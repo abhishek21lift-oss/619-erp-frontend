@@ -110,9 +110,9 @@ function BaselineDashboard({ clientId }: BaselineDashboardProps) {
   const items: CompletionItem[] = [
     { key: 'measurements', label: 'Measurements Saved', done: hasMeasurements, icon: <Ruler size={16} />, href: `/pt-os/assessment?client_id=${clientId}`, accent: '#10b981' },
     { key: 'photos', label: 'Photos Uploaded', done: hasPhotos, icon: <Camera size={16} />, href: `/pt-os/progress-photos?client_id=${clientId}`, accent: '#F59E0B' },
-    { key: 'strength', label: 'Strength Baseline', done: hasStrength, icon: <Zap size={16} />, href: `/pt-os/strength-tracking?client_id=${clientId}`, accent: '#ea580c' },
-    { key: 'mobility', label: 'Mobility Baseline', done: hasMobility, icon: <Move size={16} />, href: `/pt-os/mobility-assessment?client_id=${clientId}`, accent: '#7c3aed' },
-    { key: 'posture', label: 'Posture Assessment', done: hasPosture, icon: <Accessibility size={16} />, href: `/pt-os/posture-assessment?client_id=${clientId}`, accent: '#0ea5e9' },
+    { key: 'strength', label: 'Strength Baseline', done: hasStrength, icon: <Zap size={16} />, href: `/pt-os/strength-tracking?client_id=${clientId}`, accent: '#f59e0b' },
+    { key: 'mobility', label: 'Mobility Baseline', done: hasMobility, icon: <Move size={16} />, href: `/pt-os/mobility-assessment?client_id=${clientId}`, accent: '#0067e0' },
+    { key: 'posture', label: 'Posture Assessment', done: hasPosture, icon: <Accessibility size={16} />, href: `/pt-os/posture-assessment?client_id=${clientId}`, accent: '#0067e0' },
   ];
 
   const scores = [

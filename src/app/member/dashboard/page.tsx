@@ -414,7 +414,7 @@ function BookingRow({ b, primary }: { b: Booking; primary?: boolean }) {
         borderRadius: 12,
         background: 'var(--bg-2)',
         border: primary
-          ? '1px solid rgba(239,45,60,0.40)'
+          ? '1px solid rgba(239,68,68,0.40)'
           : '1px solid var(--line)',
         boxShadow: primary ? '0 0 0 3px var(--brand-soft)' : 'none',
       }}

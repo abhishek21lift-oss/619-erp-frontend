@@ -11,7 +11,7 @@ import { Button } from '@/components/ui';
 function fmtINR(n: number | null | undefined) { return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
 
 const KPIS = [
-  { label: 'Total Check-Ins', icon: <BarChart3 size={18} />, accent: '#06b6d4', key: 'total' as const },
+  { label: 'Total Check-Ins', icon: <BarChart3 size={18} />, accent: '#0067e0', key: 'total' as const },
   { label: 'Present', icon: <CheckCircle size={18} />, accent: '#10b981', key: 'present' as const },
   { label: 'Late', icon: <Clock size={18} />, accent: '#f59e0b', key: 'late' as const },
   { label: 'Absent', icon: <AlertTriangle size={18} />, accent: '#ef4444', key: 'absent' as const },
@@ -65,9 +65,9 @@ export default function AttendanceReportsPage() {
                 borderRadius: 24,
                 padding: '36px 40px',
                 marginBottom: 24,
-                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%)',
-                border: '1px solid rgba(2,132,199,0.15)',
-                boxShadow: '0 4px 20px rgba(2,132,199,0.08)',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #e1efff 50%, #f8fafc 100%)',
+                border: '1px solid rgba(0,89,206,0.15)',
+                boxShadow: '0 4px 20px rgba(0,89,206,0.08)',
               }}>
 
               {/* Grid overlay */}
@@ -79,22 +79,22 @@ export default function AttendanceReportsPage() {
 
 
               {/* Top accent glow bar */}
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, transparent, rgba(2,132,199,0.5), transparent)' }} />
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, transparent, rgba(0,89,206,0.5), transparent)' }} />
 
               <div style={{ position: 'relative', zIndex: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#06b6d4,#3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(6,182,212,0.35)' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#0067e0,#0059ce)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,103,224,0.35)' }}>
                     <BarChart3 size={17} color="white" />
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0284c7' }}>Reports</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0059ce' }}>Reports</span>
                 </div>
                 <h1 style={{
                   fontSize: 32, fontWeight: 860, letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0,
-                  color: '#0c4a6e',
+                  color: '#0050ad',
                 }}>
                   Reports & Dashboard
                 </h1>
-                <p style={{ marginTop: 8, fontSize: 14, color: '#6b7280', maxWidth: 520 }}>
+                <p style={{ marginTop: 8, fontSize: 14, color: '#64748b', maxWidth: 520 }}>
                   Unified footfall trends across all check-in methods — QR, face, passkey, manual, and biometric.
                 </p>
               </div>
@@ -110,11 +110,11 @@ export default function AttendanceReportsPage() {
                       padding: '10px 22px', borderRadius: 100, fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer',
                       transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)',
                       background: active
-                        ? 'linear-gradient(135deg, #0284c7, #0ea5e9)'
+                        ? 'linear-gradient(135deg, #0059ce, #0067e0)'
                         : 'rgba(255,255,255,0.8)',
                       color: active ? '#fff' : '#64748b',
                       boxShadow: active
-                        ? '0 4px 16px rgba(2,132,199,0.3)'
+                        ? '0 4px 16px rgba(0,89,206,0.3)'
                         : '0 1px 4px rgba(0,0,0,0.04)',
                     }}>
                     Last {d} days
@@ -176,12 +176,12 @@ export default function AttendanceReportsPage() {
             {/* ═══════ METHOD BREAKDOWN ═══════ */}
             {records.length > 0 && (() => {
               const METHOD_META: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-                qr:        { label: 'QR Code',      icon: <QrCode size={14} />,       color: '#06b6d4' },
-                face:      { label: 'Face',          icon: <ScanFace size={14} />,     color: '#6366f1' },
-                face_id:   { label: 'Face ID',       icon: <ScanFace size={14} />,     color: '#6366f1' },
+                qr:        { label: 'QR Code',      icon: <QrCode size={14} />,       color: '#0067e0' },
+                face:      { label: 'Face',          icon: <ScanFace size={14} />,     color: '#0067e0' },
+                face_id:   { label: 'Face ID',       icon: <ScanFace size={14} />,     color: '#0067e0' },
                 touch_id:  { label: 'Touch ID',      icon: <Fingerprint size={14} />,  color: '#10b981' },
                 fingerprint:{ label: 'Fingerprint',  icon: <Fingerprint size={14} />,  color: '#10b981' },
-                passkey:   { label: 'Passkey',       icon: <Fingerprint size={14} />,  color: '#8b5cf6' },
+                passkey:   { label: 'Passkey',       icon: <Fingerprint size={14} />,  color: '#0067e0' },
                 biometric: { label: 'Biometric',     icon: <Fingerprint size={14} />,  color: '#f59e0b' },
                 manual:    { label: 'Manual',        icon: <ClipboardList size={14} />,color: '#94a3b8' },
               };
@@ -194,9 +194,9 @@ export default function AttendanceReportsPage() {
               return (
                 <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
                   style={{ background: 'white', borderRadius: 20, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.06)', marginBottom: 24, position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: 'linear-gradient(90deg,#6366f1,#06b6d4)', borderRadius: '0 0 3px 3px', opacity: 0.5 }} />
+                  <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: 'linear-gradient(90deg,#0067e0,#0059ce)', borderRadius: '0 0 3px 3px', opacity: 0.5 }} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: '#6366f118', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366f1' }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: '#6366f118', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0067e0' }}>
                       <BarChart3 size={16} />
                     </div>
                     <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Check-In Methods</h2>
@@ -242,9 +242,9 @@ export default function AttendanceReportsPage() {
                   position: 'relative',
                   overflow: 'hidden',
                 }}>
-                <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: 'linear-gradient(90deg,#06b6d4,#3b82f6)', borderRadius: '0 0 3px 3px', opacity: 0.5 }} />
+                <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: 'linear-gradient(90deg,#0067e0,#0059ce)', borderRadius: '0 0 3px 3px', opacity: 0.5 }} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 10, background: '#06b6d418', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#06b6d4' }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: '#06b6d418', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0067e0' }}>
                     <TrendingUp size={16} />
                   </div>
                   <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Footfall Trend</h2>
@@ -265,7 +265,7 @@ export default function AttendanceReportsPage() {
                         return (
                           <m.div key={status} initial={{ height: 0 }} animate={{ height: barHeight }}
                             transition={{ duration: 0.6, delay: i * 0.03, ease: 'easeOut' }}
-                            style={{ width: 40, borderRadius: '6px 6px 0 0', background: `linear-gradient(180deg, ${colors[status] || '#06b6d4'}, ${colors[status] || '#06b6d4'}44)`, opacity: 0.6 + (i / Math.max(Object.keys(statusCounts).length, 1)) * 0.4 }}
+                            style={{ width: 40, borderRadius: '6px 6px 0 0', background: `linear-gradient(180deg, ${colors[status] || '#0067e0'}, ${colors[status] || '#0059ce'}44)`, opacity: 0.6 + (i / Math.max(Object.keys(statusCounts).length, 1)) * 0.4 }}
                             title={`${status}: ${count}`} />
                         );
                       });
@@ -291,7 +291,7 @@ export default function AttendanceReportsPage() {
                   overflow: 'hidden',
                   position: 'relative',
                 }}>
-                <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: 'linear-gradient(90deg,#10b981,#06b6d4)', borderRadius: '0 0 3px 3px', opacity: 0.5 }} />
+                <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: 'linear-gradient(90deg,#10b981,#0067e0)', borderRadius: '0 0 3px 3px', opacity: 0.5 }} />
                 <div style={{ padding: 24 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
                     <div style={{ width: 34, height: 34, borderRadius: 10, background: '#10b98118', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }}>
@@ -305,7 +305,7 @@ export default function AttendanceReportsPage() {
                     <thead>
                       <tr>
                         {['Month', 'Check-Ins', 'Members', 'Avg Daily', 'Peak Day'].map((h, i) => (
-                          <th key={i} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.8px', background: '#f8fafc', borderBottom: '1px solid rgba(0,0,0,0.07)', whiteSpace: 'nowrap' }}>{h}</th>
+                          <th key={i} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px', background: '#f8fafc', borderBottom: '1px solid rgba(0,0,0,0.07)', whiteSpace: 'nowrap' }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -331,7 +331,7 @@ export default function AttendanceReportsPage() {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                   <m.div initial={{ width: 0 }} animate={{ width: Math.min(60, (data.present / Math.max(data.checkins, 1)) * 60) }}
                                     transition={{ duration: 0.8, delay: i * 0.05, ease: 'easeOut' }}
-                                    style={{ height: 6, borderRadius: 3, background: 'linear-gradient(90deg,#06b6d4,#3b82f6)' }} />
+                                    style={{ height: 6, borderRadius: 3, background: 'linear-gradient(90deg,#0067e0,#0059ce)' }} />
                                   {month}
                                 </div>
                               </td>

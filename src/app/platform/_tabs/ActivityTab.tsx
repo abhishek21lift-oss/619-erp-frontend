@@ -31,7 +31,7 @@ export function activityLabel(a: ActivityEntry): string {
 }
 
 export const ACTIVITY_TONE: Record<string, string> = {
-  user_impersonated: '#6366f1', user_deactivated: '#ef4444', user_deleted: '#ef4444',
+  user_impersonated: '#0067e0', user_deactivated: '#ef4444', user_deleted: '#ef4444',
   org_updated: '#f59e0b', org_created: '#10b981', user_created: '#10b981',
   user_activated: '#10b981', user_password_reset: '#f59e0b', user_updated: '#f59e0b',
 };
@@ -67,7 +67,7 @@ export function ActivityTab() {
           style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }} title="Refresh"><RefreshCw size={14} /></button>
       </div>
 
-      {loading && <Center><Loader2 size={26} className="animate-spin" style={{ color: '#6366f1' }} /></Center>}
+      {loading && <Center><Loader2 size={26} className="animate-spin" style={{ color: '#0067e0' }} /></Center>}
       {error && !loading && <ErrorState error={error} onRetry={load} />}
       {!loading && !error && rows.length === 0 && (
         <EmptyState icon={<Activity size={20} />} title="No activity" description="Nothing has been logged for this filter yet." />

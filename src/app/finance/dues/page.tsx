@@ -29,9 +29,9 @@ function fmtDate(d?: string) {
 }
 function nameGradient(name: string): string {
   const palettes = [
-    'linear-gradient(135deg,#f43f5e,#e11d48)',
-    'linear-gradient(135deg,#8b5cf6,#7c3aed)',
-    'linear-gradient(135deg,#0ea5e9,#2563eb)',
+    'linear-gradient(135deg,#ef4444,#dc2626)',
+    'linear-gradient(135deg,#0067e0,#0059ce)',
+    'linear-gradient(135deg,#0067e0,#0059ce)',
     'linear-gradient(135deg,#f59e0b,#d97706)',
   ];
   let h = 0;
@@ -103,7 +103,7 @@ function Inner() {
         <div style={{ padding: '24px 0', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, borderBottom: '1px solid var(--border)' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#f59e0b,#f97316,#f43f5e)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(245,158,11,0.35)' }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#f59e0b,#f59e0b,#ef4444)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(245,158,11,0.35)' }}>
                 <AlertTriangle size={18} color="white" />
               </div>
               <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>Pending Dues</h1>
@@ -165,8 +165,8 @@ function Inner() {
             </div>
           ) : filtered.length === 0 ? (
             <div style={{ padding: '72px 32px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-              <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg,#dcfce7,#bbf7d0)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #86efac' }}>
-                <CheckCircle2 size={36} color="#16a34a" />
+              <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg,#d1fae5,#a7f3d0)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #6ee7b7' }}>
+                <CheckCircle2 size={36} color="#10b981" />
               </div>
               <div>
                 <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>All Clear!</p>
@@ -202,7 +202,7 @@ function Inner() {
                         <td style={{ padding: '14px 16px', fontSize: 13, color: 'var(--text-muted)', fontFamily: 'monospace' }}>{d.mobile || '—'}</td>
                         <td style={{ padding: '14px 16px', fontSize: 13, color: 'var(--text-muted)' }}>{d.trainer_name || '—'}</td>
                         <td style={{ padding: '14px 16px' }}>
-                          <span style={{ fontSize: 16, fontWeight: 800, background: 'linear-gradient(135deg,#ef4444,#f43f5e)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.02em' }}>{fmt(amt)}</span>
+                          <span style={{ fontSize: 16, fontWeight: 800, background: 'linear-gradient(135deg,#ef4444,#dc2626)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.02em' }}>{fmt(amt)}</span>
                         </td>
                         <td style={{ padding: '14px 16px', fontSize: 13, color: 'var(--text-muted)' }}>{fmtDate(d.pt_end_date)}</td>
                         <td style={{ padding: '14px 16px' }}>
@@ -212,15 +212,15 @@ function Inner() {
                           <span style={{
                             fontSize: 11, fontWeight: 600, borderRadius: 20, padding: '3px 10px',
                             background: d.status === 'active' ? '#ecfdf5' : '#fef2f2',
-                            color: d.status === 'active' ? '#16a34a' : '#dc2626',
-                            border: `1px solid ${d.status === 'active' ? '#86efac' : '#fecaca'}`,
+                            color: d.status === 'active' ? '#10b981' : '#dc2626',
+                            border: `1px solid ${d.status === 'active' ? '#6ee7b7' : '#fecaca'}`,
                           }}>{d.status || 'lapsed'}</span>
                         </td>
                         <td style={{ padding: '14px 16px' }}>
                           <div style={{ display: 'flex', gap: 6 }}>
                             {d.mobile && (
                               <a href={whatsappHref(d.mobile, d.name)} target="_blank" rel="noopener noreferrer"
-                                style={{ width: 30, height: 30, borderRadius: 10, border: '1.5px solid #bbf7d0', background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a', textDecoration: 'none' }}
+                                style={{ width: 30, height: 30, borderRadius: 10, border: '1.5px solid #a7f3d0', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', textDecoration: 'none' }}
                                 title="Send WhatsApp reminder">
                                 <MessageCircle size={13} />
                               </a>

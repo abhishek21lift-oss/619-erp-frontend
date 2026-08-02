@@ -18,7 +18,7 @@ import type { ProfileCompletion, ProfileTab } from '@/lib/api';
 /** Where the ring stops feeling like a warning and starts feeling like progress. */
 const TONE = (percent: number) =>
   (percent >= 90 ? { ring: '#10b981', soft: 'rgba(16,185,129,0.12)', text: '#047857' }
-    : percent >= 60 ? { ring: '#6366f1', soft: 'rgba(99,102,241,0.12)', text: '#4f46e5' }
+    : percent >= 60 ? { ring: '#0067e0', soft: 'rgba(0,103,224,0.12)', text: '#0067e0' }
       : { ring: '#f59e0b', soft: 'rgba(245,158,11,0.14)', text: '#b45309' });
 
 /**

@@ -10,9 +10,9 @@ import { Button } from '@/components/ui';
 
 const MOODS = [
   { value: 'great', label: 'Great', color: '#10b981' },
-  { value: 'good', label: 'Good', color: '#3b82f6' },
+  { value: 'good', label: 'Good', color: '#0067e0' },
   { value: 'okay', label: 'Okay', color: '#f59e0b' },
-  { value: 'tired', label: 'Tired', color: '#f97316' },
+  { value: 'tired', label: 'Tired', color: '#f59e0b' },
   { value: 'stressed', label: 'Stressed', color: '#ef4444' },
 ];
 
@@ -91,9 +91,9 @@ export default function WeeklyCheckinPage() {
                   style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     padding: '10px 24px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                    background: 'linear-gradient(135deg, #0d9488, #14b8a6)',
+                    background: 'linear-gradient(135deg, #0059ce, #0067e0)',
                     color: '#fff', fontSize: 13, fontWeight: 700,
-                    boxShadow: '0 4px 12px rgba(13,148,136,0.25)',
+                    boxShadow: '0 4px 12px rgba(0,89,206,0.25)',
                   }}
                 >
                   Retry
@@ -112,13 +112,13 @@ export default function WeeklyCheckinPage() {
         <div className="mx-auto w-full max-w-7xl py-6 sm:py-8">
           <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
-            style={{ background: '#F0FDFA', border: '1px solid #99F6E4' }}>
+            style={{ background: '#ECFDF5', border: '1px solid #A7F3D0' }}>
             <div className="relative z-10">
               <div className="flex items-center gap-2.5 mb-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(13,148,136,0.1)' }}>
-                  <ClipboardCheck size={16} style={{ color: '#0d9488' }} />
+                <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(0,89,206,0.1)' }}>
+                  <ClipboardCheck size={16} style={{ color: '#0059ce' }} />
                 </div>
-                <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: '#0d9488' }}>Progress Tracking</span>
+                <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: '#0059ce' }}>Progress Tracking</span>
               </div>
               <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
                 Weekly Check-In
@@ -135,30 +135,30 @@ export default function WeeklyCheckinPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <select value={clientId} onChange={e => setClientId(e.target.value)}
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }}>
+                  style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }}>
                   <option value="">Select client...</option>
                   {clients.data?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
                 <input type="date" value={weekStart} onChange={e => setWeekStart(e.target.value)}
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }} />
+                  style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }} />
                 <div className="grid grid-cols-2 gap-3">
                   <input type="number" step="0.1" placeholder="Weight (kg)" value={weight} onChange={e => setWeight(e.target.value)}
                     className="rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                    style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }} />
+                    style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }} />
                   <input type="number" step="0.5" placeholder="Sleep (hrs)" value={sleepHours} onChange={e => setSleepHours(e.target.value)}
                     className="rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                    style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }} />
+                    style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }} />
                   <input type="number" placeholder="Water (glasses)" value={waterGlasses} onChange={e => setWaterGlasses(e.target.value)}
                     className="rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                    style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }} />
+                    style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }} />
                   <input type="number" placeholder="Workouts this week" value={workoutCount} onChange={e => setWorkoutCount(e.target.value)}
                     className="rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                    style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }} />
+                    style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }} />
                 </div>
                 <input type="number" placeholder="Adherence % (0-100)" value={adherencePct} onChange={e => setAdherencePct(e.target.value)}
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }} />
+                  style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }} />
                 {/* ── Readiness inputs ──
                     Sleep is already above. These three are the rest of what a
                     recovery score needs: without them it is a sleep score
@@ -180,7 +180,7 @@ export default function WeeklyCheckinPage() {
                           value={f.value} onChange={(e) => f.set(e.target.value)}
                           aria-label={`${f.label} 1 to 10`}
                           className="w-full rounded-[12px] px-3 text-sm outline-none"
-                          style={{ height: 44, background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }}
+                          style={{ height: 44, background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }}
                         />
                         <p className="mt-1 text-[10px]" style={{ color: 'var(--text-muted)' }}>{f.hint}</p>
                       </div>
@@ -195,19 +195,19 @@ export default function WeeklyCheckinPage() {
                       <button key={m.value} type="button" onClick={() => setMood(m.value)}
                         className="flex-1 rounded-[10px] py-2 text-[11px] font-semibold transition-all"
                         style={{
-                          background: mood === m.value ? `${m.color}15` : '#F9FAFB',
+                          background: mood === m.value ? `${m.color}15` : '#F8FAFC',
                           border: `1.5px solid ${mood === m.value ? m.color : 'transparent'}`,
-                          color: mood === m.value ? m.color : '#6b7280',
+                          color: mood === m.value ? m.color : '#64748b',
                         }}>{m.label}</button>
                     ))}
                   </div>
                 </div>
                 <textarea placeholder="Trainer notes..." rows={2} value={trainerNotes} onChange={e => setTrainerNotes(e.target.value)}
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none resize-none"
-                  style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }} />
+                  style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }} />
                 <Button type="submit" disabled={!clientId || saving}
                   className="!w-full !rounded-[14px] !py-3 !font-[700]"
-                  style={{ background: !clientId || saving ? 'rgba(0,0,0,0.1)' : 'linear-gradient(135deg, #0d9488, #14b8a6)', color: '#fff' }}>
+                  style={{ background: !clientId || saving ? 'rgba(0,0,0,0.1)' : 'linear-gradient(135deg, #0059ce, #0067e0)', color: '#fff' }}>
                   {saving ? <Loader2 size={16} className="animate-spin" /> : success ? <Check size={16} /> : <Plus size={16} />}
                   {saving ? 'Saving...' : success ? 'Saved!' : 'Log Check-In'}
                 </Button>

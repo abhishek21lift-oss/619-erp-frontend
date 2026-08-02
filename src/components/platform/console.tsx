@@ -49,7 +49,7 @@ export function AmbientField() {
         style={{
           background:
             'linear-gradient(180deg, color-mix(in srgb, var(--brand) 7%, transparent) 0%, transparent 38%),'
-            + 'radial-gradient(120% 70% at 100% 0%, color-mix(in srgb, #8B5CF6 9%, transparent) 0%, transparent 55%)',
+            + 'radial-gradient(120% 70% at 100% 0%, color-mix(in srgb, #0067E0 9%, transparent) 0%, transparent 55%)',
         }}
       />
       <div
@@ -62,7 +62,7 @@ export function AmbientField() {
       <div
         className="absolute bottom-[-12%] right-[-6%] h-[38vh] w-[38vh] rounded-full"
         style={{
-          background: 'radial-gradient(circle, #8B5CF6 0%, transparent 68%)',
+          background: 'radial-gradient(circle, #0067E0 0%, transparent 68%)',
           opacity: 0.14, filter: 'blur(90px)',
         }}
       />
@@ -393,7 +393,7 @@ export function ConsoleHeader({
         style={{
           background:
             'linear-gradient(135deg, color-mix(in srgb, var(--brand) 16%, var(--bg-elevated)) 0%, '
-            + 'color-mix(in srgb, #8B5CF6 12%, var(--bg-elevated)) 55%, var(--bg-elevated) 100%)',
+            + 'color-mix(in srgb, #0067E0 12%, var(--bg-elevated)) 55%, var(--bg-elevated) 100%)',
           border: '1px solid var(--border)',
           boxShadow: 'var(--shadow-card), inset 0 1px 0 rgba(255,255,255,0.08)',
         }}
@@ -403,7 +403,7 @@ export function ConsoleHeader({
         <div
           aria-hidden
           className="pointer-events-none absolute -right-8 -top-12 h-36 w-36 rounded-full sm:h-44 sm:w-44"
-          style={{ background: 'radial-gradient(circle, #8B5CF6 0%, transparent 70%)', opacity: 0.28, filter: 'blur(34px)' }}
+          style={{ background: 'radial-gradient(circle, #0067E0 0%, transparent 70%)', opacity: 0.28, filter: 'blur(34px)' }}
         />
         <div
           aria-hidden
@@ -420,7 +420,7 @@ export function ConsoleHeader({
               <div
                 className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[13px] sm:h-[52px] sm:w-[52px] sm:rounded-[16px]"
                 style={{
-                  background: 'linear-gradient(145deg, #A78BFA 0%, var(--brand) 45%, #6D28D9 100%)',
+                  background: 'linear-gradient(145deg, #7FB4FF 0%, var(--brand) 45%, #0067E0 100%)',
                   boxShadow: '0 8px 22px color-mix(in srgb, var(--brand) 45%, transparent), inset 0 1px 0 rgba(255,255,255,0.32)',
                   color: '#fff',
                 }}

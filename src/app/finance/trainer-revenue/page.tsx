@@ -187,8 +187,8 @@ function Inner() {
                     display: 'flex', height: 44, width: 44,
                     alignItems: 'center', justifyContent: 'center',
                     borderRadius: 14,
-                    background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
-                    boxShadow: '0 8px 24px rgba(99,102,241,0.25)',
+                    background: 'linear-gradient(135deg,#0067e0,#0059ce)',
+                    boxShadow: '0 8px 24px rgba(0,103,224,0.25)',
                   }}>
                     <Award size={20} color="white" />
                   </div>
@@ -320,10 +320,10 @@ function Inner() {
                   <div style={{
                     display: 'flex', height: 64, width: 64,
                     alignItems: 'center', justifyContent: 'center',
-                    borderRadius: 16, background: 'rgba(99,102,241,0.08)',
+                    borderRadius: 16, background: 'rgba(0,103,224,0.08)',
                     margin: '0 auto 16px',
                   }}>
-                    <Users size={28} style={{ color: '#6366f1' }} />
+                    <Users size={28} style={{ color: '#0067e0' }} />
                   </div>
                   <p style={{
                     fontSize: 16, fontWeight: 700,
@@ -366,14 +366,14 @@ function Inner() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                               <div style={{
                                 width: 32, height: 32, borderRadius: '50%',
-                                background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                                background: 'linear-gradient(135deg,#0067e0,#0059ce)',
                                 display: 'flex', alignItems: 'center',
                                 justifyContent: 'center', fontSize: 12,
                                 fontWeight: 700, color: '#fff', flexShrink: 0,
                               }}>
                                 {trainer.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                               </div>
-                              <span style={{ color: '#6366f1', textDecoration: 'underline', textDecorationStyle: 'dotted' }}>
+                              <span style={{ color: '#0067e0', textDecoration: 'underline', textDecorationStyle: 'dotted' }}>
                                 {trainer.name}
                               </span>
                             </div>
@@ -429,7 +429,7 @@ function Inner() {
                                   transition={{ duration: 0.8, ease: 'easeOut' }}
                                   style={{
                                     height: '100%',
-                                    background: 'linear-gradient(90deg,#6366f1,#8b5cf6)',
+                                    background: 'linear-gradient(90deg,#0067e0,#0059ce)',
                                     borderRadius: 4,
                                   }}
                                 />
@@ -485,7 +485,7 @@ function Inner() {
                   }}>
                     <div style={{
                       width: 36, height: 36, borderRadius: '50%',
-                      background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                      background: 'linear-gradient(135deg,#0067e0,#0059ce)',
                       display: 'flex', alignItems: 'center',
                       justifyContent: 'center', fontSize: 13,
                       fontWeight: 700, color: '#fff', flexShrink: 0,
@@ -526,7 +526,7 @@ function Inner() {
                   <ClientMonthSection
                     label={`${monthLabel(prevYear, prevMonth)} (Previous)`}
                     clients={detailClients.prev}
-                    accent="#6366f1"
+                    accent="#0067e0"
                   />
                 </m.div>
               )}

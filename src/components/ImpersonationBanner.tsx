@@ -38,7 +38,7 @@ export default function ImpersonationBanner() {
   const full = !imp.readonly;
   const theme = full
     ? { bg: 'linear-gradient(135deg,#991b1b,#dc2626)', glow: '0 12px 40px rgba(220,38,38,0.45)', icon: '#fecaca', sub: '#fecaca', subText: 'Full access · changes are live' }
-    : { bg: 'linear-gradient(135deg,#7c2d12,#b45309)', glow: '0 12px 40px rgba(180,83,9,0.45)', icon: '#fde68a', sub: '#fed7aa', subText: 'Read-only · changes are disabled' };
+    : { bg: 'linear-gradient(135deg,#7f1d1d,#b45309)', glow: '0 12px 40px rgba(180,83,9,0.45)', icon: '#fde68a', sub: '#fef3c7', subText: 'Read-only · changes are disabled' };
 
   return (
     <div

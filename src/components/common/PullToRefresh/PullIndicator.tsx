@@ -70,7 +70,7 @@ export default function PullIndicator({ phase, progress, pullDistance, reducedMo
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           border: '1px solid rgba(255,255,255,0.7)',
-          boxShadow: '0 10px 30px rgba(74,10,30,0.18), 0 2px 8px rgba(74,10,30,0.08)',
+          boxShadow: '0 10px 30px rgba(0,80,173,0.18), 0 2px 8px rgba(0,80,173,0.08)',
           transform: `scale(${scale})`,
           transition: dragging ? 'none' : `transform 0.5s ${BOUNCE_EASE}`,
         }}

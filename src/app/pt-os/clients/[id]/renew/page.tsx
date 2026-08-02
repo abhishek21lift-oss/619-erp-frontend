@@ -30,7 +30,7 @@ function ReadOnly({ label, value, highlight }: { label: string; value: string; h
   return (
     <div className="rounded-[13px] px-4 py-3.5" style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(0,0,0,0.07)' }}>
       <p className="text-[10px] font-[700] uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
-      <p className="text-[15px] font-[700]" style={{ color: highlight || '#111827' }}>{value}</p>
+      <p className="text-[15px] font-[700]" style={{ color: highlight || '#0F172A' }}>{value}</p>
     </div>
   );
 }
@@ -132,7 +132,7 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
                 ].map(item => (
                   <div key={item.label}>
                     <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{item.label}</p>
-                    <p className="text-[14px] font-[700]" style={{ color: item.red ? '#ef4444' : '#111827' }}>{item.value}</p>
+                    <p className="text-[14px] font-[700]" style={{ color: item.red ? '#ef4444' : '#0F172A' }}>{item.value}</p>
                   </div>
                 ))}
               </div>
@@ -145,8 +145,8 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
             {/* Section: Plan */}
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(139,92,246,0.12)' }}>
-                  <Dumbbell size={13} style={{ color: '#8b5cf6' }} />
+                <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(0,103,224,0.12)' }}>
+                  <Dumbbell size={13} style={{ color: '#0067e0' }} />
                 </div>
                 <h2 className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>Package Details</h2>
               </div>
@@ -185,7 +185,7 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
 
                 {/* Computed summary */}
                 <div className="grid grid-cols-3 gap-3 pt-1">
-                  <ReadOnly label="Final Amount" value={fmtINR(final)} highlight="#111827" />
+                  <ReadOnly label="Final Amount" value={fmtINR(final)} highlight="#0F172A" />
                   <ReadOnly label="Paid Now" value={fmtINR(paidNow)} highlight="#10b981" />
                   <ReadOnly label="Balance Due" value={fmtINR(balance)} highlight={balance > 0 ? '#dc2626' : '#10b981'} />
                 </div>

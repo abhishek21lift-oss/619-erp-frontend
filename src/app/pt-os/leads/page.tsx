@@ -27,8 +27,8 @@ const SOURCE_OPTIONS = [
 ];
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
-  new:             { label: 'New',             color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
-  contacted:       { label: 'Contacted',        color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  new:             { label: 'New',             color: '#0067e0', bg: 'rgba(0,103,224,0.12)' },
+  contacted:       { label: 'Contacted',        color: '#0067e0', bg: 'rgba(0,103,224,0.12)' },
   trial_scheduled: { label: 'Trial Scheduled',  color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
   converted:       { label: 'Converted',        color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
   lost:            { label: 'Lost',             color: '#94a3b8', bg: 'rgba(148,163,184,0.14)' },
@@ -119,7 +119,7 @@ function LeadCard({
         <div className="flex min-w-0 items-center gap-3">
           <div
             className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[13px] text-[12px] font-[800] text-white"
-            style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)' }}
+            style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)' }}
           >
             {initials || '?'}
           </div>
@@ -341,7 +341,7 @@ export default function LeadsPage() {
                 className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px]"
-                    style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 8px 28px rgba(139,92,246,0.35)' }}>
+                    style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 8px 28px rgba(0,103,224,0.35)' }}>
                     <UserSearch size={24} className="text-white" />
                   </div>
                   <div>
@@ -350,7 +350,7 @@ export default function LeadsPage() {
                   </div>
                 </div>
                 <Button iconLeft={<Plus size={15} />} onClick={openCreate}
-                  style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#fff' }}>
+                  style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff' }}>
                   Add Lead
                 </Button>
               </m.div>
@@ -358,9 +358,9 @@ export default function LeadsPage() {
               {/* KPIs */}
               <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                  { label: 'Total Leads', value: counts.total, icon: <Users size={16} className="text-white" />, from: '#8b5cf6', to: '#6d28d9' },
-                  { label: 'New', value: counts.new, icon: <Target size={16} className="text-white" />, from: '#8b5cf6', to: '#7c3aed' },
-                  { label: 'In Progress', value: counts.inProgress, icon: <PhoneCall size={16} className="text-white" />, from: '#3b82f6', to: '#2563eb' },
+                  { label: 'Total Leads', value: counts.total, icon: <Users size={16} className="text-white" />, from: '#0067e0', to: '#0067e0' },
+                  { label: 'New', value: counts.new, icon: <Target size={16} className="text-white" />, from: '#0067e0', to: '#0067e0' },
+                  { label: 'In Progress', value: counts.inProgress, icon: <PhoneCall size={16} className="text-white" />, from: '#0067e0', to: '#0067e0' },
                   { label: 'Converted', value: counts.converted, icon: <TrendingUp size={16} className="text-white" />, from: '#10b981', to: '#059669' },
                 ].map((c) => (
                   <div key={c.label} className="rounded-[16px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
@@ -389,7 +389,7 @@ export default function LeadsPage() {
                     <button key={f.value} onClick={() => setStatusFilter(f.value)}
                       className="rounded-[8px] px-3 py-2 text-[11px] font-[700] transition-all"
                       style={statusFilter === f.value
-                        ? { background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#fff' }
+                        ? { background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff' }
                         : { color: 'var(--text-muted)' }}>
                       {f.label}
                     </button>
@@ -400,7 +400,7 @@ export default function LeadsPage() {
               {/* List */}
               {leads.loading && !leads.data && (
                 <div className="flex flex-col items-center justify-center gap-3 py-20">
-                  <Loader2 size={26} className="animate-spin" style={{ color: '#8b5cf6' }} />
+                  <Loader2 size={26} className="animate-spin" style={{ color: '#0067e0' }} />
                   <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>Loading leads…</p>
                 </div>
               )}
@@ -473,7 +473,7 @@ export default function LeadsPage() {
             >
               <div
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]"
-                style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 6px 20px rgba(139,92,246,0.32)' }}
+                style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 6px 20px rgba(0,103,224,0.32)' }}
               >
                 <UserSearch size={19} className="text-white" />
               </div>
@@ -546,7 +546,7 @@ export default function LeadsPage() {
                 type="button" loading={saving} disabled={saving}
                 iconLeft={!saving ? <Check size={15} /> : undefined}
                 onClick={handleSave}
-                style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff' }}
               >
                 {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Lead'}
               </Button>

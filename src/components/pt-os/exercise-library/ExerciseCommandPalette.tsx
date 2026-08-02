@@ -99,7 +99,7 @@ export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseComm
         role="dialog"
         aria-modal="true"
         aria-label="Search exercises"
-        className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0f0f12] animate-in slide-in-from-top-2 duration-200"
+        className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0f172a] animate-in slide-in-from-top-2 duration-200"
       >
         <div className="flex items-center gap-3 border-b border-slate-200/80 px-4 py-3.5 dark:border-white/[0.07]">
           {loading

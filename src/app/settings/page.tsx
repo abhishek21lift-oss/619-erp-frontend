@@ -9,6 +9,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { ROLE_LABELS, roleLabel } from '@/lib/roles';
 import { useToast } from '@/lib/toast';
+import { identity } from '@/lib/palette';
 import {
   Users, UserPlus, Shield, Key, Search, Filter, MoreHorizontal,
   Eye, EyeOff, ChevronDown, Check, X, Mail, Lock, User,
@@ -49,8 +50,8 @@ const ROLES: Record<Role, { label: string; icon: React.ReactNode; color: string;
   admin: {
     label: ROLE_LABELS.admin,
     icon: <Crown size={14} />,
-    color: '#6366f1',
-    bg: 'rgba(99,102,241,0.08)',
+    color: '#0067e0',
+    bg: 'rgba(0,103,224,0.08)',
     desc: 'Owns and runs one studio',
     perms: 'Everything inside their studio',
   },
@@ -59,7 +60,7 @@ const ROLES: Record<Role, { label: string; icon: React.ReactNode; color: string;
 const STATUS_CFG: Record<Status, { label: string; color: string; bg: string; dot: string }> = {
   active:    { label: 'Active',    color: '#059669', bg: 'rgba(5,150,105,0.08)',  dot: '#10b981' },
   pending:   { label: 'Pending',   color: '#d97706', bg: 'rgba(217,119,6,0.08)',  dot: '#f59e0b' },
-  suspended: { label: 'Suspended', color: 'var(--text-muted)', bg: 'rgba(107,114,128,0.08)', dot: '#9ca3af' },
+  suspended: { label: 'Suspended', color: 'var(--text-muted)', bg: 'rgba(100,116,139,0.08)', dot: '#94a3b8' },
 };
 
 // Roles that can be DISPLAYED but not assigned from here. Only one: yours.
@@ -71,7 +72,7 @@ const STATUS_CFG: Record<Status, { label: string; color: string; bg: string; dot
 // describing a state the product does not produce. The fallback below still
 // renders any role that turns up, which is the safety net that matters.
 const ROLE_BADGE_EXTRA: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
-  super_admin: { label: ROLE_LABELS.super_admin, color: '#8b5cf6', bg: 'rgba(139,92,246,0.10)', icon: <Crown size={14} /> },
+  super_admin: { label: ROLE_LABELS.super_admin, color: '#0067e0', bg: 'rgba(0,103,224,0.10)', icon: <Crown size={14} /> },
 };
 
 function roleBadgeCfg(role: string) {
@@ -80,14 +81,14 @@ function roleBadgeCfg(role: string) {
     ROLE_BADGE_EXTRA[role] ??
     // Falls back to roleLabel rather than the raw value, so a role that has a
     // name but no badge styling still reads as a word.
-    { label: roleLabel(role) || 'User', color: '#6b7280', bg: 'rgba(107,114,128,0.10)', icon: <User size={14} /> }
+    { label: roleLabel(role) || 'User', color: '#64748b', bg: 'rgba(100,116,139,0.10)', icon: <User size={14} /> }
   );
 }
 
 function statusBadgeCfg(status: string) {
   return (
     STATUS_CFG[status as Status] ??
-    { label: status || '—', color: '#6b7280', bg: 'rgba(107,114,128,0.08)', dot: '#9ca3af' }
+    { label: status || '—', color: '#64748b', bg: 'rgba(100,116,139,0.08)', dot: '#94a3b8' }
   );
 }
 
@@ -98,7 +99,7 @@ function initials(name: string) {
   return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
-const AVATAR_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#0ea5e9', '#8b5cf6'];
+const AVATAR_COLORS = identity;
 function avatarColor(id: string) { return AVATAR_COLORS[parseInt(id) % AVATAR_COLORS.length]; }
 
 /* ────────────────────────────────────────────────────────────────────
@@ -113,7 +114,7 @@ function pwStrength(pw: string): { score: number; label: string; color: string }
   if (/[^A-Za-z0-9]/.test(pw)) s++;
   if (s <= 1) return { score: s, label: 'Weak',   color: '#ef4444' };
   if (s <= 2) return { score: s, label: 'Fair',   color: '#f59e0b' };
-  if (s <= 3) return { score: s, label: 'Good',   color: '#3b82f6' };
+  if (s <= 3) return { score: s, label: 'Good',   color: '#0067e0' };
   return           { score: s, label: 'Strong', color: '#10b981' };
 }
 
@@ -197,8 +198,8 @@ function FloatInput({
         className="relative overflow-hidden rounded-[13px] transition-all"
         style={{
           background: focused ? 'var(--bg-card)' : 'var(--bg-subtle)',
-          border: focused ? '1.5px solid rgba(99,102,241,0.40)' : '1.5px solid rgba(15,23,42,0.09)',
-          boxShadow: focused ? '0 0 0 3px rgba(99,102,241,0.08)' : '0 1px 2px rgba(15,23,42,0.04)',
+          border: focused ? '1.5px solid rgba(0,103,224,0.40)' : '1.5px solid rgba(15,23,42,0.09)',
+          boxShadow: focused ? '0 0 0 3px rgba(0,103,224,0.08)' : '0 1px 2px rgba(15,23,42,0.04)',
           transition: 'all 180ms cubic-bezier(0.16,1,0.3,1)',
         }}
       >
@@ -208,7 +209,7 @@ function FloatInput({
           style={{
             top: lifted ? 8 : 18,
             fontSize: lifted ? 10 : 13,
-            color: lifted ? (focused ? '#6366f1' : 'rgb(148,163,184)') : 'rgb(148,163,184)',
+            color: lifted ? (focused ? '#0067e0' : 'rgb(148,163,184)') : 'rgb(148,163,184)',
             transition: 'all 150ms cubic-bezier(0.16,1,0.3,1)',
           }}
         >
@@ -223,7 +224,7 @@ function FloatInput({
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           className="w-full bg-transparent px-4 pb-3 pt-7 text-[13.5px] font-[500] outline-none"
-          style={{ color: 'rgb(15,23,42)', caretColor: '#6366f1' }}
+          style={{ color: 'rgb(15,23,42)', caretColor: '#0067e0' }}
         />
         {suffix && <div className="absolute right-4 top-1/2 -translate-y-1/2">{suffix}</div>}
       </div>
@@ -260,7 +261,7 @@ function RoleSelector({ value, onChange }: { value: Role; onChange: (r: Role) =>
             <div className="flex h-6 w-6 items-center justify-center rounded-[8px]" style={{ background: cfg.bg, color: cfg.color }}>
               {cfg.icon}
             </div>
-            <p className="mt-2 text-[12px] font-[700]" style={{ color: active ? cfg.color : 'rgb(30,30,40)' }}>{cfg.label}</p>
+            <p className="mt-2 text-[12px] font-[700]" style={{ color: active ? cfg.color : 'rgb(15,23,42)' }}>{cfg.label}</p>
             <p className="mt-0.5 text-[10.5px]" style={{ color: 'rgb(148,163,184)' }}>{cfg.desc}</p>
             <p className="mt-1 text-[10px] font-[600]" style={{ color: active ? cfg.color : 'rgb(148,163,184)', opacity: 0.85 }}>{cfg.perms}</p>
           </button>
@@ -293,8 +294,8 @@ function CoachSelector({ value, onChange }: { value: string; onChange: (v: strin
         className="flex w-full items-center gap-3 rounded-[13px] px-4 py-3.5 text-left transition-all"
         style={{
           background: open ? 'var(--bg-card)' : 'var(--bg-subtle)',
-          border: open ? '1.5px solid rgba(99,102,241,0.40)' : '1.5px solid rgba(15,23,42,0.09)',
-          boxShadow: open ? '0 0 0 3px rgba(99,102,241,0.08)' : '0 1px 2px rgba(15,23,42,0.04)',
+          border: open ? '1.5px solid rgba(0,103,224,0.40)' : '1.5px solid rgba(15,23,42,0.09)',
+          boxShadow: open ? '0 0 0 3px rgba(0,103,224,0.08)' : '0 1px 2px rgba(15,23,42,0.04)',
         }}
       >
         {value ? (
@@ -310,8 +311,8 @@ function CoachSelector({ value, onChange }: { value: string; onChange: (v: strin
           </>
         ) : (
           <>
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px]" style={{ background: 'rgba(99,102,241,0.08)' }}>
-              <Link2 size={14} color="#6366f1" />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px]" style={{ background: 'rgba(0,103,224,0.08)' }}>
+              <Link2 size={14} color="#0067e0" />
             </div>
             <span className="text-[13px]" style={{ color: 'rgb(148,163,184)' }}>Link a coach profile (optional)</span>
           </>
@@ -332,7 +333,7 @@ function CoachSelector({ value, onChange }: { value: string; onChange: (v: strin
             <div className="flex items-center gap-2 rounded-[10px] px-3 py-2 mb-1" style={{ background: 'var(--bg-subtle)' }}>
               <Search size={12} style={{ color: 'rgb(148,163,184)' }} />
               <input value={q} onChange={(e) => setQ(e.target.value)}
-                placeholder="Search coaches…" className="flex-1 bg-transparent text-[12px] outline-none" style={{ color: 'rgb(30,30,40)' }} />
+                placeholder="Search coaches…" className="flex-1 bg-transparent text-[12px] outline-none" style={{ color: 'rgb(15,23,42)' }} />
             </div>
             {value && (
               <button onClick={() => { onChange(''); setOpen(false); }}
@@ -347,8 +348,8 @@ function CoachSelector({ value, onChange }: { value: string; onChange: (v: strin
               >
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-[11px] font-[700] text-white"
                   style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}>{initials(c)}</div>
-                <span className="text-[12.5px] font-[580]" style={{ color: 'rgb(30,30,40)' }}>{c}</span>
-                {value === c && <Check size={12} className="ml-auto" style={{ color: '#6366f1' }} />}
+                <span className="text-[12.5px] font-[580]" style={{ color: 'rgb(15,23,42)' }}>{c}</span>
+                {value === c && <Check size={12} className="ml-auto" style={{ color: '#0067e0' }} />}
               </button>
             ))}
           </m.div>
@@ -430,10 +431,10 @@ function AccountCard({ account, onAction }: { account: Account; onAction: (id: s
               style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.09)', boxShadow: '0 12px 32px rgba(15,23,42,0.14)' }}
             >
               {[
-                { icon: <Edit3 size={13} />,   label: 'Edit Account',      action: 'edit',     color: 'rgb(30,30,40)' },
-                { icon: <Key size={13} />,      label: 'Reset Password',    action: 'reset-pw', color: 'rgb(30,30,40)' },
-                { icon: <RefreshCw size={13} />,label: 'Toggle Status',     action: 'toggle',   color: 'rgb(30,30,40)' },
-                { icon: <Copy size={13} />,     label: 'Copy Email',        action: 'copy',     color: 'rgb(30,30,40)' },
+                { icon: <Edit3 size={13} />,   label: 'Edit Account',      action: 'edit',     color: 'rgb(15,23,42)' },
+                { icon: <Key size={13} />,      label: 'Reset Password',    action: 'reset-pw', color: 'rgb(15,23,42)' },
+                { icon: <RefreshCw size={13} />,label: 'Toggle Status',     action: 'toggle',   color: 'rgb(15,23,42)' },
+                { icon: <Copy size={13} />,     label: 'Copy Email',        action: 'copy',     color: 'rgb(15,23,42)' },
                 { icon: <Trash2 size={13} />,   label: 'Delete Account',    action: 'delete',   color: '#ef4444' },
               ].map((item) => (
                 <button key={item.action}
@@ -460,14 +461,14 @@ function EmptyAccounts({ onAdd }: { onAdd: () => void }) {
     <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       className="flex flex-col items-center justify-center py-16 text-center">
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[22px]"
-        style={{ background: 'rgba(99,102,241,0.08)' }}>
-        <Users size={28} style={{ color: '#6366f1' }} />
+        style={{ background: 'rgba(0,103,224,0.08)' }}>
+        <Users size={28} style={{ color: '#0067e0' }} />
       </div>
       <p className="text-[16px] font-[720]" style={{ color: 'rgb(15,23,42)' }}>No accounts yet</p>
       <p className="mt-1.5 text-[13px] max-w-[260px]" style={{ color: 'rgb(148,163,184)' }}>Create your first staff account to get started with access management.</p>
       <button onClick={onAdd}
         className="mt-5 flex items-center gap-2 rounded-[13px] px-5 py-2.5 text-[13px] font-[700] text-white transition-all hover:brightness-105 active:scale-95"
-        style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 4px 16px rgba(99,102,241,0.30)' }}>
+        style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)', boxShadow: '0 4px 16px rgba(0,103,224,0.30)' }}>
         <UserPlus size={14} /> Create Account
       </button>
     </m.div>
@@ -484,13 +485,13 @@ function SecurityWidget() {
   }, []);
   const items = [
     { icon: <Activity size={13} />,       label: 'Active sessions',   value: sessionCount !== null ? String(sessionCount) : '—', color: '#10b981' },
-    { icon: <ShieldCheck size={13} />,    label: 'MFA enabled',       value: 'Enabled',       color: '#0ea5e9' },
+    { icon: <ShieldCheck size={13} />,    label: 'MFA enabled',       value: 'Enabled',       color: '#0067e0' },
     { icon: <AlertTriangle size={13} />,  label: 'Suspicious alerts', value: 'None',          color: '#f59e0b' },
   ];
   return (
     <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.07)', boxShadow: '0 1px 6px rgba(15,23,42,0.05)' }}>
       <div className="flex items-center gap-2 mb-4">
-        <Shield size={14} style={{ color: '#6366f1' }} />
+        <Shield size={14} style={{ color: '#0067e0' }} />
         <p className="text-[12.5px] font-[720] tracking-[0.01em] uppercase" style={{ color: 'rgb(100,116,139)' }}>Security Overview</p>
       </div>
       <div className="space-y-3">
@@ -638,10 +639,10 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
         style={{
           background: done
             ? 'linear-gradient(135deg,#10b981,#34d399)'
-            : 'linear-gradient(135deg,#3730a3,#6366f1,#8b5cf6)',
+            : 'linear-gradient(135deg,#0067e0,#0059ce,#0059ce)',
           boxShadow: done
             ? '0 4px 20px rgba(16,185,129,0.30)'
-            : '0 4px 20px rgba(99,102,241,0.30)',
+            : '0 4px 20px rgba(0,103,224,0.30)',
           opacity: saving ? 0.75 : 1,
         }}
       >
@@ -769,7 +770,7 @@ function ChangePasswordPanel() {
               {r.ok
                 ? <CheckCircle2 size={12} style={{ color: '#10b981', flexShrink: 0 }} />
                 : <Circle size={12} style={{ color: 'rgb(148,163,184)', flexShrink: 0 }} />}
-              <span className="text-[12px]" style={{ color: r.ok ? 'rgb(30,30,40)' : 'rgb(148,163,184)' }}>{r.label}</span>
+              <span className="text-[12px]" style={{ color: r.ok ? 'rgb(15,23,42)' : 'rgb(148,163,184)' }}>{r.label}</span>
             </div>
           ))}
         </div>
@@ -784,7 +785,7 @@ function ChangePasswordPanel() {
         ].map((item) => (
           <div key={item.label} className="flex justify-between py-1.5">
             <span className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>{item.label}</span>
-            <span className="text-[12px] font-[650]" style={{ color: 'rgb(30,30,40)' }}>{item.value}</span>
+            <span className="text-[12px] font-[650]" style={{ color: 'rgb(15,23,42)' }}>{item.value}</span>
           </div>
         ))}
       </div>
@@ -805,8 +806,8 @@ function ChangePasswordPanel() {
         style={{
           background: done
             ? 'linear-gradient(135deg,#10b981,#34d399)'
-            : 'linear-gradient(135deg,#1e3a5f,#0ea5e9)',
-          boxShadow: done ? '0 4px 20px rgba(16,185,129,0.30)' : '0 4px 20px rgba(14,165,233,0.25)',
+            : 'linear-gradient(135deg,#0050ad,#0067e0)',
+          boxShadow: done ? '0 4px 20px rgba(16,185,129,0.30)' : '0 4px 20px rgba(0,103,224,0.25)',
           opacity: (saving || (!cur || !next || !match)) ? 0.6 : 1,
         }}
       >
@@ -932,8 +933,8 @@ function AccountManagementPage() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.10)' }}>
-                  <Users size={16} style={{ color: '#6366f1' }} />
+                <div className="flex h-9 w-9 items-center justify-center rounded-[12px]" style={{ background: 'rgba(0,103,224,0.10)' }}>
+                  <Users size={16} style={{ color: '#0067e0' }} />
                 </div>
                 <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: 'rgb(15,23,42)' }}>{isSuperAdmin ? 'Account Management' : 'Security'}</h1>
               </div>
@@ -953,7 +954,7 @@ function AccountManagementPage() {
                 <button
                   onClick={() => setTab('accounts')}
                   className="flex items-center gap-2 rounded-[13px] px-4 py-2.5 text-[13px] font-[740] text-white transition-all hover:brightness-105 active:scale-95"
-                  style={{ background: 'linear-gradient(135deg,#3730a3,#6366f1)', boxShadow: '0 4px 16px rgba(99,102,241,0.28)' }}
+                  style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)', boxShadow: '0 4px 16px rgba(0,103,224,0.28)' }}
                 >
                   <UserPlus size={14} /> New Account
                 </button>
@@ -964,10 +965,10 @@ function AccountManagementPage() {
           {/* KPI chips — account stats are only meaningful to the platform admin */}
           {isSuperAdmin && (
             <div className="mt-5 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
-              <KpiChip label="Total Accounts"     value={stats.total}   icon={<Users size={13} />}       color="#6366f1" />
+              <KpiChip label="Total Accounts"     value={stats.total}   icon={<Users size={13} />}       color="#0067e0" />
               <KpiChip label="Active Users"       value={stats.active}  icon={<Activity size={13} />}    color="#10b981" />
               <KpiChip label="Trainers"           value={stats.admins}  icon={<Crown size={13} />}       color="#f59e0b" />
-              <KpiChip label="Pending Invitations" value={stats.pending} icon={<Sparkles size={13} />}   color="#8b5cf6" />
+              <KpiChip label="Pending Invitations" value={stats.pending} icon={<Sparkles size={13} />}   color="#0067e0" />
             </div>
           )}
         </div>
@@ -1008,8 +1009,8 @@ function AccountManagementPage() {
                 <div className="rounded-[22px] p-6"
                   style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                   <div className="mb-5 flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-[9px]" style={{ background: 'rgba(99,102,241,0.10)' }}>
-                      <UserPlus size={13} style={{ color: '#6366f1' }} />
+                    <div className="flex h-7 w-7 items-center justify-center rounded-[9px]" style={{ background: 'rgba(0,103,224,0.10)' }}>
+                      <UserPlus size={13} style={{ color: '#0067e0' }} />
                     </div>
                     <div>
                       <p className="text-[14px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Create Account</p>
@@ -1045,9 +1046,9 @@ function AccountManagementPage() {
                       onClick={() => setFilterOpen((o) => !o)}
                       className="flex items-center gap-2 rounded-[13px] px-3.5 py-2.5 text-[13px] font-[640] transition-all"
                       style={{
-                        background: filterRole !== 'all' ? 'rgba(99,102,241,0.08)' : 'var(--bg-card)',
-                        border: filterRole !== 'all' ? '1.5px solid rgba(99,102,241,0.22)' : '1px solid rgba(15,23,42,0.08)',
-                        color: filterRole !== 'all' ? '#4f46e5' : 'rgb(100,116,139)',
+                        background: filterRole !== 'all' ? 'rgba(0,103,224,0.08)' : 'var(--bg-card)',
+                        border: filterRole !== 'all' ? '1.5px solid rgba(0,103,224,0.22)' : '1px solid rgba(15,23,42,0.08)',
+                        color: filterRole !== 'all' ? '#0067e0' : 'rgb(100,116,139)',
                         boxShadow: '0 1px 4px rgba(15,23,42,0.04)',
                       }}
                     >
@@ -1065,18 +1066,18 @@ function AccountManagementPage() {
                         >
                           <button onClick={() => { setFilterRole('all'); setFilterOpen(false); }}
                             className="flex w-full items-center justify-between rounded-[10px] px-3.5 py-2.5 text-[12.5px] font-[600] transition hover:bg-slate-50"
-                            style={{ color: 'rgb(30,30,40)' }}>
-                            All Roles {filterRole === 'all' && <Check size={12} style={{ color: '#6366f1' }} />}
+                            style={{ color: 'rgb(15,23,42)' }}>
+                            All Roles {filterRole === 'all' && <Check size={12} style={{ color: '#0067e0' }} />}
                           </button>
                           {(Object.entries(ROLES) as [Role, typeof ROLES[Role]][]).map(([key, cfg]) => (
                             <button key={key} onClick={() => { setFilterRole(key); setFilterOpen(false); }}
                               className="flex w-full items-center justify-between rounded-[10px] px-3.5 py-2.5 text-[12.5px] font-[600] transition hover:bg-slate-50"
-                              style={{ color: 'rgb(30,30,40)' }}>
+                              style={{ color: 'rgb(15,23,42)' }}>
                               <span className="flex items-center gap-2">
                                 <span style={{ color: cfg.color }}>{cfg.icon}</span>
                                 {cfg.label}
                               </span>
-                              {filterRole === key && <Check size={12} style={{ color: '#6366f1' }} />}
+                              {filterRole === key && <Check size={12} style={{ color: '#0067e0' }} />}
                             </button>
                           ))}
                         </m.div>
@@ -1107,7 +1108,7 @@ function AccountManagementPage() {
                       <div className="flex items-center justify-center py-16">
                         <m.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                           className="h-8 w-8 rounded-full"
-                          style={{ border: '2.5px solid rgba(99,102,241,0.15)', borderTopColor: '#6366f1' }} />
+                          style={{ border: '2.5px solid rgba(0,103,224,0.15)', borderTopColor: '#0067e0' }} />
                       </div>
                     ) : accountsError ? (
                       <div className="flex flex-col items-center py-16 text-center">
@@ -1117,7 +1118,7 @@ function AccountManagementPage() {
                         <p className="text-[13px]" style={{ color: 'rgb(148,163,184)' }}>{accountsError}</p>
                         <button onClick={fetchAccounts}
                           className="mt-3 flex items-center gap-2 rounded-[11px] px-4 py-2 text-[12px] font-[700] text-white"
-                          style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+                          style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)' }}>
                           <RefreshCw size={12} /> Retry
                         </button>
                       </div>
@@ -1137,8 +1138,8 @@ function AccountManagementPage() {
               <div className="rounded-[22px] p-6"
                 style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                 <div className="mb-5 flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-[9px]" style={{ background: 'rgba(14,165,233,0.10)' }}>
-                    <Lock size={13} style={{ color: '#0ea5e9' }} />
+                  <div className="flex h-7 w-7 items-center justify-center rounded-[9px]" style={{ background: 'rgba(0,103,224,0.10)' }}>
+                    <Lock size={13} style={{ color: '#0067e0' }} />
                   </div>
                   <div>
                     <p className="text-[14px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Change Password</p>

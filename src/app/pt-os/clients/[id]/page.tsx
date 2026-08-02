@@ -60,7 +60,7 @@ const fmtDate = (d?: string) => {
 function getStatusConfig(status: string, days_left: number | null, pt_end_date?: string) {
   const endPassed = pt_end_date ? new Date(pt_end_date) < new Date() : (days_left != null && days_left <= 0);
   if (endPassed) return { label: 'Inactive', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
-  if (status === 'frozen') return { label: 'Frozen', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)', dot: '#3b82f6' };
+  if (status === 'frozen') return { label: 'Frozen', color: '#0067e0', bg: 'rgba(0,103,224,0.12)', dot: '#0067e0' };
   if (status === 'active' && days_left != null && days_left <= 7) return { label: 'Expiring', color: '#f87171', bg: 'rgba(248,113,113,0.12)', dot: '#ef4444' };
   if (status === 'active') return { label: 'Active', color: '#34d399', bg: 'rgba(52,211,153,0.12)', dot: '#10b981' };
   if (status === 'expired' || status === 'inactive') return { label: 'Inactive', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
@@ -71,7 +71,7 @@ function InfoRow({ label, value, valueColor }: { label: string; value: string; v
   return (
     <div className="flex items-start justify-between gap-3 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
       <span className="shrink-0 text-[12px] font-[500] text-slate-500">{label}</span>
-      <span className="min-w-0 flex-1 break-words text-right text-[12.5px] font-[650]" style={{ color: valueColor ?? '#111827' }}>{value}</span>
+      <span className="min-w-0 flex-1 break-words text-right text-[12.5px] font-[650]" style={{ color: valueColor ?? '#0F172A' }}>{value}</span>
     </div>
   );
 }
@@ -180,7 +180,7 @@ function QrCheckinCard({ clientId, clientName }: { clientId: string; clientName:
   };
 
   return (
-    <DarkCard title="Check-in QR Code" icon={<QrCode size={14} />} from="#0891b2">
+    <DarkCard title="Check-in QR Code" icon={<QrCode size={14} />} from="#0059ce">
       {/* Collapsed by default. This is a print-once artefact — a trainer looks
           at it when a client joins and never again — and open it took 200px of
           a rail where everything else is read on every visit. */}
@@ -189,7 +189,7 @@ function QrCheckinCard({ clientId, clientName }: { clientId: string; clientName:
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         className="flex h-[44px] w-full items-center justify-between gap-2 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80"
-        style={{ background: 'rgba(8,145,178,0.10)', color: '#0891b2', border: '1px solid rgba(8,145,178,0.20)' }}
+        style={{ background: 'rgba(0,89,206,0.10)', color: '#0059ce', border: '1px solid rgba(0,89,206,0.20)' }}
       >
         {open ? 'Hide code' : 'Show code'}
         <ChevronDown size={14} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} />
@@ -205,7 +205,7 @@ function QrCheckinCard({ clientId, clientName }: { clientId: string; clientName:
               <button
                 onClick={handlePrint}
                 className="flex h-[44px] items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80"
-                style={{ background: 'rgba(8,145,178,0.10)', color: '#0891b2', border: '1px solid rgba(8,145,178,0.20)' }}
+                style={{ background: 'rgba(0,89,206,0.10)', color: '#0059ce', border: '1px solid rgba(0,89,206,0.20)' }}
               >
                 <Printer size={13} /> Print Card
               </button>
@@ -393,7 +393,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
               <div className="flex flex-col items-center justify-center min-h-[70vh] gap-4">
                 <div className="relative h-14 w-14">
                   <div className="absolute inset-0 rounded-full"
-                    style={{ border: '2px solid rgba(124,58,237,0.15)', borderTopColor: '#7c3aed', animation: 'spin 0.9s linear infinite' }} />
+                    style={{ border: '2px solid rgba(0,103,224,0.15)', borderTopColor: '#0067e0', animation: 'spin 0.9s linear infinite' }} />
                 </div>
                 <p className="text-[13px] font-[500] text-slate-500">Loading client profile…</p>
               </div>
@@ -409,7 +409,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 <p className="text-[14px] text-slate-400">{error}</p>
                 <button onClick={loadData}
                   className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[13px] font-[700] text-white"
-                  style={{ background: 'linear-gradient(135deg, #7c3aed, #5b21b6)' }}>
+                  style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)' }}>
                   <RefreshCw size={14} /> Retry
                 </button>
               </div>
@@ -427,13 +427,13 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                   className="relative mb-3 overflow-hidden rounded-[28px] p-6 sm:p-8"
                   style={{
-                    background: 'linear-gradient(135deg, #1e1b4b 0%, #2e1065 55%, #3b1a5c 100%)',
-                    boxShadow: '0 20px 48px rgba(30,27,75,0.35)',
+                    background: 'linear-gradient(135deg, #0050ad 0%, #003f87 55%, #003f87 100%)',
+                    boxShadow: '0 20px 48px rgba(0,80,173,0.35)',
                   }}>
                   <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full blur-3xl"
-                    style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.40), transparent 70%)' }} />
+                    style={{ background: 'radial-gradient(circle, rgba(0,103,224,0.40), transparent 70%)' }} />
                   <div className="pointer-events-none absolute -bottom-32 -left-24 h-72 w-72 rounded-full blur-3xl"
-                    style={{ background: 'radial-gradient(circle, rgba(45,212,191,0.20), transparent 70%)' }} />
+                    style={{ background: 'radial-gradient(circle, rgba(0,103,224,0.20), transparent 70%)' }} />
 
                   <div className="relative flex items-start gap-4 sm:gap-6">
                     <div className="flex h-[76px] w-[76px] shrink-0 items-center justify-center rounded-[24px] text-[26px] font-[860] text-white sm:h-[100px] sm:w-[100px] sm:rounded-[30px] sm:text-[32px]"
@@ -462,10 +462,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       </div>
 
                       <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                        <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color="#2dd4bf" />
+                        <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color="#0067e0" />
                         {client.trainer_name && (
                           <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-[700]"
-                            style={{ background: 'rgba(196,181,253,0.18)', color: '#c4b5fd' }}>
+                            style={{ background: 'rgba(184,215,255,0.18)', color: '#b8d7ff' }}>
                             <User size={11} />{client.trainer_name}
                           </span>
                         )}
@@ -494,13 +494,13 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 <div className="mb-3 grid grid-cols-4 gap-2">
                   {[
                     client.mobile
-                      ? { key: 'call', label: client.mobile, icon: <Phone size={16} />, from: '#6366f1', to: '#4f46e5', href: `tel:${client.mobile}` }
+                      ? { key: 'call', label: client.mobile, icon: <Phone size={16} />, from: '#0067e0', to: '#0067e0', href: `tel:${client.mobile}` }
                       : null,
                     client.mobile
                       ? { key: 'wa', label: 'WhatsApp', icon: <MessageCircle size={16} />, from: '#10b981', to: '#059669', href: whatsappHref(client.mobile, client.name), external: true }
                       : null,
                     { key: 'enroll', label: 'Enroll in PT', icon: <Award size={16} />, from: '#f59e0b', to: '#d97706', push: `/pt-os/clients/${id}/enroll` },
-                    { key: 'renew', label: 'Renew PT', icon: <Repeat size={16} />, from: '#06b6d4', to: '#0891b2', push: `/pt-os/clients/${id}/renew` },
+                    { key: 'renew', label: 'Renew PT', icon: <Repeat size={16} />, from: '#0067e0', to: '#0059ce', push: `/pt-os/clients/${id}/renew` },
                   ].filter(Boolean).map((a) => {
                     const item = a as { key: string; label: string; icon: React.ReactNode; from: string; to: string; href?: string; push?: string; external?: boolean };
                     const inner = (
@@ -541,12 +541,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   transition={{ delay: 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                   className="mb-4 overflow-hidden rounded-[24px]"
                   style={{
-                    background: 'linear-gradient(135deg, #241f5c 0%, #34157a 100%)',
-                    boxShadow: '0 12px 32px rgba(30,27,75,0.28)',
+                    background: 'linear-gradient(135deg, #0050ad 0%, #0059ce 100%)',
+                    boxShadow: '0 12px 32px rgba(0,80,173,0.28)',
                   }}>
                   <div className="grid grid-cols-3 gap-px" style={{ background: 'rgba(255,255,255,0.12)' }}>
                     {[
-                      { label: 'Term fee', value: fmtINR(currentTermFee), sub: 'Current term', tone: '#c4b5fd' },
+                      { label: 'Term fee', value: fmtINR(currentTermFee), sub: 'Current term', tone: '#b8d7ff' },
                       { label: 'Paid', value: fmtINR(currentTermPaid), sub: `${completionPct}% complete`, tone: '#6ee7b7' },
                       {
                         label: 'Balance', value: fmtINR(currentTermBalance),
@@ -587,12 +587,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     style={{ borderBottom: '1px solid var(--border)' }}>
                     <div className="flex items-center gap-2.5">
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
-                        style={{ background: 'linear-gradient(135deg, #818cf8, #6366f1)', boxShadow: '0 3px 12px #6366f145' }}>
+                        style={{ background: 'linear-gradient(135deg, #7fb4ff, #0067e0)', boxShadow: '0 3px 12px #6366f145' }}>
                         <Clock size={16} className="text-white" />
                       </span>
                       <h3 className="text-[13.5px] font-[740] text-gray-900">PT term</h3>
                     </div>
-                    <span className="text-[13px] font-[820] tabular-nums" style={{ color: '#6366f1' }}>
+                    <span className="text-[13px] font-[820] tabular-nums" style={{ color: '#0067e0' }}>
                       {client.days_left != null ? `${client.days_left} days left` : '—'}
                     </span>
                   </div>
@@ -601,7 +601,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     <m.div initial={{ width: 0 }} animate={{ width: `${ptTermPct}%` }}
                       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                       className="h-full rounded-full"
-                      style={{ background: 'linear-gradient(90deg, #6366f1, #6366f1bb)' }} />
+                      style={{ background: 'linear-gradient(90deg, #0067e0, #6366f1bb)' }} />
                   </div>
                   <div className="mt-2.5 flex justify-between">
                     <span className="text-[10.5px] font-[600] text-slate-500">Start {fmtDate(client.pt_start_date)}</span>
@@ -647,12 +647,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
                   {/* Active Goals */}
                   {activeGoals.length > 0 && (
-                    <DarkCard title="Active Goals" icon={<Target size={14} />} from="#3b82f6">
+                    <DarkCard title="Active Goals" icon={<Target size={14} />} from="#0067e0">
                       <div className="space-y-2">
                         {activeGoals.slice(0, 3).map((g: any) => (
                           <div key={g.id}
                             className="flex items-center justify-between rounded-[12px] p-3"
-                            style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)' }}>
+                            style={{ background: 'rgba(0,103,224,0.06)', border: '1px solid rgba(0,103,224,0.15)' }}>
                             <div>
                               <p className="text-[12.5px] font-[660] text-gray-900">{g.goal_type || g.type || 'Goal'}</p>
                               <p className="text-[10.5px] text-slate-500 mt-0.5">
@@ -662,7 +662,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                             </div>
                             <button onClick={() => router.push(`/pt-os/goals?client_id=${client.id}`)}
                               className="rounded-[8px] px-2.5 py-1.5 text-[10.5px] font-[700] transition hover:opacity-80"
-                              style={{ background: 'rgba(59,130,246,0.12)', color: '#2563eb' }}>
+                              style={{ background: 'rgba(0,103,224,0.12)', color: '#0067e0' }}>
                               View
                             </button>
                           </div>
@@ -675,7 +675,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
                 <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
                   {/* Personal Info */}
-                  <DarkCard title="Personal Info" icon={<User size={14} />} from="#db2777">
+                  <DarkCard title="Personal Info" icon={<User size={14} />} from="#0067e0">
                     <InfoRow label="Gender" value={client.gender || '—'} />
                     <InfoRow label="Date of Birth" value={fmtDate(client.dob)} />
                     <InfoRow label="Phone" value={client.mobile || '—'} />
@@ -683,7 +683,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     <InfoRow label="Joined" value={fmtDate(client.joining_date)} />
                   </DarkCard>
                   {/* PT Assignment */}
-                  <DarkCard title="PT Assignment" icon={<Dumbbell size={14} />} from="#7c3aed">
+                  <DarkCard title="PT Assignment" icon={<Dumbbell size={14} />} from="#0067e0">
                     <InfoRow label="Start" value={fmtDate(client.pt_start_date)} />
                     <InfoRow label="End" value={fmtDate(client.pt_end_date)} />
                     <InfoRow label="Duration" value={client.duration_months ? `${client.duration_months} months` : '—'} />
@@ -744,13 +744,13 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   <button onClick={() => router.push(`/pt-os/session-balance?client_id=${client.id}`)}
                     className="group w-full rounded-[20px] p-5 text-left transition-all duration-200 hover:-translate-y-0.5 bg-white"
                     style={{
-                      border: '1px solid rgba(6,182,212,0.18)',
+                      border: '1px solid rgba(0,103,224,0.18)',
                       boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                     }}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-[12px]"
-                          style={{ background: 'rgba(6,182,212,0.12)' }}>
+                          style={{ background: 'rgba(0,103,224,0.12)' }}>
                           <Calendar size={16} className="text-cyan-500" />
                         </div>
                         <div>
@@ -789,7 +789,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className="flex h-11 w-11 items-center justify-center rounded-[13px]"
-                        style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                        style={{ background: 'rgba(0,103,224,0.12)', border: '1px solid rgba(0,103,224,0.2)' }}>
                         <Repeat size={18} className="text-indigo-500" />
                       </div>
                       <div>

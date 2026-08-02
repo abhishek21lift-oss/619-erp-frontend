@@ -29,20 +29,20 @@ function fmtINR(n: number | string | null | undefined) {
 }
 
 const GRADIENTS = [
-  'linear-gradient(135deg, #2563EB, #7C3AED)',
-  'linear-gradient(135deg, #10B981, #06B6D4)',
-  'linear-gradient(135deg, #F97316, #EC4899)',
-  'linear-gradient(135deg, #7C3AED, #06B6D4)',
-  'linear-gradient(135deg, #2563EB, #10B981)',
-  'linear-gradient(135deg, #EC4899, #F97316)',
-  'linear-gradient(135deg, #06B6D4, #7C3AED)',
-  'linear-gradient(135deg, #F97316, #2563EB)',
+  'linear-gradient(135deg, #0067E0, #0059CE)',
+  'linear-gradient(135deg, #10B981, #0067E0)',
+  'linear-gradient(135deg, #F59E0B, #0067E0)',
+  'linear-gradient(135deg, #0067E0, #0059CE)',
+  'linear-gradient(135deg, #0067E0, #10B981)',
+  'linear-gradient(135deg, #0067E0, #F59E0B)',
+  'linear-gradient(135deg, #0067E0, #0059CE)',
+  'linear-gradient(135deg, #F59E0B, #0067E0)',
 ];
 
 const RANK_COLORS: Record<number, { bg: string; text: string; glow: string; label: string }> = {
-  0: { bg: 'rgba(255,215,0,0.12)', text: '#F59E0B', glow: '0 0 20px rgba(255,215,0,0.25)', label: '🥇' },
-  1: { bg: 'rgba(192,192,192,0.10)', text: '#94A3B8', glow: '0 0 16px rgba(192,192,192,0.15)', label: '🥈' },
-  2: { bg: 'rgba(205,127,50,0.10)', text: '#CD7F32', glow: '0 0 16px rgba(205,127,50,0.15)', label: '🥉' },
+  0: { bg: 'rgba(245,158,11,0.12)', text: '#F59E0B', glow: '0 0 20px rgba(245,158,11,0.25)', label: '🥇' },
+  1: { bg: 'rgba(203,213,225,0.10)', text: '#94A3B8', glow: '0 0 16px rgba(203,213,225,0.15)', label: '🥈' },
+  2: { bg: 'rgba(245,158,11,0.10)', text: '#F59E0B', glow: '0 0 16px rgba(245,158,11,0.15)', label: '🥉' },
 };
 
 function GlassPanel({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -119,11 +119,11 @@ function TrainerCard({ trainer, index }: { trainer: Trainer; index: number }) {
               </Link>
               {(trainer as any).unique_id && (
                 <div className="mt-0.5">
-                  <CopyId id={(trainer as any).unique_id} color="#f97316" />
+                  <CopyId id={(trainer as any).unique_id} color="#f59e0b" />
                 </div>
               )}
               <div className="flex items-center gap-1.5 mt-0.5">
-                <Award size={11} className="text-[#8B5CF6] shrink-0" />
+                <Award size={11} className="text-[#0067E0] shrink-0" />
                 <span className="text-[11px] text-[var(--text-muted)] truncate">{specialty}</span>
               </div>
             </div>
@@ -145,16 +145,16 @@ function TrainerCard({ trainer, index }: { trainer: Trainer; index: number }) {
 
         {/* KPI Chips */}
         <div className="grid grid-cols-3 gap-2 mt-4">
-          <div className="rounded-[12px] bg-[rgba(37,99,235,0.05)] p-2.5 text-center ring-1 ring-[rgba(37,99,235,0.08)]">
-            <p className="text-[9px] font-bold uppercase tracking-[0.06em] text-[#2563EB]">Active</p>
+          <div className="rounded-[12px] bg-[rgba(0,103,224,0.05)] p-2.5 text-center ring-1 ring-[rgba(0,103,224,0.08)]">
+            <p className="text-[9px] font-bold uppercase tracking-[0.06em] text-[#0067E0]">Active</p>
             <p className="text-[16px] font-extrabold text-[var(--text-primary)] mt-0.5">{trainer.active_clients ?? 0}</p>
           </div>
           <div className="rounded-[12px] bg-[rgba(16,185,129,0.05)] p-2.5 text-center ring-1 ring-[rgba(16,185,129,0.08)]">
             <p className="text-[9px] font-bold uppercase tracking-[0.06em] text-[#10B981]">This Month</p>
             <p className="text-[16px] font-extrabold text-[var(--text-primary)] mt-0.5">{fmtINR(trainer.month_revenue)}</p>
           </div>
-          <div className="rounded-[12px] bg-[rgba(139,92,246,0.05)] p-2.5 text-center ring-1 ring-[rgba(139,92,246,0.08)]">
-            <p className="text-[9px] font-bold uppercase tracking-[0.06em] text-[#8B5CF6]">Total</p>
+          <div className="rounded-[12px] bg-[rgba(0,103,224,0.05)] p-2.5 text-center ring-1 ring-[rgba(0,103,224,0.08)]">
+            <p className="text-[9px] font-bold uppercase tracking-[0.06em] text-[#0067E0]">Total</p>
             <p className="text-[16px] font-extrabold text-[var(--text-primary)] mt-0.5">{trainer.total_clients ?? 0}</p>
           </div>
         </div>
@@ -174,7 +174,7 @@ function TrainerCard({ trainer, index }: { trainer: Trainer; index: number }) {
           <div className="flex items-center gap-1.5">
             <Link
               href={`/trainers/${trainer.id}`}
-              className="flex items-center gap-1 rounded-[10px] bg-[rgba(37,99,235,0.08)] px-3 py-1.5 text-[11px] font-bold text-[#2563EB] transition-all hover:bg-[rgba(37,99,235,0.14)]"
+              className="flex items-center gap-1 rounded-[10px] bg-[rgba(0,103,224,0.08)] px-3 py-1.5 text-[11px] font-bold text-[#0067E0] transition-all hover:bg-[rgba(0,103,224,0.14)]"
             >
               View <ChevronRight size={12} />
             </Link>
@@ -204,7 +204,7 @@ function LeaderboardRow({ trainer, index }: { trainer: Trainer; index: number })
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.04, duration: 0.25 }}
-      className="group transition-colors hover:bg-[rgba(139,92,246,0.03)] cursor-pointer"
+      className="group transition-colors hover:bg-[rgba(0,103,224,0.03)] cursor-pointer"
       onClick={() => window.location.href = `/trainers/${trainer.id}`}
     >
       <td className="py-3 px-4 w-12">
@@ -337,12 +337,12 @@ export default function TrainersPage() {
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className="relative overflow-hidden rounded-[32px] mb-8 p-[1px]"
             style={{
-              background: 'linear-gradient(135deg, rgba(37,99,235,0.3), rgba(124,58,237,0.3), rgba(6,182,212,0.3))',
+              background: 'linear-gradient(135deg, rgba(0,103,224,0.3), rgba(0,103,224,0.3), rgba(0,103,224,0.3))',
             }}
           >
-            <div className="relative rounded-[31px] bg-gradient-to-br from-[#2563EB]/90 via-[#7C3AED]/90 to-[#06B6D4]/90 p-8 sm:p-10 overflow-hidden">
+            <div className="relative rounded-[31px] bg-gradient-to-br from-[#0067E0]/90 via-[#0067E0]/90 to-[#0067E0]/90 p-8 sm:p-10 overflow-hidden">
               <div className="absolute top-[-20%] right-[-5%] w-64 h-64 rounded-full bg-white/[0.06] blur-[60px]" />
-              <div className="absolute bottom-[-30%] left-[-10%] w-72 h-72 rounded-full bg-[#06B6D4]/[0.08] blur-[80px]" />
+              <div className="absolute bottom-[-30%] left-[-10%] w-72 h-72 rounded-full bg-[#0067E0]/[0.08] blur-[80px]" />
               <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                 <div>
                   <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold text-white/80 uppercase tracking-[0.08em] mb-3">
@@ -421,7 +421,7 @@ export default function TrainersPage() {
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Search trainers by name, email, or specialization..."
-                    className="w-full h-10 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[13px] text-[var(--text-primary)] placeholder-[#9CA3AF] outline-none transition-all focus:border-[#2563EB]/30 focus:shadow-[0_0_0_3px_rgba(37,99,235,0.08)]"
+                    className="w-full h-10 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[13px] text-[var(--text-primary)] placeholder-[#94A3B8] outline-none transition-all focus:border-[#0067E0]/30 focus:shadow-[0_0_0_3px_rgba(37,99,235,0.08)]"
                   />
                 </div>
                 <span className="text-[12px] font-medium text-[var(--text-muted)] ml-auto">
@@ -488,7 +488,7 @@ export default function TrainersPage() {
                       <PremiumBarChart
                         data={monthlyRevenue as Record<string, unknown>[]}
                         xKey="month"
-                        bars={[{ key: 'revenue', label: 'Revenue', color: '#6366f1' }]}
+                        bars={[{ key: 'revenue', label: 'Revenue', color: '#0067e0' }]}
                         height={128}
                         formatValue={fmtINR}
                         className="mt-4"
@@ -498,7 +498,7 @@ export default function TrainersPage() {
                   }
                   <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[rgba(0,0,0,0.04)]">
                     <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
-                      <div className="h-2.5 w-2.5 rounded-[4px] bg-[#6366f1]" />
+                      <div className="h-2.5 w-2.5 rounded-[4px] bg-[#0067e0]" />
                       Monthly Revenue
                     </div>
                     <span className="text-[11px] font-bold text-[var(--text-primary)] ml-auto">
@@ -514,13 +514,13 @@ export default function TrainersPage() {
                       <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--text-muted)]">Insights</p>
                       <h3 className="text-[15px] font-bold text-[var(--text-primary)] mt-0.5">Team Summary</h3>
                     </div>
-                    <Zap size={16} className="text-[#F97316]" />
+                    <Zap size={16} className="text-[#F59E0B]" />
                   </div>
                   <div className="space-y-3">
                     {[
-                      { label: 'Avg Clients / Trainer', value: trainers.length ? Math.round(stats.clients / trainers.length) : 0, color: '#2563EB' },
+                      { label: 'Avg Clients / Trainer', value: trainers.length ? Math.round(stats.clients / trainers.length) : 0, color: '#0067E0' },
                       { label: 'Avg Revenue / Trainer', value: fmtINR(trainers.length ? stats.revenue / trainers.length : 0), color: '#10B981' },
-                      { label: 'Trainers with Revenue', value: trainers.filter(t => Number(t.month_revenue ?? 0) > 0).length, color: '#8B5CF6' },
+                      { label: 'Trainers with Revenue', value: trainers.filter(t => Number(t.month_revenue ?? 0) > 0).length, color: '#0067E0' },
                       { label: 'Top Performer', value: sortedByRevenue[0]?.name || '—', color: '#F59E0B' },
                     ].map(item => (
                       <div key={item.label} className="flex items-center justify-between rounded-[12px] bg-[rgba(0,0,0,0.02)] px-3.5 py-2.5">
@@ -576,10 +576,10 @@ export default function TrainersPage() {
               className="flex flex-col items-center justify-center py-20"
             >
               <div className="relative mb-6">
-                <div className="h-20 w-20 rounded-[24px] bg-gradient-to-br from-[#2563EB]/10 to-[#7C3AED]/10 flex items-center justify-center ring-1 ring-[rgba(37,99,235,0.1)]">
-                  <Users size={36} className="text-[#2563EB]/40" strokeWidth={1.5} />
+                <div className="h-20 w-20 rounded-[24px] bg-gradient-to-br from-[#0067E0]/10 to-[#0067E0]/10 flex items-center justify-center ring-1 ring-[rgba(0,103,224,0.1)]">
+                  <Users size={36} className="text-[#0067E0]/40" strokeWidth={1.5} />
                 </div>
-                <div className="absolute -top-1 -right-1 h-8 w-8 rounded-full bg-gradient-to-br from-[#F97316] to-[#EC4899] flex items-center justify-center shadow-lg">
+                <div className="absolute -top-1 -right-1 h-8 w-8 rounded-full bg-gradient-to-br from-[#F59E0B] to-[#0067E0] flex items-center justify-center shadow-lg">
                   <Search size={14} className="text-white" />
                 </div>
               </div>
@@ -593,7 +593,7 @@ export default function TrainersPage() {
               </p>
               {!search && (
                 <Link href="/trainers/add">
-                  <div className="inline-flex items-center gap-2 rounded-[14px] bg-gradient-to-r from-[#2563EB] to-[#7C3AED] px-5 py-2.5 text-[13px] font-bold text-white shadow-[0_4px_16px_rgba(37,99,235,0.25)] hover:shadow-[0_6px_24px_rgba(37,99,235,0.35)] transition-all">
+                  <div className="inline-flex items-center gap-2 rounded-[14px] bg-gradient-to-r from-[#0067E0] to-[#0067E0] px-5 py-2.5 text-[13px] font-bold text-white shadow-[0_4px_16px_rgba(37,99,235,0.25)] hover:shadow-[0_6px_24px_rgba(37,99,235,0.35)] transition-all">
                     <Plus size={16} /> Add Your First Trainer
                   </div>
                 </Link>

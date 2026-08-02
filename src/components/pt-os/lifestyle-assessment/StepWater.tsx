@@ -11,7 +11,7 @@ const QUICK_VALUES = [1, 2, 3, 4, 5];
 
 const CATEGORY_STYLE: Record<string, { bg: string; color: string }> = {
   Low: { bg: 'rgba(239,68,68,0.14)', color: '#dc2626' },
-  Moderate: { bg: 'rgba(249,115,22,0.14)', color: '#ea580c' },
+  Moderate: { bg: 'rgba(245,158,11,0.14)', color: '#f59e0b' },
   Optimal: { bg: 'rgba(245,158,11,0.12)', color: '#d97706' },
   Excellent: { bg: 'rgba(16,185,129,0.12)', color: '#059669' },
 };

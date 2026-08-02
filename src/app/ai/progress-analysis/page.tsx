@@ -124,12 +124,12 @@ export default function ProgressAnalysisPage() {
 
             <div style={{ position: 'relative' }}>
               <div style={{ position: 'relative' }}>
-                <User size={16} color="#9ca3af" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                <User size={16} color="#94a3b8" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                 <input
                   type="text"
                   style={{
                     width: '100%', padding: '12px 14px 12px 42px', borderRadius: 12, fontSize: 14,
-                    background: 'var(--bg-card)', border: '1px solid #d1d5db',
+                    background: 'var(--bg-card)', border: '1px solid #cbd5e1',
                     color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box',
                   }}
                   placeholder="Search clients by name…"
@@ -152,18 +152,18 @@ export default function ProgressAnalysisPage() {
                       style={{
                         width: '100%', textAlign: 'left', padding: '12px 16px',
                         background: 'transparent', border: 'none', cursor: 'pointer',
-                        borderBottom: i < filteredClients.length - 1 ? '1px solid #f3f4f6' : 'none',
+                        borderBottom: i < filteredClients.length - 1 ? '1px solid #f1f5f9' : 'none',
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       }}
                       onMouseDown={() => { setSelectedClient(c); setClientSearch(c.name); setShowDropdown(false); }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#F9FAFB'; }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#F8FAFC'; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
                     >
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</div>
                         {c.email && <div style={{ fontSize: 12, color: 'var(--text-disabled)', marginTop: 2 }}>{c.email}</div>}
                       </div>
-                      <ChevronRight size={14} color="#9ca3af" />
+                      <ChevronRight size={14} color="#94a3b8" />
                     </button>
                   ))}
                 </div>
@@ -218,10 +218,10 @@ export default function ProgressAnalysisPage() {
                 <m.div variants={fadeUp} initial="hidden" animate="show" custom={0} style={{
                   display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px',
                   borderRadius: 20, width: 'fit-content',
-                  background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)',
+                  background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
                 }}>
-                  <Sparkles size={13} color="#D4AF37" />
-                  <span style={{ fontSize: 12, color: '#D4AF37', fontWeight: 600 }}>Analysed by {meta.model}</span>
+                  <Sparkles size={13} color="#F59E0B" />
+                  <span style={{ fontSize: 12, color: '#F59E0B', fontWeight: 600 }}>Analysed by {meta.model}</span>
                   {meta.used_fallback && <span style={{ fontSize: 11, color: '#D97706', marginLeft: 4 }}>(fallback)</span>}
                 </m.div>
               )}
@@ -295,7 +295,7 @@ export default function ProgressAnalysisPage() {
               {analysis.wins?.length ? (
                 <m.div variants={fadeUp} initial="hidden" animate="show" custom={5} style={{
                   borderRadius: 20, padding: '20px 24px',
-                  background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.2)',
+                  background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                     <CheckCircle2 size={18} color="#10b981" />
@@ -331,8 +331,8 @@ export default function ProgressAnalysisPage() {
                         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{r.risk}</span>
                         <span style={{
                           fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: '0.05em',
-                          background: r.severity === 'high' ? 'rgba(239,68,68,0.1)' : r.severity === 'medium' ? 'rgba(251,191,36,0.15)' : '#F3F4F6',
-                          color: r.severity === 'high' ? '#ef4444' : r.severity === 'medium' ? ACCENT : '#6b7280',
+                          background: r.severity === 'high' ? 'rgba(239,68,68,0.1)' : r.severity === 'medium' ? 'rgba(251,191,36,0.15)' : '#F1F5F9',
+                          color: r.severity === 'high' ? '#ef4444' : r.severity === 'medium' ? ACCENT : '#64748b',
                         }}>{r.severity}</span>
                       </div>
                       <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>{r.action}</p>
@@ -357,7 +357,7 @@ export default function ProgressAnalysisPage() {
                     .map((r, i) => (
                     <div key={i} style={{
                       display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 24px',
-                      borderBottom: i < analysis.recommendations!.length - 1 ? '1px solid #f3f4f6' : 'none',
+                      borderBottom: i < analysis.recommendations!.length - 1 ? '1px solid #f1f5f9' : 'none',
                     }}>
                       <div style={{
                         width: 28, height: 28, borderRadius: '50%', flexShrink: 0,

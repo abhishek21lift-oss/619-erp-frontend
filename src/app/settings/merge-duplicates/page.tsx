@@ -176,7 +176,7 @@ function MergeContent() {
               {[
                 { label: 'Duplicate Groups', value: summary.total_groups, color: '#F59E0B', icon: <Users size={15} /> },
                 { label: 'Total Records', value: summary.total_records, color: '#f59e0b', icon: <AlertTriangle size={15} /> },
-                { label: 'Will Be Removed', value: summary.total_duplicates, color: '#7c3aed', icon: <Trash2 size={15} /> },
+                { label: 'Will Be Removed', value: summary.total_duplicates, color: '#0067e0', icon: <Trash2 size={15} /> },
                 { label: 'Total Value', value: fmtINR(summary.total_financial_value), color: '#10b981', icon: <IndianRupee size={15} />, isText: true },
               ].map((c, i) => (
                 <m.div key={c.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
@@ -253,7 +253,7 @@ function MergeContent() {
                           </div>
                           <div>
                             <p className="text-[10px] font-[600] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Subscriptions</p>
-                            <p className="text-[14px] font-[720]" style={{ color: '#6366f1' }}>{subsCount}</p>
+                            <p className="text-[14px] font-[720]" style={{ color: '#0067e0' }}>{subsCount}</p>
                           </div>
                           <div>
                             <p className="text-[10px] font-[600] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Balance</p>
@@ -299,9 +299,9 @@ function MergeContent() {
                                 <div className="flex flex-wrap gap-2">
                                   {(grp.subscription_starts ?? []).map((d, idx) => (
                                     <div key={d} className="flex items-center gap-1.5 rounded-[8px] px-3 py-1.5"
-                                      style={{ background: idx === subsCount - 1 ? 'rgba(99,102,241,0.1)' : 'rgba(15,23,42,0.04)', border: idx === subsCount - 1 ? '1px solid rgba(99,102,241,0.25)' : '1px solid rgba(15,23,42,0.06)' }}>
-                                      <Calendar size={10} style={{ color: idx === subsCount - 1 ? '#6366f1' : 'rgb(148,163,184)' }} />
-                                      <span className="text-[11.5px] font-[600]" style={{ color: idx === subsCount - 1 ? '#6366f1' : 'rgb(100,116,139)' }}>
+                                      style={{ background: idx === subsCount - 1 ? 'rgba(0,103,224,0.1)' : 'rgba(15,23,42,0.04)', border: idx === subsCount - 1 ? '1px solid rgba(0,103,224,0.25)' : '1px solid rgba(15,23,42,0.06)' }}>
+                                      <Calendar size={10} style={{ color: idx === subsCount - 1 ? '#0067e0' : 'rgb(148,163,184)' }} />
+                                      <span className="text-[11.5px] font-[600]" style={{ color: idx === subsCount - 1 ? '#0067e0' : 'rgb(100,116,139)' }}>
                                         {fmtDate(d)}{idx === subsCount - 1 ? ' (latest)' : ''}
                                       </span>
                                     </div>
@@ -312,7 +312,7 @@ function MergeContent() {
 
                             {/* Financial summary after merge */}
                             <div className="rounded-[12px] p-4 grid grid-cols-2 sm:grid-cols-4 gap-3"
-                              style={{ background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.1)' }}>
+                              style={{ background: 'rgba(0,103,224,0.04)', border: '1px solid rgba(0,103,224,0.1)' }}>
                               <div>
                                 <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>After Merge: Total Billed</p>
                                 <p className="text-[15px] font-[760] mt-0.5" style={{ color: 'rgb(15,23,42)' }}>{fmtINR(grp.total_final)}</p>

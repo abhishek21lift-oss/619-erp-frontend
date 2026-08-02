@@ -44,16 +44,16 @@ const ICON_MAP: Record<string, React.ElementType> = {
 };
 
 // ── Design constants ──────────────────────────────────────────────────────────
-const BRAND = '#a78bfa';
+const BRAND = '#7fb4ff';
 const THEME = {
   brand:        BRAND,
-  iconBg:       'linear-gradient(135deg, #c084fc 0%, #a78bfa 100%)',
-  activeBg:     'rgba(167,139,250,0.15)',
-  subBorder:    'rgba(167,139,250,0.12)',
-  subActiveBg:  'rgba(167,139,250,0.08)',
+  iconBg:       'linear-gradient(135deg, #7fb4ff 0%, #3b8df5 100%)',
+  activeBg:     'rgba(127,180,255,0.15)',
+  subBorder:    'rgba(127,180,255,0.12)',
+  subActiveBg:  'rgba(127,180,255,0.08)',
   inactiveText: 'rgba(255,255,255,0.52)',
   inactiveIcon: 'rgba(255,255,255,0.38)',
-  hoverBg:      'rgba(167,139,250,0.08)',
+  hoverBg:      'rgba(127,180,255,0.08)',
   iconBgIdle:   'rgba(255,255,255,0.06)',
 };
 
@@ -151,7 +151,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                 {groupIndex > 0 && (
                   <div
                     className="mb-3 h-px"
-                    style={{ background: 'linear-gradient(90deg, transparent, rgba(167,139,250,0.18), transparent)' }}
+                    style={{ background: 'linear-gradient(90deg, transparent, rgba(127,180,255,0.18), transparent)' }}
                   />
                 )}
                 <p className="px-3 text-[9.5px] font-bold uppercase tracking-[0.14em]" style={{ color: 'rgba(255,255,255,0.22)' }}>
@@ -162,7 +162,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
 
             {/* Section divider — collapsed icon-rail */}
             {sectionLabel && collapsed && groupIndex > 0 && (
-              <div className="my-2.5 mx-auto w-5 h-px" style={{ background: 'rgba(167,139,250,0.14)' }} />
+              <div className="my-2.5 mx-auto w-5 h-px" style={{ background: 'rgba(127,180,255,0.14)' }} />
             )}
 
             <div className="relative mb-px">
@@ -174,7 +174,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                 title={collapsed ? group.label : undefined}
                 className={cn(
                   'relative w-full rounded-xl transition-all duration-200 overflow-hidden',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(167,139,250,0.55)] focus-visible:ring-offset-1 focus-visible:ring-offset-transparent',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(127,180,255,0.55)] focus-visible:ring-offset-1 focus-visible:ring-offset-transparent',
                   collapsed ? 'flex justify-center px-0 py-2' : '',
                 )}
                 style={{ background: hasActiveChild ? THEME.activeBg : 'transparent' }}
@@ -310,7 +310,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                               {!isDisabled && item.isNew && badgeCount === 0 && (
                                 <span
                                   className="relative z-10 ml-1 shrink-0 block h-1.5 w-1.5 rounded-full"
-                                  style={{ background: '#22C55E', boxShadow: '0 0 5px rgba(34,197,94,0.5)' }}
+                                  style={{ background: '#10B981', boxShadow: '0 0 5px rgba(16,185,129,0.5)' }}
                                 />
                               )}
                               {!isDisabled && badgeCount > 0 && (
@@ -343,7 +343,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                               onClick={onLinkClick}
                               className={cn(
                                 'relative flex items-center gap-2 rounded-lg px-3 py-[7px] transition-all duration-150 overflow-hidden',
-                                'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[rgba(167,139,250,0.55)]',
+                                'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[rgba(127,180,255,0.55)]',
                                 active && 'font-semibold',
                               )}
                               style={{ background: active ? THEME.subActiveBg : 'transparent' }}
@@ -396,7 +396,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
           </div>
           <span
             className="absolute -bottom-[1px] -right-[1px] block h-2 w-2 rounded-full border-[1.5px]"
-            style={{ background: '#22C55E', borderColor: '#070510' }}
+            style={{ background: '#10B981', borderColor: '#0F172A' }}
           />
         </Link>
         <button
@@ -417,8 +417,8 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
       <div
         className="rounded-xl p-3"
         style={{
-          background: 'linear-gradient(135deg, rgba(167,139,250,0.08) 0%, rgba(124,58,237,0.05) 100%)',
-          border: '1px solid rgba(167,139,250,0.12)',
+          background: 'linear-gradient(135deg, rgba(127,180,255,0.08) 0%, rgba(0,103,224,0.05) 100%)',
+          border: '1px solid rgba(127,180,255,0.12)',
         }}
       >
         {/* Avatar + name + email */}
@@ -435,7 +435,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
             </div>
             <span
               className="absolute -bottom-[1px] -right-[1px] block h-2.5 w-2.5 rounded-full border-2"
-              style={{ background: '#22C55E', borderColor: '#0a0820' }}
+              style={{ background: '#10B981', borderColor: '#0f172a' }}
             />
           </div>
           <div className="flex-1 min-w-0">
@@ -452,7 +452,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
         <div className="mb-2.5">
           <span
             className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-            style={{ background: 'rgba(167,139,250,0.15)', color: BRAND, border: '1px solid rgba(167,139,250,0.2)' }}
+            style={{ background: 'rgba(127,180,255,0.15)', color: BRAND, border: '1px solid rgba(127,180,255,0.2)' }}
           >
             {roleLabel(user?.role) || 'Trainer'}
           </span>
@@ -549,7 +549,7 @@ export default function Sidebar({
         ],
       )}
       style={{
-        background: 'linear-gradient(180deg, rgba(249,115,22,0.07) 0%, rgba(249,115,22,0.02) 18%, transparent 38%), linear-gradient(160deg, #070510 0%, #0C0920 30%, #100D30 65%, #130F45 100%)',
+        background: 'linear-gradient(180deg, rgba(245,158,11,0.07) 0%, rgba(245,158,11,0.02) 18%, transparent 38%), linear-gradient(160deg, #0F172A 0%, #0F172A 30%, #0050AD 65%, #0050AD 100%)',
         paddingTop: isMobile ? 'calc(12px + env(safe-area-inset-top, 0px))' : 'env(safe-area-inset-top, 0px)',
         paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 0px)' : undefined,
         willChange: isMobile ? 'transform' : undefined,
@@ -558,7 +558,7 @@ export default function Sidebar({
         borderRadius: isMobile ? '0 16px 16px 0' : undefined,
         boxShadow: isMobile
           ? '6px 0 24px rgba(0,0,0,0.30), 2px 0 8px rgba(0,0,0,0.20)'
-          : 'inset 0 0 0 1px rgba(167,139,250,0.05), 4px 0 24px rgba(0,0,0,0.35)',
+          : 'inset 0 0 0 1px rgba(127,180,255,0.05), 4px 0 24px rgba(0,0,0,0.35)',
       }}
     >
       {/* Brand header */}
@@ -602,7 +602,7 @@ export default function Sidebar({
               aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               className="flex h-6 w-6 items-center justify-center rounded-md transition-all duration-150"
               style={{ color: 'rgba(255,255,255,0.40)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(167,139,250,0.12)'; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(127,180,255,0.12)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
             >
               {collapsed
@@ -630,7 +630,7 @@ export default function Sidebar({
       {/* Nav */}
       <div
         className="flex-1 overflow-y-auto overflow-x-hidden py-1"
-        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(167,139,250,0.15) transparent' }}
+        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(127,180,255,0.15) transparent' }}
       >
         <SidebarNav collapsed={collapsed} onLinkClick={isMobile ? onMobileClose : undefined} />
       </div>

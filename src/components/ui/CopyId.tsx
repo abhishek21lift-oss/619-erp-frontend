@@ -8,7 +8,7 @@ interface Props {
   className?: string;
 }
 
-export function CopyId({ id, color = '#6366f1', className = '' }: Props) {
+export function CopyId({ id, color = '#0067e0', className = '' }: Props) {
   const [copied, setCopied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

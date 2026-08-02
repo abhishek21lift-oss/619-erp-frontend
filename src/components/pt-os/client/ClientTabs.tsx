@@ -187,7 +187,7 @@ export function EmptyPanel({
             <a key={a.href} href={a.href}
               className="flex h-[44px] items-center gap-1.5 rounded-[12px] px-4 text-[12px] font-[750] transition-all hover:-translate-y-0.5"
               style={i === 0
-                ? { background: 'var(--brand)', color: '#fff', boxShadow: '0 4px 14px rgba(99,102,241,0.35)' }
+                ? { background: 'var(--brand)', color: '#fff', boxShadow: '0 4px 14px rgba(0,103,224,0.35)' }
                 : { background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
               {a.label} <ChevronRight size={13} />
             </a>

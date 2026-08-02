@@ -303,7 +303,7 @@ function ToastItem({
       role={toast.type === 'error' ? 'alert' : 'status'}
       aria-live={style.live}
       className={cn(
-        'pointer-events-auto w-full overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-inset dark:bg-[#1E1F24] dark:ring-white/10',
+        'pointer-events-auto w-full overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-inset dark:bg-[#0F172A] dark:ring-white/10',
         style.ring,
       )}
     >

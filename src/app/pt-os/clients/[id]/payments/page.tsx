@@ -57,10 +57,10 @@ function fmtDateTime(d?: string) {
 function StatusBadge({ status, days_left }: { status: string; days_left: number | null }) {
   const styles: Record<string, { label: string; bg: string; fg: string }> = {
     active: { label: 'Active', bg: '#10b98118', fg: '#10b981' },
-    expired: { label: 'Expired', bg: '#f43f5e18', fg: '#f43f5e' },
-    frozen: { label: 'Frozen', bg: '#3b82f618', fg: '#3b82f6' },
+    expired: { label: 'Expired', bg: '#f43f5e18', fg: '#ef4444' },
+    frozen: { label: 'Frozen', bg: '#3b82f618', fg: '#0067e0' },
   };
-  let s = styles[status] || { label: status, bg: '#6b728018', fg: '#6b7280' };
+  let s = styles[status] || { label: status, bg: '#6b728018', fg: '#64748b' };
   if (status === 'active' && days_left !== null && days_left <= 7)
     s = { label: 'Expiring', bg: '#dc262618', fg: '#dc2626' };
   return (
@@ -76,9 +76,9 @@ function PaymentStatusBadge({ status }: { status: string }) {
     completed: { label: 'Completed', bg: '#10b98112', fg: '#10b981' },
     pending: { label: 'Pending', bg: '#f59e0b12', fg: '#f59e0b' },
     failed: { label: 'Failed', bg: '#ef444412', fg: '#ef4444' },
-    refunded: { label: 'Refunded', bg: '#6366f112', fg: '#6366f1' },
+    refunded: { label: 'Refunded', bg: '#6366f112', fg: '#0067e0' },
   };
-  const c = colors[status] || { label: status, bg: '#6b728012', fg: '#6b7280' };
+  const c = colors[status] || { label: status, bg: '#6b728012', fg: '#64748b' };
   return (
     <span className="text-[10px] font-bold uppercase tracking-[0.06em] px-2 py-0.5 rounded-[6px]"
       style={{ background: c.bg, color: c.fg }}>
@@ -89,10 +89,10 @@ function PaymentStatusBadge({ status }: { status: string }) {
 
 const paymentMethods = [
   { value: 'CASH', label: 'Cash', icon: Banknote, color: '#10b981' },
-  { value: 'UPI', label: 'UPI', icon: Smartphone, color: '#6366f1' },
-  { value: 'CARD', label: 'Card', icon: CreditCard, color: '#3b82f6' },
+  { value: 'UPI', label: 'UPI', icon: Smartphone, color: '#0067e0' },
+  { value: 'CARD', label: 'Card', icon: CreditCard, color: '#0067e0' },
   { value: 'BANK_TRANSFER', label: 'Bank Transfer', icon: Landmark, color: '#f59e0b' },
-  { value: 'CHEQUE', label: 'Cheque', icon: Receipt, color: '#8b5cf6' },
+  { value: 'CHEQUE', label: 'Cheque', icon: Receipt, color: '#0067e0' },
 ];
 
 const GradientCard = ({ children, from, to, className = '' }: { children: React.ReactNode; from: string; to: string; className?: string }) => (
@@ -333,7 +333,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                   </div>
                 </GradientCard>
 
-                <GradientCard from="#8b5cf6" to="#5b21b6">
+                <GradientCard from="#0067e0" to="#0067e0">
                   <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: 'rgba(255,255,255,0.15)' }}>
@@ -403,13 +403,13 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                 }}
               >
                 {/* Header + filters */}
-                <div className="flex flex-wrap items-center gap-3 p-4 border-b" style={{ borderColor: '#f3f4f6' }}>
+                <div className="flex flex-wrap items-center gap-3 p-4 border-b" style={{ borderColor: '#f1f5f9' }}>
                   <div className="flex items-center gap-2.5">
                     <Wallet size={14} style={{ color: 'var(--text-muted)' }} />
                     <h3 className="text-[14px] font-[700]" style={{ color: 'var(--text-primary)' }}>Payment History</h3>
                     <span className="text-[11px] px-2 py-0.5 rounded-[6px] font-[600]" style={{
-                      background: 'rgba(99,102,241,0.10)',
-                      color: '#6366f1',
+                      background: 'rgba(0,103,224,0.10)',
+                      color: '#0067e0',
                     }}>
                       {payments.length} total
                     </span>
@@ -425,11 +425,11 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                       className="w-48 pl-8 pr-3 py-1.5 rounded-[8px] text-[12px] outline-none transition-all"
                       style={{
                         background: 'var(--bg-card)',
-                        border: '1px solid #d1d5db',
+                        border: '1px solid #cbd5e1',
                         color: 'var(--text-primary)',
                       }}
-                      onFocus={(e) => { e.currentTarget.style.borderColor = '#818cf8'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(129,140,248,0.15)'; }}
-                      onBlur={(e) => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.boxShadow = ''; }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = '#7fb4ff'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(127,180,255,0.15)'; }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.boxShadow = ''; }}
                     />
                   </div>
                   <select
@@ -438,7 +438,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                     className="px-2.5 py-1.5 rounded-[8px] text-[12px] font-medium outline-none cursor-pointer"
                     style={{
                       background: 'var(--bg-card)',
-                      border: '1px solid #d1d5db',
+                      border: '1px solid #cbd5e1',
                       color: 'var(--text-secondary)',
                     }}
                   >
@@ -493,7 +493,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="flex items-center gap-1.5">
-                                {MethodIcon && <MethodIcon size={12} style={{ color: methodIcon?.color || '#6b7280' }} />}
+                                {MethodIcon && <MethodIcon size={12} style={{ color: methodIcon?.color || '#64748b' }} />}
                                 <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
                                   {p.payment_method?.replace(/_/g, ' ') || '—'}
                                 </span>
@@ -510,7 +510,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                               </span>
                             </td>
                             <td className="py-3.5 px-4">
-                              <span className="text-[12px] tabular-nums" style={{ color: Number(p.incentive_amt) > 0 ? '#f59e0b' : '#9ca3af' }}>
+                              <span className="text-[12px] tabular-nums" style={{ color: Number(p.incentive_amt) > 0 ? '#f59e0b' : '#94a3b8' }}>
                                 {Number(p.incentive_amt) > 0 ? fmtINR(p.incentive_amt) : '—'}
                               </span>
                             </td>
@@ -553,7 +553,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                 </div>
 
                 {filteredPayments.length > 0 && (
-                  <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t" style={{ borderColor: '#f3f4f6' }}>
+                  <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t" style={{ borderColor: '#f1f5f9' }}>
                     <span className="text-[11px]" style={{ color: 'var(--text-disabled)' }}>
                       Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filteredPayments.length)} of {filteredPayments.length} payments
                     </span>
@@ -662,8 +662,8 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                         <div className="flex gap-2">
                           {[
                             { value: 'CASH', label: 'Cash', icon: Banknote, color: '#10b981' },
-                            { value: 'UPI', label: 'UPI', icon: Smartphone, color: '#6366f1' },
-                            { value: 'CARD', label: 'Card', icon: CreditCard, color: '#3b82f6' },
+                            { value: 'UPI', label: 'UPI', icon: Smartphone, color: '#0067e0' },
+                            { value: 'CARD', label: 'Card', icon: CreditCard, color: '#0067e0' },
                             { value: 'BANK_TRANSFER', label: 'Bank', icon: Landmark, color: '#f59e0b' },
                           ].map(m => {
                             const Icon = m.icon;
@@ -738,7 +738,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                                     onChange={(e) => setForm(f => ({ ...f, payment_ref: e.target.value }))}
                                     placeholder="TXN / UTR"
                                     className="w-full px-3 py-2 rounded-[9px] text-[12px] outline-none"
-                                    style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }}
+                                    style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }}
                                   />
                                 </div>
                                 <div>
@@ -746,7 +746,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                                   <input type="date" value={form.date}
                                     onChange={(e) => setForm(f => ({ ...f, date: e.target.value }))}
                                     className="w-full px-3 py-2 rounded-[9px] text-[12px] outline-none"
-                                    style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)', colorScheme: 'light' }}
+                                    style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)', colorScheme: 'light' }}
                                   />
                                 </div>
                               </div>
@@ -755,7 +755,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                                 placeholder="Notes (optional)"
                                 rows={2}
                                 className="w-full px-3 py-2 rounded-[9px] text-[12px] outline-none resize-none"
-                                style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }}
+                                style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }}
                               />
                             </m.div>
                           )}

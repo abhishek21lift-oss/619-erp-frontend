@@ -33,12 +33,12 @@ export default function TrialBanner() {
       <div
         className="flex items-center gap-3 px-4 py-2 transition-colors"
         style={{
-          background: onTrial ? 'linear-gradient(90deg,rgba(245,158,11,0.14),rgba(245,158,11,0.06))' : 'rgba(59,130,246,0.10)',
-          borderBottom: `1px solid ${onTrial ? 'rgba(245,158,11,0.25)' : 'rgba(59,130,246,0.25)'}`,
+          background: onTrial ? 'linear-gradient(90deg,rgba(245,158,11,0.14),rgba(245,158,11,0.06))' : 'rgba(0,103,224,0.10)',
+          borderBottom: `1px solid ${onTrial ? 'rgba(245,158,11,0.25)' : 'rgba(0,103,224,0.25)'}`,
         }}
       >
-        <Clock size={14} style={{ color: onTrial ? '#d97706' : '#2563eb' }} className="flex-shrink-0" />
-        <p className="min-w-0 flex-1 truncate text-[12.5px] font-[650]" style={{ color: onTrial ? '#92400e' : '#1e40af' }}>
+        <Clock size={14} style={{ color: onTrial ? '#d97706' : '#0067e0' }} className="flex-shrink-0" />
+        <p className="min-w-0 flex-1 truncate text-[12.5px] font-[650]" style={{ color: onTrial ? '#92400e' : '#0067e0' }}>
           {onTrial
             ? `${days} ${days === 1 ? 'day' : 'days'} left in your free trial`
             : `Your plan renews in ${days} ${days === 1 ? 'day' : 'days'}`}
@@ -48,7 +48,7 @@ export default function TrialBanner() {
             <div className="h-full rounded-full" style={{ width: `${pct * 100}%`, background: 'linear-gradient(90deg,#F59E0B,#fbbf24)' }} />
           </div>
         )}
-        <span className="flex flex-shrink-0 items-center gap-1 text-[12px] font-[750]" style={{ color: onTrial ? '#b45309' : '#2563eb' }}>
+        <span className="flex flex-shrink-0 items-center gap-1 text-[12px] font-[750]" style={{ color: onTrial ? '#b45309' : '#0067e0' }}>
           {onTrial ? 'Upgrade' : 'Renew'} <ArrowRight size={12} />
         </span>
       </div>

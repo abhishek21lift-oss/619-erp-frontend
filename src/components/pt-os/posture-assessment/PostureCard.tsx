@@ -5,7 +5,7 @@ import { DonutChart } from '@/components/ui';
 
 const RISK_STYLE: Record<string, { bg: string; color: string }> = {
   Low: { bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
-  Moderate: { bg: 'rgba(249,115,22,0.15)', color: '#f97316' },
+  Moderate: { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b' },
   High: { bg: 'rgba(220,38,38,0.18)', color: '#dc2626' },
 };
 

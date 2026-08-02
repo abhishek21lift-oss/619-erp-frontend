@@ -8,9 +8,9 @@ import type { AiDietPlan, AiDietMeal } from '@/lib/api';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 
-const ACCENT = '#16A34A';
-const ACCENT_SOFT = '#4ADE80';
-const ACCENT_DIM = 'rgba(22,163,74,0.10)';
+const ACCENT = '#10B981';
+const ACCENT_SOFT = '#34D399';
+const ACCENT_DIM = 'rgba(16,185,129,0.10)';
 const ACCENT_GRADIENT = `linear-gradient(135deg, ${ACCENT_SOFT}, ${ACCENT})`;
 
 const ACTIVITY_LEVELS = ['sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extra_active'];
@@ -68,7 +68,7 @@ function PillGroup({ options, value, onChange }: { options: string[]; value: str
             key={opt} type="button" onClick={() => onChange(opt)}
             className="rounded-full px-3.5 py-2 text-[12.5px] font-[650] transition-all"
             style={active
-              ? { background: ACCENT_GRADIENT, color: '#fff', border: '1px solid transparent', boxShadow: '0 4px 14px rgba(22,163,74,0.35)' }
+              ? { background: ACCENT_GRADIENT, color: '#fff', border: '1px solid transparent', boxShadow: '0 4px 14px rgba(16,185,129,0.35)' }
               : { background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
           >
             {labelMap[opt] ?? opt}
@@ -110,9 +110,9 @@ function MealCard({ meal, index }: { meal: AiDietMeal; index: number }) {
           <div className="mb-3 grid grid-cols-3 overflow-hidden rounded-[12px]" style={{ background: ACCENT_DIM }}>
             {[{ label: 'Protein', value: `${meal.protein_g}g` }, { label: 'Carbs', value: `${meal.carbs_g}g` }, { label: 'Fat', value: `${meal.fat_g}g` }].map((mac, i) => (
               <div key={mac.label} className="px-2 py-2.5 text-center"
-                style={{ borderRight: i < 2 ? '1px solid rgba(22,163,74,0.15)' : 'none' }}>
+                style={{ borderRight: i < 2 ? '1px solid rgba(16,185,129,0.15)' : 'none' }}>
                 <div className="text-[15px] font-[750]" style={{ color: ACCENT }}>{mac.value}</div>
-                <div className="text-[9.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: '#15803d' }}>{mac.label}</div>
+                <div className="text-[9.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: '#059669' }}>{mac.label}</div>
               </div>
             ))}
           </div>
@@ -187,12 +187,12 @@ export default function DietGeneratorPage() {
           {/* ── Hero ── */}
           <m.div variants={fadeUp} initial="hidden" animate="show" custom={0}
             className="relative mb-6 overflow-hidden rounded-[28px] p-7 sm:p-9"
-            style={{ background: 'linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+            style={{ background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
             <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full opacity-60 blur-3xl"
-              style={{ background: 'rgba(74,222,128,0.35)' }} />
+              style={{ background: 'rgba(52,211,153,0.35)' }} />
             <div className="relative flex items-center gap-4">
               <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[16px]"
-                style={{ background: ACCENT_GRADIENT, boxShadow: '0 8px 24px rgba(22,163,74,0.35)' }}>
+                style={{ background: ACCENT_GRADIENT, boxShadow: '0 8px 24px rgba(16,185,129,0.35)' }}>
                 <Apple size={24} color="#fff" />
               </div>
               <div>
@@ -207,7 +207,7 @@ export default function DietGeneratorPage() {
             <div className="relative mt-5 flex flex-wrap gap-2">
               {['Calorie Calibrated', 'Macro Balanced', 'Allergen-Safe', 'Grocery List', 'Supplement Guide'].map((p) => (
                 <span key={p} className="rounded-full px-3 py-1.5 text-[11.5px] font-[650]"
-                  style={{ background: 'rgba(255,255,255,0.75)', color: ACCENT, border: '1px solid rgba(22,163,74,0.2)' }}>
+                  style={{ background: 'rgba(255,255,255,0.75)', color: ACCENT, border: '1px solid rgba(16,185,129,0.2)' }}>
                   {p}
                 </span>
               ))}
@@ -289,7 +289,7 @@ export default function DietGeneratorPage() {
                   background: ACCENT_GRADIENT,
                   opacity: loading ? 0.6 : 1,
                   cursor: loading ? 'not-allowed' : 'pointer',
-                  boxShadow: loading ? 'none' : '0 8px 24px rgba(22,163,74,0.35)',
+                  boxShadow: loading ? 'none' : '0 8px 24px rgba(16,185,129,0.35)',
                 }}>
                 {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                 {loading ? 'Generating Plan…' : 'Generate Meal Plan'}
@@ -309,7 +309,7 @@ export default function DietGeneratorPage() {
             <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="flex flex-col items-center gap-5 py-14">
               <div className="relative flex h-20 w-20 items-center justify-center rounded-[24px]"
-                style={{ background: ACCENT_DIM, border: '1px solid rgba(22,163,74,0.2)' }}>
+                style={{ background: ACCENT_DIM, border: '1px solid rgba(16,185,129,0.2)' }}>
                 <span className="absolute inset-0 animate-ping rounded-[24px] opacity-20" style={{ background: ACCENT }} />
                 <Apple size={30} color={ACCENT} />
               </div>
@@ -332,10 +332,10 @@ export default function DietGeneratorPage() {
               {meta && (
                 <m.div variants={fadeUp} initial="hidden" animate="show" custom={0}
                   className="flex w-fit items-center gap-2 rounded-full px-3.5 py-2"
-                  style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)' }}>
-                  <Sparkles size={13} color="#B8860B" />
-                  <span className="text-[12px] font-[650]" style={{ color: '#B8860B' }}>Generated by {meta.model}</span>
-                  {meta.used_fallback && <span className="text-[11px]" style={{ color: '#B8860B', opacity: 0.7 }}>(fallback)</span>}
+                  style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
+                  <Sparkles size={13} color="#B45309" />
+                  <span className="text-[12px] font-[650]" style={{ color: '#B45309' }}>Generated by {meta.model}</span>
+                  {meta.used_fallback && <span className="text-[11px]" style={{ color: '#B45309', opacity: 0.7 }}>(fallback)</span>}
                 </m.div>
               )}
 
@@ -343,7 +343,7 @@ export default function DietGeneratorPage() {
               <m.div variants={fadeUp} initial="hidden" animate="show" custom={1}
                 className="overflow-hidden rounded-[22px]"
                 style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
-                <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg, #F0FDF4, #ECFDF5)', borderBottom: '1px solid var(--border)' }}>
+                <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg, #ECFDF5, #D1FAE5)', borderBottom: '1px solid var(--border)' }}>
                   <h2 className="m-0 text-[20px] font-[820] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>{plan.name}</h2>
                   <p className="mb-0 mt-1.5 text-[13px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{plan.description}</p>
                 </div>
@@ -357,7 +357,7 @@ export default function DietGeneratorPage() {
                     <div key={i} className="px-3 py-4 text-center"
                       style={{ borderRight: i % 2 === 0 || i < 3 ? '1px solid var(--border)' : 'none', borderTop: i >= 2 ? '1px solid var(--border)' : 'none' }}>
                       <div className="text-[19px] font-[800]" style={{ color: ACCENT }}>
-                        {s.value}<span className="ml-0.5 text-[11px] font-[700]" style={{ color: '#15803d' }}>{s.unit}</span>
+                        {s.value}<span className="ml-0.5 text-[11px] font-[700]" style={{ color: '#059669' }}>{s.unit}</span>
                       </div>
                       <div className="mt-0.5 text-[10.5px] font-[600] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
                     </div>
@@ -379,13 +379,13 @@ export default function DietGeneratorPage() {
               {plan.hydration_ml ? (
                 <m.div variants={fadeUp} initial="hidden" animate="show" custom={2}
                   className="flex items-center gap-4 rounded-[18px] px-5 py-4"
-                  style={{ background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
+                  style={{ background: '#F1F5F9', border: '1px solid #B8D7FF' }}>
                   <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[13px]"
-                    style={{ background: 'linear-gradient(135deg, #60A5FA, #3B82F6)', boxShadow: '0 6px 18px rgba(59,130,246,0.3)' }}>
+                    style={{ background: 'linear-gradient(135deg, #0067E0, #0059CE)', boxShadow: '0 6px 18px rgba(0,103,224,0.3)' }}>
                     <Droplets size={20} color="#fff" />
                   </div>
                   <div>
-                    <div className="text-[11px] font-[700] uppercase tracking-[0.08em]" style={{ color: '#2563EB' }}>Daily Hydration Target</div>
+                    <div className="text-[11px] font-[700] uppercase tracking-[0.08em]" style={{ color: '#0067E0' }}>Daily Hydration Target</div>
                     <div className="mt-0.5 text-[18px] font-[800]" style={{ color: 'var(--text-primary)' }}>
                       {plan.hydration_ml} <span className="text-[12px] font-[600]" style={{ color: 'var(--text-disabled)' }}>ml / day</span>
                     </div>
@@ -435,7 +435,7 @@ export default function DietGeneratorPage() {
                         <div className="flex flex-wrap gap-1.5">
                           {cat.items.map((item) => (
                             <span key={item} className="rounded-full px-3 py-1 text-[12px] font-[550]"
-                              style={{ background: ACCENT_DIM, color: ACCENT, border: '1px solid rgba(22,163,74,0.18)' }}>
+                              style={{ background: ACCENT_DIM, color: ACCENT, border: '1px solid rgba(16,185,129,0.18)' }}>
                               {item}
                             </span>
                           ))}

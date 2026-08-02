@@ -266,14 +266,14 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
           the deliberate action a half-logged workout deserves. */}
       <div className="relative overflow-hidden rounded-b-[28px]"
         style={{
-          background: 'linear-gradient(150deg, #140B2E 0%, #1E1140 45%, #0F0824 100%)',
-          boxShadow: '0 16px 40px -20px rgba(9,7,22,0.8)',
+          background: 'linear-gradient(150deg, #0050AD 0%, #0050AD 45%, #0F172A 100%)',
+          boxShadow: '0 16px 40px -20px rgba(15,23,42,0.8)',
         }}>
         {/* Decorative wash, clipped by the rounded parent. */}
         <span aria-hidden className="pointer-events-none absolute -right-10 -top-16 h-52 w-52 rounded-full"
           style={{ background: 'radial-gradient(circle, rgba(252,211,77,0.42) 0%, transparent 70%)', filter: 'blur(52px)' }} />
         <span aria-hidden className="pointer-events-none absolute -bottom-20 -left-12 h-48 w-48 rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(192,132,252,0.34) 0%, transparent 70%)', filter: 'blur(56px)' }} />
+          style={{ background: 'radial-gradient(circle, rgba(127,180,255,0.34) 0%, transparent 70%)', filter: 'blur(56px)' }} />
 
         <div className="relative mx-auto max-w-3xl px-5 pb-5 pt-4 sm:px-7">
           <div className="mb-2.5 flex flex-wrap items-center gap-2">
@@ -388,18 +388,18 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
 
         {/* Planned for Today — prescribed exercises for this plan/day, when linked */}
         {session.planned && session.planned.exercises.length > 0 && (
-          <div className="rounded-[20px] p-5" style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.2)' }}>
+          <div className="rounded-[20px] p-5" style={{ background: 'rgba(0,103,224,0.05)', border: '1px solid rgba(0,103,224,0.2)' }}>
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="min-w-0 flex items-center gap-2">
-                <ClipboardList size={15} className="shrink-0" style={{ color: '#6366f1' }} />
+                <ClipboardList size={15} className="shrink-0" style={{ color: '#0067e0' }} />
                 <div className="min-w-0">
-                  <p className="truncate text-[13px] font-[760]" style={{ color: '#312e81' }}>Planned for Today — {session.planned.plan_name}</p>
+                  <p className="truncate text-[13px] font-[760]" style={{ color: '#0059ce' }}>Planned for Today — {session.planned.plan_name}</p>
                   {/* Which week these numbers are for. A programme progresses,
                       so "3 × 8 at 65 kg" is only meaningful alongside the week
                       it belongs to — and if the trainer wrote this week by hand
                       it is an instruction, not something the rule produced. */}
                   {session.planned.week != null && (
-                    <p className="text-[11px] font-[650]" style={{ color: '#818cf8' }}>
+                    <p className="text-[11px] font-[650]" style={{ color: '#7fb4ff' }}>
                       Week {session.planned.week}
                       {session.planned.duration_weeks ? ` of ${session.planned.duration_weeks}` : ''}
                       {session.planned.source === 'override' ? ' · written for this week' : ''}
@@ -408,7 +408,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
                 </div>
               </div>
               <button onClick={handleLoadAllPlanned} disabled={loadingPlanned}
-                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-[700]" style={{ background: '#6366f1', color: '#fff' }}>
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-[700]" style={{ background: '#0067e0', color: '#fff' }}>
                 <Layers size={12} /> Load All
               </button>
             </div>
@@ -416,15 +416,15 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
               {session.planned.exercises.map((ex, i) => {
                 const alreadyAdded = ex.exercise_id ? session.exercises.some((se) => se.exercise_id === ex.exercise_id) : false;
                 return (
-                  <div key={`${ex.exercise_id || ex.name}-${i}`} className="flex items-center justify-between gap-3 rounded-[12px] px-3.5 py-2.5" style={{ background: '#fff', border: '1px solid rgba(99,102,241,0.12)' }}>
+                  <div key={`${ex.exercise_id || ex.name}-${i}`} className="flex items-center justify-between gap-3 rounded-[12px] px-3.5 py-2.5" style={{ background: '#fff', border: '1px solid rgba(0,103,224,0.12)' }}>
                     <div className="min-w-0">
-                      <p className="truncate text-[12.5px] font-[650]" style={{ color: '#1e1b4b' }}>{ex.name}</p>
+                      <p className="truncate text-[12.5px] font-[650]" style={{ color: '#0050ad' }}>{ex.name}</p>
                       {/* The load belongs here. It used to be dropped: the
                           server resolved the week's prescribed weight and the
                           card showed only sets × reps, so the one number that
                           changes from week to week was invisible on the only
                           screen used at the rack. */}
-                      <p className="text-[11px]" style={{ color: '#818cf8' }}>
+                      <p className="text-[11px]" style={{ color: '#7fb4ff' }}>
                         {ex.sets} &times; {ex.reps}
                         {ex.target_weight != null ? ` @ ${ex.target_weight} kg` : ''}
                         {ex.rpe != null ? ` · RPE ${ex.rpe}` : ''} target
@@ -432,7 +432,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
                     </div>
                     <button onClick={() => handleLoadOnePlanned(ex)} disabled={loadingPlanned || alreadyAdded}
                       className="flex h-[44px] flex-shrink-0 items-center rounded-[8px] px-3 text-[11px] font-[700]"
-                      style={{ background: alreadyAdded ? 'var(--bg-subtle)' : 'rgba(99,102,241,0.1)', color: alreadyAdded ? '#94a3b8' : '#6366f1' }}>
+                      style={{ background: alreadyAdded ? 'var(--bg-subtle)' : 'rgba(0,103,224,0.1)', color: alreadyAdded ? '#94a3b8' : '#0067e0' }}>
                       {alreadyAdded ? 'Added' : '+ Add'}
                     </button>
                   </div>

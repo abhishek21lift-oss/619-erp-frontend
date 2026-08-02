@@ -53,7 +53,7 @@ export function OverviewTab({ onNavigate }: { onNavigate: (tab: Tab, opts?: NavO
   useEffect(() => { api.superAdmin.subscriptionMetrics().then((r) => setMetrics(r.data)).catch(() => setMetrics(null)); }, []);
   useEffect(() => { api.superAdmin.listActivity({ limit: 20 }).then((r) => setRecent(r.data)).catch(() => setRecent([])); }, []);
 
-  if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#6366f1' }} /></Center>;
+  if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#0067e0' }} /></Center>;
   if (error) return <ErrorState error={error} onRetry={load} />;
   if (!data) return null;
 

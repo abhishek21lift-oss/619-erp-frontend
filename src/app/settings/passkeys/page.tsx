@@ -214,9 +214,9 @@ function PasskeysContent() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{
             width: 48, height: 48, borderRadius: 14,
-            background: 'linear-gradient(135deg,#7C3AED,#6D28D9)',
+            background: 'linear-gradient(135deg,#0067E0,#0059CE)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 6px 20px rgba(124,58,237,0.35)',
+            boxShadow: '0 6px 20px rgba(0,103,224,0.35)',
           }}>
             <Fingerprint size={24} color="#fff" />
           </div>
@@ -235,9 +235,9 @@ function PasskeysContent() {
             style={{
               display: 'flex', alignItems: 'center', gap: 7,
               padding: '9px 18px', borderRadius: 11, fontSize: 13, fontWeight: 660,
-              background: 'linear-gradient(135deg,#7C3AED,#6D28D9)',
+              background: 'linear-gradient(135deg,#0067E0,#0059CE)',
               color: '#fff', border: 'none', cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(124,58,237,0.35)',
+              boxShadow: '0 4px 14px rgba(0,103,224,0.35)',
               transition: 'opacity 150ms',
             }}
             onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
@@ -252,7 +252,7 @@ function PasskeysContent() {
       {credentials.length > 0 && (
         <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
           {[
-            { label: 'Total', val: credentials.length, color: '#7C3AED' },
+            { label: 'Total', val: credentials.length, color: '#0067E0' },
             { label: 'Active', val: activeCount, color: '#10b981' },
             ...(disabledCount > 0 ? [{ label: 'Disabled', val: disabledCount, color: '#f59e0b' }] : []),
           ].map(s => (
@@ -275,8 +275,8 @@ function PasskeysContent() {
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '11px 16px', borderRadius: 12, marginBottom: 16,
-          background: 'rgba(34,197,94,0.09)', border: '1px solid rgba(34,197,94,0.28)',
-          color: '#22c55e', fontSize: 13, fontWeight: 600,
+          background: 'rgba(16,185,129,0.09)', border: '1px solid rgba(16,185,129,0.28)',
+          color: '#10b981', fontSize: 13, fontWeight: 600,
         }}>
           <ShieldCheck size={16} /> {success}
         </div>
@@ -328,8 +328,8 @@ function PasskeysContent() {
       {showForm && supported && available && (
         <div style={{
           padding: '22px 24px', borderRadius: 18, marginBottom: 20,
-          background: 'var(--bg-card)', border: '1px solid rgba(124,58,237,0.28)',
-          boxShadow: '0 4px 24px rgba(124,58,237,0.10)',
+          background: 'var(--bg-card)', border: '1px solid rgba(0,103,224,0.28)',
+          boxShadow: '0 4px 24px rgba(0,103,224,0.10)',
         }}>
           <p style={{ fontSize: 15, fontWeight: 720, color: 'var(--text-primary)', marginBottom: 4 }}>
             Register a new passkey
@@ -357,7 +357,7 @@ function PasskeysContent() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 7,
                 padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 660,
-                background: 'linear-gradient(135deg,#7C3AED,#6D28D9)',
+                background: 'linear-gradient(135deg,#0067E0,#0059CE)',
                 color: '#fff', border: 'none',
                 cursor: registering ? 'not-allowed' : 'pointer',
                 opacity: registering ? 0.7 : 1,
@@ -402,7 +402,7 @@ function PasskeysContent() {
           </span>
           <span style={{
             fontSize: 11.5, fontWeight: 700, padding: '3px 9px', borderRadius: 20,
-            background: 'rgba(124,58,237,0.10)', color: '#7C3AED',
+            background: 'rgba(0,103,224,0.10)', color: '#0067E0',
           }}>
             {credentials.length}
           </span>
@@ -417,9 +417,9 @@ function PasskeysContent() {
           <div style={{ padding: '44px 24px', textAlign: 'center' }}>
             <div style={{
               width: 52, height: 52, borderRadius: 14, margin: '0 auto 16px',
-              background: 'rgba(124,58,237,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,103,224,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <Fingerprint size={24} style={{ color: '#7C3AED', opacity: 0.5 }} />
+              <Fingerprint size={24} style={{ color: '#0067E0', opacity: 0.5 }} />
             </div>
             <p style={{ fontSize: 15, fontWeight: 680, color: 'var(--text-secondary)', marginBottom: 6 }}>
               No passkeys registered
@@ -434,9 +434,9 @@ function PasskeysContent() {
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 7,
                   padding: '10px 20px', borderRadius: 11, fontSize: 13, fontWeight: 660,
-                  background: 'linear-gradient(135deg,#7C3AED,#6D28D9)',
+                  background: 'linear-gradient(135deg,#0067E0,#0059CE)',
                   color: '#fff', border: 'none', cursor: 'pointer',
-                  boxShadow: '0 4px 14px rgba(124,58,237,0.3)',
+                  boxShadow: '0 4px 14px rgba(0,103,224,0.3)',
                 }}
               >
                 <Plus size={15} /> Add Your First Passkey
@@ -460,9 +460,9 @@ function PasskeysContent() {
                   <div style={{
                     width: 42, height: 42, borderRadius: 11, flexShrink: 0,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: cred.is_active ? 'rgba(124,58,237,0.10)' : 'rgba(0,0,0,0.05)',
-                    border: `1px solid ${cred.is_active ? 'rgba(124,58,237,0.2)' : 'rgba(0,0,0,0.08)'}`,
-                    color: cred.is_active ? '#7C3AED' : '#94a3b8',
+                    background: cred.is_active ? 'rgba(0,103,224,0.10)' : 'rgba(0,0,0,0.05)',
+                    border: `1px solid ${cred.is_active ? 'rgba(0,103,224,0.2)' : 'rgba(0,0,0,0.08)'}`,
+                    color: cred.is_active ? '#0067E0' : '#94a3b8',
                   }}>
                     <DeviceIcon type={cred.device_type} />
                   </div>
@@ -478,7 +478,7 @@ function PasskeysContent() {
                           onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') setRenameId(null); }}
                           style={{
                             padding: '5px 10px', borderRadius: 8, fontSize: 13,
-                            background: 'var(--bg-subtle)', border: '1.5px solid rgba(124,58,237,0.4)',
+                            background: 'var(--bg-subtle)', border: '1.5px solid rgba(0,103,224,0.4)',
                             color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit',
                             maxWidth: 200,
                           }}
@@ -486,7 +486,7 @@ function PasskeysContent() {
                         <button
                           onClick={commitRename}
                           disabled={renaming}
-                          style={{ width: 28, height: 28, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', color: '#22c55e', cursor: 'pointer' }}
+                          style={{ width: 28, height: 28, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981', cursor: 'pointer' }}
                         >
                           {renaming ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
                         </button>
@@ -508,7 +508,7 @@ function PasskeysContent() {
                           </span>
                         )}
                         {cred.backed_up && (
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20, background: 'rgba(34,197,94,0.10)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)', flexShrink: 0 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20, background: 'rgba(16,185,129,0.10)', color: '#34d399', border: '1px solid rgba(16,185,129,0.25)', flexShrink: 0 }}>
                             Synced
                           </span>
                         )}
@@ -538,9 +538,9 @@ function PasskeysContent() {
                           color: 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.15s',
                         }}
                         onMouseEnter={e => {
-                          e.currentTarget.style.background = 'rgba(99,102,241,0.08)';
-                          e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)';
-                          e.currentTarget.style.color = '#6366f1';
+                          e.currentTarget.style.background = 'rgba(0,103,224,0.08)';
+                          e.currentTarget.style.borderColor = 'rgba(0,103,224,0.2)';
+                          e.currentTarget.style.color = '#0067e0';
                         }}
                         onMouseLeave={e => {
                           e.currentTarget.style.background = 'transparent';
@@ -610,8 +610,8 @@ function PasskeysContent() {
       {/* Security info */}
       <div style={{
         padding: '18px 22px', borderRadius: 16,
-        background: 'rgba(124,58,237,0.04)',
-        border: '1px solid rgba(124,58,237,0.14)',
+        background: 'rgba(0,103,224,0.04)',
+        border: '1px solid rgba(0,103,224,0.14)',
       }}>
         <p style={{ fontSize: 13, fontWeight: 680, color: 'var(--text-secondary)', marginBottom: 8 }}>
           How passkeys work

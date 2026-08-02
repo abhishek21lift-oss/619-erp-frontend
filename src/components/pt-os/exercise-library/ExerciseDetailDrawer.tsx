@@ -86,7 +86,7 @@ export function ExerciseDetailDrawer({
         role="dialog"
         aria-modal="true"
         aria-label={ex?.name || 'Exercise details'}
-        className="fixed right-0 top-0 z-50 flex h-full w-full max-w-[520px] flex-col border-l border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0f0f12] animate-in slide-in-from-right duration-250"
+        className="fixed right-0 top-0 z-50 flex h-full w-full max-w-[520px] flex-col border-l border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0f172a] animate-in slide-in-from-right duration-250"
       >
         <header className="flex items-start justify-between gap-3 border-b border-slate-200/80 px-5 py-4 dark:border-white/[0.07]">
           <div className="min-w-0 flex-1">

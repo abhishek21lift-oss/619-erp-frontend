@@ -7,16 +7,16 @@ import { Send, Target, TrendingUp, Users, Plus, Trash2, Calendar, CheckCircle2, 
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
-const STATUS_COLOR: Record<string, string> = { Active: '#22c55e', Draft: '#94a3b8', Scheduled: '#f59e0b', Paused: '#3b82f6', Completed: '#8b5cf6' };
+const STATUS_COLOR: Record<string, string> = { Active: '#10b981', Draft: '#94a3b8', Scheduled: '#f59e0b', Paused: '#0067e0', Completed: '#0067e0' };
 const CHANNELS = ['WhatsApp', 'SMS', 'Email', 'In-App', 'All Channels'];
 
 interface Campaign { id: string; name: string; goal: string; channel: string; audience: string; status: string; start: string; end: string; sent: number; opened: number; converted: number; }
 
 const KPIS = [
-  { label: 'Active', color: '#22c55e', icon: <TrendingUp size={18} />, bg: 'linear-gradient(135deg, rgba(34,197,94,0.1), rgba(22,163,74,0.05))' },
-  { label: 'Total Sent', color: '#8b5cf6', icon: <Send size={18} />, bg: 'linear-gradient(135deg, rgba(139,92,246,0.1), rgba(109,40,217,0.05))' },
-  { label: 'Conversions', color: '#a855f7', icon: <CheckCircle2 size={18} />, bg: 'linear-gradient(135deg, rgba(168,85,247,0.1), rgba(88,28,135,0.05))' },
-  { label: 'Conv. Rate', color: '#6d28d9', icon: <Target size={18} />, bg: 'linear-gradient(135deg, rgba(109,40,217,0.1), rgba(139,92,246,0.05))' },
+  { label: 'Active', color: '#10b981', icon: <TrendingUp size={18} />, bg: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05))' },
+  { label: 'Total Sent', color: '#0067e0', icon: <Send size={18} />, bg: 'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.05))' },
+  { label: 'Conversions', color: '#0067e0', icon: <CheckCircle2 size={18} />, bg: 'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,89,206,0.05))' },
+  { label: 'Conv. Rate', color: '#0067e0', icon: <Target size={18} />, bg: 'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.05))' },
 ];
 
 const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.05 } } };
@@ -66,7 +66,7 @@ function CampaignContent() {
   const convRate = totalSent > 0 ? ((totalConv / totalSent) * 100).toFixed(1) : '0';
   const kpiVals = [active, totalSent, totalConv, convRate + '%'];
 
-  const inp = { width: '100%', border: '1px solid #d1d5db', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-subtle)', outline: 'none', fontFamily: 'inherit' } as const;
+  const inp = { width: '100%', border: '1px solid #cbd5e1', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-subtle)', outline: 'none', fontFamily: 'inherit' } as const;
 
   return (
     <AppShell>
@@ -76,10 +76,10 @@ function CampaignContent() {
           style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: 'var(--bg-subtle)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
           <div style={{ position: 'relative' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)' }}>
-                <Send size={22} color="#a855f7" />
+              <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,103,224,0.1)', border: '1px solid rgba(0,103,224,0.2)' }}>
+                <Send size={22} color="#0067e0" />
               </div>
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'linear-gradient(135deg, #a855f7, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Marketing</span>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'linear-gradient(135deg, #0067e0, #0059ce)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Marketing</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
@@ -87,7 +87,7 @@ function CampaignContent() {
                 <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.6, color: 'var(--text-muted)' }}>Plan, launch &amp; track multi-channel marketing campaigns.</p>
               </div>
               <button onClick={() => setShowForm(v => !v)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '10px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(139,92,246,0.35)' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '10px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,103,224,0.35)' }}>
                 <Plus size={14} /> {showForm ? 'Cancel' : 'New Campaign'}
               </button>
             </div>
@@ -117,7 +117,7 @@ function CampaignContent() {
         {showForm && (
           <m.div initial={{ opacity: 0, y: -10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}
             style={{ borderRadius: 20, background: '#ffffff', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', padding: 24, marginBottom: 22 }}>
-            <h3 style={{ margin: '0 0 20px', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', gap: 8, alignItems: 'center' }}><TrendingUp size={16} color="#a855f7" /> Create Campaign</h3>
+            <h3 style={{ margin: '0 0 20px', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', gap: 8, alignItems: 'center' }}><TrendingUp size={16} color="#0067e0" /> Create Campaign</h3>
             <form onSubmit={addCampaign} style={{ display: 'grid', gap: 16 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 {[
@@ -150,9 +150,9 @@ function CampaignContent() {
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 <button type="button" onClick={() => setShowForm(false)}
-                  style={{ fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 10, border: '1px solid #d1d5db', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>Cancel</button>
+                  style={{ fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>Cancel</button>
                 <button type="submit" disabled={saving}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '8px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, boxShadow: '0 4px 16px rgba(139,92,246,0.35)' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '8px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, boxShadow: '0 4px 16px rgba(0,103,224,0.35)' }}>
                   {saving ? <><Loader2 size={13} /> Creating…</> : <><Plus size={13} /> Create Campaign</>}
                 </button>
               </div>
@@ -162,7 +162,7 @@ function CampaignContent() {
 
         {/* ── CAMPAIGN LIST ── */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}><Loader2 size={32} color="#d1d5db" style={{ animation: 'spin 1s linear infinite' }} /></div>
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}><Loader2 size={32} color="#cbd5e1" style={{ animation: 'spin 1s linear infinite' }} /></div>
         ) : (
           <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gap: 12 }}>
             {campaigns.map(c => {
@@ -200,9 +200,9 @@ function CampaignContent() {
                       <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8 }}>
                         {[
                           { label: 'Sent', value: c.sent, color: 'var(--text-muted)' },
-                          { label: 'Opened', value: c.opened, color: '#3b82f6' },
+                          { label: 'Opened', value: c.opened, color: '#0067e0' },
                           { label: 'Open Rate', value: openRate + '%', color: '#d97706' },
-                          { label: 'Converted', value: `${c.converted} (${convR}%)`, color: '#16a34a' },
+                          { label: 'Converted', value: `${c.converted} (${convR}%)`, color: '#10b981' },
                         ].map(m => (
                           <div key={m.label} style={{ textAlign: 'center' }}>
                             <div style={{ fontSize: 18, fontWeight: 800, color: m.color }}>{m.value}</div>
@@ -217,7 +217,7 @@ function CampaignContent() {
             })}
             {campaigns.length === 0 && (
               <div style={{ padding: '64px 20px', textAlign: 'center', background: '#ffffff', borderRadius: 20, border: '1px solid var(--border)' }}>
-                <Send size={36} color="#d1d5db" style={{ marginBottom: 14 }} />
+                <Send size={36} color="#cbd5e1" style={{ marginBottom: 14 }} />
                 <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)', margin: 0 }}>No campaigns yet</p>
                 <p style={{ fontSize: 12, color: 'var(--text-disabled)', marginTop: 4 }}>Click "New Campaign" to launch your first campaign.</p>
               </div>

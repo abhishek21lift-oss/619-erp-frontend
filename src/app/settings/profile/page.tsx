@@ -63,7 +63,7 @@ function pwStrength(pw: string): { score: number; label: string; color: string }
   if (/[^A-Za-z0-9]/.test(pw)) s++;
   if (s <= 1) return { score: s, label: 'Weak', color: '#ef4444' };
   if (s <= 2) return { score: s, label: 'Fair', color: '#f59e0b' };
-  if (s <= 3) return { score: s, label: 'Good', color: '#3b82f6' };
+  if (s <= 3) return { score: s, label: 'Good', color: '#0067e0' };
   return { score: s, label: 'Strong', color: '#10b981' };
 }
 
@@ -104,16 +104,16 @@ const ACTIVITY_LABELS: Record<string, string> = {
 
 function activityIcon(category: string): { icon: React.ReactNode; color: string; bg: string } {
   const map: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
-    profile:           { icon: <User size={11} />,          color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
+    profile:           { icon: <User size={11} />,          color: '#0067e0', bg: 'rgba(0,103,224,0.12)' },
     parq:               { icon: <ShieldCheck size={11} />,   color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-    informed_consent:   { icon: <FileSignature size={11} />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
-    workout:            { icon: <Dumbbell size={11} />,      color: '#ec4899', bg: 'rgba(236,72,153,0.12)' },
-    workout_log:        { icon: <ClipboardList size={11} />, color: '#06b6d4', bg: 'rgba(6,182,212,0.12)' },
+    informed_consent:   { icon: <FileSignature size={11} />, color: '#0067e0', bg: 'rgba(0,103,224,0.12)' },
+    workout:            { icon: <Dumbbell size={11} />,      color: '#0067e0', bg: 'rgba(0,103,224,0.12)' },
+    workout_log:        { icon: <ClipboardList size={11} />, color: '#0067e0', bg: 'rgba(0,103,224,0.12)' },
   };
-  return map[category] ?? { icon: <Activity size={11} />, color: '#6366f1', bg: 'rgba(99,102,241,0.12)' };
+  return map[category] ?? { icon: <Activity size={11} />, color: '#0067e0', bg: 'rgba(0,103,224,0.12)' };
 }
 
-function deviceIcon(type: string, size = 16, color = '#6366f1') {
+function deviceIcon(type: string, size = 16, color = '#0067e0') {
   if (type === 'mobile') return <Smartphone size={size} style={{ color }} />;
   if (type === 'tablet') return <Tablet size={size} style={{ color }} />;
   return <Monitor size={size} style={{ color }} />;
@@ -152,7 +152,7 @@ function GlassCard({ children, className = '', style = {}, glow = false }: {
         background: 'var(--bg-card)',
         border: '1px solid var(--border)',
         boxShadow: glow
-          ? '0 4px 32px rgba(99,102,241,0.10), 0 1px 0 rgba(255,255,255,0.9) inset'
+          ? '0 4px 32px rgba(0,103,224,0.10), 0 1px 0 rgba(255,255,255,0.9) inset'
           : '0 2px 20px rgba(15,23,42,0.07), 0 1px 0 rgba(255,255,255,0.9) inset',
         ...style,
       }}
@@ -326,7 +326,7 @@ function SpecialisationEditor({ value, onChange }: { value: string[]; onChange: 
           <span
             key={sp}
             className="inline-flex items-center gap-1.5 rounded-full py-1.5 pl-3 pr-1.5 text-[12px] font-[680]"
-            style={{ background: 'rgba(99,102,241,0.10)', color: '#4f46e5', border: '1px solid rgba(99,102,241,0.22)' }}
+            style={{ background: 'rgba(0,103,224,0.10)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.22)' }}
           >
             {sp}
             <button
@@ -368,7 +368,7 @@ function SectionHeader({ icon, title, subtitle }: { icon: React.ReactNode; title
     <div className="mb-5 flex items-center gap-3">
       <div
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-        style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.15),rgba(139,92,246,0.10))' }}
+        style={{ background: 'linear-gradient(135deg,rgba(0,103,224,0.15),rgba(0,103,224,0.10))' }}
       >
         {icon}
       </div>
@@ -398,13 +398,13 @@ function FloatInput({
     <div className="relative">
       <m.div
         animate={{
-          boxShadow: focused ? '0 0 0 3px rgba(99,102,241,0.12), 0 2px 8px rgba(99,102,241,0.08)' : '0 1px 2px rgba(15,23,42,0.04)',
+          boxShadow: focused ? '0 0 0 3px rgba(0,103,224,0.12), 0 2px 8px rgba(0,103,224,0.08)' : '0 1px 2px rgba(15,23,42,0.04)',
         }}
         transition={{ duration: 0.2 }}
         className="relative rounded-[14px] overflow-hidden"
         style={{
           background: focused ? 'var(--bg-card)' : 'var(--bg-subtle)',
-          border: `1.5px solid ${focused ? 'rgba(99,102,241,0.45)' : 'var(--border-2)'}`,
+          border: `1.5px solid ${focused ? 'rgba(0,103,224,0.45)' : 'var(--border-2)'}`,
           opacity: disabled ? 0.55 : 1,
           transition: 'background 180ms, border-color 180ms',
         }}
@@ -414,7 +414,7 @@ function FloatInput({
           style={{
             top: lifted ? 8 : (multiline ? 14 : 18),
             fontSize: lifted ? 10 : 13,
-            color: lifted ? (focused ? '#6366f1' : 'var(--text-disabled)') : 'var(--text-disabled)',
+            color: lifted ? (focused ? '#0067e0' : 'var(--text-disabled)') : 'var(--text-disabled)',
             transition: 'all 150ms cubic-bezier(0.16,1,0.3,1)',
             letterSpacing: lifted ? '0.03em' : '0',
             textTransform: lifted ? 'uppercase' : 'none',
@@ -430,7 +430,7 @@ function FloatInput({
           onBlur={() => setFocused(false)}
           disabled={disabled}
           className="w-full bg-transparent px-4 pb-3 pt-7 text-[13.5px] font-[560] outline-none disabled:cursor-not-allowed resize-none"
-          style={{ color: 'var(--text-primary)', caretColor: '#6366f1' }}
+          style={{ color: 'var(--text-primary)', caretColor: '#0067e0' }}
         />
         {suffix && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2">{suffix}</div>
@@ -454,9 +454,9 @@ function Toggle({ enabled, onChange, disabled }: { enabled: boolean; onChange: (
         width: 44, height: 26,
         borderRadius: 999,
         background: enabled
-          ? 'linear-gradient(135deg,#6366f1,#8b5cf6)'
+          ? 'linear-gradient(135deg,#0067e0,#0059ce)'
           : 'var(--border-3)',
-        boxShadow: enabled ? '0 0 16px rgba(99,102,241,0.30)' : 'none',
+        boxShadow: enabled ? '0 0 16px rgba(0,103,224,0.30)' : 'none',
         border: 'none',
         cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'background 250ms, box-shadow 250ms',
@@ -486,7 +486,7 @@ function StatChip({ icon, label, value, gradient }: {
 }) {
   return (
     <m.div
-      whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(99,102,241,0.14)' }}
+      whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(0,103,224,0.14)' }}
       whileTap={{ scale: 0.97 }}
       className="flex-shrink-0 rounded-2xl p-4"
       style={{
@@ -520,7 +520,7 @@ function SettingRow({ label, description, children, accent = false }: {
     <div
       className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-2xl transition-colors"
       style={{
-        background: accent ? 'rgba(99,102,241,0.05)' : 'var(--bg-subtle)',
+        background: accent ? 'rgba(0,103,224,0.05)' : 'var(--bg-subtle)',
         border: '1px solid var(--border)',
       }}
     >
@@ -657,9 +657,9 @@ function StickySaveBar({ dirty, saving, onSave, onDiscard, msg }: {
                 disabled={saving}
                 className="flex items-center gap-2 rounded-xl px-4 py-1.5 text-[12px] font-[700] transition-all"
                 style={{
-                  background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                  background: 'linear-gradient(135deg,#0067e0,#0059ce)',
                   color: 'white',
-                  boxShadow: '0 2px 12px rgba(99,102,241,0.40)',
+                  boxShadow: '0 2px 12px rgba(0,103,224,0.40)',
                   opacity: saving ? 0.7 : 1,
                 }}
               >
@@ -1173,7 +1173,7 @@ export default function ProfilePage() {
             <button
               onClick={loadProfile}
               className="mt-6 flex items-center gap-2 rounded-xl px-5 py-2.5 text-[13px] font-[700] text-white mx-auto"
-              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 4px 14px rgba(99,102,241,0.35)' }}
+              style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)', boxShadow: '0 4px 14px rgba(0,103,224,0.35)' }}
             >
               <RefreshCw size={13} /> Retry
             </button>
@@ -1240,10 +1240,10 @@ export default function ProfilePage() {
               <div className="mb-7 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
                 <div className="flex gap-3" style={{ minWidth: 'max-content' }}>
                   {[
-                    { icon: <Calendar size={16} style={{ color: '#6366f1' }} />, label: 'Member Since', value: fmtDate(me?.createdAt), gradient: 'linear-gradient(135deg,rgba(99,102,241,0.15),rgba(99,102,241,0.06))' },
+                    { icon: <Calendar size={16} style={{ color: '#0067e0' }} />, label: 'Member Since', value: fmtDate(me?.createdAt), gradient: 'linear-gradient(135deg,rgba(0,103,224,0.15),rgba(0,103,224,0.06))' },
                     { icon: <Shield size={16} style={{ color: me?.mfaEnabled ? '#10b981' : '#f59e0b' }} />, label: 'Two-Factor Auth', value: me?.mfaEnabled ? 'Enabled' : 'Disabled', gradient: me?.mfaEnabled ? 'linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.06))' : 'linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.06))' },
-                    { icon: <ShieldCheck size={16} style={{ color: '#0ea5e9' }} />, label: 'Role', value: roleLabel, gradient: 'linear-gradient(135deg,rgba(14,165,233,0.15),rgba(14,165,233,0.06))' },
-                    { icon: <History size={16} style={{ color: '#8b5cf6' }} />, label: 'All-Time Actions', value: String(activityTotal), gradient: 'linear-gradient(135deg,rgba(139,92,246,0.15),rgba(139,92,246,0.06))' },
+                    { icon: <ShieldCheck size={16} style={{ color: '#0067e0' }} />, label: 'Role', value: roleLabel, gradient: 'linear-gradient(135deg,rgba(0,103,224,0.15),rgba(0,103,224,0.06))' },
+                    { icon: <History size={16} style={{ color: '#0067e0' }} />, label: 'All-Time Actions', value: String(activityTotal), gradient: 'linear-gradient(135deg,rgba(0,103,224,0.15),rgba(0,103,224,0.06))' },
                   ].map((s, i) => (
                     <FadeUp key={s.label} delay={0.04 * i}>
                       <StatChip {...s} />
@@ -1273,9 +1273,9 @@ export default function ProfilePage() {
                     onClick={() => setTab(t.id)}
                     className="relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[13px] px-4 py-2.5 text-[12.5px] font-[680] transition-all"
                     style={{
-                      background: tab === t.id ? 'rgba(99,102,241,1)' : 'transparent',
+                      background: tab === t.id ? 'rgba(0,103,224,1)' : 'transparent',
                       color: tab === t.id ? 'white' : 'var(--text-muted)',
-                      boxShadow: tab === t.id ? '0 2px 8px rgba(99,102,241,0.35)' : 'none',
+                      boxShadow: tab === t.id ? '0 2px 8px rgba(0,103,224,0.35)' : 'none',
                     }}
                   >
                     {t.icon} {t.label}
@@ -1300,7 +1300,7 @@ export default function ProfilePage() {
                   {me?.completion && (
                     <GlassCard className="p-6 lg:col-span-2" glow>
                       <SectionHeader
-                        icon={<BadgeCheck size={15} style={{ color: '#6366f1' }} />}
+                        icon={<BadgeCheck size={15} style={{ color: '#0067e0' }} />}
                         title="Profile completion"
                         subtitle="Scored on what you've saved, not what you've typed"
                       />
@@ -1311,7 +1311,7 @@ export default function ProfilePage() {
                   {/* Personal Information */}
                   <FadeUp>
                     <GlassCard className="p-6">
-                      <SectionHeader icon={<User size={14} style={{ color: '#6366f1' }} />} title="Personal Information" subtitle="Your name, contact and bio" />
+                      <SectionHeader icon={<User size={14} style={{ color: '#0067e0' }} />} title="Personal Information" subtitle="Your name, contact and bio" />
                       <div className="flex flex-col gap-3">
                         <FloatInput label="Full Name" value={name} onChange={setName} required />
                         <FloatInput label="Email Address" type="email" value={email} onChange={setEmail} required />
@@ -1325,7 +1325,7 @@ export default function ProfilePage() {
                   {/* Activity Timeline */}
                   <FadeUp delay={0.05}>
                     <GlassCard className="p-6">
-                      <SectionHeader icon={<History size={14} style={{ color: '#6366f1' }} />} title="Activity Timeline" subtitle="Recent account events" />
+                      <SectionHeader icon={<History size={14} style={{ color: '#0067e0' }} />} title="Activity Timeline" subtitle="Recent account events" />
                       {activityLoading ? (
                         <div className="flex items-center justify-center py-10">
                           <Loader2 size={18} className="animate-spin" style={{ color: 'var(--text-disabled)' }} />
@@ -1335,7 +1335,7 @@ export default function ProfilePage() {
                       ) : (
                         <div className="relative pl-5">
                           <div className="absolute left-[9px] top-2 bottom-2 w-px"
-                            style={{ background: 'linear-gradient(to bottom, rgba(99,102,241,0.3), rgba(99,102,241,0.05))' }} />
+                            style={{ background: 'linear-gradient(to bottom, rgba(0,103,224,0.3), rgba(0,103,224,0.05))' }} />
                           <div className="flex flex-col gap-4">
                             {activityItems.map((item, i) => {
                               const ico = activityIcon(item.category);
@@ -1369,15 +1369,15 @@ export default function ProfilePage() {
                   {/* Current Session */}
                   <FadeUp delay={0.08}>
                     <GlassCard className="p-6 lg:col-span-2">
-                      <SectionHeader icon={<Wifi size={14} style={{ color: '#6366f1' }} />} title="Current Session" subtitle="This device, right now" />
+                      <SectionHeader icon={<Wifi size={14} style={{ color: '#0067e0' }} />} title="Current Session" subtitle="This device, right now" />
                       {!device || !session ? (
                         <p className="text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>Session info unavailable.</p>
                       ) : (
                         <div className="flex flex-col gap-4">
                           <div className="flex items-center gap-3 rounded-2xl p-4"
-                            style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.18)' }}>
+                            style={{ background: 'rgba(0,103,224,0.05)', border: '1px solid rgba(0,103,224,0.18)' }}>
                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                              style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.15),rgba(139,92,246,0.10))' }}>
+                              style={{ background: 'linear-gradient(135deg,rgba(0,103,224,0.15),rgba(0,103,224,0.10))' }}>
                               {deviceIcon(device.type)}
                             </div>
                             <div className="min-w-0 flex-1">
@@ -1444,7 +1444,7 @@ export default function ProfilePage() {
 
                   <GlassCard className="p-6" glow>
                     <SectionHeader
-                      icon={<Briefcase size={15} style={{ color: '#6366f1' }} />}
+                      icon={<Briefcase size={15} style={{ color: '#0067e0' }} />}
                       title="Professional profile"
                       subtitle="What you do, as opposed to what the software lets you click"
                     />
@@ -1474,7 +1474,7 @@ export default function ProfilePage() {
 
                   <GlassCard className="p-6">
                     <SectionHeader
-                      icon={<User size={15} style={{ color: '#6366f1' }} />}
+                      icon={<User size={15} style={{ color: '#0067e0' }} />}
                       title="About"
                       subtitle="What you'd tell someone before they train with you"
                     />
@@ -1491,7 +1491,7 @@ export default function ProfilePage() {
 
                   <GlassCard className="p-6">
                     <SectionHeader
-                      icon={<Briefcase size={15} style={{ color: '#6366f1' }} />}
+                      icon={<Briefcase size={15} style={{ color: '#0067e0' }} />}
                       title="Professional information"
                       subtitle="Your designation, how you coach, and where you've coached"
                     />
@@ -1507,7 +1507,7 @@ export default function ProfilePage() {
 
                   <GlassCard className="p-6">
                     <SectionHeader
-                      icon={<Calendar size={15} style={{ color: '#6366f1' }} />}
+                      icon={<Calendar size={15} style={{ color: '#0067e0' }} />}
                       title="Availability"
                       subtitle="When you take sessions. Split shifts are supported."
                     />
@@ -1519,7 +1519,7 @@ export default function ProfilePage() {
 
                   <GlassCard className="p-6">
                     <SectionHeader
-                      icon={<Dumbbell size={15} style={{ color: '#6366f1' }} />}
+                      icon={<Dumbbell size={15} style={{ color: '#0067e0' }} />}
                       title="Specialisations"
                       subtitle="The work you take on"
                     />
@@ -1528,7 +1528,7 @@ export default function ProfilePage() {
 
                   <GlassCard className="p-6">
                     <SectionHeader
-                      icon={<GraduationCap size={15} style={{ color: '#6366f1' }} />}
+                      icon={<GraduationCap size={15} style={{ color: '#0067e0' }} />}
                       title="Education"
                       subtitle="Degrees, diplomas and academy courses"
                     />
@@ -1537,7 +1537,7 @@ export default function ProfilePage() {
 
                   <GlassCard className="p-6">
                     <SectionHeader
-                      icon={<Trophy size={15} style={{ color: '#6366f1' }} />}
+                      icon={<Trophy size={15} style={{ color: '#0067e0' }} />}
                       title="Achievements"
                       subtitle="Competitions, records, awards and media — newest first"
                     />
@@ -1547,7 +1547,7 @@ export default function ProfilePage() {
                   <GlassCard className="p-6">
                     <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                       <SectionHeader
-                        icon={<Award size={15} style={{ color: '#6366f1' }} />}
+                        icon={<Award size={15} style={{ color: '#0067e0' }} />}
                         title="Certifications"
                         subtitle={me && me.credentialSummary.total > 0
                           ? `${me.credentialSummary.total} on file${me.credentialSummary.unknown > 0 ? ` · ${me.credentialSummary.unknown} with no expiry recorded` : ''}`
@@ -1560,7 +1560,7 @@ export default function ProfilePage() {
                           name: '', issuer: '', issued_on: null, expires_on: null, credential_id: '',
                         }])}
                         className="flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-[700] text-white transition-transform hover:scale-[1.03]"
-                        style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 4px 14px rgba(99,102,241,0.32)' }}
+                        style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)', boxShadow: '0 4px 14px rgba(0,103,224,0.32)' }}
                       >
                         <Plus size={13} /> Add
                       </button>
@@ -1599,7 +1599,7 @@ export default function ProfilePage() {
                   transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
                   <GlassCard className="p-5 sm:p-6">
                     <SectionHeader
-                      icon={<Images size={14} style={{ color: '#6366f1' }} />}
+                      icon={<Images size={14} style={{ color: '#0067e0' }} />}
                       title="Portfolio"
                       subtitle="Transformations, sessions and clips — saved as you go, not on Save"
                     />
@@ -1623,7 +1623,7 @@ export default function ProfilePage() {
                   {/* Two-Factor Authentication */}
                   <FadeUp>
                     <GlassCard className="p-6" glow>
-                      <SectionHeader icon={<Fingerprint size={14} style={{ color: '#6366f1' }} />} title="Two-Factor Authentication" subtitle="Authenticator app (TOTP)" />
+                      <SectionHeader icon={<Fingerprint size={14} style={{ color: '#0067e0' }} />} title="Two-Factor Authentication" subtitle="Authenticator app (TOTP)" />
 
                       {me?.mfaEnabled ? (
                         <div className="flex flex-col gap-4">
@@ -1662,7 +1662,7 @@ export default function ProfilePage() {
                             </div>
                             <button onClick={verifyMfa} disabled={mfaCode.length !== 6 || mfaBusy}
                               className="flex items-center gap-2 rounded-xl px-4 py-3 text-[12.5px] font-[720] text-white transition-all"
-                              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', opacity: (mfaCode.length !== 6 || mfaBusy) ? 0.55 : 1 }}>
+                              style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)', opacity: (mfaCode.length !== 6 || mfaBusy) ? 0.55 : 1 }}>
                               {mfaBusy ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
                               Verify
                             </button>
@@ -1680,7 +1680,7 @@ export default function ProfilePage() {
                           </div>
                           <button onClick={startMfaSetup} disabled={mfaBusy}
                             className="flex items-center justify-center gap-2 self-start rounded-xl px-4 py-2.5 text-[12.5px] font-[720] text-white transition-all"
-                            style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 4px 14px rgba(99,102,241,0.30)' }}>
+                            style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)', boxShadow: '0 4px 14px rgba(0,103,224,0.30)' }}>
                             {mfaBusy ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
                             Set Up Two-Factor Authentication
                           </button>
@@ -1692,7 +1692,7 @@ export default function ProfilePage() {
                   {/* Login Alerts + Sign out everywhere */}
                   <FadeUp delay={0.05}>
                     <GlassCard className="p-6">
-                      <SectionHeader icon={<Bell size={14} style={{ color: '#6366f1' }} />} title="Login Security" subtitle="Alerts and active session control" />
+                      <SectionHeader icon={<Bell size={14} style={{ color: '#0067e0' }} />} title="Login Security" subtitle="Alerts and active session control" />
                       <div className="flex flex-col gap-3">
                         <SettingRow label="Login Alerts" description="Email me on new sign-ins" accent>
                           <Toggle
@@ -1720,7 +1720,7 @@ export default function ProfilePage() {
                   {/* Change Password */}
                   <FadeUp delay={0.08}>
                     <GlassCard className="p-6 lg:col-span-2">
-                      <SectionHeader icon={<Lock size={14} style={{ color: '#6366f1' }} />} title="Change Password" subtitle="Use a strong, unique password" />
+                      <SectionHeader icon={<Lock size={14} style={{ color: '#0067e0' }} />} title="Change Password" subtitle="Use a strong, unique password" />
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div className="flex flex-col gap-3">
                           <FloatInput label="Current Password" type={showCur ? 'text' : 'password'} value={currentPw} onChange={setCurrentPw}
@@ -1787,8 +1787,8 @@ export default function ProfilePage() {
                           <button onClick={handleChangePw} disabled={!currentPw || !newPw || !pwMatch || changingPw}
                             className="flex items-center justify-center gap-2 rounded-xl py-3 text-[13px] font-[720] text-white transition-all"
                             style={{
-                              background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
-                              boxShadow: '0 4px 14px rgba(99,102,241,0.30)',
+                              background: 'linear-gradient(135deg,#0067e0,#0059ce)',
+                              boxShadow: '0 4px 14px rgba(0,103,224,0.30)',
                               opacity: (!currentPw || !newPw || !pwMatch || changingPw) ? 0.55 : 1,
                             }}>
                             {changingPw ? <Loader2 size={14} className="animate-spin" /> : <Key size={14} />}
@@ -1810,7 +1810,7 @@ export default function ProfilePage() {
                   {/* Theme */}
                   <FadeUp>
                     <GlassCard className="p-6">
-                      <SectionHeader icon={<Sun size={14} style={{ color: '#6366f1' }} />} title="Appearance" subtitle="Theme preference" />
+                      <SectionHeader icon={<Sun size={14} style={{ color: '#0067e0' }} />} title="Appearance" subtitle="Theme preference" />
                       <div className="grid grid-cols-3 gap-2">
                         {([
                           { id: 'light', label: 'Light', icon: <Sun size={18} /> },
@@ -1822,10 +1822,10 @@ export default function ProfilePage() {
                             disabled={!preferences}
                             className="flex flex-col items-center gap-2 rounded-2xl p-4 text-center transition-all disabled:opacity-50"
                             style={{
-                              background: preferences?.theme === opt.id ? 'rgba(99,102,241,0.08)' : 'var(--bg-subtle)',
-                              border: preferences?.theme === opt.id ? '1.5px solid rgba(99,102,241,0.30)' : '1px solid var(--border)',
-                              boxShadow: preferences?.theme === opt.id ? '0 4px 12px rgba(99,102,241,0.12)' : 'none',
-                              color: preferences?.theme === opt.id ? '#6366f1' : 'var(--text-muted)',
+                              background: preferences?.theme === opt.id ? 'rgba(0,103,224,0.08)' : 'var(--bg-subtle)',
+                              border: preferences?.theme === opt.id ? '1.5px solid rgba(0,103,224,0.30)' : '1px solid var(--border)',
+                              boxShadow: preferences?.theme === opt.id ? '0 4px 12px rgba(0,103,224,0.12)' : 'none',
+                              color: preferences?.theme === opt.id ? '#0067e0' : 'var(--text-muted)',
                             }}>
                             {opt.icon}
                             <span className="text-[11px] font-[660]">{opt.label}</span>
@@ -1838,7 +1838,7 @@ export default function ProfilePage() {
                   {/* Locale */}
                   <FadeUp delay={0.04}>
                     <GlassCard className="p-6">
-                      <SectionHeader icon={<Globe size={14} style={{ color: '#6366f1' }} />} title="Locale" subtitle="Timezone and date format" />
+                      <SectionHeader icon={<Globe size={14} style={{ color: '#0067e0' }} />} title="Locale" subtitle="Timezone and date format" />
                       <div className="flex flex-col gap-2.5">
                         <SettingRow label="Language" description="Interface language">
                           <span className="text-[12.5px] font-[660]" style={{ color: 'var(--text-primary)' }}>English (India)</span>
@@ -1861,7 +1861,7 @@ export default function ProfilePage() {
                   {/* Notifications */}
                   <FadeUp delay={0.08}>
                     <GlassCard className="p-6 lg:col-span-2">
-                      <SectionHeader icon={<Bell size={14} style={{ color: '#6366f1' }} />} title="Notification Preferences" subtitle="Choose how you want to be notified" />
+                      <SectionHeader icon={<Bell size={14} style={{ color: '#0067e0' }} />} title="Notification Preferences" subtitle="Choose how you want to be notified" />
                       {notifications ? (
                         <>
                           <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
@@ -1874,7 +1874,7 @@ export default function ProfilePage() {
                                 <button key={f.value} onClick={() => setFrequency(f.value)}
                                   className="rounded-[9px] px-3 py-1.5 text-[11px] font-[700] transition-all"
                                   style={{
-                                    background: notifications.frequency === f.value ? '#6366f1' : 'transparent',
+                                    background: notifications.frequency === f.value ? '#0067e0' : 'transparent',
                                     color: notifications.frequency === f.value ? '#fff' : 'var(--text-muted)',
                                   }}>
                                   {f.label}
@@ -1929,7 +1929,7 @@ export default function ProfilePage() {
                 </button>
                 <button onClick={() => setRecoveryCodes(null)}
                   className="rounded-[10px] px-4 py-2 text-[12.5px] font-[700] text-white"
-                  style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+                  style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)' }}>
                   Done
                 </button>
               </DialogFooter>

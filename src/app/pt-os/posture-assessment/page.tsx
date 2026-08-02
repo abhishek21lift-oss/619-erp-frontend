@@ -304,8 +304,8 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
                 </div>
                 {analysis.postureRiskLevel && (
                   <span className="rounded-full px-4 py-2 text-[13px] font-[800]" style={{
-                    background: analysis.postureRiskLevel === 'Low' ? 'rgba(16,185,129,0.18)' : analysis.postureRiskLevel === 'Moderate' ? 'rgba(249,115,22,0.18)' : 'rgba(220,38,38,0.2)',
-                    color: analysis.postureRiskLevel === 'Low' ? '#10b981' : analysis.postureRiskLevel === 'Moderate' ? '#f97316' : '#f87171',
+                    background: analysis.postureRiskLevel === 'Low' ? 'rgba(16,185,129,0.18)' : analysis.postureRiskLevel === 'Moderate' ? 'rgba(245,158,11,0.18)' : 'rgba(220,38,38,0.2)',
+                    color: analysis.postureRiskLevel === 'Low' ? '#10b981' : analysis.postureRiskLevel === 'Moderate' ? '#f59e0b' : '#f87171',
                   }}>
                     {analysis.postureRiskLevel} Risk
                   </span>

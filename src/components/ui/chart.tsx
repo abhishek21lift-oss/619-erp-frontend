@@ -17,12 +17,12 @@ import { cn } from './cn';
 
 // ── Theme colours ──────────────────────────────────────────────────────────
 export const CHART_COLORS = {
-  brand:   '#6366f1',
+  brand:   '#0067e0',
   emerald: '#10b981',
   amber:   '#f59e0b',
-  rose:    '#f43f5e',
-  sky:     '#0ea5e9',
-  violet:  '#8b5cf6',
+  rose:    '#ef4444',
+  sky:     '#0067e0',
+  violet:  '#0067e0',
   slate:   '#64748b',
 } as const;
 
@@ -96,7 +96,7 @@ export const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltip
         className="rounded-xl border border-[var(--border,rgba(0,0,0,0.08))] bg-[var(--bg-card,white)]/95 px-3 py-2 shadow-xl backdrop-blur-xl text-xs"
       >
         {!hideLabel && label && (
-          <p className="mb-1.5 font-medium text-[var(--text-muted,#9ca3af)]">
+          <p className="mb-1.5 font-medium text-[var(--text-muted,#94a3b8)]">
             {labelKey ? (payload[0]?.payload?.[labelKey] ?? label) : label}
           </p>
         )}
@@ -118,8 +118,8 @@ export const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltip
                     <span className="h-2.5 w-0.5 shrink-0 rounded-full" style={{ background: color }} />
                   )
                 )}
-                <span className="text-[var(--text-muted,#9ca3af)]">{name}</span>
-                <span className="ml-auto pl-4 font-semibold tabular-nums text-[var(--text-primary,#111827)]">
+                <span className="text-[var(--text-muted,#94a3b8)]">{name}</span>
+                <span className="ml-auto pl-4 font-semibold tabular-nums text-[var(--text-primary,#0F172A)]">
                   {typeof entry.value === 'number'
                     ? entry.value.toLocaleString()
                     : entry.value}
@@ -152,7 +152,7 @@ export function ChartLegendContent({ payload, nameKey, className }: ChartLegendC
         const label = cfg?.label ?? entry.value;
 
         return (
-          <div key={key} className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted,#9ca3af)]">
+          <div key={key} className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted,#94a3b8)]">
             <span className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: color }} />
             {label}
           </div>
@@ -187,14 +187,14 @@ function PremiumTooltipBox({ active, payload, label, formatValue }: {
   return (
     <div className="rounded-xl border border-[var(--border,rgba(0,0,0,0.08))] bg-[var(--bg-card,#fff)]/95 px-3 py-2.5 shadow-xl backdrop-blur-xl text-xs">
       {label && (
-        <p className="mb-1.5 font-semibold text-[var(--text-muted,#9ca3af)]">{label}</p>
+        <p className="mb-1.5 font-semibold text-[var(--text-muted,#94a3b8)]">{label}</p>
       )}
       <div className="space-y-1">
         {payload.map((entry, i) => (
           <div key={i} className="flex items-center gap-2">
-            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: entry.color ?? '#6366f1' }} />
-            {entry.name && <span className="text-[var(--text-muted,#9ca3af)]">{entry.name}</span>}
-            <span className="ml-auto pl-4 font-bold tabular-nums text-[var(--text-primary,#111827)]">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: entry.color ?? '#0067e0' }} />
+            {entry.name && <span className="text-[var(--text-muted,#94a3b8)]">{entry.name}</span>}
+            <span className="ml-auto pl-4 font-bold tabular-nums text-[var(--text-primary,#0F172A)]">
               {typeof entry.value === 'number'
                 ? (formatValue ? formatValue(entry.value) : entry.value.toLocaleString())
                 : entry.value}
@@ -213,7 +213,7 @@ export interface PremiumBarEntry {
   key: string;
   /** Series name shown in tooltip */
   label: string;
-  /** CSS color, e.g. "#6366f1" or "var(--brand)" */
+  /** CSS color, e.g. "#0067e0" or "var(--brand)" */
   color?: string;
 }
 
@@ -244,7 +244,7 @@ export function PremiumBarChart({
         <BarChart data={data} margin={{ top: 8, right: 4, bottom: 0, left: 0 }} barGap={3}>
           <defs>
             {bars.map((b, i) => {
-              const c = b.color ?? '#6366f1';
+              const c = b.color ?? '#0067e0';
               return (
                 <linearGradient key={i} id={`${uid}b${i}`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={c} stopOpacity={0.9} />
@@ -330,7 +330,7 @@ export function PremiumAreaChart({
         <AreaChart data={data} margin={{ top: 8, right: 4, bottom: 0, left: 0 }}>
           <defs>
             {areas.map((a, i) => {
-              const c = a.color ?? '#6366f1';
+              const c = a.color ?? '#0067e0';
               return (
                 <linearGradient key={i} id={`${uid}a${i}`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={c} stopOpacity={0.3} />
@@ -368,7 +368,7 @@ export function PremiumAreaChart({
             )}
           />
           {areas.map((a, i) => {
-            const c = a.color ?? '#6366f1';
+            const c = a.color ?? '#0067e0';
             return (
               <Area
                 key={a.key}

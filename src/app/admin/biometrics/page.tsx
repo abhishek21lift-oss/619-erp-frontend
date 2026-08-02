@@ -55,9 +55,9 @@ function timeAgo(iso: string | null): string {
 }
 
 const EVENT_COLORS: Record<string, string> = {
-  webauthn_login_success: '#4ADE80',
-  webauthn_registered:    '#60A5FA',
-  action_verified:        '#A78BFA',
+  webauthn_login_success: '#34D399',
+  webauthn_registered:    '#0067E0',
+  action_verified:        '#7FB4FF',
   webauthn_login_failed:  '#F87171',
   action_verify_failed:   '#F87171',
   webauthn_register_failed: '#FBBF24',
@@ -214,9 +214,9 @@ function BiometricInner() {
         </div>
       ) : stats && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
-          <StatCard label="Total Passkeys"     value={stats.totalCredentials}    icon={Fingerprint}  color="#A78BFA" />
-          <StatCard label="Enrolled Users"     value={stats.enrolledUsers}       icon={Users}        color="#60A5FA" />
-          <StatCard label="Logins (24h)"       value={stats.loginsLast24h}       icon={ShieldCheck}  color="#4ADE80" />
+          <StatCard label="Total Passkeys"     value={stats.totalCredentials}    icon={Fingerprint}  color="#7FB4FF" />
+          <StatCard label="Enrolled Users"     value={stats.enrolledUsers}       icon={Users}        color="#0067E0" />
+          <StatCard label="Logins (24h)"       value={stats.loginsLast24h}       icon={ShieldCheck}  color="#34D399" />
           <StatCard label="Failed (24h)"       value={stats.failedAttemptsLast24h} icon={ShieldAlert} color="#F87171" />
         </div>
       )}
@@ -380,9 +380,9 @@ function BiometricInner() {
       {/* Security note */}
       <div style={{
         display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 18px',
-        borderRadius: 12, background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.15)',
+        borderRadius: 12, background: 'rgba(16,185,129,0.04)', border: '1px solid rgba(16,185,129,0.15)',
       }}>
-        <Activity size={16} style={{ color: '#4ADE80', marginTop: 2, flexShrink: 0 }} />
+        <Activity size={16} style={{ color: '#34D399', marginTop: 2, flexShrink: 0 }} />
         <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.7, margin: 0 }}>
           <strong style={{ color: 'var(--text-secondary)' }}>Security note: </strong>
           No fingerprint data or biometric templates are stored anywhere in this system.

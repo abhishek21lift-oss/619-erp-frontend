@@ -45,7 +45,7 @@ const DialogContent = React.forwardRef<
         // go and no scroll container to go in. dvh rather than vh because the
         // on-screen keyboard is exactly when this bites, and vh ignores it.
         'max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain',
-        'bg-white dark:bg-[rgba(23,24,28,0.97)] backdrop-blur-xl',
+        'bg-white dark:bg-[rgba(15,23,42,0.97)] backdrop-blur-xl',
         'border border-white/25 dark:border-white/8',
         'rounded-2xl p-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)]',
         'duration-200',

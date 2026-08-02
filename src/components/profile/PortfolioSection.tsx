@@ -256,7 +256,7 @@ function Lightbox({ item, resolveUrl, onClose }: {
         // dvh, because 100vh on mobile Safari is taller than the visible area
         // and puts the caption behind the browser chrome.
         height: '100dvh',
-        background: 'rgba(9,9,11,0.94)',
+        background: 'rgba(15,23,42,0.94)',
         backdropFilter: 'blur(12px)',
         paddingTop: 'env(safe-area-inset-top,0px)',
         paddingBottom: 'env(safe-area-inset-bottom,0px)',
@@ -317,7 +317,7 @@ function Lightbox({ item, resolveUrl, onClose }: {
         {item.externalUrl && (
           <a href={item.externalUrl} target="_blank" rel="noopener noreferrer"
             className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-[700]"
-            style={{ color: '#a5b4fc' }}>
+            style={{ color: '#b8d7ff' }}>
             {embed ? 'Open on the original site' : 'Watch the video'} <ExternalLink size={11} />
           </a>
         )}
@@ -464,9 +464,9 @@ function UploadDialog({ open, onOpenChange, onCreated, remaining }: {
                   onClick={() => { setKind(k.value); setError(null); }}
                   className="flex flex-col items-center gap-1 rounded-xl px-2 py-2.5 text-[10.5px] font-[700] transition-colors"
                   style={{
-                    background: kind === k.value ? 'rgba(99,102,241,0.12)' : 'var(--bg-subtle)',
-                    border: `1px solid ${kind === k.value ? 'rgba(99,102,241,0.45)' : 'var(--border)'}`,
-                    color: kind === k.value ? '#4f46e5' : 'var(--text-secondary)',
+                    background: kind === k.value ? 'rgba(0,103,224,0.12)' : 'var(--bg-subtle)',
+                    border: `1px solid ${kind === k.value ? 'rgba(0,103,224,0.45)' : 'var(--border)'}`,
+                    color: kind === k.value ? '#0067e0' : 'var(--text-secondary)',
                   }}
                 >
                   {k.icon}
@@ -719,7 +719,7 @@ export default function PortfolioSection({ resolveUrl, onChanged, notify }: Port
 
       {reordering && (
         <p className="rounded-xl px-3 py-2 text-[11.5px]"
-          style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.22)', color: '#4f46e5' }}>
+          style={{ background: 'rgba(0,103,224,0.08)', border: '1px solid rgba(0,103,224,0.22)', color: '#0067e0' }}>
           Use the arrows on each item. Pinned items always sit above the rest, so they reorder among themselves.
         </p>
       )}
@@ -728,8 +728,8 @@ export default function PortfolioSection({ resolveUrl, onChanged, notify }: Port
         <div className="flex flex-col items-center gap-3 rounded-2xl px-5 py-12 text-center"
           style={{ background: 'var(--bg-subtle)', border: '1px dashed var(--border)' }}>
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl"
-            style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.16),rgba(139,92,246,0.10))' }}>
-            <Images size={18} style={{ color: '#6366f1' }} />
+            style={{ background: 'linear-gradient(135deg,rgba(0,103,224,0.16),rgba(0,103,224,0.10))' }}>
+            <Images size={18} style={{ color: '#0067e0' }} />
           </span>
           <div>
             <p className="text-[13.5px] font-[760]" style={{ color: 'var(--text-primary)' }}>Nothing here yet</p>

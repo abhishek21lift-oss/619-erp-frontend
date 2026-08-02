@@ -33,11 +33,11 @@ interface ClientOption { id: string; name: string; }
 // avatars whenever the list is filtered — which defeats the point of having a
 // colour to recognise.
 const AVATAR_GRADIENTS = [
-  'linear-gradient(135deg, #6366f1, #8b5cf6)',
+  'linear-gradient(135deg, #0067e0, #0059ce)',
   'linear-gradient(135deg, #10b981, #34d399)',
   'linear-gradient(135deg, #f59e0b, #fbbf24)',
-  'linear-gradient(135deg, #ec4899, #f472b6)',
-  'linear-gradient(135deg, #06b6d4, #22d3ee)',
+  'linear-gradient(135deg, #0067e0, #0059ce)',
+  'linear-gradient(135deg, #0067e0, #0059ce)',
   'linear-gradient(135deg, #ef4444, #f87171)',
 ];
 
@@ -164,7 +164,7 @@ export default function ClientPicker({ title, icon, basePath, hrefFor }: ClientP
             <button
               key={c.id}
               onClick={() => router.push(hrefFor ? hrefFor(c.id) : `${basePath}?client_id=${encodeURIComponent(c.id)}`)}
-              className="group flex items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#8CC0FA] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
+              className="group flex items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#7FB4FF] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
             >
               <ClientAvatar name={c.name} />

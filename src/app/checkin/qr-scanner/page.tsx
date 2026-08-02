@@ -32,9 +32,9 @@ type ScanResult = {
 
 const STATE_CFG: Record<ScanState, { color: string; label: string }> = {
   idle:       { color: '#94a3b8', label: 'Initialising…' },
-  loading:    { color: '#6366f1', label: 'Starting camera…' },
-  scanning:   { color: '#06b6d4', label: 'Scanning QR code…' },
-  processing: { color: '#8b5cf6', label: 'Verifying…' },
+  loading:    { color: '#0067e0', label: 'Starting camera…' },
+  scanning:   { color: '#0067e0', label: 'Scanning QR code…' },
+  processing: { color: '#0067e0', label: 'Verifying…' },
   success:    { color: '#10b981', label: 'Check-in successful' },
   error:      { color: '#ef4444', label: 'Check-in failed' },
   duplicate:  { color: '#f59e0b', label: 'Already checked in' },
@@ -194,17 +194,17 @@ export default function QrScannerPage() {
           border: '1px solid rgba(0,0,0,0.07)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#06b6d4,#0284c7)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(6,182,212,0.3)' }}>
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#0067e0,#0059ce)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(0,103,224,0.3)' }}>
               <QrCode size={22} color="#fff" />
             </div>
             <div>
-              <h1 style={{ fontSize: 20, fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>QR Check-In Scanner</h1>
-              <p style={{ fontSize: 12, color: '#6b7280', margin: '3px 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <h1 style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>QR Check-In Scanner</h1>
+              <p style={{ fontSize: 12, color: '#64748b', margin: '3px 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: scanState === 'scanning' ? '#10b981' : '#94a3b8', display: 'inline-block' }} />
                 {sc.label}
               </p>
             </div>
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, background: 'rgba(6,182,212,0.12)', border: '1px solid rgba(6,182,212,0.25)', color: '#06b6d4', fontSize: 11, fontWeight: 700 }}>
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, background: 'rgba(0,103,224,0.12)', border: '1px solid rgba(0,103,224,0.25)', color: '#0067e0', fontSize: 11, fontWeight: 700 }}>
               <Clock size={10} />
               {recents.length} today
             </div>
@@ -224,10 +224,10 @@ export default function QrScannerPage() {
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 220, height: 220 }}>
                   {/* Corner brackets */}
                   {[['0%','0%','right','bottom'],['100%','0%','left','bottom'],['0%','100%','right','top'],['100%','100%','left','top']].map(([left, top, br, bb], i) => (
-                    <div key={i} style={{ position: 'absolute', left, top, width: 30, height: 30, borderRight: br === 'right' ? 'none' : '3px solid #06b6d4', borderLeft: br === 'right' ? '3px solid #06b6d4' : 'none', borderBottom: bb === 'bottom' ? 'none' : '3px solid #06b6d4', borderTop: bb === 'bottom' ? '3px solid #06b6d4' : 'none', animation: 'qs-corner 1.5s ease-in-out infinite', animationDelay: `${i*0.15}s`, transform: left === '0%' && top === '0%' ? 'none' : left === '100%' && top === '0%' ? 'translateX(-100%)' : left === '0%' && top === '100%' ? 'translateY(-100%)' : 'translate(-100%,-100%)' }} />
+                    <div key={i} style={{ position: 'absolute', left, top, width: 30, height: 30, borderRight: br === 'right' ? 'none' : '3px solid #0067e0', borderLeft: br === 'right' ? '3px solid #0067e0' : 'none', borderBottom: bb === 'bottom' ? 'none' : '3px solid #0067e0', borderTop: bb === 'bottom' ? '3px solid #0067e0' : 'none', animation: 'qs-corner 1.5s ease-in-out infinite', animationDelay: `${i*0.15}s`, transform: left === '0%' && top === '0%' ? 'none' : left === '100%' && top === '0%' ? 'translateX(-100%)' : left === '0%' && top === '100%' ? 'translateY(-100%)' : 'translate(-100%,-100%)' }} />
                   ))}
                   {/* Scan line */}
-                  <div style={{ position: 'absolute', left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,transparent,#06b6d4,transparent)', animation: 'qs-scan 2s ease-in-out infinite', boxShadow: '0 0 10px rgba(6,182,212,0.6)' }} />
+                  <div style={{ position: 'absolute', left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,transparent,#0067e0,transparent)', animation: 'qs-scan 2s ease-in-out infinite', boxShadow: '0 0 10px rgba(0,103,224,0.6)' }} />
                 </div>
               )}
 
@@ -255,7 +255,7 @@ export default function QrScannerPage() {
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24, background: 'rgba(15,23,42,0.95)', textAlign: 'center' }}>
                   <Camera size={36} color="#94a3b8" />
                   <p style={{ color: '#f87171', fontSize: 13, margin: 0 }}>{cameraErr}</p>
-                  <button onClick={startCamera} style={{ padding: '8px 20px', borderRadius: 10, border: 'none', background: '#06b6d4', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                  <button onClick={startCamera} style={{ padding: '8px 20px', borderRadius: 10, border: 'none', background: '#0067e0', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
                     <RefreshCw size={12} style={{ display: 'inline', marginRight: 6 }} /> Retry
                   </button>
                 </div>
@@ -270,7 +270,7 @@ export default function QrScannerPage() {
 
             {/* Processing indicator */}
             {scanState === 'processing' && (
-              <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(139,92,246,0.08)', borderTop: '1px solid rgba(139,92,246,0.2)', color: '#8b5cf6', fontSize: 12 }}>
+              <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,103,224,0.08)', borderTop: '1px solid rgba(0,103,224,0.2)', color: '#0067e0', fontSize: 12 }}>
                 <Loader2 size={13} style={{ animation: 'spin 0.9s linear infinite' }} />
                 Verifying QR code with server…
               </div>
@@ -283,7 +283,7 @@ export default function QrScannerPage() {
             {/* Instructions */}
             <div style={{ background: 'var(--bg-card)', borderRadius: 14, border: '1px solid var(--border)', padding: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Zap size={12} color="#06b6d4" /> How to use
+                <Zap size={12} color="#0067e0" /> How to use
               </div>
               {[
                 'Hold the member\'s QR code in front of the camera',
@@ -292,7 +292,7 @@ export default function QrScannerPage() {
                 'Result appears with audio confirmation',
               ].map((tip, i) => (
                 <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                  <span style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(6,182,212,0.12)', color: '#06b6d4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>{i + 1}</span>
+                  <span style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(0,103,224,0.12)', color: '#0067e0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>{i + 1}</span>
                   {tip}
                 </div>
               ))}
@@ -301,7 +301,7 @@ export default function QrScannerPage() {
             {/* Recent check-ins */}
             <div style={{ background: 'var(--bg-card)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden' }}>
               <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Clock size={12} color="#06b6d4" /> Recent</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Clock size={12} color="#0067e0" /> Recent</span>
                 {recents.length > 0 && <button onClick={() => setRecents([])} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 11 }}>Clear</button>}
               </div>
               <div style={{ maxHeight: 360, overflowY: 'auto' }}>

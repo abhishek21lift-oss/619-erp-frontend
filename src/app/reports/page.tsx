@@ -52,7 +52,7 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
     present: { bg: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.06))', color: '#059669' },
     absent: { bg: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.06))', color: '#dc2626' },
     late: { bg: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.06))', color: '#d97706' },
-    expired: { bg: 'linear-gradient(135deg, rgba(107,114,128,0.12), rgba(107,114,128,0.06))', color: '#6b7280' },
+    expired: { bg: 'linear-gradient(135deg, rgba(100,116,139,0.12), rgba(100,116,139,0.06))', color: '#64748b' },
   };
   const c = config[v] || { bg: 'var(--bg-subtle)', color: 'var(--text-muted)' };
   return (
@@ -127,9 +127,9 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
           </button>
         </div>
         <button onClick={exportMonthly}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: '#eff6ff', border: '1px solid rgba(37,99,235,0.2)', color: '#2563eb', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = '#dbeafe'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: '#f1f5f9', border: '1px solid rgba(0,103,224,0.2)', color: '#0067e0', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = '#e1efff'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.transform = 'translateY(0)'; }}>
           <Download size={14} /> Export CSV
         </button>
       </m.div>
@@ -143,7 +143,7 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
 
       <m.div variants={itemVariants} style={lightBox({ padding: '20px 20px 16px' })}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <div style={{ width: 3, height: 18, borderRadius: 2, background: 'linear-gradient(180deg, #6366f1, #2563eb)' }} />
+          <div style={{ width: 3, height: 18, borderRadius: 2, background: 'linear-gradient(180deg, #0067e0, #0059ce)' }} />
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Monthly Revenue — {year}</span>
         </div>
         {loading ? (
@@ -152,7 +152,7 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
           <PremiumBarChart
             data={fullYear as Record<string, unknown>[]}
             xKey="month"
-            bars={[{ key: 'revenue', label: 'Revenue', color: '#6366f1' }]}
+            bars={[{ key: 'revenue', label: 'Revenue', color: '#0067e0' }]}
             height={200}
             formatValue={fmtAmt}
           />
@@ -196,7 +196,7 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
               ) : (
                 fullYear.map((m, i) => (
                   <tr key={i} style={{ borderBottom: '1px solid var(--border)', opacity: m.revenue === 0 ? 0.5 : 1, transition: 'background 0.2s' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,103,224,0.05)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}>
                     <td style={{ ...tableCellStyle, fontWeight: 600, color: 'var(--text-primary)' }}>{m.month} {year}</td>
                     <td style={{ ...tableCellStyle, color: 'var(--text-muted)' }}>{m.count || '—'}</td>
@@ -204,7 +204,7 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
                     <td style={tableCellStyle}>
                       {m.revenue > 0 && (
                         <div style={{ background: 'var(--bg-subtle)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
-                          <div style={{ width: `${(m.revenue / maxRevenue) * 100}%`, height: '100%', background: 'linear-gradient(90deg, #6366f1, #2563eb)', borderRadius: 4, transition: 'width 400ms' }} />
+                          <div style={{ width: `${(m.revenue / maxRevenue) * 100}%`, height: '100%', background: 'linear-gradient(90deg, #0067e0, #0059ce)', borderRadius: 4, transition: 'width 400ms' }} />
                         </div>
                       )}
                     </td>
@@ -216,7 +216,7 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
               <tr style={{ fontWeight: 700, background: 'var(--bg-subtle)', borderTop: '1px solid var(--border)' }}>
                 <td style={tableCellStyle}>Total</td>
                 <td style={tableCellStyle}>{fullYear.reduce((s, m) => s + m.count, 0)}</td>
-                <td style={{ ...tableCellStyle, color: '#2563eb', fontSize: 13 }}>{fmtAmt(totalRevenue)}</td>
+                <td style={{ ...tableCellStyle, color: '#0067e0', fontSize: 13 }}>{fmtAmt(totalRevenue)}</td>
                 <td style={tableCellStyle} />
               </tr>
             </tfoot>
@@ -298,7 +298,7 @@ function DuesTab() {
                   const due = Number(d.balance_amount || d.balance_due || 0);
                   return (
                     <tr key={d.id || i} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,103,224,0.05)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}>
                       <td style={{ ...tableCellStyle, fontWeight: 600, color: 'var(--text-primary)' }}>{d.name}</td>
                       <td style={{ ...tableCellStyle, color: 'var(--text-muted)' }}>{d.mobile || d.phone || '—'}</td>
@@ -366,8 +366,8 @@ function TrainerSummaryTab() {
               ) : trainers.length === 0 ? (
                 <tr><td colSpan={5} style={{ padding: 40, textAlign: 'center' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(99,102,241,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(99,102,241,0.15)' }}>
-                      <Users size={24} color="#6366f1" />
+                    <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(0,103,224,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,103,224,0.15)' }}>
+                      <Users size={24} color="#0067e0" />
                     </div>
                     <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--text-primary)' }}>No trainer data yet</div>
                     <div style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 300 }}>Trainer summaries will appear here once members are assigned.</div>
@@ -376,12 +376,12 @@ function TrainerSummaryTab() {
               ) : (
                 (trainers ?? []).map((t, i) => (
                   <tr key={t.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,103,224,0.05)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}>
                     <td style={{ ...tableCellStyle, fontWeight: 600, color: 'var(--text-primary)' }}>{t.name}</td>
                     <td style={{ ...tableCellStyle, color: '#059669', fontWeight: 600 }}>{t.active_clients}</td>
                     <td style={{ ...tableCellStyle, color: 'var(--text-muted)' }}>{t.total_clients}</td>
-                    <td style={{ ...tableCellStyle, fontWeight: 700, color: '#2563eb' }}>{fmtAmt(t.month_revenue)}</td>
+                    <td style={{ ...tableCellStyle, fontWeight: 700, color: '#0067e0' }}>{fmtAmt(t.month_revenue)}</td>
                     <td style={{ ...tableCellStyle, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtAmt(t.total_revenue)}</td>
                   </tr>
                 ))
@@ -393,7 +393,7 @@ function TrainerSummaryTab() {
                   <td style={tableCellStyle}>Total</td>
                   <td style={{ ...tableCellStyle, color: '#059669' }}>{totals.active}</td>
                   <td style={tableCellStyle}>{totals.total}</td>
-                  <td style={{ ...tableCellStyle, color: '#2563eb' }}>{fmtAmt(totals.monthRev)}</td>
+                  <td style={{ ...tableCellStyle, color: '#0067e0' }}>{fmtAmt(totals.monthRev)}</td>
                   <td style={tableCellStyle}>{fmtAmt(totals.totalRev)}</td>
                 </tr>
               </tfoot>
@@ -431,7 +431,7 @@ function ReportsContent() {
     <AppShell title="Reports">
       <div style={{ background: 'var(--bg-subtle)', padding: '52px 32px 28px', borderRadius: '0 0 36px 36px', marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 54, height: 54, borderRadius: 16, background: 'linear-gradient(135deg, #2563eb, #7c3aed)', border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(37,99,235,0.2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 54, height: 54, borderRadius: 16, background: 'linear-gradient(135deg, #0067e0, #0059ce)', border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(0,103,224,0.2)' }}>
             <BarChart2 size={24} color="#fff" />
           </div>
           <div>
@@ -443,9 +443,9 @@ function ReportsContent() {
         <div style={{ display: 'flex', gap: 6, borderBottom: '1px solid var(--border)', paddingBottom: 2 }}>
           {TABS.filter((t) => !t.adminOnly || isAdmin).map((t) => (
             <button key={t.key} onClick={() => setTab(t.key)}
-              style={{ padding: '10px 20px', borderRadius: '10px 10px 0 0', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', color: tab === t.key ? 'var(--text-primary)' : 'var(--text-muted)', background: tab === t.key ? 'rgba(37,99,235,0.08)' : 'transparent', transition: 'all 0.25s', position: 'relative', letterSpacing: '0.3px' }}>
+              style={{ padding: '10px 20px', borderRadius: '10px 10px 0 0', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', color: tab === t.key ? 'var(--text-primary)' : 'var(--text-muted)', background: tab === t.key ? 'rgba(0,103,224,0.08)' : 'transparent', transition: 'all 0.25s', position: 'relative', letterSpacing: '0.3px' }}>
               {tab === t.key && (
-                <div style={{ position: 'absolute', bottom: 0, left: '20%', right: '20%', height: 3, borderRadius: '3px 3px 0 0', background: 'linear-gradient(90deg, #6366f1, #2563eb)' }} />
+                <div style={{ position: 'absolute', bottom: 0, left: '20%', right: '20%', height: 3, borderRadius: '3px 3px 0 0', background: 'linear-gradient(90deg, #0067e0, #0059ce)' }} />
               )}
               {t.label}
             </button>

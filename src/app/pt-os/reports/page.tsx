@@ -27,10 +27,10 @@ function fmtINR(n: number | string | null | undefined) {
   return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 }
 
-function ChartBar({ pct, color = '#7c3aed' }: { pct: number; color?: string }) {
+function ChartBar({ pct, color = '#0067e0' }: { pct: number; color?: string }) {
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-2.5 rounded-full" style={{ background: '#e5e7eb' }}>
+      <div className="flex-1 h-2.5 rounded-full" style={{ background: '#e2e8f0' }}>
         <div className="h-full rounded-full transition-all duration-500"
           style={{ width: `${Math.min(pct, 100)}%`, background: color }} />
       </div>
@@ -66,7 +66,7 @@ export default function ReportsPage() {
               boxShadow: '0 2px 16px rgba(15,23,42,0.05)',
             }}
           >
-            <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: '#e5e7eb' }}>
+            <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: '#e2e8f0' }}>
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-[12px]"
                   style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
@@ -110,7 +110,7 @@ export default function ReportsPage() {
                           <span className="text-[13px] font-[700] tabular-nums" style={{ color: '#F59E0B' }}>{fmtINR(r.incentives)}</span>
                         </td>
                         <td className="py-3 px-4">
-                          <span className="text-[12px] font-[600]" style={{ color: '#7c3aed' }}>{pct.toFixed(1)}%</span>
+                          <span className="text-[12px] font-[600]" style={{ color: '#0067e0' }}>{pct.toFixed(1)}%</span>
                         </td>
                         <td className="py-3 px-4 min-w-[120px]">
                           <ChartBar pct={(Number(r.revenue) / maxRev) * 100} color="#10b981" />
@@ -135,10 +135,10 @@ export default function ReportsPage() {
               boxShadow: '0 2px 16px rgba(15,23,42,0.05)',
             }}
           >
-            <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: '#e5e7eb' }}>
+            <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: '#e2e8f0' }}>
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-[12px]"
-                  style={{ background: 'rgba(167,139,250,0.12)', color: '#7c3aed' }}>
+                  style={{ background: 'rgba(127,180,255,0.12)', color: '#0067e0' }}>
                   <Users size={18} />
                 </div>
                 <div>
@@ -168,7 +168,7 @@ export default function ReportsPage() {
                         <span className="text-[13px] font-[600]" style={{ color: 'var(--text-primary)' }}>{t.name}</span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="text-[12px] font-[600]" style={{ color: '#7c3aed' }}>{(Number(t.incentive_rate) * 100).toFixed(0)}%</span>
+                        <span className="text-[12px] font-[600]" style={{ color: '#0067e0' }}>{(Number(t.incentive_rate) * 100).toFixed(0)}%</span>
                       </td>
                       <td className="py-3 px-4">
                         <span className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>{t.active_clients}</span>

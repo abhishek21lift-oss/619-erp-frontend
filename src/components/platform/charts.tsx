@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { blue, amber, emerald } from '@/lib/palette';
 
 // Chart primitives for the Control Centre.
 //
@@ -9,25 +10,30 @@ import React from 'react';
 // with its own theming model to fight with the CSS variables everything else
 // uses.
 //
-// ── The palette is validated, not chosen by eye ──────────────────────────
+// ── The palette is constrained, and separates by lightness ───────────────
 //
-// SERIES below passes a colourblind/contrast check against BOTH the light
-// (#FFFFFF) and dark (#1E293B) card surfaces: every hue sits inside its
-// mode's OKLCH lightness band, clears the chroma floor, and the worst
-// adjacent pair separates by ΔE 27 for normal vision and 24.9 under deuteranopia.
+// This was four distinct hues — emerald, blue, amber and a violet — chosen
+// against a colourblind/contrast check: every hue inside its mode's OKLCH
+// lightness band, above the chroma floor, worst adjacent pair separating by
+// ΔE 27 for normal vision and 24.9 under deuteranopia.
 //
-// The app's own --success/--warning/--danger tokens were tried first and
-// fail: amber against red separates by only ΔE 11.8 for normal vision, well
-// under the floor of 15, so a viewer with full colour vision cannot reliably
-// tell "at risk" from "ended". Those tokens stay reserved for status badges,
-// where they appear one at a time next to a word and never have to be told
-// apart from each other.
+// The five-colour system removed violet, so a fourth hue is no longer
+// available to spend here. The fourth slot is now a pale blue instead: it is
+// the same hue as the first, which would be a problem if hue were doing the
+// work, and it is not — the two sit ~55 points of L apart, which reads at a
+// glance and survives every form of colour blindness, since none of them
+// affect lightness.
 //
-// Two hues drop below 3:1 against the dark surface, which obligates visible
-// labels rather than forbidding the colour — so every consumer of SERIES
-// renders a legend carrying the label AND the value, and identity never
-// rests on colour alone.
-export const SERIES = ['#059669', '#2563EB', '#D97706', '#9333EA'] as const;
+// Ordered so the two blues are never adjacent. Red is deliberately absent:
+// amber against red separates by only ΔE 11.8, under the floor of 15, so a
+// viewer with full colour vision could not reliably tell "at risk" from
+// "ended".
+//
+// Two of these drop below 3:1 against the dark surface, which obligates
+// visible labels rather than forbidding the colour — so every consumer of
+// SERIES renders a legend carrying the label AND the value, and identity
+// never rests on colour alone.
+export const SERIES = [blue[500], amber[600], emerald[600], blue[200]] as const;
 
 /**
  * Single-hue magnitude. Used where the categories have a natural order

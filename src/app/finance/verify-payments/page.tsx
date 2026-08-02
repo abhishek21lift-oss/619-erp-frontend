@@ -580,7 +580,7 @@ function ProofDialog({ row, onClose }: { row: UpiQueueRow | null; onClose: () =>
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         role="dialog" aria-modal="true" aria-label="Payment proof"
       >
-        <div className="absolute inset-0" style={{ background: 'rgba(2,6,23,0.82)' }} onClick={onClose} />
+        <div className="absolute inset-0" style={{ background: 'rgba(15,23,42,0.82)' }} onClick={onClose} />
         <m.div
           className="relative flex max-h-[88vh] w-full max-w-[520px] flex-col overflow-hidden rounded-2xl"
           initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}

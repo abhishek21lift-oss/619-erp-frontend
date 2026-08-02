@@ -17,9 +17,9 @@ const TEMPLATES = [
 ];
 
 const KPIS = [
-  { label:'Total Members', key:'members', color:'#8b5cf6', icon:<Users size={18}/>, bg:'linear-gradient(135deg, rgba(139,92,246,0.1), rgba(109,40,217,0.05))' },
-  { label:'Selected', key:'selected', color:'#a855f7', icon:<CheckCircle2 size={18}/>, bg:'linear-gradient(135deg, rgba(168,85,247,0.1), rgba(88,28,135,0.05))' },
-  { label:'Sent Today', key:'sent', color:'#6d28d9', icon:<MessageCircle size={18}/>, bg:'linear-gradient(135deg, rgba(109,40,217,0.1), rgba(139,92,246,0.05))' },
+  { label:'Total Members', key:'members', color:'#0067e0', icon:<Users size={18}/>, bg:'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.05))' },
+  { label:'Selected', key:'selected', color:'#0067e0', icon:<CheckCircle2 size={18}/>, bg:'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,89,206,0.05))' },
+  { label:'Sent Today', key:'sent', color:'#0067e0', icon:<MessageCircle size={18}/>, bg:'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.05))' },
 ];
 
 const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.06 } } };
@@ -83,13 +83,13 @@ function WAContent() {
           style={{ position:'relative', overflow:'hidden', borderRadius:24, padding:'40px 44px', marginBottom:28, background:'#f8fafc', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
           <div style={{ position:'relative' }}>
             <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
-              <div style={{ width:44, height:44, borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.2)' }}>
-                <MessageCircle size={22} color="#a855f7" />
+              <div style={{ width:44, height:44, borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,103,224,0.1)', border:'1px solid rgba(0,103,224,0.2)' }}>
+                <MessageCircle size={22} color="#0067e0" />
               </div>
-              <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', background:'linear-gradient(135deg, #a855f7, #8b5cf6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Communication</span>
+              <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', background:'linear-gradient(135deg, #0067e0, #0059ce)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Communication</span>
             </div>
-            <h1 style={{ fontSize:34, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#111827', margin:'0 0 8px' }}>WhatsApp / SMS</h1>
-            <p style={{ maxWidth:560, fontSize:14, lineHeight:1.6, color:'#6b7280' }}>Send personalised WhatsApp messages to members using templates or custom messages.</p>
+            <h1 style={{ fontSize:34, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#0F172A', margin:'0 0 8px' }}>WhatsApp / SMS</h1>
+            <p style={{ maxWidth:560, fontSize:14, lineHeight:1.6, color:'#64748b' }}>Send personalised WhatsApp messages to members using templates or custom messages.</p>
           </div>
         </m.div>
 
@@ -113,7 +113,7 @@ function WAContent() {
                   <div style={{ width:36, height:36, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:`${k.color}18` }}>
                     {k.icon}
                   </div>
-                  <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#6b7280' }}>{k.label}</span>
+                  <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#64748b' }}>{k.label}</span>
                 </div>
                 <div style={{ fontSize:30, fontWeight:800, color:k.color, lineHeight:1.2, letterSpacing:'-0.02em' }}>{vals[i]}</div>
               </m.div>
@@ -125,52 +125,52 @@ function WAContent() {
         <div style={{ display:'grid', gridTemplateColumns:'1fr 380px', gap:20 }}>
           {/* Member list */}
           <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-            style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e5e7eb', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', overflow:'hidden' }}>
-            <div style={{ padding:'14px 20px', borderBottom:'1px solid #e5e7eb', display:'flex', gap:10, alignItems:'center', background:'#f9fafb' }}>
-              <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, background:'#ffffff', borderRadius:10, padding:'8px 14px', border:'1px solid #d1d5db' }}>
-                <Search size={14} color="#9ca3af" />
+            style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e2e8f0', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', overflow:'hidden' }}>
+            <div style={{ padding:'14px 20px', borderBottom:'1px solid #e2e8f0', display:'flex', gap:10, alignItems:'center', background:'#f8fafc' }}>
+              <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, background:'#ffffff', borderRadius:10, padding:'8px 14px', border:'1px solid #cbd5e1' }}>
+                <Search size={14} color="#94a3b8" />
                 <input placeholder="Search members…" value={search} onChange={e=>setSearch(e.target.value)}
-                  style={{ flex:1, border:'none', background:'transparent', outline:'none', fontSize:13, fontWeight:500, color:'#111827' }} />
-                {search&&<button onClick={()=>setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:0 }}><X size={13}/></button>}
+                  style={{ flex:1, border:'none', background:'transparent', outline:'none', fontSize:13, fontWeight:500, color:'#0F172A' }} />
+                {search&&<button onClick={()=>setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', padding:0 }}><X size={13}/></button>}
               </div>
-              <button onClick={selectAll} style={{ fontSize:12, fontWeight:600, color:'#7c3aed', background:'rgba(124,58,237,0.08)', border:'1px solid rgba(124,58,237,0.15)', borderRadius:8, padding:'6px 14px', cursor:'pointer' }}>All</button>
-              <button onClick={clearAll} style={{ fontSize:12, fontWeight:600, color:'#6b7280', background:'#f3f4f6', border:'1px solid #e5e7eb', borderRadius:8, padding:'6px 14px', cursor:'pointer' }}>None</button>
+              <button onClick={selectAll} style={{ fontSize:12, fontWeight:600, color:'#0067e0', background:'rgba(0,103,224,0.08)', border:'1px solid rgba(0,103,224,0.15)', borderRadius:8, padding:'6px 14px', cursor:'pointer' }}>All</button>
+              <button onClick={clearAll} style={{ fontSize:12, fontWeight:600, color:'#64748b', background:'#f1f5f9', border:'1px solid #e2e8f0', borderRadius:8, padding:'6px 14px', cursor:'pointer' }}>None</button>
             </div>
             <div style={{ maxHeight:520, overflowY:'auto' }}>
               {loading ? (
-                <div style={{ padding:40, textAlign:'center', color:'#9ca3af', fontSize:14 }}>Loading members…</div>
+                <div style={{ padding:40, textAlign:'center', color:'#94a3b8', fontSize:14 }}>Loading members…</div>
               ) : filtered.map(m=>(
                 <div key={m.id} onClick={()=>toggleSelect(m.id)}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSelect(m.id); } }}
                   role="button" tabIndex={0} aria-pressed={selected.includes(m.id)} aria-label={`Select ${m.name}`}
-                  style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 20px', borderBottom:'1px solid #f3f4f6', cursor:'pointer', background:selected.includes(m.id)?'rgba(139,92,246,0.06)':'transparent', transition:'background 150ms' }}
-                  onMouseEnter={e=>{if(!selected.includes(m.id))e.currentTarget.style.background='#f9fafb';}}
+                  style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 20px', borderBottom:'1px solid #f1f5f9', cursor:'pointer', background:selected.includes(m.id)?'rgba(0,103,224,0.06)':'transparent', transition:'background 150ms' }}
+                  onMouseEnter={e=>{if(!selected.includes(m.id))e.currentTarget.style.background='#f8fafc';}}
                   onMouseLeave={e=>{if(!selected.includes(m.id))e.currentTarget.style.background='transparent';}}>
                   <input type="checkbox" checked={selected.includes(m.id)} onChange={()=>toggleSelect(m.id)} onClick={e=>e.stopPropagation()}
-                    style={{ accentColor:'#8b5cf6', width:16, height:16 }} />
-                  <div style={{ width:38, height:38, borderRadius:'50%', background:'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(109,40,217,0.08))', color:'#7c3aed', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:12, flexShrink:0, border:'1px solid rgba(139,92,246,0.15)' }}>
+                    style={{ accentColor:'#0067e0', width:16, height:16 }} />
+                  <div style={{ width:38, height:38, borderRadius:'50%', background:'linear-gradient(135deg, rgba(0,103,224,0.15), rgba(0,103,224,0.08))', color:'#0067e0', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:12, flexShrink:0, border:'1px solid rgba(0,103,224,0.15)' }}>
                     {m.photo_url?<Image src={m.photo_url} alt={m.name} width={38} height={38} style={{ borderRadius:'50%', objectFit:'cover' }}/>:(m.name||'?').slice(0,2).toUpperCase()}
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontWeight:700, fontSize:13, color:'#111827' }}>{m.name}</div>
-                    <div style={{ fontSize:11, color:'#6b7280', display:'flex', gap:14, marginTop:2 }}>
+                    <div style={{ fontWeight:700, fontSize:13, color:'#0F172A' }}>{m.name}</div>
+                    <div style={{ fontSize:11, color:'#64748b', display:'flex', gap:14, marginTop:2 }}>
                       <span style={{ display:'flex', alignItems:'center', gap:3 }}><Phone size={10}/>{m.mobile||'—'}</span>
                       {m.pt_end_date&&<span style={{ display:'flex', alignItems:'center', gap:3 }}><Clock size={10}/>Exp: {m.pt_end_date}</span>}
                     </div>
                   </div>
                   <button onClick={e=>{e.stopPropagation();openWhatsApp(m);}} disabled={!m.mobile}
-                    style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, fontWeight:700, padding:'6px 16px', borderRadius:10, background:m.mobile?'linear-gradient(135deg, #8b5cf6, #6d28d9)':'#f3f4f6', color:m.mobile?'#fff':'#9ca3af', border:'none', cursor:m.mobile?'pointer':'not-allowed', boxShadow:m.mobile?'0 4px 12px rgba(139,92,246,0.3)':'none' }}>
+                    style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, fontWeight:700, padding:'6px 16px', borderRadius:10, background:m.mobile?'linear-gradient(135deg, #0067e0, #0059ce)':'#f1f5f9', color:m.mobile?'#fff':'#94a3b8', border:'none', cursor:m.mobile?'pointer':'not-allowed', boxShadow:m.mobile?'0 4px 12px rgba(0,103,224,0.3)':'none' }}>
                     <MessageCircle size={12}/> Send
                   </button>
                 </div>
               ))}
-              {!loading && filtered.length===0 && <div style={{ padding:40, textAlign:'center', color:'#9ca3af', fontSize:14 }}>No members found</div>}
+              {!loading && filtered.length===0 && <div style={{ padding:40, textAlign:'center', color:'#94a3b8', fontSize:14 }}>No members found</div>}
             </div>
             {selected.length>0&&(
-              <div style={{ padding:'14px 20px', borderTop:'1px solid #e5e7eb', display:'flex', justifyContent:'space-between', alignItems:'center', background:'#f9fafb' }}>
-                <span style={{ fontSize:13, fontWeight:600, color:'#7c3aed' }}>{selected.length} member{selected.length>1?'s':''} selected</span>
+              <div style={{ padding:'14px 20px', borderTop:'1px solid #e2e8f0', display:'flex', justifyContent:'space-between', alignItems:'center', background:'#f8fafc' }}>
+                <span style={{ fontSize:13, fontWeight:600, color:'#0067e0' }}>{selected.length} member{selected.length>1?'s':''} selected</span>
                 <button onClick={sendBulk}
-                  style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'9px 20px', borderRadius:12, background:'linear-gradient(135deg, #8b5cf6, #6d28d9)', color:'#fff', border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(139,92,246,0.35)' }}>
+                  style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'9px 20px', borderRadius:12, background:'linear-gradient(135deg, #0067e0, #0059ce)', color:'#fff', border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(0,103,224,0.35)' }}>
                   <Send size={13}/> Send to Selected
                 </button>
               </div>
@@ -180,29 +180,29 @@ function WAContent() {
           {/* Template panel */}
           <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
             <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay:0.1 }}
-              style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e5e7eb', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', padding:22 }}>
-              <h3 style={{ margin:'0 0 16px', fontSize:14, fontWeight:700, color:'#111827', display:'flex', alignItems:'center', gap:8 }}>
-                <MessageCircle size={15} color="#a855f7"/> Message Template
+              style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e2e8f0', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', padding:22 }}>
+              <h3 style={{ margin:'0 0 16px', fontSize:14, fontWeight:700, color:'#0F172A', display:'flex', alignItems:'center', gap:8 }}>
+                <MessageCircle size={15} color="#0067e0"/> Message Template
               </h3>
               <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:14 }}>
                 {TEMPLATES.map(t=>(
                   <button key={t.id} onClick={()=>setTemplate(t)}
-                    style={{ padding:'10px 16px', borderRadius:10, border:`1px solid ${template.id===t.id?'#8b5cf6':'#e5e7eb'}`, background:template.id===t.id?'rgba(139,92,246,0.06)':'#f9fafb', textAlign:'left', cursor:'pointer', fontSize:13, fontWeight:template.id===t.id?700:500, color:template.id===t.id?'#7c3aed':'#374151', transition:'all 150ms' }}>
+                    style={{ padding:'10px 16px', borderRadius:10, border:`1px solid ${template.id===t.id?'#0067e0':'#e2e8f0'}`, background:template.id===t.id?'rgba(0,103,224,0.06)':'#f8fafc', textAlign:'left', cursor:'pointer', fontSize:13, fontWeight:template.id===t.id?700:500, color:template.id===t.id?'#0067e0':'#334155', transition:'all 150ms' }}>
                     {t.name}
                   </button>
                 ))}
               </div>
               {template.id==='custom'?(
                 <textarea rows={6} value={customMsg} onChange={e=>setCustomMsg(e.target.value)} placeholder="Write your custom message. Use {name} for member name, {date} for expiry date, {amount} for balance."
-                  style={{ width:'100%', border:'1px solid #d1d5db', borderRadius:10, padding:'12px 14px', fontSize:13, fontWeight:500, color:'#111827', background:'#f9fafb', outline:'none', resize:'vertical', fontFamily:'inherit', lineHeight:1.6 }} />
+                  style={{ width:'100%', border:'1px solid #cbd5e1', borderRadius:10, padding:'12px 14px', fontSize:13, fontWeight:500, color:'#0F172A', background:'#f8fafc', outline:'none', resize:'vertical', fontFamily:'inherit', lineHeight:1.6 }} />
               ):(
-                <div style={{ background:'#f9fafb', borderRadius:10, padding:14, fontSize:13, color:'#374151', lineHeight:1.7, whiteSpace:'pre-wrap', border:'1px solid #e5e7eb' }}>{template.body}</div>
+                <div style={{ background:'#f8fafc', borderRadius:10, padding:14, fontSize:13, color:'#334155', lineHeight:1.7, whiteSpace:'pre-wrap', border:'1px solid #e2e8f0' }}>{template.body}</div>
               )}
             </m.div>
             <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay:0.15 }}
-              style={{ borderRadius:20, background:'rgba(34,197,94,0.06)', border:'1px solid rgba(34,197,94,0.2)', padding:20 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, color:'#16a34a', fontWeight:700, fontSize:13 }}><ExternalLink size={14}/>Opens WhatsApp Web</div>
-              <p style={{ margin:0, fontSize:12, color:'#374151', lineHeight:1.6 }}>Clicking Send opens WhatsApp Web or App with a pre-filled message. No API key needed — direct member communication.</p>
+              style={{ borderRadius:20, background:'rgba(16,185,129,0.06)', border:'1px solid rgba(16,185,129,0.2)', padding:20 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, color:'#10b981', fontWeight:700, fontSize:13 }}><ExternalLink size={14}/>Opens WhatsApp Web</div>
+              <p style={{ margin:0, fontSize:12, color:'#334155', lineHeight:1.6 }}>Clicking Send opens WhatsApp Web or App with a pre-filled message. No API key needed — direct member communication.</p>
             </m.div>
           </div>
         </div>

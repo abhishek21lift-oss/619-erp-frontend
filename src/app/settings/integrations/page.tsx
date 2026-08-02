@@ -22,15 +22,15 @@ interface Integration {
 
 // Static integration metadata — status and dates are loaded from the API at runtime
 const STATIC_INTEGRATIONS: Integration[] = [
-  { id: 'razorpay',  name: 'Razorpay',          description: 'Payment gateway for fees, memberships & PT packages', category: 'payments',      icon: 'CreditCard',    color: '#2563eb', bg: '#eff6ff', status: 'pending' },
-  { id: 'paytm',     name: 'Paytm',              description: 'UPI & wallet payment processing',                     category: 'payments',      icon: 'Smartphone',    color: '#00baf2', bg: '#eef9ff', status: 'pending' },
-  { id: 'stripe',    name: 'Stripe',             description: 'International payment processing',                    category: 'payments',      icon: 'CreditCard',    color: '#635bff', bg: '#f0efff', status: 'pending' },
-  { id: 'whatsapp',  name: 'WhatsApp Business',  description: 'Send notifications, reminders & marketing via WhatsApp', category: 'communication', icon: 'MessageSquare', color: '#25d366', bg: '#f0fdf4', status: 'pending' },
-  { id: 'twilio',    name: 'Twilio SMS',         description: 'SMS alerts for dues, check-ins & announcements',     category: 'communication', icon: 'MessageSquare', color: '#f22f46', bg: '#fef2f2', status: 'pending' },
-  { id: 'sendgrid',  name: 'SendGrid',           description: 'Email marketing & transactional emails',             category: 'communication', icon: 'Send',          color: '#1a82e2', bg: '#eff6ff', status: 'unavailable', comingSoon: true },
+  { id: 'razorpay',  name: 'Razorpay',          description: 'Payment gateway for fees, memberships & PT packages', category: 'payments',      icon: 'CreditCard',    color: '#0067e0', bg: '#f1f5f9', status: 'pending' },
+  { id: 'paytm',     name: 'Paytm',              description: 'UPI & wallet payment processing',                     category: 'payments',      icon: 'Smartphone',    color: '#0067e0', bg: '#f1f5f9', status: 'pending' },
+  { id: 'stripe',    name: 'Stripe',             description: 'International payment processing',                    category: 'payments',      icon: 'CreditCard',    color: '#0067e0', bg: '#f1f5f9', status: 'pending' },
+  { id: 'whatsapp',  name: 'WhatsApp Business',  description: 'Send notifications, reminders & marketing via WhatsApp', category: 'communication', icon: 'MessageSquare', color: '#34d399', bg: '#ecfdf5', status: 'pending' },
+  { id: 'twilio',    name: 'Twilio SMS',         description: 'SMS alerts for dues, check-ins & announcements',     category: 'communication', icon: 'MessageSquare', color: '#ef4444', bg: '#fef2f2', status: 'pending' },
+  { id: 'sendgrid',  name: 'SendGrid',           description: 'Email marketing & transactional emails',             category: 'communication', icon: 'Send',          color: '#0067e0', bg: '#f1f5f9', status: 'unavailable', comingSoon: true },
   // AI Coach card is rendered as a live AiCoachCard — not in this static list
-  { id: 'biometric', name: 'Biometric Scanner',  description: 'Face & fingerprint check-in hardware',               category: 'devices',       icon: 'Camera',        color: '#8b5cf6', bg: '#f5f3ff', status: 'pending' },
-  { id: 'zoho',      name: 'Zoho Books',         description: 'Accounting & invoicing sync',                        category: 'analytics',     icon: 'BarChart3',     color: '#e42527', bg: '#fef2f2', status: 'unavailable', comingSoon: true },
+  { id: 'biometric', name: 'Biometric Scanner',  description: 'Face & fingerprint check-in hardware',               category: 'devices',       icon: 'Camera',        color: '#0067e0', bg: '#f8fafc', status: 'pending' },
+  { id: 'zoho',      name: 'Zoho Books',         description: 'Accounting & invoicing sync',                        category: 'analytics',     icon: 'BarChart3',     color: '#dc2626', bg: '#fef2f2', status: 'unavailable', comingSoon: true },
 ];
 
 const CATEGORIES = [
@@ -56,8 +56,8 @@ const glass = {
 } as const;
 
 const catColor: Record<string, string> = {
-  payments: '#f59e0b', communication: '#10b981', ai: '#8b5cf6',
-  scheduling: '#3b82f6', devices: '#ec4899', analytics: '#06b6d4',
+  payments: '#f59e0b', communication: '#10b981', ai: '#0067e0',
+  scheduling: '#0067e0', devices: '#0067e0', analytics: '#0067e0',
 };
 
 const sc: Record<Status, string> = { connected: '#10b981', error: '#ef4444', pending: '#f59e0b', unavailable: 'var(--text-disabled)' };
@@ -197,7 +197,7 @@ function OpenRouterCard() {
       style={{ ...glass, borderRadius: 20, padding: 20, borderLeft: `3px solid ${catColor.ai}` }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f3ff', color: '#8b5cf6' }}>
+        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#0067e0' }}>
           <Bot size={20} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -272,7 +272,7 @@ function OpenRouterCard() {
       <button
         onClick={checkHealth}
         disabled={checking || !settings?.configured}
-        style={{ width: '100%', padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (checking || !settings?.configured) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: settings?.configured ? 'linear-gradient(135deg,#8b5cf6,#7c3aed)' : 'var(--bg-subtle)', color: settings?.configured ? '#ffffff' : 'var(--text-disabled)', opacity: !settings?.configured ? 0.6 : 1, boxShadow: settings?.configured ? '0 4px 12px rgba(139,92,246,0.3)' : 'none' }}
+        style={{ width: '100%', padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (checking || !settings?.configured) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: settings?.configured ? 'linear-gradient(135deg,#0067e0,#0059ce)' : 'var(--bg-subtle)', color: settings?.configured ? '#ffffff' : 'var(--text-disabled)', opacity: !settings?.configured ? 0.6 : 1, boxShadow: settings?.configured ? '0 4px 12px rgba(0,103,224,0.3)' : 'none' }}
       >
         {checking ? <m.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></m.span> : <Activity size={13} />}
         {checking ? 'Pinging models…' : 'Check Model Health'}
@@ -357,7 +357,7 @@ function GoogleCalendarCard({ flashSuccess }: { flashSuccess: boolean }) {
       </AnimatePresence>
 
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14, marginTop: flash ? 28 : 0, transition: 'margin-top 0.2s' }}>
-        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eff6ff', color: '#4285f4' }}>
+        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#0067e0' }}>
           <Calendar size={20} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -419,7 +419,7 @@ function GoogleCalendarCard({ flashSuccess }: { flashSuccess: boolean }) {
           <button
             onClick={handleConnect}
             disabled={connecting || loading}
-            style={{ flex: 1, padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (connecting || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'linear-gradient(135deg,#4285f4,#1a73e8)', color: '#ffffff', boxShadow: '0 4px 12px rgba(66,133,244,0.3)', opacity: (connecting || loading) ? 0.7 : 1 }}
+            style={{ flex: 1, padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (connecting || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'linear-gradient(135deg,#0067e0,#0059ce)', color: '#ffffff', boxShadow: '0 4px 12px rgba(0,103,224,0.3)', opacity: (connecting || loading) ? 0.7 : 1 }}
           >
             {connecting
               ? <><m.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></m.span> Redirecting…</>
@@ -574,7 +574,7 @@ export default function IntegrationsPage() {
               </div>
               <div>
                 <h1 style={{ fontSize: 28, fontWeight: 800, color: '#92400e', margin: 0, letterSpacing: '-0.03em' }}>Integrations</h1>
-                <p style={{ fontSize: 14, color: '#78716c', margin: '4px 0 0' }}>Connect your studio with powerful tools</p>
+                <p style={{ fontSize: 14, color: '#64748b', margin: '4px 0 0' }}>Connect your studio with powerful tools</p>
               </div>
             </div>
           </m.div>

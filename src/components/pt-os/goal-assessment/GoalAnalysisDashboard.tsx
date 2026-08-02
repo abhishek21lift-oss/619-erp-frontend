@@ -6,7 +6,7 @@ import type { GoalDifficulty } from '@/lib/goal-calculations';
 const DIFFICULTY_STYLE: Record<GoalDifficulty, { bg: string; color: string }> = {
   Easy: { bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
   Moderate: { bg: 'rgba(245,158,11,0.15)', color: '#F59E0B' },
-  Hard: { bg: 'rgba(249,115,22,0.18)', color: '#f97316' },
+  Hard: { bg: 'rgba(245,158,11,0.18)', color: '#f59e0b' },
   'Very Hard': { bg: 'rgba(239,68,68,0.18)', color: '#ef4444' },
 };
 

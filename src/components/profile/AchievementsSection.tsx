@@ -25,12 +25,12 @@ const MAX_ENTRIES = 40;
 const KINDS: { value: AchievementKind; label: string; icon: React.ReactNode; tint: string }[] = [
   { value: 'competition', label: 'Competition', icon: <Trophy size={13} />, tint: '#d97706' },
   { value: 'record', label: 'Record', icon: <Medal size={13} />, tint: '#dc2626' },
-  { value: 'award', label: 'Award', icon: <Award size={13} />, tint: '#7c3aed' },
+  { value: 'award', label: 'Award', icon: <Award size={13} />, tint: '#0067e0' },
   { value: 'certification', label: 'Certification', icon: <BadgeCheck size={13} />, tint: '#047857' },
-  { value: 'speaking', label: 'Speaking', icon: <Mic size={13} />, tint: '#0284c7' },
+  { value: 'speaking', label: 'Speaking', icon: <Mic size={13} />, tint: '#0059ce' },
   { value: 'media', label: 'Media', icon: <Newspaper size={13} />, tint: '#475569' },
-  { value: 'publication', label: 'Publication', icon: <BookOpen size={13} />, tint: '#0f766e' },
-  { value: 'other', label: 'Other', icon: <Star size={13} />, tint: '#6366f1' },
+  { value: 'publication', label: 'Publication', icon: <BookOpen size={13} />, tint: '#0059ce' },
+  { value: 'other', label: 'Other', icon: <Star size={13} />, tint: '#0067e0' },
 ];
 const KIND_MAP = Object.fromEntries(KINDS.map((k) => [k.value, k])) as Record<AchievementKind, typeof KINDS[number]>;
 
@@ -166,7 +166,7 @@ export function AchievementsSection({ value, onChange }: {
             issuer: '', year: null, detail: '',
           }])}
           className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-[700] text-white transition-transform hover:scale-[1.03] disabled:opacity-50 disabled:hover:scale-100"
-          style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 4px 14px rgba(99,102,241,0.32)' }}
+          style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)', boxShadow: '0 4px 14px rgba(0,103,224,0.32)' }}
         >
           <Plus size={13} /> Add
         </button>

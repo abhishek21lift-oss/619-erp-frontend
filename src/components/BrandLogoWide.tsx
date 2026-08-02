@@ -16,7 +16,7 @@
  * wider, much fainter bloom — enough to read as emitted light without hazing
  * the text underneath.
  *
- * The blue is sampled from the artwork itself (#0060E0), not guessed, so the
+ * The blue is sampled from the artwork itself (#0067E0), not guessed, so the
  * halo looks like the mark is glowing rather than sitting on an unrelated
  * coloured cloud.
  */
@@ -26,7 +26,7 @@ import { useState } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 
 /** Sampled from the dominant saturated blue in the logo artwork. */
-const NEON = '#0060E0';
+const NEON = '#0067E0';
 
 export default function BrandLogoWide({
   width,

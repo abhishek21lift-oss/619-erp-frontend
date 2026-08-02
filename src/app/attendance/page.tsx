@@ -410,7 +410,7 @@ function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkA
     <section className="relative overflow-hidden rounded-[32px] border border-black/[0.07] bg-[#f8fafc] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.06)] sm:p-8 lg:p-10">
 
       <div className="relative grid grid-cols-1 gap-8 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
-        <div className="space-y-5 text-[#111827]">
+        <div className="space-y-5 text-[#0F172A]">
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-700 backdrop-blur-md">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
@@ -423,7 +423,7 @@ function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkA
 
           <div>
             <p className="text-xs uppercase tracking-[0.26em] text-gray-500">MY PT STUDIO</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#111827] sm:text-4xl lg:text-[3rem] lg:leading-[1.06]">Member Attendance</h1>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#0F172A] sm:text-4xl lg:text-[3rem] lg:leading-[1.06]">Member Attendance</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
               Real-time biometric attendance and member check-in management across all sessions.
             </p>
@@ -435,7 +435,7 @@ function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkA
               type="date" value={date}
               onChange={e => setDate(e.target.value)}
               max={today}
-              className="rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm text-[#111827] backdrop-blur-md transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-black/10"
+              className="rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm text-[#0F172A] backdrop-blur-md transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-black/10"
             />
             <HeroBtn label="Manual Entry"    icon={<Plus className="h-4 w-4" />} light onClick={onManualEntry} />
             <HeroBtn label="Export"          icon={<Download className="h-4 w-4" />} light onClick={onExport} />
@@ -453,7 +453,7 @@ function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkA
             { label: 'Late arrivals',  value: summary.late,     sub: 'logged' },
             { label: 'Unmarked',       value: summary.unmarked, sub: 'pending' },
           ].map(stat => (
-            <div key={stat.label} className="rounded-[22px] border border-black/[0.07] bg-white p-3 sm:p-4 text-[#111827] shadow-[0_1px_4px_rgba(0,0,0,0.06)] backdrop-blur-xl">
+            <div key={stat.label} className="rounded-[22px] border border-black/[0.07] bg-white p-3 sm:p-4 text-[#0F172A] shadow-[0_1px_4px_rgba(0,0,0,0.06)] backdrop-blur-xl">
               <p className="text-xs text-gray-500">{stat.label}</p>
               <p className="mt-2 text-2xl font-semibold tabular-nums">{stat.value}</p>
               <p className="mt-1 text-xs text-gray-500">{stat.sub}</p>
@@ -799,7 +799,7 @@ function InsightsPanel({ summary, weeklyBars, peakHours }: { summary: { present:
               { label: 'Present',  value: summary.present,  color: '#10b981', bg: 'bg-emerald-500/15' },
               { label: 'Absent',   value: summary.absent,   color: '#dc2626', bg: 'bg-rose-500/15' },
               { label: 'Late',     value: summary.late,     color: '#f59e0b', bg: 'bg-amber-500/15' },
-              { label: 'Unmarked', value: summary.unmarked, color: '#71717a', bg: 'bg-zinc-400/15' },
+              { label: 'Unmarked', value: summary.unmarked, color: '#64748b', bg: 'bg-zinc-400/15' },
             ] as const).map(item => (
               <div key={item.label} className="rounded-[14px] bg-zinc-50 p-3 dark:bg-white/5">
                 <div className="flex items-center justify-between">
@@ -946,7 +946,7 @@ function QuickActionsPanel({ onMarkAll }: { onMarkAll?: () => void }) {
 function FooterBar({ onSync, onGenerateReport }: { onSync: () => void; onGenerateReport: () => void }) {
   return (
     <div className="sticky above-bottom-nav z-20 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-5xl flex-col gap-3 rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,20,0.84),rgba(18,18,20,0.72))] px-4 py-4 shadow-[0_18px_60px_rgba(0,0,0,0.38)] backdrop-blur-2xl sm:flex-row sm:items-center sm:justify-between sm:px-5">
+      <div className="mx-auto flex max-w-5xl flex-col gap-3 rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.84),rgba(15,23,42,0.72))] px-4 py-4 shadow-[0_18px_60px_rgba(0,0,0,0.38)] backdrop-blur-2xl sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div className="flex items-center gap-3 text-white">
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
           <div>
@@ -1171,7 +1171,7 @@ function MemberAvatar({ client, large }: { client: Client; large?: boolean }) {
     return <Image src={client.photo_url} alt={client.name} width={48} height={48} className={`${sz} rounded-full object-cover`} />;
   }
   return (
-    <div className={`${sz} shrink-0 rounded-full bg-[linear-gradient(135deg,#F59E0B,#7c3aed)] flex items-center justify-center font-semibold text-white shadow-sm`}>
+    <div className={`${sz} shrink-0 rounded-full bg-[linear-gradient(135deg,#F59E0B,#0067e0)] flex items-center justify-center font-semibold text-white shadow-sm`}>
       {initials}
     </div>
   );
@@ -1181,7 +1181,7 @@ function FeedAvatar({ initials, status, size = 'sm' }: { initials: string; statu
   const sz = size === 'lg' ? 'h-10 w-10 text-sm' : 'h-7 w-7 text-xs';
   const ringColor = status === 'present' ? 'ring-emerald-400' : status === 'late' ? 'ring-amber-400' : status === 'error' ? 'ring-rose-400' : status === 'warn' ? 'ring-amber-400' : 'ring-zinc-300';
   return (
-    <div className={`${sz} shrink-0 rounded-full bg-[linear-gradient(135deg,#F59E0B,#7c3aed)] flex items-center justify-center font-semibold text-white ring-2 ${ringColor}`}>
+    <div className={`${sz} shrink-0 rounded-full bg-[linear-gradient(135deg,#F59E0B,#0067e0)] flex items-center justify-center font-semibold text-white ring-2 ${ringColor}`}>
       {initials}
     </div>
   );

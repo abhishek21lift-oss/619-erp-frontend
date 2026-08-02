@@ -50,10 +50,10 @@ function fmtDate(d?: string) {
 function StatusBadge({ status, days_left }: { status: string; days_left: number | null }) {
   const styles: Record<string, { label: string; bg: string; fg: string }> = {
     active: { label: 'Active', bg: '#10b98118', fg: '#10b981' },
-    expired: { label: 'Expired', bg: '#f43f5e18', fg: '#f43f5e' },
-    frozen: { label: 'Frozen', bg: '#3b82f618', fg: '#3b82f6' },
+    expired: { label: 'Expired', bg: '#f43f5e18', fg: '#ef4444' },
+    frozen: { label: 'Frozen', bg: '#3b82f618', fg: '#0067e0' },
   };
-  let s = styles[status] || { label: status, bg: '#6b728018', fg: '#6b7280' };
+  let s = styles[status] || { label: status, bg: '#6b728018', fg: '#64748b' };
   if (status === 'active' && days_left !== null && days_left <= 7)
     s = { label: 'Expiring', bg: '#dc262618', fg: '#dc2626' };
   return (
@@ -70,7 +70,7 @@ function termStatus(startDate?: string, endDate?: string) {
   const end = new Date(endDate);
   const start = startDate ? new Date(startDate) : null;
   if (end < now) return { label: 'Expired', bg: 'rgba(100,116,139,0.10)', color: '#64748b' };
-  if (start && start > now) return { label: 'Upcoming', bg: 'rgba(59,130,246,0.12)', color: '#2563eb' };
+  if (start && start > now) return { label: 'Upcoming', bg: 'rgba(0,103,224,0.12)', color: '#0067e0' };
   return { label: 'Active', bg: 'rgba(16,185,129,0.12)', color: '#059669' };
 }
 
@@ -201,7 +201,7 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
 
               {/* ── Summary Cards ── */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <GradientCard from="#6366f1" to="#4338ca">
+                <GradientCard from="#0067e0" to="#0067e0">
                   <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: 'rgba(255,255,255,0.15)' }}>
@@ -213,7 +213,7 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
                   </div>
                 </GradientCard>
 
-                <GradientCard from="#0ea5e9" to="#0369a1">
+                <GradientCard from="#0067e0" to="#0059ce">
                   <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: 'rgba(255,255,255,0.15)' }}>
@@ -225,7 +225,7 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
                   </div>
                 </GradientCard>
 
-                <GradientCard from="#7c3aed" to="#5b21b6">
+                <GradientCard from="#0067e0" to="#0067e0">
                   <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: 'rgba(255,255,255,0.15)' }}>
@@ -264,7 +264,7 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
                 >
                   <div className="flex items-center gap-3 mb-5">
                     <div className="flex h-9 w-9 items-center justify-center rounded-[11px]"
-                      style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                      style={{ background: 'rgba(0,103,224,0.12)', border: '1px solid rgba(0,103,224,0.2)' }}>
                       <Repeat size={15} className="text-indigo-500" />
                     </div>
                     <div>
@@ -291,18 +291,18 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
                             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }}
                             className="overflow-hidden rounded-[16px] p-4"
                             style={isLast
-                              ? { background: 'rgba(99,102,241,0.06)', border: '1.5px solid rgba(99,102,241,0.18)' }
+                              ? { background: 'rgba(0,103,224,0.06)', border: '1.5px solid rgba(0,103,224,0.18)' }
                               : { background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                             <div className="flex items-start justify-between gap-3 mb-3">
                               <div className="flex min-w-0 items-center gap-2.5">
                                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-[800] text-indigo-600"
-                                  style={{ background: 'rgba(99,102,241,0.12)' }}>{idx + 1}</span>
+                                  style={{ background: 'rgba(0,103,224,0.12)' }}>{idx + 1}</span>
                                 <div className="min-w-0">
                                   <div className="flex min-w-0 items-center gap-2">
                                     <p className="min-w-0 truncate text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>{t.plan_name || '—'}</p>
                                     {isLast && (
                                       <span className="shrink-0 rounded-[5px] px-1.5 py-0.5 text-[8.5px] font-[800] uppercase tracking-wider text-indigo-600"
-                                        style={{ background: 'rgba(99,102,241,0.12)' }}>Current</span>
+                                        style={{ background: 'rgba(0,103,224,0.12)' }}>Current</span>
                                     )}
                                   </div>
                                   <p className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
@@ -320,7 +320,7 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
                                 { label: 'Fee', value: fmtINR(t.selling_price), color: 'var(--text-primary)' },
                                 { label: 'Paid', value: fmtINR(t.amount_paid), color: '#059669' },
                                 { label: 'Balance', value: fmtINR(t.balance_amount), color: Number(t.balance_amount) > 0 ? '#ef4444' : '#059669' },
-                                ...(isLast ? [{ label: 'Days Left', value: client.days_left !== null ? `${client.days_left}d` : '—', color: '#6366f1' }] : []),
+                                ...(isLast ? [{ label: 'Days Left', value: client.days_left !== null ? `${client.days_left}d` : '—', color: '#0067e0' }] : []),
                               ].map((f) => (
                                 <div key={f.label} className="rounded-[10px] p-2.5" style={{ background: 'var(--bg-card)' }}>
                                   <p className="text-[8.5px] font-[700] uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>{f.label}</p>
@@ -342,8 +342,8 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
                   style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(14,165,233,0.12)' }}>
-                      <PiggyBank size={13} style={{ color: '#0ea5e9' }} />
+                    <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(0,103,224,0.12)' }}>
+                      <PiggyBank size={13} style={{ color: '#0067e0' }} />
                     </div>
                     <span className="text-[12px] font-[700]" style={{ color: 'var(--text-primary)' }}>Payments by Term</span>
                   </div>

@@ -13,7 +13,7 @@ export default function GlobalError({
 
   return (
     <html>
-      <body style={{ margin: 0, fontFamily: 'Inter, sans-serif', background: '#f5f4f0' }}>
+      <body style={{ margin: 0, fontFamily: 'Inter, sans-serif', background: '#f1f5f9' }}>
         <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center' }}>
           <div style={{ width: 64, height: 64, borderRadius: 16, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -22,8 +22,8 @@ export default function GlobalError({
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
           </div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', margin: '0 0 8px' }}>Something went wrong</h1>
-          <p style={{ fontSize: 14, color: '#6b7280', maxWidth: 400, margin: '0 0 24px', lineHeight: 1.6 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: '0 0 8px' }}>Something went wrong</h1>
+          <p style={{ fontSize: 14, color: '#64748b', maxWidth: 400, margin: '0 0 24px', lineHeight: 1.6 }}>
             A critical error occurred. Please try again or contact support.
           </p>
           <button onClick={reset}

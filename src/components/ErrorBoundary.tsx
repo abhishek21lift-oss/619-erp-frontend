@@ -118,7 +118,7 @@ function DefaultFallback({ error, reset }: { error: Error; reset: () => void }) 
         </button>
         <Link
           href="/pt-os"
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-white/20 dark:bg-[#1E1F24] dark:text-white/70 dark:hover:bg-white/10"
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-white/20 dark:bg-[#0F172A] dark:text-white/70 dark:hover:bg-white/10"
         >
           Back to app
         </Link>

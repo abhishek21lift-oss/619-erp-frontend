@@ -132,7 +132,7 @@ export function ProfileHero({
             banner should look designed rather than unfinished. */}
         <div
           className="absolute inset-0"
-          style={{ background: 'linear-gradient(135deg,#6366f1 0%,#7c3aed 40%,#8b5cf6 70%,#a78bfa 100%)' }}
+          style={{ background: 'linear-gradient(135deg,#0067e0 0%,#0067e0 40%,#0067e0 70%,#7fb4ff 100%)' }}
         />
         <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
 
@@ -182,7 +182,7 @@ export function ProfileHero({
               aria-label={avatar ? 'Change profile photo' : 'Add a profile photo'}
               className="group relative flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-[22px] text-[26px] font-[880] text-white transition-transform hover:scale-[1.03] sm:h-[92px] sm:w-[92px] sm:text-[32px]"
               style={{
-                background: avatar ? 'var(--bg-card)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                background: avatar ? 'var(--bg-card)' : 'linear-gradient(135deg,#0067e0,#0059ce)',
                 border: '3px solid var(--bg-card)',
                 boxShadow: '0 6px 24px rgba(15,23,42,0.20)',
                 letterSpacing: '-0.02em',
@@ -218,9 +218,9 @@ export function ProfileHero({
             <h2 className="text-[21px] font-[880] tracking-[-0.03em] sm:text-[26px]" style={{ color: 'var(--text-primary)' }}>
               {me.name}
             </h2>
-            <Badge icon={<ShieldCheck size={10} />} label={roleLabel} tint="#6366f1" />
+            <Badge icon={<ShieldCheck size={10} />} label={roleLabel} tint="#0067e0" />
             {me.yearsExperience !== null && me.yearsExperience > 0 && (
-              <Badge icon={<Clock size={10} />} label={`${me.yearsExperience} yr${me.yearsExperience === 1 ? '' : 's'} coaching`} tint="#0ea5e9" />
+              <Badge icon={<Clock size={10} />} label={`${me.yearsExperience} yr${me.yearsExperience === 1 ? '' : 's'} coaching`} tint="#0067e0" />
             )}
             {validCerts > 0 && (
               <Badge icon={<Award size={10} />} label={`${validCerts} certification${validCerts === 1 ? '' : 's'}`} tint="#047857" />
@@ -251,7 +251,7 @@ export function ProfileHero({
         animate={{ scaleX: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="h-[3px] w-full origin-left"
-        style={{ background: 'linear-gradient(90deg,#6366f1,#8b5cf6,#a78bfa)' }}
+        style={{ background: 'linear-gradient(90deg,#0067e0,#0067e0,#7fb4ff)' }}
       />
     </section>
   );

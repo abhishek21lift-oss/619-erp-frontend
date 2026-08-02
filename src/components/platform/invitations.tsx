@@ -32,8 +32,8 @@ import { useToast } from '@/lib/toast';
  */
 const STATUS: Record<InvitationStatus, { label: string; colour: string; bg: string; icon: React.ReactNode }> = {
   pending:   { label: 'Pending',   colour: 'var(--text-muted)', bg: 'var(--bg-subtle)',    icon: <Clock size={11} /> },
-  sent:      { label: 'Sent',      colour: '#2563EB',           bg: 'rgba(37,99,235,0.12)', icon: <Mail size={11} /> },
-  opened:    { label: 'Opened',    colour: '#7C3AED',           bg: 'rgba(124,58,237,0.12)', icon: <MailCheck size={11} /> },
+  sent:      { label: 'Sent',      colour: '#0067E0',           bg: 'rgba(0,103,224,0.12)', icon: <Mail size={11} /> },
+  opened:    { label: 'Opened',    colour: '#0067E0',           bg: 'rgba(0,103,224,0.12)', icon: <MailCheck size={11} /> },
   activated: { label: 'Activated', colour: '#059669',           bg: 'rgba(5,150,105,0.12)', icon: <ShieldCheck size={11} /> },
   expired:   { label: 'Expired',   colour: '#D97706',           bg: 'rgba(217,119,6,0.12)', icon: <MailWarning size={11} /> },
   cancelled: { label: 'Cancelled', colour: '#DC2626',           bg: 'rgba(220,38,38,0.12)', icon: <MailX size={11} /> },

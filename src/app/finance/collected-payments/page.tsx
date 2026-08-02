@@ -25,9 +25,9 @@ const METHOD_ICONS: Record<string, React.ReactNode> = {
 };
 
 const METHOD_COLORS: Record<string, string> = {
-  UPI: '#8b5cf6',
+  UPI: '#0067e0',
   Cash: '#10b981',
-  Card: '#0ea5e9',
+  Card: '#0067e0',
   Bank: '#f59e0b',
 };
 
@@ -183,20 +183,20 @@ function Inner() {
             <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
               {['all', ...methods].map(m => {
                 const isActive = methodFilter === m;
-                const color = METHOD_COLORS[m] || '#06b6d4';
+                const color = METHOD_COLORS[m] || '#0067e0';
                 return (
                   <button key={m} onClick={() => { setMethodFilter(m); setPage(0); }}
                     className="shrink-0 rounded-full px-4 py-2 text-[12px] font-semibold whitespace-nowrap transition-all duration-150"
                     style={{
-                      background: isActive ? color : '#F3F4F6',
-                      color: isActive ? '#fff' : '#6B7280',
+                      background: isActive ? color : '#F1F5F9',
+                      color: isActive ? '#fff' : '#64748B',
                       minHeight: 36,
                     }}>
                     {m === 'all' ? 'All Methods' : m}
                   </button>
                 );
               })}
-              <span className="ml-auto shrink-0 text-[12px] text-[#9ca3af]">
+              <span className="ml-auto shrink-0 text-[12px] text-[#94a3b8]">
                 {filtered.length > 0 && `${filtered.length} record${filtered.length !== 1 ? 's' : ''}`}
               </span>
             </div>
@@ -213,14 +213,14 @@ function Inner() {
             ) : paged.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-100">
-                  <Inbox size={24} color="#9ca3af" />
+                  <Inbox size={24} color="#94a3b8" />
                 </div>
-                <p className="text-[14px] font-semibold text-[#111827] mb-1">No payments found</p>
-                <p className="text-[13px] text-[#6b7280]">{search ? 'Try a different search term.' : 'Record your first payment to get started.'}</p>
+                <p className="text-[14px] font-semibold text-[#0F172A] mb-1">No payments found</p>
+                <p className="text-[13px] text-[#64748b]">{search ? 'Try a different search term.' : 'Record your first payment to get started.'}</p>
                 {!search && (
                   <button onClick={() => router.push('/finance/record-payment')}
                     className="mt-4 flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[13px] font-semibold text-white"
-                    style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)' }}>
+                    style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)' }}>
                     <Banknote size={14} /> Record Payment
                   </button>
                 )}
@@ -235,22 +235,22 @@ function Inner() {
                     <div className="flex items-center justify-between mb-2.5">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center"
-                          style={{ background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)' }}>
+                          style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)' }}>
                           <User size={14} color="white" />
                         </div>
-                        <span className="font-semibold text-[14px] text-[#111827] truncate">{p.client_name || '—'}</span>
+                        <span className="font-semibold text-[14px] text-[#0F172A] truncate">{p.client_name || '—'}</span>
                       </div>
-                      <span className="shrink-0 text-[18px] font-[800] tabular-nums ml-2" style={{ color: '#06b6d4', letterSpacing: '-0.02em' }}>{fmtINR(p.amount)}</span>
+                      <span className="shrink-0 text-[18px] font-[800] tabular-nums ml-2" style={{ color: '#0067e0', letterSpacing: '-0.02em' }}>{fmtINR(p.amount)}</span>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="flex items-center gap-1 rounded-[8px] px-2.5 py-1 text-[11px] font-[600]"
-                        style={{ background: `${METHOD_COLORS[p.method] || '#9ca3af'}15`, color: METHOD_COLORS[p.method] || '#9ca3af' }}>
+                        style={{ background: `${METHOD_COLORS[p.method] || '#94a3b8'}15`, color: METHOD_COLORS[p.method] || '#94a3b8' }}>
                         {METHOD_ICONS[p.method] || null}
                         {p.method || 'Other'}
                       </span>
                       {p.receipt_no && <span className="text-[10px] text-zinc-400 font-mono">{p.receipt_no}</span>}
                       <div className="ml-auto flex items-center gap-1 text-[11px] text-zinc-400">
-                        <CalendarDays size={11} color="#9ca3af" />
+                        <CalendarDays size={11} color="#94a3b8" />
                         {p.date || '—'}
                       </div>
                     </div>
@@ -267,7 +267,7 @@ function Inner() {
                   style={{ border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
                   Previous
                 </button>
-                <span className="text-[12px] text-[#6b7280]">{page + 1} / {pageCount}</span>
+                <span className="text-[12px] text-[#64748b]">{page + 1} / {pageCount}</span>
                 <button disabled={page >= pageCount - 1} onClick={() => setPage(p => Math.min(pageCount - 1, p + 1))}
                   className="rounded-[10px] px-4 py-2 text-[13px] font-[600] transition-all disabled:opacity-40"
                   style={{ border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
@@ -328,7 +328,7 @@ function Inner() {
                       <td colSpan={6} style={{ padding: 64, textAlign: 'center' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                           <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Inbox size={24} color="#9ca3af" />
+                            <Inbox size={24} color="#94a3b8" />
                           </div>
                           <div>
                             <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>Fresh Start</div>
@@ -349,17 +349,17 @@ function Inner() {
                         onMouseLeave={(e) => (e.currentTarget.style.background = '')}>
                         <td style={{ padding: '14px 20px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #0067e0, #0059ce)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <User size={14} color="white" />
                             </div>
                             <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 14 }}>{p.client_name || '—'}</span>
                           </div>
                         </td>
-                        <td style={{ padding: '14px 20px', fontWeight: 800, fontSize: 15, color: '#06b6d4', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                        <td style={{ padding: '14px 20px', fontWeight: 800, fontSize: 15, color: '#0067e0', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
                           {fmtINR(p.amount)}
                         </td>
                         <td style={{ padding: '14px 20px' }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: `${METHOD_COLORS[p.method] || '#9ca3af'}15`, color: METHOD_COLORS[p.method] || '#9ca3af' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: `${METHOD_COLORS[p.method] || '#94a3b8'}15`, color: METHOD_COLORS[p.method] || '#94a3b8' }}>
                             {METHOD_ICONS[p.method] || null}
                             {p.method || 'Other'}
                           </span>
@@ -369,7 +369,7 @@ function Inner() {
                         </td>
                         <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                            <CalendarDays size={13} color="#9ca3af" />
+                            <CalendarDays size={13} color="#94a3b8" />
                             {p.date || '—'}
                           </span>
                         </td>
@@ -386,7 +386,7 @@ function Inner() {
             {pageCount > 1 && (
               <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'center', gap: 6, background: 'var(--bg-subtle)' }}>
                 <button disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)', background: page === 0 ? '#F9FAFB' : 'white', color: page === 0 ? '#d1d5db' : '#111827', cursor: page === 0 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600 }}>
+                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)', background: page === 0 ? '#F8FAFC' : 'white', color: page === 0 ? '#cbd5e1' : '#0F172A', cursor: page === 0 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600 }}>
                   Previous
                 </button>
                 {Array.from({ length: Math.min(pageCount, 7) }).map((_, i) => {
@@ -395,13 +395,13 @@ function Inner() {
                   if (pIdx >= pageCount) return null;
                   return (
                     <button key={pIdx} onClick={() => setPage(pIdx)}
-                      style={{ width: 34, height: 34, borderRadius: 8, border: pIdx === page ? 'none' : '1px solid #e5e7eb', background: pIdx === page ? 'linear-gradient(135deg,#06b6d4,#3b82f6)' : 'white', color: pIdx === page ? 'white' : '#111827', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                      style={{ width: 34, height: 34, borderRadius: 8, border: pIdx === page ? 'none' : '1px solid #e2e8f0', background: pIdx === page ? 'linear-gradient(135deg,#0067e0,#0059ce)' : 'white', color: pIdx === page ? 'white' : '#0F172A', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
                       {pIdx + 1}
                     </button>
                   );
                 })}
                 <button disabled={page >= pageCount - 1} onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)', background: page >= pageCount - 1 ? '#F9FAFB' : 'white', color: page >= pageCount - 1 ? '#d1d5db' : '#111827', cursor: page >= pageCount - 1 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600 }}>
+                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)', background: page >= pageCount - 1 ? '#F8FAFC' : 'white', color: page >= pageCount - 1 ? '#cbd5e1' : '#0F172A', cursor: page >= pageCount - 1 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600 }}>
                   Next
                 </button>
               </div>

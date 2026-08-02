@@ -8,6 +8,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumModal } from '@/components/premium/PremiumModal';
 import { Button, KpiCard } from '@/components/ui';
+import { identity } from '@/lib/palette';
 import {
   FileText, Download, Send, CheckCircle2, Search,
   ChevronDown, Eye, Clock,
@@ -40,11 +41,11 @@ interface InvoiceStats {
 }
 
 const PAYMENT_ICONS: Record<PaymentMethod, { label: string; color: string }> = {
-  'upi': { label: 'UPI', color: '#7c3aed' },
-  'credit-card': { label: 'Card', color: '#0ea5e9' },
+  'upi': { label: 'UPI', color: '#0067e0' },
+  'credit-card': { label: 'Card', color: '#0067e0' },
   'cash': { label: 'Cash', color: '#10b981' },
-  'razorpay': { label: 'Razorpay', color: '#6366f1' },
-  'stripe': { label: 'Stripe', color: '#8b5cf6' },
+  'razorpay': { label: 'Razorpay', color: '#0067e0' },
+  'stripe': { label: 'Stripe', color: '#0067e0' },
   'bank-transfer': { label: 'Bank Transfer', color: '#f59e0b' },
 };
 
@@ -57,7 +58,7 @@ function initials(name: string): string {
 }
 
 function Avatar({ name }: { name: string }) {
-  const colors = ['#dc2626', '#7c3aed', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899'];
+  const colors = identity;
   const idx = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length;
   return (
     <div style={{
@@ -168,7 +169,7 @@ label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8
 p{font-size:15px;font-weight:600;margin:4px 0}
 .amount{font-size:28px;font-weight:800;color:#0f172a}
 .status{display:inline-block;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700;
-background:${invoice.status==='paid'?'#dcfce7':invoice.status==='overdue'?'#fee2e2':'#fef9c3'};
+background:${invoice.status==='paid'?'#d1fae5':invoice.status==='overdue'?'#fee2e2':'#fef3c7'};
 color:${invoice.status==='paid'?'#059669':invoice.status==='overdue'?'#dc2626':'#d97706'}}
 @media print{button{display:none}}</style></head><body>
 <h1>Invoice</h1><p style="color:#64748b;margin-bottom:24px">${invoice.id}</p>
@@ -307,8 +308,8 @@ export default function InvoicesPage() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       borderRadius: '14px',
-                      background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
-                      boxShadow: '0 8px 24px rgba(59,130,246,0.25)',
+                      background: 'linear-gradient(135deg, #0067e0, #0059ce)',
+                      boxShadow: '0 8px 24px rgba(0,103,224,0.25)',
                     }}>
                       <FileText size={20} style={{ color: '#fff' }} />
                     </div>
@@ -333,7 +334,7 @@ export default function InvoicesPage() {
                   }}>
                     <span>Finance</span>
                     <ChevronDown size={10} style={{ transform: 'rotate(-90deg)' }} />
-                    <span style={{ color: '#818cf8', fontWeight: 600 }}>Invoices</span>
+                    <span style={{ color: '#7fb4ff', fontWeight: 600 }}>Invoices</span>
                   </div>
                 </div>
 
@@ -437,8 +438,8 @@ export default function InvoicesPage() {
                       border: 'none',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
-                      background: statusTab === tab.id ? 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08))' : 'transparent',
-                      color: statusTab === tab.id ? '#6366f1' : 'rgba(100,116,139,0.8)',
+                      background: statusTab === tab.id ? 'linear-gradient(135deg, rgba(0,103,224,0.12), rgba(0,103,224,0.08))' : 'transparent',
+                      color: statusTab === tab.id ? '#0067e0' : 'rgba(100,116,139,0.8)',
                     }}
                   >
                     {tab.label}
@@ -450,8 +451,8 @@ export default function InvoicesPage() {
                       borderRadius: '9999px',
                       fontSize: '11px',
                       fontWeight: 700,
-                      background: statusTab === tab.id ? 'rgba(99,102,241,0.12)' : 'rgba(148,163,184,0.15)',
-                      color: statusTab === tab.id ? '#6366f1' : 'rgba(100,116,139,0.6)',
+                      background: statusTab === tab.id ? 'rgba(0,103,224,0.12)' : 'rgba(148,163,184,0.15)',
+                      color: statusTab === tab.id ? '#0067e0' : 'rgba(100,116,139,0.6)',
                     }}>{tab.count}</span>
                   </m.button>
                 ))}
@@ -567,10 +568,10 @@ export default function InvoicesPage() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       borderRadius: '24px',
-                      background: 'rgba(99,102,241,0.08)',
+                      background: 'rgba(0,103,224,0.08)',
                       marginBottom: '20px',
                     }}>
-                      <FileText size={36} style={{ color: '#6366f1' }} />
+                      <FileText size={36} style={{ color: '#0067e0' }} />
                     </div>
                     <p style={{
                       fontSize: '20px',
@@ -688,7 +689,7 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
     paid: { color: '#059669', bg: 'rgba(5,150,105,0.08)', dot: '#10b981' },
     pending: { color: '#d97706', bg: 'rgba(217,119,6,0.08)', dot: '#f59e0b' },
     overdue: { color: '#dc2626', bg: 'rgba(220,38,38,0.08)', dot: '#ef4444' },
-    draft: { color: 'var(--text-muted)', bg: 'rgba(107,114,128,0.08)', dot: '#9ca3af' },
+    draft: { color: 'var(--text-muted)', bg: 'rgba(100,116,139,0.08)', dot: '#94a3b8' },
     cancelled: { color: 'rgba(148,163,184,0.6)', bg: 'rgba(148,163,184,0.12)', dot: '#cbd5e1' },
   };
 
@@ -764,8 +765,8 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
                 borderRadius: '9999px',
                 fontSize: '10px',
                 fontWeight: 660,
-                background: 'rgba(99,102,241,0.08)',
-                color: '#6366f1',
+                background: 'rgba(0,103,224,0.08)',
+                color: '#0067e0',
               }}>
                 <CreditCard size={9} /> {PAYMENT_ICONS[invoice.paymentMethod].label}
               </span>
@@ -877,9 +878,9 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
                   }}
                 >
                   {[
-                    { icon: <Eye size={13} />, label: 'View Details', action: 'view', color: 'rgba(30,30,40,0.9)' },
-                    { icon: <Download size={13} />, label: 'Download PDF', action: 'download', color: 'rgba(30,30,40,0.9)' },
-                    { icon: <Send size={13} />, label: 'Send Reminder', action: 'remind', color: 'rgba(30,30,40,0.9)' },
+                    { icon: <Eye size={13} />, label: 'View Details', action: 'view', color: 'rgba(15,23,42,0.9)' },
+                    { icon: <Download size={13} />, label: 'Download PDF', action: 'download', color: 'rgba(15,23,42,0.9)' },
+                    { icon: <Send size={13} />, label: 'Send Reminder', action: 'remind', color: 'rgba(15,23,42,0.9)' },
                     { icon: <CheckCircle2 size={13} />, label: 'Mark as Paid', action: 'mark-paid', color: '#059669' },
                   ].map((item) => (
                     <button

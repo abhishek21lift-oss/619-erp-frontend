@@ -274,7 +274,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
             className="absolute inset-0 z-50 lg:hidden"
             data-no-pull-refresh
             style={{
-              background: 'rgba(5,8,22,0.50)',
+              background: 'rgba(15,23,42,0.50)',
               backdropFilter: mobileMenuOpen ? 'blur(12px)' : 'blur(0px)',
               WebkitBackdropFilter: mobileMenuOpen ? 'blur(12px)' : 'blur(0px)',
               opacity: mobileMenuOpen ? 1 : 0,
@@ -545,7 +545,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                         <p className="text-[12px] font-semibold text-[var(--text-primary)]">{user?.name || 'Admin'}</p>
                         <p className="text-[10px] text-[var(--text-muted)]">{user?.email || '—'}</p>
                         <span className="mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                          style={{ background: 'rgba(212,175,55,0.1)', color: '#D4AF37' }}>
+                          style={{ background: 'rgba(245,158,11,0.1)', color: '#F59E0B' }}>
                           {/* Was `{user?.role}` — the raw identifier, so this badge
                               read "super_admin" on every page for the operator and
                               "admin" for a studio owner. */}

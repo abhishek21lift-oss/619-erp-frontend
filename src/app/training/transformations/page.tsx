@@ -18,10 +18,10 @@ const itemVariants = {
 };
 
 const KPI_COLORS = [
-  { from: '#6366f1', to: '#8b5cf6', glow: 'rgba(99,102,241,0.12)' },
+  { from: '#0067e0', to: '#0067e0', glow: 'rgba(0,103,224,0.12)' },
   { from: '#10b981', to: '#34d399', glow: 'rgba(16,185,129,0.12)' },
   { from: '#f59e0b', to: '#fbbf24', glow: 'rgba(245,158,11,0.12)' },
-  { from: '#ec4899', to: '#f472b6', glow: 'rgba(236,72,153,0.12)' },
+  { from: '#0067e0', to: '#0067e0', glow: 'rgba(0,103,224,0.12)' },
 ];
 
 function KpiCard({ label, value, icon, gradient, colorIndex }: {
@@ -56,7 +56,7 @@ function WeightChange({ start, current }: { start?: number | null; current?: num
   const diff = c - s;
   const isUp = diff > 0;
   const isDown = diff < 0;
-  const color = isUp ? '#f87171' : isDown ? '#34d399' : '#9ca3af';
+  const color = isUp ? '#f87171' : isDown ? '#34d399' : '#94a3b8';
   const Icon = isUp ? ArrowUpRight : isDown ? ArrowDownRight : Minus;
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color, fontWeight: 700, fontSize: 13 }}>
@@ -112,7 +112,7 @@ function Inner() {
       <div style={{ background: 'var(--bg-subtle)', padding: '52px 32px 44px', borderRadius: '0 0 40px 40px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
           <m.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] as const }}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 58, height: 58, borderRadius: 18, background: 'linear-gradient(135deg, #8b5cf6, #ec4899)', boxShadow: '0 8px 32px rgba(139,92,246,0.3)', border: '1px solid var(--border)' }}>
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 58, height: 58, borderRadius: 18, background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 8px 32px rgba(0,103,224,0.3)', border: '1px solid var(--border)' }}>
             <Sparkles size={26} color="#fff" />
           </m.div>
           <div>
@@ -133,13 +133,13 @@ function Inner() {
         {/* ── KPI Grid ── */}
         <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
           <KpiCard label="Total Members" value={clients.length} icon={<Users size={16} />} colorIndex={0}
-            gradient="linear-gradient(135deg, rgba(99,102,241,0.1), rgba(99,102,241,0.03))" />
+            gradient="linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.03))" />
           <KpiCard label="Active Coaches" value={coaches} icon={<UserCheck size={16} />} colorIndex={1}
             gradient="linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.03))" />
           <KpiCard label="Avg Weight" value={avgWeight > 0 ? `${avgWeight.toFixed(0)} kg` : '—'} icon={<Weight size={16} />} colorIndex={2}
             gradient="linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.03))" />
           <KpiCard label="With Progress" value={clients.filter((c) => c.weight && Number(c.weight) > 0).length} icon={<TrendingUp size={16} />} colorIndex={3}
-            gradient="linear-gradient(135deg, rgba(236,72,153,0.1), rgba(236,72,153,0.03))" />
+            gradient="linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.03))" />
         </m.div>
 
         {/* ── Quick Stats Row ── */}
@@ -165,7 +165,7 @@ function Inner() {
                 return cLoss > bLoss ? c : b;
               }, clients[0]);
               return best.name ?? '—';
-            })() : '—', icon: <Trophy size={14} />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
+            })() : '—', icon: <Trophy size={14} />, color: '#0067e0', bg: 'rgba(0,103,224,0.1)' },
           ].map((stat, i) => (
             <m.div key={stat.label} variants={itemVariants}
               style={{ borderRadius: 16, padding: '16px 18px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
@@ -184,13 +184,13 @@ function Inner() {
             style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', background: 'var(--bg-card)' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, background: 'var(--bg-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 4, height: 18, borderRadius: 3, background: 'linear-gradient(180deg, #8b5cf6, #ec4899)', display: 'inline-block' }} />
+                <div style={{ width: 4, height: 18, borderRadius: 3, background: 'linear-gradient(180deg, #0067e0, #0059ce)', display: 'inline-block' }} />
                 <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Active Members</span>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 20, background: 'rgba(139,92,246,0.1)', color: '#7c3aed', border: '1px solid rgba(139,92,246,0.2)' }}>{filtered.length}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 20, background: 'rgba(0,103,224,0.1)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.2)' }}>{filtered.length}</span>
               </div>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '6px 14px', border: '1px solid #d1d5db' }}>
-                  <Search size={13} color="#9ca3af" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '6px 14px', border: '1px solid #cbd5e1' }}>
+                  <Search size={13} color="#94a3b8" />
                   <input placeholder="Search member or coach…" value={search} onChange={(e) => setSearch(e.target.value)}
                     style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 12.5, fontWeight: 500, outline: 'none', width: 200 }} />
                 </div>
@@ -217,8 +217,8 @@ function Inner() {
                     <tr><td colSpan={7} style={{ padding: 50, textAlign: 'center' }}>
                       <m.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
                         style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-                        <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg, rgba(139,92,246,0.12), rgba(236,72,153,0.06))', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(139,92,246,0.15)' }}>
-                          <Sparkles size={28} color="#8b5cf6" />
+                        <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg, rgba(0,103,224,0.12), rgba(0,103,224,0.06))', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,103,224,0.15)' }}>
+                          <Sparkles size={28} color="#0067e0" />
                         </div>
                         <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--text-secondary)' }}>Ready to start tracking?</div>
                         <div style={{ fontSize: 13, color: 'var(--text-disabled)', maxWidth: 360, lineHeight: 1.5 }}>Add members and begin logging their transformation journey. Every rep, every kg counts!</div>
@@ -227,15 +227,15 @@ function Inner() {
                   ) : (
                     filtered.map((c, i) => (
                       <m.tr key={c.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
-                        style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', transition: 'background 0.2s', background: i % 2 === 0 ? '#f9fafb' : '#fff' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.04)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f9fafb' : '#fff'; }}>
+                        style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', transition: 'background 0.2s', background: i % 2 === 0 ? '#f8fafc' : '#fff' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,103,224,0.04)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f8fafc' : '#fff'; }}>
                         <td style={td}>
-                          <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: 'rgba(99,102,241,0.08)', color: '#4f46e5', border: '1px solid rgba(99,102,241,0.15)' }}>{c.client_id || '—'}</span>
+                          <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: 'rgba(0,103,224,0.08)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.15)' }}>{c.client_id || '—'}</span>
                         </td>
                         <td style={{ ...td, fontWeight: 600, color: 'var(--text-primary)' }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${['#6366f1','#10b981','#f59e0b','#ec4899','#06b6d4','#8b5cf6'][Math.abs(c.name.split('').reduce((a,ch) => ((a<<5)-a)+ch.charCodeAt(0),0)) % 6]}, #818cf8)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: '#fff' }}>
+                            <div style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${['#0067e0','#10b981','#f59e0b','#0067e0','#0067e0','#0067e0'][Math.abs(c.name.split('').reduce((a,ch) => ((a<<5)-a)+ch.charCodeAt(0),0)) % 6]}, #7fb4ff)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: '#fff' }}>
                               {c.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                             </div>
                             {c.name}
@@ -247,9 +247,9 @@ function Inner() {
                         <td style={{ ...td, color: 'var(--text-muted)' }}>{fmtDate(c.joining_date || c.pt_start_date)}</td>
                         <td style={td}>
                           <Link href={`/clients/${c.id}`}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 10, background: 'rgba(99,102,241,0.08)', color: '#4f46e5', fontSize: 11.5, fontWeight: 600, textDecoration: 'none', border: '1px solid rgba(99,102,241,0.2)', transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)' }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.15)'; e.currentTarget.style.transform = 'translateY(-1px) scale(1.03)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(99,102,241,0.15)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.08)'; e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}>
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 10, background: 'rgba(0,103,224,0.08)', color: '#0067e0', fontSize: 11.5, fontWeight: 600, textDecoration: 'none', border: '1px solid rgba(0,103,224,0.2)', transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,103,224,0.15)'; e.currentTarget.style.transform = 'translateY(-1px) scale(1.03)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,103,224,0.15)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,103,224,0.08)'; e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}>
                             Log Progress <ArrowUpRight size={12} />
                           </Link>
                         </td>

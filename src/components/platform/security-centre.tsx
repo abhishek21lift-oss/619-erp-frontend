@@ -35,7 +35,7 @@ const OUTCOME: Record<string, { label: string; bg: string; fg: string }> = {
   bad_password: { label: 'Wrong password', bg: 'rgba(245,158,11,0.14)', fg: '#b45309' },
   unknown_user: { label: 'No such account', bg: 'var(--bg-subtle)',     fg: 'var(--text-muted)' },
   inactive:     { label: 'Deactivated',    bg: 'var(--bg-subtle)',      fg: 'var(--text-muted)' },
-  mfa_required: { label: 'MFA required',   bg: 'rgba(99,102,241,0.12)', fg: '#6366f1' },
+  mfa_required: { label: 'MFA required',   bg: 'rgba(0,103,224,0.12)', fg: '#0067e0' },
   mfa_failed:   { label: 'MFA failed',     bg: 'rgba(239,68,68,0.12)',  fg: '#dc2626' },
 };
 

@@ -14,7 +14,7 @@ interface SpotlightCardProps {
 export function SpotlightCard({
   children,
   className,
-  spotlightColor = 'rgba(167,139,250,0.10)',
+  spotlightColor = 'rgba(127,180,255,0.10)',
   style,
 }: SpotlightCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
@@ -42,7 +42,7 @@ export function SpotlightCard({
       className={cn('relative overflow-hidden', className)}
       style={{
         background: 'var(--bg-card)',
-        border: `1px solid ${spotlight != null ? 'rgba(167,139,250,0.28)' : 'var(--border)'}`,
+        border: `1px solid ${spotlight != null ? 'rgba(127,180,255,0.28)' : 'var(--border)'}`,
         borderRadius: 18,
         transition: 'border-color 0.25s ease',
         ...style,

@@ -34,15 +34,15 @@ export const BRAND_BLUE_TO = '#0059CE';
 /**
  * The shadow end of the hero banner. The design reference runs deep at the
  * bottom-left to bright at the top-right, and its darkest point sampled as
- * #023EAC — hue 218.8°, which is 6° off the mark. This is the same lightness
+ * #0059CE — hue 218.8°, which is 6° off the mark. This is the same lightness
  * (L 34%) held on the logo's own hue instead, so the banner is the logo blue
  * getting darker rather than a slightly different blue.
  */
 export const BRAND_BLUE_DEEP = '#0050AD';
 
 /** The same hue at surface lightness, for a soft wash. */
-export const BRAND_TINT_FROM = '#F2F8FF';
-export const BRAND_TINT_TO = '#F9FCFF';
+export const BRAND_TINT_FROM = '#F8FAFC';
+export const BRAND_TINT_TO = '#F8FAFC';
 
 /** Dark enough for small text on BRAND_TINT_*. This is the logo's mid blue. */
 export const BRAND_BLUE_LABEL = '#0059CE';
@@ -63,7 +63,7 @@ export const BRAND_TINT_GRADIENT = `linear-gradient(135deg, ${BRAND_TINT_FROM} 0
 export const BRAND_HERO_GRADIENT = `linear-gradient(45deg, ${BRAND_BLUE_DEEP} 0%, ${BRAND_BLUE_FROM} 100%)`;
 
 /** Lift under the filled hero, keyed to the gradient's own blue. */
-export const BRAND_HERO_SHADOW = '0 10px 30px rgba(2,80,173,0.28)';
+export const BRAND_HERO_SHADOW = '0 10px 30px rgba(0,89,206,0.28)';
 
 /**
  * On-hero text is pure white — all of it, including the small eyebrow and the

@@ -21,15 +21,15 @@ const CATEGORY_COLORS: Record<string, string> = {
   Vegetables: '#10b981',
   Protein: '#ef4444',
   Fruits: '#f59e0b',
-  Dairy: '#06b6d4',
-  Supplements: '#8b5cf6',
+  Dairy: '#0067e0',
+  Supplements: '#0067e0',
   Grains: '#d97706',
-  Snacks: '#ec4899',
-  Miscellaneous: '#6b7280',
+  Snacks: '#0067e0',
+  Miscellaneous: '#64748b',
 };
 
 function getCategoryColor(category: string): string {
-  return CATEGORY_COLORS[category] ?? '#6b7280';
+  return CATEGORY_COLORS[category] ?? '#64748b';
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -114,13 +114,13 @@ export function GroceryList({ items, onGenerate, isGenerating, className }: Groc
             width: 56,
             height: 56,
             borderRadius: '50%',
-            background: 'rgba(99,102,241,0.12)',
+            background: 'rgba(0,103,224,0.12)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <ShoppingCart size={24} color="#6366f1" />
+          <ShoppingCart size={24} color="#0067e0" />
         </div>
         <p
           style={{
@@ -152,7 +152,7 @@ export function GroceryList({ items, onGenerate, isGenerating, className }: Groc
               padding: '8px 20px',
               borderRadius: 10,
               border: 'none',
-              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              background: 'linear-gradient(135deg, #0067e0 0%, #0059ce 100%)',
               color: '#fff',
               fontSize: 13,
               fontWeight: 600,
@@ -215,7 +215,7 @@ export function GroceryList({ items, onGenerate, isGenerating, className }: Groc
             transition={{ duration: 0.4, ease: 'easeOut' }}
             style={{
               height: '100%',
-              background: 'linear-gradient(90deg, #6366f1 0%, #10b981 100%)',
+              background: 'linear-gradient(90deg, #0067e0 0%, #10b981 100%)',
               borderRadius: 4,
             }}
           />

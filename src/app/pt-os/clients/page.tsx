@@ -40,20 +40,20 @@ function fmtShortINR(n: number): string {
 }
 
 const CLIENT_PALETTES = [
-  { from: '#7c3aed', to: '#5b21b6', glow: 'rgba(124,58,237,0.35)' },
-  { from: '#0891b2', to: '#0e7490', glow: 'rgba(8,145,178,0.35)' },
+  { from: '#0067e0', to: '#0067e0', glow: 'rgba(0,103,224,0.35)' },
+  { from: '#0059ce', to: '#0059ce', glow: 'rgba(0,89,206,0.35)' },
   { from: '#059669', to: '#047857', glow: 'rgba(5,150,105,0.35)' },
   { from: '#d97706', to: '#b45309', glow: 'rgba(217,119,6,0.35)' },
-  { from: '#db2777', to: '#be185d', glow: 'rgba(219,39,119,0.35)' },
-  { from: '#4f46e5', to: '#3730a3', glow: 'rgba(79,70,229,0.35)' },
-  { from: '#ea580c', to: '#c2410c', glow: 'rgba(234,88,12,0.35)' },
-  { from: '#0284c7', to: '#0369a1', glow: 'rgba(2,132,199,0.35)' },
+  { from: '#0067e0', to: '#0067e0', glow: 'rgba(0,103,224,0.35)' },
+  { from: '#0067e0', to: '#0067e0', glow: 'rgba(0,103,224,0.35)' },
+  { from: '#f59e0b', to: '#b91c1c', glow: 'rgba(245,158,11,0.35)' },
+  { from: '#0059ce', to: '#0059ce', glow: 'rgba(0,89,206,0.35)' },
 ];
 
 function getStatusInfo(status: string, days_left: number | null) {
   // Not yet enrolled in a package — added to the roster but no active PT program.
-  if (status === 'pending') return { label: 'Not Enrolled', color: '#a78bfa', bg: 'rgba(167,139,250,0.14)', dot: '#8b5cf6' };
-  if (status === 'frozen') return { label: 'Frozen', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)', dot: '#3b82f6' };
+  if (status === 'pending') return { label: 'Not Enrolled', color: '#7fb4ff', bg: 'rgba(127,180,255,0.14)', dot: '#0067e0' };
+  if (status === 'frozen') return { label: 'Frozen', color: '#0067e0', bg: 'rgba(0,103,224,0.12)', dot: '#0067e0' };
   if (!days_left || days_left <= 0) return { label: 'Expired', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
   if (days_left <= 7) return { label: 'Expiring', color: '#f87171', bg: 'rgba(248,113,113,0.12)', dot: '#ef4444' };
   if (days_left <= 30) return { label: 'Soon', color: '#fbbf24', bg: 'rgba(251,191,36,0.12)', dot: '#f59e0b' };
@@ -104,10 +104,10 @@ function DaysArc({ days_left }: { days_left: number | null }) {
 }
 
 const STATUS_FILTERS = [
-  { value: 'all',     label: 'All',     from: '#7c3aed', to: '#5b21b6' },
+  { value: 'all',     label: 'All',     from: '#0067e0', to: '#0067e0' },
   { value: 'active',  label: 'Active',  from: '#10b981', to: '#059669' },
-  { value: 'pending', label: 'Not Enrolled', from: '#8b5cf6', to: '#7c3aed' },
-  { value: 'frozen',  label: 'Frozen',  from: '#3b82f6', to: '#2563eb' },
+  { value: 'pending', label: 'Not Enrolled', from: '#0067e0', to: '#0067e0' },
+  { value: 'frozen',  label: 'Frozen',  from: '#0067e0', to: '#0067e0' },
   { value: 'expired', label: 'Expired', from: '#64748b', to: '#475569' },
 ];
 
@@ -348,7 +348,7 @@ export default function PtClientsPage() {
               className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-center gap-4">
                 <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px]"
-                  style={{ background: 'linear-gradient(135deg, #7c3aed, #5b21b6)', boxShadow: '0 8px 28px rgba(124,58,237,0.35)' }}>
+                  style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 8px 28px rgba(0,103,224,0.35)' }}>
                   <Users size={24} className="text-white" />
                   <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-[800] text-white"
                     style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 2px 8px rgba(16,185,129,0.5)' }}>
@@ -365,7 +365,7 @@ export default function PtClientsPage() {
               <button
                 onClick={() => router.push('/pt-os/new-client')}
                 className="inline-flex items-center gap-2.5 rounded-[14px] px-5 py-3 text-[13px] font-[700] text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(124,58,237,0.5)]"
-                style={{ background: 'linear-gradient(135deg, #7c3aed, #5b21b6)', boxShadow: '0 6px 24px rgba(124,58,237,0.35)' }}>
+                style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 6px 24px rgba(0,103,224,0.35)' }}>
                 <UserPlus size={16} />
                 New Client
               </button>
@@ -379,7 +379,7 @@ export default function PtClientsPage() {
                 {
                   label: 'Total Clients', value: summary?.total ?? 0, prefix: '',
                   icon: <Users size={20} className="text-white" />,
-                  from: '#7c3aed', to: '#5b21b6', glow: 'rgba(124,58,237,0.4)',
+                  from: '#0067e0', to: '#0067e0', glow: 'rgba(0,103,224,0.4)',
                   sub: `${activeCount} active`,
                   subIcon: <Flame size={11} />,
                 },
@@ -393,7 +393,7 @@ export default function PtClientsPage() {
                 {
                   label: 'Total Paid', value: summary?.paid ?? 0, prefix: '₹',
                   icon: <Wallet size={20} className="text-white" />,
-                  from: '#0891b2', to: '#0e7490', glow: 'rgba(8,145,178,0.4)',
+                  from: '#0059ce', to: '#0059ce', glow: 'rgba(0,89,206,0.4)',
                   sub: 'Amounts collected',
                   subIcon: <Star size={11} />,
                 },
@@ -451,8 +451,8 @@ export default function PtClientsPage() {
                     value={search} onChange={e => setSearch(e.target.value)}
                     className="w-full rounded-[12px] py-2.5 pl-9 pr-4 text-[12.5px] font-[500] text-gray-900 outline-none transition-all duration-200 placeholder:text-slate-400"
                     style={{ background: 'var(--bg-card)', border: '1.5px solid var(--border)' }}
-                    onFocus={e => { e.currentTarget.style.borderColor = 'rgba(124,58,237,0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(124,58,237,0.08)'; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.boxShadow = ''; }}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'rgba(0,103,224,0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0,103,224,0.08)'; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.boxShadow = ''; }}
                   />
                 </div>
 
@@ -479,7 +479,7 @@ export default function PtClientsPage() {
                       <button key={mode} onClick={() => setViewMode(mode)}
                         className="rounded-[7px] p-2 transition-all duration-200"
                         style={viewMode === mode
-                          ? { background: 'rgba(124,58,237,0.10)', color: '#7c3aed' }
+                          ? { background: 'rgba(0,103,224,0.10)', color: '#0067e0' }
                           : { color: 'rgb(100,116,139)' }}>
                         <Icon size={14} />
                       </button>
@@ -555,7 +555,7 @@ export default function PtClientsPage() {
                 <div className="flex flex-col items-center justify-center gap-4 py-24">
                   <div className="relative h-12 w-12">
                     <div className="absolute inset-0 rounded-full"
-                      style={{ border: '2px solid rgba(124,58,237,0.12)', borderTopColor: '#7c3aed', animation: 'spin 0.9s linear infinite' }} />
+                      style={{ border: '2px solid rgba(0,103,224,0.12)', borderTopColor: '#0067e0', animation: 'spin 0.9s linear infinite' }} />
                   </div>
                   <p className="text-[13px] font-[500] text-slate-500">Loading clients…</p>
                 </div>
@@ -574,8 +574,8 @@ function EmptyState({ search, statusFilter, onNew }: { search: string; statusFil
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-20">
       <div className="flex h-20 w-20 items-center justify-center rounded-[24px]"
-        style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.15)' }}>
-        <Users size={32} style={{ color: '#7c3aed' }} />
+        style={{ background: 'rgba(0,103,224,0.07)', border: '1px solid rgba(0,103,224,0.15)' }}>
+        <Users size={32} style={{ color: '#0067e0' }} />
       </div>
       <p className="text-[17px] font-[760] tracking-[-0.01em] text-gray-900">
         {isFiltered ? 'No PT clients found' : 'Add your first client'}
@@ -588,7 +588,7 @@ function EmptyState({ search, statusFilter, onNew }: { search: string; statusFil
       {!isFiltered && (
         <button onClick={onNew}
           className="mt-2 inline-flex items-center gap-2 rounded-[12px] px-5 py-2.5 text-[13px] font-[700] text-white transition-all hover:-translate-y-0.5"
-          style={{ background: 'linear-gradient(135deg, #7c3aed, #5b21b6)', boxShadow: '0 6px 24px rgba(124,58,237,0.35)' }}>
+          style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 6px 24px rgba(0,103,224,0.35)' }}>
           <UserPlus size={14} />New Client
         </button>
       )}

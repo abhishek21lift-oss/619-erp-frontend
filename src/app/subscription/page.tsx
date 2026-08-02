@@ -47,8 +47,8 @@ const EASE_EXPO = [0.16, 1, 0.3, 1] as const;
 // colour each tier is.
 const PLAN_ACCENT: Record<string, string> = {
   starter: 'linear-gradient(90deg,#64748b,#475569)',
-  growth: 'linear-gradient(90deg,#3b82f6,#2563eb)',
-  professional: 'linear-gradient(90deg,#8b5cf6,#7c3aed)',
+  growth: 'linear-gradient(90deg,#0067e0,#0059ce)',
+  professional: 'linear-gradient(90deg,#0067e0,#0059ce)',
   elite: 'linear-gradient(90deg,#f59e0b,#d97706)',
 };
 const NO_PLAN_ACCENT = 'linear-gradient(90deg,var(--border),var(--border))';
@@ -780,7 +780,7 @@ function SubscriptionScreen() {
   // the shared body and design-system children resolve against a dark surface
   // rather than the light theme's near-black ink on a near-black background.
   return (
-    <div className="min-h-dvh" data-theme="dark" style={{ background: 'linear-gradient(180deg,#050816 0%,#0b1020 100%)' }}>
+    <div className="min-h-dvh" data-theme="dark" style={{ background: 'linear-gradient(180deg,#0F172A 0%,#1e293b 100%)' }}>
       {/* Floor the notch reserve rather than trusting env() alone: an installed
           PWA with statusBarStyle 'black-translucent' reports a 0 top inset on
           iOS while still painting under the status bar, which put the studio

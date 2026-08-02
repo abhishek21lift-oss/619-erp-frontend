@@ -77,7 +77,7 @@ export default function WeeklyReport({ clientId, clientName, stats }: WeeklyRepo
     <div className="rounded-[20px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
       <div className="mb-1 flex items-center gap-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-[8px]"
-          style={{ background: 'rgba(37,99,235,0.14)', color: '#2563eb' }}>
+          style={{ background: 'rgba(0,103,224,0.14)', color: '#0067e0' }}>
           <FileText size={14} />
         </div>
         <span className="text-[12.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>

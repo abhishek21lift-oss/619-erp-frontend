@@ -36,12 +36,12 @@ import { isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hook
 // uses, so signing in doesn't jump from a blue page to a maroon one. The
 // constant names stay MAROON/GOLD deliberately: this is a colour change, not a
 // rename, and keeping them makes the diff readable against the marketing file.
-const MAROON = '#0060E0';       // primary — logo blue
-const MAROON_DEEP = '#081120';  // near-black — the logo's cube
-const GOLD = '#5CB0FF';         // bright accent
-const INK = '#0B1220';          // blue-black body text
-const MUTE = '#5B6675';         // neutral slate
-const LINE = 'rgba(11,18,32,0.10)';
+const MAROON = '#0067E0';       // primary — logo blue
+const MAROON_DEEP = '#0F172A';  // near-black — the logo's cube
+const GOLD = '#0067E0';         // bright accent
+const INK = '#0F172A';          // blue-black body text
+const MUTE = '#64748B';         // neutral slate
+const LINE = 'rgba(15,23,42,0.10)';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 const SUPPORT_EMAIL = 'help@myptstudio.app';
@@ -105,14 +105,14 @@ function ForgotModal({ open, onClose, prefillEmail }: { open: boolean; onClose: 
           transition={{ duration: 0.2 }}
           role="dialog" aria-modal="true" aria-labelledby="forgot-title"
         >
-          <div className="absolute inset-0" style={{ background: 'rgba(11,18,32,0.45)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+          <div className="absolute inset-0" style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
           <m.div
             className="relative w-full max-w-[440px] overflow-hidden rounded-3xl bg-white"
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-            style={{ boxShadow: '0 40px 90px -30px rgba(8,17,32,0.5)' }}
+            style={{ boxShadow: '0 40px 90px -30px rgba(15,23,42,0.5)' }}
           >
             <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${MAROON}, ${GOLD})` }} />
             <div className="p-7">
@@ -144,7 +144,7 @@ function ForgotModal({ open, onClose, prefillEmail }: { open: boolean; onClose: 
                 className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 text-[13.5px] font-[650] transition-colors hover:bg-black/[0.03]"
                 style={{ color: INK, border: `1px solid ${LINE}` }}
               >
-                {copied ? <><Check size={15} style={{ color: '#0E9F6E' }} /> Copied</> : <><Copy size={15} /> {SUPPORT_EMAIL}</>}
+                {copied ? <><Check size={15} style={{ color: '#059669' }} /> Copied</> : <><Copy size={15} /> {SUPPORT_EMAIL}</>}
               </button>
             </div>
           </m.div>
@@ -338,7 +338,7 @@ export default function LoginPage() {
     <div
       className="relative flex min-h-[100dvh] flex-col items-center justify-center"
       style={{
-        background: 'radial-gradient(120% 78% at 50% -8%, #F2F7FF 0%, #ffffff 48%)',
+        background: 'radial-gradient(120% 78% at 50% -8%, #F8FAFC 0%, #ffffff 48%)',
         color: INK,
         fontFamily: "var(--font-sans), 'Inter', system-ui, sans-serif",
         // Guarantee the logo clears the status bar / notch even when
@@ -385,7 +385,7 @@ export default function LoginPage() {
           animate={shakeKey > 0 && !reduce ? { x: [0, -9, 8, -6, 4, 0] } : undefined}
           transition={{ duration: 0.42 }}
           className="rounded-3xl bg-white p-7 sm:p-8"
-          style={{ border: `1px solid ${LINE}`, boxShadow: '0 30px 70px -34px rgba(8,17,32,0.28), 0 4px 14px rgba(11,18,32,0.04)' }}
+          style={{ border: `1px solid ${LINE}`, boxShadow: '0 30px 70px -34px rgba(15,23,42,0.28), 0 4px 14px rgba(15,23,42,0.04)' }}
         >
 
             {/* remembered-account chip */}
@@ -570,7 +570,7 @@ export default function LoginPage() {
                 whileTap={!busy && !ok && !reduce ? { scale: 0.99 } : undefined}
                 className="relative mt-6 flex h-[54px] w-full items-center justify-center gap-2.5 overflow-hidden rounded-full text-[15px] font-[720] text-white"
                 style={{
-                  background: ok ? 'linear-gradient(135deg, #0E9F6E, #067a55)' : `linear-gradient(135deg, ${MAROON} 0%, ${MAROON_DEEP} 100%)`,
+                  background: ok ? 'linear-gradient(135deg, #059669, #047857)' : `linear-gradient(135deg, ${MAROON} 0%, ${MAROON_DEEP} 100%)`,
                   boxShadow: busy || ok ? 'none' : `0 16px 36px ${MAROON}44`,
                   cursor: busy || ok ? 'default' : 'pointer',
                   opacity: busy ? 0.92 : 1,
