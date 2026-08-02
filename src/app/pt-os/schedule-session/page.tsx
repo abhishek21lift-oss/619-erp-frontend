@@ -9,6 +9,7 @@ import {
   MoreHorizontal, Edit3, Trash2, Copy,
 } from 'lucide-react';
 import { enrolmentState, ENROLMENT_META, type ClientRow } from '@/lib/enrolment';
+import { toInputDate, toHHMM } from '@/lib/format';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 
@@ -90,6 +91,13 @@ function capitalize(s: string): string {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
+// session_date is a Postgres DATE, which node-postgres hands back as a JS Date,
+// so res.json() sends "2026-08-02T00:00:00.000Z" rather than "2026-08-02".
+// Every day cell on the grid compares against a plain YYYY-MM-DD, so passing
+// the raw value straight through meant a booked session matched no day at all
+// and simply never appeared — the booking looked like it had not happened.
+// start_time is the same story one field over: "06:00:00" against the "06:00"
+// the time input and the conflict check both use.
 function mapApiSession(s: Record<string, unknown>, trainerArr: { id: string; name: string }[]): PTSession {
   const clientName = String(s.client_name ?? '');
   return {
@@ -97,8 +105,8 @@ function mapApiSession(s: Record<string, unknown>, trainerArr: { id: string; nam
     client: clientName,
     client_id: s.client_id != null ? String(s.client_id) : '',
     trainer: trainerArr.find((t) => t.id === s.trainer_id)?.name ?? String(s.trainer_id ?? ''),
-    date: String(s.session_date ?? ''),
-    time: String(s.start_time ?? ''),
+    date: toInputDate(s.session_date as string | null),
+    time: toHHMM(s.start_time as string | null),
     duration: Number(s.duration_minutes) || 60,
     type: capitalize(String(s.session_type ?? '1-on-1')) as SessionType,
     status: (s.status as SessionStatus) ?? 'scheduled',

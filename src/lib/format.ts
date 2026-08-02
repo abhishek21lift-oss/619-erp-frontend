@@ -83,6 +83,21 @@ export function toInputDate(value?: string | Date | null): string {
   return '';
 }
 
+/**
+ * A Postgres TIME as HH:MM.
+ *
+ * time columns come back as "06:00:00", while <input type="time">, the slot
+ * labels and any time comparison in the app all speak "06:00". Comparing the
+ * two forms directly silently never matches, which is how the Schedule
+ * Session page's duplicate-booking guard managed to never fire once.
+ */
+export function toHHMM(value?: string | null): string {
+  if (!value) return '';
+  const m = /^(\d{1,2}):(\d{2})/.exec(String(value).trim());
+  if (!m) return '';
+  return `${m[1].padStart(2, '0')}:${m[2]}`;
+}
+
 /** ₹ formatter with Indian grouping. */
 export function fmtMoney(n: number | string | null | undefined): string {
   return '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
