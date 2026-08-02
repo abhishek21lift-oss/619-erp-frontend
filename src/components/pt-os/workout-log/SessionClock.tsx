@@ -64,7 +64,7 @@ export default function SessionClock({ startedAt, completed, durationMinutes }: 
 
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-[750] tabular-nums"
+      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-[750] tabular-nums"
       style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.78)' }}
       // Read out as a duration rather than as the digits, which a screen
       // reader would otherwise announce as a time.
@@ -72,7 +72,7 @@ export default function SessionClock({ startedAt, completed, durationMinutes }: 
         ? `Session duration ${durationMinutes ?? 'not recorded'}${durationMinutes != null ? ' minutes' : ''}`
         : `Elapsed ${formatElapsed(elapsedSeconds(startedAt, now))}`}
     >
-      <Timer size={11} aria-hidden />
+      <Timer size={15} aria-hidden />
       {label}
     </span>
   );
