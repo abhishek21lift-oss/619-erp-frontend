@@ -10,7 +10,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
-  Building2, Loader2, ShieldAlert, LayoutDashboard, Activity, CreditCard, Search, TrendingUp,
+  Building2, UserPlus, Loader2, ShieldAlert, LayoutDashboard, Activity, CreditCard, Search, TrendingUp,
   ScrollText, HeartPulse, ToggleRight, Megaphone, Bot, LifeBuoy, HardDrive, Mail,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -28,6 +28,7 @@ import { ActivityTab } from './_tabs/ActivityTab';
 import { FinanceTab } from './_tabs/FinanceTab';
 import { OverviewTab } from './_tabs/OverviewTab';
 import { StudiosTab } from './_tabs/StudiosTab';
+import RegistrationsTab from './_tabs/RegistrationsTab';
 
 export default function PlatformAdminPage() {
   return (
@@ -81,6 +82,7 @@ function PlatformContent() {
 
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={15} /> },
+    { id: 'registrations', label: 'Registrations', icon: <UserPlus size={15} /> },
     { id: 'studios', label: 'Studios', icon: <Building2 size={15} /> },
     { id: 'invitations', label: 'Invitations', icon: <Mail size={15} /> },
     { id: 'support', label: 'Support', icon: <LifeBuoy size={15} /> },
@@ -141,6 +143,7 @@ function PlatformContent() {
             being assembled rather than content silently swapping underneath. */}
         <div key={tab}>
           {tab === 'overview' && <OverviewTab onNavigate={onNavigate} />}
+          {tab === 'registrations' && <RegistrationsTab />}
           {tab === 'studios' && <StudiosTab />}
           {tab === 'analytics' && <AnalyticsPanel />}
           {tab === 'finance' && <FinanceTab subTab={financeSubTab} onSubTabChange={setFinanceSubTab} />}

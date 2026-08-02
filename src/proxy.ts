@@ -33,6 +33,7 @@ const PUBLIC_PREFIXES: string[] = [
   // claimed.
   '/auth/set-password',
   '/checkin',
+  '/start-free',
   '/_next',
   '/api/health',
   // The member fingerprint-enrolment prefix sat here, for the biometric

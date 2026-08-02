@@ -161,7 +161,7 @@ describe('every route segment has a boundary', () => {
     });
 
   // Public and auth surfaces: no session, so no Guard in the fallback.
-  const PUBLIC = new Set(['appointments', 'auth', 'forgot-password', 'login', 'reset-password']);
+  const PUBLIC = new Set(['appointments', 'auth', 'forgot-password', 'login', 'reset-password', 'start-free']);
 
   it('found the segments, so this cannot pass vacuously', () => {
     expect(segments.length).toBeGreaterThan(20);

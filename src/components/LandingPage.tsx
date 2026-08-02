@@ -294,7 +294,7 @@ const FAQ = [
   { q: 'Do my clients need to install anything?', a: 'No. The platform is fully web-based and mobile-friendly. You manage everything from any device, and clients can be onboarded in minutes.' },
   { q: 'Can I run more than one studio?', a: 'Yes. Our multi-tenant architecture lets you run multiple studios from one account, each with fully isolated data, its own team, branding and permissions.' },
   { q: 'Is my data secure?', a: 'Every studio is isolated at the database level with row-level security, encrypted connections and role-based access control. Your data is yours, and it is never shared across studios.' },
-  { q: 'How do I get started?', a: 'Start free or book a demo. Our team helps you import your clients and set up your studio so you are live in a day, not a month.' },
+  { q: 'How do I get started?', a: 'Start free — create your studio in a couple of minutes. Our team reviews it, then helps you import your clients so you are live in a day, not a month.' },
 ];
 
 // ── Page ────────────────────────────────────────────────────────────────────
@@ -397,14 +397,10 @@ export default function LandingPage() {
         </Reveal>
         <Reveal delay={0.16}>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/login" className="group inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-[15px] font-[720] text-white transition-transform hover:-translate-y-0.5 sm:w-auto"
+            <Link href="/start-free" className="group inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-[15px] font-[720] text-white transition-transform hover:-translate-y-0.5 sm:w-auto"
               style={{ background: `linear-gradient(135deg, ${MAROON} 0%, ${MAROON_DEEP} 100%)`, boxShadow: `0 14px 34px ${MAROON}44` }}>
               Start free <ArrowRight size={17} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
-            <a href="mailto:hello@myptstudio.app?subject=Book%20a%20demo" className="inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-[15px] font-[700] transition-colors hover:bg-black/[0.03] sm:w-auto"
-              style={{ color: INK, border: '1px solid rgba(0,0,0,0.14)' }}>
-              <PhoneCall size={16} /> Book a demo
-            </a>
           </div>
           <p className="mt-3.5 text-[12.5px]" style={{ color: MUTE }}>No credit card required · Set up in a day · Cancel anytime</p>
         </Reveal>
@@ -750,12 +746,9 @@ export default function LandingPage() {
               <h2 className="mx-auto max-w-2xl text-[30px] font-[850] leading-tight tracking-[-0.02em] sm:text-[46px]">Ready to build your fitness business?</h2>
               <p className="mx-auto mt-4 max-w-xl text-[16px]" style={{ color: 'rgba(255,255,255,0.82)' }}>Join the coaches and studios running everything on one platform. Start free today.</p>
               <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Link href="/login" className="inline-flex w-full items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-[15px] font-[760] transition-transform hover:-translate-y-0.5 sm:w-auto" style={{ background: GOLD, color: MAROON_DEEP }}>
+                <Link href="/start-free" className="inline-flex w-full items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-[15px] font-[760] transition-transform hover:-translate-y-0.5 sm:w-auto" style={{ background: GOLD, color: MAROON_DEEP }}>
                   Start free <ArrowRight size={17} />
                 </Link>
-                <a href="mailto:hello@myptstudio.app?subject=Book%20a%20demo" className="inline-flex w-full items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-[15px] font-[720] text-white transition-colors hover:bg-white/10 sm:w-auto" style={{ border: '1px solid rgba(255,255,255,0.3)' }}>
-                  Book a demo
-                </a>
               </div>
             </div>
           </div>

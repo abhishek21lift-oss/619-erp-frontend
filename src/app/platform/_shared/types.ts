@@ -13,7 +13,7 @@ import type { Organization, SubStudio } from '@/lib/api';
  */
 export { ASSIGNABLE_ROLES as ROLE_OPTIONS } from '@/lib/roles';
 
-export type Tab = 'overview' | 'studios' | 'invitations' | 'support' | 'analytics' | 'ai' | 'finance' | 'features' | 'announcements' | 'activity' | 'audit' | 'security' | 'storage' | 'health';
+export type Tab = 'overview' | 'registrations' | 'studios' | 'invitations' | 'support' | 'analytics' | 'ai' | 'finance' | 'features' | 'announcements' | 'activity' | 'audit' | 'security' | 'storage' | 'health';
 // Must list every Tab: normalizeTab() falls back to 'overview' for anything not
 // here, so omitting one silently breaks its ?tab= deep link from the sidebar.
 export const TAB_IDS: Tab[] = ['overview', 'studios', 'invitations', 'support', 'analytics', 'ai', 'finance', 'features', 'announcements', 'activity', 'audit', 'security', 'storage', 'health'];

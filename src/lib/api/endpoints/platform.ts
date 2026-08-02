@@ -28,7 +28,37 @@ export const admin = {
 
 // ── Platform Super Admin (multi-tenant SaaS) ──────────────────────────────
 // Backed by /api/super-admin/* — reachable only by role='super_admin'.
+/** A studio application awaiting review in the Command Centre. */
+export interface StudioRegistration {
+  id: string;
+  full_name: string;
+  business_name: string;
+  mobile: string;
+  email: string;
+  status: 'pending' | 'approved' | 'rejected';
+  organization_id: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  review_note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export const superAdmin = {
+  registrations: (status: 'pending' | 'approved' | 'rejected' | 'all' = 'pending') =>
+    http<{ data: StudioRegistration[]; counts: Record<string, number> }>(
+      `/api/super-admin/registrations?status=${status}`,
+    ),
+  approveRegistration: (id: string, note?: string) =>
+    http<{ data: { id: string; status: string; organization_id: string } }>(
+      `/api/super-admin/registrations/${id}/approve`,
+      { method: 'POST', body: JSON.stringify({ note: note ?? '' }) },
+    ),
+  rejectRegistration: (id: string, note?: string) =>
+    http<{ data: StudioRegistration }>(
+      `/api/super-admin/registrations/${id}/reject`,
+      { method: 'POST', body: JSON.stringify({ note: note ?? '' }) },
+    ),
   listOrgs: () =>
     http<{ data: Organization[] }>('/api/super-admin/organizations'),
   getOrg: (id: string) =>
