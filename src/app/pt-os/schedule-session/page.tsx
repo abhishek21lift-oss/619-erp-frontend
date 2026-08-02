@@ -721,7 +721,7 @@ function CreateSessionModal({
   open, onClose, onConfirm, conflict, onDismissConflict,
   trainerOptions, clientOptions, clientOptionsLoading, onOpened,
 }: {
-  open: boolean; onClose: () => void; onConfirm: (data: NewSessionData) => void;
+  open: boolean; onClose: () => void; onConfirm: (data: NewSessionData) => void | Promise<void>;
   conflict: boolean; onDismissConflict: () => void;
   trainerOptions: string[]; clientOptions: ClientRow[]; clientOptionsLoading: boolean;
   onOpened: () => void;
@@ -732,6 +732,7 @@ function CreateSessionModal({
   });
   const [step, setStep] = useState(1);
   const [clientSearch, setClientSearch] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   // A studio has one trainer: its owner. The dialog used to ask which, from a
   // list of one, and made it required — so booking took an extra tap that had
@@ -746,21 +747,38 @@ function CreateSessionModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultTrainer]);
 
-  const handleConfirm = () => {
+  // Reset only once the modal has actually closed, not the instant a confirm
+  // or cancel is clicked — this used to run inline in handleConfirm, which
+  // snapped the dialog back to the step 1 form the moment "Confirm Booking"
+  // was clicked, before the booking request had even finished. It looked
+  // exactly like the click had been undone. The 200ms delay lets the modal's
+  // own fade-out finish before the fields underneath it change.
+  useEffect(() => {
+    if (open) return;
+    const t = setTimeout(() => {
+      setStep(1);
+      setClientSearch('');
+      setForm({ client: '', client_id: '', trainer: defaultTrainer, date: new Date().toISOString().split('T')[0], time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false });
+    }, 200);
+    return () => clearTimeout(t);
+  }, [open, defaultTrainer]);
+
+  const handleConfirm = async () => {
     if (step === 1) {
       if (!form.client || !form.time) return;
       setStep(2);
       return;
     }
-    onConfirm(form);
-    setStep(1);
-    setClientSearch('');
-    setForm({ client: '', client_id: '', trainer: defaultTrainer, date: new Date().toISOString().split('T')[0], time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false });
+    setSubmitting(true);
+    try {
+      await onConfirm(form);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleClose = () => {
     onClose();
-    setTimeout(() => { setStep(1); setClientSearch(''); setForm({ client: '', client_id: '', trainer: defaultTrainer, date: new Date().toISOString().split('T')[0], time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false }); }, 200);
   };
 
   // Twenty-two names in a two-column grid is a wall. Search narrows it; the
@@ -780,14 +798,14 @@ function CreateSessionModal({
       size="lg"
       footer={
         <div className="flex gap-3 w-full justify-end">
-          <Button variant="outline" size="sm" onClick={handleClose}>Cancel</Button>
+          <Button variant="outline" size="sm" onClick={handleClose} disabled={submitting}>Cancel</Button>
           {(step === 1 || conflict) ? (
-            <Button variant="primary" size="sm" onClick={handleConfirm} disabled={!form.client || !form.time}>
-              {step === 1 ? 'Continue' : 'Book Anyway'}
+            <Button variant="primary" size="sm" onClick={handleConfirm} disabled={!form.client || !form.time || submitting}>
+              {step === 1 ? 'Continue' : submitting ? 'Booking…' : 'Book Anyway'}
             </Button>
           ) : (
-            <Button variant="success" size="sm" iconLeft={<CheckCircle2 size={13} />} onClick={handleConfirm}>
-              Confirm Booking
+            <Button variant="success" size="sm" iconLeft={<CheckCircle2 size={13} />} onClick={handleConfirm} disabled={submitting}>
+              {submitting ? 'Booking…' : 'Confirm Booking'}
             </Button>
           )}
         </div>
