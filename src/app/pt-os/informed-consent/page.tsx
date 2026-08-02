@@ -4,12 +4,13 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Check, Loader2, Search, Users, AlertCircle,
-  FileSignature, Plus, X, CheckCircle2, Download, Printer, Mail, History,
+  ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, FileSignature, Plus,
+  X, CheckCircle2, Download, Printer, Mail, History,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button, EmptyState } from '@/components/ui';
+import { Button } from '@/components/ui';
+import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import type { InformedConsent } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -87,129 +88,8 @@ function InformedConsentContent() {
   const { toast } = useToast();
   const clientId = sp.get('client_id') || '';
 
-  if (!clientId) return <ClientPicker />;
+  if (!clientId) return <ClientPicker title="Informed Consent" icon={<FileSignature size={20} color="#fff" />} basePath="/pt-os/informed-consent" />;
   return <ConsentHub key={clientId} clientId={clientId} router={router} toast={toast} />;
-}
-
-/* ─────────────────────────────────────────────────────── CLIENT PICKER */
-const AVATAR_GRADIENTS = [
-  'linear-gradient(135deg, #6366f1, #8b5cf6)',
-  'linear-gradient(135deg, #10b981, #34d399)',
-  'linear-gradient(135deg, #f59e0b, #fbbf24)',
-  'linear-gradient(135deg, #ec4899, #f472b6)',
-  'linear-gradient(135deg, #06b6d4, #22d3ee)',
-  'linear-gradient(135deg, #ef4444, #f87171)',
-];
-
-function ClientAvatar({ name }: { name: string }) {
-  const idx = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_GRADIENTS.length;
-  const initials = name.split(' ').map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
-  return (
-    <div
-      className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[12px] font-[700] text-white"
-      style={{ background: AVATAR_GRADIENTS[idx] }}
-    >
-      {initials || '?'}
-    </div>
-  );
-}
-
-function ClientPicker() {
-  const router = useRouter();
-  const [clients, setClients] = useState<ClientOption[]>([]);
-  const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-
-  useEffect(() => {
-    setLoading(true);
-    setLoadError(false);
-    api.pt.clients().then((r: { data?: unknown[] }) => {
-      const arr = Array.isArray(r?.data) ? r.data : [];
-      setClients((arr as Record<string, unknown>[]).map((c) => ({ id: String(c.id), name: String(c.name ?? '') })));
-    }).catch(() => setLoadError(true)).finally(() => setLoading(false));
-  }, []);
-
-  const filtered = clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
-
-  return (
-    <div className="mx-auto w-full max-w-4xl pt-3 pb-6">
-      <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-        className="mb-5 flex items-center gap-3 rounded-[20px] px-5 py-4"
-        style={{ background: 'linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div
-          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]"
-          style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 8px 24px rgba(245,158,11,0.3)' }}
-        >
-          <FileSignature size={20} color="#fff" />
-        </div>
-        <h1 className="text-[24px] sm:text-[30px] font-[860] tracking-[-0.03em] leading-none" style={{ color: 'var(--text-primary)' }}>
-          Informed Consent
-        </h1>
-      </m.div>
-
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="relative min-w-[220px] flex-1">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-          <input
-            type="text" placeholder="Search clients..." value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-amber-400"
-            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-          />
-        </div>
-        {!loading && !loadError && (
-          <span className="flex-shrink-0 text-[12px] font-[600]" style={{ color: 'var(--text-disabled)' }}>
-            {filtered.length} {filtered.length === 1 ? 'client' : 'clients'}
-          </span>
-        )}
-      </div>
-
-      {loading && (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex animate-pulse items-center gap-3 rounded-[16px] p-3.5" style={{ background: 'var(--bg-subtle)' }}>
-                <div className="h-10 w-10 rounded-full" style={{ background: 'var(--border)' }} />
-                <div className="h-3 w-24 rounded-full" style={{ background: 'var(--border)' }} />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {loadError && (
-          <EmptyState
-            icon={<AlertCircle size={20} />}
-            title="Could not load clients"
-            description="Something went wrong while fetching your client list."
-          />
-        )}
-
-        {!loading && !loadError && filtered.length === 0 && (
-          <EmptyState
-            icon={<Users size={20} />}
-            title="No clients found"
-            description={search ? `No clients match "${search}".` : 'Add a client to get started.'}
-          />
-        )}
-
-        {!loading && !loadError && filtered.length > 0 && (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => router.push(`/pt-os/informed-consent?client_id=${c.id}`)}
-                className="group flex items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
-                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
-              >
-                <ClientAvatar name={c.name} />
-                <span className="flex-1 truncate text-[13.5px] font-[650]" style={{ color: 'var(--text-primary)' }}>{c.name}</span>
-                <ArrowRight size={14} className="flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" style={{ color: 'var(--text-disabled)' }} />
-              </button>
-            ))}
-          </div>
-        )}
-    </div>
-  );
 }
 
 /* ─────────────────────────────────────────────────────── HUB */
