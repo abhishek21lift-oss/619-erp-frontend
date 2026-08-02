@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
@@ -9,8 +10,9 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button } from '@/components/ui';
+import { Button, EmptyState } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
+import ConsentSummary from '@/components/pt-os/informed-consent/ConsentSummary';
 import { api } from '@/lib/api';
 import type { InformedConsent } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -21,7 +23,6 @@ import {
   initInformedConsentForm, formFromRecord, nextStepId, prevStepId,
   FINAL_ACK_FIELDS, buildCreatePayload, buildUpdatePayload,
 } from '@/components/pt-os/informed-consent/types';
-import { statusStyle } from '@/components/pt-os/informed-consent/statusConfig';
 import StepAgreements from '@/components/pt-os/informed-consent/StepAgreements';
 import StepExerciseProgrammeConsent from '@/components/pt-os/informed-consent/StepExerciseProgrammeConsent';
 import StepSignatures from '@/components/pt-os/informed-consent/StepSignatures';
@@ -101,6 +102,10 @@ interface ConsentHubProps {
 function ConsentHub({ clientId, toast }: ConsentHubProps) {
   const [clientName, setClientName] = useState('');
   const [record, setRecord] = useState<InformedConsent | null>(null);
+  // Every version, not just the newest. The list call always returned these
+  // and the page threw them away, so an amended consent looked like it had
+  // never been amended.
+  const [history, setHistory] = useState<InformedConsent[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [view, setView] = useState<'summary' | 'wizard'>('summary');
@@ -120,6 +125,7 @@ function ConsentHub({ clientId, toast }: ConsentHubProps) {
       // Rows are ordered by created_at DESC — the newest row is always the
       // current version (an archived row is always superseded by a newer one).
       setRecord(rows[0] ?? null);
+      setHistory(rows);
     } catch (err: unknown) {
       setLoadError(err instanceof Error ? err.message : 'Failed to load client.');
     } finally {
@@ -149,80 +155,51 @@ function ConsentHub({ clientId, toast }: ConsentHubProps) {
     return <ConsentWizard clientId={clientId} clientName={clientName} record={record} toast={toast} onDone={closeWizard} />;
   }
 
-  const canStartFresh = !record || record.status === 'revoked';
-  const style = record ? statusStyle(record.status) : null;
+  // No consent on file. This is the one state with genuinely nothing to show,
+  // so it gets a real empty state and a single obvious next step rather than
+  // the record layout with every section blank.
+  if (!record) {
+    return (
+      <div className="mx-auto w-full max-w-3xl pt-3 pb-10">
+        <Link
+          href="/pt-os/informed-consent"
+          className="inline-flex items-center gap-1.5 rounded-[10px] py-2 pr-3 text-[13px] font-[600] transition-colors hover:opacity-80"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          <ArrowLeft size={15} /> All clients
+        </Link>
+        <div className="mt-4">
+          <EmptyState
+            icon={<FileSignature size={20} />}
+            title={`No informed consent for ${clientName || 'this client'}`}
+            description="A signed consent is required before the first session. This takes a few minutes and produces a PDF you can keep."
+            action={
+              <Button
+                iconLeft={<Plus size={14} />}
+                onClick={openWizard}
+                style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
+              >
+                Start Consent
+              </Button>
+            }
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="mx-auto w-full max-w-3xl py-6 space-y-5">
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
-                <FileSignature size={16} style={{ color: 'var(--text-muted)' }} />
-              </div>
-              <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>📝 Informed Consent</span>
-            </div>
-            <h1 className="text-[26px] sm:text-[32px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
-              {clientName}
-            </h1>
-          </div>
-          {canStartFresh && (
-            <Button iconLeft={<Plus size={14} />} onClick={openWizard} style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}>
-              Start Consent
-            </Button>
-          )}
-        </div>
-      </m.div>
-
-      {!record && (
-        <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-          <p className="text-[14px] font-[600] text-slate-500">No informed consent on file yet.</p>
-        </div>
-      )}
-
-      {record && (
-        <div className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 16px rgba(15,23,42,0.06)' }}>
-          <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
-            <div className="flex items-center gap-2">
-              <span className="rounded-full px-3 py-1 text-[11.5px] font-[700]" style={{ background: style!.bg, color: style!.color }}>
-                {style!.label}
-              </span>
-              <span className="text-[11.5px] font-[650] text-slate-400">Version {record.version}</span>
-            </div>
-            {record.status !== 'completed' && record.status !== 'revoked' && record.status !== 'archived' && (
-              <Button size="sm" iconLeft={<ArrowRight size={13} />} onClick={openWizard}>Continue</Button>
-            )}
-            {record.status === 'completed' && (
-              <Button size="sm" variant="outline" onClick={openWizard}>Amend / New Version</Button>
-            )}
-          </div>
-
-          {record.status === 'completed' && (
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                size="sm" iconLeft={<Download size={13} />} disabled={!record.pdf_url}
-                onClick={() => { if (record.pdf_url) downloadPdf(record.pdf_url, `Informed Consent - ${clientName || 'client'}.pdf`); }}
-              >
-                Download PDF
-              </Button>
-              <Button
-                size="sm" variant="outline" iconLeft={<Printer size={13} />} disabled={!record.pdf_url}
-                onClick={() => { if (record.pdf_url) window.open(record.pdf_url, '_blank', 'noopener'); }}
-              >
-                Print
-              </Button>
-            </div>
-          )}
-
-          {canStartFresh && record.status === 'revoked' && (
-            <p className="text-[12.5px] text-slate-400 mt-2">This consent was revoked. Start a new one above.</p>
-          )}
-        </div>
-      )}
-    </div>
+    <ConsentSummary
+      clientName={clientName}
+      record={record}
+      history={history}
+      onAmend={openWizard}
+      onContinue={openWizard}
+      onDownload={() => {
+        if (record.pdf_url) downloadPdf(record.pdf_url, `Informed Consent - ${clientName || 'client'}.pdf`);
+      }}
+      onPrint={() => { if (record.pdf_url) window.open(record.pdf_url, '_blank', 'noopener'); }}
+    />
   );
 }
 
