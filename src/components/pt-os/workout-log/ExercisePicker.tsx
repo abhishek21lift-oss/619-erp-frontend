@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Search, Dumbbell, X, Clock, Star, Loader2, CornerDownLeft, Check } from 'lucide-react';
+import { Search, Dumbbell, X, Clock, Star, Loader2, CornerDownLeft, Check, PlusCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -23,6 +23,19 @@ interface ExercisePickerProps {
    * wonder why a movement they know exists has vanished from search.
    */
   existingIds?: string[];
+  /**
+   * Offer "Custom" — log a movement by name that is not in the library.
+   *
+   * Opt-in rather than on by default, because whether it works depends
+   * entirely on what the caller does with it. A logged session can hold one:
+   * workout_session_exercises.exercise_id is nullable and exercise_name is
+   * NOT NULL, so the row carries the name itself. A programme cannot:
+   * workout_plan_exercises stores only a reference to the library and has no
+   * name column to put it in, so a custom pick there would be accepted by the
+   * dialog and then silently dropped. Offering it in a place that cannot keep
+   * it is worse than not offering it.
+   */
+  allowCustom?: boolean;
 }
 
 const PAGE_SIZE = 60;
@@ -44,9 +57,10 @@ const VIEWPORT = 360;
  * opens on a phone, mid-session, where a 24px chip is unhittable.
  */
 export function ExercisePicker({
-  open, onClose, onSelect, recentNames = [], existingIds = [],
+  open, onClose, onSelect, recentNames = [], existingIds = [], allowCustom = false,
 }: ExercisePickerProps) {
   const { toast } = useToast();
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const [search, setSearch] = useState('');
   const [region, setRegion] = useState('');
@@ -113,6 +127,24 @@ export function ExercisePicker({
     onClose();
   }, [existing, onSelect, onClose]);
 
+  /**
+   * The typed name, as it would be stored.
+   *
+   * Trimmed and capped at the 255 the column and the request schema both
+   * enforce — better to clip here than to have the save rejected after the
+   * trainer has already moved on.
+   */
+  const customName = search.trim().replace(/\s+/g, ' ').slice(0, 255);
+
+  const addCustom = useCallback(() => {
+    if (!customName) { searchRef.current?.focus(); return; }
+    // Empty id is the signal for "not from the library" — the same shape the
+    // recent-name chips already emit, and what the caller turns into a null
+    // exercise_id.
+    onSelect({ id: '', name: customName });
+    onClose();
+  }, [customName, onSelect, onClose]);
+
   const showRecentChips = !search && !region && !equipment && !favoritesOnly && recentNames.length > 0;
   const showRecentList  = !search && !region && !equipment && !favoritesOnly && recent.length > 0;
   const rows = showRecentList ? recent : exercises;
@@ -131,11 +163,14 @@ export function ExercisePicker({
       } else if (e.key === 'Enter') {
         const target = rows[active];
         if (target) { e.preventDefault(); pick(target); }
+        // Nothing in the library matched what was typed, so Enter means "use
+        // it anyway" rather than doing nothing at the end of a search.
+        else if (allowCustom && customName) { e.preventDefault(); addCustom(); }
       }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [open, rows, active, pick]);
+  }, [open, rows, active, pick, allowCustom, customName, addCustom]);
 
   // Keep the highlighted row in view when arrowing beyond the visible window.
   useEffect(() => {
@@ -156,13 +191,19 @@ export function ExercisePicker({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Add Exercise</DialogTitle>
-          <DialogDescription>Search the exercise library or pick a recent one.</DialogDescription>
+          <DialogDescription>
+            {allowCustom
+              ? 'Search the library, pick a recent one, or add a custom exercise by name.'
+              : 'Search the exercise library or pick a recent one.'}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="relative mb-3">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
           <input
-            type="text" autoFocus placeholder="Search exercises…" value={search}
+            ref={searchRef}
+            type="text" autoFocus value={search}
+            placeholder={allowCustom ? 'Search, or type a custom name…' : 'Search exercises…'}
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Search exercises"
             className="w-full pl-9 pr-9 py-2.5 rounded-[10px] text-[13px] outline-none"
@@ -224,6 +265,43 @@ export function ExercisePicker({
           </p>
         )}
 
+        {/* Custom — pinned above the list rather than at the end of it, so it
+            does not require scrolling past sixty near-misses to reach. */}
+        {allowCustom && (
+          <button
+            type="button"
+            onClick={addCustom}
+            data-testid="custom-exercise"
+            className="mb-2 flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left transition hover:opacity-90"
+            style={{
+              background: customName ? 'rgba(0,103,224,0.07)' : 'var(--bg-subtle)',
+              border: `1px dashed ${customName ? 'rgba(0,103,224,0.38)' : 'var(--border)'}`,
+              minHeight: 48,
+            }}
+          >
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]"
+              style={{ background: customName ? '#0067e0' : 'var(--bg-card)', color: customName ? '#fff' : '#94a3b8' }}>
+              <PlusCircle size={15} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-1.5">
+                <span className="truncate text-[13px] font-[650]" style={{ color: 'var(--text-primary)' }}>
+                  {customName ? `Use “${customName}”` : 'Custom exercise'}
+                </span>
+                <span className="shrink-0 rounded px-1 py-px text-[9px] font-bold uppercase tracking-wide"
+                  style={{ background: 'rgba(0,103,224,0.12)', color: '#0059ce' }}>
+                  Custom
+                </span>
+              </span>
+              <span className="block truncate text-[11px]" style={{ color: 'var(--text-disabled)' }}>
+                {customName
+                  ? 'Not in the library — logged against this session by name.'
+                  : 'Type a name above to log something not in the library.'}
+              </span>
+            </span>
+          </button>
+        )}
+
         <div
           ref={listRef}
           onScroll={virtual.onScroll}
@@ -235,7 +313,9 @@ export function ExercisePicker({
           )}
           {!loading && rows.length === 0 && (
             <p className="py-8 text-center text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>
-              {search ? `Nothing matches “${search}”.` : 'No exercises found.'}
+              {search
+                ? <>Nothing matches “{search}”.{allowCustom && <><br />Use the Custom option above to log it anyway.</>}</>
+                : 'No exercises found.'}
             </p>
           )}
 

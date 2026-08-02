@@ -475,7 +475,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
         onFinish={handleConfirmFinish}
       />
 
-      <ExercisePicker open={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={handleAddExercise} />
+      <ExercisePicker open={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={handleAddExercise} allowCustom />
 
       {/* Sticky summary + save bar */}
       <div className="page-action-bar" style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(15,23,42,0.08)' }}>
