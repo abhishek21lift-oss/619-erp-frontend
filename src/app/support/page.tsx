@@ -185,7 +185,7 @@ function NewTicket({ onClose, onCreated }: { onClose: () => void; onCreated: () 
         <label className="flex flex-col gap-1">
           <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Subject</span>
           <input value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={200}
-            placeholder="Check-ins are failing on the kiosk"
+            placeholder="Check-ins are failing on the QR scanner"
             className="h-10 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={{ ...cardStyle, color: 'var(--text-primary)' }} />
         </label>
 
