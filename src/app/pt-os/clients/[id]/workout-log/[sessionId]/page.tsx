@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useCallback, useEffect, useMemo, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
@@ -41,13 +41,32 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
   const [loadingPlanned, setLoadingPlanned] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
 
+  // Only the FIRST load may blank the page.
+  //
+  // Every set edit calls loadSession() to pick the server's recomputed totals
+  // and PR flags back up. It used to raise `loading` each time, and `loading`
+  // returns a centred spinner INSTEAD of the whole session — so tapping + on a
+  // set in the third exercise swapped the page for a spinner and swapped it
+  // back, leaving the browser nothing to anchor scroll to. It landed back at
+  // the top, on every tap and every time a field lost focus. Mid-workout that
+  // makes the screen unusable: you are at the bottom of a long list, logging.
+  const hasLoaded = useRef(false);
+
+  // Through a ref rather than a dependency. loadSession drives a useEffect, so
+  // if `toast` ever stopped being memoised, taking it as a dep would refetch
+  // the session on every render — an infinite loop on a live page, in the
+  // middle of a workout. It is stable today; this makes that not matter.
+  const toastRef = useRef(toast);
+  toastRef.current = toast;
+
   const loadSession = useCallback(async () => {
-    setLoading(true);
-    setLoadError('');
+    const first = !hasLoaded.current;
+    if (first) { setLoading(true); setLoadError(''); }
     try {
       const res = await api.progress.workoutLog.sessions.get(sessionId);
       const data = res?.data;
-      if (!data) { setLoadError('Session not found.'); return; }
+      if (!data) { if (first) setLoadError('Session not found.'); return; }
+      hasLoaded.current = true;
       setSession((prev) => {
         // First load only: a brand-new session (no program/day set yet) opens
         // the header form immediately so nothing blocks getting straight to it.
@@ -60,9 +79,14 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
         return next;
       });
     } catch (err: unknown) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load session.');
+      const msg = err instanceof Error ? err.message : 'Failed to load session.';
+      // A background refresh that fails must not throw away a session the
+      // trainer is part-way through logging — the set itself already saved,
+      // this call was only fetching the recomputed totals.
+      if (first) setLoadError(msg);
+      else toastRef.current.error('Could not refresh totals. Your sets are saved.');
     } finally {
-      setLoading(false);
+      if (first) setLoading(false);
     }
   }, [sessionId]);
 
