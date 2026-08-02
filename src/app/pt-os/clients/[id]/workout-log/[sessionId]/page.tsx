@@ -13,6 +13,7 @@ import { Button } from '@/components/ui';
 import FloatInput from '@/components/ui/FloatInput';
 import ExercisePicker from '@/components/pt-os/workout-log/ExercisePicker';
 import SessionSummary from '@/components/pt-os/workout-log/SessionSummary';
+import SessionClock from '@/components/pt-os/workout-log/SessionClock';
 import { api } from '@/lib/api';
 import type { WorkoutSessionDetail, WorkoutSessionExercise, WorkoutSet, WorkoutPreviousExercise } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -293,6 +294,11 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
                 {session.planned.duration_weeks ? ` of ${session.planned.duration_weeks}` : ''}
               </span>
             )}
+            <SessionClock
+              startedAt={session.created_at}
+              completed={session.status === 'completed'}
+              durationMinutes={session.duration_minutes}
+            />
           </div>
 
           <div className="flex items-start justify-between gap-3">
