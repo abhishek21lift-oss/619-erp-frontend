@@ -10,17 +10,17 @@ import { useToast } from '@/lib/toast';
 interface Offer { id:string; name:string; type:'percent'|'flat'|'free'; value:number; code:string; plan:string; validFrom:string; validUntil:string; usageLimit:number; used:number; status:'active'|'expired'|'draft'; }
 
 const KPIS = [
-  { label:'Total Offers', key:'total', color:'#8b5cf6', icon:<Tag size={18}/>, bg:'linear-gradient(135deg, rgba(139,92,246,0.1), rgba(109,40,217,0.05))' },
-  { label:'Active', key:'active', color:'#22c55e', icon:<CheckCircle2 size={18}/>, bg:'linear-gradient(135deg, rgba(34,197,94,0.1), rgba(22,163,74,0.05))' },
-  { label:'Total Used', key:'used', color:'#a855f7', icon:<Users size={18}/>, bg:'linear-gradient(135deg, rgba(168,85,247,0.1), rgba(88,28,135,0.05))' },
+  { label:'Total Offers', key:'total', color:'#0067e0', icon:<Tag size={18}/>, bg:'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.05))' },
+  { label:'Active', key:'active', color:'#10b981', icon:<CheckCircle2 size={18}/>, bg:'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05))' },
+  { label:'Total Used', key:'used', color:'#0067e0', icon:<Users size={18}/>, bg:'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,89,206,0.05))' },
   { label:'Expired', key:'expired', color:'#ef4444', icon:<Clock size={18}/>, bg:'linear-gradient(135deg, rgba(239,68,68,0.1), rgba(220,38,38,0.05))' },
 ];
 
 const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 const itemVariants = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.34, 1.56, 0.64, 1] as [number, number, number, number] } } };
 
-const statusColor:{[k:string]:string} = { active:'#16a34a', expired:'#dc2626', draft:'#6b7280' };
-const statusBg:{[k:string]:string} = { active:'rgba(22,163,74,0.1)', expired:'rgba(220,38,38,0.08)', draft:'#f3f4f6' };
+const statusColor:{[k:string]:string} = { active:'#10b981', expired:'#dc2626', draft:'#64748b' };
+const statusBg:{[k:string]:string} = { active:'rgba(16,185,129,0.1)', expired:'rgba(220,38,38,0.08)', draft:'#f1f5f9' };
 
 export default function OffersPage() { return <Guard role="admin"><OffersContent/></Guard>; }
 function OffersContent() {
@@ -95,7 +95,7 @@ function OffersContent() {
   const active=offers.filter(o=>o.status==='active').length;
   const totalUsed=offers.reduce((s,o)=>s+o.used,0);
 
-  const inp = { width:'100%', border:'1px solid #d1d5db', borderRadius:10, padding:'9px 14px', fontSize:13, fontWeight:500, color:'#111827', background:'#f9fafb', outline:'none', fontFamily:'inherit' } as const;
+  const inp = { width:'100%', border:'1px solid #cbd5e1', borderRadius:10, padding:'9px 14px', fontSize:13, fontWeight:500, color:'#0F172A', background:'#f8fafc', outline:'none', fontFamily:'inherit' } as const;
 
   return (
     <AppShell>
@@ -105,18 +105,18 @@ function OffersContent() {
           style={{ position:'relative', overflow:'hidden', borderRadius:24, padding:'40px 44px', marginBottom:28, background:'#f8fafc', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
           <div style={{ position:'relative' }}>
             <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
-              <div style={{ width:44, height:44, borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(109,40,217,0.08))' }}>
-                <Tag size={22} color="#a855f7" />
+              <div style={{ width:44, height:44, borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg, rgba(0,103,224,0.15), rgba(0,103,224,0.08))' }}>
+                <Tag size={22} color="#0067e0" />
               </div>
-              <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', background:'linear-gradient(135deg, #a855f7, #8b5cf6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Promotions</span>
+              <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', background:'linear-gradient(135deg, #0067e0, #0059ce)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Promotions</span>
             </div>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
               <div>
-                <h1 style={{ fontSize:34, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#111827', margin:'0 0 8px' }}>Offers &amp; Promotions</h1>
-                <p style={{ maxWidth:560, fontSize:14, lineHeight:1.6, color:'#6b7280' }}>Create discount codes, referral offers &amp; promotional deals for members.</p>
+                <h1 style={{ fontSize:34, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#0F172A', margin:'0 0 8px' }}>Offers &amp; Promotions</h1>
+                <p style={{ maxWidth:560, fontSize:14, lineHeight:1.6, color:'#64748b' }}>Create discount codes, referral offers &amp; promotional deals for members.</p>
               </div>
               <button onClick={()=>{ if (showForm) { setShowForm(false); setEditingId(null); } else { openNewOfferForm(); } }}
-                style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'10px 20px', borderRadius:12, background:'linear-gradient(135deg, #8b5cf6, #6d28d9)', color:'#fff', border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(139,92,246,0.35)' }}>
+                style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'10px 20px', borderRadius:12, background:'linear-gradient(135deg, #0067e0, #0059ce)', color:'#fff', border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(0,103,224,0.35)' }}>
                 <Plus size={14}/> {showForm?'Cancel':'New Offer'}
               </button>
             </div>
@@ -135,7 +135,7 @@ function OffersContent() {
                 style={{ position:'relative', overflow:'hidden', borderRadius:20, padding:'22px 24px', background:k.bg, border:`1px solid ${k.color}22`, boxShadow:'0 2px 12px rgba(0,0,0,0.06)' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
                   <div style={{ width:36, height:36, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:`${k.color}18` }}>{k.icon}</div>
-                  <span style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#6b7280' }}>{k.label}</span>
+                  <span style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#64748b' }}>{k.label}</span>
                 </div>
                 <div style={{ fontSize:30, fontWeight:800, color:k.color, lineHeight:1.2, letterSpacing:'-0.02em' }}>{loading ? '—' : vals[i]}</div>
               </m.div>
@@ -146,53 +146,53 @@ function OffersContent() {
         {/* ── CREATE FORM ── */}
         {showForm&&(
           <m.div initial={{ opacity: 0, y: -10, scale:0.98 }} animate={{ opacity: 1, y: 0, scale:1 }}
-            style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e5e7eb', boxShadow:'0 4px 20px rgba(0,0,0,0.08)', padding:24, marginBottom:22 }}>
-            <h3 style={{ margin:'0 0 20px', fontSize:15, fontWeight:700, color:'#111827', display:'flex', gap:8, alignItems:'center' }}><Gift size={16} color="#a855f7"/> {editingId ? 'Edit Offer' : 'Create New Offer'}</h3>
+            style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e2e8f0', boxShadow:'0 4px 20px rgba(0,0,0,0.08)', padding:24, marginBottom:22 }}>
+            <h3 style={{ margin:'0 0 20px', fontSize:15, fontWeight:700, color:'#0F172A', display:'flex', gap:8, alignItems:'center' }}><Gift size={16} color="#0067e0"/> {editingId ? 'Edit Offer' : 'Create New Offer'}</h3>
             <form onSubmit={addOffer} style={{ display:'grid', gap:16 }}>
               <label style={{ display:'grid', gap:5 }}>
-                <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#374151' }}>Offer Name *</span>
+                <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Offer Name *</span>
                 <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="e.g. Summer Splash 30% Off" required style={inp} />
               </label>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:14 }}>
                 <label style={{ display:'grid', gap:5 }}>
-                  <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#374151' }}>Discount Type</span>
+                  <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Discount Type</span>
                   <select value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value as any}))} style={inp}>
                     <option value="percent">Percentage %</option><option value="flat">Flat ₹ Amount</option><option value="free">Free / Complimentary</option>
                   </select>
                 </label>
                 {form.type!=='free'&&<label style={{ display:'grid', gap:5 }}>
-                  <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#374151' }}>{form.type==='percent'?'Discount %':'Amount (₹)'}</span>
+                  <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>{form.type==='percent'?'Discount %':'Amount (₹)'}</span>
                   <input type="number" min={1} value={form.value} onChange={e=>setForm(f=>({...f,value:Number(e.target.value)}))} style={inp} />
                 </label>}
                 <label style={{ display:'grid', gap:5 }}>
-                  <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#374151' }}>Usage Limit</span>
+                  <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Usage Limit</span>
                   <input type="number" min={1} value={form.usageLimit} onChange={e=>setForm(f=>({...f,usageLimit:Number(e.target.value)}))} style={inp} />
                 </label>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                 <label style={{ display:'grid', gap:5 }}>
-                  <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#374151' }}>Coupon Code</span>
+                  <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Coupon Code</span>
                   <div style={{ display:'flex', gap:6 }}>
                     <input value={form.code} onChange={e=>setForm(f=>({...f,code:e.target.value.toUpperCase()}))} placeholder="e.g. SUMMER30" style={{ ...inp, flex:1 }} />
-                    <button type="button" onClick={genCode} style={{ fontSize:12, fontWeight:700, padding:'8px 14px', borderRadius:10, border:'1px solid #8b5cf6', background:'rgba(139,92,246,0.08)', color:'#7c3aed', cursor:'pointer' }}>Auto</button>
+                    <button type="button" onClick={genCode} style={{ fontSize:12, fontWeight:700, padding:'8px 14px', borderRadius:10, border:'1px solid #0067e0', background:'rgba(0,103,224,0.08)', color:'#0067e0', cursor:'pointer' }}>Auto</button>
                   </div>
                 </label>
                 <label style={{ display:'grid', gap:5 }}>
-                  <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#374151' }}>Applicable Plan</span>
+                  <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Applicable Plan</span>
                   <input value={form.plan} onChange={e=>setForm(f=>({...f,plan:e.target.value}))} placeholder="All Plans / Quarterly…" style={inp} />
                 </label>
                 <label style={{ display:'grid', gap:5 }}>
-                  <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#374151' }}>Valid From</span>
+                  <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Valid From</span>
                   <input type="date" value={form.validFrom} onChange={e=>setForm(f=>({...f,validFrom:e.target.value}))} style={inp} />
                 </label>
                 <label style={{ display:'grid', gap:5 }}>
-                  <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#374151' }}>Valid Until</span>
+                  <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Valid Until</span>
                   <input type="date" value={form.validUntil} onChange={e=>setForm(f=>({...f,validUntil:e.target.value}))} style={inp} />
                 </label>
               </div>
               <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
-                <button type="button" onClick={()=>{ setShowForm(false); setEditingId(null); }} style={{ fontSize:12, fontWeight:700, padding:'8px 18px', borderRadius:10, border:'1px solid #d1d5db', background:'transparent', color:'#6b7280', cursor:'pointer' }}>Cancel</button>
-                <button type="submit" style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'8px 20px', borderRadius:12, background:'linear-gradient(135deg, #8b5cf6, #6d28d9)', color:'#fff', border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(139,92,246,0.35)' }}>
+                <button type="button" onClick={()=>{ setShowForm(false); setEditingId(null); }} style={{ fontSize:12, fontWeight:700, padding:'8px 18px', borderRadius:10, border:'1px solid #cbd5e1', background:'transparent', color:'#64748b', cursor:'pointer' }}>Cancel</button>
+                <button type="submit" style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'8px 20px', borderRadius:12, background:'linear-gradient(135deg, #0067e0, #0059ce)', color:'#fff', border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(0,103,224,0.35)' }}>
                   <Plus size={13}/> {editingId ? 'Save Changes' : 'Create Offer'}
                 </button>
               </div>
@@ -208,9 +208,9 @@ function OffersContent() {
               const isActive = tab===t;
               return (
                 <button key={t} onClick={()=>setTab(t)}
-                  style={{ padding:'7px 18px', borderRadius:10, border:`1px solid ${isActive?'#8b5cf6':'#e5e7eb'}`, fontSize:12, fontWeight:600, textTransform:'capitalize', cursor:'pointer',
-                    background:isActive?'linear-gradient(135deg, #8b5cf6, #6d28d9)':'#ffffff', color:isActive?'#fff':'#374151',
-                    boxShadow:isActive?'0 4px 14px rgba(139,92,246,0.3)':'none' }}>
+                  style={{ padding:'7px 18px', borderRadius:10, border:`1px solid ${isActive?'#0067e0':'#e2e8f0'}`, fontSize:12, fontWeight:600, textTransform:'capitalize', cursor:'pointer',
+                    background:isActive?'linear-gradient(135deg, #0067e0, #0059ce)':'#ffffff', color:isActive?'#fff':'#334155',
+                    boxShadow:isActive?'0 4px 14px rgba(0,103,224,0.3)':'none' }}>
                   {t} {t==='all'?`(${offers.length})`:t==='active'?`(${active})`:''}
                 </button>
               );
@@ -220,51 +220,51 @@ function OffersContent() {
 
         {/* ── OFFERS GRID ── */}
         {loading ? (
-          <div style={{ textAlign:'center', padding:'60px 20px' }}><Loader2 size={32} color="#d1d5db" style={{ animation:'spin 1s linear infinite' }} /></div>
+          <div style={{ textAlign:'center', padding:'60px 20px' }}><Loader2 size={32} color="#cbd5e1" style={{ animation:'spin 1s linear infinite' }} /></div>
         ) : (
           <m.div variants={containerVariants} initial="hidden" animate="visible"
             style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))', gap:14 }}>
             {visible.map(o=>{
               const pct=o.usageLimit>0?(o.used/o.usageLimit)*100:0;
-              const sc=statusColor[o.status]||'#6b7280';
-              const sb=statusBg[o.status]||'#f3f4f6';
+              const sc=statusColor[o.status]||'#64748b';
+              const sb=statusBg[o.status]||'#f1f5f9';
               return (
                 <m.div key={o.id} variants={itemVariants}
-                  style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e5e7eb', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', overflow:'hidden', transition:'all 0.2s ease' }}
+                  style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e2e8f0', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', overflow:'hidden', transition:'all 0.2s ease' }}
                   onMouseEnter={e=>{e.currentTarget.style.boxShadow='0 6px 24px rgba(0,0,0,0.1)';e.currentTarget.style.transform='translateY(-2px)';}}
                   onMouseLeave={e=>{e.currentTarget.style.boxShadow='0 2px 12px rgba(0,0,0,0.06)';e.currentTarget.style.transform='translateY(0)';}}>
                   <div style={{ height:4, background:`linear-gradient(90deg, ${sc}, ${sc}aa)` }}/>
                   <div style={{ padding:'18px 20px' }}>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
                       <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontWeight:700, fontSize:15, color:'#111827', marginBottom:4 }}>{o.name}</div>
+                        <div style={{ fontWeight:700, fontSize:15, color:'#0F172A', marginBottom:4 }}>{o.name}</div>
                         <span style={{ fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:20, background:sb, color:sc, textTransform:'capitalize' }}>{o.status}</span>
                       </div>
-                      <div style={{ fontSize:24, fontWeight:900, color:'#7c3aed', marginLeft:12, whiteSpace:'nowrap' }}>
-                        {o.type==='percent'?<>{o.value}%</>:o.type==='flat'?<>₹{o.value}</>:<Gift size={18} color="#a855f7"/>}
+                      <div style={{ fontSize:24, fontWeight:900, color:'#0067e0', marginLeft:12, whiteSpace:'nowrap' }}>
+                        {o.type==='percent'?<>{o.value}%</>:o.type==='flat'?<>₹{o.value}</>:<Gift size={18} color="#0067e0"/>}
                       </div>
                     </div>
-                    {o.plan&&<div style={{ fontSize:12, color:'#6b7280', marginBottom:10 }}>📦 {o.plan}</div>}
-                    <div style={{ display:'flex', alignItems:'center', gap:8, background:'#f9fafb', borderRadius:10, padding:'8px 14px', marginBottom:12, border:'1px solid #e5e7eb' }}>
-                      <Tag size={13} color='#9ca3af'/>
-                      <span style={{ fontFamily:'monospace', fontWeight:800, letterSpacing:'1px', fontSize:14, color:'#7c3aed', flex:1 }}>{o.code}</span>
+                    {o.plan&&<div style={{ fontSize:12, color:'#64748b', marginBottom:10 }}>📦 {o.plan}</div>}
+                    <div style={{ display:'flex', alignItems:'center', gap:8, background:'#f8fafc', borderRadius:10, padding:'8px 14px', marginBottom:12, border:'1px solid #e2e8f0' }}>
+                      <Tag size={13} color='#94a3b8'/>
+                      <span style={{ fontFamily:'monospace', fontWeight:800, letterSpacing:'1px', fontSize:14, color:'#0067e0', flex:1 }}>{o.code}</span>
                       <button onClick={()=>{navigator.clipboard.writeText(o.code);setCopied(o.id);setTimeout(()=>setCopied(''),2000);}} title="Copy code"
-                        style={{ display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:6, border:'none', background:'transparent', color:copied===o.id?'#16a34a':'#9ca3af', cursor:'pointer' }}>
+                        style={{ display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:6, border:'none', background:'transparent', color:copied===o.id?'#10b981':'#94a3b8', cursor:'pointer' }}>
                         {copied===o.id?<CheckCircle2 size={14}/>:<Copy size={14}/>}
                       </button>
                     </div>
                     <div style={{ marginBottom:12 }}>
-                      <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'#6b7280', marginBottom:5 }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'#64748b', marginBottom:5 }}>
                         <span>Used: {o.used}/{o.usageLimit}</span><span>{Math.round(pct)}%</span>
                       </div>
-                      <div style={{ height:6, background:'#f3f4f6', borderRadius:999, overflow:'hidden', border:'1px solid #e5e7eb' }}>
-                        <div style={{ height:'100%', background:'linear-gradient(90deg, #8b5cf6, #6d28d9)', borderRadius:999, width:`${Math.min(100,pct)}%`, transition:'width 0.3s' }}/>
+                      <div style={{ height:6, background:'#f1f5f9', borderRadius:999, overflow:'hidden', border:'1px solid #e2e8f0' }}>
+                        <div style={{ height:'100%', background:'linear-gradient(90deg, #0067e0, #0059ce)', borderRadius:999, width:`${Math.min(100,pct)}%`, transition:'width 0.3s' }}/>
                       </div>
                     </div>
-                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:11, color:'#9ca3af' }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:11, color:'#94a3b8' }}>
                       <span style={{ display:'flex', alignItems:'center', gap:3 }}><Clock size={11}/>{o.validFrom||'—'} → {o.validUntil||'—'}</span>
                       <div style={{ display:'flex', gap:4 }}>
-                        <button onClick={()=>openEditOfferForm(o)} style={{ display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:6, border:'1px solid #e5e7eb', background:'transparent', color:'#6b7280', cursor:'pointer' }}><Edit2 size={12}/></button>
+                        <button onClick={()=>openEditOfferForm(o)} style={{ display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:6, border:'1px solid #e2e8f0', background:'transparent', color:'#64748b', cursor:'pointer' }}><Edit2 size={12}/></button>
                         <button onClick={()=>handleDelete(o.id)} style={{ display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:6, border:'none', background:'rgba(239,68,68,0.08)', color:'#dc2626', cursor:'pointer' }}><Trash2 size={12}/></button>
                       </div>
                     </div>
@@ -273,10 +273,10 @@ function OffersContent() {
               );
             })}
             {visible.length === 0 && (
-              <div style={{ padding:'64px 20px', textAlign:'center', gridColumn:'1/-1', background:'#ffffff', borderRadius:20, border:'1px solid #e5e7eb' }}>
-                <Tag size={40} color="#d1d5db" style={{ marginBottom:14 }} />
-                <p style={{ fontSize:15, fontWeight:700, color:'#374151', margin:0 }}>No offers found</p>
-                <p style={{ fontSize:12, color:'#9ca3af', marginTop:4 }}>Click "New Offer" to create one.</p>
+              <div style={{ padding:'64px 20px', textAlign:'center', gridColumn:'1/-1', background:'#ffffff', borderRadius:20, border:'1px solid #e2e8f0' }}>
+                <Tag size={40} color="#cbd5e1" style={{ marginBottom:14 }} />
+                <p style={{ fontSize:15, fontWeight:700, color:'#334155', margin:0 }}>No offers found</p>
+                <p style={{ fontSize:12, color:'#94a3b8', marginTop:4 }}>Click "New Offer" to create one.</p>
               </div>
             )}
           </m.div>

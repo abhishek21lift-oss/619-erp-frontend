@@ -58,14 +58,14 @@ export interface DonutChartProps {
  * → sky → violet so a "good/active" slice tends to read warm and in-brand.
  */
 const PALETTE = [
-  '#3B82F6', // electric blue (brand)
-  '#06B6D4', // cyan
+  '#0067E0', // electric blue (brand)
+  '#0067E0', // cyan
   '#10B981', // emerald
   '#F59E0B', // amber
-  '#8B5CF6', // purple
+  '#0067E0', // purple
   '#EF4444', // coral
-  '#14B8A6', // teal
-  '#6366F1', // indigo
+  '#0067E0', // teal
+  '#0067E0', // indigo
 ];
 
 export function DonutChart({

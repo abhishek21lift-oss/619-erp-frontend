@@ -4,17 +4,19 @@ import { Gauge } from 'lucide-react';
 import { DonutChart } from '@/components/ui';
 import FitnessRadarChart from '@/components/pt-os/FitnessRadarChart';
 import type { BodyRegionScore } from '@/lib/mobility-calculations';
+import { band, palette } from '@/lib/palette';
 
 const READINESS_COLOR: Record<string, string> = {
-  Excellent: '#10b981', Good: '#F59E0B', Average: '#f97316', 'Below Average': '#ef4444', Poor: '#dc2626',
+  Excellent: band.best, Good: band.good, Average: band.mid,
+  'Below Average': band.poor, 'Poor': band.worst,
 };
 
 function scoreColor(score: number | null): string {
-  if (score == null) return '#94a3b8';
-  if (score >= 80) return '#10b981';
-  if (score >= 60) return '#F59E0B';
-  if (score >= 40) return '#f97316';
-  return '#ef4444';
+  if (score == null) return palette.gray[400];
+  if (score >= 80) return band.best;
+  if (score >= 60) return band.good;
+  if (score >= 40) return band.mid;
+  return band.worst;
 }
 
 interface MobilityDashboardProps {

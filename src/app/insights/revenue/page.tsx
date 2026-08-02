@@ -17,8 +17,8 @@
  * Series colours are not hand-picked: they were run through the dataviz
  * palette validator for BOTH themes (light surface #F8FAFC, dark #0F172A).
  *
- *   Bars  #3B82F6 / #D97706 — PASS on every check in light and dark.
- *   Donut #3B82F6, #D97706, #059669, #8B5CF6, #0891B2 — PASS in both, with one
+ *   Bars  #0067E0 / #D97706 — PASS on every check in light and dark.
+ *   Donut #0067E0, #D97706, #059669, #0067E0, #0059CE — PASS in both, with one
  *         WARN (emerald↔amber ΔE 7.9 under protanopia) that is only legal
  *         alongside secondary encoding. That relief is present: the donut keeps
  *         its legend, 2px segment gaps and value+percent tooltips, and the
@@ -45,6 +45,7 @@ import { useAsync } from '@/lib/use-async';
 import MonthlyTargetHero from '@/components/revenue/MonthlyTargetHero';
 import { fmtMoney } from '@/lib/format';
 import http from '@/lib/http';
+import { series } from '@/lib/palette';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Numeric = string | number | null | undefined;
@@ -62,9 +63,9 @@ type DuesRow = { id: string; name: string; balance_amount: Numeric };
 type RangeTotals = { count: Numeric; total: Numeric; total_incentives: Numeric };
 
 // ─── Validated series colours (see file header) ───────────────────────────────
-const REVENUE_COLOR = '#3B82F6';
+const REVENUE_COLOR = '#0067E0';
 const INCENTIVE_COLOR = '#D97706';
-const DONUT_SCALE = ['#3B82F6', '#D97706', '#059669', '#8B5CF6', '#0891B2'];
+const DONUT_SCALE = series;
 const OTHER_COLOR = '#94A3B8'; // neutral aggregate, intentionally non-categorical
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

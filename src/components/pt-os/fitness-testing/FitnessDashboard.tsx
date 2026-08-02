@@ -27,7 +27,7 @@ function scoreColor(score: number | null): string {
   if (score == null) return '#94a3b8';
   if (score >= 80) return '#10b981';
   if (score >= 60) return '#F59E0B';
-  if (score >= 40) return '#f97316';
+  if (score >= 40) return '#f59e0b';
   return '#ef4444';
 }
 

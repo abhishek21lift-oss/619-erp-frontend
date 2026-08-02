@@ -30,17 +30,17 @@ interface MealCardProps {
 
 const MEAL_TYPE_COLORS: Record<string, string> = {
   'Breakfast': '#f59e0b',
-  'Lunch': '#6366f1',
-  'Dinner': '#8b5cf6',
-  'Snack': '#ec4899',
-  'Pre Workout': '#f97316',
+  'Lunch': '#0067e0',
+  'Dinner': '#0067e0',
+  'Snack': '#0067e0',
+  'Pre Workout': '#f59e0b',
   'Post Workout': '#10b981',
-  'Before Bed': '#6366f1',
+  'Before Bed': '#0067e0',
 };
 
 function getMealColor(mealType?: string): string {
-  if (!mealType) return '#6366f1';
-  return MEAL_TYPE_COLORS[mealType] ?? '#6366f1';
+  if (!mealType) return '#0067e0';
+  return MEAL_TYPE_COLORS[mealType] ?? '#0067e0';
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -167,16 +167,16 @@ export function MealCard({
         {(calories !== undefined || protein > 0 || carbs > 0 || fat > 0) && (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
             {calories !== undefined && (
-              <MacroChip icon="🔥" value={`${calories}`} unit="kcal" color="#f97316" />
+              <MacroChip icon="🔥" value={`${calories}`} unit="kcal" color="#f59e0b" />
             )}
             {protein > 0 && (
-              <MacroChip icon="💪" value={`${protein}g`} label="protein" color="#6366f1" />
+              <MacroChip icon="💪" value={`${protein}g`} label="protein" color="#0067e0" />
             )}
             {carbs > 0 && (
               <MacroChip icon="🍚" value={`${carbs}g`} label="carbs" color="#f59e0b" />
             )}
             {fat > 0 && (
-              <MacroChip icon="🧈" value={`${fat}g`} label="fat" color="#ec4899" />
+              <MacroChip icon="🧈" value={`${fat}g`} label="fat" color="#0067e0" />
             )}
           </div>
         )}
@@ -187,7 +187,7 @@ export function MealCard({
             <div
               style={{
                 width: `${proteinPct}%`,
-                background: '#6366f1',
+                background: '#0067e0',
                 borderRadius: '4px 0 0 4px',
                 transition: 'width 0.4s ease',
               }}
@@ -202,7 +202,7 @@ export function MealCard({
             <div
               style={{
                 width: `${fatPct}%`,
-                background: '#ec4899',
+                background: '#0067e0',
                 borderRadius: '0 4px 4px 0',
                 transition: 'width 0.4s ease',
               }}

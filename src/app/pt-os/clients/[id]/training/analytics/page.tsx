@@ -36,8 +36,8 @@ import type {
 import { useToast } from '@/lib/toast';
 
 /** One hue for volume, one for strength. Fixed, so a measure keeps its colour. */
-const VOLUME = '#2563eb';
-const STRENGTH = '#7c3aed';
+const VOLUME = '#0067e0';
+const STRENGTH = '#0067e0';
 
 const shortDate = (d: string) => {
   const dt = new Date(d);

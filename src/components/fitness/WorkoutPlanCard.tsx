@@ -25,7 +25,7 @@ interface WorkoutPlanCardProps {
 const DIFFICULTY_STYLES: Record<string, { label: string; bg: string; color: string }> = {
   Beginner: { label: 'Beginner', bg: '#d1fae5', color: '#10b981' },
   Intermediate: { label: 'Intermediate', bg: '#fef3c7', color: '#f59e0b' },
-  Advanced: { label: 'Advanced', bg: '#ffe4e6', color: '#f43f5e' },
+  Advanced: { label: 'Advanced', bg: '#fee2e2', color: '#ef4444' },
 }
 
 export function WorkoutPlanCard({
@@ -37,7 +37,7 @@ export function WorkoutPlanCard({
   duration,
   exerciseCount,
   progress = 0,
-  color = 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+  color = 'linear-gradient(135deg, #0067e0, #0059ce)',
   onAssign,
   onEdit,
   onDelete,
@@ -202,7 +202,7 @@ export function WorkoutPlanCard({
               className="flex items-center gap-1 rounded-full px-2 py-1"
               style={{
                 fontSize: 11,
-                background: 'var(--bg-subtle, rgba(99,102,241,0.08))',
+                background: 'var(--bg-subtle, rgba(0,103,224,0.08))',
                 color: 'var(--text-secondary)',
               }}
             >
@@ -215,7 +215,7 @@ export function WorkoutPlanCard({
               className="flex items-center gap-1 rounded-full px-2 py-1"
               style={{
                 fontSize: 11,
-                background: 'var(--bg-subtle, rgba(99,102,241,0.08))',
+                background: 'var(--bg-subtle, rgba(0,103,224,0.08))',
                 color: 'var(--text-secondary)',
               }}
             >
@@ -228,7 +228,7 @@ export function WorkoutPlanCard({
               className="flex items-center gap-1 rounded-full px-2 py-1"
               style={{
                 fontSize: 11,
-                background: 'var(--bg-subtle, rgba(99,102,241,0.08))',
+                background: 'var(--bg-subtle, rgba(0,103,224,0.08))',
                 color: 'var(--text-secondary)',
               }}
             >
@@ -277,7 +277,7 @@ export function WorkoutPlanCard({
             <button
               onClick={onDelete}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
-              style={{ color: '#f43f5e' }}
+              style={{ color: '#ef4444' }}
               aria-label="Delete plan"
             >
               <Trash2 size={13} />

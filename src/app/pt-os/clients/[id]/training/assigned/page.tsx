@@ -24,7 +24,7 @@ import { useToast } from '@/lib/toast';
 
 const STATUS_TONE: Record<WorkoutAssignment['status'], { label: string; color: string; bg: string }> = {
   active:    { label: 'Active',    color: '#059669', bg: 'rgba(5,150,105,0.12)' },
-  completed: { label: 'Completed', color: '#2563eb', bg: 'rgba(37,99,235,0.12)' },
+  completed: { label: 'Completed', color: '#0067e0', bg: 'rgba(0,103,224,0.12)' },
   paused:    { label: 'Paused',    color: '#d97706', bg: 'rgba(217,119,6,0.12)' },
   cancelled: { label: 'Cancelled', color: '#64748b', bg: 'rgba(100,116,139,0.12)' },
 };

@@ -271,7 +271,7 @@ export function ExercisePicker({
                           <span className="truncate text-[13px] font-[650] text-[var(--text-primary)]">{ex.name}</span>
                           {ex.is_favorite && <Star size={9} className="shrink-0 text-amber-500" fill="currentColor" />}
                           {ex.is_custom && (
-                            <span className="shrink-0 rounded px-1 py-px text-[9px] font-bold uppercase tracking-wide text-[var(--brand)]" style={{ background: 'var(--brand-glow, rgba(244,63,94,0.1))' }}>
+                            <span className="shrink-0 rounded px-1 py-px text-[9px] font-bold uppercase tracking-wide text-[var(--brand)]" style={{ background: 'var(--brand-glow, rgba(239,68,68,0.1))' }}>
                               Custom
                             </span>
                           )}

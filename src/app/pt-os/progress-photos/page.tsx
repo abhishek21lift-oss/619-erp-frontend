@@ -300,13 +300,13 @@ function BeforeAfterCompare({ photos }: { photos: ProgressPhoto[] }) {
       <div className="flex flex-wrap gap-4 mb-4">
         <label className="flex items-center gap-2 text-[12.5px] font-[600] text-slate-500">
           Before
-          <select value={beforeId} onChange={(e) => setBeforeId(e.target.value)} className="rounded-[8px] px-2 py-1.5 text-[12px]" style={{ border: '1px solid #d1d5db' }}>
+          <select value={beforeId} onChange={(e) => setBeforeId(e.target.value)} className="rounded-[8px] px-2 py-1.5 text-[12px]" style={{ border: '1px solid #cbd5e1' }}>
             {photos.map((p) => <option key={p.id} value={p.id}>{p.taken_at} · {p.photo_type}</option>)}
           </select>
         </label>
         <label className="flex items-center gap-2 text-[12.5px] font-[600] text-slate-500">
           After
-          <select value={afterId} onChange={(e) => setAfterId(e.target.value)} className="rounded-[8px] px-2 py-1.5 text-[12px]" style={{ border: '1px solid #d1d5db' }}>
+          <select value={afterId} onChange={(e) => setAfterId(e.target.value)} className="rounded-[8px] px-2 py-1.5 text-[12px]" style={{ border: '1px solid #cbd5e1' }}>
             {photos.map((p) => <option key={p.id} value={p.id}>{p.taken_at} · {p.photo_type}</option>)}
           </select>
         </label>

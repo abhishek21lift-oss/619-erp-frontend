@@ -58,7 +58,7 @@ interface StreamEvent {
 const PROMPT_GROUPS: { label: string; accent: string; prompts: string[] }[] = [
   {
     label: 'Studio',
-    accent: '#22d3ee',
+    accent: '#0067e0',
     prompts: [
       'How many active clients do we have?',
       'What was our revenue this month?',
@@ -68,7 +68,7 @@ const PROMPT_GROUPS: { label: string; accent: string; prompts: string[] }[] = [
   },
   {
     label: 'Coaching',
-    accent: '#a78bfa',
+    accent: '#7fb4ff',
     prompts: [
       'Design a 4-week fat-loss block for a beginner',
       'What exercises target back for a beginner?',
@@ -86,14 +86,14 @@ const PROMPT_GROUPS: { label: string; accent: string; prompts: string[] }[] = [
 ];
 
 const GENERATORS = [
-  { href: '/ai/workout-generator', icon: Dumbbell,   label: 'Workout Plan', color: '#60a5fa' },
+  { href: '/ai/workout-generator', icon: Dumbbell,   label: 'Workout Plan', color: '#0067e0' },
   { href: '/ai/diet-generator',    icon: Apple,      label: 'Diet Plan',    color: '#34d399' },
   { href: '/ai/progress-analysis', icon: TrendingUp, label: 'Progress',     color: '#fbbf24' },
-  { href: '/ai/business-insights', icon: BarChart3,  label: 'Business',     color: '#c084fc', adminOnly: true },
+  { href: '/ai/business-insights', icon: BarChart3,  label: 'Business',     color: '#7fb4ff', adminOnly: true },
 ];
 
-const ACCENT = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
-const VIOLET = '#a78bfa';
+const ACCENT = 'linear-gradient(135deg, #0067e0 0%, #0059ce 100%)';
+const VIOLET = '#7fb4ff';
 
 function fmtRelative(iso: string) {
   const d = new Date(iso);
@@ -436,7 +436,7 @@ export default function AiCoachPage() {
 
               <div
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
-                style={{ background: ACCENT, boxShadow: '0 3px 14px rgba(124,58,237,0.35)' }}
+                style={{ background: ACCENT, boxShadow: '0 3px 14px rgba(0,103,224,0.35)' }}
               >
                 <Sparkles size={16} color="#fff" />
               </div>
@@ -478,7 +478,7 @@ export default function AiCoachPage() {
               <button
                 onClick={newChat}
                 className="flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700]"
-                style={{ background: ACCENT, color: '#fff', boxShadow: '0 3px 14px rgba(124,58,237,0.3)' }}
+                style={{ background: ACCENT, color: '#fff', boxShadow: '0 3px 14px rgba(0,103,224,0.3)' }}
               >
                 <Plus size={13} /> <span className="hidden sm:inline">New</span>
               </button>
@@ -494,7 +494,7 @@ export default function AiCoachPage() {
             {selectedClient && (
               <div
                 className="flex shrink-0 items-center gap-2 px-3 py-1.5 sm:px-5"
-                style={{ background: 'rgba(139,92,246,0.10)', borderBottom: '1px solid rgba(139,92,246,0.22)' }}
+                style={{ background: 'rgba(0,103,224,0.10)', borderBottom: '1px solid rgba(0,103,224,0.22)' }}
               >
                 <User size={13} style={{ color: VIOLET, flexShrink: 0 }} />
                 <p className="min-w-0 flex-1 truncate text-[11.5px] font-[600]" style={{ color: VIOLET }}>
@@ -590,7 +590,7 @@ export default function AiCoachPage() {
                     disabled={!input.trim()}
                     aria-label="Send"
                     className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[13px] transition-opacity disabled:opacity-40"
-                    style={{ background: ACCENT, color: '#fff', boxShadow: '0 4px 16px rgba(124,58,237,0.32)' }}
+                    style={{ background: ACCENT, color: '#fff', boxShadow: '0 4px 16px rgba(0,103,224,0.32)' }}
                   >
                     <Send size={15} />
                   </button>
@@ -814,8 +814,8 @@ function RailRow({
     <div
       className="group mb-1 flex items-center gap-1 rounded-[10px] px-2 py-2"
       style={{
-        background: active ? 'rgba(139,92,246,0.12)' : 'transparent',
-        border: `1px solid ${active ? 'rgba(139,92,246,0.28)' : 'transparent'}`,
+        background: active ? 'rgba(0,103,224,0.12)' : 'transparent',
+        border: `1px solid ${active ? 'rgba(0,103,224,0.28)' : 'transparent'}`,
       }}
     >
       <button onClick={() => onOpen(conv.id)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
@@ -874,8 +874,8 @@ function ClientAttach({ selected, open, query, options, onToggle, onQuery, onSel
         title={selected ? `Coaching about ${selected.name}` : 'Attach a client for context'}
         className="flex h-9 items-center gap-1.5 rounded-[10px] px-2.5 text-[11.5px] font-[650]"
         style={{
-          background: selected ? 'rgba(139,92,246,0.12)' : 'var(--bg-subtle)',
-          border: `1px solid ${selected ? 'rgba(139,92,246,0.3)' : 'var(--border)'}`,
+          background: selected ? 'rgba(0,103,224,0.12)' : 'var(--bg-subtle)',
+          border: `1px solid ${selected ? 'rgba(0,103,224,0.3)' : 'var(--border)'}`,
           color: selected ? VIOLET : 'var(--text-muted)',
           maxWidth: 150,
         }}
@@ -968,7 +968,7 @@ function EmptyState({ onPrompt, generators, onGenerator, onKnowledgeBase }: {
       <div className="mb-4 flex items-center gap-3">
         <div
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px]"
-          style={{ background: ACCENT, boxShadow: '0 6px 22px rgba(124,58,237,0.35)' }}
+          style={{ background: ACCENT, boxShadow: '0 6px 22px rgba(0,103,224,0.35)' }}
         >
           <Sparkles size={18} color="#fff" />
         </div>
@@ -1090,7 +1090,7 @@ function MessageBubble({ msg, copied, onCopy, canRegenerate, onRegenerate }: {
     <div className="group flex gap-2.5">
       <div
         className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]"
-        style={{ background: msg.error ? 'rgba(239,68,68,0.12)' : 'rgba(139,92,246,0.14)' }}
+        style={{ background: msg.error ? 'rgba(239,68,68,0.12)' : 'rgba(0,103,224,0.14)' }}
       >
         {msg.error
           ? <AlertTriangle size={13} style={{ color: '#ef4444' }} />
@@ -1116,7 +1116,7 @@ function MessageBubble({ msg, copied, onCopy, canRegenerate, onRegenerate }: {
                   </span>
                   {msg.sources.map((s) => (
                     <span key={s} className="rounded-full px-2 py-0.5 text-[10px] font-[620]"
-                      style={{ background: 'rgba(139,92,246,0.12)', color: VIOLET }}>{s}</span>
+                      style={{ background: 'rgba(0,103,224,0.12)', color: VIOLET }}>{s}</span>
                   ))}
                 </>
               ) : null}
@@ -1127,7 +1127,7 @@ function MessageBubble({ msg, copied, onCopy, canRegenerate, onRegenerate }: {
                   </span>
                   {msg.tools.map((t) => (
                     <span key={t} className="rounded-full px-2 py-0.5 text-[10px] font-[620]"
-                      style={{ background: 'rgba(34,211,238,0.14)', color: '#0891b2' }}>{t}</span>
+                      style={{ background: 'rgba(0,103,224,0.14)', color: '#0059ce' }}>{t}</span>
                   ))}
                 </>
               ) : null}
@@ -1163,7 +1163,7 @@ function MessageBubble({ msg, copied, onCopy, canRegenerate, onRegenerate }: {
 function TypingDots() {
   return (
     <div className="flex gap-2.5">
-      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]" style={{ background: 'rgba(139,92,246,0.14)' }}>
+      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]" style={{ background: 'rgba(0,103,224,0.14)' }}>
         <Loader2 size={13} className="animate-spin" style={{ color: VIOLET }} />
       </div>
       <div

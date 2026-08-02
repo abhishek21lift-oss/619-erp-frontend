@@ -318,7 +318,7 @@ export function ExerciseEditorDialog({
         role="dialog"
         aria-modal="true"
         aria-label={isEdit ? `Edit ${exercise?.name}` : 'Create exercise'}
-        className="relative flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0f0f12] sm:rounded-3xl animate-in slide-in-from-bottom-4 duration-250"
+        className="relative flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0f172a] sm:rounded-3xl animate-in slide-in-from-bottom-4 duration-250"
       >
         <header className="flex items-center justify-between gap-3 border-b border-slate-200/80 px-5 py-4 dark:border-white/[0.07]">
           <div className="flex min-w-0 items-center gap-3">

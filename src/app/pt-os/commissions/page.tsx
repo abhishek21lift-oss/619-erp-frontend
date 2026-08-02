@@ -142,10 +142,10 @@ export default function CommissionsPage() {
             style={{ padding: '32px 40px', marginBottom: 32, borderBottom: '1px solid var(--border)' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <div style={{ display: 'flex', width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 10, background: 'rgba(34,197,94,0.1)' }}>
-                <Percent size={18} style={{ color: '#16a34a' }} />
+              <div style={{ display: 'flex', width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 10, background: 'rgba(16,185,129,0.1)' }}>
+                <Percent size={18} style={{ color: '#10b981' }} />
               </div>
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#16a34a' }}>Finance</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#10b981' }}>Finance</span>
             </div>
             <h1 style={{ fontSize: 36, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.15, color: 'var(--text-primary)', margin: 0 }}>
               Trainer Commissions
@@ -162,7 +162,7 @@ export default function CommissionsPage() {
                 style={{
                   borderRadius: 12, padding: '10px 36px 10px 16px', fontSize: 14, fontWeight: 500,
                   background: 'var(--bg-card)',
-                  border: '1px solid #d1d5db', color: 'var(--text-primary)',
+                  border: '1px solid #cbd5e1', color: 'var(--text-primary)',
                   outline: 'none', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none',
                   minWidth: 180, cursor: 'pointer', fontFamily: 'inherit',
                 }}
@@ -170,7 +170,7 @@ export default function CommissionsPage() {
               <ChevronDown size={14} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-disabled)', pointerEvents: 'none' }} />
             </div>
             <Button onClick={handleCalculate} disabled={calculating}
-              style={{ background: 'linear-gradient(135deg, #16a34a, #22c55e)', color: '#fff', borderRadius: 12, fontWeight: 600, border: 'none', padding: '10px 22px', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 8, cursor: calculating ? 'not-allowed' : 'pointer', opacity: calculating ? 0.7 : 1, boxShadow: '0 4px 16px rgba(22,163,74,0.3)' }}>
+              style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', borderRadius: 12, fontWeight: 600, border: 'none', padding: '10px 22px', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 8, cursor: calculating ? 'not-allowed' : 'pointer', opacity: calculating ? 0.7 : 1, boxShadow: '0 4px 16px rgba(16,185,129,0.3)' }}>
               {calculating ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw size={16} />}
               Calculate Commissions
             </Button>
@@ -179,10 +179,10 @@ export default function CommissionsPage() {
           {/* ── KPI Cards ── */}
           <m.div variants={containerVariants} initial="hidden" animate="show" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
             {[
-              { label: 'Total Commission', value: fmtINR(totalCommission), icon: <DollarSign size={18} />, accent: '#22c55e', glow: 'rgba(34,197,94,0.15)' },
-              { label: 'Total Paid Out', value: fmtINR(totalPayout), icon: <CheckCircle size={18} />, accent: '#16a34a', glow: 'rgba(22,163,74,0.15)' },
+              { label: 'Total Commission', value: fmtINR(totalCommission), icon: <DollarSign size={18} />, accent: '#10b981', glow: 'rgba(16,185,129,0.15)' },
+              { label: 'Total Paid Out', value: fmtINR(totalPayout), icon: <CheckCircle size={18} />, accent: '#10b981', glow: 'rgba(16,185,129,0.15)' },
               { label: 'Pending Payouts', value: fmtINR(pendingPayouts), icon: <Clock size={18} />, accent: '#f59e0b', glow: 'rgba(245,158,11,0.15)' },
-              { label: 'Active Trainers', value: activeTrainers, icon: <Users size={18} />, accent: '#3b82f6', glow: 'rgba(59,130,246,0.15)' },
+              { label: 'Active Trainers', value: activeTrainers, icon: <Users size={18} />, accent: '#0067e0', glow: 'rgba(0,103,224,0.15)' },
             ].map((kpi, i) => (
               <m.div key={i} variants={itemVariants}
                 style={{
@@ -212,7 +212,7 @@ export default function CommissionsPage() {
               }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                 <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <UserCheck size={18} style={{ color: '#22c55e' }} />
+                  <UserCheck size={18} style={{ color: '#10b981' }} />
                   Trainer Performance
                 </h2>
                 <span style={{ fontSize: 12, color: 'var(--text-disabled)', fontWeight: 500 }}>{perfData.length} trainers</span>
@@ -226,8 +226,8 @@ export default function CommissionsPage() {
                     <m.div key={t.id || i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
                       style={{
                         borderRadius: 14, padding: '14px 16px',
-                        background: isEditing ? 'rgba(34,197,94,0.04)' : '#F9FAFB',
-                        border: isEditing ? '1px solid rgba(34,197,94,0.3)' : '1px solid #e5e7eb',
+                        background: isEditing ? 'rgba(16,185,129,0.04)' : '#F8FAFC',
+                        border: isEditing ? '1px solid rgba(16,185,129,0.3)' : '1px solid #e2e8f0',
                         transition: 'all 0.2s',
                       }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
@@ -241,8 +241,8 @@ export default function CommissionsPage() {
                             {!isEditing && (
                               <button onClick={() => handleEditCommission(t.id, t)}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: 6, color: 'var(--text-disabled)', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                                onMouseOver={e => (e.currentTarget.style.color = '#16a34a')}
-                                onMouseOut={e => (e.currentTarget.style.color = '#9ca3af')}>
+                                onMouseOver={e => (e.currentTarget.style.color = '#10b981')}
+                                onMouseOut={e => (e.currentTarget.style.color = '#94a3b8')}>
                                 <Pencil size={12} /> Edit
                               </button>
                             )}
@@ -256,11 +256,11 @@ export default function CommissionsPage() {
                             </button>
                             <button onClick={() => handleSaveCommission(t.id)} disabled={saving}
                               style={{
-                                background: saving ? '#166534' : 'linear-gradient(135deg, #16a34a, #22c55e)',
+                                background: saving ? '#047857' : 'linear-gradient(135deg, #10b981, #059669)',
                                 border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
                                 padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, color: '#fff',
                                 display: 'inline-flex', alignItems: 'center', gap: 4, transition: 'all 0.15s',
-                                boxShadow: saving ? 'none' : '0 4px 12px rgba(22,163,74,0.3)',
+                                boxShadow: saving ? 'none' : '0 4px 12px rgba(16,185,129,0.3)',
                               }}>
                               {saving ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={13} />}
                               {saving ? 'Saving...' : 'Save'}
@@ -290,21 +290,21 @@ export default function CommissionsPage() {
                             <label style={{ ...label, textTransform: 'uppercase' }}>Commission %</label>
                             <input type="number" value={draft.commission_pct ?? ''}
                               onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id], commission_pct: Number(e.target.value) } }))}
-                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
+                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
                             />
                           </div>
                           <div>
                             <label style={{ ...label, textTransform: 'uppercase' }}>Amount (₹)</label>
                             <input type="number" value={draft.commission_amount ?? ''}
                               onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id], commission_amount: Number(e.target.value) } }))}
-                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, fontWeight: 600, color: '#059669', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
+                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: '#059669', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
                             />
                           </div>
                           <div>
                             <label style={{ ...label, textTransform: 'uppercase' }}>Incentives (₹)</label>
                             <input type="number" value={draft.incentives ?? ''}
                               onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id], incentives: Number(e.target.value) } }))}
-                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
+                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
                             />
                           </div>
                         </div>
@@ -328,7 +328,7 @@ export default function CommissionsPage() {
               }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 8 }}>
                 <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Wallet size={18} style={{ color: '#22c55e' }} />
+                  <Wallet size={18} style={{ color: '#10b981' }} />
                   Payouts
                 </h2>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -336,11 +336,11 @@ export default function CommissionsPage() {
                   {payoutsData.some((p: any) => p.payout_status !== 'paid') && (
                     <button onClick={handleMarkAllPaid}
                       style={{
-                        background: 'linear-gradient(135deg, #16a34a, #22c55e)',
+                        background: 'linear-gradient(135deg, #10b981, #059669)',
                         border: 'none', cursor: 'pointer', padding: '6px 14px', borderRadius: 8,
                         fontSize: 11, fontWeight: 700, color: '#fff',
                         display: 'inline-flex', alignItems: 'center', gap: 5,
-                        boxShadow: '0 4px 12px rgba(22,163,74,0.3)',
+                        boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
                       }}>
                       <CheckCircle size={13} /> Mark All Paid
                     </button>
@@ -357,8 +357,8 @@ export default function CommissionsPage() {
                     <m.div key={tid} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                       style={{
                         borderRadius: 14, padding: '14px 16px',
-                        background: isEditing ? 'rgba(34,197,94,0.04)' : '#F9FAFB',
-                        border: isEditing ? '1px solid rgba(34,197,94,0.3)' : '1px solid #e5e7eb',
+                        background: isEditing ? 'rgba(16,185,129,0.04)' : '#F8FAFC',
+                        border: isEditing ? '1px solid rgba(16,185,129,0.3)' : '1px solid #e2e8f0',
                         transition: 'all 0.2s',
                       }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
@@ -378,8 +378,8 @@ export default function CommissionsPage() {
                         {!isEditing && (
                           <button onClick={() => handleEditPayout(tid, p)}
                             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 6, color: 'var(--text-disabled)', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                            onMouseOver={e => (e.currentTarget.style.color = '#16a34a')}
-                            onMouseOut={e => (e.currentTarget.style.color = '#9ca3af')}>
+                            onMouseOver={e => (e.currentTarget.style.color = '#10b981')}
+                            onMouseOut={e => (e.currentTarget.style.color = '#94a3b8')}>
                             <Pencil size={12} /> Edit
                           </button>
                         )}
@@ -402,7 +402,7 @@ export default function CommissionsPage() {
                             <label style={{ ...label, textTransform: 'uppercase' }}>Status</label>
                             <select value={draft.payout_status || 'pending'}
                               onChange={e => setPayoutDraft(prev => ({ ...prev, [tid]: { ...prev[tid], payout_status: e.target.value } }))}
-                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}>
+                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}>
                               <option value="pending">Pending</option>
                               <option value="paid">Paid</option>
                             </select>
@@ -411,7 +411,7 @@ export default function CommissionsPage() {
                             <label style={{ ...label, textTransform: 'uppercase' }}>Paid Amount (₹)</label>
                             <input type="number" value={draft.paid_amount ?? ''}
                               onChange={e => setPayoutDraft(prev => ({ ...prev, [tid]: { ...prev[tid], paid_amount: Number(e.target.value) } }))}
-                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, fontWeight: 600, color: '#059669', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
+                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: '#059669', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
                             />
                           </div>
                           <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
@@ -421,11 +421,11 @@ export default function CommissionsPage() {
                             </button>
                             <button onClick={() => handleSavePayout(tid)} disabled={saving}
                               style={{
-                                background: saving ? '#166534' : 'linear-gradient(135deg, #16a34a, #22c55e)',
+                                background: saving ? '#047857' : 'linear-gradient(135deg, #10b981, #059669)',
                                 border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
                                 padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, color: '#fff',
                                 display: 'inline-flex', alignItems: 'center', gap: 4,
-                                boxShadow: saving ? 'none' : '0 4px 12px rgba(22,163,74,0.3)',
+                                boxShadow: saving ? 'none' : '0 4px 12px rgba(16,185,129,0.3)',
                               }}>
                               {saving ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={13} />}
                               {saving ? 'Saving...' : 'Save'}

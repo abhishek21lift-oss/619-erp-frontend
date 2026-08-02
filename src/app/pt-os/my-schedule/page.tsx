@@ -70,7 +70,7 @@ function fmtDayPhrase(ymd: string): string {
    ('scheduled','completed','cancelled','no_show'), which is the only set
    the database will accept. Note the underscore in no_show. */
 const STATUS_META: Record<PtSessionStatus, { label: string; color: string; bg: string }> = {
-  scheduled: { label: 'Scheduled', color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  scheduled: { label: 'Scheduled', color: '#0067e0', bg: 'rgba(0,103,224,0.12)' },
   completed: { label: 'Completed', color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
   cancelled: { label: 'Cancelled', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
   no_show:   { label: 'No Show',   color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
@@ -251,7 +251,7 @@ export default function MySchedulePage() {
                 className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px]"
-                    style={{ background: 'linear-gradient(135deg, #6366f1, #4338ca)', boxShadow: '0 8px 28px rgba(99,102,241,0.35)' }}>
+                    style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 8px 28px rgba(0,103,224,0.35)' }}>
                     <CalendarCheck size={24} className="text-white" />
                   </div>
                   <div>
@@ -265,7 +265,7 @@ export default function MySchedulePage() {
                 </div>
                 <Button iconLeft={<CalendarPlus size={15} />}
                   onClick={() => router.push('/pt-os/schedule-session')}
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #4338ca)', color: '#fff' }}>
+                  style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff' }}>
                   Book Session
                 </Button>
               </m.div>
@@ -303,7 +303,7 @@ export default function MySchedulePage() {
                         <span className="text-[12.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{monthLabel}</span>
                         <button type="button" onClick={jumpToToday}
                           className="rounded-full px-2.5 py-1 text-[10.5px] font-[750] uppercase tracking-wide transition-opacity hover:opacity-80"
-                          style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>
+                          style={{ background: 'rgba(0,103,224,0.12)', color: '#0067e0' }}>
                           Today
                         </button>
                       </div>
@@ -324,7 +324,7 @@ export default function MySchedulePage() {
                           <button key={ymd} type="button" onClick={() => setSelectedDay(ymd)}
                             className="flex flex-col items-center gap-1 rounded-[12px] py-2 transition-all"
                             style={isSelected
-                              ? { background: 'linear-gradient(135deg, #6366f1, #4338ca)', color: '#fff' }
+                              ? { background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff' }
                               : { background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
                             <span className="text-[9.5px] font-[700] uppercase" style={{ opacity: isSelected ? 0.85 : 0.6 }}>
                               {WEEKDAY_INITIALS[i]}
@@ -333,11 +333,11 @@ export default function MySchedulePage() {
                             <span className="flex h-1.5 items-center">
                               {count > 0 && (
                                 <span className="h-1.5 w-1.5 rounded-full"
-                                  style={{ background: isSelected ? '#fff' : '#6366f1' }} />
+                                  style={{ background: isSelected ? '#fff' : '#0067e0' }} />
                               )}
                             </span>
                             {isToday && !isSelected && (
-                              <span className="text-[8.5px] font-[800] uppercase tracking-wide" style={{ color: '#6366f1' }}>now</span>
+                              <span className="text-[8.5px] font-[800] uppercase tracking-wide" style={{ color: '#0067e0' }}>now</span>
                             )}
                           </button>
                         );
@@ -348,8 +348,8 @@ export default function MySchedulePage() {
                   {/* Week stats */}
                   <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {[
-                      { label: 'This Week', value: weekStats.total, color: '#6366f1' },
-                      { label: 'Upcoming', value: weekStats.upcoming, color: '#3b82f6' },
+                      { label: 'This Week', value: weekStats.total, color: '#0067e0' },
+                      { label: 'Upcoming', value: weekStats.upcoming, color: '#0067e0' },
                       { label: 'Completed', value: weekStats.completed, color: '#10b981' },
                       { label: 'Missed', value: weekStats.missed, color: '#f59e0b' },
                     ].map((s) => (
@@ -378,7 +378,7 @@ export default function MySchedulePage() {
 
                   {schedule.loading && !schedule.data && (
                     <div className="flex flex-col items-center justify-center gap-3 py-16">
-                      <Loader2 size={26} className="animate-spin" style={{ color: '#6366f1' }} />
+                      <Loader2 size={26} className="animate-spin" style={{ color: '#0067e0' }} />
                       <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>Loading your schedule…</p>
                     </div>
                   )}

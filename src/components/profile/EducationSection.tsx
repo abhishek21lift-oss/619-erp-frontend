@@ -104,7 +104,7 @@ export function EducationSection({ value, onChange }: {
             id: `edu_${Date.now().toString(36)}`, institution: '', degree: '', field: '', year: null,
           }])}
           className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-[700] text-white transition-transform hover:scale-[1.03] disabled:opacity-50 disabled:hover:scale-100"
-          style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 4px 14px rgba(99,102,241,0.32)' }}
+          style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)', boxShadow: '0 4px 14px rgba(0,103,224,0.32)' }}
         >
           <Plus size={13} /> Add
         </button>

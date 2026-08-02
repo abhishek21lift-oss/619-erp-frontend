@@ -118,7 +118,7 @@ export function SearchableSelect({
                   key={opt.value} type="button"
                   onClick={() => { onChange(opt.value); setOpen(false); setQuery(''); }}
                   className="flex w-full items-center justify-between rounded-[10px] px-3.5 py-2.5 text-[12.5px] font-[580] transition hover:bg-slate-50"
-                  style={{ color: 'rgb(30,30,40)' }}
+                  style={{ color: 'rgb(15,23,42)' }}
                 >
                   <span>{opt.icon && <span className="mr-2">{opt.icon}</span>}{opt.label}</span>
                   {value === opt.value && <Check size={12} style={{ color: '#0067E0' }} />}

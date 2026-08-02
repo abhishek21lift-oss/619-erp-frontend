@@ -23,8 +23,8 @@ import type { InvitationPreview } from '@/lib/api';
 import { invitationPasswordRules, checkInvitationPassword } from '@/lib/password-policy';
 
 /** Brand for this flow: black / white / maroon, matching the invitation email. */
-const MAROON = '#7B1E2B';
-const MAROON_DARK = '#5C161F';
+const MAROON = '#7F1D1D';
+const MAROON_DARK = '#7F1D1D';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 

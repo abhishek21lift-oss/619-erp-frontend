@@ -483,7 +483,7 @@ export default function AnalyticsPanel() {
                     <tr key={s.id} style={{ borderBottom: '1px solid var(--border)' }}>
                       <td className="w-8 px-4 py-3">
                         {i < 3
-                          ? <Trophy size={13} style={{ color: ['#eab308', '#94a3b8', '#b45309'][i] }} />
+                          ? <Trophy size={13} style={{ color: ['#f59e0b', '#94a3b8', '#b45309'][i] }} />
                           : <span className="text-[11px] tabular-nums" style={{ color: 'var(--text-disabled)' }}>{i + 1}</span>}
                       </td>
                       <td className="px-4 py-3 text-[12.5px] font-[650]" style={{ color: 'var(--text-primary)' }}>

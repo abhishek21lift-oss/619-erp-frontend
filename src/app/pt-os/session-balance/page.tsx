@@ -90,7 +90,7 @@ export default function SessionBalancePage() {
                   style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
                 <Button type="submit" disabled={!clientId || !totalSessions || saving}
                   className="!w-full !rounded-[14px] !py-3 !font-[700]"
-                  style={{ background: !clientId || !totalSessions || saving ? '#e5e7eb' : 'linear-gradient(135deg, #292524, #57534e)', color: '#fff' }}>
+                  style={{ background: !clientId || !totalSessions || saving ? '#e2e8f0' : 'linear-gradient(135deg, #1E293B, #475569)', color: '#fff' }}>
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Create Balance
                 </Button>
               </form>
@@ -111,7 +111,7 @@ export default function SessionBalancePage() {
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
                 {(allBalances.data as any[] || []).map((sb: any) => (
                   <div key={sb.id} className="rounded-[12px] p-3 flex items-center justify-between"
-                    style={{ background: sb.remaining_sessions <= 3 ? 'rgba(239,68,68,0.06)' : '#F9FAFB', border: `1px solid ${sb.remaining_sessions <= 3 ? 'rgba(239,68,68,0.15)' : '#f3f4f6'}` }}>
+                    style={{ background: sb.remaining_sessions <= 3 ? 'rgba(239,68,68,0.06)' : '#F8FAFC', border: `1px solid ${sb.remaining_sessions <= 3 ? 'rgba(239,68,68,0.15)' : '#f1f5f9'}` }}>
                     <div>
                       <p className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>{sb.client_name}</p>
                       <p className="text-[11px]" style={{ color: 'var(--text-disabled)' }}>{sb.package_name || 'PT Package'}</p>

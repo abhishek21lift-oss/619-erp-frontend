@@ -38,11 +38,12 @@ import { cn } from '@/components/ui/cn';
 import { useToast } from '@/lib/toast';
 import { moduleService } from '@/lib/module-service';
 import type { ModuleConfig, ModuleRecord } from '@/lib/module-config';
+import { series } from '@/lib/palette';
 
 type FormState = Omit<ModuleRecord, 'id' | 'createdAt' | 'updatedAt'>;
 
 const pageSizeOptions = [5, 10, 20];
-const chartColors = ['#2563eb', '#16a34a', '#f59e0b', '#7c3aed', '#dc2626'];
+const chartColors = series;
 
 const accentClasses = {
   blue: 'from-blue-600 to-cyan-500',
@@ -239,7 +240,7 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
         <div className="page-main">
           <div className="page-content fade-up">
             <div className="grid gap-4">
-              <section className="overflow-hidden rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1E1F24] shadow-sm">
+              <section className="overflow-hidden rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0F172A] shadow-sm">
                 <div className={cn('h-1.5 bg-gradient-to-r', accentClasses[config.accent])} />
                 <div className="grid gap-4 p-4 lg:grid-cols-[1.4fr_0.9fr] lg:items-center">
                   <div>
@@ -264,7 +265,7 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
               </section>
 
               <section className="grid gap-4 xl:grid-cols-[0.95fr_1.35fr]">
-                <form onSubmit={submit} className="rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1E1F24] p-4 shadow-sm">
+                <form onSubmit={submit} className="rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0F172A] p-4 shadow-sm">
                   <div className="mb-4 flex items-start justify-between gap-3">
                     <div>
                       <h2 className="m-0 text-base font-bold text-slate-900 dark:text-white">{editingId ? 'Edit record' : config.primaryAction}</h2>
@@ -329,7 +330,7 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
                 </form>
 
                 <section className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1E1F24] p-4 shadow-sm">
+                  <div className="rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0F172A] p-4 shadow-sm">
                     <div className="mb-3 flex items-center justify-between">
                       <h2 className="m-0 text-base font-bold text-slate-900 dark:text-white">Performance Trend</h2>
                       <LineChart className="h-4 w-4 text-slate-500 dark:text-white/50" />
@@ -353,7 +354,7 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
                     </div>
                   </div>
 
-                  <div className="rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1E1F24] p-4 shadow-sm">
+                  <div className="rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0F172A] p-4 shadow-sm">
                     <div className="mb-3 flex items-center justify-between">
                       <h2 className="m-0 text-base font-bold text-slate-900 dark:text-white">Status Mix</h2>
                       <SlidersHorizontal className="h-4 w-4 text-slate-500 dark:text-white/50" />
@@ -384,7 +385,7 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
                 </section>
               </section>
 
-              <section className="rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1E1F24] shadow-sm">
+              <section className="rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0F172A] shadow-sm">
                 <div className="grid gap-3 border-b border-slate-200 dark:border-white/10 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="relative min-w-[220px] flex-1 sm:max-w-sm">

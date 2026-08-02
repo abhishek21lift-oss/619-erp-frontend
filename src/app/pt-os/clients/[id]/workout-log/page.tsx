@@ -265,8 +265,8 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
             {[
               { label: 'Total Sessions', value: stats.total, icon: <Dumbbell size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
               { label: 'Completed', value: stats.completed, icon: <CheckCircle2 size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)' },
-              { label: 'This Month', value: stats.thisMonth, icon: <CalendarIcon size={14} />, color: '#6366f1', spotColor: 'rgba(99,102,241,0.12)' },
-              { label: 'Plan Progress', value: stats.progress, suffix: '%', icon: <TrendingUp size={14} />, color: '#ec4899', spotColor: 'rgba(236,72,153,0.12)' },
+              { label: 'This Month', value: stats.thisMonth, icon: <CalendarIcon size={14} />, color: '#0067e0', spotColor: 'rgba(0,103,224,0.12)' },
+              { label: 'Plan Progress', value: stats.progress, suffix: '%', icon: <TrendingUp size={14} />, color: '#0067e0', spotColor: 'rgba(0,103,224,0.12)' },
             ].map((s) => (
               <m.div key={s.label} variants={itemVariants}>
                 <SpotlightCard spotlightColor={s.spotColor} style={{ padding: '14px 16px', cursor: 'default' }}>
@@ -287,10 +287,10 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
         {activeAssignment && (
           <button onClick={() => router.push(`/pt-os/workout-plans/${activeAssignment.workout_plan_id}`)}
             className="flex w-full items-center justify-between gap-4 rounded-[18px] px-5 py-4 text-left transition hover:-translate-y-0.5"
-            style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05))', border: '1px solid rgba(99,102,241,0.2)' }}>
+            style={{ background: 'linear-gradient(135deg, rgba(0,103,224,0.08), rgba(0,103,224,0.05))', border: '1px solid rgba(0,103,224,0.2)' }}>
             <div className="flex items-center gap-3 min-w-0">
-              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px]" style={{ background: 'rgba(99,102,241,0.15)' }}>
-                <Sparkles size={15} style={{ color: '#6366f1' }} />
+              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px]" style={{ background: 'rgba(0,103,224,0.15)' }}>
+                <Sparkles size={15} style={{ color: '#0067e0' }} />
               </span>
               <div className="min-w-0">
                 <p className="truncate text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>{activeAssignment.plan_name}</p>
@@ -298,8 +298,8 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
               </div>
             </div>
             <div className="hidden sm:block w-28 flex-shrink-0">
-              <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'rgba(99,102,241,0.15)' }}>
-                <div className="h-full rounded-full" style={{ width: `${Math.min(100, activeAssignment.progress_pct)}%`, background: '#6366f1' }} />
+              <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'rgba(0,103,224,0.15)' }}>
+                <div className="h-full rounded-full" style={{ width: `${Math.min(100, activeAssignment.progress_pct)}%`, background: '#0067e0' }} />
               </div>
             </div>
           </button>
@@ -335,7 +335,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
               xKey="date"
               areas={[
                 { key: 'Est. 1RM', label: 'Est. 1RM (kg)', color: '#F59E0B' },
-                { key: 'Best Weight', label: 'Best Weight (kg)', color: '#7c3aed' },
+                { key: 'Best Weight', label: 'Best Weight (kg)', color: '#0067e0' },
               ]}
               height={220}
             />
@@ -439,7 +439,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
             {planDays.map((day) => (
               <button key={day} onClick={() => createSession({ workout_day: day })} disabled={creating}
                 className="rounded-[12px] px-3 py-2.5 text-[12.5px] font-[700] transition hover:-translate-y-0.5"
-                style={{ background: 'rgba(99,102,241,0.1)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.25)' }}>
+                style={{ background: 'rgba(0,103,224,0.1)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.25)' }}>
                 {day}
               </button>
             ))}

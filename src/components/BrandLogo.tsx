@@ -33,12 +33,12 @@ export default function BrandLogo({
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #6E1230 0%, #4A0A1E 100%)',
+        background: 'linear-gradient(135deg, #0059CE 0%, #0050AD 100%)',
         color: '#ffffff',
         fontWeight: 800,
         fontSize: Math.round(size * 0.32),
         letterSpacing: '-0.02em',
-        boxShadow: '0 6px 20px rgba(74,10,30,0.28), inset 0 1px 0 rgba(255,255,255,0.30)',
+        boxShadow: '0 6px 20px rgba(0,80,173,0.28), inset 0 1px 0 rgba(255,255,255,0.30)',
         flexShrink: 0,
       }}
     >

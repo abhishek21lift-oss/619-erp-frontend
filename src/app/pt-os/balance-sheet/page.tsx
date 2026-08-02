@@ -98,9 +98,9 @@ export default function BalanceSheetPage() {
   const KPIS = [
     { label: 'Total Outstanding', value: fmtINR(totalOutstanding), icon: AlertCircle, color: '#dc2626', bg: 'linear-gradient(135deg, rgba(220,38,38,0.12), rgba(220,38,38,0.04))', border: 'rgba(220,38,38,0.15)' },
     { label: 'Collected', value: fmtINR(totalCollected), icon: CheckCircle, color: '#10b981', bg: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04))', border: 'rgba(16,185,129,0.15)' },
-    { label: 'Total Revenue', value: fmtINR(totalRevenue), icon: IndianRupee, color: '#6366f1', bg: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(99,102,241,0.04))', border: 'rgba(99,102,241,0.15)' },
+    { label: 'Total Revenue', value: fmtINR(totalRevenue), icon: IndianRupee, color: '#0067e0', bg: 'linear-gradient(135deg, rgba(0,103,224,0.12), rgba(0,103,224,0.04))', border: 'rgba(0,103,224,0.15)' },
     { label: 'Collection Rate', value: `${collectionRate}%`, icon: TrendingUp, color: '#f59e0b', bg: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.04))', border: 'rgba(245,158,11,0.15)' },
-    { label: 'PT Clients', value: String(items.length), icon: Users, color: '#8b5cf6', bg: 'linear-gradient(135deg, rgba(139,92,246,0.12), rgba(139,92,246,0.04))', border: 'rgba(139,92,246,0.15)' },
+    { label: 'PT Clients', value: String(items.length), icon: Users, color: '#0067e0', bg: 'linear-gradient(135deg, rgba(0,103,224,0.12), rgba(0,103,224,0.04))', border: 'rgba(0,103,224,0.15)' },
     { label: 'Overdue', value: String(overdueCount), icon: Clock, color: '#ef4444', bg: 'linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.04))', border: 'rgba(239,68,68,0.15)' },
   ];
 
@@ -112,17 +112,17 @@ export default function BalanceSheetPage() {
 
           {/* ── Hero ── */}
           <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            style={{ padding: '32px 40px', marginBottom: 28, borderBottom: '1px solid #f3f4f6' }}>
+            style={{ padding: '32px 40px', marginBottom: 28, borderBottom: '1px solid #f1f5f9' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(99,102,241,0.08)' }}>
-                <Wallet size={22} color="#6366f1" />
+              <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,103,224,0.08)' }}>
+                <Wallet size={22} color="#0067e0" />
               </div>
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6366f1' }}>Finance · PT OS</span>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0067e0' }}>Finance · PT OS</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, flexWrap: 'wrap' }}>
               <div>
-                <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#111827', margin: '0 0 8px' }}>Balance Sheet</h1>
-                <p style={{ maxWidth: 500, fontSize: 14, lineHeight: 1.6, color: '#6b7280' }}>
+                <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#0F172A', margin: '0 0 8px' }}>Balance Sheet</h1>
+                <p style={{ maxWidth: 500, fontSize: 14, lineHeight: 1.6, color: '#64748b' }}>
                   Track outstanding dues, collection rates, and payment status across all PT clients.
                 </p>
               </div>
@@ -181,7 +181,7 @@ export default function BalanceSheetPage() {
             <div style={{ display: 'flex', gap: 6 }}>
               {(['ALL', 'OVERDUE', 'DUE', 'CLEAR'] as const).map(f => {
                 const active = filter === f;
-                const cfg = f === 'ALL' ? { color: '#6366f1', bg: 'rgba(99,102,241,0.1)', border: 'rgba(99,102,241,0.25)' } : f === 'OVERDUE' ? { color: '#dc2626', bg: 'rgba(220,38,38,0.1)', border: 'rgba(220,38,38,0.25)' } : f === 'DUE' ? { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' } : { color: '#10b981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)' };
+                const cfg = f === 'ALL' ? { color: '#0067e0', bg: 'rgba(0,103,224,0.1)', border: 'rgba(0,103,224,0.25)' } : f === 'OVERDUE' ? { color: '#dc2626', bg: 'rgba(220,38,38,0.1)', border: 'rgba(220,38,38,0.25)' } : f === 'DUE' ? { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' } : { color: '#10b981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)' };
                 return (
                   <button key={f} onClick={() => setFilter(f)}
                     style={{ fontSize: 11, fontWeight: 700, padding: '7px 14px', borderRadius: 10, border: `1.5px solid ${active ? cfg.border : 'var(--border)'}`, background: active ? cfg.bg : 'transparent', color: active ? cfg.color : 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.2s' }}>
@@ -218,7 +218,7 @@ export default function BalanceSheetPage() {
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                       <td style={{ padding: '13px 16px' }}>
                         <div style={{ fontWeight: 650, fontSize: 13, color: 'var(--text-primary)' }}>{item.name}</div>
-                        {item.unique_id && <div style={{ fontSize: 10, color: '#6366f1', fontWeight: 700, letterSpacing: '0.05em' }}>{item.unique_id}</div>}
+                        {item.unique_id && <div style={{ fontSize: 10, color: '#0067e0', fontWeight: 700, letterSpacing: '0.05em' }}>{item.unique_id}</div>}
                         <div style={{ fontSize: 11, color: 'var(--text-disabled)', marginTop: 1 }}>{item.mobile || '—'}</div>
                       </td>
                       <td style={{ padding: '13px 16px' }}>
@@ -261,7 +261,7 @@ export default function BalanceSheetPage() {
 
             {bs.loading && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 20px' }}>
-                <div style={{ width: 24, height: 24, border: '2.5px solid #6366f1', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                <div style={{ width: 24, height: 24, border: '2.5px solid #0067e0', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                 <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
               </div>
             )}

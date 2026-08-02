@@ -76,7 +76,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
       className="fixed bottom-0 left-0 right-0 z-40 lg:hidden"
       data-no-pull-refresh
       style={{
-        background: 'rgba(7,5,15,0.94)',
+        background: 'rgba(15,23,42,0.94)',
         backdropFilter: 'blur(24px) saturate(180%)',
         WebkitBackdropFilter: 'blur(24px) saturate(180%)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
@@ -92,7 +92,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
       <div
         className="absolute top-0 left-0 right-0 h-px"
         style={{
-          background: 'linear-gradient(90deg, transparent 0%, rgba(167,139,250,0.4) 25%, rgba(167,139,250,0.65) 50%, rgba(167,139,250,0.4) 75%, transparent 100%)',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(127,180,255,0.4) 25%, rgba(127,180,255,0.65) 50%, rgba(127,180,255,0.4) 75%, transparent 100%)',
         }}
       />
 
@@ -132,9 +132,9 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                   style={{
                     top:    4,
                     bottom: 4,
-                    background: 'linear-gradient(135deg, rgba(167,139,250,0.22) 0%, rgba(109,40,217,0.14) 100%)',
-                    border: '1px solid rgba(167,139,250,0.28)',
-                    boxShadow: '0 2px 14px rgba(167,139,250,0.18), inset 0 1px 0 rgba(255,255,255,0.07)',
+                    background: 'linear-gradient(135deg, rgba(127,180,255,0.22) 0%, rgba(0,103,224,0.14) 100%)',
+                    border: '1px solid rgba(127,180,255,0.28)',
+                    boxShadow: '0 2px 14px rgba(127,180,255,0.18), inset 0 1px 0 rgba(255,255,255,0.07)',
                   }}
                   transition={SPRING}
                 />
@@ -150,8 +150,8 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                   size={18}
                   strokeWidth={isActive ? 2.3 : 1.7}
                   style={{
-                    color: isActive ? '#a78bfa' : 'rgba(255,255,255,0.40)',
-                    filter: isActive ? 'drop-shadow(0 0 7px rgba(167,139,250,0.55))' : 'none',
+                    color: isActive ? '#7fb4ff' : 'rgba(255,255,255,0.40)',
+                    filter: isActive ? 'drop-shadow(0 0 7px rgba(127,180,255,0.55))' : 'none',
                     transition: 'color 200ms ease, filter 200ms ease',
                   }}
                   aria-hidden="true"
@@ -166,7 +166,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                 className="relative z-10 select-none whitespace-nowrap text-[9.5px] font-bold uppercase leading-none"
                 style={{
                   letterSpacing: '0.065em',
-                  color: isActive ? '#c4b5fd' : 'rgba(255,255,255,0.36)',
+                  color: isActive ? '#b8d7ff' : 'rgba(255,255,255,0.36)',
                   transition: 'color 200ms ease',
                 }}
               >

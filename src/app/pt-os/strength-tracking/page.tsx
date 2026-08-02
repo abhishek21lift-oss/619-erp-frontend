@@ -35,12 +35,12 @@ const CATEGORIES: { label: string; exercises: string[] }[] = [
   { label: 'Core', exercises: ['Plank', 'Side Plank', 'Curl Up'] },
 ];
 
-const CATEGORY_COLOR: Record<string, string> = { 'Upper Body': '#ea580c', 'Lower Body': '#7c3aed', Core: '#059669' };
+const CATEGORY_COLOR: Record<string, string> = { 'Upper Body': '#f59e0b', 'Lower Body': '#0067e0', Core: '#059669' };
 
 const LEVEL_STYLE: Record<FitnessCategory, { bg: string; color: string }> = {
   Excellent: { bg: 'rgba(16,185,129,0.14)', color: '#059669' },
   Good: { bg: 'rgba(245,158,11,0.14)', color: '#d97706' },
-  Average: { bg: 'rgba(249,115,22,0.14)', color: '#ea580c' },
+  Average: { bg: 'rgba(245,158,11,0.14)', color: '#f59e0b' },
   'Below Average': { bg: 'rgba(239,68,68,0.12)', color: '#dc2626' },
   Poor: { bg: 'rgba(220,38,38,0.16)', color: '#b91c1c' },
 };
@@ -192,10 +192,10 @@ function StrengthHub({ clientId }: StrengthHubProps) {
                   <span className="ml-2 text-[11px] text-slate-400">{l.log_date}</span>
                 </div>
                 <div className="flex items-center gap-3 text-[12px]">
-                  <span className="font-bold" style={{ color: '#ea580c' }}>{l.weight_kg} kg</span>
+                  <span className="font-bold" style={{ color: '#f59e0b' }}>{l.weight_kg} kg</span>
                   <span style={{ color: 'var(--text-muted)' }}>{l.sets_done} × {l.reps_done}</span>
                   {l.one_rm_estimate != null && (
-                    <span className="flex items-center gap-1" style={{ color: '#7c3aed' }}>
+                    <span className="flex items-center gap-1" style={{ color: '#0067e0' }}>
                       <TrendingUp size={11} /> 1RM: {l.one_rm_estimate} kg
                     </span>
                   )}
@@ -269,11 +269,11 @@ function ExerciseCard({ exercise, accent, latest, gender, bodyWeightKg, onLog }:
         <div className="px-4 pb-4">
           <div className="grid grid-cols-3 gap-2 mb-2">
             <input type="number" step="0.5" placeholder="Weight (kg)" value={weight} onChange={(e) => setWeight(e.target.value)}
-              className="rounded-[10px] px-3 py-2 text-[12.5px] outline-none" style={{ border: '1px solid #d1d5db' }} />
+              className="rounded-[10px] px-3 py-2 text-[12.5px] outline-none" style={{ border: '1px solid #cbd5e1' }} />
             <input type="number" placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)}
-              className="rounded-[10px] px-3 py-2 text-[12.5px] outline-none" style={{ border: '1px solid #d1d5db' }} />
+              className="rounded-[10px] px-3 py-2 text-[12.5px] outline-none" style={{ border: '1px solid #cbd5e1' }} />
             <input type="number" placeholder="Reps" value={reps} onChange={(e) => setReps(e.target.value)}
-              className="rounded-[10px] px-3 py-2 text-[12.5px] outline-none" style={{ border: '1px solid #d1d5db' }} />
+              className="rounded-[10px] px-3 py-2 text-[12.5px] outline-none" style={{ border: '1px solid #cbd5e1' }} />
           </div>
           {previewOneRm != null && (
             <p className="mb-2 text-[11.5px] font-[600]" style={{ color: accent }}>Est. 1RM: {previewOneRm} kg</p>

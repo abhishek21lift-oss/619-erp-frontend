@@ -9,6 +9,7 @@ import { ArrowLeft, Search, Check, Smartphone, Banknote, CreditCard, Wallet, Del
 import { api } from '@/lib/api';
 import type { Client } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { identity } from '@/lib/palette';
 
 type Method = 'Cash' | 'UPI' | 'Card' | 'Bank';
 const METHODS: Method[] = ['Cash', 'UPI', 'Card', 'Bank'];
@@ -29,7 +30,7 @@ const METHOD_COLORS: Record<Method, string> = {
   Bank: 'from-amber-500 to-orange-500',
 };
 
-const AVATAR_COLORS = ['#FF3B30', '#FF9500', '#34C759', '#007AFF', '#AF52DE', '#FF2D55'];
+const AVATAR_COLORS = identity;
 function initials(name: string) {
   return name.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }

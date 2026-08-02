@@ -33,7 +33,7 @@ export default function PlatformAdminPage() {
   return (
     <Guard role="super_admin">
       <AppShell>
-        <Suspense fallback={<div className="flex justify-center py-24"><Loader2 size={26} className="animate-spin" style={{ color: '#6366f1' }} /></div>}>
+        <Suspense fallback={<div className="flex justify-center py-24"><Loader2 size={26} className="animate-spin" style={{ color: '#0067e0' }} /></div>}>
           <PlatformContent />
         </Suspense>
       </AppShell>

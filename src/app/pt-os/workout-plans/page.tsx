@@ -27,19 +27,19 @@ interface ClientOption { id: string; name: string; }
 
 
 const GOALS: Array<{ value: string; label: string; color: string }> = [
-  { value: 'muscle_gain', label: 'Muscle Gain', color: '#6366f1' },
+  { value: 'muscle_gain', label: 'Muscle Gain', color: '#0067e0' },
   { value: 'weight_loss', label: 'Weight Loss', color: '#10b981' },
-  { value: 'endurance', label: 'Endurance', color: '#ec4899' },
-  { value: 'general_fitness', label: 'General Fitness', color: '#8b5cf6' },
-  { value: 'recovery', label: 'Recovery', color: '#06b6d4' },
+  { value: 'endurance', label: 'Endurance', color: '#0067e0' },
+  { value: 'general_fitness', label: 'General Fitness', color: '#0067e0' },
+  { value: 'recovery', label: 'Recovery', color: '#0067e0' },
 ];
 
 const PLAN_COLORS = [
-  'linear-gradient(135deg, #6366f1, #8b5cf6)',
+  'linear-gradient(135deg, #0067e0, #0059ce)',
   'linear-gradient(135deg, #10b981, #34d399)',
   'linear-gradient(135deg, #f59e0b, #fbbf24)',
-  'linear-gradient(135deg, #ec4899, #f472b6)',
-  'linear-gradient(135deg, #06b6d4, #22d3ee)',
+  'linear-gradient(135deg, #0067e0, #0059ce)',
+  'linear-gradient(135deg, #0067e0, #0059ce)',
   'linear-gradient(135deg, #ef4444, #f87171)',
 ];
 
@@ -232,7 +232,7 @@ function Inner() {
               <div style={{ display: 'flex', background: 'var(--bg-card)', borderRadius: 9, padding: 3, gap: 2 }}>
                 {(['grid', 'list'] as const).map((v) => (
                   <button key={v} onClick={() => setView(v)}
-                    style={{ padding: '6px 9px', borderRadius: 7, border: 'none', cursor: 'pointer', transition: 'all 0.18s', background: view === v ? 'var(--bg-subtle)' : 'transparent', color: view === v ? '#6366f1' : 'var(--text-muted)', boxShadow: view === v ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
+                    style={{ padding: '6px 9px', borderRadius: 7, border: 'none', cursor: 'pointer', transition: 'all 0.18s', background: view === v ? 'var(--bg-subtle)' : 'transparent', color: view === v ? '#0067e0' : 'var(--text-muted)', boxShadow: view === v ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
                     {v === 'grid' ? <LayoutGrid size={14} /> : <List size={14} />}
                   </button>
                 ))}
@@ -252,16 +252,16 @@ function Inner() {
                 complete this client's brief is and what they are running. */}
             {(presetClientId
               ? [
-                { label: 'Their Plans', value: plans.length, icon: <FileText size={14} />, color: '#6366f1', spotColor: 'rgba(99,102,241,0.12)' },
+                { label: 'Their Plans', value: plans.length, icon: <FileText size={14} />, color: '#0067e0', spotColor: 'rgba(0,103,224,0.12)' },
                 { label: 'Brief Complete', value: briefClient ? briefCompleteness : 0, icon: <ClipboardList size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)', suffix: '%' },
                 { label: 'Exercises', value: exercises.length, icon: <Activity size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
-                { label: 'Completion', value: avgProgress, icon: <Trophy size={14} />, color: '#ec4899', spotColor: 'rgba(236,72,153,0.12)', suffix: '%' },
+                { label: 'Completion', value: avgProgress, icon: <Trophy size={14} />, color: '#0067e0', spotColor: 'rgba(0,103,224,0.12)', suffix: '%' },
               ]
               : [
-                { label: 'Total Plans', value: plans.length, icon: <FileText size={14} />, color: '#6366f1', spotColor: 'rgba(99,102,241,0.12)' },
+                { label: 'Total Plans', value: plans.length, icon: <FileText size={14} />, color: '#0067e0', spotColor: 'rgba(0,103,224,0.12)' },
                 { label: 'Exercises', value: exercises.length, icon: <Activity size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)' },
                 { label: 'Clients', value: clients.length, icon: <User size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
-                { label: 'Avg Completion', value: avgProgress, icon: <Trophy size={14} />, color: '#ec4899', spotColor: 'rgba(236,72,153,0.12)', suffix: '%' },
+                { label: 'Avg Completion', value: avgProgress, icon: <Trophy size={14} />, color: '#0067e0', spotColor: 'rgba(0,103,224,0.12)', suffix: '%' },
               ]
             ).map((s) => (
               <m.div key={s.label} variants={itemVariants}>
@@ -283,10 +283,10 @@ function Inner() {
         <div className="mt-5 mb-5 flex gap-1 overflow-x-auto" style={{ background: 'var(--bg-subtle)', borderRadius: 11, padding: 3, scrollbarWidth: 'none' }}>
           {[
             // Only with a client in scope — there is no brief for "the studio".
-            ...(presetClientId ? [{ key: 'brief', label: 'Client Brief', color: '#7c3aed' }] : []),
-            { key: 'plans', label: presetClientId ? 'Their Plans' : 'Active Plans', count: plans.length, color: '#6366f1' },
+            ...(presetClientId ? [{ key: 'brief', label: 'Client Brief', color: '#0067e0' }] : []),
+            { key: 'plans', label: presetClientId ? 'Their Plans' : 'Active Plans', count: plans.length, color: '#0067e0' },
             { key: 'library', label: 'Exercise Library', count: filteredExercises.length, color: '#10b981' },
-            { key: 'ai', label: 'AI Suggestions', color: '#ec4899' },
+            { key: 'ai', label: 'AI Suggestions', color: '#0067e0' },
           ].map((tab) => (
             <button key={tab.key}
               onClick={() => setActiveTab(tab.key as typeof activeTab)}
@@ -386,7 +386,7 @@ function Inner() {
                   {(['All', ...bodyParts.slice(0, 12)]).map((bp) => (
                     <button key={bp}
                       onClick={() => setActiveBodyPart(bp)}
-                      style={{ flexShrink: 0, whiteSpace: 'nowrap', padding: '5px 14px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', textTransform: 'capitalize', transition: 'all 0.18s', background: activeBodyPart === bp ? 'rgba(99,102,241,0.1)' : 'transparent', color: activeBodyPart === bp ? '#6366f1' : 'var(--text-muted)', borderColor: activeBodyPart === bp ? 'rgba(99,102,241,0.3)' : 'var(--border)' }}>
+                      style={{ flexShrink: 0, whiteSpace: 'nowrap', padding: '5px 14px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', textTransform: 'capitalize', transition: 'all 0.18s', background: activeBodyPart === bp ? 'rgba(0,103,224,0.1)' : 'transparent', color: activeBodyPart === bp ? '#0067e0' : 'var(--text-muted)', borderColor: activeBodyPart === bp ? 'rgba(0,103,224,0.3)' : 'var(--border)' }}>
                       {bp}
                     </button>
                   ))}
@@ -431,21 +431,21 @@ function Inner() {
           {activeTab === 'ai' && (
             <m.div key="ai" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               <div style={{ maxWidth: 640, margin: '0 auto', textAlign: 'center', padding: '32px 20px' }}>
-                <div style={{ width: 64, height: 64, borderRadius: 20, background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(236,72,153,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                  <Sparkles size={28} color="#6366f1" />
+                <div style={{ width: 64, height: 64, borderRadius: 20, background: 'linear-gradient(135deg, rgba(0,103,224,0.15), rgba(0,103,224,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  <Sparkles size={28} color="#0067e0" />
                 </div>
                 <h2 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>AI Workout Coach</h2>
                 <p style={{ margin: '0 0 24px', fontSize: 14, color: 'var(--text-muted)', maxWidth: 400, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
                   Generate personalized workout plans using AI. Just provide your client's details and let the AI build a complete training program.
                 </p>
                 <button onClick={() => setAiPanelOpen(true)}
-                  style={{ padding: '12px 28px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  style={{ padding: '12px 28px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                   <Sparkles size={16} />Open AI Coach
                 </button>
 
                 <div className="mt-8 grid grid-cols-1 gap-3.5 text-left sm:grid-cols-3">
                   {[
-                    { title: 'Personalized Plans', desc: 'Tailored to age, weight, goal, and experience level', color: '#6366f1' },
+                    { title: 'Personalized Plans', desc: 'Tailored to age, weight, goal, and experience level', color: '#0067e0' },
                     { title: 'Weekly Schedule', desc: 'Complete day-by-day training schedule with exercises', color: '#10b981' },
                     { title: 'Progression Notes', desc: 'Smart progression guidelines to maximize results', color: '#f59e0b' },
                   ].map((f) => (
@@ -467,7 +467,7 @@ function Inner() {
         onClick={() => setAiPanelOpen(true)}
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.96 }}
-        className="above-bottom-nav" style={{ position: 'fixed', right: 28, width: 52, height: 52, borderRadius: 16, border: 'none', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 24px rgba(99,102,241,0.45)', zIndex: 100 }}
+        className="above-bottom-nav" style={{ position: 'fixed', right: 28, width: 52, height: 52, borderRadius: 16, border: 'none', background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 24px rgba(0,103,224,0.45)', zIndex: 100 }}
         title="Open AI Coach"
       >
         <Sparkles size={20} />

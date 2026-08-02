@@ -40,12 +40,12 @@ export default function HelpPage() {
               position: 'relative', overflow: 'hidden',
               borderRadius: 24, padding: '32px 36px',
               display: 'flex', alignItems: 'center', gap: 20,
-              background: 'linear-gradient(135deg, #eff6ff, #f5f3ff, #f8fafc)',
+              background: 'linear-gradient(135deg, #f1f5f9, #f8fafc, #f8fafc)',
               border: '1px solid var(--border)',
               boxShadow: 'var(--shadow-sm)',
             }}
           >
-            <div style={{ position: 'relative', zIndex: 1, width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(99,102,241,0.3)' }}>
+            <div style={{ position: 'relative', zIndex: 1, width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, #0067e0, #0059ce)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(0,103,224,0.3)' }}>
               <HelpCircle size={26} color="#fff" />
             </div>
             <div style={{ position: 'relative', zIndex: 1 }}>
@@ -57,7 +57,7 @@ export default function HelpPage() {
           {/* ── Search ── */}
           <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
             style={{ ...lightCard, borderRadius: 16, padding: '4px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Search size={16} color="#9ca3af" />
+            <Search size={16} color="#94a3b8" />
             <input
               type="text" placeholder="Search FAQs…" value={search} onChange={(e) => { setOpenIdx(null); setSearch(e.target.value); }}
               style={{
@@ -76,7 +76,7 @@ export default function HelpPage() {
                   background: 'var(--bg-card)',
                   border: '1px solid var(--border)',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                  borderLeft: `3px solid ${openIdx === i ? '#6366f1' : 'rgba(0,0,0,0.07)'}`,
+                  borderLeft: `3px solid ${openIdx === i ? '#0067e0' : 'rgba(0,0,0,0.07)'}`,
                   transition: 'border-color 0.25s',
                 }}
               >
@@ -93,7 +93,7 @@ export default function HelpPage() {
                     transition={{ duration: 0.25 }}
                     style={{ display: 'flex', lineHeight: 0, flexShrink: 0, marginLeft: 12 }}
                   >
-                    <ChevronDown size={15} color="#9ca3af" />
+                    <ChevronDown size={15} color="#94a3b8" />
                   </m.span>
                 </button>
                 <AnimatePresence initial={false}>
@@ -129,8 +129,8 @@ export default function HelpPage() {
           {/* ── Support contacts ── */}
           <m.div {...fadeUp} transition={{ duration: 0.5, delay: 0.25 }}
             style={{ ...lightCard, borderRadius: 20, padding: 28, marginTop: 8 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.12)', marginBottom: 16 }}>
-              <HelpCircle size={22} color="#6366f1" />
+            <div style={{ width: 48, height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,103,224,0.08)', border: '1px solid rgba(0,103,224,0.12)', marginBottom: 16 }}>
+              <HelpCircle size={22} color="#0067e0" />
             </div>
             <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Still need help?</p>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 20px' }}>Reach out to our support team</p>
@@ -142,13 +142,13 @@ export default function HelpPage() {
                   border: '1px solid var(--border)', textDecoration: 'none',
                   transition: 'all 0.2s',
                 }}
-                onMouseOver={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)'; }}
-                onMouseOut={e => { e.currentTarget.style.background = '#f9fafb'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; }}>
+                onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,103,224,0.05)'; e.currentTarget.style.borderColor = 'rgba(0,103,224,0.2)'; }}
+                onMouseOut={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; }}>
                 <div style={{
                   width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'rgba(99,102,241,0.08)',
+                  background: 'rgba(0,103,224,0.08)',
                 }}>
-                  <Mail size={18} color="#6366f1" />
+                  <Mail size={18} color="#0067e0" />
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Email Support</p>
@@ -162,13 +162,13 @@ export default function HelpPage() {
                   border: '1px solid var(--border)', textDecoration: 'none',
                   transition: 'all 0.2s',
                 }}
-                onMouseOver={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)'; }}
-                onMouseOut={e => { e.currentTarget.style.background = '#f9fafb'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; }}>
+                onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,103,224,0.05)'; e.currentTarget.style.borderColor = 'rgba(0,103,224,0.2)'; }}
+                onMouseOut={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; }}>
                 <div style={{
                   width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'rgba(99,102,241,0.08)',
+                  background: 'rgba(0,103,224,0.08)',
                 }}>
-                  <Phone size={18} color="#6366f1" />
+                  <Phone size={18} color="#0067e0" />
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Call Us</p>
@@ -182,13 +182,13 @@ export default function HelpPage() {
                   border: '1px solid var(--border)', textDecoration: 'none',
                   transition: 'all 0.2s',
                 }}
-                onMouseOver={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)'; }}
-                onMouseOut={e => { e.currentTarget.style.background = '#f9fafb'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; }}>
+                onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,103,224,0.05)'; e.currentTarget.style.borderColor = 'rgba(0,103,224,0.2)'; }}
+                onMouseOut={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; }}>
                 <div style={{
                   width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'rgba(99,102,241,0.08)',
+                  background: 'rgba(0,103,224,0.08)',
                 }}>
-                  <MessageCircle size={18} color="#6366f1" />
+                  <MessageCircle size={18} color="#0067e0" />
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>WhatsApp Support</p>

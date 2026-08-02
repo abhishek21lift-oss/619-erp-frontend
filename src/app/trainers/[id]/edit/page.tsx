@@ -19,14 +19,14 @@ const EMAIL_RE  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const SECTIONS = [
-  { id: 'identity',     label: 'Identity',         icon: User,         gradient: 'linear-gradient(135deg,#FFB300,#FF8F00)' },
-  { id: 'contact',      label: 'Contact Details',  icon: Phone,        gradient: 'linear-gradient(135deg,#8B5CF6,#A78BFA)' },
-  { id: 'employment',   label: 'Employment',        icon: Briefcase,    gradient: 'linear-gradient(135deg,#00D4FF,#38BDF8)' },
-  { id: 'expertise',    label: 'Expertise',         icon: Dumbbell,     gradient: 'linear-gradient(135deg,#00E5A8,#34D399)' },
-  { id: 'schedule',     label: 'Schedule',          icon: Calendar,     gradient: 'linear-gradient(135deg,#FF9F43,#FECA57)' },
-  { id: 'compensation', label: 'Compensation',      icon: IndianRupee,  gradient: 'linear-gradient(135deg,#FF4D7A,#FB7185)' },
-  { id: 'banking',      label: 'Banking & Tax',     icon: CreditCard,   gradient: 'linear-gradient(135deg,#667eea,#764ba2)' },
-  { id: 'targets',      label: 'Targets & Access',  icon: Target,       gradient: 'linear-gradient(135deg,#f093fb,#f5576c)' },
+  { id: 'identity',     label: 'Identity',         icon: User,         gradient: 'linear-gradient(135deg,#F59E0B,#D97706)' },
+  { id: 'contact',      label: 'Contact Details',  icon: Phone,        gradient: 'linear-gradient(135deg,#0067E0,#7FB4FF)' },
+  { id: 'employment',   label: 'Employment',        icon: Briefcase,    gradient: 'linear-gradient(135deg,#0067E0,#0059CE)' },
+  { id: 'expertise',    label: 'Expertise',         icon: Dumbbell,     gradient: 'linear-gradient(135deg,#10B981,#34D399)' },
+  { id: 'schedule',     label: 'Schedule',          icon: Calendar,     gradient: 'linear-gradient(135deg,#FCD34D,#FBBF24)' },
+  { id: 'compensation', label: 'Compensation',      icon: IndianRupee,  gradient: 'linear-gradient(135deg,#0067E0,#F87171)' },
+  { id: 'banking',      label: 'Banking & Tax',     icon: CreditCard,   gradient: 'linear-gradient(135deg,#0067e0,#0059ce)' },
+  { id: 'targets',      label: 'Targets & Access',  icon: Target,       gradient: 'linear-gradient(135deg,#7fb4ff,#ef4444)' },
   { id: 'notes',        label: 'Notes',             icon: FileText,     gradient: 'linear-gradient(135deg,#64748B,#94A3B8)' },
 ];
 
@@ -44,7 +44,7 @@ function FloatLabel({ label, children, required }: { label: string; children: Re
 }
 
 // ── Input ────────────────────────────────────────────────────────────
-function FInput({ label, type = 'text', required, value, onChange, placeholder, accent = '#FFB300' }: {
+function FInput({ label, type = 'text', required, value, onChange, placeholder, accent = '#F59E0B' }: {
   label: string; type?: string; required?: boolean; placeholder?: string;
   value: string; onChange: (v: string) => void; accent?: string;
 }) {
@@ -63,7 +63,7 @@ function FInput({ label, type = 'text', required, value, onChange, placeholder, 
 }
 
 // ── Select ───────────────────────────────────────────────────────────
-function FSelect({ label, options, value, onChange, required, accent = '#FFB300' }: {
+function FSelect({ label, options, value, onChange, required, accent = '#F59E0B' }: {
   label: string; options: { value: string; label: string }[]; required?: boolean;
   value: string; onChange: (v: string) => void; accent?: string;
 }) {
@@ -82,7 +82,7 @@ function FSelect({ label, options, value, onChange, required, accent = '#FFB300'
 }
 
 // ── Toggle ───────────────────────────────────────────────────────────
-function Toggle({ label, sub, value, onChange, accent = '#00E5A8' }: {
+function Toggle({ label, sub, value, onChange, accent = '#10B981' }: {
   label: string; sub?: string; value: boolean; onChange: (v: boolean) => void; accent?: string;
 }) {
   return (
@@ -372,19 +372,19 @@ function EditContent({ id }: { id: string }) {
           <div className="mx-auto flex max-w-2xl items-center gap-3 py-3.5">
             <Link href={`/trainers/${id}`}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] transition-all duration-200 hover:scale-105 active:scale-95"
-              style={{ background: 'rgba(255,179,0,0.12)', border: '1.5px solid rgba(255,179,0,0.30)' }}>
-              <ArrowLeft size={16} style={{ color: '#FF8F00' }} />
+              style={{ background: 'rgba(245,158,11,0.12)', border: '1.5px solid rgba(245,158,11,0.30)' }}>
+              <ArrowLeft size={16} style={{ color: '#F59E0B' }} />
             </Link>
             <div className="min-w-0 flex-1">
               <h1 className="truncate text-[16px] font-[800] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Edit Trainer</h1>
-              {trainerName && <p className="truncate text-[12px] font-[600]" style={{ color: '#FF8F00' }}>{trainerName}</p>}
+              {trainerName && <p className="truncate text-[12px] font-[600]" style={{ color: '#F59E0B' }}>{trainerName}</p>}
             </div>
             <span className="shrink-0 rounded-full px-3 py-1.5 text-[11.5px] font-[700] text-white"
-              style={{ background: 'linear-gradient(135deg,#FFB300,#FF6F00)', boxShadow: '0 3px 10px rgba(255,143,0,0.40)' }}>
+              style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', boxShadow: '0 3px 10px rgba(245,158,11,0.40)' }}>
               Editing
             </span>
           </div>
-          <div className="h-[2.5px] w-full" style={{ background: 'linear-gradient(90deg,#FFB300,#FF8F00,#FF6F00)' }} />
+          <div className="h-[2.5px] w-full" style={{ background: 'linear-gradient(90deg,#F59E0B,#D97706,#D97706)' }} />
         </div>
 
         <form onSubmit={submit}>
@@ -395,16 +395,16 @@ function EditContent({ id }: { id: string }) {
               {error && (
                 <m.div key="error" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                   className="flex items-start gap-3 rounded-[16px] p-4"
-                  style={{ background: 'rgba(244,63,94,0.07)', border: '1.5px solid rgba(244,63,94,0.22)' }}>
-                  <AlertCircle size={15} style={{ color: '#f43f5e', flexShrink: 0, marginTop: 1 }} />
-                  <p className="text-[13px] font-[600]" style={{ color: '#be123c' }}>{error}</p>
+                  style={{ background: 'rgba(239,68,68,0.07)', border: '1.5px solid rgba(239,68,68,0.22)' }}>
+                  <AlertCircle size={15} style={{ color: '#ef4444', flexShrink: 0, marginTop: 1 }} />
+                  <p className="text-[13px] font-[600]" style={{ color: '#b91c1c' }}>{error}</p>
                 </m.div>
               )}
               {success && (
                 <m.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                   className="flex items-center gap-3 rounded-[16px] p-4"
-                  style={{ background: 'rgba(0,229,168,0.09)', border: '1.5px solid rgba(0,229,168,0.28)' }}>
-                  <CheckCircle size={15} style={{ color: '#00E5A8', flexShrink: 0 }} />
+                  style={{ background: 'rgba(16,185,129,0.09)', border: '1.5px solid rgba(16,185,129,0.28)' }}>
+                  <CheckCircle size={15} style={{ color: '#10B981', flexShrink: 0 }} />
                   <p className="text-[13px] font-[600]" style={{ color: '#059669' }}>Trainer updated! Redirecting…</p>
                 </m.div>
               )}
@@ -413,20 +413,20 @@ function EditContent({ id }: { id: string }) {
             {/* ── 1. Identity ────────────────────────────────────────── */}
             <SectionCard sectionId="identity">
               <div className="space-y-3">
-                <FInput label="Full Name" required value={form.name} onChange={set('name')} accent="#FFB300" />
+                <FInput label="Full Name" required value={form.name} onChange={set('name')} accent="#F59E0B" />
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <FInput label="Email Address" type="email" value={form.email} onChange={set('email')} accent="#FFB300" />
-                  <FInput label="Mobile Number" type="tel" value={form.mobile} onChange={set('mobile')} accent="#FFB300" />
+                  <FInput label="Email Address" type="email" value={form.email} onChange={set('email')} accent="#F59E0B" />
+                  <FInput label="Mobile Number" type="tel" value={form.mobile} onChange={set('mobile')} accent="#F59E0B" />
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <FSelect label="Gender" value={form.gender} onChange={set('gender')} accent="#FFB300"
+                  <FSelect label="Gender" value={form.gender} onChange={set('gender')} accent="#F59E0B"
                     options={[
                       { value: 'Male',   label: 'Male'   },
                       { value: 'Female', label: 'Female' },
                       { value: 'Other',  label: 'Other'  },
                     ]} />
-                  <FInput label="Date of Birth" type="date" value={form.dob} onChange={set('dob')} accent="#FFB300" />
-                  <FInput label="Role / Title" value={form.role} onChange={set('role')} placeholder="Personal Trainer" accent="#FFB300" />
+                  <FInput label="Date of Birth" type="date" value={form.dob} onChange={set('dob')} accent="#F59E0B" />
+                  <FInput label="Role / Title" value={form.role} onChange={set('role')} placeholder="Personal Trainer" accent="#F59E0B" />
                 </div>
               </div>
             </SectionCard>
@@ -434,12 +434,12 @@ function EditContent({ id }: { id: string }) {
             {/* ── 2. Contact Details ─────────────────────────────────── */}
             <SectionCard sectionId="contact">
               <div className="space-y-3">
-                <FInput label="Address" value={form.address} onChange={set('address')} accent="#8B5CF6" />
+                <FInput label="Address" value={form.address} onChange={set('address')} accent="#0067E0" />
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <FInput label="Alternate Phone" type="tel" value={altPhone} onChange={setAltPhone} accent="#8B5CF6" />
-                  <FInput label="Emergency Contact Name" value={emergencyName} onChange={setEmergencyName} accent="#8B5CF6" />
+                  <FInput label="Alternate Phone" type="tel" value={altPhone} onChange={setAltPhone} accent="#0067E0" />
+                  <FInput label="Emergency Contact Name" value={emergencyName} onChange={setEmergencyName} accent="#0067E0" />
                 </div>
-                <FInput label="Emergency Contact Phone" type="tel" value={emergencyPhone} onChange={setEmergencyPhone} accent="#8B5CF6" />
+                <FInput label="Emergency Contact Phone" type="tel" value={emergencyPhone} onChange={setEmergencyPhone} accent="#0067E0" />
               </div>
             </SectionCard>
 
@@ -447,14 +447,14 @@ function EditContent({ id }: { id: string }) {
             <SectionCard sectionId="employment">
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <FInput label="Join Date" type="date" value={form.joining_date} onChange={set('joining_date')} accent="#00D4FF" />
+                  <FInput label="Join Date" type="date" value={form.joining_date} onChange={set('joining_date')} accent="#0067E0" />
                   <div>
                     <p className="mb-2 text-[10.5px] font-[700] uppercase tracking-[0.10em]" style={{ color: 'rgba(148,163,184,0.9)' }}>Status</p>
                     <div className="grid grid-cols-2 gap-2">
                       {(['active', 'inactive'] as const).map(s => {
                         const on = form.status === s;
                         const cfg = s === 'active'
-                          ? { g: 'linear-gradient(135deg,#00E5A8,#34D399)', glow: '#00E5A855', label: 'Active'   }
+                          ? { g: 'linear-gradient(135deg,#10B981,#34D399)', glow: '#00E5A855', label: 'Active'   }
                           : { g: 'linear-gradient(135deg,#94A3B8,#64748B)', glow: '#94A3B855', label: 'Inactive' };
                         return (
                           <button key={s} type="button"
@@ -480,12 +480,12 @@ function EditContent({ id }: { id: string }) {
             <SectionCard sectionId="expertise">
               <div className="space-y-3">
                 <FInput label="Specialization" value={form.specialization} onChange={set('specialization')}
-                  placeholder="Strength Training, HIIT, Yoga…" accent="#00E5A8" />
+                  placeholder="Strength Training, HIIT, Yoga…" accent="#10B981" />
                 <FInput label="Certifications" value={form.certifications} onChange={set('certifications')}
-                  placeholder="K11 Fitness, ACE Certified, NASM CPT…" accent="#00E5A8" />
+                  placeholder="K11 Fitness, ACE Certified, NASM CPT…" accent="#10B981" />
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <FInput label="Experience (years)" type="number" value={experience} onChange={setExperience} accent="#00E5A8" />
-                  <FSelect label="Primary Language" value={language} onChange={setLanguage} accent="#00E5A8"
+                  <FInput label="Experience (years)" type="number" value={experience} onChange={setExperience} accent="#10B981" />
+                  <FSelect label="Primary Language" value={language} onChange={setLanguage} accent="#10B981"
                     options={[
                       { value: 'Hindi',   label: 'Hindi'   },
                       { value: 'English', label: 'English' },
@@ -498,7 +498,7 @@ function EditContent({ id }: { id: string }) {
                     placeholder="Professional background, key achievements…"
                     className="w-full resize-none rounded-[16px] px-4 pb-3 pt-[30px] text-[14px] font-[500] outline-none transition-all duration-200"
                     style={{ background: '#ffffff', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)', boxShadow: '0 1px 4px rgba(15,23,42,0.05)' }}
-                    onFocus={e => { e.currentTarget.style.border = '1.5px solid #00E5A8'; e.currentTarget.style.boxShadow = '0 0 0 3.5px rgba(0,229,168,0.13)'; }}
+                    onFocus={e => { e.currentTarget.style.border = '1.5px solid #10B981'; e.currentTarget.style.boxShadow = '0 0 0 3.5px rgba(16,185,129,0.13)'; }}
                     onBlur={e => { e.currentTarget.style.border = '1.5px solid rgba(15,23,42,0.09)'; e.currentTarget.style.boxShadow = '0 1px 4px rgba(15,23,42,0.05)'; }}
                   />
                 </FloatLabel>
@@ -517,10 +517,10 @@ function EditContent({ id }: { id: string }) {
                         <button key={day} type="button" onClick={() => toggleDay(day)}
                           className="rounded-[10px] px-3.5 py-1.5 text-[12.5px] font-[700] transition-all duration-200 active:scale-95"
                           style={{
-                            background: on ? 'linear-gradient(135deg,#FF9F43,#FECA57)' : '#ffffff',
+                            background: on ? 'linear-gradient(135deg,#FCD34D,#FBBF24)' : '#ffffff',
                             color: on ? '#fff' : 'rgb(100,116,139)',
                             border: on ? 'none' : '1.5px solid rgba(15,23,42,0.10)',
-                            boxShadow: on ? '0 3px 10px rgba(255,159,67,0.40)' : '0 1px 3px rgba(15,23,42,0.05)',
+                            boxShadow: on ? '0 3px 10px rgba(252,211,77,0.40)' : '0 1px 3px rgba(15,23,42,0.05)',
                           }}>
                           {day}
                         </button>
@@ -529,16 +529,16 @@ function EditContent({ id }: { id: string }) {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <FInput label="Shift Start" type="time" value={shiftStart} onChange={setShiftStart} accent="#FF9F43" />
-                  <FInput label="Shift End"   type="time" value={shiftEnd}   onChange={setShiftEnd}   accent="#FF9F43" />
+                  <FInput label="Shift Start" type="time" value={shiftStart} onChange={setShiftStart} accent="#FCD34D" />
+                  <FInput label="Shift End"   type="time" value={shiftEnd}   onChange={setShiftEnd}   accent="#FCD34D" />
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <FInput label="Max Sessions / Day" type="number" value={maxSessions} onChange={setMaxSessions} accent="#FF9F43" />
-                  <FInput label="Max Clients"        type="number" value={maxClients}  onChange={setMaxClients}  accent="#FF9F43" />
+                  <FInput label="Max Sessions / Day" type="number" value={maxSessions} onChange={setMaxSessions} accent="#FCD34D" />
+                  <FInput label="Max Clients"        type="number" value={maxClients}  onChange={setMaxClients}  accent="#FCD34D" />
                 </div>
                 <div className="space-y-2">
-                  <Toggle label="Weekend Available"  sub="Available to work on Sat / Sun" value={weekendAvail}     onChange={setWeekendAvail}  accent="#FF9F43" />
-                  <Toggle label="Early Morning Slots" sub="6 AM – 8 AM availability"      value={earlyMorningAvail} onChange={setEarlyMorning} accent="#FF9F43" />
+                  <Toggle label="Weekend Available"  sub="Available to work on Sat / Sun" value={weekendAvail}     onChange={setWeekendAvail}  accent="#FCD34D" />
+                  <Toggle label="Early Morning Slots" sub="6 AM – 8 AM availability"      value={earlyMorningAvail} onChange={setEarlyMorning} accent="#FCD34D" />
                 </div>
               </div>
             </SectionCard>
@@ -547,20 +547,20 @@ function EditContent({ id }: { id: string }) {
             <SectionCard sectionId="compensation">
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <FSelect label="Salary Type" value={salaryType} onChange={setSalaryType} accent="#FF4D7A"
+                  <FSelect label="Salary Type" value={salaryType} onChange={setSalaryType} accent="#0067E0"
                     options={[
                       { value: 'Fixed',      label: 'Fixed Monthly' },
                       { value: 'Hourly',     label: 'Hourly'        },
                       { value: 'Commission', label: 'Commission'    },
                       { value: 'Hybrid',     label: 'Hybrid'        },
                     ]} />
-                  <FInput label="Base Salary (₹)" type="number" value={form.salary} onChange={set('salary')} accent="#FF4D7A" />
+                  <FInput label="Base Salary (₹)" type="number" value={form.salary} onChange={set('salary')} accent="#0067E0" />
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <FInput label="Session Rate (₹)" type="number" value={sessionRate} onChange={setSessionRate} accent="#FF4D7A" />
-                  <FInput label="Incentive Rate (%)" type="number" value={form.incentive_rate} onChange={set('incentive_rate')} accent="#FF4D7A" />
+                  <FInput label="Session Rate (₹)" type="number" value={sessionRate} onChange={setSessionRate} accent="#0067E0" />
+                  <FInput label="Incentive Rate (%)" type="number" value={form.incentive_rate} onChange={set('incentive_rate')} accent="#0067E0" />
                 </div>
-                <FSelect label="Payment Frequency" value={paymentFrequency} onChange={setPaymentFrequency} accent="#FF4D7A"
+                <FSelect label="Payment Frequency" value={paymentFrequency} onChange={setPaymentFrequency} accent="#0067E0"
                   options={[
                     { value: 'Monthly',     label: 'Monthly'     },
                     { value: 'Weekly',      label: 'Weekly'      },
@@ -568,8 +568,8 @@ function EditContent({ id }: { id: string }) {
                     { value: 'Per-Session', label: 'Per Session' },
                   ]} />
                 <div className="space-y-2">
-                  <Toggle label="Include PF / ESI"  sub="Statutory deduction applies"    value={pfEsi}         onChange={setPfEsi}         accent="#FF4D7A" />
-                  <Toggle label="Bonus Eligible"    sub="Eligible for performance bonus" value={bonusEligible} onChange={setBonusEligible} accent="#FF4D7A" />
+                  <Toggle label="Include PF / ESI"  sub="Statutory deduction applies"    value={pfEsi}         onChange={setPfEsi}         accent="#0067E0" />
+                  <Toggle label="Bonus Eligible"    sub="Eligible for performance bonus" value={bonusEligible} onChange={setBonusEligible} accent="#0067E0" />
                 </div>
               </div>
             </SectionCard>
@@ -577,12 +577,12 @@ function EditContent({ id }: { id: string }) {
             {/* ── 7. Banking & Tax ───────────────────────────────────── */}
             <SectionCard sectionId="banking">
               <div className="space-y-3">
-                <FInput label="Bank Name" value={bank} onChange={setBank} accent="#667eea" />
+                <FInput label="Bank Name" value={bank} onChange={setBank} accent="#0067e0" />
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <FInput label="Account Number" value={accountNumber} onChange={setAccountNumber} accent="#667eea" />
-                  <FInput label="IFSC Code"      value={ifsc}          onChange={setIfsc}          accent="#667eea" />
+                  <FInput label="Account Number" value={accountNumber} onChange={setAccountNumber} accent="#0067e0" />
+                  <FInput label="IFSC Code"      value={ifsc}          onChange={setIfsc}          accent="#0067e0" />
                 </div>
-                <FInput label="PAN Number" value={pan} onChange={setPan} accent="#667eea" />
+                <FInput label="PAN Number" value={pan} onChange={setPan} accent="#0067e0" />
               </div>
             </SectionCard>
 
@@ -590,10 +590,10 @@ function EditContent({ id }: { id: string }) {
             <SectionCard sectionId="targets">
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <FInput label="Monthly Client Target"      type="number" value={monthlyClientTarget}  onChange={setMonthlyClientTarget}  accent="#f093fb" />
-                  <FInput label="Monthly Revenue Target (₹)" type="number" value={monthlyRevenueTarget} onChange={setMonthlyRevenueTarget} accent="#f093fb" />
+                  <FInput label="Monthly Client Target"      type="number" value={monthlyClientTarget}  onChange={setMonthlyClientTarget}  accent="#7fb4ff" />
+                  <FInput label="Monthly Revenue Target (₹)" type="number" value={monthlyRevenueTarget} onChange={setMonthlyRevenueTarget} accent="#7fb4ff" />
                 </div>
-                <FSelect label="Studio Access Level" value={studioAccess} onChange={setStudioAccess} accent="#f093fb"
+                <FSelect label="Studio Access Level" value={studioAccess} onChange={setStudioAccess} accent="#7fb4ff"
                   options={[
                     { value: 'Basic',    label: 'Basic'    },
                     { value: 'Standard', label: 'Standard' },
@@ -602,11 +602,11 @@ function EditContent({ id }: { id: string }) {
                   ]} />
                 <p className="pt-1 text-[10.5px] font-[700] uppercase tracking-[0.10em]" style={{ color: 'rgba(148,163,184,0.9)' }}>Permissions</p>
                 <div className="space-y-2">
-                  <Toggle label="Manage Clients"  sub="Can add/edit assigned clients"    value={permManageClients}  onChange={setPermManageClients}  accent="#f093fb" />
-                  <Toggle label="View Financials" sub="Can see revenue & payment data"   value={permViewFinancials} onChange={setPermViewFinancials} accent="#f093fb" />
-                  <Toggle label="Attendance"      sub="Can mark client attendance"       value={permAttendance}     onChange={setPermAttendance}     accent="#f093fb" />
-                  <Toggle label="Content"         sub="Can upload workout/diet content"  value={permContent}        onChange={setPermContent}        accent="#f093fb" />
-                  <Toggle label="Leave Approval"  sub="Can approve team leave requests"  value={permLeaveApproval}  onChange={setPermLeaveApproval}  accent="#f093fb" />
+                  <Toggle label="Manage Clients"  sub="Can add/edit assigned clients"    value={permManageClients}  onChange={setPermManageClients}  accent="#7fb4ff" />
+                  <Toggle label="View Financials" sub="Can see revenue & payment data"   value={permViewFinancials} onChange={setPermViewFinancials} accent="#7fb4ff" />
+                  <Toggle label="Attendance"      sub="Can mark client attendance"       value={permAttendance}     onChange={setPermAttendance}     accent="#7fb4ff" />
+                  <Toggle label="Content"         sub="Can upload workout/diet content"  value={permContent}        onChange={setPermContent}        accent="#7fb4ff" />
+                  <Toggle label="Leave Approval"  sub="Can approve team leave requests"  value={permLeaveApproval}  onChange={setPermLeaveApproval}  accent="#7fb4ff" />
                 </div>
               </div>
             </SectionCard>
@@ -630,7 +630,7 @@ function EditContent({ id }: { id: string }) {
 
         {/* ── Floating action bar ─────────────────────────────────────── */}
         <div className="page-action-bar px-4 pb-6 pt-3 lg:pl-[calc(var(--sidebar-w,256px)+16px)]"
-          style={{ background: 'linear-gradient(to top, rgba(255,247,237,0.95) 70%, transparent)', backdropFilter: 'blur(12px)' }}>
+          style={{ background: 'linear-gradient(to top, rgba(255,251,235,0.95) 70%, transparent)', backdropFilter: 'blur(12px)' }}>
           <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
             <Link href={`/trainers/${id}`}
               className="flex items-center gap-2 rounded-[16px] px-5 py-3 text-[14px] font-[700] transition-all duration-200 active:scale-95"
@@ -639,7 +639,7 @@ function EditContent({ id }: { id: string }) {
             </Link>
             <button type="button" onClick={() => submit()} disabled={saving || success}
               className="flex flex-1 items-center justify-center gap-2 rounded-[16px] py-3 text-[14.5px] font-[800] text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-60 sm:flex-none sm:px-10"
-              style={{ background: 'linear-gradient(135deg,#FFB300,#FF8F00,#FF6F00)', boxShadow: '0 6px 24px rgba(255,143,0,0.45)' }}>
+              style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706,#D97706)', boxShadow: '0 6px 24px rgba(245,158,11,0.45)' }}>
               {saving
                 ? <><span className="animate-spin text-base">&#9696;</span> Saving…</>
                 : success

@@ -21,7 +21,7 @@ const CATEGORIES: { value: AiKnowledgeDocument['category']; label: string }[] = 
 
 const STATUS_CFG: Record<AiKnowledgeDocument['status'], { label: string; bg: string; color: string; icon: typeof CheckCircle2 }> = {
   ready: { label: 'Ready', bg: 'rgba(16,185,129,0.1)', color: '#059669', icon: CheckCircle2 },
-  processing: { label: 'Processing', bg: 'rgba(99,102,241,0.1)', color: '#4f46e5', icon: Loader2 },
+  processing: { label: 'Processing', bg: 'rgba(0,103,224,0.1)', color: '#0067e0', icon: Loader2 },
   failed: { label: 'Failed', bg: 'rgba(239,68,68,0.1)', color: '#dc2626', icon: AlertTriangle },
 };
 
@@ -104,7 +104,7 @@ export default function AiKnowledgeBasePage() {
               style={{ padding: '28px 4px 24px', marginBottom: 8, borderBottom: '1px solid var(--border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 20px rgba(99,102,241,0.35)', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 4px 20px rgba(0,103,224,0.35)', flexShrink: 0 }}>
                     <BookOpen size={22} color="#fff" />
                   </div>
                   <div>
@@ -145,8 +145,8 @@ export default function AiKnowledgeBasePage() {
                     <m.div key={doc.id}
                       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
                       style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 16, background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 38, height: 38, borderRadius: 10, background: 'rgba(99,102,241,0.1)', flexShrink: 0 }}>
-                        <FileText size={16} style={{ color: '#6366f1' }} />
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 38, height: 38, borderRadius: 10, background: 'rgba(0,103,224,0.1)', flexShrink: 0 }}>
+                        <FileText size={16} style={{ color: '#0067e0' }} />
                       </div>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -215,7 +215,7 @@ export default function AiKnowledgeBasePage() {
                   <div style={{ display: 'flex', gap: 6 }}>
                     {CATEGORIES.map((c) => (
                       <button key={c.value} onClick={() => setCategory(c.value)}
-                        style={{ flex: 1, padding: '8px 0', borderRadius: 9, border: `1.5px solid ${category === c.value ? '#6366f1' : 'var(--border)'}`, background: category === c.value ? 'rgba(99,102,241,0.1)' : 'transparent', color: category === c.value ? '#6366f1' : 'var(--text-muted)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                        style={{ flex: 1, padding: '8px 0', borderRadius: 9, border: `1.5px solid ${category === c.value ? '#0067e0' : 'var(--border)'}`, background: category === c.value ? 'rgba(0,103,224,0.1)' : 'transparent', color: category === c.value ? '#0067e0' : 'var(--text-muted)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                         {c.label}
                       </button>
                     ))}

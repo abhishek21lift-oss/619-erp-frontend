@@ -40,7 +40,7 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 const TONE: Record<string, { fg: string; bg: string; border: string }> = {
   critical: { fg: '#b91c1c', bg: 'rgba(220,38,38,0.08)', border: 'rgba(220,38,38,0.28)' },
   warning: { fg: '#b45309', bg: 'rgba(217,119,6,0.09)', border: 'rgba(217,119,6,0.26)' },
-  info: { fg: '#1d4ed8', bg: 'rgba(37,99,235,0.07)', border: 'rgba(37,99,235,0.22)' },
+  info: { fg: '#0067e0', bg: 'rgba(0,103,224,0.07)', border: 'rgba(0,103,224,0.22)' },
 };
 
 export interface ClientSnapshotProps {
@@ -281,11 +281,11 @@ function CoachCard({ insights, clientId }: { insights: CoachInsight[]; clientId:
   };
 
   return (
-    <Card title="AI Coach" icon={<Sparkles size={16} />} from="#8b5cf6" to="#7c3aed"
+    <Card title="AI Coach" icon={<Sparkles size={16} />} from="#0067e0" to="#0067e0"
       right={source === 'ai'
         ? (
           <span className="shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-[800] uppercase tracking-wider"
-            style={{ background: 'rgba(139,92,246,0.14)', color: '#7c3aed' }}>AI</span>
+            style={{ background: 'rgba(0,103,224,0.14)', color: '#0067e0' }}>AI</span>
         )
         : null}>
       {lines.length === 0 ? (
@@ -315,7 +315,7 @@ function CoachCard({ insights, clientId }: { insights: CoachInsight[]; clientId:
           onClick={ask}
           disabled={busy}
           className="flex h-[44px] items-center gap-1.5 rounded-[12px] px-3.5 text-[11.5px] font-[750] disabled:opacity-60"
-          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: '#7c3aed' }}
+          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: '#0067e0' }}
         >
           <Sparkles size={13} className={busy ? 'animate-pulse' : undefined} />
           {busy ? 'Reading their file…' : source === 'ai' ? 'Ask again' : 'Ask the AI coach'}

@@ -11,7 +11,7 @@ import { n } from './types';
 const CATEGORY_STYLE: Record<string, { bg: string; color: string }> = {
   Excellent: { bg: 'rgba(16,185,129,0.12)', color: '#059669' },
   Good: { bg: 'rgba(245,158,11,0.12)', color: '#d97706' },
-  Fair: { bg: 'rgba(249,115,22,0.14)', color: '#ea580c' },
+  Fair: { bg: 'rgba(245,158,11,0.14)', color: '#f59e0b' },
   Poor: { bg: 'rgba(239,68,68,0.14)', color: '#dc2626' },
 };
 

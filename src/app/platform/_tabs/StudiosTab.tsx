@@ -237,7 +237,7 @@ export function StudiosTab() {
         </div>
       )}
 
-      {loading && <Center><Loader2 size={26} className="animate-spin" style={{ color: '#6366f1' }} /></Center>}
+      {loading && <Center><Loader2 size={26} className="animate-spin" style={{ color: '#0067e0' }} /></Center>}
       {error && !loading && <ErrorState error={error} onRetry={load} />}
       {!loading && !error && filtered.length === 0 && (
         <EmptyState icon={<Building2 size={20} />}
@@ -324,8 +324,8 @@ export function MoreMenu({ suspended, onToggleStatus, onSupportAccess, supportBu
 // keyed by plan_code (stable) rather than plan_name (a display string).
 export const PLAN_ACCENT: Record<string, string> = {
   starter: 'linear-gradient(90deg,#64748b,#475569)',
-  growth: 'linear-gradient(90deg,#3b82f6,#2563eb)',
-  professional: 'linear-gradient(90deg,#8b5cf6,#7c3aed)',
+  growth: 'linear-gradient(90deg,#0067e0,#0059ce)',
+  professional: 'linear-gradient(90deg,#0067e0,#0059ce)',
   elite: 'linear-gradient(90deg,#f59e0b,#d97706)',
 };
 export const NO_PLAN_ACCENT = 'linear-gradient(90deg,var(--border),var(--border))';
@@ -504,8 +504,8 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
             colored icon chip rather than plain muted text. */}
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           <MiniStat icon={<IndianRupee size={14} />} value={fmtINR(row.revenue)} label="Revenue" color="#10b981" />
-          <MiniStat icon={<Users size={14} />} value={`${row.activeClients}/${row.totalClients}`} label="Clients" color="#3b82f6" />
-          <MiniStat icon={<Dumbbell size={14} />} value={org.trainer_count ?? 0} label="Coaches" color="#8b5cf6" />
+          <MiniStat icon={<Users size={14} />} value={`${row.activeClients}/${row.totalClients}`} label="Clients" color="#0067e0" />
+          <MiniStat icon={<Dumbbell size={14} />} value={org.trainer_count ?? 0} label="Coaches" color="#0067e0" />
           <MiniStat icon={<UserCircle size={14} />} value={org.user_count ?? 0} label="Accounts" color="#f59e0b" />
         </div>
 
@@ -518,7 +518,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
           </button>
           <button onClick={() => impersonate('read_only')} disabled={suspended || impLoading === 'read_only:primary'} title="View this studio as its admin (read-only)"
             className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80 disabled:opacity-40"
-            style={{ background: 'rgba(99,102,241,0.10)', color: '#4f46e5', border: '1px solid rgba(99,102,241,0.25)' }}>
+            style={{ background: 'rgba(0,103,224,0.10)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.25)' }}>
             {impLoading === 'read_only:primary' ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />} View as
           </button>
           <MoreMenu
@@ -532,7 +532,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
 
       {expanded && (
         <div className="border-t rounded-b-[17px] px-4 py-3" style={{ borderColor: 'var(--border)', background: 'var(--bg-subtle)' }}>
-          {loadingDetail && <div className="flex justify-center py-4"><Loader2 size={18} className="animate-spin" style={{ color: '#6366f1' }} /></div>}
+          {loadingDetail && <div className="flex justify-center py-4"><Loader2 size={18} className="animate-spin" style={{ color: '#0067e0' }} /></div>}
           {detail && detail.users.length === 0 && <p className="py-2 text-[12px]" style={{ color: 'var(--text-muted)' }}>No login accounts.</p>}
           {detail && detail.users.map((u) => (
             <div key={u.id} className="flex flex-wrap items-center gap-2 py-2">
@@ -652,7 +652,7 @@ export function StudioOperatorPanel({ org, onChanged }: { org: Organization; onC
           <button
             onClick={grant} disabled={granting}
             className="flex h-9 items-center gap-1.5 rounded-[9px] px-3 text-[11.5px] font-[700] text-white disabled:opacity-50"
-            style={{ background: '#6366f1' }}
+            style={{ background: '#0067e0' }}
           >
             {granting ? <Loader2 size={12} className="animate-spin" /> : <Gift size={12} />} Grant
           </button>

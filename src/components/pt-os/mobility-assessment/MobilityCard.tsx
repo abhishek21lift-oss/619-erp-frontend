@@ -6,7 +6,7 @@ import { DonutChart } from '@/components/ui';
 const CATEGORY_STYLE: Record<string, { bg: string; color: string }> = {
   Excellent: { bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
   Good: { bg: 'rgba(245,158,11,0.15)', color: '#d97706' },
-  Average: { bg: 'rgba(249,115,22,0.15)', color: '#f97316' },
+  Average: { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b' },
   'Below Average': { bg: 'rgba(239,68,68,0.15)', color: '#ef4444' },
   Poor: { bg: 'rgba(220,38,38,0.18)', color: '#dc2626' },
 };

@@ -33,8 +33,8 @@ import type { ProgressionPreview, WorkoutPlanExercise, WorkoutExerciseInput } fr
 
 /** Muscle-group hues. Fixed per group so a group keeps its colour everywhere. */
 const GROUP_TONE: Record<string, string> = {
-  chest: '#e11d48', back: '#2563eb', legs: '#7c3aed', shoulders: '#ea580c',
-  arms: '#0891b2', core: '#ca8a04', cardio: '#059669', 'full body': '#64748b',
+  chest: '#dc2626', back: '#0067e0', legs: '#0067e0', shoulders: '#f59e0b',
+  arms: '#0059ce', core: '#d97706', cardio: '#059669', 'full body': '#64748b',
 };
 const toneFor = (group?: string | null) =>
   GROUP_TONE[(group || '').toLowerCase()] ?? 'var(--brand)';

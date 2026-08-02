@@ -14,11 +14,11 @@ import { ArrowLeft, Mail, Loader2, CheckCircle2, AlertCircle } from 'lucide-reac
 import BrandLogoWide from '@/components/BrandLogoWide';
 import { api } from '@/lib/api';
 
-const MAROON = '#0060E0';
-const GOLD = '#5CB0FF';
-const INK = '#0B1220';
-const MUTE = '#5B6675';
-const LINE = 'rgba(11,18,32,0.10)';
+const MAROON = '#0067E0';
+const GOLD = '#0067E0';
+const INK = '#0F172A';
+const MUTE = '#64748B';
+const LINE = 'rgba(15,23,42,0.10)';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -55,7 +55,7 @@ export default function ForgotPasswordPage() {
     <main
       className="relative flex min-h-[100dvh] flex-col items-center justify-center"
       style={{
-        background: 'radial-gradient(120% 78% at 50% -8%, #F2F7FF 0%, #ffffff 48%)',
+        background: 'radial-gradient(120% 78% at 50% -8%, #F8FAFC 0%, #ffffff 48%)',
         color: INK,
         fontFamily: "var(--font-sans), 'Inter', system-ui, sans-serif",
         paddingTop: 'calc(max(env(safe-area-inset-top), 2.75rem) + 1.25rem)',
@@ -95,11 +95,11 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
 
-        <div className="rounded-[20px] bg-white p-6" style={{ border: `1px solid ${LINE}`, boxShadow: '0 18px 48px rgba(11,18,32,0.08)' }}>
+        <div className="rounded-[20px] bg-white p-6" style={{ border: `1px solid ${LINE}`, boxShadow: '0 18px 48px rgba(15,23,42,0.08)' }}>
           {sent ? (
             <div className="flex flex-col items-center text-center">
-              <div className="mb-3 grid h-12 w-12 place-items-center rounded-full" style={{ background: 'rgba(34,197,94,0.12)' }}>
-                <CheckCircle2 size={24} style={{ color: '#16A34A' }} />
+              <div className="mb-3 grid h-12 w-12 place-items-center rounded-full" style={{ background: 'rgba(16,185,129,0.12)' }}>
+                <CheckCircle2 size={24} style={{ color: '#10B981' }} />
               </div>
               <p className="text-[13.5px] leading-relaxed" style={{ color: MUTE }}>
                 Nothing in your inbox after a few minutes? Check spam, then try again — and make sure
@@ -125,7 +125,7 @@ export default function ForgotPasswordPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@studio.com"
-                  className="w-full rounded-[12px] py-3 pl-10 pr-3 text-[14px] outline-none transition-colors focus:border-[#0060E0]"
+                  className="w-full rounded-[12px] py-3 pl-10 pr-3 text-[14px] outline-none transition-colors focus:border-[#0067E0]"
                   style={{ border: `1.5px solid ${LINE}`, color: INK }}
                 />
               </div>
@@ -141,7 +141,7 @@ export default function ForgotPasswordPage() {
                 type="submit"
                 disabled={busy}
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] py-3 text-[14.5px] font-[700] text-white transition-opacity disabled:opacity-60"
-                style={{ background: MAROON, boxShadow: '0 8px 22px rgba(0,96,224,0.28)' }}
+                style={{ background: MAROON, boxShadow: '0 8px 22px rgba(0,103,224,0.28)' }}
               >
                 {busy ? <><Loader2 size={17} className="animate-spin" /> Sending…</> : 'Send reset link'}
               </button>

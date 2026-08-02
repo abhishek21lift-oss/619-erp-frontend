@@ -21,6 +21,7 @@ import { cn } from '@/components/ui/cn';
 import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { identity } from '@/lib/palette';
 
 /* ────────────────────────────────────────────────────────────────────
    TYPES
@@ -67,7 +68,7 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 const TIME_SLOTS = Array.from({ length: 14 }, (_, i) => `${String(6 + i).padStart(2, '0')}:00`);
 
 const TYPE_COLORS: Record<SessionType, string> = {
-  '1-on-1': '#6366f1',
+  '1-on-1': '#0067e0',
   'Group': '#f59e0b',
   'Assessment': '#10b981',
 };
@@ -116,7 +117,7 @@ function mapApiSession(s: Record<string, unknown>, trainerArr: { id: string; nam
   };
 }
 
-const AVATAR_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#0ea5e9', '#8b5cf6', '#dc2626', '#14b8a6'];
+const AVATAR_COLORS = identity;
 
 function todayStr() {
   return new Date().toISOString().split('T')[0];
@@ -443,7 +444,7 @@ function SchedulePageContent() {
                               {daySessions.slice(0, 3).map((s) => (
                                 <div key={s.id}
                                   className="h-1 w-1.5 rounded-full"
-                                  style={{ background: s.status === 'scheduled' ? '#F59E0B' : s.status === 'completed' ? '#10b981' : '#9ca3af' }}
+                                  style={{ background: s.status === 'scheduled' ? '#F59E0B' : s.status === 'completed' ? '#10b981' : '#94a3b8' }}
                                 />
                               ))}
                               {daySessions.length > 3 && (
@@ -537,8 +538,8 @@ function SchedulePageContent() {
                             <div className="flex flex-col items-center shrink-0 w-[60px]">
                               <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 z-10"
                                 style={{
-                                  background: session.status === 'completed' ? '#10b981' : session.status === 'cancelled' ? '#9ca3af' : '#fff',
-                                  borderColor: session.status === 'completed' ? '#10b981' : session.status === 'cancelled' ? '#9ca3af' : '#F59E0B',
+                                  background: session.status === 'completed' ? '#10b981' : session.status === 'cancelled' ? '#94a3b8' : '#fff',
+                                  borderColor: session.status === 'completed' ? '#10b981' : session.status === 'cancelled' ? '#94a3b8' : '#F59E0B',
                                 }}>
                                 {session.status === 'completed' ? <CheckCircle2 size={12} color="white" /> : <span className="text-[10px] font-[800]" style={{ color: '#F59E0B' }}>{session.time.split(':')[0]}</span>}
                               </div>
@@ -602,7 +603,7 @@ function SchedulePageContent() {
                                 <div key={s.id}
                                   className="rounded-[8px] p-2 cursor-pointer transition-all hover:opacity-80"
                                   style={{
-                                    background: s.status === 'scheduled' ? 'rgba(220,38,38,0.10)' : s.status === 'completed' ? 'rgba(16,185,129,0.10)' : 'rgba(156,163,175,0.10)',
+                                    background: s.status === 'scheduled' ? 'rgba(220,38,38,0.10)' : s.status === 'completed' ? 'rgba(16,185,129,0.10)' : 'rgba(148,163,184,0.10)',
                                     border: '1px solid rgba(15,23,42,0.06)',
                                   }}
                                   onClick={() => setShowSessionPanel(s.id)}
@@ -847,7 +848,7 @@ function CreateSessionModal({
                 onChange={(e) => setClientSearch(e.target.value)}
                 placeholder="Search clients…"
                 className="mb-2 h-[44px] w-full rounded-[10px] px-3 text-[12.5px] outline-none"
-                style={{ background: '#f9fafb', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }}
+                style={{ background: '#f8fafc', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }}
               />
             )}
 
@@ -858,7 +859,7 @@ function CreateSessionModal({
                 ))}
               </div>
             ) : resolvedClients.length === 0 ? (
-              <p className="rounded-[10px] px-3 py-3 text-[12px]" style={{ background: '#f9fafb', color: 'rgb(148,163,184)' }}>
+              <p className="rounded-[10px] px-3 py-3 text-[12px]" style={{ background: '#f8fafc', color: 'rgb(148,163,184)' }}>
                 {clientSearch.trim() ? `No client matches "${clientSearch.trim()}".` : 'No clients yet.'}
               </p>
             ) : (
@@ -875,7 +876,7 @@ function CreateSessionModal({
                     <button key={c.id} type="button" onClick={() => setForm((f) => ({ ...f, client: c.name, client_id: c.id }))}
                       className="flex flex-col items-start gap-1 rounded-[10px] px-3 py-2.5 text-left text-[12px] font-[600] transition-all"
                       style={{
-                        background: selected ? 'rgba(2,113,235,0.08)' : '#f9fafb',
+                        background: selected ? 'rgba(2,113,235,0.08)' : '#f8fafc',
                         border: selected ? '1.5px solid rgba(2,113,235,0.45)' : '1.5px solid rgba(15,23,42,0.09)',
                         color: selected ? '#0059CE' : 'rgb(100,116,139)',
                       }}
@@ -897,7 +898,7 @@ function CreateSessionModal({
           <div>
             <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Trainer</p>
             <div className="flex items-center gap-2 rounded-[10px] px-3 py-2.5 text-[12px] font-[600]"
-              style={{ background: '#f9fafb', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(71,85,105)' }}>
+              style={{ background: '#f8fafc', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(71,85,105)' }}>
               <User size={13} style={{ color: 'rgb(148,163,184)' }} />
               {defaultTrainer || 'No trainer on this studio'}
             </div>
@@ -935,7 +936,7 @@ function CreateSessionModal({
                 <button key={t} type="button" onClick={() => setForm((f) => ({ ...f, type: t }))}
                   className="rounded-[10px] px-3 py-2.5 text-[12px] font-[600] transition-all"
                   style={{
-                    background: form.type === t ? 'rgba(220,38,38,0.10)' : '#f9fafb',
+                    background: form.type === t ? 'rgba(220,38,38,0.10)' : '#f8fafc',
                     border: form.type === t ? '1.5px solid rgba(220,38,38,0.30)' : '1.5px solid rgba(15,23,42,0.09)',
                     color: form.type === t ? '#F59E0B' : 'rgb(100,116,139)',
                   }}
@@ -960,7 +961,7 @@ function CreateSessionModal({
           <button type="button" onClick={() => setForm((f) => ({ ...f, recurring: !f.recurring }))}
             className="flex items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 text-[12px] font-[600] transition-all"
             style={{
-              background: form.recurring ? 'rgba(220,38,38,0.08)' : '#f9fafb',
+              background: form.recurring ? 'rgba(220,38,38,0.08)' : '#f8fafc',
               border: form.recurring ? '1.5px solid rgba(220,38,38,0.25)' : '1.5px solid rgba(15,23,42,0.09)',
               color: form.recurring ? '#F59E0B' : 'rgb(100,116,139)',
             }}>
@@ -1067,11 +1068,11 @@ function SessionDetailPanel({
                   session.status === status && 'ring-2',
                 )}
                 style={{
-                  background: status === 'completed' ? 'rgba(16,185,129,0.10)' : status === 'cancelled' ? 'rgba(239,68,68,0.10)' : 'rgba(99,102,241,0.10)',
-                  color: status === 'completed' ? '#059669' : status === 'cancelled' ? '#ef4444' : '#6366f1',
-                  borderColor: status === 'completed' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#6366f1',
+                  background: status === 'completed' ? 'rgba(16,185,129,0.10)' : status === 'cancelled' ? 'rgba(239,68,68,0.10)' : 'rgba(0,103,224,0.10)',
+                  color: status === 'completed' ? '#059669' : status === 'cancelled' ? '#ef4444' : '#0067e0',
+                  borderColor: status === 'completed' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#0067e0',
                   border: '1.5px solid transparent',
-                  ...(session.status === status ? { borderColor: status === 'completed' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#6366f1' } : {}),
+                  ...(session.status === status ? { borderColor: status === 'completed' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#0067e0' } : {}),
                 }}
               >
                 {status === 'completed' ? 'Complete' : status === 'cancelled' ? 'Cancel' : 'Schedule'}

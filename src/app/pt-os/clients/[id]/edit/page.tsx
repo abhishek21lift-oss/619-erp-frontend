@@ -45,7 +45,7 @@ function SectionCard({ title, icon, children, accent = '#F59E0B' }: {
 }
 
 function ReadOnlyField({ label, value, highlight }: { label: string; value: string; highlight?: 'green' | 'red' | 'amber' }) {
-  const color = highlight === 'green' ? '#10b981' : highlight === 'red' ? '#ef4444' : highlight === 'amber' ? '#f59e0b' : '#111827';
+  const color = highlight === 'green' ? '#10b981' : highlight === 'red' ? '#ef4444' : highlight === 'amber' ? '#f59e0b' : '#0F172A';
   return (
     <div className="rounded-[13px] px-4 py-3" style={{ background: 'var(--bg-subtle)', border: '1.5px solid var(--border)' }}>
       <p className="text-[10.5px] font-[600] uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>{label}</p>
@@ -223,7 +223,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                     onChange={e => setForm(p => ({ ...p, gender: e.target.value }))}
                     className="w-full rounded-[13px] px-4 py-3.5 text-[13.5px] font-[500] outline-none appearance-none transition-all"
                     style={{
-                      background: 'var(--bg-card)', color: form.gender ? '#111827' : '#6b7280',
+                      background: 'var(--bg-card)', color: form.gender ? '#0F172A' : '#64748b',
                       border: '1.5px solid var(--border)',
                     }}>
                     <option value="">Select gender</option>
@@ -242,7 +242,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
             </SectionCard>
 
             {/* ── PT Assignment ── */}
-            <SectionCard title="PT Assignment" icon={<Dumbbell size={16} />} accent="#6366f1">
+            <SectionCard title="PT Assignment" icon={<Dumbbell size={16} />} accent="#0067e0">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                 <FloatInput
@@ -272,7 +272,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                   onChange={set('pt_end_date')}
                   suffix={
                     form.pt_start_date && form.duration_months
-                      ? <span style={{ fontSize: 10, color: '#6366f1', fontWeight: 600 }}>auto</span>
+                      ? <span style={{ fontSize: 10, color: '#0067e0', fontWeight: 600 }}>auto</span>
                       : undefined
                   }
                 />
@@ -309,8 +309,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
               {/* Info hint */}
               <div className="mt-4 flex items-start gap-2 rounded-[10px] px-3.5 py-2.5"
-                style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.12)' }}>
-                <Info size={12} style={{ color: '#6366f1', marginTop: 2, flexShrink: 0 }} />
+                style={{ background: 'rgba(0,103,224,0.05)', border: '1px solid rgba(0,103,224,0.12)' }}>
+                <Info size={12} style={{ color: '#0067e0', marginTop: 2, flexShrink: 0 }} />
                 <p className="text-[11.5px] leading-relaxed" style={{ color: 'var(--text-disabled)' }}>
                   Balance = Final − Paid. This recalculates automatically as you type.
                 </p>

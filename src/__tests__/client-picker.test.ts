@@ -121,7 +121,7 @@ describe('the shared PT-OS client picker', () => {
     // amber remains correct for warning states elsewhere. A bare hex search
     // flags both and teaches people to ignore this test.
     expect(src).not.toContain('linear-gradient(135deg, #F59E0B, #D97706)');
-    expect(src).not.toContain('#fff7ed');
+    expect(src).not.toContain('#fffbeb');
     // Nor the blue inlined instead of imported.
     expect(src).not.toMatch(/#0067E0|#0059CE/);
     // The hero is a filled blue block, not a pale wash. The wash was the first
@@ -138,7 +138,7 @@ describe('the shared PT-OS client picker', () => {
       join(process.cwd(), 'src/components/pt-os/informed-consent/ConsentSummary.tsx'), 'utf8');
     expect(rec).toContain("from '@/lib/brand'");
     expect(rec).not.toContain('linear-gradient(135deg, #F59E0B, #D97706)');
-    expect(rec).not.toContain('#fff7ed');
+    expect(rec).not.toContain('#fffbeb');
     expect(rec).not.toContain('#B45309');
   });
 

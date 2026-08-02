@@ -18,7 +18,7 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
   return (
     <div className="space-y-7">
       <div className="flex items-start gap-4">
-        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f766e' }}>
+        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0059ce' }}>
           <FileSignature size={20} color="#fff" />
         </div>
         <div>
@@ -39,11 +39,11 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
         type="button" onClick={() => set('exerciseConsentChecked', !form.exerciseConsentChecked)}
         className="flex w-full items-start gap-3 rounded-[14px] px-4 py-3.5 text-left transition-all"
         style={{
-          background: form.exerciseConsentChecked ? 'rgba(13,148,136,0.06)' : 'var(--bg-subtle)',
-          border: form.exerciseConsentChecked ? '1.5px solid #0d9488' : '1.5px solid rgba(15,23,42,0.08)',
+          background: form.exerciseConsentChecked ? 'rgba(0,89,206,0.06)' : 'var(--bg-subtle)',
+          border: form.exerciseConsentChecked ? '1.5px solid #0059ce' : '1.5px solid rgba(15,23,42,0.08)',
         }}>
         <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]"
-          style={{ background: form.exerciseConsentChecked ? '#0d9488' : '#fff', border: form.exerciseConsentChecked ? 'none' : '1.5px solid #cbd5e1' }}>
+          style={{ background: form.exerciseConsentChecked ? '#0059ce' : '#fff', border: form.exerciseConsentChecked ? 'none' : '1.5px solid #cbd5e1' }}>
           {form.exerciseConsentChecked && <Check size={13} color="#fff" strokeWidth={3} />}
         </span>
         <span className="text-[13px] font-[600] leading-snug" style={{ color: form.exerciseConsentChecked ? '#0f172a' : '#475569' }}>

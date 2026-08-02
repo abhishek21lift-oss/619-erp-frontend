@@ -21,12 +21,12 @@ type Step = {
 };
 
 const STEPS: Step[] = [
-  { id: 1, title: 'Personal Details',        subtitle: 'Basic info & photo',        icon: <User size={18}/>,       color: '#6366f1', gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', soft: 'rgba(99,102,241,0.12)'  },
-  { id: 2, title: 'Contact Information',     subtitle: 'Phone, email, address',     icon: <Phone size={18}/>,      color: '#0ea5e9', gradient: 'linear-gradient(135deg,#0ea5e9,#38bdf8)', soft: 'rgba(14,165,233,0.12)'  },
-  { id: 3, title: 'Coaching Specialization', subtitle: 'Expertise & certifications',icon: <Dumbbell size={18}/>,  color: '#f43f5e', gradient: 'linear-gradient(135deg,#f43f5e,#fb7185)', soft: 'rgba(244,63,94,0.12)'   },
+  { id: 1, title: 'Personal Details',        subtitle: 'Basic info & photo',        icon: <User size={18}/>,       color: '#0067e0', gradient: 'linear-gradient(135deg,#0067e0,#0059ce)', soft: 'rgba(0,103,224,0.12)'  },
+  { id: 2, title: 'Contact Information',     subtitle: 'Phone, email, address',     icon: <Phone size={18}/>,      color: '#0067e0', gradient: 'linear-gradient(135deg,#0067e0,#0059ce)', soft: 'rgba(0,103,224,0.12)'  },
+  { id: 3, title: 'Coaching Specialization', subtitle: 'Expertise & certifications',icon: <Dumbbell size={18}/>,  color: '#ef4444', gradient: 'linear-gradient(135deg,#ef4444,#f87171)', soft: 'rgba(239,68,68,0.12)'   },
   { id: 4, title: 'Salary & Payroll',        subtitle: 'Compensation details',      icon: <DollarSign size={18}/>, color: '#10b981', gradient: 'linear-gradient(135deg,#10b981,#34d399)', soft: 'rgba(16,185,129,0.12)'  },
   { id: 5, title: 'Shift & Schedule',        subtitle: 'Working hours',             icon: <Clock size={18}/>,      color: '#f59e0b', gradient: 'linear-gradient(135deg,#f59e0b,#fbbf24)', soft: 'rgba(245,158,11,0.12)'  },
-  { id: 6, title: 'Clients & Permissions',   subtitle: 'Access & assignments',      icon: <Shield size={18}/>,     color: '#8b5cf6', gradient: 'linear-gradient(135deg,#8b5cf6,#a78bfa)', soft: 'rgba(139,92,246,0.12)'  },
+  { id: 6, title: 'Clients & Permissions',   subtitle: 'Access & assignments',      icon: <Shield size={18}/>,     color: '#0067e0', gradient: 'linear-gradient(135deg,#0067e0,#7fb4ff)', soft: 'rgba(0,103,224,0.12)'  },
 ];
 
 const SPECIALIZATIONS = ['Strength Training', 'HIIT', 'Yoga', 'Pilates', 'Cardio', 'Powerlifting', 'CrossFit', 'Functional Training', 'Rehabilitation', 'Nutrition', 'Weight Loss', 'Muscle Gain', 'Endurance', 'Flexibility'];
@@ -43,14 +43,14 @@ function FloatLabel({ label, children, required }: { label: string; children: Re
       {children}
       <label className="pointer-events-none absolute left-4 top-[10px] text-[10.5px] font-[700] uppercase tracking-[0.10em]"
         style={{ color: 'rgb(148,163,184)' }}>
-        {label}{required && <span className="ml-0.5" style={{ color: '#f43f5e' }}>*</span>}
+        {label}{required && <span className="ml-0.5" style={{ color: '#ef4444' }}>*</span>}
       </label>
     </div>
   );
 }
 
 // ── Input ────────────────────────────────────────────────────────────
-function Input({ label, type = 'text', placeholder, required, value, onChange, accentColor = '#6366f1' }: {
+function Input({ label, type = 'text', placeholder, required, value, onChange, accentColor = '#0067e0' }: {
   label: string; type?: string; placeholder?: string; required?: boolean;
   value?: string; onChange?: (v: string) => void; accentColor?: string;
 }) {
@@ -76,7 +76,7 @@ function Input({ label, type = 'text', placeholder, required, value, onChange, a
 }
 
 // ── Select ───────────────────────────────────────────────────────────
-function Select({ label, options, required, value, onChange, accentColor = '#6366f1' }: {
+function Select({ label, options, required, value, onChange, accentColor = '#0067e0' }: {
   label: string; options: string[]; required?: boolean;
   value?: string; onChange?: (v: string) => void; accentColor?: string;
 }) {
@@ -134,7 +134,7 @@ function ChipGroup({ options, selected, onChange, gradient, color }: {
 }
 
 // ── ToggleSwitch — fully controlled ─────────────────────────────────
-function ToggleSwitch({ label, sublabel, checked, onChange, accentColor = '#6366f1' }: {
+function ToggleSwitch({ label, sublabel, checked, onChange, accentColor = '#0067e0' }: {
   label: string; sublabel?: string;
   checked: boolean; onChange: (v: boolean) => void; accentColor?: string;
 }) {
@@ -161,7 +161,7 @@ function ToggleSwitch({ label, sublabel, checked, onChange, accentColor = '#6366
 }
 
 // ── DragDropUpload ───────────────────────────────────────────────────
-function DragDropUpload({ label, accept, accentColor = '#6366f1', accentGradient }: {
+function DragDropUpload({ label, accept, accentColor = '#0067e0', accentGradient }: {
   label: string; accept: string; accentColor?: string; accentGradient?: string;
 }) {
   const [dragging, setDragging] = useState(false);
@@ -581,9 +581,9 @@ export default function AddCoachPage() {
               {error && (
                 <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
                   className="mb-5 flex items-start gap-3 rounded-[16px] p-4"
-                  style={{ background: 'rgba(244,63,94,0.07)', border: '1.5px solid rgba(244,63,94,0.20)' }}>
-                  <AlertCircle size={16} style={{ color: '#f43f5e', flexShrink: 0, marginTop: '1px' }} />
-                  <p className="text-[13px] font-[600]" style={{ color: '#be123c' }}>{error}</p>
+                  style={{ background: 'rgba(239,68,68,0.07)', border: '1.5px solid rgba(239,68,68,0.20)' }}>
+                  <AlertCircle size={16} style={{ color: '#ef4444', flexShrink: 0, marginTop: '1px' }} />
+                  <p className="text-[13px] font-[600]" style={{ color: '#b91c1c' }}>{error}</p>
                 </m.div>
               )}
             </AnimatePresence>

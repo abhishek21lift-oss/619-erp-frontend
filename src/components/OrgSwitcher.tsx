@@ -82,7 +82,7 @@ export default function OrgSwitcher() {
           'sm:w-auto sm:max-w-[180px] sm:justify-start sm:border sm:px-2.5 sm:text-[12px] sm:font-medium',
           'sm:border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]',
         )}
-        style={activeId ? { color: '#D4AF37', borderColor: '#D4AF37' } : undefined}
+        style={activeId ? { color: '#F59E0B', borderColor: '#F59E0B' } : undefined}
       >
         {activeId ? <Building2 size={14} strokeWidth={1.5} /> : <Globe size={14} strokeWidth={1.5} />}
         <span className="hidden truncate sm:inline">{label}</span>
@@ -105,7 +105,7 @@ export default function OrgSwitcher() {
             >
               <Globe size={14} strokeWidth={1.5} />
               <span className="flex-1">All organizations</span>
-              {!activeId && <Check size={14} strokeWidth={2} style={{ color: '#D4AF37' }} />}
+              {!activeId && <Check size={14} strokeWidth={2} style={{ color: '#F59E0B' }} />}
             </button>
 
             <div className="my-1 border-t border-[var(--border)]" />
@@ -130,7 +130,7 @@ export default function OrgSwitcher() {
                     <span className="ml-1.5 text-[10px] text-rose-400">(suspended)</span>
                   )}
                 </span>
-                {activeId === org.id && <Check size={14} strokeWidth={2} style={{ color: '#D4AF37' }} />}
+                {activeId === org.id && <Check size={14} strokeWidth={2} style={{ color: '#F59E0B' }} />}
               </button>
             ))}
           </div>

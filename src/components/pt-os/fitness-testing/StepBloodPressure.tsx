@@ -10,7 +10,7 @@ import { n } from './types';
 const BADGE_STYLE: Record<string, { bg: string; color: string }> = {
   Normal: { bg: 'rgba(16,185,129,0.12)', color: '#059669' },
   Elevated: { bg: 'rgba(245,158,11,0.12)', color: '#d97706' },
-  'Hypertension Stage 1': { bg: 'rgba(249,115,22,0.14)', color: '#ea580c' },
+  'Hypertension Stage 1': { bg: 'rgba(245,158,11,0.14)', color: '#f59e0b' },
   'Hypertension Stage 2': { bg: 'rgba(239,68,68,0.14)', color: '#dc2626' },
   Hypotension: { bg: 'rgba(239,68,68,0.14)', color: '#dc2626' },
 };

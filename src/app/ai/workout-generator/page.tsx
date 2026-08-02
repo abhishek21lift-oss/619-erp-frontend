@@ -8,9 +8,9 @@ import type { AiWorkoutPlan, AiWorkoutDay, AiWorkoutExercise } from '@/lib/api';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 
-const ACCENT = '#3B82F6';
-const ACCENT_SOFT = '#60A5FA';
-const ACCENT_DIM = 'rgba(59,130,246,0.10)';
+const ACCENT = '#0067E0';
+const ACCENT_SOFT = '#0067E0';
+const ACCENT_DIM = 'rgba(0,103,224,0.10)';
 const ACCENT_GRADIENT = `linear-gradient(135deg, ${ACCENT_SOFT}, ${ACCENT})`;
 
 const GOALS = ['weight_loss', 'muscle_gain', 'strength', 'endurance', 'flexibility', 'general_fitness'];
@@ -68,7 +68,7 @@ function PillGroup({ options, value, onChange }: { options: string[]; value: str
             key={opt} type="button" onClick={() => onChange(opt)}
             className="rounded-full px-3.5 py-2 text-[12.5px] font-[650] transition-all"
             style={active
-              ? { background: ACCENT_GRADIENT, color: '#fff', border: '1px solid transparent', boxShadow: '0 4px 14px rgba(59,130,246,0.35)' }
+              ? { background: ACCENT_GRADIENT, color: '#fff', border: '1px solid transparent', boxShadow: '0 4px 14px rgba(0,103,224,0.35)' }
               : { background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
           >
             {labelMap[opt] ?? opt}
@@ -203,12 +203,12 @@ export default function WorkoutGeneratorPage() {
           {/* ── Hero ── */}
           <m.div variants={fadeUp} initial="hidden" animate="show" custom={0}
             className="relative mb-6 overflow-hidden rounded-[28px] p-7 sm:p-9"
-            style={{ background: 'linear-gradient(135deg, #EFF6FF 0%, #F0F9FF 100%)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+            style={{ background: 'linear-gradient(135deg, #F1F5F9 0%, #F8FAFC 100%)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
             <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full opacity-60 blur-3xl"
-              style={{ background: 'rgba(96,165,250,0.35)' }} />
+              style={{ background: 'rgba(0,103,224,0.35)' }} />
             <div className="relative flex items-center gap-4">
               <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[16px]"
-                style={{ background: ACCENT_GRADIENT, boxShadow: '0 8px 24px rgba(59,130,246,0.35)' }}>
+                style={{ background: ACCENT_GRADIENT, boxShadow: '0 8px 24px rgba(0,103,224,0.35)' }}>
                 <Dumbbell size={24} color="#fff" />
               </div>
               <div>
@@ -223,7 +223,7 @@ export default function WorkoutGeneratorPage() {
             <div className="relative mt-5 flex flex-wrap gap-2">
               {['Progressive Overload', 'Warm-Up & Cool-Down', 'Injury-Aware', 'Tempo & Rest Times'].map((p) => (
                 <span key={p} className="rounded-full px-3 py-1.5 text-[11.5px] font-[650]"
-                  style={{ background: 'rgba(255,255,255,0.75)', color: ACCENT, border: '1px solid rgba(59,130,246,0.2)' }}>
+                  style={{ background: 'rgba(255,255,255,0.75)', color: ACCENT, border: '1px solid rgba(0,103,224,0.2)' }}>
                   {p}
                 </span>
               ))}
@@ -300,7 +300,7 @@ export default function WorkoutGeneratorPage() {
                   background: ACCENT_GRADIENT,
                   opacity: loading ? 0.6 : 1,
                   cursor: loading ? 'not-allowed' : 'pointer',
-                  boxShadow: loading ? 'none' : '0 8px 24px rgba(59,130,246,0.35)',
+                  boxShadow: loading ? 'none' : '0 8px 24px rgba(0,103,224,0.35)',
                 }}>
                 {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                 {loading ? 'Generating Plan…' : 'Generate Workout Plan'}
@@ -320,7 +320,7 @@ export default function WorkoutGeneratorPage() {
             <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="flex flex-col items-center gap-5 py-14">
               <div className="relative flex h-20 w-20 items-center justify-center rounded-[24px]"
-                style={{ background: ACCENT_DIM, border: '1px solid rgba(59,130,246,0.2)' }}>
+                style={{ background: ACCENT_DIM, border: '1px solid rgba(0,103,224,0.2)' }}>
                 <span className="absolute inset-0 animate-ping rounded-[24px] opacity-20" style={{ background: ACCENT }} />
                 <Dumbbell size={30} color={ACCENT} />
               </div>
@@ -343,10 +343,10 @@ export default function WorkoutGeneratorPage() {
               {meta && (
                 <m.div variants={fadeUp} initial="hidden" animate="show" custom={0}
                   className="flex w-fit items-center gap-2 rounded-full px-3.5 py-2"
-                  style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)' }}>
-                  <Sparkles size={13} color="#B8860B" />
-                  <span className="text-[12px] font-[650]" style={{ color: '#B8860B' }}>Generated by {meta.model}</span>
-                  {meta.used_fallback && <span className="text-[11px]" style={{ color: '#B8860B', opacity: 0.7 }}>(fallback)</span>}
+                  style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
+                  <Sparkles size={13} color="#B45309" />
+                  <span className="text-[12px] font-[650]" style={{ color: '#B45309' }}>Generated by {meta.model}</span>
+                  {meta.used_fallback && <span className="text-[11px]" style={{ color: '#B45309', opacity: 0.7 }}>(fallback)</span>}
                 </m.div>
               )}
 
@@ -354,7 +354,7 @@ export default function WorkoutGeneratorPage() {
               <m.div variants={fadeUp} initial="hidden" animate="show" custom={1}
                 className="overflow-hidden rounded-[22px]"
                 style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
-                <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg, #EFF6FF, #F0F9FF)', borderBottom: '1px solid var(--border)' }}>
+                <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg, #F1F5F9, #F8FAFC)', borderBottom: '1px solid var(--border)' }}>
                   <h2 className="m-0 text-[20px] font-[820] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>{plan.name}</h2>
                   <p className="mb-0 mt-1.5 text-[13px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{plan.description}</p>
                 </div>

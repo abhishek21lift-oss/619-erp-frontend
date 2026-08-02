@@ -11,7 +11,7 @@ import { useToast } from '@/lib/toast';
 /* ── shared theme ─────────────────────────────── */
 const a = '#F59E0B', b = '#D97706';
 const grad = `linear-gradient(135deg,${a},${b})`;
-const inp = { width: '100%', padding: '11px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, outline: 'none' } as const;
+const inp = { width: '100%', padding: '11px 14px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, outline: 'none' } as const;
 const lab = { display: 'block', fontSize: 11, fontWeight: 600, color: a, marginBottom: 5, letterSpacing: '0.05em' } as const;
 const btnPrim = { padding: '10px 20px', borderRadius: 12, border: 'none', background: grad, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: `0 4px 20px ${a}55` } as const;
 
@@ -63,7 +63,7 @@ function DeleteModal({ open, onCancel, onConfirm }: { open: boolean; onCancel: (
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 24px' }}>This action cannot be undone.</p>
             <div style={{ display: 'flex', gap: 12 }}>
               <button onClick={onCancel}
-                style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid #d1d5db', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                 Cancel
               </button>
               <button onClick={onConfirm}
@@ -152,9 +152,9 @@ function PackagesTab() {
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: '1 1 240px', maxWidth: 320 }}>
-          <Search size={14} color="#9ca3af" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search packages..."
-            style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: 12, border: '1px solid #d1d5db', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, outline: 'none' }} />
+            style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: 12, border: '1px solid #cbd5e1', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, outline: 'none' }} />
         </div>
         <m.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={openCreate} style={{ ...btnPrim }}>
           <Plus size={15} /> Create Package
@@ -198,10 +198,10 @@ function PackagesTab() {
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 14 }}>{pkg.session_count} sessions · {pkg.duration_days} days</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <button onClick={() => toggleStatus(pkg)}
-                  style={{ width: 40, height: 22, borderRadius: 11, border: 'none', background: pkg.is_active ? '#22c55e' : '#d1d5db', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', padding: 0 }}>
+                  style={{ width: 40, height: 22, borderRadius: 11, border: 'none', background: pkg.is_active ? '#10b981' : '#cbd5e1', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', padding: 0 }}>
                   <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--bg-card)', position: 'absolute', top: 2, left: pkg.is_active ? 20 : 2, transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
                 </button>
-                <span style={{ fontSize: 11, fontWeight: 600, color: pkg.is_active ? '#22c55e' : '#6b7280' }}>{pkg.is_active ? 'Active' : 'Inactive'}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: pkg.is_active ? '#10b981' : '#64748b' }}>{pkg.is_active ? 'Active' : 'Inactive'}</span>
               </div>
             </m.div>
           ))}
@@ -255,7 +255,7 @@ function PackagesTab() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 24 }}>
-                <button onClick={() => setShowForm(false)} style={{ padding: '10px 18px', borderRadius: 10, border: '1px solid #d1d5db', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button onClick={() => setShowForm(false)} style={{ padding: '10px 18px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
                 <m.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSave}
                   disabled={saving || !form.name || !form.session_count || !form.duration_days || !form.price}
                   style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: grad, color: '#fff', fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, opacity: saving ? 0.6 : 1, boxShadow: `0 4px 16px ${a}44` }}>

@@ -25,7 +25,7 @@ type Session = {
 };
 
 const STATUS_STYLES: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-  scheduled: { label: 'Scheduled', color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', dot: '#3B82F6' },
+  scheduled: { label: 'Scheduled', color: '#0067E0', bg: 'rgba(0,103,224,0.08)', dot: '#0067E0' },
   completed: { label: 'Completed', color: '#10B981', bg: 'rgba(16,185,129,0.08)', dot: '#10B981' },
   cancelled: { label: 'Cancelled', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', dot: '#EF4444' },
   // no_show with an underscore — that is the only spelling the pt_sessions
@@ -126,10 +126,10 @@ export default function PTSessionsPage() {
           {/* Header */}
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-[22px] font-extrabold tracking-[-0.02em] text-[#111827]">
+              <h1 className="text-[22px] font-extrabold tracking-[-0.02em] text-[#0F172A]">
                 Session History
               </h1>
-              <p className="mt-1 text-[13px] text-[#6B7280]">
+              <p className="mt-1 text-[13px] text-[#64748B]">
                 Track all PT sessions across trainers
               </p>
             </div>
@@ -137,7 +137,7 @@ export default function PTSessionsPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.9 }}
               onClick={loadSessions}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(59,130,246,0.08)] text-[#3B82F6] transition-colors hover:bg-[rgba(59,130,246,0.14)]"
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(0,103,224,0.08)] text-[#0067E0] transition-colors hover:bg-[rgba(0,103,224,0.14)]"
             >
               <RefreshCw size={15} strokeWidth={2} className={loading ? 'animate-spin' : ''} />
             </m.button>
@@ -148,22 +148,22 @@ export default function PTSessionsPage() {
           {/* Filters */}
           <div className="mb-5 flex flex-col gap-3">
             <div className="relative w-full">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" strokeWidth={1.5} />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" strokeWidth={1.5} />
               <input
                 type="text" value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search by client name or mobile..."
-                className="w-full h-11 rounded-xl border border-[#d1d5db] bg-white pl-9 pr-4 text-[13px] text-[#111827] placeholder-[#9CA3AF] outline-none transition-all duration-200 focus:border-[#3B82F6]/30 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.06)]"
+                className="w-full h-11 rounded-xl border border-[#cbd5e1] bg-white pl-9 pr-4 text-[13px] text-[#0F172A] placeholder-[#94A3B8] outline-none transition-all duration-200 focus:border-[#0067E0]/30 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.06)]"
               />
             </div>
             <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
               {['all', 'scheduled', 'completed', 'cancelled', 'no_show'].map(st => {
-                const cfg = STATUS_STYLES[st] || { label: st, color: '#6B7280', bg: 'rgba(107,114,128,0.08)', dot: '#6B7280' };
+                const cfg = STATUS_STYLES[st] || { label: st, color: '#64748B', bg: 'rgba(100,116,139,0.08)', dot: '#64748B' };
                 return (
                   <button key={st} onClick={() => setStatusFilter(st)}
                     className="shrink-0 rounded-full px-4 py-2 text-[12px] font-semibold transition-all duration-150"
                     style={{
                       background: statusFilter === st ? cfg.color : 'rgba(0,0,0,0.04)',
-                      color: statusFilter === st ? '#fff' : '#6B7280',
+                      color: statusFilter === st ? '#fff' : '#64748B',
                       minHeight: 36,
                     }}
                   >
@@ -177,7 +177,7 @@ export default function PTSessionsPage() {
           {/* Session List */}
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <div className="h-8 w-8 rounded-full border-[3px] border-[#3B82F6]/20 border-t-[#3B82F6] animate-spin" />
+              <div className="h-8 w-8 rounded-full border-[3px] border-[#0067E0]/20 border-t-[#0067E0] animate-spin" />
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -185,17 +185,17 @@ export default function PTSessionsPage() {
                 <XCircle className="h-6 w-6" />
               </div>
               <p className="text-sm font-medium text-[#EF4444]">{error}</p>
-              <button onClick={loadSessions} className="mt-3 text-[13px] font-medium text-[#3B82F6] hover:underline">
+              <button onClick={loadSessions} className="mt-3 text-[13px] font-medium text-[#0067E0] hover:underline">
                 Try again
               </button>
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="mb-3 grid h-14 w-14 place-items-center rounded-full bg-[rgba(59,130,246,0.06)] text-[#3B82F6]">
+              <div className="mb-3 grid h-14 w-14 place-items-center rounded-full bg-[rgba(0,103,224,0.06)] text-[#0067E0]">
                 <Calendar className="h-7 w-7" strokeWidth={1.5} />
               </div>
-              <p className="text-sm font-medium text-[#6B7280]">No sessions found</p>
-              <p className="mt-1 text-[12px] text-[#9ca3af]">Schedule a PT session to see it here</p>
+              <p className="text-sm font-medium text-[#64748B]">No sessions found</p>
+              <p className="mt-1 text-[12px] text-[#94a3b8]">Schedule a PT session to see it here</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -221,10 +221,10 @@ export default function PTSessionsPage() {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="truncate text-[14px] font-semibold text-[#111827]">
+                      <p className="truncate text-[14px] font-semibold text-[#0F172A]">
                         {s.client_name || 'Unknown Client'}
                       </p>
-                      <div className="mt-0.5 flex items-center gap-3 text-[12px] text-[#6B7280]">
+                      <div className="mt-0.5 flex items-center gap-3 text-[12px] text-[#64748B]">
                         <span className="flex items-center gap-1">
                           <Calendar size={11} strokeWidth={1.5} />
                           {fmtDate(s.session_date)}

@@ -23,10 +23,10 @@ const TRIGGER_EVENTS = [
 ];
 
 const KPIS = [
-  { label:'Total (30d)', key:'total', color:'#8b5cf6', bg:'linear-gradient(135deg, rgba(139,92,246,0.1), rgba(109,40,217,0.05))' },
-  { label:'Sent', key:'sent', color:'#3b82f6', bg:'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(37,99,235,0.05))' },
-  { label:'Delivered', key:'delivered', color:'#16a34a', bg:'linear-gradient(135deg, rgba(34,197,94,0.1), rgba(22,163,74,0.05))' },
-  { label:'Read', key:'read', color:'#7c3aed', bg:'linear-gradient(135deg, rgba(168,85,247,0.1), rgba(88,28,135,0.05))' },
+  { label:'Total (30d)', key:'total', color:'#0067e0', bg:'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.05))' },
+  { label:'Sent', key:'sent', color:'#0067e0', bg:'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.05))' },
+  { label:'Delivered', key:'delivered', color:'#10b981', bg:'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05))' },
+  { label:'Read', key:'read', color:'#0067e0', bg:'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,89,206,0.05))' },
   { label:'Failed', key:'failed', color:'#dc2626', bg:'linear-gradient(135deg, rgba(239,68,68,0.1), rgba(220,38,38,0.05))' },
 ];
 
@@ -81,7 +81,7 @@ function AutoContent() {
     setName(''); setTemplate(''); setDelayMinutes('0'); setTriggerEvent('member_created'); setChannel('whatsapp');
   }
 
-  const inp = { width:'100%', border:'1px solid #d1d5db', borderRadius:10, padding:'10px 14px', fontSize:13, fontWeight:500, color:'#111827', background:'#f9fafb', outline:'none', fontFamily:'inherit' } as const;
+  const inp = { width:'100%', border:'1px solid #cbd5e1', borderRadius:10, padding:'10px 14px', fontSize:13, fontWeight:500, color:'#0F172A', background:'#f8fafc', outline:'none', fontFamily:'inherit' } as const;
 
   return (
     <AppShell>
@@ -91,13 +91,13 @@ function AutoContent() {
           style={{ position:'relative', overflow:'hidden', borderRadius:24, padding:'40px 44px', marginBottom:28, background:'#f8fafc', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
           <div style={{ position:'relative' }}>
             <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
-              <div style={{ width:44, height:44, borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(109,40,217,0.08))' }}>
-                <Bot size={22} color="#a855f7" />
+              <div style={{ width:44, height:44, borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg, rgba(0,103,224,0.15), rgba(0,103,224,0.08))' }}>
+                <Bot size={22} color="#0067e0" />
               </div>
-              <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', background:'linear-gradient(135deg, #a855f7, #8b5cf6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Automation</span>
+              <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', background:'linear-gradient(135deg, #0067e0, #0059ce)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Automation</span>
             </div>
-            <h1 style={{ fontSize:34, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#111827', margin:'0 0 8px' }}>Automation Rules</h1>
-            <p style={{ maxWidth:560, fontSize:14, lineHeight:1.6, color:'#6b7280' }}>Automate WhatsApp, SMS, and email messages for welcome, follow-up, renewal, birthday, and promotions.</p>
+            <h1 style={{ fontSize:34, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#0F172A', margin:'0 0 8px' }}>Automation Rules</h1>
+            <p style={{ maxWidth:560, fontSize:14, lineHeight:1.6, color:'#64748b' }}>Automate WhatsApp, SMS, and email messages for welcome, follow-up, renewal, birthday, and promotions.</p>
           </div>
         </m.div>
 
@@ -114,7 +114,7 @@ function AutoContent() {
                   <div style={{ fontSize:26, fontWeight:800, color:k.color, marginBottom:4 }}>
                     {logStats.loading ? '—' : vals[i]}
                   </div>
-                  <div style={{ fontSize:10, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.06em' }}>{k.label}</div>
+                  <div style={{ fontSize:10, fontWeight:700, color:'#64748b', textTransform:'uppercase', letterSpacing:'0.06em' }}>{k.label}</div>
                 </m.div>
               );
             })}
@@ -124,7 +124,7 @@ function AutoContent() {
         {/* ── NEW RULE BUTTON ── */}
         <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:18 }}>
           <button onClick={()=>{cancelForm(); setShowForm(!showForm);}}
-            style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'10px 20px', borderRadius:12, background:'linear-gradient(135deg, #8b5cf6, #6d28d9)', color:'#fff', border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(139,92,246,0.35)' }}>
+            style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'10px 20px', borderRadius:12, background:'linear-gradient(135deg, #0067e0, #0059ce)', color:'#fff', border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(0,103,224,0.35)' }}>
             <Plus size={14}/> {showForm?'Cancel':'New Rule'}
           </button>
         </div>
@@ -132,9 +132,9 @@ function AutoContent() {
         {/* ── CREATE/EDIT FORM ── */}
         {showForm && (
           <m.div initial={{ opacity: 0, y: -10, scale:0.98 }} animate={{ opacity: 1, y: 0, scale:1 }}
-            style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e5e7eb', boxShadow:'0 4px 20px rgba(0,0,0,0.08)', padding:24, marginBottom:22 }}>
-            <h3 style={{ margin:'0 0 20px', fontSize:15, fontWeight:700, color:'#111827', display:'flex', gap:8, alignItems:'center' }}>
-              <Bot size={16} color="#a855f7"/> {editing?'Edit Rule':'Create Rule'}
+            style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e2e8f0', boxShadow:'0 4px 20px rgba(0,0,0,0.08)', padding:24, marginBottom:22 }}>
+            <h3 style={{ margin:'0 0 20px', fontSize:15, fontWeight:700, color:'#0F172A', display:'flex', gap:8, alignItems:'center' }}>
+              <Bot size={16} color="#0067e0"/> {editing?'Edit Rule':'Create Rule'}
             </h3>
             <form onSubmit={handleCreate} style={{ display:'grid', gap:14 }}>
               <input required placeholder="Rule name (e.g., Welcome Message)" value={name} onChange={e => setName(e.target.value)} style={inp} />
@@ -157,9 +157,9 @@ function AutoContent() {
               <input type="number" placeholder="Delay (minutes, 0 = instant)" value={delayMinutes} onChange={e => setDelayMinutes(e.target.value)} style={inp} />
               <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
                 <button type="button" onClick={cancelForm}
-                  style={{ fontSize:12, fontWeight:700, padding:'8px 18px', borderRadius:10, border:'1px solid #d1d5db', background:'transparent', color:'#6b7280', cursor:'pointer' }}>Cancel</button>
+                  style={{ fontSize:12, fontWeight:700, padding:'8px 18px', borderRadius:10, border:'1px solid #cbd5e1', background:'transparent', color:'#64748b', cursor:'pointer' }}>Cancel</button>
                 <button type="submit" disabled={saving}
-                  style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'8px 20px', borderRadius:12, background:'linear-gradient(135deg, #8b5cf6, #6d28d9)', color:'#fff', border:'none', cursor:saving?'not-allowed':'pointer', opacity:saving?0.7:1, boxShadow:'0 4px 16px rgba(139,92,246,0.35)' }}>
+                  style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'8px 20px', borderRadius:12, background:'linear-gradient(135deg, #0067e0, #0059ce)', color:'#fff', border:'none', cursor:saving?'not-allowed':'pointer', opacity:saving?0.7:1, boxShadow:'0 4px 16px rgba(0,103,224,0.35)' }}>
                   {saving ? <><Loader2 size={13}/> Saving...</> : <><Plus size={13}/> {editing?'Update Rule':'Create Rule'}</>}
                 </button>
               </div>
@@ -171,31 +171,31 @@ function AutoContent() {
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
           {/* Active Rules */}
           <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-            style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e5e7eb', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', padding:20 }}>
-            <h2 style={{ fontSize:16, fontWeight:700, color:'#111827', margin:'0 0 16px', display:'flex', alignItems:'center', gap:8 }}>
-              <Zap size={16} color="#a855f7"/> Active Rules
+            style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e2e8f0', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', padding:20 }}>
+            <h2 style={{ fontSize:16, fontWeight:700, color:'#0F172A', margin:'0 0 16px', display:'flex', alignItems:'center', gap:8 }}>
+              <Zap size={16} color="#0067e0"/> Active Rules
             </h2>
             <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
               {((rules.data as any[]) || []).map((r: any) => (
                 <m.div key={r.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-                  style={{ borderRadius:12, padding:'14px 16px', background:r.is_active?'rgba(139,92,246,0.05)':'#f9fafb', border:`1px solid ${r.is_active?'rgba(139,92,246,0.2)':'#e5e7eb'}`, opacity:r.is_active?1:0.65, transition:'all 0.2s' }}>
+                  style={{ borderRadius:12, padding:'14px 16px', background:r.is_active?'rgba(0,103,224,0.05)':'#f8fafc', border:`1px solid ${r.is_active?'rgba(0,103,224,0.2)':'#e2e8f0'}`, opacity:r.is_active?1:0.65, transition:'all 0.2s' }}>
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
                     <div style={{ flex:1, minWidth:0 }}>
-                      <p style={{ margin:0, fontSize:14, fontWeight:700, color:'#111827' }}>{r.name}</p>
+                      <p style={{ margin:0, fontSize:14, fontWeight:700, color:'#0F172A' }}>{r.name}</p>
                       <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:5, flexWrap:'wrap' }}>
-                        <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:5, background:'rgba(139,92,246,0.1)', color:'#7c3aed', textTransform:'capitalize' }}>
+                        <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:5, background:'rgba(0,103,224,0.1)', color:'#0067e0', textTransform:'capitalize' }}>
                           {r.trigger_event?.replace(/_/g, ' ')}
                         </span>
-                        <span style={{ fontSize:10, color:'#6b7280' }}>via {r.channel}</span>
-                        {r.delay_minutes > 0 && <span style={{ fontSize:10, color:'#6b7280' }}>· {r.delay_minutes}m delay</span>}
+                        <span style={{ fontSize:10, color:'#64748b' }}>via {r.channel}</span>
+                        {r.delay_minutes > 0 && <span style={{ fontSize:10, color:'#64748b' }}>· {r.delay_minutes}m delay</span>}
                       </div>
                       {r.template && (
-                        <p style={{ margin:'6px 0 0', fontSize:11, color:'#9ca3af', lineHeight:1.4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:300 }}>{r.template}</p>
+                        <p style={{ margin:'6px 0 0', fontSize:11, color:'#94a3b8', lineHeight:1.4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:300 }}>{r.template}</p>
                       )}
                     </div>
                     <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
                       <button onClick={() => startEdit(r)} title="Edit rule"
-                        style={{ display:'flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:7, border:'1px solid #e5e7eb', background:'#f9fafb', color:'#6b7280', cursor:'pointer' }}>
+                        style={{ display:'flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:7, border:'1px solid #e2e8f0', background:'#f8fafc', color:'#64748b', cursor:'pointer' }}>
                         <Edit2 size={12}/>
                       </button>
                       <button onClick={() => deleteRule(r.id)} title="Delete rule"
@@ -204,8 +204,8 @@ function AutoContent() {
                       </button>
                       <button onClick={() => toggleRule(r)} title={r.is_active?'Disable':'Enable'}
                         style={{ display:'flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:7, border:'none',
-                          background:r.is_active?'rgba(22,163,74,0.1)':'#f3f4f6', cursor:'pointer' }}>
-                        {r.is_active ? <Power size={13} color="#16a34a"/> : <PowerOff size={13} color="#9ca3af"/>}
+                          background:r.is_active?'rgba(16,185,129,0.1)':'#f1f5f9', cursor:'pointer' }}>
+                        {r.is_active ? <Power size={13} color="#10b981"/> : <PowerOff size={13} color="#94a3b8"/>}
                       </button>
                     </div>
                   </div>
@@ -213,9 +213,9 @@ function AutoContent() {
               ))}
               {(!rules.data || (rules.data as any[]).length === 0) && (
                 <div style={{ padding:'40px 16px', textAlign:'center' }}>
-                  <Bot size={32} color="#d1d5db" style={{ marginBottom:12 }}/>
-                  <p style={{ fontSize:13, fontWeight:600, color:'#374151', margin:0 }}>No automation rules yet.</p>
-                  <p style={{ fontSize:11, color:'#9ca3af', marginTop:4 }}>Click "New Rule" to create your first one.</p>
+                  <Bot size={32} color="#cbd5e1" style={{ marginBottom:12 }}/>
+                  <p style={{ fontSize:13, fontWeight:600, color:'#334155', margin:0 }}>No automation rules yet.</p>
+                  <p style={{ fontSize:11, color:'#94a3b8', marginTop:4 }}>Click "New Rule" to create your first one.</p>
                 </div>
               )}
             </div>
@@ -223,38 +223,38 @@ function AutoContent() {
 
           {/* Recent Logs */}
           <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay:0.1 }}
-            style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e5e7eb', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', padding:20 }}>
-            <h2 style={{ fontSize:16, fontWeight:700, color:'#111827', margin:'0 0 16px', display:'flex', alignItems:'center', gap:8 }}>
-              <MessageSquare size={16} color="#a855f7"/> Recent Logs
+            style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e2e8f0', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', padding:20 }}>
+            <h2 style={{ fontSize:16, fontWeight:700, color:'#0F172A', margin:'0 0 16px', display:'flex', alignItems:'center', gap:8 }}>
+              <MessageSquare size={16} color="#0067e0"/> Recent Logs
             </h2>
             <div style={{ display:'flex', flexDirection:'column', gap:6, maxHeight:480, overflowY:'auto' }}>
               {((logs.data || []) as any[]).map((l: any) => {
-                const logStatusColor = l.status === 'delivered' || l.status === 'read' ? '#16a34a' : l.status === 'failed' ? '#dc2626' : '#6b7280';
-                const logStatusBg = l.status === 'delivered' || l.status === 'read' ? 'rgba(22,163,74,0.1)' : l.status === 'failed' ? 'rgba(220,38,38,0.08)' : '#f3f4f6';
+                const logStatusColor = l.status === 'delivered' || l.status === 'read' ? '#10b981' : l.status === 'failed' ? '#dc2626' : '#64748b';
+                const logStatusBg = l.status === 'delivered' || l.status === 'read' ? 'rgba(16,185,129,0.1)' : l.status === 'failed' ? 'rgba(220,38,38,0.08)' : '#f1f5f9';
                 return (
                   <div key={l.id}
-                    style={{ borderRadius:10, padding:'10px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'#f9fafb', border:'1px solid #f3f4f6' }}>
+                    style={{ borderRadius:10, padding:'10px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'#f8fafc', border:'1px solid #f1f5f9' }}>
                     <div style={{ minWidth:0, flex:1 }}>
-                      <p style={{ margin:0, fontSize:12, fontWeight:700, color:'#111827', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                      <p style={{ margin:0, fontSize:12, fontWeight:700, color:'#0F172A', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                         {l.recipient_name || l.recipient_id}
                       </p>
-                      <p style={{ margin:'2px 0 0', fontSize:10, color:'#6b7280', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                      <p style={{ margin:'2px 0 0', fontSize:10, color:'#64748b', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                         {l.message?.slice(0, 80)}
                       </p>
                     </div>
                     <div style={{ display:'flex', alignItems:'center', gap:6, marginLeft:8, flexShrink:0 }}>
                       <span style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', padding:'2px 7px', borderRadius:4, background:logStatusBg, color:logStatusColor }}>{l.status}</span>
-                      <span style={{ fontSize:9, fontWeight:600, textTransform:'uppercase', color:'#9ca3af' }}>{l.channel}</span>
-                      {l.created_at&&<span style={{ fontSize:9, color:'#9ca3af', display:'flex', alignItems:'center', gap:2 }}><Clock size={8}/>{new Date(l.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</span>}
+                      <span style={{ fontSize:9, fontWeight:600, textTransform:'uppercase', color:'#94a3b8' }}>{l.channel}</span>
+                      {l.created_at&&<span style={{ fontSize:9, color:'#94a3b8', display:'flex', alignItems:'center', gap:2 }}><Clock size={8}/>{new Date(l.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</span>}
                     </div>
                   </div>
                 );
               })}
               {(!logs.data || (logs.data as any[]).length === 0) && (
                 <div style={{ padding:'40px 16px', textAlign:'center' }}>
-                  <MessageSquare size={32} color="#d1d5db" style={{ marginBottom:12 }}/>
-                  <p style={{ fontSize:13, fontWeight:600, color:'#374151', margin:0 }}>No communication logs yet.</p>
-                  <p style={{ fontSize:11, color:'#9ca3af', marginTop:4 }}>Logs will appear here once automation rules fire.</p>
+                  <MessageSquare size={32} color="#cbd5e1" style={{ marginBottom:12 }}/>
+                  <p style={{ fontSize:13, fontWeight:600, color:'#334155', margin:0 }}>No communication logs yet.</p>
+                  <p style={{ fontSize:11, color:'#94a3b8', marginTop:4 }}>Logs will appear here once automation rules fire.</p>
                 </div>
               )}
             </div>

@@ -1,7 +1,7 @@
 /* ══════════════════════════════════════════════════════════════════
    MY PT STUDIO — DESIGN SYSTEM v6.0  ·  PREMIUM EDITION
-   Art direction: Ultra-premium fitness SaaS → true obsidian surfaces,
-   deep ember-crimson brand, luxury amber-gold KPI accent.
+   Art direction: one restrained palette — royal blue for action, emerald
+   for success, amber for warning, red for error, slate for everything else.
    Inspired by: Linear, Vercel Dashboard, Stripe, Superhuman.
    ══════════════════════════════════════════════════════════════════ */
 
@@ -19,6 +19,44 @@
 :root {
   color-scheme: light;
 
+  /* ════════════════════════════════════════════════════════════════════
+     THE PALETTE — five families, one meaning each. Everything else in this
+     file is an alias onto these, so a colour change happens once here and
+     not in two hundred call sites.
+
+       blue     primary actions, links, highlights, selected state
+       emerald  success, completed, active
+       amber    warning, pending, due soon
+       red      error, expired, overdue, destructive
+       gray     surfaces, borders, secondary text
+
+     The TypeScript side of the same table is src/lib/palette.ts — the two
+     must stay in step. Blue is the blue measured out of the logo artwork
+     (see src/lib/brand.ts), not a generic blue that looked close.
+     ════════════════════════════════════════════════════════════════════ */
+  --blue-50:#F2F8FF; --blue-100:#E1EFFF; --blue-200:#B8D7FF; --blue-300:#7FB4FF;
+  --blue-400:#3B8DF5; --blue-450:#0271EB; --blue-500:#0067E0; --blue-600:#0059CE;
+  --blue-700:#0050AD; --blue-800:#003F87; --blue-900:#002D61;
+  /* Brighter than 500 on purpose: for icons on the near-black gray-900 tiles,
+     where the deep 500 only reaches 3.4:1. */
+  --blue-on-dark:#1CA3F9;
+
+  --emerald-50:#ECFDF5; --emerald-100:#D1FAE5; --emerald-200:#A7F3D0;
+  --emerald-300:#6EE7B7; --emerald-400:#34D399; --emerald-500:#10B981;
+  --emerald-600:#059669; --emerald-700:#047857; --emerald-800:#065F46; --emerald-900:#064E3B;
+
+  --amber-50:#FFFBEB; --amber-100:#FEF3C7; --amber-200:#FDE68A; --amber-300:#FCD34D;
+  --amber-400:#FBBF24; --amber-500:#F59E0B; --amber-600:#D97706; --amber-700:#B45309;
+  --amber-800:#92400E; --amber-900:#78350F;
+
+  --red-50:#FEF2F2; --red-100:#FEE2E2; --red-200:#FECACA; --red-300:#FCA5A5;
+  --red-400:#F87171; --red-500:#EF4444; --red-600:#DC2626; --red-700:#B91C1C;
+  --red-800:#991B1B; --red-900:#7F1D1D;
+
+  --gray-0:#FFFFFF; --gray-50:#F8FAFC; --gray-100:#F1F5F9; --gray-200:#E2E8F0;
+  --gray-300:#CBD5E1; --gray-400:#94A3B8; --gray-500:#64748B; --gray-600:#475569;
+  --gray-700:#334155; --gray-800:#1E293B; --gray-900:#0F172A;
+
   /* Height of the fixed mobile bottom nav (MobileBottomNav.tsx), excluding the
      home-indicator safe area. Every "clear the bottom nav" offset below is
      derived from this, so the nav's height and the space pages reserve for it
@@ -26,19 +64,19 @@
   --bottom-nav-h: 52px;
 
   /* ── Brand (blue) ─────────────────────────────────────────── */
-  --brand:        #3B82F6;
-  --brand-hi:     #60A5FA;
-  --brand-lo:     #2563EB;
-  --brand-mid:    #3B82F6;
-  --brand-soft:   rgba(59,130,246,0.10);
-  --brand-glow:   rgba(59,130,246,0.22);
-  --brand-glow-2: rgba(59,130,246,0.08);
+  --brand:        var(--blue-500);
+  --brand-hi:     #0067E0;
+  --brand-lo:     #0067E0;
+  --brand-mid:    #0067E0;
+  --brand-soft:   rgba(0,103,224,0.10);
+  --brand-glow:   rgba(0,103,224,0.22);
+  --brand-glow-2: rgba(0,103,224,0.08);
   --rgb-brand:    59 130 246;
   --rgb-brand-hi: 96 165 250;
 
   /* ── Logo blue ────────────────────────────────────────────────
      The literal blue sampled from the MY PT STUDIO cube mark. Deliberately
-     separate from --brand (#3B82F6): --brand is the in-product accent scale
+     separate from --brand (#0067E0): --brand is the in-product accent scale
      used across charts, links and states, while this is the artwork's own
      colour, for the few surfaces that must visibly match the logo. Don't
      substitute one for the other — they are close enough that mixing them
@@ -55,7 +93,7 @@
   --logo-blue-on-dark: #1CA3F9;
 
   /* ── Gold (amber) ─────────────────────────────────────────── */
-  --gold:          #F59E0B;
+  --gold:          var(--amber-500);
   --gold-hi:       #FBBF24;
   --gold-mid:      #F59E0B;
   --gold-soft:     rgba(245,158,11,0.10);
@@ -70,9 +108,9 @@
   --saffron-900: #78350F;
 
   /* ── Accent (purple) ───────────────────────────────────────── */
-  --accent:        #8B5CF6;
-  --accent-hi:     #A855F7;
-  --accent-soft:   rgba(139,92,246,0.10);
+  --accent:        var(--blue-500);
+  --accent-hi:     var(--blue-450);
+  --accent-soft:   rgba(0,103,224,0.10);
 
   /* ── Surface palette (slate) ─────────────────────────────── */
   --bg-canvas:     #F8FAFC;
@@ -100,37 +138,37 @@
   --rgb-text:       15 23 42;
 
   /* ── Status / semantic ───────────────────────────────────── */
-  --success:        #22C55E;
-  --success-lo:     #16A34A;
-  --success-soft:   rgba(34,197,94,0.10);
-  --success-bg:     rgba(34,197,94,0.10);
-  --success-border: rgba(34,197,94,0.20);
-  --warning:        #F59E0B;
+  --success:        var(--emerald-500);
+  --success-lo:     #10B981;
+  --success-soft:   rgba(16,185,129,0.10);
+  --success-bg:     rgba(16,185,129,0.10);
+  --success-border: rgba(16,185,129,0.20);
+  --warning:        var(--amber-500);
   --warning-lo:     #FBBF24;
   --warning-soft:   rgba(245,158,11,0.10);
   --warning-bg:     rgba(245,158,11,0.10);
   --warning-border: rgba(245,158,11,0.20);
-  --danger:         #EF4444;
+  --danger:         var(--red-500);
   --danger-lo:      #DC2626;
   --danger-soft:    rgba(239,68,68,0.10);
   --danger-bg:      rgba(239,68,68,0.10);
   --danger-border:  rgba(239,68,68,0.20);
-  --info:           #3B82F6;
-  --info-lo:        #2563EB;
-  --info-soft:      rgba(59,130,246,0.10);
-  --info-bg:        rgba(59,130,246,0.10);
-  --info-border:    rgba(59,130,246,0.20);
+  --info:           var(--blue-500);
+  --info-lo:        #0067E0;
+  --info-soft:      rgba(0,103,224,0.10);
+  --info-bg:        rgba(0,103,224,0.10);
+  --info-border:    rgba(0,103,224,0.20);
   --neutral-bg:     rgba(100,116,139,0.07);
 
   /* ── Sidebar ─────────────────────────────────────────────── */
-  --sidebar-bg:          #07050f;
-  --sidebar-border:      rgba(167,139,250,0.15);
-  --sidebar-item-hover:  rgba(167,139,250,0.08);
-  --sidebar-item-active: rgba(167,139,250,0.15);
+  --sidebar-bg:          #0f172a;
+  --sidebar-border:      rgba(127,180,255,0.15);
+  --sidebar-item-hover:  rgba(127,180,255,0.08);
+  --sidebar-item-active: rgba(127,180,255,0.15);
   --sidebar-text:        rgba(255,255,255,0.88);
   --sidebar-text-muted:  rgba(255,255,255,0.55);
   --sidebar-icon:        rgba(255,255,255,0.38);
-  --sidebar-icon-active: #a78bfa;
+  --sidebar-icon-active: #7fb4ff;
   --sidebar-w:           256px;
   --sidebar-w-collapsed: 68px;
 
@@ -195,19 +233,19 @@
   color-scheme: dark;
 
   /* Brand (blue) */
-  --brand:        #60A5FA;
-  --brand-hi:     #93C5FD;
-  --brand-lo:     #3B82F6;
-  --brand-mid:    #60A5FA;
-  --brand-soft:   rgba(59,130,246,0.15);
-  --brand-glow:   rgba(59,130,246,0.30);
-  --brand-glow-2: rgba(59,130,246,0.10);
+  --brand:        #0067E0;
+  --brand-hi:     #7FB4FF;
+  --brand-lo:     #0067E0;
+  --brand-mid:    #0067E0;
+  --brand-soft:   rgba(0,103,224,0.15);
+  --brand-glow:   rgba(0,103,224,0.30);
+  --brand-glow-2: rgba(0,103,224,0.10);
   --rgb-brand:    96 165 250;
   --rgb-brand-hi: 147 197 253;
 
-  /* Logo blue — #0060E0 is too dim to read as a glyph on the slate-900
+  /* Logo blue — #0067E0 is too dim to read as a glyph on the slate-900
      canvas, so the foreground lifts while the plate stays the logo hue. */
-  --logo-blue:        #5CB0FF;
+  --logo-blue:        #0067E0;
   --logo-blue-soft:   rgba(0,103,224,0.26);
   --logo-blue-soft-h: rgba(0,103,224,0.38);
 
@@ -219,9 +257,9 @@
   --gold-glow:     rgba(245,158,11,0.24);
 
   /* Accent (purple) */
-  --accent:        #A855F7;
-  --accent-hi:     #C084FC;
-  --accent-soft:   rgba(168,85,247,0.15);
+  --accent:        #0067E0;
+  --accent-hi:     #7FB4FF;
+  --accent-soft:   rgba(0,103,224,0.15);
 
   /* Surface palette (slate) */
   --bg-canvas:     #0F172A;
@@ -247,11 +285,11 @@
   --rgb-text:       248 250 252;
 
   /* Status / semantic */
-  --success:        #22C55E;
-  --success-lo:     #4ADE80;
-  --success-soft:   rgba(34,197,94,0.15);
-  --success-bg:     rgba(34,197,94,0.15);
-  --success-border: rgba(34,197,94,0.25);
+  --success:        #10B981;
+  --success-lo:     #34D399;
+  --success-soft:   rgba(16,185,129,0.15);
+  --success-bg:     rgba(16,185,129,0.15);
+  --success-border: rgba(16,185,129,0.25);
   --warning:        #F59E0B;
   --warning-lo:     #FBBF24;
   --warning-soft:   rgba(245,158,11,0.15);
@@ -262,22 +300,22 @@
   --danger-soft:    rgba(239,68,68,0.15);
   --danger-bg:      rgba(239,68,68,0.15);
   --danger-border:  rgba(239,68,68,0.25);
-  --info:           #60A5FA;
-  --info-lo:        #93C5FD;
-  --info-soft:      rgba(59,130,246,0.15);
-  --info-bg:        rgba(59,130,246,0.15);
-  --info-border:    rgba(59,130,246,0.25);
+  --info:           #0067E0;
+  --info-lo:        #7FB4FF;
+  --info-soft:      rgba(0,103,224,0.15);
+  --info-bg:        rgba(0,103,224,0.15);
+  --info-border:    rgba(0,103,224,0.25);
   --neutral-bg:     rgba(255,255,255,0.06);
 
   /* Sidebar */
-  --sidebar-bg:          #07050f;
-  --sidebar-border:      rgba(167,139,250,0.15);
-  --sidebar-item-hover:  rgba(167,139,250,0.08);
-  --sidebar-item-active: rgba(167,139,250,0.15);
+  --sidebar-bg:          #0f172a;
+  --sidebar-border:      rgba(127,180,255,0.15);
+  --sidebar-item-hover:  rgba(127,180,255,0.08);
+  --sidebar-item-active: rgba(127,180,255,0.15);
   --sidebar-text:        rgba(255,255,255,0.88);
   --sidebar-text-muted:  rgba(255,255,255,0.55);
   --sidebar-icon:        rgba(255,255,255,0.38);
-  --sidebar-icon-active: #a78bfa;
+  --sidebar-icon-active: #7fb4ff;
 
   /* Top bar */
   --topbar-bg:     rgba(15,23,42,0.85);
@@ -1853,7 +1891,7 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
 }
 .progress-bar.success {
   background: linear-gradient(90deg, var(--success-lo) 0%, var(--success) 100%);
-  box-shadow: 0 0 6px rgba(34,197,94,0.3);
+  box-shadow: 0 0 6px rgba(16,185,129,0.3);
 }
 
 /* ── Tab active indicator with glow ── */
@@ -1967,7 +2005,7 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
 @keyframes ck-float1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-40px,-20px) scale(1.08); } }
 @keyframes ck-float2 { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(30px,-40px) scale(1.12); } 66% { transform: translate(-20px,10px) scale(0.95); } }
 @keyframes ck-float3 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(20px,30px) scale(1.06); } }
-@keyframes ck-pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(99,102,241,0.3); } 100% { box-shadow: 0 0 0 20px rgba(99,102,241,0); } }
+@keyframes ck-pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(0,103,224,0.3); } 100% { box-shadow: 0 0 0 20px rgba(0,103,224,0); } }
 @keyframes ck-guide-pulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
 @media (max-width: 640px) {
   .ck-hero-padding { padding: 12px 16px !important; }
@@ -2039,8 +2077,8 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
   padding: 20px;
   margin-bottom: 16px;
   color: #fff;
-  background: linear-gradient(135deg, var(--brand), #1D4ED8);
-  box-shadow: 0 8px 28px rgba(59, 130, 246, 0.25);
+  background: linear-gradient(135deg, var(--brand), #0067E0);
+  box-shadow: 0 8px 28px rgba(0,103,224, 0.25);
 }
 .member-bottom-nav {
   position: fixed;
@@ -2095,8 +2133,8 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
   font-size: 13px;
 }
 .badge-frozen {
-  background: rgba(59, 130, 246, 0.12);
-  color: #2563EB;
+  background: rgba(0,103,224, 0.12);
+  color: #0067E0;
 }
 
 /* Missing companions for the legacy scaffold pages */

@@ -25,6 +25,7 @@ import { MealCard } from '@/components/fitness/MealCard';
 import { GroceryList } from '@/components/fitness/GroceryList';
 import { SpotlightCard } from '@/components/fitness/SpotlightCard';
 import { AiCoachPanel } from '@/components/fitness/AiCoachPanel';
+import { identity } from '@/lib/palette';
 
 type MealType = 'Breakfast' | 'Lunch' | 'Snacks' | 'Dinner' | 'Pre Workout' | 'Post Workout';
 
@@ -48,10 +49,10 @@ interface ClientOption { id: string; name: string; }
 
 const MEAL_TYPES: { id: MealType; icon: React.ReactNode; label: string; time: string; color: string }[] = [
   { id: 'Breakfast', icon: <Coffee size={13} />, label: 'Breakfast', time: '6-9 AM', color: '#f59e0b' },
-  { id: 'Lunch', icon: <UtensilsCrossed size={13} />, label: 'Lunch', time: '12-2 PM', color: '#6366f1' },
-  { id: 'Snacks', icon: <Apple size={13} />, label: 'Snacks', time: '4-5 PM', color: '#ec4899' },
-  { id: 'Dinner', icon: <Moon size={13} />, label: 'Dinner', time: '7-9 PM', color: '#8b5cf6' },
-  { id: 'Pre Workout', icon: <Activity size={13} />, label: 'Pre Workout', time: 'Before training', color: '#f97316' },
+  { id: 'Lunch', icon: <UtensilsCrossed size={13} />, label: 'Lunch', time: '12-2 PM', color: '#0067e0' },
+  { id: 'Snacks', icon: <Apple size={13} />, label: 'Snacks', time: '4-5 PM', color: '#0067e0' },
+  { id: 'Dinner', icon: <Moon size={13} />, label: 'Dinner', time: '7-9 PM', color: '#0067e0' },
+  { id: 'Pre Workout', icon: <Activity size={13} />, label: 'Pre Workout', time: 'Before training', color: '#f59e0b' },
   { id: 'Post Workout', icon: <Activity size={13} />, label: 'Post Workout', time: 'After training', color: '#10b981' },
 ];
 
@@ -65,20 +66,20 @@ const MEAL_TYPES: { id: MealType; icon: React.ReactNode; label: string; time: st
 // modes pass. Order matches MEAL_TYPES, which is the fixed categorical order
 // used everywhere else on this page.
 const MEAL_CHART_COLORS_LIGHT: Record<MealType, string> = {
-  'Breakfast': '#f59e0b', 'Lunch': '#6366f1', 'Snacks': '#ec4899',
-  'Dinner': '#8b5cf6', 'Pre Workout': '#f97316', 'Post Workout': '#10b981',
+  'Breakfast': '#f59e0b', 'Lunch': '#0067e0', 'Snacks': '#0067e0',
+  'Dinner': '#0067e0', 'Pre Workout': '#f59e0b', 'Post Workout': '#10b981',
 };
 const MEAL_CHART_COLORS_DARK: Record<MealType, string> = {
-  'Breakfast': '#d97706', 'Lunch': '#6366f1', 'Snacks': '#ec4899',
-  'Dinner': '#8b5cf6', 'Pre Workout': '#c2410c', 'Post Workout': '#059669',
+  'Breakfast': '#d97706', 'Lunch': '#0067e0', 'Snacks': '#0067e0',
+  'Dinner': '#0067e0', 'Pre Workout': '#b91c1c', 'Post Workout': '#059669',
 };
 
 // Macro donut (protein/carbs/fats) — same reasoning, same amber step swapped
 // for dark mode. Matches the macro colors already used on ProgressRing/meter
 // labels elsewhere on this page, so the donut and the meters read as the same
 // system rather than two unrelated color schemes.
-const MACRO_COLORS_LIGHT = { protein: '#6366f1', carbs: '#f59e0b', fats: '#ec4899' };
-const MACRO_COLORS_DARK  = { protein: '#6366f1', carbs: '#d97706', fats: '#ec4899' };
+const MACRO_COLORS_LIGHT = { protein: '#0067e0', carbs: '#f59e0b', fats: '#0067e0' };
+const MACRO_COLORS_DARK  = { protein: '#0067e0', carbs: '#d97706', fats: '#0067e0' };
 
 const MEAL_TYPE_TO_API: Record<MealType, string> = {
   'Breakfast': 'breakfast', 'Lunch': 'lunch', 'Snacks': 'snacks', 'Dinner': 'dinner',
@@ -92,7 +93,7 @@ const GOAL_LABELS: Record<string, string> = {
   weight_loss: 'Weight Loss', muscle_gain: 'Muscle Gain', maintenance: 'Maintenance',
   keto: 'Keto', vegan: 'Vegan', custom: 'Custom',
 };
-const TEMPLATE_COLORS = ['#10b981', '#6366f1', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6'];
+const TEMPLATE_COLORS = identity;
 
 function apiMealTypeToLocal(apiType: string): MealType {
   const found = (Object.entries(MEAL_TYPE_TO_API) as [MealType, string][]).find(([, v]) => v === apiType);
@@ -354,9 +355,9 @@ function Inner() {
           style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
           {[
             { label: 'Calories', value: consumed, goal: GOAL_CAL, unit: 'kcal', color: '#ef4444' },
-            { label: 'Protein', value: totalProtein, goal: GOAL_PROT, unit: 'g', color: '#6366f1' },
+            { label: 'Protein', value: totalProtein, goal: GOAL_PROT, unit: 'g', color: '#0067e0' },
             { label: 'Carbs', value: totalCarbs, goal: GOAL_CARBS, unit: 'g', color: '#f59e0b' },
-            { label: 'Fats', value: totalFats, goal: GOAL_FATS, unit: 'g', color: '#ec4899' },
+            { label: 'Fats', value: totalFats, goal: GOAL_FATS, unit: 'g', color: '#0067e0' },
           ].map((macro) => (
             <m.div key={macro.label} variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
               <ProgressRing
@@ -377,21 +378,21 @@ function Inner() {
           {/* Water intake */}
           <div style={{ flex: 1, minWidth: 200, marginLeft: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderRadius: 14, background: 'var(--bg-card)', border: '1px solid var(--border)', opacity: clientId ? 1 : 0.6 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(6,182,212,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <GlassWater size={16} color="#22d3ee" />
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(0,103,224,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <GlassWater size={16} color="#0067e0" />
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-disabled)' }}>Hydration</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#22d3ee' }}>{water}/8 glasses</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#0067e0' }}>{water}/8 glasses</span>
                 </div>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <div style={{ flex: 1, height: 5, borderRadius: 3, background: 'var(--bg-subtle)', overflow: 'hidden' }}>
                     <m.div initial={{ width: 0 }} animate={{ width: `${waterPct}%` }} transition={{ duration: 0.8, ease: 'easeOut' }}
-                      style={{ height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, #06b6d4, #10b981)' }} />
+                      style={{ height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, #0067e0, #10b981)' }} />
                   </div>
                   <button onClick={() => updateWater(water + 1)} disabled={!clientId || savingWater}
-                    style={{ padding: '3px 10px', borderRadius: 6, border: '1px solid rgba(6,182,212,0.3)', background: 'rgba(6,182,212,0.1)', color: '#22d3ee', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', cursor: clientId ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap' }}>
+                    style={{ padding: '3px 10px', borderRadius: 6, border: '1px solid rgba(0,103,224,0.3)', background: 'rgba(0,103,224,0.1)', color: '#0067e0', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', cursor: clientId ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap' }}>
                     + Glass
                   </button>
                 </div>
@@ -406,10 +407,10 @@ function Inner() {
         <div style={{ display: 'flex', gap: 3, marginBottom: 20, background: 'var(--bg-subtle)', borderRadius: 11, padding: 3, overflowX: 'auto' }}>
           {[
             { key: 'meals', label: "Meal Library", count: meals.length, color: '#10b981' },
-            { key: 'templates', label: 'Templates', count: templates.length, color: '#6366f1' },
+            { key: 'templates', label: 'Templates', count: templates.length, color: '#0067e0' },
             { key: 'grocery', label: 'Grocery List', color: '#f59e0b' },
-            { key: 'supplements', label: 'Supplements', count: supplements.length, color: '#ec4899' },
-            { key: 'analytics', label: 'Analytics', color: '#06b6d4' },
+            { key: 'supplements', label: 'Supplements', count: supplements.length, color: '#0067e0' },
+            { key: 'analytics', label: 'Analytics', color: '#0067e0' },
           ].map((tab) => (
             <button key={tab.key}
               onClick={() => setActiveTab(tab.key as typeof activeTab)}
@@ -486,7 +487,7 @@ function Inner() {
               <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                 {[null, ...Object.values(GOAL_LABELS)].map((g) => (
                   <button key={g ?? 'all'} onClick={() => setGoalFilter(g)}
-                    style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.18s', background: goalFilter === g ? 'rgba(99,102,241,0.1)' : 'transparent', color: goalFilter === g ? '#6366f1' : 'var(--text-muted)', borderColor: goalFilter === g ? 'rgba(99,102,241,0.3)' : 'var(--border)' }}>
+                    style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.18s', background: goalFilter === g ? 'rgba(0,103,224,0.1)' : 'transparent', color: goalFilter === g ? '#0067e0' : 'var(--text-muted)', borderColor: goalFilter === g ? 'rgba(0,103,224,0.3)' : 'var(--border)' }}>
                     {g ?? 'All Goals'}
                   </button>
                 ))}
@@ -528,13 +529,13 @@ function Inner() {
                           <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10.5, background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
                             {t.calories} kcal
                           </span>
-                          <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10.5, background: 'rgba(99,102,241,0.1)', color: '#6366f1' }}>
+                          <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10.5, background: 'rgba(0,103,224,0.1)', color: '#0067e0' }}>
                             {t.protein}g P
                           </span>
                           <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10.5, background: 'rgba(245,158,11,0.1)', color: '#d97706' }}>
                             {t.carbs}g C
                           </span>
-                          <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10.5, background: 'rgba(236,72,153,0.1)', color: '#ec4899' }}>
+                          <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10.5, background: 'rgba(0,103,224,0.1)', color: '#0067e0' }}>
                             {t.fats}g F
                           </span>
                         </div>
@@ -564,11 +565,11 @@ function Inner() {
           {activeTab === 'supplements' && (
             <m.div key="supplements" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(236,72,153,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Pill size={16} color="#ec4899" />
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(0,103,224,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Pill size={16} color="#0067e0" />
                 </div>
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Supplement Stack</h3>
-                <span style={{ padding: '2px 8px', borderRadius: 8, fontSize: 10, fontWeight: 700, background: 'rgba(236,72,153,0.1)', color: '#ec4899', letterSpacing: '0.05em' }}>RECOMMENDED</span>
+                <span style={{ padding: '2px 8px', borderRadius: 8, fontSize: 10, fontWeight: 700, background: 'rgba(0,103,224,0.1)', color: '#0067e0', letterSpacing: '0.05em' }}>RECOMMENDED</span>
               </div>
 
               {loading ? (
@@ -587,7 +588,7 @@ function Inner() {
                   {supplements.map((s) => (
                     <m.div key={s.id} variants={itemVariants}
                       style={{ borderRadius: 14, padding: 14, background: 'var(--bg-card)', border: '1px solid var(--border)', cursor: 'default', transition: 'all 0.25s' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(236,72,153,0.08)'; e.currentTarget.style.borderColor = 'rgba(236,72,153,0.2)'; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,103,224,0.08)'; e.currentTarget.style.borderColor = 'rgba(0,103,224,0.2)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--border)'; }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                         <span style={{ fontSize: 24 }}>{s.emoji}</span>
@@ -665,12 +666,12 @@ function Inner() {
                 </SpotlightCard>
 
                 {/* Hydration — today's interactive tracker + 7-day trend vs the daily target */}
-                <SpotlightCard spotlightColor="rgba(6,182,212,0.08)" style={{ padding: 20 }}>
+                <SpotlightCard spotlightColor="rgba(0,103,224,0.08)" style={{ padding: 20 }}>
                   <h4 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Hydration Tracker</h4>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                     {Array.from({ length: 8 }).map((_, i) => (
                       <button key={i} onClick={() => updateWater(i + 1)} disabled={!clientId || savingWater}
-                        style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid', cursor: clientId ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.18s', background: i < water ? 'rgba(6,182,212,0.15)' : 'var(--bg-subtle)', borderColor: i < water ? 'rgba(6,182,212,0.4)' : 'var(--border)', color: i < water ? '#22d3ee' : 'var(--text-disabled)', opacity: clientId ? 1 : 0.5 }}>
+                        style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid', cursor: clientId ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.18s', background: i < water ? 'rgba(0,103,224,0.15)' : 'var(--bg-subtle)', borderColor: i < water ? 'rgba(0,103,224,0.4)' : 'var(--border)', color: i < water ? '#0067e0' : 'var(--text-disabled)', opacity: clientId ? 1 : 0.5 }}>
                         <GlassWater size={15} />
                       </button>
                     ))}
@@ -692,7 +693,7 @@ function Inner() {
                             labelStyle={{ color: 'var(--text-secondary)', fontWeight: 700, marginBottom: 2 }}
                             formatter={(value: number) => [`${value} glasses`, 'Water']}
                           />
-                          <Line type="monotone" dataKey="glasses" stroke="#22d3ee" strokeWidth={2} dot={{ r: 3, fill: '#22d3ee' }} activeDot={{ r: 5 }} />
+                          <Line type="monotone" dataKey="glasses" stroke="#0067e0" strokeWidth={2} dot={{ r: 3, fill: '#0067e0' }} activeDot={{ r: 5 }} />
                         </LineChart>
                       </ResponsiveContainer>
                     </>
@@ -851,9 +852,9 @@ function MealDetailModal({ meal, onClose }: { meal: Meal | null; onClose: () => 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
               {[
                 { l: 'Calories', v: meal.calories, u: 'kcal', c: '#ef4444' },
-                { l: 'Protein', v: meal.protein, u: 'g', c: '#6366f1' },
+                { l: 'Protein', v: meal.protein, u: 'g', c: '#0067e0' },
                 { l: 'Carbs', v: meal.carbs, u: 'g', c: '#f59e0b' },
-                { l: 'Fats', v: meal.fats, u: 'g', c: '#ec4899' },
+                { l: 'Fats', v: meal.fats, u: 'g', c: '#0067e0' },
               ].map((m) => (
                 <div key={m.l} style={{ textAlign: 'center', padding: '10px 6px', borderRadius: 10, background: `${m.c}10` }}>
                   <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: m.c }}>{m.v}</p>

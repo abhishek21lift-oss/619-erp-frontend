@@ -31,7 +31,7 @@ const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--borde
 const inputStyle = { ...cardStyle, color: 'var(--text-primary)' } as const;
 
 const SEVERITY: Record<AnnouncementSeverity, { label: string; bg: string; fg: string }> = {
-  info:     { label: 'Info',     bg: 'rgba(99,102,241,0.12)',  fg: '#6366f1' },
+  info:     { label: 'Info',     bg: 'rgba(0,103,224,0.12)',  fg: '#0067e0' },
   success:  { label: 'Good news', bg: 'rgba(16,185,129,0.12)', fg: '#059669' },
   warning:  { label: 'Warning',  bg: 'rgba(245,158,11,0.14)',  fg: '#b45309' },
   critical: { label: 'Critical', bg: 'rgba(239,68,68,0.12)',   fg: '#dc2626' },
@@ -39,7 +39,7 @@ const SEVERITY: Record<AnnouncementSeverity, { label: string; bg: string; fg: st
 
 const STATUS: Record<Announcement['status'], { label: string; bg: string; fg: string }> = {
   draft:     { label: 'Draft',     bg: 'var(--bg-subtle)',       fg: 'var(--text-muted)' },
-  scheduled: { label: 'Scheduled', bg: 'rgba(99,102,241,0.12)',  fg: '#6366f1' },
+  scheduled: { label: 'Scheduled', bg: 'rgba(0,103,224,0.12)',  fg: '#0067e0' },
   sent:      { label: 'Sent',      bg: 'rgba(16,185,129,0.12)',  fg: '#059669' },
   cancelled: { label: 'Cancelled', bg: 'rgba(239,68,68,0.10)',   fg: '#dc2626' },
 };
@@ -73,7 +73,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
       type="button" onClick={onClick} aria-pressed={on}
       className="min-h-[32px] rounded-[9px] px-2.5 text-[11.5px] font-[700] transition"
       style={on
-        ? { background: 'rgba(99,102,241,0.12)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.25)' }
+        ? { background: 'rgba(0,103,224,0.12)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.25)' }
         : { background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
     >
       {children}

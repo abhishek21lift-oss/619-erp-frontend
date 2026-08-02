@@ -273,8 +273,8 @@ export default function MonthlyTargetHero({ onTargetSet }: { onTargetSet?: () =>
       <div className="flex items-center gap-2.5">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
           style={{
-            background: 'linear-gradient(145deg,#8B5CF6,#6D28D9)',
-            boxShadow: '0 6px 16px rgba(139,92,246,0.35), inset 0 1px 0 rgba(255,255,255,0.3)',
+            background: 'linear-gradient(145deg,#0067E0,#0059CE)',
+            boxShadow: '0 6px 16px rgba(0,103,224,0.35), inset 0 1px 0 rgba(255,255,255,0.3)',
             color: '#fff',
           }}>
           <Target size={17} />
@@ -300,7 +300,7 @@ export default function MonthlyTargetHero({ onTargetSet }: { onTargetSet?: () =>
   // ── Not set yet ───────────────────────────────────────────────────────────
   if (!data?.locked) {
     return (
-      <Shell glow="#8B5CF6">
+      <Shell glow="#0067E0">
         {header}
 
         {!data?.can_set ? (
@@ -328,7 +328,7 @@ export default function MonthlyTargetHero({ onTargetSet }: { onTargetSet?: () =>
             <div className="mt-3.5 flex flex-wrap gap-2">
               <button onClick={submit} disabled={saving}
                 className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] px-4 text-[12.5px] font-[750] text-white disabled:opacity-60"
-                style={{ background: 'linear-gradient(135deg,#8B5CF6,#6D28D9)' }}>
+                style={{ background: 'linear-gradient(135deg,#0067E0,#0059CE)' }}>
                 {saving ? <Loader2 size={14} className="animate-spin" /> : <Lock size={14} />}
                 Confirm &amp; lock
               </button>
@@ -367,7 +367,7 @@ export default function MonthlyTargetHero({ onTargetSet }: { onTargetSet?: () =>
               </div>
               <button onClick={() => setConfirming(true)} disabled={!amountValid}
                 className="inline-flex min-h-[46px] shrink-0 items-center gap-1.5 rounded-[12px] px-4 text-[13px] font-[750] text-white disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg,#8B5CF6,#6D28D9)' }}>
+                style={{ background: 'linear-gradient(135deg,#0067E0,#0059CE)' }}>
                 <Target size={15} /> Set target
               </button>
             </div>

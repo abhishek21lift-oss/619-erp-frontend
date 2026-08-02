@@ -99,7 +99,7 @@ export function FinanceDashboardTab({ onNavigate }: { onNavigate: (t: FinanceSub
   useEffect(() => { load(); }, [load]);
   useEffect(() => { api.superAdmin.subscriptionMetrics().then((r) => setMetrics(r.data)).catch(() => setMetrics(null)); }, []);
 
-  if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#6366f1' }} /></Center>;
+  if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#0067e0' }} /></Center>;
   if (error) return <ErrorState error={error} onRetry={load} />;
 
   const renewalsDue = studios
@@ -190,7 +190,7 @@ export function BillingTab() {
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Update failed'); }
   };
 
-  if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#6366f1' }} /></Center>;
+  if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#0067e0' }} /></Center>;
   if (error) return <ErrorState error={error} onRetry={load} />;
 
   return (
@@ -370,7 +370,7 @@ export function ExecuteChangeModal({ studio, planCode, onClose, onDone }: { stud
   return (
     <Modal title={`Execute plan change · ${studio.name}`} onClose={onClose}>
       {loading || !quote ? (
-        <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" style={{ color: '#6366f1' }} /></div>
+        <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" style={{ color: '#0067e0' }} /></div>
       ) : (
         <div className="space-y-4">
           <div className="rounded-[12px] p-3 text-[12px]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
@@ -435,7 +435,7 @@ export function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStud
   return (
     <Modal title={`Billing · ${studio.name}`} onClose={onClose}>
       {loading || !o ? (
-        <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" style={{ color: '#6366f1' }} /></div>
+        <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" style={{ color: '#0067e0' }} /></div>
       ) : (
         <div className="space-y-4 max-h-[70vh] overflow-y-auto overscroll-contain">
           <div className="rounded-[12px] p-3 text-[12px]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
@@ -646,7 +646,7 @@ export function SaasMetrics({ data }: { data: SubscriptionMetrics }) {
                     </div>
                     <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}>
                       <m.div className="h-full rounded-full"
-                        style={{ background: 'linear-gradient(90deg, var(--brand), #8B5CF6)' }}
+                        style={{ background: 'linear-gradient(90deg, var(--brand), #0067E0)' }}
                         initial={{ width: 0 }}
                         animate={{ width: `${totalPlanned > 0 ? (p.studios / totalPlanned) * 100 : 0}%` }}
                         transition={{ duration: 0.55, delay: 0.16 + i * 0.05, ease: [0.16, 1, 0.3, 1] }} />
@@ -668,12 +668,12 @@ export function SaasMetrics({ data }: { data: SubscriptionMetrics }) {
           {([
             ['Active', data.states.active, '#10b981'],
             ['On trial', data.states.on_trial, '#f59e0b'],
-            ['Trial lapsed', data.states.trial_lapsed, '#f97316'],
+            ['Trial lapsed', data.states.trial_lapsed, '#f59e0b'],
             ['Lapsed', data.states.lapsed, '#ef4444'],
             ['Frozen', data.states.frozen, '#ef4444'],
             ['Expired', data.states.expired, '#94a3b8'],
             ['Cancelled', data.states.cancelled, '#94a3b8'],
-            ['Suspended', data.states.suspended, '#7c3aed'],
+            ['Suspended', data.states.suspended, '#0067e0'],
           ] as const).filter(([, n]) => n > 0).map(([label, n, colour]) => (
             <span key={label} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-[650]"
               style={{ background: `${colour}18`, color: colour }}>

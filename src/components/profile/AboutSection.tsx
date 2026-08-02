@@ -109,7 +109,7 @@ export function ChipInput({
           <span
             key={v}
             className="inline-flex items-center gap-1.5 rounded-full py-1.5 pl-3 pr-1.5 text-[12px] font-[680]"
-            style={{ background: 'rgba(99,102,241,0.10)', color: '#4f46e5', border: '1px solid rgba(99,102,241,0.22)' }}
+            style={{ background: 'rgba(0,103,224,0.10)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.22)' }}
           >
             {v}
             <button

@@ -156,13 +156,13 @@ function Inner() {
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+            <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)' }}>
               <Dumbbell size={18} color="#fff" />
             </span>
             <div className="min-w-0">
               <h1 className="truncate text-[22px] font-[800] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>{plan.name}</h1>
               {clientName && (
-                <p className="mt-0.5 text-[13px] font-[650]" style={{ color: '#6366f1' }}>For {clientName}</p>
+                <p className="mt-0.5 text-[13px] font-[650]" style={{ color: '#0067e0' }}>For {clientName}</p>
               )}
               {plan.description && <p className="mt-0.5 text-[13px]" style={{ color: 'var(--text-muted)' }}>{plan.description}</p>}
             </div>
@@ -234,7 +234,7 @@ function Inner() {
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>{day}</p>
                 <button onClick={() => { setPickerDay(i + 1); setPickerOpen(true); }}
-                  className="flex items-center gap-1 rounded-[8px] px-2.5 py-1 text-[11.5px] font-[650]" style={{ color: '#6366f1' }}>
+                  className="flex items-center gap-1 rounded-[8px] px-2.5 py-1 text-[11.5px] font-[650]" style={{ color: '#0067e0' }}>
                   <Plus size={12} /> Add
                 </button>
               </div>

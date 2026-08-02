@@ -14,7 +14,7 @@ export default function NotFound() {
           alignItems: 'center',
           justifyContent: 'center',
           fontFamily: 'Inter, sans-serif',
-          background: '#f5f4f0',
+          background: '#f1f5f9',
           padding: '24px',
           textAlign: 'center',
         }}
@@ -35,7 +35,7 @@ export default function NotFound() {
         style={{
           fontSize: 22,
           fontWeight: 700,
-          color: '#1a1a1a',
+          color: '#0f172a',
           marginBottom: 8,
         }}
       >
@@ -44,7 +44,7 @@ export default function NotFound() {
       <p
         style={{
           fontSize: 14,
-          color: '#6b7280',
+          color: '#64748b',
           maxWidth: 360,
           marginBottom: 32,
           lineHeight: 1.6,

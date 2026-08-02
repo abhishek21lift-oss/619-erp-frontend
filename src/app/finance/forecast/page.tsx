@@ -69,7 +69,7 @@ function Inner() {
         <div style={{ padding: '24px 0', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, borderBottom: '1px solid var(--border)' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-              <div style={{ width: 42, height: 42, borderRadius: 14, background: 'linear-gradient(135deg, #a855f7, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(139,92,246,0.4)' }}>
+              <div style={{ width: 42, height: 42, borderRadius: 14, background: 'linear-gradient(135deg, #0067e0, #0059ce)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,103,224,0.4)' }}>
                 <TrendingUp size={20} color="white" />
               </div>
               <h1 style={{ fontSize: 'clamp(16px, 3.5vw, 26px)', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>Projected Revenue (estimate)</h1>
@@ -89,9 +89,9 @@ function Inner() {
             return (
               <button key={tab.href} onClick={() => router.push(tab.href)}
                 style={{ padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: active ? 700 : 500, fontSize: 13, whiteSpace: 'nowrap', transition: 'all 180ms ease',
-                  background: active ? 'linear-gradient(135deg,#8b5cf6,#7c3aed)' : 'transparent',
+                  background: active ? 'linear-gradient(135deg,#0067e0,#0059ce)' : 'transparent',
                   color: active ? 'white' : 'var(--text-secondary)',
-                  boxShadow: active ? '0 2px 8px rgba(139,92,246,0.35)' : 'none',
+                  boxShadow: active ? '0 2px 8px rgba(0,103,224,0.35)' : 'none',
                 }}>
                 {tab.label}
               </button>
@@ -114,7 +114,7 @@ function Inner() {
           <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Monthly Revenue — {year}</div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>
-              Growth rate: <strong style={{ color: '#8b5cf6' }}>{growthRate}%</strong>
+              Growth rate: <strong style={{ color: '#0067e0' }}>{growthRate}%</strong>
             </div>
           </div>
           {loading ? (
@@ -155,17 +155,17 @@ function Inner() {
                         <td style={{ padding: '14px 20px', fontWeight: 600, color: 'var(--text-primary)' }}>{m.month} {year}</td>
                         <td style={{ padding: '14px 20px' }}>
                           {m.actual ? (
-                            <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 20, padding: '3px 10px', background: '#ecfdf5', color: '#16a34a', border: '1px solid #86efac' }}>Actual</span>
+                            <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 20, padding: '3px 10px', background: '#ecfdf5', color: '#10b981', border: '1px solid #6ee7b7' }}>Actual</span>
                           ) : (
-                            <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 20, padding: '3px 10px', background: '#f0f0ff', color: '#8b5cf6', border: '1px solid #c4b5fd' }}>Forecast</span>
+                            <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 20, padding: '3px 10px', background: '#f8fafc', color: '#0067e0', border: '1px solid #b8d7ff' }}>Forecast</span>
                           )}
                         </td>
-                        <td style={{ padding: '14px 20px', fontWeight: 800, fontSize: 15, color: m.actual ? '#10b981' : '#8b5cf6', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                        <td style={{ padding: '14px 20px', fontWeight: 800, fontSize: 15, color: m.actual ? '#10b981' : '#0067e0', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
                           {fmt(amount)}
                         </td>
                         <td style={{ padding: '14px 20px' }}>
                           {diffPct && amount > 0 ? (
-                            <span style={{ fontSize: 12, fontWeight: 600, color: diff >= 0 ? '#16a34a' : '#ef4444' }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: diff >= 0 ? '#10b981' : '#ef4444' }}>
                               {diff >= 0 ? '▲' : '▼'} {Math.abs(Number(diffPct))}%
                             </span>
                           ) : <span style={{ color: 'var(--text-disabled)', fontSize: 12 }}>—</span>}
@@ -177,7 +177,7 @@ function Inner() {
                 <tfoot>
                   <tr style={{ borderTop: '2px solid var(--border)', background: 'var(--bg-subtle)' }}>
                     <td style={{ padding: '14px 20px', fontWeight: 800, color: 'var(--text-primary)' }} colSpan={2}>Projected Full Year</td>
-                    <td style={{ padding: '14px 20px', fontWeight: 900, fontSize: 16, color: '#7c3aed', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{fmt(projectedYearTotal)}</td>
+                    <td style={{ padding: '14px 20px', fontWeight: 900, fontSize: 16, color: '#0067e0', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{fmt(projectedYearTotal)}</td>
                     <td />
                   </tr>
                 </tfoot>
@@ -189,7 +189,7 @@ function Inner() {
         {/* Disclaimer */}
         <div style={{ marginTop: 12, padding: '10px 16px', background: 'var(--bg-subtle)', borderRadius: 10, border: '1px solid var(--border)' }}>
           <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-            <strong style={{ color: '#8b5cf6' }}>Note:</strong> Projection based on 3-month rolling average with a 5% uplift. Figures are estimates only and may not reflect seasonal variations or planned business changes.
+            <strong style={{ color: '#0067e0' }}>Note:</strong> Projection based on 3-month rolling average with a 5% uplift. Figures are estimates only and may not reflect seasonal variations or planned business changes.
           </p>
         </div>
       </div>

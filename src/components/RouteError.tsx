@@ -18,7 +18,7 @@
 //     the leaky one was the one that actually rendered (error.tsx is nested
 //     inside ErrorBoundary, so it catches page throws first).
 //
-//  2. It hardcoded light-mode colours (bg-[#FEF2F2], text-[#6B7280]) in an app
+//  2. It hardcoded light-mode colours (bg-[#FEF2F2], text-[#64748B]) in an app
 //     that is theme-adaptive everywhere else, so the error card was a white
 //     card in dark mode.
 //

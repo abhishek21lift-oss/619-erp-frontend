@@ -112,8 +112,8 @@ function TrainerInner() {
             className="card mb-3"
             style={{
               padding: 0, overflow: 'hidden',
-              background: 'linear-gradient(135deg, var(--brand) 0%, var(--brand-lo) 60%, #6b0a14 100%)',
-              borderColor: 'rgba(239,45,60,0.40)',
+              background: 'linear-gradient(135deg, var(--brand) 0%, var(--brand-lo) 60%, #7f1d1d 100%)',
+              borderColor: 'rgba(239,68,68,0.40)',
               position: 'relative',
             }}
           >
@@ -245,7 +245,7 @@ function TrainerInner() {
                       <div style={{
                         width: 3, height: 36, borderRadius: 3, flexShrink: 0,
                         background: s.type === 'class' ? 'var(--purple)' : 'var(--brand)',
-                        boxShadow: s.type === 'class' ? '0 0 12px rgba(168,85,247,0.45)' : '0 0 12px var(--brand-glow)',
+                        boxShadow: s.type === 'class' ? '0 0 12px rgba(0,103,224,0.45)' : '0 0 12px var(--brand-glow)',
                       }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: 13, letterSpacing: '-0.005em' }}

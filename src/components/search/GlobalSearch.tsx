@@ -178,14 +178,14 @@ function Highlight({ text, query }: { text: string; query: string }) {
  * so a new backend provider renders sensibly before anyone touches this file.
  */
 const TYPE_ICON: Record<string, { icon: React.ComponentType<{ size?: number; strokeWidth?: number }>; colour: string }> = {
-  exercise: { icon: Dumbbell, colour: '#8B5CF6' },
-  workout_plan: { icon: ClipboardList, colour: '#3B82F6' },
+  exercise: { icon: Dumbbell, colour: '#0067E0' },
+  workout_plan: { icon: ClipboardList, colour: '#0067E0' },
   diet_plan: { icon: Salad, colour: '#10B981' },
-  assessment: { icon: Activity, colour: '#06B6D4' },
+  assessment: { icon: Activity, colour: '#0067E0' },
   invoice: { icon: FileText, colour: '#F59E0B' },
   payment: { icon: IndianRupee, colour: '#10B981' },
-  message: { icon: MessageSquare, colour: '#0EA5E9' },
-  ai_conversation: { icon: Sparkles, colour: '#A855F7' },
+  message: { icon: MessageSquare, colour: '#0067E0' },
+  ai_conversation: { icon: Sparkles, colour: '#0067E0' },
 };
 
 function ResultAvatar({ item }: { item: { title: string; avatar_url?: string | null; type: string } }) {
@@ -990,7 +990,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
                 transformOrigin: 'top center',
                 background: 'var(--bg-elevated)',
                 border: '1px solid var(--border)',
-                boxShadow: '0 24px 60px rgba(2,6,23,0.22), 0 2px 8px rgba(2,6,23,0.06)',
+                boxShadow: '0 24px 60px rgba(15,23,42,0.22), 0 2px 8px rgba(15,23,42,0.06)',
               }}
             >
               {renderPanel('max-h-[min(70vh,460px)]')}
@@ -1012,7 +1012,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
             >
               <div
                 className="absolute inset-0"
-                style={{ background: 'rgba(2,6,23,0.45)', backdropFilter: 'blur(6px)' }}
+                style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(6px)' }}
                 onClick={close}
               />
               <m.div
@@ -1025,7 +1025,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
                   background: 'var(--bg-elevated)',
                   borderBottom: '1px solid var(--border)',
                   paddingTop: 'env(safe-area-inset-top, 0px)',
-                  boxShadow: '0 20px 50px rgba(2,6,23,0.28)',
+                  boxShadow: '0 20px 50px rgba(15,23,42,0.28)',
                 }}
               >
                 <div className="flex items-center gap-2 px-3 py-2.5">

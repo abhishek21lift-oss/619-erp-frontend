@@ -168,7 +168,7 @@ export const ExerciseCard = React.memo(function ExerciseCard({
                 <div
                   role="menu"
                   onClick={(e) => e.stopPropagation()}
-                  className="absolute right-0 top-full z-30 mt-1 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl dark:border-white/10 dark:bg-[#151519]"
+                  className="absolute right-0 top-full z-30 mt-1 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl dark:border-white/10 dark:bg-[#0F172A]"
                 >
                   <MenuItem icon={Eye} label="View details" onClick={() => { setMenuOpen(false); onOpen(ex); }} />
                   {onEdit && (

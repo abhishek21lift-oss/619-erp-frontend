@@ -23,12 +23,12 @@ function KpiCard({ label, value, icon, gradient }: {
   return (
     <m.div variants={itemVariants}
       style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '22px 20px', background: gradient, border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', cursor: 'default', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
-      onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(6,182,212,0.12)'; }}
+      onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,103,224,0.12)'; }}
       onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)'; }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, position: 'relative', zIndex: 1 }}>
         <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text-muted)' }}>{label}</span>
         {icon && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.7)', border: '1px solid var(--border)', color: '#0891b2' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.7)', border: '1px solid var(--border)', color: '#0059ce' }}>
             {icon}
           </div>
         )}
@@ -103,8 +103,8 @@ function Inner() {
     <AppShell>
       <div style={{ background: 'var(--bg-subtle)', padding: '52px 32px 40px', borderRadius: '0 0 36px 36px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 54, height: 54, borderRadius: 16, background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(37,99,235,0.1))', border: '1px solid rgba(6,182,212,0.2)', boxShadow: '0 4px 16px rgba(6,182,212,0.1)' }}>
-            <Activity size={24} color="#0891b2" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 54, height: 54, borderRadius: 16, background: 'linear-gradient(135deg, rgba(0,103,224,0.15), rgba(0,103,224,0.1))', border: '1px solid rgba(0,103,224,0.2)', boxShadow: '0 4px 16px rgba(0,103,224,0.1)' }}>
+            <Activity size={24} color="#0059ce" />
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Attendance Report</h1>
@@ -113,13 +113,13 @@ function Inner() {
         </div>
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '7px 14px', border: '1px solid #d1d5db' }}>
-            <Calendar size={14} color="#9ca3af" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '7px 14px', border: '1px solid #cbd5e1' }}>
+            <Calendar size={14} color="#94a3b8" />
             <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>From</span>
             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, outline: 'none', padding: '2px 0' }} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '7px 14px', border: '1px solid #d1d5db' }}>
-            <Calendar size={14} color="#9ca3af" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '7px 14px', border: '1px solid #cbd5e1' }}>
+            <Calendar size={14} color="#94a3b8" />
             <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>To</span>
             <input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, outline: 'none', padding: '2px 0' }} />
           </div>
@@ -130,30 +130,30 @@ function Inner() {
         {error && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#dc2626', marginBottom: 20 }}>{error}</div>}
 
         <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 24 }}>
-          <KpiCard label="Total Check-ins" value={totalCheckins} icon={<Users size={16} />} gradient="linear-gradient(135deg, rgba(37,99,235,0.08), rgba(37,99,235,0.02))" />
+          <KpiCard label="Total Check-ins" value={totalCheckins} icon={<Users size={16} />} gradient="linear-gradient(135deg, rgba(0,103,224,0.08), rgba(0,103,224,0.02))" />
           <KpiCard label="Peak Hour" value={peakHour.count > 0 ? `${peakHour.hour}:00` : '—'} icon={<Clock size={16} />} gradient="linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02))" />
           <KpiCard label="Average Daily" value={avgDaily} icon={<TrendingUp size={16} />} gradient="linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02))" />
-          <KpiCard label="Busiest Day" value={busiestDay[0] !== '—' ? `${busiestDay[0]} (${busiestDay[1]})` : '—'} icon={<Calendar size={16} />} gradient="linear-gradient(135deg, rgba(124,58,237,0.08), rgba(124,58,237,0.02))" />
+          <KpiCard label="Busiest Day" value={busiestDay[0] !== '—' ? `${busiestDay[0]} (${busiestDay[1]})` : '—'} icon={<Calendar size={16} />} gradient="linear-gradient(135deg, rgba(0,103,224,0.08), rgba(0,103,224,0.02))" />
         </m.div>
 
         <m.div variants={containerVariants} initial="hidden" animate="visible">
           <m.div variants={itemVariants} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 20px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 3, height: 18, borderRadius: 2, background: 'linear-gradient(180deg, #06b6d4, #2563eb)' }} />
+                <div style={{ width: 3, height: 18, borderRadius: 2, background: 'linear-gradient(180deg, #0067e0, #0059ce)' }} />
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Check-ins by Hour</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 8, background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.15)' }}>
-                <ArrowUpRight size={12} color="#0891b2" />
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#0891b2' }}>{totalCheckins} total</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 8, background: 'rgba(0,103,224,0.08)', border: '1px solid rgba(0,103,224,0.15)' }}>
+                <ArrowUpRight size={12} color="#0059ce" />
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#0059ce' }}>{totalCheckins} total</span>
               </div>
             </div>
             {loading ? (
               <div style={{ height: 220, background: 'var(--bg-subtle)', borderRadius: 10 }} />
             ) : totalCheckins === 0 ? (
               <div style={{ height: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-                <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, rgba(6,182,212,0.1), rgba(6,182,212,0.04))', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(6,182,212,0.15)' }}>
-                  <BarChart3 size={24} color="#0891b2" />
+                <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.04))', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,103,224,0.15)' }}>
+                  <BarChart3 size={24} color="#0059ce" />
                 </div>
                 <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--text-muted)' }}>No check-in data for this period</div>
                 <div style={{ fontSize: 12, color: 'var(--text-disabled)', maxWidth: 300, textAlign: 'center' }}>Select a different date range to see attendance patterns.</div>
@@ -165,12 +165,12 @@ function Inner() {
                     <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', gap: 4 }}
                       onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
                       {hovered === i && h.count > 0 && (
-                        <div style={{ fontSize: 11, color: '#fff', fontWeight: 700, background: 'rgba(6,182,212,0.9)', borderRadius: 6, padding: '3px 8px', marginBottom: 2, whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: 11, color: '#fff', fontWeight: 700, background: 'rgba(0,103,224,0.9)', borderRadius: 6, padding: '3px 8px', marginBottom: 2, whiteSpace: 'nowrap' }}>
                           {h.count} check-ins
                         </div>
                       )}
                       <div style={{ fontSize: 10, color: 'var(--text-disabled)', marginTop: 'auto', fontWeight: 600 }}>{hovered !== i ? (h.count > 0 ? h.count : '') : ''}</div>
-                      <div style={{ width: '100%', height: `${Math.max((h.count / max) * 100, h.count > 0 ? 4 : 0)}%`, background: h.count > 0 ? 'linear-gradient(180deg, #06b6d4 0%, #2563eb 50%, rgba(37,99,235,0.3) 100%)' : '#f3f4f6', borderRadius: '6px 6px 0 0', minHeight: h.count > 0 ? 6 : 2, transition: 'height 0.4s, opacity 0.15s', opacity: hovered !== null && hovered !== i ? 0.5 : 1, boxShadow: h.count > 0 ? '0 2px 8px rgba(6,182,212,0.2)' : 'none' }} />
+                      <div style={{ width: '100%', height: `${Math.max((h.count / max) * 100, h.count > 0 ? 4 : 0)}%`, background: h.count > 0 ? 'linear-gradient(180deg, #0067e0 0%, #0059ce 50%, rgba(0,103,224,0.3) 100%)' : '#f1f5f9', borderRadius: '6px 6px 0 0', minHeight: h.count > 0 ? 6 : 2, transition: 'height 0.4s, opacity 0.15s', opacity: hovered !== null && hovered !== i ? 0.5 : 1, boxShadow: h.count > 0 ? '0 2px 8px rgba(0,103,224,0.2)' : 'none' }} />
                     </div>
                   ))}
                 </div>

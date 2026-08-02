@@ -60,14 +60,14 @@ function BranchesContent() {
     <AppShell>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px' }}>
         <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: 'linear-gradient(135deg, #faf5ff, #ede9fe)', boxShadow: 'var(--shadow-xs)' }}>
+          style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: 'linear-gradient(135deg, #f2f8ff, #f1f5f9)', boxShadow: 'var(--shadow-xs)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)', margin: '0 0 8px' }}>Branches</h1>
               <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.6, color: 'var(--text-muted)' }}>Manage gym locations and branches.</p>
             </div>
             <button onClick={() => setShowForm(v => !v)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '10px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(139,92,246,0.35)' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '10px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,103,224,0.35)' }}>
               <Plus size={14} /> {showForm ? 'Cancel' : 'Add Branch'}
             </button>
           </div>
@@ -85,15 +85,15 @@ function BranchesContent() {
             <div style={{ display: 'grid', gap: 5 }}>
               <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Branch Name *</span>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. MY PT STUDIO Gomti Nagar" required
-                style={{ border: '1px solid #d1d5db', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }} />
+                style={{ border: '1px solid #cbd5e1', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }} />
             </div>
             <div style={{ display: 'grid', gap: 5 }}>
               <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Location</span>
               <input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="e.g. Lucknow, UP"
-                style={{ border: '1px solid #d1d5db', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }} />
+                style={{ border: '1px solid #cbd5e1', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }} />
             </div>
             <button type="submit"
-              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '9px 22px', borderRadius: 12, background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(139,92,246,0.35)' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '9px 22px', borderRadius: 12, background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,103,224,0.35)' }}>
               <Plus size={13} /> Create
             </button>
           </m.form>
@@ -106,8 +106,8 @@ function BranchesContent() {
             {items.map(b => (
               <m.div key={b.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 style={{ borderRadius: 20, background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, transition: 'all 0.3s' }}>
-                <div style={{ width: 48, height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(109,40,217,0.1))', flexShrink: 0 }}>
-                  <MapPin size={22} color="#a855f7" />
+                <div style={{ width: 48, height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(0,103,224,0.2), rgba(0,103,224,0.1))', flexShrink: 0 }}>
+                  <MapPin size={22} color="#0067e0" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', marginBottom: 2 }}>{b.name}</div>
@@ -115,7 +115,7 @@ function BranchesContent() {
                 </div>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                   <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{b.member_count ?? 0} members</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: b.status === 'active' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: b.status === 'active' ? '#059669' : '#6b7280', textTransform: 'capitalize' }}>{b.status || 'active'}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: b.status === 'active' ? 'rgba(16,185,129,0.15)' : 'rgba(148,163,184,0.15)', color: b.status === 'active' ? '#059669' : '#64748b', textTransform: 'capitalize' }}>{b.status || 'active'}</span>
                   <button onClick={() => deleteBranch(b.id)}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8, border: 'none', background: 'rgba(239,68,68,0.12)', color: '#f87171', cursor: 'pointer', flexShrink: 0 }}>
                     <Trash2 size={14} />

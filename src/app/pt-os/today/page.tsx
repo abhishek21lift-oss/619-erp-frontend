@@ -113,7 +113,7 @@ function Today() {
         <div className="flex items-center gap-2.5">
           <span
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] text-white"
-            style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)' }}
+            style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)' }}
           >
             <CalendarDays size={18} />
           </span>
@@ -185,7 +185,7 @@ function ClientRow({
     >
       <span
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-[13px] font-[800] text-white"
-        style={{ background: c.is_rest_day ? 'var(--text-muted)' : 'linear-gradient(135deg,#7c3aed,#5b21b6)' }}
+        style={{ background: c.is_rest_day ? 'var(--text-muted)' : 'linear-gradient(135deg,#0067e0,#0059ce)' }}
       >
         {c.is_rest_day ? <Moon size={16} /> : initials(c.client_name)}
       </span>

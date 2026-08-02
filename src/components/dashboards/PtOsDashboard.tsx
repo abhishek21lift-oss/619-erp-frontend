@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import { PullToRefresh } from '@/components/ui';
 import { cn } from '@/components/ui/cn';
+import { palette, identity, rgba } from '@/lib/palette';
 import {
   Users, TrendingUp, Wallet, Percent,
   ChevronRight, Sparkles, ArrowUpRight, ArrowDownRight, Activity,
@@ -99,26 +100,28 @@ type OpsData = {
 /** The house easing curve, already used inline throughout this file. */
 const EASE = [0.16, 1, 0.3, 1] as const;
 
+// Named for what the colour means, not what hue it is. The old keys were
+// maroon/crimson/purple/rose/cyan, which stopped being useful the moment five
+// of them resolved to the same blue.
 const C = {
-  maroon:  '#7A0019',
-  crimson: '#C1121F',
-  purple:  '#7C3AED',
-  blue:    '#2563EB',
-  emerald: '#10B981',
-  amber:   '#F59E0B',
-  rose:    '#E11D48',
-  cyan:    '#06B6D4',
-  ink:     '#0F172A',
-  muted:   'rgba(100,116,139,0.85)',
+  primary:    palette.blue[500],
+  success:    palette.emerald[500],
+  warning:    palette.amber[500],
+  danger:     palette.red[600],
+  dangerDeep: palette.red[900],
+  ink:        palette.gray[900],
+  muted:      rgba(palette.gray[500], 0.85),
 };
 
-const TRAINER_COLORS = [C.purple, C.blue, C.emerald, C.amber, C.crimson, C.cyan];
+// Trainers are told apart, not judged — so this walks the non-semantic ramp
+// rather than handing someone the "overdue" red.
+const TRAINER_COLORS = identity;
 
 const STATUS_META: Record<SessionStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  scheduled: { label: 'Scheduled', color: C.blue,    icon: <CalendarClock size={10} /> },
-  completed: { label: 'Completed', color: C.emerald, icon: <CheckCircle2 size={10} />  },
+  scheduled: { label: 'Scheduled', color: C.primary,    icon: <CalendarClock size={10} /> },
+  completed: { label: 'Completed', color: C.success, icon: <CheckCircle2 size={10} />  },
   cancelled: { label: 'Cancelled', color: C.muted,   icon: <XCircle size={10} />       },
-  no_show:   { label: 'No Show',   color: C.amber,   icon: <AlertCircle size={10} />   },
+  no_show:   { label: 'No Show',   color: C.warning,   icon: <AlertCircle size={10} />   },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -190,7 +193,7 @@ function healthScore(d: DashData) {
   const growthRaw  = momPct(d.revenueTrend, 'revenue') ?? 0;
   const growth     = clamp((growthRaw + 50) / 100, 0, 1);
   const score = Math.round(collection * 35 + retention * 35 + growth * 30);
-  const color = score >= 80 ? C.emerald : score >= 60 ? C.amber : C.crimson;
+  const color = score >= 80 ? C.success : score >= 60 ? C.warning : C.danger;
   const label = score >= 80 ? 'Excellent' : score >= 60 ? 'Healthy' : score >= 40 ? 'Focus Needed' : 'At Risk';
   return { score, color, label, growthRaw };
 }
@@ -209,7 +212,7 @@ function TrendBadge({ pct }: { pct: number | null }) {
   const up = pct >= 0;
   return (
     <span className="inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[9.5px] font-[750] tabular-nums"
-      style={{ background: up ? 'rgba(16,185,129,0.12)' : 'rgba(225,29,72,0.12)', color: up ? C.emerald : C.rose }}>
+      style={{ background: up ? 'rgba(16,185,129,0.12)' : 'rgba(220,38,38,0.12)', color: up ? C.success : C.danger }}>
       {up ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}{Math.abs(pct).toFixed(0)}%
     </span>
   );
@@ -241,7 +244,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 function Skel({ w = 'w-full', h = 'h-4', r = 'rounded-xl' }: { w?: string; h?: string; r?: string }) {
-  return <div className={`${w} ${h} ${r} animate-pulse`} style={{ background: 'rgba(124,58,237,0.08)' }} />;
+  return <div className={`${w} ${h} ${r} animate-pulse`} style={{ background: 'rgba(0,103,224,0.08)' }} />;
 }
 
 // ─── HealthRing ────────────────────────────────────────────────────────────────
@@ -290,7 +293,7 @@ function HeroStat({ icon, label, value, accent, trend }: {
           {value}
           {trend != null && (
             <span className="inline-flex items-center gap-0.5 text-[9px] font-[760] tabular-nums"
-              style={{ color: trend >= 0 ? '#34d399' : '#fb7185' }}>
+              style={{ color: trend >= 0 ? '#34d399' : '#f87171' }}>
               {trend >= 0 ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}{Math.abs(trend).toFixed(0)}%
             </span>
           )}
@@ -314,10 +317,10 @@ function HeroHeader({ d, coach, studioName, loading: _loading, onRefresh: _onRef
       className="relative overflow-hidden rounded-[24px] sm:rounded-[30px]"
       style={{
         background:
-          'radial-gradient(130% 150% at 50% -25%, #2A1A5E 0%, transparent 55%),' +
-          'linear-gradient(158deg, #0B0918 0%, #170D38 42%, #0C0722 72%, #12092C 100%)',
+          'radial-gradient(130% 150% at 50% -25%, #0050AD 0%, transparent 55%),' +
+          'linear-gradient(158deg, #0F172A 0%, #0050AD 42%, #0F172A 72%, #0050AD 100%)',
         boxShadow:
-          '0 24px 64px -14px rgba(9,7,22,0.78), 0 8px 26px rgba(124,58,237,0.22),' +
+          '0 24px 64px -14px rgba(15,23,42,0.78), 0 8px 26px rgba(0,103,224,0.22),' +
           'inset 0 1px 0 rgba(255,255,255,0.10), inset 0 0 0 1px rgba(251,191,36,0.10)',
       }}
     >
@@ -326,7 +329,7 @@ function HeroHeader({ d, coach, studioName, loading: _loading, onRefresh: _onRef
         <div className="absolute -top-20 -right-14 h-60 w-60 rounded-full opacity-35"
           style={{ background: 'radial-gradient(circle, #FCD34D 0%, transparent 70%)', filter: 'blur(46px)' }} />
         <div className="absolute -bottom-20 -left-14 h-60 w-60 rounded-full opacity-25"
-          style={{ background: 'radial-gradient(circle, #c084fc 0%, transparent 70%)', filter: 'blur(54px)' }} />
+          style={{ background: 'radial-gradient(circle, #7fb4ff 0%, transparent 70%)', filter: 'blur(54px)' }} />
         <svg className="absolute inset-0 w-full h-full opacity-[0.055]" xmlns="http://www.w3.org/2000/svg">
           <defs><pattern id="hh-g" width="34" height="34" patternUnits="userSpaceOnUse">
             <path d="M 34 0 L 0 0 0 34" fill="none" stroke="white" strokeWidth="0.6" />
@@ -342,14 +345,14 @@ function HeroHeader({ d, coach, studioName, loading: _loading, onRefresh: _onRef
         />
         {/* Spotlight vignette */}
         <div className="absolute inset-0"
-          style={{ background: 'radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(6,4,16,0.55) 100%)' }} />
+          style={{ background: 'radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(15,23,42,0.55) 100%)' }} />
       </div>
 
       <div className="relative z-10 flex flex-col items-center justify-center py-4 sm:py-5 px-6 text-center">
         {/* Crest */}
         <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-full"
           style={{
-            background: 'radial-gradient(circle at 30% 25%, #211648, #0B0720)',
+            background: 'radial-gradient(circle at 30% 25%, #0050AD, #0F172A)',
             border: '1px solid rgba(251,191,36,0.45)',
             boxShadow: '0 0 0 4px rgba(251,191,36,0.06), 0 6px 18px rgba(245,158,11,0.30)',
           }}>
@@ -392,7 +395,7 @@ function HeroHeader({ d, coach, studioName, loading: _loading, onRefresh: _onRef
       <div className="absolute top-0 inset-x-0 h-px"
         style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.5), transparent)' }} />
       <div className="absolute bottom-0 inset-x-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.7), rgba(192,132,252,0.5), transparent)' }} />
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.7), rgba(127,180,255,0.5), transparent)' }} />
     </m.div>
   );
 }
@@ -418,16 +421,16 @@ function HeroHeader({ d, coach, studioName, loading: _loading, onRefresh: _onRef
  * strip uses 16, the dock 17).
  */
 export const QUICK_ACTIONS = [
-  { label: 'Add Client',           icon: UserPlus,       href: '/pt-os/new-client',           color: C.purple },
-  { label: 'Consent',              icon: FileSignature,  href: '/pt-os/informed-consent',     color: C.blue },
-  { label: 'PAR-Q',                icon: ShieldCheck,    href: '/pt-os/parq',                 color: C.emerald },
-  { label: 'Goal Setting',         icon: Target,         href: '/pt-os/goals',                color: C.maroon },
-  { label: 'Fitness Testing',      icon: Gauge,          href: '/pt-os/assessment',           color: C.amber },
-  { label: 'Lifestyle',            icon: HeartPulse,     href: '/pt-os/lifestyle-assessment', color: C.crimson },
-  { label: 'Nutrition Assessment', icon: Apple,          href: '/pt-os/nutrition-assessment', color: C.cyan },
-  { label: 'Mobility Assessment',  icon: PersonStanding, href: '/pt-os/mobility-assessment',  color: C.rose },
-  { label: 'Posture Assessment',   icon: Accessibility,  href: '/pt-os/posture-assessment',   color: C.blue },
-  { label: 'Strength Tracking',    icon: Dumbbell,       href: '/pt-os/strength-tracking',    color: C.emerald },
+  { label: 'Add Client',           icon: UserPlus,       href: '/pt-os/new-client',           color: C.primary },
+  { label: 'Consent',              icon: FileSignature,  href: '/pt-os/informed-consent',     color: C.primary },
+  { label: 'PAR-Q',                icon: ShieldCheck,    href: '/pt-os/parq',                 color: C.success },
+  { label: 'Goal Setting',         icon: Target,         href: '/pt-os/goals',                color: C.dangerDeep },
+  { label: 'Fitness Testing',      icon: Gauge,          href: '/pt-os/assessment',           color: C.warning },
+  { label: 'Lifestyle',            icon: HeartPulse,     href: '/pt-os/lifestyle-assessment', color: C.danger },
+  { label: 'Nutrition Assessment', icon: Apple,          href: '/pt-os/nutrition-assessment', color: C.primary },
+  { label: 'Mobility Assessment',  icon: PersonStanding, href: '/pt-os/mobility-assessment',  color: C.danger },
+  { label: 'Posture Assessment',   icon: Accessibility,  href: '/pt-os/posture-assessment',   color: C.primary },
+  { label: 'Strength Tracking',    icon: Dumbbell,       href: '/pt-os/strength-tracking',    color: C.success },
 ] as const;
 
 // ─── Section 2 — Mobile Quick Actions (visible on mobile only) ─────────────────
@@ -532,10 +535,10 @@ function ForecastPanel({ d }: { d: DashData }) {
   const avgPerClient = d.active_pt_clients > 0 ? d.total_monthly_pt_revenue / d.active_pt_clients : 0;
 
   const tiles = [
-    { label: 'This Month',     value: fmtCompact(d.total_monthly_pt_revenue), color: C.blue,   icon: <Wallet size={13} /> },
-    { label: 'Projected Next', value: projected !== null ? fmtCompact(projected) : '—', color: C.purple, icon: <TrendingUp size={13} />, badge: delta },
-    { label: 'Avg / Client',   value: fmtCompact(avgPerClient),               color: C.emerald, icon: <Users size={13} /> },
-    { label: '6M Collected',   value: fmtCompact(revVals.reduce((s,v)=>s+v,0)), color: C.amber, icon: <Activity size={13} /> },
+    { label: 'This Month',     value: fmtCompact(d.total_monthly_pt_revenue), color: C.primary,   icon: <Wallet size={13} /> },
+    { label: 'Projected Next', value: projected !== null ? fmtCompact(projected) : '—', color: C.primary, icon: <TrendingUp size={13} />, badge: delta },
+    { label: 'Avg / Client',   value: fmtCompact(avgPerClient),               color: C.success, icon: <Users size={13} /> },
+    { label: '6M Collected',   value: fmtCompact(revVals.reduce((s,v)=>s+v,0)), color: C.warning, icon: <Activity size={13} /> },
   ];
 
   return (
@@ -546,7 +549,7 @@ function ForecastPanel({ d }: { d: DashData }) {
           <p className="text-[10.5px] mt-0.5 font-[500]" style={{ color: C.muted }}>Linear trend projection</p>
         </div>
         <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-[700] uppercase tracking-[0.08em]"
-          style={{ background: 'rgba(124,58,237,0.1)', color: C.purple }}>
+          style={{ background: 'rgba(0,103,224,0.1)', color: C.primary }}>
           <Sparkles size={9} /> Forecast
         </span>
       </div>
@@ -609,16 +612,16 @@ function AICopilot({ d }: { d: DashData }) {
   const router = useRouter();
   const insights = useMemo(() => buildInsights(d), [d]);
   const toneStyle = {
-    risk: { color: C.crimson, bg: 'rgba(193,18,31,0.07)', border: 'rgba(193,18,31,0.18)' },
-    good: { color: C.emerald, bg: 'rgba(16,185,129,0.07)', border: 'rgba(16,185,129,0.18)' },
-    tip:  { color: C.blue,    bg: 'rgba(37,99,235,0.07)',  border: 'rgba(37,99,235,0.18)'  },
+    risk: { color: C.danger, bg: 'rgba(185,28,28,0.07)', border: 'rgba(185,28,28,0.18)' },
+    good: { color: C.success, bg: 'rgba(16,185,129,0.07)', border: 'rgba(16,185,129,0.18)' },
+    tip:  { color: C.primary,    bg: 'rgba(0,103,224,0.07)',  border: 'rgba(0,103,224,0.18)'  },
   };
   return (
     <Glass className="p-4 sm:p-5 flex flex-col"
-      style={{ background: 'linear-gradient(155deg, rgba(124,58,237,0.06), rgba(255,255,255,0.76))' }}>
+      style={{ background: 'linear-gradient(155deg, rgba(0,103,224,0.06), rgba(255,255,255,0.76))' }}>
       <div className="flex items-center gap-2.5 mb-3.5">
         <span className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white shrink-0"
-          style={{ background: `linear-gradient(135deg, ${C.purple}, ${C.blue})`, boxShadow: `0 5px 14px ${C.purple}45` }}>
+          style={{ background: `linear-gradient(135deg, ${C.primary}, ${C.primary})`, boxShadow: `0 5px 14px ${C.primary}45` }}>
           <Sparkles size={15} />
         </span>
         <div>
@@ -628,7 +631,7 @@ function AICopilot({ d }: { d: DashData }) {
       </div>
       <div className="space-y-2">
         {insights.length === 0
-          ? <div className="flex flex-col items-center py-8 text-center"><ShieldCheck size={24} style={{ color: C.emerald }} /><p className="mt-2 text-[12px] font-[600]" style={{ color: C.ink }}>All clear — no alerts</p></div>
+          ? <div className="flex flex-col items-center py-8 text-center"><ShieldCheck size={24} style={{ color: C.success }} /><p className="mt-2 text-[12px] font-[600]" style={{ color: C.ink }}>All clear — no alerts</p></div>
           : insights.map((ins, i) => {
             const t = toneStyle[ins.tone];
             return (
@@ -735,15 +738,15 @@ function TodaySchedule({ ops, loading }: { ops: OpsData | null | undefined; load
           directly above it. */}
       <div className="relative px-4 pt-4 pb-3.5 sm:px-5"
         style={{
-          background: `linear-gradient(135deg, ${C.crimson}0E 0%, ${C.purple}0B 55%, transparent 100%)`,
+          background: `linear-gradient(135deg, ${C.danger}0E 0%, ${C.primary}0B 55%, transparent 100%)`,
           borderBottom: '1px solid rgba(15,23,42,0.06)',
         }}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] text-white"
               style={{
-                background: `linear-gradient(140deg, ${C.crimson}, ${C.maroon})`,
-                boxShadow: `0 6px 16px ${C.crimson}45, inset 0 1px 0 rgba(255,255,255,0.22)`,
+                background: `linear-gradient(140deg, ${C.danger}, ${C.dangerDeep})`,
+                boxShadow: `0 6px 16px ${C.danger}45, inset 0 1px 0 rgba(255,255,255,0.22)`,
               }}>
               <CalendarClock size={17} />
             </span>
@@ -788,8 +791,8 @@ function TodaySchedule({ ops, loading }: { ops: OpsData | null | undefined; load
         {!loading && total === 0 && (
           <div className="flex flex-col items-center py-8 text-center">
             <span className="flex h-12 w-12 items-center justify-center rounded-[16px]"
-              style={{ background: `${C.crimson}0E`, border: `1px solid ${C.crimson}1F` }}>
-              <CalendarClock size={22} style={{ color: `${C.crimson}88` }} />
+              style={{ background: `${C.danger}0E`, border: `1px solid ${C.danger}1F` }}>
+              <CalendarClock size={22} style={{ color: `${C.danger}88` }} />
             </span>
             <p className="mt-2.5 text-[13px] font-[700]" style={{ color: C.ink }}>Nothing on today</p>
             <p className="mt-0.5 max-w-[34ch] text-[11px] leading-[1.5]" style={{ color: C.muted }}>
@@ -797,7 +800,7 @@ function TodaySchedule({ ops, loading }: { ops: OpsData | null | undefined; load
             </p>
             <button onClick={() => router.push('/pt-os/schedule-session')}
               className="mt-3 inline-flex h-[44px] items-center gap-1.5 rounded-full px-4 text-[11.5px] font-[720] transition-transform active:scale-95"
-              style={{ background: `${C.crimson}12`, color: C.crimson, border: `1px solid ${C.crimson}24` }}>
+              style={{ background: `${C.danger}12`, color: C.danger, border: `1px solid ${C.danger}24` }}>
               <CalendarPlus size={13} /> Schedule a session
             </button>
           </div>
@@ -817,14 +820,14 @@ function TodaySchedule({ ops, loading }: { ops: OpsData | null | undefined; load
                 transition={{ duration: 0.28, ease: EASE }}
                 className="group relative flex w-full items-center gap-3 overflow-hidden rounded-[18px] p-3.5 text-left transition-transform active:scale-[0.99]"
                 style={{
-                  background: 'linear-gradient(140deg, #140B2E 0%, #1E1140 48%, #120A28 100%)',
-                  boxShadow: '0 12px 30px -12px rgba(9,7,22,0.7), inset 0 1px 0 rgba(255,255,255,0.09)',
+                  background: 'linear-gradient(140deg, #0050AD 0%, #003F87 48%, #003F87 100%)',
+                  boxShadow: '0 12px 30px -12px rgba(15,23,42,0.7), inset 0 1px 0 rgba(255,255,255,0.09)',
                 }}
               >
                 {/* Decorative wash. Inside an overflow-hidden parent, so it is
                     clipped rather than escaping the card. */}
                 <span aria-hidden className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full"
-                  style={{ background: `radial-gradient(circle, ${C.amber}55 0%, transparent 70%)`, filter: 'blur(34px)' }} />
+                  style={{ background: `radial-gradient(circle, ${C.warning}55 0%, transparent 70%)`, filter: 'blur(34px)' }} />
 
                 <span className="relative flex h-[46px] w-[46px] shrink-0 flex-col items-center justify-center rounded-[14px]"
                   style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)' }}>
@@ -839,7 +842,7 @@ function TodaySchedule({ ops, loading }: { ops: OpsData | null | undefined; load
                 <span className="relative min-w-0 flex-1">
                   <span className="mb-0.5 flex items-center gap-1.5">
                     <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-[2px] text-[8.5px] font-[800] uppercase tracking-[0.1em]"
-                      style={{ background: `${C.amber}26`, color: '#FCD34D' }}>
+                      style={{ background: `${C.warning}26`, color: '#FCD34D' }}>
                       Next up
                     </span>
                   </span>
@@ -948,7 +951,7 @@ function TodaySchedule({ ops, loading }: { ops: OpsData | null | undefined; load
                         </span>
                       </span>
                       <span className="inline-flex h-[26px] shrink-0 items-center gap-1 rounded-full px-2.5 text-[10px] font-[780]"
-                        style={{ background: `${C.crimson}12`, color: C.crimson }}>
+                        style={{ background: `${C.danger}12`, color: C.danger }}>
                         Start <ChevronRight size={11} />
                       </span>
                     </m.button>
@@ -981,7 +984,7 @@ function ProgressRing({ done, total, reduce }: { done: number; total: number; re
       <svg width="38" height="38" viewBox="0 0 38 38" className="-rotate-90">
         <circle cx="19" cy="19" r={R} fill="none" stroke="rgba(15,23,42,0.09)" strokeWidth="3" />
         <m.circle
-          cx="19" cy="19" r={R} fill="none" stroke={C.emerald} strokeWidth="3" strokeLinecap="round"
+          cx="19" cy="19" r={R} fill="none" stroke={C.success} strokeWidth="3" strokeLinecap="round"
           strokeDasharray={CIRC}
           initial={reduce ? false : { strokeDashoffset: CIRC }}
           animate={{ strokeDashoffset: CIRC * (1 - pct) }}
@@ -1011,7 +1014,7 @@ function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loadin
       <div className="flex items-center justify-between mb-3.5">
         <div className="flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white shrink-0"
-            style={{ background: `linear-gradient(135deg, ${C.amber}, #fbbf24)`, boxShadow: `0 5px 12px ${C.amber}40` }}>
+            style={{ background: `linear-gradient(135deg, ${C.warning}, #fbbf24)`, boxShadow: `0 5px 12px ${C.warning}40` }}>
             <CalendarClock size={14} />
           </span>
           <div>
@@ -1021,7 +1024,7 @@ function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loadin
         </div>
         {renewals.length > 0 && (
           <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]"
-            style={{ background: `${C.amber}18`, color: C.amber }}>{renewals.length}</span>
+            style={{ background: `${C.warning}18`, color: C.warning }}>{renewals.length}</span>
         )}
       </div>
 
@@ -1029,7 +1032,7 @@ function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loadin
 
       {!loading && renewals.length === 0 && (
         <div className="flex flex-col items-center py-7 text-center">
-          <CheckCircle2 size={24} style={{ color: `${C.emerald}88` }} />
+          <CheckCircle2 size={24} style={{ color: `${C.success}88` }} />
           <p className="mt-2 text-[12px] font-[640]" style={{ color: C.ink }}>No renewals this week</p>
         </div>
       )}
@@ -1038,7 +1041,7 @@ function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loadin
         <div className="space-y-2" style={{ maxHeight: 280, overflowY: 'auto' }}>
           {renewals.map((r, i) => {
             const urgent = r.days_left <= 2;
-            const color = urgent ? C.crimson : r.days_left <= 5 ? C.amber : C.blue;
+            const color = urgent ? C.danger : r.days_left <= 5 ? C.warning : C.primary;
             return (
               <m.div key={r.id}
                 initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
@@ -1061,7 +1064,7 @@ function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loadin
                     {r.days_left === 0 ? 'Today!' : `${r.days_left}d`}
                   </span>
                   {r.balance_amount > 0 && (
-                    <span className="text-[9px] font-[640]" style={{ color: C.rose }}>{fmtCompact(r.balance_amount)} due</span>
+                    <span className="text-[9px] font-[640]" style={{ color: C.danger }}>{fmtCompact(r.balance_amount)} due</span>
                   )}
                 </div>
               </m.div>
@@ -1088,7 +1091,7 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
       <div className="flex items-center justify-between mb-3.5">
         <div className="flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white shrink-0"
-            style={{ background: `linear-gradient(135deg, ${C.emerald}, #34d399)`, boxShadow: `0 5px 12px ${C.emerald}40` }}>
+            style={{ background: `linear-gradient(135deg, ${C.success}, #34d399)`, boxShadow: `0 5px 12px ${C.success}40` }}>
             <Activity size={14} />
           </span>
           <div>
@@ -1105,9 +1108,9 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
         <>
           <div className="grid grid-cols-3 gap-2 mb-3.5">
             {[
-              { label: 'Total',    value: stats.this_month_total,     color: C.blue },
-              { label: 'Done',     value: stats.this_month_completed, color: C.emerald },
-              { label: 'Last mo.', value: stats.last_month_completed, color: C.purple },
+              { label: 'Total',    value: stats.this_month_total,     color: C.primary },
+              { label: 'Done',     value: stats.this_month_completed, color: C.success },
+              { label: 'Last mo.', value: stats.last_month_completed, color: C.primary },
             ].map(t => (
               <div key={t.label} className="rounded-[13px] p-2.5" style={{ background: `${t.color}0d` }}>
                 <p className="text-[8px] font-[700] uppercase tracking-[0.09em] mb-0.5" style={{ color: `${t.color}aa` }}>{t.label}</p>
@@ -1120,10 +1123,10 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
             <div className="mb-4">
               <div className="flex justify-between mb-1.5">
                 <span className="text-[9.5px] font-[650]" style={{ color: C.muted }}>Completion rate</span>
-                <span className="text-[9.5px] font-[750]" style={{ color: C.emerald }}>{completionRate.toFixed(0)}%</span>
+                <span className="text-[9.5px] font-[750]" style={{ color: C.success }}>{completionRate.toFixed(0)}%</span>
               </div>
-              <div className="h-2 rounded-full overflow-hidden" style={{ background: `${C.emerald}18` }}>
-                <m.div className="h-full rounded-full" style={{ background: `linear-gradient(90deg, ${C.emerald}, #34d399)` }}
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: `${C.success}18` }}>
+                <m.div className="h-full rounded-full" style={{ background: `linear-gradient(90deg, ${C.success}, #34d399)` }}
                   initial={{ width: 0 }} animate={{ width: `${completionRate}%` }}
                   transition={{ duration: 0.8, ease: [0.16,1,0.3,1] }} />
               </div>
@@ -1142,9 +1145,9 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
                     <div className="flex items-center justify-between mb-1 min-w-0">
                       <span className="text-[11px] font-[640] truncate max-w-[130px] sm:max-w-[170px]" style={{ color: C.ink }}>{t.trainer_name}</span>
                       <div className="flex items-center gap-1.5 text-[9px] font-[650] shrink-0 ml-2">
-                        <span style={{ color: C.emerald }}>{t.completed}✓</span>
-                        {t.scheduled > 0 && <span style={{ color: C.blue }}>{t.scheduled}⏱</span>}
-                        {t.missed > 0 && <span style={{ color: C.amber }}>{t.missed}✗</span>}
+                        <span style={{ color: C.success }}>{t.completed}✓</span>
+                        {t.scheduled > 0 && <span style={{ color: C.primary }}>{t.scheduled}⏱</span>}
+                        {t.missed > 0 && <span style={{ color: C.warning }}>{t.missed}✗</span>}
                       </div>
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: `${color}15` }}>
@@ -1266,7 +1269,7 @@ export default function PtOsDashboard() {
       {/* Ambient color wash — fixed so it doesn't scroll */}
       <div className="pointer-events-none fixed inset-0" style={{ zIndex: 0 }}>
         <div className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse 65% 45% at 10% 0%, rgba(193,18,31,0.05) 0%, transparent 55%), radial-gradient(ellipse 55% 40% at 90% 90%, rgba(124,58,237,0.05) 0%, transparent 55%)' }} />
+          style={{ background: 'radial-gradient(ellipse 65% 45% at 10% 0%, rgba(185,28,28,0.05) 0%, transparent 55%), radial-gradient(ellipse 55% 40% at 90% 90%, rgba(0,103,224,0.05) 0%, transparent 55%)' }} />
       </div>
 
       {/* Scroll container — pb accounts for mobile bottom nav (h-16=64px) + safe area.
@@ -1306,19 +1309,19 @@ export default function PtOsDashboard() {
               <SectionLabel>Key Metrics</SectionLabel>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                 <StatCard icon={<Users size={14} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
-                  sub={`${d.expired_clients} expired`} color={C.purple} accent="#a78bfa" delay={0} href="/pt-os/clients" trend={revTrend} pct={revMoM} />
+                  sub={`${d.expired_clients} expired`} color={C.primary} accent="#7fb4ff" delay={0} href="/pt-os/clients" trend={revTrend} pct={revMoM} />
                 <StatCard icon={<Wallet size={14} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
-                  color={C.emerald} accent="#34d399" delay={0.05} href="/pt-os/reports" trend={revTrend} pct={revMoM} />
+                  color={C.success} accent="#34d399" delay={0.05} href="/pt-os/reports" trend={revTrend} pct={revMoM} />
                 {/* Phone and tablet only. Still rendered there, so the numbers
                     stay one tap away on the devices a trainer carries around
                     the floor; the desktop row is the one being kept lean. */}
                 <StatCard icon={<Percent size={14} />} label="Commission" value={fmtCompact(d.total_monthly_commission)}
-                  sub={commRate} color={C.rose} accent="#fb7185" delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM}
+                  sub={commRate} color={C.danger} accent="#f87171" delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM}
                   className="lg:hidden" />
                 <StatCard icon={<Gauge size={14} />} label="Retention" value={retentionPct !== null ? `${retentionPct.toFixed(0)}%` : '—'}
-                  sub={`${d.active_pt_clients}/${d.active_pt_clients + d.expired_clients}`} color={C.cyan} accent="#22d3ee" delay={0.15} href="/pt-os/clients" />
+                  sub={`${d.active_pt_clients}/${d.active_pt_clients + d.expired_clients}`} color={C.primary} accent="#0067e0" delay={0.15} href="/pt-os/clients" />
                 <StatCard icon={<Receipt size={14} />} label="Outstanding" value={fmtCompact(d.total_outstanding)}
-                  sub={`${d.clients_with_balance} client${d.clients_with_balance !== 1 ? 's' : ''}`} color={C.amber} accent="#fbbf24" delay={0.20} href="/pt-os/balance-sheet" />
+                  sub={`${d.clients_with_balance} client${d.clients_with_balance !== 1 ? 's' : ''}`} color={C.warning} accent="#fbbf24" delay={0.20} href="/pt-os/balance-sheet" />
               </div>
             </div>
 
