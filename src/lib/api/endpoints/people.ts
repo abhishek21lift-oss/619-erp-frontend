@@ -1,4 +1,4 @@
-// API endpoints: clients, trainers, member, leave, attendance, biometricAttend.
+// API endpoints: clients, trainers, member, leave, attendance.
 //
 // Lifted verbatim from the single `api` object in the 4,185-line api.ts.
 // Method names, URLs and request shapes are unchanged; index.ts composes these
@@ -126,25 +126,4 @@ export const attendance = {
     http('/api/attendance', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: Record<string, unknown>) =>
     http(`/api/attendance/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-};
-
-export const biometricAttend = {
-  mark: (data: { memberId: string; memberName?: string; verificationMethod: string; deviceName: string; latitude: number; longitude: number }) =>
-    http<{ success: boolean; attendanceId?: string; error?: string }>('/api/biometric-attend/mark', {
-      method: 'POST', body: JSON.stringify(data),
-    }),
-  checkout: (memberId: string) =>
-    http<{ success: boolean; sessionDurationMinutes: number }>('/api/biometric-attend/checkout', {
-      method: 'POST', body: JSON.stringify({ memberId }),
-    }),
-  today: () =>
-    http<{ present: number; absent: number; late: number; active: number; feed: { id: string; memberName: string; checkInTime: string; verificationMethod: string; deviceName: string }[] }>(
-      '/api/biometric-attend/today',
-    ),
-  history: (params?: Record<string, string>) =>
-    http<{ records: unknown[]; total: number }>(`/api/biometric-attend/history${buildQs(params)}`),
-  memberHistory: (memberId: string, params?: Record<string, string>) =>
-    http<{ records: unknown[] }>(`/api/biometric-attend/member/${memberId}${buildQs(params)}`),
-  report: (params?: Record<string, string>) =>
-    http<{ url: string }>(`/api/biometric-attend/report${buildQs(params)}`),
 };

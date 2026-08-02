@@ -35,8 +35,10 @@ const PUBLIC_PREFIXES: string[] = [
   '/checkin',
   '/_next',
   '/api/health',
+  // The member fingerprint-enrolment prefix sat here, for the biometric
+  // check-in screens. That check-in path is gone; staff passkey login lives
+  // under the auth prefix below and is still covered.
   '/api/auth',
-  '/api/webauthn',
   '/models',
   '/favicon.ico',
   // The matcher below exempts image and font extensions but NOT .json, so

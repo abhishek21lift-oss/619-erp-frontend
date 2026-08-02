@@ -8,8 +8,7 @@ import AppShell from '@/components/AppShell';
 import { PullToRefresh, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button } from '@/components/ui';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
-import { api, http, Client, Attendance } from '@/lib/api';
-import { isBiometricAvailable } from '@/hooks/useWebAuthn';
+import { api, Client, Attendance } from '@/lib/api';
 import {
   Activity,
   AlertCircle,
@@ -28,7 +27,6 @@ import {
   Download,
   Eye,
   FileText,
-  Fingerprint,
   Grid3x3,
   LayoutList,
   Loader2,
@@ -140,22 +138,6 @@ function buildPeakHours(records: Attendance[], totalClients: number): { label: s
 }
 
 /* ────────────────────────────────────────────────────────────────
-   WEBAUTHN HELPERS
-──────────────────────────────────────────────────────────────── */
-function b64urlToBuffer(b64: string): ArrayBuffer {
-  const bin = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
-  const buf = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-  return buf.buffer;
-}
-function bufferToB64url(buf: ArrayBuffer | Uint8Array): string {
-  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
-  let bin = '';
-  for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-/* ────────────────────────────────────────────────────────────────
    ROOT
 ──────────────────────────────────────────────────────────────── */
 export default function AttendancePage() {
@@ -184,18 +166,12 @@ function AttendanceContent() {
   const [error,     setError]     = useState('');
   const [success,   setSuccess]   = useState('');
   const [search,    setSearch]    = useState('');
-  const [bioCode,      setBioCode]      = useState('');
-  const [bioSaving,    setBioSaving]    = useState(false);
-  const [passkeyReady, setPasskeyReady] = useState(false);
-  const [passkeySaving, setPasskeySaving] = useState(false);
 
   /* ── UI state ── */
   const [viewMode,      setViewMode]      = useState<ViewMode>('table');
   const [statusFilter,  setStatusFilter]  = useState<StatusFilter>('all');
   const [activeTab,     setActiveTab]     = useState<'members' | 'insights' | 'alerts'>('members');
-  const [bioFocus,      setBioFocus]      = useState(false);
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
-  const bioRef = useRef<HTMLInputElement>(null);
   const successTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const errorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -241,93 +217,6 @@ function AttendanceContent() {
       setSaving(null);
     }
   }, [date]);
-
-  /* ── biometric availability ── */
-  useEffect(() => { isBiometricAvailable().then(setPasskeyReady); }, []);
-
-  /* ── WebAuthn fingerprint check-in (member kiosk flow) ── */
-  async function webAuthnCheckIn() {
-    setPasskeySaving(true);
-    setError('');
-    try {
-      // Optional GPS capture
-      let latitude = 0, longitude = 0;
-      try {
-        const pos = await new Promise<GeolocationPosition>((res, rej) =>
-          navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 })
-        );
-        latitude = pos.coords.latitude;
-        longitude = pos.coords.longitude;
-      } catch { /* GPS not available — proceed without */ }
-
-      // Step 1: Get WebAuthn challenge (discoverable — no member_id needed)
-      const opts = await api.memberWebauthn.authenticateBegin();
-
-      // Step 2: Prompt device biometric
-      const publicKey: PublicKeyCredentialRequestOptions = {
-        challenge: b64urlToBuffer(opts.challenge),
-        timeout: 60000,
-        rpId: (opts as unknown as Record<string, unknown>).rpId as string | undefined,
-        allowCredentials: (opts as unknown as Record<string, unknown>).allowCredentials as PublicKeyCredentialDescriptor[] | undefined,
-        userVerification: 'preferred',
-      };
-      const assertion = await navigator.credentials.get({ publicKey }) as PublicKeyCredential;
-      const resp = assertion.response as AuthenticatorAssertionResponse;
-
-      // Step 3: Verify with backend → get memberId + memberName
-      const authResult = await api.memberWebauthn.authenticateComplete({
-        credentialId:     assertion.id,
-        rawId:            bufferToB64url(assertion.rawId),
-        authenticatorData: bufferToB64url(resp.authenticatorData),
-        signature:        bufferToB64url(resp.signature),
-        clientDataJSON:   bufferToB64url(resp.clientDataJSON),
-        userHandle:       resp.userHandle ? bufferToB64url(resp.userHandle) : undefined,
-      });
-      if (!authResult.memberId) throw new Error('Member not found — fingerprint not registered');
-
-      // Step 4: Mark biometric attendance
-      const markResult = await api.biometricAttend.mark({
-        memberId:           authResult.memberId,
-        memberName:         authResult.memberName,
-        verificationMethod: 'fingerprint',
-        deviceName:         'Fingerprint Sensor',
-        latitude,
-        longitude,
-      });
-      if (!markResult.success) throw new Error((markResult as { error?: string }).error || 'Check-in failed');
-
-      // Refresh records
-      const updated = await api.attendance.list({ date, type: 'client' });
-      setRecords(updated);
-      showSuccess(`${authResult.memberName || 'Member'} checked in via fingerprint`);
-    } catch (e: unknown) {
-      if (e instanceof DOMException && e.name === 'NotAllowedError') {
-        showError('Biometric prompt cancelled — please try again');
-      } else {
-        showError(e instanceof Error ? e.message : 'Fingerprint check-in failed');
-      }
-    } finally {
-      setPasskeySaving(false);
-    }
-  }
-
-  /* ── biometric check-in ── */
-  async function biometricCheckIn() {
-    if (!bioCode.trim()) return;
-    setBioSaving(true);
-    setError('');
-    try {
-      const res = await http<{ message: string }>('/api/attendance/biometric', { method: 'POST', body: JSON.stringify({ biometric_code: bioCode.trim(), type: 'client' }) });
-      const updated = await api.attendance.list({ date, type: 'client' });
-      setRecords(updated);
-      showSuccess(res.message);
-      setBioCode('');
-    } catch (e: unknown) {
-      showError((e instanceof Error ? e.message : null) || 'Biometric check-in failed');
-    } finally {
-      setBioSaving(false);
-    }
-  }
 
   /* ── O(1) record lookup map ── */
   const recordMap = useMemo(
@@ -437,16 +326,10 @@ function AttendanceContent() {
             <KpiCard label="Rate"      value={`${attendanceRate}%`} hint="Attendance today"  accent="violet"  icon={<TrendingUp className="h-5 w-5" />} />
           </section>
 
-          {/* ── BIOMETRIC PANEL ── */}
-          <BiometricPanel
-            bioCode={bioCode} setBioCode={setBioCode}
-            bioSaving={bioSaving} onSubmit={biometricCheckIn}
-            bioRef={bioRef} bioFocus={bioFocus} setBioFocus={setBioFocus}
-            feedItems={feedItems}
-            passkeyReady={passkeyReady}
-            passkeySaving={passkeySaving}
-            onWebAuthnCheckIn={webAuthnCheckIn}
-          />
+          {/* This page used to carry a check-in panel of its own — fingerprint
+              and member-code entry — which wrote the same attendance_logs rows
+              the QR scanner writes. Check-in now happens in exactly one place,
+              /checkin/qr-scanner. This page reads and corrects the record. */}
 
           {/* ── TAB BAR ── */}
           <div className="mt-6 flex flex-wrap gap-2 rounded-[22px] border border-zinc-200/80 bg-white/70 p-2 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
@@ -577,118 +460,6 @@ function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkA
             </div>
           ))}
         </div>
-      </div>
-    </section>
-  );
-}
-
-/* ────────────────────────────────────────────────────────────────
-   BIOMETRIC PANEL
-──────────────────────────────────────────────────────────────── */
-function BiometricPanel({ bioCode, setBioCode, bioSaving, onSubmit, bioRef, bioFocus, setBioFocus, feedItems, passkeyReady, passkeySaving, onWebAuthnCheckIn }: {
-  bioCode: string; setBioCode: (v: string) => void;
-  bioSaving: boolean; onSubmit: () => void;
-  bioRef: React.RefObject<HTMLInputElement | null>;
-  bioFocus: boolean; setBioFocus: (v: boolean) => void;
-  feedItems: FeedItem[];
-  passkeyReady: boolean;
-  passkeySaving: boolean;
-  onWebAuthnCheckIn: () => void;
-}) {
-  return (
-    <section className="mt-6 rounded-[30px] border border-zinc-200/70 bg-white/75 p-5 shadow-[0_10px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 sm:p-6">
-
-      {/* ── WebAuthn fingerprint check-in (shown only on biometric-capable devices) ── */}
-      {passkeyReady && (
-        <div className="mb-5 flex flex-col items-center gap-3 rounded-[22px] border border-violet-400/20 bg-[linear-gradient(135deg,rgba(124,58,237,0.08),rgba(109,40,217,0.04))] px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full transition ${
-              passkeySaving
-                ? 'animate-pulse bg-[linear-gradient(135deg,#7c3aed,#6d28d9)] shadow-[0_0_28px_rgba(124,58,237,0.6)]'
-                : 'bg-violet-500/12 border border-violet-400/25'
-            }`}>
-              {passkeySaving
-                ? <Loader2 className="h-6 w-6 animate-spin text-white" />
-                : <Fingerprint className="h-7 w-7 text-violet-400" />
-              }
-            </div>
-            <div>
-              <p className="font-semibold text-zinc-900 dark:text-white">Fingerprint / Face ID Check-in</p>
-              <p className="mt-0.5 text-xs text-zinc-500 dark:text-white/45">
-                {passkeySaving ? 'Touch your sensor or look at the camera…' : 'Member touches fingerprint sensor or uses Face ID to check in instantly'}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onWebAuthnCheckIn}
-            disabled={passkeySaving}
-            className="inline-flex shrink-0 items-center gap-2 rounded-[16px] bg-[linear-gradient(135deg,#7c3aed,#6d28d9)] px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(124,58,237,0.35)] transition disabled:opacity-60 hover:shadow-[0_12px_32px_rgba(124,58,237,0.48)] hover:-translate-y-0.5 active:translate-y-0"
-          >
-            {passkeySaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />}
-            {passkeySaving ? 'Scanning…' : 'Scan Fingerprint'}
-          </button>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[auto_1fr_auto] lg:items-center">
-
-        {/* pulse icon */}
-        <div className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full transition ${
-          bioSaving ? 'animate-pulse bg-[linear-gradient(135deg,#F59E0B,#D97706)] shadow-[0_0_40px_rgba(245,158,11,0.55)]' :
-          bioFocus  ? 'bg-[linear-gradient(135deg,#F59E0B,#7c3aed)] shadow-[0_0_32px_rgba(245,158,11,0.42)]' :
-          'bg-zinc-100 dark:bg-white/8'
-        }`}>
-          {bioSaving
-            ? <Loader2 className="h-8 w-8 animate-spin text-white" />
-            : <Fingerprint className={`h-9 w-9 transition ${ bioFocus ? 'text-white' : 'text-zinc-400 dark:text-white/35' }`} />
-          }
-        </div>
-
-        {/* input */}
-        <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-zinc-500 dark:text-white/40">Legacy / NFC / RFID Check-in</p>
-          <h2 className="mt-1 text-xl font-semibold text-zinc-900 dark:text-white">Member Code</h2>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-white/40">
-            Scan NFC card, RFID tag or enter member code manually — device can POST to <code className="rounded bg-zinc-100 px-1 py-0.5 text-xs dark:bg-white/10">/api/attendance/biometric</code>
-          </p>
-          <form className="mt-4 flex flex-wrap gap-3" onSubmit={e => { e.preventDefault(); onSubmit(); }}>
-            <input
-              ref={bioRef}
-              value={bioCode}
-              onChange={e => setBioCode(e.target.value)}
-              onFocus={() => setBioFocus(true)}
-              onBlur={() => setBioFocus(false)}
-              placeholder="Scan card / enter member code"
-              autoComplete="off"
-              className="flex-1 min-w-0 sm:min-w-[220px] rounded-[16px] border border-zinc-200 bg-white/80 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/30 dark:focus:ring-amber-900/20"
-            />
-            <button
-              type="submit"
-              disabled={bioSaving || !bioCode.trim()}
-              className="inline-flex items-center gap-2 rounded-[16px] border-transparent bg-[linear-gradient(135deg,#F59E0B,#D97706)] px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(245,158,11,0.28)] transition disabled:opacity-50 hover:shadow-[0_12px_30px_rgba(245,158,11,0.38)] hover:-translate-y-0.5"
-            >
-              {bioSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />}
-              {bioSaving ? 'Checking in…' : 'Check In'}
-            </button>
-          </form>
-        </div>
-
-        {/* recent feed preview */}
-        <div className="hidden lg:block w-56">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-white/30">Recent scans</p>
-          <div className="space-y-2">
-            {feedItems.slice(0, 3).map(f => (
-              <div key={f.id} className="flex items-center gap-2.5 rounded-[14px] border border-zinc-100 bg-zinc-50/70 px-3 py-2 dark:border-white/5 dark:bg-white/5">
-                <FeedAvatar initials={f.avatar} status={f.status} />
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-medium text-zinc-800 dark:text-white/80">{f.name}</p>
-                  <p className="text-xs text-zinc-400 dark:text-white/30">{f.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
       </div>
     </section>
   );

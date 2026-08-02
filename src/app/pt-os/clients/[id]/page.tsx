@@ -143,7 +143,7 @@ function DocumentsCard({ clientId }: { clientId: string }) {
   );
 }
 
-// ── QR Check-in card: printable scannable code for the kiosk/scanner ──
+// ── QR Check-in card: printable scannable code for the check-in scanner ──
 function QrCheckinCard({ clientId, clientName }: { clientId: string; clientName: string }) {
   const [open, setOpen] = useState(false);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
@@ -171,7 +171,7 @@ function QrCheckinCard({ clientId, clientName }: { clientId: string; clientName:
       printWindowCloseButtonHtml() +
       `<img src="${dataUrl}" width="280" height="280" alt="Check-in QR code" />` +
       `<p style="margin-top:12px;font-size:16px;font-weight:700;">${clientName}</p>` +
-      `<p style="margin-top:2px;font-size:12px;color:#666;">Scan at check-in kiosk</p>` +
+      `<p style="margin-top:2px;font-size:12px;color:#666;">Scan at check-in</p>` +
       `</body></html>`
     );
     w.document.close();

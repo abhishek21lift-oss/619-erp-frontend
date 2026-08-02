@@ -45,8 +45,10 @@ interface Notification {
 }
 
 const NAV_KEYWORDS: Record<string, string> = {
-  '/checkin/qr-scanner':         'walk-in walkin drop-in checkin daily visit attendance qr scanner scan code',
-  '/checkin/kiosk':              'kiosk self service qr code attendance',
+  // 'kiosk' and 'self service' are searched for by name, and the QR scanner is
+  // now the only thing they can mean — so they resolve here rather than to a
+  // dead route.
+  '/checkin/qr-scanner':         'walk-in walkin drop-in checkin daily visit attendance qr scanner scan code kiosk self service',
 '/ai-coach':                   'ai coach chatbot gpt workout nutrition fitness assistant 619',
   '/ai/workout-generator':       'ai workout plan generator create programme training',
   '/ai/diet-generator':          'ai diet nutrition plan generator meal food macros calories',

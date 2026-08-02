@@ -72,8 +72,9 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'ScanFace',
     feature: 'attendance',
     items: [
+      // One check-in route, deliberately. 'Kiosk Mode' used to sit here and ran
+      // the same QR scan against the same endpoint, differing only in chrome.
       { href: '/checkin/qr-scanner', label: 'Check In',            icon: 'ScanFace' },
-      { href: '/checkin/kiosk',      label: 'Kiosk Mode',          icon: 'Monitor',        roles: ['admin', 'manager'] },
       { href: '/attendance',         label: 'Attendance Records',  icon: 'ClipboardList',  roles: ['admin', 'manager', 'trainer'] },
       { href: '/attendance/reports', label: 'Reports & Dashboard', icon: 'BarChart3',      roles: ['admin'] },
     ],
