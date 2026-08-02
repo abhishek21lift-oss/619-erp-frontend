@@ -36,6 +36,35 @@ export const PROGRAMME_GOALS = [
   { value: 'recovery', label: 'Recovery' },
 ] as const;
 
+export const WEEKS_MIN = 1;
+export const WEEKS_MAX = 52;
+export const PER_WEEK_MIN = 1;
+export const PER_WEEK_MAX = 14;
+
+/**
+ * Read a number out of what is currently typed, held to its bounds.
+ *
+ * Called on blur and again on submit — never on change, which is what was
+ * broken. The fields used to be numeric state clamped on every keystroke:
+ *
+ *   onChange={(e) => setWeeks(Math.max(1, Number(e.target.value) || 1))}
+ *
+ * Numeric state cannot hold "", so clearing the box to type a new value was
+ * impossible. Select-all and type 8: the browser fires change with "" first,
+ * Number("") is 0, `|| 1` turns that into 1, the box snaps to "1" — and the 8
+ * lands after it, giving 18. The only reachable values were the ones you could
+ * build by appending to a 1.
+ *
+ * The upper bound was not enforced at all either: max={52} is a hint the
+ * browser does not apply to typing, and Math.max only has a floor. 999 weeks
+ * submitted happily.
+ */
+export function clamp(raw: string, min: number, max: number): number {
+  const n = Math.floor(Number(raw));
+  if (!Number.isFinite(n)) return min;
+  return Math.min(max, Math.max(min, n));
+}
+
 export interface NewProgrammeDialogProps {
   open: boolean;
   onClose: () => void;
@@ -56,8 +85,10 @@ export default function NewProgrammeDialog({
   const [clientId, setClientId] = useState<string | null>(presetClientId ?? null);
   const [name, setName] = useState('');
   const [goal, setGoal] = useState<string>(PROGRAMME_GOALS[0].value);
-  const [weeks, setWeeks] = useState(4);
-  const [perWeek, setPerWeek] = useState(3);
+  // Held as strings, not numbers, and clamped on blur rather than on every
+  // keystroke. See clamp() below for what the numeric version did.
+  const [weeks, setWeeks] = useState('4');
+  const [perWeek, setPerWeek] = useState('3');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -88,8 +119,8 @@ export default function NewProgrammeDialog({
         name: name.trim(),
         goal,
         difficulty: 'intermediate',
-        duration_weeks: weeks,
-        sessions_per_week: perWeek,
+        duration_weeks: clamp(weeks, WEEKS_MIN, WEEKS_MAX),
+        sessions_per_week: clamp(perWeek, PER_WEEK_MIN, PER_WEEK_MAX),
         // Deliberately no exercises: the builder adds them, one granular
         // request each, so they keep stable ids from the moment they exist.
       });
@@ -181,16 +212,18 @@ export default function NewProgrammeDialog({
         <div className="grid grid-cols-2 gap-3">
           <Field label="Weeks">
             <input
-              type="number" min={1} max={52} value={weeks} inputMode="numeric"
-              onChange={(e) => setWeeks(Math.max(1, Number(e.target.value) || 1))}
+              type="number" min={WEEKS_MIN} max={WEEKS_MAX} value={weeks} inputMode="numeric"
+              onChange={(e) => setWeeks(e.target.value)}
+              onBlur={() => setWeeks(String(clamp(weeks, WEEKS_MIN, WEEKS_MAX)))}
               className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
               style={inputStyle}
             />
           </Field>
           <Field label="Sessions / week">
             <input
-              type="number" min={1} max={14} value={perWeek} inputMode="numeric"
-              onChange={(e) => setPerWeek(Math.max(1, Number(e.target.value) || 1))}
+              type="number" min={PER_WEEK_MIN} max={PER_WEEK_MAX} value={perWeek} inputMode="numeric"
+              onChange={(e) => setPerWeek(e.target.value)}
+              onBlur={() => setPerWeek(String(clamp(perWeek, PER_WEEK_MIN, PER_WEEK_MAX)))}
               className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
               style={inputStyle}
             />
