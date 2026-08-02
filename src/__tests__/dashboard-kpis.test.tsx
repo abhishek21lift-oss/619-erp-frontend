@@ -51,10 +51,30 @@ import PtOsDashboard from '@/components/dashboards/PtOsDashboard';
 describe('PT-OS dashboard KPIs', () => {
   beforeEach(() => { requested.length = 0; });
 
-  it('shows the five metrics that were kept', async () => {
+  it('shows the four metrics that are on every screen size', async () => {
     render(<PtOsDashboard />);
-    for (const label of ['Active Clients', 'PT Revenue', 'Commission', 'Retention', 'Outstanding']) {
+    for (const label of ['Active Clients', 'PT Revenue', 'Retention', 'Outstanding']) {
       expect(await screen.findByText(label)).toBeTruthy();
+    }
+  });
+
+  it('keeps Commission on small screens but hides it on desktop', async () => {
+    // Hidden with a breakpoint utility rather than dropped, so the card is
+    // still in the DOM here — jsdom has no viewport to apply `lg:hidden`
+    // against. Asserting the class is the only honest check at this level;
+    // what it must NOT be is absent, which would mean it went from mobile too.
+    render(<PtOsDashboard />);
+    const commission = await screen.findByText('Commission');
+    const card = commission.closest('.group');
+    expect(card).toBeTruthy();
+    expect(card!.className).toMatch(/lg:hidden/);
+  });
+
+  it('does not hide any of the metrics that should stay on desktop', async () => {
+    render(<PtOsDashboard />);
+    for (const label of ['Active Clients', 'PT Revenue', 'Retention', 'Outstanding']) {
+      const card = (await screen.findByText(label)).closest('.group');
+      expect(card!.className).not.toMatch(/lg:hidden/);
     }
   });
 
