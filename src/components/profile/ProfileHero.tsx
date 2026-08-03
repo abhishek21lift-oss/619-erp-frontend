@@ -18,6 +18,7 @@
 // with a checkmark on it. It arrives when something can actually check it.
 
 import React, { useRef, useState } from 'react';
+import FounderBadge from '@/components/FounderBadge';
 import { m } from 'framer-motion';
 import {
   Camera, Loader2, ImagePlus, Trash2, Mail, Phone, MapPin, Calendar,
@@ -83,6 +84,8 @@ export interface ProfileHeroProps {
   me: ProfileMe;
   /** From the session, not the form — see the note at the top of this file. */
   organizationName?: string | null;
+  /** 1–20 for a Founder's Club studio, null otherwise. See FounderBadge. */
+  founderNumber?: number | null;
   /** Prefixes a stored `/uploads/...` path with the API origin. */
   resolveUrl: (path: string) => string;
   roleLabel: string;
@@ -97,7 +100,7 @@ export interface ProfileHeroProps {
 const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
 
 export function ProfileHero({
-  me, organizationName, resolveUrl, roleLabel, memberSince,
+  me, organizationName, founderNumber, resolveUrl, roleLabel, memberSince,
   avatarUploading, coverBusy, onPickAvatar, onPickCover, onRemoveCover,
 }: ProfileHeroProps) {
   const avatarInput = useRef<HTMLInputElement>(null);
@@ -234,7 +237,16 @@ export function ProfileHero({
           {/* One column of metadata on a phone: these truncate, and side by
               side at 360px they truncate to nothing useful. */}
           <div className="mt-3 grid grid-cols-1 gap-x-5 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
-            {organizationName && <Meta icon={<Building2 size={11} />}>{organizationName}</Meta>}
+            {organizationName && (
+              <Meta icon={<Building2 size={11} />}>
+                <span className="inline-flex items-center gap-2">
+                  {organizationName}
+                  {/* Beside the studio name, which is the one piece of
+                      metadata the badge is actually about. */}
+                  <FounderBadge number={founderNumber} size="sm" />
+                </span>
+              </Meta>
+            )}
             <Meta icon={<Mail size={11} />}>{me.email}</Meta>
             {me.phone && <Meta icon={<Phone size={11} />}>{me.phone}</Meta>}
             {me.location && <Meta icon={<MapPin size={11} />}>{me.location}</Meta>}

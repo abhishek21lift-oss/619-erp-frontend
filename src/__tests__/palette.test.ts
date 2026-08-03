@@ -14,7 +14,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { palette, semantic, band, identity, series, tint, rgba } from '@/lib/palette';
+import { palette, semantic, band, identity, series, founderGold, tint, rgba } from '@/lib/palette';
 
 const FAMILIES = ['blue', 'emerald', 'amber', 'red', 'gray'] as const;
 
@@ -113,7 +113,12 @@ describe('helpers', () => {
 
 describe('the app uses only the palette', () => {
   it('has no hex colour outside the five families anywhere in src/', () => {
-    const known = new Set(allHexes().map((h) => h.toUpperCase()));
+    // founderGold is the second deliberate non-semantic exception, after
+    // `identity`. It is allowed through here and then confined to one file by
+    // the assertion below — the scan alone would let it spread anywhere.
+    const known = new Set(
+      [...allHexes(), ...Object.values(founderGold)].map((h) => h.toUpperCase())
+    );
     const offenders: string[] = [];
 
     const walk = (dir: string) => {
@@ -134,5 +139,24 @@ describe('the app uses only the palette', () => {
     // Named individually rather than counted: the failure message should say
     // which file reintroduced which colour.
     expect(offenders).toEqual([]);
+  });
+
+  it('confines founder gold to the badge that needs it', () => {
+    // The five families mean something; gold does not, and must not start to.
+    // Letting it through the scan above without this would make "five
+    // semantic colours" true only of the token file.
+    const users: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = join(dir, entry);
+        if (statSync(p).isDirectory()) { walk(p); continue; }
+        if (!/\.(tsx?|css)$/.test(entry)) continue;
+        if (p.endsWith(join('lib', 'palette.ts'))) continue;
+        if (p.includes('__tests__')) continue;
+        if (/founderGold/.test(readFileSync(p, 'utf8'))) users.push(p.split('src/')[1]);
+      }
+    };
+    walk(join(process.cwd(), 'src'));
+    expect(users).toEqual(['components/FounderBadge.tsx']);
   });
 });

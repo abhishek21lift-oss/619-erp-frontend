@@ -37,6 +37,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useAsync } from '@/lib/use-async';
 import { useAuth } from '@/lib/auth-context';
+import FounderBadge from '@/components/FounderBadge';
 import http from '@/lib/http';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -309,8 +310,9 @@ function HeroStat({ icon, label, value, accent, trend }: {
   );
 }
 
-function HeroHeader({ d, coach, studioName, loading: _loading, onRefresh: _onRefresh }: {
-  d: DashData; coach: string; studioName: string; loading: boolean; onRefresh: () => void;
+function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, onRefresh: _onRefresh }: {
+  d: DashData; coach: string; studioName: string; founderNumber: number | null;
+  loading: boolean; onRefresh: () => void;
 }) {
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -382,6 +384,15 @@ function HeroHeader({ d, coach, studioName, loading: _loading, onRefresh: _onRef
         >
           {studioName}
         </h1>
+
+        {/* Under the wordmark rather than beside it: the hero name is a
+            fluid-size gradient headline, and an inline badge would ride its
+            baseline differently at every breakpoint. */}
+        {founderNumber != null && (
+          <div className="mt-3 flex justify-center">
+            <FounderBadge number={founderNumber} size="lg" />
+          </div>
+        )}
 
         {/* Flourish divider */}
         <div className="mt-3.5 flex items-center gap-2">
@@ -1420,6 +1431,7 @@ export default function PtOsDashboard() {
   const o = ops.data;
   const coach = user?.name?.split(' ')[0] || 'Coach';
   const studioName = user?.organization_name || 'PT Studio';
+  const founderNumber = user?.founder_number ?? null;
 
   const refreshAll = useCallback(async () => {
     await Promise.all([dash.refetch(), ops.refetch()]);
@@ -1455,7 +1467,7 @@ export default function PtOsDashboard() {
         {d && (
           <>
             {/* 1 — Hero header */}
-            <HeroHeader d={d} coach={coach} studioName={studioName} loading={dash.loading} onRefresh={dash.refetch} />
+            <HeroHeader d={d} coach={coach} studioName={studioName} founderNumber={founderNumber} loading={dash.loading} onRefresh={dash.refetch} />
 
             {/* 2 — Today's sessions.
                 Directly under the hero, above revenue and retention: it is the

@@ -28,6 +28,7 @@ import {
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import StudioMark from '@/components/StudioMark';
+import FounderBadge from '@/components/FounderBadge';
 import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { SubscriptionStatus, SubPlan, SubInvoice, PlanChangeQuote, CouponValidation } from '@/lib/api';
@@ -793,7 +794,12 @@ function SubscriptionScreen() {
           <div className="flex min-w-0 items-center gap-3">
             <StudioMark name={user?.organization_name || 'PT Studio'} logoUrl={user?.organization_logo_url} size={38} radius={11} />
             <div className="min-w-0">
-              <h1 className="truncate text-[14.5px] font-[820] tracking-tight text-white">{user?.organization_name || 'Your studio'}</h1>
+              <div className="flex min-w-0 items-center gap-2">
+                <h1 className="truncate text-[14.5px] font-[820] tracking-tight text-white">{user?.organization_name || 'Your studio'}</h1>
+                {/* The billing screen is where the founder price is locked, so
+                    here the badge is an explanation rather than a decoration. */}
+                <FounderBadge number={user?.founder_number} size="sm" />
+              </div>
               <p className="text-[11px]" style={{ color: '#94a3b8' }}>Subscription &amp; billing</p>
             </div>
           </div>

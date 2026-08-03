@@ -12,6 +12,8 @@ import {
 import { CopyId } from '@/components/ui/CopyId';
 import AppShell from '@/components/AppShell';
 import Guard from '@/components/Guard';
+import FounderBadge from '@/components/FounderBadge';
+import { useAuth } from '@/lib/auth-context';
 import { KpiCard } from '@/components/ui/KpiCard';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/components/ui/cn';
@@ -267,6 +269,7 @@ function LeaderboardRow({ trainer, index }: { trainer: Trainer; index: number })
 
 
 export default function TrainersPage() {
+  const { user } = useAuth();
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -348,9 +351,15 @@ export default function TrainersPage() {
                   <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold text-white/80 uppercase tracking-[0.08em] mb-3">
                     <Sparkles size={12} /> Coaching Team
                   </div>
-                  <h1 className="text-[28px] sm:text-[34px] font-extrabold text-white tracking-[-0.02em] leading-tight">
-                    Trainers Management
-                  </h1>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <h1 className="text-[28px] sm:text-[34px] font-extrabold text-white tracking-[-0.02em] leading-tight">
+                      Trainers Management
+                    </h1>
+                    {/* The team screen is where a studio's staff see the
+                        studio's own standing, so the badge belongs on the
+                        heading rather than against any one trainer. */}
+                    <FounderBadge number={user?.founder_number} />
+                  </div>
                   <p className="text-[14px] text-white/70 mt-1.5 max-w-[520px] leading-relaxed">
                     Manage coaching performance, client assignments, revenue, and trainer growth.
                   </p>
