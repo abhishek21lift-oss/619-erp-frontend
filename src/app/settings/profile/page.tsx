@@ -1223,6 +1223,7 @@ export default function ProfilePage() {
                 <ProfileHero
                   me={me}
                   organizationName={user?.organization_name}
+                  founderNumber={user?.founder_number}
                   resolveUrl={(p) => `${apiBase()}${p}`}
                   roleLabel={roleLabel}
                   memberSince={fmtDate(me.createdAt)}

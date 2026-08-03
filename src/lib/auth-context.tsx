@@ -82,8 +82,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let cachedUser: User | null = null;
     if (cachedRaw) {
       try {
-        const partial = JSON.parse(cachedRaw) as { id: string; name: string; role: string; organization_name?: string | null; organization_logo_url?: string | null };
-        cachedUser = { id: partial.id, name: partial.name, role: partial.role as any, email: '', organization_name: partial.organization_name ?? null, organization_logo_url: partial.organization_logo_url ?? null };
+        const partial = JSON.parse(cachedRaw) as { id: string; name: string; role: string; organization_name?: string | null; organization_logo_url?: string | null; is_founder?: boolean; founder_number?: number | null };
+        // founder_number is cached alongside the name for the same reason the
+        // name is: without it the badge pops in a beat after every hard
+        // refresh, which for a permanent mark of status reads as a glitch.
+        // Not PII — it is displayed publicly on the studio page.
+        cachedUser = { id: partial.id, name: partial.name, role: partial.role as any, email: '', organization_name: partial.organization_name ?? null, organization_logo_url: partial.organization_logo_url ?? null, is_founder: partial.is_founder ?? false, founder_number: partial.founder_number ?? null };
       } catch { ssDel(SESSION_USER_KEY); }
     }
     if (cachedUser) setUser(cachedUser);
@@ -105,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (res?.user) {
           const u = res.user as User;
           setUser(u);
-          ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url }));
+          ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url, is_founder: u.is_founder, founder_number: u.founder_number }));
         } else {
           setUser(null);
           ssDel(SESSION_USER_KEY);
@@ -190,7 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loggedInRef.current = true;
     const u = data.user;
     setUser(u);
-    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url }));
+    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url, is_founder: u.is_founder, founder_number: u.founder_number }));
     setLoading(false);
   }, []);
 
@@ -200,7 +204,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loggedInRef.current = true;
     const u = data.user;
     setUser(u);
-    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url }));
+    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url, is_founder: u.is_founder, founder_number: u.founder_number }));
     setLoading(false);
   }, []);
 
@@ -217,7 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loggedInRef.current = true;
     const u = data.user as User;
     setUser(u);
-    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url }));
+    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url, is_founder: u.is_founder, founder_number: u.founder_number }));
     setLoading(false);
   }, []);
 

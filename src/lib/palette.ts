@@ -201,6 +201,37 @@ export const identity = [
   blue[200],
 ] as const;
 
+/**
+ * Founder gold. One badge, and nothing else.
+ *
+ * This is the second deliberate exception to "five families", and it is made
+ * the same way `identity` above is: by being explicitly NOT semantic. The five
+ * families each carry a meaning — blue is action, emerald is success, amber is
+ * warning, red is failure, gray is neutral — and a colour that means something
+ * is exactly what this must not be. Founder status is not a state to act on.
+ * It is a permanent mark of who bought in first.
+ *
+ * Amber was the obvious in-system alternative and is the wrong one twice over:
+ * a gold-ish badge rendered in the warning colour reads as a problem beside
+ * the studio name, and using it here would dilute amber everywhere else.
+ *
+ * Scoped by convention AND by test: founder-badge.test.tsx asserts these
+ * values appear in exactly one component. If a second file starts reaching for
+ * gold, that is the moment to stop and ask what it is really trying to say.
+ *
+ * The ramp is a real metallic sweep rather than one flat yellow — dark bronze
+ * through pale champagne — because the shimmer needs stops to travel between.
+ */
+export const founderGold = {
+  100: '#FDF6E3',
+  200: '#F7E7B4',
+  300: '#EFD27C',
+  400: '#E3B94A',
+  500: '#C9971F',
+  600: '#A87A12',
+  700: '#7C570B',
+} as const;
+
 /** Hex plus an 8-bit alpha suffix, e.g. tint(blue[500], 0.1). */
 export function tint(hex: string, alpha: number): string {
   const a = Math.round(Math.max(0, Math.min(1, alpha)) * 255)

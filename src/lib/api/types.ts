@@ -49,6 +49,13 @@ export type User = {
   organization_id?: string | null;
   organization_name?: string | null;
   organization_logo_url?: string | null;
+  /**
+   * Founder's Club. Carried on the session rather than fetched, because the
+   * badge appears in six places and these two columns change roughly once,
+   * ever. `founder_number` is 1–20 and permanent; see FounderBadge.tsx.
+   */
+  is_founder?: boolean;
+  founder_number?: number | null;
 };
 
 // Types matching the /api/profile/* contract exactly (src/routes/profile.js).
