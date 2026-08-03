@@ -30,7 +30,7 @@
 // what the system does. Every panel below has an explicit empty state and a
 // way out of it.
 
-import { useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   LayoutGrid, Dumbbell, Salad, Ruler, ScrollText, ClipboardCheck, Camera,
@@ -87,17 +87,101 @@ export interface ClientTabsProps {
  *
  * Horizontally scrollable rather than wrapped: twelve tabs wrap to three rows
  * on a phone, and a three-row tab bar is a menu pretending to be a tab bar.
- * Scrolling keeps it one line and keeps the active tab in view.
+ * Scrolling keeps it one line.
+ *
+ * ── Why the edges fade ─────────────────────────────────────────────────────
+ *
+ * Twelve tabs do not fit a phone, so the strip was cutting the last visible
+ * label in half against a hard container edge — "Mea…" — which reads as a
+ * rendering fault rather than an invitation to scroll. The strip now fades out
+ * at whichever end has more content, which is the one honest way to say "there
+ * is more this way" without spending a row on arrows.
+ *
+ * It is a mask rather than a gradient overlay on purpose: this sits on a page
+ * with a gradient background, and an overlay would have to know the exact
+ * colour behind it to disappear into. A mask dissolves the strip itself, so it
+ * is correct on any background and in either theme.
+ *
+ * The fades are driven by measured scroll position, not shown unconditionally
+ * — a permanent fade over a strip that is not scrollable is a lie about the
+ * content, and on a desktop where all twelve fit it would dim two real tabs.
  */
 export function ClientTabs({ active, onChange, counts }: ClientTabsProps) {
   const reduce = useReducedMotion();
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ left: false, right: false });
+
+  const measure = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    // 1px of slack: fractional layout widths mean scrollLeft rarely lands on
+    // exactly 0 or exactly max, and a fade that never quite switches off is
+    // worse than no fade.
+    setEdges({ left: el.scrollLeft > 1, right: el.scrollLeft < max - 1 });
+  }, []);
+
+  useLayoutEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    // Children too: a count badge appearing changes scrollWidth without
+    // changing the scroller's own box.
+    for (const child of Array.from(el.children)) ro.observe(child);
+    return () => ro.disconnect();
+  }, [measure]);
+
+  // Keep the selected tab visible. The active tab can be set from outside this
+  // component — a deep link straight to ?tab=reports, or the panel below
+  // switching tabs — and landing on a strip scrolled to the far left with the
+  // selected tab off-screen looks like nothing happened.
+  useEffect(() => {
+    const el = scrollerRef.current;
+    const tab = el?.querySelector<HTMLElement>(`[data-tab="${active}"]`);
+    if (!el || !tab) return;
+    const pad = 24; // don't park it flush against a faded edge
+    const left = tab.offsetLeft - pad;
+    const right = tab.offsetLeft + tab.offsetWidth + pad;
+    if (left < el.scrollLeft) {
+      el.scrollTo({ left, behavior: reduce ? 'auto' : 'smooth' });
+    } else if (right > el.scrollLeft + el.clientWidth) {
+      el.scrollTo({ left: right - el.clientWidth, behavior: reduce ? 'auto' : 'smooth' });
+    }
+  }, [active, reduce]);
+
+  // Fade only the end that has more behind it. Two stops per side so the
+  // transition is a soft ramp rather than a visible band.
+  const mask = (() => {
+    if (!edges.left && !edges.right) return undefined;
+    const from = edges.left ? 'transparent 0, #000 28px' : '#000 0';
+    const to = edges.right ? '#000 calc(100% - 28px), transparent 100%' : '#000 100%';
+    return `linear-gradient(to right, ${from}, ${to})`;
+  })();
+
+  // Which edges are faded, as an attribute rather than only as a mask string.
+  // The mask is the thing that renders; this is the thing that can be asserted
+  // on — jsdom's CSS parser drops a gradient containing calc(), so reading
+  // style.maskImage back tests jsdom rather than the component.
+  const fade = edges.left && edges.right ? 'both' : edges.left ? 'left' : edges.right ? 'right' : 'none';
+
   return (
     <div className="relative mb-4">
       <div
+        ref={scrollerRef}
         role="tablist"
         aria-label="Client sections"
-        className="flex gap-1 overflow-x-auto rounded-[16px] p-1.5"
-        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', scrollbarWidth: 'none' }}
+        data-fade={fade}
+        onScroll={measure}
+        className="flex gap-1 overflow-x-auto rounded-[16px] p-1.5 [&::-webkit-scrollbar]:hidden"
+        style={{
+          background: 'var(--bg-subtle)',
+          border: '1px solid var(--border)',
+          scrollbarWidth: 'none',
+          WebkitMaskImage: mask,
+          maskImage: mask,
+        }}
       >
         {TABS.map((t) => {
           const on = t.key === active;
@@ -105,6 +189,7 @@ export function ClientTabs({ active, onChange, counts }: ClientTabsProps) {
           return (
             <button
               key={t.key}
+              data-tab={t.key}
               role="tab"
               aria-selected={on}
               onClick={() => onChange(t.key)}
@@ -118,15 +203,30 @@ export function ClientTabs({ active, onChange, counts }: ClientTabsProps) {
                   layoutId="client-tab-pill"
                   transition={reduce ? { duration: 0 } : { duration: 0.28, ease: EASE }}
                   className="absolute inset-0 rounded-[12px]"
-                  style={{ background: 'var(--bg-card)', boxShadow: '0 1px 3px rgba(15,23,42,0.10)' }}
+                  // Opaque white, not --bg-card's 80% — the pill sits on a grey
+                  // trough, and a translucent one picks the trough up and reads
+                  // as a disabled control rather than the selected one. The
+                  // brand-tinted ring and lift are what make it read as raised;
+                  // the shadow alone was too faint against --bg-subtle to
+                  // separate them at all.
+                  style={{
+                    background: 'var(--bg-white)',
+                    boxShadow: '0 1px 1px rgba(15,23,42,0.04), 0 4px 12px -2px var(--brand-glow-2)',
+                    border: '1px solid var(--brand-soft)',
+                  }}
                 />
               )}
-              <span className="relative flex items-center gap-1.5 whitespace-nowrap">
+              <span
+                className="relative flex items-center gap-1.5 whitespace-nowrap"
+                // The icon carries the selection as well as the pill does, and
+                // it reads before the label at a glance.
+                style={on ? { color: 'var(--brand)' } : undefined}
+              >
                 {t.icon}
-                {t.label}
+                <span style={on ? { color: 'var(--text-primary)' } : undefined}>{t.label}</span>
                 {n != null && n > 0 && (
                   <span className="rounded-full px-1.5 py-px text-[9.5px] font-[800]"
-                    style={{ background: 'var(--brand)', color: '#fff' }}>{n}</span>
+                    style={{ background: 'var(--brand)', color: 'var(--text-inverse)' }}>{n}</span>
                 )}
               </span>
             </button>
