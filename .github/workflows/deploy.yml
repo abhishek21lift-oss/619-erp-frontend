@@ -1,0 +1,29 @@
+name: Deploy Frontend to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+          script: |
+            cd /opt/myptstudio/619-erp-frontend
+            git pull origin main
+
+            cd /opt/myptstudio
+
+            docker compose build frontend
+            docker compose up -d frontend
+
+            docker image prune -f
