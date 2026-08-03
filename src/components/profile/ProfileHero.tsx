@@ -59,8 +59,15 @@ function Badge({ icon, label, tint }: { icon: React.ReactNode; label: string; ti
  * An action sitting on top of the cover image.
  *
  * Never hover-only: on a touch screen a hover-revealed control is a control
- * that does not exist. These are always visible, and legible over any
- * photograph because of the scrim behind them rather than the image beneath.
+ * that does not exist. Legible over any photograph because of the scrim behind
+ * it rather than the image beneath.
+ *
+ * The label was `hidden sm:inline` until this was reported. On a phone that
+ * left a bare 13px glyph in a dark circle — indistinguishable from decoration,
+ * which is how "unable to add banner image" happens to a button that works
+ * perfectly. It simply did not look like one. The label shows at every width
+ * now, and the target is 44px rather than the ~26px that py-1.5 produced
+ * against this app's 14px root.
  */
 function CoverAction({ icon, label, onClick, disabled }: {
   icon: React.ReactNode; label: string; onClick: () => void; disabled?: boolean;
@@ -71,11 +78,17 @@ function CoverAction({ icon, label, onClick, disabled }: {
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-[700] text-white transition-opacity disabled:opacity-50 sm:px-3"
-      style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.28)' }}
+      className="inline-flex items-center gap-1.5 rounded-full px-3.5 text-[11.5px] font-[700] text-white transition-opacity disabled:opacity-50"
+      style={{
+        minHeight: 44,
+        background: 'rgba(15,23,42,0.62)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255,255,255,0.32)',
+      }}
     >
       {icon}
-      <span className="hidden sm:inline">{label}</span>
+      <span>{label}</span>
     </button>
   );
 }
@@ -175,7 +188,7 @@ export function ProfileHero({
         {/* The avatar rides the seam. `-mt-*` on a flex row keeps the ring
             beside it aligned to the row's baseline rather than pulled up too. */}
         <div className="flex items-end justify-between gap-3">
-          <div className="-mt-8 shrink-0 sm:-mt-10">
+          <div className="relative -mt-8 shrink-0 sm:-mt-10">
             <input ref={avatarInput} type="file" accept={ACCEPT} className="hidden"
               onChange={(e) => take(e, onPickAvatar)} />
             <button
@@ -195,15 +208,51 @@ export function ProfileHero({
                 // eslint-disable-next-line @next/next/no-img-element
                 ? <img src={avatar} alt="" className="h-full w-full object-cover" />
                 : initials(me.name)}
+              {/*
+                The scrim stays hover-only — it is an enhancement, and dimming
+                a photo permanently to advertise a control is a poor trade on a
+                device that can show the control on hover instead.
+              */}
               <span
-                className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+                aria-hidden
+                className="absolute inset-0 hidden items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 sm:flex"
                 style={{ background: 'rgba(15,23,42,0.55)' }}
               >
-                {avatarUploading
-                  ? <Loader2 size={18} className="animate-spin text-white" />
-                  : <Camera size={18} className="text-white" />}
+                <Camera size={18} className="text-white" />
               </span>
             </button>
+
+            {/*
+              The permanent affordance, and the actual fix.
+
+              The camera icon used to live only inside that hover scrim. A
+              touch device never fires hover, so on a phone the avatar was an
+              image with nothing to say it could be changed — which is how this
+              came to be reported as "unable to change profile photo". The
+              button was always tappable; nothing told anyone so.
+
+              A badge on the corner rather than an overlay: it reads as an
+              affordance at a glance, the way every app that lets you change a
+              photo does it, and it does not dim the photo to say so.
+
+              pointer-events-none so the badge cannot swallow taps meant for the
+              button it sits on — it is a marker, not a second control.
+            */}
+            <span
+              aria-hidden
+              data-avatar-affordance
+              className="pointer-events-none absolute bottom-0 right-0 flex items-center justify-center rounded-full"
+              style={{
+                height: 26, width: 26,
+                background: 'var(--brand)',
+                border: '2.5px solid var(--bg-card)',
+                boxShadow: '0 2px 8px rgba(15,23,42,0.28)',
+              }}
+            >
+              {avatarUploading
+                ? <Loader2 size={12} className="animate-spin text-white" />
+                : <Camera size={12} className="text-white" />}
+            </span>
           </div>
 
           {/* The ring is small here on purpose — the full checklist is a card
