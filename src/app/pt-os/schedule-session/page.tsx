@@ -317,8 +317,8 @@ function SchedulePageContent() {
                   <Calendar size={16} style={{ color: '#F59E0B' }} />
                 </div>
                 <div>
-                  <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: 'rgb(15,23,42)' }}>Schedule Session</h1>
-                  <p className="text-[11px] font-[600] uppercase tracking-[0.08em]" style={{ color: 'rgb(148,163,184)' }}>
+                  <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>Schedule Session</h1>
+                  <p className="text-[11px] font-[600] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>
                     Personal Training / <span style={{ color: '#F59E0B' }}>Schedule Session</span>
                   </p>
                 </div>
@@ -345,7 +345,7 @@ function SchedulePageContent() {
                   className="flex items-center gap-1.5 rounded-[9px] px-3 py-1.5 text-[11px] font-[660] transition-all"
                   style={{
                     background: view === v.id ? 'linear-gradient(135deg,#F59E0B,#D97706)' : 'transparent',
-                    color: view === v.id ? '#fff' : 'rgb(148,163,184)',
+                    color: view === v.id ? '#fff' : 'var(--text-disabled)',
                     boxShadow: view === v.id ? '0 2px 8px rgba(220,38,38,0.2)' : 'none',
                   }}
                 >
@@ -357,22 +357,22 @@ function SchedulePageContent() {
             {/* Search */}
             <div className="relative flex flex-1 min-w-[180px] max-w-[260px] items-center gap-2 rounded-[12px] px-3 py-1.5"
               style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 4px rgba(15,23,42,0.04)' }}>
-              <Search size={12} style={{ color: 'rgb(148,163,184)' }} />
+              <Search size={12} style={{ color: 'var(--text-disabled)' }} />
               <input value={search} onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search sessions…"
-                className="flex-1 bg-transparent text-[12px] font-[500] outline-none" style={{ color: 'rgb(15,23,42)' }} />
+                className="flex-1 bg-transparent text-[12px] font-[500] outline-none" style={{ color: 'var(--text-primary)' }} />
             </div>
 
             {/* Date Nav */}
             <div className="flex items-center gap-1.5">
               <button onClick={() => navigateMonth(-1)} className="flex h-7 w-7 items-center justify-center rounded-[8px] transition hover:bg-black/5">
-                <ChevronLeft size={13} style={{ color: 'rgb(100,116,139)' }} />
+                <ChevronLeft size={13} style={{ color: 'var(--text-muted)' }} />
               </button>
-              <span className="text-[13px] font-[680] min-w-[140px] text-center" style={{ color: 'rgb(15,23,42)' }}>
+              <span className="text-[13px] font-[680] min-w-[140px] text-center" style={{ color: 'var(--text-primary)' }}>
                 {MONTHS[month]} {year}
               </span>
               <button onClick={() => navigateMonth(1)} className="flex h-7 w-7 items-center justify-center rounded-[8px] transition hover:bg-black/5">
-                <ChevronRight size={13} style={{ color: 'rgb(100,116,139)' }} />
+                <ChevronRight size={13} style={{ color: 'var(--text-muted)' }} />
               </button>
             </div>
           </div>
@@ -391,8 +391,8 @@ function SchedulePageContent() {
                 <RefreshCw size={22} style={{ color: '#F59E0B' }} />
               </div>
             </div>
-            <h3 className="text-[16px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Failed to load sessions</h3>
-            <p className="mt-1 text-[13px]" style={{ color: 'rgb(148,163,184)' }}>{sessionsError}</p>
+            <h3 className="text-[16px] font-[760]" style={{ color: 'var(--text-primary)' }}>Failed to load sessions</h3>
+            <p className="mt-1 text-[13px]" style={{ color: 'var(--text-disabled)' }}>{sessionsError}</p>
             <Button variant="primary" iconLeft={<RefreshCw size={13} />} onClick={fetchSessions} className="mt-4">
               Retry
             </Button>
@@ -406,7 +406,7 @@ function SchedulePageContent() {
                 <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                   <div className="grid grid-cols-7 gap-1 mb-2">
                     {WEEKDAYS.map((d) => (
-                      <div key={d} className="text-center text-[11px] font-[700] uppercase tracking-wider py-2" style={{ color: 'rgb(148,163,184)' }}>{d}</div>
+                      <div key={d} className="text-center text-[11px] font-[700] uppercase tracking-wider py-2" style={{ color: 'var(--text-disabled)' }}>{d}</div>
                     ))}
                   </div>
                   <div className="grid grid-cols-7 gap-1">
@@ -436,7 +436,7 @@ function SchedulePageContent() {
                             'flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-[700]',
                             isSelected ? 'text-white' : '',
                           )}
-                            style={{ color: isSelected ? '#fff' : 'rgb(15,23,42)' }}>
+                            style={{ color: isSelected ? '#fff' : 'var(--text-primary)' }}>
                             {day}
                           </span>
                           {daySessions.length > 0 && (
@@ -448,7 +448,7 @@ function SchedulePageContent() {
                                 />
                               ))}
                               {daySessions.length > 3 && (
-                                <span className="text-[8px] font-[700]" style={{ color: 'rgb(148,163,184)' }}>+{daySessions.length - 3}</span>
+                                <span className="text-[8px] font-[700]" style={{ color: 'var(--text-disabled)' }}>+{daySessions.length - 3}</span>
                               )}
                             </div>
                           )}
@@ -461,7 +461,7 @@ function SchedulePageContent() {
                 {/* Sessions for selected date */}
                 <div>
                   <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
-                    <p className="text-[12px] font-[700] uppercase tracking-wider mb-4" style={{ color: 'rgb(148,163,184)' }}>
+                    <p className="text-[12px] font-[700] uppercase tracking-wider mb-4" style={{ color: 'var(--text-disabled)' }}>
                       Sessions · {selectedDate}
                     </p>
                     {sessionsForDate.length === 0 ? (
@@ -469,8 +469,8 @@ function SchedulePageContent() {
                         <div className="flex h-12 w-12 items-center justify-center rounded-[14px] mb-3" style={{ background: 'rgba(220,38,38,0.08)' }}>
                           <Calendar size={20} style={{ color: '#F59E0B' }} />
                         </div>
-                        <p className="text-[13px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>No sessions scheduled</p>
-                        <p className="text-[11px] mt-1" style={{ color: 'rgb(203,213,225)' }}>Book a session to get started</p>
+                        <p className="text-[13px] font-[600]" style={{ color: 'var(--text-disabled)' }}>No sessions scheduled</p>
+                        <p className="text-[11px] mt-1" style={{ color: 'var(--text-disabled)' }}>Book a session to get started</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -489,8 +489,8 @@ function SchedulePageContent() {
                               {session.clientAvatar}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-[12.5px] font-[680]" style={{ color: 'rgb(15,23,42)' }}>{session.client}</p>
-                              <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>{session.time} · {session.duration}min · {session.trainer}</p>
+                              <p className="text-[12.5px] font-[680]" style={{ color: 'var(--text-primary)' }}>{session.client}</p>
+                              <p className="text-[11px]" style={{ color: 'var(--text-disabled)' }}>{session.time} · {session.duration}min · {session.trainer}</p>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]"
@@ -512,7 +512,7 @@ function SchedulePageContent() {
             {view === 'timeline' && (
               <m.div key="timeline" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <div className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
-                  <p className="text-[12px] font-[700] uppercase tracking-wider mb-5" style={{ color: 'rgb(148,163,184)' }}>
+                  <p className="text-[12px] font-[700] uppercase tracking-wider mb-5" style={{ color: 'var(--text-disabled)' }}>
                     Timeline · {selectedDate}
                   </p>
                   <div className="relative">
@@ -522,7 +522,7 @@ function SchedulePageContent() {
                         <div className="flex h-12 w-12 items-center justify-center rounded-[14px] mb-3" style={{ background: 'rgba(220,38,38,0.08)' }}>
                           <Clock size={20} style={{ color: '#F59E0B' }} />
                         </div>
-                        <p className="text-[13px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>No sessions on this day</p>
+                        <p className="text-[13px] font-[600]" style={{ color: 'var(--text-disabled)' }}>No sessions on this day</p>
                       </div>
                     ) : (
                       <div className="space-y-4">
@@ -543,21 +543,21 @@ function SchedulePageContent() {
                                 }}>
                                 {session.status === 'completed' ? <CheckCircle2 size={12} color="white" /> : <span className="text-[10px] font-[800]" style={{ color: '#F59E0B' }}>{session.time.split(':')[0]}</span>}
                               </div>
-                              <span className="mt-1 text-[10px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>{session.time}</span>
+                              <span className="mt-1 text-[10px] font-[600]" style={{ color: 'var(--text-disabled)' }}>{session.time}</span>
                             </div>
                             <div className="flex-1 rounded-[14px] p-3.5 transition-all border"
                               style={{ background: 'var(--bg-card)', borderColor: 'rgba(0,0,0,0.07)' }}>
                               <div className="flex items-center justify-between gap-3">
                                 <div>
-                                  <p className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>{session.client}</p>
-                                  <p className="text-[11px] mt-0.5" style={{ color: 'rgb(148,163,184)' }}>
+                                  <p className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>{session.client}</p>
+                                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-disabled)' }}>
                                     {session.trainer} · {session.duration}min · {session.type}
                                   </p>
                                 </div>
                                 <StatusPill status={session.status} />
                               </div>
                               {session.notes && (
-                                <p className="mt-2 text-[11.5px] italic" style={{ color: 'rgb(148,163,184)' }}>{session.notes}</p>
+                                <p className="mt-2 text-[11.5px] italic" style={{ color: 'var(--text-disabled)' }}>{session.notes}</p>
                               )}
                             </div>
                           </m.div>
@@ -580,9 +580,9 @@ function SchedulePageContent() {
                       return (
                         <div key={day} className={cn('p-3 text-center border-r', i === 6 && 'border-r-0')}
                           style={{ borderColor: 'rgba(0,0,0,0.07)', background: isToday ? 'rgba(220,38,38,0.04)' : 'transparent' }}>
-                          <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>{day}</p>
+                          <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>{day}</p>
                           <p className={cn('text-[16px] font-[800] mt-0.5', isToday && 'text-[#F59E0B]')}
-                            style={{ color: isToday ? '#F59E0B' : 'rgb(15,23,42)' }}>
+                            style={{ color: isToday ? '#F59E0B' : 'var(--text-primary)' }}>
                             {dateStr.split('-')[2]}
                           </p>
                         </div>
@@ -596,7 +596,7 @@ function SchedulePageContent() {
                         <div key={dateStr} className={cn('p-2 border-r min-h-[200px]', colIdx === 6 && 'border-r-0')}
                           style={{ borderColor: 'rgba(0,0,0,0.07)' }}>
                           {daySessions.length === 0 ? (
-                            <p className="text-[10px] text-center mt-6" style={{ color: 'rgb(203,213,225)' }}>No sessions</p>
+                            <p className="text-[10px] text-center mt-6" style={{ color: 'var(--text-disabled)' }}>No sessions</p>
                           ) : (
                             <div className="space-y-1">
                               {daySessions.map((s) => (
@@ -608,8 +608,8 @@ function SchedulePageContent() {
                                   }}
                                   onClick={() => setShowSessionPanel(s.id)}
                                 >
-                                  <p className="text-[10px] font-[700] truncate" style={{ color: 'rgb(15,23,42)' }}>{s.client}</p>
-                                  <p className="text-[9px]" style={{ color: 'rgb(148,163,184)' }}>{s.time} · {s.duration}min</p>
+                                  <p className="text-[10px] font-[700] truncate" style={{ color: 'var(--text-primary)' }}>{s.client}</p>
+                                  <p className="text-[9px]" style={{ color: 'var(--text-disabled)' }}>{s.time} · {s.duration}min</p>
                                 </div>
                               ))}
                             </div>
@@ -633,21 +633,21 @@ function SchedulePageContent() {
                           <div className="flex h-8 w-8 items-center justify-center rounded-[9px] text-[10px] font-[700] text-white"
                             style={{ background: AVATAR_COLORS[parseInt(s.id) % AVATAR_COLORS.length] }}>{s.clientAvatar}</div>
                           <div>
-                            <p className="text-[12.5px] font-[660]" style={{ color: 'rgb(15,23,42)' }}>{s.client}</p>
+                            <p className="text-[12.5px] font-[660]" style={{ color: 'var(--text-primary)' }}>{s.client}</p>
                           </div>
                         </div>
                       )},
                       { key: 'trainer', header: 'Trainer', render: (s: PTSession) => (
                         <div className="flex items-center gap-2">
-                          <Train size={12} style={{ color: 'rgb(148,163,184)' }} />
-                          <span className="text-[12px]" style={{ color: 'rgb(100,116,139)' }}>{s.trainer}</span>
+                          <Train size={12} style={{ color: 'var(--text-disabled)' }} />
+                          <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>{s.trainer}</span>
                         </div>
                       )},
                       { key: 'time', header: 'Time', render: (s: PTSession) => (
                         <div className="flex items-center gap-2">
-                          <Clock size={12} style={{ color: 'rgb(148,163,184)' }} />
-                          <span className="text-[12px] font-[600]" style={{ color: 'rgb(15,23,42)' }}>{s.time}</span>
-                          <span className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>({s.duration}min)</span>
+                          <Clock size={12} style={{ color: 'var(--text-disabled)' }} />
+                          <span className="text-[12px] font-[600]" style={{ color: 'var(--text-primary)' }}>{s.time}</span>
+                          <span className="text-[11px]" style={{ color: 'var(--text-disabled)' }}>({s.duration}min)</span>
                         </div>
                       )},
                       { key: 'type', header: 'Type', render: (s: PTSession) => (
@@ -664,7 +664,7 @@ function SchedulePageContent() {
                   />
                   <div>
                     <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
-                      <p className="text-[12px] font-[700] uppercase tracking-wider mb-3" style={{ color: 'rgb(148,163,184)' }}>Trainer Availability</p>
+                      <p className="text-[12px] font-[700] uppercase tracking-wider mb-3" style={{ color: 'var(--text-disabled)' }}>Trainer Availability</p>
                       <div className="space-y-3">
                         {trainerList.map((trainer, i) => {
                           const busySessions = sessionsForDate.filter((s) => s.trainer === trainer.name && s.status === 'scheduled');
@@ -675,7 +675,7 @@ function SchedulePageContent() {
                                 {initials(trainer.name)}
                               </div>
                               <div className="flex-1">
-                                <p className="text-[11.5px] font-[650]" style={{ color: 'rgb(15,23,42)' }}>{trainer.name}</p>
+                                <p className="text-[11.5px] font-[650]" style={{ color: 'var(--text-primary)' }}>{trainer.name}</p>
                               </div>
                               {busySessions.length > 0 ? (
                                 <span className="text-[10px] font-[600] rounded-full px-2 py-0.5" style={{ background: 'rgba(245,158,11,0.10)', color: '#d97706' }}>
@@ -833,9 +833,9 @@ function CreateSessionModal({
           {/* Client */}
           <div>
             <div className="mb-2 flex items-center justify-between gap-3">
-              <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Client *</p>
+              <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Client *</p>
               {!clientOptionsLoading && (
-                <span className="text-[11px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>
+                <span className="text-[11px] font-[600]" style={{ color: 'var(--text-disabled)' }}>
                   {resolvedClients.length} of {clientOptions.length}
                 </span>
               )}
@@ -848,7 +848,7 @@ function CreateSessionModal({
                 onChange={(e) => setClientSearch(e.target.value)}
                 placeholder="Search clients…"
                 className="mb-2 h-[44px] w-full rounded-[10px] px-3 text-[12.5px] outline-none"
-                style={{ background: '#f8fafc', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }}
+                style={{ background: '#f8fafc', border: '1.5px solid rgba(15,23,42,0.09)', color: 'var(--text-primary)' }}
               />
             )}
 
@@ -859,7 +859,7 @@ function CreateSessionModal({
                 ))}
               </div>
             ) : resolvedClients.length === 0 ? (
-              <p className="rounded-[10px] px-3 py-3 text-[12px]" style={{ background: '#f8fafc', color: 'rgb(148,163,184)' }}>
+              <p className="rounded-[10px] px-3 py-3 text-[12px]" style={{ background: '#f8fafc', color: 'var(--text-disabled)' }}>
                 {clientSearch.trim() ? `No client matches "${clientSearch.trim()}".` : 'No clients yet.'}
               </p>
             ) : (
@@ -878,7 +878,7 @@ function CreateSessionModal({
                       style={{
                         background: selected ? 'rgba(2,113,235,0.08)' : '#f8fafc',
                         border: selected ? '1.5px solid rgba(2,113,235,0.45)' : '1.5px solid rgba(15,23,42,0.09)',
-                        color: selected ? '#0059CE' : 'rgb(100,116,139)',
+                        color: selected ? '#0059CE' : 'var(--text-muted)',
                       }}
                     >
                       <span className="w-full truncate">{c.name}</span>
@@ -896,10 +896,10 @@ function CreateSessionModal({
           {/* Trainer — not a choice. The studio belongs to one trainer, so this
               is shown as fact rather than asked for. */}
           <div>
-            <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Trainer</p>
+            <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Trainer</p>
             <div className="flex items-center gap-2 rounded-[10px] px-3 py-2.5 text-[12px] font-[600]"
               style={{ background: '#f8fafc', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(71,85,105)' }}>
-              <User size={13} style={{ color: 'rgb(148,163,184)' }} />
+              <User size={13} style={{ color: 'var(--text-disabled)' }} />
               {defaultTrainer || 'No trainer on this studio'}
             </div>
           </div>
@@ -907,22 +907,22 @@ function CreateSessionModal({
           {/* Date/Time */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Date</p>
+              <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Date</p>
               <input type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
                 className="w-full rounded-[10px] px-3 py-2.5 text-[12.5px] font-[500] outline-none"
-                style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }} />
+                style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'var(--text-primary)' }} />
             </div>
             <div>
-              <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Time</p>
+              <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Time</p>
               <input type="time" value={form.time} onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
                 className="w-full rounded-[10px] px-3 py-2.5 text-[12.5px] font-[500] outline-none"
-                style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }} />
+                style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'var(--text-primary)' }} />
             </div>
             <div>
-              <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Duration</p>
+              <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Duration</p>
               <select value={form.duration} onChange={(e) => setForm((f) => ({ ...f, duration: parseInt(e.target.value) }))}
                 className="w-full rounded-[10px] px-3 py-2.5 text-[12.5px] font-[500] outline-none"
-                style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }}>
+                style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'var(--text-primary)' }}>
                 {[30, 45, 60, 75, 90, 120].map((d) => <option key={d} value={d}>{d} min</option>)}
               </select>
             </div>
@@ -930,7 +930,7 @@ function CreateSessionModal({
 
           {/* Session Type */}
           <div>
-            <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Session Type</p>
+            <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Session Type</p>
             <div className="grid grid-cols-3 gap-2">
               {(['1-on-1', 'Group', 'Assessment'] as const).map((t) => (
                 <button key={t} type="button" onClick={() => setForm((f) => ({ ...f, type: t }))}
@@ -938,7 +938,7 @@ function CreateSessionModal({
                   style={{
                     background: form.type === t ? 'rgba(220,38,38,0.10)' : '#f8fafc',
                     border: form.type === t ? '1.5px solid rgba(220,38,38,0.30)' : '1.5px solid rgba(15,23,42,0.09)',
-                    color: form.type === t ? '#F59E0B' : 'rgb(100,116,139)',
+                    color: form.type === t ? '#F59E0B' : 'var(--text-muted)',
                   }}
                 >
                   {t}
@@ -949,11 +949,11 @@ function CreateSessionModal({
 
           {/* Notes */}
           <div>
-            <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Notes</p>
+            <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Notes</p>
             <textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               placeholder="Session focus, client notes, or instructions…"
               className="w-full rounded-[10px] px-3 py-2.5 text-[12.5px] font-[500] outline-none resize-none"
-              style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)', minHeight: 60 }}
+              style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'var(--text-primary)', minHeight: 60 }}
             />
           </div>
 
@@ -963,7 +963,7 @@ function CreateSessionModal({
             style={{
               background: form.recurring ? 'rgba(220,38,38,0.08)' : '#f8fafc',
               border: form.recurring ? '1.5px solid rgba(220,38,38,0.25)' : '1.5px solid rgba(15,23,42,0.09)',
-              color: form.recurring ? '#F59E0B' : 'rgb(100,116,139)',
+              color: form.recurring ? '#F59E0B' : 'var(--text-muted)',
             }}>
             <Repeat size={13} />
             {form.recurring ? 'Recurring weekly' : 'Make this a recurring session'}
@@ -982,8 +982,8 @@ function CreateSessionModal({
             { k: 'Notes', v: form.notes || '—' },
           ].map((item) => (
             <div key={item.k} className="flex justify-between py-1.5 border-b" style={{ borderColor: 'rgba(0,0,0,0.07)' }}>
-              <span className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>{item.k}</span>
-              <span className="text-[12px] font-[650]" style={{ color: 'rgb(15,23,42)' }}>{item.v}</span>
+              <span className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>{item.k}</span>
+              <span className="text-[12px] font-[650]" style={{ color: 'var(--text-primary)' }}>{item.v}</span>
             </div>
           ))}
         </div>
@@ -1023,7 +1023,7 @@ function SessionDetailPanel({
             {session.type}
           </span>
           {session.recurring && (
-            <span className="flex items-center gap-1 text-[11px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>
+            <span className="flex items-center gap-1 text-[11px] font-[600]" style={{ color: 'var(--text-disabled)' }}>
               <Repeat size={11} /> Weekly
             </span>
           )}
@@ -1040,8 +1040,8 @@ function SessionDetailPanel({
             { label: 'ID', value: `#${session.id}` },
           ].map((item) => (
             <div key={item.label} className="rounded-[10px] p-3" style={{ background: 'var(--bg-subtle)' }}>
-              <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>{item.label}</p>
-              <p className="mt-1 text-[13px] font-[650]" style={{ color: 'rgb(15,23,42)' }}>{item.value}</p>
+              <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>{item.label}</p>
+              <p className="mt-1 text-[13px] font-[650]" style={{ color: 'var(--text-primary)' }}>{item.value}</p>
             </div>
           ))}
         </div>
@@ -1049,14 +1049,14 @@ function SessionDetailPanel({
         {/* Notes */}
         {session.notes && (
           <div className="rounded-[12px] p-3.5" style={{ background: 'var(--bg-subtle)', border: '1px solid rgba(15,23,42,0.06)' }}>
-            <p className="text-[10px] font-[700] uppercase tracking-wider mb-1.5" style={{ color: 'rgb(148,163,184)' }}>Session Notes</p>
-            <p className="text-[12.5px]" style={{ color: 'rgb(100,116,139)' }}>{session.notes}</p>
+            <p className="text-[10px] font-[700] uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-disabled)' }}>Session Notes</p>
+            <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>{session.notes}</p>
           </div>
         )}
 
         {/* Actions */}
         <div>
-          <p className="text-[10px] font-[700] uppercase tracking-wider mb-2" style={{ color: 'rgb(148,163,184)' }}>Update Status</p>
+          <p className="text-[10px] font-[700] uppercase tracking-wider mb-2" style={{ color: 'var(--text-disabled)' }}>Update Status</p>
           <div className="flex gap-2">
             {(['scheduled', 'completed', 'cancelled'] as const).map((status) => (
               <button
