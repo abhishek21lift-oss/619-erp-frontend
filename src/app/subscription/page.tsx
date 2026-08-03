@@ -29,6 +29,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import StudioMark from '@/components/StudioMark';
 import FounderBadge from '@/components/FounderBadge';
+import { useFounder } from '@/lib/use-founder';
 import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { SubscriptionStatus, SubPlan, SubInvoice, PlanChangeQuote, CouponValidation } from '@/lib/api';
@@ -296,6 +297,7 @@ export default function SubscriptionPage() {
 }
 
 function SubscriptionScreen() {
+  const founderNumber = useFounder();
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const [status, setStatus] = useState<SubscriptionStatus | null>(null);
@@ -798,7 +800,7 @@ function SubscriptionScreen() {
                 <h1 className="truncate text-[14.5px] font-[820] tracking-tight text-white">{user?.organization_name || 'Your studio'}</h1>
                 {/* The billing screen is where the founder price is locked, so
                     here the badge is an explanation rather than a decoration. */}
-                <FounderBadge number={user?.founder_number} size="sm" />
+                <FounderBadge number={founderNumber} size="sm" />
               </div>
               <p className="text-[11px]" style={{ color: '#94a3b8' }}>Subscription &amp; billing</p>
             </div>

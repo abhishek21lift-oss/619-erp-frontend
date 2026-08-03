@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import FounderBadge from '@/components/FounderBadge';
+import { useFounder } from '@/lib/use-founder';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { m, AnimatePresence } from 'framer-motion';
@@ -510,6 +511,7 @@ export default function Sidebar({
   const isMobile = variant === 'mobile';
   const { user } = useAuth();
   const studioName = user?.organization_name || 'PT Studio';
+  const founderNumber = useFounder();
   const studioOwner = user?.name || '';
 
   // Restore the user's manual expanded/collapsed preference on mount. There is
@@ -587,8 +589,8 @@ export default function Sidebar({
                   {/* Compact: the sidebar name is already clamped to 160px, so
                       the full "Founder #7/20" would push the number out of
                       sight on a long studio name. */}
-                  {user?.founder_number != null && (
-                    <FounderBadge number={user.founder_number} variant="compact" size="sm" className="mt-[5px]" />
+                  {founderNumber != null && (
+                    <FounderBadge number={founderNumber} variant="compact" size="sm" className="mt-[5px]" />
                   )}
                   {studioOwner && (
                     <p className="mt-[3px] max-w-[160px] truncate text-[9.5px] font-semibold text-[var(--text-muted)] tracking-[0.06em]">

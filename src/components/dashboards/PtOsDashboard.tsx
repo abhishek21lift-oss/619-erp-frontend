@@ -38,6 +38,7 @@ import { useRouter } from 'next/navigation';
 import { useAsync } from '@/lib/use-async';
 import { useAuth } from '@/lib/auth-context';
 import FounderBadge from '@/components/FounderBadge';
+import { useFounder } from '@/lib/use-founder';
 import http from '@/lib/http';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -1431,7 +1432,7 @@ export default function PtOsDashboard() {
   const o = ops.data;
   const coach = user?.name?.split(' ')[0] || 'Coach';
   const studioName = user?.organization_name || 'PT Studio';
-  const founderNumber = user?.founder_number ?? null;
+  const founderNumber = useFounder();
 
   const refreshAll = useCallback(async () => {
     await Promise.all([dash.refetch(), ops.refetch()]);
