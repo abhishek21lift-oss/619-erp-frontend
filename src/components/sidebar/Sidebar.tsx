@@ -48,6 +48,13 @@ const ICON_MAP: Record<string, React.ElementType> = {
 // ── Design constants ──────────────────────────────────────────────────────────
 const BRAND = '#7fb4ff';
 
+export const SIDEBAR_GROUNDS = {
+  /** Top of the gradient. */
+  dark: '#0F172A',
+  /** Bottom — the worst case for a light foreground, and where sub-items sit. */
+  blue: '#002D61',
+} as const;
+
 /**
  * The drawer footer's foregrounds, and the ground they sit on.
  *
@@ -58,8 +65,14 @@ const BRAND = '#7fb4ff';
  * something prettier cannot quietly put them back.
  */
 export const FOOTER_COLORS = {
-  /** The bottom of the drawer's gradient — the worst case for a light fore. */
-  drawerGround: '#0050AD',
+  /**
+   * The bottom of the drawer's gradient — the worst case for a light fore.
+   * Reads SIDEBAR_GROUNDS rather than repeating the value: when the gradient
+   * was darkened to fix the navigation above, a second literal here would have
+   * left the footer's tests measuring against a background that no longer
+   * exists, and passing for the wrong reason.
+   */
+  drawerGround: SIDEBAR_GROUNDS.blue,
   /** Translucent white fills the Profile and Settings buttons sit on. */
   neutralFill: 'rgba(255,255,255,0.10)',
   neutralFore: 'rgba(255,255,255,0.92)',
@@ -69,17 +82,72 @@ export const FOOTER_COLORS = {
   /** Sits directly on the drawer, not on a fill. */
   emailFore: 'rgba(255,255,255,0.72)',
 } as const;
+/**
+ * The drawer's foregrounds, and the two grounds they sit on.
+ *
+ * ── Why these numbers are what they are ────────────────────────────────────
+ *
+ * The background is a gradient: near-black at the top, brand blue from 65%
+ * down. Every value here was originally chosen against the dark end, and the
+ * lower half of the drawer — where the expanded sub-items and the chevrons
+ * live — is the light end. Measured against it, the whole navigation failed:
+ *
+ *   section label   1.65:1      nav icon    2.37:1
+ *   chevron         1.89:1      nav label   3.20:1
+ *
+ * AA wants 4.5:1. Four of those failed against the DARK end too, so they were
+ * never adequate; the blue only made it obvious.
+ *
+ * The fix is in two parts, and the first matters more. The blue end moved from
+ * blue[700] to blue[900].
+ *
+ * blue[700] was bright enough that white at 52% — an unremarkable value on a
+ * dark navigation — measured 3.20:1 on it. blue[900] takes that to 4.70:1, so
+ * an ordinary value works without being derived. That is the difference
+ * between fixing today's numbers and fixing the surface: whatever is added to
+ * this file next inherits a ground that already behaves.
+ *
+ * It is a palette value, not a hand-mixed one. The first pass solved for the
+ * darkness numerically and produced a blue that was not in the five families;
+ * the palette guard rejected it, correctly, because a sixth blue is exactly
+ * what that rule exists to prevent. blue[900] sits within a couple of points
+ * of the computed answer and was already in the system.
+ *
+ * Still unmistakably blue: a 52-point margin between its blue channel and its
+ * next highest.
+ *
+ * sidebar-contrast.test.ts recomputes all of it against BOTH ends.
+ */
 const THEME = {
   brand:        BRAND,
   iconBg:       'linear-gradient(135deg, #7fb4ff 0%, #3b8df5 100%)',
   activeBg:     'rgba(127,180,255,0.15)',
   subBorder:    'rgba(127,180,255,0.12)',
   subActiveBg:  'rgba(127,180,255,0.08)',
-  inactiveText: 'rgba(255,255,255,0.52)',
-  inactiveIcon: 'rgba(255,255,255,0.38)',
+  inactiveText: 'rgba(255,255,255,0.82)',
+  inactiveIcon: 'rgba(255,255,255,0.70)',
   hoverBg:      'rgba(127,180,255,0.08)',
   iconBgIdle:   'rgba(255,255,255,0.06)',
+  /** Group headings. Were 0.22 — 1.65:1 on the blue, effectively absent. */
+  sectionLabel: 'rgba(255,255,255,0.62)',
+  /** The expand/collapse arrows. Were 0.28 — 1.89:1. */
+  chevron:      'rgba(255,255,255,0.65)',
 };
+
+/**
+ * Every foreground the navigation draws, for the contrast test to walk.
+ *
+ * Listed explicitly rather than derived from THEME: THEME also holds fills,
+ * borders and a gradient, and asserting 4.5:1 on a hover background would be
+ * meaningless. These are the values a person has to actually read.
+ */
+export const SIDEBAR_FOREGROUNDS = {
+  sectionLabel: THEME.sectionLabel,
+  navLabel:     THEME.inactiveText,
+  navIcon:      THEME.inactiveIcon,
+  chevron:      THEME.chevron,
+  activeLabel:  BRAND,
+} as const;
 
 // Section headings — appear above these group IDs
 const SECTION_LABELS: Record<string, string> = {
@@ -178,7 +246,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                     style={{ background: 'linear-gradient(90deg, transparent, rgba(127,180,255,0.18), transparent)' }}
                   />
                 )}
-                <p className="px-3 text-[9.5px] font-bold uppercase tracking-[0.14em]" style={{ color: 'rgba(255,255,255,0.22)' }}>
+                <p className="px-3 text-[9.5px] font-bold uppercase tracking-[0.14em]" style={{ color: THEME.sectionLabel }}>
                   {sectionLabel}
                 </p>
               </div>
@@ -259,7 +327,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                       strokeWidth={2.5}
                       className="shrink-0 transition-transform duration-300"
                       style={{
-                        color: hasActiveChild ? BRAND : 'rgba(255,255,255,0.28)',
+                        color: hasActiveChild ? BRAND : THEME.chevron,
                         transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
                       }}
                     />
@@ -428,7 +496,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
           onClick={handleLogout}
           aria-label="Logout"
           className="flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-150 hover:bg-red-500/15 hover:text-red-400"
-          style={{ color: 'rgba(255,255,255,0.30)' }}
+          style={{ color: THEME.inactiveIcon }}
         >
           <LogOut size={13} strokeWidth={1.5} />
         </button>
@@ -596,7 +664,7 @@ export default function Sidebar({
         ],
       )}
       style={{
-        background: 'linear-gradient(180deg, rgba(245,158,11,0.07) 0%, rgba(245,158,11,0.02) 18%, transparent 38%), linear-gradient(160deg, #0F172A 0%, #0F172A 30%, #0050AD 65%, #0050AD 100%)',
+        background: 'linear-gradient(180deg, rgba(245,158,11,0.07) 0%, rgba(245,158,11,0.02) 18%, transparent 38%), linear-gradient(160deg, #0F172A 0%, #0F172A 30%, #002D61 65%, #002D61 100%)',
         paddingTop: isMobile ? 'calc(12px + env(safe-area-inset-top, 0px))' : 'env(safe-area-inset-top, 0px)',
         paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 0px)' : undefined,
         willChange: isMobile ? 'transform' : undefined,
