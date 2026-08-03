@@ -349,7 +349,11 @@ function PasskeysContent() {
                 background: 'var(--bg-subtle)', border: '1px solid var(--border)',
                 color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit',
               }}
-              onKeyDown={e => e.key === 'Enter' && handleRegister()}
+              // `registering` guarded here as well as on the button: Enter in
+              // this field bypassed the button's disabled state, and a second
+              // enrolment started while the first is waiting on the biometric
+              // prompt is a second challenge for the same user.
+              onKeyDown={e => { if (e.key === 'Enter' && !registering) handleRegister(); }}
             />
             <button
               onClick={handleRegister}
