@@ -73,4 +73,18 @@ describe('signed-out pages', () => {
     // Superseded by the wordmark in the bar, which is where a way back belongs.
     expect(read('app/login/page.tsx')).not.toMatch(/<ArrowLeft[^>]*\/>\s*Home/);
   });
+
+  it('/login offers exactly one way to reset a password', () => {
+    // There were two: a link to /forgot-password, and — beside the Password
+    // label — a button opening a modal that said resets came from your
+    // studio's trainer. That modal predated the self-serve endpoint having a
+    // UI; once it had one the page contradicted itself in two places at once.
+    // Comment lines are stripped first: the file's own header explains why
+    // there is only one, and counting that would defeat the point.
+    const src = read('app/login/page.tsx');
+    const code = src.split('\n').filter((l) => !/^\s*(\*|\/\/)/.test(l)).join('\n');
+    expect(code.match(/Forgot password\?/g) ?? []).toHaveLength(1);
+    expect(src).toContain('href="/forgot-password"');
+    expect(src).not.toContain('ForgotModal');
+  });
 });
