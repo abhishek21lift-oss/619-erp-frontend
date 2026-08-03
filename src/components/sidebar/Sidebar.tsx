@@ -698,11 +698,11 @@ export default function Sidebar({
                   <h2 className="max-w-[160px] truncate text-[13px] font-extrabold uppercase tracking-tight leading-none text-[var(--text-primary)]">
                     {studioName}
                   </h2>
-                  {/* Compact: the sidebar name is already clamped to 160px, so
-                      the full "Founder #7/20" would push the number out of
-                      sight on a long studio name. */}
+                  {/* Was the `compact` variant, which existed only because
+                      "Founder #7/20" did not fit beside a studio name clamped
+                      to 160px. Without the number the full badge fits. */}
                   {founderNumber != null && (
-                    <FounderBadge number={founderNumber} variant="compact" size="sm" className="mt-[5px]" />
+                    <FounderBadge number={founderNumber} size="sm" className="mt-[5px]" />
                   )}
                   {studioOwner && (
                     <p className="mt-[3px] max-w-[160px] truncate text-[9.5px] font-semibold text-[var(--text-muted)] tracking-[0.06em]">
