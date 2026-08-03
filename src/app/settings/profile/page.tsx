@@ -28,6 +28,7 @@ import { EducationSection } from '@/components/profile/EducationSection';
 import { AchievementsSection } from '@/components/profile/AchievementsSection';
 import { CompletionPanel } from '@/components/profile/CompletionPanel';
 import { ProfileHero } from '@/components/profile/ProfileHero';
+import { useFounder } from '@/lib/use-founder';
 import { PortfolioSkeleton } from '@/components/profile/PortfolioSection';
 
 /**
@@ -707,6 +708,7 @@ const NOTIFICATION_ROWS: { key: keyof NotificationPreferences; label: string; de
    PAGE
 ───────────────────────────────────────── */
 export default function ProfilePage() {
+  const founderNumber = useFounder();
   // `user` is the session. The studio name comes from there rather than from
   // the profile form — see the note at the top of ProfileHero.
   const { logout, user } = useAuth();
@@ -1223,7 +1225,7 @@ export default function ProfilePage() {
                 <ProfileHero
                   me={me}
                   organizationName={user?.organization_name}
-                  founderNumber={user?.founder_number}
+                  founderNumber={founderNumber}
                   resolveUrl={(p) => `${apiBase()}${p}`}
                   roleLabel={roleLabel}
                   memberSince={fmtDate(me.createdAt)}

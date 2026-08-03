@@ -13,6 +13,7 @@ import { CopyId } from '@/components/ui/CopyId';
 import AppShell from '@/components/AppShell';
 import Guard from '@/components/Guard';
 import FounderBadge from '@/components/FounderBadge';
+import { useFounder } from '@/lib/use-founder';
 import { useAuth } from '@/lib/auth-context';
 import { KpiCard } from '@/components/ui/KpiCard';
 import { Badge } from '@/components/ui/Badge';
@@ -269,7 +270,7 @@ function LeaderboardRow({ trainer, index }: { trainer: Trainer; index: number })
 
 
 export default function TrainersPage() {
-  const { user } = useAuth();
+  const founderNumber = useFounder();
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -358,7 +359,7 @@ export default function TrainersPage() {
                     {/* The team screen is where a studio's staff see the
                         studio's own standing, so the badge belongs on the
                         heading rather than against any one trainer. */}
-                    <FounderBadge number={user?.founder_number} />
+                    <FounderBadge number={founderNumber} />
                   </div>
                   <p className="text-[14px] text-white/70 mt-1.5 max-w-[520px] leading-relaxed">
                     Manage coaching performance, client assignments, revenue, and trainer growth.
