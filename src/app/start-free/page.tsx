@@ -12,7 +12,7 @@
 // them off a login they cannot pass would be worse than saying nothing.
 import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import PublicNav, { PUBLIC_NAV_CLEARANCE } from '@/components/PublicNav';
 import { ArrowRight, Building2, CheckCircle2, Clock, Eye, EyeOff, Loader2, Lock, Mail, Phone, User } from 'lucide-react';
 import { api } from '@/lib/api';
 
@@ -36,49 +36,6 @@ function validate(form: Record<Field, string>): Partial<Record<Field, string>> {
   return e;
 }
 
-
-/**
- * The landing page's bar, trimmed for a form.
- *
- * Same fixed, blurred, notch-filling treatment — without it the page began at
- * the status bar and the trial badge sat under the notch. The section links are
- * dropped: there is nothing on this page to jump to, and "Get Started" would
- * point at the page you are already on.
- */
-function SignupNav() {
-  return (
-    <header
-      className="fixed inset-x-0 top-0 z-50"
-      style={{
-        // Floor the reserve at 2.75rem so the bar still clears the status bar
-        // where env(safe-area-inset-top) resolves to 0.
-        paddingTop: 'max(env(safe-area-inset-top), 2.75rem)',
-        background: 'rgba(255,255,255,0.88)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(0,103,224,0.07)',
-      }}
-    >
-      <div className="mx-auto max-w-6xl px-4">
-        <nav className="flex items-center justify-between py-3">
-          <Link href="/" className="inline-flex items-center gap-2.5" aria-label="MY PT STUDIO home">
-            <Image src="/mypt-logo.png" alt="" width={38} height={38} priority
-              className="h-9 w-9 shrink-0 object-contain" />
-            <span className="text-[15px] font-[800] tracking-[-0.02em]">
-              <span style={{ color: '#0067E0' }}>MY PT</span>{' '}
-              <span style={{ color: '#0F172A' }}>STUDIO</span>
-            </span>
-          </Link>
-          <Link href="/login"
-            className="rounded-xl px-3.5 py-2 text-[13.5px] font-[650] transition-colors hover:bg-black/[0.04]"
-            style={{ color: '#0F172A' }}>
-            Sign in
-          </Link>
-        </nav>
-      </div>
-    </header>
-  );
-}
 
 export default function StartFreePage() {
   const [form, setForm] = useState<Record<Field, string>>(BLANK);
@@ -124,13 +81,13 @@ export default function StartFreePage() {
 
   return (
     <>
-      <SignupNav />
+      <PublicNav action="sign-in" />
       {/* Clears the fixed bar: its own notch reserve plus its content height. */}
       <main
         className="min-h-dvh px-4 pb-14 sm:px-6"
         style={{
           background: 'linear-gradient(160deg,#F8FAFC,#F1F5F9)',
-          paddingTop: 'calc(max(env(safe-area-inset-top), 2.75rem) + 5.5rem)',
+          paddingTop: PUBLIC_NAV_CLEARANCE,
         }}
       >
       <div className="mx-auto w-full max-w-[440px]">
@@ -234,12 +191,12 @@ export default function StartFreePage() {
 function PendingApproval({ email }: { email: string }) {
   return (
     <>
-      <SignupNav />
+      <PublicNav action="sign-in" />
       <main
         className="flex min-h-dvh items-start justify-center px-4 pb-14"
         style={{
           background: 'linear-gradient(160deg,#F8FAFC,#F1F5F9)',
-          paddingTop: 'calc(max(env(safe-area-inset-top), 2.75rem) + 6rem)',
+          paddingTop: PUBLIC_NAV_CLEARANCE,
         }}
       >
       <div className="w-full max-w-[460px] rounded-[22px] p-6 sm:p-8 text-center"

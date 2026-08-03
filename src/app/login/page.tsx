@@ -12,20 +12,23 @@
  * Everything here is wired to real auth: password, Google (when a client id is
  * configured) and passkey / Face ID / fingerprint (when the device supports a
  * platform authenticator). We deliberately do NOT render buttons for providers
- * that have no backend (Apple, magic-link) — no dead UI. Password resets are
- * handled by the workspace administrator (there is no self-serve reset
- * endpoint), so the "forgot password" flow routes there honestly.
+ * that have no backend (Apple, magic-link) — no dead UI. "Forgot password?"
+ * goes to /forgot-password, the self-serve reset. It used to open a modal
+ * saying resets were issued by your studio's trainer, from before that
+ * endpoint had a way in from the UI; the two shipped side by side for a while
+ * and the page offered the same thing twice, once truthfully.
  */
 
-import { useState, useEffect, useRef, useCallback, type FormEvent } from 'react';
+import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import PublicNav, { PUBLIC_NAV_CLEARANCE } from '@/components/PublicNav';
 import BrandLogoWide from '@/components/BrandLogoWide';
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
-  Eye, EyeOff, Mail, ArrowRight, ArrowLeft, Fingerprint, Loader2, Lock,
-  ShieldCheck, Check, X, KeyRound, AlertTriangle, Building2, Copy,
+  Eye, EyeOff, Mail, ArrowRight, Fingerprint, Loader2, Lock,
+  ShieldCheck, Check, AlertTriangle, Building2,
 } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '@/lib/auth-context';
@@ -73,88 +76,6 @@ function Wordmark({ light = false, size = 34 }: { light?: boolean; size?: number
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-//  FORGOT PASSWORD MODAL (honest — resets go through the workspace admin)
-// ══════════════════════════════════════════════════════════════════════════
-
-function ForgotModal({ open, onClose, prefillEmail }: { open: boolean; onClose: () => void; prefillEmail: string }) {
-  const reduce = useReducedMotion();
-  const [copied, setCopied] = useState(false);
-
-  const mailto = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Password reset request')}&body=${encodeURIComponent(
-    `Hi,\n\nI need to reset the password for my MY PT STUDIO account${prefillEmail ? ` (${prefillEmail})` : ''}.\n\nThank you.`,
-  )}`;
-
-  const copy = useCallback(async () => {
-    try { await navigator.clipboard.writeText(SUPPORT_EMAIL); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* noop */ }
-  }, []);
-
-  // Close on Escape
-  useEffect(() => {
-    if (!open) return;
-    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, [open, onClose]);
-
-  return (
-    <AnimatePresence>
-      {open && (
-        <m.div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          role="dialog" aria-modal="true" aria-labelledby="forgot-title"
-        >
-          <div className="absolute inset-0" style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
-          <m.div
-            className="relative w-full max-w-[440px] overflow-hidden rounded-3xl bg-white"
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={reduce ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
-            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-            style={{ boxShadow: '0 40px 90px -30px rgba(15,23,42,0.5)' }}
-          >
-            <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${MAROON}, ${GOLD})` }} />
-            <div className="p-7">
-              <div className="flex items-start justify-between">
-                <span className="grid h-11 w-11 place-items-center rounded-2xl" style={{ background: `${MAROON}12` }}>
-                  <KeyRound size={20} style={{ color: MAROON }} />
-                </span>
-                <button onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-full text-[color:var(--mute)] transition-colors hover:bg-black/5" style={{ color: MUTE }}>
-                  <X size={17} />
-                </button>
-              </div>
-
-              <h2 id="forgot-title" className="mt-4 text-[19px] font-[800] tracking-[-0.01em]" style={{ color: INK }}>Reset your password</h2>
-              <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: MUTE }}>
-                For your workspace&rsquo;s security, password resets are issued by your studio&rsquo;s trainer.
-                Send them a quick request and they&rsquo;ll set you up with a new password.
-              </p>
-
-              <a
-                href={mailto}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-[14.5px] font-[700] text-white transition-transform hover:-translate-y-0.5"
-                style={{ background: `linear-gradient(135deg, ${MAROON} 0%, ${MAROON_DEEP} 100%)`, boxShadow: `0 14px 30px ${MAROON}44` }}
-              >
-                <Mail size={16} /> Email my administrator
-              </a>
-
-              <button
-                onClick={copy}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 text-[13.5px] font-[650] transition-colors hover:bg-black/[0.03]"
-                style={{ color: INK, border: `1px solid ${LINE}` }}
-              >
-                {copied ? <><Check size={15} style={{ color: '#059669' }} /> Copied</> : <><Copy size={15} /> {SUPPORT_EMAIL}</>}
-              </button>
-            </div>
-          </m.div>
-        </m.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════════════
 //  MAIN
 // ══════════════════════════════════════════════════════════════════════════
 
@@ -179,7 +100,6 @@ export default function LoginPage() {
   const [shakeKey, setShakeKey] = useState(0);
   const [capsOn, setCapsOn] = useState(false);
 
-  const [forgotOpen, setForgotOpen] = useState(false);
   const [lastOrg, setLastOrg] = useState<string | null>(null);
   const [rememberedEmail, setRememberedEmail] = useState<string>('');
 
@@ -344,26 +264,20 @@ export default function LoginPage() {
         // Guarantee the logo clears the status bar / notch even when
         // env(safe-area-inset-top) resolves to 0 (some in-app browsers /
         // non-cover viewports): floor the notch reserve at 2.75rem.
-        paddingTop: 'calc(max(env(safe-area-inset-top), 2.75rem) + 1.25rem)',
+        paddingTop: PUBLIC_NAV_CLEARANCE,
         paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)',
         paddingLeft: 'max(1.25rem, env(safe-area-inset-left))',
         paddingRight: 'max(1.25rem, env(safe-area-inset-right))',
       }}
     >
+      <PublicNav action="start-free" />
+
       {/* ambient wash */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -right-24 -top-24 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${GOLD}18, transparent 68%)` }} />
         <div className="absolute -bottom-28 -left-20 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${MAROON}10, transparent 68%)` }} />
       </div>
 
-      {/* Back to home */}
-      <Link
-        href="/"
-        className="absolute left-4 inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-[12.5px] font-[600] backdrop-blur transition-colors hover:bg-white"
-        style={{ color: MUTE, border: `1px solid ${LINE}`, top: 'calc(max(env(safe-area-inset-top), 2.75rem) + 0.5rem)' }}
-      >
-        <ArrowLeft size={13} /> Home
-      </Link>
 
       <m.div
         initial={reduce ? false : { opacity: 0, y: 16 }}
@@ -458,10 +372,7 @@ export default function LoginPage() {
 
               {/* password */}
               <div className="mt-4">
-                <div className="mb-1.5 flex items-center justify-between">
-                  <label htmlFor="password" className="block text-[12px] font-[650] tracking-[0.02em]" style={{ color: INK }}>Password</label>
-                  <button type="button" onClick={() => setForgotOpen(true)} className="text-[12px] font-[650] transition-colors hover:underline" style={{ color: MAROON }}>Forgot password?</button>
-                </div>
+                <label htmlFor="password" className="mb-1.5 block text-[12px] font-[650] tracking-[0.02em]" style={{ color: INK }}>Password</label>
                 <div className="relative">
                   <input
                     id="password" ref={pwRef} type={showPw ? 'text' : 'password'} autoComplete="current-password"
@@ -640,8 +551,6 @@ export default function LoginPage() {
             <a href={`mailto:${SUPPORT_EMAIL}`} className="font-[650] hover:underline" style={{ color: MAROON }}>Contact support</a>
           </p>
       </m.div>
-
-      <ForgotModal open={forgotOpen} onClose={() => setForgotOpen(false)} prefillEmail={email.trim()} />
     </div>
   );
 }
