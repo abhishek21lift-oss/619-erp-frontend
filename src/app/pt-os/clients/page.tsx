@@ -4,13 +4,12 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSeededSearch } from '@/lib/use-seeded-search';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  Search, Users, TrendingUp, Wallet,
-  RefreshCw, UserPlus, User, Star,
-  ChevronRight, LayoutGrid, LayoutList,
-  Dumbbell, IndianRupee, AlertCircle, Flame,
+  Search, Users, RefreshCw, UserPlus, User,
+  ChevronRight, LayoutGrid, LayoutList, Dumbbell,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
+import ClientKpiStrip from '@/components/pt-os/ClientKpiStrip';
 import AppShell from '@/components/AppShell';
 import { PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
@@ -371,68 +370,19 @@ export default function PtClientsPage() {
               </button>
             </m.div>
 
-            {/* ── KPI HERO ── */}
+            {/* The strip's own file explains why it is one object rather
+                than four cards, and why it is 2x2 on mobile. */}
             <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-              className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              {[
-                {
-                  label: 'Total Clients', value: summary?.total ?? 0, prefix: '',
-                  icon: <Users size={20} className="text-white" />,
-                  from: '#0067e0', to: '#0067e0', glow: 'rgba(0,103,224,0.4)',
-                  sub: `${activeCount} active`,
-                  subIcon: <Flame size={11} />,
-                },
-                {
-                  label: 'Total Revenue', value: summary?.revenue ?? 0, prefix: '₹',
-                  icon: <TrendingUp size={20} className="text-white" />,
-                  from: '#059669', to: '#047857', glow: 'rgba(5,150,105,0.4)',
-                  sub: 'Combined PT revenue',
-                  subIcon: <IndianRupee size={11} />,
-                },
-                {
-                  label: 'Total Paid', value: summary?.paid ?? 0, prefix: '₹',
-                  icon: <Wallet size={20} className="text-white" />,
-                  from: '#0059ce', to: '#0059ce', glow: 'rgba(0,89,206,0.4)',
-                  sub: 'Amounts collected',
-                  subIcon: <Star size={11} />,
-                },
-                {
-                  label: 'Total Balance', value: summary?.balance ?? 0, prefix: '₹',
-                  icon: <AlertCircle size={20} className="text-white" />,
-                  from: '#dc2626', to: '#b91c1c', glow: 'rgba(220,38,38,0.4)',
-                  sub: 'Pending dues',
-                  subIcon: <IndianRupee size={11} />,
-                },
-              ].map((card, i) => (
-                <m.div key={card.label}
-                  initial={{ opacity: 0, y: 16, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ delay: 0.12 + i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  className="relative overflow-hidden rounded-[22px] p-5"
-                  style={{
-                    background: 'var(--bg-card)',
-                    border: `1px solid ${card.from}20`,
-                    boxShadow: 'var(--shadow-xs)',
-                  }}>
-                  <div className="relative">
-                    <div className="mb-3 flex items-center justify-between">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-[12px]"
-                        style={{ background: `linear-gradient(135deg, ${card.from}, ${card.to})`, boxShadow: `0 4px 14px ${card.glow}` }}>
-                        {card.icon}
-                      </div>
-                      <span className="flex items-center gap-1 text-[10px] font-[700] px-2 py-1 rounded-[6px]"
-                        style={{ background: `${card.from}12`, color: card.from }}>
-                        {card.subIcon}{card.sub}
-                      </span>
-                    </div>
-                    <p className="text-[26px] font-[860] tracking-[-0.03em] text-gray-900">
-                      {summary ? <AnimatedCounter value={card.value} prefix={card.prefix === '₹' ? '₹' : ''} /> : '—'}
-                    </p>
-                    <p className="mt-1 text-[11px] font-[600] text-slate-500 uppercase tracking-wider">{card.label}</p>
-                  </div>
-                </m.div>
-              ))}
+              className="mb-5">
+              <ClientKpiStrip
+                summary={summary ? {
+                  total: summary.total ?? 0, revenue: summary.revenue ?? 0,
+                  paid: summary.paid ?? 0, balance: summary.balance ?? 0,
+                } : null}
+                activeCount={activeCount}
+                renderValue={(value, prefix) => <AnimatedCounter value={value} prefix={prefix} />}
+              />
             </m.div>
 
             {/* ── CLIENT LIST ── */}
