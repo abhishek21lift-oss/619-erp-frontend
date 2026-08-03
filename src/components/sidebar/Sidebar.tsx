@@ -47,6 +47,28 @@ const ICON_MAP: Record<string, React.ElementType> = {
 
 // ── Design constants ──────────────────────────────────────────────────────────
 const BRAND = '#7fb4ff';
+
+/**
+ * The drawer footer's foregrounds, and the ground they sit on.
+ *
+ * Exported so the contrast can be asserted rather than eyeballed: these three
+ * controls were at 2.59:1, 2.59:1 and 1.09:1 against DRAWER_DARKEST, which is
+ * why they were reported as invisible. sidebar-footer-contrast.test.ts
+ * recomputes every pairing and fails below 4.5:1, so changing one of these to
+ * something prettier cannot quietly put them back.
+ */
+export const FOOTER_COLORS = {
+  /** The bottom of the drawer's gradient — the worst case for a light fore. */
+  drawerGround: '#0050AD',
+  /** Translucent white fills the Profile and Settings buttons sit on. */
+  neutralFill: 'rgba(255,255,255,0.10)',
+  neutralFore: 'rgba(255,255,255,0.92)',
+  /** Red fails on blue: #EF4444 is 2.03:1 here, #FCA5A5 only 4.02:1. */
+  dangerFill: 'rgba(239,68,68,0.22)',
+  dangerFore: '#FECACA',
+  /** Sits directly on the drawer, not on a fill. */
+  emailFore: 'rgba(255,255,255,0.72)',
+} as const;
 const THEME = {
   brand:        BRAND,
   iconBg:       'linear-gradient(135deg, #7fb4ff 0%, #3b8df5 100%)',
@@ -444,7 +466,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
             <p className="truncate text-[12.5px] font-bold leading-tight" style={{ color: 'rgba(255,255,255,0.9)' }}>
               {user?.name || 'User'}
             </p>
-            <p className="truncate text-[10px] leading-tight mt-0.5" style={{ color: 'rgba(255,255,255,0.36)' }}>
+            <p className="truncate text-[10.5px] leading-tight mt-0.5" style={{ color: 'rgba(255,255,255,0.72)' }}>
               {user?.email || user?.role || 'member'}
             </p>
           </div>
@@ -460,38 +482,60 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
           </span>
         </div>
 
-        {/* Quick actions: Profile | Settings | Logout */}
+        {/*
+          Profile | Settings | Logout.
+
+          These were unreadable, and measurably so. The drawer's background is
+          a gradient ending at #0050AD, and these three sat on the blue end at
+          rgba(255,255,255,0.42) and rgba(239,68,68,0.48) — 2.59:1 and 1.09:1
+          against it, where AA wants 4.5:1. The logout icon was a ghost.
+
+          The compounding mistake was recovering contrast on onMouseEnter.
+          This drawer is the MOBILE navigation; a touch device never fires
+          hover, so on the only screen these render, they sat at their faintest
+          value permanently. Hover is now a CSS enhancement over a base that is
+          already legible, rather than the only way to read the control.
+
+          Red is the other lesson: it does not survive a saturated blue ground.
+          #EF4444 manages 2.03:1 here and even #FCA5A5 only 4.02:1. red[200] is
+          the first step that clears AA at 5.28:1, so the icon is pale and the
+          destructive signal comes from the red-tinted fill and border instead.
+
+          44px targets, set in pixels — a 14px root makes every rem-based size
+          land at 87.5% of its name. These were about 24px tall.
+        */}
         <div className="flex items-center gap-1.5">
           <Link
             href="/settings/profile"
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-[6px] text-[10.5px] font-medium transition-all duration-150"
-            style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.42)' }}
-            onMouseEnter={e => { const t = e.currentTarget as HTMLElement; t.style.background = 'rgba(255,255,255,0.09)'; t.style.color = 'rgba(255,255,255,0.75)'; }}
-            onMouseLeave={e => { const t = e.currentTarget as HTMLElement; t.style.background = 'rgba(255,255,255,0.05)'; t.style.color = 'rgba(255,255,255,0.42)'; }}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg text-[12px] font-[600] text-white/[0.92] transition-colors duration-150 hover:bg-white/[0.18] hover:text-white"
+            style={{ background: 'rgba(255,255,255,0.10)', height: 44 }}
           >
-            <User size={11} strokeWidth={1.5} />
+            <User size={14} strokeWidth={1.9} />
             Profile
           </Link>
           <Link
             href="/settings"
             title="Settings"
-            className="flex items-center justify-center rounded-lg p-[6px] transition-all duration-150"
-            style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.42)' }}
-            onMouseEnter={e => { const t = e.currentTarget as HTMLElement; t.style.background = 'rgba(255,255,255,0.09)'; t.style.color = 'rgba(255,255,255,0.75)'; }}
-            onMouseLeave={e => { const t = e.currentTarget as HTMLElement; t.style.background = 'rgba(255,255,255,0.05)'; t.style.color = 'rgba(255,255,255,0.42)'; }}
+            aria-label="Settings"
+            className="flex items-center justify-center rounded-lg text-white/[0.92] transition-colors duration-150 hover:bg-white/[0.18] hover:text-white"
+            style={{ background: 'rgba(255,255,255,0.10)', height: 44, width: 44 }}
           >
-            <Settings size={11} strokeWidth={1.5} />
+            <Settings size={16} strokeWidth={1.9} />
           </Link>
           <button
             type="button"
             onClick={handleLogout}
             aria-label="Logout"
-            className="flex items-center justify-center rounded-lg p-[6px] transition-all duration-150"
-            style={{ background: 'rgba(239,68,68,0.07)', color: 'rgba(239,68,68,0.48)' }}
-            onMouseEnter={e => { const t = e.currentTarget as HTMLElement; t.style.background = 'rgba(239,68,68,0.14)'; t.style.color = '#f87171'; }}
-            onMouseLeave={e => { const t = e.currentTarget as HTMLElement; t.style.background = 'rgba(239,68,68,0.07)'; t.style.color = 'rgba(239,68,68,0.48)'; }}
+            className="flex items-center justify-center rounded-lg transition-colors duration-150 hover:bg-[rgba(239,68,68,0.34)]"
+            style={{
+              background: 'rgba(239,68,68,0.22)',
+              border: '1px solid rgba(254,202,202,0.34)',
+              color: '#FECACA',
+              height: 44,
+              width: 44,
+            }}
           >
-            <LogOut size={11} strokeWidth={1.5} />
+            <LogOut size={16} strokeWidth={1.9} />
           </button>
         </div>
       </div>
