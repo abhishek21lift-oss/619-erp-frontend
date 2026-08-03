@@ -21,6 +21,7 @@ import { useState, useEffect, useRef, useCallback, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import PublicNav, { PUBLIC_NAV_CLEARANCE } from '@/components/PublicNav';
 import BrandLogoWide from '@/components/BrandLogoWide';
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
@@ -344,26 +345,20 @@ export default function LoginPage() {
         // Guarantee the logo clears the status bar / notch even when
         // env(safe-area-inset-top) resolves to 0 (some in-app browsers /
         // non-cover viewports): floor the notch reserve at 2.75rem.
-        paddingTop: 'calc(max(env(safe-area-inset-top), 2.75rem) + 1.25rem)',
+        paddingTop: PUBLIC_NAV_CLEARANCE,
         paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)',
         paddingLeft: 'max(1.25rem, env(safe-area-inset-left))',
         paddingRight: 'max(1.25rem, env(safe-area-inset-right))',
       }}
     >
+      <PublicNav action="start-free" />
+
       {/* ambient wash */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -right-24 -top-24 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${GOLD}18, transparent 68%)` }} />
         <div className="absolute -bottom-28 -left-20 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${MAROON}10, transparent 68%)` }} />
       </div>
 
-      {/* Back to home */}
-      <Link
-        href="/"
-        className="absolute left-4 inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-[12.5px] font-[600] backdrop-blur transition-colors hover:bg-white"
-        style={{ color: MUTE, border: `1px solid ${LINE}`, top: 'calc(max(env(safe-area-inset-top), 2.75rem) + 0.5rem)' }}
-      >
-        <ArrowLeft size={13} /> Home
-      </Link>
 
       <m.div
         initial={reduce ? false : { opacity: 0, y: 16 }}
