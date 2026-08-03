@@ -20,3 +20,30 @@ if (typeof window !== 'undefined' && !window.localStorage) {
   };
   Object.defineProperty(window, 'localStorage', { value: fake, writable: true, configurable: true });
 }
+
+// jsdom implements no layout, so it ships no ResizeObserver. Components that
+// measure themselves — the client tab strip, the login page's Google button —
+// construct one unconditionally, because every browser they run in has it.
+// Without this they throw during layout effects and the failure looks like a
+// component bug rather than a missing test global.
+//
+// It observes nothing (there is nothing to observe) but does fire the callback
+// once on observe(), which is what a real ResizeObserver does and what a test
+// stubbing element dimensions needs in order to see them read.
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class {
+    private cb: ResizeObserverCallback;
+    constructor(cb: ResizeObserverCallback) { this.cb = cb; }
+    observe() { this.cb([], this as unknown as ResizeObserver); }
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+}
+
+// Same reason: no layout means no scrolling, so jsdom leaves Element.scrollTo
+// unimplemented. Recording the call is enough — a test asserting that a
+// far-right tab gets scrolled into view cares that it was asked for, not that
+// pixels moved.
+if (typeof Element !== 'undefined' && !Element.prototype.scrollTo) {
+  Element.prototype.scrollTo = function scrollTo() { /* no layout to scroll */ };
+}
