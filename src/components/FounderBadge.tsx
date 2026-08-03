@@ -15,6 +15,17 @@
  * That last part is the important one: `number` is the whole gate. A studio
  * that is not a founder renders null, not a dimmed badge, not a placeholder.
  *
+ * ── The number gates the badge; it is not printed on it ────────────────────
+ *
+ * The badge used to read "Founder #7/20". It now reads "Founder". The number
+ * is still required, still validated against 1..20, and still the only thing
+ * that decides whether anything renders — it just is not shown.
+ *
+ * Which means the prop is doing the same job it always did. Dropping it and
+ * taking a boolean instead would let `isFounder` be computed anywhere by
+ * anything; requiring the allocated number keeps the badge tied to a row the
+ * backend wrote under a lock.
+ *
  * ── Why gold, when the app has five colours ────────────────────────────────
  *
  * Because the five mean things and this must not. See the note beside
@@ -35,24 +46,32 @@
  * worth making. CSS keyframes are handed to the compositor and forgotten.
  *
  * `prefers-reduced-motion` stops all three. The badge stays gold, keeps its
- * number, and simply holds still — motion is the decoration, not the message.
+ * crown and its wording, and simply holds still — motion is the decoration,
+ * not the message.
  */
 
 import { useId } from 'react';
 import { founderGold } from '@/lib/palette';
 
-/** The cap. Shown as the denominator, and the reason the badge means anything. */
+/**
+ * The cap. No longer printed on the badge, but still what makes it mean
+ * anything — and still the upper bound the gate below validates against.
+ */
 export const FOUNDER_LIMIT = 20;
 
 export interface FounderBadgeProps {
   /** 1–20. Anything else renders nothing — this is the entire eligibility gate. */
   number?: number | null;
   /**
-   * `full` — crown, "Founder", number. For headers and profile.
-   * `compact` — crown and number. For a collapsed sidebar or a dense table row.
-   * `crown` — the mark alone, with the text in its accessible name.
+   * `full` — crown and "Founder".
+   * `crown` — the mark alone, with the wording in its accessible name.
+   *
+   * There used to be a `compact` variant that dropped the word and kept
+   * "#4/20", for the sidebar where the studio name is clamped to 160px. With
+   * the number gone it rendered exactly what `full` renders, so it is gone
+   * too — "Founder" is short enough for the place compact existed to serve.
    */
-  variant?: 'full' | 'compact' | 'crown';
+  variant?: 'full' | 'crown';
   /** Scales the whole badge from its font size. */
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -118,7 +137,9 @@ export default function FounderBadge({
   if (number < 1 || number > FOUNDER_LIMIT) return null;
 
   const s = SIZES[size];
-  const label = `Founder number ${number} of ${FOUNDER_LIMIT}`;
+  // The accessible name matches the visible word rather than announcing a
+  // number the badge no longer shows. The tooltip carries the rest.
+  const label = 'Founder';
 
   return (
     <span
@@ -169,7 +190,7 @@ export default function FounderBadge({
             color: 'transparent',
           }}
         >
-          {variant === 'full' ? `Founder #${number}/${FOUNDER_LIMIT}` : `#${number}/${FOUNDER_LIMIT}`}
+          Founder
         </span>
       )}
 

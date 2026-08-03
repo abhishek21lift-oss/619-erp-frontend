@@ -23,7 +23,21 @@ function badge() {
 describe('who sees the badge', () => {
   it('renders for a founder', () => {
     render(<FounderBadge number={7} />);
-    expect(screen.getByText(`Founder #7/${FOUNDER_LIMIT}`)).toBeInTheDocument();
+    expect(screen.getByText('Founder')).toBeInTheDocument();
+  });
+
+  it('does not print the number, or a hash, anywhere', () => {
+    // The number still gates the badge and is still validated against 1..20 —
+    // it is simply not shown. Nothing visible, and nothing in the accessible
+    // name either, or a screen reader would announce what sighted users can't
+    // see.
+    render(<FounderBadge number={7} />);
+    // textContent would swallow the <style jsx> block, whose CSS is full of
+    // digits; only the visible text nodes are the claim here.
+    const el = badge()!.cloneNode(true) as HTMLElement;
+    el.querySelectorAll('style').forEach((n) => n.remove());
+    expect(el.textContent?.trim()).toBe('Founder');
+    expect(badge()!.getAttribute('aria-label')).not.toMatch(/#|\bnumber\b/i);
   });
 
   it.each([
@@ -51,14 +65,15 @@ describe('who sees the badge', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders the first and last valid numbers', () => {
-    // Boundaries, because an off-by-one here silently excludes founder #1 or
-    // founder #20 — the two people most likely to notice.
+  it('renders for the first and last valid numbers', () => {
+    // Boundaries, because an off-by-one here silently excludes founder 1 or
+    // founder 20 — the two people most likely to notice. The badge reads the
+    // same for both; what is being checked is that both get one.
     const { unmount } = render(<FounderBadge number={1} />);
-    expect(screen.getByText(`Founder #1/${FOUNDER_LIMIT}`)).toBeInTheDocument();
+    expect(screen.getByText('Founder')).toBeInTheDocument();
     unmount();
     render(<FounderBadge number={FOUNDER_LIMIT} />);
-    expect(screen.getByText(`Founder #${FOUNDER_LIMIT}/${FOUNDER_LIMIT}`)).toBeInTheDocument();
+    expect(screen.getByText('Founder')).toBeInTheDocument();
   });
 });
 
@@ -78,37 +93,32 @@ describe('what it says', () => {
     );
   });
 
-  it('carries the number and the promise in its accessible name', () => {
-    // title alone is unreliable for screen readers, and the number is the
-    // whole content — a bare "image" tells somebody nothing.
+  it('carries the wording and the promise in its accessible name', () => {
+    // title alone is unreliable for screen readers, and "image" on its own
+    // tells somebody nothing.
     render(<FounderBadge number={12} />);
     const name = badge()!.getAttribute('aria-label')!;
-    expect(name).toContain('Founder number 12 of 20');
+    expect(name).toContain('Founder');
     expect(name).toContain(FOUNDER_TOOLTIP);
   });
 
-  it('states a cap of 20, matching what was sold', () => {
+  it('states a cap of 20 in the tooltip, matching what was sold', () => {
+    // The badge no longer shows "/20", so the tooltip is the only place the
+    // scarcity is stated — which is the thing that makes it worth having.
     expect(FOUNDER_LIMIT).toBe(20);
     expect(FOUNDER_TOOLTIP).toContain('only 20');
   });
 });
 
 describe('variants', () => {
-  it('compact drops the word but keeps the number', () => {
-    // For the sidebar, where the studio name is already clamped to 160px.
-    render(<FounderBadge number={4} variant="compact" />);
-    expect(screen.getByText(`#4/${FOUNDER_LIMIT}`)).toBeInTheDocument();
-    expect(screen.queryByText(/Founder #/)).toBeNull();
-  });
-
   it('crown keeps the meaning in the accessible name when the text is gone', () => {
     render(<FounderBadge number={9} variant="crown" />);
-    expect(screen.queryByText(/#9/)).toBeNull();
-    expect(badge()!.getAttribute('aria-label')).toContain('Founder number 9 of 20');
+    expect(screen.queryByText('Founder')).toBeNull();
+    expect(badge()!.getAttribute('aria-label')).toContain('Founder');
   });
 
   it('still renders nothing for a non-founder in every variant', () => {
-    for (const variant of ['full', 'compact', 'crown'] as const) {
+    for (const variant of ['full', 'crown'] as const) {
       const { container, unmount } = render(<FounderBadge number={null} variant={variant} />);
       expect(container).toBeEmptyDOMElement();
       unmount();
