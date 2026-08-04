@@ -1884,6 +1884,63 @@ export interface SystemAlertList {
   stats: SystemAlertStats;
 }
 
+// ── AI Guardian ───────────────────────────────────────────────────────────────
+
+/** One evidence line. `detail` is the readable sentence; `key` identifies the
+ *  signal so the UI can be stable across wording changes. */
+export interface GuardianEvidence {
+  key: string;
+  detail: string;
+}
+
+export interface GuardianFinding {
+  id: string;
+  title: string;
+  severity: 'critical' | 'warning' | 'info';
+  /** The deterministic diagnosis. This — not any AI narration — is the product. */
+  conclusion: string;
+  /** 0..1, capped below certainty. A summary of `evidence`, which is shown too. */
+  confidence: number;
+  evidence: {
+    /** Signals that had to fire for the finding to exist at all. */
+    triggers: GuardianEvidence[];
+    /** Corroborating signals that fired. */
+    supporting: GuardianEvidence[];
+    /** Checked, and not true. */
+    absent: GuardianEvidence[];
+    /** Could NOT be checked — a different claim from `absent`, and the reason
+     *  the confidence is lower than it would otherwise be. */
+    unchecked: GuardianEvidence[];
+  };
+  /** Command Center command names. Advisory: the Guardian never runs anything. */
+  recommend: string[];
+  /** Written next step when no command can help. */
+  advice: string | null;
+  /** True when One Click Recovery applies to this finding. */
+  recovery: boolean;
+  sources: string[];
+}
+
+export interface GuardianReport {
+  findings: GuardianFinding[];
+  checked_at: string;
+  rules_evaluated: number;
+  /** Set when there are no findings, so "ran and matched nothing" is
+   *  distinguishable from "did not run". */
+  note: string | null;
+}
+
+export interface GuardianNarration {
+  finding_id: string;
+  /** Null when the model was unavailable — the finding still stands without it. */
+  narration: string | null;
+  model?: string | null;
+  used_fallback?: boolean | null;
+  /** Present so the UI can label machine-written text as such. */
+  generated?: boolean;
+  unavailable_reason?: string;
+}
+
 export type SystemHealth = {
   checked_at: string;
   check_duration_ms: number;

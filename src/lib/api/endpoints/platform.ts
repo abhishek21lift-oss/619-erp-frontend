@@ -20,7 +20,7 @@ import type {
   SubscriptionInvoice, SubscriptionMetrics, SupportOverview, SupportTicket, SystemHealth,
   TicketMessage, TicketPriority, TicketStatus, UpiRejectReason,
   CommandCenterSnapshot, CommandCenterCommand, CommandCenterRunResult, CommandCenterDryRun,
-  SystemAlert, SystemAlertList,
+  SystemAlert, SystemAlertList, GuardianReport, GuardianNarration,
 } from '../types';
 
 // The `admin` namespace held exportDatabase() and backupDatabase(). Both are
@@ -250,6 +250,23 @@ export const superAdmin = {
   resolveAlert: (id: string) =>
     http<{ data: SystemAlert }>(
       `/api/super-admin/command-center/alerts/${encodeURIComponent(id)}/resolve`,
+      { method: 'POST' },
+    ),
+
+  /** AI Guardian. Deterministic correlations across cards — no AI is called on
+   *  this path, so it is safe to poll. */
+  commandCenterGuardian: (opts: { fresh?: boolean } = {}) =>
+    http<{ data: GuardianReport }>(
+      `/api/super-admin/command-center/guardian${opts.fresh ? '?fresh=1' : ''}`,
+    ),
+
+  /** Narrate ONE finding. A POST, and separate from the read above, because it
+   *  costs money: narrating on every poll would spend tokens restating text
+   *  already on screen. The model is given the finding and its evidence, never
+   *  the raw metrics, and cannot change the diagnosis or the confidence. */
+  explainGuardianFinding: (id: string) =>
+    http<{ data: GuardianNarration }>(
+      `/api/super-admin/command-center/guardian/${encodeURIComponent(id)}/explain`,
       { method: 'POST' },
     ),
 

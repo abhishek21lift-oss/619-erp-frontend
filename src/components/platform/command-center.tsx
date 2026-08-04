@@ -38,6 +38,7 @@ import type { CommandCenterCard, CommandCenterSnapshot, CommandCenterStatus } fr
 import { Center, ErrorState } from '@/app/platform/_shared/ui';
 import CommandPanel from './command-panel';
 import AlertCenter from './alert-center';
+import Guardian from './guardian';
 
 const POLL_MS = 5_000;
 
@@ -377,6 +378,12 @@ export default function CommandCenterTab() {
           the second question is the only one being asked. When nothing is
           wrong it collapses to one quiet line, so it costs no space. */}
       <AlertCenter onChanged={() => load(true)} />
+
+      {/* Between the alerts and the cards, deliberately. An alert says WHAT is
+          wrong; the Guardian says what it MEANS across several cards; the cards
+          are the raw state you fall back to when neither of the two above
+          matches what you are seeing. That is also the order of trust. */}
+      <Guardian />
 
       <div className="grid gap-3 sm:grid-cols-2">
         {sorted.map((c, i) => <StatusCard key={c.name} card={c} index={i} />)}
