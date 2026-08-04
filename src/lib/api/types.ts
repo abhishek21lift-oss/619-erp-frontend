@@ -1770,6 +1770,36 @@ export type AuditQuery = {
   from?: string; to?: string; q?: string; limit?: number; offset?: number;
 };
 
+// ── Command Center ────────────────────────────────────────────────────────────
+/** How a card is graded. `unavailable` is a gap in observability, not an
+ *  outage — a probe that cannot run (no Docker socket, no REDIS_URL) rather
+ *  than one that ran and found trouble. It deliberately ranks BELOW `warning`
+ *  so an un-wired dependency does not paint the console amber forever. */
+export type CommandCenterStatus =
+  | 'healthy' | 'warning' | 'critical' | 'unavailable' | 'timeout';
+
+/** One card. Every collector returns this shape, including on failure, so the
+ *  client never has to special-case a missing card. */
+export interface CommandCenterCard {
+  name: string;
+  status: CommandCenterStatus;
+  /** Collector-specific payload. Typed per card at the render site. */
+  data: unknown;
+  latency_ms: number | null;
+  /** Why the card is not green, in words an operator can act on. */
+  reason: string | null;
+  checked_at: string;
+  /** Served from the per-collector TTL cache rather than freshly probed. */
+  cached?: boolean;
+}
+
+export interface CommandCenterSnapshot {
+  status: CommandCenterStatus;
+  collected_at: string;
+  duration_ms: number;
+  cards: Record<string, CommandCenterCard>;
+}
+
 export type SystemHealth = {
   checked_at: string;
   check_duration_ms: number;

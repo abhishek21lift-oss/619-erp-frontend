@@ -19,6 +19,7 @@ import type {
   StorageTrendPoint, SubCheckoutQueueRow, SubCheckoutStats, SubDetail, SubKpis, SubStudio,
   SubscriptionInvoice, SubscriptionMetrics, SupportOverview, SupportTicket, SystemHealth,
   TicketMessage, TicketPriority, TicketStatus, UpiRejectReason,
+  CommandCenterSnapshot,
 } from '../types';
 
 // The `admin` namespace held exportDatabase() and backupDatabase(). Both are
@@ -182,6 +183,19 @@ export const superAdmin = {
     return `${apiBase()}/api/super-admin/audit/export${q ? `?${q}` : ''}`;
   },
   systemHealth: () => http<SystemHealth>('/api/super-admin/system-health'),
+
+  /** Command Center. One call returns every card; a card that failed reports
+   *  its own status inside the payload rather than failing the request, so this
+   *  never rejects just because one dependency is down. */
+  commandCenter: (opts: { cards?: string[]; fresh?: boolean } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.cards?.length) qs.set('cards', opts.cards.join(','));
+    if (opts.fresh) qs.set('fresh', '1');
+    const q = qs.toString();
+    return http<{ data: CommandCenterSnapshot }>(
+      `/api/super-admin/command-center/snapshot${q ? `?${q}` : ''}`,
+    );
+  },
 
   // ── Billing Centre ──────────────────────────────────────────────────────
   billingSettings: () => http<{ data: PlatformBillingSettings }>('/api/super-admin/billing/settings'),

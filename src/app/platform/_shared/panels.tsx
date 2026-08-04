@@ -12,8 +12,13 @@ import { PanelSkeleton } from './ui';
 export const AuditCentre = dynamic(() => import('@/components/platform/audit-centre'), {
   loading: () => <PanelSkeleton label="Loading audit trail…" />,
 });
-export const SystemHealthPanel = dynamic(() => import('@/components/platform/system-health'), {
-  loading: () => <PanelSkeleton label="Checking system health…" />,
+// The Health tab now renders the Command Center: the same database/process/
+// queue figures the old system-health panel showed, plus redis, http latency,
+// ai, security posture and smtp, all from the collector snapshot. Two health
+// screens reading two endpoints is exactly the drift the audit flagged, so the
+// old panel was removed rather than kept alongside.
+export const CommandCenterPanel = dynamic(() => import('@/components/platform/command-center'), {
+  loading: () => <PanelSkeleton label="Collecting system state…" />,
 });
 export const InvoicesPanel = dynamic(() => import('@/components/platform/invoices'), {
   loading: () => <PanelSkeleton label="Loading invoices…" />,

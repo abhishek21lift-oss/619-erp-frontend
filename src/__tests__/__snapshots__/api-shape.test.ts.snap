@@ -401,6 +401,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "superAdmin.changeQuote → /api/super-admin/organizations/",
   "superAdmin.clearOrgAiLimit → /api/super-admin/organizations/",
   "superAdmin.clearOrgFeature → /api/super-admin/organizations/",
+  "superAdmin.commandCenter → /api/super-admin/command-center/snapshot",
   "superAdmin.couponRedemptions → /api/super-admin/coupons/",
   "superAdmin.createAnnouncement → /api/super-admin/announcements",
   "superAdmin.createCoupon → /api/super-admin/coupons",

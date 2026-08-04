@@ -20,7 +20,7 @@ import { getImpersonation } from '@/lib/http';
 import { CommandBar } from './_shared/CommandBar';
 import {
   AiControlCentre, AnalyticsPanel, AuditCentre, FeatureManager, InvitationsPanel,
-  NotificationCentre, SecurityCentre, StorageCentre, SupportCentre, SystemHealthPanel,
+  NotificationCentre, SecurityCentre, StorageCentre, SupportCentre, CommandCenterPanel,
 } from './_shared/panels';
 import { FINANCE_DEEP_LINKS, normalizeTab } from './_shared/types';
 import type { FinanceSubTab, NavOpts, Tab } from './_shared/types';
@@ -95,7 +95,7 @@ function PlatformContent() {
     { id: 'audit', label: 'Audit', icon: <ScrollText size={15} /> },
     { id: 'security', label: 'Security', icon: <ShieldAlert size={15} /> },
     { id: 'storage', label: 'Storage', icon: <HardDrive size={15} /> },
-    { id: 'health', label: 'Health', icon: <HeartPulse size={15} /> },
+    { id: 'health', label: 'Command Center', icon: <HeartPulse size={15} /> },
   ];
 
   const onNavigate = (t: Tab, opts?: NavOpts) => {
@@ -156,7 +156,7 @@ function PlatformContent() {
           {tab === 'activity' && <ActivityTab />}
           {tab === 'audit' && <AuditCentre />}
           {tab === 'storage' && <StorageCentre />}
-          {tab === 'health' && <SystemHealthPanel />}
+          {tab === 'health' && <CommandCenterPanel />}
         </div>
       </div>
 
