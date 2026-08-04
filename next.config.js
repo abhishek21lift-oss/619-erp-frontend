@@ -96,7 +96,9 @@ const nextConfig = {
 
     if (!backendUrl) {
       throw new Error(
-        'NEXT_PUBLIC_API_URL is not set. Set it in Vercel project settings or .env.local'
+        'NEXT_PUBLIC_API_URL is not set. Set it as a build arg in the compose file '
+        + 'on the VPS (see infra/nginx/README.md in the backend repo), or in .env.local '
+        + 'for local development.'
       );
     }
 

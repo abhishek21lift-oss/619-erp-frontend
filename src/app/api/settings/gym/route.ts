@@ -10,7 +10,7 @@ import { proxyToBackend } from '@/lib/proxy';
 //
 // It was not free, either. Verifying a signature locally meant the frontend
 // needed JWT_SECRET — the *same symmetric secret the backend signs with* —
-// copied into Vercel, so anyone with access to the frontend's environment
+// copied into the frontend's environment, so anyone with access to it
 // could mint valid admin tokens. And if the variable was missing, this route
 // answered 500 "Server misconfiguration" rather than degrading: the gym
 // settings on the check-in page silently failed to load.

@@ -14,7 +14,8 @@
  * next.config.js headers() can, and applies to rewritten paths too.
  *
  * There is exactly one place that sets these. Do not re-add them to proxy.ts
- * or vercel.json — a middleware headers.set() silently wins over this file and
+ * (there is no vercel.json — the app is served from the VPS, not Vercel) — a
+ * middleware headers.set() silently wins over this file and
  * leaves a second copy to rot, which is how the two drifted before.
  */
 

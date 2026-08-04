@@ -22,8 +22,13 @@ export function apiBase(): string {
 
   const hostname = window.location.hostname;
 
-  // Non-localhost hostname (e.g. the live Vercel domain) — same-origin
-  // fetch works, return '' (relative URLs).
+  // Any non-localhost hostname is the deployed app, served from the VPS behind
+  // nginx. nginx routes myptstudio.com to the frontend container and that
+  // container's Next.js rewrite forwards /api/* to the backend, so a
+  // same-origin relative URL works and needs no CORS.
+  //
+  // Note this path CANNOT carry a WebSocket: the Next.js rewrite hop does not
+  // proxy an Upgrade. See wsBase() below.
   if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
     return '';
   }
@@ -37,6 +42,44 @@ export function apiBase(): string {
     );
   }
   return raw;
+}
+
+/**
+ * The WebSocket origin, derived from `NEXT_PUBLIC_API_URL`.
+ *
+ * ── Why this is not simply `apiBase()` ──────────────────────────────────────
+ *
+ * Ordinary API calls go same-origin and are forwarded by the frontend
+ * container's Next.js rewrite. That hop is an HTTP proxy and does NOT carry a
+ * WebSocket Upgrade, so `wss://myptstudio.com/...` would be dropped before it
+ * ever reached nginx. A WebSocket has to address the backend directly:
+ *
+ *   API calls   browser → nginx → frontend container → rewrite → backend
+ *   WebSocket   browser → nginx ────────────────────────────────→ backend
+ *
+ * Both hostnames resolve to the same VPS; nginx routes on the Host header.
+ *
+ * ── One source of truth ─────────────────────────────────────────────────────
+ *
+ * The scheme is swapped rather than read from a second variable, so a domain
+ * change is one env edit and the two can never disagree. https → wss, http →
+ * ws, which also means a plaintext dev backend does not silently get asked for
+ * a secure socket.
+ *
+ * Returns '' when nothing is configured; callers treat that as "no realtime
+ * transport available" and stay on polling rather than guessing a URL.
+ */
+export function wsBase(): string {
+  const raw = (process.env.NEXT_PUBLIC_API_URL ?? '').trim().replace(/\/+$/, '');
+  if (!raw) return '';
+  if (raw.startsWith('https://')) return `wss://${raw.slice('https://'.length)}`;
+  if (raw.startsWith('http://')) return `ws://${raw.slice('http://'.length)}`;
+  // A protocol-relative or bare host. Infer from how the page itself was
+  // loaded: a secure page cannot open an insecure socket, and browsers block it.
+  if (typeof window !== 'undefined') {
+    return `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${raw.replace(/^\/\//, '')}`;
+  }
+  return '';
 }
 
 // ──────────────────────────────────────────────────────────────────────
