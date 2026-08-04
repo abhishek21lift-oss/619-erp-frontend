@@ -21,10 +21,11 @@ import type {
   TicketMessage, TicketPriority, TicketStatus, UpiRejectReason,
 } from '../types';
 
-export const admin = {
-  exportDatabase: () => http<{ message?: string; url?: string }>('/api/admin/export-database'),
-  backupDatabase: () => http<{ message?: string }>('/api/admin/backup-database', { method: 'POST' }),
-};
+// The `admin` namespace held exportDatabase() and backupDatabase(). Both are
+// gone: neither had a backend route — /api/admin serves only the four reset
+// operations — and nothing in the app called either, so they were two ways to
+// wire a button straight to a 404. If database export/backup is wanted, add it
+// as a feature with a route behind it, not as a client stub.
 
 // ── Platform Super Admin (multi-tenant SaaS) ──────────────────────────────
 // Backed by /api/super-admin/* — reachable only by role='super_admin'.

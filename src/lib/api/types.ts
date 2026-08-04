@@ -650,7 +650,8 @@ export type ClearanceApprovalStatus = 'pending' | 'approved' | 'rejected';
 
 export interface MedicalClearance {
   id?: string;
-  form_id?: string;
+  /** Column is `parq_form_id`; the route returns the row with SELECT *. */
+  parq_form_id?: string;
   doctor_name: string;
   hospital: string;
   clearance_date: string;
@@ -672,7 +673,8 @@ export interface ConsentCheckboxes {
 
 export interface ConsentRecord {
   id?: string;
-  form_id?: string;
+  /** Column is `parq_form_id`; the route returns the row with SELECT *. */
+  parq_form_id?: string;
   consent_checkboxes: ConsentCheckboxes;
   client_signature: string;
   trainer_signature: string;
@@ -685,11 +687,13 @@ export type ParqDocumentType = 'medical_report' | 'medical_certificate' | 'other
 
 export interface ParqDocument {
   id: string;
-  form_id?: string;
+  /** Column is `parq_form_id`; the route returns the row with SELECT *. */
+  parq_form_id?: string;
   doc_type: ParqDocumentType;
   file_url: string;
   file_name?: string;
-  uploaded_at?: string;
+  /** Column is `created_at`; there is no `uploaded_at`. */
+  created_at?: string;
 }
 
 export interface ParqGateStatus {

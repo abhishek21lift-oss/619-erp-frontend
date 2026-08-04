@@ -16,8 +16,9 @@ import type {
 export const reports = {
   revenue: (params?: Record<string, string>) =>
     http(`/api/reports/revenue${buildQs(params)}`),
-  members: (params?: Record<string, string>) =>
-    http(`/api/reports/members${buildQs(params)}`),
+  // members() removed: /api/reports/members does not exist — reports.js serves
+  // monthly, revenue, dues, trainers, trainer-summary and revenue-target — and
+  // nothing called it.
   monthly: (year: number | string) =>
     http<unknown[]>(`/api/reports/monthly?year=${year}`),
   dues: () =>
