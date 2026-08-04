@@ -19,7 +19,7 @@ import type {
   StorageTrendPoint, SubCheckoutQueueRow, SubCheckoutStats, SubDetail, SubKpis, SubStudio,
   SubscriptionInvoice, SubscriptionMetrics, SupportOverview, SupportTicket, SystemHealth,
   TicketMessage, TicketPriority, TicketStatus, UpiRejectReason,
-  CommandCenterSnapshot,
+  CommandCenterSnapshot, CommandCenterCommand, CommandCenterRunResult, CommandCenterDryRun,
 } from '../types';
 
 // The `admin` namespace held exportDatabase() and backupDatabase(). Both are
@@ -196,6 +196,33 @@ export const superAdmin = {
       `/api/super-admin/command-center/snapshot${q ? `?${q}` : ''}`,
     );
   },
+
+  /** The server's allow-list of operational commands, including the ones that
+   *  cannot run here — each carries its own `unavailable_reason`. The client
+   *  keeps no list of its own, so what it gates and what the server enforces
+   *  cannot drift apart. */
+  commandCenterCommands: () =>
+    http<{ data: { commands: CommandCenterCommand[] } }>(
+      '/api/super-admin/command-center/commands',
+    ),
+
+  /**
+   * Run one allow-listed command.
+   *
+   * The failure statuses are meaningful and callers are expected to branch on
+   * them, since each needs a different response from the UI: 428 means a typed
+   * confirmation is required (re-send `confirm` equal to the command name), 429
+   * means the command is on cooldown, 503 means the capability is absent on
+   * this deployment. They arrive as `ApiError.status`.
+   */
+  runCommandCenterCommand: (
+    name: string,
+    body: { queue?: string; confirm?: string; dryRun?: boolean } = {},
+  ) =>
+    http<{ data: CommandCenterRunResult | CommandCenterDryRun }>(
+      `/api/super-admin/command-center/commands/${encodeURIComponent(name)}`,
+      { method: 'POST', body },
+    ),
 
   // ── Billing Centre ──────────────────────────────────────────────────────
   billingSettings: () => http<{ data: PlatformBillingSettings }>('/api/super-admin/billing/settings'),

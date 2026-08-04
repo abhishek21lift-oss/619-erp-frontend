@@ -1800,6 +1800,45 @@ export interface CommandCenterSnapshot {
   cards: Record<string, CommandCenterCard>;
 }
 
+/** One entry in the server's allow-list of operational commands.
+ *
+ *  The UI must not keep its own idea of which commands exist, which are
+ *  destructive, or which queues are valid — all three come from here, so the
+ *  gate the client renders and the gate the server enforces cannot drift. */
+export interface CommandCenterCommand {
+  name: string;
+  label: string;
+  description: string;
+  /** What running it does, in plain words. Shown in the confirmation prompt. */
+  blast_radius: string;
+  /** Requires a typed confirmation equal to `name`. */
+  destructive: boolean;
+  accepts_queue: boolean;
+  /** The valid queue names, or null when the command takes no queue. */
+  queues: string[] | null;
+  /** Non-null means the command cannot run on this deployment, and why. */
+  unavailable_reason: string | null;
+  cooldown_ms: number;
+}
+
+export interface CommandCenterRunResult {
+  command: string;
+  queue: string | null;
+  outcome: 'ok' | 'error';
+  duration_ms: number;
+  /** Command-specific payload. Rendered as formatted JSON, not parsed. */
+  output: unknown;
+}
+
+/** What a `dryRun` returns instead of running anything. */
+export interface CommandCenterDryRun {
+  dry_run: true;
+  command: string;
+  queue: string | null;
+  would_run: string;
+  blast_radius: string;
+}
+
 export type SystemHealth = {
   checked_at: string;
   check_duration_ms: number;

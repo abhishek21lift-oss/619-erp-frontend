@@ -36,6 +36,7 @@ import { api } from '@/lib/api';
 import { semantic, rgba } from '@/lib/palette';
 import type { CommandCenterCard, CommandCenterSnapshot, CommandCenterStatus } from '@/lib/api';
 import { Center, ErrorState } from '@/app/platform/_shared/ui';
+import CommandPanel from './command-panel';
 
 const POLL_MS = 5_000;
 
@@ -372,6 +373,15 @@ export default function CommandCenterTab() {
 
       <div className="grid gap-3 sm:grid-cols-2">
         {sorted.map((c, i) => <StatusCard key={c.name} card={c} index={i} />)}
+      </div>
+
+      {/* Below the cards on purpose. You diagnose, then you act — and the panel
+          that acts should not be the first thing under your cursor. A command
+          re-probes the cards immediately, because pausing a queue changes the
+          queues card and an operator who has to wait out the poll will press
+          the button a second time. */}
+      <div className="pt-1">
+        <CommandPanel onRan={() => load(true)} />
       </div>
 
       <p className="text-center text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
