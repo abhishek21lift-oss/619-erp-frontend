@@ -1839,6 +1839,51 @@ export interface CommandCenterDryRun {
   blast_radius: string;
 }
 
+// ── Alert Center ──────────────────────────────────────────────────────────────
+
+/** Note the absence of `unavailable`: a probe that could not run is a gap in
+ *  observability, not an outage, and never opens an alert. */
+export type SystemAlertSeverity = 'warning' | 'timeout' | 'critical';
+export type SystemAlertStatus = 'open' | 'acknowledged' | 'resolved';
+
+/** One PROBLEM with a lifetime — not one observation. The same condition seen a
+ *  thousand times is this single row with `occurrences` climbing. */
+export interface SystemAlert {
+  id: string;
+  /** Identity of the condition; the collector name. */
+  fingerprint: string;
+  source: string;
+  severity: SystemAlertSeverity;
+  title: string;
+  /** The collector's own sentence, refreshed on each observation. */
+  reason: string | null;
+  status: SystemAlertStatus;
+  occurrences: number;
+  first_seen_at: string;
+  last_seen_at: string;
+  acknowledged_at: string | null;
+  acknowledged_by_name: string | null;
+  resolved_at: string | null;
+  /** `auto` when the condition cleared itself, `manual` when a human closed it. */
+  resolution: 'auto' | 'manual' | null;
+  notified_at: string | null;
+  /** The card as it stood when the alert opened. Typed at the render site. */
+  snapshot: unknown;
+  created_at: string;
+}
+
+export interface SystemAlertStats {
+  open: number;
+  acknowledged: number;
+  critical: number;
+  resolved_24h: number;
+}
+
+export interface SystemAlertList {
+  alerts: SystemAlert[];
+  stats: SystemAlertStats;
+}
+
 export type SystemHealth = {
   checked_at: string;
   check_duration_ms: number;

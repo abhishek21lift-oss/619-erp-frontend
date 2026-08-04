@@ -37,6 +37,7 @@ import { semantic, rgba } from '@/lib/palette';
 import type { CommandCenterCard, CommandCenterSnapshot, CommandCenterStatus } from '@/lib/api';
 import { Center, ErrorState } from '@/app/platform/_shared/ui';
 import CommandPanel from './command-panel';
+import AlertCenter from './alert-center';
 
 const POLL_MS = 5_000;
 
@@ -370,6 +371,12 @@ export default function CommandCenterTab() {
           Refresh
         </button>
       </div>
+
+      {/* Above the cards, because the cards answer "what is the state of
+          everything" and this answers "what needs me" — and during an incident
+          the second question is the only one being asked. When nothing is
+          wrong it collapses to one quiet line, so it costs no space. */}
+      <AlertCenter onChanged={() => load(true)} />
 
       <div className="grid gap-3 sm:grid-cols-2">
         {sorted.map((c, i) => <StatusCard key={c.name} card={c} index={i} />)}

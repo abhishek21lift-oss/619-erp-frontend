@@ -20,6 +20,7 @@ import type {
   SubscriptionInvoice, SubscriptionMetrics, SupportOverview, SupportTicket, SystemHealth,
   TicketMessage, TicketPriority, TicketStatus, UpiRejectReason,
   CommandCenterSnapshot, CommandCenterCommand, CommandCenterRunResult, CommandCenterDryRun,
+  SystemAlert, SystemAlertList,
 } from '../types';
 
 // The `admin` namespace held exportDatabase() and backupDatabase(). Both are
@@ -222,6 +223,34 @@ export const superAdmin = {
     http<{ data: CommandCenterRunResult | CommandCenterDryRun }>(
       `/api/super-admin/command-center/commands/${encodeURIComponent(name)}`,
       { method: 'POST', body },
+    ),
+
+  /** Alert Center. Returns the alerts and the badge counts in one call — the
+   *  console polls this and would otherwise ask for both every tick. */
+  commandCenterAlerts: (opts: { scope?: 'live' | 'resolved' | 'all'; limit?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.scope) qs.set('scope', opts.scope);
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    const q = qs.toString();
+    return http<{ data: SystemAlertList }>(
+      `/api/super-admin/command-center/alerts${q ? `?${q}` : ''}`,
+    );
+  },
+
+  /** "Seen, I am on it." Does not stop the alert tracking the condition, so an
+   *  acknowledged alert that fixes itself still auto-resolves. */
+  acknowledgeAlert: (id: string) =>
+    http<{ data: SystemAlert }>(
+      `/api/super-admin/command-center/alerts/${encodeURIComponent(id)}/ack`,
+      { method: 'POST' },
+    ),
+
+  /** Close by hand. Recorded as `manual`, which is what keeps bad detection
+   *  visible: a wall of manual closures means the thresholds are wrong. */
+  resolveAlert: (id: string) =>
+    http<{ data: SystemAlert }>(
+      `/api/super-admin/command-center/alerts/${encodeURIComponent(id)}/resolve`,
+      { method: 'POST' },
     ),
 
   // ── Billing Centre ──────────────────────────────────────────────────────
