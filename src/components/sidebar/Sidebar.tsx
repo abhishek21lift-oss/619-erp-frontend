@@ -5,6 +5,7 @@ import {
   ChevronDown, X, LogOut, User, Settings,
   PanelLeft, PanelLeftClose,
 } from 'lucide-react';
+import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import FounderBadge from '@/components/FounderBadge';
 import { useFounder } from '@/lib/use-founder';
@@ -181,23 +182,36 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
   const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
 
+  // Nav badge counts, via the api client rather than hand-written fetch so they
+  // inherit the 401 refresh and the x-org-id header every other call gets.
+  //
+  // Both URLs used to be wrong. /api/finance/dues does not exist — there is no
+  // /api/finance mount at all, the route is /api/reports/dues. And
+  // /api/trainers/leave is not a route either: it matched /api/trainers/:id
+  // with id='leave' and answered 404 "Trainer not found"; the leave list lives
+  // at /api/leave. Neither failure surfaced — allSettled never rejects, the
+  // shape-sniffing fell through to `?? 0`, and the trailing .catch swallowed
+  // whatever was left, so both badges read zero indefinitely. Rejections are
+  // logged now for exactly that reason: a counter that quietly reports
+  // "nothing pending" is worse than no counter at all.
   useEffect(() => {
     if (!isAdmin) return;
+    let cancelled = false;
+
     Promise.allSettled([
-      fetch('/api/trainers/leave?status=pending', { credentials: 'include' }).then(r => r.json()),
-      fetch('/api/finance/dues', { credentials: 'include' }).then(r => r.json()),
+      api.leave.list({ status: 'pending' }),
+      api.reports.dues(),
     ]).then(([leavesRes, duesRes]) => {
-      const counts: Record<string, number> = {};
-      if (leavesRes.status === 'fulfilled') {
-        const d = leavesRes.value;
-        counts.pendingLeaves = Array.isArray(d?.data) ? d.data.length : Array.isArray(d) ? d.length : (d?.count ?? 0);
-      }
-      if (duesRes.status === 'fulfilled') {
-        const d = duesRes.value;
-        counts.duesCount = Array.isArray(d?.data) ? d.data.length : Array.isArray(d) ? d.length : (d?.count ?? 0);
-      }
-      setBadgeCounts(counts);
-    }).catch(() => {});
+      if (cancelled) return;
+      if (leavesRes.status === 'rejected') console.warn('[sidebar] pending-leave count failed', leavesRes.reason);
+      if (duesRes.status === 'rejected') console.warn('[sidebar] dues count failed', duesRes.reason);
+      setBadgeCounts({
+        pendingLeaves: leavesRes.status === 'fulfilled' ? leavesRes.value.length : 0,
+        duesCount: duesRes.status === 'fulfilled' ? duesRes.value.length : 0,
+      });
+    });
+
+    return () => { cancelled = true; };
   }, [isAdmin]);
 
   const filterItem = (i: { href: string; role?: string; roles?: string[]; feature?: string }, groupId: string): boolean => {
