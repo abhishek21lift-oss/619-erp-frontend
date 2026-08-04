@@ -135,7 +135,6 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "classes.sessions → /api/classes/sessions",
   "clients.assignPt → /api/clients/",
   "clients.combo → /api/clients/",
-  "clients.create → /api/clients",
   "clients.delete → /api/clients/",
   "clients.downgrade → /api/clients/",
   "clients.freeze → /api/clients/",

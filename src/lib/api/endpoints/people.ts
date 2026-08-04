@@ -14,7 +14,10 @@ export const clients = {
   list: (params?: Record<string, string | number>) =>
     http<Client[]>(`/api/clients${buildQs(params)}`),
   get:    (id: string) => http<Client>(`/api/clients/${id}`),
-  create: (data: Partial<Client>) => http<Client>('/api/clients', { method: 'POST', body: JSON.stringify(data) }),
+  // create() removed with POST /api/clients. Clients are created through
+  // api.pt.create() -> POST /api/pt-os/clients, which stamps the studio's
+  // organization_id and enforces the plan's client limit. The old route did
+  // neither, and wrote to a table no read path reads.
   update: (id: string, data: Partial<Client>) =>
     http<Client>(`/api/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: string) => http(`/api/clients/${id}`, { method: 'DELETE' }),
