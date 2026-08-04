@@ -39,6 +39,7 @@ import { Center, ErrorState } from '@/app/platform/_shared/ui';
 import CommandPanel from './command-panel';
 import AlertCenter from './alert-center';
 import Guardian from './guardian';
+import LiveLogs from './live-logs';
 
 const POLL_MS = 5_000;
 
@@ -396,6 +397,14 @@ export default function CommandCenterTab() {
           the button a second time. */}
       <div className="pt-1">
         <CommandPanel onRan={() => load(true)} />
+      </div>
+
+      {/* Last. Logs are what you reach for when the cards, the alerts and the
+          Guardian have all failed to explain what you are seeing — the deepest
+          and least summarised view, and the one that costs the most attention
+          to read. */}
+      <div className="pt-1">
+        <LiveLogs />
       </div>
 
       <p className="text-center text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>

@@ -21,6 +21,7 @@ import type {
   TicketMessage, TicketPriority, TicketStatus, UpiRejectReason,
   CommandCenterSnapshot, CommandCenterCommand, CommandCenterRunResult, CommandCenterDryRun,
   SystemAlert, SystemAlertList, GuardianReport, GuardianNarration,
+  LogTail, LogHistory,
 } from '../types';
 
 // The `admin` namespace held exportDatabase() and backupDatabase(). Both are
@@ -269,6 +270,30 @@ export const superAdmin = {
       `/api/super-admin/command-center/guardian/${encodeURIComponent(id)}/explain`,
       { method: 'POST' },
     ),
+
+  /** The live tail: the API process's in-memory ring. Pass `since` to poll
+   *  without re-shipping the whole window. */
+  commandCenterLogs: (opts: { level?: string; q?: string; since?: number; limit?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.level) qs.set('level', opts.level);
+    if (opts.q) qs.set('q', opts.q);
+    if (opts.since) qs.set('since', String(opts.since));
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    const q = qs.toString();
+    return http<{ data: LogTail }>(`/api/super-admin/command-center/logs${q ? `?${q}` : ''}`);
+  },
+
+  /** Persisted history: errors and above, durable across restarts, and the only
+   *  place the WORKER container's errors are visible. */
+  commandCenterLogHistory: (opts: { level?: string; source?: 'api' | 'worker'; q?: string; limit?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.level) qs.set('level', opts.level);
+    if (opts.source) qs.set('source', opts.source);
+    if (opts.q) qs.set('q', opts.q);
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    const q = qs.toString();
+    return http<{ data: LogHistory }>(`/api/super-admin/command-center/logs/history${q ? `?${q}` : ''}`);
+  },
 
   // ── Billing Centre ──────────────────────────────────────────────────────
   billingSettings: () => http<{ data: PlatformBillingSettings }>('/api/super-admin/billing/settings'),

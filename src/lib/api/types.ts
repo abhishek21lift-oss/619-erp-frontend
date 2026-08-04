@@ -1930,6 +1930,71 @@ export interface GuardianReport {
   note: string | null;
 }
 
+// ── Live Logs (D4) ────────────────────────────────────────────────────────────
+
+export type LogLevelName = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+
+/** One line from the in-memory ring. `level` is pino's number: 50 error, 60 fatal. */
+export interface LogLine {
+  time: number;
+  level: number;
+  msg: string;
+  /** Everything pino carried besides time/level/msg. Typed at the render site. */
+  context: unknown;
+}
+
+export interface LogRingStats {
+  held: number;
+  capacity: number;
+  total_recorded: number;
+  /** Lines the capture layer had to discard — a real fault, unlike ring overwrite. */
+  dropped: number;
+  oldest_at: string | null;
+  counts: Record<LogLevelName, number>;
+}
+
+export interface LogCaptureStats {
+  /** Which process this ring belongs to. */
+  source: 'api' | 'worker';
+  pending: number;
+  pending_capacity: number;
+  dropped_pending: number;
+  persist_from_level: number;
+  persist_enabled: boolean;
+}
+
+export interface LogTail {
+  lines: LogLine[];
+  stats: LogRingStats;
+  capture: LogCaptureStats;
+  /** Says out loud that the ring covers one process only. */
+  scope_note: string;
+}
+
+/** A persisted line. Unlike the ring, this covers the worker container too. */
+export interface PersistedLogLine {
+  id: number;
+  level: number;
+  level_label: LogLevelName;
+  logged_at: string;
+  msg: string;
+  source: 'api' | 'worker';
+  pid: number | null;
+  hostname: string | null;
+  context: unknown;
+}
+
+export interface LogHistory {
+  lines: PersistedLogLine[];
+  stats: {
+    total: number;
+    from_worker: number;
+    fatal: number;
+    last_24h: number;
+    oldest: string | null;
+  };
+}
+
 export interface GuardianNarration {
   finding_id: string;
   /** Null when the model was unavailable — the finding still stands without it. */
