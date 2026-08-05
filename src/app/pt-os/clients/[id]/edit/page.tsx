@@ -1,16 +1,17 @@
 'use client';
 
-import { use, useState, useEffect, useCallback } from 'react';
+import { use, useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  ArrowLeft, Save, User, Dumbbell, Wallet, Trash2, AlertTriangle,
+  Save, User, Dumbbell, Wallet, Trash2, AlertTriangle, Camera, Loader2,
   CheckCircle, Info,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Button } from '@/components/ui';
 import FloatInput from '@/components/ui/FloatInput';
+import PhotoCropModal from '@/components/pt-os/PhotoCropModal';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
@@ -62,6 +63,48 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // The photo is not part of `form`: it saves on its own the moment it is
+  // cropped, through its own endpoint. Folding it into the form would mean a
+  // trainer could crop a face, not press Save Changes, and lose it — and would
+  // put a base64 image inside every PATCH of a phone number.
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoBroken, setPhotoBroken] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [pickedImage, setPickedImage] = useState<string | null>(null);
+  const photoInput = useRef<HTMLInputElement>(null);
+
+  const initials = (n: string) =>
+    n.split(' ').filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+
+  /** Read the chosen file and hand it to the same crop modal new-client uses.
+   *  The modal owns the compression (800px, q0.8) — a phone photo posted raw
+   *  is several megabytes of base64 in a TEXT column, re-sent on every read of
+   *  this client. */
+  const pickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Please choose an image file.'); return; }
+    const reader = new FileReader();
+    reader.onload = () => { setPickedImage(String(reader.result)); setCropOpen(true); };
+    reader.readAsDataURL(file);
+  };
+
+  const savePhoto = async (dataUrl: string) => {
+    setPhotoBusy(true);
+    try {
+      await api.pt.uploadPhoto(id, dataUrl);
+      setPhotoUrl(dataUrl);
+      setPhotoBroken(false);
+      toast.success('Photo updated');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Could not save the photo');
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
   const [form, setForm] = useState({
     // Personal
     name: '', mobile: '', email: '', gender: '', dob: '', address: '', emergency_contact: '', emergency_phone: '',
@@ -92,6 +135,9 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         const clientRes = await api.pt.client(id);
         const c = (clientRes as any)?.data;
         if (c) {
+          // The stored photo, so the hero shows the client rather than
+          // their initials the moment the page opens.
+          setPhotoUrl((c as { photo_url?: string }).photo_url ?? null);
           setForm({
             name: c.name ?? '',
             mobile: c.mobile ?? '',
@@ -189,25 +235,76 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         <div className="min-h-screen">
           <div className="mx-auto max-w-3xl py-6 space-y-5">
 
-            {/* ── Header ── */}
+            {/* ── Hero ──
+                Was a back arrow, a title and a Save Changes button crammed on
+                one row. All three are gone or moved:
+                  * the back arrow, because the app has a bottom nav and a
+                    browser back gesture, and it was the only page carrying one;
+                  * Save Changes, because there is already a Save at the FOOT of
+                    the form, next to Cancel, where you land after filling it in.
+                    Two identical buttons on one screen is a question, not a
+                    convenience;
+                  * the subtitle "All changes auto-save on submit", which was not
+                    true — nothing auto-saves; you press Save.
+                The gradient matches the client profile hero this page is
+                reached from, so editing feels like the same object. */}
             <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-              className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button onClick={() => router.push(`/pt-os/clients/${id}`)}
-                  className="flex h-9 w-9 items-center justify-center rounded-[10px] transition hover:bg-zinc-50"
-                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                  <ArrowLeft size={15} style={{ color: 'var(--text-disabled)' }} />
+              className="relative overflow-hidden rounded-[22px] p-5"
+              style={{
+                background: [
+                  'radial-gradient(circle 180px at calc(100% - 48px) 24px, rgba(0,103,224,0.40), transparent 70%)',
+                  'linear-gradient(135deg, #0050ad 0%, #003f87 55%, #003f87 100%)',
+                ].join(', '),
+                boxShadow: '0 20px 48px rgba(0,80,173,0.35)',
+              }}>
+              <div className="flex items-center gap-4">
+                {/* ── The photo option that did not exist ──
+                    Tap the avatar to set or replace it. It saves immediately
+                    through /pt-os/clients/:id/photo — the same endpoint the
+                    new-client flow uses — so it is org-scoped by the server and
+                    needs no new permission story. */}
+                <button
+                  type="button"
+                  onClick={() => photoInput.current?.click()}
+                  disabled={photoBusy}
+                  aria-label={photoUrl ? "Change client's photo" : "Add a photo for this client"}
+                  className="group relative flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-[22px] text-[24px] font-[860] text-white disabled:opacity-60"
+                  style={{
+                    background: 'rgba(255,255,255,0.09)',
+                    border: '1px solid rgba(255,255,255,0.16)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 10px 24px rgba(0,0,0,0.28)',
+                  }}>
+                  {photoUrl && !photoBroken ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={photoUrl} alt={form.name} onError={() => setPhotoBroken(true)}
+                      className="h-full w-full object-cover" />
+                  ) : (
+                    initials(form.name || '?')
+                  )}
+                  {/* Always visible, not hover-only: on a touch screen a
+                      hover-revealed control is a control that does not exist. */}
+                  <span className="absolute inset-x-0 bottom-0 flex items-center justify-center py-1"
+                    style={{ background: 'rgba(15,23,42,0.55)' }}>
+                    {photoBusy
+                      ? <Loader2 size={13} className="animate-spin text-white" />
+                      : <Camera size={13} className="text-white" />}
+                  </span>
                 </button>
-                <div>
-                  <h1 className="text-[20px] font-[780] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
-                    Edit Client
+                <input ref={photoInput} type="file" accept="image/png,image/jpeg,image/webp"
+                  className="hidden" onChange={pickPhoto} />
+
+                <div className="min-w-0">
+                  <p className="text-[11px] font-[750] uppercase tracking-[0.14em]" style={{ color: 'rgba(184,215,255,0.75)' }}>
+                    Editing
+                  </p>
+                  <h1 className="truncate text-[22px] font-[880] leading-tight tracking-[-0.03em] text-white">
+                    {form.name || 'Client'}
                   </h1>
-                  <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>All changes auto-save on submit</p>
+                  <p className="mt-0.5 text-[12px]" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                    Tap the photo to {photoUrl ? 'change' : 'add'} it · everything else saves with the button below
+                  </p>
                 </div>
               </div>
-              <Button variant="primary" iconLeft={<Save size={14} />} onClick={handleSave} loading={saving}>
-                Save Changes
-              </Button>
             </m.div>
 
             {/* ── Personal Info ── */}
@@ -395,6 +492,13 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
           </div>
         </div>
+
+        <PhotoCropModal
+          open={cropOpen}
+          initialImageSrc={pickedImage}
+          onClose={() => { setCropOpen(false); setPickedImage(null); }}
+          onConfirm={(dataUrl) => { setPickedImage(null); savePhoto(dataUrl); }}
+        />
       </AppShell>
     </Guard>
   );
