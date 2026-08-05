@@ -151,13 +151,13 @@ function ExerciseLibrary() {
   return (
     <div className="mx-auto w-full max-w-[1600px] px-4 pb-16 pt-5 sm:px-6">
       {/* ── Header ─────────────────────────────────────────────── */}
-      <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
-        <div>
+      <header className="mb-5 flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="flex items-center gap-2.5 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--brand)]/10 text-[var(--brand)]">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--brand)]/10 text-[var(--brand)]">
               <Dumbbell size={18} />
             </span>
-            Exercise Library
+            <span className="truncate">Exercise Library</span>
           </h1>
           <p className="mt-1 text-[13px] text-[var(--text-muted)]">
             {meta ? (
@@ -171,13 +171,17 @@ function ExerciseLibrary() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <Button variant="ghost" onClick={() => lib.refetch()} aria-label="Refresh library">
             <RefreshCw size={14} className={cn(loading && 'animate-spin')} />
           </Button>
           {canAuthor && (
             <Button onClick={openCreate}>
-              <span className="flex items-center gap-1.5"><Plus size={15} /> New exercise</span>
+              <span className="flex items-center gap-1.5">
+                <Plus size={15} />
+                <span className="sm:hidden">New</span>
+                <span className="hidden sm:inline">New exercise</span>
+              </span>
             </Button>
           )}
         </div>
@@ -307,7 +311,7 @@ function ExerciseLibrary() {
               <Button variant="secondary" onClick={() => lib.refetch()}>Try again</Button>
             </div>
           ) : loading ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-0 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3 2xl:grid-cols-4">
               {Array.from({ length: 12 }).map((_, i) => (
                 <div
                   key={i}
@@ -359,7 +363,7 @@ function ExerciseLibrary() {
             />
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-0 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3 2xl:grid-cols-4">
                 {items.map((ex) => (
                   <ExerciseCard
                     key={ex.id}
