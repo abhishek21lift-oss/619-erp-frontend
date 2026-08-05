@@ -15,7 +15,7 @@
  * All figures are raw backend values or honestly-derived metrics.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { PullToRefresh } from '@/components/ui';
@@ -26,7 +26,7 @@ import {
   type CoachBirthday, type Urgency,
 } from '@/lib/coach-insights';
 import {
-  Users, TrendingUp, Wallet, Percent,
+  Users, Wallet, Percent,
   ChevronRight, Sparkles, ArrowUpRight, ArrowDownRight, Activity,
   UserPlus, CalendarPlus, Receipt,
   ShieldCheck, Target, Gauge, Crown,
@@ -47,9 +47,14 @@ type DashData = {
   active_pt_clients: number;
   expired_clients: number;
   clients_with_balance: number;
+  /** Owed AND past the end of the package it was owed for. */
+  overdue_clients: number;
   total_monthly_pt_revenue: number;
   total_monthly_commission: number;
   total_outstanding: number;
+  /** Money actually banked today, from pt_payments — not contracted amounts. */
+  today_collected: number;
+  today_payments: number;
   trainers: Array<{
     id: string; name: string; active_clients: number;
     monthly_revenue: number; monthly_commission: number;
@@ -156,15 +161,6 @@ function momPct(trend: DashData['revenueTrend'] | undefined, key: 'revenue' | 'i
   if (prev === 0) return null;
   return ((curr - prev) / prev) * 100;
 }
-function forecastNext(values: number[]): number | null {
-  const n = values.length;
-  if (n < 2) return null;
-  const xbar = (n - 1) / 2;
-  const ybar = values.reduce((s, v) => s + v, 0) / n;
-  let num = 0, den = 0;
-  for (let i = 0; i < n; i++) { num += (i - xbar) * (values[i] - ybar); den += (i - xbar) ** 2; }
-  return Math.max(0, ybar + (den === 0 ? 0 : num / den) * (n - xbar));
-}
 function healthScore(d: DashData) {
   const rev = Number(d.total_monthly_pt_revenue), out = Number(d.total_outstanding);
   const active = d.active_pt_clients, expired = d.expired_clients;
@@ -198,11 +194,19 @@ function TrendBadge({ pct }: { pct: number | null }) {
   );
 }
 
-function Glass({ children, className = '', style }: {
+function Glass({ children, className = '', style, onClick }: {
   children: React.ReactNode; className?: string; style?: React.CSSProperties;
+  /** Makes the whole surface a pointer target. Deliberately NOT given a
+   *  button role: these cards contain their own buttons, and a button
+   *  inside a button is invalid and unreachable by keyboard. Anything
+   *  offered this way is also reachable from a real control inside the
+   *  card — see TodayRevenue, where the card and its Collected half go to
+   *  the same place. */
+  onClick?: () => void;
 }) {
   return (
     <div className={`rounded-[20px] sm:rounded-[24px] ${className}`}
+      onClick={onClick}
       style={{
         background: 'rgba(255,255,255,0.76)',
         backdropFilter: 'blur(20px)',
@@ -525,48 +529,248 @@ function StatCard({
   );
 }
 
-// ─── Section 5 — Revenue Intelligence ──────────────────────────────────────────
-function ForecastPanel({ d }: { d: DashData }) {
-  const revVals = d.revenueTrend.map(x => Number(x.revenue));
-  const projected = forecastNext(revVals);
-  const last = revVals[revVals.length - 1] ?? 0;
-  const delta = projected !== null && last > 0 ? ((projected - last) / last) * 100 : null;
-  const avgPerClient = d.active_pt_clients > 0 ? d.total_monthly_pt_revenue / d.active_pt_clients : 0;
+// ─── Section 5 — Today's Revenue ───────────────────────────────────────────────
+//
+// This was "Revenue Intelligence": four tiles reading This Month, Projected
+// Next, Avg / Client and 6M Collected, with a linear-regression forecast on the
+// second one. All true, none of it answerable. You could look at it for a
+// minute and still not know whether to pick up the phone.
+//
+// The question a studio owner actually opens the dashboard with is smaller and
+// has a deadline: how much came in today, how much is still out there, and who
+// do I call. So the card carries two numbers and a way to act on each.
+//
+// ── On what "Pending" means ────────────────────────────────────────────────
+//
+// Total unpaid balance across every client, not "instalments dated today".
+// There is no per-day due date in this schema — a balance is simply owed — so
+// a figure claiming to be "due today" would be invented. The sub-label says
+// how many people it is spread across, which is what makes it actionable, and
+// the overdue count is called out separately because "owes you money" and
+// "owes you money and their package has already ended" are different
+// conversations.
+//
+// ── Why the numbers count up ───────────────────────────────────────────────
+//
+// Not decoration: this card re-fetches while you are looking at it, and a
+// figure that changes by jumping is a figure you might not notice changed.
 
-  const tiles = [
-    { label: 'This Month',     value: fmtCompact(d.total_monthly_pt_revenue), color: C.primary,   icon: <Wallet size={13} /> },
-    { label: 'Projected Next', value: projected !== null ? fmtCompact(projected) : '—', color: C.primary, icon: <TrendingUp size={13} />, badge: delta },
-    { label: 'Avg / Client',   value: fmtCompact(avgPerClient),               color: C.success, icon: <Users size={13} /> },
-    { label: '6M Collected',   value: fmtCompact(revVals.reduce((s,v)=>s+v,0)), color: C.warning, icon: <Activity size={13} /> },
-  ];
+/** Counts to `value` on mount and on every change. Respects reduced motion by
+ *  landing on the number immediately. */
+function CountUp({ value, format, reduce }: {
+  value: number;
+  format: (n: number) => string;
+  reduce: boolean;
+}) {
+  const [shown, setShown] = useState(value);
+  const fromRef = useRef(value);
+
+  useEffect(() => {
+    const from = fromRef.current;
+    fromRef.current = value;
+    if (reduce || from === value) { setShown(value); return; }
+
+    const t0 = performance.now();
+    let raf = 0;
+    const step = (now: number) => {
+      const p = Math.min((now - t0) / 650, 1);
+      // easeOutCubic: quick to nearly-there, then settles. A linear ramp on a
+      // money figure reads like a slot machine.
+      const e = 1 - Math.pow(1 - p, 3);
+      setShown(from + (value - from) * e);
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [value, reduce]);
+
+  return <>{format(Math.round(shown))}</>;
+}
+
+/**
+ * One of the two money figures. A button, because both of them go somewhere:
+ * collected opens the payments that made it up, pending opens the people it is
+ * owed by.
+ */
+function RevenueHalf({
+  emoji, label, value, sub, color, onClick, reduce, delay,
+}: {
+  emoji: string; label: string; value: number; sub: string;
+  color: string; onClick: () => void; reduce: boolean; delay: number;
+}) {
+  return (
+    <m.button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      initial={reduce ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.35, ease: EASE }}
+      className="flex-1 rounded-[16px] p-3.5 text-left transition-transform active:scale-[0.985]"
+      style={{
+        background: `linear-gradient(150deg, ${color}14 0%, ${color}08 60%, transparent 100%)`,
+        border: `1px solid ${color}24`,
+        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5)`,
+      }}
+    >
+      <span className="flex items-center gap-1.5">
+        <span className="text-[12px] leading-none" aria-hidden>{emoji}</span>
+        <span className="text-[9.5px] font-[800] uppercase tracking-[0.11em]" style={{ color: `${color}cc` }}>
+          {label}
+        </span>
+      </span>
+      {/* The number is the point of the card, so it gets the size. */}
+      <p className="mt-1.5 text-[26px] font-[880] leading-none tracking-[-0.035em] tabular-nums sm:text-[30px]"
+        style={{ color }}>
+        <CountUp value={value} format={fmtINR} reduce={reduce} />
+      </p>
+      <p className="mt-1 text-[10.5px] font-[600]" style={{ color: C.muted }}>{sub}</p>
+    </m.button>
+  );
+}
+
+/**
+ * What to do next, in one line.
+ *
+ * Exported and pure because the ordering is the judgement in this card and the
+ * uplift figure is arithmetic that can be wrong without looking wrong. Only
+ * ever one insight is returned: a stack of advice is a stack nobody reads.
+ *
+ * The order is by what would change the day — money still collectable first,
+ * then anything overdue, then the all-clear. Note that money-to-collect
+ * outranks overdue deliberately: overdue is a subset of what is owed, so
+ * leading with it would report the smaller number and bury the bigger one.
+ */
+export function revenueInsight({ collected, pending, owing, overdue, payments }: {
+  collected: number; pending: number; owing: number; overdue: number; payments: number;
+}): { icon: string; text: string; tone: string } {
+  const total = collected + pending;
+
+  if (pending > 0 && owing > 0) {
+    // Share of today's total that is still out — i.e. how much bigger today
+    // gets if it all lands. Guarded on total because pending > 0 implies
+    // total > 0, but a caller passing negatives should not divide by zero.
+    const share = total > 0 ? Math.round((pending / total) * 100) : 100;
+    return {
+      icon: '\u{1F525}',
+      tone: C.warning,
+      text: `${fmtINR(pending)} can be collected from ${owing} member${owing === 1 ? '' : 's'}`
+        + (collected > 0 ? ` \u2014 that would lift today by ${share}%.` : '.'),
+    };
+  }
+
+  // Reachable when a balance is overdue but `owing` did not come through —
+  // defensive rather than expected, since overdue implies a balance.
+  if (overdue > 0) {
+    return {
+      icon: '\u26A0\uFE0F',
+      tone: C.danger,
+      text: `${overdue} payment${overdue === 1 ? ' is' : 's are'} overdue.`,
+    };
+  }
+
+  if (collected > 0) {
+    return {
+      icon: '\u2705',
+      tone: C.success,
+      text: `Nothing outstanding \u2014 ${payments} payment${payments === 1 ? '' : 's'} in today and every balance is clear.`,
+    };
+  }
+
+  return { icon: '\u{1F4A1}', tone: C.muted, text: 'No payments yet today, and no balances outstanding.' };
+}
+
+function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
+  const router = useRouter();
+  const reduce = useReducedMotion() ?? false;
+
+  const collected = Number(d.today_collected ?? 0);
+  const pending = Number(d.total_outstanding ?? 0);
+  const owing = Number(d.clients_with_balance ?? 0);
+  const overdue = Number(d.overdue_clients ?? 0);
+  const payments = Number(d.today_payments ?? 0);
+
+  const total = collected + pending;
+  const pct = total > 0 ? (collected / total) * 100 : 0;
+
+  const insight = useMemo(
+    () => revenueInsight({ collected, pending, owing, overdue, payments }),
+    [collected, pending, owing, overdue, payments],
+  );
 
   return (
-    <Glass className="p-4 sm:p-5">
-      <div className="flex items-center justify-between mb-3.5">
+    // The whole card opens today's payments; the two halves override that with
+    // their own destinations. A div rather than a button so the halves are not
+    // buttons inside a button.
+    <Glass
+      className="cursor-pointer p-4 sm:p-5"
+      onClick={() => router.push('/finance/collected-payments')}
+    >
+      <div className="mb-3 flex items-center justify-between">
         <div>
-          <h3 className="text-[14px] sm:text-[15px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>Revenue Intelligence</h3>
-          <p className="text-[10.5px] mt-0.5 font-[500]" style={{ color: C.muted }}>Linear trend projection</p>
+          <h3 className="text-[14px] font-[780] tracking-[-0.01em] sm:text-[15px]" style={{ color: C.ink }}>
+            Today&apos;s Revenue
+          </h3>
+          <p className="mt-0.5 text-[10.5px] font-[500]" style={{ color: C.muted }}>
+            {loading ? 'Refreshing…' : `${payments} payment${payments === 1 ? '' : 's'} today`}
+          </p>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-[700] uppercase tracking-[0.08em]"
-          style={{ background: 'rgba(0,103,224,0.1)', color: C.primary }}>
-          <Sparkles size={9} /> Forecast
-        </span>
+        {overdue > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-[750] uppercase tracking-[0.08em]"
+            style={{ background: `${C.danger}14`, color: C.danger }}>
+            {overdue} overdue
+          </span>
+        )}
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        {tiles.map((t, i) => (
-          <m.div key={t.label}
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06, duration: 0.35 }}
-            className="rounded-[14px] p-3" style={{ background: `${t.color}0d`, border: `1px solid ${t.color}1f` }}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-[9px] text-white" style={{ background: t.color }}>{t.icon}</span>
-              {t.badge != null && <TrendBadge pct={t.badge} />}
-            </div>
-            <p className="text-[8px] font-[700] uppercase tracking-[0.09em]" style={{ color: `${t.color}aa` }}>{t.label}</p>
-            <p className="text-[15px] font-[850] tracking-[-0.02em] mt-0.5" style={{ color: t.color }}>{t.value}</p>
-          </m.div>
-        ))}
+
+      <div className="flex flex-col gap-2.5 sm:flex-row">
+        <RevenueHalf
+          emoji="💰" label="Collected Today" value={collected}
+          sub={payments > 0 ? `across ${payments} payment${payments === 1 ? '' : 's'}` : 'nothing yet today'}
+          color={C.success} reduce={reduce} delay={0}
+          onClick={() => router.push('/finance/collected-payments')}
+        />
+        <RevenueHalf
+          emoji="⏳" label="Pending" value={pending}
+          sub={owing > 0 ? `from ${owing} member${owing === 1 ? '' : 's'}` : 'all balances clear'}
+          color={C.warning} reduce={reduce} delay={0.07}
+          onClick={() => router.push('/finance/dues')}
+        />
       </div>
+
+      {/* Collected against collected + pending. Hidden when there is nothing
+          at all to show, because an empty bar reads as 0% collected rather
+          than as "no money in play". */}
+      {total > 0 && (
+        <div className="mt-3.5">
+          <div className="h-[5px] w-full overflow-hidden rounded-full" style={{ background: `${C.warning}26` }}>
+            <m.div
+              className="h-full rounded-full"
+              style={{ background: `linear-gradient(90deg, ${C.success}, ${C.success}bb)` }}
+              initial={reduce ? false : { width: 0 }}
+              animate={{ width: `${pct}%` }}
+              transition={{ duration: reduce ? 0 : 0.7, ease: EASE }}
+            />
+          </div>
+          <p className="mt-1.5 text-[10px] font-[650]" style={{ color: C.muted }}>
+            {Math.round(pct)}% of {fmtINR(total)} in play collected
+          </p>
+        </div>
+      )}
+
+      {insight && (
+        <m.div
+          initial={reduce ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="mt-3 flex items-start gap-2 rounded-[13px] px-3 py-2.5"
+          style={{ background: `${insight.tone}0f`, border: `1px solid ${insight.tone}20` }}
+        >
+          <span className="text-[12px] leading-[1.3]" aria-hidden>{insight.icon}</span>
+          <p className="text-[11.5px] font-[640] leading-[1.45]" style={{ color: C.ink }}>
+            {insight.text}
+          </p>
+        </m.div>
+      )}
     </Glass>
   );
 }
@@ -1329,6 +1533,43 @@ export default function PtOsDashboard() {
     await Promise.all([dash.refetch(), ops.refetch()]);
   }, [dash.refetch, ops.refetch]);
 
+  /**
+   * Keep the numbers current without a reload.
+   *
+   * Today's Revenue changes while somebody is looking at it — a payment taken
+   * at the front desk should appear here, and pull-to-refresh is not an answer
+   * on a screen left open on a desk.
+   *
+   * Only while the tab is visible, and immediately on becoming visible again.
+   * A background tab polling every minute is a request per minute per open tab
+   * that nobody will read, and the first thing you want on returning to a tab
+   * is the current figure, not the one from whenever you left.
+   *
+   * A minute, not seconds: the underlying figure changes when a human records
+   * a payment, and no studio records them faster than that.
+   */
+  useEffect(() => {
+    const REFRESH_MS = 60_000;
+    let timer: ReturnType<typeof setInterval> | null = null;
+
+    const start = () => {
+      if (timer) return;
+      timer = setInterval(() => { refreshAll(); }, REFRESH_MS);
+    };
+    const stop = () => {
+      if (timer) { clearInterval(timer); timer = null; }
+    };
+    const onVisibility = () => {
+      if (document.hidden) { stop(); return; }
+      refreshAll();
+      start();
+    };
+
+    if (!document.hidden) start();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => { stop(); document.removeEventListener('visibilitychange', onVisibility); };
+  }, [refreshAll]);
+
   const revTrend = d?.revenueTrend?.map(x => Number(x.revenue)) ?? [];
   const incTrend = d?.revenueTrend?.map(x => Number(x.incentives)) ?? [];
   const revMoM   = momPct(d?.revenueTrend, 'revenue');
@@ -1423,13 +1664,14 @@ export default function PtOsDashboard() {
             {/* 5 — AI Coach */}
             <AICoach d={d} ops={o} birthdays={birthdays.data?.data ?? []} studioName={studioName} />
 
-            {/* 6 — Revenue forecast.
-                The month-by-month revenue bar chart used to sit above this. It
-                said the same thing twice: the KPI cards already carry the
-                revenue figure and its sparkline, and the forecast below reads
-                the same revenueTrend series. d.revenueTrend is still fetched
-                and still used by both of those. */}
-            <ForecastPanel d={d} />
+            {/* 6 — Today's Revenue.
+                Was "Revenue Intelligence": this month, a linear-regression
+                projection, average per client, six-month total. All true and
+                none of it answerable — you could read it for a minute and
+                still not know whether to pick up the phone. This asks the
+                question the day actually has: what came in, what is still out,
+                who do I call. */}
+            <TodayRevenue d={d} loading={dash.loading} />
 
             {/* 7 — Session activity.
                 Was a two-column "Team Performance" row with a trainer
