@@ -99,10 +99,22 @@ function scan(): Offender[] {
     // The hook itself, and its own docs, mention the attribute in prose.
     if (file.includes(join('common', 'PullToRefresh'))) continue;
     const lines = readFileSync(file, 'utf8').split('\n');
+    // Where the previous overlay root was, so one overlay's opt-out cannot be
+    // read as the next one's.
+    //
+    // A scrim and the sheet it dims are siblings about eight lines apart. With
+    // a plain 10-line lookback, deleting the SHEET's attribute left this file
+    // green — the scan walked back past the sheet, found the SCRIM's
+    // attribute, and called the sheet covered. That is the second hole of this
+    // kind, after the bottom-sheet shape itself, and it is the same failure:
+    // the guard quietly stops guarding.
+    let prevOverlay = -1;
     lines.forEach((line, i) => {
       const isOverlay = FULL_SCREEN.test(line) || DROPDOWN.test(line) || FIXED_PANEL.test(line);
       if (!isOverlay || DECORATIVE.test(line)) return;
-      const window = lines.slice(Math.max(0, i - LOOKBACK), i + 1 + LOOKAHEAD).join('\n');
+      const from = Math.max(0, i - LOOKBACK, prevOverlay + 1);
+      prevOverlay = i;
+      const window = lines.slice(from, i + 1 + LOOKAHEAD).join('\n');
       if (window.includes('data-no-pull-refresh')) return;
       offenders.push({
         file: file.replace(`${process.cwd()}/`, ''),

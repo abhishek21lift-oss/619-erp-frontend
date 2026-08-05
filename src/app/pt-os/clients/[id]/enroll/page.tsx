@@ -5,15 +5,18 @@ import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Calendar, Award,
-  Check, Sparkles, AlertCircle, Loader2, X,
+  Check, Sparkles, AlertCircle, Loader2, X, Download, FileSignature,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Button } from '@/components/ui';
 import FloatInput from '@/components/ui/FloatInput';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
+import ClientAvatar from '@/components/pt-os/ClientAvatar';
+import { AGREEMENT_TEXT, PAYMENT_METHODS, ageFrom } from '@/lib/enrollment';
+import { SignaturePad } from '@/components/pt-os/shared/SignaturePad';
 import { api } from '@/lib/api';
-import { ApiError } from '@/lib/http';
+import { ApiError, apiBase } from '@/lib/http';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth-context';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
@@ -39,12 +42,24 @@ interface EnrollFormData {
   // boundaries, never stored as a parsed number in form state.
   finalAmount: string;
   amountPaid: string;
+  /** How the enrolling payment was taken. One of PAYMENT_METHODS. */
+  paymentMethod: string;
+}
+
+/** What the header needs to make the page about a person rather than a form. */
+interface ClientMeta {
+  name: string;
+  photoUrl: string | null;
+  dob: string | null;
+  weight: number | null;
+  goal: string | null;
+  memberSince: string | null;
 }
 
 interface FormErrors {
   startDate?: string; duration?: string; trainingMode?: string;
   workoutTime?: string; trainingDays?: string; sessionsPerWeek?: string;
-  finalAmount?: string; amountPaid?: string;
+  finalAmount?: string; amountPaid?: string; paymentMethod?: string;
 }
 
 /* ─────────────────────────────────────────────────────── CONSTANTS */
@@ -81,6 +96,8 @@ const DAYS = [
 ];
 
 const SESSIONS_OPTIONS = Array.from({ length: 7 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} Session${i > 0 ? 's' : ''}` }));
+
+
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -184,9 +201,10 @@ function initForm(): EnrollFormData {
     trainerId: '', trainerName: '', trainingMode: '', workoutExperienceLevel: '',
     previousTrainerExperience: false, workoutTime: '',
     customTime: '', useCustomTime: false, trainingDays: [], sessionsPerWeek: '',
-    finalAmount: '', amountPaid: '',
+    finalAmount: '', amountPaid: '', paymentMethod: '',
   };
 }
+
 
 /* ─────────────────────────────────────────────────────── PAGE EXPORT */
 export default function PTEnrollmentPage({ params }: { params: Promise<{ id: string }> }) {
@@ -202,6 +220,13 @@ function EnrollForm({ clientId }: { clientId: string }) {
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
 
   const [clientName, setClientName] = useState('');
+  const [clientMeta, setClientMeta] = useState<ClientMeta | null>(null);
+  // The agreement gate, and what comes after it.
+  const [agreementOpen, setAgreementOpen] = useState(false);
+  const [agreementChecked, setAgreementChecked] = useState(false);
+  const [signature, setSignature] = useState('');
+  const [enrolled, setEnrolled] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [form, setForm] = useState<EnrollFormData>(initForm);
@@ -236,6 +261,17 @@ function EnrollForm({ clientId }: { clientId: string }) {
       const c = clientRes?.data;
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
       setClientName(String(c.name ?? ''));
+      setClientMeta({
+        name: String(c.name ?? ''),
+        photoUrl: c.photo_url ? String(c.photo_url) : null,
+        dob: c.dob ? String(c.dob) : null,
+        weight: Number(c.weight) > 0 ? Number(c.weight) : null,
+        goal: c.goal ? String(c.goal) : null,
+        // joining_date is the studio's own record of when they signed up;
+        // created_at is when the row happened to be typed in. Prefer the
+        // first and fall back to the second.
+        memberSince: (c.joining_date ?? c.created_at) ? String(c.joining_date ?? c.created_at) : null,
+      });
 
       const days = typeof c.preferred_training_days === 'string' && c.preferred_training_days
         ? c.preferred_training_days.split(',').map((d) => d.trim()).filter(Boolean)
@@ -263,6 +299,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
         // plain `c.final_amount ?` check.
         finalAmount: Number(c.final_amount) > 0 ? String(c.final_amount) : '',
         amountPaid: Number(c.paid_amount) > 0 ? String(c.paid_amount) : '',
+        paymentMethod: String(c.payment_method ?? ''),
       };
 
       const draft = restore();
@@ -295,6 +332,22 @@ function EnrollForm({ clientId }: { clientId: string }) {
     () => addMonths(form.startDate, Number(form.duration)),
     [form.startDate, form.duration],
   );
+  /** The header chips. Built as a list so a client missing a date of birth or
+   *  a goal gets a shorter row rather than a row of em-dashes. */
+  const heroFacts = useMemo(() => {
+    const out: { label: string; value: string }[] = [];
+    if (!clientMeta) return out;
+    if (clientMeta.memberSince) {
+      const y = new Date(clientMeta.memberSince).getUTCFullYear();
+      if (Number.isFinite(y)) out.push({ label: 'Member since', value: String(y) });
+    }
+    const age = ageFrom(clientMeta.dob);
+    if (age != null) out.push({ label: 'Age', value: String(age) });
+    if (clientMeta.weight != null) out.push({ label: 'Weight', value: `${clientMeta.weight} kg` });
+    if (clientMeta.goal) out.push({ label: 'Goal', value: clientMeta.goal });
+    return out;
+  }, [clientMeta]);
+
   const balanceDue = useMemo(
     () => calcBalanceDue(form.finalAmount, form.amountPaid),
     [form.finalAmount, form.amountPaid],
@@ -361,6 +414,17 @@ function EnrollForm({ clientId }: { clientId: string }) {
     ...(isAdmin ? {
       final_amount: Number(form.finalAmount),
       paid_amount: Number(form.amountPaid),
+      // Empty means "not recorded". Sending '' would fail the server's enum
+      // check and take the whole enrolment down with it.
+      ...(form.paymentMethod ? { payment_method: form.paymentMethod } : {}),
+    } : {}),
+    // The agreement travels with the enrolment rather than in a second
+    // request: a signature saved separately can succeed while the enrolment
+    // it belongs to fails, and then the client has agreed to nothing.
+    ...(signature ? {
+      agreement_accepted_at: new Date().toISOString(),
+      agreement_signature: signature,
+      agreement_text: AGREEMENT_TEXT,
     } : {}),
   });
 
@@ -369,8 +433,12 @@ function EnrollForm({ clientId }: { clientId: string }) {
       await savePayload();
       clear();
       setSubmitError(null);
+      setSaving(false);
+      // Deliberately does NOT navigate. The form is downloadable only once it
+      // has been saved, and pushing straight to the profile would take that
+      // away half a second after earning it.
+      setEnrolled(true);
       toast.success('Client enrolled in PT.');
-      router.push(`/pt-os/clients/${clientId}`);
     } catch (err: unknown) {
       // No HTTP response at all (err isn't an ApiError) or a 5xx — both are
       // consistent with a proxy timeout / backend cold start. A 4xx is a
@@ -408,9 +476,51 @@ function EnrollForm({ clientId }: { clientId: string }) {
       if (firstKey) fieldRefs.current[firstKey]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
+    // Everything is valid — now the agreement. It opens here rather than
+    // being a step earlier in the form because a client should sign the
+    // finished terms, not a draft of them.
+    setSubmitError(null);
+    setAgreementOpen(true);
+  };
+
+  /** From the agreement sheet's Done button. The only path that saves. */
+  const confirmAndSave = () => {
+    setAgreementOpen(false);
     setSubmitError(null);
     setSaving(true);
     attemptSave(false);
+  };
+
+  /**
+   * The enrolment form, as a file.
+   *
+   * Fetched rather than linked because the endpoint is cookie-authenticated
+   * and needs credentials; an <a download> to a cross-origin API URL sends
+   * none and downloads the login page instead.
+   */
+  const downloadPdf = async () => {
+    setDownloading(true);
+    try {
+      const res = await fetch(`${apiBase()}/api/pt-os/clients/${clientId}/enrollment-pdf`, {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pt-enrolment-${(clientName || 'client').replace(/[^a-z0-9]+/gi, '-')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // Revoked on the next tick, not immediately: Safari has not started
+      // reading the blob when click() returns.
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not download the form.');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   if (loading) {
@@ -431,20 +541,100 @@ function EnrollForm({ clientId }: { clientId: string }) {
     );
   }
 
+  /* ── Done ──
+     Replaces the old behaviour of pushing straight to the client profile.
+     The form only becomes downloadable once it is saved, and navigating away
+     half a second after that would take it away again. */
+  if (enrolled) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-20 text-center">
+        <m.div
+          initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+          className="mx-auto flex h-16 w-16 items-center justify-center rounded-full"
+          style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)' }}
+        >
+          <Check size={30} style={{ color: '#059669' }} />
+        </m.div>
+        <h2 className="mt-4 text-[19px] font-[820] tracking-[-0.02em] text-slate-900">Enrolled</h2>
+        <p className="mt-1 text-[13px] font-[560] text-slate-500">
+          {clientName} is on a {form.duration}-month programme starting {fmtDateLong(form.startDate)}.
+        </p>
+
+        <div className="mt-6 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={downloadPdf}
+            disabled={downloading}
+            className="inline-flex h-[46px] items-center justify-center gap-2 rounded-[14px] text-[13.5px] font-[720] text-white transition-opacity disabled:opacity-60"
+            style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)' }}
+          >
+            {downloading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+            {downloading ? 'Preparing…' : 'Download enrolment form (PDF)'}
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push(`/pt-os/clients/${clientId}`)}
+            className="inline-flex h-[46px] items-center justify-center rounded-[14px] text-[13px] font-[700] text-slate-600"
+            style={{ background: 'rgba(15,23,42,0.05)' }}
+          >
+            Go to client profile
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="pb-28">
 
       {/* ── HEADER ── */}
-      {/* Header — in normal flow on the page background (no sticky card). */}
+      {/* ── Header ──
+          It used to be an award icon and "Hari Narayan Singh · Program Setup",
+          which is the form describing itself. This page is about a person, and
+          the four things that make it feel that way — their face, how long
+          they have been a member, their age and weight, what they are training
+          for — were all already on the client row and none of them were shown.
+
+          Every fact here is conditional. A client with no photo, no date of
+          birth and no goal is normal, especially at enrolment, and a row of
+          "—" would be worse than a shorter row. */}
       <div className="pt-1">
-        <div className="mx-auto max-w-3xl py-4 flex items-center gap-3">
-          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 6px 18px rgba(245,158,11,0.3)' }}>
-            <Award size={18} color="#fff" />
+        <div className="mx-auto max-w-3xl py-4">
+          <div className="flex items-center gap-3.5">
+            <ClientAvatar
+              name={clientMeta?.name || clientName}
+              photoUrl={clientMeta?.photoUrl}
+              className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-[18px] text-[18px] font-[820] text-white"
+              style={{
+                background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+                boxShadow: '0 6px 18px rgba(245,158,11,0.3)',
+              }} />
+
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-[19px] font-[860] tracking-[-0.03em] text-slate-900 leading-tight sm:text-[22px]">
+                {clientName || 'Client'}
+              </h1>
+              <p className="mt-0.5 text-[11.5px] font-[650] uppercase tracking-[0.1em]" style={{ color: '#D97706' }}>
+                PT Enrollment
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-[19px] font-[860] tracking-[-0.03em] text-slate-900 leading-none sm:text-[22px]">PT Enrollment</h1>
-            <p className="text-[12px] font-[600] text-slate-400 mt-1">{clientName || 'Client'} · Program Setup</p>
-          </div>
+
+          {heroFacts.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {heroFacts.map((f) => (
+                <span key={f.label}
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-[650]"
+                  style={{ background: 'rgba(15,23,42,0.045)', color: '#475569' }}>
+                  <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: '#94a3b8' }}>
+                    {f.label}
+                  </span>
+                  {f.value}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -513,7 +703,6 @@ function EnrollForm({ clientId }: { clientId: string }) {
 
               <div>
                 <FloatInput label="PT End Date" value={fmtDateLong(endDate)} onChange={() => {}} disabled />
-                <p className="mt-1.5 text-[11px] text-slate-400">Automatically calculated.</p>
               </div>
 
               {/* Payment Details */}
@@ -578,6 +767,43 @@ function EnrollForm({ clientId }: { clientId: string }) {
                   {!isAdmin && (
                     <p className="mt-1.5 text-[11px] text-slate-400">Only admins and managers can edit payment details.</p>
                   )}
+                </div>
+
+                {/* ── Payment method ──
+                    After the balance, because the amount is the question and
+                    the method is the follow-up. Chips rather than a dropdown:
+                    five options, all short, and this is the one field on the
+                    page somebody fills in while a client is standing in front
+                    of them.
+
+                    The values are the server's enum, not labels — a 400 comes
+                    back for anything else, which is the right place for that
+                    rule to live. */}
+                <div className="mt-4">
+                  <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
+                    Payment Method
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {PAYMENT_METHODS.map((pm) => {
+                      const active = form.paymentMethod === pm.value;
+                      return (
+                        <button
+                          key={pm.value}
+                          type="button"
+                          disabled={!isAdmin}
+                          // Tapping the active one clears it: nothing forces a
+                          // method, and a chip you cannot un-pick is a trap.
+                          onClick={() => set('paymentMethod', active ? '' : pm.value)}
+                          className="inline-flex h-[38px] items-center gap-1.5 rounded-[12px] px-3.5 text-[12.5px] font-[680] transition-all disabled:opacity-50"
+                          style={active
+                            ? { background: 'rgba(245,158,11,0.14)', border: '1.5px solid #F59E0B', color: '#B45309' }
+                            : { background: '#fff', border: '1.5px solid rgb(226,232,240)', color: 'rgb(71,85,105)' }}
+                        >
+                          <span aria-hidden>{pm.icon}</span>{pm.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
@@ -798,6 +1024,99 @@ function EnrollForm({ clientId }: { clientId: string }) {
           </div>
         </div>
       </div>
+
+      {/* ── Digital agreement ──
+          The last thing before the enrolment is written. It opens from Finish
+          rather than sitting as a step in the form, because a client should
+          sign the finished terms and not a draft of them — and because a
+          signature captured half way through a form is a signature on
+          whatever the form said at the time.
+
+          Both gates are real: the box must be ticked AND the pad must have
+          something on it. Either alone is an agreement nobody made. */}
+      <AnimatePresence>
+        {agreementOpen && (
+          <>
+            <m.div
+              key="agree-scrim"
+              data-no-pull-refresh
+              className="fixed inset-0 z-[130]"
+              style={{ background: 'rgba(2,6,23,0.5)' }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setAgreementOpen(false)}
+            />
+            <m.div
+              key="agree-sheet"
+              data-no-pull-refresh
+              role="dialog" aria-modal="true" aria-label="Digital agreement"
+              className="fixed inset-x-0 bottom-0 z-[140] flex max-h-[88dvh] flex-col overflow-hidden rounded-t-[24px] bg-white sm:inset-x-auto sm:bottom-8 sm:left-1/2 sm:w-[520px] sm:-translate-x-1/2 sm:rounded-[24px]"
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ duration: 0.3, ease: EASE }}
+              style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+            >
+              <div className="flex shrink-0 items-center gap-2.5 border-b px-5 py-3.5" style={{ borderColor: 'rgba(15,23,42,0.08)' }}>
+                <span className="flex h-8 w-8 items-center justify-center rounded-[10px]"
+                  style={{ background: 'rgba(245,158,11,0.14)', color: '#B45309' }}>
+                  <FileSignature size={15} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-[800] text-slate-900">Digital Agreement</p>
+                  <p className="text-[11px] font-[560] text-slate-400">{clientName}</p>
+                </div>
+                <button type="button" onClick={() => setAgreementOpen(false)} aria-label="Close agreement"
+                  className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: 'rgba(15,23,42,0.06)' }}>
+                  <X size={15} className="text-slate-700" />
+                </button>
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+                <p className="rounded-[14px] px-3.5 py-3 text-[12px] font-[540] leading-[1.6] text-slate-700"
+                  style={{ background: 'rgba(15,23,42,0.035)' }}>
+                  {AGREEMENT_TEXT}
+                </p>
+
+                <label className="mt-3.5 flex cursor-pointer items-start gap-2.5 rounded-[14px] px-3.5 py-3"
+                  style={{ background: agreementChecked ? 'rgba(245,158,11,0.10)' : 'rgba(15,23,42,0.03)',
+                           border: `1.5px solid ${agreementChecked ? '#F59E0B' : 'transparent'}` }}>
+                  <input
+                    type="checkbox"
+                    checked={agreementChecked}
+                    onChange={(e) => setAgreementChecked(e.target.checked)}
+                    className="mt-[2px] h-[18px] w-[18px] shrink-0 accent-[#F59E0B]"
+                  />
+                  <span className="text-[12.5px] font-[680] leading-[1.45] text-slate-800">
+                    I agree to the terms above on behalf of, and with the consent of, {clientName || 'the client'}.
+                  </span>
+                </label>
+
+                <div className="mt-3.5">
+                  <SignaturePad
+                    label="Client signature"
+                    required
+                    onChange={setSignature}
+                    onClear={() => setSignature('')}
+                  />
+                </div>
+              </div>
+
+              <div className="shrink-0 border-t px-5 py-3.5" style={{ borderColor: 'rgba(15,23,42,0.08)' }}>
+                <button
+                  type="button"
+                  onClick={confirmAndSave}
+                  disabled={!agreementChecked || !signature}
+                  className="flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] text-[13.5px] font-[750] text-white transition-opacity disabled:opacity-40"
+                  style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)' }}
+                >
+                  <Check size={15} />
+                  {!agreementChecked ? 'Tick the box to continue'
+                    : !signature ? 'Sign to continue'
+                    : 'Done'}
+                </button>
+              </div>
+            </m.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
