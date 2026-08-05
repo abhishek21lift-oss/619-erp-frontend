@@ -146,7 +146,11 @@ function CardBody({ card }: { card: CommandCenterCard }) {
     case 'runtime':
       return (
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
-          <Stat label="Heap" value={`${fmtBytes(d('memory.heap_used_bytes'))} / ${fmtBytes(d('memory.heap_total_bytes'))}`} />
+          {/* Against the LIMIT, not against heapTotal. heapTotal is what V8 has
+              committed and it tracks the live set by design, so "48MB / 50MB"
+              read as nearly-full when the process had 8GB of room. The card
+              showed the same misleading pair the alert was firing on. */}
+          <Stat label="Heap" value={`${fmtBytes(d('memory.heap_used_bytes'))} / ${fmtBytes(d('memory.heap_limit_bytes'))}`} />
           <Stat label="RSS" value={fmtBytes(d('memory.rss_bytes'))} />
           <Stat label="Loop lag p99" value={fmtMs(d('event_loop_lag_ms.p99'))} />
           <Stat label="Uptime" value={fmtDuration(d('uptime_seconds'))} />
