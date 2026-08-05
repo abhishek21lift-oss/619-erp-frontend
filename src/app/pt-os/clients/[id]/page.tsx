@@ -348,6 +348,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     return `https://wa.me/${num}?text=${encodeURIComponent(`Hi ${name ?? 'there'}, this is your trainer from MY PT STUDIO.`)}`;
   };
 
+  // Set only when the browser fails to load photo_url, so one bad path does
+  // not leave a broken-image icon where the client's face should be.
+  const [photoBroken, setPhotoBroken] = useState(false);
+
   const initials = (name: string) =>
     name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
 
@@ -460,13 +464,32 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   }}>
 
                   <div className="relative flex items-start gap-4 sm:gap-6">
-                    <div className="flex h-[76px] w-[76px] shrink-0 items-center justify-center rounded-[24px] text-[26px] font-[860] text-white sm:h-[100px] sm:w-[100px] sm:rounded-[30px] sm:text-[32px]"
+                    {/* ── The client's face, when the client has one ──────────
+                        photo_url has been on this type all along and nothing
+                        rendered it, so every client looked like two letters.
+                        Rendered directly rather than through a URL helper
+                        because the field carries both data URLs (the in-app
+                        camera crop) and stored paths; onError is what makes
+                        that safe — a path this deployment cannot serve falls
+                        back to the initials instead of leaving a broken image
+                        on the client's own profile. */}
+                    <div className="relative flex h-[76px] w-[76px] shrink-0 items-center justify-center overflow-hidden rounded-[24px] text-[26px] font-[860] text-white sm:h-[100px] sm:w-[100px] sm:rounded-[30px] sm:text-[32px]"
                       style={{
                         background: 'rgba(255,255,255,0.09)',
                         border: '1px solid rgba(255,255,255,0.16)',
                         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 10px 24px rgba(0,0,0,0.28)',
                       }}>
-                      {initials(client.name)}
+                      {client.photo_url && !photoBroken ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={client.photo_url}
+                          alt={client.name}
+                          onError={() => setPhotoBroken(true)}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        initials(client.name)
+                      )}
                     </div>
 
                     <div className="min-w-0 flex-1">
@@ -501,14 +524,20 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                         </p>
                       )}
 
-                      {/* Edit belongs to the identity, so it lives with it. */}
-                      <button onClick={() => router.push(`/pt-os/clients/${id}/edit`)}
-                        className="mt-4 flex h-[44px] items-center gap-2 rounded-[13px] px-4 text-[12.5px] font-[750] text-white transition-all hover:brightness-125"
-                        style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
-                        <Pencil size={13} /> Edit profile
-                      </button>
                     </div>
                   </div>
+
+                  {/* Edit belongs to the identity, so it lives with it — but it
+                      used to live INSIDE the right-hand column, which left a
+                      column-width of empty blue under the avatar beside it.
+                      Full width below the whole identity block: the dead space
+                      goes, and the button gets the width its 44px height was
+                      already promising. */}
+                  <button onClick={() => router.push(`/pt-os/clients/${id}/edit`)}
+                    className="relative mt-4 flex h-[44px] w-full items-center justify-center gap-2 rounded-[13px] px-4 text-[12.5px] font-[750] text-white transition-all hover:brightness-125 sm:w-auto sm:justify-start"
+                    style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
+                    <Pencil size={13} /> Edit profile
+                  </button>
                 </m.div>
 
                 {/* ── THE FOUR THINGS YOU DO FROM HERE ──
