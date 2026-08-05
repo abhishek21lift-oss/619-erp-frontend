@@ -28,10 +28,11 @@
 // hands it a snapshot either way, so a socket dropping mid-incident changes the
 // update rate and nothing else.
 
+import { useState } from 'react';
 import { m } from 'framer-motion';
 import {
   Activity, AlertTriangle, Bot, CheckCircle2, Cpu, Database, Gauge, HelpCircle,
-  Layers, Mail, RadioTower, RefreshCw, Server, ShieldAlert, Timer, XCircle,
+  ChevronDown, Layers, Mail, RadioTower, RefreshCw, Server, ShieldAlert, Timer, XCircle,
 } from 'lucide-react';
 import { semantic, rgba } from '@/lib/palette';
 import type { CommandCenterCard, CommandCenterStatus } from '@/lib/api';
@@ -236,6 +237,18 @@ function StatusCard({ card, index }: { card: CommandCenterCard; index: number })
   const meta = metaFor(card.name);
   const { Icon } = meta;
 
+  // ── Healthy cards start closed ──────────────────────────────────────────
+  //
+  // Eight cards, each ~250px with its stat grid, is 2,000px of scroll on a
+  // phone — and during an incident seven of them are saying "fine". The one
+  // that is not is the whole reason the screen is open, and it was buried.
+  //
+  // So the grid opens on exactly what needs reading: anything not healthy is
+  // expanded, healthy collapses to a 56px row you can still tap. Applied on
+  // every width, not just mobile — five collapsed "healthy" rows beat five
+  // expanded ones on a laptop too.
+  const [open, setOpen] = useState(card.status !== 'healthy');
+
   return (
     <m.div
       initial={{ opacity: 0, y: 8 }}
@@ -251,7 +264,13 @@ function StatusCard({ card, index }: { card: CommandCenterCard; index: number })
         boxShadow: `inset 3px 0 0 0 ${tone.color}`,
       }}
     >
-      <div className="mb-3 flex items-start justify-between gap-3">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-label={`${meta.title} — ${tone.label}`}
+        className={`flex w-full items-center justify-between gap-3 text-left ${open ? 'mb-3' : ''}`}
+      >
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-[10px]" style={{ background: tone.bg }}>
             <Icon size={15} color={tone.color} />
@@ -262,37 +281,50 @@ function StatusCard({ card, index }: { card: CommandCenterCard; index: number })
           </div>
         </div>
 
-        <span
-          className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-[750]"
-          style={{ background: tone.bg, color: tone.color }}
-        >
-          {/* The dot only pulses when something needs attention — a grid of
-              eight animating badges is a screensaver, not a signal. */}
+        <div className="flex flex-shrink-0 items-center gap-1.5">
           <span
-            className={`h-1.5 w-1.5 rounded-full ${card.status === 'critical' ? 'animate-pulse' : ''}`}
-            style={{ background: tone.color }}
+            className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-[750]"
+            style={{ background: tone.bg, color: tone.color }}
+          >
+            {/* The dot only pulses when something needs attention — a grid of
+                eight animating badges is a screensaver, not a signal. */}
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${card.status === 'critical' ? 'animate-pulse' : ''}`}
+              style={{ background: tone.color }}
+            />
+            {/* The label is the badge on a phone too — but the word alone is
+                what a collapsed row has to carry, so it stays. */}
+            {tone.label}
+          </span>
+          <ChevronDown
+            size={14}
+            className={`transition-transform ${open ? 'rotate-180' : ''}`}
+            style={{ color: 'var(--text-tertiary)' }}
           />
-          {tone.label}
-        </span>
-      </div>
+        </div>
+      </button>
 
-      {/* The collector's sentence, not a status word. This is the payload. */}
-      {card.reason && (
-        <p className="mb-3 rounded-[10px] px-3 py-2 text-[12px] leading-snug"
-          style={{ background: tone.bg, color: 'var(--text-primary)' }}>
-          {card.reason}
-        </p>
+      {open && (
+        <>
+          {/* The collector's sentence, not a status word. This is the payload. */}
+          {card.reason && (
+            <p className="mb-3 rounded-[10px] px-3 py-2 text-[12px] leading-snug"
+              style={{ background: tone.bg, color: 'var(--text-primary)' }}>
+              {card.reason}
+            </p>
+          )}
+
+          <CardBody card={card} />
+
+          <div className="mt-3 flex items-center gap-2 text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
+            <span>{card.latency_ms == null ? 'not probed' : `probed in ${card.latency_ms} ms`}</span>
+            {card.cached && (
+              // Says so rather than passing a stale latency off as live.
+              <span className="rounded px-1.5 py-0.5" style={{ background: 'var(--bg-subtle)' }}>cached</span>
+            )}
+          </div>
+        </>
       )}
-
-      <CardBody card={card} />
-
-      <div className="mt-3 flex items-center gap-2 text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
-        <span>{card.latency_ms == null ? 'not probed' : `probed in ${card.latency_ms} ms`}</span>
-        {card.cached && (
-          // Says so rather than passing a stale latency off as live.
-          <span className="rounded px-1.5 py-0.5" style={{ background: 'var(--bg-subtle)' }}>cached</span>
-        )}
-      </div>
     </m.div>
   );
 }

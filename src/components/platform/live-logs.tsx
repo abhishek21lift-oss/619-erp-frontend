@@ -75,6 +75,7 @@ function Row({ time, level, msg, context, source }: {
 }) {
   const tone = toneFor(level);
   const ctx = contextText(context);
+  const [showCtx, setShowCtx] = useState(false);
 
   return (
     <div className="flex gap-2 px-2.5 py-[3px] font-mono text-[11px] leading-relaxed">
@@ -89,10 +90,30 @@ function Row({ time, level, msg, context, source }: {
           {source}
         </span>
       )}
-      <span className="min-w-0 break-words" style={{ color: 'var(--text-primary)' }}>
+      {/* ── The context is hidden on a phone until asked for ───────────────
+          `method=GET url=/api/health status=200 ms=7 req_id=67d2ea7a-ba0f-...`
+          is longer than the message it annotates, and it turned every routine
+          200 into a four-line paragraph. Twenty of those is a screen of UUIDs
+          with the actual log buried in it.
+          Tapping a line reveals its context, so nothing is lost — and at sm
+          and up, where the width exists, it is inline as before. */}
+      <button
+        type="button"
+        onClick={() => setShowCtx((c) => !c)}
+        disabled={!ctx}
+        className="min-w-0 flex-1 break-words text-left disabled:cursor-default"
+        style={{ color: 'var(--text-primary)' }}
+      >
         {msg}
-        {ctx && <span style={{ color: 'var(--text-tertiary)' }}> · {ctx}</span>}
-      </span>
+        {ctx && (
+          <>
+            <span className={showCtx ? 'inline' : 'hidden sm:inline'} style={{ color: 'var(--text-tertiary)' }}> · {ctx}</span>
+            {/* A dot the size of the tap target it belongs to, so a line that
+                HAS context is distinguishable from one that does not. */}
+            <span className="ml-1.5 sm:hidden" style={{ color: 'var(--text-tertiary)' }}>{showCtx ? '' : '·••'}</span>
+          </>
+        )}
+      </button>
     </div>
   );
 }

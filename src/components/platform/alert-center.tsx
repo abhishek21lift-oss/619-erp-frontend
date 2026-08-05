@@ -80,8 +80,8 @@ function ago(iso: string | null): string {
  * other — a mis-tap closes an alert instead of acknowledging it.
  */
 const ACTION_BTN =
-  'flex flex-1 items-center justify-center gap-1 rounded-[10px] px-3 py-2.5 text-[12px] '
-  + 'font-[650] disabled:opacity-50 sm:flex-none sm:rounded-[9px] sm:px-2 sm:py-1.5 sm:text-[11.5px]';
+  'flex min-w-[92px] items-center justify-center gap-1 rounded-[10px] px-3 py-2.5 text-[12px] '
+  + 'font-[650] disabled:opacity-50 sm:min-w-0 sm:rounded-[9px] sm:px-2 sm:py-1.5 sm:text-[11.5px]';
 
 function AlertRow({
   alert, busy, onAck, onResolve,
@@ -182,7 +182,10 @@ function AlertRow({
         {!done && (
           // flex-1 on the phone so Ack and Close split the row evenly; on a
           // laptop they go back to hugging their labels.
-          <div className="flex flex-shrink-0 items-center gap-2 sm:gap-1.5">
+          // Right-aligned on the phone rather than two half-width bars: Ack and
+          // Close are what you do to an alert occasionally, not the point of
+          // the card, and full-width buttons under every row read as a form.
+          <div className="flex flex-shrink-0 items-center justify-end gap-2 sm:gap-1.5">
             {!acked && (
               <button
                 onClick={onAck}

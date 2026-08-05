@@ -173,6 +173,7 @@ function CommandRow({
   outcome: Outcome | undefined;
 }) {
   const blocked = Boolean(cmd.unavailable_reason);
+  const [showDesc, setShowDesc] = useState(false);
 
   return (
     <div
@@ -186,10 +187,10 @@ function CommandRow({
         opacity: blocked ? 0.72 : 1,
       }}
     >
-      {/* Stacks below sm for the same reason the alert rows do: a queue
-          <select> plus a Run button is ~170px that never shrinks, so the
-          command's name and its description took whatever was left. */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      {/* Name and Run stay on one line — a command row should read as a row.
+          Only the queue picker (which needs real width to show a name) pushes
+          the controls onto their own line, and only below sm. */}
+      <div className={`flex gap-3 ${cmd.accepts_queue && !blocked ? 'flex-col sm:flex-row sm:items-start sm:justify-between' : 'items-start justify-between'}`}>
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <p className="truncate text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>
@@ -202,9 +203,23 @@ function CommandRow({
               </span>
             )}
           </div>
-          <p className="mt-0.5 text-[11.5px] leading-snug" style={{ color: 'var(--text-tertiary)' }}>
-            {cmd.description}
-          </p>
+          {/* ── One line until asked ──────────────────────────────────────
+              Fourteen commands, each with a full paragraph and a full-width
+              Run, made ~1,900px of near-identical buttons — a wall you scroll
+              past rather than a panel you use. The descriptions are worth
+              having (they say what a command will actually do to production)
+              but not worth showing fourteen at once.
+              Clamped to one line, tap to open. A destructive command keeps its
+              full text: that is the one you must not skim. */}
+          <button
+            type="button"
+            onClick={() => setShowDesc((d) => !d)}
+            className="mt-0.5 block w-full text-left text-[11.5px] leading-snug"
+            style={{ color: 'var(--text-tertiary)' }}
+            aria-expanded={showDesc || cmd.destructive}
+          >
+            <span className={showDesc || cmd.destructive ? '' : 'line-clamp-1'}>{cmd.description}</span>
+          </button>
         </div>
 
         <div className="flex flex-shrink-0 items-center gap-2">
@@ -228,7 +243,9 @@ function CommandRow({
             onClick={onRun}
             disabled={blocked || running}
             title={cmd.unavailable_reason ?? cmd.blast_radius}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] px-3 py-2.5 text-[12px] font-[700] disabled:cursor-not-allowed sm:flex-none sm:px-2.5 sm:py-1.5"
+            /* min-w rather than flex-1: a 44px-tall target without a
+               full-width bar under every one of fourteen rows. */
+            className="flex min-w-[104px] items-center justify-center gap-1.5 rounded-[10px] px-3 py-2.5 text-[12px] font-[700] disabled:cursor-not-allowed sm:min-w-0 sm:px-2.5 sm:py-1.5"
             style={
               blocked
                 ? { background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-tertiary)' }
