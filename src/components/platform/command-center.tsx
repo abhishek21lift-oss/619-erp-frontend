@@ -324,29 +324,37 @@ export default function CommandCenterTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[16px] px-4 py-3"
+      {/* One row, always. It used to wrap: the title block took its natural
+          width, the counts ran past it, and Refresh dropped onto a line of its
+          own — four lines of chrome above the thing you came to read. The text
+          block is now min-w-0 flex-1 so it is the part that gives, and the
+          controls stay put. */}
+      <div className="flex items-center gap-2.5 rounded-[16px] px-3.5 py-3 sm:gap-3 sm:px-4"
         style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-        <div className="flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center rounded-[11px]" style={{ background: overall.bg }}>
-            <overall.Icon size={17} color={overall.color} />
-          </span>
-          <div>
-            <p className="text-[15px] font-[800]" style={{ color: 'var(--text-primary)' }}>
-              Platform {overall.label.toLowerCase()}
-            </p>
-            <p className="text-[11.5px]" style={{ color: 'var(--text-tertiary)' }}>
-              {counts.map((c) => `${c.n} ${TONE[c.s].label.toLowerCase()}`).join(' · ')}
-              {' · '}collected in {snap.duration_ms} ms
-            </p>
-          </div>
+        <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-[11px]" style={{ background: overall.bg }}>
+          <overall.Icon size={17} color={overall.color} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[15px] font-[800]" style={{ color: 'var(--text-primary)' }}>
+            Platform {overall.label.toLowerCase()}
+          </p>
+          <p className="text-[11.5px]" style={{ color: 'var(--text-tertiary)' }}>
+            {counts.map((c) => `${c.n} ${TONE[c.s].label.toLowerCase()}`).join(' · ')}
+            {/* How long the collect took is a number for someone tuning the
+                console, not for someone reading it on a phone during an
+                incident. It was the clause that pushed this to two lines. */}
+            <span className="hidden sm:inline">{' · '}collected in {snap.duration_ms} ms</span>
+          </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Which transport is live, stated rather than implied. An operator
-              looking at a console that has quietly dropped to 5s updates
-              deserves to know that from the screen, not from counting. */}
+        <div className="flex flex-shrink-0 items-center gap-1.5 sm:gap-2">
+          {/* Which transport is live, stated rather than implied — and stated
+              on the PHONE too. This was `hidden sm:inline-flex`, which hid the
+              one indicator that answers "why is this screen stale" from the
+              device most likely to be asking. On mobile it keeps the icon and
+              drops to "Live" / "5s"; the full label returns at sm. */}
           <span
-            className="hidden items-center gap-1.5 rounded-[11px] px-2.5 py-2 text-[11.5px] font-[650] sm:inline-flex"
+            className="inline-flex items-center gap-1.5 rounded-[11px] px-2 py-2 text-[11.5px] font-[650] sm:px-2.5"
             style={{
               background: transport === 'stream' ? rgba(semantic.success, 0.10) : 'var(--bg-subtle)',
               color: transport === 'stream' ? semantic.success : 'var(--text-tertiary)',
@@ -357,17 +365,21 @@ export default function CommandCenterTab() {
               : `Polling every ${POLL_MS / 1000}s — the realtime stream is not available`}
           >
             <RadioTower size={12} />
-            {transport === 'stream' ? 'Live' : `Polling ${POLL_MS / 1000}s`}
+            <span className="hidden sm:inline">{transport === 'stream' ? 'Live' : `Polling ${POLL_MS / 1000}s`}</span>
+            <span className="sm:hidden">{transport === 'stream' ? 'Live' : `${POLL_MS / 1000}s`}</span>
           </span>
 
+          {/* Icon-only on the phone. The word "Refresh" beside a spinning arrow
+              is the least informative 60px on the screen. */}
           <button
             onClick={() => refresh()}
             disabled={refreshing}
-            className="flex items-center gap-2 rounded-[11px] px-3 py-2 text-[12.5px] font-[650] disabled:opacity-50"
+            aria-label="Refresh"
+            className="flex items-center gap-2 rounded-[11px] px-2 py-2 text-[12.5px] font-[650] disabled:opacity-50 sm:px-3"
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           >
             <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
           </button>
         </div>
       </div>

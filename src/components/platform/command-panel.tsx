@@ -186,7 +186,10 @@ function CommandRow({
         opacity: blocked ? 0.72 : 1,
       }}
     >
-      <div className="flex items-start justify-between gap-3">
+      {/* Stacks below sm for the same reason the alert rows do: a queue
+          <select> plus a Run button is ~170px that never shrinks, so the
+          command's name and its description took whatever was left. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <p className="truncate text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>
@@ -207,10 +210,12 @@ function CommandRow({
         <div className="flex flex-shrink-0 items-center gap-2">
           {cmd.accepts_queue && !blocked && (
             <select
+              /* flex-1 on the phone so the queue picker and Run share the row
+                 instead of the picker collapsing to its longest option. */
               value={queue}
               onChange={(e) => onQueue(e.target.value)}
               aria-label={`Queue for ${cmd.label}`}
-              className="rounded-[9px] px-2 py-1.5 text-[11.5px] font-[600] outline-none"
+              className="flex-1 rounded-[10px] px-2 py-2.5 text-[12px] font-[600] outline-none sm:flex-none sm:rounded-[9px] sm:py-1.5 sm:text-[11.5px]"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
             >
               {/* Straight from the server's QUEUE_NAMES — the client never
@@ -223,7 +228,7 @@ function CommandRow({
             onClick={onRun}
             disabled={blocked || running}
             title={cmd.unavailable_reason ?? cmd.blast_radius}
-            className="flex items-center gap-1.5 rounded-[10px] px-2.5 py-1.5 text-[12px] font-[700] disabled:cursor-not-allowed"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] px-3 py-2.5 text-[12px] font-[700] disabled:cursor-not-allowed sm:flex-none sm:px-2.5 sm:py-1.5"
             style={
               blocked
                 ? { background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-tertiary)' }

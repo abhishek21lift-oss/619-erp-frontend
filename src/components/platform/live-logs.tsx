@@ -237,7 +237,11 @@ export default function LiveLogs() {
           </button>
         ))}
 
-        <div className="flex min-w-[180px] flex-1 items-center gap-1.5 rounded-[9px] px-2.5 py-1.5"
+        {/* w-full below sm. min-w-[180px] inside a wrapping row meant that on a
+            narrow screen the search box either forced the row wider than the
+            card or landed alone on a line with 180px of it and dead space after
+            — it never simply filled the line it was given. */}
+        <div className="flex w-full items-center gap-1.5 rounded-[9px] px-2.5 py-2 sm:w-auto sm:min-w-[180px] sm:flex-1 sm:py-1.5"
           style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
           <Search size={12} color="var(--text-tertiary)" />
           <input

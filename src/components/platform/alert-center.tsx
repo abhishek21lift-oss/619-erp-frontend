@@ -51,18 +51,37 @@ function toneFor(a: SystemAlert) {
   return SEVERITY[a.severity] ?? SEVERITY.warning;
 }
 
-/** "9h", "4m", "just now" — a duration an operator reads at a glance. */
+/**
+ * "9h ago", "4m ago", "just now" — a duration an operator reads at a glance.
+ *
+ * The suffix belongs HERE rather than at the call site. It used to be appended
+ * by the caller (`last {ago(x)} ago`), which read correctly for every branch
+ * except the one that matters most: a brand-new alert rendered as
+ * "last just now ago". The only branch that must not take the suffix is the
+ * only branch a live incident actually shows.
+ */
 function ago(iso: string | null): string {
   if (!iso) return '—';
   const ms = Date.now() - new Date(iso).getTime();
   if (!Number.isFinite(ms) || ms < 0) return '—';
   const mins = Math.floor(ms / 60_000);
   if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m`;
+  if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h`;
-  return `${Math.floor(hrs / 24)}d`;
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
+
+/**
+ * Ack / Close.
+ *
+ * `py-2.5` on the phone is not decoration: at py-1.5 these were 28px tall,
+ * well under the 44px Apple and Google both ask for, and they sit next to each
+ * other — a mis-tap closes an alert instead of acknowledging it.
+ */
+const ACTION_BTN =
+  'flex flex-1 items-center justify-center gap-1 rounded-[10px] px-3 py-2.5 text-[12px] '
+  + 'font-[650] disabled:opacity-50 sm:flex-none sm:rounded-[9px] sm:px-2 sm:py-1.5 sm:text-[11.5px]';
 
 function AlertRow({
   alert, busy, onAck, onResolve,
@@ -93,7 +112,16 @@ function AlertRow({
         opacity: done ? 0.7 : acked ? 0.85 : 1,
       }}
     >
-      <div className="flex items-start justify-between gap-3">
+      {/* ── Why this stacks below sm ──────────────────────────────────────
+          Side by side, the action cluster keeps its full width (it is
+          flex-shrink-0 — it has to be, or the buttons crush) and the text
+          column absorbs the whole squeeze. On a 390px phone that left the
+          title and the collector's sentence about 180px, so "Email delivery
+          problem" wrapped to two lines and its reason to three, and a card
+          that is two lines on a laptop became eight.
+          Stacked, the sentence gets the full width and the buttons get real
+          tap targets instead of 28px-tall ones. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 gap-2.5">
           <span className="mt-0.5 grid h-7 w-7 flex-shrink-0 place-items-center rounded-[9px]"
             style={{ background: done ? 'var(--bg-subtle)' : rgba(tone.color, 0.10) }}>
@@ -143,35 +171,37 @@ function AlertRow({
                 {/* Both, on purpose: "twice in 4 minutes" and "1,204 times over
                     9 hours" are the same alert to a list that shows only the
                     latest timestamp, and completely different to a human. */}
-                seen {alert.occurrences.toLocaleString('en-IN')}×, first {ago(alert.first_seen_at)} ago
+                seen {alert.occurrences.toLocaleString('en-IN')}×, first {ago(alert.first_seen_at)}
               </span>
-              <span>last {ago(alert.last_seen_at)} ago</span>
+              <span>last {ago(alert.last_seen_at)}</span>
               <span>source: {alert.source}</span>
             </p>
           </div>
         </div>
 
         {!done && (
-          <div className="flex flex-shrink-0 items-center gap-1.5">
+          // flex-1 on the phone so Ack and Close split the row evenly; on a
+          // laptop they go back to hugging their labels.
+          <div className="flex flex-shrink-0 items-center gap-2 sm:gap-1.5">
             {!acked && (
               <button
                 onClick={onAck}
                 disabled={busy}
                 title="Seen — I am on it. The alert keeps tracking the condition."
-                className="flex items-center gap-1 rounded-[9px] px-2 py-1.5 text-[11.5px] font-[650] disabled:opacity-50"
+                className={ACTION_BTN}
                 style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
               >
-                <Check size={11} /> Ack
+                <Check size={12} /> Ack
               </button>
             )}
             <button
               onClick={onResolve}
               disabled={busy}
               title="Close it. If the condition is still true it will re-open."
-              className="flex items-center gap-1 rounded-[9px] px-2 py-1.5 text-[11.5px] font-[650] disabled:opacity-50"
+              className={ACTION_BTN}
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
             >
-              <X size={11} /> Close
+              <X size={12} /> Close
             </button>
           </div>
         )}
