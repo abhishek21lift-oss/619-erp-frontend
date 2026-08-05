@@ -370,11 +370,6 @@ function EditContent({ id }: { id: string }) {
         <div className=""
           style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.55)', boxShadow: '0 1px 0 rgba(15,23,42,0.06)' }}>
           <div className="mx-auto flex max-w-2xl items-center gap-3 py-3.5">
-            <Link href={`/trainers/${id}`}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] transition-all duration-200 hover:scale-105 active:scale-95"
-              style={{ background: 'rgba(245,158,11,0.12)', border: '1.5px solid rgba(245,158,11,0.30)' }}>
-              <ArrowLeft size={16} style={{ color: '#F59E0B' }} />
-            </Link>
             <div className="min-w-0 flex-1">
               <h1 className="truncate text-[16px] font-[800] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Edit Trainer</h1>
               {trainerName && <p className="truncate text-[12px] font-[600]" style={{ color: '#F59E0B' }}>{trainerName}</p>}

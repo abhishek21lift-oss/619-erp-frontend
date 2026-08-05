@@ -151,7 +151,7 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
               <Button variant="primary" iconLeft={<RefreshCw size={13} />} onClick={fetchAll} className="mt-4">Retry</Button>
             </div>
           ) : client ? (
-            <div className="mx-auto max-w-screen-xl py-6">
+            <div className="mx-auto max-w-screen-xl pt-2 pb-6">
               {/* ── Header ── */}
               <m.div
                 initial={{ opacity: 0, y: -8 }}
@@ -159,11 +159,6 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
                 className="flex flex-wrap items-center justify-between gap-4 mb-6"
               >
                 <div className="flex items-center gap-3">
-                  <button onClick={() => router.push(`/pt-os/clients/${id}`)}
-                    className="flex h-9 w-9 items-center justify-center rounded-[10px] transition-all hover:bg-zinc-100"
-                    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                    <ArrowLeft size={16} style={{ color: 'var(--text-muted)' }} />
-                  </button>
                   <div>
                     <div className="flex items-center gap-3">
                       <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>{client.name}</h1>

@@ -4,7 +4,7 @@ import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  ArrowLeft, Plus, Search, List as ListIcon, Calendar as CalendarIcon,
+  Plus, Search, List as ListIcon, Calendar as CalendarIcon,
   History, Loader2, AlertCircle, ChevronLeft, ChevronRight, Dumbbell,
   TrendingUp, Flame, CheckCircle2, Clock, Sparkles,
 } from 'lucide-react';
@@ -219,14 +219,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="mx-auto w-full max-w-4xl py-6 space-y-5 pb-24">
-        <button onClick={() => router.push(`/pt-os/clients/${clientId}`)}
-          className="flex items-center gap-2 text-[12px] font-[600] text-slate-500 transition-colors hover:text-slate-700">
-          <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-            <ArrowLeft size={13} />
-          </div>
-          {clientName}
-        </button>
+      <div className="mx-auto w-full max-w-4xl pt-2 space-y-5 pb-24">
 
         {/* ── Gradient Hero ── */}
         <m.div

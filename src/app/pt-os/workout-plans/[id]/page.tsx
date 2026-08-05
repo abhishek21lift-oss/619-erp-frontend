@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
-import { ArrowLeft, ClipboardList, Dumbbell, Pencil, Plus, Trash2, Loader2, Check, Target, Clock } from 'lucide-react';
+import { ClipboardList, Dumbbell, Pencil, Plus, Trash2, Loader2, Check, Target, Clock } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Button } from '@/components/ui';
@@ -145,12 +145,7 @@ function Inner() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-3xl py-6 sm:py-8">
-      <button onClick={() => router.push('/pt-os/workout-plans')}
-        className="mb-4 flex items-center gap-1.5 text-[13px] font-[600]" style={{ color: 'var(--text-muted)' }}>
-        <ArrowLeft size={14} /> Workout Plans
-      </button>
-
+    <div className="mx-auto w-full max-w-3xl pt-2 pb-6 sm:pb-8">
       <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         className="rounded-[24px] p-6 sm:p-8 mb-6"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>

@@ -9,7 +9,7 @@ import { useToast } from '@/lib/toast';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth-context';
 import {
-  ArrowLeft, User, Phone, Mail, Edit2, Trash2, Users,
+  User, Phone, Mail, Edit2, Trash2, Users,
   MessageCircle, Award, Calendar, Dumbbell, CheckCircle, XCircle,
   Star, Clock, MapPin, AlertTriangle, Sparkles,
 } from 'lucide-react';
@@ -183,11 +183,6 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
         <div>
           {/* ── Hero ── */}
           <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '28px 32px 36px', borderRadius: '0 0 40px 40px' }}>
-            <button onClick={() => router.back()}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20, transition: 'background 0.2s', position: 'relative', zIndex: 1 }}>
-              <ArrowLeft size={13} /> Back to Trainers
-            </button>
-
             <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', position: 'relative', zIndex: 1 }}>
               <m.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
                 style={{ width: 76, height: 76, borderRadius: 20, flexShrink: 0, background: mg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 800, color: '#fff', boxShadow: '0 8px 32px rgba(0,103,224,0.3)' }}>

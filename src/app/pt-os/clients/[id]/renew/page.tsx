@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Repeat, CheckCircle, IndianRupee, Calendar, User, Dumbbell, FileText } from 'lucide-react';
+import { Repeat, CheckCircle, IndianRupee, Calendar, User, Dumbbell, FileText } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Button } from '@/components/ui';
@@ -103,15 +103,10 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
   return (
     <Guard>
       <AppShell>
-        <div className="mx-auto max-w-2xl py-6">
+        <div className="mx-auto max-w-2xl pt-2 pb-6">
 
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">
-            <button onClick={() => router.back()}
-              className="flex h-9 w-9 items-center justify-center rounded-[10px] transition hover:bg-zinc-100"
-              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-              <ArrowLeft size={15} style={{ color: 'var(--text-secondary)' }} />
-            </button>
             <div>
               <h1 className="text-[20px] font-[800] tracking-tight" style={{ color: 'var(--text-primary)' }}>Renew PT</h1>
               {client && <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>{client.name}</p>}
