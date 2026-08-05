@@ -22,16 +22,18 @@ export const clients = {
     http<Client>(`/api/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: string) => http(`/api/clients/${id}`, { method: 'DELETE' }),
   search: (q: string) => http<Client[]>(`/api/clients/search?q=${encodeURIComponent(q)}`),
-  uploadPhoto: (id: string, dataUrl: string) =>
-    http<{ message?: string; photo_url?: string }>(`/api/clients/${id}/photo`, {
-      method: 'POST',
-      body: JSON.stringify({ photo: dataUrl }),
-    }),
-  assignPt: (id: string, data: Record<string, unknown>) =>
-    http<{ message?: string }>(`/api/clients/${id}/assign-pt`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  // uploadPhoto, assignPt, combo, upgrade, downgrade, transfer, trial, freeze
+  // and unfreeze are gone with routes/client-actions.js on the backend.
+  //
+  // All nine posted to /api/clients/:id/*, which read and wrote the legacy
+  // `clients` table — 0 rows since PT-OS enrolment shipped, and no
+  // organization_id column, so nothing on that mount could be tenant-scoped.
+  // No component ever called any of them; they were API surface with no caller
+  // and no working route behind it.
+  //
+  // The org-scoped equivalents are api.pt.* → /api/pt-os/clients/*, which is
+  // what the app already uses: renewPt and renewalHistory below both point
+  // there, which is why they stay.
   renewPt: (id: string, data: Record<string, unknown>) =>
     http<{ message?: string; data?: unknown }>(`/api/pt-os/clients/${id}/renew`, {
       method: 'POST',
@@ -39,40 +41,6 @@ export const clients = {
     }),
   renewalHistory: (id: string) =>
     http<{ data: unknown[] }>(`/api/pt-os/clients/${id}/renewals`),
-  combo: (id: string, data: Record<string, unknown>) =>
-    http<{ message?: string }>(`/api/clients/${id}/combo`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  upgrade: (id: string, data: Record<string, unknown>) =>
-    http<{ message?: string }>(`/api/clients/${id}/upgrade`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  downgrade: (id: string, data: Record<string, unknown>) =>
-    http<{ message?: string }>(`/api/clients/${id}/downgrade`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  transfer: (id: string, data: Record<string, unknown>) =>
-    http<{ message?: string }>(`/api/clients/${id}/transfer`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  trial: (id: string, data: Record<string, unknown>) =>
-    http<{ message?: string }>(`/api/clients/${id}/trial`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  freeze: (id: string, data: Record<string, unknown>) =>
-    http<{ message?: string }>(`/api/clients/${id}/freeze`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  unfreeze: (id: string) =>
-    http<{ message?: string }>(`/api/clients/${id}/unfreeze`, {
-      method: 'POST',
-    }),
 };
 
 export const trainers = {
