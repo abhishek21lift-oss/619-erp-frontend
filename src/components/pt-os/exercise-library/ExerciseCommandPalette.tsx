@@ -89,7 +89,9 @@ export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseComm
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center px-4 pt-[12vh]">
+    // Covers the backdrop as well as the panel: a drag anywhere over an open
+    // palette belongs to the palette, never to the page behind it.
+    <div data-no-pull-refresh className="fixed inset-0 z-[60] flex items-start justify-center px-4 pt-[12vh]">
       <div
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-[3px] animate-in fade-in duration-150"
         onClick={onClose}

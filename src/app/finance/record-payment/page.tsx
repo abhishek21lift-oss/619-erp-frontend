@@ -260,6 +260,12 @@ export default function RecordPaymentPage() {
                     {pickerOpen && (
                       <m.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
                         transition={{ duration: 0.15 }}
+                        // An open picker owns every vertical drag inside it. The
+                        // hook already declines to steal a drag from a list that
+                        // is scrolled; this covers the list sitting at its top
+                        // too, because pulling the page down behind an open
+                        // dropdown is wrong at any scroll position.
+                        data-no-pull-refresh
                         className="absolute left-4 right-4 z-40 mt-1 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_16px_48px_rgba(0,0,0,0.15)]">
                         <div className="flex items-center gap-2 border-b border-[var(--border)] px-3.5 py-2.5">
                           <Search size={13} className="text-[var(--text-muted)]" />

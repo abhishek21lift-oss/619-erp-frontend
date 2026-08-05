@@ -439,6 +439,10 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.96 }}
                       transition={{ duration: 0.12, ease: 'easeOut' }}
+                      // The notification list owns every vertical drag inside
+                      // it; pulling the page down behind it is wrong at any
+                      // scroll position.
+                      data-no-pull-refresh
                       className="notif-panel absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_16px_48px_rgba(0,0,0,0.15)]"
                     >
                       {/* Header */}

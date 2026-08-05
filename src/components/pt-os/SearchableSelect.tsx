@@ -87,6 +87,9 @@ export function SearchableSelect({
           <m.div
             initial={{ opacity: 0, y: dropUp ? 6 : -6, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: dropUp ? 6 : -6, scale: 0.98 }}
             transition={{ duration: 0.15 }}
+            // An open picker owns every vertical drag inside it; pulling the
+            // page down behind one is wrong at any scroll position.
+            data-no-pull-refresh
             className={cn(
               'absolute left-0 right-0 z-[60] overflow-hidden rounded-[14px]',
               dropUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5',

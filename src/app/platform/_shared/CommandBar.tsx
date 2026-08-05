@@ -92,6 +92,9 @@ export function CommandBar({ open, onClose, onNavigate }: { open: boolean; onClo
 
   return (
     <div
+      // Covers the backdrop as well as the panel: a drag anywhere over an open
+      // command bar belongs to it, never to the page behind it.
+      data-no-pull-refresh
       className="fixed inset-0 z-[9500] flex items-start justify-center px-4 pt-[12vh]"
       style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(3px)' }}
       onClick={onClose}
