@@ -1,7 +1,6 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
@@ -159,16 +158,11 @@ function ConsentHub({ clientId, toast }: ConsentHubProps) {
   // so it gets a real empty state and a single obvious next step rather than
   // the record layout with every section blank.
   if (!record) {
+    // Same treatment as the record view: pt-2 to match the dashboard, and no
+    // back link above the content.
     return (
-      <div className="mx-auto w-full max-w-3xl pt-3 pb-10">
-        <Link
-          href="/pt-os/informed-consent"
-          className="inline-flex items-center gap-1.5 rounded-[10px] py-2 pr-3 text-[13px] font-[600] transition-colors hover:opacity-80"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <ArrowLeft size={15} /> All clients
-        </Link>
-        <div className="mt-4">
+      <div className="mx-auto w-full max-w-3xl pt-2 pb-10">
+        <div>
           <EmptyState
             icon={<FileSignature size={20} />}
             title={`No informed consent for ${clientName || 'this client'}`}

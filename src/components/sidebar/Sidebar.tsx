@@ -698,7 +698,15 @@ export default function Sidebar({
         <div className={cn('flex items-center', collapsed ? 'flex-col gap-2' : 'justify-between')}>
           <Link href="/" className={cn('flex items-center group', collapsed ? 'justify-center' : 'gap-2.5')}>
             <div className="relative shrink-0">
-              <StudioMark name={studioName} logoUrl={user?.organization_logo_url} size={collapsed ? 32 : 38} />
+              {/* White, explicitly. This drawer is navy in both themes, so the
+                  default --bg-white plate goes dark with the theme and hides
+                  the black half of a two-tone logo. */}
+              <StudioMark
+                name={studioName}
+                logoUrl={user?.organization_logo_url}
+                size={collapsed ? 32 : 38}
+                background="#FFFFFF"
+              />
             </div>
             <AnimatePresence initial={false}>
               {!collapsed && (
