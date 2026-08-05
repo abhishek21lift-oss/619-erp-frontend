@@ -1,11 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { ArrowLeft, Search, Check, Smartphone, Banknote, CreditCard, Wallet, Delete } from 'lucide-react';
+import { Search, Check, Smartphone, Banknote, CreditCard, Wallet, Delete } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { Client } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -41,7 +40,6 @@ function avatarColor(name: string) {
 }
 
 export default function RecordPaymentPage() {
-  const router = useRouter();
   const { toast } = useToast();
 
   const [clients, setClients]         = React.useState<Client[]>([]);
@@ -141,14 +139,11 @@ export default function RecordPaymentPage() {
       <AppShell>
         <div className="relative z-10 mt-1 max-w-[560px] mx-auto pb-8">
 
-          {/* ── Nav row ── */}
-          <div className="flex items-center pt-2 pb-2">
-            <button onClick={() => router.back()} aria-label="Back"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-muted)] transition-all duration-200 hover:bg-gradient-to-br hover:from-indigo-500/10 hover:to-violet-500/10 hover:text-indigo-400">
-              <ArrowLeft size={16} />
-            </button>
-          </div>
-
+          {/* No back-arrow row. Every sibling page — Today's Sale, Collected
+              Payments, Workout Plans — goes straight from the shell to its
+              hero, and the row's pt-2/pb-2 was the gap that made this page sit
+              lower than the rest. Back is the shell's job and the platform's,
+              not a control this screen needs to draw for itself. */}
           <AnimatePresence mode="wait">
             {done ? (
               /* ── Success state ── */
