@@ -14,6 +14,7 @@ import { cn } from '@/components/ui/cn';
 import Sidebar from '@/components/sidebar';
 import StudioMark from '@/components/StudioMark';
 import MobileBottomNav from '@/components/MobileBottomNav';
+import AiAssistant from '@/components/ai/AiAssistant';
 import { api } from '@/lib/api';
 import { roleLabel } from '@/lib/roles';
 import { allNavItems, isVisibleForFeature } from '@/lib/nav-config';
@@ -643,6 +644,12 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
               fixed footers (e.g. form Save/Submit bars) instead of always
               painting on top of them regardless of their z-index. */}
           <MobileBottomNav sidebarOpen={mobileMenuOpen} />
+
+          {/* The assistant sits inside this stacking context for the same
+              reason the bottom nav does — so its z-index is compared against
+              page-level fixed bars rather than always winning or always
+              losing against them. */}
+          <AiAssistant />
         </div>
       </div>
     </LazyMotion>

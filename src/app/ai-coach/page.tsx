@@ -21,7 +21,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import ChatMarkdown from '@/components/fitness/ChatMarkdown';
 import { api } from '@/lib/api';
-import { apiBase } from '@/lib/http';
+import { streamAiChat } from '@/lib/ai-stream';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth-context';
 import { normaliseRole } from '@/lib/nav-config';
@@ -37,15 +37,6 @@ interface ChatMessage {
   /** Studio documents the answer was grounded in (RAG). */
   sources?: string[];
   /** Live-data tools consulted (client lookup, revenue, attendance…). */
-  tools?: string[];
-}
-
-interface StreamEvent {
-  type: 'start' | 'chunk' | 'sources' | 'tools' | 'done' | 'error';
-  content?: string;
-  message?: string;
-  conversation_id?: string;
-  sources?: string[];
   tools?: string[];
 }
 
@@ -200,56 +191,28 @@ export default function AiCoachPage() {
       setMessages((prev) => prev.map((msg) => (msg.id === replyId ? { ...msg, content, sources: pendingSources, tools: pendingTools } : msg)));
 
     try {
-      const res = await fetch(`${apiBase()}/api/ai/chat`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
+      // The SSE parsing lives in lib/ai-stream so this page and the floating
+      // assistant cannot drift apart on it.
+      const { aborted } = await streamAiChat(
+        {
           message: body,
-          conversation_id: conversationId ?? undefined,
-          client_id: selectedClient?.id,
+          conversationId,
+          clientId: selectedClient?.id,
           regenerate,
-        }),
-      });
-      if (!res.ok || !res.body) {
-        throw new Error(res.status === 401 ? 'Your session has expired — please sign in again.' : `Request failed (${res.status}).`);
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      for (;;) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? '';
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const raw = line.slice(6).trim();
-          if (!raw) continue;
-          let evt: StreamEvent;
-          try { evt = JSON.parse(raw) as StreamEvent; } catch { continue; }
-
-          if (evt.type === 'start' && evt.conversation_id) {
-            setConversationId(evt.conversation_id);
-          } else if (evt.type === 'sources') {
-            pendingSources = evt.sources;
-          } else if (evt.type === 'tools') {
-            pendingTools = evt.tools;
-          } else if (evt.type === 'chunk') {
-            acc += evt.content ?? '';
+          signal: controller.signal,
+        },
+        {
+          onConversationId: setConversationId,
+          onSources: (srcs) => { pendingSources = srcs; },
+          onTools: (t) => { pendingTools = t; },
+          onText: (text) => {
+            acc = text;
             if (!started) { started = true; pushReply(acc); } else updateReply(acc);
-          } else if (evt.type === 'done') {
-            if (evt.conversation_id) setConversationId(evt.conversation_id);
-          } else if (evt.type === 'error') {
-            throw new Error(evt.message || 'The coach ran into a problem.');
-          }
-        }
-      }
+          },
+        },
+      );
 
+      if (aborted) { loadConversations(); return; }
       if (!started) pushReply("I couldn't generate a reply just now — please try again.", true);
       loadConversations();
     } catch (err) {

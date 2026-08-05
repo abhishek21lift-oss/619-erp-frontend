@@ -22,10 +22,14 @@ import { join } from 'node:path';
 
 const SRC = join(process.cwd(), 'src');
 
-/** How far above a match to look for the attribute. Overlay roots spread their
- *  attributes over several lines; the attribute is often not on the className
- *  line itself. */
+/** How far around a match to look for the attribute. Overlay roots spread
+ *  their attributes over several lines and the attribute is rarely on the
+ *  className line itself — it can be above it (most modals, which put
+ *  `data-no-pull-refresh` before `className`) or below it (MobileBottomNav
+ *  puts it on the very next line). An earlier version only looked up, which
+ *  reported MobileBottomNav as an offender when it has been tagged all along. */
 const LOOKBACK = 10;
+const LOOKAHEAD = 4;
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -58,6 +62,25 @@ const FULL_SCREEN = /fixed inset-0/;
 const DROPDOWN = /\babsolute\b(?=[^"'`]*\bz-)(?=[^"'`]*(?:\btop-full\b|\bbottom-full\b|\bmt-|\bmb-|\boverflow-hidden\b))/;
 
 /**
+ * A bottom sheet or a full-height side drawer.
+ *
+ * `fixed inset-0` was never the only shape an overlay comes in, and this arm
+ * exists because the AI assistant's sheet proved it. That sheet is
+ * `fixed inset-x-0 bottom-0 z-[140]` — it takes drags exactly like a modal
+ * does, and neither of the patterns above saw it. Deleting its opt-out left
+ * this file green, which is the one thing a guard test may never do. That is
+ * the second time this has happened here; the first was the Record Payment
+ * picker, which is why the DROPDOWN arm looks the way it does.
+ *
+ * Bottom-anchored or full-height-side, AND stacked (`z-`). Deliberately NOT
+ * top-docked bars: a header pinned to `top-0` is page chrome, and dragging
+ * down from it is how you perform the refresh, not a bug in it. Widening this
+ * to `top-0` flags the app header, the landing header and the public nav, none
+ * of which should swallow the gesture.
+ */
+const FIXED_PANEL = /\bfixed\b(?=[^"'`]*\bz-)(?=[^"'`]*(?:\bbottom-0\b|\binset-y-0\b))/;
+
+/**
  * Decorative layers are not overlays.
  *
  * `pointer-events-none fixed inset-0` is a gradient or a grain texture behind
@@ -77,9 +100,9 @@ function scan(): Offender[] {
     if (file.includes(join('common', 'PullToRefresh'))) continue;
     const lines = readFileSync(file, 'utf8').split('\n');
     lines.forEach((line, i) => {
-      const isOverlay = FULL_SCREEN.test(line) || DROPDOWN.test(line);
+      const isOverlay = FULL_SCREEN.test(line) || DROPDOWN.test(line) || FIXED_PANEL.test(line);
       if (!isOverlay || DECORATIVE.test(line)) return;
-      const window = lines.slice(Math.max(0, i - LOOKBACK), i + 1).join('\n');
+      const window = lines.slice(Math.max(0, i - LOOKBACK), i + 1 + LOOKAHEAD).join('\n');
       if (window.includes('data-no-pull-refresh')) return;
       offenders.push({
         file: file.replace(`${process.cwd()}/`, ''),
@@ -105,7 +128,7 @@ describe('pull-to-refresh opt-out', () => {
     let overlays = 0;
     for (const file of walk(SRC)) {
       for (const line of readFileSync(file, 'utf8').split('\n')) {
-        if ((FULL_SCREEN.test(line) || DROPDOWN.test(line)) && !DECORATIVE.test(line)) overlays += 1;
+        if ((FULL_SCREEN.test(line) || DROPDOWN.test(line) || FIXED_PANEL.test(line)) && !DECORATIVE.test(line)) overlays += 1;
       }
     }
     expect(overlays).toBeGreaterThan(20);
