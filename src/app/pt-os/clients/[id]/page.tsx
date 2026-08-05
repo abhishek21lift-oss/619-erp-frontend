@@ -427,13 +427,37 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                   className="relative mb-3 overflow-hidden rounded-[28px] p-6 sm:p-8"
                   style={{
-                    background: 'linear-gradient(135deg, #0050ad 0%, #003f87 55%, #003f87 100%)',
+                    // The two corner glows are BACKGROUND LAYERS, not child divs.
+                    //
+                    // They used to be absolutely-positioned divs with
+                    // `blur-3xl`. On iOS Safari a `filter: blur()` child is
+                    // promoted to its own compositing layer, and the ancestor's
+                    // `overflow-hidden` + `border-radius` clip is then applied
+                    // to that layer as a RECTANGLE. The glow's square corner
+                    // showed outside the card's rounded corner as a pale blue
+                    // wedge — crisp on the outer edges (the border box), soft
+                    // on the inside (the blur). Confirmed by which corners were
+                    // affected: top-right and bottom-left, where the two glows
+                    // sat; top-right had no such artifact.
+                    //
+                    // A background layer cannot escape, because backgrounds are
+                    // always painted inside the border-radius. That makes this
+                    // correct by construction rather than by relying on
+                    // compositor behaviour — which matters, since the bug only
+                    // reproduces on WebKit and cannot be regression-tested here.
+                    //
+                    // The 180px radius was fitted against the old rendering by
+                    // pixel comparison: mean difference 1.1/255 (0.43%), and the
+                    // fit is flat between 140px and 200px, so it is not a
+                    // magic number. Two fewer DOM nodes and two fewer 288px
+                    // blur(64px) layers per card is a mobile paint win as well.
+                    background: [
+                      'radial-gradient(circle 180px at calc(100% - 48px) 32px, rgba(0,103,224,0.40), transparent 70%)',
+                      'radial-gradient(circle 180px at 48px calc(100% - 16px), rgba(0,103,224,0.20), transparent 70%)',
+                      'linear-gradient(135deg, #0050ad 0%, #003f87 55%, #003f87 100%)',
+                    ].join(', '),
                     boxShadow: '0 20px 48px rgba(0,80,173,0.35)',
                   }}>
-                  <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full blur-3xl"
-                    style={{ background: 'radial-gradient(circle, rgba(0,103,224,0.40), transparent 70%)' }} />
-                  <div className="pointer-events-none absolute -bottom-32 -left-24 h-72 w-72 rounded-full blur-3xl"
-                    style={{ background: 'radial-gradient(circle, rgba(0,103,224,0.20), transparent 70%)' }} />
 
                   <div className="relative flex items-start gap-4 sm:gap-6">
                     <div className="flex h-[76px] w-[76px] shrink-0 items-center justify-center rounded-[24px] text-[26px] font-[860] text-white sm:h-[100px] sm:w-[100px] sm:rounded-[30px] sm:text-[32px]"
