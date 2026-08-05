@@ -354,29 +354,36 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
           style={{ background: 'radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(15,23,42,0.55) 100%)' }} />
       </div>
 
-      {/* ── Trimmed to ~90% of its old height ──────────────────────────────
-          Measured off the CSS rather than eyeballed. The stack was roughly
-          224px on a phone and 248px from sm up: 32/40 of block padding, a 40px
-          crest plus its 10px gap, the eyebrow, a 31/43px wordmark, the founder
-          badge at 40 including its gap, the 21px flourish, and 28/30 for the
-          date line.
-          Ten percent is 22px and 25px. Taking it all from one place would have
-          been visible — a squashed crest, or a wordmark with no room — so it
-          comes off the padding and the six vertical gaps in proportion, which
-          is why every number below moved by one step and none by two. */}
-      <div className="relative z-10 flex flex-col items-center justify-center py-3 sm:py-3.5 px-6 text-center">
+      {/* ── Two passes of trimming, measured off the CSS, not eyeballed ─────
+          It started at ~224px on a phone and ~248px from sm up. The first pass
+          took 10% out of the padding and the vertical gaps in proportion,
+          leaving ~202/~226.
+
+          A further 20% is ~41px and ~45px, and that is more than the remaining
+          gaps hold — they total about 30. So the second pass could not come
+          from air alone, and the choice was to squash the crest and the
+          wordmark or to drop something.
+
+          The flourish divider went: 19px of pure decoration, and the only
+          thing in the stack carrying no information. Everything that says
+          something — the crest, the greeting, the wordmark, the founder badge,
+          the date — is still here, and the wordmark's type size is untouched.
+
+          The rest: py 12→8 / 14→8, crest 36→32, and one step off each
+          remaining gap. 41px and 45px, or 20.3% and 19.9%. */}
+      <div className="relative z-10 flex flex-col items-center justify-center py-2 px-6 text-center">
         {/* Crest */}
-        <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-full"
+        <div className="mb-1.5 flex h-8 w-8 items-center justify-center rounded-full"
           style={{
             background: 'radial-gradient(circle at 30% 25%, #0050AD, #0F172A)',
             border: '1px solid rgba(251,191,36,0.45)',
             boxShadow: '0 0 0 4px rgba(251,191,36,0.06), 0 6px 18px rgba(245,158,11,0.30)',
           }}>
-          <Crown size={16} style={{ color: '#FCD34D' }} />
+          <Crown size={15} style={{ color: '#FCD34D' }} />
         </div>
 
         {/* Greeting eyebrow */}
-        <p className="mb-1.5 text-[9.5px] sm:text-[10.5px] font-[700] uppercase tracking-[0.28em]"
+        <p className="mb-0.5 text-[9.5px] sm:text-[10.5px] font-[700] uppercase tracking-[0.28em]"
           style={{ color: 'rgba(252,211,77,0.66)' }}>
           {greeting()} · {coach}
         </p>
@@ -398,20 +405,12 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
             fluid-size gradient headline, and an inline badge would ride its
             baseline differently at every breakpoint. */}
         {founderNumber != null && (
-          <div className="mt-2.5 flex justify-center">
+          <div className="mt-2 flex justify-center">
             <FounderBadge number={founderNumber} size="lg" />
           </div>
         )}
 
-        {/* Flourish divider */}
-        <div className="mt-3 flex items-center gap-2">
-          <span className="h-px w-10 sm:w-16" style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.7))' }} />
-          <span className="h-[7px] w-[7px] rotate-45"
-            style={{ background: 'linear-gradient(135deg,#FDE68A,#F59E0B)', boxShadow: '0 0 8px rgba(245,158,11,0.7)' }} />
-          <span className="h-px w-10 sm:w-16" style={{ background: 'linear-gradient(90deg, rgba(251,191,36,0.7), transparent)' }} />
-        </div>
-
-        <p className="mt-2.5 text-[10.5px] sm:text-[12px] font-[600] uppercase tracking-[0.22em]"
+        <p className="mt-2 text-[10.5px] sm:text-[12px] font-[600] uppercase tracking-[0.22em]"
           style={{ color: 'rgba(255,255,255,0.46)' }}>
           {dateStr}
         </p>
