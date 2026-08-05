@@ -203,9 +203,19 @@ export default function WorkoutGeneratorPage() {
           {/* ── Hero ── */}
           <m.div variants={fadeUp} initial="hidden" animate="show" custom={0}
             className="relative mb-6 overflow-hidden rounded-[28px] p-7 sm:p-9"
-            style={{ background: 'linear-gradient(135deg, #F1F5F9 0%, #F8FAFC 100%)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-            <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full opacity-60 blur-3xl"
-              style={{ background: 'rgba(0,103,224,0.35)' }} />
+            style={{
+              // Glow folded into the card's own background. It used to be an
+              // absolutely-positioned `blur-3xl` child; WebKit promotes a
+              // filtered child to its own layer and then clips that layer to a
+              // RECTANGLE, so its square corner painted outside this card's
+              // rounded corner. A background cannot escape the border-radius.
+              // 220px fitted against the old rendering by pixel comparison.
+              background: [
+                'radial-gradient(circle 220px at calc(100% - 32px) 32px, rgba(0,103,224,0.21), transparent 70%)',
+                'linear-gradient(135deg, #F1F5F9 0%, #F8FAFC 100%)',
+              ].join(', '),
+              border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)',
+            }}>
             <div className="relative flex items-center gap-4">
               <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[16px]"
                 style={{ background: ACCENT_GRADIENT, boxShadow: '0 8px 24px rgba(0,103,224,0.35)' }}>

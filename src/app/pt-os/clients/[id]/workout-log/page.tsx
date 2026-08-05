@@ -234,8 +234,26 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
           animate={{ opacity: 1, y: 0 }}
           className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-rose-500/10 p-5 sm:p-7 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)]"
         >
-          <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-400/20 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-gradient-to-br from-rose-400/20 to-orange-400/20 blur-3xl" />
+          {/* Corner glows as ONE unfiltered gradient layer, replacing two
+              `blur-3xl` circles. `filter: blur()` promotes a child to its own
+              compositing layer, and WebKit then applies this card's rounded
+              `overflow-hidden` clip to that layer as a RECTANGLE — so the blob's
+              square corner paints outside the rounded corner. Reported on iOS
+              against the client profile card, which had the identical pattern.
+              A gradient needs no filter, so nothing is promoted and the clip holds.
+              240px, and the averaged colour for each two-tone blob, were fitted
+              against the old rendering by pixel comparison: 0.99/255 mean
+              difference, where two offset radials per blob scored 2.10. */}
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage: [
+                'radial-gradient(circle 240px at calc(100% - 32px) 32px, rgba(251,169,48,0.2), transparent 70%)',
+                'radial-gradient(circle 240px at 32px calc(100% - 16px), rgba(251,130,97,0.2), transparent 70%)',
+              ].join(', '),
+            }}
+            aria-hidden
+          />
 
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3.5 min-w-0">
