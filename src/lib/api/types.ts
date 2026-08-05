@@ -3004,3 +3004,44 @@ export interface ClientRecovery {
   trend?: 'improving' | 'steady' | 'declining' | null;
   weeks: RecoveryWeek[];
 }
+
+/* ── AI executable actions ──────────────────────────────────────────────
+ * The assistant proposes; the operator confirms; the server executes. These
+ * three types are the three steps.
+ */
+
+export interface AiActionSummary {
+  id: string;
+  title: string;
+  /** True when running this sends something to real clients. The confirm
+   *  screen keys its warning off this, so it must not be optimistic. */
+  outward: boolean;
+}
+
+export interface AiActionPlan {
+  plan_id: string;
+  action_id: string;
+  title: string;
+  description: string;
+  outward: boolean;
+  /** How many people will actually be messaged. */
+  count: number;
+  preview: Array<{ name: string; detail: string }>;
+  sample_message: string | null;
+  /** Shown BEFORE confirming — an unconfigured channel belongs here, not in
+   *  the results afterwards. */
+  warnings: string[];
+  truncated: boolean;
+  expires_at: string;
+}
+
+export interface AiActionResult {
+  /** Counts by delivery status. `sent` is the only one that means a message
+   *  left the building; `not_configured` and `failed` are reported as
+   *  themselves. */
+  tally: Record<string, number>;
+  sent: number;
+  total: number;
+  warnings: string[];
+  results: Array<{ id: string; name: string; status: string; error: string | null }>;
+}

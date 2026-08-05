@@ -7,7 +7,8 @@
 import { http, httpSSE } from '../../http';
 import { buildQs } from '../qs';
 import type {
-  ActivityFeed, AiBusinessInsights, AiConversation, AiDietParams, AiDietPlan,
+  ActivityFeed, AiActionPlan, AiActionResult, AiActionSummary,
+  AiBusinessInsights, AiConversation, AiDietParams, AiDietPlan,
   AiFitnessTestAnalysis, AiHealthResponse, AiKnowledgeDocument, AiMessage, AiModelStat,
   AiProgressAnalysis, AiProviderSettings, AiUsageStats, AiWorkoutParams, AiWorkoutPlan,
   DuesItem, ProfileDevice, ProfileSession, SearchResponse, TrainerSummaryRow,
@@ -74,6 +75,27 @@ export const ai = {
     http<{ data: AiConversation }>(`/api/ai/conversations/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
+    }),
+
+  /* ── Executable actions ───────────────────────────────────────────────
+   * Two calls, deliberately. plan() is read-only and returns exactly what
+   * would happen; execute() quotes the plan id back and is the only thing
+   * that writes or sends. There is no one-shot variant, because the
+   * confirmation step is the safety property and an endpoint that skipped it
+   * would eventually get called. */
+  actions: () =>
+    http<{ data: AiActionSummary[] }>('/api/ai/actions'),
+
+  actionPlan: (id: string, params?: Record<string, unknown>) =>
+    http<{ data: AiActionPlan }>(`/api/ai/actions/${id}/plan`, {
+      method: 'POST',
+      body: JSON.stringify(params ?? {}),
+    }),
+
+  actionExecute: (id: string, planId: string) =>
+    http<{ data: AiActionResult }>(`/api/ai/actions/${id}/execute`, {
+      method: 'POST',
+      body: JSON.stringify({ plan_id: planId }),
     }),
 
   usage: () =>

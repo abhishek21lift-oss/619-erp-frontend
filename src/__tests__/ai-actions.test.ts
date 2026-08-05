@@ -18,16 +18,32 @@ import {
 const UUID = '3f1a2b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b';
 
 describe('the action registry', () => {
-  it('carries the ten shortcuts, each with something to do', () => {
-    expect(AI_ACTIONS).toHaveLength(10);
+  it('every shortcut leads somewhere', () => {
+    expect(AI_ACTIONS.length).toBeGreaterThanOrEqual(10);
     for (const a of AI_ACTIONS) {
       expect(a.emoji).toBeTruthy();
       expect(a.label).toBeTruthy();
-      // Every action must lead somewhere: a prompt to send or a page to open.
-      expect(Boolean(a.prompt) || Boolean(a.href)).toBe(true);
+      // A tile that does nothing is worse than no tile.
+      expect(Boolean(a.prompt) || Boolean(a.href) || Boolean(a.actionId)).toBe(true);
       if (a.kind === 'route') expect(a.href).toBeTruthy();
       if (a.kind === 'ask') expect(a.prompt).toBeTruthy();
+      if (a.kind === 'execute') expect(a.actionId).toBeTruthy();
     }
+  });
+
+  it('an execute action carries no prompt, so it can never be mistaken for a question', () => {
+    // runAction branches on kind. If an execute action also had a prompt, a
+    // reordered branch would silently turn "send to 40 people" into a chat
+    // message — the failure would look like nothing happening.
+    for (const a of AI_ACTIONS.filter((x) => x.kind === 'execute')) {
+      expect(a.prompt).toBeUndefined();
+      expect(a.href).toBeUndefined();
+    }
+  });
+
+  it('names the two executable actions the server actually exposes', () => {
+    expect(AI_ACTIONS.filter((a) => a.kind === 'execute').map((a) => a.actionId).sort())
+      .toEqual(['dues_reminders', 'renewal_reminders']);
   });
 
   it('has no duplicate ids', () => {

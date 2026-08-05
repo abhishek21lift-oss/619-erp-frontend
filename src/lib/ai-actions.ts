@@ -11,13 +11,17 @@
  *                   (the workout generator, the diet generator), and a chat
  *                   answer would be a worse version of it. The action opens
  *                   that screen instead of pretending to do it inline.
+ *   kind: 'execute' — this one really does something: it messages clients.
+ *                   The model never runs it. Tapping it asks the server for a
+ *                   plan — who exactly, saying exactly what — and nothing
+ *                   happens until the operator confirms that plan.
  *
  * Marking the second group honestly is the point. An assistant that answers
  * "sure, I've created the workout" without creating one is worse than a button
  * that takes you where the workout is actually created.
  */
 
-export type AiActionKind = 'ask' | 'route';
+export type AiActionKind = 'ask' | 'route' | 'execute';
 
 export interface AiAction {
   id: string;
@@ -30,6 +34,8 @@ export interface AiAction {
   prompt?: string;
   /** kind: 'route' — where to go. `:id` is filled from the current client. */
   href?: string;
+  /** kind: 'execute' — the server-side action id. */
+  actionId?: string;
   /** Route actions that need a client, when the current page has none, fall
    *  back to asking instead of navigating to a broken URL. */
   needsClient?: boolean;
@@ -65,13 +71,24 @@ export const AI_ACTIONS: AiAction[] = [
     relevantTo: ['/pt-os/clients', '/pt-os/nutrition-assessment'],
   },
   {
+    // Was a question that listed who is due. It now offers to actually message
+    // them — behind a confirmation screen naming every recipient. The
+    // informational version did not disappear: "Highest renewal
+    // opportunities" below still answers who and how much.
     id: 'renew-clients',
     emoji: '💳',
-    label: 'Renew clients',
-    kind: 'ask',
-    prompt:
-      'Which clients are due for renewal in the next 14 days? List them with their package, end date and outstanding balance.',
+    label: 'Send renewal reminders',
+    kind: 'execute',
+    actionId: 'renewal_reminders',
     relevantTo: ['/finance', '/pt-os/clients'],
+  },
+  {
+    id: 'dues-reminders',
+    emoji: '🧾',
+    label: 'Send payment reminders',
+    kind: 'execute',
+    actionId: 'dues_reminders',
+    relevantTo: ['/finance', '/finance/dues'],
   },
   {
     id: 'message-everyone',
