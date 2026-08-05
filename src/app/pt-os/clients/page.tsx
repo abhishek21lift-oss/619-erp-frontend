@@ -2,11 +2,8 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSeededSearch } from '@/lib/use-seeded-search';
-import { m, AnimatePresence } from 'framer-motion';
-import {
-  Search, Users, RefreshCw, UserPlus, User,
-  ChevronRight, LayoutGrid, LayoutList, Dumbbell,
-} from 'lucide-react';
+import { m } from 'framer-motion';
+import { Search, Users, UserPlus, User, Phone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import ClientKpiStrip from '@/components/pt-os/ClientKpiStrip';
@@ -14,7 +11,6 @@ import AppShell from '@/components/AppShell';
 import { PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api, PtClientBase } from '@/lib/api';
-import { CopyId } from '@/components/ui/CopyId';
 
 type PtClient = PtClientBase & {
   gender: string;
@@ -29,9 +25,6 @@ type PtClient = PtClientBase & {
   total_earned_commission: number;
 };
 
-function fmtINR(n: number | string | null | undefined) {
-  return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
-}
 function fmtShortINR(n: number): string {
   if (n >= 100000) return '₹' + (n / 100000).toFixed(1) + 'L';
   if (n >= 1000) return '₹' + (n / 1000).toFixed(1) + 'K';
@@ -110,119 +103,15 @@ const STATUS_FILTERS = [
   { value: 'expired', label: 'Expired', from: '#64748b', to: '#475569' },
 ];
 
-type ViewMode = 'table' | 'grid';
-
-function ClientCard({ client, index }: { client: PtClient; index: number }) {
-  const router = useRouter();
-  const palette = CLIENT_PALETTES[index % CLIENT_PALETTES.length];
-  const initials = client.name.split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase();
-  const statusInfo = getStatusInfo(client.status, client.days_left);
-  return (
-    <m.div
-      initial={{ opacity: 0, y: 16, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay: index * 0.04, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      onClick={() => router.push(`/pt-os/clients/${client.id}`)}
-      className="group cursor-pointer rounded-[20px] p-5 transition-all duration-300 hover:-translate-y-1.5"
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        boxShadow: 'var(--shadow-xs)',
-      }}
-    >
-      {/* Top row */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] text-white text-[13px] font-[800] transition-transform duration-300 group-hover:scale-110"
-            style={{ background: `linear-gradient(135deg, ${palette.from}, ${palette.to})`, boxShadow: `0 4px 14px ${palette.glow}` }}>
-            {initials}
-            <span className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-white"
-              style={{ background: statusInfo.dot }} />
-          </div>
-          <div>
-            <p className="text-[13.5px] font-[760] text-gray-900 leading-tight tracking-[-0.01em]">{client.name}</p>
-            <div className="mt-0.5 flex items-center gap-1">
-              <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color={palette.from} />
-            </div>
-          </div>
-        </div>
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-[700] uppercase tracking-wide px-2.5 py-1 rounded-[8px]"
-          style={{ background: statusInfo.bg, color: statusInfo.color }}>
-          <span className="h-1.5 w-1.5 rounded-full" style={{ background: statusInfo.color }} />
-          {statusInfo.label}
-        </span>
-      </div>
-
-      {/* Trainer + Package */}
-      <div className="flex items-center gap-2 mb-4">
-        {client.trainer_name && (
-          <div className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1"
-            style={{ background: `${palette.from}18` }}>
-            <User size={10} style={{ color: palette.from }} />
-            <span className="text-[11px] font-[600]" style={{ color: palette.from }}>{client.trainer_name}</span>
-          </div>
-        )}
-        {client.package_type && (
-          <div className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1"
-            style={{ background: 'var(--bg-subtle)' }}>
-            <Dumbbell size={10} className="text-slate-400" />
-            <span className="text-[11px] font-[600] text-slate-500">{client.package_type}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Financial row */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        {[
-          { label: 'Amount', value: fmtShortINR(client.final_amount), color: 'var(--text-primary)' },
-          { label: 'Paid', value: fmtShortINR(client.paid_amount), color: '#34d399' },
-          { label: 'Balance', value: fmtShortINR(client.balance_amount), color: client.balance_amount > 0 ? '#f87171' : '#34d399' },
-        ].map(f => (
-          <div key={f.label} className="rounded-[10px] p-2.5 text-center"
-            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-            <p className="text-[11px] font-[700] tabular-nums" style={{ color: f.color }}>{f.value}</p>
-            <p className="text-[9px] font-[600] text-slate-400 mt-0.5 uppercase tracking-wide">{f.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Progress bar */}
-      <div>
-        <div className="mb-1.5 flex items-center justify-between">
-          <span className="text-[9px] font-[700] uppercase tracking-wider text-slate-400">Payment Progress</span>
-          <span className="text-[10px] font-[700]" style={{ color: palette.from }}>
-            {Math.min(Math.round((client.paid_amount / Math.max(client.final_amount, 1)) * 100), 100)}%
-          </span>
-        </div>
-        <div className="h-1.5 w-full rounded-full" style={{ background: 'var(--bg-subtle)' }}>
-          <m.div
-            initial={{ width: 0 }}
-            animate={{ width: `${Math.min(Math.round((client.paid_amount / Math.max(client.final_amount, 1)) * 100), 100)}%` }}
-            transition={{ duration: 0.8, delay: index * 0.04 + 0.1, ease: 'easeOut' }}
-            className="h-full rounded-full"
-            style={{ background: `linear-gradient(90deg, ${palette.from}, ${palette.to})` }}
-          />
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="mt-3 flex items-center justify-between">
-        <DaysArc days_left={client.days_left} />
-        <div className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 transition-all duration-200 group-hover:opacity-80"
-          style={{ background: `${palette.from}18`, color: palette.from }}>
-          <span className="text-[11px] font-[700]">View Profile</span>
-          <ChevronRight size={12} />
-        </div>
-      </div>
-    </m.div>
-  );
-}
-
 function ClientTableRow({ client, index }: { client: PtClient; index: number }) {
   const router = useRouter();
   const palette = CLIENT_PALETTES[index % CLIENT_PALETTES.length];
   const initials = client.name.split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase();
   const statusInfo = getStatusInfo(client.status, client.days_left);
+  // Same fallback the profile hero uses: photo_url carries both data URLs from
+  // the in-app crop and stored paths, and a path this deployment cannot serve
+  // must land on the initials rather than a broken-image icon in every row.
+  const [photoBroken, setPhotoBroken] = useState(false);
   return (
     <m.tr
       initial={{ opacity: 0, x: -10 }}
@@ -234,13 +123,26 @@ function ClientTableRow({ client, index }: { client: PtClient; index: number }) 
     >
       <td className="py-3.5 px-5">
         <div className="flex items-center gap-3">
-          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-white text-[11px] font-[800] transition-transform duration-200 group-hover:scale-105"
+          <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[15px] text-white text-[13px] font-[800] transition-transform duration-200 group-hover:scale-105"
             style={{ background: `linear-gradient(135deg, ${palette.from}, ${palette.to})`, boxShadow: `0 3px 10px ${palette.glow}` }}>
-            {initials}
+            {client.photo_url && !photoBroken ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={client.photo_url} alt={client.name}
+                onError={() => setPhotoBroken(true)}
+                className="h-full w-full object-cover" />
+            ) : initials}
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-[13px] font-[740] text-gray-900">{client.name}</p>
-            <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color={palette.from} />
+            {/* The ID lived here and nobody dials an ID. The number is what you
+                reach for from a roster, and it is one tap away on the phone
+                this list is mostly read on. */}
+            <div className="mt-0.5 flex items-center gap-1.5">
+              <Phone size={10} className="shrink-0 text-slate-400" />
+              <span className="text-[11.5px] font-[600] tabular-nums text-slate-500">
+                {client.mobile || '—'}
+              </span>
+            </div>
           </div>
         </div>
       </td>
@@ -263,12 +165,12 @@ function ClientTableRow({ client, index }: { client: PtClient; index: number }) 
           {statusInfo.label}
         </span>
       </td>
+      {/* Balance, not the package total. What's owed is the thing you scan a
+          roster for; the contracted amount never changes and is on the
+          client's own page. */}
       <td className="py-3.5 px-4 text-right">
-        <span className="text-[13px] font-[760] text-gray-900 tabular-nums">{fmtShortINR(client.final_amount)}</span>
-      </td>
-      <td className="py-3.5 px-4 text-right hidden lg:table-cell">
-        <span className="text-[12px] font-[700] tabular-nums"
-          style={{ color: client.balance_amount > 0 ? '#f87171' : '#34d399' }}>
+        <span className="text-[13px] font-[760] tabular-nums"
+          style={{ color: client.balance_amount > 0 ? '#dc2626' : '#059669' }}>
           {fmtShortINR(client.balance_amount)}
         </span>
       </td>
@@ -289,14 +191,6 @@ export default function PtClientsPage() {
   // Seeded from ?q= so a handoff from the global search arrives filtered.
   const [search, setSearch] = useSeededSearch();
   const [statusFilter, setStatusFilter] = useState('all');
-  const [viewMode, setViewMode] = useState<ViewMode>('table');
-
-  // Default to grid/card view on mobile screens
-  useEffect(() => {
-    if (window.matchMedia('(max-width: 767px)').matches) {
-      setViewMode('grid');
-    }
-  }, []);
   const clients = useAsync<{ data: PtClient[]; total: number }>(
     () => api.pt.clients().then(r => r as { data: PtClient[]; total: number }),
     [],
@@ -422,26 +316,10 @@ export default function PtClientsPage() {
                     ))}
                   </div>
 
-                  {/* View mode */}
-                  <div className="flex shrink-0 gap-1 rounded-[10px] p-1"
-                    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                    {([['table', LayoutList], ['grid', LayoutGrid]] as const).map(([mode, Icon]) => (
-                      <button key={mode} onClick={() => setViewMode(mode)}
-                        className="rounded-[7px] p-2 transition-all duration-200"
-                        style={viewMode === mode
-                          ? { background: 'rgba(0,103,224,0.10)', color: '#0067e0' }
-                          : { color: 'rgb(100,116,139)' }}>
-                        <Icon size={14} />
-                      </button>
-                    ))}
-                  </div>
-
-                  <button onClick={() => clients.refetch()}
-                    className="flex shrink-0 items-center gap-1.5 rounded-[10px] px-3 py-2 text-[11px] font-[600] text-slate-500 transition-all duration-200 hover:text-slate-700"
-                    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                    <RefreshCw size={11} />Refresh
-                  </button>
-
+                  {/* No view toggle and no Refresh button. One list, one layout —
+                      the toggle only ever chose between two renderings of the
+                      same rows, and PullToRefresh above already refetches on
+                      the gesture people actually use here. */}
                   <span className="ml-auto shrink-0 text-[11px] font-[600] text-slate-500">
                     <span className="text-gray-700">{filtered.length}</span>
                     <span className="mx-1 text-slate-300">/</span>
@@ -450,55 +328,39 @@ export default function PtClientsPage() {
                 </div>
               </div>
 
-              {/* ── GRID VIEW ── */}
-              {viewMode === 'grid' && (
-                filtered.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                    {filtered.map((c, i) => <ClientCard key={c.id} client={c} index={i} />)}
-                  </div>
-                ) : !clients.loading && (
-                  <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+              {/* ── THE LIST ── */}
+              <div className="overflow-hidden rounded-[20px]"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
+                        {[
+                          { label: 'Client', cls: '' },
+                          { label: 'Trainer', cls: 'hidden sm:table-cell' },
+                          { label: 'Package', cls: 'hidden md:table-cell' },
+                          { label: 'Status', cls: '' },
+                          { label: 'Balance', cls: '' },
+                          { label: 'Commission', cls: 'hidden xl:table-cell' },
+                          { label: 'Days', cls: '' },
+                        ].map(col => (
+                          <th key={col.label} className={`px-4 py-3.5 text-[9px] font-[700] uppercase tracking-[0.12em] text-slate-500 ${col.cls}`}>
+                            {col.label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((c, i) => <ClientTableRow key={c.id} client={c} index={i} />)}
+                    </tbody>
+                  </table>
+                </div>
+                {filtered.length === 0 && !clients.loading && (
+                  <div className="p-6">
                     <EmptyState search={search} statusFilter={statusFilter} onNew={() => router.push('/pt-os/new-client')} />
                   </div>
-                )
-              )}
-
-              {/* ── TABLE VIEW ── */}
-              {viewMode === 'table' && (
-                <div className="overflow-hidden rounded-[20px]"
-                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
-                          {[
-                            { label: 'Client', cls: '' },
-                            { label: 'Trainer', cls: 'hidden sm:table-cell' },
-                            { label: 'Package', cls: 'hidden md:table-cell' },
-                            { label: 'Status', cls: '' },
-                            { label: 'Amount', cls: '' },
-                            { label: 'Balance', cls: 'hidden lg:table-cell' },
-                            { label: 'Commission', cls: 'hidden xl:table-cell' },
-                            { label: 'Days', cls: '' },
-                          ].map(col => (
-                            <th key={col.label} className={`px-4 py-3.5 text-[9px] font-[700] uppercase tracking-[0.12em] text-slate-500 ${col.cls}`}>
-                              {col.label}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filtered.map((c, i) => <ClientTableRow key={c.id} client={c} index={i} />)}
-                      </tbody>
-                    </table>
-                  </div>
-                  {filtered.length === 0 && !clients.loading && (
-                    <div className="p-6">
-                      <EmptyState search={search} statusFilter={statusFilter} onNew={() => router.push('/pt-os/new-client')} />
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
 
               {/* ── LOADING ── */}
               {clients.loading && !clients.data && (
