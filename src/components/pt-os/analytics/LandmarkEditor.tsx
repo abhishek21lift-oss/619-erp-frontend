@@ -97,7 +97,7 @@ export default function LandmarkEditor({ open, onClose, onSaved }: LandmarkEdito
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center"
+      data-no-pull-refresh className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center"
       style={{ background: 'rgba(15,23,42,0.45)' }}
       onClick={close}
       role="presentation"

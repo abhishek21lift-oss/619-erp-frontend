@@ -63,7 +63,7 @@ export function ErrorState({ error, onRetry }: { error: string; onRetry: () => v
 
 export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-[9000] flex items-center justify-center p-4"
+    <div data-no-pull-refresh className="fixed inset-0 z-[9000] flex items-center justify-center p-4"
       style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(3px)' }} onClick={onClose}>
       <div className="w-full max-w-md rounded-[20px] p-6" onClick={(e) => e.stopPropagation()}
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 24px 60px rgba(15,23,42,0.30)' }}>

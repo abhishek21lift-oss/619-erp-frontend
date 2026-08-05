@@ -150,7 +150,7 @@ export default function NewProgrammeDialog({
       // covering the sheet's primary action on a 390px screen. Above the FAB
       // and the nav, below the toasts (z-9999) and the impersonation banner
       // (z-10000), both of which should outrank a dialog.
-      className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center"
+      data-no-pull-refresh className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center"
       style={{ background: 'rgba(15,23,42,0.45)' }}
       onClick={onClose}
       role="presentation"

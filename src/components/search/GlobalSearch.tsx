@@ -985,7 +985,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.985 }}
               transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-[18px]"
+              data-no-pull-refresh className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-[18px]"
               style={{
                 transformOrigin: 'top center',
                 background: 'var(--bg-elevated)',
@@ -1004,7 +1004,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
         <AnimatePresence>
           {sheetOpen && (
             <m.div
-              className="fixed inset-0 z-[120] sm:hidden"
+              data-no-pull-refresh className="fixed inset-0 z-[120] sm:hidden"
               initial={reduce ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

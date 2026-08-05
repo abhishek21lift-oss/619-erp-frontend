@@ -454,7 +454,7 @@ function ActionDialog({
   return (
     <AnimatePresence>
       <m.div
-        className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
+        data-no-pull-refresh className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         role="dialog" aria-modal="true" aria-labelledby="verify-dialog-title"
       >
@@ -576,7 +576,7 @@ function ProofDialog({ row, onClose }: { row: UpiQueueRow | null; onClose: () =>
   return (
     <AnimatePresence>
       <m.div
-        className="fixed inset-0 z-[110] flex items-center justify-center p-4"
+        data-no-pull-refresh className="fixed inset-0 z-[110] flex items-center justify-center p-4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         role="dialog" aria-modal="true" aria-label="Payment proof"
       >
@@ -732,7 +732,7 @@ function NewRequestDialog({
   return (
     <AnimatePresence>
       <m.div
-        className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
+        data-no-pull-refresh className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         role="dialog" aria-modal="true" aria-labelledby="new-request-title"
       >

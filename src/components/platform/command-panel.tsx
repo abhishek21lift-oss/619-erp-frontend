@@ -80,7 +80,7 @@ function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center p-4"
+      data-no-pull-refresh className="fixed inset-0 z-50 grid place-items-center p-4"
       style={{ background: rgba(semantic.ink, 0.55) }}
       role="dialog"
       aria-modal="true"

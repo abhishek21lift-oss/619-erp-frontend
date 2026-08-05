@@ -592,7 +592,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="fixed inset-0 z-[65]"
+                      data-no-pull-refresh className="fixed inset-0 z-[65]"
                       style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)' }}
                       onClick={() => setShowPaymentPanel(false)}
                     />

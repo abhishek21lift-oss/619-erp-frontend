@@ -327,7 +327,7 @@ function CoachSelector({ value, onChange }: { value: string; onChange: (v: strin
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-[14px] p-1"
+            data-no-pull-refresh className="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-[14px] p-1"
             style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.09)', boxShadow: '0 12px 32px rgba(15,23,42,0.12)' }}
           >
             <div className="flex items-center gap-2 rounded-[10px] px-3 py-2 mb-1" style={{ background: 'var(--bg-subtle)' }}>
@@ -427,7 +427,7 @@ function AccountCard({ account, onAction }: { account: Account; onAction: (id: s
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -4 }}
               transition={{ duration: 0.12 }}
-              className="absolute right-0 top-10 z-50 min-w-[180px] overflow-hidden rounded-[14px] p-1"
+              data-no-pull-refresh className="absolute right-0 top-10 z-50 min-w-[180px] overflow-hidden rounded-[14px] p-1"
               style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.09)', boxShadow: '0 12px 32px rgba(15,23,42,0.14)' }}
             >
               {[
@@ -1061,7 +1061,7 @@ function AccountManagementPage() {
                         <m.div
                           initial={{ opacity: 0, scale: 0.96, y: -4 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: -4 }}
                           transition={{ duration: 0.12 }}
-                          className="absolute right-0 top-12 z-50 min-w-[160px] overflow-hidden rounded-[14px] p-1"
+                          data-no-pull-refresh className="absolute right-0 top-12 z-50 min-w-[160px] overflow-hidden rounded-[14px] p-1"
                           style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.09)', boxShadow: '0 12px 32px rgba(15,23,42,0.12)' }}
                         >
                           <button onClick={() => { setFilterRole('all'); setFilterOpen(false); }}

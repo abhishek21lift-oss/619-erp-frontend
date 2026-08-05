@@ -302,7 +302,7 @@ export function MoreMenu({ suspended, onToggleStatus, onSupportAccess, supportBu
         <MoreVertical size={15} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1.5 w-52 overflow-hidden rounded-[12px] py-1.5"
+        <div data-no-pull-refresh className="absolute right-0 top-full z-20 mt-1.5 w-52 overflow-hidden rounded-[12px] py-1.5"
           style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', boxShadow: '0 12px 32px rgba(15,23,42,0.18)' }}>
           <button onClick={() => { setOpen(false); onSupportAccess(); }} disabled={supportBusy}
             className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[12.5px] font-[600] transition hover:bg-black/5 disabled:opacity-50"

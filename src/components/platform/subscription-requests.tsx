@@ -324,7 +324,7 @@ function ActionDialog({
 
   return (
     <AnimatePresence>
-      <m.div className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
+      <m.div data-no-pull-refresh className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         role="dialog" aria-modal="true" aria-labelledby="sub-action-title">
         <div className="absolute inset-0" style={{ background: 'var(--bg-overlay)' }}
@@ -461,7 +461,7 @@ function PlatformUpiDialog({
 
   return (
     <AnimatePresence>
-      <m.div className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
+      <m.div data-no-pull-refresh className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         role="dialog" aria-modal="true" aria-labelledby="upi-settings-title">
         <div className="absolute inset-0" style={{ background: 'var(--bg-overlay)' }}

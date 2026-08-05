@@ -260,7 +260,7 @@ function ExerciseLibrary() {
         </div>
 
         {railOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
+          <div data-no-pull-refresh className="fixed inset-0 z-50 lg:hidden">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={() => setRailOpen(false)} aria-hidden />
             <div className="absolute bottom-0 left-0 right-0 max-h-[82vh] overflow-y-auto rounded-t-3xl border-t border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-[#0f172a]">
               <ExerciseFilterRail

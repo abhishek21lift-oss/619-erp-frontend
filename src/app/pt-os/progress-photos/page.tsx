@@ -263,7 +263,7 @@ function PhotoStudio({ clientId }: PhotoStudioProps) {
       />
 
       {preview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-6" onClick={() => setPreview(null)}>
+        <div data-no-pull-refresh className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-6" onClick={() => setPreview(null)}>
           <button className="absolute top-5 right-5 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 hover:bg-white/20" onClick={() => setPreview(null)}>
             <X size={16} color="#fff" />
           </button>

@@ -81,7 +81,7 @@ export function FloatingPanel({ open, onClose, title, subtitle, icon, size = 'md
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label={title}>
+        <div data-no-pull-refresh className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label={title}>
           <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

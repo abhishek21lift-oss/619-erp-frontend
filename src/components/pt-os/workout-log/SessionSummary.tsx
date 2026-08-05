@@ -70,7 +70,7 @@ export default function SessionSummary({ session, open, onCancel, onFinish }: Se
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center"
+      data-no-pull-refresh className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center"
       style={{ background: 'rgba(15,23,42,0.45)' }}
       onClick={onCancel}
       role="presentation"

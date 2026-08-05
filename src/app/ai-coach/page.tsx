@@ -893,8 +893,9 @@ function ClientAttach({ selected, open, query, options, onToggle, onQuery, onSel
 
       {open && (
         <>
-          <div className="fixed inset-0 z-[70]" onClick={onToggle} />
+          <div data-no-pull-refresh className="fixed inset-0 z-[70]" onClick={onToggle} />
           <div
+            data-no-pull-refresh
             className="absolute right-0 top-full z-[71] mt-1.5 w-[240px] overflow-hidden rounded-[13px] p-1.5"
             // --bg-elevated, not --bg-card: this floats over the chat, and
             // --bg-card is translucent glass. Matches OrgSwitcher, the AppShell
