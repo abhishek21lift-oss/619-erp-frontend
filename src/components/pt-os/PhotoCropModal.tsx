@@ -30,7 +30,16 @@ interface PhotoCropModalProps {
 
 export default function PhotoCropModal({
   open, onClose, onConfirm, initialImageSrc,
-  title = 'Profile Photo', cropShape = 'round', aspect = 1, maxDim = 800,
+  // ── Why the default is 'rect' ────────────────────────────────────────────
+  // 'round' clips the canvas to a circle and cropAndCompressImage then encodes
+  // it as JPEG — which has no alpha channel, so the corners outside the circle
+  // are filled. Verified in Chromium: they come back rgb(0,0,0), pure black,
+  // baked into the file.
+  // Every avatar in this app is a rounded SQUARE (rounded-[22px] on the edit
+  // hero, [24px] on the client profile, [30px] at sm), so a circular crop
+  // guaranteed four black corners showing through the squircle. A round crop is
+  // only safe with a format that keeps alpha, and nothing here wants one.
+  title = 'Profile Photo', cropShape = 'rect', aspect = 1, maxDim = 800,
 }: PhotoCropModalProps) {
   const { toast } = useToast();
   const camera = useCamera();
