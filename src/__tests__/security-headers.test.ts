@@ -22,6 +22,39 @@ describe('buildCsp', () => {
     expect(csp).not.toContain('https://localhost;');
   });
 
+  it('allows the WebSocket origin as well as the https one', () => {
+    // Not belt-and-braces, and not a duplicate of the case above.
+    //
+    // `https://api.example.com` in connect-src does NOT permit
+    // `wss://api.example.com`. CSP3's scheme-part matching runs
+    // http→https/ws/wss, ws→wss and wss→https, and stops there — https→wss is
+    // simply absent, so the https origin on its own blocks the socket.
+    //
+    // Confirmed in Chromium against this exact policy: with only the https
+    // origin listed, opening the Command Center's realtime stream fires
+    // securitypolicyviolation[connect-src] and the console silently sits on its
+    // polling fallback, looking like a backend or nginx fault. With the wss
+    // origin listed it connects — and an unlisted wss host is still blocked, so
+    // the policy is still doing its job.
+    const csp = buildCsp({ NEXT_PUBLIC_API_URL: 'https://api.myptstudio.com' });
+    expect(csp).toContain('https://api.myptstudio.com');
+    expect(csp).toContain('wss://api.myptstudio.com');
+  });
+
+  it('derives ws:// from a plaintext dev API, never wss://', () => {
+    // A secure socket to a plaintext dev backend cannot connect at all, and
+    // listing one would hide that behind a CSP that looks right.
+    const csp = buildCsp({ NEXT_PUBLIC_API_URL: 'http://localhost:5000' });
+    expect(csp).toContain('ws://localhost:5000');
+    expect(csp).not.toContain('wss://localhost:5000');
+  });
+
+  it('adds no socket origin when there is no API URL to derive one from', () => {
+    const csp = buildCsp({});
+    expect(csp).not.toContain('wss://');
+    expect(csp).not.toContain('ws://');
+  });
+
   it('falls back to a wildcard Supabase host, not to nothing', () => {
     expect(buildCsp({})).toContain('*.supabase.co');
   });

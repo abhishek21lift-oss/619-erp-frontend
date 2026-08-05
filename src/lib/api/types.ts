@@ -1800,6 +1800,21 @@ export interface CommandCenterSnapshot {
   cards: Record<string, CommandCenterCard>;
 }
 
+/** A single-use ticket for the realtime stream (Phase 3).
+ *
+ *  The socket cannot present the session cookie: it addresses the API host
+ *  directly, because the Next.js rewrite that carries ordinary /api/* calls
+ *  does not forward an Upgrade, and the cookie belongs to the app host. The
+ *  ticket is minted over the authenticated HTTPS channel and spent once, within
+ *  `expires_in_ms`. `path` comes from the server so the two cannot drift; the
+ *  origin is the client's, from `wsBase()`. */
+export interface CommandCenterStreamTicket {
+  ticket: string;
+  expires_in_ms: number;
+  path: string;
+  tick_ms: number;
+}
+
 /** One entry in the server's allow-list of operational commands.
  *
  *  The UI must not keep its own idea of which commands exist, which are

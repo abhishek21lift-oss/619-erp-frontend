@@ -20,6 +20,7 @@ import type {
   SubscriptionInvoice, SubscriptionMetrics, SupportOverview, SupportTicket, SystemHealth,
   TicketMessage, TicketPriority, TicketStatus, UpiRejectReason,
   CommandCenterSnapshot, CommandCenterCommand, CommandCenterRunResult, CommandCenterDryRun,
+  CommandCenterStreamTicket,
   SystemAlert, SystemAlertList, GuardianReport, GuardianNarration,
   LogTail, LogHistory,
 } from '../types';
@@ -198,6 +199,17 @@ export const superAdmin = {
       `/api/super-admin/command-center/snapshot${q ? `?${q}` : ''}`,
     );
   },
+
+  /** Mint the single-use ticket that authenticates the realtime stream.
+   *
+   *  A POST because it creates a credential. Called on connect and again on
+   *  every reconnect: a ticket is spent by the socket it opens and expires in
+   *  well under a minute, so it is never worth caching. */
+  commandCenterStreamTicket: () =>
+    http<{ data: CommandCenterStreamTicket }>(
+      '/api/super-admin/command-center/stream-ticket',
+      { method: 'POST' },
+    ),
 
   /** The server's allow-list of operational commands, including the ones that
    *  cannot run here — each carries its own `unavailable_reason`. The client

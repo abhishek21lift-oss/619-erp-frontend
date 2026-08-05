@@ -23,23 +23,24 @@
 //    at noeviction, enqueues will start failing" is the product; "WARNING" is
 //    not.
 //
-// Polling at 5s for now. Phase 3 replaces the transport with a WebSocket and
-// keeps this as the fallback; the render path does not change either way.
+// The transport is a WebSocket when one can be opened and a 5s poll when it
+// cannot (Phase 3). This file does not know which — useCommandCenterSnapshot
+// hands it a snapshot either way, so a socket dropping mid-incident changes the
+// update rate and nothing else.
 
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { m } from 'framer-motion';
 import {
   Activity, AlertTriangle, Bot, CheckCircle2, Cpu, Database, Gauge, HelpCircle,
-  Layers, Mail, RefreshCw, Server, ShieldAlert, Timer, XCircle,
+  Layers, Mail, RadioTower, RefreshCw, Server, ShieldAlert, Timer, XCircle,
 } from 'lucide-react';
-import { api } from '@/lib/api';
 import { semantic, rgba } from '@/lib/palette';
-import type { CommandCenterCard, CommandCenterSnapshot, CommandCenterStatus } from '@/lib/api';
+import type { CommandCenterCard, CommandCenterStatus } from '@/lib/api';
 import { Center, ErrorState } from '@/app/platform/_shared/ui';
 import CommandPanel from './command-panel';
 import AlertCenter from './alert-center';
 import Guardian from './guardian';
 import LiveLogs from './live-logs';
+import { useCommandCenterSnapshot } from './useCommandCenterSnapshot';
 
 const POLL_MS = 5_000;
 
@@ -293,34 +294,11 @@ function StatusCard({ card, index }: { card: CommandCenterCard; index: number })
 }
 
 export default function CommandCenterTab() {
-  const [snap, setSnap] = useState<CommandCenterSnapshot | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  // Ref, not state: the interval closes over it and must not restart on change.
-  const alive = useRef(true);
-
-  const load = useCallback(async (fresh = false) => {
-    try {
-      const res = await api.superAdmin.commandCenter({ fresh });
-      if (!alive.current) return;
-      setSnap(res.data);
-      setError('');
-    } catch (err: unknown) {
-      // Only a total failure lands here — a single sick collector comes back
-      // inside the payload as a red card, which is the whole design.
-      if (alive.current) setError(err instanceof Error ? err.message : 'Failed to load the Command Center');
-    } finally {
-      if (alive.current) { setLoading(false); setRefreshing(false); }
-    }
-  }, []);
-
-  useEffect(() => {
-    alive.current = true;
-    load();
-    const id = setInterval(() => load(), POLL_MS);
-    return () => { alive.current = false; clearInterval(id); };
-  }, [load]);
+  // Transport lives in the hook. This component renders a snapshot and does not
+  // know whether it arrived over a socket or a poll — which is the point: the
+  // stream can fail at any moment and the screen must not change shape when it
+  // does. See useCommandCenterSnapshot.ts.
+  const { snap, error, loading, refreshing, transport, refresh } = useCommandCenterSnapshot(POLL_MS);
 
   if (loading) {
     return (
@@ -333,7 +311,7 @@ export default function CommandCenterTab() {
     );
   }
 
-  if (error && !snap) return <Center><ErrorState error={error} onRetry={() => { setLoading(true); load(true); }} /></Center>;
+  if (error && !snap) return <Center><ErrorState error={error} onRetry={() => refresh()} /></Center>;
   if (!snap) return null;
 
   const cards = Object.values(snap.cards);
@@ -363,22 +341,42 @@ export default function CommandCenterTab() {
           </div>
         </div>
 
-        <button
-          onClick={() => { setRefreshing(true); load(true); }}
-          disabled={refreshing}
-          className="flex items-center gap-2 rounded-[11px] px-3 py-2 text-[12.5px] font-[650] disabled:opacity-50"
-          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-        >
-          <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Which transport is live, stated rather than implied. An operator
+              looking at a console that has quietly dropped to 5s updates
+              deserves to know that from the screen, not from counting. */}
+          <span
+            className="hidden items-center gap-1.5 rounded-[11px] px-2.5 py-2 text-[11.5px] font-[650] sm:inline-flex"
+            style={{
+              background: transport === 'stream' ? rgba(semantic.success, 0.10) : 'var(--bg-subtle)',
+              color: transport === 'stream' ? semantic.success : 'var(--text-tertiary)',
+              border: '1px solid var(--border)',
+            }}
+            title={transport === 'stream'
+              ? 'Live: pushed from the server as it changes'
+              : `Polling every ${POLL_MS / 1000}s — the realtime stream is not available`}
+          >
+            <RadioTower size={12} />
+            {transport === 'stream' ? 'Live' : `Polling ${POLL_MS / 1000}s`}
+          </span>
+
+          <button
+            onClick={() => refresh()}
+            disabled={refreshing}
+            className="flex items-center gap-2 rounded-[11px] px-3 py-2 text-[12.5px] font-[650] disabled:opacity-50"
+            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          >
+            <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Above the cards, because the cards answer "what is the state of
           everything" and this answers "what needs me" — and during an incident
           the second question is the only one being asked. When nothing is
           wrong it collapses to one quiet line, so it costs no space. */}
-      <AlertCenter onChanged={() => load(true)} />
+      <AlertCenter onChanged={() => refresh()} />
 
       {/* Between the alerts and the cards, deliberately. An alert says WHAT is
           wrong; the Guardian says what it MEANS across several cards; the cards
@@ -396,7 +394,7 @@ export default function CommandCenterTab() {
           queues card and an operator who has to wait out the poll will press
           the button a second time. */}
       <div className="pt-1">
-        <CommandPanel onRan={() => load(true)} />
+        <CommandPanel onRan={() => refresh()} />
       </div>
 
       {/* Last. Logs are what you reach for when the cards, the alerts and the
@@ -408,7 +406,8 @@ export default function CommandCenterTab() {
       </div>
 
       <p className="text-center text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
-        Updating every {POLL_MS / 1000}s · last collected {new Date(snap.collected_at).toLocaleTimeString()}
+        {transport === 'stream' ? 'Streaming live' : `Updating every ${POLL_MS / 1000}s`}
+        {' · '}last collected {new Date(snap.collected_at).toLocaleTimeString()}
       </p>
     </div>
   );

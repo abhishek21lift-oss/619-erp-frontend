@@ -408,6 +408,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "superAdmin.commandCenterGuardian → /api/super-admin/command-center/guardian",
   "superAdmin.commandCenterLogHistory → /api/super-admin/command-center/logs/history",
   "superAdmin.commandCenterLogs → /api/super-admin/command-center/logs",
+  "superAdmin.commandCenterStreamTicket → /api/super-admin/command-center/stream-ticket",
   "superAdmin.couponRedemptions → /api/super-admin/coupons/",
   "superAdmin.createAnnouncement → /api/super-admin/announcements",
   "superAdmin.createCoupon → /api/super-admin/coupons",
