@@ -23,6 +23,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { m } from 'framer-motion';
 import {
   CalendarDays, ChevronRight, Dumbbell, Loader2, Moon, Play, RotateCw, Users,
@@ -183,12 +184,16 @@ function ClientRow({
         opacity: c.is_rest_day && !inProgress ? 0.72 : 1,
       }}
     >
-      <span
+      {/* A rest day keeps the moon rather than the face — that row is about
+          the programme having nothing scheduled, not about who the client is. */}
+      <ClientAvatar
+        name={c.client_name}
+        photoUrl={c.is_rest_day ? null : c.client_photo}
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-[13px] font-[800] text-white"
         style={{ background: c.is_rest_day ? 'var(--text-muted)' : 'linear-gradient(135deg,#0067e0,#0059ce)' }}
       >
         {c.is_rest_day ? <Moon size={16} /> : initials(c.client_name)}
-      </span>
+      </ClientAvatar>
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>

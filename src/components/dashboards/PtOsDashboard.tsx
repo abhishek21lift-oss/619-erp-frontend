@@ -17,6 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
+import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { PullToRefresh } from '@/components/ui';
 import { cn } from '@/components/ui/cn';
 import { palette, identity, rgba } from '@/lib/palette';
@@ -85,6 +86,7 @@ type OpsData = {
   renewals_due: Array<{
     id: string; name: string; mobile: string | null;
     trainer_name: string | null; package_type: string | null;
+    photo_url: string | null;
     pt_end_date: string; days_left: number;
     balance_amount: number; monthly_pt_amount: number;
   }>;
@@ -149,10 +151,6 @@ function fmt12(t: string | null) {
   if (isNaN(h) || isNaN(m)) return t;
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
 }
-function initials(name: string | null) {
-  return (name ?? '?').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
-}
-
 /** Minutes since midnight, for comparing a slot against the clock. */
 function minutesOf(t: string | null): number | null {
   if (!t) return null;
@@ -1113,10 +1111,11 @@ function TodaySchedule({ ops, loading }: { ops: OpsData | null | undefined; load
                       className="flex w-full items-center gap-2.5 rounded-[14px] p-2.5 text-left transition-colors hover:bg-[rgba(15,23,42,0.028)]"
                       style={{ border: '1px dashed rgba(100,116,139,0.3)' }}
                     >
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-[820]"
-                        style={{ background: 'rgba(100,116,139,0.13)', color: C.ink }}>
-                        {initials(c.client_name)}
-                      </span>
+                      <ClientAvatar
+                        name={c.client_name}
+                        photoUrl={c.client_photo}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-[820]"
+                        style={{ background: 'rgba(100,116,139,0.13)', color: C.ink }} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[12px] font-[720]" style={{ color: C.ink }}>
                           {c.client_name ?? 'Unknown client'}
@@ -1225,10 +1224,11 @@ function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loadin
                 onClick={() => router.push(`/pt-os/clients/${r.id}`)}
                 className="flex items-center gap-2.5 rounded-[13px] p-2.5 cursor-pointer transition active:scale-[0.985]"
                 style={{ background: `${color}09`, border: `1px solid ${color}1f` }}>
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] text-[10px] font-[820] text-white"
-                  style={{ background: `linear-gradient(135deg, ${color}, ${color}cc)` }}>
-                  {initials(r.name)}
-                </div>
+                <ClientAvatar
+                  name={r.name}
+                  photoUrl={r.photo_url}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] text-[10px] font-[820] text-white"
+                  style={{ background: `linear-gradient(135deg, ${color}, ${color}cc)` }} />
                 <div className="flex-1 min-w-0">
                   <p className="text-[11.5px] font-[720] truncate" style={{ color: C.ink }}>{r.name}</p>
                   <p className="text-[9.5px] font-[500] truncate" style={{ color: C.muted }}>

@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import Link from 'next/link';
-import Image from 'next/image';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PullToRefresh, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button } from '@/components/ui';
@@ -1166,14 +1166,15 @@ function StatusBadge({ status }: { status: string }) {
 
 function MemberAvatar({ client, large }: { client: Client; large?: boolean }) {
   const sz = large ? 'h-12 w-12 text-sm' : 'h-9 w-9 text-xs';
-  const initials = (client.name || '?').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
-  if (client.photo_url) {
-    return <Image src={client.photo_url} alt={client.name} width={48} height={48} className={`${sz} rounded-full object-cover`} />;
-  }
+  // This used to branch on photo_url and render the image with no onError, so
+  // a stored path this deployment cannot serve left a broken-image icon in the
+  // roster. ClientAvatar falls back to the initials instead.
   return (
-    <div className={`${sz} shrink-0 rounded-full bg-[linear-gradient(135deg,#F59E0B,#0067e0)] flex items-center justify-center font-semibold text-white shadow-sm`}>
-      {initials}
-    </div>
+    <ClientAvatar
+      name={client.name}
+      photoUrl={client.photo_url}
+      className={`${sz} shrink-0 rounded-full bg-[linear-gradient(135deg,#F59E0B,#0067e0)] flex items-center justify-center font-semibold text-white shadow-sm`}
+    />
   );
 }
 

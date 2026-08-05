@@ -20,13 +20,14 @@
  */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import SharedClientAvatar from '@/components/pt-os/ClientAvatar';
 import { m } from 'framer-motion';
 import { AlertCircle, ArrowRight, Search, Users } from 'lucide-react';
 import { EmptyState } from '@/components/ui';
 import { BRAND_HERO_GRADIENT, BRAND_HERO_SHADOW, ON_BRAND_BORDER, ON_BRAND_TEXT } from '@/lib/brand';
 import { api } from '@/lib/api';
 
-interface ClientOption { id: string; name: string; }
+interface ClientOption { id: string; name: string; photoUrl: string | null; }
 
 // Deterministic per-name, so a client keeps the same colour across every tool
 // and across reloads. Picking at random, or by list index, would reshuffle the
@@ -41,16 +42,15 @@ const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #ef4444, #f87171)',
 ];
 
-export function ClientAvatar({ name }: { name: string }) {
+export function ClientAvatar({ name, photoUrl }: { name: string; photoUrl?: string | null }) {
   const idx = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_GRADIENTS.length;
-  const initials = name.split(' ').map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
   return (
-    <div
+    <SharedClientAvatar
+      name={name}
+      photoUrl={photoUrl}
       className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[12px] font-[700] text-white"
       style={{ background: AVATAR_GRADIENTS[idx] }}
-    >
-      {initials || '?'}
-    </div>
+    />
   );
 }
 
@@ -80,7 +80,11 @@ export default function ClientPicker({ title, icon, basePath, hrefFor }: ClientP
     setLoadError(false);
     api.pt.clients().then((r: { data?: unknown[] }) => {
       const arr = Array.isArray(r?.data) ? r.data : [];
-      setClients((arr as Record<string, unknown>[]).map((c) => ({ id: String(c.id), name: String(c.name ?? '') })));
+      setClients((arr as Record<string, unknown>[]).map((c) => ({
+        id: String(c.id),
+        name: String(c.name ?? ''),
+        photoUrl: c.photo_url ? String(c.photo_url) : null,
+      })));
     }).catch(() => setLoadError(true)).finally(() => setLoading(false));
   }, []);
 
@@ -167,7 +171,7 @@ export default function ClientPicker({ title, icon, basePath, hrefFor }: ClientP
               className="group flex items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#7FB4FF] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
             >
-              <ClientAvatar name={c.name} />
+              <ClientAvatar name={c.name} photoUrl={c.photoUrl} />
               <span className="flex-1 truncate text-[13.5px] font-[650]" style={{ color: 'var(--text-primary)' }}>{c.name}</span>
               <ArrowRight size={14} className="flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" style={{ color: 'var(--text-disabled)' }} />
             </button>

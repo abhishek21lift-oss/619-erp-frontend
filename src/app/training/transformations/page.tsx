@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
+import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import Link from 'next/link';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
@@ -235,9 +236,8 @@ function Inner() {
                         </td>
                         <td style={{ ...td, fontWeight: 600, color: 'var(--text-primary)' }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${['#0067e0','#10b981','#f59e0b','#0067e0','#0067e0','#0067e0'][Math.abs(c.name.split('').reduce((a,ch) => ((a<<5)-a)+ch.charCodeAt(0),0)) % 6]}, #7fb4ff)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: '#fff' }}>
-                              {c.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-                            </div>
+                            <ClientAvatar name={c.name} photoUrl={c.photo_url}
+                              style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${['#0067e0','#10b981','#f59e0b','#0067e0','#0067e0','#0067e0'][Math.abs(c.name.split('').reduce((a,ch) => ((a<<5)-a)+ch.charCodeAt(0),0)) % 6]}, #7fb4ff)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: '#fff' }} />
                             {c.name}
                           </span>
                         </td>

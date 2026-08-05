@@ -385,6 +385,7 @@ export type DuesItem = {
   name?: string;
   client_id?: string;
   mobile?: string;
+  photo_url?: string | null;
   balance_amount?: number;
   pt_end_date?: string;
   status?: string;

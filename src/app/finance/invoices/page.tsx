@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { useSeededSearch } from '@/lib/use-seeded-search';
 import { m, AnimatePresence } from 'framer-motion';
 import { api } from '@/lib/api';
@@ -24,6 +25,7 @@ interface Invoice {
   id: string;
   memberName: string;
   memberAvatar: string;
+  memberPhoto: string | null;
   amount: number;
   date: string;
   dueDate: string;
@@ -57,11 +59,11 @@ function initials(name: string): string {
   return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
-function Avatar({ name }: { name: string }) {
+function Avatar({ name, photoUrl }: { name: string; photoUrl?: string | null }) {
   const colors = identity;
   const idx = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length;
   return (
-    <div style={{
+    <ClientAvatar name={name} photoUrl={photoUrl} style={{
       display: 'flex',
       height: '36px',
       width: '36px',
@@ -75,7 +77,7 @@ function Avatar({ name }: { name: string }) {
       background: colors[idx],
     }}>
       {initials(name)}
-    </div>
+    </ClientAvatar>
   );
 }
 
@@ -84,6 +86,7 @@ function normaliseInvoice(raw: Record<string, unknown>): Invoice {
     id: String(raw.id ?? ''),
     memberName: String(raw.client_name ?? raw.member_name ?? raw.memberName ?? ''),
     memberAvatar: String(raw.member_avatar ?? raw.memberAvatar ?? ''),
+    memberPhoto: raw.client_photo ? String(raw.client_photo) : null,
     amount: Number(raw.amount ?? 0),
     date: String(raw.date ?? ''),
     dueDate: String(raw.due_date ?? raw.dueDate ?? ''),
@@ -726,7 +729,7 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
-        <Avatar name={invoice.memberName} />
+        <Avatar name={invoice.memberName} photoUrl={invoice.memberPhoto} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
             <p style={{

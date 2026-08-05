@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { KpiCard, PullToRefresh } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { DuesItem } from '@/lib/api';
@@ -187,12 +188,12 @@ function Inner() {
                   {filtered.map((d) => {
                     const amt  = Number(d.balance_amount || 0);
                     const risk = riskLevel(amt);
-                    const initials = (d.name || '?').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
                     return (
                       <tr key={d.id} onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '' }} style={{ borderBottom: '1px solid var(--border)', transition: 'background 150ms' }}>
                         <td style={{ padding: '14px 16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{ width: 36, height: 36, borderRadius: '50%', background: nameGradient(d.name || '?'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: 'white', flexShrink: 0 }}>{initials}</div>
+                            <ClientAvatar name={d.name} photoUrl={d.photo_url}
+                              style={{ width: 36, height: 36, borderRadius: '50%', background: nameGradient(d.name || '?'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: 'white', flexShrink: 0 }} />
                             <div>
                               <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 14 }}>{d.name}</div>
                               <div style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-disabled)' }}>{d.client_id || '—'}</div>
