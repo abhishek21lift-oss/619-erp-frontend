@@ -1485,9 +1485,18 @@ export default function PtOsDashboard() {
                 It replaces the half-width "Today" card that used to sit in the
                 Operations row further down — that card showed the session's
                 own title rather than the client's programme, and could only
-                ever see the appointment book. */}
-            <div>
-              <SectionLabel>Today</SectionLabel>
+                ever see the appointment book.
+
+                No SectionLabel here. "TODAY" sat directly above a card whose
+                own header reads "Today's Sessions / Thursday, 6 Aug" — the
+                label said the word twice and cost 23px to do it. Every other
+                section keeps its label, because none of them repeat their
+                heading the way this one did.
+
+                The remaining gap is inline rather than a margin class because
+                the parent's space-y utility targets `> * ~ *` and outranks a
+                plain mt-* on specificity; a class here would simply lose. */}
+            <div style={{ marginTop: 8 }}>
               <TodaySchedule ops={o} loading={ops.loading} />
             </div>
 
