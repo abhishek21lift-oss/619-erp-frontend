@@ -429,7 +429,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     surface made a card nobody could scan. */}
                 <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="relative mb-3 overflow-hidden rounded-[28px] p-6 sm:p-8"
+                  className="relative mb-3 overflow-hidden rounded-[28px] p-5 sm:p-7"
                   style={{
                     // The two corner glows are BACKGROUND LAYERS, not child divs.
                     //
@@ -493,15 +493,27 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <h1 className="min-w-0 text-[22px] font-[880] leading-[1.15] tracking-[-0.03em] text-white sm:text-[34px]">
-                          {client.name}
-                        </h1>
+                      {/* The name gets its own line and truncates rather than
+                          wrapping. It used to share the row with the status
+                          pill, which left roughly 120px for it on a phone —
+                          enough for "Ajeet Yadav" and not for "Hari Narayan
+                          Singh", so real names wrapped to two and three lines
+                          and the card grew to fit them. */}
+                      <h1 className="truncate text-[22px] font-[880] leading-[1.15] tracking-[-0.03em] text-white sm:text-[34px]">
+                        {client.name}
+                      </h1>
+
+                      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                        {/* #0067e0 is the brand blue, and CopyId tints its own background and
+                            border from the colour it is given — which on this navy card
+                            meant blue text on blue at 8% alpha, at 10px. This light blue
+                            is the one the rest of the card's chips use. */}
+                        <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color="#b8d7ff" />
                         {statusCfg && (
                           // statusCfg.bg is a 12%-alpha tint and the border 30/255 —
                           // both mixed for a light card, and both nearly invisible
                           // against this gradient. Same hue, enough of it to read.
-                          <span className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5"
+                          <span className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1"
                             style={{ background: `${statusCfg.color}26`, border: `1px solid ${statusCfg.color}66` }}>
                             <span className="h-1.5 w-1.5 rounded-full" style={{ background: statusCfg.dot }} />
                             <span className="text-[10px] font-[800] uppercase tracking-wider" style={{ color: statusCfg.color }}>
@@ -511,43 +523,28 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                         )}
                       </div>
 
-                      <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                        {/* #0067e0 is the brand blue, and CopyId tints its own background and
-                            border from the colour it is given — which on this navy card
-                            meant blue text on blue at 8% alpha, at 10px. The same light
-                            blue the trainer chip beside it already uses. */}
-                        <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color="#b8d7ff" />
-                        {client.trainer_name && (
-                          <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-[700]"
-                            style={{ background: 'rgba(184,215,255,0.18)', color: '#b8d7ff' }}>
-                            <User size={11} />{client.trainer_name}
-                          </span>
-                        )}
-                      </div>
-
                       {client.email && (
-                        <p className="mt-2.5 truncate text-[12px] font-[600]" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                        <p className="mt-2 truncate text-[12px] font-[600]" style={{ color: 'rgba(255,255,255,0.55)' }}>
                           {client.email}
                         </p>
                       )}
 
+                      {/* Edit sits at the bottom of the identity column rather
+                          than on a row of its own below the card. Its own row
+                          cost the card the button's full height plus a 16px
+                          gap; here it shares the row the 92px avatar already
+                          sets, so part of it is paid for by space that was
+                          empty blue. Still the lower right, just smaller — 36px
+                          and 11.5px type, which is what a secondary action next
+                          to somebody's name should weigh. */}
+                      <div className="mt-3 flex justify-end">
+                        <button onClick={() => router.push(`/pt-os/clients/${id}/edit`)}
+                          className="flex h-[36px] items-center gap-1.5 rounded-[11px] px-3.5 text-[11.5px] font-[750] text-white transition-all hover:brightness-125"
+                          style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
+                          <Pencil size={12} /> Edit profile
+                        </button>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Edit belongs to the identity, so it sits below the whole
-                      identity block rather than inside the right-hand column,
-                      which used to leave a column-width of empty blue under the
-                      avatar. Not full width, though: stretched edge to edge it
-                      became the loudest thing on a card whose job is to say who
-                      this person is — a secondary action in a primary button's
-                      clothes. Lower right, at the 44px height that keeps it
-                      tappable. */}
-                  <div className="relative mt-4 flex justify-end">
-                    <button onClick={() => router.push(`/pt-os/clients/${id}/edit`)}
-                      className="flex h-[44px] items-center gap-2 rounded-[13px] px-4 text-[12.5px] font-[750] text-white transition-all hover:brightness-125"
-                      style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
-                      <Pencil size={13} /> Edit profile
-                    </button>
                   </div>
                 </m.div>
 
