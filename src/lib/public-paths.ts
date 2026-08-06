@@ -36,6 +36,8 @@
  * session expired SHOULD be sent to sign in again.
  */
 
+import { isMemberAppPage } from './portals';
+
 /** Exact pathnames reachable with no session. */
 export const SESSIONLESS_PAGES = [
   '/',
@@ -56,4 +58,23 @@ export const SESSIONLESS_PAGES = [
 /** True when `pathname` is one of the sessionless pages. */
 export function isSessionlessPage(pathname: string): boolean {
   return (SESSIONLESS_PAGES as readonly string[]).includes(pathname);
+}
+
+/**
+ * Which sign-in page to send somebody back to from `pathname`.
+ *
+ * There are two doors now and they are not interchangeable: /login refuses a
+ * member account and /member-login refuses a staff one. So every "you need to
+ * sign in" path — the edge redirect, the 401 handler, logout, the idle
+ * timeout — has to pick the right one, or a client whose session lapsed is
+ * shown Admin Login and told, correctly but uselessly, that members cannot
+ * sign in there.
+ *
+ * The member app is the /member segment. Matched exactly and with a trailing
+ * slash rather than as a prefix, because '/member-login'.startsWith('/member')
+ * is true and would otherwise fold the sign-in page into the app it guards.
+ */
+export function signInPathFor(pathname: string): '/login' | '/member-login' {
+  if (pathname === '/member-login') return '/member-login';
+  return isMemberAppPage(pathname) ? '/member-login' : '/login';
 }

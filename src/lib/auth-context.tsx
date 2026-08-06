@@ -3,6 +3,13 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { useRouter } from 'next/navigation';
 import { api, type User, http } from './api';
 import { resetRedirectLock, refreshSession } from './http';
+// Minimal non-sensitive user fields cached in sessionStorage (cleared on tab
+// close); the full user, email included, stays in memory only. The key and its
+// accessors live in session-cache.ts rather than here because http.ts clears
+// this same cache on a 401 — and while each side declared its own constant,
+// the two had drifted onto different keys in different stores.
+import { readCachedUser, writeCachedUser, clearCachedUser } from './session-cache';
+import { signInPathFor } from './public-paths';
 import type { Role } from './roles';
 export type { Role } from './roles';
 
@@ -24,29 +31,12 @@ const AuthContext = createContext<Ctx>({
   logout: () => {},
 });
 
-// Minimal non-sensitive user fields stored in sessionStorage (cleared on tab close).
-// Full user object (including email) remains in memory only.
-const SESSION_USER_KEY = '619_user_minimal_v3';
-
-function ssGet(key: string): string | null {
-  if (typeof window === 'undefined') return null;
-  try { return sessionStorage.getItem(key); } catch { return null; }
-}
-function ssSet(key: string, val: string): void {
-  if (typeof window === 'undefined') return;
-  try { sessionStorage.setItem(key, val); } catch { /* quota */ }
-}
-function ssDel(key: string): void {
-  if (typeof window === 'undefined') return;
-  try { sessionStorage.removeItem(key); } catch { /* noop */ }
-}
-
 // Drop the cached minimal user so the next full-page load re-resolves identity
 // from /api/auth/me instead of flashing the previous (e.g. super-admin) user.
 // Used when starting/exiting impersonation so the operator is re-identified as
 // the studio admin (and vice-versa) without a stale-role flash.
 export function clearCachedAuthUser(): void {
-  ssDel(SESSION_USER_KEY);
+  clearCachedUser();
 }
 
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes idle timeout
@@ -66,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loggedInRef.current = false;
     api.auth.logout?.().catch((_err) => console.warn('[auth] logout failed', _err));
     setUser(null);
-    ssDel(SESSION_USER_KEY);
+    clearCachedUser();
   }, []);
 
   useEffect(() => {
@@ -78,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Restore cached user immediately — avoids blank flash on hard refresh.
     // Only id + name + role are persisted; email and other PII stay in memory.
-    const cachedRaw = ssGet(SESSION_USER_KEY);
+    const cachedRaw = readCachedUser();
     let cachedUser: User | null = null;
     if (cachedRaw) {
       try {
@@ -88,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // refresh, which for a permanent mark of status reads as a glitch.
         // Not PII — it is displayed publicly on the studio page.
         cachedUser = { id: partial.id, name: partial.name, role: partial.role as any, email: '', organization_name: partial.organization_name ?? null, organization_logo_url: partial.organization_logo_url ?? null, is_founder: partial.is_founder ?? false, founder_number: partial.founder_number ?? null };
-      } catch { ssDel(SESSION_USER_KEY); }
+      } catch { clearCachedUser(); }
     }
     if (cachedUser) setUser(cachedUser);
 
@@ -109,10 +99,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (res?.user) {
           const u = res.user as User;
           setUser(u);
-          ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url, is_founder: u.is_founder, founder_number: u.founder_number }));
+          writeCachedUser(JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url, is_founder: u.is_founder, founder_number: u.founder_number }));
         } else {
           setUser(null);
-          ssDel(SESSION_USER_KEY);
+          clearCachedUser();
         }
       })
       .catch((err: unknown) => {
@@ -121,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const status = (err as { status?: number })?.status;
         if (status === 401 || status === 403) {
           setUser(null);
-          ssDel(SESSION_USER_KEY);
+          clearCachedUser();
         }
         // All other errors (network, timeout, 5xx): keep cached session silently
       })
@@ -138,14 +128,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Where to send somebody who has just stopped being signed in. There are two
+  // sign-in pages and each refuses the other's accounts, so a client dropped on
+  // /login is shown a door that will not open for them.
+  const backToSignIn = useCallback(function () {
+    router.replace(signInPathFor(window.location.pathname));
+  }, [router]);
+
   useEffect(() => {
     function onSessionExpired() {
       _clearSession();
-      router.replace('/login');
+      backToSignIn();
     }
     window.addEventListener('session-expired', onSessionExpired);
     return () => window.removeEventListener('session-expired', onSessionExpired);
-  }, [_clearSession, router]);
+  }, [_clearSession, backToSignIn]);
 
   // Proactive session keep-alive. The access token lives ~15 min; renew it
   // every 12 min while logged in so a long-open tab never starts failing, and
@@ -174,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
         _clearSession();
-        router.replace('/login');
+        backToSignIn();
       }, SESSION_TIMEOUT_MS);
     }
     // Include mousemove so simply using the app (not just clicking) counts as
@@ -186,7 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(idleTimer);
       events.forEach(e => window.removeEventListener(e, resetIdleTimer));
     };
-  }, [user, _clearSession, router]);
+  }, [user, _clearSession, backToSignIn]);
 
   const login = useCallback(async function (
     email: string, password: string, mfaCode?: string, portal?: 'staff' | 'member',
@@ -196,7 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loggedInRef.current = true;
     const u = data.user;
     setUser(u);
-    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url, is_founder: u.is_founder, founder_number: u.founder_number }));
+    writeCachedUser(JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url, is_founder: u.is_founder, founder_number: u.founder_number }));
     setLoading(false);
   }, []);
 
@@ -206,7 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loggedInRef.current = true;
     const u = data.user;
     setUser(u);
-    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url, is_founder: u.is_founder, founder_number: u.founder_number }));
+    writeCachedUser(JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url, is_founder: u.is_founder, founder_number: u.founder_number }));
     setLoading(false);
   }, []);
 
@@ -223,14 +220,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loggedInRef.current = true;
     const u = data.user as User;
     setUser(u);
-    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url, is_founder: u.is_founder, founder_number: u.founder_number }));
+    writeCachedUser(JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url, is_founder: u.is_founder, founder_number: u.founder_number }));
     setLoading(false);
   }, []);
 
   const logout = useCallback(function (): void {
     _clearSession();
-    router.replace('/login');
-  }, [_clearSession, router]);
+    backToSignIn();
+  }, [_clearSession, backToSignIn]);
 
   return (
     <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, loginWithPasskey, logout }}>

@@ -22,7 +22,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 import { buildReportOnlyCsp } from '@/lib/security-headers';
-import { SESSIONLESS_PAGES } from '@/lib/public-paths';
+import { SESSIONLESS_PAGES, signInPathFor } from '@/lib/public-paths';
 
 const PUBLIC_PREFIXES: string[] = [
   // The pages a person can open with no account — the front page, sign in,
@@ -119,9 +119,13 @@ function withReportOnlyCsp(req: NextRequest): NextResponse {
 
 function redirectToLogin(req: NextRequest, deleteTokenCookie = false): NextResponse {
   const loginUrl = req.nextUrl.clone();
-  loginUrl.pathname = '/login';
   const { pathname } = req.nextUrl;
-  if (pathname !== '/' && !pathname.startsWith('/login')) {
+  // Two doors, and each refuses the other's accounts: a client whose token
+  // expired under /member must land on Member Login, not on the Admin page
+  // that will tell them members cannot sign in there.
+  const signIn = signInPathFor(pathname);
+  loginUrl.pathname = signIn;
+  if (pathname !== '/' && pathname !== signIn) {
     loginUrl.searchParams.set('redirect', pathname);
   }
   const res = NextResponse.redirect(loginUrl);

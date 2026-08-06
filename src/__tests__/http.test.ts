@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { http, ApiError, resetRedirectLock } from '@/lib/http';
+import { writeCachedUser, readCachedUser, clearCachedUser } from '@/lib/session-cache';
 
 const API_URL = 'http://localhost:5000';
 
@@ -13,6 +14,7 @@ beforeEach(() => {
   });
   vi.stubGlobal('fetch', vi.fn());
   if (typeof window !== 'undefined' && window.localStorage) window.localStorage.clear();
+  clearCachedUser();
 });
 
 afterEach(() => {
@@ -100,7 +102,12 @@ describe('http()', () => {
 
     const handler = vi.fn();
     window.addEventListener('session-expired', handler);
-    window.localStorage.setItem('619_user_v2', 'cached');
+    // Seeded through the same helper AuthProvider writes with. This line used
+    // to read localStorage.setItem('619_user_v2', …) and the assertion below
+    // used to read it back — a matched pair that agreed with each other and
+    // with nothing else in the codebase, so it passed for as long as the
+    // cached user was never actually being cleared.
+    writeCachedUser('cached');
 
     vi.mocked(fetch)
       .mockResolvedValueOnce(mockJsonResponse(401, { error: { message: 'Token expired' } }))
@@ -108,7 +115,7 @@ describe('http()', () => {
 
     await expect(http('/api/me')).rejects.toBeInstanceOf(ApiError);
     expect(handler).toHaveBeenCalledTimes(1);
-    expect(window.localStorage.getItem('619_user_v2')).toBeNull();
+    expect(readCachedUser()).toBeNull();
     window.removeEventListener('session-expired', handler);
   });
 

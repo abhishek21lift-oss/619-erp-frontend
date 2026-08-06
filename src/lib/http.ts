@@ -14,6 +14,7 @@
 //     event, clears state, and uses the Next.js router for a soft redirect.
 
 import { SESSIONLESS_PAGES } from './public-paths';
+import { clearCachedUser } from './session-cache';
 
 export function apiBase(): string {
   if (typeof window === 'undefined') {
@@ -202,7 +203,6 @@ function serializeBody(body: unknown): BodyInit | undefined {
 // ──────────────────────────────────────────────────────────────────────
 //  Global 401 handler + token refresh
 // ──────────────────────────────────────────────────────────────────────
-const SESSION_USER_KEY = '619_user_v2';
 let _redirecting = false;
 
 /** Reset the redirect lock — called by AuthProvider after login() succeeds. */
@@ -221,7 +221,11 @@ function handleUnauthorized(): void {
   if (typeof window === 'undefined' || _redirecting) return;
   if (PUBLIC_CLIENT_PATHS.includes(window.location.pathname)) return;
   _redirecting = true;
-  try { localStorage.removeItem(SESSION_USER_KEY); } catch { /* noop */ }
+  // Imported, not re-declared. This used to remove '619_user_v2' from
+  // localStorage while AuthProvider was writing '619_user_minimal_v3' to
+  // sessionStorage — wrong key, wrong store, so a 401 left the previous
+  // person's identity cached and the next mount painted as them.
+  clearCachedUser();
   window.dispatchEvent(new CustomEvent('session-expired'));
 }
 

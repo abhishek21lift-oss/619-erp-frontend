@@ -97,7 +97,10 @@ function DeadLink({ message }: { message: string }) {
             ends back here. */}
         <div className="flex flex-col gap-2">
           <Link
-            href="/login"
+            // Member Login, not /login. The only person who ever reaches this
+            // page is a client, and /login refuses member accounts outright —
+            // sending them there ends in a second dead end.
+            href="/member-login"
             className="flex h-11 items-center justify-center rounded-[11px] text-[13.5px] font-[700]"
             style={{ background: MAROON, color: '#fff' }}
           >
@@ -119,7 +122,7 @@ function Activated({ email }: { email: string }) {
   const [count, setCount] = useState(5);
 
   useEffect(() => {
-    if (count <= 0) { router.replace('/login'); return; }
+    if (count <= 0) { router.replace('/member-login'); return; }
     const t = setTimeout(() => setCount((c) => c - 1), 1000);
     return () => clearTimeout(t);
   }, [count, router]);
@@ -143,7 +146,7 @@ function Activated({ email }: { email: string }) {
           Your password is saved. Sign in with <strong style={{ color: 'var(--text-primary)' }}>{email}</strong> to see your plan.
         </p>
         <button
-          onClick={() => router.replace('/login')}
+          onClick={() => router.replace('/member-login')}
           className="flex h-12 w-full items-center justify-center gap-2 rounded-[11px] text-[14px] font-[700]"
           style={{ background: MAROON, color: '#fff' }}
         >

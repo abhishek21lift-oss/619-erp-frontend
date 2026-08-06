@@ -32,6 +32,8 @@ import {
 } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '@/lib/auth-context';
+import { rememberKeys, portalForRole, type Portal } from '@/lib/portals';
+import { roleLabel } from '@/lib/roles';
 import { isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
 
 // ── Palette (mirrors the marketing site) ─────────────────────────────────────
@@ -48,10 +50,6 @@ const LINE = 'rgba(15,23,42,0.10)';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 const SUPPORT_EMAIL = 'help@myptstudio.app';
-
-const LS_EMAIL = 'myptstudio.lastEmail';
-const LS_ORG = 'myptstudio.lastOrg';
-const LS_REMEMBER = 'myptstudio.remember';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -79,8 +77,7 @@ function Wordmark({ light = false, size = 34 }: { light?: boolean; size?: number
 //  MAIN
 // ══════════════════════════════════════════════════════════════════════════
 
-/** Which sign-in screen this is. Passed to the server, which enforces it. */
-export type Portal = 'staff' | 'member';
+export type { Portal };
 
 const COPY: Record<Portal, { title: string; blurb: string; otherHref: string; otherLabel: string }> = {
   staff: {
@@ -99,10 +96,11 @@ const COPY: Record<Portal, { title: string; blurb: string; otherHref: string; ot
 
 export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) {
   const copy = COPY[portal];
+  const LS = rememberKeys(portal);
   // Set when the server says the credentials were right but this is the wrong
   // sign-in page. Turns the error box into a way out rather than a wall.
   const [wrongPortal, setWrongPortal] = useState(false);
-  const { user, login, loginWithGoogle, loginWithPasskey, loading } = useAuth();
+  const { user, login, loginWithGoogle, loginWithPasskey, logout, loading } = useAuth();
   const router = useRouter();
   const reduce = useReducedMotion();
 
@@ -159,25 +157,42 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
   // Restore remembered account
   useEffect(() => {
     try {
-      const savedEmail = localStorage.getItem(LS_EMAIL) ?? '';
-      const rememberPref = localStorage.getItem(LS_REMEMBER);
-      setLastOrg(localStorage.getItem(LS_ORG));
+      const savedEmail = localStorage.getItem(LS.email) ?? '';
+      const rememberPref = localStorage.getItem(LS.remember);
+      setLastOrg(localStorage.getItem(LS.org));
       if (savedEmail && rememberPref !== '0') {
         setRememberedEmail(savedEmail);
         setEmail(savedEmail);
         setRemember(true);
       }
     } catch { /* private mode */ }
-  }, []);
+  }, [LS.email, LS.remember, LS.org]);
 
-  // Redirect once authenticated (role-aware)
+  // Which portal the session already in this browser belongs to. The auth
+  // cookie is one per browser, not one per sign-in page, so a trainer who was
+  // already signed in here IS the session /api/auth/me resolves when a client
+  // opens Member Login on the same device.
+  const sessionPortal: Portal | null = user ? portalForRole(user.role) : null;
+  const foreignSession = sessionPortal !== null && sessionPortal !== portal;
+
+  // Redirect once authenticated (role-aware) — but only into the portal this
+  // page is the door to.
+  //
+  // Without the foreignSession guard this effect was the reported bug: a client
+  // opened /member-login on a device their trainer had used, the trainer's
+  // still-valid cookie resolved, and this fired router.replace('/pt-os') — the
+  // client got the trainer's app, instantly, without touching the form. The
+  // reverse held too: a member session on /login was thrown at
+  // /member/dashboard. Neither is a data leak (the server answers the session
+  // it is given, and it was genuinely the trainer's session) but it is exactly
+  // what "the trainer's profile opens inside the client's" looks like, and no
+  // amount of care on the server can fix it from here.
   useEffect(() => {
-    if (!loading && user) {
-      if (user.role === 'trainer') router.replace('/trainer/dashboard');
-      else if (user.role === 'member') router.replace('/member/dashboard');
-      else router.replace('/pt-os');
-    }
-  }, [user, loading, router]);
+    if (loading || !user || foreignSession) return;
+    if (user.role === 'trainer') router.replace('/trainer/dashboard');
+    else if (user.role === 'member') router.replace('/member/dashboard');
+    else router.replace('/pt-os');
+  }, [user, loading, foreignSession, router]);
 
   const emailValid = EMAIL_RE.test(email.trim());
   const emailError = touched.email && !email.trim() ? 'Email is required.' : touched.email && !emailValid ? 'Enter a valid email address.' : '';
@@ -186,13 +201,13 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
   function persistRemember(u: { email: string; organization_name?: string | null }) {
     try {
       if (remember) {
-        localStorage.setItem(LS_EMAIL, u.email);
-        localStorage.setItem(LS_REMEMBER, '1');
-        if (u.organization_name) localStorage.setItem(LS_ORG, u.organization_name);
+        localStorage.setItem(LS.email, u.email);
+        localStorage.setItem(LS.remember, '1');
+        if (u.organization_name) localStorage.setItem(LS.org, u.organization_name);
       } else {
-        localStorage.setItem(LS_REMEMBER, '0');
-        localStorage.removeItem(LS_EMAIL);
-        localStorage.removeItem(LS_ORG);
+        localStorage.setItem(LS.remember, '0');
+        localStorage.removeItem(LS.email);
+        localStorage.removeItem(LS.org);
       }
     } catch { /* noop */ }
   }
@@ -280,6 +295,73 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
             <Wordmark size={44} />
           </m.div>
           <Loader2 className="animate-spin" size={20} style={{ color: MAROON }} />
+        </div>
+      </div>
+    );
+  }
+
+  // Somebody else's session is open in this browser. Do not sign them out
+  // silently and do not walk into their app — say whose session it is and make
+  // leaving it a deliberate tap. The name here is the browser's own session,
+  // not a lookup, so there is nothing to leak by showing it.
+  if (foreignSession && user) {
+    // Phrased so it needs no indefinite article — "a trainer" and "an admin"
+    // take different ones, and roleLabel is not going to tell us which.
+    const otherLabel = sessionPortal === 'member'
+      ? 'a member account'
+      : `a studio account (${roleLabel(user.role).toLowerCase()})`;
+    return (
+      <div
+        className="relative flex min-h-[100dvh] flex-col items-center justify-center"
+        style={{
+          background: 'radial-gradient(120% 78% at 50% -8%, #F8FAFC 0%, #ffffff 48%)',
+          color: INK,
+          fontFamily: "var(--font-sans), 'Inter', system-ui, sans-serif",
+          paddingTop: PUBLIC_NAV_CLEARANCE,
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)',
+          paddingLeft: 'max(1.25rem, env(safe-area-inset-left))',
+          paddingRight: 'max(1.25rem, env(safe-area-inset-right))',
+        }}
+      >
+        <PublicNav action="start-free" />
+        <div className="relative z-10 w-full max-w-[400px]">
+          <div className="mb-6 flex flex-col items-center text-center">
+            <BrandLogoWide width={224} priority />
+            <h1 className="mt-4 text-[27px] font-[840] tracking-[-0.025em]" style={{ color: INK }}>{copy.title}</h1>
+          </div>
+          <div
+            className="rounded-3xl bg-white p-7 text-center sm:p-8"
+            style={{ border: `1px solid ${LINE}`, boxShadow: '0 30px 70px -34px rgba(15,23,42,0.28)' }}
+          >
+            <span
+              className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full text-[16px] font-[800] text-white"
+              style={{ background: `linear-gradient(135deg, ${MAROON}, ${MAROON_DEEP})` }}
+            >
+              {(user.name || '?').slice(0, 1).toUpperCase()}
+            </span>
+            <p className="text-[15.5px] font-[750]" style={{ color: INK }}>
+              This device is signed in as {user.name}
+            </p>
+            <p className="mt-1.5 text-[13.5px] leading-relaxed" style={{ color: MUTE }}>
+              That is {otherLabel}, so it can&rsquo;t sign in here. Sign it out to
+              continue on {copy.title}.
+            </p>
+            <button
+              type="button"
+              onClick={() => logout()}
+              className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[14.5px] font-[750] text-white"
+              style={{ background: MAROON }}
+            >
+              Sign out and continue <ArrowRight size={16} />
+            </button>
+            <Link
+              href={sessionPortal === 'member' ? '/member/dashboard' : '/pt-os'}
+              className="mt-3 inline-block text-[13px] font-[650]"
+              style={{ color: MUTE }}
+            >
+              Stay signed in as {user.name}
+            </Link>
+          </div>
         </div>
       </div>
     );
