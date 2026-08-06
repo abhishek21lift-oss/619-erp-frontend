@@ -26,10 +26,17 @@ export function easePull(dy: number, threshold: number, cap: number): number {
   return Math.min(threshold + extra, cap);
 }
 
-/** Fire a short haptic tick where supported (silently no-ops otherwise). */
-export function triggerHaptic(ms: number): void {
+/**
+ * Fire a haptic tick where supported (silently no-ops otherwise).
+ *
+ * Takes a pattern as well as a plain duration, because that is what
+ * `navigator.vibrate` takes. The check-in scanner tells its three outcomes
+ * apart by rhythm — one tap, two taps, one long buzz — so the answer lands
+ * without looking at the screen.
+ */
+export function triggerHaptic(pattern: number | number[]): void {
   if (typeof navigator === 'undefined' || !('vibrate' in navigator)) return;
-  try { navigator.vibrate(ms); } catch { /* unsupported / blocked — non-fatal */ }
+  try { navigator.vibrate(pattern); } catch { /* unsupported / blocked — non-fatal */ }
 }
 
 export function delay(ms: number): Promise<void> {
