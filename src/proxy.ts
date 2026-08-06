@@ -22,27 +22,27 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 import { buildReportOnlyCsp } from '@/lib/security-headers';
+import { SESSIONLESS_PAGES } from '@/lib/public-paths';
 
 const PUBLIC_PREFIXES: string[] = [
-  '/',
-  '/login',
-  '/reset-password',
-  '/forgot-password',
-  // An invited admin has no session yet — that is the entire point. Without
-  // this the invitation link 307s to /login and the studio can never be
-  // claimed.
-  '/auth/set-password',
-  // The same thing one level down, and it shipped broken because the comment
-  // above was read as history rather than as a rule: a client following their
-  // activation email has no session either, so this path 307'd to /login and
-  // took the ?token= with it — unrecoverable, since the redirect preserves
-  // only the pathname. Observed in production before anyone could activate.
+  // The pages a person can open with no account — the front page, sign in,
+  // signup, and the token links people arrive at from an email. Shared with
+  // http.ts's 401 handler, because keeping two copies is what caused the
+  // client activation link to break twice in a row: once here (307 to /login
+  // before the page ran) and once there (the page rendered, then a 401 on
+  // /api/auth/me redirected it away half a second later). Both dropped the
+  // ?token=, which is the credential.
   //
-  // Scoped to /client/activate, not /client: anything else that lands under
-  // that segment later is a signed-in client's own data and must stay gated.
-  '/client/activate',
+  // Prefix-matched here, exact-matched in http.ts. That difference is safe in
+  // this direction — the proxy being slightly more permissive only means a
+  // page renders and its own Guard decides — but it is why /client/activate
+  // is listed rather than /client: a signed-in client's data will live under
+  // that segment later and must stay gated.
+  ...SESSIONLESS_PAGES,
+
+  // Below: not pages. The proxy sees asset and API requests that http.ts
+  // never does, so these stay local to this file.
   '/checkin',
-  '/start-free',
   '/_next',
   '/api/health',
   // The member fingerprint-enrolment prefix sat here, for the biometric

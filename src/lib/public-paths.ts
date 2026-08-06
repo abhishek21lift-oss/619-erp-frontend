@@ -1,0 +1,56 @@
+/**
+ * Pages a person can open without an account.
+ *
+ * ── Why this file exists ──
+ *
+ * There were three independent copies of this idea and they did not agree:
+ *
+ *   src/proxy.ts     PUBLIC_PREFIXES   — the edge redirect to /login
+ *   src/lib/http.ts  PUBLIC_CLIENT_PATHS — the 401 → session-expired redirect
+ *   Guard            role props        — the in-page redirect
+ *
+ * Adding /client/activate to the first one was not enough, because the second
+ * one then bounced the page half a second after it rendered: AuthProvider
+ * calls /api/auth/me on mount, a visitor with no session gets a 401, and
+ * http's handler dispatches `session-expired` for any path it does not
+ * recognise. Two separate bug reports, one missing entry each, same root
+ * cause — a list that has to be updated in more than one place eventually
+ * is not.
+ *
+ * So the page list lives here and both consumers import it. The proxy keeps
+ * its own extra entries for assets (/theme-init.js, /manifest.json, /_next…)
+ * because those are not pages and http never sees them.
+ *
+ * ── What belongs here ──
+ *
+ * A page that a person with NO SESSION is expected to reach and use. In
+ * practice that is two kinds:
+ *
+ *   • Entry points — the front page, sign in, the signup flow.
+ *   • Token links — where somebody arrives from an email holding a
+ *     credential that IS the token in the URL. These are the dangerous ones:
+ *     a redirect drops the query string, so the token is destroyed and the
+ *     link cannot be retried.
+ *
+ * What does NOT belong here: anything a signed-in user reads. A kiosk whose
+ * session expired SHOULD be sent to sign in again.
+ */
+
+/** Exact pathnames reachable with no session. */
+export const SESSIONLESS_PAGES = [
+  '/',
+  '/login',
+  '/forgot-password',
+  // Token links. A redirect away from any of these takes the ?token= with it
+  // — redirectToLogin preserves only the pathname — so the credential is gone
+  // and the user needs a fresh email.
+  '/reset-password',
+  '/auth/set-password',
+  '/client/activate',
+  '/start-free',
+] as const;
+
+/** True when `pathname` is one of the sessionless pages. */
+export function isSessionlessPage(pathname: string): boolean {
+  return (SESSIONLESS_PAGES as readonly string[]).includes(pathname);
+}

@@ -13,6 +13,8 @@
 //     hard-navigating via window.location.href. AuthProvider listens to this
 //     event, clears state, and uses the Next.js router for a soft redirect.
 
+import { SESSIONLESS_PAGES } from './public-paths';
+
 export function apiBase(): string {
   if (typeof window === 'undefined') {
     // SSR: use the configured URL directly (server-to-server, no proxy needed)
@@ -208,7 +210,12 @@ export function resetRedirectLock(): void {
   _redirecting = false;
 }
 
-const PUBLIC_CLIENT_PATHS = ['/', '/login', '/reset-password'];
+// Imported, not re-declared. This previously read
+// `['/', '/login', '/reset-password']` and omitted every token link but one,
+// so a client on /client/activate saw the page for half a second and was then
+// redirected to /login — with the ?token= dropped, destroying the credential.
+// See src/lib/public-paths.ts for why there is now a single source.
+const PUBLIC_CLIENT_PATHS: readonly string[] = SESSIONLESS_PAGES;
 
 function handleUnauthorized(): void {
   if (typeof window === 'undefined' || _redirecting) return;
