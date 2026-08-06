@@ -1,11 +1,10 @@
 'use client';
 
-import { use, useState, useEffect, useCallback, useRef } from 'react';
+import { use, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  Save, User, Dumbbell, Wallet, Trash2, AlertTriangle, Camera, Loader2,
-  CheckCircle, Info,
+  Save, User, Trash2, AlertTriangle, Camera, Loader2, CheckCircle,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -14,14 +13,6 @@ import FloatInput from '@/components/ui/FloatInput';
 import PhotoCropModal from '@/components/pt-os/PhotoCropModal';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-
-function addMonths(dateStr: string, months: number): string {
-  if (!dateStr || !months) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return '';
-  d.setMonth(d.getMonth() + months);
-  return d.toISOString().slice(0, 10);
-}
 
 function SectionCard({ title, icon, children, accent = '#F59E0B' }: {
   title: string; icon: React.ReactNode; children: React.ReactNode; accent?: string;
@@ -42,16 +33,6 @@ function SectionCard({ title, icon, children, accent = '#F59E0B' }: {
       </div>
       {children}
     </m.div>
-  );
-}
-
-function ReadOnlyField({ label, value, highlight }: { label: string; value: string; highlight?: 'green' | 'red' | 'amber' }) {
-  const color = highlight === 'green' ? '#10b981' : highlight === 'red' ? '#ef4444' : highlight === 'amber' ? '#f59e0b' : '#0F172A';
-  return (
-    <div className="rounded-[13px] px-4 py-3" style={{ background: 'var(--bg-subtle)', border: '1.5px solid var(--border)' }}>
-      <p className="text-[10.5px] font-[600] uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>{label}</p>
-      <p className="text-[14px] font-[700]" style={{ color }}>{value}</p>
-    </div>
   );
 }
 
@@ -105,28 +86,14 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
     }
   };
 
+  // Who the client is. Nothing about their schedule or their money — the PT
+  // dates and the amounts are not loaded, not held here and not sent back.
   const [form, setForm] = useState({
-    // Personal
     name: '', mobile: '', email: '', gender: '', dob: '', address: '', emergency_contact: '', emergency_phone: '',
-    // PT Assignment
-    pt_start_date: '', pt_end_date: '', duration_months: '',
-    // Financial
-    final_amount: '', paid_amount: '',
   });
-
-  // Derived (read-only)
-  const balance = Math.max(0, (parseFloat(form.final_amount) || 0) - (parseFloat(form.paid_amount) || 0));
 
   const set = (key: keyof typeof form) => (v: string) =>
     setForm(p => ({ ...p, [key]: v }));
-
-  // When start date or duration changes → recalculate end date
-  const recalcEndDate = useCallback((startDate: string, months: string) => {
-    const monthsNum = parseInt(months, 10);
-    if (startDate && monthsNum > 0) {
-      setForm(p => ({ ...p, pt_end_date: addMonths(startDate, monthsNum) }));
-    }
-  }, []);
 
   // Load client data
   useEffect(() => {
@@ -147,11 +114,6 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
             address: c.address ?? '',
             emergency_contact: c.emergency_contact ?? '',
             emergency_phone: c.emergency_phone ?? '',
-            pt_start_date: c.pt_start_date ? String(c.pt_start_date).slice(0, 10) : '',
-            pt_end_date: c.pt_end_date ? String(c.pt_end_date).slice(0, 10) : '',
-            duration_months: c.duration_months != null ? String(c.duration_months) : '',
-            final_amount: c.final_amount != null ? String(c.final_amount) : '',
-            paid_amount: c.paid_amount != null ? String(c.paid_amount) : '',
           });
         }
       } catch (err: any) {
@@ -188,8 +150,18 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
     if (!form.name.trim()) { toast.error('Name is required'); return; }
     setSaving(true);
     try {
-      const num  = (v: string) => v.trim() !== '' ? Number(v) : null;
       const str  = (v: string) => v.trim() || null;
+      // Personal fields only.
+      //
+      // The five that used to follow — pt_start_date, pt_end_date,
+      // duration_months, final_amount, paid_amount — are deliberately absent,
+      // not merely blank. PATCH /pt-os/clients/:id builds its SET list from
+      // `req.body[key] !== undefined`, so a field that is not sent leaves its
+      // column exactly as it was. Sending null would have cleared it.
+      //
+      // Dropping them also retires a bug the backend still carries a comment
+      // about: this form posted the whole client, so correcting a phone number
+      // re-sent final_amount and could be refused for a price nobody touched.
       await api.pt.updateClient(id, {
         name: form.name.trim(),
         mobile: str(form.mobile),
@@ -199,11 +171,6 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         address: str(form.address),
         emergency_contact: str(form.emergency_contact),
         emergency_phone: str(form.emergency_phone),
-        pt_start_date: str(form.pt_start_date),
-        pt_end_date: str(form.pt_end_date),
-        duration_months: num(form.duration_months),
-        final_amount: num(form.final_amount),
-        paid_amount: num(form.paid_amount),
       });
       toast.success('Client updated successfully');
       router.push(`/pt-os/clients/${id}`);
@@ -213,8 +180,6 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
       setSaving(false);
     }
   };
-
-  const fmtINR = (n: number) => '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
   if (loading) {
     return (
@@ -338,81 +303,12 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
               </div>
             </SectionCard>
 
-            {/* ── PT Assignment ── */}
-            <SectionCard title="PT Assignment" icon={<Dumbbell size={16} />} accent="#0067e0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                <FloatInput
-                  label="PT Start Date"
-                  type="date"
-                  value={form.pt_start_date}
-                  onChange={v => {
-                    setForm(p => ({ ...p, pt_start_date: v }));
-                    recalcEndDate(v, form.duration_months);
-                  }}
-                />
-
-                <FloatInput
-                  label="Duration (months)"
-                  type="number"
-                  value={form.duration_months}
-                  onChange={v => {
-                    setForm(p => ({ ...p, duration_months: v }));
-                    recalcEndDate(form.pt_start_date, v);
-                  }}
-                />
-
-                <FloatInput
-                  label="PT End Date"
-                  type="date"
-                  value={form.pt_end_date}
-                  onChange={set('pt_end_date')}
-                  suffix={
-                    form.pt_start_date && form.duration_months
-                      ? <span style={{ fontSize: 10, color: '#0067e0', fontWeight: 600 }}>auto</span>
-                      : undefined
-                  }
-                />
-
-              </div>
-            </SectionCard>
-
-            {/* ── Financial ── */}
-            <SectionCard title="Financial Details" icon={<Wallet size={16} />} accent="#10b981">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                <FloatInput
-                  label="Final / Selling Price (₹)"
-                  type="number"
-                  value={form.final_amount}
-                  onChange={set('final_amount')}
-                />
-
-                <FloatInput
-                  label="Amount Paid (₹)"
-                  type="number"
-                  value={form.paid_amount}
-                  onChange={set('paid_amount')}
-                />
-
-                {/* Balance — auto-calculated, read-only */}
-                <ReadOnlyField
-                  label="Balance Due (auto)"
-                  value={balance > 0 ? fmtINR(balance) : 'Fully Paid ✓'}
-                  highlight={balance > 0 ? 'red' : 'green'}
-                />
-
-              </div>
-
-              {/* Info hint */}
-              <div className="mt-4 flex items-start gap-2 rounded-[10px] px-3.5 py-2.5"
-                style={{ background: 'rgba(0,103,224,0.05)', border: '1px solid rgba(0,103,224,0.12)' }}>
-                <Info size={12} style={{ color: '#0067e0', marginTop: 2, flexShrink: 0 }} />
-                <p className="text-[11.5px] leading-relaxed" style={{ color: 'var(--text-disabled)' }}>
-                  Balance = Final − Paid. This recalculates automatically as you type.
-                </p>
-              </div>
-            </SectionCard>
+            {/* PT Assignment and Financial Details were here.
+                They are gone from this form, and the PATCH no longer carries
+                pt_start_date, pt_end_date, duration_months, final_amount or
+                paid_amount at all — see handleSave. Dates and money change
+                through enrolment and renewal, which is where the decision is
+                actually made; this page is for who the client is. */}
 
             {/* ── Save footer ── */}
             <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
