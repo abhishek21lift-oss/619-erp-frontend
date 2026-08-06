@@ -51,11 +51,24 @@ import PtOsDashboard from '@/components/dashboards/PtOsDashboard';
 describe('PT-OS dashboard KPIs', () => {
   beforeEach(() => { requested.length = 0; });
 
-  it('shows the four metrics that are on every screen size', async () => {
+  it('shows the three metrics that are on every screen size', async () => {
     render(<PtOsDashboard />);
-    for (const label of ['Active Clients', 'PT Revenue', 'Retention', 'Outstanding']) {
+    for (const label of ['Active Clients', 'PT Revenue', 'Retention']) {
       expect(await screen.findByText(label)).toBeTruthy();
     }
+  });
+
+  it('no longer repeats Outstanding, which Today\'s Revenue already carries', async () => {
+    // The same ₹10K was on screen four times: this card, the "Pending" half of
+    // Today's Revenue, the AI Coach's "₹10K due" row, and that card's own
+    // insight line. Only one of those can be acted on, so only one survives —
+    // Pending, which names the members and links to the dues list.
+    //
+    // Asserted as an absence because a metric quietly returning is exactly the
+    // kind of change nobody notices in review.
+    render(<PtOsDashboard />);
+    await screen.findByText('Active Clients');
+    expect(screen.queryByText('Outstanding')).toBeNull();
   });
 
   it('keeps Commission on small screens but hides it on desktop', async () => {
@@ -72,7 +85,7 @@ describe('PT-OS dashboard KPIs', () => {
 
   it('does not hide any of the metrics that should stay on desktop', async () => {
     render(<PtOsDashboard />);
-    for (const label of ['Active Clients', 'PT Revenue', 'Retention', 'Outstanding']) {
+    for (const label of ['Active Clients', 'PT Revenue', 'Retention']) {
       const card = (await screen.findByText(label)).closest('.group');
       expect(card!.className).not.toMatch(/lg:hidden/);
     }
