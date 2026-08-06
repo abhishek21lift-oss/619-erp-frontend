@@ -1,28 +1,87 @@
 'use client';
 /**
- * Member Dashboard — mobile-first member portal home.
- * Built on the 619 Iron design system using member-shell CSS classes.
+ * Member Dashboard — what a client sees when they sign in.
+ *
+ * ── What this replaces ────────────────────────────────────────────────────
+ *
+ * A prototype that had been left in place. It showed "42 workouts", "-2.1kg"
+ * and a "7 day streak" to every member, because all three were string
+ * literals in the JSX. Its icons were Unicode geometry (◧ ◆ ◈ ◌ ⌂ ◉), which
+ * is why they rendered as diamonds and half-squares. Its bottom-nav tabs set
+ * state that nothing read, so four of the five did nothing at all.
+ *
+ * And its plan card was blank — "Days remaining ___ days", "ENDS ON —" —
+ * because it loaded `user.member_id`, the foreign key to the legacy and empty
+ * `clients` table. Accounts created by the activation flow carry
+ * `pt_client_id` instead, so the lookup found nothing and the card rendered
+ * its own placeholders.
+ *
+ * Everything here comes from /api/me, which is scoped server-side to the
+ * caller's own client record. No route in that module takes an id, so there
+ * is nothing a member could tamper with to reach somebody else's data.
+ *
+ * ── The design ────────────────────────────────────────────────────────────
+ *
+ * One saturated surface: the plan. "How long have I got left, and do I owe
+ * anything" is the question a member opens this screen with, so it is the
+ * only thing wearing colour. Everything below is neutral, and the eye reads
+ * downward from it.
+ *
+ * Sections with nothing to say are not rendered. A member three days into a
+ * package has no measurements and no payment history, and four cards telling
+ * them so is worse than a short page.
  */
-import { useEffect, useState } from 'react';
-import Guard from '@/components/Guard';
-import { useAuth } from '@/lib/auth-context';
-import { api } from '@/lib/api';
 
-type Membership = {
-  plan_name: string;
-  status: 'active' | 'expired' | 'frozen';
-  end_date: string;
-  days_remaining: number;
-  balance_amount: number;
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { m } from 'framer-motion';
+import {
+  CalendarDays, Wallet, Dumbbell, TrendingDown, TrendingUp, Minus,
+  User, Phone, Mail, Target, Ruler, CheckCircle2, Clock, CreditCard,
+  ChevronRight, ShieldCheck,
+} from 'lucide-react';
+import Guard from '@/components/Guard';
+import ClientAvatar from '@/components/pt-os/ClientAvatar';
+import { api } from '@/lib/api';
+import type { MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement } from '@/lib/api';
+import { palette, rgba } from '@/lib/palette';
+
+const C = {
+  primary: palette.blue[500],
+  primaryDeep: palette.blue[700],
+  success: palette.emerald[500],
+  warning: palette.amber[500],
+  danger: palette.red[500],
+  ink: palette.gray[900],
+  muted: palette.gray[500],
 };
-type Booking = {
-  id: string;
-  class_name: string;
-  starts_at: string;
-  status: 'confirmed' | 'waitlist' | 'cancelled' | 'attended';
-  trainer_name?: string;
-  color?: string;
-};
+const EASE = [0.16, 1, 0.3, 1] as const;
+
+const num = (v: unknown) => Number(v ?? 0) || 0;
+const inr = (v: unknown) => '₹' + num(v).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+
+/** "12 Mar 2026", or null. Never "Invalid Date". */
+function longDate(v: string | null | undefined): string | null {
+  if (!v) return null;
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/**
+ * Whole days from now until `end`, or null when there is no end date.
+ *
+ * Derived here rather than read from a field: the old page rendered
+ * `days_remaining` from an endpoint that never returned it, which is exactly
+ * how the card came to print the word "days" with nothing in front of it.
+ */
+function daysLeft(end: string | null | undefined): number | null {
+  if (!end) return null;
+  const d = new Date(end);
+  if (Number.isNaN(d.getTime())) return null;
+  const ms = d.setHours(23, 59, 59, 999) - Date.now();
+  return Math.max(0, Math.ceil(ms / 86_400_000));
+}
 
 export default function MemberDashboardPage() {
   return (
@@ -33,595 +92,371 @@ export default function MemberDashboardPage() {
 }
 
 function MemberDashboard() {
-  const { user } = useAuth();
-  const [tab, setTab] = useState<'home' | 'classes' | 'bookings' | 'plan' | 'profile'>(
-    'home',
-  );
-  const [membership, setMembership] = useState<Membership | null>(null);
-  const [today, setToday] = useState<Booking[]>([]);
-  const [upcoming, setUpcoming] = useState<Booking[]>([]);
+  const [profile, setProfile] = useState<MeProfile | null>(null);
+  const [plan, setPlan] = useState<MeMembership | null>(null);
+  const [payments, setPayments] = useState<MePayment[]>([]);
+  const [visits, setVisits] = useState<MeAttendance[]>([]);
+  const [weights, setWeights] = useState<MeMeasurement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    let alive = true;
     (async () => {
-      try {
-        const memberId = user?.member_id || user?.id || '';
-        if (!memberId) {
-          setLoading(false);
-          return;
-        }
-        const [memberRes, bookings] = await Promise.all([
-          api.member.get(memberId),
-          api.bookings.list(),
-        ]);
-        const member = (memberRes as any)?.data ?? null;
-        setMembership(member?.plan_name ? {
-          plan_name: member.plan_name,
-          status: (member.status || 'active') as Membership['status'],
-          end_date: member.end_date,
-          days_remaining: Number(member.days_remaining ?? 0),
-          balance_amount: Number(member.balance_amount ?? 0),
-        } : null);
-        const todayDate = new Date().toISOString().slice(0, 10);
-        const all = (bookings as any[]) ?? [];
-        setToday(all.filter((x) => x.starts_at?.startsWith(todayDate)));
-        setUpcoming(
-          all.filter((x) => x.starts_at > new Date().toISOString()).slice(0, 3),
-        );
-      } catch {
-        // API unavailable — leave empty state
-      } finally {
-        setLoading(false);
-      }
+      // Settled, not all: one endpoint being unavailable costs that section,
+      // not the page. The old version wrapped every call in a single try and
+      // fell back to a blank screen whenever any of them failed.
+      const [p, mem, pay, att, meas] = await Promise.allSettled([
+        api.me.profile(), api.me.membership(), api.me.payments(),
+        api.me.attendance(), api.me.measurements(),
+      ]);
+      if (!alive) return;
+      if (p.status === 'fulfilled') setProfile(p.value.data); else setFailed(true);
+      if (mem.status === 'fulfilled') setPlan(mem.value.data);
+      if (pay.status === 'fulfilled') setPayments(pay.value.data ?? []);
+      if (att.status === 'fulfilled') setVisits(att.value.data ?? []);
+      if (meas.status === 'fulfilled') setWeights(meas.value.data ?? []);
+      setLoading(false);
     })();
-  }, [user?.id]);
+    return () => { alive = false; };
+  }, []);
 
   if (loading) return <Skeleton />;
 
-  const initials = (user?.name || 'M')
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-  const firstName = user?.name?.split(' ')[0] || 'Member';
+  if (failed || !profile) {
+    return (
+      <Shell>
+        <div className="rounded-[18px] p-6 text-center"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+          <p className="text-[14px] font-[700]" style={{ color: C.ink }}>We could not load your profile</p>
+          <p className="mt-1.5 text-[12.5px]" style={{ color: C.muted }}>
+            Refresh the page, and tell your trainer if it keeps happening.
+          </p>
+        </div>
+      </Shell>
+    );
+  }
+
+  const left = daysLeft(profile.pt_end_date);
+  const balance = num(plan?.balance_amount);
+  const total = num(plan?.final_amount);
+  const paid = num(plan?.paid_amount);
+  const endsOn = longDate(profile.pt_end_date);
+
+  // Share of the package elapsed. Drawn only when both ends are known — a bar
+  // with one endpoint guessed is a bar that lies about how much time is left.
+  const startMs = profile.pt_start_date ? new Date(profile.pt_start_date).getTime() : NaN;
+  const endMs = profile.pt_end_date ? new Date(profile.pt_end_date).getTime() : NaN;
+  const spanPct = Number.isFinite(startMs) && Number.isFinite(endMs) && endMs > startMs
+    ? Math.min(100, Math.max(0, ((Date.now() - startMs) / (endMs - startMs)) * 100))
+    : null;
+
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  const visitsThisMonth = visits.filter((v) => (v.date ?? '').slice(0, 7) === thisMonth).length;
+
+  // Measurements arrive newest-first, so the oldest reading is the last one.
+  const latestWeight = weights[0] ? num(weights[0].weight_kg)
+    : (profile.weight != null ? num(profile.weight) : null);
+  const firstWeight = weights.length > 1 ? num(weights[weights.length - 1].weight_kg) : null;
+  const weightDelta = latestWeight != null && firstWeight != null ? latestWeight - firstWeight : null;
 
   return (
-    <div className="member-shell">
-      <header className="member-header">
-        <div className="member-header-inner">
-          <div>
-            <div
-              style={{
-                fontSize: 11,
-                color: 'var(--muted)',
-                fontWeight: 600,
-                letterSpacing: '0.4px',
-              }}
-            >
-              Hi 👋
-            </div>
-            <div
-              style={{
-                fontSize: 17,
-                fontWeight: 800,
-                color: 'var(--text)',
-                letterSpacing: '-0.022em',
-                marginTop: 1,
-              }}
-            >
-              {firstName}
-            </div>
-          </div>
-          <div
-            className="user-avatar"
-            style={{ width: 38, height: 38, fontSize: 13, borderRadius: 10 }}
-          >
-            {initials}
-          </div>
+    <Shell>
+      {/* ── Who you are ──────────────────────────────────────────────────── */}
+      <m.div
+        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: EASE }}
+        className="mb-3 flex items-center gap-3"
+      >
+        <ClientAvatar
+          name={profile.name}
+          photoUrl={profile.photo_url}
+          className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full text-[17px] font-[800]"
+          style={{ background: rgba(C.primary, 0.12), color: C.primary }}
+        />
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-[19px] font-[820] leading-tight tracking-[-0.02em]" style={{ color: C.ink }}>
+            {profile.name}
+          </h1>
+          <p className="mt-0.5 truncate text-[12px] font-[600]" style={{ color: C.muted }}>
+            {profile.studio_name || 'Your studio'}
+            {profile.member_code ? ` · #${profile.member_code}` : ''}
+          </p>
         </div>
-      </header>
+      </m.div>
 
-      <main className="member-main">
-        {/* Membership status hero */}
-        <div className="member-hero">
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-              position: 'relative',
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  fontSize: 10.5,
-                  fontWeight: 700,
-                  letterSpacing: '1.6px',
-                  textTransform: 'uppercase',
-                  color: 'rgba(255,255,255,0.78)',
-                }}
-              >
-                Current Plan
-              </div>
-              <div
-                style={{
-                  fontSize: 22,
-                  fontWeight: 800,
-                  letterSpacing: '-0.022em',
-                  color: 'var(--bg-white)',
-                  marginTop: 6,
-                }}
-              >
-                {membership?.plan_name}
-              </div>
-            </div>
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                padding: '4px 10px',
-                borderRadius: 999,
-                background: 'rgba(255,255,255,0.20)',
-                color: 'var(--bg-white)',
-                border: '1px solid rgba(255,255,255,0.28)',
-                letterSpacing: '0.4px',
-                textTransform: 'uppercase',
-              }}
-            >
-              {membership?.status === 'active' ? '● Active' : membership?.status}
-            </span>
+      {/* ── The plan. The one saturated surface on the page. ─────────────── */}
+      <m.section
+        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05, duration: 0.45, ease: EASE }}
+        className="mb-4 overflow-hidden rounded-[22px] p-5"
+        style={{
+          background: `linear-gradient(150deg, ${C.primaryDeep} 0%, ${C.primary} 62%, ${C.primaryDeep} 100%)`,
+          boxShadow: `0 14px 34px -12px ${rgba(C.primary, 0.55)}`,
+        }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[9.5px] font-[750] uppercase tracking-[0.16em]" style={{ color: 'rgba(255,255,255,0.62)' }}>
+              Current plan
+            </p>
+            <p className="mt-1 truncate text-[17px] font-[800] text-white">
+              {profile.package_type || 'Personal Training'}
+            </p>
           </div>
-
-          <div style={{ marginTop: 16, position: 'relative' }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: 11,
-                color: 'rgba(255,255,255,0.85)',
-                marginBottom: 6,
-                fontWeight: 600,
-              }}
-            >
-              <span>Days remaining</span>
-              <span className="tabular" style={{ fontWeight: 700 }}>
-                {membership?.days_remaining} days
-              </span>
-            </div>
-            <div
-              style={{
-                height: 6,
-                borderRadius: 999,
-                background: 'rgba(255,255,255,0.20)',
-                overflow: 'hidden',
-              }}
-            >
-              <div
-                style={{
-                  height: '100%',
-                  width: `${Math.min(
-                    100,
-                    ((membership?.days_remaining ?? 0) / 180) * 100,
-                  )}%`,
-                  background: 'var(--bg-white)',
-                  borderRadius: 999,
-                  transition: 'width 0.6s var(--ease)',
-                }}
-              />
-            </div>
-          </div>
-
-          <div className="rg-2" style={{ marginTop: 14, gap: 8, position: 'relative' }}>
-            <MiniHeroStat label="Ends on" value={membership?.end_date || '—'} />
-            <MiniHeroStat
-              label="Balance"
-              value={
-                membership?.balance_amount
-                  ? `₹${membership.balance_amount}`
-                  : 'Paid up'
-              }
-            />
-          </div>
+          <span className="shrink-0 rounded-full px-2.5 py-1 text-[9.5px] font-[750] uppercase tracking-[0.08em] text-white"
+            style={{ background: profile.status === 'active' ? 'rgba(255,255,255,0.20)' : rgba(C.danger, 0.9) }}>
+            {profile.status || 'active'}
+          </span>
         </div>
 
-        {/* Today's classes */}
-        <section>
-          <SectionHeader title="Today" right={`${today.length} class${today.length !== 1 ? 'es' : ''}`} />
-          {today.length === 0 ? (
-            <EmptyState icon="◐" title="No classes today" cta="Browse classes" />
+        {/* A real number, or an honest absence. The old card printed the unit
+            with nothing in front of it. */}
+        <div className="mt-4">
+          {left !== null ? (
+            <>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[34px] font-[880] leading-none tabular-nums text-white">{left}</span>
+                <span className="text-[13px] font-[650]" style={{ color: 'rgba(255,255,255,0.72)' }}>
+                  day{left === 1 ? '' : 's'} left
+                </span>
+              </div>
+              {spanPct !== null && (
+                <div className="mt-2.5 h-[5px] w-full overflow-hidden rounded-full"
+                  style={{ background: 'rgba(255,255,255,0.22)' }}>
+                  <m.div className="h-full rounded-full" style={{ background: '#fff' }}
+                    initial={{ width: 0 }} animate={{ width: `${spanPct}%` }}
+                    transition={{ duration: 0.7, ease: EASE }} />
+                </div>
+              )}
+            </>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {today.map((b) => (
-                <BookingRow key={b.id} b={b} primary />
-              ))}
-            </div>
+            <p className="text-[13px] font-[600]" style={{ color: 'rgba(255,255,255,0.72)' }}>
+              No end date set — ask your trainer.
+            </p>
           )}
-        </section>
+        </div>
 
-        {/* Quick actions */}
-        <section
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 10,
-          }}
-        >
-          <ActionTile icon="◧" label="Book class" />
-          <ActionTile icon="◆" label="Book PT" />
-          <ActionTile
-            icon="◈"
-            label="Pay dues"
-            badge={
-              membership?.balance_amount ? `₹${membership.balance_amount}` : null
-            }
+        <div className="mt-4 grid grid-cols-2 gap-2.5">
+          <PlanCell label="Ends on" value={endsOn ?? 'Not set'} />
+          <PlanCell label="Balance" value={balance > 0 ? inr(balance) : 'Paid up'}
+            tone={balance > 0 ? '#FCD34D' : undefined} />
+        </div>
+
+        {balance > 0 && (
+          <Link href="/member/payments"
+            className="mt-3 flex h-11 items-center justify-center gap-1.5 rounded-[13px] text-[13px] font-[750]"
+            style={{ background: '#fff', color: C.primaryDeep }}>
+            <CreditCard size={15} /> Pay {inr(balance)}
+          </Link>
+        )}
+      </m.section>
+
+      {/* ── Progress. Only what was actually measured. ───────────────────── */}
+      <Section title="Your progress">
+        <div className="grid grid-cols-3 gap-2.5">
+          <Metric icon={<Dumbbell size={13} />} label="Visits" value={String(visitsThisMonth)} sub="this month" />
+          <Metric icon={<Ruler size={13} />} label="Weight"
+            value={latestWeight != null ? `${latestWeight} kg` : '—'}
+            sub={latestWeight != null ? 'latest' : 'not recorded'} />
+          <Metric
+            icon={weightDelta == null ? <Minus size={13} />
+              : weightDelta < 0 ? <TrendingDown size={13} /> : <TrendingUp size={13} />}
+            label="Change"
+            value={weightDelta == null ? '—' : `${weightDelta > 0 ? '+' : ''}${weightDelta.toFixed(1)} kg`}
+            sub={weightDelta == null ? 'needs 2 readings' : 'since first'}
+            tone={weightDelta == null ? undefined : weightDelta < 0 ? C.success : C.warning}
           />
-        </section>
+        </div>
+      </Section>
 
-        {/* Upcoming */}
-        <section>
-          <SectionHeader title="Upcoming" />
-          {upcoming.length === 0 ? (
-            <EmptyState icon="◌" title="No upcoming bookings" cta="Browse classes" />
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {upcoming.map((b) => (
-                <BookingRow key={b.id} b={b} />
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Progress card */}
-        <section className="card" style={{ padding: '1.1rem 1.25rem' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 12,
-            }}
-          >
-            <div className="card-title" style={{ marginBottom: 0 }}>
-              Your progress
-            </div>
-            <button
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--brand-hi)',
-                fontSize: 11.5,
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              View all →
-            </button>
-          </div>
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <Stat label="Workouts" value="42" sub="this month" />
-            <Stat
-              label="Weight"
-              value="-2.1kg"
-              sub="since Jan"
-              valueColor="var(--success)"
+      {/* ── Trainer, when one is assigned ────────────────────────────────── */}
+      {profile.trainer_name && (
+        <Section title="Your trainer">
+          <div className="flex items-center gap-3 rounded-[16px] p-3.5"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <ClientAvatar
+              name={profile.trainer_name}
+              photoUrl={profile.trainer_photo}
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[13px] font-[800]"
+              style={{ background: rgba(C.primary, 0.12), color: C.primary }}
             />
-            <Stat label="Streak" value="◆ 7" sub="days" valueColor="var(--gold)" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[14px] font-[750]" style={{ color: C.ink }}>{profile.trainer_name}</p>
+              <p className="truncate text-[11.5px] font-[550]" style={{ color: C.muted }}>
+                {profile.trainer_specialization || 'Personal trainer'}
+              </p>
+            </div>
           </div>
-        </section>
-      </main>
-
-      {/* Bottom nav */}
-      <nav className="member-bottom-nav">
-        <div className="member-bottom-nav-inner">
-          {(
-            [
-              ['home', '⌂', 'Home'],
-              ['classes', '◧', 'Classes'],
-              ['bookings', '◌', 'Bookings'],
-              ['plan', '◆', 'Plan'],
-              ['profile', '◉', 'Profile'],
-            ] as const
-          ).map(([key, icon, label]) => (
-            <button
-              key={key}
-              className={`member-bottom-btn${tab === key ? ' is-active' : ''}`}
-              onClick={() => setTab(key as any)}
-            >
-              <span className="member-bottom-btn-icon">{icon}</span>
-              <span style={{ marginTop: 2 }}>{label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
-    </div>
-  );
-}
-
-// ── Sub-components ─────────────────────────────────────────────────────────
-function MiniHeroStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      style={{
-        background: 'rgba(255,255,255,0.14)',
-        border: '1px solid rgba(255,255,255,0.20)',
-        borderRadius: 10,
-        padding: '.6rem .75rem',
-        backdropFilter: 'blur(6px)',
-      }}
-    >
-      <div
-        style={{
-          fontSize: 10,
-          color: 'rgba(255,255,255,0.78)',
-          fontWeight: 600,
-          letterSpacing: '0.5px',
-          textTransform: 'uppercase',
-        }}
-      >
-        {label}
-      </div>
-      <div
-        style={{ fontSize: 13, fontWeight: 700, color: 'var(--bg-white)', marginTop: 3 }}
-        className="tabular"
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function SectionHeader({ title, right }: { title: string; right?: string }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 8,
-      }}
-    >
-      <div
-        style={{
-          fontSize: 13,
-          fontWeight: 700,
-          color: 'var(--text-2)',
-          letterSpacing: '-0.005em',
-        }}
-      >
-        {title}
-      </div>
-      {right && (
-        <div className="text-muted text-xs" style={{ fontWeight: 600 }}>
-          {right}
-        </div>
+        </Section>
       )}
-    </div>
-  );
-}
 
-function BookingRow({ b, primary }: { b: Booking; primary?: boolean }) {
-  const t = new Date(b.starts_at);
-  const time = t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: 12,
-        borderRadius: 12,
-        background: 'var(--bg-2)',
-        border: primary
-          ? '1px solid rgba(239,68,68,0.40)'
-          : '1px solid var(--line)',
-        boxShadow: primary ? '0 0 0 3px var(--brand-soft)' : 'none',
-      }}
-    >
-      <div
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 11,
-          flexShrink: 0,
-          background:
-            b.color ||
-            'linear-gradient(135deg, var(--brand) 0%, var(--brand-lo) 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 13,
-          fontWeight: 800,
-          color: 'var(--bg-white)',
-          letterSpacing: '0.5px',
-        }}
-      >
-        {b.class_name.slice(0, 2).toUpperCase()}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontWeight: 600,
-            color: 'var(--text)',
-            fontSize: 14,
-            letterSpacing: '-0.005em',
-          }}
-          className="truncate"
-        >
-          {b.class_name}
-        </div>
-        <div className="text-muted text-xs">
-          {time} · {b.trainer_name || 'TBA'}
-        </div>
-      </div>
-      {b.status === 'waitlist' ? (
-        <span className="badge badge-frozen">Waitlist</span>
-      ) : (
-        <button className="btn btn-primary btn-sm">Check in</button>
+      {/* ── Recent visits ────────────────────────────────────────────────── */}
+      {visits.length > 0 && (
+        <Section title="Recent visits">
+          <div className="overflow-hidden rounded-[16px]"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            {visits.slice(0, 4).map((v, i, arr) => (
+              <div key={v.id} className="flex items-center gap-2.5 px-3.5 py-2.5"
+                style={i === arr.length - 1 ? undefined : { borderBottom: '1px solid var(--border)' }}>
+                <CheckCircle2 size={14} style={{ color: C.success }} />
+                <span className="flex-1 text-[12.5px] font-[650]" style={{ color: C.ink }}>
+                  {longDate(v.date) ?? v.date}
+                </span>
+                <span className="text-[11px] font-[550]" style={{ color: C.muted }}>
+                  {v.check_in_time
+                    ? new Date(v.check_in_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+                    : '—'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Section>
       )}
+
+      {/* ── Payments ─────────────────────────────────────────────────────── */}
+      {payments.length > 0 && (
+        <Section title="Payments" action={{ href: '/member/payments', label: 'All' }}>
+          <div className="overflow-hidden rounded-[16px]"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            {payments.slice(0, 4).map((p, i, arr) => (
+              <div key={p.id} className="flex items-center gap-2.5 px-3.5 py-2.5"
+                style={i === arr.length - 1 ? undefined : { borderBottom: '1px solid var(--border)' }}>
+                <Wallet size={14} style={{ color: C.success }} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12.5px] font-[700]" style={{ color: C.ink }}>{inr(p.amount)}</p>
+                  <p className="text-[10.5px] font-[550]" style={{ color: C.muted }}>
+                    {longDate(p.date) ?? p.date}
+                    {p.payment_method ? ` · ${p.payment_method.replace(/_/g, ' ').toLowerCase()}` : ''}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          {total > 0 && (
+            <p className="mt-2 text-[11px] font-[600]" style={{ color: C.muted }}>
+              {inr(paid)} paid of {inr(total)}
+            </p>
+          )}
+        </Section>
+      )}
+
+      {/* ── The rest of the record ───────────────────────────────────────── */}
+      <Section title="Your details">
+        <div className="overflow-hidden rounded-[16px]"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+          <Detail icon={<Target size={13} />} label="Goal" value={profile.goal} />
+          <Detail icon={<CalendarDays size={13} />} label="Member since" value={longDate(profile.joining_date)} />
+          <Detail icon={<Clock size={13} />} label="Started" value={longDate(profile.pt_start_date)} />
+          <Detail icon={<Ruler size={13} />} label="Height" value={profile.height ? `${profile.height} cm` : null} />
+          <Detail icon={<Mail size={13} />} label="Email" value={profile.email} />
+          <Detail icon={<Phone size={13} />} label="Mobile" value={profile.mobile} />
+          <Detail icon={<User size={13} />} label="Date of birth" value={longDate(profile.dob)} last />
+        </div>
+      </Section>
+
+      <p className="mt-5 flex items-center justify-center gap-1.5 text-[10.5px] font-[600]" style={{ color: C.muted }}>
+        <ShieldCheck size={11} /> Only you and your studio can see this
+      </p>
+    </Shell>
+  );
+}
+
+/* ── Pieces ─────────────────────────────────────────────────────────────── */
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-[100dvh]" style={{ background: 'var(--bg-canvas)' }}>
+      <div className="mx-auto w-full max-w-[560px] px-4 pb-16 pt-5">{children}</div>
     </div>
   );
 }
 
-function ActionTile({
-  icon,
-  label,
-  badge,
-}: {
-  icon: string;
-  label: string;
-  badge?: string | null;
+function Section({ title, action, children }: {
+  title: string; action?: { href: string; label: string }; children: React.ReactNode;
 }) {
   return (
-    <button
-      style={{
-        position: 'relative',
-        background: 'var(--bg-2)',
-        border: '1px solid var(--line)',
-        borderRadius: 14,
-        padding: '14px 10px',
-        cursor: 'pointer',
-        transition: 'border-color 0.15s var(--ease), transform 0.15s var(--ease)',
-        fontFamily: 'inherit',
-      }}
-    >
-      <div
-        style={{
-          fontSize: 22,
-          color: 'var(--brand-hi)',
-          marginBottom: 6,
-          textAlign: 'center',
-        }}
-      >
+    <section className="mb-4">
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-[10px] font-[780] uppercase tracking-[0.13em]" style={{ color: C.muted }}>{title}</h2>
+        {action && (
+          <Link href={action.href} className="flex items-center gap-0.5 text-[11px] font-[700]" style={{ color: C.primary }}>
+            {action.label} <ChevronRight size={12} />
+          </Link>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function PlanCell({ label, value, tone }: { label: string; value: string; tone?: string }) {
+  return (
+    <div className="rounded-[13px] px-3 py-2.5" style={{ background: 'rgba(255,255,255,0.13)' }}>
+      <p className="text-[8.5px] font-[750] uppercase tracking-[0.12em]" style={{ color: 'rgba(255,255,255,0.62)' }}>
+        {label}
+      </p>
+      <p className="mt-1 truncate text-[14px] font-[780]" style={{ color: tone ?? '#fff' }}>{value}</p>
+    </div>
+  );
+}
+
+function Metric({ icon, label, value, sub, tone }: {
+  icon: React.ReactNode; label: string; value: string; sub: string; tone?: string;
+}) {
+  return (
+    <div className="rounded-[16px] p-3" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-[8px]"
+        style={{ background: rgba(tone ?? C.primary, 0.12), color: tone ?? C.primary }}>
         {icon}
-      </div>
-      <div
-        style={{
-          fontSize: 11.5,
-          fontWeight: 600,
-          color: 'var(--text-2)',
-          textAlign: 'center',
-          letterSpacing: '-0.005em',
-        }}
-      >
-        {label}
-      </div>
-      {badge && (
-        <span
-          style={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            fontSize: 9.5,
-            background: 'var(--brand)',
-            color: 'var(--on-brand)',
-            borderRadius: 999,
-            padding: '2px 6px',
-            fontWeight: 700,
-          }}
-          className="tabular"
-        >
-          {badge}
-        </span>
-      )}
-    </button>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  sub,
-  valueColor,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  valueColor?: string;
-}) {
-  return (
-    <div>
-      <div
-        style={{
-          fontSize: 18,
-          fontWeight: 800,
-          letterSpacing: '-0.022em',
-          color: valueColor || 'var(--text)',
-        }}
-        className="tabular"
-      >
+      </span>
+      <p className="mt-2 text-[9px] font-[720] uppercase tracking-[0.1em]" style={{ color: C.muted }}>{label}</p>
+      <p className="mt-0.5 text-[17px] font-[840] leading-none tabular-nums tracking-[-0.02em]"
+        style={{ color: tone ?? C.ink }}>
         {value}
-      </div>
-      <div className="text-muted" style={{ fontSize: 11, marginTop: 2, fontWeight: 600 }}>
-        {label}
-      </div>
-      <div
-        style={{ fontSize: 10, color: 'var(--muted-2)', marginTop: 1, fontWeight: 500 }}
-      >
-        {sub}
-      </div>
+      </p>
+      <p className="mt-1 text-[9.5px] font-[550]" style={{ color: C.muted }}>{sub}</p>
     </div>
   );
 }
 
-function EmptyState({
-  icon,
-  title,
-  cta,
-}: {
-  icon: string;
-  title: string;
-  cta: string;
+/**
+ * A row of the record. Shows an em dash rather than hiding the row, so a
+ * member can see what their studio is still missing from them — a blank they
+ * can fill is more useful than a row that silently disappeared.
+ */
+function Detail({ icon, label, value, last }: {
+  icon: React.ReactNode; label: string; value: string | null | undefined; last?: boolean;
 }) {
   return (
-    <div
-      style={{
-        borderRadius: 14,
-        border: '1px dashed var(--line-2)',
-        padding: '1.5rem 1rem',
-        textAlign: 'center',
-      }}
-    >
-      <div style={{ fontSize: 24, marginBottom: 8, opacity: 0.55 }}>{icon}</div>
-      <div className="text-muted text-sm" style={{ marginBottom: 8 }}>
-        {title}
-      </div>
-      <button
-        style={{
-          background: 'transparent',
-          border: 'none',
-          color: 'var(--brand-hi)',
-          fontSize: 12,
-          fontWeight: 700,
-          cursor: 'pointer',
-        }}
-      >
-        {cta} →
-      </button>
+    <div className="flex items-center gap-2.5 px-3.5 py-2.5"
+      style={last ? undefined : { borderBottom: '1px solid var(--border)' }}>
+      <span style={{ color: C.muted }}>{icon}</span>
+      <span className="flex-1 text-[12px] font-[600]" style={{ color: C.muted }}>{label}</span>
+      <span className="max-w-[55%] truncate text-right text-[12.5px] font-[680]"
+        style={{ color: value ? C.ink : C.muted }}>
+        {value || '—'}
+      </span>
     </div>
   );
 }
 
 function Skeleton() {
   return (
-    <div className="member-shell">
-      <div className="member-header">
-        <div className="member-header-inner">
-          <div>
-            <div className="skeleton" style={{ width: 60, height: 11, marginBottom: 6 }} />
-            <div className="skeleton" style={{ width: 110, height: 16 }} />
-          </div>
-          <div className="skeleton" style={{ width: 38, height: 38, borderRadius: 10 }} />
+    <Shell>
+      <div className="mb-3 flex items-center gap-3">
+        <div className="h-[52px] w-[52px] animate-pulse rounded-full" style={{ background: 'var(--bg-subtle)' }} />
+        <div className="flex-1">
+          <div className="h-4 w-2/5 animate-pulse rounded" style={{ background: 'var(--bg-subtle)' }} />
+          <div className="mt-2 h-3 w-1/3 animate-pulse rounded" style={{ background: 'var(--bg-subtle)' }} />
         </div>
       </div>
-      <div className="member-main">
-        <div className="skeleton" style={{ height: 180, borderRadius: 16 }} />
-        <div className="skeleton" style={{ height: 80, borderRadius: 14 }} />
-        <div className="skeleton" style={{ height: 80, borderRadius: 14 }} />
+      <div className="mb-4 h-[210px] animate-pulse rounded-[22px]" style={{ background: 'var(--bg-subtle)' }} />
+      <div className="grid grid-cols-3 gap-2.5">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-[92px] animate-pulse rounded-[16px]" style={{ background: 'var(--bg-subtle)' }} />
+        ))}
       </div>
-    </div>
+    </Shell>
   );
 }
-
-

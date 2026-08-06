@@ -2531,6 +2531,68 @@ export type ClientLoginStatus = {
   } | null;
 };
 
+/** The member's own record, as /api/me/profile returns it. */
+export type MeProfile = {
+  id: string;
+  member_code: string | null;
+  name: string;
+  email: string | null;
+  mobile: string | null;
+  gender: string | null;
+  dob: string | null;
+  photo_url: string | null;
+  address: string | null;
+  package_type: string | null;
+  goal: string | null;
+  height: number | null;
+  weight: number | null;
+  joining_date: string | null;
+  pt_start_date: string | null;
+  pt_end_date: string | null;
+  duration_months: number | null;
+  status: string | null;
+  trainer_name: string | null;
+  trainer_photo: string | null;
+  trainer_specialization: string | null;
+  studio_name: string | null;
+  studio_logo: string | null;
+};
+
+export type MeMembership = {
+  id: string;
+  package_type: string | null;
+  base_amount: number | string;
+  discount: number | string;
+  final_amount: number | string;
+  paid_amount: number | string;
+  balance_amount: number | string;
+  monthly_pt_amount: number | string;
+  pt_start_date: string | null;
+  pt_end_date: string | null;
+  duration_months: number | null;
+  status: string | null;
+};
+
+export type MePayment = {
+  id: string;
+  amount: number | string;
+  date: string;
+  payment_method: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
+export type MeAttendance = {
+  id: string;
+  date: string;
+  check_in_time: string | null;
+  check_out_time: string | null;
+  method: string | null;
+  status: string | null;
+};
+
+export type MeMeasurement = { weight_kg: number | string; measured_at: string };
+
 export type SubscriptionMetrics = {
   mrr_inr: number;
   arr_inr: number;

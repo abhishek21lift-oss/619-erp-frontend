@@ -12,6 +12,7 @@ import type {
   AnnouncementPreview, AuditEntry, AuditFilters, AuditQuery, Coupon, FeatureCatalogue,
   FeatureOverrideRow, ImpersonationSession, Invitation, InvitationDetail,
   ClientActivationPreview, ClientLoginStatus,
+  MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement,
   InvitationPreview, InvoiceQuery, InvoiceTotals, LoginEvent, LoginEventQuery,
   OrgBillingProfile, OrgInternalNotes, OrgUser, Organization, OrganizationDetail,
   PlanChangeQuote, PlatformAnalytics, PlatformBillingSettings, PlatformFeature,
@@ -633,6 +634,18 @@ export const invitations = {
       `/api/invitations/${encodeURIComponent(token)}/accept`,
       { method: 'POST', body: JSON.stringify({ password }) }
     ),
+};
+
+// ── The signed-in member's own data ───────────────────────
+// Every one of these is scoped server-side to req.user.pt_client_id — no
+// route takes an id, so there is nothing here for a caller to tamper with.
+// See src/modules/client-portal on the backend.
+export const me = {
+  profile: () => http<{ data: MeProfile }>('/api/me/profile'),
+  membership: () => http<{ data: MeMembership }>('/api/me/membership'),
+  payments: () => http<{ data: MePayment[] }>('/api/me/payments'),
+  attendance: () => http<{ data: MeAttendance[] }>('/api/me/attendance'),
+  measurements: () => http<{ data: MeMeasurement[] }>('/api/me/measurements'),
 };
 
 // ── Client activation (public) ────────────────────────────
