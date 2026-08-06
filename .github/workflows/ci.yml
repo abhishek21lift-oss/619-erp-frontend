@@ -80,13 +80,96 @@ jobs:
         # exists to catch, not something to pass quietly.
         run: npm test
 
+  # ── Job 3b: End-to-end ─────────────────────────────────────────────
+  #
+  # Audit finding H-10. Every other job here mocks one side of a boundary:
+  # Vitest mocks fetch, and the backend's Jest suite mocks the pg pool. So the
+  # property this product actually sells — that one studio cannot see another's
+  # data — was asserted only by tests that mock away the layer where it can
+  # fail. This job runs a real browser-grade stack: real Postgres, the real
+  # migrations, two seeded studios, the real API.
+  #
+  # It checks out the BACKEND repo alongside this one, because isolation is a
+  # property of the pair and cannot be tested from either alone.
+  e2e:
+    name: E2E — cross-tenant isolation
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        # pgvector, because migration 046 installs the extension and the chain
+        # aborts without it.
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: erp_e2e
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/erp_e2e
+      JWT_SECRET: ci-e2e-secret-at-least-32-characters-long!!
+      FRONTEND_URL: http://127.0.0.1:3100
+      E2E_API_URL: http://127.0.0.1:5100
+      E2E_APP_URL: http://127.0.0.1:3100
+      PORT: '5100'
+
+    steps:
+      - name: Checkout frontend
+        uses: actions/checkout@v4
+        with: { path: frontend }
+
+      - name: Checkout backend
+        uses: actions/checkout@v4
+        with:
+          repository: abhishek21lift-oss/619-erp-backend
+          ref: main
+          path: backend
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+
+      - name: Install backend
+        working-directory: backend
+        run: npm ci
+
+      - name: Build the database and start the API
+        working-directory: backend
+        # e2e-setup.sh creates the Supabase-compatible roles, applies
+        # schema.sql, runs every migration, seeds two studios, and serves.
+        run: |
+          nohup npm run e2e:setup > /tmp/api.log 2>&1 &
+          for _ in $(seq 1 90); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 http://127.0.0.1:5100/api/health || true)
+            [ "$code" != "000" ] && break
+            sleep 2
+          done
+          curl -s -o /dev/null -w 'api health: %{http_code}\n' http://127.0.0.1:5100/api/health || (tail -50 /tmp/api.log; exit 1)
+
+      - name: Install frontend
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Run the isolation suite
+        working-directory: frontend
+        # --project=api only: these assert against the API directly, because a
+        # leak has to be impossible at the source rather than merely unrendered.
+        run: npx playwright test --project=api
+
+      - name: API log on failure
+        if: failure()
+        run: tail -100 /tmp/api.log
+
   # ── Job 4: Build ───────────────────────────────────────────────────
   build:
     name: Production Build
     runs-on: ubuntu-latest
     # Gated on tests too: shipping an artifact from a commit whose tests fail
     # is the exact thing this pipeline is meant to prevent.
-    needs: [lint, typecheck, test]
+    needs: [lint, typecheck, test, e2e]
     env:
       NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
       NEXT_TELEMETRY_DISABLED: '1'

@@ -15,7 +15,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "knip": "knip",
-    "device-check": "node scripts/device-check/run.mjs"
+    "device-check": "node scripts/device-check/run.mjs",
+    "e2e": "playwright test",
+    "e2e:api": "playwright test --project=api"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.19",
@@ -43,6 +45,7 @@
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^16.2.10",
+    "@playwright/test": "^1.62.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
