@@ -40,6 +40,9 @@
 export const SESSIONLESS_PAGES = [
   '/',
   '/login',
+  // The client-facing sign-in. Same screen as /login with a different portal,
+  // and just as public — a member arriving here has no session by definition.
+  '/member-login',
   '/forgot-password',
   // Token links. A redirect away from any of these takes the ?token= with it
   // — redirectToLogin preserves only the pathname — so the credential is gone

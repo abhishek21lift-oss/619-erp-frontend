@@ -166,6 +166,9 @@ describe('every route segment has a boundary', () => {
   // here for exactly the reason `auth` does.
   const PUBLIC = new Set([
     'appointments', 'auth', 'client', 'forgot-password', 'login',
+    // The client-facing half of the sign-in split. Public for the same reason
+    // 'login' is: nobody reaching it has a session yet.
+    'member-login',
     'reset-password', 'start-free',
   ]);
 

@@ -116,10 +116,15 @@ function Nav() {
             ))}
           </div>
           <div className="hidden items-center gap-2.5 md:flex">
-            <Link href="/login" className="rounded-xl px-3.5 py-2 text-[13.5px] font-[650] transition-colors hover:bg-black/[0.04]" style={{ color: INK }}>Login</Link>
-            <Link href="/login" className="group inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-[13.5px] font-[680] text-white transition-transform hover:-translate-y-0.5"
+            {/* Two doors, not one. Both used to point at /login and both said
+                something vague; now each names who it is for. The split is
+                enforced on the server — a member is refused at Admin Login
+                and a studio account at Member Login — so these labels are a
+                description of the rule, not a substitute for it. */}
+            <Link href="/login" className="rounded-xl px-3.5 py-2 text-[13.5px] font-[650] transition-colors hover:bg-black/[0.04]" style={{ color: INK }}>Admin Login</Link>
+            <Link href="/member-login" className="group inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-[13.5px] font-[680] text-white transition-transform hover:-translate-y-0.5"
               style={{ background: `linear-gradient(135deg, ${MAROON} 0%, ${MAROON_DEEP} 100%)`, boxShadow: `0 8px 20px ${MAROON}40` }}>
-              Get Started <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+              Member Login <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
           <button className="md:hidden" onClick={() => setOpen((s) => !s)} aria-label="Menu" style={{ color: INK }}>
@@ -132,8 +137,8 @@ function Nav() {
               <a key={n} href={`#${n.toLowerCase()}`} onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2.5 text-[14px] font-[560]" style={{ color: INK }}>{n}</a>
             ))}
             <div className="mt-2 flex gap-2 border-t pt-3" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
-              <Link href="/login" className="flex-1 rounded-xl py-2.5 text-center text-[14px] font-[650]" style={{ color: INK, border: '1px solid rgba(0,0,0,0.1)' }}>Login</Link>
-              <Link href="/login" className="flex-1 rounded-xl py-2.5 text-center text-[14px] font-[680] text-white" style={{ background: MAROON }}>Get Started</Link>
+              <Link href="/login" onClick={() => setOpen(false)} className="flex-1 rounded-xl py-2.5 text-center text-[14px] font-[650]" style={{ color: INK, border: '1px solid rgba(0,0,0,0.1)' }}>Admin Login</Link>
+              <Link href="/member-login" onClick={() => setOpen(false)} className="flex-1 rounded-xl py-2.5 text-center text-[14px] font-[680] text-white" style={{ background: MAROON }}>Member Login</Link>
             </div>
           </div>
         )}

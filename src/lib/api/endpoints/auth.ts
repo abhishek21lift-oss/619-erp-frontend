@@ -20,10 +20,24 @@ export const auth = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
-  login: (email: string, password: string, mfaCode?: string) =>
+  /**
+   * `portal` says which sign-in screen the person used: 'staff' for Admin
+   * Login, 'member' for Member Login. The server refuses the mismatch — a
+   * client cannot sign in through Admin Login and vice versa — so this is not
+   * a UI hint, it is part of the request.
+   *
+   * Omitted rather than defaulted here, so the server's own default ('staff')
+   * is the single place that decision lives.
+   */
+  login: (email: string, password: string, mfaCode?: string, portal?: 'staff' | 'member') =>
     http<{ user: User }>('/api/auth/login', {
       method: 'POST',
-      body: mfaCode ? { email, password, mfa_code: mfaCode } : { email, password },
+      body: {
+        email,
+        password,
+        ...(mfaCode ? { mfa_code: mfaCode } : {}),
+        ...(portal ? { portal } : {}),
+      },
     }),
   googleLogin: (credential: string) =>
     http<{ user: User }>('/api/auth/google-login', {
