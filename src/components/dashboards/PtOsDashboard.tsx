@@ -28,8 +28,8 @@ import {
 import {
   Users, Wallet, Percent,
   ChevronRight, Sparkles, ArrowUpRight, ArrowDownRight, Activity,
-  UserPlus, CalendarPlus,
-  ShieldCheck, Target, Gauge,
+  UserPlus, CalendarPlus, Receipt,
+  ShieldCheck, Target, Gauge, Crown,
   CalendarClock, CheckCircle2,
   FileSignature, HeartPulse, Apple, PersonStanding, MessageCircle, Phone,
   AlertTriangle, Clock,
@@ -350,45 +350,55 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
 
           The rest: py 12→8 / 14→8, crest 36→32, and one step off each
           remaining gap. 41px and 45px, or 20.3% and 19.9%. */}
-      {/* ── Third pass: stop shouting ────────────────────────────────────
-          The two passes described above trimmed padding and gaps but left the
-          composition alone: a crest, then an all-caps eyebrow at 0.28em
-          tracking, then the studio name at 44px in a five-stop gold gradient
-          with two drop-shadows, then the badge, then the date in caps. Five
-          centred rows, roughly 200px, and the largest type on the entire
-          dashboard spent on a name the owner already knows.
-
-          It also set the register for everything below it. A hero that loud
-          gives every card underneath permission to be loud, which is how the
-          page ended up with five competing accent colours.
-
-          Now: left-aligned, two rows. The date leads as a quiet eyebrow, the
-          greeting is the headline at a readable weight, the studio name sits
-          under it as a small amber line — the one place gold survives, because
-          one accent used once reads as considered and five read as noise. The
-          dark surface stays: it is the only dark element on the page and it
-          anchors the top without needing to be tall. ~96px, from ~200px. */}
-      <div className="relative z-10 flex items-center gap-3 px-5 py-4 sm:px-6 sm:py-5">
-        <div className="min-w-0 flex-1">
-          <p className="text-[9.5px] font-[650] uppercase tracking-[0.2em]"
-            style={{ color: 'rgba(255,255,255,0.42)' }}>
-            {dateStr}
-          </p>
-          <h1 className="mt-1.5 truncate text-[21px] font-[820] leading-none tracking-[-0.02em] text-white sm:text-[25px]">
-            {greeting()}, {coach}
-          </h1>
-          <p className="mt-1.5 truncate text-[11.5px] font-[650] tracking-[0.02em]"
-            style={{ color: 'rgba(252,211,77,0.82)' }}>
-            {studioName}
-          </p>
+      <div className="relative z-10 flex flex-col items-center justify-center py-2 px-6 text-center">
+        {/* Crest */}
+        <div className="mb-1.5 flex h-8 w-8 items-center justify-center rounded-full"
+          style={{
+            background: 'radial-gradient(circle at 30% 25%, #0050AD, #0F172A)',
+            border: '1px solid rgba(251,191,36,0.45)',
+            boxShadow: '0 0 0 4px rgba(251,191,36,0.06), 0 6px 18px rgba(245,158,11,0.30)',
+          }}>
+          <Crown size={15} style={{ color: '#FCD34D' }} />
         </div>
 
+        {/* Greeting eyebrow */}
+        <p className="mb-0.5 text-[9.5px] sm:text-[10.5px] font-[700] uppercase tracking-[0.28em]"
+          style={{ color: 'rgba(252,211,77,0.66)' }}>
+          {greeting()} · {coach}
+        </p>
+
+        <h1
+          className="text-[32px] sm:text-[44px] font-[900] tracking-[0.14em] leading-[0.98] uppercase"
+          style={{
+            background: 'linear-gradient(92deg, #ffffff 0%, #FCD34D 34%, #F59E0B 62%, #FDE68A 82%, #ffffff 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            filter: 'drop-shadow(0 1px 0 rgba(0,0,0,0.40)) drop-shadow(0 3px 20px rgba(245,158,11,0.48))',
+          }}
+        >
+          {studioName}
+        </h1>
+
+        {/* Under the wordmark rather than beside it: the hero name is a
+            fluid-size gradient headline, and an inline badge would ride its
+            baseline differently at every breakpoint. */}
         {founderNumber != null && (
-          <div className="shrink-0">
+          <div className="mt-2 flex justify-center">
             <FounderBadge number={founderNumber} size="lg" />
           </div>
         )}
+
+        <p className="mt-2 text-[10.5px] sm:text-[12px] font-[600] uppercase tracking-[0.22em]"
+          style={{ color: 'rgba(255,255,255,0.46)' }}>
+          {dateStr}
+        </p>
       </div>
+
+      <div className="absolute top-0 inset-x-0 h-px"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.5), transparent)' }} />
+      <div className="absolute bottom-0 inset-x-0 h-px"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.7), rgba(127,180,255,0.5), transparent)' }} />
     </m.div>
   );
 }
@@ -456,73 +466,65 @@ function MobileQuickActions() {
 }
 
 // ─── Section 3 — KPI Stat Cards ────────────────────────────────────────────────
-/**
- * One number, quietly.
- *
- * ── What this card used to be ────────────────────────────────────────────
- *
- * Nine colour applications per card: a tinted gradient background, a coloured
- * border, a coloured shadow, a 3px gradient bar across the top, a
- * gradient-filled icon tile with its own coloured shadow, a coloured label, a
- * coloured value, a coloured sparkline, and a shimmer sweep on hover. Five
- * cards in the row, five different hues, every one at full strength.
- *
- * No single one of those was wrong. The problem was all of them at once on
- * every card, so the row had no hierarchy — five things shouting reads the
- * same as five things whispering, and the eye gives up. That is most of why
- * the page felt like clutter.
- *
- * Now: a neutral surface, a hairline, a small tinted icon, the number in ink.
- * Colour appears once per card, on the smallest element. The value is the
- * biggest thing on the card because the value is the point.
- *
- * ── The sparkline and the delta are gone, and not only for looks ─────────
- *
- * Every card that took them was passed `revTrend` / `revMoM` — the REVENUE
- * series — including Active Clients. A studio with four clients read
- * "4  ↘78%", where 78% was the month-on-month change in revenue. Two cards
- * showing an identical percentage for unrelated metrics was the tell.
- *
- * A wrong number rendered confidently is worse than no number. The API does
- * not return a per-metric history, so rather than invent one the card stops
- * claiming a trend it cannot source. Revenue's own figure is unaffected.
- */
 function StatCard({
-  icon, label, value, sub, color, delay = 0, href, className,
+  icon, label, value, sub, color, accent, delay = 0, href, trend, pct, className,
 }: {
   icon: React.ReactNode; label: string; value: string; sub?: string;
-  /** The one place colour appears: the icon. Never the surface, never the value. */
-  color: string; delay?: number; href?: string;
+  color: string; accent: string; delay?: number; href?: string;
+  trend?: number[]; pct?: number | null;
   /** Responsive visibility, for cards that only belong on some screen sizes. */
   className?: string;
 }) {
   const router = useRouter();
+  const max = trend && trend.length > 0 ? Math.max(...trend, 1) : 1;
   return (
     <m.div
-      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4, ease: EASE }}
-      whileTap={{ scale: 0.985 }}
+      initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      whileHover={{ y: -4, scale: 1.015 }} whileTap={{ scale: 0.97 }}
       onClick={() => href && router.push(href)}
-      className={cn('group relative overflow-hidden rounded-[16px] p-3.5 sm:p-4 cursor-pointer', className)}
+      className={cn('group relative overflow-hidden rounded-[18px] p-3.5 sm:p-4 cursor-pointer', className)}
       style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
+        background: `linear-gradient(155deg, ${color}11 0%, rgba(255,255,255,0.88) 65%)`,
+        border: `1px solid ${color}22`,
+        boxShadow: `0 4px 20px ${color}0d, inset 0 1px 0 rgba(255,255,255,0.7)`,
+        backdropFilter: 'blur(16px)',
       }}
     >
-      <span className="mb-3 inline-flex h-7 w-7 items-center justify-center rounded-[9px]"
-        style={{ background: rgba(color, 0.12), color }}>
-        {icon}
-      </span>
+      {/* shimmer */}
+      <div className="pointer-events-none absolute inset-0 -translate-x-full skew-x-[-12deg] bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+      {/* top accent */}
+      <div className="absolute top-0 inset-x-0 h-[3px] rounded-t-[18px]"
+        style={{ background: `linear-gradient(90deg, ${color}, ${accent})` }} />
 
-      <p className="text-[9.5px] font-[720] uppercase tracking-[0.11em]" style={{ color: C.muted }}>
-        {label}
-      </p>
-      <p className="mt-1 text-[21px] font-[860] leading-none tracking-[-0.03em] tabular-nums sm:text-[24px]"
-        style={{ color: C.ink }}>
-        {value}
-      </p>
-      {sub && <p className="mt-1.5 text-[10.5px] font-[550]" style={{ color: C.muted }}>{sub}</p>}
+      <div className="relative z-10 flex items-start justify-between mb-2.5 pt-0.5">
+        <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-[10px] sm:rounded-[12px] text-white transition-all duration-200 group-hover:scale-110 group-hover:-rotate-6"
+          style={{ background: `linear-gradient(135deg, ${color}, ${accent})`, boxShadow: `0 4px 12px ${color}40` }}>
+          {icon}
+        </div>
+        {pct !== undefined && <TrendBadge pct={pct ?? null} />}
+      </div>
+
+      <div className="relative z-10">
+        <p className="text-[9px] sm:text-[9.5px] font-[750] uppercase tracking-[0.1em] mb-1" style={{ color: `${color}aa` }}>{label}</p>
+        <p className="text-[18px] sm:text-[21px] font-[880] tracking-[-0.03em] leading-none" style={{ color }}>{value}</p>
+        {sub && <p className="mt-1 text-[9.5px] font-[500]" style={{ color: C.muted }}>{sub}</p>}
+      </div>
+
+      {trend && trend.length > 0 && (
+        <div className="relative z-10 flex items-end gap-[2px] h-7 sm:h-8 mt-2.5">
+          {trend.map((v, i) => (
+            <m.div key={i}
+              initial={{ scaleY: 0 }} animate={{ scaleY: 1 }}
+              transition={{ delay: delay + 0.2 + i * 0.04, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="flex-1 rounded-t-[3px] origin-bottom"
+              style={{
+                height: `${Math.max((v / max) * 100, 8)}%`,
+                background: i === trend.length - 1 ? `linear-gradient(to top, ${color}, ${accent})` : `${color}22`,
+              }} />
+          ))}
+        </div>
+      )}
     </m.div>
   );
 }
@@ -591,15 +593,9 @@ function CountUp({ value, format, reduce }: {
  * owed by.
  */
 function RevenueHalf({
-  icon, label, value, sub, color, onClick, reduce, delay,
+  emoji, label, value, sub, color, onClick, reduce, delay,
 }: {
-  // A lucide glyph, not an emoji. 💰 and ⏳ sat beside uppercase labels in a
-  // page otherwise drawn entirely in line icons, and emoji render in the
-  // system's own colours — so two of the loudest spots on the dashboard were
-  // the two the palette had no say over. The insight line below keeps its
-  // single emoji: at the head of a sentence it reads as punctuation rather
-  // than as an icon.
-  icon: React.ReactNode; label: string; value: number; sub: string;
+  emoji: string; label: string; value: number; sub: string;
   color: string; onClick: () => void; reduce: boolean; delay: number;
 }) {
   return (
@@ -617,7 +613,7 @@ function RevenueHalf({
       }}
     >
       <span className="flex items-center gap-1.5">
-        <span className="inline-flex items-center" style={{ color }} aria-hidden>{icon}</span>
+        <span className="text-[12px] leading-none" aria-hidden>{emoji}</span>
         <span className="text-[9.5px] font-[800] uppercase tracking-[0.11em]" style={{ color: `${color}cc` }}>
           {label}
         </span>
@@ -728,13 +724,13 @@ function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
 
       <div className="flex flex-col gap-2.5 sm:flex-row">
         <RevenueHalf
-          icon={<Wallet size={12} />} label="Collected Today" value={collected}
+          emoji="💰" label="Collected Today" value={collected}
           sub={payments > 0 ? `across ${payments} payment${payments === 1 ? '' : 's'}` : 'nothing yet today'}
           color={C.success} reduce={reduce} delay={0}
           onClick={() => router.push('/finance/collected-payments')}
         />
         <RevenueHalf
-          icon={<Clock size={12} />} label="Pending" value={pending}
+          emoji="⏳" label="Pending" value={pending}
           sub={owing > 0 ? `from ${owing} member${owing === 1 ? '' : 's'}` : 'all balances clear'}
           color={C.warning} reduce={reduce} delay={0.07}
           onClick={() => router.push('/finance/dues')}
@@ -1574,11 +1570,10 @@ export default function PtOsDashboard() {
     return () => { stop(); document.removeEventListener('visibilitychange', onVisibility); };
   }, [refreshAll]);
 
-  // The four series that fed the KPI sparklines and deltas are gone with them.
-  // They were the defect, not the decoration: revTrend/revMoM were handed to
-  // Active Clients as well as PT Revenue, so a client count displayed the
-  // revenue trend. momPct itself stays — healthScore and Session Activity
-  // still use it, on the metric it actually belongs to.
+  const revTrend = d?.revenueTrend?.map(x => Number(x.revenue)) ?? [];
+  const incTrend = d?.revenueTrend?.map(x => Number(x.incentives)) ?? [];
+  const revMoM   = momPct(d?.revenueTrend, 'revenue');
+  const incMoM   = momPct(d?.revenueTrend, 'incentives');
 
   const commRate = d?.total_monthly_pt_revenue && d.total_monthly_pt_revenue > 0
     ? `${((d.total_monthly_commission / d.total_monthly_pt_revenue) * 100).toFixed(0)}% rate` : undefined;
@@ -1631,79 +1626,63 @@ export default function PtOsDashboard() {
             {/* 3 — Mobile quick actions (desktop uses the dock) */}
             <MobileQuickActions />
 
-            {/* 3 — KPI grid.
-                Four cards, not five. Outstanding was the fifth and it is gone
-                from here: Today's Revenue below already carries that figure as
-                "Pending", with the member count and a way to act on it. The
-                same ₹10K was on screen four times — this card, the Pending
-                half, the AI Coach's "₹10K due" row, and its own insight line.
-                Saying it once, in the place that can do something about it,
-                is the difference between a dashboard and a noticeboard.
-
-                Four also means the desktop row is full without Commission,
-                which stays phone-and-tablet only — a trainer on the floor
-                wants it a tap away, a desk does not need it in the top row. */}
+            {/* 3 — KPI grid: 2 cols mobile → 3 tablet → 4 desktop.
+                Four rather than five on desktop because Commission is hidden
+                there (lg:hidden below) and the row would otherwise sit a card
+                short. Small screens still show all five. */}
             <div>
               <SectionLabel>Key Metrics</SectionLabel>
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                 <StatCard icon={<Users size={14} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
-                  sub={d.expired_clients > 0 ? `${d.expired_clients} expired` : 'none expired'}
-                  color={C.primary} delay={0} href="/pt-os/clients" />
+                  sub={`${d.expired_clients} expired`} color={C.primary} accent="#7fb4ff" delay={0} href="/pt-os/clients" trend={revTrend} pct={revMoM} />
                 <StatCard icon={<Wallet size={14} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
-                  sub="this month" color={C.success} delay={0.04} href="/pt-os/reports" />
-                <StatCard icon={<Gauge size={14} />} label="Retention" value={retentionPct !== null ? `${retentionPct.toFixed(0)}%` : '—'}
-                  sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients}`}
-                  color={C.primary} delay={0.08} href="/pt-os/clients" />
+                  color={C.success} accent="#34d399" delay={0.05} href="/pt-os/reports" trend={revTrend} pct={revMoM} />
+                {/* Phone and tablet only. Still rendered there, so the numbers
+                    stay one tap away on the devices a trainer carries around
+                    the floor; the desktop row is the one being kept lean. */}
                 <StatCard icon={<Percent size={14} />} label="Commission" value={fmtCompact(d.total_monthly_commission)}
-                  sub={commRate} color={C.warning} delay={0.12} href="/pt-os/commissions" className="lg:hidden" />
-                <StatCard icon={<Activity size={14} />} label="Sessions" value={String(o?.session_stats?.this_month_total ?? 0)}
-                  sub="booked this month" color={C.primary} delay={0.12} href="/pt-os/sessions"
-                  className="hidden lg:block" />
+                  sub={commRate} color={C.danger} accent="#f87171" delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM}
+                  className="lg:hidden" />
+                <StatCard icon={<Gauge size={14} />} label="Retention" value={retentionPct !== null ? `${retentionPct.toFixed(0)}%` : '—'}
+                  sub={`${d.active_pt_clients}/${d.active_pt_clients + d.expired_clients}`} color={C.primary} accent="#0067e0" delay={0.15} href="/pt-os/clients" />
+                <StatCard icon={<Receipt size={14} />} label="Outstanding" value={fmtCompact(d.total_outstanding)}
+                  sub={`${d.clients_with_balance} client${d.clients_with_balance !== 1 ? 's' : ''}`} color={C.warning} accent="#fbbf24" delay={0.20} href="/pt-os/balance-sheet" />
               </div>
             </div>
 
-            {/* 4 — Today's Revenue.
-                Moved up, above the coach and the optional sections. Money is
-                the second question of the day after "who am I training", and
-                it was previously below three cards that were often empty.
+            {/* 5 — Renewals due.
+                Was a two-column row with a "Today" card beside it. That card
+                is now the full-width section under the hero, where it can show
+                the programme and the clients who are due but unbooked — so
+                keeping it here as well would have been the same list twice, one
+                of them worse. Renewals is full width now that it is alone. */}
+            <div>
+              <SectionLabel>Renewals</SectionLabel>
+              <RenewalsDue ops={o} loading={ops.loading} />
+            </div>
 
+            {/* 5 — AI Coach */}
+            <AICoach d={d} ops={o} birthdays={birthdays.data?.data ?? []} studioName={studioName} />
+
+            {/* 6 — Today's Revenue.
                 Was "Revenue Intelligence": this month, a linear-regression
                 projection, average per client, six-month total. All true and
                 none of it answerable — you could read it for a minute and
-                still not know whether to pick up the phone. */}
+                still not know whether to pick up the phone. This asks the
+                question the day actually has: what came in, what is still out,
+                who do I call. */}
             <TodayRevenue d={d} loading={dash.loading} />
 
-            {/* 5 — What needs attention */}
-            <AICoach d={d} ops={o} birthdays={birthdays.data?.data ?? []} studioName={studioName} />
-
-            {/* 6 — Renewals, and only when there are any.
-                This rendered a full-height card containing a tick and the
-                words "No renewals this week" — roughly a third of a phone
-                screen spent saying nothing, every day of every quiet week.
-
-                An empty state earns its space when the reader might otherwise
-                wonder whether the feature is broken. Nobody wonders that about
-                renewals: the coach section above already lists what is coming
-                up, so silence here is unambiguous. While loading it still
-                renders, because a section that appears late looks like a
-                glitch. */}
-            {(ops.loading || (o?.renewals_due?.length ?? 0) > 0) && (
-              <div>
-                <SectionLabel>Renewals</SectionLabel>
-                <RenewalsDue ops={o} loading={ops.loading} />
-              </div>
-            )}
-
-            {/* 7 — Session activity, on the same terms.
-                A studio that has booked nothing this month got a card reading
-                1 / 0 / 0 above a 0% bar. That is not a dashboard telling you
-                something, it is a dashboard filling space. */}
-            {(ops.loading || (o?.session_stats?.this_month_total ?? 0) > 0) && (
-              <div>
-                <SectionLabel>Sessions</SectionLabel>
-                <SessionActivity ops={o} loading={ops.loading} />
-              </div>
-            )}
+            {/* 7 — Session activity.
+                Was a two-column "Team Performance" row with a trainer
+                leaderboard beside it. Three of the four studios have exactly
+                one trainer, so the board ranked a list of one, and "team" was
+                the wrong word for a solo studio. Full width now that it is the
+                only card in the row. */}
+            <div>
+              <SectionLabel>Sessions</SectionLabel>
+              <SessionActivity ops={o} loading={ops.loading} />
+            </div>
           </>
         )}
       </div>
