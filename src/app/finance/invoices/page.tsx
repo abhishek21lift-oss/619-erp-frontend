@@ -5,6 +5,7 @@ import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { useSeededSearch } from '@/lib/use-seeded-search';
 import { m, AnimatePresence } from 'framer-motion';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumModal } from '@/components/premium/PremiumModal';
@@ -226,6 +227,18 @@ export default function InvoicesPage() {
     fetchInvoices();
   }, [fetchInvoices]);
 
+  const { toast } = useToast();
+
+  // Every handler below reports its own failure.
+  //
+  // They used to swallow: `catch { /* silently ignore */ }` on reminder and
+  // mark-paid, and no catch at all on create. On a billing screen that is the
+  // worst possible default — a studio owner pressed "Send Reminder", saw
+  // nothing change, and had no way to tell a delivered reminder from a failed
+  // one. Mark Paid was worse: the modal stayed open with the invoice still
+  // unpaid and no explanation, so the natural response was to press it again.
+  // The rest of this app already uses useToast() on failure; these four were
+  // the gap, not a different convention.
   const handleCreateInvoice = React.useCallback(async () => {
     if (!createForm.memberName || !createForm.amount || !createForm.dueDate) return;
     setCreating(true);
@@ -239,28 +252,47 @@ export default function InvoicesPage() {
       });
       setShowCreateModal(false);
       setCreateForm({ memberName: '', amount: '', dueDate: '', description: '', paymentMethod: 'upi' });
+      toast.success('Invoice created');
       fetchInvoices();
+    } catch (err: unknown) {
+      // Previously uncaught entirely: the rejection became an unhandled promise
+      // rejection, `finally` re-enabled the button, and the modal just sat
+      // there looking like the click had not registered.
+      toast.error(err instanceof Error ? err.message : 'Could not create the invoice');
     } finally {
       setCreating(false);
     }
-  }, [createForm, fetchInvoices]);
+  }, [createForm, fetchInvoices, toast]);
 
   const handleDownloadPDF = React.useCallback((invoice: Invoice) => {
     const w = window.open('', '_blank');
     if (w) { w.document.write(generateInvoiceHTML(invoice)); w.document.close(); w.focus(); w.print(); }
-  }, []);
+    // A popup blocker returns null, and the function used to return silently —
+    // indistinguishable from a broken button.
+    else toast.error('Your browser blocked the invoice window. Allow pop-ups for this site and try again.');
+  }, [toast]);
 
   const handleSendReminder = React.useCallback(async (invoice: Invoice) => {
-    try { await api.invoices.remind(invoice.id); } catch { /* silently ignore */ }
-  }, []);
+    try {
+      await api.invoices.remind(invoice.id);
+      toast.success('Reminder sent');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Could not send the reminder');
+    }
+  }, [toast]);
 
   const handleMarkPaid = React.useCallback(async (invoice: Invoice) => {
     try {
       await api.invoices.markPaid(invoice.id);
       setSelectedInvoice(null);
+      toast.success('Invoice marked as paid');
       fetchInvoices();
-    } catch { /* silently ignore */ }
-  }, [fetchInvoices]);
+    } catch (err: unknown) {
+      // Deliberately leaves the modal open on failure: the invoice is still
+      // unpaid, so closing it would imply the opposite.
+      toast.error(err instanceof Error ? err.message : 'Could not mark the invoice as paid');
+    }
+  }, [fetchInvoices, toast]);
 
   const statusTabs = React.useMemo(() => {
     const counts: Record<string, number> = { all: invoices.length, paid: 0, pending: 0, overdue: 0, draft: 0, cancelled: 0 };
