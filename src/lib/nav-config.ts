@@ -312,6 +312,16 @@ export function isGroupVisibleForRole(group: NavGroup, userRole?: string): boole
   // Platform operators get ONLY platform-scoped groups (the control plane), not
   // studio groups — so they see a dedicated interface instead of a studio's nav.
   if (role === 'super_admin') return !!group.roles?.includes('super_admin');
+
+  // Clients get ONLY client-scoped groups, by the same rule and for a sharper
+  // reason. The default below is "an untagged group is for everyone", which
+  // was true while every account belonged to studio staff. Client logins end
+  // that: without this line a client's sidebar would list Finance, Trainer
+  // Management and Insights. The API refuses those (see requireStaff), so
+  // nothing leaks — but a nav full of doors that all answer 403 is its own
+  // kind of broken, and it tells a client exactly what to go probing at.
+  if (role === 'member') return !!group.roles?.includes('member');
+
   if (group.roles?.length) return !!role && (group.roles as string[]).includes(role);
   return true;
 }

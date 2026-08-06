@@ -21,7 +21,10 @@ import { workouts, exercises, diet, classes, bookings, calendar } from './endpoi
 import { progress } from './endpoints/progress';
 import { pt } from './endpoints/ptOs';
 import { branches, gymSettings, qr, subscription, membershipPlans } from './endpoints/studio';
-import { superAdmin, settings, features, invitations, integrations } from './endpoints/platform';
+import {
+  superAdmin, settings, features, invitations, integrations,
+  clientActivation, clientLogin,
+} from './endpoints/platform';
 import { campaigns, feedback, communication, notifications, automation, support } from './endpoints/engagement';
 import { reports, search, activity, ai } from './endpoints/insights';
 
@@ -66,6 +69,8 @@ export const api = {
   settings,
   features,
   invitations,
+  clientActivation,
+  clientLogin,
   integrations,
   campaigns,
   feedback,

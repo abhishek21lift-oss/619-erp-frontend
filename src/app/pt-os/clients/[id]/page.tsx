@@ -22,6 +22,7 @@ import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { PremiumAreaChart } from '@/components/ui';
 import ClientSnapshot from '@/components/pt-os/ClientSnapshot';
+import ClientLoginCard from '@/components/pt-os/ClientLoginCard';
 import {
   ClientTabs, TabPanel, EmptyPanel, LinkPanel, type TabKey,
 } from '@/components/pt-os/client/ClientTabs';
@@ -627,6 +628,17 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     ))}
                   </div>
                 </m.div>
+
+                {/* ── CLIENT LOGIN ──
+                    Directly under the money, because eligibility depends on
+                    it: a login is what somebody gets for having paid, and the
+                    card says so plainly when they have not. The component
+                    picks which of its three shapes to render from the
+                    server's answer, and renders nothing at all if the status
+                    read fails — a profile page must not break over it. */}
+                <div className="mb-4">
+                  <ClientLoginCard clientId={client.id} />
+                </div>
 
                 {/* ── WHAT NEEDS ATTENTION, THE GOAL, THE COACH, THE RECORDS ──
                     Replaces three donuts. A ring is the right shape for a

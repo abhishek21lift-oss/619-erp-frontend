@@ -2494,6 +2494,43 @@ export type InvitationPreview = {
   expires_at: string;
 };
 
+/** What the public client-activation page may know before anyone logs in. */
+export type ClientActivationPreview = {
+  studio_name: string;
+  /** First name only. Enough to confirm "this is me", nothing more. */
+  client_name: string;
+  /** Masked — this endpoint must not become an email-disclosure oracle. */
+  email_masked: string;
+  expires_at: string;
+};
+
+/** The state of one client's login, as the trainer's card renders it. */
+export type ClientLoginStatus = {
+  client_id: string;
+  login_activated: boolean;
+  login_enabled: boolean;
+  login_email: string | null;
+  email_verified_at: string | null;
+  last_login_at: string | null;
+  locked_until: string | null;
+  activation_sent_at: string | null;
+  /** Decided server-side. The button must not re-derive this rule. */
+  can_activate: boolean;
+  blocked_reason: string | null;
+  blocked_message: string | null;
+  invitation: {
+    id: string;
+    status: string;
+    expires_at: string | null;
+    sent_at: string | null;
+    activated_at: string | null;
+    send_attempts: number;
+    last_error: string | null;
+    invited_by_name: string | null;
+    created_at: string;
+  } | null;
+};
+
 export type SubscriptionMetrics = {
   mrr_inr: number;
   arr_inr: number;

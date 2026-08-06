@@ -11,6 +11,7 @@ import type {
   AiSettings, AiStudioUsage, AiTrendPoint, Announcement, AnnouncementInput,
   AnnouncementPreview, AuditEntry, AuditFilters, AuditQuery, Coupon, FeatureCatalogue,
   FeatureOverrideRow, ImpersonationSession, Invitation, InvitationDetail,
+  ClientActivationPreview, ClientLoginStatus,
   InvitationPreview, InvoiceQuery, InvoiceTotals, LoginEvent, LoginEventQuery,
   OrgBillingProfile, OrgInternalNotes, OrgUser, Organization, OrganizationDetail,
   PlanChangeQuote, PlatformAnalytics, PlatformBillingSettings, PlatformFeature,
@@ -631,6 +632,40 @@ export const invitations = {
     http<{ data: { activated: boolean; email: string } }>(
       `/api/invitations/${encodeURIComponent(token)}/accept`,
       { method: 'POST', body: JSON.stringify({ password }) }
+    ),
+};
+
+// ── Client activation (public) ────────────────────────────
+// Used by a CLIENT who has no session yet — the token in the URL is the only
+// credential, so nothing here sends an Authorization header. Sibling of
+// `invitations` above, which does the same for studio owners.
+export const clientActivation = {
+  preview: (token: string) =>
+    http<{ data: ClientActivationPreview }>(`/api/client-activation/${encodeURIComponent(token)}`),
+  accept: (token: string, password: string) =>
+    http<{ data: { activated: boolean; email: string } }>(
+      `/api/client-activation/${encodeURIComponent(token)}/accept`,
+      { method: 'POST', body: JSON.stringify({ password }) }
+    ),
+};
+
+// ── Client logins (trainer side) ──────────────────────────
+// Staff only and org-scoped on the server; a client id from here is checked
+// against the caller's studio before anything is read or written.
+export const clientLogin = {
+  status: (clientId: string) =>
+    http<{ data: ClientLoginStatus }>(`/api/client-login/${encodeURIComponent(clientId)}`),
+  activate: (clientId: string) =>
+    http<{ data: ClientLoginStatus; email_sent: boolean }>(
+      `/api/client-login/${encodeURIComponent(clientId)}/activate`, { method: 'POST', body: '{}' }
+    ),
+  resend: (clientId: string) =>
+    http<{ data: ClientLoginStatus; email_sent: boolean }>(
+      `/api/client-login/${encodeURIComponent(clientId)}/resend`, { method: 'POST', body: '{}' }
+    ),
+  deactivate: (clientId: string) =>
+    http<{ data: ClientLoginStatus }>(
+      `/api/client-login/${encodeURIComponent(clientId)}/deactivate`, { method: 'POST', body: '{}' }
     ),
 };
 
