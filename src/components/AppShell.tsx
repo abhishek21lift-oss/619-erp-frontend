@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
+import { useTheme } from '@/components/ThemeProvider';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/components/ui/cn';
@@ -131,25 +132,18 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const notifLastFetchedRef = useRef<number>(0);
-  const [darkMode, setDarkMode] = useState(false);
-
-  // Persist dark mode preference
-  useEffect(() => {
-    const saved = localStorage.getItem('619-theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = saved ? saved === 'dark' : prefersDark;
-    setDarkMode(isDark);
-    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    document.documentElement.classList.toggle('dark', isDark);
-  }, []);
-
-  const toggleDark = () => {
-    const next = !darkMode;
-    setDarkMode(next);
-    localStorage.setItem('619-theme', next ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light');
-    document.documentElement.classList.toggle('dark', next);
-  };
+  // Theme comes from ThemeProvider — this component does NOT keep its own copy.
+  //
+  // It used to: local `darkMode` state, its own mount effect, and a toggle that
+  // wrote localStorage['619-theme'], while ThemeProvider and the pre-paint
+  // script used localStorage['theme']. Two systems, two keys, no connection.
+  // Pressing this button changed the page but left every useTheme() consumer
+  // stale (the diet-plan charts kept their light palette in dark mode), and on
+  // the next load the pre-paint script found nothing under 'theme' and fell
+  // back to the system preference — throwing away the choice the user had just
+  // made. See public/theme-init.js for the one-time migration of the old key.
+  const { theme, toggle: toggleDark } = useTheme();
+  const darkMode = theme === 'dark';
 
   const { user, logout } = useAuth();
   const studioName = user?.organization_name || 'PT Studio';

@@ -14,6 +14,7 @@ import {
   Award, Plus, BadgeCheck, Briefcase, GraduationCap, Trophy, Images,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
+import { useTheme } from '@/components/ThemeProvider';
 import AppShell from '@/components/AppShell';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -1122,16 +1123,26 @@ export default function ProfilePage() {
     }
   };
 
+  const { setTheme } = useTheme();
+
   /* ── Preferences (write-through) ── */
-  // Mirrors AppShell's own dark-mode toggle exactly (same localStorage key/
-  // format and DOM side effects) so the two controls stay in sync.
+  // Goes through ThemeProvider, like the header toggle does.
+  //
+  // This used to hand-roll the same side effects against localStorage
+  // ['619-theme'] — mirroring AppShell, which was itself the wrong half of the
+  // split. Two keys ('619-theme' here and in AppShell, 'theme' in
+  // ThemeProvider and the pre-paint script) meant this control changed the
+  // page but not the context, and the next page load fell back to the system
+  // preference and discarded the choice. One writer now.
+  //
+  // 'system' still resolves here rather than in the provider: the provider's
+  // Theme type is the RESOLVED value, and what the user picked is already
+  // persisted server-side in `preferences.theme`.
   const applyThemeLive = (theme: 'light' | 'dark' | 'system') => {
     const resolved = theme === 'system'
       ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
       : theme;
-    localStorage.setItem('619-theme', resolved);
-    document.documentElement.setAttribute('data-theme', resolved);
-    document.documentElement.classList.toggle('dark', resolved === 'dark');
+    setTheme(resolved);
   };
 
   const setPreference = async <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {
