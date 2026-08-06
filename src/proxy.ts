@@ -32,6 +32,15 @@ const PUBLIC_PREFIXES: string[] = [
   // this the invitation link 307s to /login and the studio can never be
   // claimed.
   '/auth/set-password',
+  // The same thing one level down, and it shipped broken because the comment
+  // above was read as history rather than as a rule: a client following their
+  // activation email has no session either, so this path 307'd to /login and
+  // took the ?token= with it — unrecoverable, since the redirect preserves
+  // only the pathname. Observed in production before anyone could activate.
+  //
+  // Scoped to /client/activate, not /client: anything else that lands under
+  // that segment later is a signed-in client's own data and must stay gated.
+  '/client/activate',
   '/checkin',
   '/start-free',
   '/_next',
