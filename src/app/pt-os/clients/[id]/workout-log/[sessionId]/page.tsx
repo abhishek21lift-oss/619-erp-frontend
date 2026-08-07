@@ -237,34 +237,32 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
   const s = session.summary;
 
   return (
-    // ── Full bleed horizontally, standard gap vertically ──
+    // Inside the shell's padding, like every other page.
     //
-    // .shell-main wraps every page in 16px of padding, 24px from 768px up.
-    //
-    // The HORIZONTAL padding is cancelled so the hero runs edge to edge — that
-    // is what "remove the container" meant. The TOP padding is left alone: it
-    // is the same small gap every other hero in the app sits below, and taking
-    // it away here made this one screen sit tighter than the rest. Consistency
-    // across the app beats a flush edge on a single page.
-    //
-    // Explicit pixels, and `md:` rather than `sm:`. globals.css sets the root
-    // font to 14px, so -mx-4 would be 14px against 16px of padding and leave a
-    // 2px seam; and the shell's own breakpoint is 768px, which is Tailwind's
-    // `md`, not `sm` at 640 — using `sm:` would over-pull by 8px between 640
-    // and 767.
-    <div className="-mx-[16px] pb-32 md:-mx-[24px]">
+    // This used to cancel it — `-mx-[16px] md:-mx-[24px]` — so the hero ran
+    // edge to edge, on the reasoning that a full-width header sheet reads as a
+    // lid on the page. It was the ONLY screen in the app that did so, and next
+    // to the dashboard the difference does not read as intent: the hero has
+    // square corners jammed into both edges of the display while every other
+    // hero is an inset card with rounded ones, so this screen looks like the
+    // one that is broken.
+    // pt-2 matches the dashboard's own container. .shell-main gives every page
+    // 16px (24px from 768px up); the dashboard adds 8px on top of that before
+    // its hero, and without the same 8px here this hero sat visibly tighter
+    // under the top bar than the one it is meant to match.
+    <div className="pt-2 pb-32">
       {/* ── Hero ──
-          A header sheet rather than a card in a stack: full width, rounded
-          only at the bottom so it reads as a lid on the page rather than as
-          the first item of content. It keeps the app's standard gap below the
-          top bar, like every other hero.
+          Same shape as the dashboard's: inset by the shell's own padding and
+          rounded on all four corners, at the same radii, so the two read as
+          the same component family rather than as two different ideas about
+          what a page header is.
 
-          It also absorbs what used to sit above it. The back link and the
+          It still absorbs what used to sit above it. The back link and the
           status pill were a strip of their own between the bar and the page;
           the status now lives here where it belongs, next to the session it
           describes. Leaving this screen is "Save & Exit" at the foot, which is
           the deliberate action a half-logged workout deserves. */}
-      <div className="relative overflow-hidden rounded-b-[28px]"
+      <div className="relative overflow-hidden rounded-[24px] sm:rounded-[30px]"
         style={{
           background: 'linear-gradient(150deg, #0050AD 0%, #0050AD 45%, #0F172A 100%)',
           boxShadow: '0 16px 40px -20px rgba(15,23,42,0.8)',
@@ -324,10 +322,11 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
         </div>
       </div>
 
-      {/* Content keeps its own 16px inset — the hero is what goes edge to edge;
-          rounded cards jammed against the screen edge read as broken, not as
-          full-bleed. */}
-      <div className="mx-auto max-w-3xl space-y-5 px-[16px] py-5 md:px-[24px]">
+      {/* No horizontal padding of its own any more. It carried px-[16px]
+          md:px-[24px] to re-add the inset the wrapper above was cancelling;
+          now that nothing is cancelled, keeping it would indent the content
+          twice and leave the cards narrower than the hero above them. */}
+      <div className="mx-auto max-w-3xl space-y-5 py-5">
         {/* The editable detail, unchanged in behaviour: still a disclosure, so
             the exercises stay reachable without scrolling past a wall of
             fields. It now hangs below the hero rather than inside a card. */}
