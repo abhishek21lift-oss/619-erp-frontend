@@ -184,16 +184,40 @@ function ClientRow({
         opacity: c.is_rest_day && !inProgress ? 0.72 : 1,
       }}
     >
-      {/* A rest day keeps the moon rather than the face — that row is about
-          the programme having nothing scheduled, not about who the client is. */}
-      <ClientAvatar
-        name={c.client_name}
-        photoUrl={c.is_rest_day ? null : c.client_photo}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-[13px] font-[800] text-white"
-        style={{ background: c.is_rest_day ? 'var(--text-muted)' : 'linear-gradient(135deg,#0067e0,#0059ce)' }}
-      >
-        {c.is_rest_day ? <Moon size={16} /> : initials(c.client_name)}
-      </ClientAvatar>
+      {/* The face, on every row.
+
+          This used to pass photoUrl={null} on a rest day so the tile could show
+          a moon instead, on the reasoning that the row is about the programme
+          having nothing scheduled rather than about who the client is. In
+          practice most of the roster is rest days on any given weekday, so the
+          screen a trainer opens on the gym floor was a column of identical grey
+          moons — the one thing that tells two rows apart at a glance, the
+          person's face, was removed from exactly the rows that needed it most.
+          It was also the only place in the app that withheld a photo it had.
+
+          The rest day still reads as one: the row keeps its dimmed opacity, the
+          "nothing scheduled" subtitle and the muted Start button. The moon moves
+          to a small badge on the corner of the photo, so the state is still
+          shown without spending the whole tile on it. */}
+      <div className="relative shrink-0">
+        <ClientAvatar
+          name={c.client_name}
+          photoUrl={c.client_photo}
+          className="flex h-11 w-11 items-center justify-center rounded-[14px] text-[13px] font-[800] text-white"
+          style={{ background: c.is_rest_day ? 'var(--text-muted)' : 'linear-gradient(135deg,#0067e0,#0059ce)' }}
+        >
+          {initials(c.client_name)}
+        </ClientAvatar>
+        {c.is_rest_day && (
+          <span
+            aria-hidden
+            className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full"
+            style={{ background: 'var(--text-muted)', border: '1.5px solid var(--bg-card)', color: '#fff' }}
+          >
+            <Moon size={9} />
+          </span>
+        )}
+      </div>
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>
