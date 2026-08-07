@@ -58,8 +58,11 @@ describe('ClientAvatar', () => {
   });
 
   it('uses a caller-supplied fallback instead of initials', () => {
-    // Today passes a Moon icon for rest days, because that row is about the
-    // programme prescribing nothing, not about who the client is.
+    // The `children` escape hatch, kept because a caller may have something
+    // better than initials to show when there is no photo. Today used to be
+    // that caller — it passed a Moon for rest days — and no longer is: it
+    // shows the face on every row and marks the rest day with a corner badge
+    // instead. The prop stays supported and tested on its own terms.
     render(<ClientAvatar name="Ajeet Yadav"><span>rest</span></ClientAvatar>);
     expect(screen.getByText('rest')).toBeTruthy();
     expect(screen.queryByText('AY')).toBeNull();
