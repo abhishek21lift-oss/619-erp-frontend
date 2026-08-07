@@ -88,6 +88,26 @@ type OpsData = {
     plan_id: string; plan_name: string;
     planned_exercises: number;
   }>;
+  /**
+   * Clients whose ENROLMENT says they train today.
+   *
+   * The third and last place the answer can live. Both lists above assume the
+   * studio records its work where the dashboard already looks — an appointment
+   * in pt_sessions, or a programme naming a weekday. A studio that does
+   * neither was told "Nothing on today" every day, under a heading naming a
+   * day its clients were training on.
+   *
+   * The day picker on the enrolment form is required and validated, so this is
+   * filled in for every enrolled client, and until now nothing read it back
+   * except the enrolment PDF.
+   */
+  today_enrolled?: Array<{
+    client_id: string;
+    client_name: string | null; client_photo: string | null;
+    preferred_workout_time: string | null;
+    preferred_training_days: string | null;
+    trainer_name: string | null;
+  }>;
   renewals_due: Array<{
     id: string; name: string; mobile: string | null;
     trainer_name: string | null; package_type: string | null;
@@ -1101,6 +1121,7 @@ export type TodayRow = {
 export function buildTodayQueue(
   booked: OpsData['today_sessions'],
   due: OpsData['today_unscheduled'],
+  enrolled: OpsData['today_enrolled'] = [],
 ): TodayRow[] {
   const openSlots = booked
     // A finished session is not "left to do", and a cancelled one is not
@@ -1128,9 +1149,29 @@ export function buildTodayQueue(
     href: '/pt-os/today',
   }));
 
-  // Booked first, in clock order, then the ones nobody has scheduled. They
-  // cannot be interleaved honestly — there is no time to interleave them on.
-  return [...openSlots, ...unbooked];
+  // Clients the enrolment says train today. Unlike the programme list these
+  // DO carry a time — preferred_workout_time is picked on the same form as
+  // the days — so they can be ordered honestly among themselves.
+  const expected = (enrolled ?? []).map((c) => ({
+    key: `e-${c.client_id}`,
+    name: c.client_name,
+    photo: c.client_photo,
+    sub: c.preferred_training_days
+      ? `Trains ${c.preferred_training_days}`
+      : 'Training day',
+    time: c.preferred_workout_time,
+    href: '/pt-os/schedule-session',
+  }));
+
+  // Booked first in clock order, then programme days, then enrolment days.
+  //
+  // The order is by how much is actually known, not by time. A booked slot is
+  // a commitment; a programme day is a plan; an enrolment day is a habit. The
+  // timed enrolment rows are NOT interleaved with the booked ones, because a
+  // preferred time is when the client usually comes, not an appointment — and
+  // showing the two as one clock-ordered list would present a habit as
+  // something the studio had agreed to.
+  return [...openSlots, ...unbooked, ...expected];
 }
 
 function TodaySchedule({ ops, loading }: { ops: OpsData | null | undefined; loading: boolean }) {
@@ -1141,9 +1182,13 @@ function TodaySchedule({ ops, loading }: { ops: OpsData | null | undefined; load
   // and never actually memoise anything.
   const booked = useMemo(() => ops?.today_sessions ?? [], [ops?.today_sessions]);
   const due = useMemo(() => ops?.today_unscheduled ?? [], [ops?.today_unscheduled]);
+  const enrolled = useMemo(() => ops?.today_enrolled ?? [], [ops?.today_enrolled]);
 
   const done = booked.filter((s) => s.status === 'completed').length;
-  const queue = useMemo(() => buildTodayQueue(booked, due), [booked, due]);
+  const queue = useMemo(
+    () => buildTodayQueue(booked, due, enrolled),
+    [booked, due, enrolled],
+  );
 
   const shown = queue.slice(0, TODAY_VISIBLE);
   const hidden = queue.length - shown.length;
@@ -1201,7 +1246,11 @@ function TodaySchedule({ ops, loading }: { ops: OpsData | null | undefined; load
             <p className="mt-0.5 max-w-[34ch] text-[10.5px] leading-[1.5]" style={{ color: C.muted }}>
               {done > 0
                 ? `${done} session${done === 1 ? '' : 's'} completed.`
-                : "No booked slots, and no client's programme falls on today."}
+                /* Names all three sources now. It used to name two, which made
+                   it a false statement for a studio whose clients' training
+                   days are recorded on the enrolment form — it asserted
+                   nobody trains today while the enrolment said otherwise. */
+                : 'No booked slots, no programme day, and nobody enrolled for today.'}
             </p>
             <button onClick={() => router.push('/pt-os/schedule-session')}
               className="mt-2.5 inline-flex h-[36px] items-center gap-1.5 rounded-full px-3.5 text-[11px] font-[720] transition-transform active:scale-95"

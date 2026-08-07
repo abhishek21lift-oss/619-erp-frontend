@@ -14,6 +14,7 @@ import { buildTodayQueue, TODAY_VISIBLE } from '@/components/dashboards/PtOsDash
 
 type Booked = Parameters<typeof buildTodayQueue>[0];
 type Due = Parameters<typeof buildTodayQueue>[1];
+type Enrolled = NonNullable<Parameters<typeof buildTodayQueue>[2]>;
 
 const slot = (
   id: string,
@@ -42,6 +43,19 @@ const dueClient = (id: string, exercises = 2): Due[number] => ({
   plan_id: 'p1',
   plan_name: 'Full Body',
   planned_exercises: exercises,
+});
+
+const enrolledClient = (
+  id: string,
+  preferred_workout_time: string | null = '06:00',
+  preferred_training_days = 'Mon, Wed, Fri',
+): Enrolled[number] => ({
+  client_id: id,
+  client_name: `Enrolled ${id}`,
+  client_photo: null,
+  preferred_workout_time,
+  preferred_training_days,
+  trainer_name: 'Abhishek',
 });
 
 const names = (rows: ReturnType<typeof buildTodayQueue>) => rows.map((r) => r.name);
@@ -169,5 +183,64 @@ describe('row content', () => {
     const q = buildTodayQueue([slot('a', '07:00')], [dueClient('x')]);
     expect(q[0].href).toBe('/pt-os/sessions');
     expect(q[1].href).toBe('/pt-os/today');
+  });
+});
+
+// ── Enrolment training days ────────────────────────────────────────────────
+//
+// The third source, and the one the panel was blind to. A studio that books
+// nothing into pt_sessions and assigns no workout plan still knows which days
+// each client trains — it is a required field on the enrolment form. Before
+// this, such a studio was told "Nothing on today" every single day.
+describe('clients whose enrolment says they train today', () => {
+  it('shows a client with no booked slot and no programme', () => {
+    const q = buildTodayQueue([], [], [enrolledClient('c1')]);
+    expect(names(q)).toEqual(['Enrolled c1']);
+  });
+
+  it('carries the preferred workout time onto the row', () => {
+    // Unlike a programme day, the enrolment records WHEN — so the row can say
+    // so instead of rendering as untimed.
+    expect(buildTodayQueue([], [], [enrolledClient('c1', '06:30')])[0].time).toBe('06:30');
+  });
+
+  it('survives a client with no preferred time', () => {
+    const row = buildTodayQueue([], [], [enrolledClient('c1', null)])[0];
+    expect(row.time).toBeNull();
+    expect(row.name).toBe('Enrolled c1');
+  });
+
+  it('names the training days so the row explains why it is there', () => {
+    expect(buildTodayQueue([], [], [enrolledClient('c1', '06:00', 'Tue, Thu')])[0].sub)
+      .toBe('Trains Tue, Thu');
+  });
+
+  it('ranks behind booked slots and programme days', () => {
+    // Order is by how much is known: a commitment, then a plan, then a habit.
+    const q = buildTodayQueue([slot('a', '09:00')], [dueClient('d')], [enrolledClient('e', '06:00')]);
+    expect(names(q)).toEqual(['Client a', 'Due d', 'Enrolled e']);
+  });
+
+  it('does not interleave an early preferred time among booked slots', () => {
+    // 06:00 is earlier than the booked 09:00, and must still sort after it —
+    // a habit is not an appointment and must not be shown as one.
+    const q = buildTodayQueue([slot('a', '09:00')], [], [enrolledClient('e', '06:00')]);
+    expect(names(q)).toEqual(['Client a', 'Enrolled e']);
+  });
+
+  it('keys enrolment rows apart from booked and due rows', () => {
+    const q = buildTodayQueue([slot('1', '07:00')], [dueClient('1')], [enrolledClient('1')]);
+    expect(new Set(q.map((r) => r.key)).size).toBe(3);
+  });
+
+  it('sends the row somewhere a session can actually be booked', () => {
+    expect(buildTodayQueue([], [], [enrolledClient('c1')])[0].href).toBe('/pt-os/schedule-session');
+  });
+
+  it('treats a missing list as empty rather than throwing', () => {
+    // The field is optional on OpsData: a backend that predates it, or a
+    // cached response, must not blank the whole panel.
+    expect(() => buildTodayQueue([slot('a', '07:00')], [])).not.toThrow();
+    expect(buildTodayQueue([slot('a', '07:00')], []).length).toBe(1);
   });
 });
