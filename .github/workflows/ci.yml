@@ -129,7 +129,20 @@ jobs:
           --health-timeout 5s --health-retries 10
 
     env:
-      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/erp_e2e
+      # sslmode=disable, because the service container above is a stock
+      # Postgres image and stock Postgres is not built with SSL. Without this
+      # the job never reached a single test: e2e-setup.sh died on its first
+      # psql call with "server does not support SSL, but SSL was required", and
+      # the API's own pool asked for SSL unconditionally too, so fixing only
+      # the script would have moved the same failure one step later.
+      #
+      # Both halves read this one parameter now — libpq understands it, and
+      # src/db/pool.js parses it out of the URL — so psql and the Node pool
+      # cannot end up disagreeing about whether the connection is encrypted.
+      # It is safe here and only here: this database is a throwaway container
+      # on the runner's own loopback, and e2e-setup.sh refuses to run against
+      # anything that looks like a real environment.
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/erp_e2e?sslmode=disable
       JWT_SECRET: ci-e2e-secret-at-least-32-characters-long!!
       FRONTEND_URL: http://127.0.0.1:3100
       E2E_API_URL: http://127.0.0.1:5100
