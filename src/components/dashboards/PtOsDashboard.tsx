@@ -34,6 +34,7 @@ import {
   FileSignature, HeartPulse, Apple, PersonStanding, MessageCircle, Phone,
   AlertTriangle, Clock,
   Accessibility, Dumbbell,
+  Lock, PartyPopper, TrendingUp,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAsync } from '@/lib/use-async';
@@ -605,6 +606,235 @@ function CountUp({ value, format, reduce }: {
   }, [value, reduce]);
 
   return <>{format(Math.round(shown))}</>;
+}
+
+// ─── Monthly revenue target ───────────────────────────────────────────────────
+//
+// The month's commitment, on the dashboard rather than only on the revenue
+// page. It is the one number on either screen that is a DECISION rather than a
+// report — every KPI beside it describes what happened; this says what the
+// studio is trying to do about it — and it was two taps away on a screen
+// nobody opens mid-shift.
+//
+// Read-only here, on purpose. Setting a target is irreversible for the month
+// (UNIQUE (organization_id, period), no update route), so it keeps its
+// confirmation flow on /insights/revenue where there is room to explain the
+// lock. This card shows the state and links there; it never offers the form.
+//
+// Same endpoint as MonthlyTargetHero, so the two cannot disagree.
+
+export type RevenueTargetData = {
+  period: string;
+  target_amount: number | null;
+  achieved: number;
+  balance: number | null;
+  surplus: number | null;
+  pct: number | null;
+  locked: boolean;
+  set_by_name: string | null;
+  can_set: boolean;
+};
+
+/**
+ * The month's status in one phrase, coloured by whether it is earned.
+ *
+ * Pace-aware rather than a flat threshold: 40% of target on the 5th is fine
+ * and 40% on the 28th is not, and a card that called both "behind" would be
+ * ignored by the end of the first week. Exported and pure so the boundaries
+ * can be asserted on data — they are invisible in a screenshot.
+ */
+export function targetTone(pct: number, daysLeft: number, totalDays: number): {
+  ring: string; label: string; icon: 'smashed' | 'up' | 'warn';
+} {
+  if (pct >= 100) return { ring: C.success, label: 'Target smashed', icon: 'smashed' };
+  // Share of the month already gone. A target is "on pace" if collection has
+  // kept up with the calendar.
+  const elapsed = totalDays > 0 ? 1 - daysLeft / totalDays : 0;
+  const pace = elapsed * 100;
+  if (pct >= pace) return { ring: C.success, label: 'On track', icon: 'up' };
+  if (pct >= pace * 0.7) return { ring: C.warning, label: 'Slightly behind', icon: 'warn' };
+  return { ring: C.danger, label: 'Behind pace', icon: 'warn' };
+}
+
+/** Days remaining in the current month, counting today. */
+export function daysLeftInMonth(now = new Date()): number {
+  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  return last - now.getDate() + 1;
+}
+
+function TargetRing({ pct, colour, size = 104 }: { pct: number; colour: string; size?: number }) {
+  const reduce = useReducedMotion();
+  const stroke = 10;
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  // The STROKE clamps — a ring cannot draw past full. The NUMBER does not.
+  // The revenue page's ring clamped both, so a studio that collected ₹20,000
+  // against a ₹1,000 target read "100% OF TARGET" while the line underneath
+  // said ₹20,000 of ₹1,000. The ring is decoration; the figure is the claim.
+  const dash = (Math.max(0, Math.min(100, pct)) / 100) * circ;
+
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+          stroke="rgba(15,23,42,0.06)" strokeWidth={stroke} />
+        <m.circle
+          cx={size / 2} cy={size / 2} r={r} fill="none" stroke={colour}
+          strokeWidth={stroke} strokeLinecap="round" strokeDasharray={circ}
+          initial={{ strokeDashoffset: reduce ? circ - dash : circ }}
+          animate={{ strokeDashoffset: circ - dash }}
+          transition={{ duration: reduce ? 0 : 1.1, ease: EASE }}
+          style={{ filter: `drop-shadow(0 0 7px ${colour}55)` }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="tabular-nums font-[860] leading-none"
+          style={{
+            color: C.ink,
+            letterSpacing: '-0.03em',
+            // Steps down so 2000% fits the same ring 40% sits in, rather than
+            // overflowing it or being truncated.
+            fontSize: pct >= 1000 ? 17 : pct >= 100 ? 20 : 23,
+          }}>
+          {Math.round(pct)}%
+        </span>
+        <span className="mt-0.5 text-[8.5px] font-[750] uppercase tracking-[0.12em]"
+          style={{ color: C.muted }}>
+          of target
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function MonthlyTarget() {
+  const router = useRouter();
+  const reduce = useReducedMotion();
+  const t = useAsync<RevenueTargetData>(
+    (signal) => http<{ data: RevenueTargetData }>('/api/reports/revenue-target', { signal })
+      .then((r) => r.data),
+    [],
+  );
+
+  const daysLeft = daysLeftInMonth();
+  const totalDays = useMemo(() => {
+    const n = new Date();
+    return new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate();
+  }, []);
+  const month = useMemo(
+    () => new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
+    [],
+  );
+
+  const data = t.data;
+  const pct = data?.pct ?? 0;
+  const tone = useMemo(() => targetTone(pct, daysLeft, totalDays), [pct, daysLeft, totalDays]);
+
+  if (t.loading) {
+    return (
+      <Glass className="p-4 sm:p-5">
+        <div className="flex items-center gap-4">
+          <Skel w="w-[104px]" h="h-[104px]" r="rounded-full" />
+          <div className="flex-1 space-y-2.5">
+            <Skel w="w-32" h="h-3" /><Skel w="w-40" h="h-6" /><Skel w="w-28" h="h-3" />
+          </div>
+        </div>
+      </Glass>
+    );
+  }
+
+  // A failed read is not rendered as a zeroed target. "₹0 of ₹0, behind pace"
+  // is a claim about the studio's month, and this card would be making it up.
+  if (t.error || !data) return null;
+
+  // No target set yet. Still worth a card — it is the prompt to set one, and
+  // for a trainer (can_set false) it explains the blank rather than hiding it.
+  if (data.target_amount === null) {
+    return (
+      <Glass className="p-4 sm:p-5" onClick={data.can_set ? () => router.push('/insights/revenue') : undefined}
+        style={data.can_set ? { cursor: 'pointer' } : undefined}>
+        <div className="flex items-center gap-3.5">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]"
+            style={{ background: rgba(C.primary, 0.1), color: C.primary }}>
+            <Target size={18} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[13.5px] font-[780]" style={{ color: C.ink }}>
+              No target for {month}
+            </p>
+            <p className="mt-0.5 text-[11px] leading-[1.5]" style={{ color: C.muted }}>
+              {data.can_set
+                ? `${fmtINR(data.achieved)} collected so far. Set a target to track the month against it.`
+                : `${fmtINR(data.achieved)} collected so far. An admin can set this month's target.`}
+            </p>
+          </div>
+          {data.can_set && <ChevronRight size={16} style={{ color: C.muted }} />}
+        </div>
+      </Glass>
+    );
+  }
+
+  const surplus = data.surplus ?? 0;
+  const balance = data.balance ?? 0;
+  const beat = pct >= 100;
+
+  return (
+    <Glass
+      className="overflow-hidden p-4 sm:p-5"
+      onClick={() => router.push('/insights/revenue')}
+      style={{ cursor: 'pointer' }}
+    >
+      <div className="flex items-center gap-4 sm:gap-5">
+        <TargetRing pct={pct} colour={tone.ring} />
+
+        <div className="min-w-0 flex-1">
+          {/* Month, and how much of it is left — the number that makes the
+              percentage mean something. */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <p className="text-[11px] font-[750] uppercase tracking-[0.1em]" style={{ color: C.muted }}>
+              {month}
+            </p>
+            {data.locked && (
+              <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-[750]"
+                style={{ background: 'rgba(15,23,42,0.05)', color: C.muted }}>
+                <Lock size={8} /> Locked
+              </span>
+            )}
+          </div>
+
+          {/* The headline is what came IN, not the percentage — a trainer
+              scanning this wants the money, and the ring already carries the
+              ratio. Counted up, like every other money figure here. */}
+          <p className="mt-1 tabular-nums text-[24px] sm:text-[27px] font-[860] leading-none"
+            style={{ color: C.ink, letterSpacing: '-0.03em' }}>
+            <CountUp value={Number(data.achieved)} format={fmtCompact} reduce={!!reduce} />
+          </p>
+          <p className="mt-1 text-[11.5px]" style={{ color: C.muted }}>
+            of <span className="font-[750]" style={{ color: C.ink }}>{fmtCompact(data.target_amount)}</span>
+            {' · '}{daysLeft} day{daysLeft === 1 ? '' : 's'} left
+          </p>
+
+          {/* Status, and the one figure that follows from it: what is still to
+              collect, or what has been made over. Only one of the two is ever
+              true, so only one is shown. */}
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-[10px] font-[780]"
+              style={{ background: rgba(tone.ring, 0.12), color: tone.ring }}>
+              {tone.icon === 'smashed' ? <PartyPopper size={10} />
+                : tone.icon === 'up' ? <TrendingUp size={10} />
+                : <AlertTriangle size={10} />}
+              {tone.label}
+            </span>
+            <span className="text-[10.5px] font-[700] tabular-nums" style={{ color: beat ? C.success : C.muted }}>
+              {beat ? `+${fmtCompact(surplus)} over` : `${fmtCompact(balance)} to go`}
+            </span>
+          </div>
+        </div>
+
+        <ChevronRight size={16} className="hidden shrink-0 sm:block" style={{ color: C.muted }} />
+      </div>
+    </Glass>
+  );
 }
 
 /**
@@ -1679,6 +1909,20 @@ export default function PtOsDashboard() {
                 Four rather than five on desktop because Commission is hidden
                 there (lg:hidden below) and the row would otherwise sit a card
                 short. Small screens still show all five. */}
+            {/* 3.5 — The month's revenue target.
+                Above Key Metrics because it frames them: "PT Revenue ₹95.5K"
+                is a fact, and whether that is good depends entirely on what
+                the studio committed to. It lived only on /insights/revenue,
+                two taps into a screen nobody opens mid-shift.
+
+                Read-only. Setting a target is irreversible for the month, so
+                the form stays where there is room to explain the lock; this
+                links there. */}
+            <div>
+              <SectionLabel>This Month</SectionLabel>
+              <MonthlyTarget />
+            </div>
+
             <div>
               <SectionLabel>Key Metrics</SectionLabel>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
