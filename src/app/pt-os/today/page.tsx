@@ -20,18 +20,39 @@
 // a rest day. Hiding them would leave the trainer wondering whether the client
 // is missing from the list because they are resting or because something is
 // broken — and "nothing scheduled" is a real answer worth showing.
+//
+// ── Design notes ───────────────────────────────────────────────────────────
+//
+// This screen is read one-handed, at arm's length, in a bright room, by
+// somebody who is mid-conversation with a client. Four things follow from that
+// and are easy to undo by accident:
+//
+//   1. Every colour comes from a token, because the dark theme is not a tint
+//      of the light one — a hard-coded rgba(15,23,42,…) chip is invisible on
+//      a dark card, and this screen used two of them.
+//   2. Nothing is said in colour alone. The time chip distinguishes a booked
+//      slot from somebody's usual hour with an icon and a label, not a hue;
+//      the explanation used to live in a `title` tooltip, which on the phone
+//      this runs on does not exist.
+//   3. Nothing legible is dimmed. Rest days were rendered at 0.72 opacity,
+//      which pushed the muted subtitle under the contrast floor. They are set
+//      apart by the moon badge, the wording and an outline button instead.
+//   4. Motion is optional. The row stagger is skipped under
+//      prefers-reduced-motion rather than shortened.
 
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
-import { m } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import {
-  CalendarDays, ChevronRight, Dumbbell, Loader2, Moon, Play, RotateCw, Users,
+  AlertTriangle, CalendarCheck, CalendarDays, ChevronRight, Clock, Dumbbell,
+  Loader2, Moon, Play, RotateCw, Users,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import type { TodayClient, TodayRoster } from '@/lib/api';
+import { fmtTime12 } from '@/lib/format';
 import { useToast } from '@/lib/toast';
 import { EmptyState } from '@/components/ui';
 
@@ -52,13 +73,21 @@ function Today() {
   const { toast } = useToast();
   const [roster, setRoster] = useState<TodayRoster | null>(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [starting, setStarting] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    setLoading(true);
+    setFailed(false);
     try {
       const res = await api.progress.workoutLog.today();
       setRoster(res?.data ?? null);
     } catch {
+      // A failed request used to fall through to "Nobody is in today", which
+      // reads as an answer about the day rather than a network error — the one
+      // wrong reading a trainer cannot recover from, because it tells them to
+      // stop looking. The toast disappears; this does not.
+      setFailed(true);
       toast.error('Could not load today');
     } finally {
       setLoading(false);
@@ -74,6 +103,7 @@ function Today() {
    * retype every time.
    */
   const open = async (c: TodayClient) => {
+    if (starting) return;
     if (c.session_id) {
       router.push(`/pt-os/clients/${c.client_id}/workout-log/${c.session_id}`);
       return;
@@ -95,14 +125,6 @@ function Today() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-24">
-        <Loader2 size={26} className="animate-spin" style={{ color: 'var(--brand)' }} />
-      </div>
-    );
-  }
-
   const clients = roster?.clients ?? [];
   const done = clients.filter((c) => c.session_status === 'completed').length;
 
@@ -116,7 +138,7 @@ function Today() {
           >
             <CalendarDays size={18} />
           </span>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="text-[20px] font-[800]" style={{ color: 'var(--text-primary)' }}>Today</h1>
             <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
               {roster?.day_of_week}
@@ -124,9 +146,50 @@ function Today() {
             </p>
           </div>
         </div>
+
+        {/* How far through the day, without spending a row on it. The count
+            above is the same number in words; this is the version you can read
+            without reading. */}
+        {clients.length > 0 && (
+          <div
+            className="mt-3 h-1.5 w-full overflow-hidden rounded-full"
+            style={{ background: 'var(--bg-subtle)' }}
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={clients.length}
+            aria-valuenow={done}
+            aria-label={`${done} of ${clients.length} sessions done today`}
+          >
+            <span
+              className="block h-full rounded-full transition-[width] duration-300"
+              style={{ width: `${(done / clients.length) * 100}%`, background: 'var(--brand)' }}
+            />
+          </div>
+        )}
       </header>
 
-      {clients.length === 0 ? (
+      {/* Skeletons rather than a lone spinner: the rows arrive in a known shape
+          and reserving it stops the page jumping under a thumb already on its
+          way to the first Start button. */}
+      {loading ? (
+        <RosterSkeleton />
+      ) : failed ? (
+        <EmptyState
+          icon={<AlertTriangle size={22} />}
+          title="Could not load today"
+          description="The roster did not come back. Check the connection and try again — nothing has been lost."
+          action={(
+            <button
+              type="button"
+              onClick={load}
+              className="inline-flex h-[44px] cursor-pointer items-center gap-2 rounded-[14px] px-4 text-[13.5px] font-[700] text-white transition-transform active:scale-95"
+              style={{ background: 'var(--brand)' }}
+            >
+              <RotateCw size={16} /> Try again
+            </button>
+          )}
+        />
+      ) : clients.length === 0 ? (
         <EmptyState
           icon={<Users size={22} />}
           title="Nobody is in today"
@@ -135,7 +198,7 @@ function Today() {
             <button
               type="button"
               onClick={() => router.push('/pt-os/schedule-session')}
-              className="inline-flex h-[44px] items-center gap-2 rounded-[14px] px-4 text-[13.5px] font-[700] text-white"
+              className="inline-flex h-[44px] cursor-pointer items-center gap-2 rounded-[14px] px-4 text-[13.5px] font-[700] text-white transition-transform active:scale-95"
               style={{ background: 'var(--brand)' }}
             >
               <Dumbbell size={16} /> Book a session
@@ -156,11 +219,17 @@ function Today() {
           {clients.map((c, i) => (
             <Fragment key={c.client_id}>
               {c.is_rest_day && !clients[i - 1]?.is_rest_day && (
-                <p className="mt-3 text-[11px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                <h2 className="mt-3 text-[11px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
                   Rest day
-                </p>
+                </h2>
               )}
-              <ClientRow c={c} i={i} starting={starting === c.client_id} onOpen={() => open(c)} />
+              <ClientRow
+                c={c}
+                i={i}
+                starting={starting === c.client_id}
+                busy={starting !== null}
+                onOpen={() => open(c)}
+              />
             </Fragment>
           ))}
         </div>
@@ -169,23 +238,41 @@ function Today() {
   );
 }
 
+function RosterSkeleton() {
+  return (
+    <div className="flex flex-col gap-2.5" aria-hidden>
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="flex animate-pulse items-center gap-3 rounded-[18px] p-3.5"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+        >
+          <span className="h-11 w-11 shrink-0 rounded-[14px]" style={{ background: 'var(--bg-subtle)' }} />
+          <span className="min-w-0 flex-1 space-y-2">
+            <span className="block h-3 w-32 rounded-full" style={{ background: 'var(--bg-subtle)' }} />
+            <span className="block h-2.5 w-44 rounded-full" style={{ background: 'var(--bg-subtle)' }} />
+          </span>
+          <span className="h-[44px] w-[86px] shrink-0 rounded-[14px]" style={{ background: 'var(--bg-subtle)' }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ClientRow({
-  c, i, starting, onOpen,
-}: { c: TodayClient; i: number; starting: boolean; onOpen: () => void }) {
+  c, i, starting, busy, onOpen,
+}: { c: TodayClient; i: number; starting: boolean; busy: boolean; onOpen: () => void }) {
+  const reduce = useReducedMotion();
   const doneAlready = c.session_status === 'completed';
   const inProgress = c.session_status === 'in_progress';
 
   return (
     <m.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={reduce ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: Math.min(i * 0.03, 0.2), duration: 0.18 }}
+      transition={{ delay: reduce ? 0 : Math.min(i * 0.03, 0.2), duration: reduce ? 0 : 0.18 }}
       className="flex items-center gap-3 rounded-[18px] p-3.5"
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        opacity: c.is_rest_day && !inProgress ? 0.72 : 1,
-      }}
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
     >
       {/* The face, on every row.
 
@@ -198,10 +285,11 @@ function ClientRow({
           person's face, was removed from exactly the rows that needed it most.
           It was also the only place in the app that withheld a photo it had.
 
-          The rest day still reads as one: the row keeps its dimmed opacity, the
-          "nothing scheduled" subtitle and the muted Start button. The moon moves
-          to a small badge on the corner of the photo, so the state is still
-          shown without spending the whole tile on it. */}
+          The rest day still reads as one: the moon badge on the corner of the
+          photo, the "nothing scheduled" subtitle and the outline Start button.
+          What it no longer does is dim the whole row — 0.72 opacity took the
+          muted subtitle below the contrast floor to say something three other
+          signals were already saying. */}
       <div className="relative shrink-0">
         <ClientAvatar
           name={c.client_name}
@@ -223,24 +311,40 @@ function ClientRow({
       </div>
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
+        {/* items-start, not items-center: when the name takes two lines the
+            chip belongs beside the first of them, not floating in the gap
+            between. */}
+        <div className="flex items-start gap-1.5">
           {/* The time leads, because the list is ordered by it and a row you
               cannot read a time off is a row you have to count places to
               locate. Only a booked slot or an enrolment has one; a programme
-              names a weekday and never an hour. */}
+              names a weekday and never an hour.
+
+              Booked and usual-hour are told apart by the icon first and the
+              tint second. They used to differ by tint alone, with the meaning
+              parked in a `title` tooltip — a hover affordance on a screen that
+              is only ever touched. Same 12-hour format as the dashboard card;
+              this one said "06:00" while the card that links here said
+              "6:00 AM" for the identical field. */}
           {c.start_time && (
             <span
-              className="shrink-0 rounded-[6px] px-1.5 py-0.5 text-[11px] font-[800] tabular-nums"
+              className="mt-[2px] inline-flex shrink-0 items-center gap-1 rounded-[7px] px-1.5 py-0.5 text-[11px] font-[800] tabular-nums"
               style={{
-                background: c.source === 'booked' ? 'rgba(0,103,224,0.10)' : 'rgba(15,23,42,0.05)',
-                color: c.source === 'booked' ? 'var(--brand)' : 'var(--text-muted)',
+                background: c.source === 'booked' ? 'var(--brand-soft)' : 'var(--bg-subtle)',
+                color: c.source === 'booked' ? 'var(--brand-hi)' : 'var(--text-secondary)',
               }}
-              title={c.source === 'booked' ? 'Booked slot' : 'Usual training time'}
             >
-              {c.start_time}
+              {c.source === 'booked' ? <CalendarCheck size={10} aria-hidden /> : <Clock size={10} aria-hidden />}
+              {fmtTime12(c.start_time)}
+              <span className="sr-only">{c.source === 'booked' ? ' booked slot' : ' usual training time'}</span>
             </span>
           )}
-          <p className="truncate text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>
+          {/* Wraps rather than truncates. The chip and the button between them
+              leave about 150px on a 390px phone, which is enough to turn
+              "Rahul Sharma" into "Rahul Shar…" — an ellipsis on the one field
+              the whole row is scanned for. The subtitle below still truncates;
+              losing the tail of a programme name costs nothing. */}
+          <p className="line-clamp-2 text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>
             {c.client_name}
           </p>
         </div>
@@ -260,26 +364,38 @@ function ClientRow({
       <button
         type="button"
         onClick={onOpen}
-        disabled={starting}
+        // Every button locks while any one start is in flight. Only the tapped
+        // row used to lock, so a second tap on a second row during the round
+        // trip opened a second session — the easiest mis-tap to make on a list
+        // whose whole purpose is a column of identical buttons.
+        disabled={busy}
         aria-label={`${inProgress ? 'Resume' : doneAlready ? 'Open' : 'Start'} ${c.client_name}'s session`}
-        className="flex h-[44px] shrink-0 items-center gap-1.5 rounded-[14px] px-3.5 text-[13px] font-[700] disabled:opacity-60"
+        aria-busy={starting}
+        className="flex h-[44px] shrink-0 cursor-pointer items-center gap-1.5 rounded-[14px] px-3.5 text-[13px] font-[700] transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
         // A rest day is still startable — a trainer may run an ad-hoc session —
-        // but it does not get the solid brand button. Four equally loud Start
-        // buttons would make the trainer read every row to find the ones who
-        // are actually training today.
+        // but it gets an outline rather than the solid brand fill. Four equally
+        // loud Start buttons would make the trainer read every row to find the
+        // ones who are actually training today.
+        //
+        // Resume is the loudest thing on the screen when it appears, because a
+        // session that is already open is the only row where anything is
+        // currently happening. It was a pale amber wash carrying amber text,
+        // which is both the quietest treatment here and below the contrast
+        // floor in either theme.
         style={{
           background: doneAlready ? 'var(--bg-subtle)'
-            : inProgress ? 'rgba(245,158,11,0.14)'
-              : c.is_rest_day ? 'var(--bg-subtle)' : 'var(--brand)',
-          color: doneAlready ? 'var(--text-muted)'
-            : inProgress ? '#b45309'
-              : c.is_rest_day ? 'var(--text-muted)' : '#fff',
+            : inProgress ? 'var(--amber-700)'
+              : c.is_rest_day ? 'transparent' : 'var(--brand)',
+          color: doneAlready ? 'var(--text-secondary)'
+            : inProgress ? '#fff'
+              : c.is_rest_day ? 'var(--text-secondary)' : '#fff',
+          border: c.is_rest_day && !inProgress && !doneAlready ? '1px solid var(--border-2)' : '1px solid transparent',
         }}
       >
-        {starting ? <Loader2 size={15} className="animate-spin" />
-          : doneAlready ? <ChevronRight size={15} />
-            : inProgress ? <RotateCw size={15} />
-              : <Play size={15} />}
+        {starting ? <Loader2 size={15} className="animate-spin" aria-hidden />
+          : doneAlready ? <ChevronRight size={15} aria-hidden />
+            : inProgress ? <RotateCw size={15} aria-hidden />
+              : <Play size={15} aria-hidden />}
         {doneAlready ? 'Done' : inProgress ? 'Resume' : 'Start'}
       </button>
     </m.div>
