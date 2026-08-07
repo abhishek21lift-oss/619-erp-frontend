@@ -1,125 +1,112 @@
 // What "Today's Sessions" shows, and in what order.
 //
-// Three rules, all of which fail silently. A completed session that stays in
-// the list looks exactly like a session you still have to run. A queue in the
-// wrong order looks like a queue. A cap applied before the filter shows two
-// rows that are both already done and hides the two that are not — and the
-// card still looks perfectly reasonable in a screenshot.
+// ── What changed, and why the old tests went with it ───────────────────────
 //
-// The logic is a pure function precisely so these can be asserted on data
-// rather than on pixels.
+// This used to take three lists off the ops summary — booked slots, programme
+// days, enrolment days — and sort and concatenate them itself. Which meant the
+// card and the /pt-os/today page it links to each decided the order of the day
+// independently, from different queries, and were free to disagree about who
+// was next. They did: the card grouped by how much was known (a booking, then
+// a plan, then a habit) while a trainer reads the day off a clock.
+//
+// The server orders once now and both screens render what they are given. So
+// the ordering assertions here are gone — there is nothing left to sort — and
+// what remains is the part that is still this function's job, plus one new
+// assertion that is more important than any of the old ones: that it does NOT
+// reorder what it was handed.
+//
+// Everything below fails silently. A completed session left in the list looks
+// exactly like one still to run. A re-sorted queue looks like a queue.
 
 import { describe, expect, it } from 'vitest';
 import { buildTodayQueue, TODAY_VISIBLE } from '@/components/dashboards/PtOsDashboard';
+import type { TodayClient } from '@/lib/api';
 
-type Booked = Parameters<typeof buildTodayQueue>[0];
-type Due = Parameters<typeof buildTodayQueue>[1];
-type Enrolled = NonNullable<Parameters<typeof buildTodayQueue>[2]>;
-
-const slot = (
-  id: string,
-  start_time: string | null,
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show' = 'scheduled',
-): Booked[number] => ({
-  id,
-  title: 'PT Session',
-  session_date: '2026-08-06',
-  start_time,
-  end_time: null,
-  status,
-  notes: null,
-  client_name: `Client ${id}`,
-  client_photo: null,
-  trainer_name: 'Abhishek',
-  plan_name: 'Full Body',
-  plan_id: 'p1',
-});
-
-const dueClient = (id: string, exercises = 2): Due[number] => ({
-  assignment_id: id,
-  client_id: `c-${id}`,
-  client_name: `Due ${id}`,
+const row = (over: Partial<TodayClient> & { client_id: string }): TodayClient => ({
+  assignment_id: 'a-' + over.client_id,
+  client_name: `Client ${over.client_id}`,
   client_photo: null,
   plan_id: 'p1',
   plan_name: 'Full Body',
-  planned_exercises: exercises,
-});
-
-const enrolledClient = (
-  id: string,
-  preferred_workout_time: string | null = '06:00',
-  preferred_training_days = 'Mon, Wed, Fri',
-): Enrolled[number] => ({
-  client_id: id,
-  client_name: `Enrolled ${id}`,
-  client_photo: null,
-  preferred_workout_time,
-  preferred_training_days,
-  trainer_name: 'Abhishek',
+  progress_pct: 0,
+  planned_exercises: 2,
+  start_time: null,
+  source: 'programme',
+  is_rest_day: false,
+  session_id: null,
+  session_status: null,
+  ...over,
 });
 
 const names = (rows: ReturnType<typeof buildTodayQueue>) => rows.map((r) => r.name);
 
-describe('completed sessions leave the list', () => {
+describe('finished and resting clients leave the list', () => {
   it('drops a completed session', () => {
-    const q = buildTodayQueue([slot('a', '07:00', 'completed'), slot('b', '08:00')], []);
+    const q = buildTodayQueue([
+      row({ client_id: 'a', session_status: 'completed' }),
+      row({ client_id: 'b' }),
+    ]);
     expect(names(q)).toEqual(['Client b']);
   });
 
-  it('drops a cancelled one too', () => {
-    // Not literally asked for, but a session that is not happening has no
-    // business occupying one of two visible rows.
-    const q = buildTodayQueue([slot('a', '07:00', 'cancelled'), slot('b', '08:00')], []);
-    expect(names(q)).toEqual(['Client b']);
-  });
-
-  it('keeps a no-show, which is unresolved rather than finished', () => {
-    const q = buildTodayQueue([slot('a', '07:00', 'no_show')], []);
+  it('keeps an in-progress one, which is unresolved rather than finished', () => {
+    const q = buildTodayQueue([row({ client_id: 'a', session_status: 'in_progress' })]);
     expect(names(q)).toEqual(['Client a']);
   });
 
+  it('drops a rest day', () => {
+    // A rest day is a real answer on the full list, where there is room to say
+    // "nothing scheduled". It is not one of the two things left to do.
+    const q = buildTodayQueue([
+      row({ client_id: 'a', is_rest_day: true }),
+      row({ client_id: 'b' }),
+    ]);
+    expect(names(q)).toEqual(['Client b']);
+  });
+
   it('a fully completed day leaves an empty queue, not a list of ticks', () => {
-    const q = buildTodayQueue([slot('a', '07:00', 'completed'), slot('b', '08:00', 'completed')], []);
+    const q = buildTodayQueue([
+      row({ client_id: 'a', session_status: 'completed' }),
+      row({ client_id: 'b', session_status: 'completed' }),
+    ]);
     expect(q).toEqual([]);
   });
 });
 
-describe('serial order — first session to last', () => {
-  it('sorts booked slots by start time regardless of the order they arrive in', () => {
-    const q = buildTodayQueue([slot('c', '18:00'), slot('a', '06:30'), slot('b', '12:15')], []);
-    expect(names(q)).toEqual(['Client a', 'Client b', 'Client c']);
+describe('the server\'s order is preserved exactly', () => {
+  it('does not re-sort by time', () => {
+    // The single most important property here. The roster arrives ordered —
+    // earliest first, untimed after, rest days last — and any sort applied on
+    // top is a second opinion about the day that the full list does not share.
+    const q = buildTodayQueue([
+      row({ client_id: 'late', start_time: '18:00' }),
+      row({ client_id: 'early', start_time: '06:00' }),
+    ]);
+    expect(names(q)).toEqual(['Client late', 'Client early']);
   });
 
-  it('sorts across midday and midnight boundaries by minutes, not by string', () => {
-    // '09:00' > '10:00' lexically only in the wrong direction; this is exactly
-    // the sort that looks fine until 10am.
-    const q = buildTodayQueue([slot('late', '10:00'), slot('early', '09:00')], []);
-    expect(names(q)).toEqual(['Client early', 'Client late']);
-  });
-
-  it('puts unscheduled clients after the booked ones', () => {
-    // Nobody has said when they are. Interleaving would mean inventing a time.
-    const q = buildTodayQueue([slot('a', '17:00')], [dueClient('x')]);
-    expect(names(q)).toEqual(['Client a', 'Due x']);
-  });
-
-  it('keeps due clients in the order the server sent them', () => {
-    const q = buildTodayQueue([], [dueClient('1'), dueClient('2'), dueClient('3')]);
-    expect(names(q)).toEqual(['Due 1', 'Due 2', 'Due 3']);
-  });
-
-  it('a booked slot with no time sorts last among the booked, not first', () => {
-    const q = buildTodayQueue([slot('untimed', null), slot('a', '07:00')], []);
-    expect(names(q)).toEqual(['Client a', 'Client untimed']);
+  it('does not float timed rows above untimed ones', () => {
+    const q = buildTodayQueue([
+      row({ client_id: 'untimed', start_time: null }),
+      row({ client_id: 'timed', start_time: '07:00' }),
+    ]);
+    expect(names(q)).toEqual(['Client untimed', 'Client timed']);
   });
 
   it('does not mutate the array it was given', () => {
-    // .sort() sorts in place; sorting the caller's array would reorder the
-    // dashboard's own state behind its back.
-    const input = [slot('c', '18:00'), slot('a', '06:30')];
-    const before = input.map((s) => s.id);
-    buildTodayQueue(input, []);
-    expect(input.map((s) => s.id)).toEqual(before);
+    const input = [row({ client_id: 'a' }), row({ client_id: 'b' })];
+    const before = input.map((c) => c.client_id);
+    buildTodayQueue(input);
+    expect(input.map((c) => c.client_id)).toEqual(before);
+  });
+
+  it('closes the gaps left by filtering, keeping relative order', () => {
+    const q = buildTodayQueue([
+      row({ client_id: 'a', start_time: '06:00' }),
+      row({ client_id: 'skip', session_status: 'completed' }),
+      row({ client_id: 'b', start_time: '07:00' }),
+    ]);
+    expect(names(q)).toEqual(['Client a', 'Client b']);
   });
 });
 
@@ -128,119 +115,76 @@ describe('two at a time', () => {
     expect(TODAY_VISIBLE).toBe(2);
   });
 
-  // The cap is applied to the FILTERED queue. Applied to the raw list instead,
-  // a morning where the first two sessions are done would show two completed
+  // The cap is applied to the FILTERED queue. Applied to the raw roster
+  // instead, a morning where the first two are done would show two completed
   // rows and hide the two that still need running.
   it('the two shown are the first two still to do, not the first two of the day', () => {
     const q = buildTodayQueue([
-      slot('a', '06:00', 'completed'),
-      slot('b', '07:00', 'completed'),
-      slot('c', '08:00'),
-      slot('d', '09:00'),
-    ], []);
+      row({ client_id: 'a', session_status: 'completed' }),
+      row({ client_id: 'b', session_status: 'completed' }),
+      row({ client_id: 'c' }),
+      row({ client_id: 'd' }),
+    ]);
     expect(names(q.slice(0, TODAY_VISIBLE))).toEqual(['Client c', 'Client d']);
     expect(q.length - TODAY_VISIBLE).toBe(0);
   });
 
   it('the overflow count counts what is left, not the whole day', () => {
     const q = buildTodayQueue([
-      slot('a', '06:00', 'completed'),
-      slot('b', '07:00'), slot('c', '08:00'), slot('d', '09:00'), slot('e', '10:00'),
-    ], []);
+      row({ client_id: 'a', session_status: 'completed' }),
+      row({ client_id: 'b' }), row({ client_id: 'c' }),
+      row({ client_id: 'd' }), row({ client_id: 'e' }),
+    ]);
     expect(q).toHaveLength(4);
     expect(q.length - TODAY_VISIBLE).toBe(2);
   });
 });
 
 describe('row content', () => {
-  it('carries the programme name, and the exercise count for a due client', () => {
-    const q = buildTodayQueue([], [dueClient('x', 3)]);
-    expect(q[0].sub).toBe('Full Body · 3 exercises');
+  it('carries the programme name and the exercise count', () => {
+    expect(buildTodayQueue([row({ client_id: 'x', planned_exercises: 3 })])[0].sub)
+      .toBe('Full Body · 3 exercises');
   });
 
   it('says "exercise" in the singular for one', () => {
-    expect(buildTodayQueue([], [dueClient('x', 1)])[0].sub).toBe('Full Body · 1 exercise');
+    expect(buildTodayQueue([row({ client_id: 'x', planned_exercises: 1 })])[0].sub)
+      .toBe('Full Body · 1 exercise');
   });
 
   it('omits the count when the programme prescribes nothing', () => {
-    expect(buildTodayQueue([], [dueClient('x', 0)])[0].sub).toBe('Full Body');
+    expect(buildTodayQueue([row({ client_id: 'x', planned_exercises: 0 })])[0].sub)
+      .toBe('Full Body');
   });
 
-  it('falls back off the useless session title only when there is no programme', () => {
-    const withPlan = buildTodayQueue([slot('a', '07:00')], [])[0];
-    expect(withPlan.sub).toBe('Full Body');
-
-    const noPlan = buildTodayQueue([{ ...slot('a', '07:00'), plan_name: null }], [])[0];
-    expect(noPlan.sub).toBe('PT Session');
+  it('says so when there is no programme at all', () => {
+    // The state this whole change exists to surface: a client booked in with
+    // no plan written yet. Interpolating plan_name here would read
+    // "null · 0 exercises".
+    expect(buildTodayQueue([row({ client_id: 'x', plan_name: null, planned_exercises: 0 })])[0].sub)
+      .toBe('No programme yet');
   });
 
-  it('keys booked and due rows apart so two ids cannot collide', () => {
-    const q = buildTodayQueue([slot('1', '07:00')], [dueClient('1')]);
+  it('carries the time through for a booked slot', () => {
+    expect(buildTodayQueue([row({ client_id: 'x', start_time: '06:30' })])[0].time).toBe('06:30');
+  });
+
+  it('keys on the client, who appears at most once', () => {
+    // The roster is deduplicated per client server-side, so the client id is
+    // a stable key — and unlike the old assignment id it exists for a client
+    // with no programme.
+    const q = buildTodayQueue([row({ client_id: '1' }), row({ client_id: '2' })]);
     expect(new Set(q.map((r) => r.key)).size).toBe(2);
   });
 
-  it('sends each row where it can actually be actioned', () => {
-    const q = buildTodayQueue([slot('a', '07:00')], [dueClient('x')]);
-    expect(q[0].href).toBe('/pt-os/sessions');
-    expect(q[1].href).toBe('/pt-os/today');
-  });
-});
-
-// ── Enrolment training days ────────────────────────────────────────────────
-//
-// The third source, and the one the panel was blind to. A studio that books
-// nothing into pt_sessions and assigns no workout plan still knows which days
-// each client trains — it is a required field on the enrolment form. Before
-// this, such a studio was told "Nothing on today" every single day.
-describe('clients whose enrolment says they train today', () => {
-  it('shows a client with no booked slot and no programme', () => {
-    const q = buildTodayQueue([], [], [enrolledClient('c1')]);
-    expect(names(q)).toEqual(['Enrolled c1']);
-  });
-
-  it('carries the preferred workout time onto the row', () => {
-    // Unlike a programme day, the enrolment records WHEN — so the row can say
-    // so instead of rendering as untimed.
-    expect(buildTodayQueue([], [], [enrolledClient('c1', '06:30')])[0].time).toBe('06:30');
-  });
-
-  it('survives a client with no preferred time', () => {
-    const row = buildTodayQueue([], [], [enrolledClient('c1', null)])[0];
-    expect(row.time).toBeNull();
-    expect(row.name).toBe('Enrolled c1');
-  });
-
-  it('names the training days so the row explains why it is there', () => {
-    expect(buildTodayQueue([], [], [enrolledClient('c1', '06:00', 'Tue, Thu')])[0].sub)
-      .toBe('Trains Tue, Thu');
-  });
-
-  it('ranks behind booked slots and programme days', () => {
-    // Order is by how much is known: a commitment, then a plan, then a habit.
-    const q = buildTodayQueue([slot('a', '09:00')], [dueClient('d')], [enrolledClient('e', '06:00')]);
-    expect(names(q)).toEqual(['Client a', 'Due d', 'Enrolled e']);
-  });
-
-  it('does not interleave an early preferred time among booked slots', () => {
-    // 06:00 is earlier than the booked 09:00, and must still sort after it —
-    // a habit is not an appointment and must not be shown as one.
-    const q = buildTodayQueue([slot('a', '09:00')], [], [enrolledClient('e', '06:00')]);
-    expect(names(q)).toEqual(['Client a', 'Enrolled e']);
-  });
-
-  it('keys enrolment rows apart from booked and due rows', () => {
-    const q = buildTodayQueue([slot('1', '07:00')], [dueClient('1')], [enrolledClient('1')]);
-    expect(new Set(q.map((r) => r.key)).size).toBe(3);
-  });
-
-  it('sends the row somewhere a session can actually be booked', () => {
-    expect(buildTodayQueue([], [], [enrolledClient('c1')])[0].href).toBe('/pt-os/schedule-session');
-  });
-
-  it('treats a missing list as empty rather than throwing', () => {
-    // The field is optional on OpsData: a backend that predates it, or a
-    // cached response, must not blank the whole panel.
-    expect(() => buildTodayQueue([slot('a', '07:00')], [])).not.toThrow();
-    expect(buildTodayQueue([slot('a', '07:00')], []).length).toBe(1);
+  it('sends every row to the full list, in that same order', () => {
+    // Tapping any row opens the day; each client has their own Start button
+    // there. Three different destinations by source was the old behaviour and
+    // meant the same tap did different things depending on the row.
+    const q = buildTodayQueue([
+      row({ client_id: 'a', source: 'booked' }),
+      row({ client_id: 'b', source: 'programme' }),
+      row({ client_id: 'c', source: 'enrolled' }),
+    ]);
+    expect(q.map((r) => r.href)).toEqual(['/pt-os/today', '/pt-os/today', '/pt-os/today']);
   });
 });

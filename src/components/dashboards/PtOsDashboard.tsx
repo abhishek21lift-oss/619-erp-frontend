@@ -42,6 +42,7 @@ import { useAuth } from '@/lib/auth-context';
 import FounderBadge from '@/components/FounderBadge';
 import { useFounder } from '@/lib/use-founder';
 import http from '@/lib/http';
+import type { TodayClient, TodayRoster } from '@/lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type DashData = {
@@ -1348,77 +1349,51 @@ export type TodayRow = {
  * the wrong rows. Testing them through the rendered dashboard would mean
  * mocking half the app to assert on data.
  */
-export function buildTodayQueue(
-  booked: OpsData['today_sessions'],
-  due: OpsData['today_unscheduled'],
-  enrolled: OpsData['today_enrolled'] = [],
-): TodayRow[] {
-  const openSlots = booked
-    // A finished session is not "left to do", and a cancelled one is not
-    // happening. Neither belongs in a two-row list of what is next.
-    .filter((s) => s.status !== 'completed' && s.status !== 'cancelled')
-    // Untimed booked slots sort last within the booked group rather than
-    // first, which is where an undefined would put them.
-    .sort((a, b) => (minutesOf(a.start_time) ?? 1e9) - (minutesOf(b.start_time) ?? 1e9))
-    .map((s) => ({
-      key: `s-${s.id}`,
-      name: s.client_name,
-      photo: s.client_photo,
-      sub: s.plan_name ?? s.title ?? 'No programme assigned',
-      time: s.start_time,
-      href: '/pt-os/sessions',
+export function buildTodayQueue(roster: TodayClient[]): TodayRow[] {
+  return roster
+    // A finished session is not "left to do". With two rows visible, one spent
+    // on somebody already trained is a row wasted.
+    .filter((c) => c.session_status !== 'completed')
+    // A rest day is a real answer on the full list, where there is room to say
+    // "nothing scheduled". It is not one of the two things left to do.
+    .filter((c) => !c.is_rest_day)
+    .map((c) => ({
+      key: c.client_id,
+      name: c.client_name,
+      photo: c.client_photo,
+      sub: !c.plan_name
+        ? 'No programme yet'
+        : c.planned_exercises > 0
+          ? `${c.plan_name} · ${c.planned_exercises} exercise${c.planned_exercises === 1 ? '' : 's'}`
+          : c.plan_name,
+      time: c.start_time,
+      // Every row goes to the same place: the full list, in this same order,
+      // where each client has their own Start button.
+      href: '/pt-os/today',
     }));
-
-  const unbooked = due.map((c) => ({
-    key: `d-${c.assignment_id}`,
-    name: c.client_name,
-    photo: c.client_photo,
-    sub: c.plan_name
-      + (c.planned_exercises > 0 ? ` · ${c.planned_exercises} exercise${c.planned_exercises === 1 ? '' : 's'}` : ''),
-    time: null,
-    href: '/pt-os/today',
-  }));
-
-  // Clients the enrolment says train today. Unlike the programme list these
-  // DO carry a time — preferred_workout_time is picked on the same form as
-  // the days — so they can be ordered honestly among themselves.
-  const expected = (enrolled ?? []).map((c) => ({
-    key: `e-${c.client_id}`,
-    name: c.client_name,
-    photo: c.client_photo,
-    sub: c.preferred_training_days
-      ? `Trains ${c.preferred_training_days}`
-      : 'Training day',
-    time: c.preferred_workout_time,
-    href: '/pt-os/schedule-session',
-  }));
-
-  // Booked first in clock order, then programme days, then enrolment days.
-  //
-  // The order is by how much is actually known, not by time. A booked slot is
-  // a commitment; a programme day is a plan; an enrolment day is a habit. The
-  // timed enrolment rows are NOT interleaved with the booked ones, because a
-  // preferred time is when the client usually comes, not an appointment — and
-  // showing the two as one clock-ordered list would present a habit as
-  // something the studio had agreed to.
-  return [...openSlots, ...unbooked, ...expected];
 }
 
-function TodaySchedule({ ops, loading }: { ops: OpsData | null | undefined; loading: boolean }) {
+function TodaySchedule() {
   const router = useRouter();
   const reduce = useReducedMotion();
-  // Memoised, not `?? []` inline: a fresh literal every render makes it a new
-  // dependency every render, so the queue below would recompute on each pass
-  // and never actually memoise anything.
-  const booked = useMemo(() => ops?.today_sessions ?? [], [ops?.today_sessions]);
-  const due = useMemo(() => ops?.today_unscheduled ?? [], [ops?.today_unscheduled]);
-  const enrolled = useMemo(() => ops?.today_enrolled ?? [], [ops?.today_enrolled]);
 
-  const done = booked.filter((s) => s.status === 'completed').length;
-  const queue = useMemo(
-    () => buildTodayQueue(booked, due, enrolled),
-    [booked, due, enrolled],
+  // The SAME endpoint /pt-os/today renders, and the same order.
+  //
+  // This card used to merge three lists off the ops summary and sort them
+  // itself. Two independent orderings of the same day is how the card and the
+  // page it links to end up disagreeing about who is next — so the server
+  // orders once, and both screens render what they are given. This card is
+  // simply the first two rows of that list.
+  const roster = useAsync<TodayRoster>(
+    (signal) => http<{ data: TodayRoster }>('/api/pt-os/workout-log/today', { signal })
+      .then((r) => r.data),
+    [],
   );
+
+  const clients = useMemo(() => roster.data?.clients ?? [], [roster.data?.clients]);
+  const done = clients.filter((c) => c.session_status === 'completed').length;
+  const queue = useMemo(() => buildTodayQueue(clients), [clients]);
+  const loading = roster.loading;
 
   const shown = queue.slice(0, TODAY_VISIBLE);
   const hidden = queue.length - shown.length;
@@ -1448,7 +1423,7 @@ function TodaySchedule({ ops, loading }: { ops: OpsData | null | undefined; load
             {done > 0 && ` · ${done} done`}
           </p>
         </div>
-        {!(loading && !ops) && (
+        {roster.hasResolved && (
           <span className="shrink-0 rounded-full px-2 py-[3px] text-[10px] font-[780] tabular-nums"
             style={{ background: `${C.danger}10`, color: C.danger }}>
             {queue.length} left
@@ -1457,7 +1432,7 @@ function TodaySchedule({ ops, loading }: { ops: OpsData | null | undefined; load
       </div>
 
       <div className="px-4 pb-3.5 sm:px-5">
-        {loading && !ops && (
+        {loading && !roster.hasResolved && (
           <div className="space-y-1.5">
             {[1, 2].map((i) => (
               <div key={i} className="flex items-center gap-2.5 rounded-[13px] p-2.5" style={{ background: 'rgba(15,23,42,0.03)' }}>
@@ -1899,7 +1874,7 @@ export default function PtOsDashboard() {
                 the parent's space-y utility targets `> * ~ *` and outranks a
                 plain mt-* on specificity; a class here would simply lose. */}
             <div style={{ marginTop: 8 }}>
-              <TodaySchedule ops={o} loading={ops.loading} />
+              <TodaySchedule />
             </div>
 
             {/* 3 — Mobile quick actions (desktop uses the dock) */}

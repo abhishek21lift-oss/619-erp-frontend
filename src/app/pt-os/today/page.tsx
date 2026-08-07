@@ -21,7 +21,7 @@
 // is missing from the list because they are resting or because something is
 // broken — and "nothing scheduled" is a real answer worth showing.
 
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { m } from 'framer-motion';
@@ -104,8 +104,6 @@ function Today() {
   }
 
   const clients = roster?.clients ?? [];
-  const training = clients.filter((c) => !c.is_rest_day);
-  const resting = clients.filter((c) => c.is_rest_day);
   const done = clients.filter((c) => c.session_status === 'completed').length;
 
   return (
@@ -131,35 +129,40 @@ function Today() {
       {clients.length === 0 ? (
         <EmptyState
           icon={<Users size={22} />}
-          title="Nobody is on a programme today"
-          description="Assign a client a workout programme and they will appear here on the days it prescribes."
+          title="Nobody is in today"
+          description="Nothing booked, no programme prescribing today, and nobody whose enrolment names this weekday."
           action={(
             <button
               type="button"
-              onClick={() => router.push('/pt-os/workout-plans')}
+              onClick={() => router.push('/pt-os/schedule-session')}
               className="inline-flex h-[44px] items-center gap-2 rounded-[14px] px-4 text-[13.5px] font-[700] text-white"
               style={{ background: 'var(--brand)' }}
             >
-              <Dumbbell size={16} /> Workout Programs
+              <Dumbbell size={16} /> Book a session
             </button>
           )}
         />
       ) : (
-        <div className="flex flex-col gap-2.5">
-          {training.map((c, i) => (
-            <ClientRow key={c.assignment_id} c={c} i={i} starting={starting === c.client_id} onOpen={() => open(c)} />
-          ))}
+        /* Rendered in the ORDER THE SERVER SENT, which is the order the day
+           happens: earliest first, untimed after them, rest days last. It is
+           not re-sorted or re-grouped here — the dashboard card shows the first
+           two rows of this same list, and two independent sorts of the same
+           data is how the two screens end up disagreeing about who is next.
 
-          {resting.length > 0 && (
-            <>
-              <p className="mt-3 text-[11px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                Rest day
-              </p>
-              {resting.map((c, i) => (
-                <ClientRow key={c.assignment_id} c={c} i={i} starting={starting === c.client_id} onOpen={() => open(c)} />
-              ))}
-            </>
-          )}
+           The rest-day heading is still drawn, but as a divider at the point
+           the order reaches them rather than by pulling them into a separate
+           array, so labelling them cannot change their position. */
+        <div className="flex flex-col gap-2.5">
+          {clients.map((c, i) => (
+            <Fragment key={c.client_id}>
+              {c.is_rest_day && !clients[i - 1]?.is_rest_day && (
+                <p className="mt-3 text-[11px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                  Rest day
+                </p>
+              )}
+              <ClientRow c={c} i={i} starting={starting === c.client_id} onOpen={() => open(c)} />
+            </Fragment>
+          ))}
         </div>
       )}
     </>
@@ -220,13 +223,37 @@ function ClientRow({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>
-          {c.client_name}
-        </p>
+        <div className="flex items-center gap-1.5">
+          {/* The time leads, because the list is ordered by it and a row you
+              cannot read a time off is a row you have to count places to
+              locate. Only a booked slot or an enrolment has one; a programme
+              names a weekday and never an hour. */}
+          {c.start_time && (
+            <span
+              className="shrink-0 rounded-[6px] px-1.5 py-0.5 text-[11px] font-[800] tabular-nums"
+              style={{
+                background: c.source === 'booked' ? 'rgba(0,103,224,0.10)' : 'rgba(15,23,42,0.05)',
+                color: c.source === 'booked' ? 'var(--brand)' : 'var(--text-muted)',
+              }}
+              title={c.source === 'booked' ? 'Booked slot' : 'Usual training time'}
+            >
+              {c.start_time}
+            </span>
+          )}
+          <p className="truncate text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>
+            {c.client_name}
+          </p>
+        </div>
         <p className="truncate text-[12px]" style={{ color: 'var(--text-muted)' }}>
-          {c.is_rest_day
-            ? `${c.plan_name} · nothing scheduled`
-            : `${c.plan_name} · ${c.planned_exercises} exercise${c.planned_exercises === 1 ? '' : 's'}`}
+          {/* Three shapes, because a client can now be here without a plan at
+              all — the row used to interpolate plan_name unconditionally and
+              would have read "null · 0 exercises" for exactly the newly
+              enrolled client this list was extended to include. */}
+          {!c.plan_name
+            ? 'No programme yet · exercises can be added in the session'
+            : c.is_rest_day
+              ? `${c.plan_name} · nothing scheduled`
+              : `${c.plan_name} · ${c.planned_exercises} exercise${c.planned_exercises === 1 ? '' : 's'}`}
         </p>
       </div>
 
