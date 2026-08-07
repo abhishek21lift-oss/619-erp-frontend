@@ -62,6 +62,14 @@ const PUBLIC_PREFIXES: string[] = [
   // out — meaning the login page itself flashes the wrong theme. It only reads
   // localStorage and sets a class name.
   '/theme-init.js',
+  // Same reason as the line above, and the same failure: without this entry
+  // /no-zoom.js 307s to /login and the pinch-gesture blocker never runs. That
+  // failure is close to invisible — the viewport meta tag in layout.tsx still
+  // renders and still reads like the fix, but it is the one layer iOS ignores,
+  // so the gesture would come back on exactly the devices the script exists
+  // for. Verified by requesting the path, not by reading the matcher.
+  // It adds four event listeners and reads nothing.
+  '/no-zoom.js',
   '/logo.png',
   '/619-logo.png',
   '/sitemap.xml',

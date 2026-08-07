@@ -371,6 +371,18 @@ html {
      browser's own native pull-to-refresh/rubber-band from firing alongside
      it (Chrome/Android in particular double-triggers without this). */
   overscroll-behavior-y: contain;
+  /* Scrolling yes, zooming no — the third of the three places pinch-zoom has
+     to be turned off (viewport meta in layout.tsx, gesture events in
+     /no-zoom.js, this).
+
+     `pan-x pan-y` and NOT `manipulation`: manipulation is the usual shorthand
+     for "kill the 300ms double-tap delay", but it explicitly PERMITS
+     continuous pinch-zoom, so it would leave the gesture this is meant to
+     remove. Listing the pan directions instead allows one-finger scrolling in
+     both axes while withholding both zoom gestures — pinch AND double-tap.
+     Double-tap is why this rule exists at all: /no-zoom.js cancels multi-touch
+     gestures, but a double-tap is two single taps and never reaches it. */
+  touch-action: pan-x pan-y;
 }
 body {
   min-height: 100dvh;

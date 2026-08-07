@@ -80,7 +80,25 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  // maximumScale removed — WCAG 1.4.4: users must be able to resize text
+  // Pinch-zoom is off, by product decision.
+  //
+  // These two lines were previously REMOVED on purpose, with the note "WCAG
+  // 1.4.4: users must be able to resize text". That reasoning was sound and is
+  // being overridden knowingly, not by accident, so the trade is written down
+  // rather than quietly reversed: an operator running this on a studio iPad
+  // kept zooming the layout by brushing the screen with two fingers, and a
+  // half-zoomed till screen during a client's payment is its own kind of
+  // unusable. Browser-level page zoom (desktop Ctrl +/-, and the OS-level
+  // Zoom accessibility setting on iOS/Android) is unaffected by any of this
+  // and remains the route for anyone who needs larger text.
+  //
+  // On their own these do nothing on an iPhone or iPad: Safari has ignored
+  // user-scalable and maximum-scale since iOS 10, precisely because sites
+  // abused them. They still matter for Android Chrome and desktop touch. The
+  // iOS half is handled by /no-zoom.js, and double-tap by touch-action in
+  // globals.css — all three are needed, none is sufficient alone.
+  maximumScale: 1,
+  userScalable: false,
   // iOS auto-zoom on inputs is prevented by ensuring font-size >= 16px on all inputs
   viewportFit: 'cover',
   // themeColor per scheme so the mobile browser chrome matches the app instead
@@ -133,6 +151,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="/theme-init.js" />
+        {/*
+          Cancels the pinch gesture on iOS, where the viewport meta tag above is
+          ignored — see /no-zoom.js. `defer` rather than blocking: unlike the
+          theme script this has nothing to do with the first paint, and a
+          gesture cannot happen before the page is interactive anyway.
+        */}
+        <script src="/no-zoom.js" defer />
         <meta name="mobile-web-app-capable" content="yes" />
         <link rel="manifest" href="/manifest.json" />
         {/* Skip-to-content link (Accessibility — Issue #16) */}
