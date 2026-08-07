@@ -829,15 +829,28 @@ export interface WorkoutSessionSummary {
 
 /** One client on a trainer's roster for a given day. */
 export interface TodayClient {
-  assignment_id: string;
+  /** Null for a client on today's list who has no programme assigned. */
+  assignment_id: string | null;
   client_id: string;
   client_name: string;
   client_photo: string | null;
-  plan_id: string;
-  plan_name: string;
+  plan_id: string | null;
+  plan_name: string | null;
   progress_pct: number | null;
   planned_exercises: number;
-  /** The programme prescribes nothing for this weekday — an answer, not a gap. */
+  /**
+   * Wall-clock 'HH:MM', or null when nobody has said when.
+   *
+   * A booked slot carries a real appointment time and an enrolment carries the
+   * hour the client usually arrives; a programme names a weekday and never an
+   * hour. The roster is ordered by this server-side.
+   */
+  start_time: string | null;
+  /** Why this client is on today's list — the server's answer, not a guess. */
+  source: 'booked' | 'programme' | 'enrolled';
+  /** The programme prescribes nothing for this weekday — an answer, not a gap.
+   *  Only ever true for a `programme` row: a booked client with no plan also
+   *  has zero planned exercises and is emphatically not resting. */
   is_rest_day: boolean;
   session_id: string | null;
   session_status: WorkoutSessionStatus | null;
