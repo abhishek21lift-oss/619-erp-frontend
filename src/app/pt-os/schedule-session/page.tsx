@@ -119,8 +119,23 @@ function mapApiSession(s: Record<string, unknown>, trainerArr: { id: string; nam
 
 const AVATAR_COLORS = identity;
 
+/**
+ * A Date as YYYY-MM-DD in the viewer's own zone.
+ *
+ * `toISOString()` gives the UTC date, so in India (UTC+05:30) it names the
+ * PREVIOUS day for any local time before 05:30 — the calendar highlighted the
+ * wrong cell as "today" and opened on the wrong day, rolling over at 5.30am
+ * instead of at 12. `en-CA` formats as YYYY-MM-DD, which is the shape
+ * `session_date` comes back as and what every comparison here expects.
+ */
+function localDateStr(d: Date) {
+  return new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(d);
+}
+
 function todayStr() {
-  return new Date().toISOString().split('T')[0];
+  return localDateStr(new Date());
 }
 
 /* ────────────────────────────────────────────────────────────────────
@@ -173,23 +188,41 @@ function SchedulePageContent() {
     try {
       setSessionsLoading(true);
       setSessionsError('');
-      const trainersRes = (await api.pt.trainers()) as { data: any[] };
-      const trainerArr = Array.isArray(trainersRes?.data) ? trainersRes.data : [];
+      // One call for the whole studio, not one per trainer.
+      //
+      // This used to fan out `api.pt.sessions({ trainer_id })` across the
+      // trainer list and flatten the results, which quietly made the trainer
+      // list a FILTER on the calendar. Any session whose trainer_id was null
+      // — nothing validates it on POST /sessions — or whose trainer was
+      // inactive, soft-deleted, or attached to no organization was absent
+      // from every one of those responses, so it never rendered and no empty
+      // state explained why. A studio with sessions booked saw a calendar
+      // with one dot on it. Worse, `trainerArr.length === 0` short-circuited
+      // to `[]`, so a studio with no trainer record showed no sessions at all
+      // rather than the ones it had.
+      //
+      // GET /api/pt-os/sessions without trainer_id already returns the
+      // studio's whole list, tenant-scoped server-side. Trainers are still
+      // fetched — the booking dialog and the workload panel need the names —
+      // but they no longer decide what the calendar can see.
+      const [trainersRes, sessionsRes] = await Promise.all([
+        api.pt.trainers(),
+        api.pt.sessions(),
+      ]);
+      const trainerArr = (Array.isArray(trainersRes?.data) ? trainersRes.data : []) as { id: string; name: string }[];
       setTrainerList(trainerArr);
-      const allSessionsData = trainerArr.length > 0
-        ? (await Promise.all(
-            trainerArr.map((t: any) =>
-              api.pt.sessions({ trainer_id: t.id }).then(r => (r as any)?.data ?? []).catch((err) => { toast.error(err?.message || 'Failed to load sessions'); return []; })
-            )
-          )).flat()
-        : [];
-      setSessions(allSessionsData.map((s: Record<string, unknown>) => mapApiSession(s, trainerArr)));
-    } catch (err: any) {
-      setSessionsError(err?.message || 'Failed to load sessions');
+      const allSessionsData = (Array.isArray(sessionsRes?.data) ? sessionsRes.data : []) as Record<string, unknown>[];
+      setSessions(allSessionsData.map((s) => mapApiSession(s, trainerArr)));
+    } catch (err) {
+      setSessionsError(err instanceof Error ? err.message : 'Failed to load sessions');
     } finally {
       setSessionsLoading(false);
     }
-  }, [toast]);
+    // No `toast` dependency any more: the per-trainer fan-out needed a
+    // per-call error toast because one trainer's request could fail while the
+    // others succeeded. A single request either works or lands in the catch
+    // above, which the page already renders as an error state with a retry.
+  }, []);
 
   useEffect(() => {
     fetchSessions();
@@ -219,7 +252,11 @@ function SchedulePageContent() {
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(start);
       d.setDate(diff + i);
-      return d.toISOString().split('T')[0];
+      // Local, not UTC. `new Date(y, m, d)` is local midnight, and east of
+      // Greenwich toISOString() turns that back into the PREVIOUS day — so
+      // the Weekly view was built from dates one off from the ones it
+      // displayed, and matched no sessions on the boundary day.
+      return localDateStr(d);
     });
   }, [year, month, selectedDate]);
 
@@ -736,7 +773,7 @@ function CreateSessionModal({
   onOpened: () => void;
 }) {
   const [form, setForm] = useState<NewSessionData>({
-    client: '', client_id: '', trainer: '', date: new Date().toISOString().split('T')[0], time: '06:00',
+    client: '', client_id: '', trainer: '', date: todayStr(), time: '06:00',
     duration: 60, type: '1-on-1', notes: '', recurring: false,
   });
   const [step, setStep] = useState(1);
@@ -767,7 +804,7 @@ function CreateSessionModal({
     const t = setTimeout(() => {
       setStep(1);
       setClientSearch('');
-      setForm({ client: '', client_id: '', trainer: defaultTrainer, date: new Date().toISOString().split('T')[0], time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false });
+      setForm({ client: '', client_id: '', trainer: defaultTrainer, date: todayStr(), time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false });
     }, 200);
     return () => clearTimeout(t);
   }, [open, defaultTrainer]);
