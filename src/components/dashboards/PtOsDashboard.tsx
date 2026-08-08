@@ -424,7 +424,7 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
  * The quick actions, in the order a trainer actually works through them: take
  * the client on, clear them to train (consent, PAR-Q), agree what they are
  * training FOR, then the assessments — general first, then the specific ones.
- * Goal Setting sits ahead of the assessments because a goal is the thing the
+ * Goal sits ahead of the assessments because a goal is the thing the
  * assessments are measured against.
  *
  * ONE list, rendered by both the mobile strip and the desktop dock. They were
@@ -444,13 +444,13 @@ export const QUICK_ACTIONS = [
   { label: 'Add Client',           icon: UserPlus,       href: '/pt-os/new-client',           color: C.primary },
   { label: 'Consent',              icon: FileSignature,  href: '/pt-os/informed-consent',     color: C.primary },
   { label: 'PAR-Q',                icon: ShieldCheck,    href: '/pt-os/parq',                 color: C.success },
-  { label: 'Goal Setting',         icon: Target,         href: '/pt-os/goals',                color: C.dangerDeep },
-  { label: 'Fitness Testing',      icon: Gauge,          href: '/pt-os/assessment',           color: C.warning },
+  { label: 'Goal',                 icon: Target,         href: '/pt-os/goals',                color: C.dangerDeep },
+  { label: 'Fitness',              icon: Gauge,          href: '/pt-os/assessment',           color: C.warning },
   { label: 'Lifestyle',            icon: HeartPulse,     href: '/pt-os/lifestyle-assessment', color: C.danger },
-  { label: 'Nutrition Assessment', icon: Apple,          href: '/pt-os/nutrition-assessment', color: C.primary },
-  { label: 'Mobility Assessment',  icon: PersonStanding, href: '/pt-os/mobility-assessment',  color: C.danger },
-  { label: 'Posture Assessment',   icon: Accessibility,  href: '/pt-os/posture-assessment',   color: C.primary },
-  { label: 'Strength Tracking',    icon: Dumbbell,       href: '/pt-os/strength-tracking',    color: C.success },
+  { label: 'Nutrition',            icon: Apple,          href: '/pt-os/nutrition-assessment', color: C.primary },
+  { label: 'Mobility',             icon: PersonStanding, href: '/pt-os/mobility-assessment',  color: C.danger },
+  { label: 'Posture',              icon: Accessibility,  href: '/pt-os/posture-assessment',   color: C.primary },
+  { label: 'Strength',             icon: Dumbbell,       href: '/pt-os/strength-tracking',    color: C.success },
 ] as const;
 
 // ─── Section 2 — Mobile Quick Actions (visible on mobile only) ─────────────────
@@ -1726,8 +1726,8 @@ export function QuickDock() {
     // on every animated element — `translateY(0px)` here — which silently
     // replaced the class's `translateX(-50%)`. The dock's left edge therefore
     // sat at exactly 50% of the viewport and its full 900px ran off the right
-    // of the screen, at every desktop width. Posture Assessment and Strength
-    // Tracking, being last, were simply never reachable.
+    // of the screen, at every desktop width. Posture and Strength, being
+    // last, were simply never reachable.
     //
     // Centering on the viewport would not have been right either: the sidebar
     // is z-50 against this z-40, so the leading items would have slid under it
