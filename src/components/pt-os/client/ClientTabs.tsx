@@ -36,8 +36,20 @@ import {
   LayoutGrid, Dumbbell, Salad, Ruler, ScrollText, ClipboardCheck, Camera,
   FileSignature, Wallet, StickyNote, Sparkles, FileBarChart, ChevronRight,
 } from 'lucide-react';
+import { palette } from '@/lib/palette';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+// Same five-colour rotation the dashboard's Quick Actions strip uses — this
+// strip is built to read as that strip's twin, not a coincidentally similar
+// one, so it draws from the exact same rotation rather than its own set.
+const TAB_COLOR = {
+  primary:    palette.blue[500],
+  success:    palette.emerald[500],
+  warning:    palette.amber[500],
+  danger:     palette.red[600],
+  dangerDeep: palette.red[900],
+};
 
 export type TabKey =
   | 'overview' | 'training' | 'nutrition' | 'measurements' | 'log' | 'checkins'
@@ -47,6 +59,7 @@ interface TabDef {
   key: TabKey;
   label: string;
   icon: React.ReactNode;
+  color: string;
   /** Shown on the tab when there is something to count. */
   count?: number;
 }
@@ -61,18 +74,18 @@ export interface TabLink {
 }
 
 const TABS: TabDef[] = [
-  { key: 'overview', label: 'Overview', icon: <LayoutGrid size={14} /> },
-  { key: 'training', label: 'Training', icon: <Dumbbell size={14} /> },
-  { key: 'log', label: 'Workout Log', icon: <ScrollText size={14} /> },
-  { key: 'measurements', label: 'Measurements', icon: <Ruler size={14} /> },
-  { key: 'nutrition', label: 'Nutrition', icon: <Salad size={14} /> },
-  { key: 'checkins', label: 'Check-ins', icon: <ClipboardCheck size={14} /> },
-  { key: 'photos', label: 'Photos', icon: <Camera size={14} /> },
-  { key: 'ai', label: 'AI Coach', icon: <Sparkles size={14} /> },
-  { key: 'payments', label: 'Payments', icon: <Wallet size={14} /> },
-  { key: 'documents', label: 'Documents', icon: <FileSignature size={14} /> },
-  { key: 'notes', label: 'Notes', icon: <StickyNote size={14} /> },
-  { key: 'reports', label: 'Reports', icon: <FileBarChart size={14} /> },
+  { key: 'overview', label: 'Overview', icon: <LayoutGrid size={16} />, color: TAB_COLOR.primary },
+  { key: 'training', label: 'Training', icon: <Dumbbell size={16} />, color: TAB_COLOR.success },
+  { key: 'log', label: 'Workout Log', icon: <ScrollText size={16} />, color: TAB_COLOR.warning },
+  { key: 'measurements', label: 'Measurements', icon: <Ruler size={16} />, color: TAB_COLOR.danger },
+  { key: 'nutrition', label: 'Nutrition', icon: <Salad size={16} />, color: TAB_COLOR.dangerDeep },
+  { key: 'checkins', label: 'Check-ins', icon: <ClipboardCheck size={16} />, color: TAB_COLOR.primary },
+  { key: 'photos', label: 'Photos', icon: <Camera size={16} />, color: TAB_COLOR.success },
+  { key: 'ai', label: 'AI Coach', icon: <Sparkles size={16} />, color: TAB_COLOR.warning },
+  { key: 'payments', label: 'Payments', icon: <Wallet size={16} />, color: TAB_COLOR.danger },
+  { key: 'documents', label: 'Documents', icon: <FileSignature size={16} />, color: TAB_COLOR.dangerDeep },
+  { key: 'notes', label: 'Notes', icon: <StickyNote size={16} />, color: TAB_COLOR.primary },
+  { key: 'reports', label: 'Reports', icon: <FileBarChart size={16} />, color: TAB_COLOR.success },
 ];
 
 export interface ClientTabsProps {
@@ -85,9 +98,25 @@ export interface ClientTabsProps {
 /**
  * The tab strip.
  *
+ * Same shape as the dashboard's Quick Actions strip: a coloured icon tile
+ * over a label, scrolling horizontally. Trainers already read that shape as
+ * "quick links into a client's world" from the dashboard, so the profile's
+ * own section switcher wears it instead of a boxed pill bar that looked like
+ * nothing else on the page.
+ *
  * Horizontally scrollable rather than wrapped: twelve tabs wrap to three rows
  * on a phone, and a three-row tab bar is a menu pretending to be a tab bar.
  * Scrolling keeps it one line.
+ *
+ * ── What still makes it a tab strip, not a Quick Actions copy ─────────────
+ *
+ * Every tile in Quick Actions does the same thing — navigate away — so
+ * nothing there needs to show a "current" state. This strip switches what is
+ * on screen without leaving the page, so exactly one tile is always the
+ * selected one: raised on an opaque card with a solid ring in its own colour,
+ * against the rest sitting flat in their usual soft tint. Losing that
+ * distinction would turn every click into a guess about what is currently
+ * showing.
  *
  * ── Why the edges fade ─────────────────────────────────────────────────────
  *
@@ -174,62 +203,54 @@ export function ClientTabs({ active, onChange, counts }: ClientTabsProps) {
         aria-label="Client sections"
         data-fade={fade}
         onScroll={measure}
-        className="flex gap-1 overflow-x-auto rounded-[16px] p-1.5 [&::-webkit-scrollbar]:hidden"
+        className="flex gap-2.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden"
         style={{
-          background: 'var(--bg-subtle)',
-          border: '1px solid var(--border)',
           scrollbarWidth: 'none',
           WebkitMaskImage: mask,
           maskImage: mask,
         }}
       >
-        {TABS.map((t) => {
+        {TABS.map((t, i) => {
           const on = t.key === active;
           const n = counts?.[t.key];
           return (
-            <button
+            <m.button
               key={t.key}
               data-tab={t.key}
               role="tab"
               aria-selected={on}
               onClick={() => onChange(t.key)}
-              // 44px explicitly: globals.css sets a 14px root, so a rem-based
-              // height lands at 87.5% and a "44px" tab measures 38.
-              className="relative flex shrink-0 items-center gap-1.5 rounded-[12px] px-3 text-[12px] font-[720] transition-colors"
-              style={{ height: 44, color: on ? 'var(--text-primary)' : 'var(--text-muted)' }}
+              initial={reduce ? false : { opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: reduce ? 0 : i * 0.03, duration: 0.3 }}
+              className="flex shrink-0 flex-col items-center gap-1.5 rounded-[16px] p-3 text-center transition-all active:scale-95"
+              style={{
+                minWidth: 72,
+                // Selected sits on an opaque card with a solid ring in the
+                // tile's own colour, same as the pill it replaces — a
+                // translucent selected state on the same soft tint every
+                // other tile already wears would be indistinguishable from
+                // them. Resting tiles keep Quick Actions' own flat tint.
+                background: on ? 'var(--bg-white)' : `${t.color}12`,
+                border: on ? `1px solid ${t.color}` : `1px solid ${t.color}22`,
+                boxShadow: on ? `0 4px 14px ${t.color}40` : 'none',
+              }}
             >
-              {on && (
-                <m.span
-                  layoutId="client-tab-pill"
-                  transition={reduce ? { duration: 0 } : { duration: 0.28, ease: EASE }}
-                  className="absolute inset-0 rounded-[12px]"
-                  // Opaque white, not --bg-card's 80% — the pill sits on a grey
-                  // trough, and a translucent one picks the trough up and reads
-                  // as a disabled control rather than the selected one. The
-                  // brand-tinted ring and lift are what make it read as raised;
-                  // the shadow alone was too faint against --bg-subtle to
-                  // separate them at all.
-                  style={{
-                    background: 'var(--bg-white)',
-                    boxShadow: '0 1px 1px rgba(15,23,42,0.04), 0 4px 12px -2px var(--brand-glow-2)',
-                    border: '1px solid var(--brand-soft)',
-                  }}
-                />
-              )}
-              <span
-                className="relative flex items-center gap-1.5 whitespace-nowrap"
-                // The icon carries the selection as well as the pill does, and
-                // it reads before the label at a glance.
-                style={on ? { color: 'var(--brand)' } : undefined}
-              >
+              <span className="relative flex h-10 w-10 items-center justify-center rounded-[13px] text-white"
+                style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}cc)`, boxShadow: `0 4px 12px ${t.color}40` }}>
                 {t.icon}
-                <span style={on ? { color: 'var(--text-primary)' } : undefined}>{t.label}</span>
                 {n != null && n > 0 && (
-                  <span className="rounded-full px-1.5 py-px text-[9.5px] font-[800]"
-                    style={{ background: 'var(--brand)', color: 'var(--text-inverse)' }}>{n}</span>
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-[800]"
+                    style={{ background: 'var(--brand)', color: '#fff', border: '2px solid var(--bg-canvas)' }}>
+                    {n}
+                  </span>
                 )}
               </span>
-            </button>
+              <span className="text-[9.5px] font-[680] leading-tight whitespace-nowrap"
+                style={{ color: on ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                {t.label}
+              </span>
+            </m.button>
           );
         })}
       </div>
