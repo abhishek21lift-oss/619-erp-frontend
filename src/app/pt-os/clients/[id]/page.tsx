@@ -14,6 +14,7 @@ import {
   ShieldCheck, FileSignature, ClipboardList,
   QrCode, Printer, ScrollText, ChevronDown, Mail, Ruler, ClipboardCheck,
   StickyNote, FileBarChart, Sparkles,
+  Gauge, Apple, PersonStanding, Accessibility,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -24,7 +25,7 @@ import { PremiumAreaChart } from '@/components/ui';
 import ClientSnapshot from '@/components/pt-os/ClientSnapshot';
 import ClientLoginCard from '@/components/pt-os/ClientLoginCard';
 import {
-  ClientTabs, TabPanel, EmptyPanel, LinkPanel, type TabKey,
+  ClientTabs, TabPanel, EmptyPanel, LinkPanel, TAB_COLOR, type TabKey,
 } from '@/components/pt-os/client/ClientTabs';
 import RecoveryPanel from '@/components/pt-os/client/RecoveryPanel';
 import type { ClientRecovery } from '@/lib/api';
@@ -857,9 +858,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       icon={<Wallet size={16} />}
                       title="Payments"
                       body="What has been taken, what is outstanding, and the sessions it bought."
+                      color={TAB_COLOR.danger}
                       links={[
-                        { label: 'Payment history', href: `/pt-os/clients/${client.id}/payments`, hint: 'Every transaction' },
-                        { label: 'Session balance', href: `/pt-os/session-balance?client_id=${client.id}`, hint: 'Packages and sessions left' },
+                        { label: 'Payment history', href: `/pt-os/clients/${client.id}/payments`, hint: 'Every transaction', icon: <Wallet size={15} />, color: TAB_COLOR.primary },
+                        { label: 'Session balance', href: `/pt-os/session-balance?client_id=${client.id}`, hint: 'Packages and sessions left', icon: <Clock size={15} />, color: TAB_COLOR.warning },
                       ]}
                     />
                   </div>
@@ -922,13 +924,14 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     body={activePlanName
                       ? `Currently running "${activePlanName}".`
                       : 'No programme is assigned yet — start with a plan, then build the week.'}
+                    color={TAB_COLOR.success}
                     links={[
-                      { label: 'Workout programmes', href: `/pt-os/workout-plans?client_id=${client.id}`, hint: 'Design or assign a plan' },
-                      { label: 'Assigned programme', href: `/pt-os/clients/${client.id}/training/assigned`, hint: 'What they are on now' },
-                      { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume, intensity, trend' },
-                      { label: 'Strength tracking', href: `/pt-os/strength-tracking?client_id=${client.id}`, hint: 'Estimated 1RM and lifts' },
-                      { label: 'Sessions', href: `/pt-os/sessions?client_id=${client.id}`, hint: 'Book and review sessions' },
-                      { label: 'Goals', href: `/pt-os/goals?client_id=${client.id}`, hint: 'What they are training for' },
+                      { label: 'Workout programmes', href: `/pt-os/workout-plans?client_id=${client.id}`, hint: 'Design or assign a plan', icon: <ScrollText size={15} />, color: TAB_COLOR.primary },
+                      { label: 'Assigned programme', href: `/pt-os/clients/${client.id}/training/assigned`, hint: 'What they are on now', icon: <ClipboardList size={15} />, color: TAB_COLOR.success },
+                      { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume, intensity, trend', icon: <TrendingUp size={15} />, color: TAB_COLOR.warning },
+                      { label: 'Strength tracking', href: `/pt-os/strength-tracking?client_id=${client.id}`, hint: 'Estimated 1RM and lifts', icon: <Dumbbell size={15} />, color: TAB_COLOR.success },
+                      { label: 'Sessions', href: `/pt-os/sessions?client_id=${client.id}`, hint: 'Book and review sessions', icon: <Clock size={15} />, color: TAB_COLOR.danger },
+                      { label: 'Goals', href: `/pt-os/goals?client_id=${client.id}`, hint: 'What they are training for', icon: <Target size={15} />, color: TAB_COLOR.dangerDeep },
                     ]}
                   />
                 </TabPanel>
@@ -938,9 +941,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     icon={<ScrollText size={16} />}
                     title="Workout log"
                     body="Every set that was actually performed — weight, reps, and the records they beat."
+                    color={TAB_COLOR.warning}
                     links={[
-                      { label: 'Open the workout log', href: `/pt-os/clients/${client.id}/workout-log`, hint: 'Sets, reps, RPE, notes' },
-                      { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume and trend over time' },
+                      { label: 'Open the workout log', href: `/pt-os/clients/${client.id}/workout-log`, hint: 'Sets, reps, RPE, notes', icon: <ScrollText size={15} />, color: TAB_COLOR.primary },
+                      { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume and trend over time', icon: <TrendingUp size={15} />, color: TAB_COLOR.warning },
                     ]}
                   />
                 </TabPanel>
@@ -950,10 +954,11 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     icon={<Ruler size={16} />}
                     title="Measurements"
                     body="Weight and body composition come from the fitness test. Circumference tracking fills in as measurements are recorded."
+                    color={TAB_COLOR.danger}
                     links={[
-                      { label: 'Measurements', href: `/pt-os/measurements?client_id=${client.id}`, hint: 'Weight, body fat, circumferences' },
-                      { label: 'Record a fitness test', href: `/pt-os/assessment?client_id=${client.id}`, hint: 'Weight, BMI, body fat, scores' },
-                      { label: 'Progress tracking overview', href: `/pt-os/progress-tracking-setup?client_id=${client.id}`, hint: "What's on file, and what's missing" },
+                      { label: 'Measurements', href: `/pt-os/measurements?client_id=${client.id}`, hint: 'Weight, body fat, circumferences', icon: <Ruler size={15} />, color: TAB_COLOR.primary },
+                      { label: 'Record a fitness test', href: `/pt-os/assessment?client_id=${client.id}`, hint: 'Weight, BMI, body fat, scores', icon: <Gauge size={15} />, color: TAB_COLOR.warning },
+                      { label: 'Progress tracking overview', href: `/pt-os/progress-tracking-setup?client_id=${client.id}`, hint: "What's on file, and what's missing", icon: <Flag size={15} />, color: TAB_COLOR.success },
                     ]}
                   />
                 </TabPanel>
@@ -963,9 +968,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     icon={<Salad size={16} />}
                     title="Nutrition"
                     body="Calories, macros and compliance appear here once meals are being logged against a plan."
+                    color={TAB_COLOR.dangerDeep}
                     links={[
-                      { label: 'Nutrition assessment', href: `/pt-os/nutrition-assessment?client_id=${client.id}`, hint: 'Habits, preferences, targets' },
-                      { label: 'Diet plans', href: `/pt-os/diet-plans?client_id=${client.id}`, hint: 'Assign a meal plan' },
+                      { label: 'Nutrition assessment', href: `/pt-os/nutrition-assessment?client_id=${client.id}`, hint: 'Habits, preferences, targets', icon: <Apple size={15} />, color: TAB_COLOR.primary },
+                      { label: 'Diet plans', href: `/pt-os/diet-plans?client_id=${client.id}`, hint: 'Assign a meal plan', icon: <ScrollText size={15} />, color: TAB_COLOR.success },
                     ]}
                   />
                 </TabPanel>
@@ -984,6 +990,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     icon={<Camera size={20} />}
                     title="No progress photos yet"
                     body="Front, side and back photos over time are the comparison clients respond to most. They stay private to the studio."
+                    color={TAB_COLOR.success}
                     actions={[{ label: 'Add progress photos', href: `/pt-os/progress-photos?client_id=${client.id}` }]}
                   />
                 </TabPanel>
@@ -993,7 +1000,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     icon={<StickyNote size={16} />}
                     title="Notes"
                     body="Coach notes live on the Overview tab, beside the client's details — they are read alongside everything else rather than filed away."
-                    links={[{ label: 'Go to Overview', href: `/pt-os/clients/${client.id}`, hint: 'Notes card is there' }]}
+                    color={TAB_COLOR.primary}
+                    links={[{ label: 'Go to Overview', href: `/pt-os/clients/${client.id}`, hint: 'Notes card is there', icon: <StickyNote size={15} />, color: TAB_COLOR.primary }]}
                   />
                 </TabPanel>
 
@@ -1002,11 +1010,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     icon={<Sparkles size={16} />}
                     title="AI Coach"
                     body="The observations above the tabs are derived from this client's own readings. The assistant can go further — ask it about their programme, recovery or nutrition."
+                    color={TAB_COLOR.warning}
                     links={[
-                      { label: 'AI progress analysis', href: `/ai/progress-analysis?client_id=${client.id}`, hint: 'Trend and recommendations' },
-                      { label: 'AI workout generator', href: `/ai/workout-generator?client_id=${client.id}`, hint: 'Draft a programme' },
-                      { label: 'AI diet generator', href: `/ai/diet-generator?client_id=${client.id}`, hint: 'Draft a meal plan' },
-                      { label: 'Training brief', href: `/pt-os/workout-plans?client_id=${client.id}`, hint: 'Everything needed to design a programme' },
+                      { label: 'AI progress analysis', href: `/ai/progress-analysis?client_id=${client.id}`, hint: 'Trend and recommendations', icon: <TrendingUp size={15} />, color: TAB_COLOR.primary },
+                      { label: 'AI workout generator', href: `/ai/workout-generator?client_id=${client.id}`, hint: 'Draft a programme', icon: <Dumbbell size={15} />, color: TAB_COLOR.success },
+                      { label: 'AI diet generator', href: `/ai/diet-generator?client_id=${client.id}`, hint: 'Draft a meal plan', icon: <Salad size={15} />, color: TAB_COLOR.warning },
+                      { label: 'Training brief', href: `/pt-os/workout-plans?client_id=${client.id}`, hint: 'Everything needed to design a programme', icon: <FileText size={15} />, color: TAB_COLOR.danger },
                     ]}
                   />
                 </TabPanel>
@@ -1016,7 +1025,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     icon={<FileBarChart size={16} />}
                     title="Reports"
                     body="A shareable summary of this client's month — sessions, progress and what changed."
-                    links={[{ label: 'Reports', href: `/pt-os/reports?client_id=${client.id}`, hint: 'Generate and share' }]}
+                    color={TAB_COLOR.success}
+                    links={[{ label: 'Reports', href: `/pt-os/reports?client_id=${client.id}`, hint: 'Generate and share', icon: <FileBarChart size={15} />, color: TAB_COLOR.success }]}
                   />
                 </TabPanel>
 
@@ -1030,13 +1040,14 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       icon={<ShieldCheck size={16} />}
                       title="Screening &amp; assessments"
                       body="The forms the training brief is assembled from."
+                      color={TAB_COLOR.dangerDeep}
                       links={[
-                        { label: 'PAR-Q', href: `/pt-os/parq?client_id=${client.id}`, hint: 'Medical clearance' },
-                        { label: 'Informed consent', href: `/pt-os/informed-consent?client_id=${client.id}`, hint: 'Signed agreement' },
-                        { label: 'Lifestyle assessment', href: `/pt-os/lifestyle-assessment?client_id=${client.id}`, hint: 'Sleep, stress, recovery' },
-                        { label: 'Posture assessment', href: `/pt-os/posture-assessment?client_id=${client.id}`, hint: 'Alignment findings' },
-                        { label: 'Mobility assessment', href: `/pt-os/mobility-assessment?client_id=${client.id}`, hint: 'Restriction and pain' },
-                        { label: 'Fitness testing', href: `/pt-os/assessment?client_id=${client.id}`, hint: 'Strength, cardio, flexibility' },
+                        { label: 'PAR-Q', href: `/pt-os/parq?client_id=${client.id}`, hint: 'Medical clearance', icon: <ShieldCheck size={15} />, color: TAB_COLOR.success },
+                        { label: 'Informed consent', href: `/pt-os/informed-consent?client_id=${client.id}`, hint: 'Signed agreement', icon: <FileSignature size={15} />, color: TAB_COLOR.primary },
+                        { label: 'Lifestyle assessment', href: `/pt-os/lifestyle-assessment?client_id=${client.id}`, hint: 'Sleep, stress, recovery', icon: <HeartPulse size={15} />, color: TAB_COLOR.danger },
+                        { label: 'Posture assessment', href: `/pt-os/posture-assessment?client_id=${client.id}`, hint: 'Alignment findings', icon: <Accessibility size={15} />, color: TAB_COLOR.primary },
+                        { label: 'Mobility assessment', href: `/pt-os/mobility-assessment?client_id=${client.id}`, hint: 'Restriction and pain', icon: <PersonStanding size={15} />, color: TAB_COLOR.danger },
+                        { label: 'Fitness testing', href: `/pt-os/assessment?client_id=${client.id}`, hint: 'Strength, cardio, flexibility', icon: <Gauge size={15} />, color: TAB_COLOR.warning },
                       ]}
                     />
                   </div>
