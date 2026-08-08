@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import type { AiProgressAnalysis } from '@/lib/api';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { PageContainer, PageHero } from '@/components/ui';
 
 const ACCENT = '#FBBF24';
 const ACCENT_DIM = 'rgba(251,191,36,0.12)';
@@ -78,35 +79,25 @@ export default function ProgressAnalysisPage() {
 
   return (
     <Guard>
-      <AppShell title="AI Progress Analyzer">
-        <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px 80px' }}>
-          {/* Hero */}
-          <m.div variants={fadeUp} initial="hidden" animate="show" custom={0} style={{ marginBottom: 40 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-              <div style={{
-                width: 52, height: 52, borderRadius: 16, flexShrink: 0,
-                background: 'linear-gradient(135deg, rgba(251,191,36,0.2), rgba(251,191,36,0.05))',
-                border: '1px solid rgba(251,191,36,0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <TrendingUp size={24} color={ACCENT} />
-              </div>
-              <div>
-                <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>AI Progress Analyzer</h1>
-                <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--text-muted)' }}>
-                  Deep dive into a client&apos;s fitness journey with AI-powered insights and strategy
-                </p>
-              </div>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+      <AppShell>
+        <PageContainer>
+
+          <PageHero
+            icon={<TrendingUp size={20} />}
+            title="AI Progress Analyzer"
+            subtitle="Deep dive into a client's fitness journey with AI-powered insights and strategy"
+          >
+            <div className="flex flex-wrap gap-2">
               {['Weight Trends', 'Strength Analysis', 'Attendance Tracking', 'Risk Detection', 'Monthly Strategy'].map((p) => (
-                <span key={p} style={{
-                  fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 20,
-                  background: ACCENT_DIM, color: ACCENT, border: '1px solid rgba(251,191,36,0.2)',
-                }}>{p}</span>
+                <span key={p} className="rounded-full px-3 py-1.5 text-[12px] font-[550] text-white"
+                  style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                  {p}
+                </span>
               ))}
             </div>
-          </m.div>
+          </PageHero>
+
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
 
           {/* Client selector */}
           <m.div variants={fadeUp} initial="hidden" animate="show" custom={1} style={{
@@ -404,6 +395,7 @@ export default function ProgressAnalysisPage() {
             </div>
           )}
         </div>
+        </PageContainer>
       </AppShell>
     </Guard>
   );

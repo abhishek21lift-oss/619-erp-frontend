@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import type { AiWorkoutPlan, AiWorkoutDay, AiWorkoutExercise } from '@/lib/api';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { PageContainer, PageHero } from '@/components/ui';
 
 const ACCENT = '#0067E0';
 const ACCENT_SOFT = '#0067E0';
@@ -198,47 +199,24 @@ export default function WorkoutGeneratorPage() {
   return (
     <Guard>
       <AppShell>
-        <div className="mx-auto w-full max-w-4xl pb-20 pt-6">
+        <PageContainer>
 
-          {/* ── Hero ── */}
-          <m.div variants={fadeUp} initial="hidden" animate="show" custom={0}
-            className="relative mb-6 overflow-hidden rounded-[28px] p-7 sm:p-9"
-            style={{
-              // Glow folded into the card's own background. It used to be an
-              // absolutely-positioned `blur-3xl` child; WebKit promotes a
-              // filtered child to its own layer and then clips that layer to a
-              // RECTANGLE, so its square corner painted outside this card's
-              // rounded corner. A background cannot escape the border-radius.
-              // 220px fitted against the old rendering by pixel comparison.
-              background: [
-                'radial-gradient(circle 220px at calc(100% - 32px) 32px, rgba(0,103,224,0.21), transparent 70%)',
-                'linear-gradient(135deg, #F1F5F9 0%, #F8FAFC 100%)',
-              ].join(', '),
-              border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)',
-            }}>
-            <div className="relative flex items-center gap-4">
-              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[16px]"
-                style={{ background: ACCENT_GRADIENT, boxShadow: '0 8px 24px rgba(0,103,224,0.35)' }}>
-                <Dumbbell size={24} color="#fff" />
-              </div>
-              <div>
-                <h1 className="text-[26px] font-[860] leading-tight tracking-[-0.03em] sm:text-[32px]" style={{ color: 'var(--text-primary)' }}>
-                  AI Workout Generator
-                </h1>
-                <p className="mt-1 max-w-xl text-[13.5px] sm:text-[14px]" style={{ color: 'var(--text-muted)' }}>
-                  A personalised training programme built around your biology, goals, and equipment.
-                </p>
-              </div>
-            </div>
-            <div className="relative mt-5 flex flex-wrap gap-2">
+          <PageHero
+            icon={<Dumbbell size={20} />}
+            title="AI Workout Generator"
+            subtitle="A personalised training programme built around your biology, goals, and equipment."
+          >
+            <div className="flex flex-wrap gap-2">
               {['Progressive Overload', 'Warm-Up & Cool-Down', 'Injury-Aware', 'Tempo & Rest Times'].map((p) => (
-                <span key={p} className="rounded-full px-3 py-1.5 text-[11.5px] font-[650]"
-                  style={{ background: 'rgba(255,255,255,0.75)', color: ACCENT, border: '1px solid rgba(0,103,224,0.2)' }}>
+                <span key={p} className="rounded-full px-3 py-1.5 text-[11.5px] font-[650] text-white"
+                  style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>
                   {p}
                 </span>
               ))}
             </div>
-          </m.div>
+          </PageHero>
+
+        <div className="mx-auto w-full max-w-4xl">
 
           {/* ── Form ── */}
           <m.div variants={fadeUp} initial="hidden" animate="show" custom={1}
@@ -407,6 +385,7 @@ export default function WorkoutGeneratorPage() {
             </div>
           )}
         </div>
+        </PageContainer>
       </AppShell>
     </Guard>
   );

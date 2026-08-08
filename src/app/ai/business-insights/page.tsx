@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import type { AiBusinessInsights } from '@/lib/api';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { PageContainer, PageHero } from '@/components/ui';
 
 const PERIODS = [
   { label: 'Last 7 days', value: '7d' },
@@ -61,17 +62,16 @@ export default function BusinessInsightsPage() {
 
   return (
     <Guard role="admin">
-      <AppShell title="AI Business Insights">
+      <AppShell>
+        <PageContainer>
+
+          <PageHero
+            icon={<BarChart3 size={20} />}
+            title="AI Business Insights"
+            subtitle="AI-powered analysis of your studio's performance and growth opportunities"
+          />
+
         <div className="max-w-4xl mx-auto space-y-8">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-violet-500/10">
-              <BarChart3 className="w-6 h-6 text-violet-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">AI Business Insights</h1>
-              <p className="text-gray-500 text-sm">AI-powered analysis of your studio&apos;s performance and growth opportunities</p>
-            </div>
-          </div>
 
           <div className="p-6 rounded-2xl border border-gray-200 bg-white space-y-4">
             <div className="space-y-1">
@@ -217,6 +217,7 @@ export default function BusinessInsightsPage() {
             </div>
           )}
         </div>
+        </PageContainer>
       </AppShell>
     </Guard>
   );

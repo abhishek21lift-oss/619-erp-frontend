@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button, PullToRefresh } from '@/components/ui';
+import { Button, PullToRefresh, PageContainer, PageHero } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { useToast } from '@/lib/toast';
 import { api, AiKnowledgeDocument } from '@/lib/api';
@@ -97,28 +97,22 @@ export default function AiKnowledgeBasePage() {
     <Guard roles={['admin', 'manager']}>
       <AppShell>
         <PullToRefresh onRefresh={kb.refetch}>
-          <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 20px 60px' }}>
+          <PageContainer>
 
-            {/* Hero */}
-            <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              style={{ padding: '28px 4px 24px', marginBottom: 8, borderBottom: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 4px 20px rgba(0,103,224,0.35)', flexShrink: 0 }}>
-                    <BookOpen size={22} color="#fff" />
-                  </div>
-                  <div>
-                    <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Knowledge Base</h1>
-                    <p style={{ margin: '3px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
-                      SOPs, guides &amp; policies the AI Coach answers from before general knowledge
-                    </p>
-                  </div>
-                </div>
-                <Button variant="primary" size="sm" iconLeft={<Upload size={14} />} onClick={() => setUploadOpen(true)}>
-                  Upload Document
-                </Button>
-              </div>
-            </m.div>
+            <PageHero
+              icon={<BookOpen size={20} />}
+              title="Knowledge Base"
+              subtitle="SOPs, guides & policies the AI Coach answers from before general knowledge"
+              actions={
+                <button type="button" onClick={() => setUploadOpen(true)}
+                  className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
+                  style={{ background: '#fff', color: '#0F172A' }}>
+                  <Upload size={16} /> Upload Document
+                </button>
+              }
+            />
+
+          <div className="mx-auto w-full max-w-4xl">
 
             {/* List */}
             {kb.loading ? (
@@ -186,6 +180,7 @@ export default function AiKnowledgeBasePage() {
 
             <style>{`@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 0.3; } }`}</style>
           </div>
+          </PageContainer>
         </PullToRefresh>
 
         {/* Upload modal */}
