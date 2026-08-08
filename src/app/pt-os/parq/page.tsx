@@ -4,12 +4,12 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, ShieldCheck, Plus, X,
+  ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, ShieldCheck, Plus,
   History, CheckCircle2, Download, Printer, Mail,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button } from '@/components/ui';
+import { Button, PageContainer, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import type { ParqForm, ParqFormDetail, ParqDocument } from '@/lib/api';
@@ -132,29 +132,21 @@ function ParqHub({ clientId, toast }: ParqHubProps) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl py-6 space-y-5">
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
-                <ShieldCheck size={16} style={{ color: 'var(--text-muted)' }} />
-              </div>
-              <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>PAR-Q + Health Screening</span>
-            </div>
-            <h1 className="text-[26px] sm:text-[32px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
-              {clientName}&apos;s PAR-Q
-            </h1>
-          </div>
-          <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}>
-            New Screening
-          </Button>
-        </div>
-      </m.div>
+    <PageContainer>
+      <PageHero
+        icon={<ShieldCheck size={20} />}
+        title={`${clientName}'s PAR-Q`}
+        subtitle="PAR-Q + Health Screening"
+        actions={
+          <button type="button" onClick={() => openWizard(null)}
+            className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
+            style={{ background: '#fff', color: '#0F172A' }}>
+            <Plus size={16} /> New Screening
+          </button>
+        }
+      />
 
-      <div className="space-y-3">
+      <div className="mx-auto w-full max-w-3xl space-y-3">
         {forms.length === 0 && (
           <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <p className="text-[14px] font-[600] text-slate-500">No PAR-Q screenings yet.</p>
@@ -173,7 +165,7 @@ function ParqHub({ clientId, toast }: ParqHubProps) {
           <ParqCard key={String(f.id)} form={f} onClick={() => openWizard(String(f.id))} />
         ))}
       </div>
-    </div>
+    </PageContainer>
   );
 }
 
@@ -384,29 +376,18 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
   }
 
   return (
-    <div className="pb-28">
-      {/* Header — in normal flow on the page background (no sticky card). */}
-      <div className="pt-1">
-        <div className="mx-auto max-w-3xl py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', boxShadow: '0 6px 18px rgba(0,103,224,0.3)' }}>
-              <ShieldCheck size={18} color="#fff" />
-            </div>
-            <div>
-              <h1 className="text-[19px] font-[860] tracking-[-0.03em] text-slate-900 leading-none sm:text-[22px]">{currentFormId ? 'Edit Screening' : 'New Screening'}</h1>
-              <p className="text-[12px] font-[600] text-slate-400 mt-1">{clientName}</p>
-            </div>
-          </div>
-          <button type="button" onClick={() => onDone(false)} className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-[650] transition-colors hover:bg-white" style={{ color: '#64748b', border: '1px solid rgba(15,23,42,0.08)' }}>
-            <X size={12} /> Cancel
-          </button>
-        </div>
-        <div className="mx-auto max-w-3xl pb-3">
-          <StepperTimeline steps={stepperSteps} current={step} onStep={(id) => setStep(id as StepId)} />
-        </div>
-      </div>
+    <PageContainer>
+      {/* No Cancel action — Back, in the sticky footer, already exits the
+          wizard at step 1 with the same discard-confirm guard. */}
+      <PageHero
+        icon={<ShieldCheck size={18} />}
+        title={currentFormId ? 'Edit Screening' : 'New Screening'}
+        subtitle={clientName}
+      >
+        <StepperTimeline steps={stepperSteps} current={step} onStep={(id) => setStep(id as StepId)} />
+      </PageHero>
 
-      <div className="mx-auto max-w-3xl py-6 space-y-5">
+      <div className="mx-auto max-w-3xl space-y-5">
         <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
           {step === 1 && <StepParqQuestionnaire form={form} set={set} error={errors.parqQuestionnaire} stepLabel={stepPositionLabel('parqQuestionnaire', riskLevel)} />}
           {step === 2 && riskLevel === 'high' && (
@@ -440,7 +421,7 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }
 

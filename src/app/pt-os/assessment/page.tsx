@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, PageContainer, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -434,34 +434,27 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
   const latestAssessment = sortedHistory[0];
 
   return (
-    <div className="pb-28">
-      {/* Header — in normal flow on the page background (no sticky card). */}
-      <div className="pt-1">
-        <div className="mx-auto max-w-3xl py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', boxShadow: '0 6px 18px rgba(0,103,224,0.3)' }}>
-              <ClipboardCheck size={18} color="#fff" />
-            </div>
-            <div>
-              <h1 className="text-[19px] font-[860] tracking-[-0.03em] text-slate-900 leading-none sm:text-[22px]">Fitness Testing</h1>
-              <p className="text-[12px] font-[600] text-slate-400 mt-1">{clientName || 'Client'} · Assessment {nextAssessmentNumber}</p>
-            </div>
-          </div>
+    <PageContainer>
+      <PageHero
+        icon={<ClipboardCheck size={18} />}
+        title="Fitness Testing"
+        subtitle={`${clientName || 'Client'} · Assessment ${nextAssessmentNumber}`}
+        actions={
           <button
             type="button" onClick={() => router.push('/pt-os/assessment')}
-            className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-[650] transition-colors hover:bg-white" style={{ color: '#64748b', border: '1px solid rgba(15,23,42,0.08)' }}
+            className="inline-flex h-[44px] w-full flex-shrink-0 items-center justify-center gap-1.5 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
+            style={{ background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.22)' }}
           >
-            <X size={12} /> Change client
+            <X size={14} /> Change client
           </button>
-        </div>
+        }
+      >
         {!reviewMode && !lastSaved && (
-          <div className="mx-auto max-w-3xl pb-3">
-            <ProgressTimeline current={step} onStep={setStep} />
-          </div>
+          <ProgressTimeline current={step} onStep={setStep} />
         )}
-      </div>
+      </PageHero>
 
-      <div className="mx-auto max-w-3xl py-6 space-y-5">
+      <div className="mx-auto max-w-3xl space-y-5">
         {lastSaved ? (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-5">
             <div className="flex items-center gap-4 rounded-[20px] p-5" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)' }}>
@@ -589,6 +582,6 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
           {historyAiId && <AiRecommendationsPanel assessmentId={historyAiId} />}
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }

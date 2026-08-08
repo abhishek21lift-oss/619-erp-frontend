@@ -106,6 +106,9 @@ describe('no page draws a container box around its own title', () => {
     ['app', 'pt-os', 'clients', '[id]', 'payments', 'page.tsx'],
     ['app', 'pt-os', 'session-balance', 'page.tsx'],
     ['app', 'pt-os', 'progress-photos', 'page.tsx'],
+    ['app', 'pt-os', 'informed-consent', 'page.tsx'],
+    ['app', 'pt-os', 'parq', 'page.tsx'],
+    ['app', 'pt-os', 'assessment', 'page.tsx'],
   ];
 
   it.each(pages)('%s/%s/%s has no slab header', (...p) => {
@@ -661,5 +664,49 @@ describe('what the phone screenshots showed', () => {
     const reports = src('app', 'reports', 'page.tsx');
     expect(reports).toContain("short: 'Revenue'");
     expect(reports).toContain('aria-label={t.label}');
+  });
+});
+
+describe('informed consent, PAR-Q and fitness testing wizards', () => {
+  it('the consent wizard drops Cancel — Back already exits it', () => {
+    // Same shape as the goal wizard fix: handleBack at step 1 calls the same
+    // onDone(false) escape the Cancel button called, so keeping both was two
+    // controls doing one job.
+    const consent = src('app', 'pt-os', 'informed-consent', 'page.tsx');
+    expect(consent).toContain('<PageHero');
+    expect(consent).not.toContain('Cancel');
+  });
+
+  it('the PAR-Q hub and wizard both use PageHero, and the wizard drops Cancel', () => {
+    const parq = src('app', 'pt-os', 'parq', 'page.tsx');
+    expect((parq.match(/<PageHero/g) ?? []).length).toBeGreaterThanOrEqual(2);
+    expect((parq.match(/<PageContainer>/g) ?? []).length).toBeGreaterThanOrEqual(2);
+    expect(parq).not.toContain('Cancel');
+  });
+
+  it('the fitness testing wizard keeps Change client — it goes somewhere Back does not', () => {
+    // handleBack at step 1 returns to the client's profile; Change client
+    // goes to the client picker. Different destinations, so unlike the
+    // consent/PAR-Q Cancel buttons this one is not a duplicate of Back and
+    // stays, moved into the hero's actions slot.
+    const assessment = src('app', 'pt-os', 'assessment', 'page.tsx');
+    expect(assessment).toContain('<PageHero');
+    expect(assessment).toContain('Change client');
+    expect(assessment).toContain("router.push('/pt-os/assessment')");
+  });
+
+  it('the shared and fitness-testing steppers are readable on navy, not near-black-on-navy', () => {
+    // Same bug as GoalProgressTimeline: built for a light background, so the
+    // active step read #0f172a on #fff and the rest read near-black on a
+    // light track — both invisible once these steppers moved inside
+    // PageHero. StepperTimeline is shared by the consent and PAR-Q wizards;
+    // fitness-testing/ProgressTimeline has one caller, the assessment wizard.
+    const stepper = src('components', 'pt-os', 'shared', 'StepperTimeline.tsx');
+    const fitnessStepper = src('components', 'pt-os', 'fitness-testing', 'ProgressTimeline.tsx');
+    for (const s of [stepper, fitnessStepper]) {
+      expect(s).not.toContain("color: '#0f172a'");
+      expect(s).not.toContain("background: '#e2e8f0'");
+      expect(s).toContain('rgba(255,255,255,0.14)');
+    }
   });
 });

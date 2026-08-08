@@ -5,11 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
   ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, FileSignature, Plus,
-  X, CheckCircle2, Download, Printer, Mail, History,
+  CheckCircle2, Download, Printer, Mail, History,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button, EmptyState } from '@/components/ui';
+import { Button, EmptyState, PageContainer, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import ConsentSummary from '@/components/pt-os/informed-consent/ConsentSummary';
 import { api } from '@/lib/api';
@@ -361,38 +361,18 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
   }
 
   return (
-    <div className="pb-28">
-      {/* Header — in normal flow, directly on the page background. The old
-          sticky white card floated at a safe-area-dependent offset, which on
-          notched phones opened a large blank band under the top bar. */}
-      <div className="mx-auto max-w-3xl pt-1">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]"
-              style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', boxShadow: '0 6px 18px rgba(0,103,224,0.3)' }}
-            >
-              <FileSignature size={18} color="#fff" />
-            </div>
-            <div>
-              <h1 className="text-[19px] font-[860] tracking-[-0.03em] text-slate-900 leading-none sm:text-[22px]">{currentId ? 'Continue Consent' : 'New Informed Consent'}</h1>
-              <p className="text-[12px] font-[600] text-slate-400 mt-1">{clientName}</p>
-            </div>
-          </div>
-          <button
-            type="button" onClick={() => onDone(false)}
-            className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-[650] transition-colors hover:bg-white"
-            style={{ color: '#64748b', border: '1px solid rgba(15,23,42,0.08)' }}
-          >
-            <X size={12} /> Cancel
-          </button>
-        </div>
-        <div className="mt-4">
-          <StepperTimeline steps={stepperSteps} current={step} onStep={(id) => setStep(id as StepId)} />
-        </div>
-      </div>
+    <PageContainer>
+      {/* No Cancel action — Back, in the sticky footer, already exits the
+          wizard at step 1 with the same discard-confirm guard. */}
+      <PageHero
+        icon={<FileSignature size={18} />}
+        title={currentId ? 'Continue Consent' : 'New Informed Consent'}
+        subtitle={clientName}
+      >
+        <StepperTimeline steps={stepperSteps} current={step} onStep={(id) => setStep(id as StepId)} />
+      </PageHero>
 
-      <div className="mx-auto max-w-3xl py-5 space-y-5">
+      <div className="mx-auto max-w-3xl space-y-5">
         <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
           {step === 1 && <StepExerciseProgrammeConsent form={form} set={set} error={errors.step1} />}
           {step === 2 && <StepAgreements form={form} set={set} error={errors.step2} />}
@@ -416,7 +396,7 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }
 
