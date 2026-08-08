@@ -54,15 +54,18 @@ import { api } from '@/lib/api';
 import type { TodayClient, TodayRoster } from '@/lib/api';
 import { fmtTime12 } from '@/lib/format';
 import { useToast } from '@/lib/toast';
-import { EmptyState } from '@/components/ui';
+import { EmptyState, PageContainer, PageHero } from '@/components/ui';
 
 export default function TodayPage() {
   return (
     <Guard roles={['admin', 'manager', 'trainer']}>
       <AppShell>
-        <div className="mx-auto max-w-screen-md px-4 py-4 pb-28">
+        {/* max-w-screen-md with its own px-4 sat inside .shell-main's gutter,
+            so this page was both narrower and further from the edge than the
+            dashboard. PageContainer carries the dashboard's measurements. */}
+        <PageContainer>
           <Today />
-        </div>
+        </PageContainer>
       </AppShell>
     </Guard>
   );
@@ -130,30 +133,20 @@ function Today() {
 
   return (
     <>
-      <header className="mb-4">
-        <div className="flex items-center gap-2.5">
-          <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] text-white"
-            style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)' }}
-          >
-            <CalendarDays size={18} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-[20px] font-[800]" style={{ color: 'var(--text-primary)' }}>Today</h1>
-            <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-              {roster?.day_of_week}
-              {clients.length > 0 && ` · ${done} of ${clients.length} done`}
-            </p>
-          </div>
-        </div>
-
-        {/* How far through the day, without spending a row on it. The count
-            above is the same number in words; this is the version you can read
-            without reading. */}
+      <PageHero
+        icon={<CalendarDays size={20} />}
+        title="Today"
+        subtitle={roster?.day_of_week
+          ? `${roster.day_of_week}${clients.length > 0 ? ` · ${done} of ${clients.length} done` : ''}`
+          : undefined}
+      >
+        {/* How far through the day, without spending a row on it. The count in
+            the subtitle is the same number in words; this is the version you
+            can read without reading. */}
         {clients.length > 0 && (
           <div
-            className="mt-3 h-1.5 w-full overflow-hidden rounded-full"
-            style={{ background: 'var(--bg-subtle)' }}
+            className="h-1.5 w-full overflow-hidden rounded-full"
+            style={{ background: 'rgba(255,255,255,0.18)' }}
             role="progressbar"
             aria-valuemin={0}
             aria-valuemax={clients.length}
@@ -162,11 +155,11 @@ function Today() {
           >
             <span
               className="block h-full rounded-full transition-[width] duration-300"
-              style={{ width: `${(done / clients.length) * 100}%`, background: 'var(--brand)' }}
+              style={{ width: `${(done / clients.length) * 100}%`, background: '#fff' }}
             />
           </div>
         )}
-      </header>
+      </PageHero>
 
       {/* Skeletons rather than a lone spinner: the rows arrive in a known shape
           and reserving it stops the page jumping under a thumb already on its

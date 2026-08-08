@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { WorkoutPlan, LibraryExercise, TrainingBrief } from '@/lib/api';
 import { ApiError } from '@/lib/http';
@@ -191,79 +191,59 @@ function Inner() {
 
   return (
     <div style={{ minHeight: '100%', position: 'relative' }}>
-      <div className="relative z-10 mt-1 mx-auto max-w-[1400px] pb-24">
-        {/* ── Gradient Hero ── */}
-        <m.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-indigo-500/10 via-violet-500/10 to-pink-500/10 p-5 sm:p-7 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] mt-2"
+      <PageContainer>
+        {/* ── Hero ──
+            This was a lavender-to-pink gradient card with its own corner
+            glows and its own max-w-[1400px] container — a different surface
+            from every other page's header, 120px wider than the dashboard,
+            and starting at mt-1 instead of pt-2. The stat tiles that lived
+            inside it move out below, where they are cards like every other
+            KPI row in the app. */}
+        <PageHero
+          icon={<Dumbbell size={20} />}
+          title={briefClient?.name ?? 'Workout Plans'}
+          subtitle={briefClient
+            ? [
+              briefClient.age != null ? `${briefClient.age} yrs` : null,
+              briefClient.gender,
+              briefClient.goal ? String(briefClient.goal).replace(/_/g, ' ') : null,
+            ].filter(Boolean).join(' · ') || 'Design their programme'
+            : 'Build and manage personalized training programs'}
         >
-          {/* Corner glows as ONE unfiltered gradient layer, replacing two
-              `blur-3xl` circles. `filter: blur()` promotes a child to its own
-              compositing layer, and WebKit then applies this card's rounded
-              `overflow-hidden` clip to that layer as a RECTANGLE — so the blob's
-              square corner paints outside the rounded corner. Reported on iOS
-              against the client profile card, which had the identical pattern.
-              A gradient needs no filter, so nothing is promoted and the clip holds.
-              240px, and the averaged colour for each two-tone blob, were fitted
-              against the old rendering by pixel comparison: 0.99/255 mean
-              difference, where two offset radials per blob scored 2.10. */}
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              backgroundImage: [
-                'radial-gradient(circle 240px at calc(100% - 32px) 32px, rgba(148,161,249,0.2), transparent 70%)',
-                'radial-gradient(circle 240px at 32px calc(100% - 16px), rgba(206,148,216,0.2), transparent 70%)',
-              ].join(', '),
-            }}
-            aria-hidden
-          />
-
-          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3.5">
-              <m.span
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-pink-500 text-white shadow-[0_4px_20px_rgba(99,102,241,0.35)]"
-              >
-                <Dumbbell size={22} />
-              </m.span>
-              {/* Arriving with ?client_id= means somebody opened a specific
-                  client's Workout Plans. The page should say whose. */}
-              <div className="min-w-0">
-                <h1 className="text-[22px] sm:text-[26px] font-extrabold tracking-[-0.02em] leading-tight text-[var(--text-primary)]">
-                  {briefClient?.name ?? 'Workout Plans'}
-                </h1>
-                <p className="mt-0.5 text-[13px] text-[var(--text-muted)]">
-                  {briefClient
-                    ? [
-                      briefClient.age != null ? `${briefClient.age} yrs` : null,
-                      briefClient.gender,
-                      briefClient.goal ? String(briefClient.goal).replace(/_/g, ' ') : null,
-                    ].filter(Boolean).join(' · ') || 'Design their programme'
-                    : 'Build and manage personalized training programs'}
-                </p>
-              </div>
+          {/* View toggle + New Plan, on the hero. The pill row and the title
+              used to share a flex row that wrapped awkwardly on a phone. */}
+          <div className="flex items-center gap-2">
+            <div className="flex shrink-0 gap-1 rounded-[11px] p-1"
+              style={{ background: 'rgba(255,255,255,0.12)' }}>
+              {(['grid', 'list'] as const).map((v) => (
+                <button key={v} type="button" onClick={() => setView(v)}
+                  aria-pressed={view === v}
+                  aria-label={v === 'grid' ? 'Grid view' : 'List view'}
+                  className="flex h-[36px] w-[38px] cursor-pointer items-center justify-center rounded-[8px] transition-colors"
+                  style={{
+                    background: view === v ? '#fff' : 'transparent',
+                    color: view === v ? '#0F172A' : 'rgba(255,255,255,0.8)',
+                  }}>
+                  {v === 'grid' ? <LayoutGrid size={15} /> : <List size={15} />}
+                </button>
+              ))}
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <div style={{ display: 'flex', background: 'var(--bg-card)', borderRadius: 9, padding: 3, gap: 2 }}>
-                {(['grid', 'list'] as const).map((v) => (
-                  <button key={v} onClick={() => setView(v)}
-                    style={{ padding: '6px 9px', borderRadius: 7, border: 'none', cursor: 'pointer', transition: 'all 0.18s', background: view === v ? 'var(--bg-subtle)' : 'transparent', color: view === v ? '#0067e0' : 'var(--text-muted)', boxShadow: view === v ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
-                    {v === 'grid' ? <LayoutGrid size={14} /> : <List size={14} />}
-                  </button>
-                ))}
-              </div>
-              <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus size={14} style={{ marginRight: 5 }} />New Plan
-              </Button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="inline-flex h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] transition-transform active:scale-95 sm:flex-none"
+              style={{ background: '#fff', color: '#0F172A' }}>
+              <Plus size={16} /> New Plan
+            </button>
           </div>
+        </PageHero>
 
-          {/* ── KPI cards ── */}
-          <m.div variants={containerVariants} initial="hidden" animate="visible"
-            className="relative mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {/* ── KPI cards ──
+            Out of the hero and onto the page, as cards like every other KPI
+            row in the app. Inside a tinted gradient panel they were tiles on a
+            tile. */}
+        <m.div variants={containerVariants} initial="hidden" animate="visible"
+          className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {/* Scoped to whoever is in view. Opening ONE client's plans and
                 being told the studio has 11 clients and 200 library exercises
                 answers a question nobody asked from here; what matters is how
@@ -294,11 +274,10 @@ function Inner() {
                 </SpotlightCard>
               </m.div>
             ))}
-          </m.div>
         </m.div>
 
         {/* ── Tabs (horizontally scrollable on mobile) ── */}
-        <div className="mt-5 mb-5 flex gap-1 overflow-x-auto" style={{ background: 'var(--bg-subtle)', borderRadius: 11, padding: 3, scrollbarWidth: 'none' }}>
+        <div className="flex gap-1 overflow-x-auto" style={{ background: 'var(--bg-subtle)', borderRadius: 11, padding: 3, scrollbarWidth: 'none' }}>
           {[
             // Only with a client in scope — there is no brief for "the studio".
             ...(presetClientId ? [{ key: 'brief', label: 'Client Brief', color: '#0067e0' }] : []),
@@ -478,7 +457,7 @@ function Inner() {
             </m.div>
           )}
         </AnimatePresence>
-      </div>
+      </PageContainer>
 
       {/* ── Floating AI button ── */}
       <m.button
