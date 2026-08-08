@@ -596,38 +596,51 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 </div>
 
                 {/* ── MONEY ──
-                    The same hairline grid it has always been, on its own card
-                    now. It is a different question from "who is this", and it
-                    is the one a trainer is asked about at the door. */}
-                <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  className="mb-4 overflow-hidden rounded-[24px]"
-                  style={{
-                    background: 'linear-gradient(135deg, #0050ad 0%, #0059ce 100%)',
-                    boxShadow: '0 12px 32px rgba(0,80,173,0.28)',
-                  }}>
-                  <div className="grid grid-cols-3 gap-px" style={{ background: 'rgba(255,255,255,0.12)' }}>
-                    {[
-                      { label: 'Term fee', value: fmtINR(currentTermFee), sub: 'Current term', tone: '#b8d7ff' },
-                      { label: 'Paid', value: fmtINR(currentTermPaid), sub: `${completionPct}% complete`, tone: '#6ee7b7' },
-                      {
-                        label: 'Balance', value: fmtINR(currentTermBalance),
-                        sub: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'Overdue' : 'Due') : 'Cleared',
-                        tone: currentTermBalance > 0 ? '#fca5a5' : '#6ee7b7',
-                      },
-                    ].map((k) => (
-                      <div key={k.label} className="px-3 py-4 sm:px-5" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                        <p className="text-[9px] font-[750] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                          {k.label}
-                        </p>
-                        <p className="mt-1 truncate text-[18px] font-[860] tracking-[-0.02em] text-white sm:text-[22px]">
-                          {k.value}
-                        </p>
-                        <p className="mt-0.5 truncate text-[10px] font-[700]" style={{ color: k.tone }}>{k.sub}</p>
-                      </div>
-                    ))}
-                  </div>
-                </m.div>
+                    Three KPI cards instead of one solid block. The block used
+                    the hero's own navy blue at full strength, so scrolling
+                    past it read as the hero continuing rather than as a new,
+                    different question — "who is this" bleeding into "what do
+                    they owe". Each card is white now, with a coloured icon
+                    tile and value carrying the colour instead of the card
+                    itself: Term Fee keeps the hero's blue (it is the one
+                    neutral fact of the three), Paid and Balance keep the
+                    green/amber/red they already had, because paid-or-owed is
+                    a status this app colours everywhere else. */}
+                <div className="mb-4 grid grid-cols-3 gap-2 sm:gap-3">
+                  {[
+                    {
+                      label: 'Term Fee', value: fmtINR(currentTermFee), sub: 'Current term',
+                      icon: <IndianRupee size={15} />, color: '#0067e0',
+                    },
+                    {
+                      label: 'Paid', value: fmtINR(currentTermPaid), sub: `${completionPct}% complete`,
+                      icon: <CheckCircle size={15} />, color: '#10b981',
+                    },
+                    {
+                      label: 'Balance', value: fmtINR(currentTermBalance),
+                      sub: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'Overdue' : 'Due') : 'Cleared',
+                      icon: currentTermBalance > 0 ? <AlertTriangle size={15} /> : <CheckCircle size={15} />,
+                      color: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? '#ef4444' : '#f59e0b') : '#10b981',
+                    },
+                  ].map((k, i) => (
+                    <m.div key={k.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.08 + i * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                      className="rounded-[18px] p-3 sm:p-4"
+                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                      <span className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white"
+                        style={{ background: `linear-gradient(135deg, ${k.color}, ${k.color}cc)`, boxShadow: `0 3px 10px ${k.color}40` }}>
+                        {k.icon}
+                      </span>
+                      <p className="mt-2.5 text-[9px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                        {k.label}
+                      </p>
+                      <p className="mt-0.5 truncate text-[17px] font-[860] tracking-[-0.02em] sm:text-[20px]" style={{ color: k.color }}>
+                        {k.value}
+                      </p>
+                      <p className="mt-0.5 truncate text-[10px] font-[700]" style={{ color: 'var(--text-muted)' }}>{k.sub}</p>
+                    </m.div>
+                  ))}
+                </div>
 
                 {/* ── CLIENT LOGIN ──
                     Directly under the money, because eligibility depends on
