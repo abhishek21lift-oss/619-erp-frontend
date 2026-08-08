@@ -15,6 +15,7 @@ export default function WorkoutLogLandingPage() {
       <AppShell>
         <ClientPicker
           title="Workout Log"
+          subtitle="Pick a client to open their log"
           icon={<ClipboardList size={20} color="#fff" />}
           basePath="/pt-os/workout-log"
           hrefFor={(id) => `/pt-os/clients/${id}/workout-log`}

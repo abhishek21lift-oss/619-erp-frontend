@@ -15,7 +15,7 @@ import {
 } from 'recharts';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DonutChart } from '@/components/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DonutChart, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { Meal as ApiMeal, DietTemplate as ApiDietTemplate, DietAssignment, NutritionLog } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -217,10 +217,20 @@ function Inner() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const consumed = meals.reduce((s, m) => s + (m.calories || 0), 0);
-  const totalProtein = meals.reduce((s, m) => s + (m.protein || 0), 0);
-  const totalCarbs = meals.reduce((s, m) => s + (m.carbs || 0), 0);
-  const totalFats = meals.reduce((s, m) => s + (m.fats || 0), 0);
+  // Number(), because `+` on a string concatenates.
+  //
+  // protein/carbs/fats are Postgres `numeric`, and node-postgres hands numeric
+  // back as a STRING to avoid losing precision — so `0 + "25.0"` was "025.0",
+  // which is the stray leading zero on the rings. With one meal it merely looks
+  // wrong; with two it is `"025.0" + "30.0"` = "025.030.0", and every number
+  // downstream of it — the ring fill, the donut, the remaining-kcal — is NaN.
+  // calories is an `integer` column and comes back as a number, which is why it
+  // was the only one of the four that added up.
+  const num = (v: unknown) => Number(v) || 0;
+  const consumed = meals.reduce((s, m) => s + num(m.calories), 0);
+  const totalProtein = meals.reduce((s, m) => s + num(m.protein), 0);
+  const totalCarbs = meals.reduce((s, m) => s + num(m.carbs), 0);
+  const totalFats = meals.reduce((s, m) => s + num(m.fats), 0);
 
   const GOAL_CAL = activeAssignment?.daily_calories ?? 2400;
   const GOAL_PROT = activeAssignment?.daily_protein_g ?? 160;
@@ -305,33 +315,33 @@ function Inner() {
   };
 
   return (
-    <div style={{ minHeight: '100%', position: 'relative' }}>
+    <PageContainer>
       {/* Hero */}
-      <div style={{ padding: '28px 32px 24px', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <m.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #10b981, #34d399)', boxShadow: '0 4px 20px rgba(16,185,129,0.35)', flexShrink: 0 }}
-            >
-              <Salad size={22} color="#fff" />
-            </m.div>
-            <div>
-              <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Diet Plans</h1>
-              <p style={{ margin: '3px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Nutrition planning and meal tracking for your clients</p>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-              style={{ padding: '7px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', fontWeight: 600, cursor: 'pointer', outline: 'none' }} />
-            <Button variant="primary" size="sm" onClick={() => setAddMealOpen(true)}>
-              <Plus size={14} style={{ marginRight: 5 }} />Add Meal
-            </Button>
-          </div>
+      <PageHero
+        icon={<Salad size={20} />}
+        title="Diet Plans"
+        subtitle="Nutrition planning and meal tracking for your clients"
+      >
+        {/* The date and Add Meal were a flex row that wrapped under the title
+            on a phone; on the hero they are a fixed two-up. */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <input
+            type="date" value={date} onChange={(e) => setDate(e.target.value)}
+            aria-label="Diet log date"
+            className="h-[44px] w-full min-w-0 rounded-[12px] px-3 text-[13px] font-[600] text-white outline-none"
+            style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', colorScheme: 'dark' }}
+          />
+          <button
+            type="button"
+            onClick={() => setAddMealOpen(true)}
+            className="inline-flex h-[44px] cursor-pointer items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] transition-transform active:scale-95"
+            style={{ background: '#fff', color: '#0F172A' }}>
+            <Plus size={16} /> Add Meal
+          </button>
         </div>
+      </PageHero>
 
+      <div>
         {/* Client-scoping banner */}
         {clientId ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 14px', borderRadius: 10, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', marginBottom: 20, flexWrap: 'wrap' }}>
@@ -365,7 +375,7 @@ function Inner() {
                 strokeWidth={7}
                 progress={Math.min((macro.value / macro.goal) * 100, 100)}
                 color={macro.color}
-                value={String(macro.value)}
+                value={String(Math.round(macro.value * 10) / 10)}
                 label={macro.unit}
               />
               <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textAlign: 'center' }}>
@@ -764,7 +774,7 @@ function Inner() {
           50% { opacity: 0.3; }
         }
       `}</style>
-    </div>
+    </PageContainer>
   );
 }
 

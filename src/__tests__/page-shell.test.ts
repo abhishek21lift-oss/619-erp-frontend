@@ -75,6 +75,10 @@ describe('no page draws a container box around its own title', () => {
     ['app', 'pt-os', 'clients', 'birthdays', 'page.tsx'],
     ['app', 'pt-os', 'leads', 'page.tsx'],
     ['app', 'pt-os', 'new-client', 'page.tsx'],
+    ['app', 'pt-os', 'today', 'page.tsx'],
+    ['app', 'pt-os', 'workout-plans', 'page.tsx'],
+    ['app', 'pt-os', 'exercise-library', 'page.tsx'],
+    ['app', 'pt-os', 'diet-plans', 'page.tsx'],
   ];
 
   it.each(pages)('%s/%s/%s has no slab header', (...p) => {
@@ -186,6 +190,70 @@ describe('pages that had their own width and their own top gap', () => {
     const bd = src('app', 'pt-os', 'clients', 'birthdays', 'page.tsx');
     expect(bd).not.toContain('<Cake size={22} color="#fff" />');
     expect(bd).toContain('icon={<Cake size={20} />}');
+  });
+});
+
+describe('the five module pages', () => {
+  it('the client picker is a hero, not a coloured banner strip', () => {
+    // One strip served ten tools — Workout Log, Goals, Progress Photos and the
+    // rest — so all ten move together. It also carried per-title-length type
+    // stepping to stop long names running into the icon tile; the hero wraps,
+    // so that goes with it.
+    const picker = src('components', 'pt-os', 'shared', 'ClientPicker.tsx');
+    expect(picker).toContain('<PageHero');
+    expect(picker).toContain('<PageContainer>');
+    expect(picker).not.toContain('max-w-4xl pt-3 pb-6');
+    expect(picker).not.toContain("title.length > 18");
+  });
+
+  it('exercise library stops paying its gutter twice', () => {
+    // max-w-[1600px] with px-4 sm:px-6 INSIDE .shell-main's own gutter.
+    const lib = src('app', 'pt-os', 'exercise-library', 'page.tsx');
+    expect(lib).not.toContain('max-w-[1600px] px-4');
+  });
+
+  it('workout plans drops the tinted gradient panel around its header', () => {
+    // A lavender-to-pink card with its own corner glows and its own
+    // max-w-[1400px] — a different surface from every other page's header, and
+    // 120px wider than the dashboard. The KPI tiles inside it were tiles on a
+    // tile; they are cards on the page now.
+    const wp = src('app', 'pt-os', 'workout-plans', 'page.tsx');
+    expect(wp).not.toContain('max-w-[1400px]');
+    expect(wp).not.toContain('from-indigo-500/10 via-violet-500/10 to-pink-500/10');
+  });
+
+  it('today keeps its progress bar, on the hero', () => {
+    const today = src('app', 'pt-os', 'today', 'page.tsx');
+    expect(today).toContain('role="progressbar"');
+    expect(today).not.toContain('max-w-screen-md px-4');
+  });
+});
+
+describe('the diet page adds its macros instead of concatenating them', () => {
+  // protein/carbs/fats are Postgres `numeric`, and node-postgres returns
+  // numeric as a STRING to avoid losing precision. So `0 + "25.0"` was the
+  // string "025.0" — the stray leading zero on the rings.
+  //
+  // With one meal it only looks wrong. With two it is "025.0" + "30.0" =
+  // "025.030.0", and the ring fill, the macro donut and the remaining-kcal
+  // figure downstream of it are all NaN. calories is an `integer` column and
+  // comes back as a number, which is why it was the only one of the four that
+  // ever added up.
+  const diet = src('app', 'pt-os', 'diet-plans', 'page.tsx');
+
+  it('coerces every macro before summing it', () => {
+    expect(diet).toContain('const num = (v: unknown) => Number(v) || 0;');
+    for (const k of ['calories', 'protein', 'carbs', 'fats']) {
+      expect(diet).toContain(`s + num(m.${k})`);
+    }
+  });
+
+  it('no longer adds a raw field straight onto the accumulator', () => {
+    expect(diet).not.toMatch(/s \+ \(m\.(protein|carbs|fats|calories) \|\| 0\)/);
+  });
+
+  it('rounds for display, because summing floats gives 25.400000000000002', () => {
+    expect(diet).toContain('Math.round(macro.value * 10) / 10');
   });
 });
 

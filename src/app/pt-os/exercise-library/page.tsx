@@ -8,7 +8,7 @@ import {
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Badge, Button, EmptyState, Skeleton, cn } from '@/components/ui';
+import { Badge, Button, EmptyState, PageContainer, PageHero, Skeleton, cn } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -149,43 +149,38 @@ function ExerciseLibrary() {
   ]), []);
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-4 pb-16 pt-5 sm:px-6">
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <header className="mb-5 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="flex items-center gap-2.5 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--brand)]/10 text-[var(--brand)]">
-              <Dumbbell size={18} />
-            </span>
-            <span className="truncate">Exercise Library</span>
-          </h1>
-          <p className="mt-1 text-[13px] text-[var(--text-muted)]">
-            {meta ? (
-              <>
-                {meta.total.toLocaleString()} exercises
-                {meta.custom_total > 0 && ` · ${meta.custom_total} custom`}
-              </>
-            ) : (
-              'Loading library…'
+    <PageContainer>
+      {/* max-w-[1600px] with its own px-4/sm:px-6 INSIDE .shell-main's gutter
+          — so this page was 320px wider than the dashboard and paid its
+          padding twice. */}
+      <PageHero
+        icon={<Dumbbell size={20} />}
+        title="Exercise Library"
+        subtitle={meta
+          ? `${meta.total.toLocaleString()} exercises${meta.custom_total > 0 ? ` · ${meta.custom_total} custom` : ''}`
+          : 'Loading library…'}
+        actions={(
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => lib.refetch()}
+              aria-label="Refresh library"
+              className="flex h-[44px] w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-[14px] transition-transform active:scale-95"
+              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
+              <RefreshCw size={16} className={cn(loading && 'animate-spin')} />
+            </button>
+            {canAuthor && (
+              <button
+                type="button"
+                onClick={openCreate}
+                className="inline-flex h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] transition-transform active:scale-95 sm:flex-none"
+                style={{ background: '#fff', color: '#0F172A' }}>
+                <Plus size={16} /> New exercise
+              </button>
             )}
-          </p>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          <Button variant="ghost" onClick={() => lib.refetch()} aria-label="Refresh library">
-            <RefreshCw size={14} className={cn(loading && 'animate-spin')} />
-          </Button>
-          {canAuthor && (
-            <Button onClick={openCreate}>
-              <span className="flex items-center gap-1.5">
-                <Plus size={15} />
-                <span className="sm:hidden">New</span>
-                <span className="hidden sm:inline">New exercise</span>
-              </span>
-            </Button>
-          )}
-        </div>
-      </header>
+          </div>
+        )}
+      />
 
       {/* ── Search bar ─────────────────────────────────────────── */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -440,7 +435,7 @@ function ExerciseLibrary() {
         onClose={() => setPaletteOpen(false)}
         onSelect={(ex) => setDetailId(ex.id)}
       />
-    </div>
+    </PageContainer>
   );
 }
 
