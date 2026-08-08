@@ -837,13 +837,24 @@ function MonthlyTarget() {
  * One of the two money figures. A button, because both of them go somewhere:
  * collected opens the payments that made it up, pending opens the people it is
  * owed by.
+ *
+ * The ring is a thick donut rather than a thin progress hairline (same
+ * construction as `TargetRing`, just smaller) — its fill is this figure's
+ * share of the money in play today (collected + pending), so the two donuts
+ * read as complements of one whole rather than two unrelated gauges.
  */
-function RevenueHalf({
-  emoji, label, value, sub, color, onClick, reduce, delay,
+function RevenueDonut({
+  emoji, label, value, sub, color, pct, onClick, reduce, delay,
 }: {
   emoji: string; label: string; value: number; sub: string;
-  color: string; onClick: () => void; reduce: boolean; delay: number;
+  color: string; pct: number; onClick: () => void; reduce: boolean; delay: number;
 }) {
+  const size = 72;
+  const stroke = 12;
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = (Math.max(0, Math.min(100, pct)) / 100) * circ;
+
   return (
     <m.button
       type="button"
@@ -851,25 +862,41 @@ function RevenueHalf({
       initial={reduce ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.35, ease: EASE }}
-      className="flex-1 rounded-[16px] p-3.5 text-left transition-transform active:scale-[0.985]"
+      className="flex flex-1 items-center gap-3 rounded-[16px] p-3.5 text-left transition-transform active:scale-[0.985]"
       style={{
         background: `linear-gradient(150deg, ${color}14 0%, ${color}08 60%, transparent 100%)`,
         border: `1px solid ${color}24`,
         boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5)`,
       }}
     >
-      <span className="flex items-center gap-1.5">
-        <span className="text-[12px] leading-none" aria-hidden>{emoji}</span>
+      <div className="relative shrink-0" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="-rotate-90">
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+            stroke={`${color}22`} strokeWidth={stroke} />
+          <m.circle
+            cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color}
+            strokeWidth={stroke} strokeLinecap="round" strokeDasharray={circ}
+            initial={{ strokeDashoffset: reduce ? circ - dash : circ }}
+            animate={{ strokeDashoffset: circ - dash }}
+            transition={{ duration: reduce ? 0 : 1.1, ease: EASE, delay }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center text-[19px]" aria-hidden>
+          {emoji}
+        </div>
+      </div>
+
+      <div className="min-w-0 flex-1">
         <span className="text-[9.5px] font-[800] uppercase tracking-[0.11em]" style={{ color: `${color}cc` }}>
           {label}
         </span>
-      </span>
-      {/* The number is the point of the card, so it gets the size. */}
-      <p className="mt-1.5 text-[26px] font-[880] leading-none tracking-[-0.035em] tabular-nums sm:text-[30px]"
-        style={{ color }}>
-        <CountUp value={value} format={fmtINR} reduce={reduce} />
-      </p>
-      <p className="mt-1 text-[10.5px] font-[600]" style={{ color: C.muted }}>{sub}</p>
+        {/* The number is the point of the card, so it gets the size. */}
+        <p className="mt-0.5 truncate text-[19px] font-[880] leading-none tracking-[-0.03em] tabular-nums sm:text-[21px]"
+          style={{ color }}>
+          <CountUp value={value} format={fmtINR} reduce={reduce} />
+        </p>
+        <p className="mt-1 truncate text-[10.5px] font-[600]" style={{ color: C.muted }}>{sub}</p>
+      </div>
     </m.button>
   );
 }
@@ -969,14 +996,16 @@ function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
       </div>
 
       <div className="flex flex-col gap-2.5 sm:flex-row">
-        <RevenueHalf
+        <RevenueDonut
           emoji="💰" label="Collected Today" value={collected}
+          pct={pct}
           sub={payments > 0 ? `across ${payments} payment${payments === 1 ? '' : 's'}` : 'nothing yet today'}
           color={C.success} reduce={reduce} delay={0}
           onClick={() => router.push('/finance/collected-payments')}
         />
-        <RevenueHalf
+        <RevenueDonut
           emoji="⏳" label="Pending" value={pending}
+          pct={total > 0 ? 100 - pct : 0}
           sub={owing > 0 ? `from ${owing} member${owing === 1 ? '' : 's'}` : 'all balances clear'}
           color={C.warning} reduce={reduce} delay={0.07}
           onClick={() => router.push('/finance/dues')}
