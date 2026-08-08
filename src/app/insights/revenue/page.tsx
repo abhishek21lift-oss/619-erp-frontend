@@ -40,7 +40,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { KpiCard, DonutChart, PremiumBarChart, PullToRefresh, EmptyState } from '@/components/ui';
+import { KpiCard, DonutChart, PremiumBarChart, PullToRefresh, EmptyState, PageContainer, PageHero } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import MonthlyTargetHero from '@/components/revenue/MonthlyTargetHero';
 import { fmtMoney } from '@/lib/format';
@@ -311,36 +311,30 @@ function RevenueAnalytics() {
   return (
     <AppShell>
       <PullToRefresh onRefresh={refreshAll}>
-        <div className="mx-auto w-full max-w-7xl py-5 pb-24 lg:pb-10 space-y-4">
+        <PageContainer>
 
-          {/* ── Title ───────────────────────────────────────────────────── */}
-          <header className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <span
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
-                style={{ background: 'var(--bg-subtle)', color: REVENUE_COLOR }}
+          {/* ── Hero ──
+              Was its own `--bg-subtle` icon tile + h1, 32px outside the
+              dashboard's own hero pattern. PageHero now, with Refresh as a
+              hero action — the same slot balance-sheet and exercise-library
+              use for a page-level control that isn't a filter. */}
+          <PageHero
+            icon={<TrendingUp size={20} />}
+            title="Revenue Analytics"
+            subtitle="Collected revenue, incentives and trainer contribution"
+            actions={
+              <button
+                type="button"
+                onClick={refreshAll}
+                aria-label="Refresh revenue data"
+                className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
+                style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}
               >
-                <TrendingUp size={20} />
-              </span>
-              <div className="min-w-0">
-                <h1 className="text-[19px] sm:text-[22px] font-extrabold tracking-tight truncate"
-                  style={{ color: 'var(--text-primary)' }}>
-                  Revenue Analytics
-                </h1>
-                <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  Collected revenue, incentives and trainer contribution
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={refreshAll}
-              className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
-              style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}
-            >
-              <RefreshCw size={13} className={monthly.loading ? 'animate-spin' : ''} />
-              Refresh
-            </button>
-          </header>
+                <RefreshCw size={13} className={monthly.loading ? 'animate-spin' : ''} />
+                Refresh
+              </button>
+            }
+          />
 
           {/* ── Monthly target ──────────────────────────────────────────
               First, and deliberately so: it is the only element on this page
@@ -598,7 +592,7 @@ function RevenueAnalytics() {
               </table>
             </div>
           </Panel>
-        </div>
+        </PageContainer>
       </PullToRefresh>
     </AppShell>
   );

@@ -84,6 +84,7 @@ describe('no page draws a container box around its own title', () => {
     ['app', 'finance', 'invoices', 'page.tsx'],
     ['app', 'finance', 'collected-payments', 'page.tsx'],
     ['app', 'pt-os', 'balance-sheet', 'page.tsx'],
+    ['app', 'insights', 'revenue', 'page.tsx'],
   ];
 
   it.each(pages)('%s/%s/%s has no slab header', (...p) => {
@@ -311,6 +312,26 @@ describe('the finance pages', () => {
       expect(s).not.toMatch(/minmax\(\s*(180|220)px/);
       expect(s).toContain('grid-cols-2');
     }
+  });
+});
+
+describe('revenue analytics loses its own icon tile and header row', () => {
+  // The lone stray in an otherwise-converted section: renewal, sessions and
+  // traffic all used PageHero already, this one still built its own h1 next
+  // to a bare `--bg-subtle` rounded square.
+  const revenue = src('app', 'insights', 'revenue', 'page.tsx');
+
+  it('has no header-local icon tile', () => {
+    expect(revenue).not.toContain('h-11 w-11 shrink-0 items-center justify-center rounded-2xl');
+    expect(revenue).not.toContain('<header className="flex flex-wrap items-center justify-between');
+  });
+
+  it('moves refresh into the hero actions slot, styled for the navy surface', () => {
+    // The old button sat on `--bg-subtle`, which resolves light-on-light
+    // against the page background. On the hero it needs the same translucent
+    // white chip exercise-library and leads use for their own hero actions.
+    expect(revenue).toContain('actions={');
+    expect(revenue).toContain("background: 'rgba(255,255,255,0.12)'");
   });
 });
 
