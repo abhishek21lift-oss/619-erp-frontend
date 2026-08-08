@@ -79,6 +79,11 @@ describe('no page draws a container box around its own title', () => {
     ['app', 'pt-os', 'workout-plans', 'page.tsx'],
     ['app', 'pt-os', 'exercise-library', 'page.tsx'],
     ['app', 'pt-os', 'diet-plans', 'page.tsx'],
+    ['app', 'finance', 'forecast', 'page.tsx'],
+    ['app', 'finance', 'dues', 'page.tsx'],
+    ['app', 'finance', 'invoices', 'page.tsx'],
+    ['app', 'finance', 'collected-payments', 'page.tsx'],
+    ['app', 'pt-os', 'balance-sheet', 'page.tsx'],
   ];
 
   it.each(pages)('%s/%s/%s has no slab header', (...p) => {
@@ -254,6 +259,58 @@ describe('the diet page adds its macros instead of concatenating them', () => {
 
   it('rounds for display, because summing floats gives 25.400000000000002', () => {
     expect(diet).toContain('Math.round(macro.value * 10) / 10');
+  });
+});
+
+describe('the finance pages', () => {
+  // All five set `maxWidth: 1280` with their own 16–20px of side padding,
+  // INSIDE .shell-main's 16px. Balance Sheet then added a further 40px on the
+  // header block, putting its title 76px from the screen edge on a phone where
+  // the dashboard sits at 16.
+  const finance = [
+    ['app', 'finance', 'forecast', 'page.tsx'],
+    ['app', 'finance', 'dues', 'page.tsx'],
+    ['app', 'finance', 'invoices', 'page.tsx'],
+    ['app', 'finance', 'collected-payments', 'page.tsx'],
+    ['app', 'pt-os', 'balance-sheet', 'page.tsx'],
+  ];
+
+  it.each(finance)('%s/%s/%s sets no 1280px container of its own', (...p) => {
+    const s = src(...p);
+    expect(s).not.toMatch(/maxWidth: 1280/);
+    expect(s).not.toContain("maxWidth: '1280px'");
+    expect(s).not.toContain('max-w-[1280px]');
+  });
+
+  it('invoices no longer nests a second container inside the first', () => {
+    // A hero container at maxWidth 1280 and then a content container at
+    // maxWidth 1280 with its own padding — two, neither of them the
+    // dashboard's. The width assertion above catches both; this one catches
+    // the padding the inner container paid.
+    //
+    // Scoped to that padding rather than to `marginLeft: 'auto'`, which the
+    // file still uses legitimately to right-align a skeleton row and a toolbar
+    // spacer.
+    const inv = src('app', 'finance', 'invoices', 'page.tsx');
+    expect(inv).not.toContain("isSm ? '24px 32px 112px' : '24px 16px 112px'");
+  });
+
+  it('collected payments drops the tinted gradient card around its header', () => {
+    const cp = src('app', 'finance', 'collected-payments', 'page.tsx');
+    expect(cp).not.toContain('from-cyan-500/10 via-blue-500/10 to-violet-500/10');
+  });
+
+  it('the KPI rows are two-up on a phone, not one', () => {
+    // auto-fit/auto-fill minmax(180–220px, 1fr) gives one full-width tile per
+    // row at 390px: four figures over four screenfuls.
+    for (const p of [
+      ['app', 'finance', 'invoices', 'page.tsx'],
+      ['app', 'pt-os', 'balance-sheet', 'page.tsx'],
+    ]) {
+      const s = src(...p);
+      expect(s).not.toMatch(/minmax\(\s*(180|220)px/);
+      expect(s).toContain('grid-cols-2');
+    }
   });
 });
 

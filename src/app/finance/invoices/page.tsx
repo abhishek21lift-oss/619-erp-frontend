@@ -9,7 +9,7 @@ import { useToast } from '@/lib/toast';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumModal } from '@/components/premium/PremiumModal';
-import { Button, KpiCard } from '@/components/ui';
+import { Button, KpiCard, PageContainer, PageHero } from '@/components/ui';
 import { identity } from '@/lib/palette';
 import {
   FileText, Download, Send, CheckCircle2, Search,
@@ -309,133 +309,49 @@ export default function InvoicesPage() {
   return (
     <Guard role="admin">
       <AppShell>
-        <div>
+        <PageContainer>
 
-          {/* ── Hero ── */}
-          <div style={{
-            position: 'relative',
-            overflow: 'hidden',
-            borderBottom: '1px solid var(--border)',
-          }}>
-
-            <div style={{
-              position: 'relative',
-              zIndex: 1,
-              maxWidth: '1280px',
-              marginLeft: 'auto',
-              marginRight: 'auto',
-              padding: isSm ? '28px 32px' : '24px 20px',
-            }}>
-              <div style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-                gap: '16px',
-              }}>
-                {/* Left: Icon + Title + Subtitle + Breadcrumb */}
-                <div style={{ flex: 1, minWidth: isSm ? undefined : '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                      display: 'flex',
-                      height: '44px',
-                      width: '44px',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: '14px',
-                      background: 'linear-gradient(135deg, #0067e0, #0059ce)',
-                      boxShadow: '0 8px 24px rgba(0,103,224,0.25)',
-                    }}>
-                      <FileText size={20} style={{ color: '#fff' }} />
-                    </div>
-                    <h1 style={{
-                      fontSize: '26px',
-                      fontWeight: 860,
-                      letterSpacing: '-0.03em',
-                      margin: 0,
-                      color: 'var(--text-primary)',
-                    }}>Invoices</h1>
+          {/* ── Hero ──
+              maxWidth 1280 with its own 20/32px of padding INSIDE
+              .shell-main's gutter. The right-hand column of Overdue/Pending
+              figures and the Create button wrapped under the title on a phone
+              and lost their alignment; they are hero children now. */}
+          <PageHero
+            icon={<FileText size={20} />}
+            title="Invoices"
+            subtitle="Manage billing, track payments, and send invoices."
+          >
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex flex-1 gap-2.5">
+                {[
+                  { label: 'Overdue', value: fmtCurrency(stats.overdue) },
+                  { label: 'Pending', value: fmtCurrency(stats.pending) },
+                ].map((s2) => (
+                  <div key={s2.label} className="min-w-0 flex-1 rounded-[12px] px-3 py-2.5"
+                    style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
+                    <p className="truncate text-[17px] font-[800] tabular-nums leading-none text-white">{s2.value}</p>
+                    <p className="mt-1.5 text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.66)' }}>{s2.label}</p>
                   </div>
-                  <p style={{ marginTop: '6px', fontSize: '13px', color: 'var(--text-muted)' }}>
-                    Manage billing, track payments, and send invoices.
-                  </p>
-                  <div style={{
-                    marginTop: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '12px',
-                    color: 'var(--text-disabled)',
-                  }}>
-                    <span>Finance</span>
-                    <ChevronDown size={10} style={{ transform: 'rotate(-90deg)' }} />
-                    <span style={{ color: '#7fb4ff', fontWeight: 600 }}>Invoices</span>
-                  </div>
-                </div>
-
-                {/* Right: Compact Stats + Actions */}
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-end',
-                  gap: '12px',
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    gap: '16px',
-                    flexWrap: 'wrap',
-                    justifyContent: 'flex-end',
-                    alignItems: 'center',
-                  }}>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        color: 'var(--text-muted)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                      }}>Overdue</div>
-                      <div style={{
-                        fontSize: '17px',
-                        fontWeight: 800,
-                        color: '#ef4444',
-                        marginTop: '2px',
-                      }}>{fmtCurrency(stats.overdue)}</div>
-                    </div>
-                    <div style={{ width: '1px', height: '32px', background: 'rgba(0,0,0,0.1)' }} />
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        color: 'var(--text-muted)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                      }}>Pending</div>
-                      <div style={{
-                        fontSize: '17px',
-                        fontWeight: 800,
-                        color: '#F59E0B',
-                        marginTop: '2px',
-                      }}>{fmtCurrency(stats.pending)}</div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <Button variant="primary" iconLeft={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>Create Invoice</Button>
-                  </div>
-                </div>
+                ))}
               </div>
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
+                style={{ background: '#fff', color: '#0F172A' }}>
+                <Plus size={16} /> Create Invoice
+              </button>
             </div>
-          </div>
+          </PageHero>
 
-          {/* ── Main Content ── */}
-          <div style={{
-            maxWidth: '1280px',
-            marginLeft: 'auto',
-            marginRight: 'auto',
-            padding: isSm ? '24px 32px 112px' : '24px 16px 112px',
-          }}>
+          {/* ── Main Content ──
+              The second container: another maxWidth 1280 with its own 16/32px,
+              on top of the hero's. PageContainer is the only one now. The KPI
+              row was auto-fill minmax(220px), which is one full-width tile per
+              row at 390px — four figures over four screenfuls. */}
+          <div className="pb-2">
             {/* KPI Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+            <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
               <KpiCard label="Total Invoiced" value={fmtCurrency(stats.total)} icon={<FileText size={16} />} accent="blue" />
               <KpiCard label="Paid" value={fmtCurrency(stats.paid)} icon={<CheckCircle2 size={16} />} accent="emerald" />
               <KpiCard label="Pending" value={fmtCurrency(stats.pending)} icon={<Clock size={16} />} accent="amber" />
@@ -707,7 +623,7 @@ export default function InvoicesPage() {
               </div>
             </div>
           </PremiumModal>
-        </div>
+        </PageContainer>
       </AppShell>
     </Guard>
   );
