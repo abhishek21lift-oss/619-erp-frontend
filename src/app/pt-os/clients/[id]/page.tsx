@@ -940,7 +940,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     links={[
                       { label: 'Measurements', href: `/pt-os/measurements?client_id=${client.id}`, hint: 'Weight, body fat, circumferences' },
                       { label: 'Record a fitness test', href: `/pt-os/assessment?client_id=${client.id}`, hint: 'Weight, BMI, body fat, scores' },
-                      { label: 'Progress tracking setup', href: `/pt-os/progress-tracking-setup?client_id=${client.id}`, hint: 'Choose what to measure' },
+                      { label: 'Progress tracking overview', href: `/pt-os/progress-tracking-setup?client_id=${client.id}`, hint: "What's on file, and what's missing" },
                     ]}
                   />
                 </TabPanel>
