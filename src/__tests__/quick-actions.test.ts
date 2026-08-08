@@ -19,13 +19,13 @@ describe('QUICK_ACTIONS', () => {
       'Add Client',
       'Consent',
       'PAR-Q',
-      'Goal Setting',
-      'Fitness Testing',
+      'Goal',
+      'Fitness',
       'Lifestyle',
-      'Nutrition Assessment',
-      'Mobility Assessment',
-      'Posture Assessment',
-      'Strength Tracking',
+      'Nutrition',
+      'Mobility',
+      'Posture',
+      'Strength',
     ]);
   });
 
