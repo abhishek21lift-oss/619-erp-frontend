@@ -9,7 +9,7 @@ import { getSheetCacheSync, lookupByMobile } from '@/lib/sheet-import';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button } from '@/components/ui';
+import { Button, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import FloatInput from '@/components/ui/FloatInput';
 import PhotoCropModal from '@/components/pt-os/PhotoCropModal';
@@ -395,38 +395,37 @@ function NewClientForm() {
   }
 
   return (
-    <div className="pb-28">
+    <PageContainer>
 
       {/* ── PAGE HEADER ── */}
-      {/* Header — in normal flow on the page background (no sticky card). */}
-      <div className="pt-1">
-        <div className="mx-auto max-w-3xl py-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 6px 18px rgba(245,158,11,0.3)' }}>
-              <Award size={18} color="#fff" />
-            </div>
-            <div>
-              <h1 className="text-[19px] font-[860] tracking-[-0.03em] text-slate-900 leading-none sm:text-[22px]">New PT Client</h1>
-              <p className="text-[12px] font-[600] text-slate-400 mt-1">Create a new Personal Training client profile.</p>
-            </div>
-          </div>
-          {/* Progress */}
-          <div className="flex items-center justify-between gap-3 mb-1.5">
-            <span className="text-[11px] font-[700] uppercase tracking-wider text-slate-400">Progress</span>
-            <span className="text-[12px] font-[800]" style={{ color: '#F59E0B' }}>{progress}%</span>
-          </div>
-          <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: '#e2e8f0' }}>
-            <m.div
-              className="h-full rounded-full"
-              style={{ background: 'linear-gradient(90deg,#F59E0B,#D97706)' }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.4, ease: EASE }}
-            />
-          </div>
+      {/* The form keeps its max-w-3xl reading measure — a column of inputs is
+          unusable at 1280px — but the hero and the container around it now sit
+          where the dashboard's do. It used to be `pt-1` with the header in its
+          own max-w-3xl block, so the page started a pixel under the top bar
+          instead of the dashboard's eight. */}
+      <PageHero
+        icon={<Award size={20} />}
+        title="New PT Client"
+        subtitle="Create a new Personal Training client profile."
+      >
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[11px] font-[800] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.66)' }}>Progress</span>
+          <span className="text-[12px] font-[800] tabular-nums text-white">{progress}%</span>
         </div>
-      </div>
+        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full"
+          style={{ background: 'rgba(255,255,255,0.16)' }}
+          role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}
+          aria-label="Form completion">
+          <m.div
+            className="h-full rounded-full"
+            style={{ background: 'linear-gradient(90deg,#FBBF24,#F59E0B)' }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.4, ease: EASE }}
+          />
+        </div>
+      </PageHero>
 
-      <div className="mx-auto max-w-3xl py-6">
+      <div className="mx-auto w-full max-w-3xl">
         {/* ── SHEET IMPORT BANNER ── */}
         {sheetRowCount !== null && (
           <m.div
@@ -635,6 +634,6 @@ function NewClientForm() {
         onClose={() => { setCropModalOpen(false); setDroppedImageSrc(null); }}
         onConfirm={(dataUrl) => { set('photoDataUrl', dataUrl); setDroppedImageSrc(null); }}
       />
-    </div>
+    </PageContainer>
   );
 }

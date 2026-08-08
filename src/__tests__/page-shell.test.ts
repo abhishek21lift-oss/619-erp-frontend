@@ -71,6 +71,10 @@ describe('no page draws a container box around its own title', () => {
     ['app', 'insights', 'sessions', 'page.tsx'],
     ['app', 'operations', 'leaderboard', 'page.tsx'],
     ['app', 'attendance', 'page.tsx'],
+    ['app', 'pt-os', 'clients', 'page.tsx'],
+    ['app', 'pt-os', 'clients', 'birthdays', 'page.tsx'],
+    ['app', 'pt-os', 'leads', 'page.tsx'],
+    ['app', 'pt-os', 'new-client', 'page.tsx'],
   ];
 
   it.each(pages)('%s/%s/%s has no slab header', (...p) => {
@@ -141,6 +145,47 @@ describe('attendance reports merged into the attendance page', () => {
     // The old page divided a month's check-ins by the number of records in
     // that month — checkins/checkins — so "Avg Daily" printed 1 every month.
     expect(attendance).toContain('d.checkins / Math.max(d.days.size, 1)');
+  });
+});
+
+describe('pages that had their own width and their own top gap', () => {
+  // Each of these set a container of its own instead of the dashboard's:
+  // max-w-[1600px] with mt-1 on two of them (320px wider than the dashboard,
+  // a pixel higher), maxWidth 1100 with a further 20px of side padding INSIDE
+  // .shell-main's 16px on another, and pt-1 with a bare max-w-3xl on the form.
+  const own = [
+    ['app', 'pt-os', 'clients', 'page.tsx'],
+    ['app', 'pt-os', 'leads', 'page.tsx'],
+  ];
+
+  it.each(own)('%s/%s/%s no longer sets max-w-[1600px]', (...p) => {
+    expect(src(...p)).not.toContain('max-w-[1600px]');
+  });
+
+  it('the birthday page pays no gutter inside the shell gutter', () => {
+    expect(src('app', 'pt-os', 'clients', 'birthdays', 'page.tsx'))
+      .not.toContain("padding: '24px 20px 60px'");
+  });
+
+  it('the new-client form keeps a reading measure but not its own top gap', () => {
+    // max-w-3xl is right for a column of inputs — 1280px of text fields is
+    // unusable. What was wrong was the page starting at pt-1.
+    const form = src('app', 'pt-os', 'new-client', 'page.tsx');
+    expect(form).toContain('max-w-3xl');
+    expect(form).not.toContain('className="pt-1"');
+  });
+
+  it('the birthday page drops the two-hue tile that read as an emoji badge', () => {
+    // A 48px blue-to-amber gradient square with a white cake in it. Nothing
+    // else in the app mixes two hues in one icon tile, and at that size it
+    // read as a coloured emoji stuck to the corner of the page.
+    //
+    // Scoped to the header tile, not to the gradient: the same two hues are
+    // still on the small TODAY pill in a birthday row, where a celebratory
+    // badge is what it is meant to be and it is not "the top of the page".
+    const bd = src('app', 'pt-os', 'clients', 'birthdays', 'page.tsx');
+    expect(bd).not.toContain('<Cake size={22} color="#fff" />');
+    expect(bd).toContain('icon={<Cake size={20} />}');
   });
 });
 
