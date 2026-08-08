@@ -246,11 +246,11 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
     // square corners jammed into both edges of the display while every other
     // hero is an inset card with rounded ones, so this screen looks like the
     // one that is broken.
-    // pt-2 matches the dashboard's own container. .shell-main gives every page
-    // 16px (24px from 768px up); the dashboard adds 8px on top of that before
-    // its hero, and without the same 8px here this hero sat visibly tighter
+    // pt-1 matches the dashboard's own container. .shell-main gives every page
+    // 16px (24px from 768px up); the dashboard adds 4px on top of that before
+    // its hero, and without the same 4px here this hero sat visibly tighter
     // under the top bar than the one it is meant to match.
-    <div className="pt-2 pb-32">
+    <div className="pt-1 pb-32">
       {/* ── Hero ──
           Same shape as the dashboard's: inset by the shell's own padding and
           rounded on all four corners, at the same radii, so the two read as

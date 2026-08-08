@@ -400,9 +400,9 @@ function NewClientForm() {
       {/* ── PAGE HEADER ── */}
       {/* The form keeps its max-w-3xl reading measure — a column of inputs is
           unusable at 1280px — but the hero and the container around it now sit
-          where the dashboard's do. It used to be `pt-1` with the header in its
-          own max-w-3xl block, so the page started a pixel under the top bar
-          instead of the dashboard's eight. */}
+          where the dashboard's do — currently `pt-1`, read off PageContainer
+          rather than repeated here so a future change there does not leave
+          this comment describing a gap that no longer exists. */}
       <PageHero
         icon={<Award size={20} />}
         title="New PT Client"

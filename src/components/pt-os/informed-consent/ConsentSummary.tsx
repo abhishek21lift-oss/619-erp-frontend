@@ -163,12 +163,12 @@ export default function ConsentSummary({
         transition: { duration: 0.28, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] as const },
       });
 
-  // pt-2 matches the dashboard, which is the reference for how far the first
+  // pt-1 matches the dashboard, which is the reference for how far the first
   // card sits below the top bar. It was pt-3, and the "All clients" link above
   // the hero added another ~36px on top of that, so this page started
   // noticeably lower than every other one.
   return (
-    <div className="mx-auto w-full max-w-3xl pt-2 pb-10 space-y-4">
+    <div className="mx-auto w-full max-w-3xl pt-1 pb-10 space-y-4">
       {/* No back link. It was added because the page had no way out, but the
           bottom nav, the drawer and the browser control are all still there,
           and a text link above the hero pushed the whole page down to solve a

@@ -428,9 +428,9 @@ export default function QrScannerPage() {
   return (
     <Guard role="member">
       <AppShell>
-        {/* pt-2 to match the dashboard, so the first card sits the same
+        {/* pt-1 to match the dashboard, so the first card sits the same
             distance below the top bar as it does everywhere else. */}
-        <div className="pt-2">
+        <div className="pt-1">
 
           {/* ── Header: what the desk gets asked ── */}
           <div

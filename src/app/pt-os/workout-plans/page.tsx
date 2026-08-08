@@ -196,9 +196,9 @@ function Inner() {
             This was a lavender-to-pink gradient card with its own corner
             glows and its own max-w-[1400px] container — a different surface
             from every other page's header, 120px wider than the dashboard,
-            and starting at mt-1 instead of pt-2. The stat tiles that lived
-            inside it move out below, where they are cards like every other
-            KPI row in the app. */}
+            and starting at mt-1 instead of matching the dashboard's own gap.
+            The stat tiles that lived inside it move out below, where they
+            are cards like every other KPI row in the app. */}
         <PageHero
           icon={<Dumbbell size={20} />}
           title={briefClient?.name ?? 'Workout Plans'}

@@ -44,8 +44,8 @@ describe('the page container is the dashboard container', () => {
     expect(containerClasses()).toBe(dashboardClasses());
   });
 
-  it('leaves the gap under the top bar to pt-2, as the dashboard does', () => {
-    expect(containerClasses()).toContain('pt-2');
+  it('leaves the gap under the top bar to pt-1, as the dashboard does', () => {
+    expect(containerClasses()).toContain('pt-1');
   });
 
   it('adds no horizontal padding of its own', () => {

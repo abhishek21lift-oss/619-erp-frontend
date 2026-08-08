@@ -219,7 +219,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="mx-auto w-full max-w-4xl pt-2 space-y-5 pb-24">
+      <div className="mx-auto w-full max-w-4xl pt-1 space-y-5 pb-24">
 
         {/* ── Gradient Hero ── */}
         <m.div

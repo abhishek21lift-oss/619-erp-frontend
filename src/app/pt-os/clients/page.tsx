@@ -227,7 +227,7 @@ export default function PtClientsPage() {
     <Guard>
       <AppShell>
         <PullToRefresh onRefresh={clients.refetch}>
-          {/* max-w-7xl and pt-2, exactly as the dashboard: this used to be
+          {/* max-w-7xl, exactly as the dashboard: this used to be
               max-w-[1600px] with mt-1, so on a wide screen the page ran 320px
               wider than the dashboard and sat a pixel higher. */}
           <PageContainer>

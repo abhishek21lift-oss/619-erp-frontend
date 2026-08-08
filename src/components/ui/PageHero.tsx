@@ -6,7 +6,7 @@
  * ── Why this exists ────────────────────────────────────────────────────────
  *
  * The dashboard has a hero: a deep navy gradient panel with rounded corners,
- * sitting `pt-2` under the top bar and inside the shell's own gutter. Every
+ * sitting `pt-1` under the top bar and inside the shell's own gutter. Every
  * report page had grown its own version of the idea instead — a pale
  * `--bg-subtle` slab with `borderRadius: '0 0 36px 36px'` and
  * `padding: '52px 32px 40px'`, followed by a content block with
@@ -130,7 +130,7 @@ export function PageHero({ title, subtitle, icon, children, actions, className }
 
 /**
  * The page's scroll container, with exactly the dashboard's measurements:
- * `pt-2` under the top bar, the shell's own gutter left and right (no extra
+ * `pt-1` under the top bar, the shell's own gutter left and right (no extra
  * padding of its own), and the same vertical rhythm between sections.
  *
  * The bottom padding clears the mobile bottom nav plus the safe-area inset —
@@ -140,7 +140,7 @@ export function PageContainer({ children, className }: { children: React.ReactNo
   return (
     <div
       className={cn(
-        'relative mx-auto w-full max-w-7xl pt-2',
+        'relative mx-auto w-full max-w-7xl pt-1',
         'pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] lg:pb-28',
         'space-y-3.5 sm:space-y-4',
         className,

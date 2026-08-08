@@ -158,10 +158,10 @@ function ConsentHub({ clientId, toast }: ConsentHubProps) {
   // so it gets a real empty state and a single obvious next step rather than
   // the record layout with every section blank.
   if (!record) {
-    // Same treatment as the record view: pt-2 to match the dashboard, and no
+    // Same treatment as the record view: pt-1 to match the dashboard, and no
     // back link above the content.
     return (
-      <div className="mx-auto w-full max-w-3xl pt-2 pb-10">
+      <div className="mx-auto w-full max-w-3xl pt-1 pb-10">
         <div>
           <EmptyState
             icon={<FileSignature size={20} />}
