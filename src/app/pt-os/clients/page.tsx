@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import ClientKpiStrip from '@/components/pt-os/ClientKpiStrip';
 import AppShell from '@/components/AppShell';
-import { PullToRefresh } from '@/components/ui';
+import { PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api, PtClientBase } from '@/lib/api';
 
@@ -227,42 +227,26 @@ export default function PtClientsPage() {
     <Guard>
       <AppShell>
         <PullToRefresh onRefresh={clients.refetch}>
-          {/* No background or horizontal padding of our own: .shell-main
-              (globals.css) already paints the canvas and supplies the page
-              gutter + max-width. Declaring them here painted a greyer
-              --bg-subtle panel on top of --bg-canvas and doubled the side
-              padding, so the page sat narrower and a different colour than
-              the rest of the app. */}
-          <div className="relative z-10 mx-auto mt-1 w-full max-w-[1600px] pb-6">
+          {/* max-w-7xl and pt-2, exactly as the dashboard: this used to be
+              max-w-[1600px] with mt-1, so on a wide screen the page ran 320px
+              wider than the dashboard and sat a pixel higher. */}
+          <PageContainer>
 
-            {/* ── PAGE HEADER ── */}
-            <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-              <div className="flex items-center gap-4">
-                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px]"
-                  style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 8px 28px rgba(0,103,224,0.35)' }}>
-                  <Users size={24} className="text-white" />
-                  <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-[800] text-white"
-                    style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 2px 8px rgba(16,185,129,0.5)' }}>
-                    {activeCount}
-                  </div>
-                </div>
-                <div>
-                  <h1 className="text-[28px] font-[860] tracking-[-0.04em] text-gray-900 leading-tight">PT Clients</h1>
-                  <p className="mt-0.5 text-[13px] font-[500] text-slate-500">
-                    Personal training client management
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => router.push('/pt-os/new-client')}
-                className="inline-flex items-center gap-2.5 rounded-[14px] px-5 py-3 text-[13px] font-[700] text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(124,58,237,0.5)]"
-                style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 6px 24px rgba(0,103,224,0.35)' }}>
-                <UserPlus size={16} />
-                New Client
-              </button>
-            </m.div>
+            <PageHero
+              icon={<Users size={20} />}
+              title="PT Clients"
+              subtitle="Personal training client management"
+              actions={(
+                <button
+                  type="button"
+                  onClick={() => router.push('/pt-os/new-client')}
+                  className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
+                  style={{ background: '#fff', color: '#0F172A' }}>
+                  <UserPlus size={16} />
+                  New Client
+                </button>
+              )}
+            />
 
             {/* The strip's own file explains why it is one object rather
                 than four cards, and why it is 2x2 on mobile. */}
@@ -373,7 +357,7 @@ export default function PtClientsPage() {
                 </div>
               )}
             </m.div>
-          </div>
+          </PageContainer>
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
         </PullToRefresh>
       </AppShell>

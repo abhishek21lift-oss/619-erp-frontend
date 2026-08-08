@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button, FloatInput, EmptyState, PullToRefresh } from '@/components/ui';
+import { Button, FloatInput, EmptyState, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import { useAsync } from '@/lib/use-async';
@@ -328,32 +328,24 @@ export default function LeadsPage() {
     <Guard>
       <AppShell>
         <PullToRefresh onRefresh={leads.refetch}>
-          {/* No background or horizontal padding of our own: .shell-main
-              (globals.css) already paints the canvas and supplies the page
-              gutter + max-width. Re-declaring them here painted a greyer
-              --bg-subtle panel on top of --bg-canvas and doubled the side
-              padding, so the page sat narrower and a different colour than
-              every other screen. */}
-          <div className="relative z-10 mx-auto mt-1 w-full max-w-[1600px] pb-6">
+          {/* max-w-7xl and pt-2, exactly as the dashboard — this was
+              max-w-[1600px] with mt-1. */}
+          <PageContainer>
 
-              {/* Header */}
-              <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px]"
-                    style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 8px 28px rgba(0,103,224,0.35)' }}>
-                    <UserSearch size={24} className="text-white" />
-                  </div>
-                  <div>
-                    <h1 className="text-[24px] sm:text-[28px] font-[860] tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>Leads</h1>
-                    <p className="mt-0.5 text-[13px] font-[500]" style={{ color: 'var(--text-muted)' }}>Prospective clients, before they enrol in PT</p>
-                  </div>
-                </div>
-                <Button iconLeft={<Plus size={15} />} onClick={openCreate}
-                  style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff' }}>
-                  Add Lead
-                </Button>
-              </m.div>
+              <PageHero
+                icon={<UserSearch size={20} />}
+                title="Leads"
+                subtitle="Prospective clients, before they enrol in PT"
+                actions={(
+                  <button
+                    type="button"
+                    onClick={openCreate}
+                    className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
+                    style={{ background: '#fff', color: '#0F172A' }}>
+                    <Plus size={16} /> Add Lead
+                  </button>
+                )}
+              />
 
               {/* KPIs */}
               <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -435,7 +427,7 @@ export default function LeadsPage() {
                   ))}
                 </div>
               )}
-          </div>
+          </PageContainer>
         </PullToRefresh>
 
         {/* Add / Edit dialog */}

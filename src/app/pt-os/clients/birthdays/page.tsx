@@ -6,7 +6,7 @@ import { m } from 'framer-motion';
 import { Cake, Search, PartyPopper, Phone, MessageCircle, Sparkles } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PullToRefresh } from '@/components/ui';
+import { PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api, ClientBirthday } from '@/lib/api';
 
@@ -72,30 +72,34 @@ export default function ClientBirthdaysPage() {
     <Guard roles={['admin', 'manager', 'trainer']}>
       <AppShell>
         <PullToRefresh onRefresh={bd.refetch}>
-          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 20px 60px' }}>
+          {/* maxWidth 1100 with its own 20px of side padding — inside
+              .shell-main's 16px — put this page both narrower and further from
+              the edge than the dashboard. PageContainer carries the
+              dashboard's measurements. */}
+          <PageContainer>
 
-            {/* Hero */}
-            <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              style={{ padding: '28px 4px 24px', marginBottom: 8, borderBottom: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #0067e0, #f59e0b)', boxShadow: '0 4px 20px rgba(0,103,224,0.35)', flexShrink: 0 }}>
-                  <Cake size={22} color="#fff" />
-                </div>
-                <div>
-                  <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Clients Birthday</h1>
-                  <p style={{ margin: '3px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Never miss a client&apos;s birthday — sorted by who&apos;s up next</p>
-                </div>
-              </div>
-
+            {/* The tile that used to sit here was a blue-to-amber gradient
+                square with a white cake in it. Nothing else in the app mixes
+                two hues in one icon tile, and at 48px it read as a coloured
+                emoji badge stuck to the corner of the page rather than as part
+                of a header. The cake is still the page's mark — it is the one
+                thing that says at a glance which screen this is — but in the
+                same translucent tile every other hero uses. */}
+            <PageHero
+              icon={<Cake size={20} />}
+              title="Clients Birthday"
+              subtitle="Never miss a client's birthday — sorted by who's up next"
+            >
               {todayCount > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 12, background: 'rgba(0,103,224,0.1)', border: '1px solid rgba(0,103,224,0.25)' }}>
-                  <PartyPopper size={15} style={{ color: '#0067e0' }} />
-                  <span style={{ fontSize: 12.5, fontWeight: 700, color: '#0067e0' }}>
+                <div className="inline-flex items-center gap-2 rounded-[12px] px-3.5 py-2.5"
+                  style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                  <PartyPopper size={15} className="shrink-0 text-white" />
+                  <span className="text-[12.5px] font-[700] text-white">
                     {todayCount} {todayCount === 1 ? 'client has' : 'clients have'} a birthday today — say hi!
                   </span>
                 </div>
               )}
-            </m.div>
+            </PageHero>
 
             {/* Search + filters */}
             <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -202,7 +206,7 @@ export default function ClientBirthdaysPage() {
             <style>{`
               @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 0.3; } }
             `}</style>
-          </div>
+          </PageContainer>
         </PullToRefresh>
       </AppShell>
     </Guard>
