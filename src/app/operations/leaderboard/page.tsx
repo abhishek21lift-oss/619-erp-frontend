@@ -39,7 +39,7 @@ import { AlertTriangle, CalendarRange, Crown, RotateCw, Trophy, UserCheck, Users
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import ClientAvatar, { initialsOf } from '@/components/pt-os/ClientAvatar';
-import { EmptyState, PageHeader, Skeleton } from '@/components/ui';
+import { EmptyState, PageContainer, PageHero, Skeleton } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { Attendance, Client } from '@/lib/api';
 import { fmtDate, toInputDate } from '@/lib/format';
@@ -138,18 +138,21 @@ function Inner() {
 
   return (
     <AppShell>
-      <div className="page-main">
-        <div className="page-content mx-auto w-full max-w-screen-md">
-          <PageHeader
-            icon={<Trophy size={18} />}
-            title="Check-in Leaderboard"
-            // The range is not repeated here. It is in the two date fields
-            // immediately below, and a second copy in DD-MM-YYYY wrapped the
-            // header onto three lines on a phone. Where the range genuinely
-            // changes the meaning of what is on screen — an empty board — it
-            // is spelled out there instead.
-            subtitle="Who is actually turning up"
-          />
+      <PageContainer>
+        {/* `.page-main` used to wrap this and added its own 16px on top of the
+            shell's, so the page sat at 32px from the edge while the dashboard
+            sat at 16. PageContainer carries the dashboard's exact
+            measurements. */}
+        <PageHero
+          icon={<Trophy size={20} />}
+          title="Check-in Leaderboard"
+          // The range is not repeated here. It is in the two date fields
+          // immediately below, and a second copy in DD-MM-YYYY wrapped the
+          // header onto three lines on a phone. Where the range genuinely
+          // changes the meaning of what is on screen — an empty board — it
+          // is spelled out there instead.
+          subtitle="Who is actually turning up"
+        />
 
           {/* ── Range ────────────────────────────────────────────────────
               Presets first, because "last 30 days" is the question almost
@@ -159,7 +162,7 @@ function Inner() {
               flex-wrap row where the label and its field could land on
               different lines. */}
           <div
-            className="mb-4 rounded-[18px] p-3.5"
+            className="rounded-[18px] p-3.5"
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
           >
             <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
@@ -211,7 +214,7 @@ function Inner() {
 
           {/* Three numbers off the same request. The old page made the reader
               add the column up to learn how many check-ins there had been. */}
-          <div className="mb-4 grid grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-3 gap-2.5">
             <Stat icon={<UserCheck size={14} />} label="Check-ins" value={loading ? null : totalCheckins} />
             <Stat icon={<Users size={14} />} label="Members" value={loading ? null : board.length} />
             <Stat
@@ -257,8 +260,7 @@ function Inner() {
               </p>
             </>
           )}
-        </div>
-      </div>
+      </PageContainer>
     </AppShell>
   );
 }

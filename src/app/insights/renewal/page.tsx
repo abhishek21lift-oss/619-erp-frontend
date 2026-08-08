@@ -6,6 +6,7 @@ import AppShell from '@/components/AppShell';
 import { RefreshCcw, Users, AlertTriangle, CalendarClock, Percent, Clock, UserCheck } from 'lucide-react';
 import { api, Client } from '@/lib/api';
 import { fmtDate } from '@/lib/format';
+import { PageContainer, PageHero } from '@/components/ui';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -94,22 +95,20 @@ function Inner() {
 
   return (
     <AppShell>
-      <div style={{ background: 'var(--bg-subtle)', padding: '52px 32px 40px', borderRadius: '0 0 36px 36px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 54, height: 54, borderRadius: 16, background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 8px 32px rgba(0,103,224,0.2)', border: '1px solid var(--border)' }}>
-            <RefreshCcw size={24} color="#fff" />
-          </div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Renewal Report</h1>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Monitor membership renewals and upcoming expirations</p>
-          </div>
-        </div>
-      </div>
+      <PageContainer>
+        <PageHero
+          icon={<RefreshCcw size={20} />}
+          title="Renewal Report"
+          subtitle="Monitor membership renewals and upcoming expirations"
+        />
 
-      <div style={{ padding: '24px 32px' }}>
-        {error && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#ef4444', marginBottom: 20 }}>{error}</div>}
+        {error && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: '10px 16px', fontSize: 13, color: '#ef4444' }}>{error}</div>}
 
-        <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 24 }}>
+        {/* Two up on a phone. `minmax(150px, 1fr)` auto-fit gave one full-width
+            tile per row at 390px, so four numbers took four screenfuls of
+            scrolling to read — the whole point of a KPI row is that you take
+            it in at once. */}
+        <m.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <KpiCard label="Active Members" value={stats.active} icon={<Users size={16} />} gradient="linear-gradient(135deg, #ecfdf5, #fff)" />
           <KpiCard label="Expiring in 7 Days" value={stats.expiring7} icon={<AlertTriangle size={16} />} gradient="linear-gradient(135deg, #fef2f2, #fff)" />
           <KpiCard label="Expiring in 30 Days" value={stats.expiring30} icon={<CalendarClock size={16} />} gradient="linear-gradient(135deg, #fffbeb, #fff)" />
@@ -155,9 +154,9 @@ function Inner() {
                       const daysColor = days <= 7 ? '#ef4444' : days <= 14 ? '#f59e0b' : '#10b981';
                       const daysBg = days <= 7 ? 'rgba(239,68,68,0.08)' : days <= 14 ? 'rgba(245,158,11,0.08)' : 'rgba(16,185,129,0.08)';
                       return (
-                        <tr key={c.id || i} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s', background: i % 2 === 0 ? '#f8fafc' : '#fff' }}
+                        <tr key={c.id || i} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s', background: i % 2 === 0 ? 'var(--bg-subtle)' : 'var(--bg-card)' }}
                           onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,103,224,0.05)'; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f8fafc' : '#fff'; }}>
+                          onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? 'var(--bg-subtle)' : 'var(--bg-card)'; }}>
                           <td style={{ ...td, fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</td>
                           <td style={{ ...td }}>
                             <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: 'rgba(0,103,224,0.08)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.12)' }}>{c.package_type || '—'}</span>
@@ -179,7 +178,7 @@ function Inner() {
             </div>
           </m.div>
         </m.div>
-      </div>
+      </PageContainer>
     </AppShell>
   );
 }

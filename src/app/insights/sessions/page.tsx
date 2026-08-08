@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
-import { PremiumBarChart } from '@/components/ui';
+import { CalendarRange } from 'lucide-react';
+import { PageContainer, PageHero, PremiumBarChart } from '@/components/ui';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -58,53 +59,80 @@ function Inner() {
 
   return (
     <AppShell>
-      <div className="page-main">
-        <div className="page-content fade-up">
-          {error && <div className="alert alert-error">{error}</div>}
-
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>From</label>
-            <input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)}
-              className="rounded-[10px] px-3 py-1.5 text-[13px] outline-none"
-              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
-            <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>To</label>
-            <input type="date" value={to} min={from} max={today} onChange={(e) => setTo(e.target.value)}
-              className="rounded-[10px] px-3 py-1.5 text-[13px] outline-none"
-              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
+      <PageContainer>
+        {/* This page had no title of any kind. It opened on a bare date range
+            and three numbers, so the only way to know what you were looking at
+            was to remember what you had tapped to get here. */}
+        <PageHero
+          icon={<CalendarRange size={20} />}
+          title="Session Utilisation"
+          subtitle="Which days of the week the studio actually fills up"
+        >
+          <div className="grid grid-cols-2 gap-2.5">
+            <HeroDate label="From" value={from} max={to} onChange={setFrom} />
+            <HeroDate label="To" value={to} min={from} max={today} onChange={setTo} />
           </div>
+        </PageHero>
 
-          <div className="kpi-grid mb-3">
-            <Stat label="Total Check-ins" value={total} color="var(--brand)" />
-            <Stat label="Avg Per Day" value={avg} color="var(--info)" />
-            <Stat label="Busiest Day" value={busiest.count > 0 ? busiest.day : '—'} color="var(--success)" />
+        {error && (
+          <div className="rounded-[12px] px-4 py-2.5 text-[13px]"
+            style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626' }}>
+            {error}
           </div>
+        )}
 
-          <div className="card">
-            <div className="card-title">Check-ins by day of week</div>
-            {loading ? (
-              <div style={{ height: 220, background: 'var(--bg-subtle)', borderRadius: 10 }} />
-            ) : (
-              <PremiumBarChart
-                data={byDay as Record<string, unknown>[]}
-                xKey="day"
-                bars={[{ key: 'count', label: 'Check-ins', color: '#10b981' }]}
-                height={220}
-              />
-            )}
-          </div>
+        <div className="grid grid-cols-3 gap-2.5">
+          <Stat label="Total Check-ins" value={total} color="var(--brand)" />
+          <Stat label="Avg Per Day" value={avg} color="var(--brand)" />
+          <Stat label="Busiest Day" value={busiest.count > 0 ? busiest.day : '—'} color="var(--success)" />
         </div>
-      </div>
+
+        <div className="rounded-[18px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+          <h2 className="mb-3 text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>
+            Check-ins by day of week
+          </h2>
+          {loading ? (
+            <div className="animate-pulse rounded-[12px]" style={{ height: 220, background: 'var(--bg-subtle)' }} />
+          ) : (
+            <PremiumBarChart
+              data={byDay as Record<string, unknown>[]}
+              xKey="day"
+              bars={[{ key: 'count', label: 'Check-ins', color: '#10b981' }]}
+              height={220}
+            />
+          )}
+        </div>
+      </PageContainer>
     </AppShell>
   );
 }
 
 function Stat({ label, value, color }: { label: string; value: number | string; color: string }) {
   return (
-    <div className="kpi-card">
-      <div style={{ fontSize: 26, fontWeight: 800, color, letterSpacing: '-0.03em' }} className="tabular">{value}</div>
-      <div className="text-muted" style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '1.4px', textTransform: 'uppercase', marginTop: 4 }}>
+    <div className="rounded-[16px] p-3" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      <div className="text-[22px] font-[800] tabular-nums leading-none tracking-[-0.03em]" style={{ color }}>{value}</div>
+      <div className="mt-1.5 text-[10px] font-[800] uppercase leading-tight tracking-wider" style={{ color: 'var(--text-muted)' }}>
         {label}
       </div>
     </div>
+  );
+}
+
+/** A date field on the hero's dark surface — see the twin in insights/traffic. */
+function HeroDate({
+  label, value, min, max, onChange,
+}: { label: string; value: string; min?: string; max?: string; onChange: (v: string) => void }) {
+  return (
+    <label className="block min-w-0">
+      <span className="mb-1 block text-[10.5px] font-[800] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.66)' }}>
+        {label}
+      </span>
+      <input
+        type="date" value={value} min={min} max={max}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-[44px] w-full min-w-0 rounded-[12px] px-3 text-[13px] font-[600] text-white outline-none"
+        style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', colorScheme: 'dark' }}
+      />
+    </label>
   );
 }
