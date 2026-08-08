@@ -17,8 +17,6 @@ import { describe, expect, it, vi, afterEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import { ClientTabs, TABS } from '@/components/pt-os/client/ClientTabs';
 
-// framer-motion's layoutId animation needs no real layout here; the pill is
-// rendered either way and its presence is what matters.
 const originals: Array<() => void> = [];
 
 /** Make the tablist report itself as horizontally scrollable. */
@@ -129,15 +127,20 @@ describe('<ClientTabs /> — the strip', () => {
     expect(scrollTo).toHaveBeenCalled();
   });
 
-  it('gives the selected tile an opaque background, not a translucent one', () => {
-    // Resting tiles already sit on a soft colour tint (Quick Actions' own
-    // look). A translucent selected state on that same tint would be
-    // indistinguishable from every other tile, so it must be opaque.
-    render(<ClientTabs active="overview" onChange={() => {}} />);
-    const selected = strip().querySelector('[aria-selected="true"]') as HTMLElement;
-    expect(selected).not.toBeNull();
-    expect(selected.style.background).toContain('--bg-white');
-    expect(selected.style.background).not.toContain('--bg-card');
+  it('marks the selected tile with a ring on the icon, not a card behind it', () => {
+    // The icon grid has no card of its own — a coloured rectangle wrapped
+    // around it was the extra layer that got simplified away. Selection is a
+    // ring drawn on the icon tile's own box-shadow instead.
+    render(<ClientTabs active="training" onChange={() => {}} />);
+    const tabs = screen.getAllByRole('tab');
+    const iconStyle = (t: HTMLElement) => (t.querySelector('span[style*="linear-gradient"]') as HTMLElement).style;
+
+    const selected = tabs.find((t) => t.getAttribute('aria-selected') === 'true')!;
+    const resting = tabs.find((t) => t.getAttribute('aria-selected') === 'false')!;
+    expect(iconStyle(selected).boxShadow).not.toBe(iconStyle(resting).boxShadow);
+    // No tab, selected or not, wraps its icon in a background rectangle of
+    // its own — the button itself carries no background at all.
+    for (const t of tabs) expect(t.style.background).toBe('');
   });
 
   it('renders each tab as an icon tile over a label, like Quick Actions', () => {

@@ -98,25 +98,27 @@ export interface ClientTabsProps {
 /**
  * The tab strip.
  *
- * Same shape as the dashboard's Quick Actions strip: a coloured icon tile
- * over a label, scrolling horizontally. Trainers already read that shape as
- * "quick links into a client's world" from the dashboard, so the profile's
- * own section switcher wears it instead of a boxed pill bar that looked like
- * nothing else on the page.
+ * An icon grid, the way iOS's own Health or Settings tiles are: a solid
+ * coloured squircle with a white glyph, a label under it, nothing else. The
+ * first version of this redesign kept the pill strip's card underneath —
+ * each tile sat in a rectangle tinted to match its icon — which put every
+ * colour on screen twice and read as busier than the plain icon grid it was
+ * reaching for. Dropping the rectangle and letting the icon carry its own
+ * colour alone is what made it actually read as simple.
  *
  * Horizontally scrollable rather than wrapped: twelve tabs wrap to three rows
  * on a phone, and a three-row tab bar is a menu pretending to be a tab bar.
  * Scrolling keeps it one line.
  *
- * ── What still makes it a tab strip, not a Quick Actions copy ─────────────
+ * ── What still makes it a tab strip, not an icon-grid launcher ────────────
  *
- * Every tile in Quick Actions does the same thing — navigate away — so
- * nothing there needs to show a "current" state. This strip switches what is
- * on screen without leaving the page, so exactly one tile is always the
- * selected one: raised on an opaque card with a solid ring in its own colour,
- * against the rest sitting flat in their usual soft tint. Losing that
- * distinction would turn every click into a guess about what is currently
- * showing.
+ * A Quick Actions tile or a home-screen icon always does the same thing —
+ * open something else — so none of them need a "current" state. This strip
+ * switches what is on screen without leaving the page, so exactly one tile
+ * is always the selected one: its icon carries a ring in its own colour and
+ * sits very slightly larger, and its label picks up that same colour instead
+ * of staying neutral grey. Losing that distinction would turn every tap into
+ * a guess about what is currently showing.
  *
  * ── Why the edges fade ─────────────────────────────────────────────────────
  *
@@ -214,30 +216,33 @@ export function ClientTabs({ active, onChange, counts }: ClientTabsProps) {
           const on = t.key === active;
           const n = counts?.[t.key];
           return (
-            <m.button
+            <button
               key={t.key}
               data-tab={t.key}
               role="tab"
               aria-selected={on}
               onClick={() => onChange(t.key)}
-              initial={reduce ? false : { opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: reduce ? 0 : i * 0.03, duration: 0.3 }}
-              className="flex shrink-0 flex-col items-center gap-1.5 rounded-[16px] p-3 text-center transition-all active:scale-95"
-              style={{
-                minWidth: 72,
-                // Selected sits on an opaque card with a solid ring in the
-                // tile's own colour, same as the pill it replaces — a
-                // translucent selected state on the same soft tint every
-                // other tile already wears would be indistinguishable from
-                // them. Resting tiles keep Quick Actions' own flat tint.
-                background: on ? 'var(--bg-white)' : `${t.color}12`,
-                border: on ? `1px solid ${t.color}` : `1px solid ${t.color}22`,
-                boxShadow: on ? `0 4px 14px ${t.color}40` : 'none',
-              }}
+              className="flex shrink-0 flex-col items-center gap-1.5 rounded-[14px] px-1 py-1 text-center transition-transform active:scale-95"
+              style={{ minWidth: 64 }}
             >
-              <span className="relative flex h-10 w-10 items-center justify-center rounded-[13px] text-white"
-                style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}cc)`, boxShadow: `0 4px 12px ${t.color}40` }}>
+              {/* No card, no tint rectangle behind it — an icon-grid tile
+                  carries its own colour and nothing else does, the way an
+                  iOS Health or Settings tile does. Selection is a ring on the
+                  tile itself, not a second box wrapped around it; two
+                  concentric coloured boxes was the "little busy" this
+                  simplified. */}
+              <m.span
+                className="relative flex h-11 w-11 items-center justify-center rounded-[14px] text-white"
+                initial={reduce ? false : { opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: on ? 1.06 : 1 }}
+                transition={{ delay: reduce ? 0 : i * 0.03, duration: 0.25, ease: EASE }}
+                style={{
+                  background: `linear-gradient(135deg, ${t.color}, ${t.color}cc)`,
+                  boxShadow: on
+                    ? `0 0 0 2.5px ${t.color}59, 0 6px 16px ${t.color}55`
+                    : `0 4px 10px ${t.color}35`,
+                }}
+              >
                 {t.icon}
                 {n != null && n > 0 && (
                   <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-[800]"
@@ -245,12 +250,12 @@ export function ClientTabs({ active, onChange, counts }: ClientTabsProps) {
                     {n}
                   </span>
                 )}
-              </span>
+              </m.span>
               <span className="text-[9.5px] font-[680] leading-tight whitespace-nowrap"
-                style={{ color: on ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                style={{ color: on ? t.color : 'var(--text-muted)' }}>
                 {t.label}
               </span>
-            </m.button>
+            </button>
           );
         })}
       </div>
