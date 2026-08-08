@@ -8,7 +8,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import type { Payment } from '@/lib/api';
-import { Button, KpiCard, PullToRefresh } from '@/components/ui';
+import { Button, KpiCard, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import {
   Banknote, Search, ArrowUpDown, User, Wallet,
   Smartphone, CreditCard, Receipt, CalendarDays, RefreshCw, Inbox,
@@ -119,73 +119,49 @@ function Inner() {
   return (
     <AppShell>
       <PullToRefresh onRefresh={fetchPayments}>
-      <div style={{ minHeight: '100dvh' }}>
-        {/* Page Header — gradient hero, matching Today's Sale / Record Payment */}
-        <div className="relative z-10 mt-1 max-w-[1280px] mx-auto pt-2">
-          <m.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-violet-500/10 p-6 sm:p-8 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)]"
-          >
-            {/* Corner glows as ONE unfiltered gradient layer, replacing two
-                `blur-3xl` circles. `filter: blur()` promotes a child to its own
-                compositing layer, and WebKit then applies this card's rounded
-                `overflow-hidden` clip to that layer as a RECTANGLE — so the blob's
-                square corner paints outside the rounded corner. Reported on iOS
-                against the client profile card, which had the identical pattern.
-                A gradient needs no filter, so nothing is promoted and the clip holds.
-                240px, and the averaged colour for each two-tone blob, were fitted
-                against the old rendering by pixel comparison: 0.99/255 mean
-                difference, where two offset radials per blob scored 2.10. */}
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                backgroundImage: [
-                  'radial-gradient(circle 240px at calc(100% - 32px) 32px, rgba(65,188,244,0.2), transparent 70%)',
-                  'radial-gradient(circle 240px at 32px calc(100% - 32px), rgba(132,152,250,0.2), transparent 70%)',
-                ].join(', '),
-              }}
-              aria-hidden
-            />
+      <PageContainer>
+        {/* ── Hero ──
+            This was a cyan-to-violet gradient card with its own corner glows,
+            on its own max-w-[1280px] container with mt-1 pt-2 — and then the
+            content below it opened a SECOND max-w-1280 container with a
+            further 20px of padding, inside .shell-main's gutter. Two nested
+            containers, neither of them the dashboard's. */}
+        <PageHero
+          icon={<Banknote size={20} />}
+          title="Collected Payments"
+          subtitle="Track and manage all incoming payments"
+        >
+          <div className="flex gap-2.5">
+            <button
+              type="button"
+              onClick={fetchPayments}
+              className="inline-flex h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] text-white transition-transform active:scale-95 sm:flex-none"
+              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
+              <RefreshCw size={15} /> Refresh
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/finance/record-payment')}
+              className="inline-flex h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] transition-transform active:scale-95 sm:flex-none"
+              style={{ background: '#fff', color: '#0F172A' }}>
+              <Banknote size={15} /> Record Payment
+            </button>
+          </div>
+        </PageHero>
 
-            <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-              <div className="flex items-center gap-3.5">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 text-white shadow-[0_4px_16px_rgba(6,182,212,0.35)]">
-                  <Banknote size={22} />
-                </span>
-                <div>
-                  <h1 className="text-[22px] sm:text-[28px] font-extrabold tracking-[-0.03em] leading-tight text-[var(--text-primary)]">
-                    Collected Payments
-                  </h1>
-                  <p className="mt-1 text-[13px] text-[var(--text-muted)]">
-                    Track and manage all incoming payments
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" iconLeft={<RefreshCw size={13} />} onClick={fetchPayments}>
-                  Refresh
-                </Button>
-                <Button variant="primary" size="sm" iconLeft={<Banknote size={13} />} onClick={() => router.push('/finance/record-payment')}>
-                  + Record Payment
-                </Button>
-              </div>
-            </div>
-
-            {/* KPI Row — 2-up on mobile instead of stacking full-width */}
-            {!loading && (
-              <div className="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {/* KPI Row — 2-up on mobile instead of stacking full-width. Out of
+            the tinted panel and onto the page, as cards. */}
+        {!loading && (
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <KpiCard icon={<Layers size={16} />} label="Total Payments" value={filtered.length.toString()} accent="sky" />
                 <KpiCard icon={<IndianRupee size={16} />} label="Total Collected" value={fmtINR(totalCollected)} accent="emerald" />
                 <KpiCard icon={<List size={16} />} label="Unique Methods" value={methods.length.toString()} accent="violet" />
-                <KpiCard icon={<TrendingUp size={16} />} label="Largest Payment" value={fmtINR(largestPayment)} accent="amber" />
-              </div>
-            )}
-          </m.div>
-        </div>
+            <KpiCard icon={<TrendingUp size={16} />} label="Largest Payment" value={fmtINR(largestPayment)} accent="amber" />
+          </div>
+        )}
 
         {/* Main Content */}
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '20px 20px 48px' }}>
+        <div>
           {/* Search & Filters */}
           <div className="mb-5 flex flex-col gap-3">
             <div className="relative w-full">
@@ -426,7 +402,7 @@ function Inner() {
             )}
           </div>
         </div>
-      </div>
+      </PageContainer>
       </PullToRefresh>
     </AppShell>
   );

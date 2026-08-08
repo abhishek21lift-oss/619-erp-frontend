@@ -5,7 +5,7 @@ import { m } from 'framer-motion';
 import { Wallet, TrendingUp, AlertCircle, CheckCircle, Search, Download, IndianRupee, Users, Clock } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PullToRefresh } from '@/components/ui';
+import { PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api, PtClientBase } from '@/lib/api';
 
@@ -108,44 +108,39 @@ export default function BalanceSheetPage() {
     <Guard role="admin">
       <AppShell>
         <PullToRefresh onRefresh={bs.refetch}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
+        <PageContainer>
 
-          {/* ── Hero ── */}
-          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            style={{ padding: '32px 40px', marginBottom: 28, borderBottom: '1px solid #f1f5f9' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,103,224,0.08)' }}>
-                <Wallet size={22} color="#0067e0" />
-              </div>
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0067e0' }}>Finance · PT OS</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, flexWrap: 'wrap' }}>
-              <div>
-                <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#0F172A', margin: '0 0 8px' }}>Balance Sheet</h1>
-                <p style={{ maxWidth: 500, fontSize: 14, lineHeight: 1.6, color: '#64748b' }}>
-                  Track outstanding dues, collection rates, and payment status across all PT clients.
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+          {/* ── Hero ──
+              maxWidth 1280 with 20px of its own padding INSIDE .shell-main's
+              gutter, and then a further 40px on the header block — so the
+              title sat 76px from the screen edge on a phone where the
+              dashboard sits at 16. */}
+          <PageHero
+            icon={<Wallet size={20} />}
+            title="Balance Sheet"
+            subtitle="Track outstanding dues, collection rates, and payment status across all PT clients."
+          >
+            {(clearCount > 0 || overdueCount > 0) && (
+              <div className="flex flex-wrap gap-2">
                 {clearCount > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                    <CheckCircle size={12} color="#10b981" />
-                    <span style={{ fontSize: 12, fontWeight: 600, color: '#10b981' }}>{clearCount} cleared</span>
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-[700] text-white"
+                    style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                    <CheckCircle size={13} /> {clearCount} cleared
+                  </span>
                 )}
                 {overdueCount > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.2)' }}>
-                    <AlertCircle size={12} color="#dc2626" />
-                    <span style={{ fontSize: 12, fontWeight: 600, color: '#dc2626' }}>{overdueCount} overdue</span>
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-[700]"
+                    style={{ background: 'rgba(248,113,113,0.22)', border: '1px solid rgba(248,113,113,0.35)', color: '#FECACA' }}>
+                    <AlertCircle size={13} /> {overdueCount} overdue
+                  </span>
                 )}
               </div>
-            </div>
-          </m.div>
+            )}
+          </PageHero>
 
           {/* ── KPI Cards ── */}
           <m.div variants={containerVariants} initial="hidden" animate="visible"
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 24 }}>
+            className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {KPIS.map(k => {
               const Icon = k.icon;
               return (
@@ -277,7 +272,7 @@ export default function BalanceSheetPage() {
               </div>
             )}
           </m.div>
-        </div>
+        </PageContainer>
         </PullToRefresh>
       </AppShell>
     </Guard>

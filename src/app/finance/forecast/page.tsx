@@ -4,7 +4,7 @@ import { m } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { KpiCard } from '@/components/ui';
+import { KpiCard, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import { TrendingUp, CalendarRange, BarChart3, Target } from 'lucide-react';
 
@@ -63,24 +63,21 @@ function Inner() {
 
   return (
     <AppShell>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
+      <PageContainer>
 
-        {/* ── Hero ── */}
-        <div style={{ padding: '24px 0', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, borderBottom: '1px solid var(--border)' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-              <div style={{ width: 42, height: 42, borderRadius: 14, background: 'linear-gradient(135deg, #0067e0, #0059ce)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,103,224,0.4)' }}>
-                <TrendingUp size={20} color="white" />
-              </div>
-              <h1 style={{ fontSize: 'clamp(16px, 3.5vw, 26px)', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>Projected Revenue (estimate)</h1>
-            </div>
-            <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>Projected vs actual revenue &middot; {year} full year view</p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-subtle)', borderRadius: 20, padding: '6px 14px', border: '1px solid var(--border)' }}>
-            <BarChart3 size={14} color="var(--text-muted)" />
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>{growthRate}% growth rate</span>
-          </div>
-        </div>
+        {/* ── Hero ──
+            maxWidth 1280 with its own 20px of side padding, applied INSIDE
+            .shell-main's gutter, and a bottom rule instead of a header. */}
+        <PageHero
+          icon={<TrendingUp size={20} />}
+          title="Projected Revenue"
+          subtitle={`Projected vs actual revenue · ${year} full year view`}
+        >
+          <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[12px] font-[700] text-white"
+            style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>
+            <BarChart3 size={14} /> {growthRate}% growth rate
+          </span>
+        </PageHero>
 
         {/* ── Finance Tabs ── */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'var(--bg-card)', padding: '6px', borderRadius: 14, border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', overflowX: 'auto', flexWrap: 'nowrap' }}>
@@ -192,7 +189,7 @@ function Inner() {
             <strong style={{ color: '#0067e0' }}>Note:</strong> Projection based on 3-month rolling average with a 5% uplift. Figures are estimates only and may not reflect seasonal variations or planned business changes.
           </p>
         </div>
-      </div>
+      </PageContainer>
     </AppShell>
   );
 }

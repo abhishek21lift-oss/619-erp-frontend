@@ -5,7 +5,7 @@ import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
-import { KpiCard, PullToRefresh } from '@/components/ui';
+import { KpiCard, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { DuesItem } from '@/lib/api';
 import {
@@ -98,47 +98,27 @@ function Inner() {
   return (
     <AppShell>
       <PullToRefresh onRefresh={fetchDues}>
-      <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
+      <PageContainer>
 
-        {/* ── Hero ── */}
-        <div style={{ padding: '24px 0', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, borderBottom: '1px solid var(--border)' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#f59e0b,#f59e0b,#ef4444)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(245,158,11,0.35)' }}>
-                <AlertTriangle size={18} color="white" />
-              </div>
-              <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>Pending Dues</h1>
-            </div>
-            <h2 style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 4px' }}>Total Outstanding Amount</h2>
-            <div style={{ fontSize: 'clamp(28px, 8vw, 44px)', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>{fmtCompact(total)}</div>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '8px 0 0' }}>{filtered.length} member{filtered.length !== 1 ? 's' : ''} with pending dues</p>
-          </div>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <PageHero
+          icon={<AlertTriangle size={20} />}
+          title="Pending Dues"
+          subtitle={`${filtered.length} ${filtered.length === 1 ? 'member' : 'members'} with pending dues`}
+        >
+          <div className="grid grid-cols-3 gap-2.5">
             {[
-              { label: 'High Risk', value: highRisk },
-              { label: 'Medium', value: medRisk },
+              { label: 'Outstanding', value: fmtCompact(total) },
+              { label: 'High risk', value: String(highRisk) },
+              { label: 'Medium', value: String(medRisk) },
             ].map((s) => (
-              <div key={s.label} style={{ background: 'var(--bg-subtle)', borderRadius: 14, padding: '14px 20px', border: '1px solid var(--border)', textAlign: 'center', minWidth: 90 }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-primary)' }}>{s.value}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 2 }}>{s.label}</div>
+              <div key={s.label} className="rounded-[12px] px-3 py-2.5"
+                style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
+                <p className="truncate text-[17px] font-[800] tabular-nums leading-none text-white">{s.value}</p>
+                <p className="mt-1.5 truncate text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.66)' }}>{s.label}</p>
               </div>
             ))}
           </div>
-        </div>
-
-        {/* ── KPI Cards ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, marginBottom: 24 }}>
-          <KpiCard label="Total Outstanding" value={fmtCompact(total)} hint={`Full: ${fmt(total)}`} icon={<Banknote size={16} />} accent="amber" />
-          <KpiCard label="Members with Dues" value={String(filtered.length)} hint="Require follow-up" icon={<Users size={16} />} accent="orange" />
-          <KpiCard label="High Risk Members" value={String(highRisk)} hint="Balance ≥ ₹10,000" icon={<AlertTriangle size={16} />} accent="rose" />
-          <KpiCard
-            label="Recovery Progress"
-            value={dues.length > 0 ? Math.round(((dues.length - filtered.length) / (dues.length || 1)) * 100) + '%' : '—'}
-            hint="vs total base"
-            icon={<TrendingDown size={16} />}
-            accent="emerald"
-          />
-        </div>
+        </PageHero>
 
         {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 14, padding: '12px 16px', fontSize: 14, color: '#dc2626', marginBottom: 16 }}>{error}</div>}
 
@@ -236,7 +216,7 @@ function Inner() {
             </div>
           )}
         </div>
-      </m.div>
+      </PageContainer>
       </PullToRefresh>
     </AppShell>
   );
