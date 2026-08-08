@@ -42,6 +42,7 @@ import { useAuth } from '@/lib/auth-context';
 import FounderBadge from '@/components/FounderBadge';
 import { useFounder } from '@/lib/use-founder';
 import http from '@/lib/http';
+import { fmtTime12 } from '@/lib/format';
 import type { TodayClient, TodayRoster } from '@/lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -164,12 +165,6 @@ function fmtCompact(n: number | string | null | undefined) {
   return fmtINR(v);
 }
 function clamp(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)); }
-function fmt12(t: string | null) {
-  if (!t) return null;
-  const [h, m] = t.split(':').map(Number);
-  if (isNaN(h) || isNaN(m)) return t;
-  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
-}
 /** Minutes since midnight, for comparing a slot against the clock. */
 function minutesOf(t: string | null): number | null {
   if (!t) return null;
@@ -1501,7 +1496,7 @@ function TodaySchedule() {
                   <span className="block truncate text-[10px] font-[540]" style={{ color: C.muted }}>
                     {/* A time when there is one; the row is a due client when
                         there is not, and inventing one would be a lie. */}
-                    {r.time ? `${fmt12(r.time)} · ` : ''}{r.sub}
+                    {r.time ? `${fmtTime12(r.time)} · ` : ''}{r.sub}
                   </span>
                 </span>
 
