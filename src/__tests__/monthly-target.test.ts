@@ -115,7 +115,7 @@ describe('the dashboard card does not invent a month', () => {
     // Setting a target is once per month and cannot be undone; the dashboard
     // must not offer it without the confirmation flow that explains the lock.
     const card = dashboard.slice(dashboard.indexOf('function MonthlyTarget()'));
-    const end = card.indexOf('function RevenueHalf');
+    const end = card.indexOf('function RevenueDonut');
     expect(card.slice(0, end)).not.toMatch(/method:\s*'POST'/);
   });
 });
