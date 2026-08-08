@@ -5,6 +5,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Activity, Users, Clock, TrendingUp, Calendar, BarChart3, ArrowUpRight } from 'lucide-react';
 import { api } from '@/lib/api';
+import { PageContainer, PageHero } from '@/components/ui';
 
 const HOURS = ['06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22'];
 
@@ -101,35 +102,25 @@ function Inner() {
 
   return (
     <AppShell>
-      <div style={{ background: 'var(--bg-subtle)', padding: '52px 32px 40px', borderRadius: '0 0 36px 36px', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 54, height: 54, borderRadius: 16, background: 'linear-gradient(135deg, rgba(0,103,224,0.15), rgba(0,103,224,0.1))', border: '1px solid rgba(0,103,224,0.2)', boxShadow: '0 4px 16px rgba(0,103,224,0.1)' }}>
-            <Activity size={24} color="#0059ce" />
+      <PageContainer>
+        <PageHero
+          icon={<Activity size={20} />}
+          title="Attendance Report"
+          subtitle="Track member check-in patterns and peak traffic hours"
+        >
+          {/* Two equal columns that cannot outgrow the hero. The old pair was
+              a flex row of intrinsically-sized pills — icon, label and a date
+              input each sized to their own content — so on a phone the "To"
+              field simply ran off the right edge of the screen. */}
+          <div className="grid grid-cols-2 gap-2.5">
+            <DateField label="From" value={from} max={to} onChange={setFrom} />
+            <DateField label="To" value={to} min={from} onChange={setTo} />
           </div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Attendance Report</h1>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Track member check-in patterns and peak traffic hours</p>
-          </div>
-        </div>
+        </PageHero>
 
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '7px 14px', border: '1px solid #cbd5e1' }}>
-            <Calendar size={14} color="#94a3b8" />
-            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>From</span>
-            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, outline: 'none', padding: '2px 0' }} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '7px 14px', border: '1px solid #cbd5e1' }}>
-            <Calendar size={14} color="#94a3b8" />
-            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>To</span>
-            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, outline: 'none', padding: '2px 0' }} />
-          </div>
-        </div>
-      </div>
+        {error && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: '10px 16px', fontSize: 13, color: '#dc2626' }}>{error}</div>}
 
-      <div style={{ padding: '24px 32px' }}>
-        {error && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#dc2626', marginBottom: 20 }}>{error}</div>}
-
-        <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 24 }}>
+        <m.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <KpiCard label="Total Check-ins" value={totalCheckins} icon={<Users size={16} />} gradient="linear-gradient(135deg, rgba(0,103,224,0.08), rgba(0,103,224,0.02))" />
           <KpiCard label="Peak Hour" value={peakHour.count > 0 ? `${peakHour.hour}:00` : '—'} icon={<Clock size={16} />} gradient="linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02))" />
           <KpiCard label="Average Daily" value={avgDaily} icon={<TrendingUp size={16} />} gradient="linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02))" />
@@ -159,7 +150,12 @@ function Inner() {
                 <div style={{ fontSize: 12, color: 'var(--text-disabled)', maxWidth: 300, textAlign: 'center' }}>Select a different date range to see attendance patterns.</div>
               </div>
             ) : (
-              <>
+              /* Seventeen bars will not fit a 390px card — that is 14px each,
+                 narrower than the hour label under them. The chart scrolls
+                 inside its own card rather than squeezing, so the page body
+                 never scrolls sideways. */
+              <div className="-mx-1 overflow-x-auto px-1">
+                <div className="min-w-[520px]">
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 220 }}>
                   {byHour.map((h, i) => (
                     <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', gap: 4 }}
@@ -179,11 +175,40 @@ function Inner() {
                     <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: 10, color: 'var(--text-disabled)', fontWeight: 600, letterSpacing: '0.5px' }}>{h.hour}</div>
                   ))}
                 </div>
-              </>
+                </div>
+              </div>
             )}
           </m.div>
         </m.div>
-      </div>
+      </PageContainer>
     </AppShell>
+  );
+}
+
+/**
+ * A labelled date field that cannot outgrow its column.
+ *
+ * `<input type="date">` sizes itself to its own content and ignores the width
+ * of whatever it is in, which is how the "To" field ended up off the right of
+ * the screen. `w-full` plus `min-w-0` on a grid child is the fix.
+ */
+function DateField({
+  label, value, min, max, onChange,
+}: { label: string; value: string; min?: string; max?: string; onChange: (v: string) => void }) {
+  return (
+    <label className="block min-w-0">
+      <span className="mb-1 block text-[10.5px] font-[800] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.66)' }}>
+        {label}
+      </span>
+      <input
+        type="date"
+        value={value}
+        min={min}
+        max={max}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-[44px] w-full min-w-0 rounded-[12px] px-3 text-[13px] font-[600] text-white outline-none"
+        style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', colorScheme: 'dark' }}
+      />
+    </label>
   );
 }

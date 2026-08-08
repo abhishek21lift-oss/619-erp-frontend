@@ -100,3 +100,6 @@ export type {
   PremiumBarEntry,
   PremiumAreaEntry,
 } from './chart';
+
+export { PageHero, PageContainer } from './PageHero';
+export type { PageHeroProps } from './PageHero';

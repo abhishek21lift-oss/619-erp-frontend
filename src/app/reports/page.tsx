@@ -5,7 +5,7 @@ import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import AppShell from '@/components/AppShell';
-import { KpiCard } from '@/components/ui';
+import { KpiCard, PageContainer, PageHero } from '@/components/ui';
 import { useAuth } from '@/lib/auth-context';
 import {
   BarChart2, AlertCircle, Users,
@@ -134,7 +134,11 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
         </button>
       </m.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+      {/* Two columns on a phone, four from `sm`. This was a hard
+          `repeat(4,1fr)` at every width, which on a 390px screen left each
+          tile about 85px — so the values rendered as "₹..", "J.." and "₹90..".
+          A KPI you cannot read is not a KPI. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-3.5">
         <KpiCard label={`Total ${year}`} value={fmtAmt(totalRevenue)} icon={<DollarSign size={16} />} accent="blue" />
         <KpiCard label="Avg / Month" value={fmtAmt(avgMonthly)} icon={<TrendingUp size={16} />} accent="cyan" />
         <KpiCard label="Best Month" value={bestMonth?.month ?? '—'} icon={<BarChart2 size={16} />} accent="emerald" hint={bestMonth ? fmtAmt(bestMonth.revenue) : ''} />
@@ -421,43 +425,64 @@ function ReportsContent() {
   const [tab, setTab] = useState<Tab>(initialTab);
   useEffect(() => setTab(initialTab), [initialTab]);
 
-  const TABS: { key: Tab; label: string; adminOnly?: boolean }[] = [
-    { key: 'monthly', label: 'Monthly Revenue' },
-    { key: 'dues', label: 'Pending Dues' },
-    { key: 'trainers', label: 'Coach Summary', adminOnly: true },
+  const TABS: { key: Tab; label: string; short: string; adminOnly?: boolean }[] = [
+    { key: 'monthly', label: 'Monthly Revenue', short: 'Revenue' },
+    { key: 'dues', label: 'Pending Dues', short: 'Dues' },
+    { key: 'trainers', label: 'Coach Summary', short: 'Coaches', adminOnly: true },
   ];
+  const visibleTabs = TABS.filter((t) => !t.adminOnly || isAdmin);
 
   return (
     <AppShell title="Reports">
-      <div style={{ background: 'var(--bg-subtle)', padding: '52px 32px 28px', borderRadius: '0 0 36px 36px', marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 54, height: 54, borderRadius: 16, background: 'linear-gradient(135deg, #0067e0, #0059ce)', border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(0,103,224,0.2)' }}>
-            <BarChart2 size={24} color="#fff" />
-          </div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Reports Dashboard</h1>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Business analytics &amp; insights</p>
-          </div>
-        </div>
+      <PageContainer>
+        <PageHero
+          icon={<BarChart2 size={20} />}
+          title="Reports Dashboard"
+          subtitle="Business analytics & insights"
+        >
+          {/* The tabs live in the hero, which is where they belong: they select
+              what the whole page is, not what one card is.
 
-        <div style={{ display: 'flex', gap: 6, borderBottom: '1px solid var(--border)', paddingBottom: 2 }}>
-          {TABS.filter((t) => !t.adminOnly || isAdmin).map((t) => (
-            <button key={t.key} onClick={() => setTab(t.key)}
-              style={{ padding: '10px 20px', borderRadius: '10px 10px 0 0', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', color: tab === t.key ? 'var(--text-primary)' : 'var(--text-muted)', background: tab === t.key ? 'rgba(0,103,224,0.08)' : 'transparent', transition: 'all 0.25s', position: 'relative', letterSpacing: '0.3px' }}>
-              {tab === t.key && (
-                <div style={{ position: 'absolute', bottom: 0, left: '20%', right: '20%', height: 3, borderRadius: '3px 3px 0 0', background: 'linear-gradient(90deg, #0067e0, #0059ce)' }} />
-              )}
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
+              A segmented control of equal thirds, with the short labels. The
+              long ones — "Monthly Revenue", "Pending Dues", "Coach Summary" —
+              measure 400px laid out in a row, in a strip that is 318px wide on
+              a 390px phone. They cannot fit, which is why the old version wrapped
+              every one of them onto two lines. The full label is still read out
+              to screen readers; sighted users have the page title above and,
+              for revenue, the year stepper immediately below. */}
+          <div
+            className="grid gap-1 rounded-full p-1"
+            style={{ background: 'rgba(255,255,255,0.10)', gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))` }}
+            role="tablist"
+            aria-label="Report"
+          >
+            {visibleTabs.map((t) => {
+              const active = tab === t.key;
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  aria-label={t.label}
+                  onClick={() => setTab(t.key)}
+                  className="h-[38px] cursor-pointer truncate rounded-full px-2 text-[12.5px] font-[700] transition-colors"
+                  style={{
+                    background: active ? '#fff' : 'transparent',
+                    color: active ? '#0F172A' : 'rgba(255,255,255,0.82)',
+                  }}
+                >
+                  {t.short}
+                </button>
+              );
+            })}
+          </div>
+        </PageHero>
 
-      <div style={{ padding: '0 32px 32px' }}>
         {tab === 'monthly' && <MonthlyTab year={year} setYear={setYear} />}
         {tab === 'dues' && <DuesTab />}
         {tab === 'trainers' && isAdmin && <TrainerSummaryTab />}
-      </div>
+      </PageContainer>
     </AppShell>
   );
 }
