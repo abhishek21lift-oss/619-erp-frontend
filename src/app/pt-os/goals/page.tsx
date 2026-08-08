@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, Target, Plus, X,
+  ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, Target, Plus,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -350,14 +350,10 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
         icon={<Target size={18} />}
         title={goalId ? 'Edit Goal' : 'New Goal'}
         subtitle={clientName}
-        actions={
-          <button type="button" onClick={() => onDone(false)}
-            className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
-            style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
-            <X size={13} /> Cancel
-          </button>
-        }
       >
+        {/* No Cancel action here — the sticky footer's Back button already
+            exits the wizard at step 1 with the same discard-confirm guard,
+            so a second escape hatch in the hero was redundant chrome. */}
         {!reviewMode && <GoalProgressTimeline current={step} onStep={setStep} />}
       </PageHero>
 
