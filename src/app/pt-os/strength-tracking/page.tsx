@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button } from '@/components/ui';
+import { Button, PageContainer, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -138,26 +138,20 @@ function StrengthHub({ clientId }: StrengthHubProps) {
   const sortedHistory = [...logs].sort((a, b) => b.log_date.localeCompare(a.log_date)).slice(0, 20);
 
   return (
-    <div className="mx-auto w-full max-w-4xl py-6 space-y-6">
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
-            <Zap size={16} style={{ color: 'var(--text-muted)' }} />
-          </div>
-          <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>Strength Tracking</span>
-        </div>
-        <h1 className="text-[26px] sm:text-[32px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
-          {clientName}&apos;s Strength Progress
-        </h1>
+    <PageContainer>
+      <PageHero
+        icon={<Zap size={20} />}
+        title={`${clientName}'s Strength Progress`}
+        subtitle="Strength Tracking"
+      >
         {!bodyWeightKg && (
-          <p className="mt-2 text-[12.5px]" style={{ color: '#d97706' }}>
+          <p className="text-[12.5px] font-[600]" style={{ color: '#FDE68A' }}>
             No bodyweight on file — Strength Level badges need it. Add a weight via Fitness Testing to unlock them.
           </p>
         )}
-      </m.div>
+      </PageHero>
 
+    <div className="mx-auto w-full max-w-4xl space-y-6">
       {CATEGORIES.map((cat) => (
         <div key={cat.label}>
           <div className="flex items-center gap-2 mb-3 px-1">
@@ -206,6 +200,7 @@ function StrengthHub({ clientId }: StrengthHubProps) {
         )}
       </div>
     </div>
+    </PageContainer>
   );
 }
 

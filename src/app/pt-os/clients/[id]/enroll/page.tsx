@@ -9,10 +9,9 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button } from '@/components/ui';
+import { Button, PageContainer, PageHero } from '@/components/ui';
 import FloatInput from '@/components/ui/FloatInput';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
-import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { AGREEMENT_TEXT, PAYMENT_METHODS, ageFrom } from '@/lib/enrollment';
 import { SignaturePad } from '@/components/pt-os/shared/SignaturePad';
 import { api } from '@/lib/api';
@@ -586,59 +585,37 @@ function EnrollForm({ clientId }: { clientId: string }) {
   }
 
   return (
-    <div className="pb-28">
+    <PageContainer>
 
-      {/* ── HEADER ── */}
-      {/* ── Header ──
-          It used to be an award icon and "Hari Narayan Singh · Program Setup",
-          which is the form describing itself. This page is about a person, and
-          the four things that make it feel that way — their face, how long
-          they have been a member, their age and weight, what they are training
-          for — were all already on the client row and none of them were shown.
-
-          Every fact here is conditional. A client with no photo, no date of
-          birth and no goal is normal, especially at enrolment, and a row of
-          "—" would be worse than a shorter row. */}
-      <div className="pt-1">
-        <div className="mx-auto max-w-3xl py-4">
-          <div className="flex items-center gap-3.5">
-            <ClientAvatar
-              name={clientMeta?.name || clientName}
-              photoUrl={clientMeta?.photoUrl}
-              className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-[18px] text-[18px] font-[820] text-white"
-              style={{
-                background: 'linear-gradient(135deg, #F59E0B, #D97706)',
-                boxShadow: '0 6px 18px rgba(245,158,11,0.3)',
-              }} />
-
-            <div className="min-w-0 flex-1">
-              <h1 className="truncate text-[19px] font-[860] tracking-[-0.03em] text-slate-900 leading-tight sm:text-[22px]">
-                {clientName || 'Client'}
-              </h1>
-              <p className="mt-0.5 text-[11.5px] font-[650] uppercase tracking-[0.1em]" style={{ color: '#D97706' }}>
-                PT Enrollment
-              </p>
-            </div>
-          </div>
-
-          {heroFacts.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {heroFacts.map((f) => (
-                <span key={f.label}
-                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-[650]"
-                  style={{ background: 'rgba(15,23,42,0.045)', color: '#475569' }}>
-                  <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: '#94a3b8' }}>
-                    {f.label}
-                  </span>
-                  {f.value}
+      {/* ── Hero ──
+          Was an award icon and "Hari Narayan Singh · Program Setup", which is
+          the form describing itself. This page is about a person, and the
+          facts that make it feel that way — how long they have been a
+          member, their age and weight, what they are training for — are the
+          hero's children, conditionally: a client missing a date of birth or
+          a goal gets a shorter row rather than a row of "—". */}
+      <PageHero
+        icon={<Award size={20} />}
+        title={clientName || 'Client'}
+        subtitle="PT Enrollment"
+      >
+        {heroFacts.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {heroFacts.map((f) => (
+              <span key={f.label}
+                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-[650] text-white"
+                style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.66)' }}>
+                  {f.label}
                 </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+                {f.value}
+              </span>
+            ))}
+          </div>
+        )}
+      </PageHero>
 
-      <div className="mx-auto max-w-3xl py-6 space-y-5">
+      <div className="mx-auto max-w-3xl space-y-5">
 
         {/* ── SMART ALERTS ── */}
         <AnimatePresence>
@@ -1117,6 +1094,6 @@ function EnrollForm({ clientId }: { clientId: string }) {
           </>
         )}
       </AnimatePresence>
-    </div>
+    </PageContainer>
   );
 }
