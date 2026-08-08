@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo, Suspense } from 'react';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PullToRefresh, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button } from '@/components/ui';
+import { PullToRefresh, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button, PageContainer, PageHero } from '@/components/ui';
 import { useAuth } from '@/lib/auth-context';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { api, Client, Attendance } from '@/lib/api';
 import {
   Activity,
@@ -45,6 +45,20 @@ import {
   Wifi,
   Zap,
 } from 'lucide-react';
+
+/** Range CSV, carried over from /attendance/reports. */
+function exportRangeCSV(records: Attendance[], days: string) {
+  const header = ['Date', 'Member', 'Status', 'Check-In Time', 'Check-Out Time'];
+  const rows = records.map(r => [r.date ?? '', r.ref_name ?? r.ref_id ?? '', r.status ?? '', r.check_in ?? '', r.check_out ?? '']);
+  const csv = [header, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `attendance-${days}days-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 /* ────────────────────────────────────────────────────────────────
    TYPES
@@ -143,7 +157,10 @@ function buildPeakHours(records: Attendance[], totalClients: number): { label: s
 export default function AttendancePage() {
   return (
     <Guard>
-      <AttendanceContent />
+      {/* useSearchParams needs a Suspense boundary above it. */}
+      <Suspense fallback={null}>
+        <AttendanceContent />
+      </Suspense>
     </Guard>
   );
 }
@@ -170,8 +187,23 @@ function AttendanceContent() {
   /* ── UI state ── */
   const [viewMode,      setViewMode]      = useState<ViewMode>('table');
   const [statusFilter,  setStatusFilter]  = useState<StatusFilter>('all');
-  const [activeTab,     setActiveTab]     = useState<'members' | 'insights' | 'alerts'>('members');
+  // ?tab=insights is what /attendance/reports redirects to, so the old
+  // bookmark lands on the panel its content moved into rather than on the
+  // member list.
+  const sp = useSearchParams();
+  const [activeTab, setActiveTab] = useState<'members' | 'insights' | 'alerts'>(
+    sp.get('tab') === 'insights' ? 'insights' : sp.get('tab') === 'alerts' ? 'alerts' : 'members',
+  );
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
+
+  /* ── Trends, merged in from the old /attendance/reports page ──
+     Fetched only once the Insights tab is opened: it is two more requests
+     over 90 days of history, and the tab a trainer actually lands on is the
+     member list. */
+  const [range, setRange] = useState('7');
+  const [rangeRecords, setRangeRecords] = useState<Attendance[]>([]);
+  const [rangeLoading, setRangeLoading] = useState(false);
+  const [monthlyRecords, setMonthlyRecords] = useState<Attendance[]>([]);
   const successTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const errorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -194,6 +226,24 @@ function AttendanceContent() {
     loadData();
     return () => { clearTimeout(successTimer.current); clearTimeout(errorTimer.current); };
   }, [date, loadData]);
+
+  useEffect(() => {
+    if (activeTab !== 'insights') return;
+    let alive = true;
+    setRangeLoading(true);
+    Promise.all([
+      api.attendance.list({ days: range }),
+      api.attendance.list({ months: '12' }),
+    ])
+      .then(([r, m]) => {
+        if (!alive) return;
+        setRangeRecords(Array.isArray(r) ? r : []);
+        setMonthlyRecords(Array.isArray(m) ? m : []);
+      })
+      .catch((e: Error) => alive && showError(e.message))
+      .finally(() => alive && setRangeLoading(false));
+    return () => { alive = false; };
+  }, [activeTab, range]);
 
   /* ── mark function ── */
   const mark = useCallback(async (client: Client, status: string) => {
@@ -300,7 +350,7 @@ function AttendanceContent() {
         {/* FooterBar below is position:sticky, which breaks under a
             transformed ancestor — keep it outside PullToRefresh's wrapper. */}
         <PullToRefresh onRefresh={loadData}>
-        <div className="mx-auto w-full max-w-7xl pb-28 pt-4">
+        <PageContainer>
 
           {/* ── toasts ── */}
           {error   && <Toast msg={error}   type="error"   onClose={() => setError('')} />}
@@ -309,15 +359,14 @@ function AttendanceContent() {
           {/* ── HERO ── */}
           <AttendanceHero
             date={date} setDate={setDate} today={today}
-            attendanceRate={attendanceRate} summary={summary}
             onMarkAll={date === today ? markAllPresent : undefined}
             onManualEntry={() => setManualEntryOpen(true)}
             onExport={() => window.open(`/api/attendance?format=csv&date=${date}`, '_blank')}
-            onReports={() => router.push('/attendance/reports')}
+            onReports={() => setActiveTab('insights')}
           />
 
           {/* ── KPI CARDS ── */}
-          <section className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6 lg:gap-4">
+          <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6 lg:gap-4">
             <KpiCard label="Present"   value={summary.present}  hint={`${summary.total > 0 ? Math.round(summary.present / summary.total * 100) : 0}% of total`}  accent="emerald" icon={<UserCheck className="h-5 w-5" />} onClick={() => setStatusFilter('present')}  active={statusFilter === 'present'} />
             <KpiCard label="Absent"    value={summary.absent}   hint={`${summary.total > 0 ? Math.round(summary.absent  / summary.total * 100) : 0}% of total`}  accent="rose"    icon={<UserX    className="h-5 w-5" />} onClick={() => setStatusFilter('absent')}   active={statusFilter === 'absent'} />
             <KpiCard label="Late"      value={summary.late}     hint="Arrived after cut-off" accent="amber"   icon={<Clock    className="h-5 w-5" />} onClick={() => setStatusFilter('late')}     active={statusFilter === 'late'} />
@@ -360,7 +409,15 @@ function AttendanceContent() {
                 date={date} today={today} onMarkAll={date === today ? markAllPresent : undefined}
               />
             )}
-            {activeTab === 'insights' && <InsightsPanel summary={summary} weeklyBars={weeklyBars} peakHours={peakHours} />}
+            {activeTab === 'insights' && (
+              <InsightsPanel
+                summary={summary} weeklyBars={weeklyBars} peakHours={peakHours}
+                range={range} setRange={setRange}
+                rangeRecords={rangeRecords} rangeLoading={rangeLoading}
+                monthlyRecords={monthlyRecords}
+                onExport={() => exportRangeCSV(rangeRecords, range)}
+              />
+            )}
             {activeTab === 'alerts'   && (
               <AlertsPanel
                 alerts={smartAlerts}
@@ -374,13 +431,13 @@ function AttendanceContent() {
           <LiveFeedPanel feedItems={feedItems} />
 
           {/* ── QUICK ACTIONS ── */}
-          <QuickActionsPanel onMarkAll={date === today ? markAllPresent : undefined} />
+          <QuickActionsPanel onMarkAll={date === today ? markAllPresent : undefined} onTrends={() => setActiveTab('insights')} />
 
-        </div>
+        </PageContainer>
         </PullToRefresh>
 
         {/* ── FOOTER BAR ── */}
-        <FooterBar onSync={loadData} onGenerateReport={() => router.push('/attendance/reports')} />
+        <FooterBar onSync={loadData} onGenerateReport={() => setActiveTab('insights')} />
 
         {/* ── MANUAL ENTRY MODAL ── */}
         <ManualEntryModal
@@ -398,70 +455,64 @@ function AttendanceContent() {
 /* ────────────────────────────────────────────────────────────────
    HERO
 ──────────────────────────────────────────────────────────────── */
-function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkAll, onManualEntry, onExport, onReports }: {
+/**
+ * ── What came out of this hero, and why ───────────────────────────────────
+ *
+ * A pale `#f8fafc` slab — a container box drawn around the title, on its own
+ * surface, squared off against the top bar. It is PageHero now, the same one
+ * the dashboard uses.
+ *
+ * Four stat tiles: Present today, Attendance rate, Late arrivals, Unmarked.
+ * Every one of those numbers is repeated in the KPI row that renders directly
+ * underneath, which also adds Absent and Total. On a phone the two stacks are
+ * both one-per-row, so the page opened with the same four figures twice and
+ * you scrolled past two screens of them before reaching a single member. The
+ * KPI row is the one that survives: it has all six, and its tiles filter the
+ * list when you tap them.
+ *
+ * "Live sync active" and "Biometric device connected". Neither was connected
+ * to anything — no socket, no device handshake, no state of any kind behind
+ * them; they were literals that always rendered. A green pulsing dot that
+ * claims a device is online when nothing has asked a device anything is worse
+ * than no indicator, because a trainer will believe it and stop checking. Gone
+ * until something real backs them.
+ */
+function AttendanceHero({ date, setDate, today, onMarkAll, onManualEntry, onExport, onReports }: {
   date: string; setDate: (d: string) => void; today: string;
-  attendanceRate: number; summary: { present: number; absent: number; late: number; unmarked: number; total: number };
   onMarkAll?: () => void;
   onManualEntry: () => void;
   onExport: () => void;
   onReports: () => void;
 }) {
   return (
-    <section className="relative overflow-hidden rounded-[32px] border border-black/[0.07] bg-[#f8fafc] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.06)] sm:p-8 lg:p-10">
-
-      <div className="relative grid grid-cols-1 gap-8 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
-        <div className="space-y-5 text-[#0F172A]">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-700 backdrop-blur-md">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-              Live sync active
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 backdrop-blur-md">
-              <Wifi className="h-3.5 w-3.5" />Biometric device connected
-            </span>
-          </div>
-
-          <div>
-            <p className="text-xs uppercase tracking-[0.26em] text-gray-500">MY PT STUDIO</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#0F172A] sm:text-4xl lg:text-[3rem] lg:leading-[1.06]">Member Attendance</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
-              Real-time biometric attendance and member check-in management across all sessions.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <input
-              aria-label="Attendance date"
-              type="date" value={date}
-              onChange={e => setDate(e.target.value)}
-              max={today}
-              className="rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm text-[#0F172A] backdrop-blur-md transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-black/10"
-            />
-            <HeroBtn label="Manual Entry"    icon={<Plus className="h-4 w-4" />} light onClick={onManualEntry} />
-            <HeroBtn label="Export"          icon={<Download className="h-4 w-4" />} light onClick={onExport} />
-            <HeroBtn label="Reports"         icon={<FileText className="h-4 w-4" />} light onClick={onReports} />
-            {onMarkAll && (
-              <HeroBtn label="Mark All Present" icon={<CheckCircle2 className="h-4 w-4" />} primary onClick={onMarkAll} />
-            )}
-          </div>
+    <PageHero
+      icon={<UserCheck size={20} />}
+      title="Member Attendance"
+      subtitle="Mark the day, correct a record, and see who is turning up."
+    >
+      <div className="space-y-2.5">
+        <input
+          aria-label="Attendance date"
+          type="date" value={date}
+          onChange={e => setDate(e.target.value)}
+          max={today}
+          className="h-[44px] w-full min-w-0 rounded-[12px] px-3 text-[13px] font-[600] text-white outline-none sm:max-w-[220px]"
+          style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', colorScheme: 'dark' }}
+        />
+        {/* Mark All Present is the destructive-ish one — it writes a row for
+            every active member — so it sits apart from the three that only
+            read, and it is the only one that gets a solid fill. The four used
+            to be an undifferentiated wrap of pills. */}
+        <div className="grid grid-cols-3 gap-2">
+          <HeroBtn label="Manual" icon={<Plus className="h-4 w-4" />} light onClick={onManualEntry} />
+          <HeroBtn label="Export" icon={<Download className="h-4 w-4" />} light onClick={onExport} />
+          <HeroBtn label="Trends" icon={<FileText className="h-4 w-4" />} light onClick={onReports} />
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {[
-            { label: 'Present today',  value: summary.present,  sub: 'members' },
-            { label: 'Attendance rate', value: `${attendanceRate}%`, sub: 'today' },
-            { label: 'Late arrivals',  value: summary.late,     sub: 'logged' },
-            { label: 'Unmarked',       value: summary.unmarked, sub: 'pending' },
-          ].map(stat => (
-            <div key={stat.label} className="rounded-[22px] border border-black/[0.07] bg-white p-3 sm:p-4 text-[#0F172A] shadow-[0_1px_4px_rgba(0,0,0,0.06)] backdrop-blur-xl">
-              <p className="text-xs text-gray-500">{stat.label}</p>
-              <p className="mt-2 text-2xl font-semibold tabular-nums">{stat.value}</p>
-              <p className="mt-1 text-xs text-gray-500">{stat.sub}</p>
-            </div>
-          ))}
-        </div>
+        {onMarkAll && (
+          <HeroBtn label="Mark All Present" icon={<CheckCircle2 className="h-4 w-4" />} primary onClick={onMarkAll} full />
+        )}
       </div>
-    </section>
+    </PageHero>
   );
 }
 
@@ -770,11 +821,49 @@ const AttendanceBtns = React.memo(function AttendanceBtns({ client, rec, saving,
 /* ────────────────────────────────────────────────────────────────
    INSIGHTS PANEL
 ──────────────────────────────────────────────────────────────── */
-function InsightsPanel({ summary, weeklyBars, peakHours }: { summary: { present: number; absent: number; late: number; unmarked: number; total: number }; weeklyBars: { day: string; pct: number }[]; peakHours: { label: string; pct: number }[] }) {
+/**
+ * Insights & Trends — the merged panel.
+ *
+ * ── What was merged into it ────────────────────────────────────────────────
+ *
+ * /attendance/reports was a second page called "Reports & Dashboard",
+ * reachable only from two buttons on this one. It read the same
+ * api.attendance.list this page reads and led with the same four numbers —
+ * Total, Present, Late, Absent — over a range instead of a day. So a trainer
+ * asking "how has attendance been" had two pages telling them, in two visual
+ * languages, from one table.
+ *
+ * Its three parts are here now: the range selector, the check-in method
+ * breakdown and the monthly summary. /attendance/reports redirects here, so
+ * anything bookmarked or linked still lands in the right place.
+ *
+ * What did not come across is its "Footfall Trend" card. It was labelled a
+ * trend and drew one bar per STATUS — present, late, absent — with no time
+ * axis at all. It could not show a trend; the Weekly Attendance Trends chart
+ * below, which does plot days, is what that card was pretending to be.
+ */
+function InsightsPanel({
+  summary, weeklyBars, peakHours, range, setRange, rangeRecords, rangeLoading, monthlyRecords, onExport,
+}: {
+  summary: { present: number; absent: number; late: number; unmarked: number; total: number };
+  weeklyBars: { day: string; pct: number }[];
+  peakHours: { label: string; pct: number }[];
+  range: string;
+  setRange: (r: string) => void;
+  rangeRecords: Attendance[];
+  rangeLoading: boolean;
+  monthlyRecords: Attendance[];
+  onExport: () => void;
+}) {
   const bars = weeklyBars.length > 0 ? weeklyBars : [{ day: '—', pct: 0 }];
   const max = Math.max(...bars.map(b => b.pct), 1);
   return (
-    <div className="grid gap-5 xl:grid-cols-[1.3fr_0.7fr]">
+    <div className="space-y-4">
+      <RangeBar range={range} setRange={setRange} onExport={onExport} />
+      <RangeKpis records={rangeRecords} loading={rangeLoading} />
+      <MethodBreakdown records={rangeRecords} range={range} />
+
+      <div className="grid gap-5 xl:grid-cols-[1.3fr_0.7fr]">
       <PremiumCard title="Weekly Attendance Trends" subtitle="Last 7 days — daily attendance rate">
         <div className="flex h-44 items-end gap-2 pt-4">
           {bars.map((b, i) => (
@@ -828,7 +917,191 @@ function InsightsPanel({ summary, weeklyBars, peakHours }: { summary: { present:
           </div>
         </PremiumCard>
       </div>
+      </div>
+
+      <MonthlySummary records={monthlyRecords} />
     </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   MERGED FROM /attendance/reports
+──────────────────────────────────────────────────────────────── */
+
+const RANGES = [
+  { id: '7', label: '7 days' },
+  { id: '30', label: '30 days' },
+  { id: '90', label: '90 days' },
+];
+
+function RangeBar({ range, setRange, onExport }: { range: string; setRange: (r: string) => void; onExport: () => void }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <div
+        className="grid flex-1 gap-1 rounded-full p-1"
+        style={{ background: 'var(--bg-subtle)', gridTemplateColumns: `repeat(${RANGES.length}, minmax(0, 1fr))` }}
+        role="tablist"
+        aria-label="Date range"
+      >
+        {RANGES.map(r => {
+          const active = range === r.id;
+          return (
+            <button
+              key={r.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setRange(r.id)}
+              className="h-[38px] cursor-pointer truncate rounded-full px-2 text-[12.5px] font-[700] transition-colors"
+              style={{
+                background: active ? 'var(--brand)' : 'transparent',
+                color: active ? '#fff' : 'var(--text-secondary)',
+              }}
+            >
+              {r.label}
+            </button>
+          );
+        })}
+      </div>
+      <button
+        type="button"
+        onClick={onExport}
+        className="inline-flex h-[40px] shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-4 text-[12.5px] font-[700] transition-transform active:scale-95"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+      >
+        <Download size={14} /> Export
+      </button>
+    </div>
+  );
+}
+
+const RANGE_KPIS = [
+  { key: 'total',   label: 'Check-ins', color: 'var(--brand)' },
+  { key: 'present', label: 'Present',   color: '#059669' },
+  { key: 'late',    label: 'Late',      color: '#B45309' },
+  { key: 'absent',  label: 'Absent',    color: '#DC2626' },
+] as const;
+
+function RangeKpis({ records, loading }: { records: Attendance[]; loading: boolean }) {
+  return (
+    // Two up on a phone. The page this came from used
+    // `auto-fit minmax(200px, 1fr)`, which is one full-width tile per row at
+    // 390px — four numbers, four screenfuls.
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {RANGE_KPIS.map(k => {
+        const value = k.key === 'total' ? records.length : records.filter(r => r.status === k.key).length;
+        return (
+          <div key={k.key} className="rounded-[16px] p-3.5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <p className="text-[10px] font-[800] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{k.label}</p>
+            {loading
+              ? <div className="mt-2 h-[26px] w-12 animate-pulse rounded-md" style={{ background: 'var(--bg-subtle)' }} />
+              : <p className="mt-1.5 text-[24px] font-[800] tabular-nums leading-none" style={{ color: k.color }}>{value}</p>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const METHOD_META: Record<string, { label: string; color: string }> = {
+  qr:          { label: 'QR Code',     color: '#0067e0' },
+  face:        { label: 'Face',        color: '#0067e0' },
+  face_id:     { label: 'Face ID',     color: '#0067e0' },
+  touch_id:    { label: 'Touch ID',    color: '#059669' },
+  fingerprint: { label: 'Fingerprint', color: '#059669' },
+  passkey:     { label: 'Passkey',     color: '#0067e0' },
+  biometric:   { label: 'Biometric',   color: '#B45309' },
+  manual:      { label: 'Manual',      color: '#64748B' },
+};
+
+function MethodBreakdown({ records, range }: { records: Attendance[]; range: string }) {
+  const counts = useMemo(() => {
+    const acc: Record<string, number> = {};
+    for (const r of records) {
+      const m = (r as Attendance & { check_in_method?: string }).check_in_method || 'manual';
+      acc[m] = (acc[m] || 0) + 1;
+    }
+    return Object.entries(acc).sort((a, b) => b[1] - a[1]);
+  }, [records]);
+
+  if (counts.length === 0) return null;
+  const total = records.length || 1;
+
+  return (
+    <PremiumCard title="Check-in methods" subtitle={`Last ${range} days`}>
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+        {counts.map(([method, count]) => {
+          const meta = METHOD_META[method] ?? { label: method, color: '#64748B' };
+          const pct = Math.round((count / total) * 100);
+          return (
+            <div key={method} className="rounded-[14px] p-3" style={{ background: 'var(--bg-subtle)' }}>
+              <p className="truncate text-[11.5px] font-[650]" style={{ color: 'var(--text-secondary)' }}>{meta.label}</p>
+              <p className="mt-1 text-[20px] font-[800] tabular-nums leading-none" style={{ color: 'var(--text-primary)' }}>{count}</p>
+              <div className="mt-2 h-1 overflow-hidden rounded-full" style={{ background: 'var(--border-2)' }}>
+                <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: meta.color }} />
+              </div>
+              <p className="mt-1 text-[10.5px]" style={{ color: 'var(--text-muted)' }}>{pct}% of check-ins</p>
+            </div>
+          );
+        })}
+      </div>
+    </PremiumCard>
+  );
+}
+
+function MonthlySummary({ records }: { records: Attendance[] }) {
+  const rows = useMemo(() => {
+    const byMonth: Record<string, { checkins: number; members: Set<string>; present: number; days: Set<string> }> = {};
+    for (const r of records) {
+      const date = r.date || '';
+      const key = date.slice(0, 7);
+      if (!key) continue;
+      byMonth[key] ??= { checkins: 0, members: new Set(), present: 0, days: new Set() };
+      byMonth[key].checkins++;
+      byMonth[key].members.add(String(r.ref_id));
+      byMonth[key].days.add(date);
+      if (r.status === 'present') byMonth[key].present++;
+    }
+    return Object.entries(byMonth).sort().reverse().slice(0, 6).map(([month, d]) => ({
+      month,
+      checkins: d.checkins,
+      members: d.members.size,
+      // Per DAY the studio was open, not per record — the version this came
+      // from divided the month's check-ins by the number of records in that
+      // month, which is checkins/checkins and prints 1 for every month.
+      avgDaily: Math.round(d.checkins / Math.max(d.days.size, 1)),
+      presentPct: Math.round((d.present / Math.max(d.checkins, 1)) * 100),
+    }));
+  }, [records]);
+
+  return (
+    <PremiumCard title="Monthly summary" subtitle="Last 6 months">
+      {rows.length === 0 ? (
+        <p className="py-8 text-center text-[13px]" style={{ color: 'var(--text-muted)' }}>No monthly data yet.</p>
+      ) : (
+        // Cards, not a five-column table. At 390px a table of Month /
+        // Check-Ins / Members / Avg Daily / Peak Day gives each column about
+        // 60px, and the page this came from simply let it scroll sideways.
+        <div className="space-y-2.5">
+          {rows.map(r => (
+            <div key={r.month} className="rounded-[14px] p-3" style={{ background: 'var(--bg-subtle)' }}>
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>{r.month}</p>
+                <p className="text-[13px] font-[800] tabular-nums" style={{ color: 'var(--text-primary)' }}>
+                  {r.checkins}
+                  <span className="ml-1 text-[10.5px] font-[700]" style={{ color: 'var(--text-muted)' }}>check-ins</span>
+                </p>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                <span><b className="tabular-nums" style={{ color: 'var(--text-secondary)' }}>{r.members}</b> members</span>
+                <span><b className="tabular-nums" style={{ color: 'var(--text-secondary)' }}>{r.avgDaily}</b> avg/day</span>
+                <span><b className="tabular-nums" style={{ color: 'var(--text-secondary)' }}>{r.presentPct}%</b> present</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </PremiumCard>
   );
 }
 
@@ -912,14 +1185,14 @@ function LiveFeedPanel({ feedItems }: { feedItems: FeedItem[] }) {
 /* ────────────────────────────────────────────────────────────────
    QUICK ACTIONS
 ──────────────────────────────────────────────────────────────── */
-function QuickActionsPanel({ onMarkAll }: { onMarkAll?: () => void }) {
+function QuickActionsPanel({ onMarkAll, onTrends }: { onMarkAll?: () => void; onTrends: () => void }) {
   const router = useRouter();
   const actions = [
     { label: 'Mark All Present', icon: <CheckCircle2 className="h-5 w-5" />, color: 'from-emerald-500/20 to-green-500/10', onClick: onMarkAll },
     { label: 'Bulk Attendance',  icon: <Users className="h-5 w-5" />,        color: 'from-sky-500/20 to-blue-500/10', onClick: onMarkAll },
     { label: 'Export CSV',       icon: <Download className="h-5 w-5" />,      color: 'from-violet-500/20 to-purple-500/10', onClick: () => window.open(`/api/attendance?format=csv&date=${new Date().toISOString().split('T')[0]}`, '_blank') },
     { label: 'Send Reminders',   icon: <Bell className="h-5 w-5" />,          color: 'from-amber-500/20 to-yellow-500/10', onClick: () => router.push('/engagement/notifications') },
-    { label: 'Open Reports',     icon: <BarChart3 className="h-5 w-5" />,     color: 'from-rose-500/20 to-red-500/10', onClick: () => router.push('/attendance/reports') },
+    { label: 'Trends',           icon: <BarChart3 className="h-5 w-5" />,     color: 'from-rose-500/20 to-red-500/10', onClick: onTrends },
   ];
   return (
     <section className="mt-6">
@@ -1188,17 +1461,23 @@ function FeedAvatar({ initials, status, size = 'sm' }: { initials: string; statu
   );
 }
 
-function HeroBtn({ label, icon, primary, compact, onClick, light }: { label: string; icon: React.ReactNode; primary?: boolean; compact?: boolean; onClick?: () => void; light?: boolean }) {
+function HeroBtn({ label, icon, primary, compact, onClick, light, full }: { label: string; icon: React.ReactNode; primary?: boolean; compact?: boolean; onClick?: () => void; light?: boolean; full?: boolean }) {
   return (
-    <button onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-full border font-medium transition hover:-translate-y-0.5 ${
-        compact ? 'px-3.5 py-2 text-sm' : 'px-4 py-2.5 text-sm'
-      } ${
+    <button
+      type="button"
+      onClick={onClick}
+      // h-[44px] rather than py-2.5: these sit on a hero a trainer taps at
+      // arm's length, and `light` used to mean a white pill on a pale slab —
+      // on the dark hero it is a translucent one, so the variant now describes
+      // where it sits rather than what colour it happens to be.
+      className={`inline-flex h-[44px] cursor-pointer items-center justify-center gap-2 truncate rounded-full border font-medium transition-transform active:scale-95 ${
+        full ? 'w-full' : ''
+      } ${compact ? 'px-3.5 text-sm' : 'px-4 text-[13px]'} ${
         primary
-          ? 'border-transparent bg-[linear-gradient(135deg,#F59E0B,#D97706)] text-white shadow-[0_10px_28px_rgba(245,158,11,0.32)] hover:shadow-[0_14px_36px_rgba(245,158,11,0.42)]'
+          ? 'border-transparent bg-[linear-gradient(135deg,#F59E0B,#D97706)] text-white shadow-[0_10px_28px_rgba(245,158,11,0.32)]'
           : light
-            ? 'border-black/10 bg-white text-gray-700 shadow-sm hover:bg-gray-50'
-            : 'border-white/15 bg-white/10 text-white/85 hover:bg-white/18 backdrop-blur-md'
+            ? 'border-white/18 bg-white/12 text-white backdrop-blur-md'
+            : 'border-white/15 bg-white/10 text-white/85 backdrop-blur-md'
       }`}>
       {icon}{label}
     </button>
