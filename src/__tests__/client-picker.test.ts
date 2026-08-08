@@ -66,7 +66,7 @@ describe('the shared PT-OS client picker', () => {
     // A floor, so converting a page by deleting its picker and forgetting to
     // render the shared one — which type-checks fine, the page just renders
     // nothing — does not pass silently.
-    expect(callers().length).toBe(12);
+    expect(callers().length).toBe(13);
   });
 
   it('every basePath it is given is a route that exists', () => {
@@ -94,10 +94,11 @@ describe('the shared PT-OS client picker', () => {
     expect(mismatched).toEqual([]);
   });
 
-  it('only Workout Log overrides where picking a client goes', () => {
-    // hrefFor exists for one page: a client's log lives at
-    // /pt-os/clients/[id]/workout-log, a path segment the default
-    // `?client_id=` target cannot express.
+  it('only Workout Log and Progress Report override where picking a client goes', () => {
+    // hrefFor exists for two pages: a client's log lives at
+    // /pt-os/clients/[id]/workout-log and a client's training analytics
+    // (Progress Report) lives at /pt-os/clients/[id]/training/analytics —
+    // both path segments the default `?client_id=` target cannot express.
     //
     // Pinned because hrefFor silently wins over basePath, which means the
     // assertion above — that a picker returns to its own page — stops being
@@ -105,8 +106,9 @@ describe('the shared PT-OS client picker', () => {
     // someone makes on purpose, not a thing that appears in a diff.
     const overriding = callers()
       .filter((p) => readFileSync(p, 'utf8').includes('hrefFor='))
-      .map((p) => p.split('/').slice(-2)[0]);
-    expect(overriding).toEqual(['workout-log']);
+      .map((p) => p.split('/').slice(-2)[0])
+      .sort();
+    expect(overriding).toEqual(['progress-report', 'workout-log']);
   });
 
   it('the hero takes its blue from lib/brand, not a hardcoded hex', () => {
@@ -142,9 +144,19 @@ describe('the shared PT-OS client picker', () => {
     expect(rec).not.toContain('#B45309');
   });
 
-  it('the one override points at a route that exists', () => {
+  it('the workout log override points at a route that exists', () => {
     const src = readFileSync(join(PT_OS, 'workout-log/page.tsx'), 'utf8');
     expect(src).toMatch(/hrefFor=\{\(id\) => `\/pt-os\/clients\/\$\{id\}\/workout-log`\}/);
     expect(existsSync(join(process.cwd(), 'src/app/pt-os/clients/[id]/workout-log/page.tsx'))).toBe(true);
+  });
+
+  it('the progress report override points at a route that exists', () => {
+    // "Progress Report" used to be the sidebar label on /pt-os/reports — PT
+    // revenue and trainer commissions, not a client's own progress. That page
+    // moved to Insights (see nav-config.ts) and this route now opens what the
+    // label actually promises: the client's training analytics.
+    const src = readFileSync(join(PT_OS, 'progress-report/page.tsx'), 'utf8');
+    expect(src).toMatch(/hrefFor=\{\(id\) => `\/pt-os\/clients\/\$\{id\}\/training\/analytics`\}/);
+    expect(existsSync(join(process.cwd(), 'src/app/pt-os/clients/[id]/training/analytics/page.tsx'))).toBe(true);
   });
 });
