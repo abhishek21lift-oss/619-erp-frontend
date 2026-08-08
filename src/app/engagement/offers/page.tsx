@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { PageContainer, PageHero } from '@/components/ui';
 import { Tag, Gift, Plus, Edit2, Trash2, Copy, Clock, CheckCircle2, Users, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -99,35 +100,25 @@ function OffersContent() {
 
   return (
     <AppShell>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
-        {/* ── HERO — DO NOT CHANGE ── */}
-        <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          style={{ position:'relative', overflow:'hidden', borderRadius:24, padding:'40px 44px', marginBottom:28, background:'#f8fafc', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
-          <div style={{ position:'relative' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
-              <div style={{ width:44, height:44, borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg, rgba(0,103,224,0.15), rgba(0,103,224,0.08))' }}>
-                <Tag size={22} color="#0067e0" />
-              </div>
-              <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', background:'linear-gradient(135deg, #0067e0, #0059ce)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Promotions</span>
-            </div>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-              <div>
-                <h1 style={{ fontSize:34, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#0F172A', margin:'0 0 8px' }}>Offers &amp; Promotions</h1>
-                <p style={{ maxWidth:560, fontSize:14, lineHeight:1.6, color:'#64748b' }}>Create discount codes, referral offers &amp; promotional deals for members.</p>
-              </div>
-              <button onClick={()=>{ if (showForm) { setShowForm(false); setEditingId(null); } else { openNewOfferForm(); } }}
-                style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'10px 20px', borderRadius:12, background:'linear-gradient(135deg, #0067e0, #0059ce)', color:'#fff', border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(0,103,224,0.35)' }}>
-                <Plus size={14}/> {showForm?'Cancel':'New Offer'}
-              </button>
-            </div>
-          </div>
-        </m.div>
+      <PageContainer>
+        <PageHero
+          icon={<Tag size={20} />}
+          title="Offers & Promotions"
+          subtitle="Create discount codes, referral offers & promotional deals for members."
+          actions={
+            <button type="button" onClick={()=>{ if (showForm) { setShowForm(false); setEditingId(null); } else { openNewOfferForm(); } }}
+              className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
+              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
+              <Plus size={14}/> {showForm?'Cancel':'New Offer'}
+            </button>
+          }
+        />
 
-        {error && <div style={{ borderRadius:14, padding:'14px 20px', marginBottom:22, background:'#fef2f2', border:'1px solid #fecaca', color:'#dc2626', fontWeight:600, fontSize:13 }}>{error}</div>}
+        {error && <div style={{ borderRadius:14, padding:'14px 20px', background:'#fef2f2', border:'1px solid #fecaca', color:'#dc2626', fontWeight:600, fontSize:13 }}>{error}</div>}
 
         {/* ── KPI CARDS ── */}
         <m.div variants={containerVariants} initial="hidden" animate="visible"
-          style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:14, marginBottom:28 }}>
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {KPIS.map((k,i)=>{
             const vals = [offers.length, active, totalUsed, offers.filter(o=>o.status==='expired').length];
             return (
@@ -146,14 +137,14 @@ function OffersContent() {
         {/* ── CREATE FORM ── */}
         {showForm&&(
           <m.div initial={{ opacity: 0, y: -10, scale:0.98 }} animate={{ opacity: 1, y: 0, scale:1 }}
-            style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e2e8f0', boxShadow:'0 4px 20px rgba(0,0,0,0.08)', padding:24, marginBottom:22 }}>
+            style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e2e8f0', boxShadow:'0 4px 20px rgba(0,0,0,0.08)', padding:24 }}>
             <h3 style={{ margin:'0 0 20px', fontSize:15, fontWeight:700, color:'#0F172A', display:'flex', gap:8, alignItems:'center' }}><Gift size={16} color="#0067e0"/> {editingId ? 'Edit Offer' : 'Create New Offer'}</h3>
             <form onSubmit={addOffer} style={{ display:'grid', gap:16 }}>
               <label style={{ display:'grid', gap:5 }}>
                 <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Offer Name *</span>
                 <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="e.g. Summer Splash 30% Off" required style={inp} />
               </label>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:14 }}>
+              <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap:14 }}>
                 <label style={{ display:'grid', gap:5 }}>
                   <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Discount Type</span>
                   <select value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value as any}))} style={inp}>
@@ -169,7 +160,7 @@ function OffersContent() {
                   <input type="number" min={1} value={form.usageLimit} onChange={e=>setForm(f=>({...f,usageLimit:Number(e.target.value)}))} style={inp} />
                 </label>
               </div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap:14 }}>
                 <label style={{ display:'grid', gap:5 }}>
                   <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Coupon Code</span>
                   <div style={{ display:'flex', gap:6 }}>
@@ -203,7 +194,7 @@ function OffersContent() {
         {/* ── TABS ── */}
         {!loading && (
           <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            style={{ display:'flex', gap:6, marginBottom:20, flexWrap:'wrap' }}>
+            style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
             {(['all','active','expired','draft'] as const).map(t=>{
               const isActive = tab===t;
               return (
@@ -281,7 +272,7 @@ function OffersContent() {
             )}
           </m.div>
         )}
-      </div>
+      </PageContainer>
     </AppShell>
   );
 }

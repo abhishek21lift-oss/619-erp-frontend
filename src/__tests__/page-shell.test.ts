@@ -85,6 +85,12 @@ describe('no page draws a container box around its own title', () => {
     ['app', 'finance', 'collected-payments', 'page.tsx'],
     ['app', 'pt-os', 'balance-sheet', 'page.tsx'],
     ['app', 'insights', 'revenue', 'page.tsx'],
+    ['app', 'engagement', 'automation', 'page.tsx'],
+    ['app', 'engagement', 'campaigns', 'page.tsx'],
+    ['app', 'engagement', 'feedback', 'page.tsx'],
+    ['app', 'engagement', 'notifications', 'page.tsx'],
+    ['app', 'engagement', 'offers', 'page.tsx'],
+    ['app', 'engagement', 'whatsapp', 'page.tsx'],
   ];
 
   it.each(pages)('%s/%s/%s has no slab header', (...p) => {
@@ -312,6 +318,76 @@ describe('the finance pages', () => {
       expect(s).not.toMatch(/minmax\(\s*(180|220)px/);
       expect(s).toContain('grid-cols-2');
     }
+  });
+});
+
+describe('the engagement section (Communication)', () => {
+  // All six pages set `maxWidth: 1280` with 20px of their own side padding,
+  // INSIDE .shell-main's 16px, and a pale/light hero instead of the dashboard's
+  // navy one. Three of the six (automation, feedback, offers) carried a
+  // human-authored `HERO — DO NOT CHANGE` comment from an earlier pass that
+  // fixed contrast below the hero but deliberately left it alone; that
+  // decision is superseded here on explicit instruction to bring every
+  // engagement page onto the shared hero and gutters.
+  const engagement = [
+    ['app', 'engagement', 'automation', 'page.tsx'],
+    ['app', 'engagement', 'campaigns', 'page.tsx'],
+    ['app', 'engagement', 'feedback', 'page.tsx'],
+    ['app', 'engagement', 'notifications', 'page.tsx'],
+    ['app', 'engagement', 'offers', 'page.tsx'],
+    ['app', 'engagement', 'whatsapp', 'page.tsx'],
+  ];
+
+  it.each(engagement)('%s/%s/%s sets no 1280px container of its own', (...p) => {
+    expect(src(...p)).not.toMatch(/maxWidth:\s*1280/);
+  });
+
+  it.each(engagement)('%s/%s/%s carries no leftover DO-NOT-CHANGE marker', (...p) => {
+    expect(src(...p)).not.toMatch(/DO NOT CHANGE/);
+  });
+
+  it('the four pages with a primary action move it into the hero actions slot', () => {
+    // Campaigns, Notifications and Offers already put "New X" beside the
+    // title; Automation's "New Rule" sat in its own row below the KPIs
+    // instead, which is now consistent with the other three.
+    for (const p of [
+      ['app', 'engagement', 'automation', 'page.tsx'],
+      ['app', 'engagement', 'campaigns', 'page.tsx'],
+      ['app', 'engagement', 'notifications', 'page.tsx'],
+      ['app', 'engagement', 'offers', 'page.tsx'],
+    ]) {
+      const s = src(...p);
+      expect(s).toContain('actions={');
+      expect(s).toContain("background: 'rgba(255,255,255,0.12)'");
+    }
+  });
+
+  it('the KPI rows are two-up on a phone, not one column that only widens past four', () => {
+    // repeat(auto-fit, minmax(150px, 1fr)) does collapse on a phone, but not
+    // to the app's usual two-column rhythm — it is replaced with the same
+    // grid-cols-2 lg:grid-cols-N every other converted KPI row uses.
+    for (const p of engagement) {
+      const s = src(...p);
+      expect(s).not.toMatch(/minmax\(150px/);
+    }
+  });
+
+  it('no engagement page still asks for a fixed multi-column grid that cannot collapse', () => {
+    // gridTemplateColumns: '1fr 1fr' / '1fr 1fr 1fr' / '1fr 380px' — three or
+    // four across, or one fixed 380px column, on a 390px phone. Every one of
+    // these is now a responsive Tailwind grid instead.
+    for (const p of engagement) {
+      const s = src(...p);
+      expect(s).not.toMatch(/gridTemplateColumns:\s*'1fr 1fr/);
+      expect(s).not.toMatch(/gridTemplateColumns:\s*'1fr 380px'/);
+    }
+  });
+
+  it('whatsapp stacks the member list above the template panel on a phone', () => {
+    // The fixed 1fr 380px split put a 380px-wide panel on a 390px screen —
+    // 10px left for everything else. It is one column until lg now.
+    const wa = src('app', 'engagement', 'whatsapp', 'page.tsx');
+    expect(wa).toContain("grid-cols-1 lg:grid-cols-[1fr_380px]");
   });
 });
 

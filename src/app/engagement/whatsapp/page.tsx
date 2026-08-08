@@ -4,6 +4,7 @@ import { m } from 'framer-motion';
 import Image from 'next/image';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { PageContainer, PageHero } from '@/components/ui';
 import { MessageCircle, Send, Users, CheckCircle2, Phone, Clock, Search, X, ExternalLink } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -77,33 +78,24 @@ function WAContent() {
 
   return (
     <AppShell>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
-        {/* ── HERO ── */}
-        <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          style={{ position:'relative', overflow:'hidden', borderRadius:24, padding:'40px 44px', marginBottom:28, background:'#f8fafc', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
-          <div style={{ position:'relative' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
-              <div style={{ width:44, height:44, borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,103,224,0.1)', border:'1px solid rgba(0,103,224,0.2)' }}>
-                <MessageCircle size={22} color="#0067e0" />
-              </div>
-              <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', background:'linear-gradient(135deg, #0067e0, #0059ce)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Communication</span>
-            </div>
-            <h1 style={{ fontSize:34, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#0F172A', margin:'0 0 8px' }}>WhatsApp / SMS</h1>
-            <p style={{ maxWidth:560, fontSize:14, lineHeight:1.6, color:'#64748b' }}>Send personalised WhatsApp messages to members using templates or custom messages.</p>
-          </div>
-        </m.div>
+      <PageContainer>
+        <PageHero
+          icon={<MessageCircle size={20} />}
+          title="WhatsApp / SMS"
+          subtitle="Send personalised WhatsApp messages to members using templates or custom messages."
+        />
 
         {/* ── ERROR BANNER ── */}
         {loadError && (
           <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-            style={{ marginBottom: 20, borderRadius: 14, padding: '14px 18px', background: '#fef2f2', border: '1px solid #fecaca', fontSize: 13, color: '#dc2626', lineHeight: 1.5 }}>
+            style={{ borderRadius: 14, padding: '14px 18px', background: '#fef2f2', border: '1px solid #fecaca', fontSize: 13, color: '#dc2626', lineHeight: 1.5 }}>
             <strong style={{ color: '#b91c1c' }}>Unable to load members:</strong> {loadError}. WhatsApp integration is not configured — contact your administrator if this problem persists.
           </m.div>
         )}
 
         {/* ── KPI CARDS ── */}
         <m.div variants={containerVariants} initial="hidden" animate="visible"
-          style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:14, marginBottom:28 }}>
+          className="grid grid-cols-2 lg:grid-cols-3 gap-3">
           {KPIS.map((k,i)=>{
             const vals = [members.length, selected.length, sent];
             return (
@@ -122,7 +114,7 @@ function WAContent() {
         </m.div>
 
         {/* ── MAIN CONTENT ── */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 380px', gap:20 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px]" style={{ gap:20 }}>
           {/* Member list */}
           <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
             style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e2e8f0', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', overflow:'hidden' }}>
@@ -206,7 +198,7 @@ function WAContent() {
             </m.div>
           </div>
         </div>
-      </div>
+      </PageContainer>
     </AppShell>
   );
 }

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PullToRefresh } from '@/components/ui';
+import { PullToRefresh, PageContainer, PageHero } from '@/components/ui';
 import { Bell, Send, Users, CheckCircle2, Clock, Plus, Trash2, MessageSquare, RefreshCw, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -77,40 +77,30 @@ function NContent() {
   return (
     <AppShell>
       <PullToRefresh onRefresh={load}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
-        {/* ── HERO ── */}
-        <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          style={{ position:'relative', overflow:'hidden', borderRadius:24, padding:'40px 44px', marginBottom:28, background:'#f8fafc', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
-          <div style={{ position:'relative' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
-              <div style={{ width:44, height:44, borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,103,224,0.1)', border:'1px solid rgba(0,103,224,0.2)' }}>
-                <Bell size={22} color="#0067e0" />
-              </div>
-              <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', background:'linear-gradient(135deg, #0067e0, #0059ce)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Communication</span>
-            </div>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-              <div>
-                <h1 style={{ fontSize:34, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#0F172A', margin:'0 0 8px' }}>Notifications</h1>
-                <p style={{ maxWidth:560, fontSize:14, lineHeight:1.6, color:'#64748b' }}>Send alerts, reminders &amp; announcements to members.</p>
-              </div>
-              <button onClick={()=>setShowForm(v=>!v)}
-                style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'10px 20px', borderRadius:12, background:'linear-gradient(135deg, #0067e0, #0059ce)', color:'#fff', border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(0,103,224,0.35)' }}>
-                <Plus size={14}/> {showForm?'Cancel':'Compose'}
-              </button>
-            </div>
-          </div>
-        </m.div>
+      <PageContainer>
+        <PageHero
+          icon={<Bell size={20} />}
+          title="Notifications"
+          subtitle="Send alerts, reminders & announcements to members."
+          actions={
+            <button type="button" onClick={()=>setShowForm(v=>!v)}
+              className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
+              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
+              <Plus size={14}/> {showForm?'Cancel':'Compose'}
+            </button>
+          }
+        />
 
         {error && (
           <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-            style={{ borderRadius:14, padding:'14px 20px', marginBottom:22, background:'#fef2f2', border:'1px solid #fecaca', color:'#dc2626', fontWeight:600, fontSize:13 }}>
+            style={{ borderRadius:14, padding:'14px 20px', background:'#fef2f2', border:'1px solid #fecaca', color:'#dc2626', fontWeight:600, fontSize:13 }}>
             {error}
           </m.div>
         )}
 
         {/* ── KPI CARDS ── */}
         <m.div variants={containerVariants} initial="hidden" animate="visible"
-          style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:14, marginBottom:28 }}>
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {KPIS.map((k,i)=>{
             const vals = [total, sent, scheduled, memberCount];
             return (
@@ -131,10 +121,10 @@ function NContent() {
         {/* ── COMPOSE FORM ── */}
         {showForm&&(
           <m.div initial={{ opacity: 0, y: -10, scale:0.98 }} animate={{ opacity: 1, y: 0, scale:1 }}
-            style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e2e8f0', boxShadow:'0 4px 20px rgba(0,0,0,0.08)', padding:24, marginBottom:22 }}>
+            style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e2e8f0', boxShadow:'0 4px 20px rgba(0,0,0,0.08)', padding:24 }}>
             <h3 style={{ margin:'0 0 20px', fontSize:15, fontWeight:700, color:'#0F172A', display:'flex', gap:8, alignItems:'center' }}><Send size={16} color="#0067e0"/> Compose Notification</h3>
             <form onSubmit={handleSend} style={{ display:'grid', gap:16 }}>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap:14 }}>
                 <label style={{ display:'grid', gap:5 }}>
                   <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Type</span>
                   <select value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value}))} style={selInp}>
@@ -197,7 +187,7 @@ function NContent() {
                     <span style={{ fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:20, background:n.status==='sent'?'rgba(16,185,129,0.12)':'rgba(245,158,11,0.12)', color:n.status==='sent'?'#10b981':'#d97706', textTransform:'capitalize' }}>{n.status}</span>
                   </div>
                   <p style={{ margin:'0 0 8px', fontSize:13, color:'#334155', lineHeight:1.6 }}>{n.body}</p>
-                  <div style={{ display:'flex', gap:16, fontSize:11, color:'#64748b', alignItems:'center' }}>
+                  <div style={{ display:'flex', gap:16, fontSize:11, color:'#64748b', alignItems:'center', flexWrap:'wrap' }}>
                     <span style={{ display:'flex', alignItems:'center', gap:4 }}><Users size={11}/>{n.recipients} recipients</span>
                     <span style={{ display:'flex', alignItems:'center', gap:4 }}><Clock size={11}/>{n.created_at ? new Date(n.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</span>
                     <span style={{ background:'#f1f5f9', padding:'2px 8px', borderRadius:6, fontSize:11, fontWeight:600, color:'#64748b', border:'1px solid #e2e8f0' }}>{n.audience}</span>
@@ -211,7 +201,7 @@ function NContent() {
             ))
           )}
         </m.div>
-      </div>
+      </PageContainer>
       </PullToRefresh>
     </AppShell>
   );

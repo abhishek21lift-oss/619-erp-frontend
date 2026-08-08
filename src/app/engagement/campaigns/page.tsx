@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { PageContainer, PageHero } from '@/components/ui';
 import { Send, Target, TrendingUp, Users, Plus, Trash2, Calendar, CheckCircle2, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -70,37 +71,27 @@ function CampaignContent() {
 
   return (
     <AppShell>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
-        {/* ── HERO ── */}
-        <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: 'var(--bg-subtle)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-          <div style={{ position: 'relative' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,103,224,0.1)', border: '1px solid rgba(0,103,224,0.2)' }}>
-                <Send size={22} color="#0067e0" />
-              </div>
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'linear-gradient(135deg, #0067e0, #0059ce)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Marketing</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: 'var(--text-primary)', margin: '0 0 8px' }}>Campaigns</h1>
-                <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.6, color: 'var(--text-muted)' }}>Plan, launch &amp; track multi-channel marketing campaigns.</p>
-              </div>
-              <button onClick={() => setShowForm(v => !v)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '10px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,103,224,0.35)' }}>
-                <Plus size={14} /> {showForm ? 'Cancel' : 'New Campaign'}
-              </button>
-            </div>
-          </div>
-        </m.div>
+      <PageContainer>
+        <PageHero
+          icon={<Send size={20} />}
+          title="Campaigns"
+          subtitle="Plan, launch & track multi-channel marketing campaigns."
+          actions={
+            <button type="button" onClick={() => setShowForm(v => !v)}
+              className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
+              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
+              <Plus size={14} /> {showForm ? 'Cancel' : 'New Campaign'}
+            </button>
+          }
+        />
 
         {error && (
-          <div style={{ borderRadius: 14, padding: '14px 20px', marginBottom: 22, background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: 600, fontSize: 13 }}>{error}</div>
+          <div style={{ borderRadius: 14, padding: '14px 20px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: 600, fontSize: 13 }}>{error}</div>
         )}
 
         {/* ── KPI CARDS ── */}
         <m.div variants={containerVariants} initial="hidden" animate="visible"
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 28 }}>
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {KPIS.map((k, i) => (
             <m.div key={k.label} variants={itemVariants}
               style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '22px 24px', background: k.bg, border: `1px solid ${k.color}22`, boxShadow: 'var(--shadow-xs)', cursor: 'default' }}>
@@ -116,10 +107,10 @@ function CampaignContent() {
         {/* ── CREATE FORM ── */}
         {showForm && (
           <m.div initial={{ opacity: 0, y: -10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-            style={{ borderRadius: 20, background: '#ffffff', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', padding: 24, marginBottom: 22 }}>
+            style={{ borderRadius: 20, background: '#ffffff', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', padding: 24 }}>
             <h3 style={{ margin: '0 0 20px', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', gap: 8, alignItems: 'center' }}><TrendingUp size={16} color="#0067e0" /> Create Campaign</h3>
             <form onSubmit={addCampaign} style={{ display: 'grid', gap: 16 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 14 }}>
                 {[
                   { label: 'Campaign Name *', key: 'name', type: 'text', placeholder: 'e.g. Summer Fitness Drive' },
                   { label: 'Goal', key: 'goal', type: 'text', placeholder: 'e.g. Increase renewals by 20%' },
@@ -224,7 +215,7 @@ function CampaignContent() {
             )}
           </m.div>
         )}
-      </div>
+      </PageContainer>
     </AppShell>
   );
 }

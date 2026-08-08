@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { PageContainer, PageHero } from '@/components/ui';
 import { Star, MessageSquare, ThumbsUp, ThumbsDown, Clock, CheckCircle2, User, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -79,27 +80,18 @@ function FeedbackContent() {
 
   return (
     <AppShell>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
-        {/* ── HERO — DO NOT CHANGE ── */}
-        <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: 'var(--bg-subtle)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-          <div style={{ position: 'relative', zIndex: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(0,103,224,0.15), rgba(0,103,224,0.08))' }}>
-                <Star size={22} color="#0067e0" />
-              </div>
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'linear-gradient(135deg, #0067e0, #0059ce)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Feedback</span>
-            </div>
-            <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: 'var(--text-primary)', margin: '0 0 8px' }}>Member Feedback</h1>
-            <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.6, color: 'var(--text-muted)' }}>Track, respond &amp; act on member reviews and complaints.</p>
-          </div>
-        </m.div>
+      <PageContainer>
+        <PageHero
+          icon={<Star size={20} />}
+          title="Member Feedback"
+          subtitle="Track, respond & act on member reviews and complaints."
+        />
 
-        {error && <div style={{ borderRadius: 14, padding: '14px 20px', marginBottom: 22, background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: 600, fontSize: 13 }}>{error}</div>}
+        {error && <div style={{ borderRadius: 14, padding: '14px 20px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: 600, fontSize: 13 }}>{error}</div>}
 
         {/* ── KPI CARDS ── */}
         <m.div variants={containerVariants} initial="hidden" animate="visible"
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 28 }}>
+          className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           {KPIS.map((k, i) => {
             const vals = [avgRating, items.length, positive, open, nps];
             const suffixes = [' ⭐', '', '', '', '%'];
@@ -115,7 +107,7 @@ function FeedbackContent() {
 
         {/* ── FILTERS ── */}
         <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
+          style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {CATS.map(c => (
               <button key={c} onClick={() => setCat(c)}
@@ -190,7 +182,7 @@ function FeedbackContent() {
             )}
           </m.div>
         )}
-      </div>
+      </PageContainer>
     </AppShell>
   );
 }
