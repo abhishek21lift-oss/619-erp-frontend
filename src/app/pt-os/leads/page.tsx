@@ -328,7 +328,7 @@ export default function LeadsPage() {
     <Guard>
       <AppShell>
         <PullToRefresh onRefresh={leads.refetch}>
-          {/* max-w-7xl and pt-2, exactly as the dashboard — this was
+          {/* max-w-7xl, exactly as the dashboard — this was
               max-w-[1600px] with mt-1. */}
           <PageContainer>
 

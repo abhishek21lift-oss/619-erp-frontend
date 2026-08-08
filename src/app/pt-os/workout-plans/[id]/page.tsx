@@ -145,7 +145,7 @@ function Inner() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-3xl pt-2 pb-6 sm:pb-8">
+    <div className="mx-auto w-full max-w-3xl pt-1 pb-6 sm:pb-8">
       <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         className="rounded-[24px] p-6 sm:p-8 mb-6"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>

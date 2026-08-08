@@ -1841,7 +1841,7 @@ export default function PtOsDashboard() {
           QuickDock and the ambient wash above stay outside PullToRefresh: both use
           position:fixed, which breaks once an ancestor gets a transform. */}
       <PullToRefresh onRefresh={refreshAll}>
-      <div className="relative mx-auto w-full max-w-7xl pt-2 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] lg:pb-28 space-y-3.5 sm:space-y-4"
+      <div className="relative mx-auto w-full max-w-7xl pt-1 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] lg:pb-28 space-y-3.5 sm:space-y-4"
         style={{ zIndex: 1 }}>
 
         {dash.loading && !d && <SkeletonDash />}

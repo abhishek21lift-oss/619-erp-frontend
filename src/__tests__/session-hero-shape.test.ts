@@ -52,12 +52,12 @@ describe('the session hero sits inside the shell like the rest', () => {
     expect(page).toContain(radii);
   });
 
-  it('keeps the dashboard\'s extra 8px above the hero', () => {
-    // .shell-main gives every page 16px; the dashboard adds pt-2 on top before
+  it('keeps the dashboard\'s extra 4px above the hero', () => {
+    // .shell-main gives every page 16px; the dashboard adds pt-1 on top before
     // its hero. Without the same here this one sat visibly tighter under the
     // top bar than the hero it is meant to match.
-    expect(page).toMatch(/className="pt-2 pb-32"/);
-    expect(dashboard).toMatch(/max-w-7xl pt-2/);
+    expect(page).toMatch(/className="pt-1 pb-32"/);
+    expect(dashboard).toMatch(/max-w-7xl pt-1/);
   });
 
   it('does not indent the content a second time', () => {
