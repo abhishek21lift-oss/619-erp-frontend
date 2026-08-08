@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button } from '@/components/ui';
+import { Button, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
@@ -55,14 +55,17 @@ function fmtDateTime(d?: string) {
 }
 
 function StatusBadge({ status, days_left }: { status: string; days_left: number | null }) {
+  // Alpha bumped from the 18 (~9%) this used when it sat on a light card —
+  // on the navy hero the tint needs more presence to still read as a pill
+  // rather than plain coloured text. This component has one caller.
   const styles: Record<string, { label: string; bg: string; fg: string }> = {
-    active: { label: 'Active', bg: '#10b98118', fg: '#10b981' },
-    expired: { label: 'Expired', bg: '#f43f5e18', fg: '#ef4444' },
-    frozen: { label: 'Frozen', bg: '#3b82f618', fg: '#0067e0' },
+    active: { label: 'Active', bg: '#10b98133', fg: '#10b981' },
+    expired: { label: 'Expired', bg: '#f43f5e33', fg: '#ef4444' },
+    frozen: { label: 'Frozen', bg: '#3b82f633', fg: '#0067e0' },
   };
-  let s = styles[status] || { label: status, bg: '#6b728018', fg: '#64748b' };
+  let s = styles[status] || { label: status, bg: '#6b728033', fg: '#64748b' };
   if (status === 'active' && days_left !== null && days_left <= 7)
-    s = { label: 'Expiring', bg: '#dc262618', fg: '#dc2626' };
+    s = { label: 'Expiring', bg: '#dc262633', fg: '#dc2626' };
   return (
     <span className="text-[11px] font-bold uppercase tracking-[0.06em] px-2.5 py-1 rounded-[8px]"
       style={{ background: s.bg, color: s.fg }}>
@@ -233,51 +236,43 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
               <Button variant="primary" iconLeft={<RefreshCw size={13} />} onClick={fetchAll} className="mt-4">Retry</Button>
             </div>
           ) : client ? (
-            <div className="mx-auto max-w-screen-xl pt-2 pb-6">
-              {/* ── Header ── */}
-              <m.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-wrap items-center justify-between gap-4 mb-6"
-              >
-                <div className="flex items-center gap-3">
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>{client.name}</h1>
-                      <StatusBadge status={client.status} days_left={client.days_left} />
-                    </div>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <p className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>
-                        {client.client_id || client.id.slice(0, 8)} · PT Payments
-                      </p>
-                      {client.trainer_name && (
-                        <span className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
-                          <User size={11} /> {client.trainer_name}
-                        </span>
-                      )}
-                      {client.package_type && (
-                        <span className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
-                          <Dumbbell size={11} /> {client.package_type}
-                        </span>
-                      )}
-                    </div>
+            <PageContainer>
+              <PageHero
+                icon={<Wallet size={20} />}
+                title={client.name}
+                subtitle={`${client.client_id || client.id.slice(0, 8)} · PT Payments`}
+                actions={
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => router.push(`/pt-os/clients/${id}`)}
+                      className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
+                      style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
+                      <ArrowLeft size={14} /> Profile
+                    </button>
+                    <button type="button" onClick={() => setShowPaymentPanel(true)}
+                      className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
+                      style={{ background: '#fff', color: '#0F172A' }}>
+                      <Plus size={14} /> Record Payment
+                    </button>
                   </div>
+                }
+              >
+                <div className="flex flex-wrap items-center gap-3">
+                  <StatusBadge status={client.status} days_left={client.days_left} />
+                  {client.trainer_name && (
+                    <span className="flex items-center gap-1 text-[11px]" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                      <User size={11} /> {client.trainer_name}
+                    </span>
+                  )}
+                  {client.package_type && (
+                    <span className="flex items-center gap-1 text-[11px]" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                      <Dumbbell size={11} /> {client.package_type}
+                    </span>
+                  )}
                 </div>
-
-                <div className="flex gap-2">
-                  <Button variant="outline" iconLeft={<ArrowLeft size={14} />}
-                    onClick={() => router.push(`/pt-os/clients/${id}`)}>
-                    Profile
-                  </Button>
-                  <Button variant="primary" iconLeft={<Plus size={14} />}
-                    onClick={() => setShowPaymentPanel(true)}>
-                    Record Payment
-                  </Button>
-                </div>
-              </m.div>
+              </PageHero>
 
               {/* ── Summary Cards ── */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <GradientCard from="#F59E0B" to="#D97706">
                   <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-3">
@@ -346,7 +341,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="rounded-[14px] p-5 mb-6"
+                className="rounded-[14px] p-5"
                 style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}
               >
                 <div className="flex items-center justify-between mb-3">
@@ -813,7 +808,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                   </>
                 )}
               </AnimatePresence>
-            </div>
+            </PageContainer>
           ) : null}
         </div>
       </AppShell>

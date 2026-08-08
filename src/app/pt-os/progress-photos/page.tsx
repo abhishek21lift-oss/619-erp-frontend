@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button } from '@/components/ui';
+import { Button, PageContainer, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -142,21 +142,14 @@ function PhotoStudio({ clientId }: PhotoStudioProps) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl py-6 space-y-6">
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
-            <Camera size={16} style={{ color: 'var(--text-muted)' }} />
-          </div>
-          <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>Progress Photos</span>
-        </div>
-        <h1 className="text-[26px] sm:text-[32px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
-          {clientName}&apos;s Photo Capture Studio
-        </h1>
-      </m.div>
+    <PageContainer>
+      <PageHero
+        icon={<Camera size={20} />}
+        title={`${clientName}'s Photo Capture Studio`}
+        subtitle="Progress Photos"
+      />
 
+    <div className="mx-auto w-full max-w-4xl space-y-6">
       {/* Photo Guidelines */}
       <div className="rounded-[20px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
         <button type="button" onClick={() => setGuidelinesOpen((v) => !v)} className="flex w-full items-center justify-between px-6 py-4">
@@ -278,6 +271,7 @@ function PhotoStudio({ clientId }: PhotoStudioProps) {
         </div>
       )}
     </div>
+    </PageContainer>
   );
 }
 

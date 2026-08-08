@@ -23,7 +23,7 @@ import { m } from 'framer-motion';
 import { Loader2, TrendingUp, Trophy, Activity } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { EmptyState, PremiumAreaChart, PremiumBarChart } from '@/components/ui';
+import { EmptyState, PremiumAreaChart, PremiumBarChart, PageContainer, PageHero } from '@/components/ui';
 import AdherencePanel from '@/components/pt-os/analytics/AdherencePanel';
 import MusclePanel from '@/components/pt-os/analytics/MusclePanel';
 import PrTimeline from '@/components/pt-os/analytics/PrTimeline';
@@ -161,14 +161,14 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
   return (
     <Guard roles={['admin', 'manager', 'trainer']}>
       <AppShell>
-        <div className="mx-auto max-w-screen-md px-4 py-4">
-          <h1 className="text-[20px] font-[800]" style={{ color: 'var(--text-primary)' }}>
-            Progress Analytics
-          </h1>
-          <p className="mb-4 mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-            Built from logged sessions — not from the plan.
-          </p>
+        <PageContainer>
+          <PageHero
+            icon={<TrendingUp size={20} />}
+            title="Progress Analytics"
+            subtitle="Built from logged sessions — not from the plan."
+          />
 
+        <div className="mx-auto max-w-screen-md">
           {loading ? (
             <div className="flex justify-center py-20">
               <Loader2 size={24} className="animate-spin" style={{ color: 'var(--brand)' }} />
@@ -306,6 +306,7 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
           // per keystroke.
           onSaved={loadStats}
         />
+        </PageContainer>
       </AppShell>
     </Guard>
   );
