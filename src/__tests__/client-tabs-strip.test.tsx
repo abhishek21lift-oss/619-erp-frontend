@@ -129,14 +129,37 @@ describe('<ClientTabs /> — the strip', () => {
     expect(scrollTo).toHaveBeenCalled();
   });
 
-  it('gives the selected pill an opaque background', () => {
-    // --bg-card is 80% white. On the grey trough that picks the trough up and
-    // reads as a disabled control rather than the selected one.
+  it('gives the selected tile an opaque background, not a translucent one', () => {
+    // Resting tiles already sit on a soft colour tint (Quick Actions' own
+    // look). A translucent selected state on that same tint would be
+    // indistinguishable from every other tile, so it must be opaque.
     render(<ClientTabs active="overview" onChange={() => {}} />);
-    const pill = strip().querySelector('[aria-selected="true"] span[style*="background"]') as HTMLElement;
-    expect(pill).not.toBeNull();
-    expect(pill.style.background).toContain('--bg-white');
-    expect(pill.style.background).not.toContain('--bg-card');
+    const selected = strip().querySelector('[aria-selected="true"]') as HTMLElement;
+    expect(selected).not.toBeNull();
+    expect(selected.style.background).toContain('--bg-white');
+    expect(selected.style.background).not.toContain('--bg-card');
+  });
+
+  it('renders each tab as an icon tile over a label, like Quick Actions', () => {
+    render(<ClientTabs active="overview" onChange={() => {}} />);
+    const overview = screen.getByRole('tab', { name: /Overview/ });
+    // The icon tile is a distinct child with its own coloured gradient fill,
+    // not an icon sitting inline beside the label text.
+    const tile = overview.querySelector('span[style*="linear-gradient"]');
+    expect(tile).not.toBeNull();
+  });
+
+  it('gives every tab a colour, and does not repeat it on adjacent tabs', () => {
+    // Not full uniqueness — Quick Actions itself rotates five colours across
+    // more than five tiles — only that two tabs sitting next to each other in
+    // the strip are never the same colour, which is what would actually blur
+    // together while scrolling.
+    render(<ClientTabs active="overview" onChange={() => {}} />);
+    const tabs = screen.getAllByRole('tab');
+    const bg = (el: HTMLElement) => (el.querySelector('span[style*="linear-gradient"]') as HTMLElement).style.background;
+    for (let i = 1; i < tabs.length; i++) {
+      expect(bg(tabs[i])).not.toBe(bg(tabs[i - 1]));
+    }
   });
 
   it('shows a count badge only where there is something to count', () => {
