@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button } from '@/components/ui';
+import { Button, PageContainer, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -186,29 +186,21 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl py-6 space-y-5">
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
-                <Target size={16} style={{ color: 'var(--text-muted)' }} />
-              </div>
-              <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>Goal Assessment</span>
-            </div>
-            <h1 className="text-[26px] sm:text-[32px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
-              {clientName}&apos;s Goals
-            </h1>
-          </div>
-          <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}>
-            New Goal
-          </Button>
-        </div>
-      </m.div>
+    <PageContainer>
+      <PageHero
+        icon={<Target size={20} />}
+        title={`${clientName}'s Goals`}
+        subtitle="Goal Assessment"
+        actions={
+          <button type="button" onClick={() => openWizard(null)}
+            className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
+            style={{ background: '#fff', color: '#0F172A' }}>
+            <Plus size={16} /> New Goal
+          </button>
+        }
+      />
 
-      <div className="space-y-3">
+      <div className="mx-auto w-full max-w-3xl space-y-3">
         {goals.length === 0 && (
           <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <p className="text-[14px] font-[600] text-slate-500">No goals set yet.</p>
@@ -221,7 +213,7 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
           <GoalCard key={String(g.id)} goal={g} latestWeight={latestWeight} onClick={() => openWizard(String(g.id))} />
         ))}
       </div>
-    </div>
+    </PageContainer>
   );
 }
 
@@ -353,31 +345,23 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
   };
 
   return (
-    <div className="pb-28">
-      {/* Header — in normal flow on the page background (no sticky card). */}
-      <div className="pt-1">
-        <div className="mx-auto max-w-3xl py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', boxShadow: '0 6px 18px rgba(0,103,224,0.3)' }}>
-              <Target size={18} color="#fff" />
-            </div>
-            <div>
-              <h1 className="text-[19px] font-[860] tracking-[-0.03em] text-slate-900 leading-none sm:text-[22px]">{goalId ? 'Edit Goal' : 'New Goal'}</h1>
-              <p className="text-[12px] font-[600] text-slate-400 mt-1">{clientName}</p>
-            </div>
-          </div>
-          <button type="button" onClick={() => onDone(false)} className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-[650] transition-colors hover:bg-white" style={{ color: '#64748b', border: '1px solid rgba(15,23,42,0.08)' }}>
-            <X size={12} /> Cancel
+    <PageContainer>
+      <PageHero
+        icon={<Target size={18} />}
+        title={goalId ? 'Edit Goal' : 'New Goal'}
+        subtitle={clientName}
+        actions={
+          <button type="button" onClick={() => onDone(false)}
+            className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
+            style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
+            <X size={13} /> Cancel
           </button>
-        </div>
-        {!reviewMode && (
-          <div className="mx-auto max-w-3xl pb-3">
-            <GoalProgressTimeline current={step} onStep={setStep} />
-          </div>
-        )}
-      </div>
+        }
+      >
+        {!reviewMode && <GoalProgressTimeline current={step} onStep={setStep} />}
+      </PageHero>
 
-      <div className="mx-auto max-w-3xl py-6 space-y-5">
+      <div className="mx-auto max-w-3xl space-y-5">
         {!reviewMode ? (
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
             {step === 1 && <StepPrimaryGoal form={form} set={set} error={errors.primaryGoal} />}
@@ -434,6 +418,6 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

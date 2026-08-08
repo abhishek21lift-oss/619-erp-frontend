@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Repeat, CheckCircle, IndianRupee, Calendar, User, Dumbbell, FileText } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button } from '@/components/ui';
+import { Button, PageContainer, PageHero } from '@/components/ui';
 import FloatInput from '@/components/ui/FloatInput';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -103,15 +103,15 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
   return (
     <Guard>
       <AppShell>
-        <div className="mx-auto max-w-2xl pt-2 pb-6">
+        <PageContainer>
 
-          {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
-            <div>
-              <h1 className="text-[20px] font-[800] tracking-tight" style={{ color: 'var(--text-primary)' }}>Renew PT</h1>
-              {client && <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>{client.name}</p>}
-            </div>
-          </div>
+          <PageHero
+            icon={<Repeat size={20} />}
+            title="Renew PT"
+            subtitle={client ? client.name : undefined}
+          />
+
+        <div className="mx-auto max-w-2xl">
 
           {/* Current subscription summary */}
           {client && (
@@ -215,6 +215,7 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
             </div>
           </div>
         </div>
+        </PageContainer>
       </AppShell>
     </Guard>
   );

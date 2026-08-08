@@ -96,6 +96,11 @@ describe('no page draws a container box around its own title', () => {
     ['app', 'ai', 'progress-analysis', 'page.tsx'],
     ['app', 'ai', 'business-insights', 'page.tsx'],
     ['app', 'ai-coach', 'knowledge', 'page.tsx'],
+    ['app', 'pt-os', 'clients', '[id]', 'enroll', 'page.tsx'],
+    ['app', 'pt-os', 'clients', '[id]', 'renew', 'page.tsx'],
+    ['app', 'pt-os', 'goals', 'page.tsx'],
+    ['app', 'pt-os', 'sessions', 'page.tsx'],
+    ['app', 'pt-os', 'strength-tracking', 'page.tsx'],
   ];
 
   it.each(pages)('%s/%s/%s has no slab header', (...p) => {
@@ -461,6 +466,59 @@ describe('the AI suite (Workout/Diet Generator, Progress Analyzer, Business Insi
     expect(kb).not.toContain('width: 48, height: 48, borderRadius: 14');
     expect(kb).toContain('actions={');
     expect(kb).toContain('Upload Document');
+  });
+});
+
+describe('the client-scoped PT pages (enroll, renew, goals, sessions, strength tracking)', () => {
+  it('enroll keeps the per-client fact chips, restyled for the navy hero', () => {
+    // "Member since" / "Age" / "Weight" / "Goal" — conditional, so a client
+    // missing a date of birth or a goal gets a shorter row rather than a row
+    // of dashes. The chip itself moves from a dark-on-light tint to a
+    // translucent white one; the avatar it used to sit beside is gone —
+    // PageHero's icon slot draws its own tile and cannot host a photo.
+    const enroll = src('app', 'pt-os', 'clients', '[id]', 'enroll', 'page.tsx');
+    expect(enroll).toContain('heroFacts.map');
+    expect(enroll).toContain("background: 'rgba(255,255,255,0.14)'");
+    expect(enroll).not.toContain('<ClientAvatar');
+  });
+
+  it('the goal wizard progress timeline is readable on navy, not near-black-on-navy', () => {
+    // GoalProgressTimeline was built for a light page background: the active
+    // step's circle was #0f172a (near-black) and its label was the same
+    // #0f172a on top of it — invisible once the component moved inside
+    // PageHero's navy gradient. Fixed at the source since this component
+    // has exactly one caller.
+    const timeline = src('components', 'pt-os', 'goal-assessment', 'GoalProgressTimeline.tsx');
+    expect(timeline).not.toContain("active ? '#0f172a'");
+    expect(timeline).not.toContain("background: '#e2e8f0'");
+  });
+
+  it('the goals list and goal wizard headers both use PageHero', () => {
+    // Two return paths in one file — the client's goal list and the
+    // multi-step wizard for creating/editing one — each had its own ad-hoc
+    // header. Both convert, not just the one the screenshot showed.
+    const goals = src('app', 'pt-os', 'goals', 'page.tsx');
+    expect((goals.match(/<PageHero/g) ?? []).length).toBeGreaterThanOrEqual(2);
+    expect((goals.match(/<PageContainer>/g) ?? []).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('sessions moves refresh into the hero actions slot', () => {
+    const sessions = src('app', 'pt-os', 'sessions', 'page.tsx');
+    expect(sessions).toContain('actions={');
+    expect(sessions).not.toContain("bg-[rgba(0,103,224,0.08)] text-[#0067E0]");
+  });
+
+  it('strength tracking keeps the missing-bodyweight warning, recoloured for navy', () => {
+    const st = src('app', 'pt-os', 'strength-tracking', 'page.tsx');
+    expect(st).toContain('No bodyweight on file');
+    expect(st).not.toContain("mt-2 text-[12.5px]");
+    expect(st).toContain("color: '#FDE68A'");
+  });
+
+  it('renew PT gets a hero instead of a bare h1', () => {
+    const renew = src('app', 'pt-os', 'clients', '[id]', 'renew', 'page.tsx');
+    expect(renew).not.toContain('text-[20px] font-[800] tracking-tight');
+    expect(renew).toContain('title="Renew PT"');
   });
 });
 

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 
 type Session = {
@@ -122,28 +123,25 @@ export default function PTSessionsPage() {
   return (
     <Guard>
       <AppShell>
-        <div className="mx-auto w-full max-w-7xl py-6 sm:py-8">
-          {/* Header */}
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-[22px] font-extrabold tracking-[-0.02em] text-[#0F172A]">
-                Session History
-              </h1>
-              <p className="mt-1 text-[13px] text-[#64748B]">
-                Track all PT sessions across trainers
-              </p>
-            </div>
-            <m.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={loadSessions}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(0,103,224,0.08)] text-[#0067E0] transition-colors hover:bg-[rgba(0,103,224,0.14)]"
-            >
-              <RefreshCw size={15} strokeWidth={2} className={loading ? 'animate-spin' : ''} />
-            </m.button>
-          </div>
-
-          {/* Tab Bar */}
+        <PageContainer>
+          <PageHero
+            icon={<Calendar size={20} />}
+            title="Session History"
+            subtitle="Track all PT sessions across trainers"
+            actions={
+              <m.button
+                type="button"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={loadSessions}
+                aria-label="Refresh sessions"
+                className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors"
+                style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}
+              >
+                <RefreshCw size={15} strokeWidth={2} className={loading ? 'animate-spin' : ''} />
+              </m.button>
+            }
+          />
 
           {/* Filters */}
           <div className="mb-5 flex flex-col gap-3">
@@ -254,7 +252,7 @@ export default function PTSessionsPage() {
               })}
             </div>
           )}
-        </div>
+        </PageContainer>
       </AppShell>
     </Guard>
   );
