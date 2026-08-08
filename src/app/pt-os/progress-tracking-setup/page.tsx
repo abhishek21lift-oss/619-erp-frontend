@@ -40,7 +40,7 @@ function ProgressTrackingSetupContent() {
   const sp = useSearchParams();
   const clientId = sp.get('client_id') || '';
 
-  if (!clientId) return <ClientPicker title="Progress Tracking Session" icon={<Flag size={20} color="#fff" />} basePath="/pt-os/progress-tracking-setup" />;
+  if (!clientId) return <ClientPicker title="Progress Tracking Overview" subtitle="Pick a client to see their baseline completion" icon={<Flag size={20} color="#fff" />} basePath="/pt-os/progress-tracking-setup" />;
   return <BaselineDashboard key={clientId} clientId={clientId} router={router} />;
 }
 
@@ -151,7 +151,7 @@ function BaselineDashboard({ clientId }: BaselineDashboardProps) {
           <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(245,158,11,0.15)' }}>
             <Flag size={16} color="#F59E0B" />
           </div>
-          <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'rgba(255,255,255,0.5)' }}>Progress Tracking Setup</span>
+          <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'rgba(255,255,255,0.5)' }}>Progress Tracking Overview</span>
         </div>
         <h1 className="text-[26px] sm:text-[32px] font-[860] tracking-[-0.03em] leading-tight text-white">
           {clientName}&apos;s Baseline
