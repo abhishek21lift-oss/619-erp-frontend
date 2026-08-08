@@ -70,6 +70,7 @@ describe('no page draws a container box around its own title', () => {
     ['app', 'insights', 'traffic', 'page.tsx'],
     ['app', 'insights', 'sessions', 'page.tsx'],
     ['app', 'operations', 'leaderboard', 'page.tsx'],
+    ['app', 'attendance', 'page.tsx'],
   ];
 
   it.each(pages)('%s/%s/%s has no slab header', (...p) => {
@@ -92,6 +93,54 @@ describe('no page draws a container box around its own title', () => {
   it.each(pages)('%s/%s/%s is off the double-padding legacy scaffold', (...p) => {
     // `.page-main` sets its own 16px inside `.shell-main`'s 16px.
     expect(src(...p)).not.toContain('className="page-main"');
+  });
+});
+
+describe('attendance reports merged into the attendance page', () => {
+  const reports = src('app', 'attendance', 'reports', 'page.tsx');
+  const attendance = src('app', 'attendance', 'page.tsx');
+
+  it('leaves the old path as a redirect, not a 404', () => {
+    // The path is in browser bookmarks and in whatever the studio has pinned.
+    // Deleting the file turns a page that still exists under a different name
+    // into a support call.
+    expect(reports).toContain("router.replace('/attendance?tab=insights')");
+  });
+
+  it('lands on the tab the content actually moved to', () => {
+    // A redirect to ?tab=insights that the target ignores is a redirect to the
+    // member list — the promise the URL makes has to be one the page keeps.
+    expect(attendance).toContain('useSearchParams');
+    expect(attendance).toContain("sp.get('tab') === 'insights' ? 'insights'");
+  });
+
+  it('carries the parts of the old page that held information', () => {
+    expect(attendance).toContain('function MethodBreakdown');
+    expect(attendance).toContain('function MonthlySummary');
+    expect(attendance).toContain('function RangeBar');
+  });
+
+  it('drops the card that was labelled a trend and had no time axis', () => {
+    // "Footfall Trend" drew one bar per STATUS — present, late, absent. It
+    // could not show a trend. The weekly chart beside it does plot days.
+    expect(attendance).not.toContain('Footfall Trend');
+    expect(attendance).toContain('Weekly Attendance Trends');
+  });
+
+  it('sends the two buttons that opened it to the tab instead', () => {
+    expect(attendance).not.toContain("router.push('/attendance/reports')");
+    expect(attendance).toContain("onGenerateReport={() => setActiveTab('insights')}");
+  });
+
+  it('does not fetch 90 days of history until the tab is opened', () => {
+    // Two extra requests on a page whose landing tab is the member list.
+    expect(attendance).toContain("if (activeTab !== 'insights') return;");
+  });
+
+  it('averages a month over the days it was open, not over its own rows', () => {
+    // The old page divided a month's check-ins by the number of records in
+    // that month — checkins/checkins — so "Avg Daily" printed 1 every month.
+    expect(attendance).toContain('d.checkins / Math.max(d.days.size, 1)');
   });
 });
 
@@ -140,6 +189,27 @@ describe('what the phone screenshots showed', () => {
     const traffic = src('app', 'insights', 'traffic', 'page.tsx');
     expect(traffic).toContain('overflow-x-auto');
     expect(traffic).toContain('min-w-[520px]');
+  });
+
+  it('the attendance hero no longer repeats the KPI row', () => {
+    // Present today / Attendance rate / Late arrivals / Unmarked sat in the
+    // hero, and the KPI row directly below has all four plus Absent and Total.
+    // On a phone both stacks are one-per-row, so the page opened with the same
+    // four figures twice and you scrolled two screens to reach a member.
+    const att = src('app', 'attendance', 'page.tsx');
+    expect(att).not.toContain("label: 'Present today'");
+    expect(att).not.toContain("label: 'Attendance rate'");
+    expect(att).not.toContain("label: 'Late arrivals'");
+  });
+
+  it('the attendance hero claims no hardware it never asked about', () => {
+    // "Live sync active" with a pulsing green dot, and "Biometric device
+    // connected", were literals with no socket, handshake or state behind
+    // them. An indicator that is always green is worse than none, because a
+    // trainer believes it and stops checking.
+    const att = src('app', 'attendance', 'page.tsx');
+    expect(att).not.toContain('Live sync active');
+    expect(att).not.toContain('Biometric device connected');
   });
 
   it('the report tabs use labels that fit', () => {
