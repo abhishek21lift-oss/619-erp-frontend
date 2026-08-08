@@ -91,6 +91,11 @@ describe('no page draws a container box around its own title', () => {
     ['app', 'engagement', 'notifications', 'page.tsx'],
     ['app', 'engagement', 'offers', 'page.tsx'],
     ['app', 'engagement', 'whatsapp', 'page.tsx'],
+    ['app', 'ai', 'workout-generator', 'page.tsx'],
+    ['app', 'ai', 'diet-generator', 'page.tsx'],
+    ['app', 'ai', 'progress-analysis', 'page.tsx'],
+    ['app', 'ai', 'business-insights', 'page.tsx'],
+    ['app', 'ai-coach', 'knowledge', 'page.tsx'],
   ];
 
   it.each(pages)('%s/%s/%s has no slab header', (...p) => {
@@ -388,6 +393,74 @@ describe('the engagement section (Communication)', () => {
     // 10px left for everything else. It is one column until lg now.
     const wa = src('app', 'engagement', 'whatsapp', 'page.tsx');
     expect(wa).toContain("grid-cols-1 lg:grid-cols-[1fr_380px]");
+  });
+});
+
+describe('the AI suite (Workout/Diet Generator, Progress Analyzer, Business Insights, Knowledge Base)', () => {
+  // Each page built its own colourful gradient hero card instead of the
+  // dashboard's navy one — a different accent per page (blue, green, amber,
+  // violet, blue again) — inside a bare maxWidth wrapper rather than
+  // PageContainer's gutter.
+  const aiPages = [
+    ['app', 'ai', 'workout-generator', 'page.tsx'],
+    ['app', 'ai', 'diet-generator', 'page.tsx'],
+    ['app', 'ai', 'progress-analysis', 'page.tsx'],
+    ['app', 'ai', 'business-insights', 'page.tsx'],
+    ['app', 'ai-coach', 'knowledge', 'page.tsx'],
+  ];
+
+  it.each(aiPages)('%s/%s/%s/%s no longer passes a title to AppShell', (...p) => {
+    // PageHero supplies the title now; AppShell's own `title` prop renders a
+    // second, plainer heading above it — the two together would print the
+    // page name twice.
+    expect(src(...p)).not.toMatch(/<AppShell title=/);
+  });
+
+  it('workout and diet generators drop their own gradient hero card', () => {
+    for (const p of [
+      ['app', 'ai', 'workout-generator', 'page.tsx'],
+      ['app', 'ai', 'diet-generator', 'page.tsx'],
+    ]) {
+      const s = src(...p);
+      expect(s).not.toMatch(/radial-gradient\(circle 220px/);
+      expect(s).not.toContain('rounded-[28px]');
+    }
+  });
+
+  it('the feature-pill rows restyle for the navy hero instead of their own tint', () => {
+    // 'rgba(255,255,255,0.75)' pills on a pale card become translucent white
+    // on navy — the same chip balance-sheet and leads use in PageHero.
+    for (const p of [
+      ['app', 'ai', 'workout-generator', 'page.tsx'],
+      ['app', 'ai', 'diet-generator', 'page.tsx'],
+      ['app', 'ai', 'progress-analysis', 'page.tsx'],
+    ]) {
+      const s = src(...p);
+      expect(s).not.toContain('rgba(255,255,255,0.75)');
+      expect(s).toContain("background: 'rgba(255,255,255,0.14)'");
+    }
+  });
+
+  it('progress analyzer drops its own 52px icon tile and marginBottom-40 hero block', () => {
+    const pa = src('app', 'ai', 'progress-analysis', 'page.tsx');
+    expect(pa).not.toContain('width: 52, height: 52');
+    expect(pa).not.toContain('marginBottom: 40');
+  });
+
+  it('business insights drops the hardcoded icon-plus-h1 header row', () => {
+    const bi = src('app', 'ai', 'business-insights', 'page.tsx');
+    expect(bi).not.toContain('<h1 className="text-2xl font-bold text-gray-900">AI Business Insights</h1>');
+    expect(bi).not.toContain('p-2.5 rounded-xl bg-violet-500/10');
+  });
+
+  it('knowledge base moves Upload Document into the hero actions slot', () => {
+    const kb = src('app', 'ai-coach', 'knowledge', 'page.tsx');
+    // The old header's own 48px gradient icon tile is gone — PageHero draws
+    // its own — and the button that used to sit beside a plain h1 is now in
+    // the actions slot.
+    expect(kb).not.toContain('width: 48, height: 48, borderRadius: 14');
+    expect(kb).toContain('actions={');
+    expect(kb).toContain('Upload Document');
   });
 });
 
