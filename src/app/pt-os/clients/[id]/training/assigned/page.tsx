@@ -17,7 +17,7 @@ import { m } from 'framer-motion';
 import { CalendarDays, ChevronRight, ClipboardList, Loader2 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { EmptyState } from '@/components/ui';
+import { EmptyState, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { WorkoutAssignment } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -71,14 +71,14 @@ export default function AssignedWorkoutsPage({ params }: { params: Promise<{ id:
   return (
     <Guard roles={['admin', 'manager', 'trainer']}>
       <AppShell>
-        <div className="mx-auto max-w-screen-md px-4 py-4">
-          <h1 className="text-[20px] font-[800]" style={{ color: 'var(--text-primary)' }}>
-            Assigned Workouts
-          </h1>
-          <p className="mb-4 mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-            Programmes this client is on, and how far through.
-          </p>
+        <PageContainer>
+          <PageHero
+            icon={<ClipboardList size={20} />}
+            title="Assigned Workouts"
+            subtitle="Programmes this client is on, and how far through."
+          />
 
+        <div className="mx-auto max-w-screen-md">
           {loading ? (
             <div className="flex justify-center py-20">
               <Loader2 size={24} className="animate-spin" style={{ color: 'var(--brand)' }} />
@@ -173,6 +173,7 @@ export default function AssignedWorkoutsPage({ params }: { params: Promise<{ id:
             </div>
           )}
         </div>
+        </PageContainer>
       </AppShell>
     </Guard>
   );

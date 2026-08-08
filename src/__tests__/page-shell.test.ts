@@ -101,6 +101,11 @@ describe('no page draws a container box around its own title', () => {
     ['app', 'pt-os', 'goals', 'page.tsx'],
     ['app', 'pt-os', 'sessions', 'page.tsx'],
     ['app', 'pt-os', 'strength-tracking', 'page.tsx'],
+    ['app', 'pt-os', 'clients', '[id]', 'training', 'assigned', 'page.tsx'],
+    ['app', 'pt-os', 'clients', '[id]', 'training', 'analytics', 'page.tsx'],
+    ['app', 'pt-os', 'clients', '[id]', 'payments', 'page.tsx'],
+    ['app', 'pt-os', 'session-balance', 'page.tsx'],
+    ['app', 'pt-os', 'progress-photos', 'page.tsx'],
   ];
 
   it.each(pages)('%s/%s/%s has no slab header', (...p) => {
@@ -519,6 +524,46 @@ describe('the client-scoped PT pages (enroll, renew, goals, sessions, strength t
     const renew = src('app', 'pt-os', 'clients', '[id]', 'renew', 'page.tsx');
     expect(renew).not.toContain('text-[20px] font-[800] tracking-tight');
     expect(renew).toContain('title="Renew PT"');
+  });
+});
+
+describe('the training/payments/session-balance/photo pages', () => {
+  it('assigned workouts and progress analytics drop their bare h1', () => {
+    for (const p of [
+      ['app', 'pt-os', 'clients', '[id]', 'training', 'assigned', 'page.tsx'],
+      ['app', 'pt-os', 'clients', '[id]', 'training', 'analytics', 'page.tsx'],
+    ]) {
+      const s = src(...p);
+      expect(s).not.toContain('text-[20px] font-[800]');
+      expect(s).not.toContain('max-w-screen-md px-4 py-4');
+    }
+  });
+
+  it('client payments moves Profile and Record Payment into the hero actions slot', () => {
+    const payments = src('app', 'pt-os', 'clients', '[id]', 'payments', 'page.tsx');
+    expect(payments).toContain('actions={');
+    expect(payments).toContain('Record Payment');
+    expect(payments).toContain('Profile');
+  });
+
+  it('the local StatusBadge tint is strong enough to read as a pill on navy', () => {
+    // It sat at ~9% alpha (hex suffix 18) on a white card; on the hero that
+    // is indistinguishable from the background, leaving only the coloured
+    // text. Bumped to ~20% (suffix 33) since this component has one caller.
+    const payments = src('app', 'pt-os', 'clients', '[id]', 'payments', 'page.tsx');
+    expect(payments).not.toContain("bg: '#10b98118'");
+    expect(payments).toContain("bg: '#10b98133'");
+  });
+
+  it('session balance and progress photos both use the shared hero', () => {
+    for (const p of [
+      ['app', 'pt-os', 'session-balance', 'page.tsx'],
+      ['app', 'pt-os', 'progress-photos', 'page.tsx'],
+    ]) {
+      const s = src(...p);
+      expect(s).toContain('<PageHero');
+      expect(s).not.toContain("mb-6");
+    }
   });
 });
 

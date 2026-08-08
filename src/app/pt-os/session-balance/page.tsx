@@ -6,7 +6,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { useAsync } from '@/lib/use-async';
 import { api, Client } from '@/lib/api';
-import { Button } from '@/components/ui';
+import { Button, PageContainer, PageHero } from '@/components/ui';
 
 export default function SessionBalancePage() {
   const [clientId, setClientId] = useState('');
@@ -36,28 +36,17 @@ export default function SessionBalancePage() {
   return (
     <Guard>
       <AppShell>
-        <div className="mx-auto w-full max-w-7xl py-6 sm:py-8">
-          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="p-8 sm:p-10 mb-6"
-            style={{ borderBottom: '1px solid var(--border)' }}>
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
-                <Gauge size={16} style={{ color: 'var(--text-muted)' }} />
-              </div>
-              <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-muted)' }}>Session Management</span>
-            </div>
-            <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
-              Session Balance
-            </h1>
-            <p className="mt-3 max-w-xl text-[14px]" style={{ color: 'var(--text-muted)' }}>
-              Track PT session usage, view low balance alerts, and manage package renewals.
-            </p>
-          </m.div>
+        <PageContainer>
+          <PageHero
+            icon={<Gauge size={20} />}
+            title="Session Balance"
+            subtitle="Track PT session usage, view low balance alerts, and manage package renewals."
+          />
 
           {/* Low Balance Alert */}
           {(balances.data as any[] || []).length > 0 && (
             <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-              className="rounded-[16px] p-4 mb-6 flex items-start gap-3"
+              className="rounded-[16px] p-4 flex items-start gap-3"
               style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
               <AlertTriangle size={20} style={{ color: '#ef4444', flexShrink: 0 }} />
               <div>
@@ -131,7 +120,7 @@ export default function SessionBalancePage() {
               </div>
             </div>
           </div>
-        </div>
+        </PageContainer>
       </AppShell>
     </Guard>
   );
