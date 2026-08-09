@@ -1097,6 +1097,25 @@ export interface PtLead {
   updated_at: string;
 }
 
+/**
+ * A row from a studio's own business-write audit trail (GET
+ * /api/pt-os/activity-log) — client/payment/commission writes made by the
+ * studio's own staff. Unlike the platform Audit Centre's AuditEntry, this is
+ * always scoped to one organization, so there is no organization_id/name to
+ * carry.
+ */
+export interface ActivityLogEntry {
+  id: string | number;
+  user_id: string | null;
+  user_name: string | null;
+  action: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  old_data?: unknown;
+  new_data?: unknown;
+  created_at: string;
+}
+
 export interface ClientBirthday {
   id: string;
   name: string;
