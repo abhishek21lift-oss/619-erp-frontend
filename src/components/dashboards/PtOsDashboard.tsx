@@ -422,10 +422,9 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
 
 /**
  * The quick actions, in the order a trainer actually works through them: take
- * the client on, clear them to train (consent, PAR-Q), agree what they are
- * training FOR, then the assessments — general first, then the specific ones.
- * Goal sits ahead of the assessments because a goal is the thing the
- * assessments are measured against.
+ * the client on, clear them to train (consent, PAR-Q), run the general
+ * fitness assessment, agree what they are training FOR, then the remaining,
+ * more specific assessments.
  *
  * ONE list, rendered by both the mobile strip and the desktop dock. They were
  * two hand-maintained copies, which is precisely how they drift: adding three
@@ -444,8 +443,8 @@ export const QUICK_ACTIONS = [
   { label: 'Add Client',           icon: UserPlus,       href: '/pt-os/new-client',           color: C.primary },
   { label: 'Consent',              icon: FileSignature,  href: '/pt-os/informed-consent',     color: C.primary },
   { label: 'PAR-Q',                icon: ShieldCheck,    href: '/pt-os/parq',                 color: C.success },
-  { label: 'Goal',                 icon: Target,         href: '/pt-os/goals',                color: C.dangerDeep },
   { label: 'Fitness',              icon: Gauge,          href: '/pt-os/assessment',           color: C.warning },
+  { label: 'Goal',                 icon: Target,         href: '/pt-os/goals',                color: C.dangerDeep },
   { label: 'Lifestyle',            icon: HeartPulse,     href: '/pt-os/lifestyle-assessment', color: C.danger },
   { label: 'Nutrition',            icon: Apple,          href: '/pt-os/nutrition-assessment', color: C.primary },
   { label: 'Mobility',             icon: PersonStanding, href: '/pt-os/mobility-assessment',  color: C.danger },

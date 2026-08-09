@@ -684,15 +684,10 @@ describe('informed consent, PAR-Q and fitness testing wizards', () => {
     expect(parq).not.toContain('Cancel');
   });
 
-  it('the fitness testing wizard keeps Change client — it goes somewhere Back does not', () => {
-    // handleBack at step 1 returns to the client's profile; Change client
-    // goes to the client picker. Different destinations, so unlike the
-    // consent/PAR-Q Cancel buttons this one is not a duplicate of Back and
-    // stays, moved into the hero's actions slot.
+  it('the fitness testing hero drops Change client — one less control in a shorter hero', () => {
     const assessment = src('app', 'pt-os', 'assessment', 'page.tsx');
     expect(assessment).toContain('<PageHero');
-    expect(assessment).toContain('Change client');
-    expect(assessment).toContain("router.push('/pt-os/assessment')");
+    expect(assessment).not.toContain('Change client');
   });
 
   it('the shared and fitness-testing steppers are readable on navy, not near-black-on-navy', () => {

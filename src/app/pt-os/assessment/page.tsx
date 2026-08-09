@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
   ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, ClipboardCheck,
-  History, X, CheckCircle2, Plus, Download, Sparkles,
+  History, CheckCircle2, Plus, Download, Sparkles,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -439,15 +439,6 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
         icon={<ClipboardCheck size={18} />}
         title="Fitness Testing"
         subtitle={`${clientName || 'Client'} · Assessment ${nextAssessmentNumber}`}
-        actions={
-          <button
-            type="button" onClick={() => router.push('/pt-os/assessment')}
-            className="inline-flex h-[44px] w-full flex-shrink-0 items-center justify-center gap-1.5 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
-            style={{ background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.22)' }}
-          >
-            <X size={14} /> Change client
-          </button>
-        }
       >
         {!reviewMode && !lastSaved && (
           <ProgressTimeline current={step} onStep={setStep} />
