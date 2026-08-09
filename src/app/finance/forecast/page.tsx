@@ -4,7 +4,7 @@ import { m } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { KpiCard, PageContainer, PageHero } from '@/components/ui';
+import { PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import { TrendingUp, CalendarRange, BarChart3, Target } from 'lucide-react';
 
@@ -71,7 +71,7 @@ function Inner() {
         <PageHero
           icon={<TrendingUp size={20} />}
           title="Projected Revenue"
-          subtitle={`Projected vs actual revenue · ${year} full year view`}
+          subtitle={`Projected vs actual revenue · ${year}`}
         >
           <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[12px] font-[700] text-white"
             style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>
@@ -98,12 +98,30 @@ function Inner() {
 
         {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 14, padding: '12px 16px', fontSize: 14, color: '#dc2626', marginBottom: 16 }}>{error}</div>}
 
-        {/* ── KPI Cards ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, marginBottom: 24 }}>
-          <KpiCard label="Realised YTD" value={fmtCompact(realisedTotal)} icon={<BarChart3 size={16} />} accent="emerald" />
-          <KpiCard label="Forecast (Remaining)" value={fmtCompact(forecastRest)} icon={<TrendingUp size={16} />} accent="sky" />
-          <KpiCard label="Projected Full Year" value={fmtCompact(projectedYearTotal)} icon={<Target size={16} />} accent="violet" />
-          <KpiCard label="Months Remaining" value={String(11 - currentMonth)} icon={<CalendarRange size={16} />} accent="amber" />
+        {/* ── KPI Cards ──
+            Small square colourful tiles rather than the wide gradient KpiCard
+            "box" this page used before — same four accent colours, a fraction
+            of the footprint. */}
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: 'Realised YTD', value: fmtCompact(realisedTotal), icon: BarChart3, from: '#10b981', to: '#059669' },
+            { label: 'Forecast Remaining', value: fmtCompact(forecastRest), icon: TrendingUp, from: '#0067e0', to: '#0059ce' },
+            { label: 'Projected Full Year', value: fmtCompact(projectedYearTotal), icon: Target, from: '#0050AD', to: '#003F87' },
+            { label: 'Months Remaining', value: String(11 - currentMonth), icon: CalendarRange, from: '#f59e0b', to: '#d97706' },
+          ].map((k) => {
+            const Icon = k.icon;
+            return (
+              <div key={k.label}
+                className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-[20px] p-3 text-center text-white"
+                style={{ background: `linear-gradient(135deg, ${k.from}, ${k.to})`, boxShadow: `0 8px 24px -8px ${k.from}66` }}>
+                <span className="flex h-9 w-9 items-center justify-center rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }}>
+                  <Icon size={16} />
+                </span>
+                <span className="text-[17px] font-[820] tracking-[-0.02em]">{k.value}</span>
+                <span className="text-[9.5px] font-[700] uppercase leading-tight tracking-wide text-white/80">{k.label}</span>
+              </div>
+            );
+          })}
         </div>
 
         {/* ── Forecast Table ── */}
