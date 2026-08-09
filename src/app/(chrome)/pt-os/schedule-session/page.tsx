@@ -21,6 +21,7 @@ import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { identity } from '@/lib/palette';
+import { activatable } from '@/lib/a11y';
 
 /* ────────────────────────────────────────────────────────────────────
    TYPES
@@ -642,7 +643,9 @@ function SchedulePageContent() {
                                     background: s.status === 'scheduled' ? 'rgba(220,38,38,0.10)' : s.status === 'completed' ? 'rgba(16,185,129,0.10)' : 'rgba(148,163,184,0.10)',
                                     border: '1px solid rgba(15,23,42,0.06)',
                                   }}
-                                  onClick={() => setShowSessionPanel(s.id)}
+                                  {...activatable(() => setShowSessionPanel(s.id), {
+                                    label: `Open session with ${s.client} at ${s.time}`,
+                                  })}
                                 >
                                   <p className="text-[10px] font-[700] truncate" style={{ color: 'var(--text-primary)' }}>{s.client}</p>
                                   <p className="text-[9px]" style={{ color: 'var(--text-disabled)' }}>{s.time} · {s.duration}min</p>

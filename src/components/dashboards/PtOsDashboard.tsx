@@ -218,7 +218,11 @@ function Glass({ children, className = '', style, onClick }: {
    *  inside a button is invalid and unreachable by keyboard. Anything
    *  offered this way is also reachable from a real control inside the
    *  card — see TodayRevenue, where the card and its Collected half go to
-   *  the same place. */
+   *  the same place.
+   *
+   *  a11y-exempt: WCAG 2.1.1 requires the FUNCTION to be keyboard-operable,
+   *  not this element. The inner control satisfies it. keyboard-access.test.ts
+   *  reads this marker; delete it and the test will demand a role here. */
   onClick?: () => void;
 }) {
   return (

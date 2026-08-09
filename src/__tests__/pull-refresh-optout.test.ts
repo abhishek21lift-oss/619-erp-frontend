@@ -34,8 +34,12 @@ const LOOKAHEAD = 4;
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
-    if (statSync(full).isDirectory()) walk(full, out);
-    else if (full.endsWith('.tsx')) out.push(full);
+    // Not __tests__: a test file is not an overlay in the app, and a scanner
+    // that reads its own siblings reports their example strings as findings.
+    // keyboard-access.test.tsx contains the literal '<div className="fixed
+    // inset-0" …>' to prove its own scrim rule, and this flagged it.
+    if (statSync(full).isDirectory()) { if (name !== '__tests__') walk(full, out); continue; }
+    if (full.endsWith('.tsx')) out.push(full);
   }
   return out;
 }
