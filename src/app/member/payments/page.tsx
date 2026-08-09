@@ -19,7 +19,7 @@ import {
   Receipt, ArrowRight, Inbox, AlertTriangle, RefreshCw, Ban, ExternalLink,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import AppShell from '@/components/AppShell';
+import MemberShell from '@/components/member/MemberShell';
 import { api } from '@/lib/api';
 import { ApiError } from '@/lib/http';
 import type { UpiHistoryRow } from '@/lib/api';
@@ -82,7 +82,13 @@ function Inner() {
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <AppShell>
+    // MemberShell, not AppShell. This route lives under /member, and Guard
+    // redirects anyone whose portal is not 'member' — so staff cannot reach
+    // it, yet it was rendering the staff shell: the staff sidebar, and a
+    // bottom nav offering Clients / Sessions / Check-in, every one of which
+    // bounces a member straight back out again. It now carries the same
+    // chrome as the rest of the portal.
+    <MemberShell>
       <PageHeader
         title={isMember ? 'My payments' : 'Member payments'}
         subtitle={isMember
@@ -220,6 +226,6 @@ function Inner() {
           </div>
         </div>
       )}
-    </AppShell>
+    </MemberShell>
   );
 }
