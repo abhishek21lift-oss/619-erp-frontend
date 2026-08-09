@@ -312,6 +312,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "progress.workoutLog.today → /api/pt-os/workout-log/today",
   "progress.workoutLog.volumeSummary → /api/pt-os/workout-log/volume-summary",
   "progress.workoutLog.weeklyReport → /api/pt-os/workout-log/weekly-report",
+  "pt.activityLog → /api/pt-os/activity-log",
   "pt.balanceSheet → /api/pt-os/balance-sheet",
   "pt.calculateCommissions → /api/pt-os/commissions/calculate",
   "pt.client → /api/pt-os/clients/",

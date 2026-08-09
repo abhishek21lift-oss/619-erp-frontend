@@ -219,6 +219,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/insights/renewal',         label: 'Renewal Report',      icon: 'RefreshCcw',    roles: ['admin'] },
       { href: '/insights/traffic',         label: 'Attendance Report',   icon: 'Activity',      roles: ['admin'] },
       { href: '/operations/leaderboard',   label: 'Member Leaderboard',  icon: 'Trophy',        roles: ['admin', 'manager'] },
+      { href: '/pt-os/activity-log',       label: 'Activity Log',        icon: 'ScrollText',    roles: ['admin', 'manager'] },
     ],
   },
 ];
