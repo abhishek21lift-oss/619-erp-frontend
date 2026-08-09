@@ -41,7 +41,7 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
 
       <div className="mb-5">
         <SearchableSelect
-          label="Assessment Method" allowCustom={false}
+          label="Assessment Method" allowCustom={false} hideLabel
           value={form.bodyCompMethod}
           onChange={(v) => set('bodyCompMethod', v)}
           options={METHODS}

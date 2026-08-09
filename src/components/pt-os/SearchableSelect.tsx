@@ -22,11 +22,15 @@ interface SearchableSelectProps {
   required?: boolean;
   /** When true (default), unmatched search text can be used as a freeform value. */
   allowCustom?: boolean;
+  /** Hides the visible uppercase label above the field — `label` still drives
+   *  the accessible name and the closed-state placeholder ("Select …"), so a
+   *  screen reader and an empty field both still say what it is. */
+  hideLabel?: boolean;
 }
 
 /** A closed dropdown with an in-list filter input, and an optional freeform fallback. */
 export function SearchableSelect({
-  label, value, onChange, options, placeholder, error, required, allowCustom = true,
+  label, value, onChange, options, placeholder, error, required, allowCustom = true, hideLabel = false,
 }: SearchableSelectProps) {
   const normalized: SearchableSelectOption[] = options.map((o) =>
     typeof o === 'string' ? { value: o, label: o } : o,
@@ -63,11 +67,14 @@ export function SearchableSelect({
 
   return (
     <div className="relative" ref={wrapRef}>
-      <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
-        {label} {required && <span style={{ color: '#0067E0' }}>*</span>}
-      </p>
+      {!hideLabel && (
+        <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
+          {label} {required && <span style={{ color: '#0067E0' }}>*</span>}
+        </p>
+      )}
       <button
         type="button"
+        aria-label={label}
         onClick={toggleOpen}
         className="flex w-full items-center gap-3 rounded-[13px] px-4 py-3.5 text-left transition-all"
         style={{

@@ -44,8 +44,18 @@ export function ProgressTimeline({ current, onStep }: ProgressTimelineProps) {
                     )}
                   </AnimatePresence>
                 </div>
+                {/* No whitespace-nowrap: the longer step names
+                    ("Cardiorespiratory Endurance", "Muscular Strength")
+                    overflowed their own 90px column at nowrap and bled into
+                    the neighbouring step's label, reading as overlapping
+                    text. Wrapping keeps each label inside its own column.
+                    min-h reserves the two-line labels' height for every step
+                    — otherwise the short one-line labels leave their button
+                    shorter than its wrapped neighbours, and the connector
+                    line's mb-5 (tuned once, for every step alike) would sit
+                    at a different height relative to each circle. */}
                 <span
-                  className="text-[10.5px] font-[680] tracking-tight whitespace-nowrap max-w-[90px] text-center leading-tight"
+                  className="min-h-[26px] max-w-[90px] text-center text-[10.5px] font-[680] leading-tight tracking-tight"
                   style={{ color: active ? '#fff' : done ? '#7FB4FF' : 'rgba(255,255,255,0.55)' }}
                 >
                   {s.label}
