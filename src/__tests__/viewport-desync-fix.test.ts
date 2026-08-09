@@ -14,6 +14,16 @@
 // Timing matters as much as the trigger: a chrome collapse fires a burst of
 // resizes as it animates, and correcting on each one would issue a scroll per
 // frame. These assert the debounce as well as the behaviour.
+//
+// The hook now also corrects once, unconditionally, on mount — every test
+// below therefore sees one scrollTo call before it drives a single resize.
+// AppShell (and this hook with it) remounts on every page navigation rather
+// than living in a shared layout, so a resize the hook needed to see can land
+// in the gap between the old page's listener being removed and the new
+// page's being attached — tapping a bottom-nav link both blurs the focused
+// field and navigates in the same gesture. The new page then mounts already
+// desynced, and on a page with no text input nothing would ever resize again
+// to trigger a correction. The mount-time call is what recovers that case.
 
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
@@ -60,12 +70,13 @@ afterEach(() => {
 describe('the keyboard case still works', () => {
   it('corrects once the keyboard is dismissed, not while it is open', () => {
     renderHook(() => useViewportDesyncFix());
+    expect(scrollTo).toHaveBeenCalledTimes(1);   // the mount-time correction
 
     resizeTo(400);              // keyboard up — 400px occluded
-    expect(scrollTo).not.toHaveBeenCalled();
+    expect(scrollTo).toHaveBeenCalledTimes(1);   // still just the mount call
 
     resizeTo(800);              // dismissed
-    expect(scrollTo).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenCalledTimes(2);
   });
 
   it('does not wait for the debounce on a dismissal', () => {
@@ -74,7 +85,7 @@ describe('the keyboard case still works', () => {
     renderHook(() => useViewportDesyncFix());
     resizeTo(400);
     resizeTo(800);
-    expect(scrollTo).toHaveBeenCalledTimes(1);  // before any timer runs
+    expect(scrollTo).toHaveBeenCalledTimes(2);  // mount + dismissal, before any timer runs
   });
 });
 
@@ -84,12 +95,13 @@ describe('the case that was thrown away', () => {
     // nothing at all — which is why a page with no text input could never be
     // recovered.
     renderHook(() => useViewportDesyncFix());
+    expect(scrollTo).toHaveBeenCalledTimes(1);   // the mount-time correction
 
     resizeTo(740);
-    expect(scrollTo).not.toHaveBeenCalled();   // debounced, not dropped
+    expect(scrollTo).toHaveBeenCalledTimes(1);   // debounced, not dropped
 
     vi.advanceTimersByTime(250);
-    expect(scrollTo).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenCalledTimes(2);
   });
 
   it('corrects once for a burst, not once per frame', () => {
@@ -99,7 +111,24 @@ describe('the case that was thrown away', () => {
     [790, 780, 770, 760, 750, 740].forEach(resizeTo);
     vi.advanceTimersByTime(250);
 
+    expect(scrollTo).toHaveBeenCalledTimes(2);   // mount + one correction for the whole burst
+  });
+});
+
+describe('a page that mounts already desynced', () => {
+  it('corrects once immediately, without waiting for any resize', () => {
+    // AppShell remounting per navigation means a page can land already
+    // displaced with no future resize to ever trigger the old, resize-only
+    // correction — exactly the /ai/business-insights failure mode, but
+    // happening because the desync predates this mount rather than because
+    // the page has no text input.
+    Object.defineProperty(document.documentElement, 'scrollHeight', { configurable: true, value: 800 });
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0, writable: true });
+
+    renderHook(() => useViewportDesyncFix());
+
     expect(scrollTo).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
   });
 });
 
@@ -134,12 +163,14 @@ describe('what the correction actually does', () => {
 describe('it cleans up after itself', () => {
   it('removes the listener and drops a pending correction on unmount', () => {
     const { unmount } = renderHook(() => useViewportDesyncFix());
-    resizeTo(740);           // schedules a correction
+    expect(scrollTo).toHaveBeenCalledTimes(1);   // the mount-time correction
+
+    resizeTo(740);           // schedules a further correction
     unmount();
     vi.advanceTimersByTime(250);
 
     expect(listeners).toHaveLength(0);
-    expect(scrollTo).not.toHaveBeenCalled();
+    expect(scrollTo).toHaveBeenCalledTimes(1);   // the pending one never fired
   });
 });
 

@@ -46,6 +46,23 @@ import { useEffect } from 'react';
  * Neither branch moves the user when nothing is wrong, which is what makes it
  * defensible to run on chrome collapse as well as on keyboard dismissal.
  *
+ * ── Why the correction also runs once on mount ─────────────────────────────
+ *
+ * AppShell is rendered per-page, not from a shared root layout — every one of
+ * the ~200 pages using it renders its own `<AppShell>`, so this hook unmounts
+ * and remounts on every client-side navigation. A resize this hook needs to
+ * see can land in the gap between the old page's listener being torn down and
+ * the new page's being attached: tapping a bottom-nav link both blurs the
+ * focused field and navigates in the same gesture, and the keyboard-dismiss
+ * resize can fire mid-navigation, after the old listener is gone and before
+ * the new one exists. The new page then mounts already desynced, and — on a
+ * page with no text input to ever trigger another resize — nothing would
+ * correct it, ever. Running the correction once at mount as well closes
+ * exactly that gap: a page that lands already desynced fixes itself
+ * immediately instead of waiting on an event that may never come. It is a
+ * no-op in the ordinary case for the same reason the resize-triggered call
+ * is — a freshly mounted page has nothing to re-assert.
+ *
  * No-ops entirely on browsers without visualViewport, which is every desktop
  * case that never had the problem.
  */
@@ -97,6 +114,11 @@ export default function useViewportDesyncFix() {
       clearTimeout(settle);
       settle = setTimeout(correct, SETTLE_MS);
     };
+
+    // Catches a page that mounts already desynced — see the mount comment
+    // above. Unconditional and immediate, not debounced: unlike a resize
+    // burst there is only ever one of these per mount.
+    correct();
 
     vv.addEventListener('resize', onResize);
     return () => {
