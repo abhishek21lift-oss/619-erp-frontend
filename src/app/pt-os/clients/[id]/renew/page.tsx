@@ -70,7 +70,6 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
         setForm(f => ({
           ...f,
           finalAmount: String(c?.final_amount || ''),
-          startDate: new Date().toISOString().slice(0, 10),
         }));
       }
     });
