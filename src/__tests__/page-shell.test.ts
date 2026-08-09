@@ -15,12 +15,13 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { srcPath } from '@/__tests__/helpers/app-routes';
 
 const code = (s: string) => s
   .replace(/\/\*[\s\S]*?\*\//g, '')
   .replace(/^\s*\/\/.*$/gm, '');
 
-const src = (...p: string[]) => code(readFileSync(join(__dirname, '..', ...p), 'utf8'));
+const src = (...p: string[]) => code(readFileSync(srcPath(...p), 'utf8'));
 
 const shell = src('components', 'ui', 'PageHero.tsx');
 const dashboard = src('components', 'dashboards', 'PtOsDashboard.tsx');

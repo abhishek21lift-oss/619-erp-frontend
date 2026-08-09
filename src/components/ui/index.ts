@@ -34,6 +34,7 @@ export { DonutChart } from './DonutChart';
 export type { DonutChartProps, DonutDatum } from './DonutChart';
 
 export { PageHeader } from './PageHeader';
+export { PageTitle } from './PageTitle';
 export type { PageHeaderProps } from './PageHeader';
 
 export { FloatInput } from './FloatInput';

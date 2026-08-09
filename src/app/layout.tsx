@@ -207,18 +207,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       {/*
                        * NavScrollProvider belongs HERE, not inside AppShell.
                        *
-                       * AppShell is rendered by each of ~97 pages rather than
-                       * from a layout, so it — and everything it wrapped —
-                       * unmounted and remounted on every client-side
-                       * navigation. That reset topBar to 'expanded' each time,
-                       * which snapped --topbar-h from 32px back to 46px and
-                       * animated the header spacer, shifting every page's
-                       * content down and then back up on arrival.
+                       * Originally because AppShell was rendered by each of ~97
+                       * pages rather than from a layout, so it — and everything
+                       * it wrapped — remounted on every client-side navigation.
+                       * That reset topBar to 'expanded' each time, which
+                       * snapped --topbar-h from 32px back to 46px and animated
+                       * the header spacer, shifting every page's content down
+                       * and then back up on arrival.
                        *
-                       * A layout persists across navigation, so the scroll
-                       * state now survives it. This also gives the member
-                       * portal a real provider instead of the context default,
-                       * since those pages never go through AppShell at all.
+                       * AppShell is a layout now — (chrome)/layout.tsx — so
+                       * that particular reason is gone. This one is not: the
+                       * member portal never renders AppShell at all, and its
+                       * pages would fall back to the context default if the
+                       * provider sat inside the staff shell.
                        */}
                       <NavScrollProvider>
                         <LazyMotion features={domAnimation}>

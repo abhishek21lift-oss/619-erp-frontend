@@ -14,13 +14,13 @@
 // nav and the keyboard is opened next to it most. This hook measures the gap
 // instead of scrolling, so it works on both.
 
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import {describe, expect, it, vi, beforeEach, afterEach} from 'vitest';
+import {renderHook} from '@testing-library/react';
+import {readFileSync} from 'node:fs';
 import useVisualViewportAnchor from '@/hooks/useVisualViewportAnchor';
+import {srcPath} from '@/__tests__/helpers/app-routes';
 
-const src = (...p: string[]) => readFileSync(join(process.cwd(), 'src', ...p), 'utf8');
+const src = (...p: string[]) => readFileSync(srcPath(...p), 'utf8');
 
 type Listener = () => void;
 

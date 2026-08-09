@@ -23,6 +23,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import { SESSIONLESS_PAGES, isSessionlessPage } from '@/lib/public-paths';
 import path from 'node:path';
+import { srcPath } from '@/__tests__/helpers/app-routes';
 
 const SRC = path.join(process.cwd(), 'src');
 const proxySrc = fs.readFileSync(path.join(SRC, 'proxy.ts'), 'utf8');
@@ -82,7 +83,7 @@ describe('the proxy lets in everyone who arrives from an email', () => {
   it.each(TOKEN_ENTRY_POINTS)('$url is actually served by a page', ({ page }) => {
     // Stops the list above from drifting into fiction: an entry kept public
     // for a page that was renamed or deleted is a hole, not a safety net.
-    expect(fs.existsSync(path.join(SRC, page))).toBe(true);
+    expect(fs.existsSync(srcPath(...page.split('/')))).toBe(true);
   });
 
   it('keeps the token, which the redirect would not', () => {

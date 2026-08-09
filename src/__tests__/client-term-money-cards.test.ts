@@ -14,12 +14,12 @@
 // everywhere else, and that mapping never needed to change, only the shape
 // of the card carrying it.
 
-import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import {describe, expect, it} from 'vitest';
+import {readFileSync} from 'node:fs';
+import {appPath} from '@/__tests__/helpers/app-routes';
 
 const page = readFileSync(
-  join(process.cwd(), 'src', 'app', 'pt-os', 'clients', '[id]', 'page.tsx'), 'utf8');
+  appPath('pt-os', 'clients', '[id]', 'page.tsx'), 'utf8');
 
 describe('the Term Fee / Paid / Balance cards are not a copy of the hero', () => {
   it('drops the solid navy block the hero itself uses', () => {

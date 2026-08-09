@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import { semantic, rgba } from '@/lib/palette';
 import type { CommandCenterCard, CommandCenterStatus } from '@/lib/api';
-import { Center, ErrorState } from '@/app/platform/_shared/ui';
+import { Center, ErrorState } from '@/app/(chrome)/platform/_shared/ui';
 import CommandPanel from './command-panel';
 import AlertCenter from './alert-center';
 import Guardian from './guardian';

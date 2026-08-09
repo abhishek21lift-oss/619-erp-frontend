@@ -12,9 +12,10 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { appPath } from '@/__tests__/helpers/app-routes';
 
 const raw = readFileSync(
-  join(__dirname, '..', 'app', 'pt-os', 'clients', '[id]', 'workout-log', '[sessionId]', 'page.tsx'),
+  appPath('pt-os', 'clients', '[id]', 'workout-log', '[sessionId]', 'page.tsx'),
   'utf8',
 );
 

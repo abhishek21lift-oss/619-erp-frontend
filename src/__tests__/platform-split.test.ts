@@ -17,11 +17,12 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { appPath } from '@/__tests__/helpers/app-routes';
 
-const DIR = path.join(process.cwd(), 'src/app/platform');
+const DIR = appPath('platform');
 const PAGE = path.join(DIR, 'page.tsx');
 
-/** Every .ts/.tsx file under src/app/platform, repo-relative. */
+/** Every .ts/.tsx file under the platform route, repo-relative. */
 function tree(dir: string, acc: string[] = []): string[] {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);

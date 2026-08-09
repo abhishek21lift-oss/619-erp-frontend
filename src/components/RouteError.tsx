@@ -30,16 +30,22 @@
 //
 // ── Why `shell` is a prop rather than always-on ────────────────────────────
 //
-// This app mounts <Guard><AppShell> inside each page.tsx — there are no segment
-// layouts at all. So a segment error.tsx replaces the page INCLUDING its
-// chrome, and has to re-render the shell itself for the user to keep the nav
-// and navigate away. That is why the old root error.tsx wrapped its fallback in
-// Guard + AppShell: not an oversight, a consequence of the architecture.
+// Three kinds of caller, and each needs something different.
 //
-// But it must NOT do that on the public routes. Guard redirects to /login when
-// there is no session, so a throw on /login rendered a fallback that redirected
-// to /login — which threw again. An unauthenticated user got a loop instead of
-// a message. Auth and public segments therefore pass shell={false}.
+//  1. src/app/error.tsx — the root boundary. It sits ABOVE
+//     (chrome)/layout.tsx, so when it renders, no shell has been rendered at
+//     all. It passes shell, and re-creates the chrome itself, or the user is
+//     left on a page with no way out.
+//
+//  2. Segments under (chrome) — every one of them passes shell={false}. Their
+//     layout has already put Guard + AppShell around whatever this returns.
+//     They used to pass shell={true}, correctly, back when each page mounted
+//     its own shell and a segment boundary replaced the page chrome and all.
+//
+//  3. Public and auth segments — shell={false}, and for a different reason
+//     again: Guard redirects to /login when there is no session, so a throw on
+//     /login rendered a fallback that redirected to /login, which threw again.
+//     An unauthenticated user got a loop instead of a message.
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';

@@ -9,7 +9,7 @@
 // rendered nowhere.
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import ScheduleSessionPage from '@/app/pt-os/schedule-session/page';
+import ScheduleSessionPage from '@/app/(chrome)/pt-os/schedule-session/page';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), back: vi.fn() }) }));
 vi.mock('@/components/Guard', () => ({ default: ({ children }: never) => children }));

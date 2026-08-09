@@ -34,9 +34,10 @@ import path from 'node:path';
 import { signInPathFor, SESSIONLESS_PAGES } from '@/lib/public-paths';
 import { rememberKeys, portalForRole } from '@/lib/portals';
 import { SESSION_USER_KEY } from '@/lib/session-cache';
+import { srcPath } from '@/__tests__/helpers/app-routes';
 
 const SRC = path.join(process.cwd(), 'src');
-const read = (...p: string[]) => fs.readFileSync(path.join(SRC, ...p), 'utf8');
+const read = (...p: string[]) => fs.readFileSync(srcPath(...p), 'utf8');
 
 const authContextSrc = read('lib', 'auth-context.tsx');
 const httpSrc = read('lib', 'http.ts');

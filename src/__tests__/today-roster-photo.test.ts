@@ -13,12 +13,12 @@
 // The API already returns client_photo — see workout-log.routes.js — so there
 // is no server-side half to keep in step.
 
-import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import {describe, expect, it} from 'vitest';
+import {readFileSync} from 'node:fs';
+import {appPath} from '@/__tests__/helpers/app-routes';
 
 const page = readFileSync(
-  join(__dirname, '..', 'app', 'pt-os', 'today', 'page.tsx'),
+  appPath('pt-os', 'today', 'page.tsx'),
   'utf8',
 );
 
