@@ -806,12 +806,13 @@ function ClientPicker({
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-      <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.50)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+    // Wrapper, not sibling — see the note in ai/diet-generator's Field.
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+      <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.50)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
         {label}
-      </label>
+      </span>
       {children}
-    </div>
+    </label>
   );
 }
 

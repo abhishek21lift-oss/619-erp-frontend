@@ -79,10 +79,15 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
 
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <p className="mb-1.5 text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
+    // A <label> wrapping the control, not a <p> beside it. As a paragraph this
+    // caption associated with nothing: every select and input under it — the
+    // whole platform payment and org-admin surface — was announced by a screen
+    // reader with no name at all. Wrapping needs no id plumbing, and makes the
+    // caption clickable into the field as a bonus.
+    <label className="block">
+      <span className="mb-1.5 block text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</span>
       {children}
-    </div>
+    </label>
   );
 }
 

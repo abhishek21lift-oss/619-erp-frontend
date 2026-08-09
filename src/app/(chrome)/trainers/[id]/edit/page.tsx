@@ -33,13 +33,14 @@ const SECTIONS = [
 // ── FloatLabel ───────────────────────────────────────────────────────
 function FloatLabel({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
   return (
-    <div className="relative">
+    // See trainers/add — the caption wraps the field so it is a real label.
+    <label className="relative block">
       {children}
-      <label className="pointer-events-none absolute left-4 top-[10px] text-[10.5px] font-[700] uppercase tracking-[0.10em]"
+      <span className="pointer-events-none absolute left-4 top-[10px] text-[10.5px] font-[700] uppercase tracking-[0.10em]"
         style={{ color: 'rgba(148,163,184,0.9)' }}>
         {label}{required && <span className="ml-0.5 text-rose-400">*</span>}
-      </label>
-    </div>
+      </span>
+    </label>
   );
 }
 

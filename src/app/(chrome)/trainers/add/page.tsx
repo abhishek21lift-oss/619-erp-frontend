@@ -40,13 +40,16 @@ const EMAIL_RE  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // ── FloatLabel ───────────────────────────────────────────────────────
 function FloatLabel({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
   return (
-    <div className="relative">
+    // A floating caption painted over the input still has to BE the label,
+    // not merely look like one. Wrapping associates it; pointer-events-none
+    // stays on the caption so it does not eat clicks meant for the field.
+    <label className="relative block">
       {children}
-      <label className="pointer-events-none absolute left-4 top-[10px] text-[10.5px] font-[700] uppercase tracking-[0.10em]"
+      <span className="pointer-events-none absolute left-4 top-[10px] text-[10.5px] font-[700] uppercase tracking-[0.10em]"
         style={{ color: 'rgb(148,163,184)' }}>
         {label}{required && <span className="ml-0.5" style={{ color: '#ef4444' }}>*</span>}
-      </label>
-    </div>
+      </span>
+    </label>
   );
 }
 
