@@ -44,12 +44,16 @@ const fadeUp: Variants = {
 /* ─── Form atoms ─────────────────────────────────────────────────────────── */
 function Field({ label, required, children, span }: { label: string; required?: boolean; children: React.ReactNode; span?: boolean }) {
   return (
-    <div style={span ? { gridColumn: '1 / -1' } : undefined}>
-      <label className="mb-1.5 block text-[11px] font-[700] uppercase tracking-[0.06em]" style={{ color: 'var(--text-muted)' }}>
+    // The <label> is the wrapper, not a sibling of the control. A label that
+    // sits NEXT to its input associates with nothing: the screen reader
+    // announces the field with no name at all. Wrapping needs no id plumbing
+    // and makes the caption clickable as a bonus.
+    <label className="block" style={span ? { gridColumn: '1 / -1' } : undefined}>
+      <span className="mb-1.5 block text-[11px] font-[700] uppercase tracking-[0.06em]" style={{ color: 'var(--text-muted)' }}>
         {label}{required && <span style={{ color: ACCENT }}> *</span>}
-      </label>
+      </span>
       {children}
-    </div>
+    </label>
   );
 }
 
