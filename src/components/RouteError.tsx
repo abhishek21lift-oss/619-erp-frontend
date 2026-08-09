@@ -145,7 +145,7 @@ export default function RouteError({ error, reset, shell = true, segment }: Rout
         className="grid h-14 w-14 place-items-center rounded-full"
         style={staleBuild
           ? { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }
-          : { background: 'var(--danger-soft)', color: 'var(--danger)' }}
+          : { background: 'var(--danger-soft)', color: 'var(--danger-text)' }}
       >
         {staleBuild ? <RotateCcw className="h-7 w-7" /> : <AlertTriangle className="h-7 w-7" />}
       </div>

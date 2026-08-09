@@ -91,7 +91,7 @@ export function FloatInput({
               ? focused
                 ? 'text-[var(--gold,#F59E0B)]'
                 : error
-                ? 'text-[var(--danger)]'
+                ? 'text-[var(--danger-text)]'
                 : 'text-[var(--text-muted)]'
               : 'text-[var(--text-muted)]',
           )}
@@ -148,7 +148,7 @@ export function FloatInput({
 
       {/* Error message */}
       {error && (
-        <p className="mt-1.5 text-[11px] font-medium text-[var(--danger)]">
+        <p className="mt-1.5 text-[11px] font-medium text-[var(--danger-text)]">
           {error}
         </p>
       )}

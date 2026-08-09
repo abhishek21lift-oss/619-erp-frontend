@@ -52,7 +52,7 @@ export function StepSupplements({ form, set, error }: StepSupplementsProps) {
           <SupplementChecklist value={form.supplements} onChange={(v) => set('supplements', v)} />
         )}
 
-      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
     </div>
   );
 }

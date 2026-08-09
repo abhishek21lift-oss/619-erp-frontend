@@ -331,7 +331,7 @@ function Inner() {
                         className={`btn ${full ? 'btn-ghost' : 'btn-primary'} btn-sm`}
                         style={
                           full
-                            ? { color: 'var(--warning)', borderColor: 'var(--warning)' }
+                            ? { color: 'var(--warning-text)', borderColor: 'var(--warning)' }
                             : undefined
                         }
                       >

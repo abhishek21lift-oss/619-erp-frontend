@@ -591,7 +591,7 @@ function AppShellContent({ children }: AppShellProps) {
                         </Link>
                         <hr className="my-1 border-[var(--border)]" />
                         <button onClick={handleLogout}
-                          className="flex w-full items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--danger)] hover:bg-[var(--danger)]/5 transition-colors">
+                          className="flex w-full items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--danger-text)] hover:bg-[var(--danger)]/5 transition-colors">
                           <LogOut size={14} strokeWidth={1.5} /> Logout
                         </button>
                       </div>

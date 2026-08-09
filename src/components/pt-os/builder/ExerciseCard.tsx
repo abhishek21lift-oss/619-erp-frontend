@@ -406,7 +406,7 @@ function IconButton({
       aria-label={label}
       onClick={onClick}
       className="flex h-[44px] w-[44px] items-center justify-center rounded-[12px] transition-colors"
-      style={{ color: danger ? 'var(--danger)' : 'var(--text-muted)' }}
+      style={{ color: danger ? 'var(--danger-text)' : 'var(--text-muted)' }}
     >
       {children}
     </button>

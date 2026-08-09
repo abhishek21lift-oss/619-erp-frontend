@@ -37,7 +37,7 @@ function Switch({ on, disabled, onClick, label }: {
       role="switch" aria-checked={on} aria-label={label}
       disabled={disabled} onClick={onClick}
       className="flex h-8 items-center rounded-full transition-opacity disabled:opacity-40"
-      style={{ color: on ? 'var(--success)' : 'var(--text-disabled)' }}
+      style={{ color: on ? 'var(--success-text)' : 'var(--text-disabled)' }}
     >
       {on ? <ToggleRight size={30} /> : <ToggleLeft size={30} />}
     </button>
@@ -307,7 +307,7 @@ export default function FeatureManager() {
   if (error) {
     return (
       <div className="flex flex-col items-center gap-2.5 py-16 text-center">
-        <AlertTriangle size={22} style={{ color: 'var(--danger)' }} />
+        <AlertTriangle size={22} style={{ color: 'var(--danger-text)' }} />
         <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{error}</p>
         <button onClick={load} className="mt-1 text-[12px] font-[700]" style={{ color: 'var(--brand)' }}>Try again</button>
       </div>

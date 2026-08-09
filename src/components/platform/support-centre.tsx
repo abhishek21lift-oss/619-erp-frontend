@@ -100,7 +100,7 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
         <button onClick={onBack} className="mb-2 flex items-center gap-1 text-[12px] font-[650]" style={{ color: 'var(--brand)' }}>
           <ChevronLeft size={13} /> Back
         </button>
-        <p className="py-6 text-center text-[12.5px]" style={{ color: 'var(--danger)' }}>{error}</p>
+        <p className="py-6 text-center text-[12.5px]" style={{ color: 'var(--danger-text)' }}>{error}</p>
       </Panel>
     );
   }
@@ -273,7 +273,7 @@ export default function SupportCentre() {
   if (error) {
     return (
       <div className="flex flex-col items-center gap-2.5 py-16 text-center">
-        <AlertTriangle size={22} style={{ color: 'var(--danger)' }} />
+        <AlertTriangle size={22} style={{ color: 'var(--danger-text)' }} />
         <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{error}</p>
         <button onClick={load} className="mt-1 text-[12px] font-[700]" style={{ color: 'var(--brand)' }}>Try again</button>
       </div>
@@ -341,7 +341,7 @@ export default function SupportCentre() {
         <Panel padded={false}>
           {tickets.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-14 text-center">
-              <CheckCircle2 size={22} style={{ color: 'var(--success)' }} />
+              <CheckCircle2 size={22} style={{ color: 'var(--success-text)' }} />
               <p className="text-[13px] font-[650]" style={{ color: 'var(--text-secondary)' }}>Nothing waiting</p>
               <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>No ticket matches this filter.</p>
             </div>

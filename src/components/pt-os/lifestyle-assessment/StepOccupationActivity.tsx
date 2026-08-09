@@ -99,7 +99,7 @@ export function StepOccupationActivity({ form, set, error }: StepOccupationActiv
           </div>
         </div>
 
-        {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+        {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
         {level && (
           <div className="flex items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>

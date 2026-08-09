@@ -71,7 +71,7 @@ export function StepConsent({ form, set, error, stepLabel }: StepConsentProps) {
           </p>
         )}
 
-      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
     </div>
   );
 }

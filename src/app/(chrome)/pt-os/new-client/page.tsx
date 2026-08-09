@@ -476,7 +476,7 @@ function NewClientForm() {
                     </button>
                   ))}
                 </div>
-                {errors.gender && <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{errors.gender}</p>}
+                {errors.gender && <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{errors.gender}</p>}
               </div>
 
               <FloatInput

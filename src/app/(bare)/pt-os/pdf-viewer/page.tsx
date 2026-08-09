@@ -177,7 +177,7 @@ function PdfViewerScreen() {
         )}
         {!loading && error && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
-            <AlertTriangle size={26} style={{ color: 'var(--danger)' }} />
+            <AlertTriangle size={26} style={{ color: 'var(--danger-text)' }} />
             <p className="text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>{error}</p>
           </div>
         )}

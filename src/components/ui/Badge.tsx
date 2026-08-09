@@ -18,9 +18,9 @@ type Tone =
 
 const TONES: Record<Tone, string> = {
   neutral: 'bg-[var(--bg-subtle)] text-[var(--text-muted)] ring-[var(--border)]',
-  success: 'bg-[var(--success)]/10 text-[var(--success)] ring-[var(--success)]/20',
-  warning: 'bg-[var(--warning)]/10 text-[var(--warning)] ring-[var(--warning)]/20',
-  danger: 'bg-[var(--danger)]/10 text-[var(--danger)] ring-[var(--danger)]/20',
+  success: 'bg-[var(--success)]/10 text-[var(--success-text)] ring-[var(--success)]/20',
+  warning: 'bg-[var(--warning)]/10 text-[var(--warning-text)] ring-[var(--warning)]/20',
+  danger: 'bg-[var(--danger)]/10 text-[var(--danger-text)] ring-[var(--danger)]/20',
   info: 'bg-[var(--info)]/10 text-[var(--info)] ring-[var(--info)]/20',
   brand: 'bg-[var(--brand)]/10 text-[var(--brand)] ring-[var(--brand)]/20',
   purple: 'bg-[var(--accent)]/10 text-[var(--accent)] ring-[var(--accent)]/20',

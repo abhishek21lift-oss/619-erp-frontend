@@ -560,8 +560,8 @@ function SaveIndicator({ status }: { status: ReturnType<typeof useAutosave>['sta
   if (status === 'idle') return null;
   const label = saveStatusLabel(status);
   const tone =
-    status === 'error' ? 'var(--danger)'
-      : status === 'saved' ? '#059669'
+    status === 'error' ? 'var(--danger-text)'
+      : status === 'saved' ? 'var(--success-text)'
         : 'var(--text-muted)';
   return (
     <div

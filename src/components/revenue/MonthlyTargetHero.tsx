@@ -276,9 +276,9 @@ export default function MonthlyTargetHero({ onTargetSet }: { onTargetSet?: () =>
     return (
       <Shell>
         <div className="flex items-center gap-2.5">
-          <AlertTriangle size={16} style={{ color: 'var(--danger)' }} />
-          <p className="flex-1 text-[13px]" style={{ color: 'var(--danger)' }}>{error}</p>
-          <button onClick={load} className="text-[12px] font-[700] underline" style={{ color: 'var(--danger)' }}>
+          <AlertTriangle size={16} style={{ color: 'var(--danger-text)' }} />
+          <p className="flex-1 text-[13px]" style={{ color: 'var(--danger-text)' }}>{error}</p>
+          <button onClick={load} className="text-[12px] font-[700] underline" style={{ color: 'var(--danger-text)' }}>
             Retry
           </button>
         </div>
@@ -333,7 +333,7 @@ export default function MonthlyTargetHero({ onTargetSet }: { onTargetSet?: () =>
           <div className="rounded-[14px] p-4"
             style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-border)' }}>
             <div className="flex items-start gap-2.5">
-              <AlertTriangle size={16} className="mt-0.5 shrink-0" style={{ color: 'var(--warning)' }} />
+              <AlertTriangle size={16} className="mt-0.5 shrink-0" style={{ color: 'var(--warning-text)' }} />
               <div className="min-w-0">
                 <p className="text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>
                   Set {fmtINR(amount)} as the target for {monthLabel()}?

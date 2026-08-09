@@ -393,7 +393,7 @@ export default function StorageCentre() {
   if (error || !overview) {
     return (
       <div className="flex flex-col items-center gap-2.5 py-16 text-center">
-        <AlertTriangle size={22} style={{ color: 'var(--danger)' }} />
+        <AlertTriangle size={22} style={{ color: 'var(--danger-text)' }} />
         <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{error || 'Could not load storage usage.'}</p>
         <button onClick={load} className="mt-1 text-[12px] font-[700]" style={{ color: 'var(--brand)' }}>Try again</button>
       </div>

@@ -876,7 +876,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                     {DAYS.filter((d) => form.trainingDays.includes(d.key)).map((d) => `✓ ${d.full}`).join('   ')}
                   </p>
                 )}
-                {errors.trainingDays && <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{errors.trainingDays}</p>}
+                {errors.trainingDays && <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{errors.trainingDays}</p>}
               </div>
 
               {/* Sessions Per Week */}

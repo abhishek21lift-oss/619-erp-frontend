@@ -51,7 +51,7 @@ export default function AdherencePanel({ adherence, thisWeek, planName }: Adhere
     );
   }
 
-  const tone = pct >= 85 ? '#059669' : pct >= 60 ? '#d97706' : 'var(--danger)';
+  const tone = pct >= 85 ? 'var(--success-text)' : pct >= 60 ? 'var(--warning-text)' : 'var(--danger-text)';
   const max = Math.max(1, ...weeks.map((w) => w.planned + w.extra));
 
   return (
@@ -116,7 +116,7 @@ export default function AdherencePanel({ adherence, thisWeek, planName }: Adhere
       {thisWeek && (thisWeek.missed.length > 0 || thisWeek.remaining.length > 0) && (
         <div className="mt-3 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
           {thisWeek.missed.length > 0 && (
-            <p className="flex items-center gap-1.5 text-[12px] font-[650]" style={{ color: 'var(--danger)' }}>
+            <p className="flex items-center gap-1.5 text-[12px] font-[650]" style={{ color: 'var(--danger-text)' }}>
               <TriangleAlert size={13} className="shrink-0" />
               Missed this week: {thisWeek.missed.map((d) => DAY_NAME[d]).join(', ')}
             </p>
@@ -157,7 +157,7 @@ function Legend() {
     <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
       {[
         ['#059669', 'Target met'],
-        ['var(--danger)', 'Short of target'],
+        ['var(--danger-text)', 'Short of target'],
         ['#94a3b8', 'Extra session'],
       ].map(([c, label]) => (
         <span key={label} className="flex items-center gap-1 text-[10px] font-[650]" style={{ color: 'var(--text-muted)' }}>
