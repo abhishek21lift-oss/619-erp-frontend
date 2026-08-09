@@ -14,11 +14,11 @@ import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { calcPostureRiskScore, classifyRisk } from '@/lib/posture-calculations';
-import { STEPS, initPostureForm } from '@/components/pt-os/posture-assessment/types';
+import { STEPS, initPostureForm, COACH_NOTE_FIELDS } from '@/components/pt-os/posture-assessment/types';
 import type { PostureFormData, StepId, CoachNotes } from '@/components/pt-os/posture-assessment/types';
 import PostureProgressTimeline from '@/components/pt-os/posture-assessment/PostureProgressTimeline';
 import StepPostureObservations from '@/components/pt-os/posture-assessment/StepPostureObservations';
-import CoachNotesPanel from '@/components/pt-os/posture-assessment/CoachNotesPanel';
+import CoachNotesPanel from '@/components/pt-os/shared/CoachNotesPanel';
 import PostureRiskBadges from '@/components/pt-os/posture-assessment/PostureRiskBadges';
 import PostureComparison from '@/components/pt-os/posture-assessment/PostureComparison';
 import PostureCard from '@/components/pt-os/posture-assessment/PostureCard';
@@ -289,7 +289,12 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
         {!reviewMode ? (
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
             {step === 1 && <StepPostureObservations form={form} set={set} />}
-            {step === 2 && <CoachNotesPanel notes={form.coachNotes} set={(notes) => set('coachNotes', notes)} />}
+            {step === 2 && <CoachNotesPanel
+                fields={COACH_NOTE_FIELDS}
+                notes={form.coachNotes}
+                onChange={(key, value) => set('coachNotes', { ...form.coachNotes, [key]: value })}
+                subtitle="Step 2 of 2 — optional, free-form notes per focus area."
+              />}
           </m.div>
         ) : (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-5">

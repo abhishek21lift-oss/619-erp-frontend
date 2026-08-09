@@ -18,7 +18,7 @@ import {
   calcNutritionScore, calcRecoveryScore, classifyRisk, calcHabitRiskScore,
   buildLifestyleRiskFactors, calcLifestyleScore, classifyLifestyleReadiness,
 } from '@/lib/lifestyle-calculations';
-import { STEPS, initLifestyleForm, n } from '@/components/pt-os/lifestyle-assessment/types';
+import { STEPS, initLifestyleForm, n, COACH_NOTE_FIELDS } from '@/components/pt-os/lifestyle-assessment/types';
 import type { LifestyleFormData, FormErrors, StepId, CoachNotes } from '@/components/pt-os/lifestyle-assessment/types';
 import LifestyleProgressTimeline from '@/components/pt-os/lifestyle-assessment/LifestyleProgressTimeline';
 import StepSleep from '@/components/pt-os/lifestyle-assessment/StepSleep';
@@ -30,7 +30,7 @@ import StepAdditionalFactors from '@/components/pt-os/lifestyle-assessment/StepA
 import LifestyleDashboard from '@/components/pt-os/lifestyle-assessment/LifestyleDashboard';
 import HabitRiskBadges from '@/components/pt-os/lifestyle-assessment/HabitRiskBadges';
 import WeeklyHabitGoals from '@/components/pt-os/lifestyle-assessment/WeeklyHabitGoals';
-import CoachNotesPanel from '@/components/pt-os/lifestyle-assessment/CoachNotesPanel';
+import CoachNotesPanel from '@/components/pt-os/shared/CoachNotesPanel';
 import LifestyleComparison from '@/components/pt-os/lifestyle-assessment/LifestyleComparison';
 import LifestyleCard from '@/components/pt-os/lifestyle-assessment/LifestyleCard';
 
@@ -397,7 +397,11 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
               stressLevel={n(form.stressLevel)}
               mealFrequency={n(form.mealFrequency)}
             />
-            <CoachNotesPanel notes={form.coachNotes} set={(notes) => set('coachNotes', notes)} />
+            <CoachNotesPanel
+                fields={COACH_NOTE_FIELDS}
+                notes={form.coachNotes}
+                onChange={(key, value) => set('coachNotes', { ...form.coachNotes, [key]: value })}
+              />
           </m.div>
         )}
       </div>
