@@ -13,8 +13,9 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { appPath, routeExists } from '@/__tests__/helpers/app-routes';
 
-const PT_OS = join(process.cwd(), 'src/app/pt-os');
+const PT_OS = appPath('pt-os');
 const SHARED = 'src/components/pt-os/shared/ClientPicker.tsx';
 
 /** Every pt-os page.tsx that imports the shared picker. */
@@ -75,7 +76,7 @@ describe('the shared PT-OS client picker', () => {
     const bad: string[] = [];
     for (const p of callers()) {
       for (const [, base] of readFileSync(p, 'utf8').matchAll(/basePath="([^"]+)"/g)) {
-        if (!existsSync(join(process.cwd(), 'src/app', base, 'page.tsx'))) bad.push(base);
+        if (!routeExists(base)) bad.push(base);
       }
     }
     expect(bad).toEqual([]);
@@ -147,7 +148,7 @@ describe('the shared PT-OS client picker', () => {
   it('the workout log override points at a route that exists', () => {
     const src = readFileSync(join(PT_OS, 'workout-log/page.tsx'), 'utf8');
     expect(src).toMatch(/hrefFor=\{\(id\) => `\/pt-os\/clients\/\$\{id\}\/workout-log`\}/);
-    expect(existsSync(join(process.cwd(), 'src/app/pt-os/clients/[id]/workout-log/page.tsx'))).toBe(true);
+    expect(routeExists('pt-os/clients/[id]/workout-log')).toBe(true);
   });
 
   it('the progress report override points at a route that exists', () => {
@@ -157,6 +158,6 @@ describe('the shared PT-OS client picker', () => {
     // label actually promises: the client's training analytics.
     const src = readFileSync(join(PT_OS, 'progress-report/page.tsx'), 'utf8');
     expect(src).toMatch(/hrefFor=\{\(id\) => `\/pt-os\/clients\/\$\{id\}\/training\/analytics`\}/);
-    expect(existsSync(join(process.cwd(), 'src/app/pt-os/clients/[id]/training/analytics/page.tsx'))).toBe(true);
+    expect(routeExists('pt-os/clients/[id]/training/analytics')).toBe(true);
   });
 });

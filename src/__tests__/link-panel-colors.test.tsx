@@ -12,12 +12,12 @@
 // profile actually gives them one, drawn from the shared TAB_COLOR rotation
 // rather than an invented hex.
 
-import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { LinkPanel, EmptyPanel, TAB_COLOR } from '@/components/pt-os/client/ClientTabs';
-import { Dumbbell, Target } from 'lucide-react';
+import {describe, expect, it} from 'vitest';
+import {render, screen} from '@testing-library/react';
+import {readFileSync} from 'node:fs';
+import {LinkPanel, EmptyPanel, TAB_COLOR} from '@/components/pt-os/client/ClientTabs';
+import {Dumbbell, Target} from 'lucide-react';
+import {appPath} from '@/__tests__/helpers/app-routes';
 
 describe('LinkPanel colours its header and every row it is given', () => {
   it('tints the header icon tile when a colour is passed', () => {
@@ -72,7 +72,7 @@ describe('LinkPanel colours its header and every row it is given', () => {
 
 describe('every panel the client profile opens is coloured, not just the tabs', () => {
   const page = readFileSync(
-    join(process.cwd(), 'src', 'app', 'pt-os', 'clients', '[id]', 'page.tsx'), 'utf8');
+    appPath('pt-os', 'clients', '[id]', 'page.tsx'), 'utf8');
 
   it('finds panels at all — a passing test on an empty list proves nothing', () => {
     const panels = [...page.matchAll(/<(?:LinkPanel|EmptyPanel)\b/g)];

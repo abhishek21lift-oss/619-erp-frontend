@@ -9,12 +9,12 @@
 // giving the revenue page an honest home. Both are pinned here so a future
 // edit can't quietly repoint one without the other.
 
-import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { NAV_GROUPS } from '@/lib/nav-config';
+import {describe, expect, it} from 'vitest';
+import {readFileSync} from 'node:fs';
+import {NAV_GROUPS} from '@/lib/nav-config';
+import {srcPath} from '@/__tests__/helpers/app-routes';
 
-const src = (...p: string[]) => readFileSync(join(process.cwd(), 'src', ...p), 'utf8');
+const src = (...p: string[]) => readFileSync(srcPath(...p), 'utf8');
 
 describe('"Progress Report" opens a client\'s progress, not PT revenue', () => {
   const screening = NAV_GROUPS.find((g) => g.id === 'progress-tracking')!;

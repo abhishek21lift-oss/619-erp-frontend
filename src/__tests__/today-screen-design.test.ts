@@ -15,16 +15,16 @@
 // concerned. `code()` removes /* … */ blocks (which covers JSX comments) and
 // whole-line // comments before anything is matched.
 
-import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { fmtTime12 } from '@/lib/format';
+import {describe, expect, it} from 'vitest';
+import {readFileSync} from 'node:fs';
+import {fmtTime12} from '@/lib/format';
+import {srcPath} from '@/__tests__/helpers/app-routes';
 
 const code = (s: string) => s
   .replace(/\/\*[\s\S]*?\*\//g, '')
   .replace(/^\s*\/\/.*$/gm, '');
 
-const src = (...p: string[]) => code(readFileSync(join(__dirname, '..', ...p), 'utf8'));
+const src = (...p: string[]) => code(readFileSync(srcPath(...p), 'utf8'));
 
 const page = src('app', 'pt-os', 'today', 'page.tsx');
 const card = src('components', 'dashboards', 'PtOsDashboard.tsx');

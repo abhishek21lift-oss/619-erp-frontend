@@ -11,13 +11,13 @@
 // plan it does not have, a row that renders "null · 0 exercises", or a log
 // page that assumes a plan is attached and blanks when it is not.
 
-import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { buildTodayQueue } from '@/components/dashboards/PtOsDashboard';
-import type { TodayClient } from '@/lib/api';
+import {describe, expect, it} from 'vitest';
+import {readFileSync} from 'node:fs';
+import {buildTodayQueue} from '@/components/dashboards/PtOsDashboard';
+import type {TodayClient} from '@/lib/api';
+import {srcPath} from '@/__tests__/helpers/app-routes';
 
-const src = (...p: string[]) => readFileSync(join(__dirname, '..', ...p), 'utf8');
+const src = (...p: string[]) => readFileSync(srcPath(...p), 'utf8');
 
 const planless: TodayClient = {
   assignment_id: null,

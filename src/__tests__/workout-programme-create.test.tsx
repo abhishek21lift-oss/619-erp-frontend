@@ -8,10 +8,9 @@
 // So these assert the contract that replaced it: create the shell, assign it,
 // then hand over to the builder with the id the server returned.
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, cleanup, fireEvent } from '@testing-library/react';
+import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest';
+import {render, screen, waitFor, cleanup, fireEvent} from '@testing-library/react';
 import fs from 'node:fs';
-import path from 'node:path';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
@@ -30,6 +29,7 @@ const toastError = vi.fn();
 vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast: { error: toastError, success: vi.fn() } }) }));
 
 import NewProgrammeDialog from '@/components/pt-os/builder/NewProgrammeDialog';
+import {appPath, routeExists} from '@/__tests__/helpers/app-routes';
 
 beforeEach(() => {
   push.mockReset(); create.mockReset(); assign.mockReset(); toastError.mockReset();
@@ -111,7 +111,7 @@ describe('NewProgrammeDialog — the replacement for the deleted wizard', () => 
 });
 
 describe('the Programs screen no longer carries the old wizard', () => {
-  const PAGE = path.join(process.cwd(), 'src/app/pt-os/workout-plans/page.tsx');
+  const PAGE = appPath('pt-os/workout-plans/page.tsx');
   const src = fs.readFileSync(PAGE, 'utf8');
 
   it('has no builder tab or wizard state left behind', () => {
@@ -131,7 +131,7 @@ describe('the Programs screen no longer carries the old wizard', () => {
 });
 
 describe('Training navigation', () => {
-  const PROFILE = path.join(process.cwd(), 'src/app/pt-os/clients/[id]/page.tsx');
+  const PROFILE = appPath('pt-os/clients/[id]/page.tsx');
   const src = fs.readFileSync(PROFILE, 'utf8');
 
   it('offers the Training section on the client profile', () => {
@@ -148,7 +148,6 @@ describe('Training navigation', () => {
     // The orphan-link check. A tile pointing at a route nobody created 404s,
     // and nothing in the build would say so — the same class of miss the
     // platform-split orphan check caught.
-    const APP = path.join(process.cwd(), 'src/app');
     for (const route of [
       'pt-os/workout-plans',
       'pt-os/clients/[id]/training/assigned',
@@ -156,7 +155,7 @@ describe('Training navigation', () => {
       'pt-os/clients/[id]/training/builder',
       'pt-os/clients/[id]/workout-log',
     ]) {
-      expect(fs.existsSync(path.join(APP, route, 'page.tsx')), `${route} missing`).toBe(true);
+      expect(routeExists(route), `${route} missing`).toBe(true);
     }
   });
 });

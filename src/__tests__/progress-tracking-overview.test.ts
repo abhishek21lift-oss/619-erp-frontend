@@ -15,12 +15,12 @@
 // page is named or linked to, chosen to say what the page actually is: a
 // status overview, not a session or a setup wizard.
 
-import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { NAV_GROUPS } from '@/lib/nav-config';
+import {describe, expect, it} from 'vitest';
+import {readFileSync} from 'node:fs';
+import {NAV_GROUPS} from '@/lib/nav-config';
+import {srcPath} from '@/__tests__/helpers/app-routes';
 
-const src = (...p: string[]) => readFileSync(join(process.cwd(), 'src', ...p), 'utf8');
+const src = (...p: string[]) => readFileSync(srcPath(...p), 'utf8');
 
 describe('Progress Tracking Overview is named consistently everywhere', () => {
   const screening = NAV_GROUPS.find((g) => g.id === 'progress-tracking')!;

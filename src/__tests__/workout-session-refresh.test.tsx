@@ -76,7 +76,7 @@ vi.mock('@/lib/api', () => ({
   },
 }));
 
-import WorkoutSessionPage from '@/app/pt-os/clients/[id]/workout-log/[sessionId]/page';
+import WorkoutSessionPage from '@/app/(chrome)/pt-os/clients/[id]/workout-log/[sessionId]/page';
 
 // The page reads its route params with React's `use()`. A bare
 // Promise.resolve() suspends and never resumes here — nothing outside React

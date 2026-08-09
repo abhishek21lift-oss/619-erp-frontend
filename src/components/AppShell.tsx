@@ -33,8 +33,6 @@ import { clearSearchHistory } from '@/components/search/recent';
 
 interface AppShellProps {
   children: React.ReactNode;
-  title?: string;
-  headerLeft?: React.ReactNode;
 }
 
 interface Notification {
@@ -115,7 +113,7 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-function AppShellContent({ children, title, headerLeft }: AppShellProps) {
+function AppShellContent({ children }: AppShellProps) {
   // Every page in the shell has fields, so the iOS keyboard-dismiss gap is a
   // shell-level problem, not a per-page one.
   //
@@ -610,12 +608,6 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
             initial={false}
           />
 
-          {headerLeft && (
-            <div className="flex items-center gap-3 px-4 sm:px-6 lg:px-8">
-              {headerLeft}
-            </div>
-          )}
-
           {/* Width/max-width/margin/padding all come from .shell-main in globals.css —
               the equivalent Tailwind utilities (mx-auto w-full max-w-[1440px] px-4
               sm:px-6 lg:px-8) were dead here: same-specificity CSS declared later in
@@ -623,24 +615,27 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
           <main id="main-content" className="flex-1 min-w-0 overflow-x-hidden shell-main"
           >
             {pathname === '/' && <TrialBanner />}
-            <AnimatePresence mode="popLayout" initial={false}>
-              <m.div
-                key={pathname}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, transition: { duration: 0.1 } }}
-                transition={{ duration: 0.22, ease: [0.21, 0.47, 0.32, 0.98] }}
-              >
-                {title && (
-                  <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
-                    {title}
-                  </h1>
-                )}
-                <PullToRefresh global onRefresh={globalRefresh}>
-                  <div key={refreshKey}>{children}</div>
-                </PullToRefresh>
-              </m.div>
-            </AnimatePresence>
+            {/* Keyed on pathname so each route fades in on arrival. There is
+                deliberately no AnimatePresence and no exit animation here.
+                There used to be one — `mode="popLayout"`, a 0.1s fade out —
+                and it had never run once: this whole subtree was destroyed
+                with the page on every navigation, so nothing was left mounted
+                to animate out. Now that the shell is a layout and does
+                persist, that exit WOULD start running, which is a new
+                transition nobody has looked at on a device — and the exiting
+                page is absolutely positioned over the arriving one while it
+                plays. Enabling it is a UI change, not part of moving the
+                shell, so what shipped for years is what still ships. */}
+            <m.div
+              key={pathname}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.22, ease: [0.21, 0.47, 0.32, 0.98] }}
+            >
+              <PullToRefresh global onRefresh={globalRefresh}>
+                <div key={refreshKey}>{children}</div>
+              </PullToRefresh>
+            </m.div>
           </main>
 
           {/* Mobile bottom navigation — hidden when sidebar drawer is open.
@@ -662,10 +657,13 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 }
 
 export default function AppShell(props: AppShellProps) {
-  // NavScrollProvider used to wrap this. It now lives in app/layout.tsx: this
-  // component is rendered by each page rather than by a layout, so anything
-  // mounted here is destroyed and rebuilt on every navigation — which reset
-  // the top bar's scroll state and shifted the page's content on arrival.
+  // Mounted once, from src/app/(chrome)/layout.tsx — see the note there. It
+  // used to be rendered by each of 97 pages instead, which destroyed and
+  // rebuilt the entire shell on every navigation.
+  //
+  // NavScrollProvider is the one piece that still lives further up, in
+  // app/layout.tsx: the member portal has no AppShell at all and still needs
+  // the scroll state.
   return (
     <PullRefreshRegistryProvider>
       <AppShellContent {...props} />

@@ -14,9 +14,10 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import PublicNav, { PUBLIC_NAV_CLEARANCE } from '@/components/PublicNav';
+import { srcPath } from '@/__tests__/helpers/app-routes';
 
 const SRC = join(process.cwd(), 'src');
-const read = (p: string) => readFileSync(join(SRC, p), 'utf8');
+const read = (p: string) => readFileSync(srcPath(...p.split('/')), 'utf8');
 
 describe('<PublicNav />', () => {
   it('always links the wordmark back to the marketing site', () => {

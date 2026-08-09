@@ -33,6 +33,7 @@ vi.mock('@/components/AppShell', () => ({
 }));
 
 import RouteError from '@/components/RouteError';
+import { APP_DIR, ROUTE_GROUPS } from '@/__tests__/helpers/app-routes';
 
 const SECRET = 'Cannot read properties of undefined (reading \'orgId\') at /api/internal/x';
 
@@ -147,41 +148,61 @@ describe('<RouteError /> — the shell decision', () => {
 });
 
 describe('every route segment has a boundary', () => {
-  const APP = path.join(process.cwd(), 'src/app');
+  const APP = APP_DIR;
 
-  /** Top-level segments that contain at least one page. */
-  const segments = fs.readdirSync(APP, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && e.name !== 'api')
-    .map((e) => e.name)
-    .filter((name) => {
-      const walk = (d: string): boolean =>
-        fs.readdirSync(d, { withFileTypes: true }).some((e) =>
-          e.isDirectory() ? walk(path.join(d, e.name)) : e.name === 'page.tsx');
-      return walk(path.join(APP, name));
-    });
+  /** Top-level segments that own at least one page, tagged with their group. */
+  const segments = ROUTE_GROUPS.flatMap((group) => {
+    const root = path.join(APP, group);
+    return fs.readdirSync(root, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => ({ group, name: e.name, dir: path.join(root, e.name) }))
+      .filter(({ dir }) => {
+        const walk = (d: string): boolean =>
+          fs.readdirSync(d, { withFileTypes: true }).some((e) =>
+            e.isDirectory() ? walk(path.join(d, e.name)) : e.name === 'page.tsx');
+        return walk(dir);
+      });
+  }).filter(({ name }) => !name.startsWith('['));
 
-  // Public and auth surfaces: no session, so no Guard in the fallback.
-  // `client` is the client activation flow — somebody following a link from
-  // their trainer's email who does not have an account yet, so it belongs
-  // here for exactly the reason `auth` does.
+  // Whether a segment's fallback should re-create the shell itself.
+  //
+  //  · under (chrome) — never. Its layout has already rendered Guard +
+  //    AppShell around whatever the boundary returns, so passing shell would
+  //    nest a second copy of the whole shell inside the first.
+  //  · under (bare) — yes, unless the segment is public. These pages carry no
+  //    shell from a layout, so a fallback that wants nav has to build it.
+  //
+  // Public and auth surfaces: no session, so no Guard in the fallback. Guard
+  // redirects to /login when there is none, and a shelled fallback on /login
+  // redirects to the route that just threw. `client` is the activation flow —
+  // somebody following a link from their trainer's email who has no account
+  // yet — so it belongs here for exactly the reason `auth` does.
   const PUBLIC = new Set([
-    'appointments', 'auth', 'client', 'forgot-password', 'login',
+    'auth', 'client', 'forgot-password', 'login',
     // The client-facing half of the sign-in split. Public for the same reason
     // 'login' is: nobody reaching it has a session yet.
     'member-login',
     'reset-password', 'start-free',
   ]);
+  const wantsShell = ({ group, name }: { group: string; name: string }) =>
+    group !== '(chrome)' && !PUBLIC.has(name);
+
+  const errorFile = ({ dir }: { dir: string }) => path.join(dir, 'error.tsx');
 
   it('found the segments, so this cannot pass vacuously', () => {
     expect(segments.length).toBeGreaterThan(20);
-    expect(segments).toContain('finance');
-    expect(segments).toContain('login');
+    expect(segments.map((s) => s.name)).toContain('finance');
+    expect(segments.map((s) => s.name)).toContain('login');
+    // Both groups have to be populated, or the shell expectations below are
+    // all being checked against one rule.
+    for (const group of ROUTE_GROUPS) {
+      expect(segments.filter((s) => s.group === group).length).toBeGreaterThan(0);
+    }
   });
 
   it('has an error.tsx in every segment that owns pages', () => {
-    const missing = segments
-      .filter((s) => !s.startsWith('['))
-      .filter((s) => !fs.existsSync(path.join(APP, s, 'error.tsx')));
+    const missing = segments.filter((s) => !fs.existsSync(errorFile(s)))
+      .map((s) => `${s.group}/${s.name}`);
     expect(missing).toEqual([]);
   });
 
@@ -190,13 +211,12 @@ describe('every route segment has a boundary', () => {
     // misbehaves for a logged-out user hitting an error, which no build step
     // would reveal.
     const wrong: string[] = [];
-    for (const s of segments.filter((x) => !x.startsWith('['))) {
-      const f = path.join(APP, s, 'error.tsx');
+    for (const seg of segments) {
+      const f = errorFile(seg);
       if (!fs.existsSync(f)) continue;
-      const src = fs.readFileSync(f, 'utf8');
-      const bare = /shell=\{false\}/.test(src);
-      if (PUBLIC.has(s) !== bare) {
-        wrong.push(`${s}: shell=${!bare}, expected shell=${!PUBLIC.has(s)}`);
+      const bare = /shell=\{false\}/.test(fs.readFileSync(f, 'utf8'));
+      if (wantsShell(seg) === bare) {
+        wrong.push(`${seg.group}/${seg.name}: shell=${!bare}, expected shell=${wantsShell(seg)}`);
       }
     }
     expect(wrong).toEqual([]);
@@ -206,10 +226,10 @@ describe('every route segment has a boundary', () => {
     // 27 hand-written fallbacks would drift. If one stops importing RouteError,
     // the redaction and reporting guarantees above stop applying to it.
     const offenders = segments
-      .filter((s) => !s.startsWith('['))
-      .filter((s) => fs.existsSync(path.join(APP, s, 'error.tsx')))
+      .filter((s) => fs.existsSync(errorFile(s)))
       .filter((s) => !/from '@\/components\/RouteError'/
-        .test(fs.readFileSync(path.join(APP, s, 'error.tsx'), 'utf8')));
+        .test(fs.readFileSync(errorFile(s), 'utf8')))
+      .map((s) => `${s.group}/${s.name}`);
     expect(offenders).toEqual([]);
     expect(fs.readFileSync(path.join(APP, 'error.tsx'), 'utf8'))
       .toMatch(/from '@\/components\/RouteError'/);

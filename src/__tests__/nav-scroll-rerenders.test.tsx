@@ -16,11 +16,11 @@
 // invariant rather than the implementation: a scroll that does not cross a
 // topBar state boundary must not re-render a consumer at all.
 
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { render, act } from '@testing-library/react';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { NavScrollProvider, useNavScroll } from '@/contexts/nav-scroll-context';
+import {describe, expect, it, vi, beforeEach, afterEach} from 'vitest';
+import {render, act} from '@testing-library/react';
+import {readFileSync} from 'node:fs';
+import {NavScrollProvider, useNavScroll} from '@/contexts/nav-scroll-context';
+import {srcPath} from '@/__tests__/helpers/app-routes';
 
 let rafCbs: FrameRequestCallback[] = [];
 let renders = 0;
@@ -102,7 +102,7 @@ describe('scrolling without crossing a state boundary', () => {
 });
 
 describe('the provider is mounted where it survives navigation', () => {
-  const read = (...p: string[]) => readFileSync(join(process.cwd(), 'src', ...p), 'utf8');
+  const read = (...p: string[]) => readFileSync(srcPath(...p), 'utf8');
 
   it('lives in the root layout, not inside AppShell', () => {
     // AppShell is rendered by each of ~97 pages rather than by a layout, so
