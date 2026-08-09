@@ -394,7 +394,11 @@ function MemberNav() {
       // opt-out MobileBottomNav carries, and the guard test that just caught
       // this missing is the reason it exists.
       data-no-pull-refresh
-      className="fixed inset-x-0 bottom-0 z-40"
+      // .mobile-bottom-nav rather than Tailwind's bottom-0, so this bar takes
+      // its bottom from --vv-bottom-inset exactly as the staff nav does. It
+      // was pinned at a plain bottom-0, which meant the iOS fix in the staff
+      // shell stopped at the portal boundary and members kept the bug.
+      className="mobile-bottom-nav fixed inset-x-0 z-40"
       style={{
         background: 'var(--bg-card)',
         borderTop: '1px solid var(--border)',
@@ -427,11 +431,22 @@ function MemberNav() {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-[100dvh]" style={{ background: 'var(--bg-canvas)' }}>
-      {/* Bottom padding clears the fixed bar plus the home indicator, so the
-          last card is fully scrollable into view rather than sitting under it. */}
+      {/* Top to bottom: the phone's own status-bar inset, then the page, then
+          the tab bar — the same order the staff shell uses.
+          The inset was missing entirely. This portal has no top bar of its own
+          to carry it (the staff shell's fixed header pays it, and /member/classes
+          pays it on .member-header), and the app renders with viewport-fit=cover
+          under a translucent status bar, so on a notched phone the first card
+          started underneath the clock. pt-5 stays as the gap BELOW the inset,
+          rather than being the only thing standing in for it. */}
       <div
         className="mx-auto w-full max-w-[560px] px-4 pt-5"
-        style={{ paddingBottom: 'calc(84px + env(safe-area-inset-bottom, 0px))' }}
+        style={{
+          marginTop: 'env(safe-area-inset-top, 0px)',
+          // Clears the fixed bar plus the home indicator, so the last card is
+          // fully scrollable into view rather than sitting under it.
+          paddingBottom: 'calc(84px + env(safe-area-inset-bottom, 0px))',
+        }}
       >
         {children}
       </div>

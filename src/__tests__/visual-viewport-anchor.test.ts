@@ -232,3 +232,33 @@ describe('the bottom chrome actually consumes the inset', () => {
     expect(shell).toContain('useVisualViewportAnchor()');
   });
 });
+
+// The member portal does not go through AppShell — each page renders its own
+// chrome — so the first version of this fix stopped dead at the portal
+// boundary: the variable was never published there and the member tab bar was
+// pinned at a plain bottom-0. Members kept the bug the staff side had fixed.
+describe('the member portal is covered too', () => {
+  it('mounts the hook, since it never goes through AppShell', () => {
+    const layout = src('app', 'member', 'layout.tsx');
+    expect(layout).toContain('useVisualViewportAnchor()');
+  });
+
+  it('its tab bar takes the inset rather than pinning itself to bottom-0', () => {
+    const dash = src('app', 'member', 'dashboard', 'page.tsx');
+    expect(dash).toContain('mobile-bottom-nav');
+    expect(dash).not.toMatch(/className="[^"]*\bbottom-0\b/);
+  });
+
+  it('the .member-bottom-nav rule takes it as well', () => {
+    const css = src('app', 'globals.css');
+    expect(css).toMatch(/\.member-bottom-nav\s*\{[^}]*bottom:\s*var\(--vv-bottom-inset, 0px\)/);
+  });
+
+  it('the portal pays the top safe-area inset, having no top bar to carry it', () => {
+    // The staff shell's fixed header pays this, and /member/classes pays it
+    // on .member-header. The dashboard had neither and started its first card
+    // under the status bar on a notched phone.
+    const dash = src('app', 'member', 'dashboard', 'page.tsx');
+    expect(dash).toContain("marginTop: 'env(safe-area-inset-top, 0px)'");
+  });
+});

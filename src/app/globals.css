@@ -2115,7 +2115,11 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
 }
 .member-bottom-nav {
   position: fixed;
-  bottom: 0;
+  /* --vv-bottom-inset for the same reason .mobile-bottom-nav takes it: a
+     plain `bottom: 0` resolves against the layout viewport, which on iOS is
+     not where the screen ends once the keyboard has been opened and
+     dismissed. See useVisualViewportAnchor. */
+  bottom: var(--vv-bottom-inset, 0px);
   left: 0;
   right: 0;
   z-index: 40;
