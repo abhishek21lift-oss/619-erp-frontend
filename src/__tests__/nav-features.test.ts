@@ -146,15 +146,33 @@ describe('the tags match the platform registry', () => {
 });
 
 describe('role and feature are independent gates', () => {
+  /**
+   * An item carrying BOTH gates: admin-only, and inside a feature-tagged
+   * group (allNavItems inherits the group's tag onto each item).
+   *
+   * The fixture's own properties are asserted rather than assumed. These two
+   * tests are about the general principle, not about one route, but they
+   * previously reached for /attendance/reports and broke when it was dropped
+   * from the nav — as a bare `.find(...)!` returning undefined, which fails
+   * on a confusing property access rather than saying what actually changed.
+   */
+  function twoGateItem() {
+    const item = allNavItems().find((i) => i.href === '/finance/record-payment');
+    expect(item, 'fixture /finance/record-payment is no longer in the nav').toBeDefined();
+    expect(item!.roles, 'fixture must stay admin-only for these gates to differ').toEqual(['admin']);
+    expect(item!.feature, 'fixture must stay inside a feature-tagged group').toBe('finance');
+    return item!;
+  }
+
   it('a feature flag cannot grant an item the role check denies', () => {
-    const reports = allNavItems().find((i) => i.href === '/attendance/reports')!;
-    expect(isVisibleForFeature(reports, { attendance: true })).toBe(true);
-    expect(isVisibleForRole(reports, 'trainer')).toBe(false);
+    const item = twoGateItem();
+    expect(isVisibleForFeature(item, { finance: true })).toBe(true);
+    expect(isVisibleForRole(item, 'trainer')).toBe(false);
   });
 
   it('a role cannot grant an item the feature check denies', () => {
-    const reports = allNavItems().find((i) => i.href === '/attendance/reports')!;
-    expect(isVisibleForRole(reports, 'admin')).toBe(true);
-    expect(isVisibleForFeature(reports, { attendance: false })).toBe(false);
+    const item = twoGateItem();
+    expect(isVisibleForRole(item, 'admin')).toBe(true);
+    expect(isVisibleForFeature(item, { finance: false })).toBe(false);
   });
 });

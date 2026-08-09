@@ -75,8 +75,14 @@ export const NAV_GROUPS: NavGroup[] = [
       // One check-in route, deliberately. 'Kiosk Mode' used to sit here and ran
       // the same QR scan against the same endpoint, differing only in chrome.
       { href: '/checkin/qr-scanner', label: 'Check In',            icon: 'ScanFace' },
+      // 'Reports & Dashboard' (/attendance/reports) used to sit here and is
+      // gone for the same reason 'Kiosk Mode' above it went: it was a second
+      // entry onto the same screen. That page's content was already merged
+      // into Attendance Records' own Insights & Trends tab, leaving the route
+      // as nothing but a redirect back into /attendance — so the sidebar was
+      // offering two buttons that landed in the same place. The redirect
+      // itself stays, so existing bookmarks and links still resolve.
       { href: '/attendance',         label: 'Attendance Records',  icon: 'ClipboardList',  roles: ['admin', 'manager', 'trainer'] },
-      { href: '/attendance/reports', label: 'Reports & Dashboard', icon: 'BarChart3',      roles: ['admin'] },
     ],
   },
   {
