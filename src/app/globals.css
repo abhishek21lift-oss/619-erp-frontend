@@ -496,11 +496,32 @@ body {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + var(--vv-bottom-inset, 0px));
   z-index: 50;
 }
 @media (min-width: 1024px) {
+  /* Deliberately NOT offset by --vv-bottom-inset. The inset exists for an
+     iOS bug, and on mobile pinch-zoom is disabled by product decision, so
+     there the visual viewport only moves for the keyboard and browser
+     chrome. Desktop is the opposite: page zoom is explicitly the supported
+     route for larger text (see the viewport comment in app/layout.tsx), and
+     zooming legitimately shrinks the visual viewport — feeding that in would
+     drag this bar around for a bug desktop never had. */
   .page-action-bar { bottom: 0; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   BOTTOM-ANCHORED CHROME  —  the mobile nav's own offset
+   `bottom: 0` resolves against the LAYOUT viewport, which on iOS is not
+   where the screen ends once the keyboard has been opened and dismissed
+   (worst in a standalone PWA, which is how this app is installed). The
+   nav then floats with a strip of blank page under it.
+   --vv-bottom-inset is published by useVisualViewportAnchor and is the
+   gap between the two; it is 0px whenever they agree, so this is inert
+   in the healthy case and on every browser without visualViewport.
+   ════════════════════════════════════════════════════════════════════ */
+.mobile-bottom-nav {
+  bottom: var(--vv-bottom-inset, 0px);
 }
 
 /* ════════════════════════════════════════════════════════════════════
