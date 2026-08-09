@@ -159,7 +159,7 @@ function Inner() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                    {['Member', 'Mobile', 'Coach', 'Balance Due', 'Expiry', 'Risk', 'Status', ''].map((h, i) => (
+                    {['Member', 'Mobile', 'Balance Due', 'Expiry', 'Risk', 'Status', ''].map((h, i) => (
                       <th key={i} style={{ padding: '14px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', background: 'var(--bg-subtle)', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
@@ -181,7 +181,6 @@ function Inner() {
                           </div>
                         </td>
                         <td style={{ padding: '14px 16px', fontSize: 13, color: 'var(--text-muted)', fontFamily: 'monospace' }}>{d.mobile || '—'}</td>
-                        <td style={{ padding: '14px 16px', fontSize: 13, color: 'var(--text-muted)' }}>{d.trainer_name || '—'}</td>
                         <td style={{ padding: '14px 16px' }}>
                           <span style={{ fontSize: 16, fontWeight: 800, background: 'linear-gradient(135deg,#ef4444,#dc2626)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.02em' }}>{fmt(amt)}</span>
                         </td>
