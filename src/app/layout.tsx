@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
-import { LazyMotion, domAnimation } from 'framer-motion';
+import { LazyMotion, MotionConfig, domAnimation } from 'framer-motion';
 import { AuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/lib/toast';
 import { PermissionsProvider } from '@/lib/permissions-context';
@@ -222,11 +222,36 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                        * provider sat inside the staff shell.
                        */}
                       <NavScrollProvider>
-                        <LazyMotion features={domAnimation}>
-                          <SentryInit />
-                          {children}
-                          <CommandPalette />
-                        </LazyMotion>
+                        {/*
+                         * reducedMotion="user" is the only thing that reaches
+                         * framer-motion for a visitor who asks for less motion.
+                         *
+                         * globals.css has the standard
+                         * `@media (prefers-reduced-motion: reduce)` reset, and
+                         * it covers nothing here: it caps animation- and
+                         * transition-duration, and framer-motion uses neither.
+                         * It animates by writing inline styles from its own
+                         * rAF loop, which no CSS rule can cap and no media
+                         * query can see. So ~190 `initial={{ opacity: 0, y }}`
+                         * mount animations across the app played their full
+                         * translate for a user with a vestibular disorder, on
+                         * every page, on every navigation.
+                         *
+                         * This is framer's own mechanism rather than a
+                         * workaround: transform and layout animations are
+                         * dropped when the OS setting is on, opacity ones are
+                         * kept, and anything explicitly opted out with
+                         * `reducedMotion: false` at the component level still
+                         * runs. Nothing changes for anyone who has not asked
+                         * for it.
+                         */}
+                        <MotionConfig reducedMotion="user">
+                          <LazyMotion features={domAnimation}>
+                            <SentryInit />
+                            {children}
+                            <CommandPalette />
+                          </LazyMotion>
+                        </MotionConfig>
                       </NavScrollProvider>
                     </ToastProvider>
                   </FeaturesProvider>

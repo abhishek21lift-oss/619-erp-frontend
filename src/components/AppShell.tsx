@@ -35,6 +35,14 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
+// The top bar's two heights, in px, excluding the safe-area inset.
+//
+// EXPANDED is also the layout reserve: the spacer below the fixed header is
+// this tall at all times, never the compact height. That is deliberate — see
+// the spacer for what animating it cost.
+const TOPBAR_EXPANDED_H = 46;
+const TOPBAR_COMPACT_H = 32;
+
 interface Notification {
   id: string;
   type: string;
@@ -270,7 +278,7 @@ function AppShellContent({ children }: AppShellProps) {
             // Live top-bar height for page-level sticky headers (.below-topbar):
             // tracks the expanded/compact animation so stuck headers never
             // slide under (or paint over) the fixed shell header.
-            ['--topbar-h' as string]: `calc(${topBar === 'compact' ? 32 : 46}px + env(safe-area-inset-top, 0px))`,
+            ['--topbar-h' as string]: `calc(${topBar === 'compact' ? TOPBAR_COMPACT_H : TOPBAR_EXPANDED_H}px + env(safe-area-inset-top, 0px))`,
           }}
         >
           {/* Scoped blur overlay — background stays in place, only blurs + dims */}
@@ -314,7 +322,7 @@ function AppShellContent({ children }: AppShellProps) {
 
             <m.div
               className="flex items-center gap-1.5 px-3 sm:gap-2.5 sm:px-4 lg:gap-3 lg:px-6"
-              animate={{ height: topBar === 'compact' ? 32 : 46 }}
+              animate={{ height: topBar === 'compact' ? TOPBAR_COMPACT_H : TOPBAR_EXPANDED_H }}
               transition={transConfig}
             >
               {/* Mobile menu toggle.
@@ -594,18 +602,32 @@ function AppShellContent({ children }: AppShellProps) {
             </m.div>
           </m.header>
 
-          {/* Spacer — tracks fixed header height so content always starts below it.
-              marginTop (not paddingTop) for the safe-area inset: box-sizing:border-box
-              means an explicit `height` clamps the box to that height regardless of
-              padding, so padding-based inset would get silently swallowed on notched
-              devices. margin sits outside the height calculation, so it's additive. */}
-          <m.div
+          {/* Spacer — reserves the room the fixed header occupies, so content
+              starts below it.
+
+              Fixed at the EXPANDED height, and not animated. It used to track
+              the header (46 ↔ 32), which meant every scroll-direction change
+              moved this in-flow box by 14px and pushed the entire page's
+              content with it — a layout shift on a plain scroll, hundreds of
+              times a session. Scroll is not an input CLS forgives, so it
+              scored too.
+
+              The header still shrinks; only the reserve is constant. The 14px
+              band that opens under a compact bar is never actually seen: the
+              bar is only compact while scrolling mid-document, where the
+              content behind it has already scrolled up under it. At the top of
+              the page — the one place a gap would show — the state machine
+              always reports 'expanded'.
+
+              marginTop (not paddingTop) for the safe-area inset:
+              box-sizing:border-box means an explicit `height` clamps the box
+              to that height regardless of padding, so a padding-based inset
+              would get silently swallowed on notched devices. margin sits
+              outside the height calculation, so it is additive. */}
+          <div
             aria-hidden="true"
             className="flex-shrink-0 pointer-events-none"
-            style={{ marginTop: 'env(safe-area-inset-top, 0px)' }}
-            animate={{ height: topBar === 'compact' ? 32 : 46 }}
-            transition={transConfig}
-            initial={false}
+            style={{ height: TOPBAR_EXPANDED_H, marginTop: 'env(safe-area-inset-top, 0px)' }}
           />
 
           {/* Width/max-width/margin/padding all come from .shell-main in globals.css —
