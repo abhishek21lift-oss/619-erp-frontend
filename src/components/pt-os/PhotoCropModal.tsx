@@ -9,6 +9,7 @@ import { Button } from '@/components/ui';
 import { useCamera } from '@/hooks/useCamera';
 import { cropAndCompressImage } from '@/lib/image';
 import { useToast } from '@/lib/toast';
+import { activatable } from '@/lib/a11y';
 
 type Mode = 'select' | 'camera' | 'crop';
 
@@ -155,7 +156,7 @@ export default function PhotoCropModal({
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={(e) => { e.preventDefault(); setDragOver(false); loadFile(e.dataTransfer.files?.[0]); }}
-              onClick={() => fileRef.current?.click()}
+              {...activatable(() => fileRef.current?.click(), { label: 'Choose a photo to upload' })}
               className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-colors"
               style={{
                 borderColor: dragOver ? 'var(--logo-blue, #0067E0)' : 'var(--border-2)',

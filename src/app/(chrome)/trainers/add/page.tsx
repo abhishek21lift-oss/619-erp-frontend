@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageTitle } from '@/components/ui';
+import { activatable } from '@/lib/a11y';
 
 // ── Types ────────────────────────────────────────────────────────────
 type Step = {
@@ -171,7 +172,7 @@ function DragDropUpload({ label, accept, accentColor = '#0067e0', accentGradient
     <div>
       <p className="mb-2.5 text-[10.5px] font-[700] uppercase tracking-[0.10em]" style={{ color: 'rgb(148,163,184)' }}>{label}</p>
       <div
-        onClick={() => ref.current?.click()}
+        {...activatable(() => ref.current?.click(), { label: `Upload ${label}` })}
         onDragOver={e => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={e => { e.preventDefault(); setDragging(false); setFiles(p => [...p, ...Array.from(e.dataTransfer.files).map(f => f.name)]); }}

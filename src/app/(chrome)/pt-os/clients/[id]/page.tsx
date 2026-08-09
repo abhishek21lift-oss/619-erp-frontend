@@ -29,6 +29,7 @@ import {
 import RecoveryPanel from '@/components/pt-os/client/RecoveryPanel';
 import type { ClientRecovery } from '@/lib/api';
 import { printWindowCloseButtonHtml } from '@/lib/printWindowChrome';
+import { activatable } from '@/lib/a11y';
 
 interface PtClientDetail {
   id: string; unique_id?: string; client_id?: string; name: string;
@@ -824,7 +825,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       </div>
                     </div>
                   ) : (
-                    <div onClick={() => setEditNotes(true)} className="group cursor-pointer rounded-[12px] p-3 transition-all"
+                    <div {...activatable(() => setEditNotes(true), { label: 'Edit notes' })} className="group cursor-pointer rounded-[12px] p-3 transition-all"
                       style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.12)' }}>
                       {client.notes ? (
                         <p className="text-[12.5px] leading-relaxed text-gray-700">{client.notes}</p>

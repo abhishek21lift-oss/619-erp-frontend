@@ -13,6 +13,7 @@ import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import PhotoCropModal from '@/components/pt-os/PhotoCropModal';
+import { activatable } from '@/lib/a11y';
 
 interface ProgressPhoto {
   id: string; client_id: string; photo_url: string;
@@ -174,7 +175,10 @@ function PhotoStudio({ clientId }: PhotoStudioProps) {
               <div
                 className="relative flex items-center justify-center cursor-pointer"
                 style={{ aspectRatio: '3/4', background: photo ? '#0f172a' : 'var(--bg-subtle)' }}
-                onClick={() => photo ? setPreview(photo.photo_url) : setCropModalType(c.type)}
+                {...activatable(
+                  () => (photo ? setPreview(photo.photo_url) : setCropModalType(c.type)),
+                  { label: photo ? `View ${c.label} photo` : `Add ${c.label} photo` },
+                )}
               >
                 {photo ? (
                   <>
@@ -229,7 +233,8 @@ function PhotoStudio({ clientId }: PhotoStudioProps) {
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
             {sortedHistory.map((p) => (
-              <div key={p.id} className="relative rounded-[12px] overflow-hidden group cursor-pointer" style={{ aspectRatio: '3/4' }} onClick={() => setPreview(p.photo_url)}>
+              <div key={p.id} className="relative rounded-[12px] overflow-hidden group cursor-pointer" style={{ aspectRatio: '3/4' }}
+                {...activatable(() => setPreview(p.photo_url), { label: `View ${p.photo_type} photo from ${p.taken_at}` })}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.photo_url} alt={p.photo_type} className="h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2">
