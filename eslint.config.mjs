@@ -13,6 +13,11 @@ const eslintConfig = [
       '_pcheck.js',
       '*.config.js',
       '*.config.mjs',
+      // Vendored agent skills. Third-party code installed by `npx skills add`,
+      // not project source: linting it reports 25 warnings nobody here can fix
+      // and drowns the ones that are ours.
+      '.claude/skills/**',
+      '.agents/skills/**',
       'postcss.config.js',
       'tailwind.config.ts',
     ],

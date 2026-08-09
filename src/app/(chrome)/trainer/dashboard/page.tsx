@@ -288,7 +288,7 @@ function TrainerInner() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
-                    <span className="tabular" style={{ color: expiring ? 'var(--warning)' : 'var(--muted)', fontWeight: expiring ? 700 : 500 }}>
+                    <span className="tabular" style={{ color: expiring ? 'var(--warning-text)' : 'var(--muted)', fontWeight: expiring ? 700 : 500 }}>
                       {c.days_left} days left
                     </span>
                     <span className="text-muted text-xs">Last: {c.last_visit || '—'}</span>
@@ -325,7 +325,7 @@ function TrainerInner() {
                     <tr key={e.month}>
                       <td style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{e.month}</td>
                       <td className="tabular">{fmt(e.revenue)}</td>
-                      <td className="tabular" style={{ color: 'var(--success)', fontWeight: 600 }}>{fmt(e.incentive)}</td>
+                      <td className="tabular" style={{ color: 'var(--success-text)', fontWeight: 600 }}>{fmt(e.incentive)}</td>
                       <td className="tabular" style={{ fontWeight: 700 }}>{fmt(e.total)}</td>
                       <td><button className="btn btn-ghost btn-sm">↓</button></td>
                     </tr>
@@ -343,7 +343,7 @@ function TrainerInner() {
 
 function MiniStat({ label, value, tone }: { label: string; value: string; tone: 'green' | 'red' | 'blue' | 'purple' }) {
   const colors: Record<string, string> = {
-    green: 'var(--success)', red: 'var(--brand-hi)', blue: 'var(--info)', purple: 'var(--purple)',
+    green: 'var(--success-text)', red: 'var(--brand-hi)', blue: 'var(--info)', purple: 'var(--purple)',
   };
   return (
     <div className={`kpi-card ${tone}`}>

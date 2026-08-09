@@ -280,7 +280,7 @@ function SupportPage() {
 
           {error && (
             <div className="flex flex-col items-center gap-2 py-10 text-center">
-              <AlertTriangle size={20} style={{ color: 'var(--danger)' }} />
+              <AlertTriangle size={20} style={{ color: 'var(--danger-text)' }} />
               <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{error}</p>
               <button onClick={load} className="text-[12px] font-[700]" style={{ color: 'var(--brand)' }}>Try again</button>
             </div>
@@ -292,7 +292,7 @@ function SupportPage() {
 
           {tickets?.length === 0 && !composing && (
             <div className="flex flex-col items-center gap-2 rounded-[16px] py-12 text-center" style={cardStyle}>
-              <CheckCircle2 size={22} style={{ color: 'var(--success)' }} />
+              <CheckCircle2 size={22} style={{ color: 'var(--success-text)' }} />
               <p className="text-[13px] font-[650]" style={{ color: 'var(--text-secondary)' }}>No open requests</p>
               <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>Anything you raise will appear here.</p>
             </div>

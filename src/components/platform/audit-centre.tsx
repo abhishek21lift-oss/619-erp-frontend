@@ -372,7 +372,7 @@ export default function AuditCentre() {
 
         {error && !loading && (
           <div className="flex flex-col items-center gap-2.5 py-14 text-center">
-            <AlertTriangle size={22} style={{ color: 'var(--danger)' }} />
+            <AlertTriangle size={22} style={{ color: 'var(--danger-text)' }} />
             <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{error}</p>
             <button onClick={load} className="mt-1 text-[12px] font-[700]" style={{ color: 'var(--brand)' }}>Try again</button>
           </div>

@@ -81,7 +81,7 @@ export function StepFlexibility({ form, set, error }: StepFlexibilityProps) {
         />
       </div>
 
-      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
       {combinedScore != null && (
         <div className="mt-6 flex items-center gap-2">

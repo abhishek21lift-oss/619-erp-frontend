@@ -107,7 +107,7 @@ function Inner() {
       <div className="mt-5">
         {error ? (
           <div className="flex items-start gap-2.5 rounded-xl p-4"
-            style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
+            style={{ background: 'var(--danger-soft)', color: 'var(--danger-text)' }}>
             <AlertTriangle size={17} className="mt-px shrink-0" />
             <span className="text-[13.5px]">{error}</span>
           </div>
@@ -156,13 +156,13 @@ function Inner() {
                       </p>
                     )}
                     {row.activated_to && (
-                      <p className="mt-1 text-[12.5px]" style={{ color: 'var(--success)' }}>
+                      <p className="mt-1 text-[12.5px]" style={{ color: 'var(--success-text)' }}>
                         Active until {new Date(row.activated_to).toLocaleDateString('en-IN',
                           { dateStyle: 'medium' })}
                       </p>
                     )}
                     {row.status === 'PAYMENT_PENDING' && row.rejected_reason && (
-                      <p className="mt-1 text-[12.5px]" style={{ color: 'var(--danger)' }}>
+                      <p className="mt-1 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
                         Last reference was not accepted{row.rejected_note ? ` — ${row.rejected_note}` : ''}
                       </p>
                     )}

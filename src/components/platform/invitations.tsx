@@ -169,7 +169,7 @@ function Row({ inv, onChanged }: { inv: Invitation; onChanged: () => void }) {
         {inv.last_error && (
           <p
             className="flex items-start gap-1.5 rounded-[8px] px-2.5 py-2 text-[11.5px]"
-            style={{ background: 'var(--danger-bg)', color: 'var(--danger)' }}
+            style={{ background: 'var(--danger-bg)', color: 'var(--danger-text)' }}
           >
             <AlertTriangle size={12} className="mt-[2px] shrink-0" />
             <span className="min-w-0">Last delivery failed: {inv.last_error}</span>
@@ -197,7 +197,7 @@ function Row({ inv, onChanged }: { inv: Invitation; onChanged: () => void }) {
                 style={{
                   background: 'var(--bg-subtle)',
                   border: '1px solid var(--border)',
-                  color: a.danger ? 'var(--danger)' : 'var(--text-secondary)',
+                  color: a.danger ? 'var(--danger-text)' : 'var(--text-secondary)',
                 }}
               >
                 {busy === a.key ? <Loader2 size={12} className="animate-spin" /> : a.icon}
@@ -300,9 +300,9 @@ export default function InvitationsPanel() {
             className="flex items-start gap-2.5 rounded-[12px] p-3.5"
             style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)' }}
           >
-            <AlertTriangle size={15} className="mt-[2px] shrink-0" style={{ color: 'var(--danger)' }} />
+            <AlertTriangle size={15} className="mt-[2px] shrink-0" style={{ color: 'var(--danger-text)' }} />
             <div>
-              <p className="text-[12.5px] font-[700]" style={{ color: 'var(--danger)' }}>Email is not configured</p>
+              <p className="text-[12.5px] font-[700]" style={{ color: 'var(--danger-text)' }}>Email is not configured</p>
               <p className="mt-0.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
                 SMTP_HOST, SMTP_USER and SMTP_PASS are not all set on this deploy. Invitations cannot be
                 sent or resent until they are — new studios must be created with a password instead.

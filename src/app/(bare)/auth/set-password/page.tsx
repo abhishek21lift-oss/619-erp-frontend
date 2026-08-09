@@ -73,7 +73,7 @@ function DeadLink({ message }: { message: string }) {
       <div className="text-center">
         <div
           className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[14px]"
-          style={{ background: 'var(--danger-bg)', color: 'var(--danger)' }}
+          style={{ background: 'var(--danger-bg)', color: 'var(--danger-text)' }}
         >
           <AlertTriangle size={22} />
         </div>
@@ -126,7 +126,7 @@ function Activated({ email }: { email: string }) {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5, ease: EASE }}
           className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full"
-          style={{ background: 'var(--success-bg)', color: 'var(--success)' }}
+          style={{ background: 'var(--success-bg)', color: 'var(--success-text)' }}
         >
           <ShieldCheck size={26} />
         </m.div>
@@ -298,14 +298,14 @@ function SetPasswordForm() {
         <ul className="flex flex-col gap-1.5 rounded-[11px] p-3" style={{ background: 'var(--bg-subtle)' }}>
           {rules.map((r) => (
             <li key={r.label} className="flex items-center gap-2 text-[12px]"
-              style={{ color: r.ok ? 'var(--success)' : 'var(--text-muted)' }}>
+              style={{ color: r.ok ? 'var(--success-text)' : 'var(--text-muted)' }}>
               {r.ok ? <Check size={13} /> : <X size={13} style={{ opacity: 0.45 }} />}
               {r.label}
             </li>
           ))}
           {confirm.length > 0 && (
             <li className="flex items-center gap-2 text-[12px]"
-              style={{ color: password === confirm ? 'var(--success)' : 'var(--text-muted)' }}>
+              style={{ color: password === confirm ? 'var(--success-text)' : 'var(--text-muted)' }}>
               {password === confirm ? <Check size={13} /> : <X size={13} style={{ opacity: 0.45 }} />}
               Both passwords match
             </li>
@@ -316,7 +316,7 @@ function SetPasswordForm() {
           <p
             role="alert"
             className="rounded-[10px] px-3 py-2.5 text-[12.5px]"
-            style={{ background: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid var(--danger-border)' }}
+            style={{ background: 'var(--danger-bg)', color: 'var(--danger-text)', border: '1px solid var(--danger-border)' }}
           >
             {error}
           </p>

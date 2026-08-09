@@ -130,7 +130,7 @@ export function StepMealPatternBehaviour({ form, set, error }: StepMealPatternBe
           <MultiSelectChips value={form.eatingBehaviours} onChange={(v) => set('eatingBehaviours', v)} options={EATING_BEHAVIOUR_OPTIONS} />
         </div>
 
-      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
     </div>
   );
 }

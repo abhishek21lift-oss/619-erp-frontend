@@ -101,7 +101,7 @@ export function StepCardio({ form, set, age, gender, error }: StepCardioProps) {
         <FloatInput label="Notes" multiline autoGrow value={form.cardioDistanceMeters} onChange={(v) => set('cardioDistanceMeters', v)} />
       )}
 
-      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
       {form.cardioTestType && (preview.vo2 != null || preview.category) && (
         <div className="mt-6 flex flex-wrap items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>

@@ -74,7 +74,7 @@ function Tile({ label, value, sub, tone, subTone }: {
   label: string; value: string; sub?: string;
   tone?: 'positive' | 'neutral' | 'critical'; subTone?: 'caution';
 }) {
-  const colour = tone === 'positive' ? 'var(--success)' : tone === 'critical' ? 'var(--danger)' : 'var(--text-primary)';
+  const colour = tone === 'positive' ? 'var(--success-text)' : tone === 'critical' ? 'var(--danger-text)' : 'var(--text-primary)';
   return (
     <div className="rounded-[14px] p-3.5" style={cardStyle}>
       <p className="text-[10px] font-[750] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>{label}</p>
@@ -270,7 +270,7 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
           </div>
 
           {error && (
-            <p className="mt-3 text-[12px] font-[650]" style={{ color: 'var(--danger)' }}>{error}</p>
+            <p className="mt-3 text-[12px] font-[650]" style={{ color: 'var(--danger-text)' }}>{error}</p>
           )}
 
           <div className="mt-4 flex items-center gap-2">
@@ -292,7 +292,7 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
       )}
 
       {error && !form && (
-        <p className="py-6 text-center text-[12.5px]" style={{ color: 'var(--danger)' }}>{error}</p>
+        <p className="py-6 text-center text-[12.5px]" style={{ color: 'var(--danger-text)' }}>{error}</p>
       )}
     </div>
   );
@@ -505,7 +505,7 @@ export default function InvoicesPanel() {
 
         {error && !loading && (
           <div className="flex flex-col items-center gap-2.5 py-14 text-center">
-            <AlertTriangle size={22} style={{ color: 'var(--danger)' }} />
+            <AlertTriangle size={22} style={{ color: 'var(--danger-text)' }} />
             <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{error}</p>
             <button onClick={load} className="mt-1 text-[12px] font-[700]" style={{ color: 'var(--brand)' }}>Try again</button>
           </div>

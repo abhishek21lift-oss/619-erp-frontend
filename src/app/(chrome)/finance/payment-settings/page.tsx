@@ -130,7 +130,7 @@ function Inner() {
         }}
       >
         <ShieldCheck size={18} className="mt-0.5 shrink-0"
-          style={{ color: enabled ? 'var(--success)' : 'var(--text-muted)' }} />
+          style={{ color: enabled ? 'var(--success-text)' : 'var(--text-muted)' }} />
         <div className="min-w-0 flex-1">
           <p className="text-[13.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>
             {enabled ? 'Collection is on' : 'Collection is off'}
@@ -285,7 +285,7 @@ function Inner() {
         </div>
 
         {error && (
-          <p className="mt-4 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger)' }}>
+          <p className="mt-4 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
             <AlertTriangle size={14} className="mt-px shrink-0" /> {error}
           </p>
         )}
@@ -341,7 +341,7 @@ function Field({
       <div className="mt-1.5">{children}</div>
       {hint && (
         <p className="mt-1.5 text-[11.5px]"
-          style={{ color: invalid ? 'var(--danger)' : 'var(--text-muted)' }}>{hint}</p>
+          style={{ color: invalid ? 'var(--danger-text)' : 'var(--text-muted)' }}>{hint}</p>
       )}
     </div>
   );

@@ -88,7 +88,7 @@ export function SearchableSelect({
         </span>
         <ChevronDown size={14} style={{ color: 'rgb(148,163,184)', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 200ms', flexShrink: 0 }} />
       </button>
-      {error && <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
       <AnimatePresence>
         {open && (
           <m.div

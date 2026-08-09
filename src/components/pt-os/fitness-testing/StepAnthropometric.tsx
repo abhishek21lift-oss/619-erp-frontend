@@ -55,7 +55,7 @@ export function StepAnthropometric({ form, set, error }: StepAnthropometricProps
         </div>
       </div>
 
-      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
       {(bmi != null || whr != null) && (
         <div className="mt-6 rounded-[16px] p-4 grid grid-cols-2 gap-4" style={{ background: 'var(--bg-subtle)' }}>

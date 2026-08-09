@@ -147,7 +147,7 @@ function SeatMeter({ used, limit, remaining }: {
   if (limit == null) {
     return (
       <div className="flex items-center gap-2 text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
-        <Users size={14} style={{ color: 'var(--success)' }} />
+        <Users size={14} style={{ color: 'var(--success-text)' }} />
         <span><strong style={{ color: 'var(--text-primary)' }}>{used}</strong> active clients · unlimited</span>
       </div>
     );
@@ -173,7 +173,7 @@ function SeatMeter({ used, limit, remaining }: {
           initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.7, ease: EASE_EXPO }} />
       </div>
       {full && (
-        <p className="mt-2 text-[11.5px]" style={{ color: 'var(--danger)' }}>
+        <p className="mt-2 text-[11.5px]" style={{ color: 'var(--danger-text)' }}>
           Archive a client to free a slot, or upgrade below. Existing clients keep full access.
         </p>
       )}
@@ -233,7 +233,7 @@ function ChangePreview({ quote, busy, checkoutAvailable, onConfirm, onPay, onDis
             {quote.proration_credit_inr > 0 && (
               <div className="flex items-center justify-between text-[12.5px]">
                 <span style={{ color: 'var(--text-muted)' }}>Unused time on your current plan</span>
-                <span className="tabular-nums" style={{ color: 'var(--success)' }}>−{fmtINR(quote.proration_credit_inr)}</span>
+                <span className="tabular-nums" style={{ color: 'var(--success-text)' }}>−{fmtINR(quote.proration_credit_inr)}</span>
               </div>
             )}
             <div className="flex items-center justify-between border-t pt-2 text-[13.5px] font-[800]"
@@ -242,7 +242,7 @@ function ChangePreview({ quote, busy, checkoutAvailable, onConfirm, onPay, onDis
               <span className="tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmtINR(quote.amount_due_inr)}</span>
             </div>
             {quote.founder_locked && (
-              <p className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--warning)' }}>
+              <p className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--warning-text)' }}>
                 <Crown size={11} /> Founder pricing locked in
               </p>
             )}
@@ -260,7 +260,7 @@ function ChangePreview({ quote, busy, checkoutAvailable, onConfirm, onPay, onDis
             archived automatically — but the trainer needs to know. */}
         {quote.warning && (
           <div className="mt-3 flex gap-2.5 pl-3" style={{ borderLeft: '3px solid var(--warning)' }}>
-            <AlertTriangle size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--warning)' }} />
+            <AlertTriangle size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--warning-text)' }} />
             <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{quote.warning}</p>
           </div>
         )}
@@ -466,7 +466,7 @@ function SubscriptionScreen() {
         <Reveal>
           <Panel accent="var(--danger-border)" glow="var(--danger)" className="p-6 text-center sm:p-7">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full" style={{ background: 'var(--danger-soft)' }}>
-              <ShieldAlert size={26} style={{ color: 'var(--danger)' }} />
+              <ShieldAlert size={26} style={{ color: 'var(--danger-text)' }} />
             </div>
             <h2 className="text-[22px] font-[860] tracking-[-0.02em] sm:text-[24px]" style={{ color: 'var(--text-primary)' }}>
               {status?.state === 'trial_expired' || status?.state === 'frozen' ? 'Your trial has expired' : 'Your subscription is inactive'}
@@ -515,7 +515,7 @@ function SubscriptionScreen() {
                   </h2>
                   {status.is_founder && (
                     <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-[750]"
-                      style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>
+                      style={{ background: 'var(--warning-bg)', color: 'var(--warning-text)' }}>
                       <Crown size={10} /> Founder #{status.founder_number}
                     </span>
                   )}
@@ -570,7 +570,7 @@ function SubscriptionScreen() {
       {/* Founder banner — plain text, no pill container. */}
       {slots != null && slots > 0 && (
         <Reveal delay={0.05}>
-          <p className="flex items-center justify-center gap-2 text-center text-[12px] font-[700]" style={{ color: 'var(--warning)' }}>
+          <p className="flex items-center justify-center gap-2 text-center text-[12px] font-[700]" style={{ color: 'var(--warning-text)' }}>
             <Flame size={13} />
             Founder&apos;s Club — only {slots}{founderLimit != null ? ` of ${founderLimit}` : ''} lifetime-locked-price spots left.
           </p>
@@ -629,14 +629,14 @@ function SubscriptionScreen() {
                   </div>
 
                   <div className="flex flex-1 flex-wrap gap-x-4 gap-y-1 text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                    <span className="flex items-center gap-1.5"><Check size={12} className="shrink-0" style={{ color: 'var(--success)' }} /> {p.client_limit != null ? `Up to ${p.client_limit} clients` : 'Unlimited clients'}</span>
-                    <span className="flex items-center gap-1.5"><Check size={12} className="shrink-0" style={{ color: 'var(--success)' }} /> All premium features</span>
-                    <span className="flex items-center gap-1.5"><Check size={12} className="shrink-0" style={{ color: 'var(--success)' }} /> {p.duration_months >= 12 ? 'Priority support' : 'Standard support'}</span>
+                    <span className="flex items-center gap-1.5"><Check size={12} className="shrink-0" style={{ color: 'var(--success-text)' }} /> {p.client_limit != null ? `Up to ${p.client_limit} clients` : 'Unlimited clients'}</span>
+                    <span className="flex items-center gap-1.5"><Check size={12} className="shrink-0" style={{ color: 'var(--success-text)' }} /> All premium features</span>
+                    <span className="flex items-center gap-1.5"><Check size={12} className="shrink-0" style={{ color: 'var(--success-text)' }} /> {p.duration_months >= 12 ? 'Priority support' : 'Standard support'}</span>
                   </div>
 
                   <div className="sm:w-[160px] sm:shrink-0 sm:text-right">
                     {isCurrent ? (
-                      <span className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11.5px] font-[700]" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>
+                      <span className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11.5px] font-[700]" style={{ background: 'var(--success-bg)', color: 'var(--success-text)' }}>
                         <Check size={12} /> Current plan
                       </span>
                     ) : isPendingTarget ? (
@@ -653,7 +653,7 @@ function SubscriptionScreen() {
                         Switch to {p.name}
                       </button>
                     ) : requested ? (
-                      <span className="inline-flex items-center rounded-full px-3 py-1.5 text-[11.5px] font-[700]" style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>Request sent ✓</span>
+                      <span className="inline-flex items-center rounded-full px-3 py-1.5 text-[11.5px] font-[700]" style={{ background: 'var(--warning-bg)', color: 'var(--warning-text)' }}>Request sent ✓</span>
                     ) : (
                       <button
                         onClick={() => (checkoutAvailable ? startCheckout(p.code) : requestActivation(p.code))}
@@ -727,7 +727,7 @@ function SubscriptionScreen() {
                 </Button>
               </div>
               {coupon && (
-                <p className="mt-2 text-[11.5px]" style={{ color: coupon.valid ? 'var(--success)' : 'var(--danger)' }}>
+                <p className="mt-2 text-[11.5px]" style={{ color: coupon.valid ? 'var(--success-text)' : 'var(--danger-text)' }}>
                   {coupon.valid
                     ? `${fmtINR(coupon.discount_inr ?? 0)} off${coupon.net_amount_inr != null && coupon.gross_amount_inr > 0 ? ` — ${fmtINR(coupon.net_amount_inr)} due instead of ${fmtINR(coupon.gross_amount_inr)}` : ''}. It will be applied when your subscription is activated.`
                     : coupon.reason}

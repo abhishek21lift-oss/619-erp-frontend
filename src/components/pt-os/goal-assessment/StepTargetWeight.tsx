@@ -37,7 +37,7 @@ export function StepTargetWeight({ form, set, currentWeight, error }: StepTarget
           <FloatInput label="Target Weight (kg)" type="number" value={form.targetWeight} onChange={(v) => set('targetWeight', v)} />
         </div>
 
-        {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+        {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
         {gap != null && (
           <div className="mt-6 rounded-[16px] p-5" style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)' }}>

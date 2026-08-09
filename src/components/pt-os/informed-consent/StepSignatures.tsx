@@ -35,7 +35,7 @@ export function StepSignatures({ form, set, error }: StepSignaturesProps) {
         <SignaturePad label="Witness Signature" onChange={(v) => set('witnessSignature', v)} />
       </div>
 
-      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
     </div>
   );
 }

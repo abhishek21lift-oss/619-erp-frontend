@@ -84,7 +84,7 @@ export function StepEndurance({ form, set, gender, error }: StepEnduranceProps) 
         />
       </div>
 
-      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
       {combinedScore != null && (
         <div className="mt-6 flex flex-wrap items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>

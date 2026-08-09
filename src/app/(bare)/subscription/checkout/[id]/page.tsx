@@ -204,7 +204,7 @@ function Row({ label, value, tone }: { label: string; value: string; tone?: 'suc
     <div className="flex items-baseline justify-between text-[13.5px]">
       <span style={{ color: 'var(--text-muted)' }}>{label}</span>
       <span className="tabular-nums font-[600]"
-        style={{ color: tone === 'success' ? 'var(--success)' : 'var(--text-primary)' }}>
+        style={{ color: tone === 'success' ? 'var(--success-text)' : 'var(--text-primary)' }}>
         {value}
       </span>
     </div>
@@ -345,9 +345,9 @@ function UtrBlock({
     <Panel className="mt-4">
       {request.rejected_note && (
         <div className="mb-4 flex items-start gap-2.5 rounded-xl p-3" style={{ background: 'var(--danger-soft)' }}>
-          <AlertTriangle size={16} className="mt-px shrink-0" style={{ color: 'var(--danger)' }} />
+          <AlertTriangle size={16} className="mt-px shrink-0" style={{ color: 'var(--danger-text)' }} />
           <div>
-            <p className="text-[13px] font-[700]" style={{ color: 'var(--danger)' }}>
+            <p className="text-[13px] font-[700]" style={{ color: 'var(--danger-text)' }}>
               Your last reference was not accepted
             </p>
             <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
@@ -383,7 +383,7 @@ function UtrBlock({
         }}
       />
       <div className="mt-1.5 flex items-center justify-between text-[11.5px]">
-        <span style={{ color: showErr ? 'var(--danger)' : 'var(--text-muted)' }}>
+        <span style={{ color: showErr ? 'var(--danger-text)' : 'var(--text-muted)' }}>
           {showErr ? 'Must be 12 to 16 digits.' : 'Numbers only.'}
         </span>
         <span className="tabular-nums" style={{ color: 'var(--text-muted)' }}>{utr.length}/16</span>
@@ -403,7 +403,7 @@ function UtrBlock({
         }} />
 
       {error && (
-        <p className="mt-3 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger)' }}>
+        <p className="mt-3 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
           <AlertTriangle size={14} className="mt-px shrink-0" /> {error}
         </p>
       )}
@@ -438,7 +438,7 @@ function AwaitingVerification({
     <Panel className="mt-6">
       <div className="flex flex-col items-center text-center">
         <m.span className="flex h-14 w-14 items-center justify-center rounded-2xl"
-          style={{ background: 'color-mix(in srgb, var(--warning) 14%, transparent)', color: 'var(--warning)' }}
+          style={{ background: 'color-mix(in srgb, var(--warning) 14%, transparent)', color: 'var(--warning-text)' }}
           animate={{ scale: [1, 1.06, 1] }}
           transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}>
           <ShieldCheck size={24} />
@@ -473,7 +473,7 @@ function Approved({ request, router }: { request: Detail['request']; router: Ret
     <Panel className="mt-6">
       <div className="flex flex-col items-center text-center">
         <m.span className="flex h-14 w-14 items-center justify-center rounded-2xl"
-          style={{ background: 'var(--success-soft)', color: 'var(--success)' }}
+          style={{ background: 'var(--success-soft)', color: 'var(--success-text)' }}
           initial={{ scale: 0.85 }} animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 320, damping: 18 }}>
           <PartyPopper size={24} />
@@ -524,7 +524,7 @@ function LoadFailed({ message, onBack }: { message: string | null; onBack: () =>
     <Panel className="mt-6">
       <div className="flex flex-col items-center text-center">
         <span className="flex h-14 w-14 items-center justify-center rounded-2xl"
-          style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
+          style={{ background: 'var(--danger-soft)', color: 'var(--danger-text)' }}>
           <AlertTriangle size={24} />
         </span>
         <h1 className="mt-4 text-[19px] font-[780]" style={{ color: 'var(--text-primary)' }}>

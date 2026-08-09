@@ -25,10 +25,10 @@ const DIFFICULTY_TONE = {
 
 /** Region accent. Colour carries the muscle group at a glance, not decoration. */
 const REGION_ACCENT: Record<string, string> = {
-  Chest:       'var(--danger)',
+  Chest:       'var(--danger-text)',
   Back:        'var(--info)',
-  Legs:        'var(--success)',
-  Shoulders:   'var(--warning)',
+  Legs:        'var(--success-text)',
+  Shoulders:   'var(--warning-text)',
   Arms:        'var(--brand)',
   Core:        'var(--accent)',
   Cardio:      'var(--info)',
@@ -285,7 +285,7 @@ function MenuItem({
         disabled
           ? 'cursor-not-allowed opacity-40'
           : 'hover:bg-slate-50 dark:hover:bg-white/5',
-        destructive ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]',
+        destructive ? 'text-[var(--danger-text)]' : 'text-[var(--text-primary)]',
       )}
     >
       <Icon size={14} />

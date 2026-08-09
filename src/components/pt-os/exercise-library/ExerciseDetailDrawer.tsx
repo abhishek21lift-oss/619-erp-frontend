@@ -157,7 +157,7 @@ export function ExerciseDetailDrawer({
           style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
         >
           {error && (
-            <div className="rounded-xl border border-[var(--danger)]/20 bg-[var(--danger)]/5 p-4 text-sm text-[var(--danger)]">
+            <div className="rounded-xl border border-[var(--danger)]/20 bg-[var(--danger)]/5 p-4 text-sm text-[var(--danger-text)]">
               {error}
             </div>
           )}

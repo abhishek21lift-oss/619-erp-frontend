@@ -370,12 +370,12 @@ export function ExerciseEditor({
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2">
                       {nameCheck.state === 'checking' && <Loader2 size={14} className="animate-spin text-[var(--text-muted)]" />}
-                      {nameCheck.state === 'ok' && <Check size={14} className="text-[var(--success)]" />}
-                      {nameCheck.state === 'taken' && <AlertCircle size={14} className="text-[var(--danger)]" />}
+                      {nameCheck.state === 'ok' && <Check size={14} className="text-[var(--success-text)]" />}
+                      {nameCheck.state === 'taken' && <AlertCircle size={14} className="text-[var(--danger-text)]" />}
                     </span>
                   </div>
                   {nameCheck.state === 'taken' && (
-                    <p className="mt-1.5 text-[11.5px] text-[var(--danger)]">
+                    <p className="mt-1.5 text-[11.5px] text-[var(--danger-text)]">
                       &ldquo;{nameCheck.conflict}&rdquo; already exists. Pick a different name.
                     </p>
                   )}
@@ -698,11 +698,11 @@ function Field({
     <label className="block">
       <span className="mb-1 block text-[12px] font-medium text-[var(--text-primary)]">
         {label}
-        {required && <span className="ml-0.5 text-[var(--danger)]">*</span>}
+        {required && <span className="ml-0.5 text-[var(--danger-text)]">*</span>}
       </span>
       {children}
       {hint && !error && <span className="mt-1 block text-[11px] text-[var(--text-muted)]">{hint}</span>}
-      {error && <span className="mt-1 block text-[11px] text-[var(--danger)]">{error}</span>}
+      {error && <span className="mt-1 block text-[11px] text-[var(--danger-text)]">{error}</span>}
     </label>
   );
 }
@@ -737,7 +737,7 @@ function ListField({
                 type="button"
                 aria-label={`Remove ${item}`}
                 onClick={() => onChange(value.filter((_, x) => x !== i))}
-                className="shrink-0 rounded p-0.5 text-[var(--text-muted)] hover:text-[var(--danger)]"
+                className="shrink-0 rounded p-0.5 text-[var(--text-muted)] hover:text-[var(--danger-text)]"
               >
                 <Trash2 size={12} />
               </button>

@@ -804,7 +804,7 @@ export function StudioFeatureEditor({ orgId, orgName }: { orgId: string; orgName
                     disabled={f.is_core || f.source === 'global_off'}
                     onClick={() => setOverride(f)}
                     className="shrink-0 disabled:opacity-35"
-                    style={{ color: f.enabled ? 'var(--success)' : 'var(--text-disabled)' }}
+                    style={{ color: f.enabled ? 'var(--success-text)' : 'var(--text-disabled)' }}
                   >
                     {f.is_core ? <Lock size={14} /> : f.enabled ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
                   </button>

@@ -295,7 +295,7 @@ function ExerciseLibrary() {
 
           {error ? (
             <div className="flex flex-col items-center gap-3 rounded-2xl border border-[var(--danger)]/20 bg-[var(--danger)]/5 px-6 py-12 text-center">
-              <AlertCircle size={24} className="text-[var(--danger)]" />
+              <AlertCircle size={24} className="text-[var(--danger-text)]" />
               <div>
                 <p className="text-sm font-medium text-[var(--text-primary)]">Could not load the library</p>
                 <p className="mt-1 text-[12.5px] text-[var(--text-muted)]">{error}</p>

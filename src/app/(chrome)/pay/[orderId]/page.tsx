@@ -95,7 +95,7 @@ function Inner() {
       <div className="mx-auto max-w-md py-16 text-center">
         <div
           className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl"
-          style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}
+          style={{ background: 'var(--danger-soft)', color: 'var(--danger-text)' }}
         >
           <AlertTriangle size={24} />
         </div>
@@ -289,7 +289,7 @@ function PayeePanel({
         <span className="shrink-0 rounded-full px-2 py-1 text-[11.5px] font-[650]"
           style={{
             background: countdown.expired ? 'var(--danger-soft)' : 'var(--bg-subtle)',
-            color: countdown.expired ? 'var(--danger)' : 'var(--text-muted)',
+            color: countdown.expired ? 'var(--danger-text)' : 'var(--text-muted)',
           }}>
           {countdown.expired ? 'Expired' : countdown.label}
         </span>
@@ -476,9 +476,9 @@ function UtrForm({
       {previousRejection && (
         <div className="mb-4 flex items-start gap-2.5 rounded-xl p-3"
           style={{ background: 'var(--danger-soft)' }}>
-          <AlertTriangle size={16} className="mt-px shrink-0" style={{ color: 'var(--danger)' }} />
+          <AlertTriangle size={16} className="mt-px shrink-0" style={{ color: 'var(--danger-text)' }} />
           <div className="min-w-0">
-            <p className="text-[13px] font-[700]" style={{ color: 'var(--danger)' }}>
+            <p className="text-[13px] font-[700]" style={{ color: 'var(--danger-text)' }}>
               Your last reference was not accepted
             </p>
             <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
@@ -521,7 +521,7 @@ function UtrForm({
       />
       <div className="mt-1.5 flex items-center justify-between">
         <span id="utr-error" className="text-[11.5px]"
-          style={{ color: showUtrError ? 'var(--danger)' : 'var(--text-muted)' }}>
+          style={{ color: showUtrError ? 'var(--danger-text)' : 'var(--text-muted)' }}>
           {showUtrError ? 'Must be 12 to 16 digits.' : 'Numbers only.'}
         </span>
         <span className="text-[11.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
@@ -596,7 +596,7 @@ function UtrForm({
       />
 
       {error && (
-        <p className="mt-3 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger)' }}>
+        <p className="mt-3 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
           <AlertTriangle size={14} className="mt-px shrink-0" /> {error}
         </p>
       )}
@@ -630,7 +630,7 @@ function WaitingPanel({
       <div className="flex items-start gap-3">
         <m.span
           className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-          style={{ background: 'color-mix(in srgb, var(--warning) 14%, transparent)', color: 'var(--warning)' }}
+          style={{ background: 'color-mix(in srgb, var(--warning) 14%, transparent)', color: 'var(--warning-text)' }}
           animate={{ scale: [1, 1.06, 1] }}
           transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
         >
@@ -669,7 +669,7 @@ function ApprovedPanel({
     <Panel className={className}>
       <div className="flex items-start gap-3">
         <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-          style={{ background: 'var(--success-soft)', color: 'var(--success)' }}>
+          style={{ background: 'var(--success-soft)', color: 'var(--success-text)' }}>
           <Check size={18} />
         </span>
         <div className="min-w-0 flex-1">
@@ -726,7 +726,7 @@ function SubmissionHistory({
                 {new Date(s.submitted_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
               </p>
               {s.status === 'REJECTED' && s.rejected_reason && (
-                <p className="mt-1 text-[12px]" style={{ color: 'var(--danger)' }}>
+                <p className="mt-1 text-[12px]" style={{ color: 'var(--danger-text)' }}>
                   {reasons[s.rejected_reason]}{s.rejected_note ? ` — ${s.rejected_note}` : ''}
                 </p>
               )}

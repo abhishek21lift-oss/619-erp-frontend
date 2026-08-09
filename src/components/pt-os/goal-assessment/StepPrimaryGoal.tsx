@@ -49,7 +49,7 @@ export function StepPrimaryGoal({ form, set, error }: StepPrimaryGoalProps) {
           })}
         </div>
 
-        {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+        {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
         {form.goalType === 'custom' && (
           <div className="mt-6 space-y-4">

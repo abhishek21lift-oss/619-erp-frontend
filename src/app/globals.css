@@ -131,14 +131,41 @@
   /* ── Text ────────────────────────────────────────────────── */
   --text-primary:   #0F172A;
   --text-secondary: #1E293B;
-  --text-muted:     #64748B;
+  /* gray-600, not gray-500. The lighter tone measured 4.34:1 on --bg-subtle —
+     just under AA — and muted text on a subtle-grey chip or panel is one of
+     the most common pairings in the app. See contrast.test.ts. */
+  --text-muted:     #475569;
   --text-disabled:  #94A3B8;
   --text-inverse:   #FFFFFF;
   --text-brand:     var(--brand);
   --rgb-text:       15 23 42;
 
   /* ── Status / semantic ───────────────────────────────────── */
+  /*
+   * -text variants exist because the 500 tone of a status colour is a FILL,
+   * not a text colour, and it was being used as both.
+   *
+   * Measured on this theme's three surfaces (--bg-canvas, --bg-base,
+   * --bg-subtle), emerald-500 as text is 2.32:1 at worst and amber-500 is
+   * 1.96:1 — against a WCAG AA requirement of 4.5:1 for body text. Amber was
+   * the worst offender in the app: "pending" and "due soon" were the least
+   * readable words on the screen. src/lib/palette.ts has said so from the
+   * start ("text on a tint should be 600 or darker"); nothing enforced it, so
+   * ~150 call sites set the fill token as a text colour anyway.
+   *
+   * The tones below are the lightest ones in each family that clear 4.5:1 on
+   * ALL THREE surfaces, so they are safe wherever they land. The plain tokens
+   * keep the 500 tone: fills, status dots, borders and icons are unchanged,
+   * and only text moved.
+   *
+   * palette.test.ts still holds — these are existing tones of the existing
+   * five families, not new colours. contrast.test.ts recomputes every ratio
+   * from this file and fails below AA.
+   */
   --success:        var(--emerald-500);
+  --success-text:   var(--emerald-700);   /* 5.01:1 worst case */
+  --warning-text:   var(--amber-700);     /* 4.58:1 */
+  --danger-text:    var(--red-700);       /* 5.91:1 */
   --success-lo:     #10B981;
   --success-soft:   rgba(16,185,129,0.10);
   --success-bg:     rgba(16,185,129,0.10);
@@ -279,12 +306,19 @@
   /* Text */
   --text-primary:   #F8FAFC;
   --text-secondary: #E2E8F0;
-  --text-muted:     #94A3B8;
+  /* gray-300, not gray-400: 4.04:1 on --bg-subtle, same failure inverted. */
+  --text-muted:     #CBD5E1;
   --text-disabled:  #64748B;
   --text-inverse:   #0F172A;
   --rgb-text:       248 250 252;
 
   /* Status / semantic */
+  /* Same idea as the light theme, inverted: on a dark surface the readable
+     tone is LIGHTER than the fill, not darker. Ratios are against
+     --bg-subtle (#334155), the worst of the three dark surfaces. */
+  --success-text:   #34D399;   /* emerald-400 — 5.39:1 */
+  --warning-text:   #FBBF24;   /* amber-400   — 6.20:1 */
+  --danger-text:    #FCA5A5;   /* red-300     — 5.46:1; red-400 is 3.74 here */
   --success:        #10B981;
   --success-lo:     #34D399;
   --success-soft:   rgba(16,185,129,0.15);
@@ -832,8 +866,8 @@ body {
 .card-kpi-value { font-size: 28px; font-weight: 800; color: var(--text-primary); line-height: 1; letter-spacing: -0.02em; }
 .card-kpi-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 .card-kpi-delta { font-size: 12px; font-weight: 600; margin-top: 6px; }
-.card-kpi-delta.up { color: var(--success); }
-.card-kpi-delta.down { color: var(--danger); }
+.card-kpi-delta.up { color: var(--success-text); }
+.card-kpi-delta.down { color: var(--danger-text); }
 
 /* ════════════════════════════════════════════════════════════════════
    BUTTONS  —  Premium Edition
@@ -920,7 +954,7 @@ body {
 textarea.form-control { height: auto; padding: 10px 12px; resize: vertical; min-height: 80px; line-height: 1.5; }
 select.form-control { cursor: pointer; }
 .form-hint { font-size: 11px; color: var(--text-muted); }
-.form-error { font-size: 11px; color: var(--danger); }
+.form-error { font-size: 11px; color: var(--danger-text); }
 .form-control.is-error { border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger-bg); }
 .input-group { display: flex; }
 .input-group .form-control { border-radius: var(--radius-sm) 0 0 var(--radius-sm); flex: 1; }
@@ -1010,9 +1044,9 @@ select.form-control { cursor: pointer; }
   font-weight: 700;
   white-space: nowrap;
 }
-.badge-success { background: var(--success-bg);  color: var(--success); border: 1px solid var(--success-border); }
-.badge-warning { background: var(--warning-bg);  color: var(--warning); border: 1px solid var(--warning-border); }
-.badge-danger  { background: var(--danger-bg);   color: var(--danger);  border: 1px solid var(--danger-border);  }
+.badge-success { background: var(--success-bg);  color: var(--success-text); border: 1px solid var(--success-border); }
+.badge-warning { background: var(--warning-bg);  color: var(--warning-text); border: 1px solid var(--warning-border); }
+.badge-danger  { background: var(--danger-bg);   color: var(--danger-text);  border: 1px solid var(--danger-border);  }
 .badge-info    { background: var(--info-bg);     color: var(--info);    border: 1px solid var(--info-border);    }
 .badge-neutral { background: var(--neutral-bg);  color: var(--text-muted); border: 1px solid var(--border-2);   }
 .badge-brand   { background: var(--brand-soft);  color: var(--brand);   border: 1px solid var(--brand-soft); }
@@ -1194,9 +1228,9 @@ select.form-control { cursor: pointer; }
   font-size: 13px;
   border: 1px solid transparent;
 }
-.alert-success { background: var(--success-bg); color: var(--success); border-color: var(--success-border); }
-.alert-warning { background: var(--warning-bg); color: var(--warning); border-color: var(--warning-border); }
-.alert-danger  { background: var(--danger-bg);  color: var(--danger);  border-color: var(--danger-border);  }
+.alert-success { background: var(--success-bg); color: var(--success-text); border-color: var(--success-border); }
+.alert-warning { background: var(--warning-bg); color: var(--warning-text); border-color: var(--warning-border); }
+.alert-danger  { background: var(--danger-bg);  color: var(--danger-text);  border-color: var(--danger-border);  }
 .alert-info    { background: var(--info-bg);    color: var(--info);    border-color: var(--info-border);    }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1233,7 +1267,7 @@ select.form-control { cursor: pointer; }
   text-decoration: none;
 }
 .dropdown-item:hover { background: var(--bg-hover); }
-.dropdown-item.danger { color: var(--danger); }
+.dropdown-item.danger { color: var(--danger-text); }
 .dropdown-item.danger:hover { background: var(--danger-bg); }
 .dropdown-divider { height: 1px; background: var(--border); margin: 4px 0; }
 
@@ -1300,8 +1334,8 @@ select.form-control { cursor: pointer; }
 }
 .stat-card-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 .stat-card-delta { font-size: 11px; font-weight: 600; margin-top: 8px; display: flex; align-items: center; gap: 3px; }
-.stat-card-delta.up   { color: var(--success); }
-.stat-card-delta.down { color: var(--danger); }
+.stat-card-delta.up   { color: var(--success-text); }
+.stat-card-delta.down { color: var(--danger-text); }
 
 /* ════════════════════════════════════════════════════════════════════
    KPI VARIANTS — Premium Edition
@@ -1330,8 +1364,8 @@ select.form-control { cursor: pointer; }
   background: linear-gradient(135deg, rgba(4,120,87,0.09) 0%, rgba(4,120,87,0.03) 100%);
   border-color: rgba(4,120,87,0.18);
 }
-.kpi-success .stat-card-value { color: var(--success); }
-.kpi-success .stat-card-icon  { background: var(--success-bg); color: var(--success); }
+.kpi-success .stat-card-value { color: var(--success-text); }
+.kpi-success .stat-card-icon  { background: var(--success-bg); color: var(--success-text); }
 
 /* Teal — chart / engagement KPIs */
 .kpi-teal {
@@ -1452,9 +1486,9 @@ select.form-control { cursor: pointer; }
 .text-brand   { color:var(--brand); }
 .text-gold    { color:var(--gold); }
 .text-accent  { color:var(--accent); }
-.text-success { color:var(--success); }
-.text-warning { color:var(--warning); }
-.text-danger  { color:var(--danger); }
+.text-success { color:var(--success-text); }
+.text-warning { color:var(--warning-text); }
+.text-danger  { color:var(--danger-text); }
 .text-muted   { color:var(--text-muted); }
 .text-xs      { font-size:11px; }
 .text-sm      { font-size:12px; }
@@ -1566,9 +1600,9 @@ select.form-control { cursor: pointer; }
 .pt-client-name { font-weight:600; font-size:0.9rem; color:var(--text-primary); }
 .pt-client-sub  { font-size:0.78rem; color:var(--text-muted); }
 .pt-pill { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700; }
-.pt-pill.green  { background:var(--success-bg); color:var(--success); }
-.pt-pill.yellow { background:var(--warning-bg); color:var(--warning); }
-.pt-pill.red    { background:var(--danger-bg);  color:var(--danger);  }
+.pt-pill.green  { background:var(--success-bg); color:var(--success-text); }
+.pt-pill.yellow { background:var(--warning-bg); color:var(--warning-text); }
+.pt-pill.red    { background:var(--danger-bg);  color:var(--danger-text);  }
 .pt-pill.blue   { background:var(--info-bg);    color:var(--info);    }
 .pt-exercise-row { display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); }
 .pt-exercise-row:last-child { border-bottom:none; }
@@ -1586,8 +1620,8 @@ select.form-control { cursor: pointer; }
 .pt-agenda-item h4 { font-size:1rem; }
 .pt-agenda-item p  { color:var(--text-muted); max-width:none; }
 .pt-status-pill { display:inline-flex; align-items:center; gap:6px; padding:8px 10px; border-radius:999px; background:var(--bg-hover); color:var(--text-secondary); font-size:12px; font-weight:800; }
-.pt-status-pill.is-green { background:var(--success-bg); color:var(--success); }
-.pt-status-pill.is-red   { background:var(--danger-bg);  color:var(--danger);  }
+.pt-status-pill.is-green { background:var(--success-bg); color:var(--success-text); }
+.pt-status-pill.is-red   { background:var(--danger-bg);  color:var(--danger-text);  }
 .pt-report-list { display:grid; gap:12px; margin:0; padding:0; list-style:none; }
 .pt-report-list li { padding:12px 14px; border-radius:16px; background:var(--brand-soft); color:var(--text-primary); font-weight:600; }
 
@@ -2176,7 +2210,7 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
 
 /* Missing companions for the legacy scaffold pages */
 .tabular { font-variant-numeric: tabular-nums; }
-.alert-error { background: var(--danger-bg); color: var(--danger); border-color: var(--danger-border); }
+.alert-error { background: var(--danger-bg); color: var(--danger-text); border-color: var(--danger-border); }
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

@@ -190,7 +190,7 @@ function StudioTable({ rows, onChanged }: { rows: AiStudioUsage[]; onChanged: ()
                     </span>
                   ) : (
                     <>
-                      <span className="tabular-nums" style={{ color: r.over ? 'var(--danger)' : 'var(--text-secondary)' }}>
+                      <span className="tabular-nums" style={{ color: r.over ? 'var(--danger-text)' : 'var(--text-secondary)' }}>
                         {fmtTokens(r.tokens_this_month)} / {fmtTokens(r.limit)}
                         {r.used_pct !== null && <span className="ml-1.5 text-[10.5px]">{r.used_pct}%</span>}
                       </span>
@@ -548,7 +548,7 @@ export default function AiControlCentre() {
   if (error || !overview || !settings) {
     return (
       <div className="flex flex-col items-center gap-2.5 py-16 text-center">
-        <AlertTriangle size={22} style={{ color: 'var(--danger)' }} />
+        <AlertTriangle size={22} style={{ color: 'var(--danger-text)' }} />
         <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{error || 'Could not load AI usage.'}</p>
         <button onClick={load} className="mt-1 text-[12px] font-[700]" style={{ color: 'var(--brand)' }}>Try again</button>
       </div>

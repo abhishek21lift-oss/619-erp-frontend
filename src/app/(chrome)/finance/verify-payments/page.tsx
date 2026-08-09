@@ -176,7 +176,7 @@ function Inner() {
       <div className="mt-4">
         {error ? (
           <div className="flex items-start gap-2.5 rounded-xl p-4"
-            style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
+            style={{ background: 'var(--danger-soft)', color: 'var(--danger-text)' }}>
             <AlertTriangle size={17} className="mt-px shrink-0" />
             <span className="text-[13.5px]">{error}</span>
           </div>
@@ -359,7 +359,7 @@ function PaymentRow({
       )}
 
       {row.status === 'PAYMENT_PENDING' && row.rejected_reason && (
-        <p className="mt-2 flex items-start gap-1.5 text-[12.5px]" style={{ color: 'var(--danger)' }}>
+        <p className="mt-2 flex items-start gap-1.5 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
           <AlertTriangle size={13} className="mt-px shrink-0" />
           Last attempt rejected: {REJECT_REASON_LABELS[row.rejected_reason]}
           {row.rejected_note ? ` — ${row.rejected_note}` : ''}
@@ -375,7 +375,7 @@ function PaymentRow({
           </button>
           <button type="button" onClick={onReject}
             className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-[13.5px] font-[700] sm:flex-none"
-            style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
+            style={{ background: 'var(--danger-soft)', color: 'var(--danger-text)' }}>
             <X size={15} /> Reject
           </button>
           <button type="button" onClick={onCorrect}
@@ -534,7 +534,7 @@ function ActionDialog({
             )}
 
             {error && (
-              <p className="mt-3 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger)' }}>
+              <p className="mt-3 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
                 <AlertTriangle size={14} className="mt-px shrink-0" /> {error}
               </p>
             )}
@@ -873,7 +873,7 @@ function NewRequestDialog({
             </p>
 
             {error && (
-              <p className="mt-3 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger)' }}>
+              <p className="mt-3 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
                 <AlertTriangle size={14} className="mt-px shrink-0" /> {error}
               </p>
             )}

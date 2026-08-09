@@ -143,7 +143,7 @@ export function OverviewTab({ onNavigate }: { onNavigate: (tab: Tab, opts?: NavO
                 points={revenuePoints}
                 format={fmtINR}
                 hint={revDeltaPct != null
-                  ? <span style={{ color: revDeltaPct >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                  ? <span style={{ color: revDeltaPct >= 0 ? 'var(--success-text)' : 'var(--danger-text)' }}>
                       {revDeltaPct >= 0 ? '▲' : '▼'} {Math.abs(revDeltaPct)}% vs last month
                     </span>
                   : 'no prior month to compare'}
