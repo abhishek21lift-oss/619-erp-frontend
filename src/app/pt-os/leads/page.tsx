@@ -9,22 +9,14 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button, FloatInput, EmptyState, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
+import { Button, EmptyState, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import SearchableSelect from '@/components/pt-os/SearchableSelect';
+import { LeadFormFields, SOURCE_OPTIONS, emptyLeadForm } from '@/components/pt-os/leads/LeadFormFields';
+import type { LeadFormState } from '@/components/pt-os/leads/LeadFormFields';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
 import type { PtLead } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-
-const SOURCE_OPTIONS = [
-  { value: 'walk-in', label: 'Walk-in' },
-  { value: 'referral', label: 'Referral' },
-  { value: 'social_media', label: 'Social Media' },
-  { value: 'website', label: 'Website' },
-  { value: 'phone', label: 'Phone Enquiry' },
-  { value: 'other', label: 'Other' },
-];
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
   new:             { label: 'New',             color: '#0067e0', bg: 'rgba(0,103,224,0.12)' },
@@ -42,52 +34,6 @@ const STATUS_FILTERS = [
   { value: 'converted', label: 'Converted' },
   { value: 'lost', label: 'Lost' },
 ];
-
-/**
- * A titled group of fields inside the lead dialog.
- *
- * The label wears the same micro-label treatment as the KPI captions on the
- * page behind it, so the dialog reads as part of that screen. Its job is to
- * break eight inputs into groups small enough to take in at a glance.
- */
-function FormSection({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col gap-3">
-      {/* The trailing rule is doing real work, not decoration. SearchableSelect
-          renders its own uppercase label above the field ("SOURCE", "TRAINER"),
-          so a group heading in the same case and a similar size reads as a
-          competing sibling rather than a level above it. The rule and the
-          darker ink settle which is which. */}
-      <div className="flex items-center gap-2.5">
-        <h3
-          className="shrink-0 text-[10.5px] font-[750] uppercase tracking-wide"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          {label}
-        </h3>
-        <span aria-hidden className="h-px flex-1" style={{ background: 'var(--border)' }} />
-      </div>
-      {children}
-    </section>
-  );
-}
-
-interface LeadFormState {
-  name: string;
-  mobile: string;
-  email: string;
-  source: string;
-  interested_package: string;
-  trainer_id: string;
-  trainer_name: string;
-  follow_up_date: string;
-  notes: string;
-}
-
-const emptyForm: LeadFormState = {
-  name: '', mobile: '', email: '', source: 'walk-in', interested_package: '',
-  trainer_id: '', trainer_name: '', follow_up_date: '', notes: '',
-};
 
 function fmtDate(d?: string | null) {
   if (!d) return null;
@@ -224,13 +170,12 @@ export default function LeadsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<LeadFormState>(emptyForm);
+  const [form, setForm] = useState<LeadFormState>(emptyLeadForm);
   const [saving, setSaving] = useState(false);
   const [convertingId, setConvertingId] = useState<string | null>(null);
 
   const set = <K extends keyof LeadFormState>(key: K, val: LeadFormState[K]) => setForm((f) => ({ ...f, [key]: val }));
 
-  const openCreate = () => { setEditingId(null); setForm(emptyForm); setDialogOpen(true); };
   const openEdit = (lead: PtLead) => {
     setEditingId(lead.id);
     setForm({
@@ -267,10 +212,11 @@ export default function LeadsPage() {
   }, [leads.data]);
 
   const handleSave = async () => {
+    if (!editingId) return;
     if (!form.name.trim()) { toast.error('Name is required.'); return; }
     setSaving(true);
     try {
-      const payload = {
+      await api.pt.leads.update(editingId, {
         name: form.name.trim(),
         mobile: form.mobile.replace(/\D/g, '') || undefined,
         email: form.email.trim() || undefined,
@@ -280,14 +226,8 @@ export default function LeadsPage() {
         trainer_name: form.trainer_name || undefined,
         follow_up_date: form.follow_up_date || undefined,
         notes: form.notes.trim() || undefined,
-      };
-      if (editingId) {
-        await api.pt.leads.update(editingId, payload);
-        toast.success('Lead updated.');
-      } else {
-        await api.pt.leads.create(payload);
-        toast.success('Lead added.');
-      }
+      });
+      toast.success('Lead updated.');
       setDialogOpen(false);
       leads.refetch();
     } catch (err: unknown) {
@@ -339,7 +279,7 @@ export default function LeadsPage() {
                 actions={(
                   <button
                     type="button"
-                    onClick={openCreate}
+                    onClick={() => router.push('/pt-os/leads/new')}
                     className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
                     style={{ background: '#fff', color: '#0F172A' }}>
                     <Plus size={16} /> Add Lead
@@ -408,7 +348,7 @@ export default function LeadsPage() {
                   />
                   {!search && statusFilter === 'all' && (
                     <div className="mt-4 flex justify-center">
-                      <Button iconLeft={<Plus size={14} />} onClick={openCreate}>Add Lead</Button>
+                      <Button iconLeft={<Plus size={14} />} onClick={() => router.push('/pt-os/leads/new')}>Add Lead</Button>
                     </div>
                   )}
                 </div>
@@ -472,7 +412,7 @@ export default function LeadsPage() {
               {/* pr-8 keeps the title clear of the dialog's own close button. */}
               <div className="min-w-0 pr-8">
                 <DialogTitle className="text-[17px] font-[820] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
-                  {editingId ? 'Edit Lead' : 'Add Lead'}
+                  Edit Lead
                 </DialogTitle>
                 <DialogDescription className="mt-0.5 text-[12px] font-[500]" style={{ color: 'var(--text-muted)' }}>
                   Capture the essentials — you can fill in the rest later.
@@ -483,46 +423,7 @@ export default function LeadsPage() {
             {/* The only scrolling region. overscroll-contain stops a flick at
                 the end of the list from scrolling the page underneath. */}
             <div className="min-h-0 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
-              <div className="flex flex-col gap-5">
-                <FormSection label="Contact">
-                  <FloatInput label="Full Name" required value={form.name} onChange={(v) => set('name', v)} />
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <FloatInput label="Mobile" type="tel" value={form.mobile} onChange={(v) => set('mobile', v)} />
-                    <FloatInput label="Email" type="email" value={form.email} onChange={(v) => set('email', v)} />
-                  </div>
-                </FormSection>
-
-                <FormSection label="Where they came from">
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <SearchableSelect
-                      label="Source" allowCustom={false}
-                      value={form.source} onChange={(v) => set('source', v)}
-                      options={SOURCE_OPTIONS}
-                    />
-                    <SearchableSelect
-                      label="Trainer" allowCustom={false}
-                      value={form.trainer_id}
-                      onChange={(v) => {
-                        set('trainer_id', v);
-                        set('trainer_name', (trainers.data ?? []).find((t) => t.id === v)?.name || '');
-                      }}
-                      options={(trainers.data ?? []).map((t) => ({ value: t.id, label: t.name }))}
-                      placeholder="Unassigned"
-                    />
-                  </div>
-                </FormSection>
-
-                <FormSection label="What they want">
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <FloatInput label="Interested Package" value={form.interested_package} onChange={(v) => set('interested_package', v)} />
-                    <FloatInput label="Follow-up Date" type="date" value={form.follow_up_date} onChange={(v) => set('follow_up_date', v)} />
-                  </div>
-                </FormSection>
-
-                <FormSection label="Notes">
-                  <FloatInput label="Anything worth remembering" multiline rows={3} value={form.notes} onChange={(v) => set('notes', v)} />
-                </FormSection>
-              </div>
+              <LeadFormFields form={form} set={set} trainers={trainers.data ?? []} />
             </div>
 
             {/* Pinned, so the primary action is reachable at any scroll
@@ -540,7 +441,7 @@ export default function LeadsPage() {
                 onClick={handleSave}
                 style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff' }}
               >
-                {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Lead'}
+                {saving ? 'Saving…' : 'Save Changes'}
               </Button>
             </div>
           </DialogContent>
