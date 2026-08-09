@@ -13,14 +13,14 @@ import { QUICK_ACTIONS } from '@/components/dashboards/PtOsDashboard';
 
 describe('QUICK_ACTIONS', () => {
   it('is in the order a trainer works through a new client', () => {
-    // Onboard, clear to train, agree the goal, then assess — general first,
-    // then the specific assessments.
+    // Onboard, clear to train, run the general fitness assessment, agree
+    // the goal, then the remaining specific assessments.
     expect(QUICK_ACTIONS.map((a) => a.label)).toEqual([
       'Add Client',
       'Consent',
       'PAR-Q',
-      'Goal',
       'Fitness',
+      'Goal',
       'Lifestyle',
       'Nutrition',
       'Mobility',
