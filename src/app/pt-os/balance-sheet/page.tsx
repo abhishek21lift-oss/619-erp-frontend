@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { m } from 'framer-motion';
-import { Wallet, TrendingUp, AlertCircle, CheckCircle, Search, Download, IndianRupee, Users, Clock } from 'lucide-react';
+import { Wallet, TrendingUp, AlertCircle, CheckCircle, Search, Download, Users, Clock } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PageContainer, PageHero, PullToRefresh } from '@/components/ui';
@@ -26,18 +26,17 @@ function fmtINRFull(n: number | string | null | undefined) {
   return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 }
 
-const STATUS_CFG: Record<string, { label: string; bg: string; color: string; dot: string }> = {
-  OVERDUE: { label: 'Overdue',  bg: 'rgba(220,38,38,0.10)',  color: '#dc2626', dot: '#dc2626' },
-  DUE:     { label: 'Due',      bg: 'rgba(245,158,11,0.10)', color: '#f59e0b', dot: '#f59e0b' },
-  CLEAR:   { label: 'Clear',    bg: 'rgba(16,185,129,0.10)', color: '#10b981', dot: '#10b981' },
-};
-
-function DueBadge({ status }: { status: string }) {
-  const cfg = STATUS_CFG[status] || STATUS_CFG.DUE;
+function ActiveBadge({ status }: { status: string }) {
+  const active = status === 'active';
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '3px 10px', borderRadius: 20, background: cfg.bg, color: cfg.color }}>
-      <span style={{ width: 5, height: 5, borderRadius: '50%', background: cfg.dot, display: 'inline-block' }} />
-      {cfg.label}
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700,
+      textTransform: 'uppercase', letterSpacing: '0.06em', padding: '3px 10px', borderRadius: 20,
+      background: active ? 'rgba(16,185,129,0.10)' : 'rgba(148,163,184,0.14)',
+      color: active ? '#10b981' : '#64748b',
+    }}>
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: active ? '#10b981' : '#94a3b8', display: 'inline-block' }} />
+      {active ? 'Active' : 'Inactive'}
     </span>
   );
 }
@@ -76,31 +75,35 @@ export default function BalanceSheetPage() {
     [],
   );
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'ALL' | 'OVERDUE' | 'DUE' | 'CLEAR'>('ALL');
-  const items = bs.data?.data ?? [];
+  const [filter, setFilter] = useState<'ALL' | 'OVERDUE' | 'DUE'>('ALL');
+  const items = useMemo(() => bs.data?.data ?? [], [bs.data]);
+
+  // Only clients who still owe something ever appear on this page — a
+  // cleared client has nothing here to act on.
+  const duesOnly = useMemo(() => items.filter(i => Number(i.balance_amount) > 0), [items]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return items.filter(i => {
+    return duesOnly.filter(i => {
       const matchQ = !q || i.name.toLowerCase().includes(q) || (i.mobile || '').includes(q) || (i.trainer_name || '').toLowerCase().includes(q);
       const matchF = filter === 'ALL' || i.due_status === filter;
       return matchQ && matchF;
     });
-  }, [items, search, filter]);
+  }, [duesOnly, search, filter]);
 
+  // Outstanding and collection rate are studio-wide figures — cleared
+  // clients still paid in, and that is what collection rate measures —
+  // so these stay over every client, not just the ones still owing.
   const totalOutstanding = items.reduce((s, i) => s + Number(i.balance_amount), 0);
   const totalCollected = items.reduce((s, i) => s + Number(i.paid_amount), 0);
   const totalRevenue = items.reduce((s, i) => s + Number(i.final_amount), 0);
   const collectionRate = totalRevenue > 0 ? Math.round((totalCollected / totalRevenue) * 100) : 0;
-  const overdueCount = items.filter(i => i.due_status === 'OVERDUE').length;
-  const clearCount = items.filter(i => i.due_status === 'CLEAR').length;
+  const overdueCount = duesOnly.filter(i => i.due_status === 'OVERDUE').length;
 
   const KPIS = [
     { label: 'Total Outstanding', value: fmtINR(totalOutstanding), icon: AlertCircle, color: '#dc2626', bg: 'linear-gradient(135deg, rgba(220,38,38,0.12), rgba(220,38,38,0.04))', border: 'rgba(220,38,38,0.15)' },
-    { label: 'Collected', value: fmtINR(totalCollected), icon: CheckCircle, color: '#10b981', bg: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04))', border: 'rgba(16,185,129,0.15)' },
-    { label: 'Total Revenue', value: fmtINR(totalRevenue), icon: IndianRupee, color: '#0067e0', bg: 'linear-gradient(135deg, rgba(0,103,224,0.12), rgba(0,103,224,0.04))', border: 'rgba(0,103,224,0.15)' },
     { label: 'Collection Rate', value: `${collectionRate}%`, icon: TrendingUp, color: '#f59e0b', bg: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.04))', border: 'rgba(245,158,11,0.15)' },
-    { label: 'PT Clients', value: String(items.length), icon: Users, color: '#0067e0', bg: 'linear-gradient(135deg, rgba(0,103,224,0.12), rgba(0,103,224,0.04))', border: 'rgba(0,103,224,0.15)' },
+    { label: 'Clients With Dues', value: String(duesOnly.length), icon: Users, color: '#0067e0', bg: 'linear-gradient(135deg, rgba(0,103,224,0.12), rgba(0,103,224,0.04))', border: 'rgba(0,103,224,0.15)' },
     { label: 'Overdue', value: String(overdueCount), icon: Clock, color: '#ef4444', bg: 'linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.04))', border: 'rgba(239,68,68,0.15)' },
   ];
 
@@ -118,22 +121,13 @@ export default function BalanceSheetPage() {
           <PageHero
             icon={<Wallet size={20} />}
             title="Balance Sheet"
-            subtitle="Track outstanding dues, collection rates, and payment status across all PT clients."
           >
-            {(clearCount > 0 || overdueCount > 0) && (
+            {overdueCount > 0 && (
               <div className="flex flex-wrap gap-2">
-                {clearCount > 0 && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-[700] text-white"
-                    style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>
-                    <CheckCircle size={13} /> {clearCount} cleared
-                  </span>
-                )}
-                {overdueCount > 0 && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-[700]"
-                    style={{ background: 'rgba(248,113,113,0.22)', border: '1px solid rgba(248,113,113,0.35)', color: '#FECACA' }}>
-                    <AlertCircle size={13} /> {overdueCount} overdue
-                  </span>
-                )}
+                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-[700]"
+                  style={{ background: 'rgba(248,113,113,0.22)', border: '1px solid rgba(248,113,113,0.35)', color: '#FECACA' }}>
+                  <AlertCircle size={13} /> {overdueCount} overdue
+                </span>
               </div>
             )}
           </PageHero>
@@ -174,9 +168,9 @@ export default function BalanceSheetPage() {
               />
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
-              {(['ALL', 'OVERDUE', 'DUE', 'CLEAR'] as const).map(f => {
+              {(['ALL', 'OVERDUE', 'DUE'] as const).map(f => {
                 const active = filter === f;
-                const cfg = f === 'ALL' ? { color: '#0067e0', bg: 'rgba(0,103,224,0.1)', border: 'rgba(0,103,224,0.25)' } : f === 'OVERDUE' ? { color: '#dc2626', bg: 'rgba(220,38,38,0.1)', border: 'rgba(220,38,38,0.25)' } : f === 'DUE' ? { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' } : { color: '#10b981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)' };
+                const cfg = f === 'ALL' ? { color: '#0067e0', bg: 'rgba(0,103,224,0.1)', border: 'rgba(0,103,224,0.25)' } : f === 'OVERDUE' ? { color: '#dc2626', bg: 'rgba(220,38,38,0.1)', border: 'rgba(220,38,38,0.25)' } : { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' };
                 return (
                   <button key={f} onClick={() => setFilter(f)}
                     style={{ fontSize: 11, fontWeight: 700, padding: '7px 14px', borderRadius: 10, border: `1.5px solid ${active ? cfg.border : 'var(--border)'}`, background: active ? cfg.bg : 'transparent', color: active ? cfg.color : 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.2s' }}>
@@ -199,8 +193,8 @@ export default function BalanceSheetPage() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-elevated)' }}>
-                    {['Client', 'Trainer', 'Package', 'Final', 'Paid', 'Balance', 'Status', 'Days'].map(h => (
-                      <th key={h} style={{ padding: '12px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-disabled)', textAlign: h === 'Final' || h === 'Paid' || h === 'Balance' ? 'right' : 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                    {['Client', 'Package', 'Balance', 'Status', 'Days'].map(h => (
+                      <th key={h} style={{ padding: '12px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-disabled)', textAlign: h === 'Balance' ? 'right' : 'left', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -213,26 +207,16 @@ export default function BalanceSheetPage() {
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                       <td style={{ padding: '13px 16px' }}>
                         <div style={{ fontWeight: 650, fontSize: 13, color: 'var(--text-primary)' }}>{item.name}</div>
-                        {item.unique_id && <div style={{ fontSize: 10, color: '#0067e0', fontWeight: 700, letterSpacing: '0.05em' }}>{item.unique_id}</div>}
                         <div style={{ fontSize: 11, color: 'var(--text-disabled)', marginTop: 1 }}>{item.mobile || '—'}</div>
-                      </td>
-                      <td style={{ padding: '13px 16px' }}>
-                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{item.trainer_name || '—'}</span>
                       </td>
                       <td style={{ padding: '13px 16px' }}>
                         <span style={{ fontSize: 11, color: 'var(--text-muted)', maxWidth: 120, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.package_type || '—'}</span>
                       </td>
                       <td style={{ padding: '13px 16px', textAlign: 'right' }}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{fmtINRFull(item.final_amount)}</span>
-                      </td>
-                      <td style={{ padding: '13px 16px', textAlign: 'right' }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>{fmtINRFull(item.paid_amount)}</span>
-                      </td>
-                      <td style={{ padding: '13px 16px', textAlign: 'right' }}>
                         <span style={{ fontSize: 13, fontWeight: 800, color: Number(item.balance_amount) > 0 ? '#dc2626' : '#10b981', fontVariantNumeric: 'tabular-nums' }}>{fmtINRFull(item.balance_amount)}</span>
                       </td>
                       <td style={{ padding: '13px 16px' }}>
-                        <DueBadge status={item.due_status} />
+                        <ActiveBadge status={item.status} />
                       </td>
                       <td style={{ padding: '13px 16px' }}>
                         <span style={{ fontSize: 11, fontWeight: 600, color: item.days_left !== null && item.days_left <= 0 ? '#dc2626' : 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
@@ -264,7 +248,7 @@ export default function BalanceSheetPage() {
             {filtered.length > 0 && (
               <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-elevated)' }}>
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  Showing <strong>{filtered.length}</strong> of <strong>{items.length}</strong> clients
+                  Showing <strong>{filtered.length}</strong> of <strong>{duesOnly.length}</strong> clients
                 </span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>
                   Filtered outstanding: <span style={{ color: '#dc2626' }}>{fmtINRFull(filtered.reduce((s, i) => s + Number(i.balance_amount), 0))}</span>
