@@ -52,6 +52,11 @@ interface PtClientDetail {
 const fmtINR = (n: number | string | null | undefined) =>
   '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
+// No ₹ prefix — used only by the Term Fee/Paid/Balance cards, where the
+// label above each figure already says what it is.
+const fmtNum = (n: number | string | null | undefined) =>
+  Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+
 const fmtDate = (d?: string) => {
   if (!d) return '—';
   const dt = new Date(d);
@@ -614,15 +619,15 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 <div className="mb-4 grid grid-cols-3 gap-2 sm:gap-3">
                   {[
                     {
-                      label: 'Term Fee', value: fmtINR(currentTermFee), sub: 'Current term',
+                      label: 'Term Fee', value: fmtNum(currentTermFee), sub: 'Current term',
                       icon: <IndianRupee size={16} />, color: '#0067e0',
                     },
                     {
-                      label: 'Paid', value: fmtINR(currentTermPaid), sub: `${completionPct}% complete`,
+                      label: 'Paid', value: fmtNum(currentTermPaid), sub: `${completionPct}% complete`,
                       icon: <CheckCircle size={16} />, color: '#10b981',
                     },
                     {
-                      label: 'Balance', value: fmtINR(currentTermBalance),
+                      label: 'Balance', value: fmtNum(currentTermBalance),
                       sub: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'Overdue' : 'Due') : 'Cleared',
                       icon: currentTermBalance > 0 ? <AlertTriangle size={16} /> : <CheckCircle size={16} />,
                       color: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? '#ef4444' : '#f59e0b') : '#10b981',
@@ -643,7 +648,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       <p className="mt-2.5 text-[9px] font-[750] uppercase tracking-wider" style={{ color: `${k.color}b3` }}>
                         {k.label}
                       </p>
-                      <p className="mt-0.5 truncate text-[18px] font-[860] tracking-[-0.02em] sm:text-[21px]" style={{ color: k.color }}>
+                      <p className="mt-0.5 truncate text-[23px] font-[860] tracking-[-0.02em] sm:text-[27px]" style={{ color: k.color }}>
                         {k.value}
                       </p>
                       <p className="mt-0.5 truncate text-[10px] font-[700]" style={{ color: 'var(--text-muted)' }}>{k.sub}</p>
