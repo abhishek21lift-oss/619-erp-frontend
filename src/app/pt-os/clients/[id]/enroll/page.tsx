@@ -30,8 +30,6 @@ interface EnrollFormData {
   workoutExperienceLevel: string;
   previousTrainerExperience: boolean;
   workoutTime: string;
-  customTime: string;
-  useCustomTime: boolean;
   trainingDays: string[];
   sessionsPerWeek: string; // '1'..'7'
   // Payment Details — mirrors the existing pt_clients.final_amount /
@@ -65,9 +63,9 @@ interface FormErrors {
 const DURATIONS = Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} Month${i > 0 ? 's' : ''}` }));
 
 const TRAINING_MODES = [
-  { value: 'Offline', label: 'Offline — In-person at the studio', icon: '🏢' },
-  { value: 'Online', label: 'Online — Remote video sessions', icon: '💻' },
-  { value: 'Hybrid', label: 'Hybrid — A mix of both', icon: '🔄' },
+  { value: 'Offline', label: 'Offline', icon: '🏢' },
+  { value: 'Online', label: 'Online', icon: '💻' },
+  { value: 'Hybrid', label: 'Hybrid', icon: '🔄' },
 ];
 
 // Same value set as pt_lifestyle_assessments.workout_experience_level.
@@ -76,12 +74,6 @@ const WORKOUT_EXPERIENCE_OPTIONS = [
   { value: 'intermediate', label: 'Intermediate', icon: '🏋️' },
   { value: 'advanced', label: 'Advanced', icon: '🔥' },
   { value: 'athlete', label: 'Athlete', icon: '🏆' },
-];
-
-const TIME_SLOTS = [
-  '5:00 AM', '6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
-  '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM',
-  '7:00 PM', '8:00 PM', '9:00 PM',
 ];
 
 const DAYS = [
@@ -124,6 +116,19 @@ function daysBetween(a: string, b: string): number {
 function fmtINR(n: number): string {
   return '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 }
+/** A native `<input type="time">` only ever displays a 24-hour "HH:MM"
+ *  value — a client enrolled before this field became one converts its
+ *  preferred_workout_time from the old picker's "5:00 AM" label format so
+ *  the time still shows up here instead of appearing blank. */
+function to24Hour(v: string): string {
+  if (!v) return '';
+  if (/^\d{2}:\d{2}$/.test(v)) return v;
+  const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(v.trim());
+  if (!m) return '';
+  let h = parseInt(m[1], 10) % 12;
+  if (m[3].toUpperCase() === 'PM') h += 12;
+  return `${String(h).padStart(2, '0')}:${m[2]}`;
+}
 /** Balance Due = Final Selling Price − Amount Paid, never negative. Mirrors
  *  the backend's GREATEST(final_amount - paid_amount, 0) exactly — this is
  *  a live UX preview only, the backend independently recomputes and owns
@@ -146,7 +151,6 @@ function validateTrainingMode(v: string): string | undefined {
   return v ? undefined : 'Please select a training mode.';
 }
 function validateWorkoutTime(form: EnrollFormData): string | undefined {
-  if (form.useCustomTime) return form.customTime ? undefined : 'Please enter a custom time.';
   return form.workoutTime ? undefined : 'Please select a workout time.';
 }
 function validateTrainingDays(v: string[]): string | undefined {
@@ -199,7 +203,7 @@ function initForm(): EnrollFormData {
     startDate: todayStr(), duration: '',
     trainerId: '', trainerName: '', trainingMode: '', workoutExperienceLevel: '',
     previousTrainerExperience: false, workoutTime: '',
-    customTime: '', useCustomTime: false, trainingDays: [], sessionsPerWeek: '',
+    trainingDays: [], sessionsPerWeek: '',
     finalAmount: '', amountPaid: '', paymentMethod: '',
   };
 }
@@ -284,9 +288,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
         trainingMode: (String(c.training_mode ?? '') as EnrollFormData['trainingMode']) || '',
         workoutExperienceLevel: String(c.workout_experience_level ?? ''),
         previousTrainerExperience: Boolean(c.previous_trainer_experience),
-        workoutTime: String(c.preferred_workout_time ?? ''),
-        customTime: '',
-        useCustomTime: false,
+        workoutTime: to24Hour(String(c.preferred_workout_time ?? '')),
         trainingDays: days,
         sessionsPerWeek: c.sessions_per_week ? String(c.sessions_per_week) : '',
         // pt_clients.final_amount / paid_amount default to 0 (NOT NULL) in the
@@ -403,7 +405,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
     training_mode: form.trainingMode,
     workout_experience_level: form.workoutExperienceLevel || undefined,
     previous_trainer_experience: form.previousTrainerExperience,
-    preferred_workout_time: form.useCustomTime ? form.customTime : form.workoutTime,
+    preferred_workout_time: form.workoutTime,
     preferred_training_days: form.trainingDays.join(', '),
     sessions_per_week: Number(form.sessionsPerWeek),
     // Payment fields are admin/manager-only (matches the backend's RBAC
@@ -682,18 +684,14 @@ function EnrollForm({ clientId }: { clientId: string }) {
                 <FloatInput label="PT End Date" value={fmtDateLong(endDate)} onChange={() => {}} disabled />
               </div>
 
-              {/* Payment Details */}
               <div>
-                <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
-                  Payment Details
-                </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div ref={bindFieldRef('finalAmount')}>
                     <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
                       Final / Selling Price {isAdmin && <span style={{ color: '#F59E0B' }}>*</span>}
                     </p>
                     <FloatInput
-                      label="" required={isAdmin}
+                      label=""
                       type="number" placeholder="Enter Final Selling Price"
                       prefix={<span className="text-[13px] font-[700]">₹</span>}
                       value={form.finalAmount}
@@ -708,7 +706,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                       Amount Paid {isAdmin && <span style={{ color: '#F59E0B' }}>*</span>}
                     </p>
                     <FloatInput
-                      label="" required={isAdmin}
+                      label=""
                       type="number" placeholder="Enter Amount Paid"
                       prefix={<span className="text-[13px] font-[700]">₹</span>}
                       value={form.amountPaid}
@@ -835,33 +833,17 @@ function EnrollForm({ clientId }: { clientId: string }) {
                 </div>
               </div>
 
-              {/* Preferred Workout Time */}
+              {/* Preferred Workout Time — a native time field: tap it and the
+                  device's own time picker opens, rather than choosing from a
+                  fixed list of slots. */}
               <div ref={bindFieldRef('workoutTime')}>
-                <SearchableSelect
-                  label="Preferred Workout Time" required allowCustom={false}
-                  value={form.useCustomTime ? 'Custom' : form.workoutTime}
-                  onChange={(v) => {
-                    if (v === 'Custom') {
-                      setForm((p) => ({ ...p, useCustomTime: true, workoutTime: '' }));
-                    } else {
-                      setForm((p) => ({ ...p, workoutTime: v, useCustomTime: false }));
-                    }
-                    setErrors((e) => ({ ...e, workoutTime: undefined }));
-                  }}
-                  options={[...TIME_SLOTS, 'Custom']}
+                <FloatInput
+                  label="Preferred Workout Time" required
+                  type="time" value={form.workoutTime}
+                  onChange={(v) => { set('workoutTime', v); setErrors((e) => ({ ...e, workoutTime: undefined })); }}
+                  onBlur={() => setErrors((e) => ({ ...e, workoutTime: validateWorkoutTime(form) }))}
                   error={errors.workoutTime}
                 />
-                <AnimatePresence>
-                  {form.useCustomTime && (
-                    <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden max-w-[200px]">
-                      <FloatInput
-                        label="Custom Time" type="time" value={form.customTime}
-                        onChange={(v) => set('customTime', v)}
-                        onBlur={() => setErrors((e) => ({ ...e, workoutTime: validateWorkoutTime(form) }))}
-                      />
-                    </m.div>
-                  )}
-                </AnimatePresence>
               </div>
 
               {/* Preferred Training Days */}
