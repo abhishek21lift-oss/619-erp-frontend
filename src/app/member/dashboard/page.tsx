@@ -38,11 +38,10 @@ import { m } from 'framer-motion';
 import {
   CalendarDays, Wallet, Dumbbell, TrendingDown, TrendingUp, Minus,
   User, Phone, Mail, Target, Ruler, CheckCircle2, Clock, CreditCard,
-  ChevronRight, ShieldCheck, Home, LogOut,
+  ChevronRight, ShieldCheck,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { usePathname } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
+import MemberShell from '@/components/member/MemberShell';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { api } from '@/lib/api';
 import type { MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement } from '@/lib/api';
@@ -366,93 +365,10 @@ function MemberDashboard() {
 
 /* ── Pieces ─────────────────────────────────────────────────────────────── */
 
-/**
- * The three places a member can actually go, plus the way out.
- *
- * The page this replaced had a five-tab bar, but four of the tabs only set
- * React state that nothing read — tapping Classes, Bookings, Plan or Profile
- * did nothing at all. Rebuilding the page without a nav then removed even the
- * one that worked, and left no way to sign out, which is worse than a bar
- * with dead buttons.
- *
- * So: real links to the routes that exist, and nothing else. Three working
- * tabs beat five that mostly do not.
- */
-const MEMBER_TABS = [
-  { href: '/member/dashboard', label: 'Home', icon: Home },
-  { href: '/member/classes', label: 'Classes', icon: CalendarDays },
-  { href: '/member/payments', label: 'Payments', icon: Wallet },
-] as const;
-
-function MemberNav() {
-  const pathname = usePathname();
-  const { logout } = useAuth();
-  return (
-    <nav
-      // A fixed bar at the bottom of the viewport: a downward drag that starts
-      // here is somebody reaching for a tab, not asking to refresh. Same
-      // opt-out MobileBottomNav carries, and the guard test that just caught
-      // this missing is the reason it exists.
-      data-no-pull-refresh
-      // .mobile-bottom-nav rather than Tailwind's bottom-0, so this bar takes
-      // its bottom from --vv-bottom-inset exactly as the staff nav does. It
-      // was pinned at a plain bottom-0, which meant the iOS fix in the staff
-      // shell stopped at the portal boundary and members kept the bug.
-      className="mobile-bottom-nav fixed inset-x-0 z-40"
-      style={{
-        background: 'var(--bg-card)',
-        borderTop: '1px solid var(--border)',
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-      }}
-    >
-      <div className="mx-auto flex w-full max-w-[560px]">
-        {MEMBER_TABS.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href;
-          return (
-            <Link key={href} href={href}
-              className="flex flex-1 flex-col items-center gap-1 py-2.5"
-              style={{ color: active ? C.primary : C.muted }}>
-              <Icon size={18} strokeWidth={active ? 2.4 : 1.9} />
-              <span className="text-[10px] font-[700]">{label}</span>
-            </Link>
-          );
-        })}
-        <button type="button" onClick={() => logout()}
-          className="flex flex-1 flex-col items-center gap-1 py-2.5"
-          style={{ color: C.muted }}>
-          <LogOut size={18} strokeWidth={1.9} />
-          <span className="text-[10px] font-[700]">Sign out</span>
-        </button>
-      </div>
-    </nav>
-  );
-}
-
+/** Thin alias kept so the many call sites in this file stay untouched; the
+ *  shell itself is shared with the rest of the portal now. */
 function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-[100dvh]" style={{ background: 'var(--bg-canvas)' }}>
-      {/* Top to bottom: the phone's own status-bar inset, then the page, then
-          the tab bar — the same order the staff shell uses.
-          The inset was missing entirely. This portal has no top bar of its own
-          to carry it (the staff shell's fixed header pays it, and /member/classes
-          pays it on .member-header), and the app renders with viewport-fit=cover
-          under a translucent status bar, so on a notched phone the first card
-          started underneath the clock. pt-5 stays as the gap BELOW the inset,
-          rather than being the only thing standing in for it. */}
-      <div
-        className="mx-auto w-full max-w-[560px] px-4 pt-5"
-        style={{
-          marginTop: 'env(safe-area-inset-top, 0px)',
-          // Clears the fixed bar plus the home indicator, so the last card is
-          // fully scrollable into view rather than sitting under it.
-          paddingBottom: 'calc(84px + env(safe-area-inset-bottom, 0px))',
-        }}
-      >
-        {children}
-      </div>
-      <MemberNav />
-    </div>
-  );
+  return <MemberShell>{children}</MemberShell>;
 }
 
 function Section({ title, action, children }: {

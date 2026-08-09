@@ -6,6 +6,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import Guard from '@/components/Guard';
+import MemberNav from '@/components/member/MemberNav';
 import { api } from '@/lib/api';
 
 type Session = {
@@ -348,6 +349,11 @@ function Inner() {
           </div>
         )}
       </main>
+      {/* This page rendered no bar at all, so a member who reached it had no
+          way anywhere except the browser's back button — while .member-main
+          was already reserving the space for one. .member-header above pays
+          the top inset, so only the bottom was missing. */}
+      <MemberNav />
     </div>
   );
 }

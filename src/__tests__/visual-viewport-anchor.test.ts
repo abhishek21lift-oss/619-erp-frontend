@@ -244,9 +244,33 @@ describe('the member portal is covered too', () => {
   });
 
   it('its tab bar takes the inset rather than pinning itself to bottom-0', () => {
-    const dash = src('app', 'member', 'dashboard', 'page.tsx');
-    expect(dash).toContain('mobile-bottom-nav');
-    expect(dash).not.toMatch(/className="[^"]*\bbottom-0\b/);
+    const nav = src('components', 'member', 'MemberNav.tsx');
+    expect(nav).toContain('mobile-bottom-nav');
+    expect(nav).not.toMatch(/className="[^"]*\bbottom-0\b/);
+  });
+
+  it('every member page ends with that same bar', () => {
+    // The bar used to live inside the dashboard page as a local component, so
+    // only the dashboard had one: /member/classes rendered none at all (a
+    // dead end — back button or nothing) and /member/payments rendered the
+    // STAFF nav instead. Checked per page rather than trusting the shared
+    // component to have been adopted everywhere.
+    const pages = ['dashboard', 'classes', 'payments'];
+    for (const p of pages) {
+      const s = src('app', 'member', p, 'page.tsx');
+      expect(s, `${p} must render the member nav, directly or via MemberShell`)
+        .toMatch(/MemberNav|MemberShell/);
+    }
+  });
+
+  it('no member page borrows the staff shell', () => {
+    // AppShell brings the staff sidebar and a bottom nav offering Clients /
+    // Sessions / Check-in — routes Guard bounces a member out of the moment
+    // they tap one.
+    for (const p of ['dashboard', 'classes', 'payments']) {
+      const s = src('app', 'member', p, 'page.tsx');
+      expect(s, `${p} must not render AppShell`).not.toMatch(/<AppShell|from '@\/components\/AppShell'/);
+    }
   });
 
   it('the .member-bottom-nav rule takes it as well', () => {
@@ -257,8 +281,12 @@ describe('the member portal is covered too', () => {
   it('the portal pays the top safe-area inset, having no top bar to carry it', () => {
     // The staff shell's fixed header pays this, and /member/classes pays it
     // on .member-header. The dashboard had neither and started its first card
-    // under the status bar on a notched phone.
-    const dash = src('app', 'member', 'dashboard', 'page.tsx');
-    expect(dash).toContain("marginTop: 'env(safe-area-inset-top, 0px)'");
+    // under the status bar on a notched phone. Asserted on the shared shell,
+    // so it covers every page that adopts it rather than one of them.
+    const shell = src('components', 'member', 'MemberShell.tsx');
+    expect(shell).toContain("'env(safe-area-inset-top, 0px)'");
+    // …and the escape hatch for a page that already pays it, so the inset is
+    // never counted twice.
+    expect(shell).toContain('headerPaysTopInset');
   });
 });
