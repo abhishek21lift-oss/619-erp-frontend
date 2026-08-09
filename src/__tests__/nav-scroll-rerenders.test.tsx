@@ -18,6 +18,8 @@
 
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, act } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { NavScrollProvider, useNavScroll } from '@/contexts/nav-scroll-context';
 
 let rafCbs: FrameRequestCallback[] = [];
@@ -96,6 +98,20 @@ describe('scrolling without crossing a state boundary', () => {
     for (let y = 500; y >= 200; y -= 100) scrollTo(y);   // reverse: up → compact
 
     expect(renders).toBeGreaterThan(0);
+  });
+});
+
+describe('the provider is mounted where it survives navigation', () => {
+  const read = (...p: string[]) => readFileSync(join(process.cwd(), 'src', ...p), 'utf8');
+
+  it('lives in the root layout, not inside AppShell', () => {
+    // AppShell is rendered by each of ~97 pages rather than by a layout, so
+    // anything mounted inside it is destroyed and rebuilt on every navigation.
+    // With the provider in there, topBar reset to 'expanded' on arrival, which
+    // snapped --topbar-h from 32px back to 46px and animated the header
+    // spacer — shifting the whole page's content down and then back up.
+    expect(read('app', 'layout.tsx')).toContain('<NavScrollProvider>');
+    expect(read('components', 'AppShell.tsx')).not.toContain('<NavScrollProvider>');
   });
 });
 

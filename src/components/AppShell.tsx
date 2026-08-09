@@ -20,7 +20,7 @@ import { api } from '@/lib/api';
 import { roleLabel } from '@/lib/roles';
 import { allNavItems, isVisibleForFeature } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
-import { NavScrollProvider, useNavScroll } from '@/contexts/nav-scroll-context';
+import { useNavScroll } from '@/contexts/nav-scroll-context';
 import { PullRefreshRegistryProvider } from '@/contexts/pull-refresh-context';
 import PullToRefresh from '@/components/common/PullToRefresh';
 import OrgSwitcher from '@/components/OrgSwitcher';
@@ -662,11 +662,13 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 }
 
 export default function AppShell(props: AppShellProps) {
+  // NavScrollProvider used to wrap this. It now lives in app/layout.tsx: this
+  // component is rendered by each page rather than by a layout, so anything
+  // mounted here is destroyed and rebuilt on every navigation — which reset
+  // the top bar's scroll state and shifted the page's content on arrival.
   return (
-    <NavScrollProvider>
-      <PullRefreshRegistryProvider>
-        <AppShellContent {...props} />
-      </PullRefreshRegistryProvider>
-    </NavScrollProvider>
+    <PullRefreshRegistryProvider>
+      <AppShellContent {...props} />
+    </PullRefreshRegistryProvider>
   );
 }
