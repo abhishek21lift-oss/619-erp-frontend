@@ -5,12 +5,27 @@
  *
  * Single RAF loop. Direction hysteresis prevents flicker. Scroll-stop debounce.
  *
- * State machine (Instagram / WhatsApp native-mobile pattern):
- *   scroll down  → topBar: hidden
+ * State machine:
  *   scroll up    → topBar: compact (visible, shrunk)
+ *   scroll down  → topBar: expanded
  *   at page top  → topBar: expanded
  *   at page btm  → topBar: expanded
  *   route change → topBar: expanded (instant reset)
+ *
+ * ── There used to be a third state, and it never did anything ─────────────
+ *
+ * Scrolling down returned 'hidden', documented here as the Instagram pattern
+ * of sliding the bar off-screen. Nothing implemented it: AppShell's header
+ * animates `y: 0` unconditionally, and its height reads
+ * `topBar === 'compact' ? 32 : 46` — so 'hidden' rendered a full-height,
+ * fully-visible bar, pixel for pixel identical to 'expanded'. The state was
+ * dead in exactly the way `bottomBar` and `scrollY` were before it.
+ *
+ * It is collapsed into 'expanded' rather than implemented, because rendering
+ * it would be a new UI behaviour rather than a fix. If sliding the bar away
+ * on scroll-down is wanted, that is a deliberate change: give the header a
+ * `y: -100%` branch and keep the spacer at its expanded height, which is what
+ * it now is anyway.
  *
  * Direction hysteresis: DIRECTION_HYSTERESIS px must accumulate in a new direction
  * before the state transitions — prevents flicker from micro-jitter.
@@ -55,7 +70,7 @@ import {
 } from 'react';
 import { usePathname } from 'next/navigation';
 
-export type BarState = 'expanded' | 'compact' | 'hidden';
+export type BarState = 'expanded' | 'compact';
 
 export interface NavScrollValue {
   topBar: BarState;
@@ -179,8 +194,10 @@ export function NavScrollProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Scroll down hides the top bar; scroll up keeps it visible but shrunk.
-      return resolvedDir === 'down' ? 'hidden' : 'compact';
+      // Scroll up shrinks the bar; scroll down restores it. (Scrolling down
+      // used to return 'hidden' — see the note at the top of this file for why
+      // that state is gone rather than implemented.)
+      return resolvedDir === 'down' ? 'expanded' : 'compact';
     });
 
     // After scroll settles, reset velocity accumulator
