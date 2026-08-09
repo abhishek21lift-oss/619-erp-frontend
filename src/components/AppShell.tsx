@@ -28,6 +28,7 @@ import ImpersonationBanner from '@/components/ImpersonationBanner';
 import TrialBanner from '@/components/TrialBanner';
 import GlobalSearch, { type PageEntry } from '@/components/search/GlobalSearch';
 import useViewportDesyncFix from '@/hooks/useViewportDesyncFix';
+import useVisualViewportAnchor from '@/hooks/useVisualViewportAnchor';
 import { clearSearchHistory } from '@/components/search/recent';
 
 interface AppShellProps {
@@ -117,7 +118,17 @@ function timeAgo(dateStr: string): string {
 function AppShellContent({ children, title, headerLeft }: AppShellProps) {
   // Every page in the shell has fields, so the iOS keyboard-dismiss gap is a
   // shell-level problem, not a per-page one.
+  //
+  // Two mechanisms, and they cover different halves of the same bug:
+  //  · useViewportDesyncFix re-asserts the DOCUMENT's scroll position, which
+  //    makes Safari recompute — but only works where there is a document
+  //    scroll to re-assert, so it cannot help a viewport-height page like the
+  //    AI Coach console.
+  //  · useVisualViewportAnchor MEASURES the gap between the layout and visual
+  //    viewports and hands it to the bottom chrome as --vv-bottom-inset, so
+  //    the nav tracks the real bottom edge whether or not the page scrolls.
   useViewportDesyncFix();
+  useVisualViewportAnchor();
 
   const { features } = useFeatures();
   const searchPages = useMemo(() => buildSearchPages(features), [features]);
