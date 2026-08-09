@@ -11,7 +11,7 @@ import type { Payment } from '@/lib/api';
 import { Button, KpiCard, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import {
   Banknote, Search, ArrowUpDown, User, Wallet,
-  Smartphone, CreditCard, Receipt, CalendarDays, RefreshCw, Inbox,
+  Smartphone, CreditCard, Receipt, CalendarDays, Inbox,
   Layers, IndianRupee, List, TrendingUp,
 } from 'lucide-react';
 
@@ -130,24 +130,7 @@ function Inner() {
           icon={<Banknote size={20} />}
           title="Collected Payments"
           subtitle="Track and manage all incoming payments"
-        >
-          <div className="flex gap-2.5">
-            <button
-              type="button"
-              onClick={fetchPayments}
-              className="inline-flex h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] text-white transition-transform active:scale-95 sm:flex-none"
-              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
-              <RefreshCw size={15} /> Refresh
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push('/finance/record-payment')}
-              className="inline-flex h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] transition-transform active:scale-95 sm:flex-none"
-              style={{ background: '#fff', color: '#0F172A' }}>
-              <Banknote size={15} /> Record Payment
-            </button>
-          </div>
-        </PageHero>
+        />
 
         {/* KPI Row — 2-up on mobile instead of stacking full-width. Out of
             the tinted panel and onto the page, as cards. */}

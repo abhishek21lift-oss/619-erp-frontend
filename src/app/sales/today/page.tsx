@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
   TrendingUp, ArrowUpRight, Smartphone, CreditCard,
-  Banknote, Wallet, Plus, RefreshCw, Receipt, User, Clock,
+  Banknote, Wallet, Plus, Receipt, User, Clock,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -116,42 +116,21 @@ function Inner() {
             }}
             aria-hidden
           />
-          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                Total Revenue Today
-              </p>
-              <p className="mt-2 text-[48px] sm:text-[56px] font-extrabold tracking-[-0.03em] bg-gradient-to-br from-pink-400 via-rose-400 to-orange-400 bg-clip-text text-transparent leading-none tabular-nums">
-                {loading ? '—' : fmtINR(totalToday)}
-              </p>
-              <div className="mt-2 flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[12px] font-semibold text-emerald-400">
-                  <TrendingUp size={12} />
-                  Live
-                </span>
-                <span className="text-[12px] text-[var(--text-muted)]">
-                  {payments.length} transaction{payments.length !== 1 ? 's' : ''} today
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => router.push('/finance/record-payment')}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_4px_16px_rgba(236,72,153,0.35)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(236,72,153,0.45)]"
-              >
-                <Plus size={15} />
-                Record Payment
-              </button>
-              <button
-                type="button"
-                onClick={refresh}
-                disabled={loading}
-                aria-label="Refresh"
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-muted)] transition-all duration-200 hover:bg-gradient-to-br hover:from-pink-500/10 hover:to-rose-500/10 hover:text-pink-400 disabled:opacity-50"
-              >
-                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              </button>
+          <div className="relative">
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              Total Revenue Today
+            </p>
+            <p className="mt-2 text-[48px] sm:text-[56px] font-extrabold tracking-[-0.03em] bg-gradient-to-br from-pink-400 via-rose-400 to-orange-400 bg-clip-text text-transparent leading-none tabular-nums">
+              {loading ? '—' : fmtINR(totalToday)}
+            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[12px] font-semibold text-emerald-400">
+                <TrendingUp size={12} />
+                Live
+              </span>
+              <span className="text-[12px] text-[var(--text-muted)]">
+                {payments.length} transaction{payments.length !== 1 ? 's' : ''} today
+              </span>
             </div>
           </div>
         </m.div>
