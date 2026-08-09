@@ -10,6 +10,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import SentryInit from '@/components/SentryInit';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { GoogleAuthWrapper } from '@/components/GoogleAuthWrapper';
+import { NavScrollProvider } from '@/contexts/nav-scroll-context';
 import './globals.css';
 
 const inter = Inter({
@@ -203,11 +204,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <PermissionsProvider>
                   <FeaturesProvider>
                     <ToastProvider>
-                      <LazyMotion features={domAnimation}>
-                        <SentryInit />
-                        {children}
-                        <CommandPalette />
-                      </LazyMotion>
+                      {/*
+                       * NavScrollProvider belongs HERE, not inside AppShell.
+                       *
+                       * AppShell is rendered by each of ~97 pages rather than
+                       * from a layout, so it — and everything it wrapped —
+                       * unmounted and remounted on every client-side
+                       * navigation. That reset topBar to 'expanded' each time,
+                       * which snapped --topbar-h from 32px back to 46px and
+                       * animated the header spacer, shifting every page's
+                       * content down and then back up on arrival.
+                       *
+                       * A layout persists across navigation, so the scroll
+                       * state now survives it. This also gives the member
+                       * portal a real provider instead of the context default,
+                       * since those pages never go through AppShell at all.
+                       */}
+                      <NavScrollProvider>
+                        <LazyMotion features={domAnimation}>
+                          <SentryInit />
+                          {children}
+                          <CommandPalette />
+                        </LazyMotion>
+                      </NavScrollProvider>
                     </ToastProvider>
                   </FeaturesProvider>
                 </PermissionsProvider>
