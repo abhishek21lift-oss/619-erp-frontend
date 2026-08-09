@@ -601,41 +601,49 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     the hero's own navy blue at full strength, so scrolling
                     past it read as the hero continuing rather than as a new,
                     different question — "who is this" bleeding into "what do
-                    they owe". Each card is white now, with a coloured icon
-                    tile and value carrying the colour instead of the card
-                    itself: Term Fee keeps the hero's blue (it is the one
-                    neutral fact of the three), Paid and Balance keep the
+                    they owe".
+                    A plain white card with only the icon tinted (the first
+                    cut of this) read as flat next to the colourful tab strip
+                    and its panels below — three cards, not twelve, so a soft
+                    colour wash on the card itself (the same tinted-chip
+                    treatment Quick Actions uses) reads as considered rather
+                    than busy here. Term Fee keeps the hero's blue (it is the
+                    one neutral fact of the three); Paid and Balance keep the
                     green/amber/red they already had, because paid-or-owed is
                     a status this app colours everywhere else. */}
                 <div className="mb-4 grid grid-cols-3 gap-2 sm:gap-3">
                   {[
                     {
                       label: 'Term Fee', value: fmtINR(currentTermFee), sub: 'Current term',
-                      icon: <IndianRupee size={15} />, color: '#0067e0',
+                      icon: <IndianRupee size={16} />, color: '#0067e0',
                     },
                     {
                       label: 'Paid', value: fmtINR(currentTermPaid), sub: `${completionPct}% complete`,
-                      icon: <CheckCircle size={15} />, color: '#10b981',
+                      icon: <CheckCircle size={16} />, color: '#10b981',
                     },
                     {
                       label: 'Balance', value: fmtINR(currentTermBalance),
                       sub: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'Overdue' : 'Due') : 'Cleared',
-                      icon: currentTermBalance > 0 ? <AlertTriangle size={15} /> : <CheckCircle size={15} />,
+                      icon: currentTermBalance > 0 ? <AlertTriangle size={16} /> : <CheckCircle size={16} />,
                       color: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? '#ef4444' : '#f59e0b') : '#10b981',
                     },
                   ].map((k, i) => (
                     <m.div key={k.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.08 + i * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                      className="rounded-[18px] p-3 sm:p-4"
-                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-                      <span className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white"
-                        style={{ background: `linear-gradient(135deg, ${k.color}, ${k.color}cc)`, boxShadow: `0 3px 10px ${k.color}40` }}>
+                      className="rounded-[20px] p-3 sm:p-4"
+                      style={{
+                        background: `linear-gradient(160deg, ${k.color}14 0%, ${k.color}05 100%)`,
+                        border: `1px solid ${k.color}22`,
+                        boxShadow: `0 4px 14px ${k.color}14`,
+                      }}>
+                      <span className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white"
+                        style={{ background: `linear-gradient(135deg, ${k.color}, ${k.color}cc)`, boxShadow: `0 4px 10px ${k.color}45` }}>
                         {k.icon}
                       </span>
-                      <p className="mt-2.5 text-[9px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                      <p className="mt-2.5 text-[9px] font-[750] uppercase tracking-wider" style={{ color: `${k.color}b3` }}>
                         {k.label}
                       </p>
-                      <p className="mt-0.5 truncate text-[17px] font-[860] tracking-[-0.02em] sm:text-[20px]" style={{ color: k.color }}>
+                      <p className="mt-0.5 truncate text-[18px] font-[860] tracking-[-0.02em] sm:text-[21px]" style={{ color: k.color }}>
                         {k.value}
                       </p>
                       <p className="mt-0.5 truncate text-[10px] font-[700]" style={{ color: 'var(--text-muted)' }}>{k.sub}</p>
