@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { useTheme } from '@/components/ThemeProvider';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, FloatInput } from '@/components/ui';
 import { api } from '@/lib/api';
 import type {
   ProfileMe, NotificationPreferences, UserPreferences, ProfileDevice, ProfileSession,
@@ -384,62 +384,7 @@ function SectionHeader({ icon, title, subtitle }: { icon: React.ReactNode; title
 /* ─────────────────────────────────────────
    FLOAT INPUT (GLASS)
 ───────────────────────────────────────── */
-function FloatInput({
-  label, type = 'text', value, onChange, suffix, required, disabled, multiline,
-}: {
-  label: string; type?: string; value: string;
-  onChange: (v: string) => void;
-  suffix?: React.ReactNode; required?: boolean; disabled?: boolean; multiline?: boolean;
-}) {
-  const id = React.useId();
-  const [focused, setFocused] = useState(false);
-  const lifted = focused || value.length > 0;
-  const Field = multiline ? 'textarea' : 'input';
-  return (
-    <div className="relative">
-      <m.div
-        animate={{
-          boxShadow: focused ? '0 0 0 3px rgba(0,103,224,0.12), 0 2px 8px rgba(0,103,224,0.08)' : '0 1px 2px rgba(15,23,42,0.04)',
-        }}
-        transition={{ duration: 0.2 }}
-        className="relative rounded-[14px] overflow-hidden"
-        style={{
-          background: focused ? 'var(--bg-card)' : 'var(--bg-subtle)',
-          border: `1.5px solid ${focused ? 'rgba(0,103,224,0.45)' : 'var(--border-2)'}`,
-          opacity: disabled ? 0.55 : 1,
-          transition: 'background 180ms, border-color 180ms',
-        }}
-      >
-        <label htmlFor={id}
-          className="pointer-events-none absolute left-4 font-[560] transition-all"
-          style={{
-            top: lifted ? 8 : (multiline ? 14 : 18),
-            fontSize: lifted ? 10 : 13,
-            color: lifted ? (focused ? '#0067e0' : 'var(--text-disabled)') : 'var(--text-disabled)',
-            transition: 'all 150ms cubic-bezier(0.16,1,0.3,1)',
-            letterSpacing: lifted ? '0.03em' : '0',
-            textTransform: lifted ? 'uppercase' : 'none',
-          }}
-        >
-          {label}{required && ' *'}
-        </label>
-        <Field
-          id={id} type={multiline ? undefined : type} value={value}
-          rows={multiline ? 3 : undefined}
-          onChange={e => onChange(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          disabled={disabled}
-          className="w-full bg-transparent px-4 pb-3 pt-7 text-[13.5px] font-[560] outline-none disabled:cursor-not-allowed resize-none"
-          style={{ color: 'var(--text-primary)', caretColor: '#0067e0' }}
-        />
-        {suffix && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2">{suffix}</div>
-        )}
-      </m.div>
-    </div>
-  );
-}
+
 
 /* ─────────────────────────────────────────
    IOS TOGGLE
@@ -1325,11 +1270,11 @@ export default function ProfilePage() {
                   <GlassCard className="p-6">
                     <SectionHeader icon={<User size={14} style={{ color: '#0067e0' }} />} title="Personal Information" subtitle="Your name, contact and bio" />
                     <div className="flex flex-col gap-3">
-                      <FloatInput label="Full Name" value={name} onChange={setName} required />
-                      <FloatInput label="Email Address" type="email" value={email} onChange={setEmail} required />
-                      <FloatInput label="Phone Number" value={phone} onChange={setPhone} />
-                      <FloatInput label="Location" value={location} onChange={setLocation} />
-                      <FloatInput label="Bio" value={bio} onChange={setBio} multiline />
+                      <FloatInput tone="brand" upperLifted label="Full Name" value={name} onChange={setName} required />
+                      <FloatInput tone="brand" upperLifted label="Email Address" type="email" value={email} onChange={setEmail} required />
+                      <FloatInput tone="brand" upperLifted label="Phone Number" value={phone} onChange={setPhone} />
+                      <FloatInput tone="brand" upperLifted label="Location" value={location} onChange={setLocation} />
+                      <FloatInput tone="brand" upperLifted label="Bio" value={bio} onChange={setBio} multiline />
                     </div>
                   </GlassCard>
                 </FadeUp>
@@ -1461,7 +1406,7 @@ export default function ProfilePage() {
                     subtitle="What you do, as opposed to what the software lets you click"
                   />
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <FloatInput label="Job title" value={jobTitle} onChange={setJobTitle} />
+                    <FloatInput tone="brand" upperLifted label="Job title" value={jobTitle} onChange={setJobTitle} />
                     <div>
                       <label htmlFor="coaching-since" className="mb-1.5 block text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
                         Coaching since
@@ -1670,7 +1615,7 @@ export default function ProfilePage() {
                         </div>
                         <div className="flex items-end gap-2">
                           <div className="flex-1">
-                            <FloatInput label="6-digit code" value={mfaCode} onChange={v => setMfaCode(v.replace(/\D/g, '').slice(0, 6))} />
+                            <FloatInput tone="brand" upperLifted label="6-digit code" value={mfaCode} onChange={v => setMfaCode(v.replace(/\D/g, '').slice(0, 6))} />
                           </div>
                           <button onClick={verifyMfa} disabled={mfaCode.length !== 6 || mfaBusy}
                             className="flex items-center gap-2 rounded-xl px-4 py-3 text-[12.5px] font-[720] text-white transition-all"
@@ -1735,9 +1680,9 @@ export default function ProfilePage() {
                     <SectionHeader icon={<Lock size={14} style={{ color: '#0067e0' }} />} title="Change Password" subtitle="Use a strong, unique password" />
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="flex flex-col gap-3">
-                        <FloatInput label="Current Password" type={showCur ? 'text' : 'password'} value={currentPw} onChange={setCurrentPw}
+                        <FloatInput tone="brand" upperLifted label="Current Password" type={showCur ? 'text' : 'password'} value={currentPw} onChange={setCurrentPw}
                           suffix={eyeBtn(showCur, () => setShowCur(v => !v))} required />
-                        <FloatInput label="New Password" type={showNew ? 'text' : 'password'} value={newPw} onChange={setNewPw}
+                        <FloatInput tone="brand" upperLifted label="New Password" type={showNew ? 'text' : 'password'} value={newPw} onChange={setNewPw}
                           suffix={eyeBtn(showNew, () => setShowNew(v => !v))} required />
                         {newPw.length > 0 && (
                           <div>
@@ -1751,7 +1696,7 @@ export default function ProfilePage() {
                             <p className="text-right text-[11px] font-[660]" style={{ color: strength.color }}>{strength.label}</p>
                           </div>
                         )}
-                        <FloatInput label="Confirm New Password" type={showConf ? 'text' : 'password'} value={confirmPw} onChange={setConfirmPw}
+                        <FloatInput tone="brand" upperLifted label="Confirm New Password" type={showConf ? 'text' : 'password'} value={confirmPw} onChange={setConfirmPw}
                           suffix={
                             <div className="flex items-center gap-1.5">
                               {pwMatch && <CheckCircle2 size={13} style={{ color: '#10b981' }} />}

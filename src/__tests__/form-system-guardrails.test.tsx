@@ -6,11 +6,12 @@
 // make not using it visible.
 
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import ts from 'typescript';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { Slider } from '@/components/ui/Slider';
+import { FloatInput } from '@/components/ui/FloatInput';
 import { auditAccessibleNames } from '@/__tests__/helpers/accessible-name';
 
 const SRC = join(process.cwd(), 'src');
@@ -43,6 +44,44 @@ describe('one form system, not eighteen', () => {
       if (/(export\s+)?function\s+FormField\b|const\s+FormField\s*[:=]/.test(src)) defs.push(rel(f));
     }
     expect(defs).toEqual(['src/components/ui/form/FormField.tsx']);
+  });
+
+  it('has exactly one FloatInput implementation', () => {
+    // It was three: components/ui plus a 49-line copy in settings/page and a
+    // 56-line copy in settings/profile. Both copies were called with only
+    // label, type, value, onChange and suffix — their required, disabled,
+    // multiline and placeholder branches were dead — so the shared component
+    // already supported every prop in use. What differed was the accent: gold
+    // in the 39 PT-OS assessment files, brand blue in Settings. That is now a
+    // `tone`, not a component.
+    const defs: string[] = [];
+    for (const f of sources()) {
+      const src = readFileSync(f, 'utf8');
+      if (/^function FloatInput\(|export function FloatInput\(/m.test(src)) defs.push(rel(f));
+    }
+    expect(defs).toEqual(['src/components/ui/FloatInput.tsx']);
+  });
+
+  it('keeps each Settings screen on the tone it already had', () => {
+    // Deduplication, not a redesign. Both screens focus to brand blue, and
+    // profile small-caps its lifted caption while the account screen does not
+    // — preserved rather than reconciled, because reconciling them is a design
+    // decision and this was not one.
+    const account = readFileSync(join(SRC, 'app/(chrome)/settings/page.tsx'), 'utf8');
+    const profile = readFileSync(join(SRC, 'app/(chrome)/settings/profile/page.tsx'), 'utf8');
+    expect(account.match(/<FloatInput tone="brand"/g) ?? []).toHaveLength(6);
+    expect(account).not.toMatch(/upperLifted/);
+    expect(profile.match(/<FloatInput tone="brand" upperLifted/g) ?? []).toHaveLength(10);
+  });
+
+  it('leaves the assessment screens on gold, which is the default', () => {
+    // 39 files import the shared FloatInput and pass no tone. If the default
+    // ever flipped, every PT-OS assessment would change accent at once.
+    const src = readFileSync(join(SRC, 'components/ui/FloatInput.tsx'), 'utf8');
+    expect(src).toMatch(/tone = 'gold'/);
+    const enroll = readFileSync(join(SRC, 'app/(chrome)/pt-os/clients/[id]/enroll/page.tsx'), 'utf8');
+    expect(enroll).toMatch(/<FloatInput/);
+    expect(enroll).not.toMatch(/tone=/);
   });
 
   it('has no second search-input component', () => {
@@ -200,6 +239,39 @@ describe('the five representative migrations', () => {
     const src = readFileSync(join(SRC, 'app/(chrome)/pt-os/weekly-checkin/page.tsx'), 'utf8');
     expect((src.match(/inputMode="decimal"/g) ?? []).length).toBe(2);
     expect((src.match(/inputMode="numeric"/g) ?? []).length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe('FloatInput tones', () => {
+  it('labels its control in both tones', () => {
+    const { unmount } = render(<FloatInput label="Full Name" value="" onChange={() => {}} />);
+    expect(screen.getByLabelText('Full Name')).toBeInstanceOf(HTMLInputElement);
+    unmount();
+    render(<FloatInput label="Display Name" tone="brand" value="" onChange={() => {}} />);
+    expect(screen.getByLabelText('Display Name')).toBeInstanceOf(HTMLInputElement);
+  });
+
+  it('keeps the caption visible once the field has a value', () => {
+    // The reason this pattern is allowed to stay: the caption lifts, it does
+    // not disappear. That is the rule the whole phase is about.
+    render(<FloatInput label="Job title" value="Head Coach" onChange={() => {}} />);
+    expect(screen.getByLabelText('Job title')).toHaveValue('Head Coach');
+    expect(screen.getByText('Job title')).toBeVisible();
+  });
+
+  it('small-caps the lifted caption only when asked', () => {
+    const { unmount } = render(<FloatInput label="Plain" value="x" onChange={() => {}} />);
+    expect(screen.getByText('Plain').className).not.toMatch(/uppercase/);
+    unmount();
+    render(<FloatInput label="Capped" upperLifted value="x" onChange={() => {}} />);
+    expect(screen.getByText('Capped').className).toMatch(/uppercase/);
+  });
+
+  it('still passes the caller onChange through', () => {
+    let seen = '';
+    render(<FloatInput label="Email" tone="brand" value="" onChange={(v) => { seen = v; }} />);
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.com' } });
+    expect(seen).toBe('a@b.com');
   });
 });
 

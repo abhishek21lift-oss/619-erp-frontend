@@ -16,6 +16,7 @@ import {
   CheckCircle2, Circle, Zap, Crown, Headphones, Briefcase,
   Sparkles, LogIn, RefreshCw, Trash2, Edit3, Copy, Fingerprint,
 } from 'lucide-react';
+import { FloatInput } from '@/components/ui';
 
 /* ────────────────────────────────────────────────────────────────────
    TYPES
@@ -181,55 +182,7 @@ function KpiChip({ label, value, icon, color }: { label: string; value: number |
 /* ────────────────────────────────────────────────────────────────────
    FLOATING LABEL INPUT
 ──────────────────────────────────────────────────────────────────── */
-function FloatInput({
-  label, type = 'text', value, onChange, placeholder = ' ', suffix, required,
-}: {
-  label: string; type?: string; value: string;
-  onChange: (v: string) => void; placeholder?: string;
-  suffix?: React.ReactNode; required?: boolean;
-}) {
-  const id = useId();
-  const [focused, setFocused] = useState(false);
-  const lifted = focused || value.length > 0;
-  return (
-    <div className="relative">
-      <div
-        className="relative overflow-hidden rounded-[13px] transition-all"
-        style={{
-          background: focused ? 'var(--bg-card)' : 'var(--bg-subtle)',
-          border: focused ? '1.5px solid rgba(0,103,224,0.40)' : '1.5px solid rgba(15,23,42,0.09)',
-          boxShadow: focused ? '0 0 0 3px rgba(0,103,224,0.08)' : '0 1px 2px rgba(15,23,42,0.04)',
-          transition: 'all 180ms cubic-bezier(0.16,1,0.3,1)',
-        }}
-      >
-        <label
-          htmlFor={id}
-          className="pointer-events-none absolute left-4 font-[500] transition-all"
-          style={{
-            top: lifted ? 8 : 18,
-            fontSize: lifted ? 10 : 13,
-            color: lifted ? (focused ? '#0067e0' : 'rgb(148,163,184)') : 'rgb(148,163,184)',
-            transition: 'all 150ms cubic-bezier(0.16,1,0.3,1)',
-          }}
-        >
-          {label}{required && ' *'}
-        </label>
-        <input
-          id={id}
-          type={type}
-          value={value}
-          placeholder={lifted ? placeholder : ''}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          className="w-full bg-transparent px-4 pb-3 pt-7 text-[13.5px] font-[500] outline-none"
-          style={{ color: 'rgb(15,23,42)', caretColor: '#0067e0' }}
-        />
-        {suffix && <div className="absolute right-4 top-1/2 -translate-y-1/2">{suffix}</div>}
-      </div>
-    </div>
-  );
-}
+
 
 /* ────────────────────────────────────────────────────────────────────
    ROLE SELECTOR CARDS
@@ -575,11 +528,11 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
         </div>
       </div>
 
-      <FloatInput label="Full Name" value={name} onChange={setName} required />
-      <FloatInput label="Email Address" type="email" value={email} onChange={setEmail} required />
+      <FloatInput tone="brand" label="Full Name" value={name} onChange={setName} required />
+      <FloatInput tone="brand" label="Email Address" type="email" value={email} onChange={setEmail} required />
 
       {/* Password */}
-      <FloatInput
+      <FloatInput tone="brand"
         label="Password"
         type={showPw ? 'text' : 'password'}
         value={password}
@@ -724,8 +677,8 @@ function ChangePasswordPanel() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <FloatInput label="Current Password" type={showCur  ? 'text' : 'password'} value={cur}  onChange={setCur}  suffix={pwSuffix(showCur,  () => setShowCur(v => !v))}  required />
-      <FloatInput label="New Password"     type={showNext ? 'text' : 'password'} value={next} onChange={setNext} suffix={pwSuffix(showNext, () => setShowNext(v => !v))} required />
+      <FloatInput tone="brand" label="Current Password" type={showCur  ? 'text' : 'password'} value={cur}  onChange={setCur}  suffix={pwSuffix(showCur,  () => setShowCur(v => !v))}  required />
+      <FloatInput tone="brand" label="New Password"     type={showNext ? 'text' : 'password'} value={next} onChange={setNext} suffix={pwSuffix(showNext, () => setShowNext(v => !v))} required />
 
       {/* Strength */}
       {next.length > 0 && (
@@ -742,7 +695,7 @@ function ChangePasswordPanel() {
 
       {/* Confirm */}
       <div className="relative">
-        <FloatInput
+        <FloatInput tone="brand"
           label="Confirm New Password"
           type={showConf ? 'text' : 'password'}
           value={conf}
