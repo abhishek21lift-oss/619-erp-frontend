@@ -392,7 +392,7 @@ function Section({ title, action, children }: {
 function PlanCell({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div className="rounded-[13px] px-3 py-2.5" style={{ background: 'rgba(255,255,255,0.13)' }}>
-      <p className="text-[8.5px] font-[750] uppercase tracking-[0.12em]" style={{ color: 'rgba(255,255,255,0.62)' }}>
+      <p className="text-[9px] font-[750] uppercase tracking-[0.12em]" style={{ color: 'rgba(255,255,255,0.62)' }}>
         {label}
       </p>
       <p className="mt-1 truncate text-[14px] font-[780]" style={{ color: tone ?? '#fff' }}>{value}</p>

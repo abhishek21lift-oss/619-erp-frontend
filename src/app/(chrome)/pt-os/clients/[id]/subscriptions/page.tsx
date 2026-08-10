@@ -294,7 +294,7 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
                                 <div className="flex min-w-0 items-center gap-2">
                                   <p className="min-w-0 truncate text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>{t.plan_name || '—'}</p>
                                   {isLast && (
-                                    <span className="shrink-0 rounded-[5px] px-1.5 py-0.5 text-[8.5px] font-[800] uppercase tracking-wider text-indigo-600"
+                                    <span className="shrink-0 rounded-[5px] px-1.5 py-0.5 text-[9px] font-[800] uppercase tracking-wider text-indigo-600"
                                       style={{ background: 'rgba(0,103,224,0.12)' }}>Current</span>
                                   )}
                                 </div>
@@ -316,7 +316,7 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
                               ...(isLast ? [{ label: 'Days Left', value: client.days_left !== null ? `${client.days_left}d` : '—', color: '#0067e0' }] : []),
                             ].map((f) => (
                               <div key={f.label} className="rounded-[10px] p-2.5" style={{ background: 'var(--bg-card)' }}>
-                                <p className="text-[8.5px] font-[700] uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>{f.label}</p>
+                                <p className="text-[9px] font-[700] uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>{f.label}</p>
                                 <p className="text-[12.5px] font-[760] tabular-nums" style={{ color: f.color }}>{f.value}</p>
                               </div>
                             ))}

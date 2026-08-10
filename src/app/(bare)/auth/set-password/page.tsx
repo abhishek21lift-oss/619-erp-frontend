@@ -230,7 +230,7 @@ function SetPasswordForm() {
             <Building2 size={17} />
           </span>
           <div className="min-w-0">
-            <p className="truncate text-[14.5px] font-[780]" style={{ color: 'var(--text-primary)' }}>
+            <p className="truncate text-[14px] font-[780]" style={{ color: 'var(--text-primary)' }}>
               {preview.studio_name}
             </p>
             {/* Masked, because this page is public — it must not become a way
@@ -325,7 +325,7 @@ function SetPasswordForm() {
         <button
           type="submit"
           disabled={!allOk || busy}
-          className="flex h-12 items-center justify-center gap-2 rounded-[11px] text-[14.5px] font-[700] transition-opacity disabled:opacity-40"
+          className="flex h-12 items-center justify-center gap-2 rounded-[11px] text-[14px] font-[700] transition-opacity disabled:opacity-40"
           style={{ background: MAROON, backgroundImage: `linear-gradient(135deg, ${MAROON} 0%, ${MAROON_DARK} 100%)`, color: '#fff' }}
         >
           {busy ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}

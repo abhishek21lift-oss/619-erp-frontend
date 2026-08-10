@@ -79,7 +79,7 @@ function Wordmark({ light = false }: { light?: boolean }) {
       {/* Mirrors the artwork: "MY PT" blue, "STUDIO" black. On the dark footer
           that inverts — black on near-black is invisible — so STUDIO takes the
           light accent there instead. */}
-      <span className="text-[15.5px] font-[750] tracking-[-0.01em]">
+      <span className="text-[15px] font-[750] tracking-[-0.01em]">
         <span style={{ color: light ? '#fff' : MAROON }}>MY&nbsp;PT&nbsp;</span>
         <span style={{ color: light ? GOLD : INK }}>STUDIO</span>
       </span>
@@ -175,7 +175,7 @@ function DashboardMock() {
             </div>
             <div className="text-[15px] font-[800]" style={{ color: INK }}>{k.v}</div>
             <div className="flex items-center justify-between">
-              <span className="text-[8.5px] font-[600] uppercase tracking-wide" style={{ color: MUTE }}>{k.l}</span>
+              <span className="text-[9px] font-[600] uppercase tracking-wide" style={{ color: MUTE }}>{k.l}</span>
               <span className="text-[9px] font-[700]" style={{ color: '#059669' }}>{k.d}</span>
             </div>
           </div>
@@ -488,7 +488,7 @@ export default function LandingPage() {
               <span className="text-[12px] font-[720] uppercase tracking-[0.14em]" style={{ color: MAROON }}>Before</span>
               <ul className="mt-5 space-y-3.5">
                 {['Client data scattered across Excel & Sheets', 'Plans and updates lost in WhatsApp', 'Manual billing, missed renewals & dues', 'Attendance on paper, no real insight', 'No single view of the business'].map((p) => (
-                  <li key={p} className="flex items-start gap-3 text-[14.5px]" style={{ color: INK }}>
+                  <li key={p} className="flex items-start gap-3 text-[14px]" style={{ color: INK }}>
                     <X size={18} className="mt-0.5 shrink-0" style={{ color: '#DC2626' }} /> <span style={{ opacity: 0.82 }}>{p}</span>
                   </li>
                 ))}
@@ -501,7 +501,7 @@ export default function LandingPage() {
               <span className="relative text-[12px] font-[720] uppercase tracking-[0.14em]" style={{ color: GOLD_HI }}>With MY PT STUDIO</span>
               <ul className="relative mt-5 space-y-3.5">
                 {['One profile per client — plans, payments, progress', 'Everything in sync, on every device', 'Automated invoices, dues & renewal nudges', 'QR / face check-in with live analytics', 'Your whole business at a glance'].map((p) => (
-                  <li key={p} className="flex items-start gap-3 text-[14.5px]">
+                  <li key={p} className="flex items-start gap-3 text-[14px]">
                     <span className="mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full" style={{ background: GOLD }}><Check size={12} style={{ color: MAROON_DEEP }} /></span>
                     <span style={{ opacity: 0.94 }}>{p}</span>
                   </li>
@@ -554,10 +554,10 @@ export default function LandingPage() {
               <div>
                 <Eyebrow>Beautiful on every screen</Eyebrow>
                 <h2 className="mt-5 text-[28px] font-[820] leading-tight tracking-[-0.02em] sm:text-[38px]">Desktop, tablet, phone — <span style={{ color: MAROON }}>your studio travels with you.</span></h2>
-                <p className="mt-4 text-[15.5px]" style={{ color: MUTE }}>Coach from the gym floor, review revenue from the sofa, onboard a client from your phone. Same data, everywhere, instantly.</p>
+                <p className="mt-4 text-[15px]" style={{ color: MUTE }}>Coach from the gym floor, review revenue from the sofa, onboard a client from your phone. Same data, everywhere, instantly.</p>
                 <ul className="mt-6 space-y-3">
                   {['Native-feeling web app — nothing to install', 'Real-time sync across your whole team', 'Works beautifully on any device'].map((p) => (
-                    <li key={p} className="flex items-center gap-2.5 text-[14.5px] font-[560]" style={{ color: INK }}>
+                    <li key={p} className="flex items-center gap-2.5 text-[14px] font-[560]" style={{ color: INK }}>
                       <span className="grid h-5 w-5 place-items-center rounded-full text-white" style={{ background: MAROON }}><Check size={12} /></span> {p}
                     </li>
                   ))}
@@ -624,7 +624,7 @@ export default function LandingPage() {
               <div className="flex h-full flex-col rounded-3xl p-6" style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                 <Quote size={26} style={{ color: GOLD }} />
                 <div className="mt-2 flex gap-0.5">{Array.from({ length: 5 }).map((_, s) => <Star key={s} size={14} style={{ color: GOLD, fill: GOLD }} />)}</div>
-                <p className="mt-3 flex-1 text-[14.5px] leading-relaxed" style={{ color: INK, opacity: 0.86 }}>“{t.q}”</p>
+                <p className="mt-3 flex-1 text-[14px] leading-relaxed" style={{ color: INK, opacity: 0.86 }}>“{t.q}”</p>
                 <div className="mt-5 border-t pt-4" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
                   <div className="text-[13.5px] font-[750]" style={{ color: INK }}>{t.n}</div>
                   <div className="text-[12px]" style={{ color: MUTE }}>{t.r}</div>

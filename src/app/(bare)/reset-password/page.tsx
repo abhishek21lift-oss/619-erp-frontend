@@ -84,7 +84,7 @@ function ResetPasswordForm() {
         </p>
         <Link
           href="/forgot-password"
-          className="mt-4 inline-flex w-full items-center justify-center rounded-[12px] py-3 text-[14.5px] font-[700] text-white"
+          className="mt-4 inline-flex w-full items-center justify-center rounded-[12px] py-3 text-[14px] font-[700] text-white"
           style={{ background: MAROON }}
         >
           Request a new link
@@ -105,7 +105,7 @@ function ResetPasswordForm() {
         </p>
         <Link
           href="/login"
-          className="mt-4 inline-flex w-full items-center justify-center rounded-[12px] py-3 text-[14.5px] font-[700] text-white"
+          className="mt-4 inline-flex w-full items-center justify-center rounded-[12px] py-3 text-[14px] font-[700] text-white"
           style={{ background: MAROON }}
         >
           Sign in now
@@ -182,7 +182,7 @@ function ResetPasswordForm() {
         <button
           type="submit"
           disabled={busy}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] py-3 text-[14.5px] font-[700] text-white transition-opacity disabled:opacity-60"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] py-3 text-[14px] font-[700] text-white transition-opacity disabled:opacity-60"
           style={{ background: MAROON, boxShadow: '0 8px 22px rgba(0,103,224,0.28)' }}
         >
           {busy ? <><Loader2 size={17} className="animate-spin" /> Updating…</> : 'Set new password'}

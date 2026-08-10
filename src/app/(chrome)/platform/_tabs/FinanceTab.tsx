@@ -210,7 +210,7 @@ export function BillingTab() {
                       status badges are the row's identity, and on a phone the
                       name was being cut to "Abhishek PT …". */}
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <p className="text-[14.5px] font-[750] leading-tight" style={{ color: 'var(--text-primary)' }}>{s.name}</p>
+                    <p className="text-[14px] font-[750] leading-tight" style={{ color: 'var(--text-primary)' }}>{s.name}</p>
                     <Badge tone={st.tone}>{st.label}</Badge>
                     {s.is_founder && (
                       <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-[750]"
@@ -619,7 +619,7 @@ export function SaasMetrics({ data }: { data: SubscriptionMetrics }) {
                       animate={{ height: `${Math.max((r.revenue_inr / maxRevenue) * 96, 2)}px` }}
                       transition={{ duration: 0.5, delay: 0.12 + i * 0.03, ease: [0.16, 1, 0.3, 1] }}
                     />
-                    <span className="text-[8.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>{r.label.slice(0, 3)}</span>
+                    <span className="text-[9px] tabular-nums" style={{ color: 'var(--text-muted)' }}>{r.label.slice(0, 3)}</span>
                   </div>
                 ))}
               </div>

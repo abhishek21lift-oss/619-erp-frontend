@@ -697,7 +697,7 @@ function TargetRing({ pct, colour, size = 104 }: { pct: number; colour: string; 
           }}>
           {Math.round(pct)}%
         </span>
-        <span className="mt-0.5 text-[8.5px] font-[750] uppercase tracking-[0.12em]"
+        <span className="mt-0.5 text-[9px] font-[750] uppercase tracking-[0.12em]"
           style={{ color: C.muted }}>
           of target
         </span>

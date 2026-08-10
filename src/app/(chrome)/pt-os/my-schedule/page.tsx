@@ -335,7 +335,7 @@ export default function MySchedulePage() {
                             )}
                           </span>
                           {isToday && !isSelected && (
-                            <span className="text-[8.5px] font-[800] uppercase tracking-wide" style={{ color: '#0067e0' }}>now</span>
+                            <span className="text-[9px] font-[800] uppercase tracking-wide" style={{ color: '#0067e0' }}>now</span>
                           )}
                         </button>
                       );
