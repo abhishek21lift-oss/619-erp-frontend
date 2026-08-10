@@ -1,4 +1,4 @@
-// API endpoints: clients, trainers, member, leave, attendance.
+// API endpoints: clients, trainers, leave, attendance.
 //
 // Lifted verbatim from the single `api` object in the 4,185-line api.ts.
 // Method names, URLs and request shapes are unchanged; index.ts composes these
@@ -58,13 +58,6 @@ export const trainers = {
   }) => http<{ data: unknown }>('/api/trainers/sessions', {
     method: 'POST', body: JSON.stringify(data),
   }),
-};
-
-export const member = {
-  get: (id: string) =>
-    http<{ data: unknown }>(`/api/v1/members/${id}`),
-  metrics: (id: string) =>
-    http<{ membership: unknown; stats: unknown }>(`/api/v1/members/${id}/metrics`),
 };
 
 export const leave = {
