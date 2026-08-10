@@ -15,7 +15,7 @@
 // directory resolves to this file, so no import path anywhere had to change.
 
 import { auth, webauthn, accounts, profile } from './endpoints/auth';
-import { clients, trainers, member, leave, attendance } from './endpoints/people';
+import { clients, trainers, leave, attendance } from './endpoints/people';
 import { payments, invoices, expenses, offers, upiPayments } from './endpoints/money';
 import { workouts, exercises, diet, classes, bookings, calendar } from './endpoints/training';
 import { progress } from './endpoints/progress';
@@ -44,7 +44,6 @@ export const api = {
   profile,
   clients,
   trainers,
-  member,
   leave,
   attendance,
   payments,
