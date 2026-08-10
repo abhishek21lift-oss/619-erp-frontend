@@ -1,9 +1,10 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { Activity, Users, Clock, TrendingUp, Calendar, BarChart3, ArrowUpRight } from 'lucide-react';
 import { api } from '@/lib/api';
+import { scrollIndexIntoCentre } from '@/lib/chart-scroll';
 import { PageContainer, PageHero } from '@/components/ui';
 
 const HOURS = ['06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22'];
@@ -99,6 +100,51 @@ function Inner() {
 
   const [hovered, setHovered] = useState<number | null>(null);
 
+  // ── Open the hour chart on the hour that matters ──────────────────────
+  //
+  // The chart is 17 hours wide inside a card that is ~350px on a phone, so it
+  // scrolls horizontally (squeezing 17 bars into 350px gives each one 14px,
+  // narrower than the hour label under it). It opened at 06:00 — the quietest
+  // hour of the day, in a gym — so the peak the KPI card names sat off-screen
+  // and had to be hunted for.
+  //
+  // Three constraints shape this, all of which rule out the obvious version:
+  //
+  //  · No layout shift. This runs in useLayoutEffect and writes scrollLeft
+  //    directly, so the position is already correct at first paint: nothing
+  //    animates and nothing moves. scrollIntoView is deliberately NOT used —
+  //    it scrolls ancestors too, which would jump the whole page vertically.
+  //  · Never fight the user. Any pointer, wheel, touch or key interaction with
+  //    the scroller latches userScrolled and this stops for that dataset.
+  //    Those events are chosen because they cannot be produced by writing
+  //    scrollLeft, unlike the scroll event, which fires for our own write and
+  //    would make this immediately think it had been overridden.
+  //  · Once per dataset. positionedFor pins the key; changing the date range
+  //    is the user asking for different data, so that re-arms it.
+  const chartScroller = useRef<HTMLDivElement>(null);
+  const userScrolled = useRef(false);
+  const positionedFor = useRef<string | null>(null);
+
+  const peakIndex = byHour.reduce((best, h, i) => (h.count > byHour[best].count ? i : best), 0);
+
+  useLayoutEffect(() => {
+    const el = chartScroller.current;
+    if (!el || loading || totalCheckins === 0) return;
+
+    const key = `${from}|${to}|${peakIndex}`;
+    if (positionedFor.current === key) return;
+    // A new range re-arms it, including after the user had scrolled the last one.
+    if (positionedFor.current !== null && !positionedFor.current.startsWith(`${from}|${to}|`)) {
+      userScrolled.current = false;
+    }
+    if (userScrolled.current) return;
+    positionedFor.current = key;
+
+    scrollIndexIntoCentre(el, peakIndex);
+  }, [loading, totalCheckins, peakIndex, from, to]);
+
+  const stopAutoScroll = () => { userScrolled.current = true; };
+
   return (
     <PageContainer>
       <PageHero
@@ -152,11 +198,18 @@ function Inner() {
                narrower than the hour label under them. The chart scrolls
                inside its own card rather than squeezing, so the page body
                never scrolls sideways. */
-            <div className="-mx-1 overflow-x-auto px-1">
+            <div
+              ref={chartScroller}
+              className="-mx-1 overflow-x-auto px-1"
+              onPointerDown={stopAutoScroll}
+              onWheel={stopAutoScroll}
+              onTouchStart={stopAutoScroll}
+              onKeyDown={stopAutoScroll}
+            >
               <div className="min-w-[520px]">
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 220 }}>
                 {byHour.map((h, i) => (
-                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', gap: 4 }}
+                  <div key={i} data-hour-index={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', gap: 4 }}
                     onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
                     {hovered === i && h.count > 0 && (
                       <div style={{ fontSize: 11, color: '#fff', fontWeight: 700, background: 'rgba(0,103,224,0.9)', borderRadius: 6, padding: '3px 8px', marginBottom: 2, whiteSpace: 'nowrap' }}>
