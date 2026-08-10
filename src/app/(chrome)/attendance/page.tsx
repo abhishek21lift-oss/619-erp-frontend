@@ -1293,8 +1293,8 @@ function ManualEntryModal({ open, onOpenChange, clients, date, onSuccess }: {
           <DialogTitle>Manual Attendance Entry</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div>
-            <label className="text-xs font-medium text-zinc-600 dark:text-white/50">Member</label>
+          <div role="group" aria-labelledby="atd-member-label">
+            <span id="atd-member-label" className="text-xs font-medium text-zinc-600 dark:text-white/50">Member</span>
             {selectedClient ? (
               <div className="mt-1.5 flex items-center justify-between rounded-[12px] border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-white/10 dark:bg-white/5">
                 <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedClient.name}</span>
@@ -1345,8 +1345,8 @@ function ManualEntryModal({ open, onOpenChange, clients, date, onSuccess }: {
           </div>
 
           <div>
-            <label className="text-xs font-medium text-zinc-600 dark:text-white/50">Status</label>
-            <div className="mt-1.5 flex gap-2">
+            <span id="atd-status-label" className="text-xs font-medium text-zinc-600 dark:text-white/50">Status</span>
+            <div role="group" aria-labelledby="atd-status-label" className="mt-1.5 flex gap-2">
               {(['present', 'late', 'absent'] as const).map(s => (
                 <button key={s} type="button" onClick={() => setStatus(s)}
                   className={`flex-1 rounded-[10px] border px-3 py-2 text-xs font-medium capitalize transition ${

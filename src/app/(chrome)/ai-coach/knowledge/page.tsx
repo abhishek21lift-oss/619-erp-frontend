@@ -198,14 +198,14 @@ export default function AiKnowledgeBasePage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Title</label>
-                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Gym Cleaning SOP"
+                <label htmlFor="kb-title" style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Title</label>
+                <input id="kb-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Gym Cleaning SOP"
                   style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-primary)', fontSize: 13, boxSizing: 'border-box' }} />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Category</label>
-                <div style={{ display: 'flex', gap: 6 }}>
+                <span id="kb-category-label" style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Category</span>
+                <div role="group" aria-labelledby="kb-category-label" style={{ display: 'flex', gap: 6 }}>
                   {CATEGORIES.map((c) => (
                     <button key={c.value} onClick={() => setCategory(c.value)}
                       style={{ flex: 1, padding: '8px 0', borderRadius: 9, border: `1.5px solid ${category === c.value ? '#0067e0' : 'var(--border)'}`, background: category === c.value ? 'rgba(0,103,224,0.1)' : 'transparent', color: category === c.value ? '#0067e0' : 'var(--text-muted)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>

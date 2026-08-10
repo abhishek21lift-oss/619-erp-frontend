@@ -73,8 +73,8 @@ export default function BusinessInsightsPage() {
 
         <div className="p-6 rounded-2xl border border-gray-200 bg-white space-y-4">
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-800">Analysis Period</label>
-            <div className="flex flex-wrap gap-2">
+            <span id="analysis-period-label" className="text-sm font-medium text-gray-800">Analysis Period</span>
+            <div role="group" aria-labelledby="analysis-period-label" className="flex flex-wrap gap-2">
               {PERIODS.map((p) => (
                 <button
                   key={p.value}

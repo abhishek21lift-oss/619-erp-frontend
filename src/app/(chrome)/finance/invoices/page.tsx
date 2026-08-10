@@ -596,8 +596,9 @@ export default function InvoicesPage() {
               ['Description', 'description', 'text', 'e.g. Monthly membership fee'],
             ] as [string, keyof Omit<CreateForm, 'paymentMethod'>, string, string][]).map(([label, key, type, placeholder]) => (
               <div key={key}>
-                <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>{label}</label>
+                <label htmlFor={`inv-${key}`} style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>{label}</label>
                 <input
+                  id={`inv-${key}`}
                   type={type}
                   value={createForm[key]}
                   onChange={e => setCreateForm(f => ({ ...f, [key]: e.target.value }))}

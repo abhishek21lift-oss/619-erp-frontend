@@ -349,10 +349,11 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                   </button>
                 ) : (
                   <div className="mt-3 space-y-2.5">
-                    <label className="block text-[11px] font-[700]" style={{ color: 'var(--text-muted)' }}>
+                    <label htmlFor="delete-confirm" className="block text-[11px] font-[700]" style={{ color: 'var(--text-muted)' }}>
                       Type <span style={{ color: '#b91c1c' }}>{form.name}</span> to confirm
                     </label>
                     <input
+                      id="delete-confirm"
                       value={confirmText}
                       onChange={(e) => setConfirmText(e.target.value)}
                       placeholder={form.name}
