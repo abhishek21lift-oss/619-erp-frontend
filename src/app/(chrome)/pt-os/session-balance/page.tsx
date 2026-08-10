@@ -60,7 +60,7 @@ export default function SessionBalancePage() {
           <div>
             <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'var(--text-primary)' }}>Add Session Package</h2>
             <form onSubmit={handleCreate} className="space-y-3">
-              <select value={clientId} onChange={e => setClientId(e.target.value)}
+              <select aria-label="Client" value={clientId} onChange={e => setClientId(e.target.value)}
                 className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
                 style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
                 <option value="">Select client...</option>
@@ -72,7 +72,7 @@ export default function SessionBalancePage() {
               <input placeholder="Package name (e.g., 12 PT Sessions)" value={packageName} onChange={e => setPackageName(e.target.value)}
                 className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
                 style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+              <input aria-label="Package end date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
                 className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
                 style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
               <Button type="submit" disabled={!clientId || !totalSessions || saving}

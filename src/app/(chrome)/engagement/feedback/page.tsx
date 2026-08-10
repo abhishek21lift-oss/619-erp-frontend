@@ -113,7 +113,7 @@ function FeedbackContent() {
                 background: cat === c ? 'linear-gradient(135deg, #0067e0, #0059ce)' : '#ffffff', color: cat === c ? '#fff' : '#334155' }}>{c}</button>
           ))}
         </div>
-        <select value={statusF} onChange={e => setStatusF(e.target.value as any)}
+        <select aria-label="Filter by status" value={statusF} onChange={e => setStatusF(e.target.value as any)}
           style={{ maxWidth: 160, width: '100%', border: '1px solid #cbd5e1', borderRadius: 10, padding: '7px 12px', fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', background: '#ffffff', outline: 'none', fontFamily: 'inherit' }}>
           <option value="all">All Status</option><option value="open">Open</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option>
         </select>

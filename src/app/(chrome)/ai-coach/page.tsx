@@ -756,7 +756,7 @@ function RailRow({
   if (isRenaming) {
     return (
       <div className="mb-1 rounded-[10px] p-1.5" style={{ background: 'var(--bg-subtle)' }}>
-        <input
+        <input aria-label="Conversation name"
           autoFocus
           value={renameDraft}
           onChange={(e) => onRenameChange(e.target.value)}

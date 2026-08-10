@@ -63,6 +63,56 @@ function wrappersIn(sf: ts.SourceFile): Set<string> {
   return out;
 }
 
+/**
+ * Components that label by ID rather than by wrapping: they take an `id` prop
+ * and render `<label htmlFor={id}>` beside {children}, so
+ * `<Field id="gst-percent"><input id="gst-percent"/></Field>` is correctly
+ * associated even though nothing here nests.
+ *
+ * Without this the audit called payment-settings' two inputs nameless when
+ * they were the best-labelled controls in the app — the same
+ * one-component-boundary blind spot that made the first version of this file
+ * report 242.
+ */
+function idLabelWrappersIn(sf: ts.SourceFile): Set<string> {
+  const out = new Set<string>();
+  const find = (n: ts.Node) => {
+    const fn = ts.isFunctionDeclaration(n) ? n
+      : (ts.isVariableDeclaration(n) && n.initializer
+        && (ts.isArrowFunction(n.initializer) || ts.isFunctionExpression(n.initializer)))
+        ? n.initializer : null;
+    const name = ts.isFunctionDeclaration(n) ? n.name?.getText()
+      : (fn && ts.isVariableDeclaration(n)) ? n.name.getText() : null;
+    if (fn && name && /^[A-Z]/.test(name)) {
+      // htmlFor={id} where `id` is one of this component's own props — not
+      // htmlFor="literal" (names one fixed control, not whatever is passed
+      // in) and not htmlFor={`x-${row.id}`} (a local, so the component is
+      // labelling something it renders itself). Without the props check every
+      // page that labels a mapped row registers as a wrapper, and then any
+      // `id` prop anywhere would silently count as a label.
+      const props = new Set<string>();
+      for (const p of fn.parameters) {
+        if (ts.isObjectBindingPattern(p.name)) {
+          for (const el of p.name.elements) props.add(el.name.getText());
+        }
+      }
+      let ok = false;
+      const scan = (x: ts.Node) => {
+        if (ts.isJsxAttribute(x) && x.name.getText() === 'htmlFor'
+          && x.initializer && ts.isJsxExpression(x.initializer)
+          && x.initializer.expression && ts.isIdentifier(x.initializer.expression)
+          && props.has(x.initializer.expression.getText())) ok = true;
+        x.forEachChild(scan);
+      };
+      scan(fn);
+      if (ok) out.add(name);
+    }
+    n.forEachChild(find);
+  };
+  find(sf);
+  return out;
+}
+
 /** '@/components/x' or './x' → the .tsx on disk. */
 function resolveModule(spec: string, fromFile: string): string | null {
   let base: string;
@@ -94,7 +144,11 @@ export function auditAccessibleNames(): NameAudit {
   const files = sourceFiles(SRC);
   const asts = new Map(files.map((f) => [f, parse(f)] as const));
   const wrapperExports = new Map<string, Set<string>>();
-  for (const [f, sf] of asts) wrapperExports.set(f, wrappersIn(sf));
+  const idWrapperExports = new Map<string, Set<string>>();
+  for (const [f, sf] of asts) {
+    wrapperExports.set(f, wrappersIn(sf));
+    idWrapperExports.set(f, idLabelWrappersIn(sf));
+  }
 
   const audit: NameAudit = {
     total: 0, aria: 0, wrapped: 0, htmlFor: 0,
@@ -104,16 +158,20 @@ export function auditAccessibleNames(): NameAudit {
   for (const [f, sf] of asts) {
     const rel = relative(process.cwd(), f).replace(/\\/g, '/');
     const wrappers = new Set(wrapperExports.get(f));
+    const idWrappers = new Set(idWrapperExports.get(f));
 
     const imports = (n: ts.Node) => {
       if (ts.isImportDeclaration(n) && n.importClause?.namedBindings
         && ts.isNamedImports(n.importClause.namedBindings)
         && ts.isStringLiteral(n.moduleSpecifier)) {
         const mod = resolveModule(n.moduleSpecifier.text, f);
-        const exported = mod ? wrapperExports.get(mod) : null;
-        if (exported) {
+        for (const [exported, into] of [
+          [mod ? wrapperExports.get(mod) : null, wrappers],
+          [mod ? idWrapperExports.get(mod) : null, idWrappers],
+        ] as const) {
+          if (!exported) continue;
           for (const el of n.importClause.namedBindings.elements) {
-            if (exported.has((el.propertyName ?? el.name).getText())) wrappers.add(el.name.getText());
+            if (exported.has((el.propertyName ?? el.name).getText())) into.add(el.name.getText());
           }
         }
       }
@@ -121,10 +179,24 @@ export function auditAccessibleNames(): NameAudit {
     };
     imports(sf);
 
+    // Every id some <label htmlFor> in this file points at. File-wide rather
+    // than scoped to the label's subtree, deliberately: htmlFor associates by
+    // document id, not by nesting, so the label may live anywhere.
     const fors = new Set<string>();
     const collect = (n: ts.Node) => {
       if (ts.isJsxAttribute(n) && n.name.getText() === 'htmlFor' && n.initializer) {
         fors.add(n.initializer.getText());
+      }
+      // <Field id="gst-percent"> — the label is rendered inside Field, which
+      // this file never sees, so the id prop stands in for the htmlFor.
+      const open = ts.isJsxElement(n) ? n.openingElement
+        : ts.isJsxSelfClosingElement(n) ? n : null;
+      if (open && idWrappers.has(open.tagName.getText())) {
+        for (const attr of open.attributes.properties) {
+          if (ts.isJsxAttribute(attr) && attr.name.getText() === 'id' && attr.initializer) {
+            fors.add(attr.initializer.getText());
+          }
+        }
       }
       n.forEachChild(collect);
     };

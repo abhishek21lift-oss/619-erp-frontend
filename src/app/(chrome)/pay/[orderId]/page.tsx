@@ -530,10 +530,10 @@ function UtrForm({
       </div>
 
       {/* ── Optional proof ── */}
-      <label className="mt-4 block text-[12px] font-[650]" style={{ color: 'var(--text-primary)' }}>
+      <label htmlFor="pay-proof" className="mt-4 block text-[12px] font-[650]" style={{ color: 'var(--text-primary)' }}>
         Payment screenshot <span style={{ color: 'var(--text-muted)' }}>(optional)</span>
       </label>
-      <input
+      <input id="pay-proof"
         ref={fileInput}
         type="file"
         accept="image/png,image/jpeg,application/pdf"

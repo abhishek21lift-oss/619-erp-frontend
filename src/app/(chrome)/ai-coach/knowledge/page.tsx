@@ -216,8 +216,8 @@ export default function AiKnowledgeBasePage() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>File (PDF or .txt, up to 15 MB)</label>
-                <input ref={fileInputRef} type="file" accept=".pdf,.txt,application/pdf,text/plain"
+                <label htmlFor="kb-file" style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>File (PDF or .txt, up to 15 MB)</label>
+                <input id="kb-file" ref={fileInputRef} type="file" accept=".pdf,.txt,application/pdf,text/plain"
                   onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                   style={{ width: '100%', fontSize: 12.5, color: 'var(--text-primary)' }} />
               </div>

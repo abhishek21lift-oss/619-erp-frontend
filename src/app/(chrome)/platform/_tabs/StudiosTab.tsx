@@ -188,7 +188,7 @@ export function StudiosTab() {
           />
         </div>
         <div className="relative">
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value as StudioSort)}
+          <select aria-label="Sort studios" value={sortBy} onChange={(e) => setSortBy(e.target.value as StudioSort)}
             className="h-9 appearance-none rounded-[10px] py-1.5 pl-8 pr-8 text-[12px] font-[650] outline-none"
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
             {SORTS.map((s) => <option key={s.id} value={s.id}>Sort · {s.label}</option>)}
@@ -476,7 +476,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
           </button>
           <div className="relative flex-shrink-0">
             <StudioMark name={org.name} logoUrl={org.logo_url} size={44} />
-            <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onLogoPick} />
+            <input aria-label="Upload a studio logo" ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onLogoPick} />
             <button onClick={() => fileRef.current?.click()} disabled={uploading} title="Upload / change logo"
               className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full transition hover:opacity-80"
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>

@@ -242,8 +242,8 @@ function PackagesTab() {
                   </div>
                 </div>
                 <div>
-                  <label style={lab}>GOAL TYPE</label>
-                  <select value={form.goal_type} onChange={e => setForm(p => ({ ...p, goal_type: e.target.value }))} style={{ ...inp, appearance: 'none' as const }}>
+                  <label htmlFor="pkg-goal-type" style={lab}>GOAL TYPE</label>
+                  <select id="pkg-goal-type" value={form.goal_type} onChange={e => setForm(p => ({ ...p, goal_type: e.target.value }))} style={{ ...inp, appearance: 'none' as const }}>
                     <option value="">— Select goal type —</option>
                     {GOAL_TYPES.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
                   </select>

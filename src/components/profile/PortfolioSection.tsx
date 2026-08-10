@@ -348,7 +348,7 @@ function FilePick({ label, file, onPick, max }: {
       <span className="mb-1 block text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
         {label}
       </span>
-      <input
+      <input aria-label={label}
         ref={input}
         type="file"
         accept="image/png,image/jpeg,image/webp,image/gif"

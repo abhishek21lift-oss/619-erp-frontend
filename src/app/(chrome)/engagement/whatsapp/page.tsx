@@ -136,7 +136,7 @@ function WAContent() {
                 style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 20px', borderBottom:'1px solid #f1f5f9', cursor:'pointer', background:selected.includes(m.id)?'rgba(0,103,224,0.06)':'transparent', transition:'background 150ms' }}
                 onMouseEnter={e=>{if(!selected.includes(m.id))e.currentTarget.style.background='#f8fafc';}}
                 onMouseLeave={e=>{if(!selected.includes(m.id))e.currentTarget.style.background='transparent';}}>
-                <input type="checkbox" checked={selected.includes(m.id)} onChange={()=>toggleSelect(m.id)} onClick={e=>e.stopPropagation()}
+                <input aria-label={`Select ${m.name}`} type="checkbox" checked={selected.includes(m.id)} onChange={()=>toggleSelect(m.id)} onClick={e=>e.stopPropagation()}
                   style={{ accentColor:'#0067e0', width:16, height:16 }} />
                 <div style={{ width:38, height:38, borderRadius:'50%', background:'linear-gradient(135deg, rgba(0,103,224,0.15), rgba(0,103,224,0.08))', color:'#0067e0', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:12, flexShrink:0, border:'1px solid rgba(0,103,224,0.15)' }}>
                   {m.photo_url?<Image src={m.photo_url} alt={m.name} width={38} height={38} style={{ borderRadius:'50%', objectFit:'cover' }}/>:(m.name||'?').slice(0,2).toUpperCase()}

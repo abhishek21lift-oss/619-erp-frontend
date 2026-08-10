@@ -420,7 +420,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                     onBlur={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.boxShadow = ''; }}
                   />
                 </div>
-                <select
+                <select aria-label="Filter by status"
                   value={statusFilter}
                   onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
                   className="px-2.5 py-1.5 rounded-[8px] text-[12px] font-medium outline-none cursor-pointer"
@@ -730,8 +730,8 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                                 />
                               </div>
                               <div>
-                                <label className="block text-[10px] font-[600] uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Date</label>
-                                <input type="date" value={form.date}
+                                <label htmlFor="pay-record-date" className="block text-[10px] font-[600] uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Date</label>
+                                <input id="pay-record-date" type="date" value={form.date}
                                   onChange={(e) => setForm(f => ({ ...f, date: e.target.value }))}
                                   className="w-full px-3 py-2 rounded-[9px] text-[12px] outline-none"
                                   style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)', colorScheme: 'light' }}

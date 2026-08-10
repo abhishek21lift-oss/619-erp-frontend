@@ -811,7 +811,7 @@ function AddMealModal({ open, onClose, onCreated }: { open: boolean; onClose: ()
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <input placeholder="Meal name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13, outline: 'none' }} />
-          <select value={form.meal_type} onChange={(e) => setForm((f) => ({ ...f, meal_type: e.target.value }))}
+          <select aria-label="Meal type" value={form.meal_type} onChange={(e) => setForm((f) => ({ ...f, meal_type: e.target.value }))}
             style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13, outline: 'none' }}>
             {Object.entries(MEAL_TYPE_TO_API).map(([label, val]) => <option key={val} value={val}>{label}</option>)}
           </select>

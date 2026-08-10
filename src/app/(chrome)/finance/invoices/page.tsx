@@ -608,8 +608,8 @@ export default function InvoicesPage() {
               </div>
             ))}
             <div>
-              <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>Payment Method</label>
-              <select
+              <label htmlFor="inv-payment-method" style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>Payment Method</label>
+              <select id="inv-payment-method"
                 value={createForm.paymentMethod}
                 onChange={e => setCreateForm(f => ({ ...f, paymentMethod: e.target.value as PaymentMethod }))}
                 style={{ display: 'block', width: '100%', marginTop: 6, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, outline: 'none', background: 'var(--bg-subtle)' }}

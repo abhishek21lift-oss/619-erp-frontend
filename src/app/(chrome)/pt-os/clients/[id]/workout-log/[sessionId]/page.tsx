@@ -358,8 +358,8 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
                     )}
                     {session.workout_assignment_id && dayOptions.length > 0 ? (
                       <div>
-                        <p className="mb-1.5 text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Workout Day</p>
-                        <select value={session.workout_day || ''}
+                        <label htmlFor="wl-day" className="mb-1.5 block text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Workout Day</label>
+                        <select id="wl-day" value={session.workout_day || ''}
                           onChange={(e) => { setSession((p) => (p ? { ...p, workout_day: e.target.value } : p)); handleHeaderSave({ workout_day: e.target.value || null }); }}
                           className="w-full rounded-[10px] px-3 py-2.5 text-[13px] font-[650] outline-none" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: '#0f172a' }}>
                           <option value="">Select a day…</option>

@@ -105,7 +105,7 @@ export function StepMedicalClearance({ form, set, error, formId, documents, onDo
               {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
               {uploading ? 'Uploading…' : 'Upload File'}
             </button>
-            <input ref={fileInputRef} type="file" className="hidden" accept="application/pdf,image/*" onChange={handleFileChange} />
+            <input aria-label="Upload a medical clearance document" ref={fileInputRef} type="file" className="hidden" accept="application/pdf,image/*" onChange={handleFileChange} />
           </div>
 
           {documents.length > 0 && (

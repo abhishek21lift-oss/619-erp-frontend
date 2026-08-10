@@ -87,28 +87,79 @@ describe('the label wrappers wrap', () => {
 });
 
 describe('controls with no accessible name', () => {
-  // A ratchet, deliberately. 61 controls still have no name by any route, and
-  // each needs a human decision about what to call it — there is no mechanical
-  // answer to "what is this number input for". Pinning the count stops the
-  // number growing while it is worked down, and the test fails either way: add
-  // one and it breaks, fix one and it breaks asking you to lower the bar.
+  // This was a ratchet pinned at 61 while the list was worked down. It is now
+  // zero, so it is an invariant instead: every input, select and textarea in
+  // the app has a name by one of the four routes the audit recognises.
   //
-  // Not a licence to leave them. Every one of these is a Level A failure for
-  // somebody using a screen reader.
-  const KNOWN = 61;
-
-  it(`is ${KNOWN} — and not one more`, () => {
-    expect(
-      audit.nameless.length,
-      audit.nameless.length > KNOWN
-        ? `new unnamed control(s):\n${audit.nameless.slice(KNOWN).join('\n')}`
-        : 'fixed some — lower KNOWN to match',
-    ).toBe(KNOWN);
+  // The 61 were fixed three ways, chosen per site rather than uniformly:
+  //   · 30 already had a visible caption and only needed associating —
+  //     htmlFor + id, which also makes clicking the caption focus the control
+  //     (that matters most for the date and time pickers on a phone). Where
+  //     the control is rendered per row, the id carries the row key.
+  //   · 3 of those captions were a <p> or a <span>, which label nothing until
+  //     they are a <label>; see the block test below.
+  //   · 31 had no caption anywhere — filter selects, hidden file inputs,
+  //     rename fields — and took an aria-label. Where the caption is already a
+  //     prop (Slider, SelectRow, SelectInput, PortfolioSection) the name is
+  //     that same prop, so WCAG 2.5.3 holds by construction rather than by two
+  //     strings being kept in step by hand.
+  it('is empty', () => {
+    expect(audit.nameless, `unnamed control(s):\n${audit.nameless.join('\n')}`).toEqual([]);
   });
 
-  it('reports where they are, so the list is actionable', () => {
-    // Guards against the count being right for the wrong reason.
-    expect(audit.nameless.every((x) => /^src\/.+:\d+$/.test(x))).toBe(true);
+  it('is empty for the right reason', () => {
+    // An audit that silently stopped finding controls would also report zero.
+    // Every control must land in exactly one bin, and the bins must still add
+    // up to the whole app.
+    expect(audit.total).toBeGreaterThan(380);
+    expect(audit.aria + audit.wrapped + audit.htmlFor
+      + audit.placeholderOnly.length + audit.nameless.length).toBe(audit.total);
+  });
+});
+
+describe('captions that had to become labels', () => {
+  // A <p> is block, a <label> is inline. Swapping one for the other without
+  // restoring the display would reflow the caption onto the control's line —
+  // a visual change, which this work was explicitly not allowed to make.
+  // globals.css resets every margin to 0, so `block` is the only thing that
+  // has to be put back.
+  const converted: [string, string][] = [
+    ['app/(chrome)/pt-os/schedule-session/page.tsx', 'sess-date'],
+    ['app/(chrome)/pt-os/schedule-session/page.tsx', 'sess-time'],
+    ['app/(chrome)/pt-os/schedule-session/page.tsx', 'sess-duration'],
+    ['app/(chrome)/pt-os/clients/[id]/workout-log/[sessionId]/page.tsx', 'wl-day'],
+    ['app/(chrome)/settings/profile/page.tsx', 'coaching-since'],
+  ];
+
+  it.each(converted)('%s: the label for %s is still block-level', (file, id) => {
+    const src = readFileSync(srcPath(...file.split('/')), 'utf8');
+    const line = src.split('\n').find((l) => l.includes(`htmlFor="${id}"`));
+    expect(line, `no label for ${id}`).toBeDefined();
+    expect(line).toMatch(/className="[^"]*\bblock\b/);
+  });
+});
+
+describe('labelling across a component boundary', () => {
+  it('counts <Field id="x"><input id="x"/></Field> as named', () => {
+    // payment-settings' Field renders <label htmlFor={id}> and its call sites
+    // pass a matching id. The audit could not see through that, and reported
+    // the two best-labelled inputs in the app as nameless — the same
+    // one-boundary blind spot that made its first version report 242. Two of
+    // the "61" were this, not a real failure.
+    const src = readFileSync(srcPath('app', '(chrome)', 'finance', 'payment-settings', 'page.tsx'), 'utf8');
+    expect(src).toMatch(/<label htmlFor=\{id\}/);
+    expect(src).toMatch(/<Field id="gst-percent"/);
+    expect(audit.nameless.filter((x) => x.includes('payment-settings'))).toEqual([]);
+  });
+
+  it('does not treat a page that labels a mapped row as such a wrapper', () => {
+    // commissions labels its per-trainer inputs with htmlFor={`comm-pct-
+    // ${t.id}`}. That is a local, not a prop, so the page must not register as
+    // a label-by-id component — otherwise an `id` prop on anything anywhere
+    // would start counting as a label and the audit would go quietly blind.
+    const src = readFileSync(srcPath('app', '(chrome)', 'pt-os', 'commissions', 'page.tsx'), 'utf8');
+    expect(src).toMatch(/htmlFor=\{`comm-pct-\$\{t\.id\}`\}/);
+    expect(audit.total).toBeGreaterThan(380);
   });
 });
 
@@ -116,9 +167,9 @@ describe('placeholder-as-label', () => {
   // The accname spec does accept a placeholder as a last-resort name, so these
   // are not 4.1.2 failures. They are still poor: the name disappears the moment
   // the field has content, which is exactly when someone re-reading the form
-  // needs it. Tracked, not enforced — giving 109 fields visible labels is a
+  // needs it. Tracked, not enforced — giving 105 fields visible labels is a
   // design change, not a bug fix.
   it('is tracked, and has not spread', () => {
-    expect(audit.placeholderOnly.length).toBeLessThanOrEqual(109);
+    expect(audit.placeholderOnly.length).toBeLessThanOrEqual(105);
   });
 });

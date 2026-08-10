@@ -470,7 +470,7 @@ function PasskeysContent() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     {renameId === cred.id ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <input
+                        <input aria-label="Passkey name"
                           ref={renameRef}
                           value={renameVal}
                           onChange={e => setRenameVal(e.target.value)}
