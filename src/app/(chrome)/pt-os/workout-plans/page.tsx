@@ -53,7 +53,7 @@ const itemVariants = {
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)',
-  background: 'var(--bg-subtle)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none',
+  background: 'var(--bg-subtle)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit',
 };
 const labelStyle: React.CSSProperties = {
   display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em',
@@ -373,7 +373,7 @@ function Inner() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-subtle)', borderRadius: 8, padding: '8px 12px', border: '1px solid var(--border)' }}>
                   <Search size={13} color="var(--text-disabled)" />
                   <input placeholder="Search exercises…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, outline: 'none' }} />
+                    style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 500 }} />
                   {searchQuery && <button onClick={() => setSearchQuery('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-disabled)', padding: 0, display: 'flex' }}><X size={13} /></button>}
                 </div>
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
@@ -547,7 +547,7 @@ function AssignClientModal({
           <Search size={14} color="var(--text-disabled)" />
           <input
             autoFocus placeholder="Search clients…" value={search} onChange={(e) => setSearch(e.target.value)}
-            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: 13 }}
+            style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13 }}
           />
         </div>
 

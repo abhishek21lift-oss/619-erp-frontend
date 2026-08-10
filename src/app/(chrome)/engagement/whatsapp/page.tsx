@@ -120,7 +120,7 @@ function WAContent() {
             <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, background:'#ffffff', borderRadius:10, padding:'8px 14px', border:'1px solid #cbd5e1' }}>
               <Search size={14} color="#94a3b8" />
               <input placeholder="Search members…" value={search} onChange={e=>setSearch(e.target.value)}
-                style={{ flex:1, border:'none', background:'transparent', outline:'none', fontSize:13, fontWeight:500, color:'#0F172A' }} />
+                style={{ flex:1, border:'none', background:'transparent', fontSize:13, fontWeight:500, color:'#0F172A' }} />
               {search&&<button onClick={()=>setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', padding:0 }}><X size={13}/></button>}
             </div>
             <button onClick={selectAll} style={{ fontSize:12, fontWeight:600, color:'#0067e0', background:'rgba(0,103,224,0.08)', border:'1px solid rgba(0,103,224,0.15)', borderRadius:8, padding:'6px 14px', cursor:'pointer' }}>All</button>
@@ -184,7 +184,7 @@ function WAContent() {
             </div>
             {template.id==='custom'?(
               <textarea rows={6} value={customMsg} onChange={e=>setCustomMsg(e.target.value)} placeholder="Write your custom message. Use {name} for member name, {date} for expiry date, {amount} for balance."
-                style={{ width:'100%', border:'1px solid #cbd5e1', borderRadius:10, padding:'12px 14px', fontSize:13, fontWeight:500, color:'#0F172A', background:'#f8fafc', outline:'none', resize:'vertical', fontFamily:'inherit', lineHeight:1.6 }} />
+                style={{ width:'100%', border:'1px solid #cbd5e1', borderRadius:10, padding:'12px 14px', fontSize:13, fontWeight:500, color:'#0F172A', background:'#f8fafc', resize:'vertical', fontFamily:'inherit', lineHeight:1.6 }} />
             ):(
               <div style={{ background:'#f8fafc', borderRadius:10, padding:14, fontSize:13, color:'#334155', lineHeight:1.7, whiteSpace:'pre-wrap', border:'1px solid #e2e8f0' }}>{template.body}</div>
             )}

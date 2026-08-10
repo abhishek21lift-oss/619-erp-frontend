@@ -59,7 +59,7 @@ export default function HelpPage() {
           <input
             type="text" placeholder="Search FAQs…" value={search} onChange={(e) => { setOpenIdx(null); setSearch(e.target.value); }}
             style={{
-              flex: 1, border: 'none', outline: 'none', padding: '12px 0',
+              flex: 1, border: 'none', padding: '12px 0',
               background: 'transparent', color: 'var(--text-primary)', fontSize: 13,
             }}
           />

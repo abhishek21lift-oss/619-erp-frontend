@@ -428,7 +428,6 @@ export default function InvoicesPage() {
                     background: 'transparent',
                     fontSize: '13px',
                     fontWeight: 500,
-                    outline: 'none',
                     border: 'none',
                     color: 'rgba(30,41,59,0.9)',
                   }}
@@ -603,7 +602,7 @@ export default function InvoicesPage() {
                   value={createForm[key]}
                   onChange={e => setCreateForm(f => ({ ...f, [key]: e.target.value }))}
                   placeholder={placeholder}
-                  style={{ display: 'block', width: '100%', marginTop: 6, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, outline: 'none', background: 'var(--bg-subtle)', boxSizing: 'border-box' }}
+                  style={{ display: 'block', width: '100%', marginTop: 6, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, background: 'var(--bg-subtle)', boxSizing: 'border-box' }}
                 />
               </div>
             ))}
@@ -612,7 +611,7 @@ export default function InvoicesPage() {
               <select id="inv-payment-method"
                 value={createForm.paymentMethod}
                 onChange={e => setCreateForm(f => ({ ...f, paymentMethod: e.target.value as PaymentMethod }))}
-                style={{ display: 'block', width: '100%', marginTop: 6, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, outline: 'none', background: 'var(--bg-subtle)' }}
+                style={{ display: 'block', width: '100%', marginTop: 6, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, background: 'var(--bg-subtle)' }}
               >
                 {Object.entries(PAYMENT_ICONS).map(([k, v]) => (
                   <option key={k} value={k}>{v.label}</option>

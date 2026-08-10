@@ -107,7 +107,7 @@ export default function ClientBirthdaysPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search client, trainer, phone…"
-                style={{ width: '100%', paddingLeft: 36, paddingRight: 14, paddingTop: 9, paddingBottom: 9, borderRadius: 12, border: '1.5px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                style={{ width: '100%', paddingLeft: 36, paddingRight: 14, paddingTop: 9, paddingBottom: 9, borderRadius: 12, border: '1.5px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }}
               />
             </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>

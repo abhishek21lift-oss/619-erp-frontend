@@ -346,7 +346,7 @@ function PasskeysContent() {
               style={{
                 flex: 1, padding: '10px 14px', borderRadius: 10, fontSize: 14,
                 background: 'var(--bg-subtle)', border: '1px solid var(--border)',
-                color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit',
+                color: 'var(--text-primary)', fontFamily: 'inherit',
               }}
               onKeyDown={e => e.key === 'Enter' && handleRegister()}
             />
@@ -478,7 +478,7 @@ function PasskeysContent() {
                           style={{
                             padding: '5px 10px', borderRadius: 8, fontSize: 13,
                             background: 'var(--bg-subtle)', border: '1.5px solid rgba(0,103,224,0.4)',
-                            color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit',
+                            color: 'var(--text-primary)', fontFamily: 'inherit',
                             maxWidth: 200,
                           }}
                         />

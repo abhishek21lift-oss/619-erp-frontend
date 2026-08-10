@@ -160,8 +160,7 @@ export default function CommissionsPage() {
               style={{
                 borderRadius: 12, padding: '10px 36px 10px 16px', fontSize: 14, fontWeight: 500,
                 background: 'var(--bg-card)',
-                border: '1px solid #cbd5e1', color: 'var(--text-primary)',
-                outline: 'none', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none',
+                border: '1px solid #cbd5e1', color: 'var(--text-primary)', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none',
                 minWidth: 180, cursor: 'pointer', fontFamily: 'inherit',
               }}
             />
@@ -288,21 +287,21 @@ export default function CommissionsPage() {
                           <label htmlFor={`comm-pct-${t.id}`} style={{ ...label, textTransform: 'uppercase' }}>Commission %</label>
                           <input id={`comm-pct-${t.id}`} type="number" value={draft.commission_pct ?? ''}
                             onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id], commission_pct: Number(e.target.value) } }))}
-                            style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
+                            style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', fontFamily: 'inherit' }}
                           />
                         </div>
                         <div>
                           <label htmlFor={`comm-amt-${t.id}`} style={{ ...label, textTransform: 'uppercase' }}>Amount (₹)</label>
                           <input id={`comm-amt-${t.id}`} type="number" value={draft.commission_amount ?? ''}
                             onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id], commission_amount: Number(e.target.value) } }))}
-                            style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: '#059669', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
+                            style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: '#059669', background: 'var(--bg-card)', fontFamily: 'inherit' }}
                           />
                         </div>
                         <div>
                           <label htmlFor={`comm-inc-${t.id}`} style={{ ...label, textTransform: 'uppercase' }}>Incentives (₹)</label>
                           <input id={`comm-inc-${t.id}`} type="number" value={draft.incentives ?? ''}
                             onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id], incentives: Number(e.target.value) } }))}
-                            style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
+                            style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', fontFamily: 'inherit' }}
                           />
                         </div>
                       </div>
@@ -400,7 +399,7 @@ export default function CommissionsPage() {
                           <label htmlFor={`payout-status-${tid}`} style={{ ...label, textTransform: 'uppercase' }}>Status</label>
                           <select id={`payout-status-${tid}`} value={draft.payout_status || 'pending'}
                             onChange={e => setPayoutDraft(prev => ({ ...prev, [tid]: { ...prev[tid], payout_status: e.target.value } }))}
-                            style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}>
+                            style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', fontFamily: 'inherit', cursor: 'pointer' }}>
                             <option value="pending">Pending</option>
                             <option value="paid">Paid</option>
                           </select>
@@ -409,7 +408,7 @@ export default function CommissionsPage() {
                           <label htmlFor={`payout-paid-${tid}`} style={{ ...label, textTransform: 'uppercase' }}>Paid Amount (₹)</label>
                           <input id={`payout-paid-${tid}`} type="number" value={draft.paid_amount ?? ''}
                             onChange={e => setPayoutDraft(prev => ({ ...prev, [tid]: { ...prev[tid], paid_amount: Number(e.target.value) } }))}
-                            style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: '#059669', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
+                            style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: '#059669', background: 'var(--bg-card)', fontFamily: 'inherit' }}
                           />
                         </div>
                         <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>

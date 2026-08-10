@@ -95,7 +95,7 @@ function OffersContent() {
   const active=offers.filter(o=>o.status==='active').length;
   const totalUsed=offers.reduce((s,o)=>s+o.used,0);
 
-  const inp = { width:'100%', border:'1px solid #cbd5e1', borderRadius:10, padding:'9px 14px', fontSize:13, fontWeight:500, color:'#0F172A', background:'#f8fafc', outline:'none', fontFamily:'inherit' } as const;
+  const inp = { width:'100%', border:'1px solid #cbd5e1', borderRadius:10, padding:'9px 14px', fontSize:13, fontWeight:500, color:'#0F172A', background:'#f8fafc', fontFamily:'inherit' } as const;
 
   return (
     <PageContainer>

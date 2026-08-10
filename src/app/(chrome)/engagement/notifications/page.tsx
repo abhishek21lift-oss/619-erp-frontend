@@ -70,8 +70,8 @@ function NContent() {
   const typeColor=(t:string)=>t.includes('Birthday')?'#0067e0':t.includes('Expiry')?'#f59e0b':t.includes('Due')?'#ef4444':t.includes('Anniversary')?'#0067e0':'#0067e0';
   const typeEmoji=(t:string)=>t.includes('Birthday')?'🎂':t.includes('Expiry')?'⚠️':t.includes('Due')?'💳':t.includes('Anniversary')?'🎉':'📢';
 
-  const inp = { width:'100%', border:'1px solid #cbd5e1', borderRadius:10, padding:'9px 14px', fontSize:13, fontWeight:500, color:'#0F172A', background:'#f8fafc', outline:'none', fontFamily:'inherit' } as const;
-  const selInp = { width:'100%', border:'1px solid #cbd5e1', borderRadius:10, padding:'9px 12px', fontSize:13, fontWeight:500, color:'#0F172A', background:'#f8fafc', outline:'none', fontFamily:'inherit' } as const;
+  const inp = { width:'100%', border:'1px solid #cbd5e1', borderRadius:10, padding:'9px 14px', fontSize:13, fontWeight:500, color:'#0F172A', background:'#f8fafc', fontFamily:'inherit' } as const;
+  const selInp = { width:'100%', border:'1px solid #cbd5e1', borderRadius:10, padding:'9px 12px', fontSize:13, fontWeight:500, color:'#0F172A', background:'#f8fafc', fontFamily:'inherit' } as const;
 
   return (
     <PullToRefresh onRefresh={load}>
