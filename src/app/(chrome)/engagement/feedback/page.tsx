@@ -114,7 +114,7 @@ function FeedbackContent() {
           ))}
         </div>
         <select aria-label="Filter by status" value={statusF} onChange={e => setStatusF(e.target.value as any)}
-          style={{ maxWidth: 160, width: '100%', border: '1px solid #cbd5e1', borderRadius: 10, padding: '7px 12px', fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', background: '#ffffff', outline: 'none', fontFamily: 'inherit' }}>
+          style={{ maxWidth: 160, width: '100%', border: '1px solid #cbd5e1', borderRadius: 10, padding: '7px 12px', fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', background: '#ffffff', fontFamily: 'inherit' }}>
           <option value="all">All Status</option><option value="open">Open</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option>
         </select>
       </m.div>
@@ -159,7 +159,7 @@ function FeedbackContent() {
                     {showReply === f.id && (
                       <div style={{ marginTop: 14, display: 'flex', gap: 8 }}>
                         <input value={reply} onChange={e => setReply(e.target.value)} placeholder="Type your reply to the member…"
-                          style={{ flex: 1, border: '1px solid #cbd5e1', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-subtle)', outline: 'none', fontFamily: 'inherit' }} />
+                          style={{ flex: 1, border: '1px solid #cbd5e1', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-subtle)', fontFamily: 'inherit' }} />
                         <button onClick={() => handleReply(f.id)}
                           style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 10, background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,103,224,0.3)' }}>
                           Send &amp; Resolve

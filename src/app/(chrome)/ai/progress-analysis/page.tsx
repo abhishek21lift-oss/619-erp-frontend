@@ -119,7 +119,7 @@ export default function ProgressAnalysisPage() {
                 style={{
                   width: '100%', padding: '12px 14px 12px 42px', borderRadius: 12, fontSize: 14,
                   background: 'var(--bg-card)', border: '1px solid #cbd5e1',
-                  color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box',
+                  color: 'var(--text-primary)', boxSizing: 'border-box',
                 }}
                 placeholder="Search clients by name…"
                 value={selectedClient ? selectedClient.name : clientSearch}

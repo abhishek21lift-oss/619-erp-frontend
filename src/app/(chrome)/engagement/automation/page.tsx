@@ -81,7 +81,7 @@ function AutoContent() {
     setName(''); setTemplate(''); setDelayMinutes('0'); setTriggerEvent('member_created'); setChannel('whatsapp');
   }
 
-  const inp = { width:'100%', border:'1px solid #cbd5e1', borderRadius:10, padding:'10px 14px', fontSize:13, fontWeight:500, color:'#0F172A', background:'#f8fafc', outline:'none', fontFamily:'inherit' } as const;
+  const inp = { width:'100%', border:'1px solid #cbd5e1', borderRadius:10, padding:'10px 14px', fontSize:13, fontWeight:500, color:'#0F172A', background:'#f8fafc', fontFamily:'inherit' } as const;
 
   return (
     <PageContainer>

@@ -200,7 +200,7 @@ export default function AiKnowledgeBasePage() {
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Title</label>
                 <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Gym Cleaning SOP"
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-primary)', fontSize: 13, boxSizing: 'border-box' }} />
               </div>
 
               <div>

@@ -501,7 +501,7 @@ function Inner() {
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-subtle)', borderRadius: 8, padding: '5px 12px', border: '1px solid var(--border)' }}>
                   <Search size={13} color="var(--text-disabled)" />
                   <input placeholder="Search templates..." value={search} onChange={(e) => setSearch(e.target.value)}
-                    style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 12, fontWeight: 500, outline: 'none', width: 160 }} />
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 12, fontWeight: 500, width: 160 }} />
                   {search && <button onClick={() => setSearch('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-disabled)', padding: 0, display: 'flex' }}><X size={12} /></button>}
                 </div>
               </div>
@@ -810,24 +810,24 @@ function AddMealModal({ open, onClose, onCreated }: { open: boolean; onClose: ()
         <DialogHeader><DialogTitle>Add Meal</DialogTitle></DialogHeader>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <input placeholder="Meal name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13, outline: 'none' }} />
+            style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13 }} />
           <select aria-label="Meal type" value={form.meal_type} onChange={(e) => setForm((f) => ({ ...f, meal_type: e.target.value }))}
-            style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13, outline: 'none' }}>
+            style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13 }}>
             {Object.entries(MEAL_TYPE_TO_API).map(([label, val]) => <option key={val} value={val}>{label}</option>)}
           </select>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <input type="number" placeholder="Calories" value={form.calories} onChange={(e) => setForm((f) => ({ ...f, calories: e.target.value }))}
-              style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13, outline: 'none' }} />
+              style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13 }} />
             <input placeholder="Serving size" value={form.serving_size} onChange={(e) => setForm((f) => ({ ...f, serving_size: e.target.value }))}
-              style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13, outline: 'none' }} />
+              style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13 }} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
             <input type="number" placeholder="Protein (g)" value={form.protein_g} onChange={(e) => setForm((f) => ({ ...f, protein_g: e.target.value }))}
-              style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13, outline: 'none' }} />
+              style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13 }} />
             <input type="number" placeholder="Carbs (g)" value={form.carbs_g} onChange={(e) => setForm((f) => ({ ...f, carbs_g: e.target.value }))}
-              style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13, outline: 'none' }} />
+              style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13 }} />
             <input type="number" placeholder="Fats (g)" value={form.fats_g} onChange={(e) => setForm((f) => ({ ...f, fats_g: e.target.value }))}
-              style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13, outline: 'none' }} />
+              style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13 }} />
           </div>
         </div>
         <DialogFooter>
@@ -928,7 +928,7 @@ function AssignTemplateModal({
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-subtle)', borderRadius: 10, padding: '8px 12px', border: '1px solid var(--border)' }}>
               <Search size={14} color="var(--text-disabled)" />
               <input autoFocus placeholder="Search clients…" value={search} onChange={(e) => setSearch(e.target.value)}
-                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: 13 }} />
+                style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13 }} />
             </div>
             <div style={{ maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4, marginTop: 10 }}>
               {loading && <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}><Loader2 size={18} className="animate-spin" /></div>}

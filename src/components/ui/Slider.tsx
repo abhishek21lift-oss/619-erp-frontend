@@ -31,7 +31,7 @@ export function Slider({ label, value, min, max, step = 1, onChange, formatValue
         type="range" min={min} max={max} step={step} value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full accent-[#F59E0B]"
-        style={{ background: `linear-gradient(90deg, #F59E0B ${pct}%, #e2e8f0 ${pct}%)`, height: 6, borderRadius: 999, appearance: 'none', outline: 'none' }}
+        style={{ background: `linear-gradient(90deg, #F59E0B ${pct}%, #e2e8f0 ${pct}%)`, height: 6, borderRadius: 999, appearance: 'none' }}
       />
       {scaleLabels && scaleLabels.length > 0 && (
         <div className="mt-1.5 flex justify-between text-[10.5px] font-[600]" style={{ color: '#94a3b8' }}>

@@ -704,7 +704,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                     style={{
                       flex: 1, resize: 'none', background: 'rgba(255,255,255,0.06)',
                       border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px',
-                      fontSize: 13, color: '#fff', outline: 'none', fontFamily: 'inherit',
+                      fontSize: 13, color: '#fff', fontFamily: 'inherit',
                       lineHeight: 1.4, maxHeight: 100, overflowY: 'auto',
                     }}
                   />
@@ -862,7 +862,6 @@ const inputStyle: React.CSSProperties = {
   padding: '10px 12px',
   fontSize: 13,
   color: '#fff',
-  outline: 'none',
   fontFamily: 'inherit',
   boxSizing: 'border-box',
   appearance: 'none',
