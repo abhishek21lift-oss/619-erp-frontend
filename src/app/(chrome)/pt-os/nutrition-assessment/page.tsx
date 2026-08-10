@@ -18,7 +18,7 @@ import {
   calcDigestiveHealthScore, calcSupplementScore, calcNutritionRiskScore,
   buildNutritionRiskFactors, calcNutritionScore, classifyNutritionReadiness,
 } from '@/lib/nutrition-calculations';
-import { STEPS, initNutritionForm, n } from '@/components/pt-os/nutrition-assessment/types';
+import { STEPS, initNutritionForm, n, COACH_NOTE_FIELDS } from '@/components/pt-os/nutrition-assessment/types';
 import type { NutritionFormData, FormErrors, StepId, CoachNotes } from '@/components/pt-os/nutrition-assessment/types';
 import NutritionProgressTimeline from '@/components/pt-os/nutrition-assessment/NutritionProgressTimeline';
 import StepDietPreference from '@/components/pt-os/nutrition-assessment/StepDietPreference';
@@ -31,7 +31,7 @@ import StepHydrationCravings from '@/components/pt-os/nutrition-assessment/StepH
 import StepContext from '@/components/pt-os/nutrition-assessment/StepContext';
 import NutritionDashboard from '@/components/pt-os/nutrition-assessment/NutritionDashboard';
 import NutritionRiskBadges from '@/components/pt-os/nutrition-assessment/NutritionRiskBadges';
-import CoachNotesPanel from '@/components/pt-os/nutrition-assessment/CoachNotesPanel';
+import CoachNotesPanel from '@/components/pt-os/shared/CoachNotesPanel';
 import NutritionComparison from '@/components/pt-os/nutrition-assessment/NutritionComparison';
 import NutritionCard from '@/components/pt-os/nutrition-assessment/NutritionCard';
 
@@ -428,7 +428,11 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-5">
             <NutritionDashboard scores={analysis} />
             <NutritionRiskBadges riskFactors={analysis.riskFactors} />
-            <CoachNotesPanel notes={form.coachNotes} set={(notes) => set('coachNotes', notes)} />
+            <CoachNotesPanel
+                fields={COACH_NOTE_FIELDS}
+                notes={form.coachNotes}
+                onChange={(key, value) => set('coachNotes', { ...form.coachNotes, [key]: value })}
+              />
           </m.div>
         )}
       </div>
