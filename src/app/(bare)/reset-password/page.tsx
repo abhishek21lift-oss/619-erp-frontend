@@ -117,10 +117,11 @@ function ResetPasswordForm() {
   return (
     <div className="rounded-[20px] bg-white p-6" style={{ border: `1px solid ${LINE}`, boxShadow: '0 18px 48px rgba(15,23,42,0.08)' }}>
       <form onSubmit={handleSubmit} noValidate>
-        <label className="mb-1.5 block text-[12.5px] font-[650]" style={{ color: INK }}>New password</label>
+        <label htmlFor="rp-password" className="mb-1.5 block text-[12.5px] font-[650]" style={{ color: INK }}>New password</label>
         <div className="relative">
           <Lock size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: MUTE }} />
           <input
+            id="rp-password"
             type={show ? 'text' : 'password'}
             autoComplete="new-password"
             autoFocus
@@ -158,10 +159,11 @@ function ResetPasswordForm() {
           </div>
         )}
 
-        <label className="mb-1.5 mt-4 block text-[12.5px] font-[650]" style={{ color: INK }}>Confirm password</label>
+        <label htmlFor="rp-confirm" className="mb-1.5 mt-4 block text-[12.5px] font-[650]" style={{ color: INK }}>Confirm password</label>
         <div className="relative">
           <Lock size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: MUTE }} />
           <input
+            id="rp-confirm"
             type={show ? 'text' : 'password'}
             autoComplete="new-password"
             value={confirm}

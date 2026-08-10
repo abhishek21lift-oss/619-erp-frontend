@@ -115,10 +115,11 @@ export default function ForgotPasswordPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} noValidate>
-              <label className="mb-1.5 block text-[12.5px] font-[650]" style={{ color: INK }}>Email</label>
+              <label htmlFor="fp-email" className="mb-1.5 block text-[12.5px] font-[650]" style={{ color: INK }}>Email</label>
               <div className="relative">
                 <Mail size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: MUTE }} />
                 <input
+                  id="fp-email"
                   type="email"
                   autoComplete="email"
                   autoFocus

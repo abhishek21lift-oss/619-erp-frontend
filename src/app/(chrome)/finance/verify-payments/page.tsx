@@ -753,8 +753,12 @@ function NewRequestDialog({
             </p>
 
             {/* ── Member ── */}
-            <label className="mt-4 block text-[12px] font-[650]"
-              style={{ color: 'var(--text-primary)' }}>Member</label>
+            {/* A caption over a composite — a chip once a member is picked,
+                a search box before that — and the search box carries its own
+                name. There is no single container to hang a role on, so this
+                is a caption, not a label. */}
+            <span className="mt-4 block text-[12px] font-[650]"
+              style={{ color: 'var(--text-primary)' }}>Member</span>
             {member ? (
               <div className="mt-1.5 flex items-center gap-2.5 rounded-xl p-3"
                 style={{ background: 'var(--bg-subtle)' }}>

@@ -721,8 +721,8 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                           >
                             <div className="grid grid-cols-2 gap-2">
                               <div>
-                                <label className="block text-[10px] font-[600] uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Reference</label>
-                                <input type="text" value={form.payment_ref}
+                                <label htmlFor="pay-ref" className="block text-[10px] font-[600] uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Reference</label>
+                                <input id="pay-ref" type="text" value={form.payment_ref}
                                   onChange={(e) => setForm(f => ({ ...f, payment_ref: e.target.value }))}
                                   placeholder="TXN / UTR"
                                   className="w-full px-3 py-2 rounded-[9px] text-[12px] outline-none"

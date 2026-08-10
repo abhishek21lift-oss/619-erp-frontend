@@ -107,8 +107,13 @@ describe('a control next to a label must be joined to it', () => {
           : ts.isJsxSelfClosingElement(n) ? n : null;
         if (open && open.tagName.getText() === 'label') {
           const attrs = open.attributes.properties.filter(ts.isJsxAttribute).map((a) => a.name.getText());
-          // A label with no htmlFor is fine when it WRAPS its control.
-          const wraps = ts.isJsxElement(n) && /<(input|select|textarea)\b/.test(n.getText());
+          // A label with no htmlFor is fine when it WRAPS its control — either
+          // literally, or as {children} in a Field-style wrapper, which is the
+          // pattern nine components in this app already use. Counting the
+          // second kind as a failure was the scanner's own bug: it reported
+          // the wrappers that had been fixed precisely to wrap.
+          const inner = ts.isJsxElement(n) ? n.getText() : '';
+          const wraps = /<(input|select|textarea)\b/.test(inner) || /\{\s*children\s*\}/.test(inner);
           if (!attrs.includes('htmlFor') && !wraps) {
             offenders.push(`${rel(f)}:${sf.getLineAndCharacterOfPosition(open.getStart(sf)).line + 1}`);
           }
@@ -117,11 +122,78 @@ describe('a control next to a label must be joined to it', () => {
       };
       walk(sf);
     }
-    // A ratchet at the measured count, not a round number with slack in it.
-    // These are pre-existing and each needs a per-site decision about which
-    // control it names. It may fall, never rise.
-    expect(offenders.length, `unassociated <label>s:\n${offenders.join('\n')}`)
-      .toBeLessThanOrEqual(29);
+    // Zero, and an invariant rather than a ratchet. Every remaining site was
+    // audited individually and resolved one of three ways — associated with
+    // htmlFor, turned into a group caption with role="group", or turned into a
+    // plain caption where it never named a control at all.
+    expect(offenders, `unassociated <label>s:\n${offenders.join('\n')}`).toEqual([]);
+  });
+});
+
+describe('the label audit, resolved case by case', () => {
+  // 24 sites, each looked at individually rather than swept. Nine were the
+  // scanner's own fault — Field-style wrappers that put {children} inside the
+  // <label>, which IS an association; the scanner only recognised a literal
+  // control tag. That was fixed above rather than in those nine files.
+  //
+  // The other fifteen split three ways by what the caption actually names.
+
+  it('associates the ten captions that sit beside a real control', () => {
+    const associated: [string, string][] = [
+      ['app/(bare)/forgot-password/page.tsx', 'fp-email'],
+      ['app/(bare)/reset-password/page.tsx', 'rp-password'],
+      ['app/(bare)/reset-password/page.tsx', 'rp-confirm'],
+      ['app/(chrome)/ai-coach/knowledge/page.tsx', 'kb-title'],
+      ['app/(chrome)/pt-os/clients/[id]/edit/page.tsx', 'delete-confirm'],
+      ['app/(chrome)/pt-os/clients/[id]/payments/page.tsx', 'pay-ref'],
+      ['app/(chrome)/settings/integrations/page.tsx', 'integration-credential'],
+      ['app/(chrome)/trainers/leave/page.tsx', 'leave-reason'],
+      ['app/(chrome)/trainers/leave/page.tsx', 'leave-reject-note'],
+    ];
+    for (const [file, id] of associated) {
+      const src = readFileSync(join(SRC, ...file.split('/')), 'utf8');
+      expect(src, `${file}: no label for ${id}`).toMatch(new RegExp(`htmlFor="${id}"`));
+      expect(src, `${file}: no control with id ${id}`).toMatch(new RegExp(`id="${id}"`));
+    }
+  });
+
+  it('gives the invoice field map a per-row id', () => {
+    // Rendered once per entry in a five-row map, so a fixed id would put the
+    // same id on five inputs and point every label at the first one.
+    const src = readFileSync(join(SRC, 'app/(chrome)/finance/invoices/page.tsx'), 'utf8');
+    expect(src).toMatch(/htmlFor=\{`inv-\$\{key\}`\}/);
+    expect(src).toMatch(/id=\{`inv-\$\{key\}`\}/);
+  });
+
+  it('turns the four button-group captions into groups, not labels', () => {
+    // "Analysis Period", "Category", "Status" and the member picker caption a
+    // ROW OF BUTTONS or a composite. A <label> cannot name those — label only
+    // associates with a form control — so each becomes a <span> with an id and
+    // the container carries role="group" aria-labelledby. Both elements are
+    // inline with the same classes, so nothing moves.
+    const groups: [string, string][] = [
+      ['app/(chrome)/ai/business-insights/page.tsx', 'analysis-period-label'],
+      ['app/(chrome)/ai-coach/knowledge/page.tsx', 'kb-category-label'],
+      ['app/(chrome)/attendance/page.tsx', 'atd-member-label'],
+      ['app/(chrome)/attendance/page.tsx', 'atd-status-label'],
+    ];
+    for (const [file, id] of groups) {
+      const src = readFileSync(join(SRC, ...file.split('/')), 'utf8');
+      expect(src, `${file}: no caption ${id}`).toMatch(new RegExp(`<span id="${id}"`));
+      expect(src, `${file}: nothing labelled by ${id}`)
+        .toMatch(new RegExp(`role="group" aria-labelledby="${id}"`));
+      expect(src, `${file}: ${id} is still a label`).not.toMatch(new RegExp(`<label[^>]*>${id}`));
+    }
+  });
+
+  it('demotes the one caption with no container to a plain span', () => {
+    // verify-payments' "Member" caption sits directly above a conditional —
+    // a chip once a member is picked, a search box before that — with no
+    // single element to hang a role on. The search box already carries its own
+    // name, so this is a caption and nothing more.
+    const src = readFileSync(join(SRC, 'app/(chrome)/finance/verify-payments/page.tsx'), 'utf8');
+    expect(src).toMatch(/<span className="mt-4 block text-\[12px\] font-\[650\]"/);
+    expect(src).not.toMatch(/<label className="mt-4 block text-\[12px\] font-\[650\]"/);
   });
 });
 
