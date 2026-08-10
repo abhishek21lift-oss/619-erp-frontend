@@ -6,6 +6,7 @@ import { Package, Plus, Pencil, Trash2, X, Check, Search } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { FormField, TextInput, TextArea, SelectInput } from '@/components/ui';
 
 /* ── shared theme ─────────────────────────────── */
 const a = '#F59E0B', b = '#D97706';
@@ -223,35 +224,39 @@ function PackagesTab() {
                 </button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div>
-                  <label style={lab}>PACKAGE NAME *</label>
-                  <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Fat Loss Starter" style={inp} />
-                </div>
+                {/* Four of these captions were <label>s with no htmlFor, so
+                    they named nothing, and the trailing " *" was doing the job
+                    `required` should. The examples stay as placeholders — a
+                    price field called "e.g. 8000" is the failure; a price field
+                    called "Price" showing "e.g. 8000" is the point. */}
+                <FormField label="Package name" required>
+                  <TextInput value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                    placeholder="e.g. Fat Loss Starter" />
+                </FormField>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-                  <div>
-                    <label style={lab}>SESSIONS *</label>
-                    <input type="number" min={1} value={form.session_count} onChange={e => setForm(p => ({ ...p, session_count: e.target.value }))} placeholder="e.g. 12" style={inp} />
-                  </div>
-                  <div>
-                    <label style={lab}>DURATION (DAYS) *</label>
-                    <input type="number" min={1} value={form.duration_days} onChange={e => setForm(p => ({ ...p, duration_days: e.target.value }))} placeholder="e.g. 30" style={inp} />
-                  </div>
-                  <div>
-                    <label style={lab}>PRICE (₹) *</label>
-                    <input type="number" min={0} value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="e.g. 8000" style={inp} />
-                  </div>
+                  <FormField label="Sessions" required>
+                    <TextInput type="number" min={1} inputMode="numeric" value={form.session_count}
+                      onChange={e => setForm(p => ({ ...p, session_count: e.target.value }))} placeholder="e.g. 12" />
+                  </FormField>
+                  <FormField label="Duration" description="days" required>
+                    <TextInput type="number" min={1} inputMode="numeric" value={form.duration_days}
+                      onChange={e => setForm(p => ({ ...p, duration_days: e.target.value }))} placeholder="e.g. 30" />
+                  </FormField>
+                  <FormField label="Price" description="₹" required>
+                    <TextInput type="number" min={0} inputMode="numeric" value={form.price}
+                      onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="e.g. 8000" />
+                  </FormField>
                 </div>
-                <div>
-                  <label htmlFor="pkg-goal-type" style={lab}>GOAL TYPE</label>
-                  <select id="pkg-goal-type" value={form.goal_type} onChange={e => setForm(p => ({ ...p, goal_type: e.target.value }))} style={{ ...inp, appearance: 'none' as const }}>
+                <FormField label="Goal type">
+                  <SelectInput value={form.goal_type} onChange={e => setForm(p => ({ ...p, goal_type: e.target.value }))}>
                     <option value="">— Select goal type —</option>
                     {GOAL_TYPES.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={lab}>DESCRIPTION</label>
-                  <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Optional description" rows={3} style={{ ...inp, resize: 'vertical' as const }} />
-                </div>
+                  </SelectInput>
+                </FormField>
+                <FormField label="Description" description="Shown to members on the package card.">
+                  <TextArea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                    rows={3} />
+                </FormField>
               </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 24 }}>
                 <button onClick={() => setShowForm(false)} style={{ padding: '10px 18px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>

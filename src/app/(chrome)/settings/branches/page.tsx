@@ -5,6 +5,7 @@ import Guard from '@/components/Guard';
 import { MapPin, Plus, Edit3, Trash2, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { FormField, TextInput } from '@/components/ui';
 
 interface Branch { id: string; name: string; location: string; status: string; member_count: number; }
 
@@ -80,16 +81,17 @@ function BranchesContent() {
       {showForm && (
         <m.form initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} onSubmit={addBranch}
           style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, borderRadius: 20, background: 'var(--bg-card)', border: '1px solid var(--border)', padding: 20, marginBottom: 22, alignItems: 'end', boxShadow: 'var(--shadow-xs)' }}>
-          <div style={{ display: 'grid', gap: 5 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Branch Name *</span>
-            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. MY PT STUDIO Gomti Nagar" required
-              style={{ border: '1px solid #cbd5e1', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-card)', fontFamily: 'inherit' }} />
-          </div>
-          <div style={{ display: 'grid', gap: 5 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Location</span>
-            <input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="e.g. Lucknow, UP"
-              style={{ border: '1px solid #cbd5e1', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-card)', fontFamily: 'inherit' }} />
-          </div>
+          {/* The captions here were <span>s beside their inputs, so they
+              named nothing. The asterisk moves into `required`, which both
+              draws it and tells assistive tech. */}
+          <FormField label="Branch Name" required>
+            <TextInput value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              placeholder="e.g. MY PT STUDIO Gomti Nagar" autoComplete="organization" />
+          </FormField>
+          <FormField label="Location">
+            <TextInput value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
+              placeholder="e.g. Lucknow, UP" autoComplete="address-level2" />
+          </FormField>
           <button type="submit"
             style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '9px 22px', borderRadius: 12, background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,103,224,0.35)' }}>
             <Plus size={13} /> Create
