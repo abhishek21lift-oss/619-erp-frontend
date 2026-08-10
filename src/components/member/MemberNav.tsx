@@ -52,9 +52,8 @@ export default function MemberNav() {
       // opt-out MobileBottomNav carries, and the guard test that caught this
       // missing is the reason it exists.
       data-no-pull-refresh
-      // .mobile-bottom-nav rather than Tailwind's bottom-0, so this takes its
-      // bottom from --vv-bottom-inset exactly as the staff nav does — see
-      // useVisualViewportAnchor, mounted for this portal in member/layout.tsx.
+      // .mobile-bottom-nav rather than Tailwind's bottom-0, so this bar and
+      // the staff one are positioned by the same single rule.
       className="mobile-bottom-nav fixed inset-x-0 z-40"
       style={{
         background: 'var(--bg-card)',

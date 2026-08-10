@@ -8,6 +8,7 @@ import { FeaturesProvider } from '@/lib/features-context';
 import CommandPalette from '@/components/CommandPalette';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import SentryInit from '@/components/SentryInit';
+import ViewportProbe from '@/components/dev/ViewportProbe';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { GoogleAuthWrapper } from '@/components/GoogleAuthWrapper';
 import { NavScrollProvider } from '@/contexts/nav-scroll-context';
@@ -250,6 +251,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             <SentryInit />
                             {children}
                             <CommandPalette />
+                            {/* Renders nothing unless NODE_ENV is not
+                                production AND ?vvprobe=1 is in the URL. It is
+                                mounted here rather than in AppShell so the
+                                member portal, which has no AppShell, can be
+                                diagnosed too. */}
+                            <ViewportProbe />
                           </LazyMotion>
                         </MotionConfig>
                       </NavScrollProvider>

@@ -28,7 +28,6 @@ import ImpersonationBanner from '@/components/ImpersonationBanner';
 import TrialBanner from '@/components/TrialBanner';
 import GlobalSearch, { type PageEntry } from '@/components/search/GlobalSearch';
 import useViewportDesyncFix from '@/hooks/useViewportDesyncFix';
-import useVisualViewportAnchor from '@/hooks/useVisualViewportAnchor';
 import { clearSearchHistory } from '@/components/search/recent';
 
 interface AppShellProps {
@@ -130,11 +129,12 @@ function AppShellContent({ children }: AppShellProps) {
   //    makes Safari recompute — but only works where there is a document
   //    scroll to re-assert, so it cannot help a viewport-height page like the
   //    AI Coach console.
-  //  · useVisualViewportAnchor MEASURES the gap between the layout and visual
-  //    viewports and hands it to the bottom chrome as --vv-bottom-inset, so
-  //    the nav tracks the real bottom edge whether or not the page scrolls.
+  //
+  // There was a second mechanism here — useVisualViewportAnchor — which
+  // measured the layout/visual viewport gap and offset the bottom chrome by
+  // it. It is gone: both signs of that measurement moved the nav when nothing
+  // was wrong. BOTTOM-NAV.md has the full account.
   useViewportDesyncFix();
-  useVisualViewportAnchor();
 
   const { features } = useFeatures();
   const searchPages = useMemo(() => buildSearchPages(features), [features]);

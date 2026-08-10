@@ -616,11 +616,9 @@ export default function AiCoachPage() {
           .ai-rail-band {
             position: fixed;
             top: var(--topbar-h, calc(46px + env(safe-area-inset-top, 0px)));
-            /* --vv-bottom-inset for the same reason .mobile-bottom-nav takes
-               it: this band has to stop exactly where the nav starts, so if
-               the nav is tracking the real bottom edge and this is not, the
-               two come apart. */
-            bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + var(--vv-bottom-inset, 0px));
+            /* Stops exactly where the nav starts. No inset term — the nav is
+               at the physical bottom edge, so this measures from there. */
+            bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
           }
         `}</style>
     </Guard>

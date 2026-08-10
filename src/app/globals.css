@@ -530,7 +530,7 @@ body {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + var(--vv-bottom-inset, 0px));
+  bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
   z-index: 50;
 }
 @media (min-width: 1024px) {
@@ -555,7 +555,12 @@ body {
    in the healthy case and on every browser without visualViewport.
    ════════════════════════════════════════════════════════════════════ */
 .mobile-bottom-nav {
-  bottom: var(--vv-bottom-inset, 0px);
+  /* The physical bottom edge, and nothing else.
+     This used to be `bottom: var(--vv-bottom-inset)`, written by a hook that
+     measured window.innerHeight against visualViewport and offset the bar by
+     the difference. Both signs of that measurement turned out to be wrong to
+     act on. See BOTTOM-NAV.md. */
+  bottom: 0;
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -571,12 +576,11 @@ body {
   top: var(--topbar-h, calc(46px + env(safe-area-inset-top, 0px)));
 }
 .above-bottom-nav {
-  /* --vv-bottom-inset for the same reason .mobile-bottom-nav takes it, and it
-     has to be the SAME value or the two come apart: anything sitting "above
-     the nav" is positioned relative to where the nav is, and the nav tracks
-     the real bottom edge. Without this the FAB stayed put while the nav moved,
-     which is why the AI button and the nav appeared at unrelated heights. */
-  bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 16px + var(--vv-bottom-inset, 0px));
+  /* No inset term: the nav is at the physical bottom edge now, so anything
+     sitting above it measures from there too. When the nav was being offset,
+     this had to carry the same offset or the two came apart — which is why the
+     AI button and the nav appeared at unrelated heights. */
+  bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 16px);
 }
 @media (min-width: 1024px) {
   .above-bottom-nav { bottom: 24px; }
@@ -2154,11 +2158,7 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
 }
 .member-bottom-nav {
   position: fixed;
-  /* --vv-bottom-inset for the same reason .mobile-bottom-nav takes it: a
-     plain `bottom: 0` resolves against the layout viewport, which on iOS is
-     not where the screen ends once the keyboard has been opened and
-     dismissed. See useVisualViewportAnchor. */
-  bottom: var(--vv-bottom-inset, 0px);
+  bottom: 0;
   left: 0;
   right: 0;
   z-index: 40;
