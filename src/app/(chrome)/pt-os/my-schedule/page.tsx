@@ -10,6 +10,7 @@ import {
 import Guard from '@/components/Guard';
 import { Button, EmptyState, PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
+import { useAuth } from '@/lib/auth-context';
 import { api } from '@/lib/api';
 import type { PtSession, PtSessionStatus } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -168,6 +169,8 @@ function SessionRow({
 export default function MySchedulePage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const canManageTrainers = user?.role === 'admin' || user?.role === 'manager';
 
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
   const [selectedDay, setSelectedDay] = useState<string>(() => toYmd(new Date()));
@@ -268,16 +271,34 @@ export default function MySchedulePage() {
               </Button>
             </m.div>
 
-            {/* Account not linked to a trainer profile — explain rather than
-                show a bare empty agenda that reads as a bug. */}
+            {/* No trainer profile resolved — explain rather than show a bare
+                empty agenda that reads as a bug.
+
+                Role-aware, because the old copy told the studio owner to "ask
+                an admin" while they were the admin, on their own studio, with a
+                diary full of sessions. An admin can fix this themselves; a
+                trainer or receptionist genuinely cannot, and sending them to
+                Trainers would only dead-end on a permission check. */}
             {!trainerLinked && schedule.data && (
               <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
                 <EmptyState
                   icon={<UserCog size={22} />}
-                  title="Your account isn't linked to a trainer profile"
-                  description="My Schedule shows the sessions assigned to you as a trainer. Ask an admin to link your login to a trainer, or view the studio-wide list in Session History."
+                  title="No trainer profile matches this login"
+                  description={canManageTrainers
+                    ? `My Schedule shows the sessions booked against you as a trainer. ${user?.email
+                        ? `No active trainer in this studio uses ${user.email}.`
+                        : "No active trainer in this studio uses this login's email address."
+                      } Add one, or correct an existing trainer's email, and this schedule fills in straight away.`
+                    : 'My Schedule shows the sessions booked against you as a trainer. Ask your studio admin to add you as a trainer using this same email address, or view the studio-wide list in Session History.'}
                 />
-                <div className="mt-4 flex justify-center">
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  {canManageTrainers && (
+                    <Button iconLeft={<UserCog size={14} />}
+                      onClick={() => router.push('/trainers')}
+                      style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff' }}>
+                      Manage Trainers
+                    </Button>
+                  )}
                   <Button variant="outline" iconLeft={<CalendarDays size={14} />}
                     onClick={() => router.push('/pt-os/sessions')}>
                     Open Session History
