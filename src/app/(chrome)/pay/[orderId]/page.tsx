@@ -231,7 +231,7 @@ function Panel({ children, className }: { children: React.ReactNode; className?:
       style={{
         background: 'var(--bg-elevated)',
         border: '1px solid var(--border)',
-        boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+        boxShadow: 'var(--shadow-xs)',
       }}
     >
       {children}
