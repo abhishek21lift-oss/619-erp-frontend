@@ -339,7 +339,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
             >
               {(user.name || '?').slice(0, 1).toUpperCase()}
             </span>
-            <p className="text-[15.5px] font-[750]" style={{ color: INK }}>
+            <p className="text-[15px] font-[750]" style={{ color: INK }}>
               This device is signed in as {user.name}
             </p>
             <p className="mt-1.5 text-[13.5px] leading-relaxed" style={{ color: MUTE }}>
@@ -349,7 +349,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
             <button
               type="button"
               onClick={() => logout()}
-              className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[14.5px] font-[750] text-white"
+              className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[14px] font-[750] text-white"
               style={{ background: MAROON }}
             >
               Sign out and continue <ArrowRight size={16} />
@@ -479,7 +479,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
                     placeholder="you@studio.com"
                     aria-invalid={!!emailError}
                     aria-describedby={emailError ? 'email-err' : undefined}
-                    className="w-full rounded-xl bg-white text-[14.5px] outline-none transition-all"
+                    className="w-full rounded-xl bg-white text-[14px] outline-none transition-all"
                     style={{
                       height: 52, paddingLeft: 42, paddingRight: 14, color: INK,
                       border: `1px solid ${emailError ? 'rgba(220,38,38,0.55)' : focused === 'email' ? MAROON : LINE}`,
@@ -510,7 +510,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
                     placeholder="••••••••••"
                     aria-invalid={!!passwordError}
                     aria-describedby={passwordError ? 'pw-err' : undefined}
-                    className="w-full rounded-xl bg-white text-[14.5px] outline-none transition-all"
+                    className="w-full rounded-xl bg-white text-[14px] outline-none transition-all"
                     style={{
                       height: 52, paddingLeft: 42, paddingRight: 46, color: INK,
                       border: `1px solid ${passwordError ? 'rgba(220,38,38,0.55)' : focused === 'password' ? MAROON : LINE}`,

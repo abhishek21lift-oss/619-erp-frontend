@@ -273,7 +273,7 @@ function Inner() {
                         <div
                           style={{
                             fontWeight: 700,
-                            fontSize: 14.5,
+                            fontSize: 14,
                             color: 'var(--text)',
                             letterSpacing: '-0.012em',
                           }}

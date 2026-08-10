@@ -633,7 +633,7 @@ function EditContent({ id }: { id: string }) {
               <ArrowLeft size={15} /> Cancel
             </Link>
             <button type="button" onClick={() => submit()} disabled={saving || success}
-              className="flex flex-1 items-center justify-center gap-2 rounded-[16px] py-3 text-[14.5px] font-[800] text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-60 sm:flex-none sm:px-10"
+              className="flex flex-1 items-center justify-center gap-2 rounded-[16px] py-3 text-[14px] font-[800] text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-60 sm:flex-none sm:px-10"
               style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706,#D97706)', boxShadow: '0 6px 24px rgba(245,158,11,0.45)' }}>
               {saving
                 ? <><span className="animate-spin text-base">&#9696;</span> Saving…</>

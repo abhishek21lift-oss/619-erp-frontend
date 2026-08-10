@@ -893,7 +893,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       <Repeat size={18} className="text-indigo-500" />
                     </div>
                     <div>
-                      <h3 className="text-[14.5px] font-[760] text-gray-900">PT Subscription History</h3>
+                      <h3 className="text-[14px] font-[760] text-gray-900">PT Subscription History</h3>
                       <p className="text-[11px] text-slate-500 mt-0.5">
                         {lifetimeTermCount} term{lifetimeTermCount !== 1 ? 's' : ''} · {fmtINR(lifetimePaid)} lifetime paid
                       </p>

@@ -82,7 +82,7 @@ export default function AiLauncher({
 
       {isNew && (
         <span
-          className="absolute -right-0.5 -top-0.5 rounded-full px-1.5 py-[2px] text-[8.5px] font-[850] uppercase tracking-[0.08em] text-white"
+          className="absolute -right-0.5 -top-0.5 rounded-full px-1.5 py-[2px] text-[9px] font-[850] uppercase tracking-[0.08em] text-white"
           style={{
             background: 'linear-gradient(135deg,#10b981,#059669)',
             boxShadow: '0 2px 8px rgba(16,185,129,0.55)',
