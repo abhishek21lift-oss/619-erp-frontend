@@ -112,8 +112,18 @@ describe('controls with no accessible name', () => {
     // Every control must land in exactly one bin, and the bins must still add
     // up to the whole app.
     expect(audit.total).toBeGreaterThan(380);
-    expect(audit.aria + audit.wrapped + audit.htmlFor
+    expect(audit.aria + audit.wrapped + audit.htmlFor + audit.wired
       + audit.placeholderOnly.length + audit.nameless.length).toBe(audit.total);
+  });
+
+  it('recognises the form system rather than reporting it as broken', () => {
+    // The controls inside TextInput/TextArea/SelectInput take their id and
+    // aria-describedby from the enclosing FormField at runtime, so none of it
+    // appears in the JSX and every other route here called them nameless.
+    // form-field.test.tsx proves the association actually renders; this only
+    // records that the static audit now understands the pattern.
+    expect(audit.wired).toBeGreaterThan(0);
+    expect(audit.nameless.filter((x) => x.includes('ui/form/'))).toEqual([]);
   });
 });
 
