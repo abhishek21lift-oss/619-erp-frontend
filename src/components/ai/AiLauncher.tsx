@@ -57,7 +57,9 @@ export default function AiLauncher({
       style={{
         // Above the bottom nav on mobile, off the safe area on desktop where
         // there is no nav to clear.
-        bottom: 'calc(var(--bottom-nav-h, 0px) + env(safe-area-inset-bottom, 0px) + 16px)',
+        // + --vv-bottom-inset so the button and the nav move together; see
+        // .above-bottom-nav in globals.css.
+        bottom: 'calc(var(--bottom-nav-h, 0px) + env(safe-area-inset-bottom, 0px) + 16px + var(--vv-bottom-inset, 0px))',
         background: 'linear-gradient(135deg, rgba(0,103,224,0.92), rgba(0,63,135,0.92))',
         border: '1px solid rgba(255,255,255,0.22)',
         backdropFilter: 'blur(18px) saturate(180%)',

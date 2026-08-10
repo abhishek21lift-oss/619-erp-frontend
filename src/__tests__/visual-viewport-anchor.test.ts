@@ -118,14 +118,33 @@ describe('the bar is drawn short of the bottom edge', () => {
   });
 });
 
-describe('the bar is pushed below the fold', () => {
-  it('lifts it by a small gap, e.g. chrome mid-collapse', () => {
+describe('the visible area ends above bottom: 0', () => {
+  // This test used to assert '80px' — it pinned the bug rather than the fix.
+  //
+  // A visual viewport shorter than window.innerHeight is the NORMAL state of
+  // mobile Safari: the bottom toolbar overlays the layout viewport, so the
+  // reading is 40-90px positive for as long as the toolbar is on screen. The
+  // old symmetric clamp turned that into `bottom: 80px` and floated the nav in
+  // the middle of the page with content visible underneath — on every route,
+  // at a different height per scroll position, because the toolbar collapses
+  // as you scroll. That was the reported bug, and this test was green for it.
+  it('leaves the nav alone — a bar behind the browser toolbar is correct', () => {
     renderHook(() => useVisualViewportAnchor());
 
     setViewport({ height: 720, offsetTop: 0 });
     fire('resize');
 
-    expect(inset()).toBe('80px');
+    expect(inset()).toBe('0px');
+  });
+
+  it('does not lift it at any magnitude', () => {
+    renderHook(() => useVisualViewportAnchor());
+
+    for (const height of [795, 760, 720, 690, 640]) {
+      setViewport({ height, offsetTop: 0 });
+      fire('resize');
+      expect(inset(), `visual viewport ${height}px`).toBe('0px');
+    }
   });
 });
 
@@ -148,9 +167,16 @@ describe('an open keyboard is deliberately not compensated', () => {
     fire('resize');
     expect(inset()).toBe('0px');
 
-    setViewport({ height: 740 });     // dismissed, 60px still displaced
+    // Dismissed. The residual this hook corrects is the NEGATIVE one — the
+    // layout viewport ending above the screen — which is offsetTop moving, not
+    // height shrinking. A shorter visual viewport alone is just the toolbar.
+    setViewport({ height: 740 });
     fire('resize');
-    expect(inset()).toBe('60px');
+    expect(inset()).toBe('0px');
+
+    setViewport({ height: 800, offsetTop: 60 });   // web view left shifted
+    fire('resize');
+    expect(inset()).toBe('-60px');
   });
 });
 
