@@ -205,7 +205,7 @@ function MergeContent() {
             {/* ── Search ── */}
             <div className="relative mb-4" style={{ maxWidth: 340 }}>
               <Search size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgb(148,163,184)', pointerEvents: 'none' }} />
-              <input value={search} onChange={e => setSearch(e.target.value)}
+              <input aria-label="Search by name or phone" value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search by name or phone…"
                 className="w-full rounded-[12px] pl-9 pr-4 py-2.5 text-[13px] outline-none"
                 style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }} />

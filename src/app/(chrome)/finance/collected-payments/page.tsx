@@ -147,7 +147,7 @@ function Inner() {
         <div className="mb-5 flex flex-col gap-3">
           <div className="relative w-full">
             <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-disabled)', pointerEvents: 'none' }} />
-            <input
+            <input aria-label="Search by client, receipt, notes"
               placeholder="Search by client, receipt, notes..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}

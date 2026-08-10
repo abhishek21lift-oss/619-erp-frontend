@@ -207,7 +207,7 @@ export default function CommandPalette() {
         {/* ── Input row ── */}
         <div className="cmdk-input-wrap">
           <span className="cmdk-icon" aria-hidden="true">⌕</span>
-          <input
+          <input aria-label="Search members, jump to pages, run actions"
             ref={inputRef}
             className="cmdk-input"
             placeholder="Search members, jump to pages, run actions"

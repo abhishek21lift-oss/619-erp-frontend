@@ -767,7 +767,7 @@ function ClientPicker({
   }
   return (
     <div style={{ position: 'relative' }}>
-      <input
+      <input aria-label="Search clients"
         type="text"
         value={selectedClient ? selectedClient.name : clientQuery}
         onFocus={onFocus}

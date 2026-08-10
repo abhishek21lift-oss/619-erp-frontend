@@ -581,7 +581,7 @@ export default function IntegrationsPage() {
         <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} style={{ marginBottom: 28 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, ...glass, borderRadius: 14, padding: '4px 16px', marginBottom: 16 }}>
             <Search size={16} className="text-[var(--text-muted)]" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search integrations..."
+            <input aria-label="Search integrations" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search integrations..."
               style={{ flex: 1, border: 'none', fontSize: 13, padding: '12px 0', color: 'var(--text-primary)', background: 'transparent' }}
             />
             {search && <button onClick={() => setSearch('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}><X size={14} /></button>}

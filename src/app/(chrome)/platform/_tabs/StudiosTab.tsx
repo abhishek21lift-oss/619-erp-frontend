@@ -180,7 +180,7 @@ export function StudiosTab() {
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
         <div className="relative min-w-[160px] flex-1">
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-          <input
+          <input aria-label="Search studios"
             value={query} onChange={(e) => setQuery(e.target.value)}
             placeholder="Search studios…"
             className="h-9 w-full rounded-[10px] pl-8 pr-3 text-[12.5px] outline-none"

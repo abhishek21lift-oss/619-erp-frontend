@@ -90,13 +90,54 @@ describe('placeholder-as-label only ever decreases', () => {
   const audit = auditAccessibleNames();
 
   it('is at or below the count recorded when the system landed', () => {
-    // 105 when this phase started; 88 after the five representative forms.
-    // Lower it as fields migrate, never raise it.
-    expect(audit.placeholderOnly.length).toBeLessThanOrEqual(88);
+    // 105 when this phase started, 88 after the five representative forms,
+    // 45 once the search inputs took real names. Lower it as fields migrate,
+    // never raise it.
+    expect(audit.placeholderOnly.length).toBeLessThanOrEqual(45);
   });
 
   it('still has nothing without a name at all', () => {
     expect(audit.nameless).toEqual([]);
+  });
+});
+
+describe('search and command inputs', () => {
+  const audit = auditAccessibleNames();
+
+  it('none of them is named only by its placeholder', () => {
+    // 43 search inputs took a name that survives typing. They kept their own
+    // magnifier, container, focus styling and — for the palettes — their
+    // combobox semantics and key handling, because dropping SearchField in
+    // would have added a second icon and replaced chrome that had to be
+    // preserved. So the treatment was applied as an attribute, not a
+    // component: aria-label, which is the case the accname spec reserves for a
+    // control with no visible text label.
+    const stragglers = audit.placeholderOnly.filter((at) => {
+      const [file, line] = [at.slice(0, at.lastIndexOf(':')), +at.slice(at.lastIndexOf(':') + 1)];
+      const src = readFileSync(join(process.cwd(), file), 'utf8').split('\n');
+      const blob = src.slice(line - 1, line + 12).join('\n');
+      return /placeholder=(["'`{])\s*(Search|Filter|Find)/i.test(blob);
+    });
+    expect(stragglers, `search input named only by placeholder:\n${stragglers.join('\n')}`)
+      .toEqual([]);
+  });
+
+  it('has no JSX attribute containing a literal unicode escape', () => {
+    // finance/invoices had placeholder="Search invoices…". A JSX
+    // attribute string is literal — there is no escape processing — so that
+    // rendered the seven characters on screen. It had been there since the
+    // field was written and only became visible when a codemod copied the
+    // placeholder into a name. String and template literals in JS are a
+    // different matter and are left alone.
+    const offenders: string[] = [];
+    for (const f of sources()) {
+      readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
+        if (/(?:placeholder|aria-label|title|alt)="[^"]*\\u[0-9a-fA-F]{4}/.test(line)) {
+          offenders.push(`${rel(f)}:${i + 1}`);
+        }
+      });
+    }
+    expect(offenders).toEqual([]);
   });
 });
 

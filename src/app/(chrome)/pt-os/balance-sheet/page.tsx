@@ -158,7 +158,7 @@ export default function BalanceSheetPage() {
         <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
             <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-disabled)', pointerEvents: 'none' }} />
-            <input
+            <input aria-label="Search client, trainer, phone"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search client, trainer, phone…"

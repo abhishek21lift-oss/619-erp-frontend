@@ -265,7 +265,7 @@ export default function LiveLogs() {
         <div className="flex w-full items-center gap-1.5 rounded-[9px] px-2.5 py-2 sm:w-auto sm:min-w-[180px] sm:flex-1 sm:py-1.5"
           style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
           <Search size={12} color="var(--text-tertiary)" />
-          <input
+          <input aria-label="Filter by message"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Filter by message…"

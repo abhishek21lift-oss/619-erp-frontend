@@ -124,7 +124,7 @@ function Inner() {
       <div style={{ background: 'var(--bg-card)', borderRadius: 18, border: '1px solid var(--border)', padding: '14px 18px', marginBottom: 16, boxShadow: 'var(--shadow-xs)' }}>
         <div style={{ position: 'relative', maxWidth: 340 }}>
           <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-disabled)' }} />
-          <input type="search" placeholder="Search member, ID or mobile" onChange={(e) => handleSearch(e.target.value)}
+          <input aria-label="Search member, ID or mobile" type="search" placeholder="Search member, ID or mobile" onChange={(e) => handleSearch(e.target.value)}
             style={{ width: '100%', padding: '9px 12px 9px 34px', borderRadius: 12, border: '1.5px solid var(--border)', fontSize: 13, color: 'var(--text-primary)', background: 'var(--bg-card)', boxSizing: 'border-box' }} />
         </div>
       </div>

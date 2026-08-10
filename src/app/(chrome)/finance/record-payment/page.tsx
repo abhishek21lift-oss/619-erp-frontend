@@ -267,7 +267,7 @@ export default function RecordPaymentPage() {
                       className="absolute left-4 right-4 z-40 mt-1 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_16px_48px_rgba(0,0,0,0.15)]">
                       <div className="flex items-center gap-2 border-b border-[var(--border)] px-3.5 py-2.5">
                         <Search size={13} className="text-[var(--text-muted)]" />
-                        <input ref={searchRef} value={query} onChange={e => setQuery(e.target.value)}
+                        <input aria-label="Search name or phone" ref={searchRef} value={query} onChange={e => setQuery(e.target.value)}
                           placeholder="Search name or phone"
                           className="flex-1 border-none bg-transparent text-[14px] text-[var(--text-primary)] outline-none" />
                       </div>

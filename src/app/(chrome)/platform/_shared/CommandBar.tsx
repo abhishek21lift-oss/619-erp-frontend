@@ -106,7 +106,7 @@ export function CommandBar({ open, onClose, onNavigate }: { open: boolean; onClo
       >
         <div className="flex items-center gap-2.5 border-b px-4 py-3" style={{ borderColor: 'var(--border)' }}>
           <Search size={15} style={{ color: 'var(--text-muted)' }} />
-          <input
+          <input aria-label="Search studios, coupons, or jump to a section"
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}

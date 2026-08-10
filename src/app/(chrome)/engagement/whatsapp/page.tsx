@@ -119,7 +119,7 @@ function WAContent() {
           <div style={{ padding:'14px 20px', borderBottom:'1px solid #e2e8f0', display:'flex', gap:10, alignItems:'center', background:'#f8fafc' }}>
             <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, background:'#ffffff', borderRadius:10, padding:'8px 14px', border:'1px solid #cbd5e1' }}>
               <Search size={14} color="#94a3b8" />
-              <input placeholder="Search members…" value={search} onChange={e=>setSearch(e.target.value)}
+              <input aria-label="Search members" placeholder="Search members…" value={search} onChange={e=>setSearch(e.target.value)}
                 style={{ flex:1, border:'none', background:'transparent', fontSize:13, fontWeight:500, color:'#0F172A' }} />
               {search&&<button onClick={()=>setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', padding:0 }}><X size={13}/></button>}
             </div>

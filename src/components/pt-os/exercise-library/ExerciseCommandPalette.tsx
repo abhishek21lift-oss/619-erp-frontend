@@ -107,7 +107,7 @@ export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseComm
           {loading
             ? <Loader2 size={16} className="shrink-0 animate-spin text-[var(--text-muted)]" />
             : <Search size={16} className="shrink-0 text-[var(--text-muted)]" />}
-          <input
+          <input aria-label="Search exercises"
             ref={inputRef}
             value={q}
             onChange={(e) => setQ(e.target.value)}
