@@ -111,7 +111,13 @@ describe('controls with no accessible name', () => {
     // An audit that silently stopped finding controls would also report zero.
     // Every control must land in exactly one bin, and the bins must still add
     // up to the whole app.
-    expect(audit.total).toBeGreaterThan(380);
+    //
+    // The floor is deliberately well below today's count and falls over time
+    // BY DESIGN: a field migrated to FormField stops being a raw <input> in a
+    // page and becomes a <TextInput>, counted once inside controls.tsx instead
+    // of once per call site. Migration therefore shrinks `total`, and a tight
+    // floor here would fail on every successful migration.
+    expect(audit.total).toBeGreaterThan(250);
     expect(audit.aria + audit.wrapped + audit.htmlFor + audit.wired
       + audit.placeholderOnly.length + audit.nameless.length).toBe(audit.total);
   });
@@ -169,7 +175,7 @@ describe('labelling across a component boundary', () => {
     // would start counting as a label and the audit would go quietly blind.
     const src = readFileSync(srcPath('app', '(chrome)', 'pt-os', 'commissions', 'page.tsx'), 'utf8');
     expect(src).toMatch(/htmlFor=\{`comm-pct-\$\{t\.id\}`\}/);
-    expect(audit.total).toBeGreaterThan(380);
+    expect(audit.total).toBeGreaterThan(250);
   });
 });
 
@@ -177,9 +183,9 @@ describe('placeholder-as-label', () => {
   // The accname spec does accept a placeholder as a last-resort name, so these
   // are not 4.1.2 failures. They are still poor: the name disappears the moment
   // the field has content, which is exactly when someone re-reading the form
-  // needs it. Tracked, not enforced — giving 105 fields visible labels is a
-  // design change, not a bug fix.
+  // needs it. Tracked, not enforced — giving every one of them a visible label is a
+  // design change, not a bug fix. 105 -> 88 as the first forms migrated.
   it('is tracked, and has not spread', () => {
-    expect(audit.placeholderOnly.length).toBeLessThanOrEqual(105);
+    expect(audit.placeholderOnly.length).toBeLessThanOrEqual(88);
   });
 });

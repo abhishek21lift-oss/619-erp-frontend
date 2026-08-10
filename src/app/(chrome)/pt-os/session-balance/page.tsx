@@ -5,7 +5,7 @@ import { Gauge, Plus, Loader2, AlertTriangle } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { useAsync } from '@/lib/use-async';
 import { api, Client } from '@/lib/api';
-import { Button, PageContainer, PageHero } from '@/components/ui';
+import { Button, PageContainer, PageHero, FormField, TextInput, SelectInput } from '@/components/ui';
 
 export default function SessionBalancePage() {
   const [clientId, setClientId] = useState('');
@@ -60,21 +60,25 @@ export default function SessionBalancePage() {
           <div>
             <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'var(--text-primary)' }}>Add Session Package</h2>
             <form onSubmit={handleCreate} className="space-y-3">
-              <select aria-label="Client" value={clientId} onChange={e => setClientId(e.target.value)}
-                className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                <option value="">Select client...</option>
-                {clients.data?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-              <input required type="number" placeholder="Total sessions" value={totalSessions} onChange={e => setTotalSessions(e.target.value)}
-                className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
-              <input placeholder="Package name (e.g., 12 PT Sessions)" value={packageName} onChange={e => setPackageName(e.target.value)}
-                className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
-              <input aria-label="Package end date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
+              <FormField label="Client" required>
+                <SelectInput value={clientId} onChange={e => setClientId(e.target.value)}>
+                  <option value="">Select client...</option>
+                  {clients.data?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </SelectInput>
+              </FormField>
+              <FormField label="Total sessions" required>
+                <TextInput type="number" min={1} inputMode="numeric"
+                  value={totalSessions} onChange={e => setTotalSessions(e.target.value)} />
+              </FormField>
+              {/* The example survives as a placeholder because that is what it
+                  always was — a format, not the field's name. */}
+              <FormField label="Package name">
+                <TextInput placeholder="e.g. 12 PT Sessions"
+                  value={packageName} onChange={e => setPackageName(e.target.value)} />
+              </FormField>
+              <FormField label="Valid until" description="Optional. Leave blank for no expiry.">
+                <TextInput type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+              </FormField>
               <Button type="submit" disabled={!clientId || !totalSessions || saving}
                 className="!w-full !rounded-[14px] !py-3 !font-[700]"
                 style={{ background: !clientId || !totalSessions || saving ? '#e2e8f0' : 'linear-gradient(135deg, #1E293B, #475569)', color: '#fff' }}>

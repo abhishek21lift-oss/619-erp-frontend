@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback, useRef, useMemo, Suspense } fr
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
-import { PullToRefresh, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button, PageContainer, PageHero } from '@/components/ui';
+import { PullToRefresh, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button, PageContainer, PageHero, SearchField } from '@/components/ui';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api, Client, Attendance } from '@/lib/api';
@@ -1302,11 +1302,15 @@ function ManualEntryModal({ open, onOpenChange, clients, date, onSuccess }: {
               </div>
             ) : (
               <>
-                <input
+                {/* A search box, so the placeholder stays visible and the
+                    label is hidden — but it is a real associated <label>, so
+                    the name no longer vanishes the moment you type. */}
+                <SearchField
+                  label="Search member"
+                  placeholder="Search member…"
                   value={query}
                   onChange={e => setQuery(e.target.value)}
-                  placeholder="Search member…"
-                  className="mt-1.5 w-full rounded-[12px] border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  fieldClassName="mt-1.5"
                 />
                 <div className="mt-2 max-h-40 overflow-y-auto rounded-[12px] border border-zinc-100 dark:border-white/5">
                   {filteredClients.length === 0 ? (

@@ -5,7 +5,7 @@ import { ClipboardCheck, Plus, Loader2, Check } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { useAsync } from '@/lib/use-async';
 import { api, Client } from '@/lib/api';
-import { Button } from '@/components/ui';
+import { Button, FormField, TextInput, TextArea, SelectInput } from '@/components/ui';
 
 const MOODS = [
   { value: 'great', label: 'Great', color: '#10b981' },
@@ -129,32 +129,51 @@ export default function WeeklyCheckinPage() {
           <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'var(--text-primary)' }}>Log Check-In</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <select aria-label="Client" value={clientId} onChange={e => setClientId(e.target.value)}
-                className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }}>
-                <option value="">Select client...</option>
-                {clients.data?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-              <input aria-label="Week starting" type="date" value={weekStart} onChange={e => setWeekStart(e.target.value)}
-                className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }} />
+              {/* Migrated to the form system. Every caption here used to be a
+                  placeholder, so a half-filled check-in was six anonymous
+                  number boxes — and this form is filled from a phone, beside a
+                  client, where "was the third one water or workouts?" is a real
+                  question. The captions are persistent now; the placeholders
+                  that survive carry a unit or a range, which is what a
+                  placeholder is for. */}
+              <FormField label="Client" required>
+                <SelectInput value={clientId} onChange={e => setClientId(e.target.value)}>
+                  <option value="">Select client...</option>
+                  {clients.data?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </SelectInput>
+              </FormField>
+
+              <FormField label="Week starting">
+                <TextInput type="date" value={weekStart} onChange={e => setWeekStart(e.target.value)} />
+              </FormField>
+
               <div className="grid grid-cols-2 gap-3">
-                <input type="number" step="0.1" placeholder="Weight (kg)" value={weight} onChange={e => setWeight(e.target.value)}
-                  className="rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }} />
-                <input type="number" step="0.5" placeholder="Sleep (hrs)" value={sleepHours} onChange={e => setSleepHours(e.target.value)}
-                  className="rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }} />
-                <input type="number" placeholder="Water (glasses)" value={waterGlasses} onChange={e => setWaterGlasses(e.target.value)}
-                  className="rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }} />
-                <input type="number" placeholder="Workouts this week" value={workoutCount} onChange={e => setWorkoutCount(e.target.value)}
-                  className="rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }} />
+                {/* inputMode alongside type="number": the type gives a numeric
+                    keypad, and decimal vs numeric decides whether it has a
+                    decimal point. Weight and sleep take halves; glasses and
+                    workouts do not. */}
+                <FormField label="Weight" description="kg">
+                  <TextInput type="number" step="0.1" inputMode="decimal" placeholder="e.g. 72.5"
+                    value={weight} onChange={e => setWeight(e.target.value)} />
+                </FormField>
+                <FormField label="Sleep" description="hours per night">
+                  <TextInput type="number" step="0.5" inputMode="decimal" placeholder="e.g. 7.5"
+                    value={sleepHours} onChange={e => setSleepHours(e.target.value)} />
+                </FormField>
+                <FormField label="Water" description="glasses per day">
+                  <TextInput type="number" inputMode="numeric"
+                    value={waterGlasses} onChange={e => setWaterGlasses(e.target.value)} />
+                </FormField>
+                <FormField label="Workouts" description="this week">
+                  <TextInput type="number" inputMode="numeric"
+                    value={workoutCount} onChange={e => setWorkoutCount(e.target.value)} />
+                </FormField>
               </div>
-              <input type="number" placeholder="Adherence % (0-100)" value={adherencePct} onChange={e => setAdherencePct(e.target.value)}
-                className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }} />
+
+              <FormField label="Adherence" description="Percentage, 0 to 100.">
+                <TextInput type="number" min={0} max={100} inputMode="numeric"
+                  value={adherencePct} onChange={e => setAdherencePct(e.target.value)} />
+              </FormField>
               {/* ── Readiness inputs ──
                   Sleep is already above. These three are the rest of what a
                   recovery score needs: without them it is a sleep score
@@ -170,16 +189,15 @@ export default function WeeklyCheckinPage() {
                     { label: 'Energy', hint: '10 = best', value: energy, set: setEnergy },
                     { label: 'Soreness', hint: '10 = worst', value: soreness, set: setSoreness },
                   ]).map((f) => (
-                    <div key={f.label}>
-                      <input
-                        type="number" min={1} max={10} placeholder={f.label}
+                    // The hint moves from a loose <p> under the box into the
+                    // field's description slot, so it is announced with the
+                    // control instead of being read as stray text after it.
+                    <FormField key={f.label} label={f.label} description={f.hint}>
+                      <TextInput
+                        type="number" min={1} max={10} inputMode="numeric"
                         value={f.value} onChange={(e) => f.set(e.target.value)}
-                        aria-label={`${f.label} 1 to 10`}
-                        className="w-full rounded-[12px] px-3 text-sm outline-none"
-                        style={{ height: 44, background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }}
                       />
-                      <p className="mt-1 text-[10px]" style={{ color: 'var(--text-muted)' }}>{f.hint}</p>
-                    </div>
+                    </FormField>
                   ))}
                 </div>
               </div>
@@ -198,9 +216,10 @@ export default function WeeklyCheckinPage() {
                   ))}
                 </div>
               </div>
-              <textarea placeholder="Trainer notes..." rows={2} value={trainerNotes} onChange={e => setTrainerNotes(e.target.value)}
-                className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none resize-none"
-                style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }} />
+              <FormField label="Trainer notes">
+                <TextArea rows={2} placeholder="How the week went, anything to watch"
+                  value={trainerNotes} onChange={e => setTrainerNotes(e.target.value)} />
+              </FormField>
               <Button type="submit" disabled={!clientId || saving}
                 className="!w-full !rounded-[14px] !py-3 !font-[700]"
                 style={{ background: !clientId || saving ? 'rgba(0,0,0,0.1)' : 'linear-gradient(135deg, #0059ce, #0067e0)', color: '#fff' }}>

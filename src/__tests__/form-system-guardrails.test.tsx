@@ -90,14 +90,75 @@ describe('placeholder-as-label only ever decreases', () => {
   const audit = auditAccessibleNames();
 
   it('is at or below the count recorded when the system landed', () => {
-    // 105 at the start of this phase. Lower it as fields migrate; never raise
-    // it. The audit already understands FormField, so a migrated field leaves
-    // this bin rather than moving between bins.
-    expect(audit.placeholderOnly.length).toBeLessThanOrEqual(105);
+    // 105 when this phase started; 88 after the five representative forms.
+    // Lower it as fields migrate, never raise it.
+    expect(audit.placeholderOnly.length).toBeLessThanOrEqual(88);
   });
 
   it('still has nothing without a name at all', () => {
     expect(audit.nameless).toEqual([]);
+  });
+});
+
+describe('the five representative migrations', () => {
+  // One form per area, migrated before the remaining fields, so the system is
+  // proved on real forms rather than on a demo. Each entry: the route, and the
+  // captions that used to live in a placeholder and now live in a label.
+  const migrated: [string, string[]][] = [
+    ['app/(chrome)/pt-os/weekly-checkin/page.tsx',
+      ['Client', 'Week starting', 'Weight', 'Sleep', 'Water', 'Workouts', 'Adherence', 'Trainer notes']],
+    ['app/(chrome)/subscription/packages/page.tsx',
+      ['Package name', 'Sessions', 'Duration', 'Price', 'Goal type', 'Description']],
+    ['app/(chrome)/pt-os/session-balance/page.tsx',
+      ['Client', 'Total sessions', 'Package name', 'Valid until']],
+    ['app/(chrome)/settings/branches/page.tsx', ['Branch Name', 'Location']],
+    ['app/(chrome)/attendance/page.tsx', ['Search member']],
+  ];
+
+  it.each(migrated)('%s uses the system', (file) => {
+    const src = readFileSync(join(SRC, ...file.split('/')), 'utf8');
+    expect(src).toMatch(/from '@\/components\/ui'/);
+    expect(src).toMatch(/<(FormField|SearchField)\b/);
+  });
+
+  it.each(migrated)('%s gives every migrated field a persistent label', (file, labels) => {
+    const src = readFileSync(join(SRC, ...file.split('/')), 'utf8');
+    for (const label of labels) {
+      expect(src, `no label "${label}"`).toMatch(new RegExp(`label="${label}"`));
+    }
+  });
+
+  it('kept the business logic on every one of them', () => {
+    // The migration moves markup only. If a value binding or a submit handler
+    // went missing the form would still render, and still look right.
+    const checks: [string, RegExp[]][] = [
+      ['app/(chrome)/pt-os/weekly-checkin/page.tsx', [
+        /onSubmit=\{handleSubmit\}/, /value=\{weight\}/, /setWeight\(e\.target\.value\)/,
+        /value=\{adherencePct\}/, /value=\{trainerNotes\}/, /step="0\.5"/,
+      ]],
+      ['app/(chrome)/subscription/packages/page.tsx', [
+        /value=\{form\.session_count\}/, /value=\{form\.price\}/, /min=\{0\}/, /GOAL_TYPES\.map/,
+      ]],
+      ['app/(chrome)/pt-os/session-balance/page.tsx', [
+        /onSubmit=\{handleCreate\}/, /value=\{totalSessions\}/, /value=\{endDate\}/,
+      ]],
+      ['app/(chrome)/settings/branches/page.tsx', [
+        /onSubmit=\{addBranch\}/, /value=\{form\.name\}/, /value=\{form\.location\}/,
+      ]],
+      ['app/(chrome)/attendance/page.tsx', [/value=\{query\}/, /setQuery\(e\.target\.value\)/]],
+    ];
+    for (const [file, patterns] of checks) {
+      const src = readFileSync(join(SRC, ...file.split('/')), 'utf8');
+      for (const p of patterns) expect(src, `${file} lost ${p}`).toMatch(p);
+    }
+  });
+
+  it('gives the numeric fields the right mobile keyboard', () => {
+    // type="number" gets a numeric keypad; inputMode decides whether it has a
+    // decimal point. Weight and sleep take halves, glasses and workouts do not.
+    const src = readFileSync(join(SRC, 'app/(chrome)/pt-os/weekly-checkin/page.tsx'), 'utf8');
+    expect((src.match(/inputMode="decimal"/g) ?? []).length).toBe(2);
+    expect((src.match(/inputMode="numeric"/g) ?? []).length).toBeGreaterThanOrEqual(3);
   });
 });
 
