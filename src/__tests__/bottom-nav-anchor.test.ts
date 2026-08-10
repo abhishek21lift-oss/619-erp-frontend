@@ -1,23 +1,29 @@
-// The bottom nav is anchored to the viewport, and only one thing may move it.
+// The bottom nav sits on the physical bottom edge, and nothing may move it.
 //
-// Reported as "the nav appears at a different height on every page, with
-// content visible underneath it". The architecture was NOT the cause — the nav
-// is `position: fixed` and no ancestor creates a containing block for it. The
-// cause was the value of `--vv-bottom-inset`: useVisualViewportAnchor clamped
-// its measurement symmetrically, so it LIFTED the bar whenever the visible
-// area ended above `bottom: 0`.
+// Two attempts were made at being cleverer than `bottom: 0`, and both shipped
+// a bug. Both lived in useVisualViewportAnchor, which measured
+// window.innerHeight against visualViewport and offset the bar by the
+// difference:
 //
-// That reading is the normal state of mobile Safari — the bottom toolbar
-// overlays the layout viewport, so visualViewport.height is 40-90px shorter
-// than window.innerHeight for as long as the toolbar is showing. So the lift
-// fired constantly, and because the toolbar collapses as you scroll, it landed
-// the bar at a different height on every page and every scroll position.
+//   1. The symmetric clamp LIFTED the bar whenever the visible area ended
+//      above bottom: 0 — which is the normal state of mobile Safari, because
+//      the bottom toolbar overlays the layout viewport. The nav floated
+//      mid-page, at a different height per route and per scroll position.
 //
-// The sign logic itself is pinned in visual-viewport-anchor.test.ts. This file
-// pins the structure around it: that the nav is viewport-fixed, that there is
-// exactly one of it, that it is mounted by the shell rather than by a page,
-// that nothing above it can capture a fixed descendant, and that anything
-// positioned "above the nav" moves with it.
+//   2. Fixing the sign left the other half: a NEGATIVE reading pushed the bar
+//      DOWN. visualViewport.offsetTop goes positive during rubber-band
+//      overscroll and the toolbar transition, so at the absolute bottom of a
+//      document the nav slid below the viewport and half-vanished. Confirmed
+//      on a physical iPhone, which is the only place either bug was visible.
+//
+// The premise was wrong, not the arithmetic. visualViewport's geometry moves
+// for toolbar collapse, rubber-band and pinch — none of which should move
+// application chrome. The hook is gone. `bottom: 0` is the whole mechanism,
+// and useViewportDesyncFix still handles the iOS desync the honest way, by
+// re-asserting the DOCUMENT's scroll position rather than repositioning an
+// element.
+//
+// See BOTTOM-NAV.md.
 
 import { describe, expect, it } from 'vitest';
 import ts from 'typescript';
@@ -29,12 +35,12 @@ const css = readFileSync(srcPath('app', 'globals.css'), 'utf8');
 const shell = readFileSync(srcPath('components', 'AppShell.tsx'), 'utf8');
 const nav = readFileSync(srcPath('components', 'MobileBottomNav.tsx'), 'utf8');
 
-/** The declarations of a CSS rule, by exact selector. */
+/** The declarations of a CSS rule, by exact selector, comments stripped. */
 function rule(selector: string): string {
   const re = new RegExp(`(^|\\})\\s*${selector.replace('.', '\\.')}\\s*\\{([^}]*)\\}`, 'm');
   const m = re.exec(css);
   expect(m, `rule ${selector} not found`).not.toBeNull();
-  return m![2];
+  return m![2].replace(/\/\*[\s\S]*?\*\//g, '');
 }
 
 describe('the nav is anchored to the viewport', () => {
@@ -42,19 +48,38 @@ describe('the nav is anchored to the viewport', () => {
     expect(nav).toMatch(/className="mobile-bottom-nav fixed left-0 right-0/);
   });
 
-  it('takes its bottom offset from nothing but the anchor inset', () => {
-    // A hardcoded offset here, or a second term, is how a page-specific fudge
-    // gets in. The only permitted value is the inset, which is 0 unless the
-    // viewport is genuinely displaced.
-    expect(rule('.mobile-bottom-nav').trim()).toBe('bottom: var(--vv-bottom-inset, 0px);');
+  it('sits on the bottom edge, with no offset term at all', () => {
+    // A second term here — an inset, a variable, a magic number — is how both
+    // previous bugs got in. There is one permitted value.
+    expect(rule('.mobile-bottom-nav').trim()).toBe('bottom: 0;');
   });
 
-  it('never lifts: the inset can only be zero or negative', () => {
-    const hook = readFileSync(srcPath('hooks', 'useVisualViewportAnchor.ts'), 'utf8');
-    // The bug was a symmetric clamp. Math.min against a positive bound is what
-    // allowed a positive inset, and a positive inset is what lifts the bar.
-    expect(hook).toMatch(/shift < 0/);
-    expect(hook).not.toMatch(/Math\.min\(MAX_SHIFT_PX/);
+  it('has no runtime writer of its position anywhere in the app', () => {
+    // The nav moved because a hook wrote a CSS variable it read. Nothing may
+    // write one again: --bottom-nav-h is a static 52px, and no code sets a
+    // bottom offset on the nav.
+    const writers: string[] = [];
+    const walk = (dir: string) => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const p = join(dir, e.name);
+        if (e.isDirectory()) { if (e.name !== '__tests__') walk(p); continue; }
+        if (!/\.tsx?$/.test(e.name)) continue;
+        const src = readFileSync(p, 'utf8');
+        if (/setProperty\(\s*'--(vv-bottom-inset|bottom-nav-h)'/.test(src)) {
+          writers.push(relative(process.cwd(), p).replace(/\\/g, '/'));
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src'));
+    expect(writers).toEqual([]);
+  });
+
+  it('kept the desync fix, which corrects scroll rather than position', () => {
+    // The legitimate half of the iOS problem. It re-asserts the document's own
+    // scroll position so Safari recomputes; it never moves an element.
+    const desync = readFileSync(srcPath('hooks', 'useViewportDesyncFix.ts'), 'utf8');
+    expect(desync).toMatch(/window\.scrollTo/);
+    expect(desync).not.toMatch(/setProperty/);
   });
 });
 
@@ -128,15 +153,19 @@ describe('nothing above it can capture a fixed descendant', () => {
 });
 
 describe('things positioned above the nav move with it', () => {
-  it('.above-bottom-nav carries the same inset', () => {
-    // Without this the FAB stays put while the nav moves, and the two appear
-    // at unrelated heights — which is what the report described.
-    expect(rule('.above-bottom-nav')).toMatch(/var\(--vv-bottom-inset, 0px\)/);
+  it('.above-bottom-nav measures from the same edge', () => {
+    // The nav is on the bottom edge, so anything above it measures from there.
+    // While the nav was being offset these needed the same offset or the two
+    // came apart, which is why the AI button and the nav appeared at unrelated
+    // heights.
+    expect(rule('.above-bottom-nav')).not.toMatch(/vv-bottom-inset/);
+    expect(rule('.above-bottom-nav')).toMatch(/var\(--bottom-nav-h\)/);
   });
 
   it('so does the AI launcher, which sets its own offset inline', () => {
     const launcher = readFileSync(srcPath('components', 'ai', 'AiLauncher.tsx'), 'utf8');
-    expect(launcher).toMatch(/bottom: 'calc\([^']*--vv-bottom-inset[^']*\)'/);
+    expect(launcher).toMatch(/bottom: 'calc\(var\(--bottom-nav-h[^']*\)'/);
+    expect(launcher).not.toMatch(/vv-bottom-inset/);
   });
 
   it('desktop still opts out, deliberately', () => {

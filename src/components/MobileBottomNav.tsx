@@ -73,10 +73,10 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
 
   return (
     <m.nav
-      // `bottom` comes from .mobile-bottom-nav, not Tailwind's bottom-0: it
-      // tracks --vv-bottom-inset so the bar stays on the real bottom edge
-      // even when iOS leaves the layout viewport disagreeing with the
-      // visible one. See useVisualViewportAnchor.
+      // `bottom` comes from .mobile-bottom-nav rather than Tailwind's
+      // bottom-0, so exactly one rule in the app decides where this bar sits.
+      // That rule is `bottom: 0`. See BOTTOM-NAV.md for the two attempts at
+      // making it cleverer than that, and why both were wrong.
       className="mobile-bottom-nav fixed left-0 right-0 z-40 lg:hidden"
       data-no-pull-refresh
       style={{
