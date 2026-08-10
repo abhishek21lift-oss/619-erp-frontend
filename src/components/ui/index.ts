@@ -50,8 +50,6 @@ export type { FormFieldProps, FieldWiring, SearchFieldProps } from './form';
 
 export { FloatInput } from './FloatInput';
 export { Slider } from './Slider';
-export { SearchInput } from './SearchInput';
-export type { SearchInputProps } from './SearchInput';
 
 export { FilterChips } from './FilterChips';
 export type { FilterChipsProps, FilterChip } from './FilterChips';

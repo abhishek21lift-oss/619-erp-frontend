@@ -34,6 +34,45 @@ function sourceFiles(dir: string, out: string[] = []): string[] {
 const parse = (f: string) =>
   ts.createSourceFile(f, readFileSync(f, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
 
+/**
+ * Components that label their children by id through context.
+ *
+ * FormField renders `<label htmlFor={id}>` and `{children}` as siblings, and
+ * hands the same id to whatever control is inside via a context provider. The
+ * children are labelled, but neither of the two patterns above can see it: the
+ * label does not wrap them, and the id is not a prop the call site passes.
+ *
+ * Detected structurally rather than by name — a component that renders a
+ * `<label htmlFor>`, renders `{children}`, AND provides a context. All three
+ * together are specific to this wiring; any two of them are not.
+ */
+function contextLabelWrappersIn(sf: ts.SourceFile): Set<string> {
+  const out = new Set<string>();
+  const find = (n: ts.Node) => {
+    const fn = ts.isFunctionDeclaration(n) ? n
+      : (ts.isVariableDeclaration(n) && n.initializer
+        && (ts.isArrowFunction(n.initializer) || ts.isFunctionExpression(n.initializer)))
+        ? n.initializer : null;
+    const name = ts.isFunctionDeclaration(n) ? n.name?.getText()
+      : (fn && ts.isVariableDeclaration(n)) ? n.name.getText() : null;
+    if (fn && name && /^[A-Z]/.test(name)) {
+      let hasLabelFor = false, hasChildren = false, hasProvider = false;
+      const scan = (x: ts.Node) => {
+        if (ts.isJsxAttribute(x) && x.name.getText() === 'htmlFor') hasLabelFor = true;
+        if (ts.isJsxExpression(x) && x.expression && x.expression.getText() === 'children') hasChildren = true;
+        const o = ts.isJsxElement(x) ? x.openingElement : ts.isJsxSelfClosingElement(x) ? x : null;
+        if (o && /\.Provider$/.test(o.tagName.getText())) hasProvider = true;
+        x.forEachChild(scan);
+      };
+      scan(fn);
+      if (hasLabelFor && hasChildren && hasProvider) out.add(name);
+    }
+    n.forEachChild(find);
+  };
+  find(sf);
+  return out;
+}
+
 /** Components in a file whose JSX puts {children} inside a <label>. */
 function wrappersIn(sf: ts.SourceFile): Set<string> {
   const out = new Set<string>();
@@ -123,6 +162,21 @@ function resolveModule(spec: string, fromFile: string): string | null {
   return null;
 }
 
+/**
+ * Does this control take its id and ARIA from the enclosing FormField?
+ *
+ * `{...fieldControlProps(w)}` puts id, aria-describedby, aria-invalid,
+ * required, disabled and readOnly on the element at runtime, so none of them
+ * appear in this file's JSX and every other route here reports it as nameless.
+ * The association is proved by rendering, in form-field.test.tsx; this only
+ * has to stop the static scan calling it a failure.
+ */
+function wiredControl(open: ts.JsxOpeningElement | ts.JsxSelfClosingElement): boolean {
+  return open.attributes.properties.some(
+    (p) => ts.isJsxSpreadAttribute(p) && /\bfieldControlProps\s*\(/.test(p.expression.getText()),
+  );
+}
+
 const CONTROLS = new Set(['input', 'select', 'textarea']);
 const NAMED = ['aria-label', 'aria-labelledby', 'title'];
 /** Controls that take their name from their own value or need none. */
@@ -133,6 +187,13 @@ export interface NameAudit {
   aria: number;
   wrapped: number;
   htmlFor: number;
+  /**
+   * Named by the enclosing FormField, which hands the control its id through
+   * context. The control spreads fieldControlProps(useFieldWiring()), so the
+   * id and aria-describedby arrive at runtime rather than appearing in this
+   * file's JSX. FormField's own tests prove the association renders.
+   */
+  wired: number;
   /** A name per the accname spec, but one that vanishes the moment you type. */
   placeholderOnly: string[];
   /** No accessible name by any route. WCAG 4.1.2 failures. */
@@ -146,12 +207,14 @@ export function auditAccessibleNames(): NameAudit {
   const wrapperExports = new Map<string, Set<string>>();
   const idWrapperExports = new Map<string, Set<string>>();
   for (const [f, sf] of asts) {
-    wrapperExports.set(f, wrappersIn(sf));
+    // A context-labelling wrapper labels its children, same as a wrapping one,
+    // so it joins the same set.
+    wrapperExports.set(f, new Set([...wrappersIn(sf), ...contextLabelWrappersIn(sf)]));
     idWrapperExports.set(f, idLabelWrappersIn(sf));
   }
 
   const audit: NameAudit = {
-    total: 0, aria: 0, wrapped: 0, htmlFor: 0,
+    total: 0, aria: 0, wrapped: 0, htmlFor: 0, wired: 0,
     placeholderOnly: [], nameless: [], filesScanned: files.length,
   };
 
@@ -220,6 +283,7 @@ export function auditAccessibleNames(): NameAudit {
             const at = `${rel}:${line}`;
             if (NAMED.some((k) => k in a)) audit.aria++;
             else if (depth > 0) audit.wrapped++;
+            else if (wiredControl(open)) audit.wired++;
             else if (a.id?.initializer && fors.has(a.id.initializer.getText())) audit.htmlFor++;
             else if ('placeholder' in a) audit.placeholderOnly.push(at);
             else audit.nameless.push(at);

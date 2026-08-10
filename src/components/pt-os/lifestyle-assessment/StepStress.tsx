@@ -46,7 +46,7 @@ export function StepStress({ form, set }: StepStressProps) {
         <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Stress Level</p>
         <span className="text-[26px]">{stressEmoji(level)}</span>
       </div>
-      <Slider label="" value={level} min={1} max={10} onChange={(v) => set('stressLevel', String(v))}
+      <Slider label="" ariaLabel="Stress Level" value={level} min={1} max={10} onChange={(v) => set('stressLevel', String(v))}
         scaleLabels={['😌 Very Low', '😐 Moderate', '😫 Very High']} />
 
       <div className="mt-6 flex items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>
