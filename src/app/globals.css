@@ -571,7 +571,12 @@ body {
   top: var(--topbar-h, calc(46px + env(safe-area-inset-top, 0px)));
 }
 .above-bottom-nav {
-  bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 16px);
+  /* --vv-bottom-inset for the same reason .mobile-bottom-nav takes it, and it
+     has to be the SAME value or the two come apart: anything sitting "above
+     the nav" is positioned relative to where the nav is, and the nav tracks
+     the real bottom edge. Without this the FAB stayed put while the nav moved,
+     which is why the AI button and the nav appeared at unrelated heights. */
+  bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 16px + var(--vv-bottom-inset, 0px));
 }
 @media (min-width: 1024px) {
   .above-bottom-nav { bottom: 24px; }

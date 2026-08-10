@@ -46,6 +46,17 @@ import { useEffect } from 'react';
  * exactly as it does today. What gets corrected is the much smaller residual
  * displacement left behind AFTER the keyboard goes away, which is the bug.
  *
+ * ── It can only ever push DOWN ─────────────────────────────────────────────
+ *
+ * The first version of this clamped the measurement symmetrically, so it also
+ * LIFTED the bar whenever the visible area ended above `bottom: 0`. That
+ * reading is the normal state of mobile Safari — the bottom toolbar overlays
+ * the layout viewport — so the nav ended up floating tens of pixels above the
+ * screen edge with page content showing underneath it, at a different height
+ * on every page and every scroll position, because the toolbar collapses as
+ * you scroll. See the sign discussion in apply(). A bar behind the browser
+ * toolbar is correct; a bar in the middle of the page is not.
+ *
  * No-ops entirely without visualViewport, which is every desktop browser and
  * every case that never had the problem.
  */
@@ -85,19 +96,32 @@ export default function useVisualViewportAnchor() {
       const layoutBottom = window.innerHeight;
       const visibleBottom = vv.offsetTop + vv.height;
 
-      // Signs matter here, and the reported symptom is the NEGATIVE one:
-      //   < 0  the layout viewport ends ABOVE the screen, so a bottom: 0 bar
-      //        is drawn short of the edge with blank page beneath it — the
-      //        bug in the screenshots. Corrected by pushing the bar DOWN,
-      //        which a negative `bottom` does.
-      //   > 0  the layout viewport ends BELOW the screen, so the bar is off
-      //        the fold. Small values (chrome mid-collapse) are lifted; a
-      //        big one is the keyboard and is left alone on purpose.
+      // This correction is ONE-DIRECTIONAL. It may push the bar down; it must
+      // never lift it. That asymmetry is the whole fix — the first version of
+      // this clamped symmetrically and lifted the nav off the bottom edge on
+      // every ordinary iOS page, which is the bug it was reported for.
+      //
+      //   shift < 0  the layout viewport ends ABOVE the screen, so a bottom: 0
+      //              bar is drawn short of the edge with blank page beneath
+      //              it. Real, rare, and what this hook exists for. Corrected
+      //              by pushing the bar down, which a negative `bottom` does.
+      //
+      //   shift > 0  the visible area ends above where `bottom: 0` lands. On
+      //              mobile Safari that is not a fault, it is the NORMAL
+      //              steady state: the browser's bottom toolbar overlays the
+      //              layout viewport, so visualViewport.height is smaller than
+      //              window.innerHeight by the toolbar's height for as long as
+      //              the toolbar is on screen. A bar at bottom: 0 sitting
+      //              behind that toolbar is correct, and is what every other
+      //              site does. Lifting it by the toolbar height parks it in
+      //              the middle of the page with content visible underneath —
+      //              and because the toolbar collapses and expands as you
+      //              scroll, the bar then moves to a different height on every
+      //              page and every scroll position.
       const shift = layoutBottom - visibleBottom;
 
-      const inset = Math.abs(shift) >= KEYBOARD_MIN_PX
-        ? 0
-        : Math.max(-MAX_SHIFT_PX, Math.min(MAX_SHIFT_PX, Math.round(shift)));
+      const displaced = shift < 0 && -shift < KEYBOARD_MIN_PX;
+      const inset = displaced ? Math.max(-MAX_SHIFT_PX, Math.round(shift)) : 0;
 
       root.style.setProperty('--vv-bottom-inset', `${inset}px`);
     };
