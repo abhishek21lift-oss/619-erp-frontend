@@ -821,7 +821,7 @@ function SelectInput({
 }: { value: string; onChange: (v: string) => void; placeholder: string; children: React.ReactNode }) {
   return (
     <div style={{ position: 'relative' }}>
-      <select
+      <select aria-label={placeholder}
         value={value}
         onChange={e => onChange(e.target.value)}
         style={{ ...inputStyle, paddingRight: 34, cursor: 'pointer', color: value ? '#fff' : 'rgba(255,255,255,0.45)' }}

@@ -156,7 +156,7 @@ export default function CommissionsPage() {
         {/* ── Controls ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 28 }}>
           <div style={{ position: 'relative' }}>
-            <input type="month" value={month} onChange={e => setMonth(e.target.value)}
+            <input aria-label="Month" type="month" value={month} onChange={e => setMonth(e.target.value)}
               style={{
                 borderRadius: 12, padding: '10px 36px 10px 16px', fontSize: 14, fontWeight: 500,
                 background: 'var(--bg-card)',
@@ -285,22 +285,22 @@ export default function CommissionsPage() {
                     ) : (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                         <div>
-                          <label style={{ ...label, textTransform: 'uppercase' }}>Commission %</label>
-                          <input type="number" value={draft.commission_pct ?? ''}
+                          <label htmlFor={`comm-pct-${t.id}`} style={{ ...label, textTransform: 'uppercase' }}>Commission %</label>
+                          <input id={`comm-pct-${t.id}`} type="number" value={draft.commission_pct ?? ''}
                             onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id], commission_pct: Number(e.target.value) } }))}
                             style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
                           />
                         </div>
                         <div>
-                          <label style={{ ...label, textTransform: 'uppercase' }}>Amount (₹)</label>
-                          <input type="number" value={draft.commission_amount ?? ''}
+                          <label htmlFor={`comm-amt-${t.id}`} style={{ ...label, textTransform: 'uppercase' }}>Amount (₹)</label>
+                          <input id={`comm-amt-${t.id}`} type="number" value={draft.commission_amount ?? ''}
                             onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id], commission_amount: Number(e.target.value) } }))}
                             style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: '#059669', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
                           />
                         </div>
                         <div>
-                          <label style={{ ...label, textTransform: 'uppercase' }}>Incentives (₹)</label>
-                          <input type="number" value={draft.incentives ?? ''}
+                          <label htmlFor={`comm-inc-${t.id}`} style={{ ...label, textTransform: 'uppercase' }}>Incentives (₹)</label>
+                          <input id={`comm-inc-${t.id}`} type="number" value={draft.incentives ?? ''}
                             onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id], incentives: Number(e.target.value) } }))}
                             style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
                           />
@@ -397,8 +397,8 @@ export default function CommissionsPage() {
                     ) : (
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                         <div>
-                          <label style={{ ...label, textTransform: 'uppercase' }}>Status</label>
-                          <select value={draft.payout_status || 'pending'}
+                          <label htmlFor={`payout-status-${tid}`} style={{ ...label, textTransform: 'uppercase' }}>Status</label>
+                          <select id={`payout-status-${tid}`} value={draft.payout_status || 'pending'}
                             onChange={e => setPayoutDraft(prev => ({ ...prev, [tid]: { ...prev[tid], payout_status: e.target.value } }))}
                             style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}>
                             <option value="pending">Pending</option>
@@ -406,8 +406,8 @@ export default function CommissionsPage() {
                           </select>
                         </div>
                         <div>
-                          <label style={{ ...label, textTransform: 'uppercase' }}>Paid Amount (₹)</label>
-                          <input type="number" value={draft.paid_amount ?? ''}
+                          <label htmlFor={`payout-paid-${tid}`} style={{ ...label, textTransform: 'uppercase' }}>Paid Amount (₹)</label>
+                          <input id={`payout-paid-${tid}`} type="number" value={draft.paid_amount ?? ''}
                             onChange={e => setPayoutDraft(prev => ({ ...prev, [tid]: { ...prev[tid], paid_amount: Number(e.target.value) } }))}
                             style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: '#059669', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
                           />

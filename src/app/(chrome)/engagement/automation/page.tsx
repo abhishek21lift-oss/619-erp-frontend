@@ -128,14 +128,14 @@ function AutoContent() {
           <form onSubmit={handleCreate} style={{ display:'grid', gap:14 }}>
             <input required placeholder="Rule name (e.g., Welcome Message)" value={name} onChange={e => setName(e.target.value)} style={inp} />
             <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap:14 }}>
-              <select value={triggerEvent} onChange={e => {
+              <select aria-label="Trigger event" value={triggerEvent} onChange={e => {
                 setTriggerEvent(e.target.value);
                 const ev = TRIGGER_EVENTS.find(t => t.value === e.target.value);
                 if (ev) setChannel(ev.channel);
               }} style={inp}>
                 {TRIGGER_EVENTS.map(ev => <option key={ev.value} value={ev.value}>{ev.label}</option>)}
               </select>
-              <select value={channel} onChange={e => setChannel(e.target.value)} style={inp}>
+              <select aria-label="Channel" value={channel} onChange={e => setChannel(e.target.value)} style={inp}>
                 <option value="whatsapp">WhatsApp</option>
                 <option value="sms">SMS</option>
                 <option value="email">Email</option>

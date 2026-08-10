@@ -27,7 +27,7 @@ export function Slider({ label, value, min, max, step = 1, onChange, formatValue
           </span>
         </div>
       )}
-      <input
+      <input aria-label={label}
         type="range" min={min} max={max} step={step} value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full accent-[#F59E0B]"

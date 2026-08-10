@@ -117,11 +117,11 @@ function ConfirmDialog({
           {cmd.blast_radius}
         </p>
 
-        <label className="mb-1.5 block text-[11px] font-[650] uppercase tracking-wide"
+        <label htmlFor="confirm-phrase" className="mb-1.5 block text-[11px] font-[650] uppercase tracking-wide"
           style={{ color: 'var(--text-tertiary)' }}>
           Type <span style={{ color: 'var(--text-primary)' }}>{cmd.name}</span> to confirm
         </label>
-        <input
+        <input id="confirm-phrase"
           autoFocus
           value={typed}
           onChange={(e) => setTyped(e.target.value)}

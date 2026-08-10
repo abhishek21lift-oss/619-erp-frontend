@@ -412,7 +412,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
                 />
               </div>
               {programs.length > 0 && (
-                <select value={programFilter} onChange={(e) => setProgramFilter(e.target.value)}
+                <select aria-label="Filter by program" value={programFilter} onChange={(e) => setProgramFilter(e.target.value)}
                   className="rounded-[10px] px-3 py-2 text-[12.5px] outline-none"
                   style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
                   <option value="">All programs</option>

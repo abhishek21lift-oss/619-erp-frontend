@@ -169,7 +169,7 @@ export default function PhotoCropModal({
               </p>
               <p className="text-[11px] text-[var(--text-disabled)]">JPG or PNG</p>
             </div>
-            <input
+            <input aria-label="Choose a photo"
               ref={fileRef} type="file" accept="image/*" className="hidden"
               onChange={(e) => loadFile(e.target.files?.[0])}
             />

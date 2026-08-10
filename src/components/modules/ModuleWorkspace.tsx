@@ -398,15 +398,15 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
                     <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-white/40" />
                     <input className="input pl-8" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Search ${config.entityName.toLowerCase()}s`} />
                   </div>
-                  <select className="input select max-w-[180px]" value={status} onChange={(e) => setStatus(e.target.value)}>
+                  <select aria-label="Filter by status" className="input select max-w-[180px]" value={status} onChange={(e) => setStatus(e.target.value)}>
                     <option>All</option>
                     {config.statuses.map((item) => <option key={item}>{item}</option>)}
                   </select>
-                  <select className="input select max-w-[160px]" value={priority} onChange={(e) => setPriority(e.target.value)}>
+                  <select aria-label="Filter by priority" className="input select max-w-[160px]" value={priority} onChange={(e) => setPriority(e.target.value)}>
                     <option>All</option>
                     {config.priorities.map((item) => <option key={item}>{item}</option>)}
                   </select>
-                  <select className="input select max-w-[160px]" value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
+                  <select aria-label="Sort by" className="input select max-w-[160px]" value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
                     <option value="dueDate">Due date</option>
                     <option value="amount">Value</option>
                     <option value="title">Title</option>
@@ -482,7 +482,7 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
                   Showing {filtered.length === 0 ? 0 : (page - 1) * pageSize + 1}-{Math.min(page * pageSize, filtered.length)} of {filtered.length}
                 </div>
                 <div className="flex items-center gap-2">
-                  <select className="input select h-8 max-w-[90px]" value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
+                  <select aria-label="Rows per page" className="input select h-8 max-w-[90px]" value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
                     {pageSizeOptions.map((size) => <option key={size} value={size}>{size}/page</option>)}
                   </select>
                   <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} aria-label="Previous page">

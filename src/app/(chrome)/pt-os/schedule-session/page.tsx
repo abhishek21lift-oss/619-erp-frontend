@@ -946,20 +946,20 @@ function CreateSessionModal({
           {/* Date/Time */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Date</p>
-              <input type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+              <label htmlFor="sess-date" className="mb-2 block text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Date</label>
+              <input id="sess-date" type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
                 className="w-full rounded-[10px] px-3 py-2.5 text-[12.5px] font-[500] outline-none"
                 style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'var(--text-primary)' }} />
             </div>
             <div>
-              <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Time</p>
-              <input type="time" value={form.time} onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
+              <label htmlFor="sess-time" className="mb-2 block text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Time</label>
+              <input id="sess-time" type="time" value={form.time} onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
                 className="w-full rounded-[10px] px-3 py-2.5 text-[12.5px] font-[500] outline-none"
                 style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'var(--text-primary)' }} />
             </div>
             <div>
-              <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Duration</p>
-              <select value={form.duration} onChange={(e) => setForm((f) => ({ ...f, duration: parseInt(e.target.value) }))}
+              <label htmlFor="sess-duration" className="mb-2 block text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Duration</label>
+              <select id="sess-duration" value={form.duration} onChange={(e) => setForm((f) => ({ ...f, duration: parseInt(e.target.value) }))}
                 className="w-full rounded-[10px] px-3 py-2.5 text-[12.5px] font-[500] outline-none"
                 style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'var(--text-primary)' }}>
                 {[30, 45, 60, 75, 90, 120].map((d) => <option key={d} value={d}>{d} min</option>)}

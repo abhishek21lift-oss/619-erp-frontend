@@ -129,13 +129,13 @@ export default function WeeklyCheckinPage() {
           <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'var(--text-primary)' }}>Log Check-In</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <select value={clientId} onChange={e => setClientId(e.target.value)}
+              <select aria-label="Client" value={clientId} onChange={e => setClientId(e.target.value)}
                 className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
                 style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }}>
                 <option value="">Select client...</option>
                 {clients.data?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
-              <input type="date" value={weekStart} onChange={e => setWeekStart(e.target.value)}
+              <input aria-label="Week starting" type="date" value={weekStart} onChange={e => setWeekStart(e.target.value)}
                 className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
                 style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }} />
               <div className="grid grid-cols-2 gap-3">

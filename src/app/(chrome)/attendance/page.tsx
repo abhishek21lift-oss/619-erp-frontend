@@ -1329,13 +1329,13 @@ function ManualEntryModal({ open, onOpenChange, clients, date, onSuccess }: {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-zinc-600 dark:text-white/50">Date</label>
-              <input type="date" value={entryDate} max={date} onChange={e => setEntryDate(e.target.value)}
+              <label htmlFor="atd-entry-date" className="text-xs font-medium text-zinc-600 dark:text-white/50">Date</label>
+              <input id="atd-entry-date" type="date" value={entryDate} max={date} onChange={e => setEntryDate(e.target.value)}
                 className="mt-1.5 w-full rounded-[12px] border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 dark:border-white/10 dark:bg-white/5 dark:text-white" />
             </div>
             <div>
-              <label className="text-xs font-medium text-zinc-600 dark:text-white/50">Check-in time</label>
-              <input type="time" value={checkIn} onChange={e => setCheckIn(e.target.value)}
+              <label htmlFor="atd-checkin-time" className="text-xs font-medium text-zinc-600 dark:text-white/50">Check-in time</label>
+              <input id="atd-checkin-time" type="time" value={checkIn} onChange={e => setCheckIn(e.target.value)}
                 className="mt-1.5 w-full rounded-[12px] border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 dark:border-white/10 dark:bg-white/5 dark:text-white" />
             </div>
           </div>
@@ -1357,8 +1357,8 @@ function ManualEntryModal({ open, onOpenChange, clients, date, onSuccess }: {
           </div>
 
           <div>
-            <label className="text-xs font-medium text-zinc-600 dark:text-white/50">Notes (optional)</label>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
+            <label htmlFor="atd-notes" className="text-xs font-medium text-zinc-600 dark:text-white/50">Notes (optional)</label>
+            <textarea id="atd-notes" value={notes} onChange={e => setNotes(e.target.value)} rows={2}
               className="mt-1.5 w-full rounded-[12px] border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 dark:border-white/10 dark:bg-white/5 dark:text-white" />
           </div>
 

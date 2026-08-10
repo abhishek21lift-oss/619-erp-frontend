@@ -194,7 +194,7 @@ function DragDropUpload({ label, accept, accentColor = '#0067e0', accentGradient
           </p>
           <p className="mt-0.5 text-[11px]" style={{ color: 'rgb(148,163,184)' }}>{accept}</p>
         </div>
-        <input ref={ref} type="file" accept={accept} multiple className="hidden"
+        <input aria-label={`Upload ${label}`} ref={ref} type="file" accept={accept} multiple className="hidden"
           onChange={e => setFiles(p => [...p, ...Array.from(e.target.files || []).map(f => f.name)])} />
       </div>
       {files.length > 0 && (
@@ -384,7 +384,7 @@ export default function AddCoachPage() {
               <Camera size={22} className="text-white" />
             </span>
           </button>
-          <input ref={photoRef} type="file" accept="image/*" className="hidden"
+          <input aria-label="Upload a trainer photo" ref={photoRef} type="file" accept="image/*" className="hidden"
             onChange={e => { const f = e.target.files?.[0]; if (f) setPhotoPreview(URL.createObjectURL(f)); }} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

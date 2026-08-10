@@ -234,10 +234,10 @@ function Inner() {
                 {(draftGrouped.get(i + 1) || []).map((ex) => (
                   <div key={ex.index} className="flex flex-wrap items-center gap-2 rounded-[12px] px-3 py-2.5" style={{ background: 'var(--bg-subtle)' }}>
                     <span className="min-w-0 flex-1 truncate text-[13px] font-[650]" style={{ color: 'var(--text-primary)' }}>{ex.name}</span>
-                    <input type="number" min={1} value={ex.sets} onChange={(e) => updateDraftField(ex.index, 'sets', Number(e.target.value))}
+                    <input title="Sets" type="number" min={1} value={ex.sets} onChange={(e) => updateDraftField(ex.index, 'sets', Number(e.target.value))}
                       className="w-12 rounded-[8px] px-2 py-1 text-center text-[12px] outline-none" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }} />
                     <span className="text-[11px]" style={{ color: 'var(--text-disabled)' }}>&times;</span>
-                    <input type="number" min={1} value={ex.reps} onChange={(e) => updateDraftField(ex.index, 'reps', Number(e.target.value))}
+                    <input title="Reps" type="number" min={1} value={ex.reps} onChange={(e) => updateDraftField(ex.index, 'reps', Number(e.target.value))}
                       className="w-12 rounded-[8px] px-2 py-1 text-center text-[12px] outline-none" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }} />
                     <input type="number" min={0} step={15} value={ex.rest_seconds} onChange={(e) => updateDraftField(ex.index, 'rest_seconds', Number(e.target.value))}
                       className="w-14 rounded-[8px] px-2 py-1 text-center text-[12px] outline-none" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}

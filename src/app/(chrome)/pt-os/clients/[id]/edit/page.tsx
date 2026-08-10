@@ -251,7 +251,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                     : <Camera size={13} className="text-white" />}
                 </span>
               </button>
-              <input ref={photoInput} type="file" accept="image/png,image/jpeg,image/webp"
+              <input aria-label="Upload a client photo" ref={photoInput} type="file" accept="image/png,image/jpeg,image/webp"
                 className="hidden" onChange={pickPhoto} />
 
               <div className="min-w-0">
@@ -275,8 +275,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
               <FloatInput label="Phone Number" type="tel" value={form.mobile} onChange={set('mobile')} />
               <FloatInput label="Email Address" type="email" value={form.email} onChange={set('email')} />
               <div>
-                <label className="block text-[11px] font-[600] mb-2" style={{ color: 'var(--text-disabled)' }}>Gender</label>
-                <select
+                <label htmlFor="client-gender" className="block text-[11px] font-[600] mb-2" style={{ color: 'var(--text-disabled)' }}>Gender</label>
+                <select id="client-gender"
                   value={form.gender}
                   onChange={e => setForm(p => ({ ...p, gender: e.target.value }))}
                   className="w-full rounded-[13px] px-4 py-3.5 text-[13.5px] font-[500] outline-none appearance-none transition-all"

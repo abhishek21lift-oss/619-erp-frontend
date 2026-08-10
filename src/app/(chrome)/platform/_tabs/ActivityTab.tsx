@@ -57,7 +57,7 @@ export function ActivityTab() {
   return (
     <div>
       <div className="mb-4 flex items-center gap-2">
-        <select value={orgFilter} onChange={(e) => setOrgFilter(e.target.value)}
+        <select aria-label="Filter by studio" value={orgFilter} onChange={(e) => setOrgFilter(e.target.value)}
           className="rounded-[10px] px-3 py-2 text-[12.5px] outline-none"
           style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
           <option value="">All studios</option>

@@ -546,7 +546,7 @@ function SelectRow({ label, description, value, options, onChange }: {
 }) {
   return (
     <SettingRow label={label} description={description}>
-      <select
+      <select aria-label={label}
         value={value}
         onChange={e => onChange(e.target.value)}
         className="rounded-[10px] px-2.5 py-1.5 text-[12px] font-[660] outline-none"
@@ -1463,10 +1463,10 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <FloatInput label="Job title" value={jobTitle} onChange={setJobTitle} />
                     <div>
-                      <span className="mb-1.5 block text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                      <label htmlFor="coaching-since" className="mb-1.5 block text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
                         Coaching since
-                      </span>
-                      <input
+                      </label>
+                      <input id="coaching-since"
                         type="date" value={experienceSince}
                         onChange={(e) => setExperienceSince(e.target.value)}
                         className="w-full rounded-xl px-3.5 py-3 text-[13px] font-[560] outline-none"

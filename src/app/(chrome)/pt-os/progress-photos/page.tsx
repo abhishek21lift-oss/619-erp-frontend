@@ -322,7 +322,7 @@ function BeforeAfterCompare({ photos }: { photos: ProgressPhoto[] }) {
 
       <div className="mt-4 flex items-center gap-3 max-w-[360px] mx-auto">
         <RefreshCw size={13} style={{ color: '#94a3b8' }} />
-        <input
+        <input aria-label="Before and after comparison position"
           type="range" min={1} max={99} value={split}
           onChange={(e) => setSplit(Number(e.target.value))}
           className="flex-1 accent-[#F59E0B]"

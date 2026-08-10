@@ -167,7 +167,7 @@ export function ProfileHero({
           style={{ background: 'linear-gradient(to bottom,rgba(15,23,42,0.28),transparent)' }} />
 
         <div className="absolute right-3 top-3 flex items-center gap-2 sm:right-4 sm:top-4">
-          <input ref={coverInput} type="file" accept={ACCEPT} className="hidden"
+          <input aria-label="Upload a banner image" ref={coverInput} type="file" accept={ACCEPT} className="hidden"
             onChange={(e) => take(e, onPickCover)} />
           <CoverAction
             icon={coverBusy ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />}
@@ -187,7 +187,7 @@ export function ProfileHero({
             beside it aligned to the row's baseline rather than pulled up too. */}
         <div className="flex items-end justify-between gap-3">
           <div className="-mt-8 shrink-0 sm:-mt-10">
-            <input ref={avatarInput} type="file" accept={ACCEPT} className="hidden"
+            <input aria-label="Upload a profile photo" ref={avatarInput} type="file" accept={ACCEPT} className="hidden"
               onChange={(e) => take(e, onPickAvatar)} />
             <button
               type="button"
