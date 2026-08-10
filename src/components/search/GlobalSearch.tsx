@@ -939,7 +939,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
               darkMode ? 'text-slate-500 group-focus-within:text-slate-300' : 'text-slate-400 group-focus-within:text-slate-600',
             )}
           />
-          <input
+          <input aria-label="Search clients"
             ref={inputRef}
             type="text"
             role="combobox"
@@ -1031,7 +1031,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
                 <div className="flex items-center gap-2 px-3 py-2.5">
                   <div className="relative flex flex-1 items-center">
                     <Search size={15} strokeWidth={2} className="absolute left-3 z-10" style={{ color: 'var(--text-disabled)' }} />
-                    <input
+                    <input aria-label="Search by name or mobile"
                       ref={sheetInputRef}
                       type="text"
                       role="combobox"

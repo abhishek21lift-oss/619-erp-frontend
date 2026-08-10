@@ -679,7 +679,7 @@ function ConversationRail(props: RailProps) {
           style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
         >
           <Search size={13} style={{ color: 'var(--text-disabled)' }} />
-          <input
+          <input aria-label="Search chats"
             value={query}
             onChange={(e) => onQuery(e.target.value)}
             placeholder="Search chats"
@@ -864,7 +864,7 @@ function ClientAttach({ selected, open, query, options, onToggle, onQuery, onSel
             // menus and SearchableSelect, which all use elevated for popovers.
             style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', boxShadow: '0 14px 36px rgba(0,0,0,0.2)' }}
           >
-            <input
+            <input aria-label="Search clients"
               autoFocus
               value={query}
               onChange={(e) => onQuery(e.target.value)}

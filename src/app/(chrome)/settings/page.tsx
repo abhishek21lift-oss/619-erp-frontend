@@ -331,7 +331,7 @@ function CoachSelector({ value, onChange }: { value: string; onChange: (v: strin
           >
             <div className="flex items-center gap-2 rounded-[10px] px-3 py-2 mb-1" style={{ background: 'var(--bg-subtle)' }}>
               <Search size={12} style={{ color: 'rgb(148,163,184)' }} />
-              <input value={q} onChange={(e) => setQ(e.target.value)}
+              <input aria-label="Search coaches" value={q} onChange={(e) => setQ(e.target.value)}
                 placeholder="Search coaches…" className="flex-1 bg-transparent text-[12px] outline-none" style={{ color: 'rgb(15,23,42)' }} />
             </div>
             {value && (
@@ -1029,7 +1029,7 @@ function AccountManagementPage() {
                   <div className="relative flex flex-1 min-w-[200px] items-center gap-2.5 rounded-[13px] px-3.5 py-2.5"
                     style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 4px rgba(15,23,42,0.04)' }}>
                     <Search size={13} style={{ color: 'rgb(148,163,184)', flexShrink: 0 }} />
-                    <input value={search} onChange={(e) => setSearch(e.target.value)}
+                    <input aria-label="Search accounts" value={search} onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search accounts…"
                       className="flex-1 bg-transparent text-[13px] font-[500] outline-none" style={{ color: 'rgb(15,23,42)' }} />
                     {search && (

@@ -184,8 +184,9 @@ describe('placeholder-as-label', () => {
   // are not 4.1.2 failures. They are still poor: the name disappears the moment
   // the field has content, which is exactly when someone re-reading the form
   // needs it. Tracked, not enforced — giving every one of them a visible label is a
-  // design change, not a bug fix. 105 -> 88 as the first forms migrated.
+  // design change, not a bug fix. 105 -> 88 -> 45 as forms and search
+  // inputs migrated.
   it('is tracked, and has not spread', () => {
-    expect(audit.placeholderOnly.length).toBeLessThanOrEqual(88);
+    expect(audit.placeholderOnly.length).toBeLessThanOrEqual(45);
   });
 });

@@ -395,7 +395,7 @@ function SchedulePageContent() {
             <div className="relative flex flex-1 min-w-[180px] max-w-[260px] items-center gap-2 rounded-[12px] px-3 py-1.5"
               style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 4px rgba(15,23,42,0.04)' }}>
               <Search size={12} style={{ color: 'var(--text-disabled)' }} />
-              <input value={search} onChange={(e) => setSearch(e.target.value)}
+              <input aria-label="Search sessions" value={search} onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search sessions…"
                 className="flex-1 bg-transparent text-[12px] font-[500] outline-none" style={{ color: 'var(--text-primary)' }} />
             </div>
@@ -881,7 +881,7 @@ function CreateSessionModal({
             </div>
 
             {clientOptions.length > 6 && (
-              <input
+              <input aria-label="Search clients"
                 type="text"
                 value={clientSearch}
                 onChange={(e) => setClientSearch(e.target.value)}

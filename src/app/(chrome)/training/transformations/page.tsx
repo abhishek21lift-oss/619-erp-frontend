@@ -191,7 +191,7 @@ function Inner() {
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '6px 14px', border: '1px solid #cbd5e1' }}>
                   <Search size={13} color="#94a3b8" />
-                  <input placeholder="Search member or coach…" value={search} onChange={(e) => setSearch(e.target.value)}
+                  <input aria-label="Search member or coach" placeholder="Search member or coach…" value={search} onChange={(e) => setSearch(e.target.value)}
                     style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 12.5, fontWeight: 500, width: 200 }} />
                 </div>
               </div>

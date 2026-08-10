@@ -257,7 +257,7 @@ function DuesTab() {
       <m.div variants={itemVariants} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '6px 14px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
           <Search size={14} color="var(--text-muted)" />
-          <input type="search" placeholder="Search member or phone…" value={search} onChange={(e) => setSearch(e.target.value)}
+          <input aria-label="Search member or phone" type="search" placeholder="Search member or phone…" value={search} onChange={(e) => setSearch(e.target.value)}
             style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, width: 220, padding: '4px 0' }} />
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 10, background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>

@@ -307,7 +307,7 @@ export default function LeadsPage() {
             <div className="mb-4 flex flex-wrap items-center gap-2.5">
               <div className="relative min-w-[200px] flex-1 sm:max-w-sm">
                 <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-                <input
+                <input aria-label="Search leads"
                   type="text" placeholder="Search leads…" value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full rounded-[12px] py-2.5 pl-9 pr-4 text-[12.5px] font-[500] outline-none transition-colors"

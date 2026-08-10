@@ -396,7 +396,7 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="relative min-w-[220px] flex-1 sm:max-w-sm">
                     <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-white/40" />
-                    <input className="input pl-8" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Search ${config.entityName.toLowerCase()}s`} />
+                    <input aria-label={`Search ${config.entityName.toLowerCase()}s`} className="input pl-8" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Search ${config.entityName.toLowerCase()}s`} />
                   </div>
                   <select aria-label="Filter by status" className="input select max-w-[180px]" value={status} onChange={(e) => setStatus(e.target.value)}>
                     <option>All</option>

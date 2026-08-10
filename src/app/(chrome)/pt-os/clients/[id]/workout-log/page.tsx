@@ -329,7 +329,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
                 {ex}
               </button>
             ))}
-            <input
+            <input aria-label="Or search exercise"
               type="text" placeholder="Or search exercise…" value={chartSearch}
               onChange={(e) => setChartSearch(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && chartSearch.trim()) setChartExercise(chartSearch.trim()); }}
@@ -404,7 +404,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <div className="relative flex-1 min-w-[180px]">
                 <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-                <input
+                <input aria-label="Search by date, exercise, notes"
                   type="text" placeholder="Search by date, exercise, notes…" value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full pl-8 pr-3 py-2 rounded-[10px] text-[12.5px] outline-none"

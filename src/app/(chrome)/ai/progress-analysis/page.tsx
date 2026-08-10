@@ -114,7 +114,7 @@ export default function ProgressAnalysisPage() {
           <div style={{ position: 'relative' }}>
             <div style={{ position: 'relative' }}>
               <User size={16} color="#94a3b8" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-              <input
+              <input aria-label="Search clients by name"
                 type="text"
                 style={{
                   width: '100%', padding: '12px 14px 12px 42px', borderRadius: 12, fontSize: 14,

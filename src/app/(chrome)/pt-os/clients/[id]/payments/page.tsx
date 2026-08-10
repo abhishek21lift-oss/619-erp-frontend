@@ -405,7 +405,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                 <div className="flex-1" />
                 <div className="relative">
                   <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-                  <input
+                  <input aria-label="Search payments"
                     type="text"
                     placeholder="Search payments..."
                     value={searchTerm}

@@ -56,7 +56,7 @@ export default function HelpPage() {
         <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
           style={{ ...lightCard, borderRadius: 16, padding: '4px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <Search size={16} color="#94a3b8" />
-          <input
+          <input aria-label="Search FAQs"
             type="text" placeholder="Search FAQs…" value={search} onChange={(e) => { setOpenIdx(null); setSearch(e.target.value); }}
             style={{
               flex: 1, border: 'none', padding: '12px 0',

@@ -225,7 +225,7 @@ function Inner() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', background: 'var(--bg-subtle)', borderRadius: 10, padding: '5px 12px', border: '1px solid var(--border)' }}>
                 <Search size={13} color="#94a3b8" />
-                <input placeholder="Search trainer / type…" value={search} onChange={(e) => setSearch(e.target.value)}
+                <input aria-label="Search trainer / type" placeholder="Search trainer / type…" value={search} onChange={(e) => setSearch(e.target.value)}
                   style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 12.5, fontWeight: 500, width: 200 }} />
               </div>
               <button onClick={() => setShowModal(true)}

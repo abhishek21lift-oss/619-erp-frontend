@@ -104,7 +104,7 @@ export function SearchableSelect({
             style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(15,23,42,0.09)', boxShadow: dropUp ? '0 -12px 32px rgba(15,23,42,0.12)' : '0 12px 32px rgba(15,23,42,0.12)' }}
           >
             <div className="border-b p-2" style={{ borderColor: 'rgba(15,23,42,0.06)' }}>
-              <input
+              <input aria-label={`Search ${label}`}
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}

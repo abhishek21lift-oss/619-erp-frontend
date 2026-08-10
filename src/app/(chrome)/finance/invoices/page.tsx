@@ -419,10 +419,10 @@ export default function InvoicesPage() {
                 boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
               }}>
                 <Search size={13} style={{ color: 'rgba(148,163,184,0.8)' }} />
-                <input
+                <input aria-label="Search invoices"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search invoices\u2026"
+                  placeholder="Search invoices…"
                   style={{
                     flex: 1,
                     background: 'transparent',
