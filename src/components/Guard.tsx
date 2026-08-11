@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { hasRole, normaliseRole } from '@/lib/roles';
 import { portalForRole, portalForPage, homeFor } from '@/lib/portals';
-import { signInPathFor } from '@/lib/public-paths';
+import { isSessionlessPage, signInPathFor } from '@/lib/public-paths';
 import type { Role } from '@/lib/roles';
 
 interface Props {
@@ -56,12 +56,41 @@ export default function Guard({ children, role, roles }: Props) {
   // safer: `ready` was sticky, so a user whose role changed mid-session kept
   // passing until the component unmounted. This recomputes on every render.
   const roleRequired = role !== undefined || roles !== undefined;
+
+  // ── A page declared sessionless is allowed to render without a session ─────
+  //
+  // Without this the front page did not exist. `/` is the first entry in
+  // SESSIONLESS_PAGES and src/app/(chrome)/page.tsx ends with
+  // `if (!user) return <LandingPage />` — but that line was unreachable: the
+  // (chrome) layout wraps every page in this Guard, and Guard redirected any
+  // visitor with no session to /login before the page could decide anything.
+  // So the marketing site — nav, pricing, FAQ, the whole 800-line component —
+  // could only ever be seen by someone already signed in, who is sent to the
+  // dashboard instead. Every logged-out visitor got the Admin Login form.
+  //
+  // The list already existed and already said `/` was public; three other
+  // consumers read it (the edge redirect in proxy.ts, the 401 handler in
+  // http.ts, and signInPathFor). Guard was the one that never asked.
+  //
+  // Deliberately narrow. It applies only when ALL of:
+  //   · there is no user at all — an existing session still follows the
+  //     portal rules below, so a member opening `/` is still sent to their
+  //     own app rather than shown the marketing page
+  //   · the pathname is an exact match in SESSIONLESS_PAGES
+  //   · the page asks for no role — a sessionless page with a role prop is a
+  //     contradiction, and this resolves it by refusing rather than allowing
+  //
+  // In practice that is `/` and nothing else: every other sessionless page
+  // lives under (bare), which has no Guard.
+  const anonymousWelcome = !user && !roleRequired && isSessionlessPage(pathname);
+
   const verdict: 'pending' | 'redirect' | 'pass' =
     loading ? 'pending'
-      : (!user || userPortal === null) ? 'redirect'
-        : userPortal !== pagePortal ? 'redirect'
-          : (roleRequired && !hasRole(user.role, roles ?? role)) ? 'redirect'
-            : 'pass';
+      : anonymousWelcome ? 'pass'
+        : (!user || userPortal === null) ? 'redirect'
+          : userPortal !== pagePortal ? 'redirect'
+            : (roleRequired && !hasRole(user.role, roles ?? role)) ? 'redirect'
+              : 'pass';
 
   // The effect now carries only the side-effect — the navigation itself. It no
   // longer decides what is rendered.
