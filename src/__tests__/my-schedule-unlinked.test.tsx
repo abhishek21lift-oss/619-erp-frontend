@@ -30,11 +30,19 @@ vi.mock('@/lib/auth-context', () => ({
 }));
 
 const mySessions = vi.fn();
+const todayRoster = vi.fn();
+const createWorkoutSession = vi.fn();
 vi.mock('@/lib/api', () => ({
   api: {
     pt: {
       mySessions: (...args: unknown[]) => mySessions(...args),
       updateSession: vi.fn(),
+    },
+    progress: {
+      workoutLog: {
+        today: (...args: unknown[]) => todayRoster(...args),
+        sessions: { create: (...args: unknown[]) => createWorkoutSession(...args) },
+      },
     },
   },
 }));
@@ -47,10 +55,18 @@ import MySchedulePage from '@/app/(chrome)/pt-os/my-schedule/page';
 
 const UNLINKED = { data: [], total: 0, trainer_linked: false };
 
+/** The roster endpoint's empty answer for a day. */
+const emptyRoster = (date = '2026-08-11') => ({
+  data: { date, day_of_week: 'Tuesday', clients: [] },
+});
+
 beforeEach(() => {
   push.mockClear();
   mySessions.mockReset();
+  todayRoster.mockReset();
+  createWorkoutSession.mockReset();
   mySessions.mockResolvedValue(UNLINKED);
+  todayRoster.mockResolvedValue(emptyRoster());
   mockUser = { id: 'u1', name: 'Owner', role: 'admin', email: 'owner@studio.com' };
 });
 
@@ -169,5 +185,165 @@ describe('the linked case still renders the agenda', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("the day agenda is the roster, not just booked pt_sessions", () => {
+  // The reported bug: Today listed five clients and My Schedule said "Nothing
+  // scheduled" for the same date. Today reads /workout-log/today, which unions
+  // booked slots, active programmes and enrolment training-days; My Schedule
+  // read pt_sessions alone, and the studio had no bookings — so the page was
+  // technically correct and practically useless.
+  const linked = { data: [], total: 0, trainer_linked: true };
+
+  // The page opens on today, so fixtures must be dated today or they land on
+  // a day the agenda is not showing. Pinning the clock instead would break the
+  // roster's own date echo, which the Start payload asserts on.
+  const now = new Date();
+  const TODAY = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+  const roster = (clients: Record<string, unknown>[], date = TODAY) => ({
+    data: { date, day_of_week: 'Wednesday', clients },
+  });
+
+  const CLIENT = {
+    client_id: 'c1', client_name: 'Prakhar Sharma', client_photo: null,
+    assignment_id: 'a1', plan_id: 'p1', plan_name: 'Full Body',
+    progress_pct: 20, planned_exercises: 2,
+    start_time: '07:00', source_rank: 2,
+    session_id: null, session_status: null,
+  };
+
+  it('lists clients who have a programme day but no booking', async () => {
+    mySessions.mockResolvedValue(linked);
+    todayRoster.mockResolvedValue(roster([CLIENT]));
+    render(<MySchedulePage />);
+
+    expect(await screen.findByText('Prakhar Sharma')).toBeTruthy();
+    expect(screen.getByText(/Full Body · 2 exercises/)).toBeTruthy();
+    // The old empty state must be gone, not merely pushed below the list.
+    expect(screen.queryByText(/nothing scheduled\./i)).toBeNull();
+  });
+
+  it('asks the roster for the selected day, not always for today', async () => {
+    mySessions.mockResolvedValue(linked);
+    todayRoster.mockResolvedValue(roster([]));
+    render(<MySchedulePage />);
+
+    await waitFor(() => expect(todayRoster).toHaveBeenCalled());
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    expect(todayRoster.mock.calls[0][0]).toEqual({ date: today });
+  });
+
+  it('shows one row per client, not one for the booking and one for the roster', async () => {
+    // A booked client appears in BOTH sources — the roster includes bookings as
+    // source_rank 1. Rendering both lists would show the same person twice.
+    mySessions.mockResolvedValue({
+      data: [{
+        id: 's1', client_id: 'c1', client_name: 'Prakhar Sharma',
+        session_date: TODAY, start_time: '07:00:00', status: 'scheduled',
+      }],
+      total: 1, trainer_linked: true,
+    });
+    todayRoster.mockResolvedValue(roster([{ ...CLIENT, source_rank: 1 }]));
+    render(<MySchedulePage />);
+
+    await screen.findByText('Prakhar Sharma');
+    expect(screen.getAllByText('Prakhar Sharma')).toHaveLength(1);
+    // And the row carries BOTH halves: the booking's status and the workout action.
+    expect(screen.getByText('Scheduled')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^start$/i })).toBeTruthy();
+  });
+
+  it('starts a workout with the programme and weekday pre-filled', async () => {
+    // Identical to the Today page's behaviour on purpose: a trainer starting
+    // from either screen must land in the same place, without retyping the two
+    // fields the New Session form used to ask for.
+    mySessions.mockResolvedValue(linked);
+    todayRoster.mockResolvedValue(roster([CLIENT]));
+    createWorkoutSession.mockResolvedValue({ data: { id: 'ws-9' } });
+    render(<MySchedulePage />);
+
+    (await screen.findByRole('button', { name: /^start$/i })).click();
+
+    await waitFor(() => expect(createWorkoutSession).toHaveBeenCalled());
+    expect(createWorkoutSession.mock.calls[0][0]).toEqual({
+      client_id: 'c1',
+      session_date: TODAY,
+      program_name: 'Full Body',
+      workout_day: 'Wednesday',
+    });
+    await waitFor(() =>
+      expect(push).toHaveBeenCalledWith('/pt-os/clients/c1/workout-log/ws-9'));
+  });
+
+  it('resumes an existing log instead of starting a second one', async () => {
+    mySessions.mockResolvedValue(linked);
+    todayRoster.mockResolvedValue(roster([
+      { ...CLIENT, session_id: 'ws-live', session_status: 'in_progress' },
+    ]));
+    render(<MySchedulePage />);
+
+    (await screen.findByRole('button', { name: /resume/i })).click();
+
+    // Navigation only — creating another log would fork the same workout.
+    expect(createWorkoutSession).not.toHaveBeenCalled();
+    expect(push).toHaveBeenCalledWith('/pt-os/clients/c1/workout-log/ws-live');
+  });
+
+  it('offers View, not Start, once the workout is done', async () => {
+    mySessions.mockResolvedValue(linked);
+    todayRoster.mockResolvedValue(roster([
+      { ...CLIENT, session_id: 'ws-done', session_status: 'completed' },
+    ]));
+    render(<MySchedulePage />);
+
+    expect(await screen.findByRole('button', { name: /view/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^start$/i })).toBeNull();
+  });
+
+  it('calls a rest day a rest day rather than counting zero exercises', async () => {
+    mySessions.mockResolvedValue(linked);
+    todayRoster.mockResolvedValue(roster([{ ...CLIENT, planned_exercises: 0 }]));
+    render(<MySchedulePage />);
+
+    expect(await screen.findByText(/Full Body · rest day/)).toBeTruthy();
+    // Still startable — a trainer may run an ad-hoc session.
+    expect(screen.getByRole('button', { name: /^start$/i })).toBeTruthy();
+  });
+
+  it('counts the selected day, not the week, so the figures match the list', async () => {
+    // "0 THIS WEEK" beside five clients was the contradiction that made the
+    // page read as broken: the stats came from pt_sessions, the list from the
+    // roster, and two sources describing one screen always drift apart.
+    mySessions.mockResolvedValue(linked);
+    todayRoster.mockResolvedValue(roster([
+      CLIENT,
+      { ...CLIENT, client_id: 'c2', client_name: 'Ajeet Yadav', session_status: 'completed' },
+    ]));
+    render(<MySchedulePage />);
+
+    await screen.findByText('Ajeet Yadav');
+    expect(screen.getByText('On This Day')).toBeTruthy();
+    const onDay = screen.getByText('On This Day').closest('div');
+    expect(onDay?.textContent).toContain('2');
+  });
+
+  it('keeps a booking whose client the roster did not return', async () => {
+    // Cancelled, or a client since deactivated. It is still the trainer's
+    // diary, so dropping it silently would hide a real appointment.
+    mySessions.mockResolvedValue({
+      data: [{
+        id: 's9', client_id: 'gone', client_name: 'Vipul Bhatia',
+        session_date: TODAY, start_time: '18:00:00', status: 'cancelled',
+      }],
+      total: 1, trainer_linked: true,
+    });
+    todayRoster.mockResolvedValue(roster([]));
+    render(<MySchedulePage />);
+
+    expect(await screen.findByText('Vipul Bhatia')).toBeTruthy();
+    expect(screen.getByText('Cancelled')).toBeTruthy();
   });
 });
