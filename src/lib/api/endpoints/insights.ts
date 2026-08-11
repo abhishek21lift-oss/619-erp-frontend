@@ -11,7 +11,7 @@ import type {
   AiBusinessInsights, AiConversation, AiDietParams, AiDietPlan,
   AiFitnessTestAnalysis, AiHealthResponse, AiKnowledgeDocument, AiMessage, AiModelStat,
   AiProgressAnalysis, AiProviderSettings, AiUsageStats, AiWorkoutParams, AiWorkoutPlan,
-  DuesItem, ProfileDevice, ProfileSession, SearchResponse, TrainerSummaryRow,
+  DuesItem, DuesSummary, ProfileDevice, ProfileSession, SearchResponse, TrainerSummaryRow,
 } from '../types';
 
 export const reports = {
@@ -22,8 +22,24 @@ export const reports = {
   // nothing called it.
   monthly: (year: number | string) =>
     http<unknown[]>(`/api/reports/monthly?year=${year}`),
+  /** Top 100 debtors by balance. For a TOTAL use `duesSummary` — see below. */
   dues: () =>
     http<DuesItem[]>('/api/reports/dues'),
+  /**
+   * Authoritative outstanding aggregates over every debtor.
+   *
+   * `dues` above is capped at 100 rows server-side, so summing it in the
+   * browser gave "outstanding among the hundred who owe most" under a label
+   * that said Outstanding. Same population, no cap, aggregated in SQL.
+   * `high`/`medium` are the risk-band thresholds, passed from the page so the
+   * numbers are not defined twice.
+   */
+  duesSummary: (params?: { high?: number; medium?: number }) =>
+    http<DuesSummary>(`/api/reports/dues/summary${buildQs(
+      params ? Object.fromEntries(
+        Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]),
+      ) : undefined,
+    )}`),
   trainerSummary: () =>
     http<TrainerSummaryRow[]>('/api/reports/trainer-summary'),
 };

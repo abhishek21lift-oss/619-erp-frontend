@@ -104,3 +104,52 @@ export function feedTime(iso: string | null): string {
   if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 }
+
+// ─── What counts as a check-in ────────────────────────────────────────────────
+//
+// One definition, in one place, because three screens were each answering it
+// for themselves and two of them disagreed.
+//
+// `attendance_logs` carries a status per row, and the backend enumerates
+// exactly three when it summarises the day (routes/attendance.js — present,
+// absent, late); 'excused' turns up in the data as well, and the mark endpoint
+// defaults a row to 'present'. An 'absent' or 'excused' row is a record that
+// somebody did NOT come in: it exists for the same member on the same day as
+// their other rows, so counting it does not merely add noise, it inflates the
+// figure.
+//
+// What went wrong without this:
+//
+//   insights/traffic       `records.length`                        — inflated
+//   insights/sessions      status === 'present' || 'late'          — correct
+//   operations/leaderboard status === 'present' || 'late'          — correct
+//
+// All three fetch the identical rows — `attendance.list({from, to, type:
+// 'client'})` — so "Total Check-ins" for one date range had two different
+// answers depending on which page you opened. leaderboard.test.ts already
+// pinned the correct rule; traffic simply never used it.
+//
+// Deliberately NOT pushed into the API as a server-side filter: an attendance
+// REGISTER has to show absences, so a list endpoint that hid them would break
+// the screens that exist to display them. The rows are right; the counting was
+// wrong, and counting is what belongs here.
+
+/** The statuses that mean a body actually came through the door. */
+export const CHECKED_IN_STATUSES = ['present', 'late'] as const;
+
+/**
+ * True when an attendance row represents an actual visit.
+ *
+ * Takes the loosest possible shape on purpose — the three callers type their
+ * rows differently (`Attendance`, a local row type, and `any` off the wire) and
+ * this must not force them to agree on anything but the status field.
+ */
+export function isCheckIn(row: { status?: string | null } | null | undefined): boolean {
+  if (!row) return false;
+  return (CHECKED_IN_STATUSES as readonly string[]).includes(String(row.status ?? ''));
+}
+
+/** How many of these rows are real visits. */
+export function countCheckIns(rows: readonly ({ status?: string | null } | null | undefined)[]): number {
+  return rows.reduce<number>((n, r) => n + (isCheckIn(r) ? 1 : 0), 0);
+}

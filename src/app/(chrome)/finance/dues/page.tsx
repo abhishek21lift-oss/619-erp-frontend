@@ -6,7 +6,7 @@ import Guard from '@/components/Guard';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { KpiCard, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import { api } from '@/lib/api';
-import type { DuesItem } from '@/lib/api';
+import type { DuesItem, DuesSummary } from '@/lib/api';
 import {
   Search, AlertTriangle, CheckCircle2, TrendingDown,
   MessageCircle, Users, Banknote,
@@ -45,14 +45,21 @@ function whatsappHref(phone?: string, name?: string) {
   return `https://wa.me/${num}?text=${encodeURIComponent(`Hi ${name ?? 'there'}, kindly clear your outstanding dues at MY PT STUDIO. Thank you.`)}`;
 }
 
+// The risk bands, named once. They are sent to /dues/summary so the server
+// counts with the same boundaries this function colours with — the alternative
+// is the same two numbers living in two files and quietly drifting.
+const RISK_HIGH = 10000;
+const RISK_MEDIUM = 3000;
+
 function riskLevel(amount: number): { label: string; color: string; bg: string } {
-  if (amount >= 10000) return { label: 'High Risk', color: '#ef4444', bg: '#fef2f2' };
-  if (amount >= 3000)  return { label: 'Medium',    color: '#f59e0b', bg: '#fffbeb' };
+  if (amount >= RISK_HIGH)   return { label: 'High Risk', color: '#ef4444', bg: '#fef2f2' };
+  if (amount >= RISK_MEDIUM) return { label: 'Medium',    color: '#f59e0b', bg: '#fffbeb' };
   return                       { label: 'Low',       color: '#10b981', bg: '#ecfdf5' };
 }
 
 function Inner() {
   const [dues, setDues]   = useState<DuesItem[]>([]);
+  const [summary, setSummary] = useState<DuesSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
   const [search, setSearch]   = useState('');
@@ -69,11 +76,26 @@ function Inner() {
 
   useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
+  // ── Rows and totals come from different places, on purpose ──────────────
+  //
+  // /api/reports/dues is capped at 100 rows server-side. That is fine for the
+  // table below, and wrong for the figures in the hero: this page used to sum
+  // those rows in the browser, so a studio with more than 100 debtors saw
+  // "Outstanding" showing the top hundred's balance under a label that claims
+  // to be the lot. /dues/summary aggregates the identical population in SQL
+  // with no cap. The thresholds are passed from RISK_HIGH/RISK_MEDIUM below so
+  // the bands are defined exactly once.
   const fetchDues = () => {
     setLoading(true);
     setError('');
-    return api.reports.dues()
-      .then((r) => setDues(Array.isArray(r) ? r : []))
+    return Promise.all([
+      api.reports.dues(),
+      api.reports.duesSummary({ high: RISK_HIGH, medium: RISK_MEDIUM }).catch(() => null),
+    ])
+      .then(([rows, sum]) => {
+        setDues(Array.isArray(rows) ? rows : []);
+        setSummary(sum);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   };
@@ -90,9 +112,19 @@ function Inner() {
     );
   }, [dues, search]);
 
-  const total = filtered.reduce((s, d) => s + Number(d.balance_amount || 0), 0);
-  const highRisk = filtered.filter((d) => Number(d.balance_amount || 0) >= 10000).length;
-  const medRisk  = filtered.filter((d) => { const a = Number(d.balance_amount || 0); return a >= 3000 && a < 10000; }).length;
+  // Authoritative when the summary loaded. The fallback is the old truncated
+  // arithmetic and is marked as approximate in the hero, because a wrong total
+  // presented as exact is what this change exists to remove.
+  const shownTotal = filtered.reduce((s, d) => s + Number(d.balance_amount || 0), 0);
+  const total    = summary ? summary.total_outstanding : shownTotal;
+  const highRisk = summary ? summary.high_risk_count
+    : filtered.filter((d) => Number(d.balance_amount || 0) >= RISK_HIGH).length;
+  const medRisk  = summary ? summary.medium_risk_count
+    : filtered.filter((d) => { const a = Number(d.balance_amount || 0); return a >= RISK_MEDIUM && a < RISK_HIGH; }).length;
+  const debtorCount = summary ? summary.debtor_count : filtered.length;
+  // The table shows at most what the API returned; say so when that is less
+  // than the real number of debtors instead of letting the list imply it is all.
+  const truncated = summary != null && !search && dues.length < summary.debtor_count;
 
   return (
     <PullToRefresh onRefresh={fetchDues}>
@@ -101,11 +133,16 @@ function Inner() {
       <PageHero
         icon={<AlertTriangle size={20} />}
         title="Pending Dues"
-        subtitle={`${filtered.length} ${filtered.length === 1 ? 'member' : 'members'} with pending dues`}
+        subtitle={
+          search
+            ? `${filtered.length} ${filtered.length === 1 ? 'member' : 'members'} matching`
+            : `${debtorCount} ${debtorCount === 1 ? 'member' : 'members'} with pending dues`
+            + (truncated ? ` \u00b7 showing the ${dues.length} largest` : '')
+        }
       >
         <div className="grid grid-cols-3 gap-2.5">
           {[
-            { label: 'Outstanding', value: fmtCompact(total) },
+            { label: summary ? 'Outstanding' : 'Outstanding (shown)', value: fmtCompact(total) },
             { label: 'High risk', value: String(highRisk) },
             { label: 'Medium', value: String(medRisk) },
           ].map((s) => (

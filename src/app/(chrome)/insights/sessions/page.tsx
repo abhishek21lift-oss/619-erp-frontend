@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
+import { countCheckIns, isCheckIn } from '@/lib/checkin';
 import { CalendarRange } from 'lucide-react';
 import { PageContainer, PageHero, PremiumBarChart } from '@/components/ui';
 
@@ -46,13 +47,13 @@ function Inner() {
     const counts = [0, 0, 0, 0, 0, 0, 0];
     for (const r of records) {
       if (!r.date) continue;
-      if (r.status !== 'present' && r.status !== 'late') continue;
+      if (!isCheckIn(r)) continue;
       counts[new Date(r.date).getDay()]++;
     }
     return DAYS.map((d, i) => ({ day: d, count: counts[i] }));
   }, [records]);
 
-  const total = records.filter((r) => r.status === 'present' || r.status === 'late').length;
+  const total = countCheckIns(records);
   const avg = Math.round(total / Math.max(byDay.filter((d) => d.count > 0).length, 1));
   const busiest = byDay.reduce((b, d) => (d.count > b.count ? d : b), byDay[0]);
 

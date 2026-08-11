@@ -4,6 +4,7 @@ import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { Activity, Users, Clock, TrendingUp, Calendar, BarChart3, ArrowUpRight } from 'lucide-react';
 import { api } from '@/lib/api';
+import { isCheckIn } from '@/lib/checkin';
 import { scrollIndexIntoCentre } from '@/lib/chart-scroll';
 import { PageContainer, PageHero } from '@/components/ui';
 
@@ -72,28 +73,41 @@ function Inner() {
     return () => { alive = false; };
   }, [from, to]);
 
+  // -- One population, three aggregations --------------------------------
+  //
+  // This page used to count three different things and present them as one
+  // report: byHour took rows that had a check_in time, byDay took rows that
+  // had a date, and the "Total Check-ins" KPI took `records.length` -- every
+  // row returned, including the 'absent' and 'excused' ones that exist for
+  // the same member on the same day and mean the opposite of a visit.
+  //
+  // So the KPI was inflated, it did not match either chart beneath it, and it
+  // did not match the identical KPI on insights/sessions, which had the rule
+  // right. All of them now read the same filtered list. See checkin.ts.
+  const visits = useMemo(() => records.filter(isCheckIn), [records]);
+
   const byHour = useMemo(() => {
     const map = new Map<string, number>();
-    for (const r of records) {
+    for (const r of visits) {
       if (!r.check_in) continue;
       const h = String(r.check_in).slice(0, 2);
       map.set(h, (map.get(h) || 0) + 1);
     }
     return HOURS.map((h) => ({ hour: h, count: map.get(h) || 0 }));
-  }, [records]);
+  }, [visits]);
 
   const byDay = useMemo(() => {
     const map = new Map<string, number>();
-    for (const r of records) {
+    for (const r of visits) {
       if (!r.date) continue;
       map.set(r.date, (map.get(r.date) || 0) + 1);
     }
     const sorted = Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
     return sorted;
-  }, [records]);
+  }, [visits]);
 
   const max = Math.max(...byHour.map((h) => h.count), 1);
-  const totalCheckins = records.length;
+  const totalCheckins = visits.length;
   const peakHour = byHour.reduce((b, h) => (h.count > b.count ? h : b), byHour[0]);
   const avgDaily = byDay.length > 0 ? Math.round(totalCheckins / byDay.length) : 0;
   const busiestDay = byDay.reduce((b, d) => (d[1] > b[1] ? d : b), ['—', 0]);

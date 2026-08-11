@@ -7,6 +7,7 @@ import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import type { Payment } from '@/lib/api';
+import type { PaymentStats } from '@/lib/api/endpoints/money';
 import { Button, KpiCard, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import {
   Banknote, Search, ArrowUpDown, User, Wallet,
@@ -39,6 +40,7 @@ export default function CollectedPaymentsPage() {
 function Inner() {
   const router = useRouter();
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [stats, setStats] = useState<PaymentStats | null>(null);
   const [loading, setLoading] = useState(true);
   // Two values, not one: `query` is what is in the box right now (so the input
   // stays responsive and can be seeded from ?q= by the global search), `search`
@@ -59,11 +61,26 @@ function Inner() {
     return () => clearTimeout(t);
   }, [query]);
 
+  // ── Rows for the table, aggregates from the server ──────────────────────
+  //
+  // GET /api/payments is capped (LIMIT 200 by default), so `payments` below is
+  // the most recent page of the ledger, not the ledger. This page used to sum
+  // it in the browser and label the result "Total Collected" — which meant any
+  // studio past 200 payments saw the last 200 payments' worth of money
+  // presented as everything it had ever taken.
+  //
+  // /api/payments/stats does the SUM in SQL over the whole matching ledger,
+  // with the same tenant, branch and soft-delete rules, and returns the method
+  // split too. The table still renders rows; only the KPIs changed source.
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.payments.list();
+      const [data, s] = await Promise.all([
+        api.payments.list(),
+        api.payments.stats().catch(() => null),
+      ]);
       setPayments(Array.isArray(data) ? data : []);
+      setStats(s);
     } catch {
       setPayments([]);
     } finally {
@@ -99,8 +116,26 @@ function Inner() {
     return list;
   }, [payments, search, methodFilter, sortField, sortDir]);
 
-  const totalCollected = useMemo(() => filtered.reduce((s, p) => s + p.amount, 0), [filtered]);
+  // Search and method filters act on the rows in hand, so while either is
+  // active the figures describe the visible selection and are labelled that
+  // way. With no filter applied the KPIs are the server's, over everything.
+  const isFiltered = Boolean(search) || methodFilter !== 'all';
+  const shownTotal = useMemo(() => filtered.reduce((s, p) => s + p.amount, 0), [filtered]);
+  const authoritative = stats != null && !isFiltered;
+  const totalCollected = authoritative ? stats!.total : shownTotal;
+  const paymentCount = authoritative ? stats!.count : filtered.length;
+  // The filter dropdown's options — method NAMES, from the rows in hand.
   const methods = useMemo(() => [...new Set(payments.map((p) => p.method))], [payments]);
+  // The KPI is a different question: how many methods the studio actually uses.
+  // Taken from the server's per-method sums, because distinct methods within a
+  // 200-row page under-reports a studio that has stopped taking cash recently.
+  const methodCount = useMemo(() => {
+    if (stats) return [stats.cash, stats.upi, stats.card, stats.bank].filter((v) => Number(v) > 0).length;
+    return methods.length;
+  }, [stats, methods]);
+  // Deliberately NOT taken from stats: the endpoint returns sums, not a MAX,
+  // and inventing one client-side from a capped page would be the same bug in
+  // a new place. Labelled as the largest in view.
   const largestPayment = useMemo(() => filtered.reduce((m, p) => Math.max(m, p.amount), 0), [filtered]);
 
   const pageCount = Math.ceil(filtered.length / PAGE_SIZE);
@@ -134,10 +169,10 @@ function Inner() {
           the tinted panel and onto the page, as cards. */}
       {!loading && (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <KpiCard icon={<Layers size={16} />} label="Total Payments" value={filtered.length.toString()} accent="sky" />
-              <KpiCard icon={<IndianRupee size={16} />} label="Total Collected" value={fmtINR(totalCollected)} accent="emerald" />
-              <KpiCard icon={<List size={16} />} label="Unique Methods" value={methods.length.toString()} accent="violet" />
-          <KpiCard icon={<TrendingUp size={16} />} label="Largest Payment" value={fmtINR(largestPayment)} accent="amber" />
+              <KpiCard icon={<Layers size={16} />} label={isFiltered ? 'Payments (filtered)' : 'Total Payments'} value={paymentCount.toString()} accent="sky" />
+              <KpiCard icon={<IndianRupee size={16} />} label={isFiltered ? 'Collected (filtered)' : 'Total Collected'} value={fmtINR(totalCollected)} accent="emerald" />
+              <KpiCard icon={<List size={16} />} label="Unique Methods" value={methodCount.toString()} accent="violet" />
+          <KpiCard icon={<TrendingUp size={16} />} label="Largest In View" value={fmtINR(largestPayment)} accent="amber" />
         </div>
       )}
 
