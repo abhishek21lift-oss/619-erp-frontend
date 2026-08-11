@@ -57,8 +57,16 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Docker HEALTHCHECK — polls the lightweight /api/health route
+# Docker HEALTHCHECK.
+#
+# 127.0.0.1 rather than localhost: on Alpine, localhost resolves to ::1
+# first, and the standalone server binds HOSTNAME=0.0.0.0 which is IPv4
+# only. wget then fails to connect and the container sits permanently
+# unhealthy while serving traffic perfectly well.
+#
+# This was fixed on the VPS and never made it back here, so every pull
+# conflicted on this line. Adopting the box's working version ends that.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget -qO- http://localhost:3000/api/health || exit 1
+  CMD wget -qO- http://127.0.0.1:3000/ || exit 1
 
 CMD ["node", "server.js"]
