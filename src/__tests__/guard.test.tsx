@@ -182,3 +182,98 @@ describe('<Guard /> keeps the two apps apart', () => {
     expect(mockReplace).not.toHaveBeenCalled();
   });
 });
+
+// ── The splash must not appear when the answer is already known ─────────────
+//
+// This is the regression that produced BOTH reported navigation bugs, so it is
+// pinned here rather than left to code review.
+//
+// Guard used to hold its verdict in `useState(false)` and flip it in an effect.
+// Effects run after the commit, so the FIRST render pass of every Guard
+// returned the full-viewport splash even when auth had resolved long ago — and
+// 112 pages nest their own <Guard> inside the one in the chrome layout, so it
+// happened on every single navigation. Visible as the bottom-nav flicker; and
+// because the splash is `minHeight: 100dvh`, it also collapsed the document to
+// one viewport at exactly the moment scroll restoration needed the old height.
+describe('<Guard /> paints no loading frame when auth is already resolved', () => {
+  /** A DOM query after render() cannot see this: RTL flushes effects inside
+   *  act(), so by the time any assertion runs the splash has already been
+   *  replaced — an earlier attempt at this test reported 0 for that reason and
+   *  would have passed against the broken component. A MutationObserver records
+   *  nodes that were added and then removed, which is exactly the transient
+   *  frame being ruled out. */
+  function countSplashFrames(ui: React.ReactElement): { splash: number; host: HTMLElement } {
+    let splash = 0;
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const observer = new MutationObserver((records) => {
+      for (const r of records) {
+        r.addedNodes.forEach((n) => {
+          if ((n.textContent ?? '').includes('Loading')) splash += 1;
+        });
+      }
+    });
+    observer.observe(host, { childList: true, subtree: true });
+    render(ui, { container: host });
+    observer.takeRecords().forEach((r) => {
+      r.addedNodes.forEach((n) => {
+        if ((n.textContent ?? '').includes('Loading')) splash += 1;
+      });
+    });
+    observer.disconnect();
+    return { splash, host };
+  }
+
+  it('commits the children directly, with no splash frame in between', () => {
+    pathname = '/pt-os/clients';
+    mockUseAuth.mockReturnValue({ user: { id: 'u1', role: 'trainer' as Role }, loading: false });
+
+    const { splash, host } = countSplashFrames(<Guard><p>real content</p></Guard>);
+
+    expect(host.textContent).toContain('real content');
+    expect(splash).toBe(0);
+    host.remove();
+  });
+
+  it('does not paint one for a nested Guard either, which is what 112 pages do', () => {
+    pathname = '/pt-os/clients';
+    mockUseAuth.mockReturnValue({ user: { id: 'u1', role: 'trainer' as Role }, loading: false });
+
+    const { splash, host } = countSplashFrames(
+      <Guard><Guard role="trainer"><p>real content</p></Guard></Guard>,
+    );
+
+    expect(host.textContent).toContain('real content');
+    expect(splash).toBe(0);
+    host.remove();
+  });
+
+  it('still paints it while auth is genuinely unresolved', () => {
+    // The fix must not be "delete the splash". A cold load has nothing else to
+    // show, and rendering children before the session is known would flash a
+    // page at somebody who may turn out not to be allowed to see it.
+    pathname = '/pt-os/clients';
+    mockUseAuth.mockReturnValue({ user: null, loading: true });
+
+    const { splash, host } = countSplashFrames(<Guard><p>real content</p></Guard>);
+
+    expect(host.textContent).not.toContain('real content');
+    expect(splash).toBeGreaterThan(0);
+    host.remove();
+  });
+
+  it('re-checks on every render instead of latching open', async () => {
+    // `ready` was sticky: once true it stayed true for the life of the
+    // component, so a session that changed underneath a mounted page kept
+    // passing the gate. Deriving the verdict removes that by construction.
+    pathname = '/pt-os/clients';
+    mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'admin' as Role }, loading: false });
+    const { rerender } = render(<Guard role="admin"><p>admin tools</p></Guard>);
+    await waitFor(() => expect(screen.getByText('admin tools')).toBeInTheDocument());
+
+    mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'trainer' as Role }, loading: false });
+    rerender(<Guard role="admin"><p>admin tools</p></Guard>);
+
+    expect(screen.queryByText('admin tools')).not.toBeInTheDocument();
+  });
+});
