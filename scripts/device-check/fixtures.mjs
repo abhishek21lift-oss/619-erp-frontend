@@ -576,6 +576,27 @@ const ROUTES = [
       ],
     },
   })],
+  // Birthdays MUST come before /clients/:id — `birthdays` is a literal path
+  // segment, not an id, so the general handler matched it happily and
+  // returned ONE CLIENT OBJECT where the dashboard expects an array. Not a
+  // cosmetic mismatch: AICoach hands it to buildCoachInsights, which calls
+  // .filter on it, and the entire studio dashboard went to its error
+  // boundary — "TypeError: t.filter is not a function".
+  //
+  // So the one route in this table that every user lands on first has
+  // rendered nothing but "Something went wrong" for the whole life of this
+  // harness, and the dashboard's layout has never actually been checked at
+  // 390px despite being listed here.
+  //
+  // The real backend gets this right and says so on the line above its own
+  // route (pt-os.routes.js:220 — "MUST be before /clients/:id"), which is
+  // precisely the hazard this table reproduced.
+  [/^\/api\/pt-os\/clients\/birthdays$/, () => ({
+    data: [
+      { id: 'c-2', name: 'Rahul Mehta', mobile: '+91 98111 22233', days_until_birthday: 0 },
+      { id: 'c-3', name: 'Deeksha Tomar', mobile: null, days_until_birthday: 4 },
+    ],
+  })],
   [/^\/api\/pt-os\/clients\/[^/]+$/, () => ({ data: CLIENT })],
   [/^\/api\/pt-os\/clients$/, () => ({ data: [CLIENT] })],
 
