@@ -16,6 +16,14 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
+# Where the AI service (repo: mps-ai) lives on the compose network. Read by
+# next.config.js's rewrites(), which Next.js evaluates at BUILD time and bakes
+# into routes-manifest.json — so this has to be an ARG, not a runtime env var.
+# Optional: unset means /ai/* is simply not routed, and the build still
+# succeeds, which is what lets a deploy without the AI service keep working.
+ARG AI_SERVICE_URL
+ENV AI_SERVICE_URL=$AI_SERVICE_URL
+
 RUN npm run build
 
 # ─── Stage 3: Production runner (minimal image) ────────────────────
