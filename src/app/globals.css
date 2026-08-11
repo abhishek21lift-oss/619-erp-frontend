@@ -1501,6 +1501,36 @@ select.form-control { cursor: pointer; }
 .animate-float-c { animation: float-c 22s ease-in-out infinite; }
 .animate-ripple  { animation: ripple 0.65s ease-out forwards; }
 
+/* ════════════════════════════════════════════════════════════════════
+   MARKETING HERO — the two ambient lights behind the landing hero.
+
+   CSS rather than a motion library: these are two decorative divs that
+   never stop moving, and the cheapest correct way to move something
+   forever is a compositor-only keyframe the main thread never sees. Only
+   transform and opacity are animated, so no frame costs layout or paint,
+   and neither element can shift the page — both are absolutely
+   positioned inside an overflow-clipped stage.
+
+   Very slow on purpose, and at coprime durations so the pair never
+   visibly repeats. A hero light pulsing on a two-second loop reads as a
+   loading state; at this speed it registers as the light being alive
+   rather than as an animation playing.
+
+   The reduced-motion block below already cuts every animation in the app
+   to 0.01ms, so these stop for anyone who asked for that — no rule of
+   their own required.
+   ════════════════════════════════════════════════════════════════════ */
+@keyframes hero-glow-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1);    opacity: 0.85; }
+  50%      { transform: translate3d(2%, -3%, 0) scale(1.10); opacity: 1; }
+}
+@keyframes hero-glow-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.06); opacity: 0.70; }
+  50%      { transform: translate3d(-3%, 2%, 0) scale(1);   opacity: 0.95; }
+}
+.hero-glow-a { animation: hero-glow-a 38s ease-in-out infinite; will-change: transform, opacity; }
+.hero-glow-b { animation: hero-glow-b 46s ease-in-out infinite; will-change: transform, opacity; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
