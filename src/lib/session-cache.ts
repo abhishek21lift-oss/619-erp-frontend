@@ -55,4 +55,65 @@ export function writeCachedUser(json: string): void {
 export function clearCachedUser(): void {
   if (typeof window === 'undefined') return;
   try { sessionStorage.removeItem(SESSION_USER_KEY); } catch { /* noop */ }
+  clearCachedFeatures();
+}
+
+/**
+ * ── The studio's last-known feature map ──
+ *
+ * Purely a layout stabiliser, and never an authorisation input.
+ *
+ * The bottom navigation filters its tabs by feature flag, and those flags
+ * arrive one API round trip after the bar has already painted. Measured in a
+ * throttled mobile browser profile: the bar rendered five tabs at +1.0s and
+ * re-laid itself out to three at +2.0s, so every launch showed a second of the
+ * navigation rearranging under the reader's thumb. Seeding from the last known
+ * answer means a returning user's bar is right the first time it paints.
+ *
+ * Two things this deliberately is NOT:
+ *
+ *   · It is not a permission. The server refuses a disabled capability with
+ *     403 FEATURE_DISABLED whatever this says, and `enabled()` still fails
+ *     OPEN for anything it has not been told about — so a stale cache can at
+ *     worst show a tab that 403s when tapped, which is exactly the failure the
+ *     provider already accepts by design.
+ *   · It is not identity. It holds which modules a studio has switched on —
+ *     the same thing the navigation already puts on screen — and no name, no
+ *     email, no token.
+ *
+ * localStorage rather than sessionStorage, unlike the user cache above, and
+ * that difference is the whole point: the reported symptom is on a COLD
+ * LAUNCH, with the app closed and reopened. sessionStorage is empty at exactly
+ * that moment, so caching there would fix nothing. It is stamped with the user
+ * id it was written for and never applied to anybody else, and clearCachedUser
+ * drops it — so a logout, a 401 and an impersonation switch all take it too.
+ */
+const FEATURES_KEY = '619_features_v1';
+
+export function readCachedFeatures(userId: string): Record<string, boolean> | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(FEATURES_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { uid?: string; features?: unknown };
+    // A map written for somebody else is not this studio's answer.
+    if (parsed.uid !== userId || !parsed.features || typeof parsed.features !== 'object') return null;
+    const out: Record<string, boolean> = {};
+    for (const [k, v] of Object.entries(parsed.features as Record<string, unknown>)) {
+      if (typeof v === 'boolean') out[k] = v;
+    }
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+export function writeCachedFeatures(userId: string, features: Record<string, boolean>): void {
+  if (typeof window === 'undefined') return;
+  try { localStorage.setItem(FEATURES_KEY, JSON.stringify({ uid: userId, features })); } catch { /* quota */ }
+}
+
+export function clearCachedFeatures(): void {
+  if (typeof window === 'undefined') return;
+  try { localStorage.removeItem(FEATURES_KEY); } catch { /* noop */ }
 }

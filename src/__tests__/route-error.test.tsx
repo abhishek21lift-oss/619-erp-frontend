@@ -222,6 +222,28 @@ describe('every route segment has a boundary', () => {
     expect(wrong).toEqual([]);
   });
 
+  it('gives the chrome GROUP its own boundary, not just its segments', () => {
+    // The gap this closes, measured in a real browser rather than reasoned
+    // about: `/` is (chrome)/page.tsx and sits directly in the group, so with
+    // no error.tsx at the group root its nearest boundary was src/app/error.tsx
+    // — which is ABOVE (chrome)/layout.tsx. Catching there does not replace the
+    // page, it replaces the LAYOUT: probe counts showed ChromeLayout, the Guard
+    // inside it and AppShell all going live 1 → 0, with RouteError's own
+    // shell={true} copy mounting in their place. The persistent bottom
+    // navigation is destroyed and rebuilt as part of that swap, which is
+    // exactly the flicker users report. A page-level throw must cost the page,
+    // not the chrome around it.
+    //
+    // `/` is also the Home tab of the bottom nav, so this was one tap away.
+    const f = path.join(APP, '(chrome)', 'error.tsx');
+    expect(fs.existsSync(f)).toBe(true);
+    const src = fs.readFileSync(f, 'utf8');
+    // shell={false}: AppShell is still mounted above when this renders, so
+    // asking for a shell here would paint a second one inside the first.
+    expect(src).toMatch(/shell=\{false\}/);
+    expect(src).toMatch(/from '@\/components\/RouteError'/);
+  });
+
   it('routes every boundary through the shared component', () => {
     // 27 hand-written fallbacks would drift. If one stops importing RouteError,
     // the redaction and reporting guarantees above stop applying to it.
