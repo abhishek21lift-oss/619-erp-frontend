@@ -21,6 +21,19 @@
 
 import { apiBase } from '@/lib/http';
 
+/**
+ * The service's check of the answer's figures against the records they were
+ * supposed to come from. Numbers only — prose is not checkable this way — and
+ * `figures` carries just the ones it could not account for.
+ */
+export interface ClientAiGrounding {
+  checked: number;
+  inSource: number;
+  derived: number;
+  unverified: number;
+  figures: { text: string; value: number; line: number; context: string }[];
+}
+
 export interface ClientAiAnswer {
   message: string;
   clientId: string;
@@ -29,6 +42,7 @@ export interface ClientAiAnswer {
   toolsUsed: string[];
   /** Tools that were denied or errored — shown so a gap is visible, not hidden. */
   toolsUnavailable: { tool: string; reason: string }[];
+  grounding?: ClientAiGrounding;
   proposedAction: unknown | null;
   requiresConfirmation: boolean;
   meta?: {

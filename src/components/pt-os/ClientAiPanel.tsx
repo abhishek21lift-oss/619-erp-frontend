@@ -21,7 +21,7 @@ import {
 import { Button } from '@/components/ui';
 import {
   streamClientAi, ClientAiError, SUGGESTED_QUESTIONS,
-  type ClientAiTurn,
+  type ClientAiTurn, type ClientAiGrounding,
 } from '@/lib/client-ai';
 
 interface Msg extends ClientAiTurn {
@@ -36,6 +36,8 @@ interface Msg extends ClientAiTurn {
   /** Written, but stopped short. The text is kept — it is real and the trainer
    *  is already reading it — with a line saying not to treat it as complete. */
   truncated?: boolean;
+  /** The service's check of this answer's figures against the client's records. */
+  grounding?: ClientAiGrounding;
 }
 
 /** `getClientTrainingBrief` → `training brief`. */
@@ -135,6 +137,7 @@ export default function ClientAiPanel({
         content: res.message,
         tools: res.toolsUsed,
         unavailable: res.toolsUnavailable,
+        grounding: res.grounding,
         streaming: false,
       });
     } catch (err) {
@@ -298,6 +301,27 @@ export default function ClientAiPanel({
                         <AlertTriangle size={11} />
                         Stopped before it finished — treat this as incomplete.
                       </p>
+                    )}
+
+                    {/* Figures the service could not find in this client's
+                        records. Named individually rather than counted: a
+                        trainer needs to know WHICH number to distrust, and a
+                        bare "1 unverified figure" makes them re-read the whole
+                        answer to guess at it. */}
+                    {!!msg.grounding?.figures.length && (
+                      <div
+                        className="mt-2.5 rounded-[10px] px-2.5 py-2"
+                        style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.30)' }}
+                      >
+                        <p className="flex items-center gap-1.5 text-[10.5px] font-[750]" style={{ color: '#b45309' }}>
+                          <AlertTriangle size={11} />
+                          Not found in {clientName}&rsquo;s records:{' '}
+                          {msg.grounding.figures.map((f) => f.text).join(', ')}
+                        </p>
+                        <p className="mt-1 text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                          Check {msg.grounding.figures.length === 1 ? 'this figure' : 'these figures'} against the record before acting on {msg.grounding.figures.length === 1 ? 'it' : 'them'}.
+                        </p>
+                      </div>
                     )}
 
                     {/* Provenance. A trainer acting on this deserves to know

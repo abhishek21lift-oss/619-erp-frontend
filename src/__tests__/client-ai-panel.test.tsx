@@ -184,6 +184,44 @@ describe('what it shows', () => {
     expect(await screen.findByText(/couldn.t read: attendance/i)).toBeTruthy();
   });
 
+  it('names the figures it could not find in the record', async () => {
+    // The service checked the answer's numbers against the client's records
+    // and could not account for 22.7%. Showing the answer without that flag
+    // hands the trainer a fabricated body-fat reading as though the database
+    // had stated it — the exact failure the whole grounding design exists to
+    // prevent, and the one a trainer cannot detect by reading.
+    streamClientAi.mockImplementation(streamsBack({
+      message: 'Body fat is 22.7%.',
+      grounding: {
+        checked: 1,
+        inSource: 0,
+        derived: 0,
+        unverified: 1,
+        figures: [{ text: '22.7%', value: 22.7, line: 1, context: 'Body fat is 22.7%.' }],
+      },
+    }));
+    open();
+    fireEvent.click(screen.getByRole('button', { name: 'Summarize this client' }));
+
+    // The figure itself, not a count — the trainer must know WHICH number.
+    expect(await screen.findByText(/not found in Rahul Sharma.s records: 22\.7%/i)).toBeTruthy();
+    // And the answer is still shown: the panel flags, it does not censor.
+    expect(screen.getByText(/Body fat is 22\.7%/)).toBeTruthy();
+  });
+
+  it('says nothing when every figure checked out', async () => {
+    // A warning that appears on healthy answers is a warning trainers learn to
+    // ignore, which costs exactly the case above.
+    streamClientAi.mockImplementation(streamsBack({
+      grounding: { checked: 3, inSource: 3, derived: 0, unverified: 0, figures: [] },
+    }));
+    open();
+    fireEvent.click(screen.getByRole('button', { name: 'Summarize this client' }));
+    await screen.findByText(/78\.4 kg/);
+
+    expect(screen.queryByText(/not found in/i)).toBeNull();
+  });
+
   it('states plainly that it is read-only', async () => {
     // §27: the assistant must never imply it changed something. Phase 1 cannot
     // write at all, and the panel should say so rather than leave it ambiguous.
