@@ -53,7 +53,7 @@ export default function AiLauncher({
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 420, damping: 26 }}
       whileTap={{ scale: 0.92 }}
-      className="fixed right-4 z-[120] flex h-14 w-14 items-center justify-center rounded-full sm:right-6"
+      className="group fixed right-4 z-[120] flex h-14 w-14 items-center justify-center rounded-full sm:right-6"
       style={{
         // Above the bottom nav on mobile, off the safe area on desktop where
         // there is no nav to clear.
@@ -67,8 +67,17 @@ export default function AiLauncher({
     >
       {/* The glow. A sibling rather than a box-shadow animation, because
           animating box-shadow repaints the button every frame and animating
-          transform/opacity on a separate layer does not. */}
-      {!reducedMotion && (
+          transform/opacity on a separate layer does not.
+
+          Gated on `isNew` as well as reduced motion. It used to pulse forever
+          for everybody: a button breathing in the corner of every screen in
+          the product, on every screen, for the life of the account. That is
+          an onboarding affordance doing a permanent job — once you know the
+          assistant is there, the pulse is just movement in your peripheral
+          vision while you are trying to read a client's numbers. It now stops
+          being animated the moment the panel has been opened once, which is
+          exactly when it has finished saying what it had to say. */}
+      {!reducedMotion && isNew && (
         <m.span
           aria-hidden
           className="pointer-events-none absolute inset-0 rounded-full"
@@ -79,6 +88,23 @@ export default function AiLauncher({
       )}
 
       <Sparkles size={22} className="relative text-white" strokeWidth={2.2} />
+
+      {/* Names the thing on hover. The aria-label says "Open AI assistant"
+          for screen readers; sighted pointer users had only a sparkle to go
+          on. Hidden from the a11y tree so it is not announced twice, and
+          pointer-events-none so it can never eat the button's own click. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute right-full mr-3 hidden whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[11px] font-[700] text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 sm:block"
+        style={{
+          background: 'rgba(15,23,42,0.92)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          boxShadow: '0 4px 14px rgba(15,23,42,0.28)',
+        }}
+      >
+        Studio AI
+      </span>
 
       {isNew && (
         <span
