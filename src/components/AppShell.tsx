@@ -686,26 +686,6 @@ export default function AppShell(props: AppShellProps) {
   // NavScrollProvider is the one piece that still lives further up, in
   // app/layout.tsx: the member portal has no AppShell at all and still needs
   // the scroll state.
-  const { user } = useAuth();
-
-  // ── No session, no application chrome ─────────────────────────────────────
-  //
-  // Reaching this with no user means Guard let an anonymous visitor through to
-  // a page declared sessionless — in practice `/`, which is the marketing site
-  // when signed out and the studio dashboard when signed in.
-  //
-  // Without this the front page came up wrapped in the signed-in application:
-  // a sidebar reading "WORKSPACE / Attendance / AI Suite", a top bar with a
-  // notifications bell, a profile card naming nobody, and the mobile tab bar
-  // underneath — the marketing page framed by the product's own furniture,
-  // offering navigation to screens that would bounce the visitor straight back
-  // to /login.
-  //
-  // The shell is not merely hidden here, it is never mounted: it opens a
-  // notifications poll and a features fetch on mount, and there is no
-  // authenticated caller to make either on behalf of.
-  if (!user) return <>{props.children}</>;
-
   return (
     <PullRefreshRegistryProvider>
       <AppShellContent {...props} />

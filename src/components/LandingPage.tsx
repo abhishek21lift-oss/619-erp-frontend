@@ -47,53 +47,6 @@ const gradText: React.CSSProperties = {
   WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
 };
 
-// ── Hero night palette ──────────────────────────────────────────────────────
-//
-// The hero is the one dark surface on this page; everything from "Trusted by"
-// down stays white. These are scoped to it rather than added to the palette
-// above, because the page's constants are used in ~100 places in fixed
-// structural roles and a dark variant of each would double that table for one
-// section's benefit.
-//
-// Every value is from src/lib/palette.ts — palette.test.ts scans this file and
-// fails on any hex outside the five families. That constraint decided two of
-// them for me:
-//
-//   NIGHT is gray-900, the same near-black this file already calls "the logo's
-//   cube". Deep charcoal, deliberately not #000: pure black kills the
-//   gradients and makes the white type ring.
-//
-//   NIGHT_ACCENT is blue-950 (#1CA3F9) rather than the brand blue-500. The
-//   palette documents exactly why: on a gray-900 tile the deep 500 reaches
-//   only 3.4:1, so it is the one blue in the system that must not carry
-//   meaning on a dark surface. 950 exists for this case and measures 7.4:1.
-const NIGHT        = '#0F172A'; // gray-900  — the stage floor
-const NIGHT_LIFT   = '#1E293B'; // gray-800  — the lifted edge
-const NIGHT_BLUE   = '#002D61'; // blue-900  — depth in the corners
-const NIGHT_BLUE_2 = '#003F87'; // blue-800  — the warmer pool of light
-const NIGHT_ACCENT = '#1CA3F9'; // blue-950  — the only blue readable as text here
-const ON_NIGHT     = '#FFFFFF'; // gray-0    — headline, 17.9:1
-const ON_NIGHT_2   = '#CBD5E1'; // gray-300  — body copy, 11.6:1
-const ON_NIGHT_3   = '#94A3B8'; // gray-400  — supporting line, 7.0:1
-const ON_NIGHT_LABEL = '#E2E8F0'; // gray-200 — the eyebrow label, 7.1:1 on its pill
-
-/** The headline's accent phrase, lit rather than inked. */
-const gradTextNight: React.CSSProperties = {
-  background: `linear-gradient(104deg, ${GOLD_HI} 0%, ${NIGHT_ACCENT} 46%, ${ON_NIGHT} 104%)`,
-  WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
-};
-
-/**
- * A single grain tile, as a data URI.
- *
- * ~230 bytes of SVG rather than a texture file: it costs no request, cannot
- * block paint, and tiles at 140px so the repeat is invisible. Held at 3.5%
- * opacity, where it does not read as texture so much as stop the large
- * gradients banding on 8-bit displays, which is the actual job.
- */
-const GRAIN =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
-
 // ── Scroll reveal ───────────────────────────────────────────────────────────
 function Reveal({ children, delay = 0, y = 22, className = '' }: { children: ReactNode; delay?: number; y?: number; className?: string }) {
   const reduce = useReducedMotion();
@@ -121,27 +74,14 @@ function Wordmark({ light = false }: { light?: boolean }) {
         height={38}
         priority
         className="h-9 w-9 shrink-0 object-contain"
-        // The light variant used to carry a BLACK drop shadow, which on the
-        // dark surfaces it exists for did precisely nothing — the cube is
-        // black artwork and it was being given a black edge. Same rim light
-        // the wide lockup uses, at this size a single hairline is enough.
-        style={light
-          ? { filter: 'drop-shadow(0 0 1px rgba(255,255,255,0.85)) drop-shadow(0 0 6px rgba(0,103,224,0.75))' }
-          : { filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.35))' }}
+        style={light ? { filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.35))' } : undefined}
       />
-      {/* Mirrors the artwork: "MY PT" blue, "STUDIO" black. On a dark surface
-          that inverts — black on near-black is invisible — so STUDIO takes an
-          accent there instead.
-
-          That accent is blue-950, not the brand blue-500 GOLD resolves to.
-          Both dark surfaces this appears on (the footer, and now the nav while
-          it is over the hero) are near gray-900, where blue-500 measures
-          3.4:1 — under AA for text, and this is the company's own name.
-          blue-950 exists in the palette for precisely this and reaches 7.4:1.
-          See the note on `blue` in src/lib/palette.ts. */}
+      {/* Mirrors the artwork: "MY PT" blue, "STUDIO" black. On the dark footer
+          that inverts — black on near-black is invisible — so STUDIO takes the
+          light accent there instead. */}
       <span className="text-[15px] font-[750] tracking-[-0.01em]">
         <span style={{ color: light ? '#fff' : MAROON }}>MY&nbsp;PT&nbsp;</span>
-        <span style={{ color: light ? NIGHT_ACCENT : INK }}>STUDIO</span>
+        <span style={{ color: light ? GOLD : INK }}>STUDIO</span>
       </span>
     </span>
   );
@@ -152,36 +92,6 @@ const NAV = ['Solutions', 'Features', 'Pricing', 'Resources', 'About'];
 // ── Nav ─────────────────────────────────────────────────────────────────────
 function Nav() {
   const [open, setOpen] = useState(false);
-
-  // ── The bar reads the surface it is sitting on ────────────────────────────
-  //
-  // The hero is a dark stage and this bar is fixed over it, so a permanently
-  // white bar would sit on the night like a strip of paper — and its ink-black
-  // links would be the only dark text on the darkest part of the page. It
-  // starts transparent-on-dark and becomes the original white bar once the
-  // hero has scrolled past.
-  //
-  // A scroll listener rather than IntersectionObserver on the hero: this only
-  // needs one boolean about the window, the handler is passive and does a
-  // single comparison, and the state is set only when the value actually
-  // flips, so React re-renders twice per page visit rather than per frame.
-  const [onNight, setOnNight] = useState(true);
-  useEffect(() => {
-    // Roughly the hero's own height. Deliberately not measured off the DOM:
-    // the fade to white is 180px tall, so anywhere in that band is the right
-    // moment to swap and a precise boundary buys nothing.
-    const SWAP_AT = 520;
-    const read = () => setOnNight((was) => {
-      const now = window.scrollY < SWAP_AT;
-      return now === was ? was : now;
-    });
-    read();
-    window.addEventListener('scroll', read, { passive: true });
-    return () => window.removeEventListener('scroll', read);
-  }, []);
-
-  const linkColor = onNight ? 'rgba(255,255,255,0.72)' : MUTE;
-
   return (
     <header
       className="fixed inset-x-0 top-0 z-50"
@@ -191,19 +101,18 @@ function Nav() {
         // bar. Floor the notch reserve at 2.75rem so the nav still clears the
         // status bar even when env(safe-area-inset-top) resolves to 0.
         paddingTop: 'max(env(safe-area-inset-top), 2.75rem)',
-        background: onNight ? 'rgba(15,23,42,0.55)' : 'rgba(255,255,255,0.88)',
+        background: 'rgba(255,255,255,0.88)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: `1px solid ${onNight ? 'rgba(255,255,255,0.09)' : 'rgba(0,103,224,0.07)'}`,
-        transition: 'background 260ms ease, border-color 260ms ease',
+        borderBottom: '1px solid rgba(0,103,224,0.07)',
       }}
     >
       <div className="mx-auto max-w-6xl px-4">
         <nav className="flex items-center justify-between py-3">
-          <Link href="/"><Wordmark light={onNight} /></Link>
+          <Link href="/"><Wordmark /></Link>
           <div className="hidden items-center gap-7 md:flex">
             {NAV.map((n) => (
-              <a key={n} href={`#${n.toLowerCase()}`} className="text-[13.5px] font-[560] transition-colors hover:opacity-70" style={{ color: linkColor }}>{n}</a>
+              <a key={n} href={`#${n.toLowerCase()}`} className="text-[13.5px] font-[560] transition-colors hover:opacity-70" style={{ color: MUTE }}>{n}</a>
             ))}
           </div>
           <div className="hidden items-center gap-2.5 md:flex">
@@ -212,32 +121,23 @@ function Nav() {
                 enforced on the server — a member is refused at Admin Login
                 and a studio account at Member Login — so these labels are a
                 description of the rule, not a substitute for it. */}
-            <Link href="/login" className={`rounded-xl px-3.5 py-2 text-[13.5px] font-[650] transition-colors ${onNight ? 'hover:bg-white/10' : 'hover:bg-black/[0.04]'}`}
-              style={{ color: onNight ? ON_NIGHT : INK }}>Admin Login</Link>
+            <Link href="/login" className="rounded-xl px-3.5 py-2 text-[13.5px] font-[650] transition-colors hover:bg-black/[0.04]" style={{ color: INK }}>Admin Login</Link>
             <Link href="/member-login" className="group inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-[13.5px] font-[680] text-white transition-transform hover:-translate-y-0.5"
               style={{ background: `linear-gradient(135deg, ${MAROON} 0%, ${MAROON_DEEP} 100%)`, boxShadow: `0 8px 20px ${MAROON}40` }}>
               Member Login <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
-          <button className="md:hidden" onClick={() => setOpen((s) => !s)} aria-label="Menu" style={{ color: onNight ? ON_NIGHT : INK }}>
+          <button className="md:hidden" onClick={() => setOpen((s) => !s)} aria-label="Menu" style={{ color: INK }}>
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
         </nav>
-        {/* The panel follows the bar. A white sheet dropping out of a dark
-            translucent bar onto a dark hero was the one place the two
-            treatments met and disagreed. */}
         {open && (
-          <div className="mt-2 rounded-2xl p-3 md:hidden" style={{
-            background: onNight ? 'rgba(15,23,42,0.92)' : 'rgba(255,255,255,0.95)',
-            backdropFilter: 'blur(18px)',
-            WebkitBackdropFilter: 'blur(18px)',
-            border: `1px solid ${onNight ? 'rgba(255,255,255,0.12)' : 'rgba(0,103,224,0.08)'}`,
-          }}>
+          <div className="mt-2 rounded-2xl p-3 md:hidden" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(18px)', border: '1px solid rgba(0,103,224,0.08)' }}>
             {NAV.map((n) => (
-              <a key={n} href={`#${n.toLowerCase()}`} onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2.5 text-[14px] font-[560]" style={{ color: onNight ? ON_NIGHT_2 : INK }}>{n}</a>
+              <a key={n} href={`#${n.toLowerCase()}`} onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2.5 text-[14px] font-[560]" style={{ color: INK }}>{n}</a>
             ))}
-            <div className="mt-2 flex gap-2 border-t pt-3" style={{ borderColor: onNight ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }}>
-              <Link href="/login" onClick={() => setOpen(false)} className="flex-1 rounded-xl py-2.5 text-center text-[14px] font-[650]" style={{ color: onNight ? ON_NIGHT : INK, border: `1px solid ${onNight ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.1)'}` }}>Admin Login</Link>
+            <div className="mt-2 flex gap-2 border-t pt-3" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+              <Link href="/login" onClick={() => setOpen(false)} className="flex-1 rounded-xl py-2.5 text-center text-[14px] font-[650]" style={{ color: INK, border: '1px solid rgba(0,0,0,0.1)' }}>Admin Login</Link>
               <Link href="/member-login" onClick={() => setOpen(false)} className="flex-1 rounded-xl py-2.5 text-center text-[14px] font-[680] text-white" style={{ background: MAROON }}>Member Login</Link>
             </div>
           </div>
@@ -253,12 +153,7 @@ function DashboardMock() {
   return (
     <div
       className="relative overflow-hidden rounded-[22px] p-3 sm:p-4"
-      // Border and shadow are for a DARK surround now. The 10%-blue hairline
-      // was tuned against white and vanishes on the night stage, leaving a
-      // bright panel with no edge; and a slate drop shadow has nothing to fall
-      // on. A light rim plus a deeper, tighter shadow gives the panel back its
-      // edge — the separation from the background is the glow behind it.
-      style={{ background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.18)', boxShadow: '0 40px 90px -30px rgba(0,45,97,0.75), 0 12px 30px -12px rgba(15,23,42,0.55)' }}
+      style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(0,103,224,0.10)', boxShadow: '0 40px 90px -30px rgba(15,23,42,0.35), 0 12px 30px -12px rgba(15,23,42,0.18)' }}
     >
       {/* window chrome */}
       <div className="mb-3 flex items-center gap-1.5 px-1">
@@ -322,108 +217,12 @@ function DashboardMock() {
 function Section({ id, children, className = '' }: { id?: string; children: ReactNode; className?: string }) {
   return <section id={id} className={`mx-auto max-w-6xl px-5 ${className}`}>{children}</section>;
 }
-/**
- * `night` is a variant rather than a replacement: this is used by eight
- * sections and only the hero is dark. On white the pill is a blue wash with
- * blue-500 text; on the night stage that pairing is 3.4:1 and effectively
- * unreadable, so the dark variant switches to the bright blue-950 accent on a
- * translucent white fill and measures 7.4:1.
- */
-function Eyebrow({ children, night = false }: { children: ReactNode; night?: boolean }) {
+function Eyebrow({ children }: { children: ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-[720] uppercase tracking-[0.14em]"
-      // Near-white label, not the blue accent. Measured: blue-950 on this pill
-      // — a 7% white fill over the stage, blurred, so it lifts to about
-      // rgb(58,76,102) — is 3.2:1, and this is 11px uppercase, which needs
-      // 4.5. gray-200 gives 7.1:1 on the same fill. The brand accent moves to
-      // the sparkle at the call site, where it is decoration rather than the
-      // words, and colour is still doing its job without carrying the reading.
-      style={night
-        ? {
-          background: 'rgba(255,255,255,0.05)',
-          color: ON_NIGHT_LABEL,
-          border: '1px solid rgba(255,255,255,0.12)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.10)',
-        }
-        : { background: 'rgba(0,103,224,0.06)', color: MAROON, border: '1px solid rgba(0,103,224,0.10)' }}>
+      style={{ background: 'rgba(0,103,224,0.06)', color: MAROON, border: '1px solid rgba(0,103,224,0.10)' }}>
       {children}
     </span>
-  );
-}
-
-/**
- * The hero's dark stage.
- *
- * Wraps ONLY the hero. Everything below it — "Trusted by", features, pricing,
- * FAQ — stays on white, so the bottom edge has to hand off to that white
- * rather than stop at it: the last 180px fades NIGHT to #fff, which is why
- * there is no visible seam where the section ends.
- *
- * Structure, back to front:
- *   1. the charcoal base and its two corner pools of blue
- *   2. two slow, wide lights (CSS keyframes — see globals.css)
- *   3. a grain tile, mostly to stop the gradients banding
- *   4. a top vignette so the fixed nav always has something to sit on
- *   5. the fade to white
- *
- * All five are `pointer-events-none` and sit behind `relative z-10` content,
- * so none of them can intercept a click on the CTA.
- */
-function HeroStage({ children }: { children: ReactNode }) {
-  return (
-    <div className="relative isolate overflow-hidden" style={{ background: NIGHT }}>
-      {/* 1 — base: charcoal, lifted a little at the top, with blue pooling
-             only in the corners.
-             Held back deliberately. The first pass ran these at full strength
-             and the result was a blue gradient rather than a charcoal room —
-             the brief asks for a dark stage with brand light in it, which
-             means the blue has to stay in the corners and out of the middle
-             where the copy sits. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0" style={{
-        background:
-          `radial-gradient(115% 70% at 50% -12%, ${NIGHT_LIFT} 0%, transparent 55%),` +
-          `radial-gradient(70% 55% at 6% 4%, ${NIGHT_BLUE} 0%, transparent 60%),` +
-          `radial-gradient(65% 50% at 94% 96%, ${NIGHT_BLUE} 0%, transparent 58%)`,
-        opacity: 0.7,
-      }} />
-
-      {/* 2 — the two lights. Large, soft, low-opacity: the stage being lit,
-             not two coloured circles. */}
-      <div aria-hidden className="hero-glow-a pointer-events-none absolute" style={{
-        top: '-22%', left: '50%', width: 'min(1000px, 140%)', height: '560px',
-        marginLeft: 'min(-500px, -70%)',
-        background: `radial-gradient(circle, ${NIGHT_BLUE_2} 0%, transparent 68%)`,
-        filter: 'blur(70px)', opacity: 0.42,
-      }} />
-      <div aria-hidden className="hero-glow-b pointer-events-none absolute" style={{
-        top: '26%', right: '-14%', width: 'min(700px, 100%)', height: '480px',
-        background: `radial-gradient(circle, ${MAROON} 0%, transparent 66%)`,
-        filter: 'blur(90px)', opacity: 0.16,
-      }} />
-
-      {/* 3 — grain */}
-      <div aria-hidden className="pointer-events-none absolute inset-0"
-        style={{ backgroundImage: GRAIN, backgroundRepeat: 'repeat', opacity: 0.035, mixBlendMode: 'overlay' }} />
-
-      {/* 4 — top vignette. The nav is fixed and translucent; without this the
-             lights can drift up behind it and change how the bar reads. */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-40"
-        style={{ background: `linear-gradient(180deg, rgba(15,23,42,0.72) 0%, transparent 100%)` }} />
-
-      {/* 5 — the handoff to the white page below */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[170px]"
-        style={{ background: `linear-gradient(180deg, rgba(15,23,42,0) 0%, ${NIGHT} 38%, #fff 100%)` }} />
-
-      {/* The reserve below the content is what keeps the product mock OFF the
-          fade. Without it the stage ended about 56px under the mock while the
-          fade is 170px tall, so the white ran up through the mock's lower
-          third — and the mock is a 90%-white panel with a 10%-blue border, so
-          where the two met it dissolved: chart bars ending in nothing, and the
-          "+18% this month" card gone entirely, white on white. */}
-      <div className="relative z-10 pb-[120px] sm:pb-[150px]">{children}</div>
-    </div>
   );
 }
 
@@ -576,72 +375,43 @@ export default function LandingPage() {
           Top padding adds exactly the notch height on top of the base
           clearance so the logo always sits below the fixed topbar +
           notification area, never cramped under it on notched phones. */}
-      <HeroStage>
       <Section id="solutions" className="pb-16 text-center pt-[calc(max(env(safe-area-inset-top),2.75rem)+6.5rem)] sm:pt-[calc(max(env(safe-area-inset-top),2.75rem)+7.5rem)]">
         <Reveal>
-          {/* Wide lockup, sized responsively. The halo runs at full strength on
-              the night stage — it was dialled back to 0.85 because on white it
-              bled into the eyebrow pill directly beneath, which is the opposite
-              problem to the one a dark background has. */}
+          {/* Wide lockup, sized responsively. The neon is dialled back slightly
+              here because the eyebrow pill sits immediately beneath it and a
+              full-strength halo bleeds into that text. */}
           <div className="mb-7 flex justify-center">
-            <span className="sm:hidden"><BrandLogoWide width={252} priority intensity={1} night /></span>
-            <span className="hidden sm:inline"><BrandLogoWide width={340} priority intensity={1} night /></span>
+            <span className="sm:hidden"><BrandLogoWide width={252} priority intensity={0.85} /></span>
+            <span className="hidden sm:inline"><BrandLogoWide width={340} priority intensity={0.85} /></span>
           </div>
         </Reveal>
         <Reveal delay={0.04}>
-          <Eyebrow night><span style={{ color: NIGHT_ACCENT, display: 'inline-flex' }}><Sparkles size={13} /></span> The operating system for fitness professionals</Eyebrow>
+          <Eyebrow><Sparkles size={13} /> The operating system for fitness professionals</Eyebrow>
         </Reveal>
         <Reveal delay={0.08}>
-          {/* leading 1.03 -> 1.05: at 68px the tighter setting had the
-              descenders of "your" almost touching the "f" of "fitness". */}
-          <h1 className="mx-auto mt-6 max-w-4xl text-[40px] font-[860] leading-[1.05] tracking-[-0.035em] sm:text-[68px]"
-            style={{ color: ON_NIGHT, textShadow: '0 1px 40px rgba(15,23,42,0.55)' }}>
+          <h1 className="mx-auto mt-6 max-w-4xl text-[40px] font-[860] leading-[1.03] tracking-[-0.035em] sm:text-[68px]">
             Run your entire<br className="hidden sm:block" /> fitness business
-            <br className="hidden sm:block" /> <span style={gradTextNight}>from one platform.</span>
+            <br className="hidden sm:block" /> <span style={gradText}>from one platform.</span>
           </h1>
         </Reveal>
         <Reveal delay={0.12}>
-          {/* max-w-2xl -> 40ch: a measure in characters holds ~65 per line at
-              every size, where the rem cap gave 92 on a desktop — long enough
-              that the eye loses the line return under a 68px headline. */}
-          <p className="mx-auto mt-6 text-[16px] leading-relaxed sm:text-[19px]"
-            style={{ color: ON_NIGHT_2, maxWidth: '62ch' }}>
+          <p className="mx-auto mt-6 max-w-2xl text-[16px] leading-relaxed sm:text-[19px]" style={{ color: MUTE }}>
             MY PT STUDIO is the software that runs modern personal trainers, coaches and studios —
             clients, workouts, nutrition, attendance, payments and analytics, beautifully unified.
           </p>
         </Reveal>
         <Reveal delay={0.16}>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            {/* The gradient ran brand-blue to near-black, which on white reads
-                as depth and on the night stage would have faded the button's
-                lower half into the floor. It runs blue-450 to blue-600 now —
-                lit rather than shadowed — with a white inner highlight and a
-                ring so the edge stays defined against the dark.
-                3.9:1 against the stage as a UI surface, white label 4.7:1. */}
-            <Link href="/start-free" className="group inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-[15px] font-[720] text-white transition-transform duration-200 hover:-translate-y-0.5 sm:w-auto"
-              style={{
-                background: `linear-gradient(135deg, ${MAROON_HI} 0%, ${MAROON} 55%, #0059CE 100%)`,
-                border: '1px solid rgba(255,255,255,0.16)',
-                boxShadow: `0 14px 40px rgba(0,103,224,0.42), 0 2px 6px rgba(15,23,42,0.4), inset 0 1px 0 rgba(255,255,255,0.24)`,
-              }}>
+            <Link href="/start-free" className="group inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-[15px] font-[720] text-white transition-transform hover:-translate-y-0.5 sm:w-auto"
+              style={{ background: `linear-gradient(135deg, ${MAROON} 0%, ${MAROON_DEEP} 100%)`, boxShadow: `0 14px 34px ${MAROON}44` }}>
               Start free <ArrowRight size={17} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
-          <p className="mt-3.5 text-[12.5px]" style={{ color: ON_NIGHT_3 }}>No credit card required · Set up in a day · Cancel anytime</p>
+          <p className="mt-3.5 text-[12.5px]" style={{ color: MUTE }}>No credit card required · Set up in a day · Cancel anytime</p>
         </Reveal>
 
         <Reveal delay={0.2} y={34}>
           <div className="relative mx-auto mt-14 max-w-4xl">
-            {/* The product, lit from behind. On white the mock's own drop
-                shadow was what separated it from the page; on the night stage
-                a shadow has nothing to fall on, so the separation comes from
-                light instead. Sits behind everything in this block and takes
-                no pointer events. */}
-            <div aria-hidden className="pointer-events-none absolute -inset-x-10 -top-10 bottom-0 -z-10"
-              style={{
-                background: `radial-gradient(60% 50% at 50% 40%, rgba(0,103,224,0.34) 0%, transparent 70%)`,
-                filter: 'blur(50px)',
-              }} />
             {/* floating accent cards */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.5, duration: 0.6 }}
               className="absolute -left-4 top-10 z-10 hidden rounded-2xl p-3 sm:-left-10 sm:block"
@@ -669,7 +439,6 @@ export default function LandingPage() {
           </div>
         </Reveal>
       </Section>
-      </HeroStage>
 
       {/* ── TRUSTED BY ── */}
       <Section className="py-14">

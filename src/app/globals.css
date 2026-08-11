@@ -387,38 +387,7 @@
    ════════════════════════════════════════════════════════════════════ */
 html {
   font-family: var(--font-sans);
-  /* ── 87.5%, not 14px ──────────────────────────────────────────────────
-     Same 14px for everyone on a default browser (87.5% of 16px is 14px
-     exactly, verified in Chromium), so nothing about the app's density
-     changes. The difference is for the people who have gone into their
-     browser and asked for larger text: `font-size: 14px` is an absolute
-     override that discarded that preference outright — a user who set
-     their default to 20px still got 14px — while a percentage scales with
-     it (20px default -> 17.5px root). That is the whole of this change.
-
-     ── What this deliberately does NOT fix ────────────────────────────
-     A 14px root also means every rem-based Tailwind utility renders at
-     87.5% of the value its name implies: `h-11` is 2.75rem, which is 44px
-     only when the root is 16px, and here it is 38.5px. Several comments
-     in this codebase asserted "h-11 = 44px: the minimum a thumb can hit
-     reliably" and were measurably wrong — device-check caught the AI
-     Coach's WhatsApp and Call buttons at 149x39.
-
-     Making those names truthful means moving the root to 16px, and that
-     is not a fix, it is a redesign: roughly 9,900 rem-based utilities
-     across src/ would grow 14.3% while the ~6,700 hard-coded px values
-     they are tuned against (text-[12.5px], rounded-[20px], inline
-     styles) would not move at all. Every spacing relationship in the app
-     is currently balanced at a 14px root.
-
-     So the rule while the root stays at 14px: anything that must clear a
-     real pixel threshold — touch targets above all — states that
-     threshold in px and does not trust a rem utility to mean what it
-     says. See TAP_MIN in components/dashboards/PtOsDashboard.tsx, and
-     root-font-size.test.ts, which pins this relationship so the next
-     person to read `h-11` as "44px" is contradicted by a failing test
-     rather than by a user with a fat thumb. */
-  font-size: 87.5%;
+  font-size: 14px;
   color: var(--text-primary);
   background: var(--bg-canvas);
   -webkit-font-smoothing: antialiased;
@@ -1500,36 +1469,6 @@ select.form-control { cursor: pointer; }
 .animate-float-b { animation: float-b 18s ease-in-out infinite; }
 .animate-float-c { animation: float-c 22s ease-in-out infinite; }
 .animate-ripple  { animation: ripple 0.65s ease-out forwards; }
-
-/* ════════════════════════════════════════════════════════════════════
-   MARKETING HERO — the two ambient lights behind the landing hero.
-
-   CSS rather than a motion library: these are two decorative divs that
-   never stop moving, and the cheapest correct way to move something
-   forever is a compositor-only keyframe the main thread never sees. Only
-   transform and opacity are animated, so no frame costs layout or paint,
-   and neither element can shift the page — both are absolutely
-   positioned inside an overflow-clipped stage.
-
-   Very slow on purpose, and at coprime durations so the pair never
-   visibly repeats. A hero light pulsing on a two-second loop reads as a
-   loading state; at this speed it registers as the light being alive
-   rather than as an animation playing.
-
-   The reduced-motion block below already cuts every animation in the app
-   to 0.01ms, so these stop for anyone who asked for that — no rule of
-   their own required.
-   ════════════════════════════════════════════════════════════════════ */
-@keyframes hero-glow-a {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1);    opacity: 0.85; }
-  50%      { transform: translate3d(2%, -3%, 0) scale(1.10); opacity: 1; }
-}
-@keyframes hero-glow-b {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1.06); opacity: 0.70; }
-  50%      { transform: translate3d(-3%, 2%, 0) scale(1);   opacity: 0.95; }
-}
-.hero-glow-a { animation: hero-glow-a 38s ease-in-out infinite; will-change: transform, opacity; }
-.hero-glow-b { animation: hero-glow-b 46s ease-in-out infinite; will-change: transform, opacity; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

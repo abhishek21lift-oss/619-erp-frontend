@@ -122,15 +122,9 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
               aria-current={isActive ? 'page' : undefined}
               style={{ gap: 2, minHeight: 44 }}
             >
-              {/* Focus ring for keyboard nav.
-                  Was ring-purple-400 — purple is not one of the app's five
-                  families (see lib/palette.ts), so the only purple pixels in
-                  the product appeared on keyboard focus in the bottom bar.
-                  The active pill and its glow are already brand-300; the
-                  focus ring matches them. */}
+              {/* Focus ring for keyboard nav */}
               <span
-                className="absolute inset-1 rounded-xl opacity-0 ring-2 ring-offset-0 transition-opacity focus-visible:opacity-100"
-                style={{ boxShadow: 'none', ['--tw-ring-color' as string]: 'rgba(127,180,255,0.9)' }}
+                className="absolute inset-1 rounded-xl opacity-0 transition-opacity focus-visible:opacity-100 ring-2 ring-purple-400 ring-offset-0"
                 aria-hidden="true"
               />
 

@@ -33,7 +33,6 @@ export default function BrandLogoWide({
   className = '',
   priority = false,
   intensity = 1,
-  night = false,
 }: {
   /** Rendered width in px. Height follows the artwork's 2.53:1 ratio. */
   width: number;
@@ -41,25 +40,6 @@ export default function BrandLogoWide({
   priority?: boolean;
   /** Scales the halo. 1 is the default; lower it on denser surfaces. */
   intensity?: number;
-  /**
-   * Render for a dark surface.
-   *
-   * The artwork is black glyphs with blue facets, drawn for the light pages
-   * this component was written for (see the note above). Put it on the night
-   * hero unchanged and "PT" and "STUDIO" — the black two-thirds of the
-   * wordmark — drop to almost nothing against the charcoal: the company's own
-   * name, half missing, as the first thing on the page.
-   *
-   * The fix is a rim light rather than a recolour. A white hairline traced
-   * tight around the silhouette separates the black glyphs from the
-   * background while leaving every brand colour exactly as drawn, and on a
-   * dark stage it reads as the mark being lit from behind rather than as an
-   * outline stuck on it. Recolouring was the alternative and is worse:
-   * inverting turns the blue orange, and a flat brightness lift greys the
-   * blacks without touching the blue, which breaks the bevels the artwork is
-   * built out of.
-   */
-  night?: boolean;
 }) {
   const reduce = useReducedMotion();
   const [failed, setFailed] = useState(false);
@@ -121,18 +101,7 @@ export default function BrandLogoWide({
           // Two-stop drop shadow: a tight blue rim that hugs the glyph edges,
           // then a soft neutral shadow for depth. Blue alone reads as a print
           // mis-registration; neutral alone kills the neon.
-          //
-          // On night the neutral depth shadow is useless — a dark shadow on a
-          // dark stage — so it is replaced by the rim: a 1px white hairline to
-          // separate the black glyphs, then a wider blue bloom for the lit
-          // look. Stacked drop-shadows compose outward from the alpha
-          // silhouette, so the white sits under the blue rather than fighting
-          // it.
-          filter: night
-            ? `drop-shadow(0 0 1px rgba(255,255,255,0.92))`
-            + ` drop-shadow(0 0 ${Math.round(width * 0.012)}px rgba(255,255,255,0.38))`
-            + ` drop-shadow(0 0 ${Math.round(width * 0.05)}px ${NEON}cc)`
-            : `drop-shadow(0 0 ${Math.round(width * 0.02)}px ${NEON}${intensity >= 1 ? '99' : '66'}) drop-shadow(0 ${Math.round(width * 0.03)}px ${Math.round(width * 0.06)}px rgba(15,23,42,0.18))`,
+          filter: `drop-shadow(0 0 ${Math.round(width * 0.02)}px ${NEON}${intensity >= 1 ? '99' : '66'}) drop-shadow(0 ${Math.round(width * 0.03)}px ${Math.round(width * 0.06)}px rgba(15,23,42,0.18))`,
         }}
       />
     </div>
