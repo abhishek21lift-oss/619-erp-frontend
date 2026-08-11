@@ -8,6 +8,7 @@ import { FeaturesProvider } from '@/lib/features-context';
 import CommandPalette from '@/components/CommandPalette';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import SentryInit from '@/components/SentryInit';
+import ScrollRestoration from '@/components/ScrollRestoration';
 import ViewportProbe from '@/components/dev/ViewportProbe';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { GoogleAuthWrapper } from '@/components/GoogleAuthWrapper';
@@ -249,6 +250,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         <MotionConfig reducedMotion="user">
                           <LazyMotion features={domAnimation}>
                             <SentryInit />
+                            <ScrollRestoration />
                             {children}
                             <CommandPalette />
                             {/* Renders nothing unless NODE_ENV is not
