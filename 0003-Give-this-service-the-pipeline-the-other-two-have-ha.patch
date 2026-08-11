@@ -1,0 +1,446 @@
+From 0e1e7e038ddd6a14ae3a8751687494e799a73718 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 11 Aug 2026 06:21:27 +0000
+Subject: [PATCH 3/3] Give this service the pipeline the other two have had for
+ months
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Until now every change here reached production by hand: a patch file mailed
+out, uploaded to the box, `git am`, `docker compose build`. That is how the
+fence-guard fix sat undeployed, and how a placeholder once got pasted into
+AI_PRIMARY_MODEL in two .env files including the ERP's. The frontend and
+backend have had CI-gated deploys with rollback for months; this repo was the
+exception, and the exception was the expensive part.
+
+Three workflows, same shape as the siblings so a reader who knows one knows
+all three:
+
+  ci.yml        eslint + the 44-test security suite + an advisory npm audit
+  deploy.yml    gated on CI, runs on the VPS, health-checks afterwards
+  rollback.yml  a specific SHA, straight to the box, confirmation required
+
+Deploy runs on a self-hosted runner rather than reaching in over SSH — the
+siblings had to remove a four-attempt retry ladder to get there, and this repo
+starts where they ended up. docs/self-hosted-runner.md covers the setup and,
+more importantly, what it costs: the runner is a process on the production
+box, so anyone who can merge a workflow here can run code there.
+
+deploy.yml does not stop at `docker compose up -d`. config.js is fail-fast by
+design, so a bad AI_API_KEY or a forbidden secret name makes the container
+exit AFTER a perfectly successful `up -d` — the deploy would report green
+while nothing served. It polls /health for ten seconds and fails the job with
+the container's logs if nothing answers.
+
+rollback.yml notes the one coupling worth checking: the panel calls
+/ai/client-agent/chat/stream, so rolling back past the commit that added it
+would leave the deployed UI calling a route that no longer exists.
+---
+ .github/workflows/ci.yml       |  68 +++++++++++++++++++
+ .github/workflows/deploy.yml   | 118 +++++++++++++++++++++++++++++++++
+ .github/workflows/rollback.yml |  80 ++++++++++++++++++++++
+ docs/self-hosted-runner.md     | 104 +++++++++++++++++++++++++++++
+ 4 files changed, 370 insertions(+)
+ create mode 100644 .github/workflows/ci.yml
+ create mode 100644 .github/workflows/deploy.yml
+ create mode 100644 .github/workflows/rollback.yml
+ create mode 100644 docs/self-hosted-runner.md
+
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+new file mode 100644
+index 0000000..7672c32
+--- /dev/null
++++ b/.github/workflows/ci.yml
+@@ -0,0 +1,68 @@
++name: CI — Lint · Test
++
++# The gate deploy.yml waits on.
++#
++# This service has no build step and no type-checker, so CI is two jobs rather
++# than the frontend's four. What it does have is a security suite: __tests__
++# asserts the tenant boundary, the prompt fence and the read-only contract
++# against the REAL app with fake collaborators, not against mocks of the thing
++# under test. Those are the tests worth blocking a deploy on.
++
++on:
++  push:
++    branches: [main]
++  pull_request:
++    branches: [main]
++  # GitHub does not fire `push` workflows for pushes authenticated with an app
++  # or bot token — a recursion guard. Since deploy.yml waits on this workflow's
++  # conclusion, such a commit would land on main and deploy nothing. This
++  # button is how it gets a result without an empty commit pushed by hand.
++  workflow_dispatch:
++
++concurrency:
++  group: ${{ github.workflow }}-${{ github.ref }}
++  cancel-in-progress: true
++
++jobs:
++  lint:
++    name: ESLint
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: '20'
++          cache: npm
++      - run: npm ci
++      - run: npx eslint src __tests__
++
++  test:
++    name: Jest
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: '20'
++          cache: npm
++      - run: npm ci
++      # No AI_API_KEY here on purpose. config.js is fail-fast, so the suite
++      # supplies its own test env — if a test ever needed a real key to pass,
++      # it would be reaching the network, and that is the bug.
++      - run: npx jest --ci
++
++  audit:
++    name: npm audit
++    runs-on: ubuntu-latest
++    # Advisory. A transitive advisory with no patch available should not block
++    # a security fix from shipping — but it should be visible on every run
++    # rather than discovered during an incident.
++    continue-on-error: true
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: '20'
++          cache: npm
++      - run: npm ci
++      - run: npm audit --audit-level=high
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+new file mode 100644
+index 0000000..8362079
+--- /dev/null
++++ b/.github/workflows/deploy.yml
+@@ -0,0 +1,118 @@
++name: Deploy AI Service to VPS
++
++# The pipeline this repo never had.
++#
++# Until now every change here reached production by hand: a patch file mailed
++# out, uploaded to the box, `git am`, `docker compose build`. That is how a
++# fence-guard fix sat undeployed for days, and how a model name once got pasted
++# into the wrong .env. The other two services in this stack have had CI-gated
++# deploys for months; this one was the exception, and the exception was the
++# expensive part.
++#
++# Same shape as the frontend and backend workflows deliberately: a reader who
++# knows one knows all three.
++
++on:
++  workflow_run:
++    workflows: ["CI — Lint · Test"]
++    types: [completed]
++    branches: [main]
++  workflow_dispatch:
++
++# ── Why this job runs ON the VPS ─────────────────────────────────────────────
++#
++# The sibling repos used to deploy from a GitHub-hosted runner over SSH, and
++# repeatedly could not reach the box:
++#
++#   2026/08/05 06:14:53 dial tcp ***:22: i/o timeout
++#
++# A self-hosted runner inverts the direction — it sits on this box and asks
++# GitHub for work over outbound HTTPS on 443, so no inbound port is involved
++# and no SSH connection is ever made. This repo starts there rather than
++# inheriting the retry ladder the others had to remove.
++#
++# Setup (once, on the VPS): GitHub → repo Settings → Actions → Runners.
++# The SAME runner serves all three repos if it is registered at the
++# organisation level; registered per-repo, each repo needs its own. Label it
++# `myptstudio` either way.
++
++concurrency:
++  group: deploy-ai
++  cancel-in-progress: false
++
++jobs:
++  deploy:
++    runs-on: [self-hosted, myptstudio]
++    timeout-minutes: 20
++
++    if: >-
++      github.event_name == 'workflow_dispatch' ||
++      github.event.workflow_run.conclusion == 'success'
++
++    steps:
++      - name: Report what is being deployed and why it was allowed
++        run: |
++          echo "Trigger:    ${{ github.event_name }}"
++          echo "CI result:  ${{ github.event.workflow_run.conclusion || 'n/a (manual dispatch)' }}"
++          echo "Commit:     ${{ github.event.workflow_run.head_sha || github.sha }}"
++
++      - name: Deploy
++        run: |
++          set -euo pipefail
++
++          cd /opt/myptstudio/mps-ai
++
++          # `checkout main` before pulling, because rollback.yml leaves the
++          # checkout DETACHED. A bare `git pull origin main` against a detached
++          # HEAD does not move it, so the next deploy after a rollback would
++          # report success and ship nothing. --ff-only fails loudly rather than
++          # creating a merge commit or quietly discarding anything edited on
++          # the box — and this box HAS been edited by hand, which is exactly
++          # the state that needs to fail loudly rather than be steamrolled.
++          git fetch origin main
++          git checkout main
++          git pull --ff-only origin main
++
++          git rev-parse HEAD > /opt/myptstudio/.ai-deployed-sha.new
++
++          # The `ai` service is defined in the stack's compose file, not in
++          # this repo — it shares a network with `api` so the ERP call never
++          # leaves the host. So the build runs from there, against this
++          # repo's Dockerfile.
++          cd /opt/myptstudio
++
++          docker compose build ai
++          docker compose up -d ai
++
++          mv /opt/myptstudio/.ai-deployed-sha.new /opt/myptstudio/.ai-deployed-sha
++
++          docker image prune -f
++
++      # A container that starts and then dies on a config error still counts as
++      # a successful `up -d`. config.js is fail-fast by design — a missing
++      # AI_API_KEY or a forbidden secret name refuses to boot — so the useful
++      # check is whether it is still serving a moment later, not whether the
++      # command returned zero.
++      - name: Prove it is actually answering
++        run: |
++          set -euo pipefail
++          for i in $(seq 1 10); do
++            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4100/health || true)
++            if [ "$code" = "200" ]; then
++              echo "ai is serving (health 200 after ${i}s)"
++              exit 0
++            fi
++            sleep 1
++          done
++          echo "::error::ai did not return 200 from /health within 10s (last: ${code:-no answer})"
++          cd /opt/myptstudio && docker compose logs --tail=50 ai || true
++          exit 1
++
++      - name: Show what the stack looks like if the deploy failed
++        if: failure()
++        continue-on-error: true
++        run: |
++          cd /opt/myptstudio
++          docker compose ps || true
++          echo "── last 50 lines of ai ──"
++          docker compose logs --tail=50 ai || true
+diff --git a/.github/workflows/rollback.yml b/.github/workflows/rollback.yml
+new file mode 100644
+index 0000000..eb0909e
+--- /dev/null
++++ b/.github/workflows/rollback.yml
+@@ -0,0 +1,80 @@
++name: Rollback AI Service
++
++# Put a known-good commit back on the box, without waiting for a revert to
++# travel through main and CI.
++#
++# Deliberately manual and deliberately unguarded by CI: you reach for it when
++# main is broken, so requiring main's pipeline to be green first would defeat
++# the point.
++#
++# ── What to know before using it ────────────────────────────────────────────
++#
++# This service holds no schema and owns no data — every read goes through the
++# ERP under the caller's own token, and Phase 1 cannot write at all. So a
++# rollback here is as clean as a rollback gets: there is nothing left behind
++# that older code could be inconsistent with.
++#
++# The one coupling to check is the API contract with the frontend. The panel
++# calls /ai/client-agent/chat/stream; rolling back past the commit that added
++# it would leave the deployed UI calling a route that no longer exists. If the
++# release you are undoing spanned both repositories, roll both.
++
++on:
++  workflow_dispatch:
++    inputs:
++      sha:
++        description: 'Full or short git SHA to roll back to (must exist on origin/main)'
++        required: true
++        type: string
++      confirm:
++        description: 'Type ROLLBACK to confirm. Read the notes in this file first.'
++        required: true
++        type: string
++
++jobs:
++  rollback:
++    runs-on: [self-hosted, myptstudio]
++    timeout-minutes: 20
++
++    steps:
++      - name: Refuse unless explicitly confirmed
++        if: inputs.confirm != 'ROLLBACK'
++        run: |
++          echo "::error::Confirmation not given. Type ROLLBACK in the confirm field."
++          exit 1
++
++      - name: Roll the box back to the requested commit
++        # The SHA travels as an environment variable rather than being
++        # interpolated into the script text. `${{ inputs.sha }}` inside a run
++        # block is substituted BEFORE bash sees it, so a crafted input would be
++        # pasted in as shell source; "$SHA" is just a string to bash however it
++        # is spelled.
++        env:
++          SHA: ${{ inputs.sha }}
++        run: |
++          set -euo pipefail
++          cd /opt/myptstudio/mps-ai
++
++          echo "Currently deployed: $(cat /opt/myptstudio/.ai-deployed-sha 2>/dev/null || echo unknown)"
++          echo "Rolling back to:    $SHA"
++
++          git fetch origin main
++
++          git cat-file -e "$SHA^{commit}" || {
++            echo "No such commit: $SHA"
++            exit 1
++          }
++
++          git checkout --detach "$SHA"
++
++          cd /opt/myptstudio
++          docker compose build ai
++          docker compose up -d ai
++
++          git -C /opt/myptstudio/mps-ai rev-parse HEAD \
++            > /opt/myptstudio/.ai-deployed-sha
++
++          echo "Rolled back. The checkout is now DETACHED at $SHA."
++          echo "The next normal deploy runs 'git checkout main' before pulling,"
++          echo "so it will move off this commit by itself once main carries the"
++          echo "fix — nothing needs doing on the box by hand."
+diff --git a/docs/self-hosted-runner.md b/docs/self-hosted-runner.md
+new file mode 100644
+index 0000000..a40c4c8
+--- /dev/null
++++ b/docs/self-hosted-runner.md
+@@ -0,0 +1,104 @@
++# The self-hosted runner
++
++One runner on the VPS serves all three repositories. Set it up once.
++
++## Why it exists
++
++Deploys used to run on a GitHub-hosted machine that reached into the VPS over
++SSH. That machine repeatedly could not complete a TCP handshake to port 22:
++
++```
++2026/08/05 06:14:53 dial tcp ***:22: i/o timeout
++05 Aug  outage swallowed 07:17 and 07:20, over by 07:27          (~10 min)
++08 Aug  swallowed 06:43, 06:46 AND 06:52 — every attempt — on a
++        box that had deployed successfully at 06:05              (>10 min)
++```
++
++The response had been four retry attempts spanning twenty-two minutes — about
++a hundred lines of ladder per repository, which hid the problem rather than
++removing it, and which the 08 Aug outage outlasted anyway.
++
++A self-hosted runner reverses the direction. It runs on the VPS and asks GitHub
++for work over **outbound HTTPS on 443**, a long poll it re-opens itself. Nothing
++reaches in, no inbound port is involved, and the failure above cannot occur
++because no SSH connection is ever made.
++
++## What it costs
++
++Be clear-eyed about this before installing it:
++
++- The runner is a **process on the production box**. It needs updating like
++  anything else exposed to the internet, even though it opens no port.
++- **Anyone who can push a workflow file to one of these repositories can run
++  code on the production VPS.** With SSH deploys the blast radius was a secret;
++  now it is the box. Keep the repositories private, and protect `main` — a
++  workflow merged without review is a shell on production.
++- A job that hangs holds the runner. `timeout-minutes` on every job is not
++  decoration.
++
++## Install
++
++On the VPS, as a user that is **not** root:
++
++```bash
++sudo useradd -m -s /bin/bash gha
++sudo usermod -aG docker gha          # needs docker without sudo
++sudo chown -R gha:gha /opt/myptstudio
++sudo su - gha
++```
++
++Then, for each repository — GitHub → **Settings → Actions → Runners → New
++self-hosted runner** — and follow the commands it shows. They look like this,
++but **use the token from that page**, it is single-use and expires in an hour:
++
++```bash
++mkdir ~/actions-runner && cd ~/actions-runner
++curl -o actions-runner-linux-x64.tar.gz -L \
++  https://github.com/actions/runner/releases/latest/download/actions-runner-linux-x64.tar.gz
++tar xzf actions-runner-linux-x64.tar.gz
++
++./config.sh --url https://github.com/<owner>/<repo> --token <TOKEN> \
++            --labels myptstudio --unattended
++
++sudo ./svc.sh install gha
++sudo ./svc.sh start
++```
++
++The `--labels myptstudio` matters: every workflow says
++`runs-on: [self-hosted, myptstudio]`, and `self-hosted` alone would match any
++runner on the account.
++
++### One runner or three?
++
++Registered **per repository** (the commands above), each repo needs its own
++runner directory — three installs, three services. Registered at the
++**organisation** level instead (Settings → Actions → Runners on the org, with
++access granted to the three repos) one runner serves all of them, and jobs
++queue behind each other. One is simpler to keep updated; three let a frontend
++build and a backend deploy run at once.
++
++## Verify before merging anything
++
++```bash
++sudo ./svc.sh status                 # active (running)
++```
++
++and on GitHub the runner shows **Idle** with a green dot under Settings →
++Actions → Runners.
++
++Until a runner is registered, a merged workflow does not fail — it **queues**,
++waiting for a runner that matches the labels. So the order is: install the
++runner, see it Idle, then merge.
++
++## What can be deleted afterwards
++
++Once all three repositories deploy through the runner, these secrets are no
++longer read by anything:
++
++- `HOST`
++- `USERNAME`
++- `SSH_KEY` (backend) / `SSH_PRIVATE_KEY` (frontend)
++
++Delete them **after** the first successful deploy through the runner, not
++before — they are the way back if the runner has to be removed. Removing the
++deploy key from `~/.ssh/authorized_keys` on the box is the same decision.
+-- 
+2.43.0
+
