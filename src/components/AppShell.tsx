@@ -637,27 +637,45 @@ function AppShellContent({ children }: AppShellProps) {
           <main id="main-content" className="flex-1 min-w-0 overflow-x-hidden shell-main"
           >
             {pathname === '/' && <TrialBanner />}
-            {/* Keyed on pathname so each route fades in on arrival. There is
-                deliberately no AnimatePresence and no exit animation here.
-                There used to be one — `mode="popLayout"`, a 0.1s fade out —
-                and it had never run once: this whole subtree was destroyed
-                with the page on every navigation, so nothing was left mounted
-                to animate out. Now that the shell is a layout and does
-                persist, that exit WOULD start running, which is a new
-                transition nobody has looked at on a device — and the exiting
-                page is absolutely positioned over the arriving one while it
-                plays. Enabling it is a UI change, not part of moving the
-                shell, so what shipped for years is what still ships. */}
-            <m.div
-              key={pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.22, ease: [0.21, 0.47, 0.32, 0.98] }}
-            >
+            {/* ── The route container. Keyed, and deliberately not animated ──
+
+                This used to be an `m.div` with `initial={{ opacity: 0 }}`
+                animating to 1 over 220ms, so every arriving route faded up
+                from nothing. Measured in a throttled mobile browser: the
+                wrapper's computed opacity stepped 0 → 0.12 → 0.47 → … → 1 on
+                every navigation, and that is the washed-out frame users
+                reported. A page that is already rendered has nothing to gain
+                from being shown at 12% opacity first.
+
+                The KEY stays, and that is not an oversight. It was never there
+                for the animation — it is what makes a route change actually
+                remount the page. React reuses a component instance when the
+                same type sits at the same position, which is exactly what
+                happens between two dynamic routes: /clients/c1 → /clients/c2
+                is the same page component. Without the key that instance would
+                be reused, its useState would hold the previous client's form
+                state, and the 5 empty-dependency hooks across the 15 dynamic
+                routes would never re-run — the new client's page showing the
+                old client's data. The key is a correctness mechanism that the
+                fade happened to be attached to.
+
+                A plain div rather than a motion component: with no animation
+                props left there is nothing for framer-motion to do here, and a
+                motion component would still take the compositing path.
+
+                Still no AnimatePresence and no exit animation. There used to
+                be one — `mode="popLayout"`, a 0.1s fade out — and it had never
+                run once, because this subtree was destroyed with the page on
+                every navigation and nothing was left mounted to animate out.
+                Now that the shell persists, enabling it would start running an
+                exit that absolutely positions the leaving page over the
+                arriving one. That is a new transition, and this change is
+                about removing one. */}
+            <div key={pathname}>
               <PullToRefresh global onRefresh={globalRefresh}>
                 <div key={refreshKey}>{children}</div>
               </PullToRefresh>
-            </m.div>
+            </div>
           </main>
 
           {/* Mobile bottom navigation — hidden when sidebar drawer is open.
