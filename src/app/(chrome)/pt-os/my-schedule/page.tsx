@@ -4,15 +4,15 @@ import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  CalendarCheck, ChevronLeft, ChevronRight, Clock, User, Dumbbell, Phone,
-  CheckCircle2, XCircle, AlertTriangle, Loader2, CalendarPlus, CalendarDays, UserCog,
+  CalendarCheck, ChevronLeft, ChevronRight, User, Dumbbell, Phone,
+  CheckCircle2, XCircle, AlertTriangle, Loader2, CalendarPlus, CalendarDays, UserCog, Play,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, EmptyState, PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { useAuth } from '@/lib/auth-context';
 import { api } from '@/lib/api';
-import type { PtSession, PtSessionStatus } from '@/lib/api';
+import type { PtSession, PtSessionStatus, TodayClient } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
 /* ── Date helpers ──────────────────────────────────────────────────────────
@@ -78,15 +78,47 @@ const STATUS_META: Record<PtSessionStatus, { label: string; color: string; bg: s
 
 const WEEKDAY_INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-function SessionRow({
-  session, onStatus, busy,
+/**
+ * One client on the selected day.
+ *
+ * Carries two independent things, which is why it is not two components:
+ *
+ *   the BOOKING  — a pt_sessions row, if one exists. Its status and the
+ *                  Complete / No Show / Cancel actions belong to the
+ *                  appointment.
+ *   the WORKOUT  — Start or Resume, which creates or opens a workout_session.
+ *                  Wired exactly as the Today page wires it, because a trainer
+ *                  who starts a session from here and from there must land in
+ *                  the same place with the same programme pre-filled.
+ *
+ * A client can have either, both, or only a programme day with neither.
+ */
+function DayRow({
+  client, booking, onStatus, onOpen, busyStatus, starting,
 }: {
-  session: PtSession;
+  client: TodayClient | null;
+  booking: PtSession | null;
   onStatus: (status: PtSessionStatus) => void;
-  busy: boolean;
+  onOpen: () => void;
+  busyStatus: boolean;
+  starting: boolean;
 }) {
-  const meta = STATUS_META[session.status] ?? STATUS_META.scheduled;
-  const isScheduled = session.status === 'scheduled';
+  const meta = booking ? (STATUS_META[booking.status] ?? STATUS_META.scheduled) : null;
+  const isScheduled = booking?.status === 'scheduled';
+  const time = booking?.start_time ?? client?.start_time ?? null;
+  const name = client?.client_name || booking?.client_name || 'Unknown client';
+  const done = client?.session_status === 'completed';
+  const inProgress = client?.session_status === 'in_progress';
+
+  // What the programme says for this weekday. `plan_name` with zero planned
+  // exercises is a rest day — still startable, because a trainer may run an
+  // ad-hoc session, but it must not read as though a workout is waiting.
+  const restDay = !!client && client.planned_exercises === 0;
+  const detail = client
+    ? (client.plan_name
+        ? `${client.plan_name} · ${restDay ? 'rest day' : `${client.planned_exercises} exercise${client.planned_exercises === 1 ? '' : 's'}`}`
+        : 'nothing scheduled')
+    : (booking?.session_type || 'Booked session');
 
   return (
     <div
@@ -94,15 +126,21 @@ function SessionRow({
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}
     >
       <div className="flex items-start gap-3.5">
-        {/* Time rail */}
-        <div className="flex w-[74px] shrink-0 flex-col items-center rounded-[12px] py-2"
-          style={{ background: meta.bg }}>
-          <span className="text-[12.5px] font-[800] leading-tight" style={{ color: meta.color }}>
-            {fmtTime(session.start_time)}
+        {/* Time rail. Untimed rows keep the rail so the column does not
+            jitter between rows that have a time and rows that do not. */}
+        <div
+          className="flex w-[74px] shrink-0 flex-col items-center rounded-[12px] py-2"
+          style={{ background: meta ? meta.bg : 'var(--bg-subtle)' }}
+        >
+          <span
+            className="text-[12.5px] font-[800] leading-tight"
+            style={{ color: meta ? meta.color : 'var(--text-muted)' }}
+          >
+            {time ? fmtTime(time) : '—'}
           </span>
-          {session.duration_minutes ? (
-            <span className="mt-0.5 text-[10px] font-[650]" style={{ color: meta.color, opacity: 0.85 }}>
-              {session.duration_minutes} min
+          {booking?.duration_minutes ? (
+            <span className="mt-0.5 text-[10px] font-[650]" style={{ color: meta?.color, opacity: 0.85 }}>
+              {booking.duration_minutes} min
             </span>
           ) : null}
         </div>
@@ -110,56 +148,82 @@ function SessionRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <p className="truncate text-[13.5px] font-[760]" style={{ color: 'var(--text-primary)' }}>
-              {session.client_name || 'Unknown client'}
+              {name}
             </p>
-            <span className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-[750] uppercase tracking-wide"
-              style={{ background: meta.bg, color: meta.color }}>
-              {meta.label}
-            </span>
+            {meta && (
+              <span
+                className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-[750] uppercase tracking-wide"
+                style={{ background: meta.bg, color: meta.color }}
+              >
+                {meta.label}
+              </span>
+            )}
           </div>
 
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-            {session.session_type && (
-              <span className="flex items-center gap-1 text-[11.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
-                <Dumbbell size={11} />{session.session_type}
-              </span>
-            )}
-            {session.end_time && (
-              <span className="flex items-center gap-1 text-[11.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
-                <Clock size={11} />ends {fmtTime(session.end_time)}
-              </span>
-            )}
-            {session.client_mobile && (
-              <a href={`tel:${session.client_mobile}`}
+            <span className="flex items-center gap-1 text-[11.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
+              <Dumbbell size={11} />{detail}
+            </span>
+            {booking?.client_mobile && (
+              <a
+                href={`tel:${booking.client_mobile}`}
                 className="flex items-center gap-1 text-[11.5px] font-[600] hover:underline"
-                style={{ color: 'var(--text-muted)' }}>
-                <Phone size={11} />{session.client_mobile}
+                style={{ color: 'var(--text-muted)' }}
+              >
+                <Phone size={11} />{booking.client_mobile}
               </a>
             )}
           </div>
 
-          {session.notes && (
-            <p className="mt-2 text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{session.notes}</p>
+          {booking?.notes && (
+            <p className="mt-2 text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{booking.notes}</p>
           )}
 
-          {isScheduled && (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Button size="sm" disabled={busy}
-                iconLeft={busy ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
-                onClick={() => onStatus('completed')}
-                style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff' }}>
-                Complete
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {/* The workout action, first: it is what a trainer taps on the
+                floor. Absent for a booking with no client record behind it,
+                because there is no programme to start. */}
+            {client && (
+              <Button
+                size="sm"
+                disabled={starting}
+                onClick={onOpen}
+                iconLeft={starting
+                  ? <Loader2 size={12} className="animate-spin" />
+                  : done ? <CheckCircle2 size={12} /> : <Play size={12} />}
+                variant={done ? 'outline' : undefined}
+                style={done ? undefined : {
+                  background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff',
+                }}
+              >
+                {done ? 'View' : inProgress ? 'Resume' : 'Start'}
               </Button>
-              <Button size="sm" variant="outline" disabled={busy}
-                iconLeft={<AlertTriangle size={12} />} onClick={() => onStatus('no_show')}>
-                No Show
-              </Button>
-              <Button size="sm" variant="ghost" disabled={busy}
-                iconLeft={<XCircle size={12} />} onClick={() => onStatus('cancelled')}>
-                Cancel
-              </Button>
-            </div>
-          )}
+            )}
+
+            {isScheduled && (
+              <>
+                <Button
+                  size="sm" variant="outline" disabled={busyStatus}
+                  iconLeft={busyStatus ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+                  onClick={() => onStatus('completed')}
+                >
+                  Complete
+                </Button>
+                <Button
+                  size="sm" variant="ghost" disabled={busyStatus}
+                  iconLeft={<AlertTriangle size={12} />} onClick={() => onStatus('no_show')}
+                >
+                  No Show
+                </Button>
+                <Button
+                  size="sm" variant="ghost" disabled={busyStatus}
+                  iconLeft={<XCircle size={12} />} onClick={() => onStatus('cancelled')}
+                >
+                  Cancel
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -175,6 +239,7 @@ export default function MySchedulePage() {
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
   const [selectedDay, setSelectedDay] = useState<string>(() => toYmd(new Date()));
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [startingId, setStartingId] = useState<string | null>(null);
 
   const weekDays = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
@@ -187,6 +252,26 @@ export default function MySchedulePage() {
   const sessions = useMemo(() => schedule.data?.data ?? [], [schedule.data]);
   const trainerLinked = schedule.data?.trainer_linked ?? true;
 
+  // The day's roster, from the same endpoint the Today page uses.
+  //
+  // pt_sessions alone is not "who am I training today". It holds BOOKED slots,
+  // and a studio records an attendance three different ways — a booking, an
+  // active programme prescribing this weekday, or the training days chosen at
+  // enrolment. /workout-log/today unions all three, clock-orders them, and
+  // returns session_id so a started log can be resumed rather than
+  // double-started. Reading pt_sessions only is why this page showed "Nothing
+  // scheduled" while Today listed five clients for the same date.
+  //
+  // It is a separate fetch rather than a merge of the week query because the
+  // roster is expensive to compute per day and only the SELECTED day is shown.
+  const roster = useAsync(
+    () => (trainerLinked
+      ? api.progress.workoutLog.today({ date: selectedDay })
+      : Promise.resolve(null)),
+    [selectedDay, trainerLinked],
+  );
+  const rosterClients = useMemo(() => roster.data?.data?.clients ?? [], [roster.data]);
+
   const byDay = useMemo(() => {
     const map: Record<string, PtSession[]> = {};
     for (const s of sessions) {
@@ -196,14 +281,61 @@ export default function MySchedulePage() {
     return map;
   }, [sessions]);
 
-  const daySessions = byDay[selectedDay] ?? [];
+  const daySessions = useMemo(() => byDay[selectedDay] ?? [], [byDay, selectedDay]);
 
-  const weekStats = useMemo(() => ({
-    total: sessions.length,
-    completed: sessions.filter((s) => s.status === 'completed').length,
-    upcoming: sessions.filter((s) => s.status === 'scheduled').length,
-    missed: sessions.filter((s) => s.status === 'cancelled' || s.status === 'no_show').length,
-  }), [sessions]);
+  /**
+   * One row per client for the selected day.
+   *
+   * The roster is the spine — it already includes booked clients, so listing
+   * pt_sessions alongside it would show the same person twice. Where a booking
+   * exists it is attached to the row, which is what lets a single row carry
+   * both the appointment's status (Completed / No Show) and the workout action
+   * (Start / Resume). Server order is preserved: timed before untimed, rest
+   * days last, and that ordering is the whole point of the endpoint.
+   */
+  const dayRows = useMemo(() => {
+    const bookingFor = new Map<string, PtSession>();
+    for (const s of daySessions) {
+      // Earliest booking wins, matching the roster's own MIN(start_time).
+      const existing = bookingFor.get(s.client_id);
+      if (!existing || (s.start_time ?? '') < (existing.start_time ?? '')) {
+        bookingFor.set(s.client_id, s);
+      }
+    }
+
+    // Typed explicitly: inferred from the map alone `client` narrows to
+    // TodayClient, and the booking-only rows pushed below would not fit.
+    const rows: { client: TodayClient | null; booking: PtSession | null }[] =
+      rosterClients.map((c) => ({
+        client: c,
+        booking: bookingFor.get(c.client_id) ?? null,
+      }));
+
+    // A booking whose client the roster did not return — cancelled, or a
+    // client no longer active. Still the trainer's diary, so it is shown
+    // rather than silently dropped.
+    const seen = new Set(rosterClients.map((c) => c.client_id));
+    for (const s of daySessions) {
+      if (!seen.has(s.client_id)) {
+        seen.add(s.client_id);
+        rows.push({ client: null, booking: s });
+      }
+    }
+    return rows;
+  }, [rosterClients, daySessions]);
+
+  // Counted over the SELECTED DAY's rows rather than the week's bookings.
+  // Showing "0 this week" beside a list of five clients was the contradiction
+  // that made this page look broken: the figures came from pt_sessions while
+  // the list now comes from the roster, and two sources describing one screen
+  // will always drift apart.
+  const dayStats = useMemo(() => ({
+    total: dayRows.length,
+    done: dayRows.filter((r) => r.client?.session_status === 'completed').length,
+    toDo: dayRows.filter((r) => r.client && r.client.session_status !== 'completed').length,
+    missed: dayRows.filter((r) => r.booking
+      && (r.booking.status === 'cancelled' || r.booking.status === 'no_show')).length,
+  }), [dayRows]);
 
   const shiftWeek = useCallback((delta: number) => {
     const next = addDays(weekStart, delta * 7);
@@ -226,12 +358,48 @@ export default function MySchedulePage() {
       await api.pt.updateSession(session.id, { status });
       toast.success(`Marked ${STATUS_META[status].label.toLowerCase()}.`);
       schedule.refetch();
+      // The roster carries the workout log's state, not the booking's, but a
+      // cancelled booking changes what the row should offer — refetch both so
+      // the two halves of a row cannot disagree.
+      roster.refetch();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Could not update this session.');
     } finally {
       setBusyId(null);
     }
   };
+
+  /**
+   * Start or resume the workout log — the same two-branch behaviour as the
+   * Today page, deliberately identical rather than similar.
+   *
+   * Resuming is navigation. Starting creates the session with the programme
+   * and weekday already filled in, which is the point: those are the two
+   * fields the New Session form otherwise asks the trainer to retype at the
+   * exact moment they are standing in front of the client.
+   */
+  const openWorkout = useCallback(async (c: TodayClient) => {
+    if (startingId) return;
+    if (c.session_id) {
+      router.push(`/pt-os/clients/${c.client_id}/workout-log/${c.session_id}`);
+      return;
+    }
+    setStartingId(c.client_id);
+    try {
+      const res = await api.progress.workoutLog.sessions.create({
+        client_id: c.client_id,
+        session_date: roster.data?.data?.date ?? selectedDay,
+        program_name: c.plan_name,
+        workout_day: roster.data?.data?.day_of_week,
+      });
+      const id = (res as { data?: { id?: string } })?.data?.id;
+      if (!id) throw new Error('Session was created without an id');
+      router.push(`/pt-os/clients/${c.client_id}/workout-log/${id}`);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Could not start the session');
+      setStartingId(null);
+    }
+  }, [startingId, router, roster.data, selectedDay, toast]);
 
   const monthLabel = `${weekDays[0].toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} – ${weekDays[6].toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}`;
   const todayYmd = toYmd(new Date());
@@ -367,15 +535,15 @@ export default function MySchedulePage() {
                 {/* Week stats */}
                 <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {[
-                    { label: 'This Week', value: weekStats.total, color: '#0067e0' },
-                    { label: 'Upcoming', value: weekStats.upcoming, color: '#0067e0' },
-                    { label: 'Completed', value: weekStats.completed, color: '#10b981' },
-                    { label: 'Missed', value: weekStats.missed, color: '#f59e0b' },
+                    { label: 'On This Day', value: dayStats.total, color: '#0067e0' },
+                    { label: 'To Do', value: dayStats.toDo, color: '#0067e0' },
+                    { label: 'Completed', value: dayStats.done, color: '#10b981' },
+                    { label: 'Missed', value: dayStats.missed, color: '#f59e0b' },
                   ].map((s) => (
                     <div key={s.label} className="rounded-[14px] px-4 py-3"
                       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
                       <p className="text-[20px] font-[820] tracking-[-0.02em]" style={{ color: s.color }}>
-                        {schedule.data ? s.value : '—'}
+                        {roster.data || schedule.data ? s.value : '—'}
                       </p>
                       <p className="mt-0.5 text-[10.5px] font-[650] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
                         {s.label}
@@ -391,11 +559,11 @@ export default function MySchedulePage() {
                     {fmtDayLabel(selectedDay)}
                   </h2>
                   <span className="text-[11.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
-                    {daySessions.length} session{daySessions.length === 1 ? '' : 's'}
+                    {dayRows.length} client{dayRows.length === 1 ? '' : 's'}
                   </span>
                 </div>
 
-                {schedule.loading && !schedule.data && (
+                {(schedule.loading || roster.loading) && !roster.data && !schedule.data && (
                   <div className="flex flex-col items-center justify-center gap-3 py-16">
                     <Loader2 size={26} className="animate-spin" style={{ color: '#0067e0' }} />
                     <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>Loading your schedule…</p>
@@ -415,7 +583,7 @@ export default function MySchedulePage() {
                   </div>
                 )}
 
-                {!schedule.loading && !schedule.error && daySessions.length === 0 && (
+                {!schedule.loading && !roster.loading && !schedule.error && dayRows.length === 0 && (
                   <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
                     <EmptyState
                       icon={<CalendarDays size={22} />}
@@ -425,19 +593,28 @@ export default function MySchedulePage() {
                   </div>
                 )}
 
-                {daySessions.length > 0 && (
+                {dayRows.length > 0 && (
                   <div className="space-y-2.5">
-                    {daySessions.map((s, i) => (
-                      <m.div key={s.id}
-                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: Math.min(i, 8) * 0.03, duration: 0.25 }}>
-                        <SessionRow
-                          session={s}
-                          busy={busyId === s.id}
-                          onStatus={(status) => updateStatus(s, status)}
-                        />
-                      </m.div>
-                    ))}
+                    {dayRows.map((row, i) => {
+                      // Server order is preserved as-is: timed rows first, then
+                      // untimed, rest days last. Re-sorting here would put this
+                      // page and Today in a different order for the same day.
+                      const key = row.client?.client_id ?? row.booking?.id ?? String(i);
+                      return (
+                        <m.div key={key}
+                          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: Math.min(i, 8) * 0.03, duration: 0.25 }}>
+                          <DayRow
+                            client={row.client}
+                            booking={row.booking}
+                            busyStatus={!!row.booking && busyId === row.booking.id}
+                            starting={!!row.client && startingId === row.client.client_id}
+                            onOpen={() => row.client && openWorkout(row.client)}
+                            onStatus={(status) => row.booking && updateStatus(row.booking, status)}
+                          />
+                        </m.div>
+                      );
+                    })}
                   </div>
                 )}
               </>
