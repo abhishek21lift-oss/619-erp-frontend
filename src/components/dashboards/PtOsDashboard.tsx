@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAsync } from '@/lib/use-async';
+import { DashboardError } from '@/components/dashboards/primitives';
 import { useAuth } from '@/lib/auth-context';
 import FounderBadge from '@/components/FounderBadge';
 import { useFounder } from '@/lib/use-founder';
@@ -1878,6 +1879,22 @@ export default function PtOsDashboard() {
 
         {dash.loading && !d && <SkeletonDash />}
 
+        {/* A failed read used to render NOTHING. The skeleton above is gated
+            on `loading` and the content below on `d`, so an API failure left
+            both false and the content area went permanently blank — no
+            message, no retry, indistinguishable from a studio with no data,
+            on the screen every admin lands on after login. Logged as Critical
+            #3 in DASHBOARD-AUDIT.md. The trainer dashboard has had this
+            branch all along; this is the same one.
+
+            Gated on `!d` as well as `error` so a failed background refresh
+            never replaces figures that are already on screen with an alarm —
+            the poll runs every 60s, and a single blip should not blank a
+            dashboard somebody is reading. */}
+        {dash.error && !d && (
+          <DashboardError onRetry={refreshAll} retrying={dash.loading} />
+        )}
+
         {d && (
           <>
             {/* 1 — Hero header */}
@@ -1957,7 +1974,18 @@ export default function PtOsDashboard() {
             </div>
 
             {/* 5 — AI Coach */}
-            <AICoach d={d} ops={o} birthdays={birthdays.data?.data ?? []} studioName={studioName} />
+            {/* Array.isArray, not `?? []`: the nullish default only catches
+                undefined, so anything ELSE this endpoint yields — an object,
+                an error envelope, a string — passes through to
+                buildCoachInsights, which calls .filter on it and takes the
+                whole dashboard to its error boundary. One malformed list
+                should cost this card, not the entire screen. Seen for real:
+                device-check's fixture table matched `birthdays` as a client
+                id and served a single client object, and every dashboard run
+                in that harness rendered "Something went wrong". */}
+            <AICoach d={d} ops={o}
+              birthdays={Array.isArray(birthdays.data?.data) ? birthdays.data.data : []}
+              studioName={studioName} />
 
             {/* 6 — Today's Revenue.
                 Was "Revenue Intelligence": this month, a linear-regression
