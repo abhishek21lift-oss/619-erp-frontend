@@ -20,8 +20,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import {
-  askClientAi, ClientAiError, SUGGESTED_QUESTIONS,
-  type ClientAiTurn,
+  streamClientAi, ClientAiError, SUGGESTED_QUESTIONS,
+  type ClientAiTurn, type ClientAiGrounding,
 } from '@/lib/client-ai';
 
 interface Msg extends ClientAiTurn {
@@ -30,6 +30,14 @@ interface Msg extends ClientAiTurn {
   tools?: string[];
   unavailable?: { tool: string; reason: string }[];
   failed?: boolean;
+  /** Still being written. Drives the caret, and suppresses the provenance
+   *  chips until there is an answer for them to be provenance for. */
+  streaming?: boolean;
+  /** Written, but stopped short. The text is kept — it is real and the trainer
+   *  is already reading it — with a line saying not to treat it as complete. */
+  truncated?: boolean;
+  /** The service's check of this answer's figures against the client's records. */
+  grounding?: ClientAiGrounding;
 }
 
 /** `getClientTrainingBrief` → `training brief`. */
@@ -67,7 +75,13 @@ export default function ClientAiPanel({
   }, [clientId]);
 
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
+    // Instant while streaming: a smooth scroll re-triggered on every token
+    // spends its whole life interrupting itself and never reaches the bottom.
+    const streaming = messages.some((msg) => msg.streaming);
+    listRef.current?.scrollTo({
+      top: listRef.current.scrollHeight,
+      behavior: streaming ? 'auto' : 'smooth',
+    });
   }, [messages, busy]);
 
   useEffect(() => {
@@ -92,30 +106,63 @@ export default function ClientAiPanel({
     const controller = new AbortController();
     abortRef.current = controller;
 
+    // One id for the whole answer, minted before the first token: every update
+    // below targets it, so a second question started while this one is still
+    // writing cannot overwrite the wrong bubble.
+    const answerId = `a-${Date.now()}`;
+    const patch = (fields: Partial<Msg>) => setMessages(
+      (prev) => prev.map((msg) => (msg.id === answerId ? { ...msg, ...fields } : msg)),
+    );
+
     try {
-      const res = await askClientAi(
+      const res = await streamClientAi(
         { clientId, message: question, history: priorHistory },
+        {
+          // Retrieval is done and the model is writing. The bubble appears now,
+          // empty, because an empty bubble that is about to fill reads as
+          // progress where a spinner reads as a wait.
+          onStart: (start) => setMessages((prev) => [...prev, {
+            id: answerId,
+            role: 'assistant',
+            content: '',
+            tools: start.toolsUsed,
+            unavailable: start.toolsUnavailable,
+            streaming: true,
+          }]),
+          onText: (text) => patch({ content: text }),
+        },
         controller.signal,
       );
-      setMessages((prev) => [...prev, {
-        id: `a-${Date.now()}`,
-        role: 'assistant',
+      patch({
         content: res.message,
         tools: res.toolsUsed,
         unavailable: res.toolsUnavailable,
-      }]);
+        grounding: res.grounding,
+        streaming: false,
+      });
     } catch (err) {
       if (controller.signal.aborted) return;
-      setMessages((prev) => [...prev, {
-        id: `e-${Date.now()}`,
-        role: 'assistant',
-        failed: true,
-        content: err instanceof ClientAiError ? err.message : 'Something went wrong.',
-      }]);
+      const partial = err instanceof ClientAiError && err.partial;
+      if (partial) {
+        // Keep what arrived, flag it. Deleting text the trainer has already
+        // read to replace it with "something went wrong" is the worse outcome.
+        patch({ streaming: false, truncated: true });
+      } else {
+        setMessages((prev) => [...prev.filter((msg) => msg.id !== answerId), {
+          id: `e-${Date.now()}`,
+          role: 'assistant',
+          failed: true,
+          content: err instanceof ClientAiError ? err.message : 'Something went wrong.',
+        }]);
+      }
     } finally {
       if (!controller.signal.aborted) setBusy(false);
     }
   }, [busy, clientId, messages]);
+
+  // The spinner belongs to the retrieval phase only. Once text is arriving, the
+  // text itself is the progress indicator and a second one is just noise.
+  const waiting = busy && !messages.some((msg) => msg.streaming);
 
   return (
     <div
@@ -235,7 +282,47 @@ export default function ClientAiPanel({
                       style={{ color: 'var(--text-primary)' }}
                     >
                       {msg.content}
+                      {msg.streaming && (
+                        <span
+                          aria-hidden
+                          className="ml-0.5 inline-block animate-pulse align-baseline"
+                          style={{ width: 2, height: '0.95em', background: '#0067e0' }}
+                        />
+                      )}
                     </p>
+                    {/* The bubble is empty for the first second or two. Say what
+                        is happening rather than showing a blank box. */}
+                    {msg.streaming && !msg.content && (
+                      <span className="sr-only">Writing an answer</span>
+                    )}
+
+                    {msg.truncated && (
+                      <p className="mt-1.5 flex items-center gap-1.5 text-[10.5px] font-[700]" style={{ color: '#f59e0b' }}>
+                        <AlertTriangle size={11} />
+                        Stopped before it finished — treat this as incomplete.
+                      </p>
+                    )}
+
+                    {/* Figures the service could not find in this client's
+                        records. Named individually rather than counted: a
+                        trainer needs to know WHICH number to distrust, and a
+                        bare "1 unverified figure" makes them re-read the whole
+                        answer to guess at it. */}
+                    {!!msg.grounding?.figures.length && (
+                      <div
+                        className="mt-2.5 rounded-[10px] px-2.5 py-2"
+                        style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.30)' }}
+                      >
+                        <p className="flex items-center gap-1.5 text-[10.5px] font-[750]" style={{ color: '#b45309' }}>
+                          <AlertTriangle size={11} />
+                          Not found in {clientName}&rsquo;s records:{' '}
+                          {msg.grounding.figures.map((f) => f.text).join(', ')}
+                        </p>
+                        <p className="mt-1 text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                          Check {msg.grounding.figures.length === 1 ? 'this figure' : 'these figures'} against the record before acting on {msg.grounding.figures.length === 1 ? 'it' : 'them'}.
+                        </p>
+                      </div>
+                    )}
 
                     {/* Provenance. A trainer acting on this deserves to know
                         which records it rests on — and which it could not read,
@@ -264,7 +351,7 @@ export default function ClientAiPanel({
               </div>
             ))}
 
-            {busy && (
+            {waiting && (
               <div className="flex items-center gap-2 px-1 py-2">
                 <Loader2 size={13} className="animate-spin" style={{ color: '#0067e0' }} />
                 <span className="text-[11.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>

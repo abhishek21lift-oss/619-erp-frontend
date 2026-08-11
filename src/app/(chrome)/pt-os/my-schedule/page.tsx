@@ -4,10 +4,11 @@ import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  CalendarCheck, ChevronLeft, ChevronRight, User, Dumbbell, Phone,
+  CalendarCheck, ChevronLeft, ChevronRight, User, Dumbbell, Phone, Clock,
   CheckCircle2, XCircle, AlertTriangle, Loader2, CalendarPlus, CalendarDays, UserCog, Play,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
+import ClientAvatar, { initialsOf } from '@/components/pt-os/ClientAvatar';
 import { Button, EmptyState, PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { useAuth } from '@/lib/auth-context';
@@ -122,32 +123,34 @@ function DayRow({
 
   return (
     <div
-      className="rounded-[16px] p-4"
+      className="rounded-[16px] p-3.5"
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}
     >
-      <div className="flex items-start gap-3.5">
-        {/* Time rail. Untimed rows keep the rail so the column does not
-            jitter between rows that have a time and rows that do not. */}
-        <div
-          className="flex w-[74px] shrink-0 flex-col items-center rounded-[12px] py-2"
-          style={{ background: meta ? meta.bg : 'var(--bg-subtle)' }}
+      <div className="flex items-start gap-3">
+        {/* The face, in the position the empty time rail used to hold.
+
+            That rail was a 74px filled block carrying the string "—" on every
+            programme row — and on a normal weekday most of the roster is
+            programme rows, so the largest, leftmost, first-scanned element on
+            the screen said nothing on five cards out of five. It was there to
+            stop the column jittering between timed and untimed rows, which is
+            a real problem; keeping a coloured box to solve it is not. The
+            width is now held by something that differs per row.
+
+            Same component and same 44px tile as Today, because a trainer
+            moving between the two screens is looking for the same faces. */}
+        <ClientAvatar
+          name={name}
+          photoUrl={client?.client_photo}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] text-[13px] font-[800] text-white"
+          style={{ background: restDay ? 'var(--text-muted)' : 'linear-gradient(135deg,#0067e0,#0059ce)' }}
         >
-          <span
-            className="text-[12.5px] font-[800] leading-tight"
-            style={{ color: meta ? meta.color : 'var(--text-muted)' }}
-          >
-            {time ? fmtTime(time) : '—'}
-          </span>
-          {booking?.duration_minutes ? (
-            <span className="mt-0.5 text-[10px] font-[650]" style={{ color: meta?.color, opacity: 0.85 }}>
-              {booking.duration_minutes} min
-            </span>
-          ) : null}
-        </div>
+          {initialsOf(name)}
+        </ClientAvatar>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <p className="truncate text-[13.5px] font-[760]" style={{ color: 'var(--text-primary)' }}>
+            <p className="truncate text-[14px] font-[760]" style={{ color: 'var(--text-primary)' }}>
               {name}
             </p>
             {meta && (
@@ -160,39 +163,78 @@ function DayRow({
             )}
           </div>
 
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className="flex items-center gap-1 text-[11.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
-              <Dumbbell size={11} />{detail}
-            </span>
-            {booking?.client_mobile && (
-              <a
-                href={`tel:${booking.client_mobile}`}
-                className="flex items-center gap-1 text-[11.5px] font-[600] hover:underline"
-                style={{ color: 'var(--text-muted)' }}
+          <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+            {/* The time, now shown only when there is one. It reads as a chip
+                rather than a rail: present on the rows that have an hour,
+                absent — not blank — on the rows that do not.
+
+                tabular-nums so 6:00 and 11:30 occupy the same width and the
+                column of times stays aligned down the list. */}
+            {time && (
+              <span
+                className="inline-flex items-center gap-1 rounded-[7px] px-1.5 py-0.5 text-[11px] font-[800] tabular-nums"
+                style={{
+                  background: meta ? meta.bg : 'var(--brand-soft)',
+                  color: meta ? meta.color : 'var(--brand-hi)',
+                }}
               >
-                <Phone size={11} />{booking.client_mobile}
-              </a>
+                <Clock size={10} aria-hidden />
+                {fmtTime(time)}
+                {booking?.duration_minutes ? ` · ${booking.duration_minutes}m` : ''}
+              </span>
             )}
+            <span className="flex min-w-0 items-center gap-1 text-[11.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
+              <Dumbbell size={11} className="shrink-0" />
+              <span className="truncate">{detail}</span>
+            </span>
           </div>
 
-          {booking?.notes && (
-            <p className="mt-2 text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{booking.notes}</p>
+          {booking?.client_mobile && (
+            // Given its own 44px row rather than sharing the meta line. It is a
+            // tel: link — a touch target — and it was sitting inline at 11.5px
+            // beside static text, which is both under the minimum size and
+            // indistinguishable from the programme label next to it.
+            <a
+              href={`tel:${booking.client_mobile}`}
+              className="mt-1 -ml-1.5 inline-flex h-11 items-center gap-1.5 rounded-[10px] px-1.5 text-[12px] font-[650]"
+              style={{ color: 'var(--brand-hi)' }}
+            >
+              <Phone size={12} aria-hidden />
+              {booking.client_mobile}
+              <span className="sr-only"> — call {name}</span>
+            </a>
           )}
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          {booking?.notes && (
+            <p className="mt-1.5 text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{booking.notes}</p>
+          )}
+
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
             {/* The workout action, first: it is what a trainer taps on the
                 floor. Absent for a booking with no client record behind it,
-                because there is no programme to start. */}
+                because there is no programme to start.
+
+                Every one of these was size="sm" — h-8, 32px — on a screen only
+                ever used with a thumb, and up to four of them in one row. They
+                are 44px now, which is the floor, and they wrap rather than
+                shrink to fit. */}
             {client && (
               <Button
-                size="sm"
                 disabled={starting}
                 onClick={onOpen}
+                aria-label={`${done ? 'View' : inProgress ? 'Resume' : 'Start'} ${name}'s session`}
                 iconLeft={starting
-                  ? <Loader2 size={12} className="animate-spin" />
-                  : done ? <CheckCircle2 size={12} /> : <Play size={12} />}
-                variant={done ? 'outline' : undefined}
-                style={done ? undefined : {
+                  ? <Loader2 size={14} className="animate-spin" />
+                  : done ? <CheckCircle2 size={14} /> : <Play size={14} />}
+                variant={done || restDay ? 'outline' : undefined}
+                className="min-h-[44px]"
+                // A rest day is still startable — a trainer may run an ad-hoc
+                // session — but it does not get the solid brand fill. Four
+                // equally loud Start buttons make the trainer read every row to
+                // find the clients who are actually training today, which is
+                // the one question this screen exists to answer. Today already
+                // draws it this way; this page rendered all five identically.
+                style={done || restDay ? undefined : {
                   background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff',
                 }}
               >
@@ -203,21 +245,21 @@ function DayRow({
             {isScheduled && (
               <>
                 <Button
-                  size="sm" variant="outline" disabled={busyStatus}
-                  iconLeft={busyStatus ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+                  variant="outline" disabled={busyStatus} className="min-h-[44px]"
+                  iconLeft={busyStatus ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                   onClick={() => onStatus('completed')}
                 >
                   Complete
                 </Button>
                 <Button
-                  size="sm" variant="ghost" disabled={busyStatus}
-                  iconLeft={<AlertTriangle size={12} />} onClick={() => onStatus('no_show')}
+                  variant="ghost" disabled={busyStatus} className="min-h-[44px]"
+                  iconLeft={<AlertTriangle size={14} />} onClick={() => onStatus('no_show')}
                 >
                   No Show
                 </Button>
                 <Button
-                  size="sm" variant="ghost" disabled={busyStatus}
-                  iconLeft={<XCircle size={12} />} onClick={() => onStatus('cancelled')}
+                  variant="ghost" disabled={busyStatus} className="min-h-[44px]"
+                  iconLeft={<XCircle size={14} />} onClick={() => onStatus('cancelled')}
                 >
                   Cancel
                 </Button>

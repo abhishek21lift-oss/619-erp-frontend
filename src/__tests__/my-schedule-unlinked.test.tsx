@@ -253,7 +253,7 @@ describe("the day agenda is the roster, not just booked pt_sessions", () => {
     expect(screen.getAllByText('Prakhar Sharma')).toHaveLength(1);
     // And the row carries BOTH halves: the booking's status and the workout action.
     expect(screen.getByText('Scheduled')).toBeTruthy();
-    expect(screen.getByRole('button', { name: /^start$/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^start Prakhar Sharma's session$/i })).toBeTruthy();
   });
 
   it('starts a workout with the programme and weekday pre-filled', async () => {
@@ -265,7 +265,7 @@ describe("the day agenda is the roster, not just booked pt_sessions", () => {
     createWorkoutSession.mockResolvedValue({ data: { id: 'ws-9' } });
     render(<MySchedulePage />);
 
-    (await screen.findByRole('button', { name: /^start$/i })).click();
+    (await screen.findByRole('button', { name: /^start .+'s session$/i })).click();
 
     await waitFor(() => expect(createWorkoutSession).toHaveBeenCalled());
     expect(createWorkoutSession.mock.calls[0][0]).toEqual({
@@ -285,7 +285,7 @@ describe("the day agenda is the roster, not just booked pt_sessions", () => {
     ]));
     render(<MySchedulePage />);
 
-    (await screen.findByRole('button', { name: /resume/i })).click();
+    (await screen.findByRole('button', { name: /^resume .+'s session$/i })).click();
 
     // Navigation only — creating another log would fork the same workout.
     expect(createWorkoutSession).not.toHaveBeenCalled();
@@ -299,8 +299,12 @@ describe("the day agenda is the roster, not just booked pt_sessions", () => {
     ]));
     render(<MySchedulePage />);
 
-    expect(await screen.findByRole('button', { name: /view/i })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /^start$/i })).toBeNull();
+    expect(await screen.findByRole('button', { name: /^view .+'s session$/i })).toBeTruthy();
+    // Matched on the visible text, not the aria-label. Asserting the absence of
+    // /^start$/ would pass even if a Start button were rendered, because no
+    // button on this row is named exactly "Start" any more — a negative
+    // assertion against a pattern nothing can match tests nothing.
+    expect(screen.queryByText(/^Start$/)).toBeNull();
   });
 
   it('calls a rest day a rest day rather than counting zero exercises', async () => {
@@ -310,7 +314,105 @@ describe("the day agenda is the roster, not just booked pt_sessions", () => {
 
     expect(await screen.findByText(/Full Body · rest day/)).toBeTruthy();
     // Still startable — a trainer may run an ad-hoc session.
-    expect(screen.getByRole('button', { name: /^start$/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^start .+'s session$/i })).toBeTruthy();
+  });
+
+  it('a rest day gets a quieter Start than a real session', async () => {
+    // The question this screen answers is "who am I actually training today".
+    // If every row's Start carries the same brand fill, the trainer has to read
+    // all five subtitles to answer it — the loudest element on each card would
+    // be saying the same thing about clients in two different states. Today
+    // already draws rest days as an outline; this page drew them identically.
+    //
+    // Asserted in both directions, because only the contrast is the design
+    // decision: an outline on every row would satisfy a one-sided check and
+    // lose exactly as much information as a fill on every row.
+    mySessions.mockResolvedValue(linked);
+    todayRoster.mockResolvedValue(roster([{ ...CLIENT, planned_exercises: 0 }]));
+    const rest = render(<MySchedulePage />);
+    // Both the variant and the inline fill are checked. They are set by two
+    // separate expressions on the same element, so a check on only one of them
+    // passes while the other is reverted — and either one alone reinstates a
+    // solid-looking button on a rest day.
+    const restStart = await screen.findByRole('button', { name: /^start .+'s session$/i });
+    expect(restStart.getAttribute('style') ?? '').not.toContain('gradient');
+    expect(restStart.className).toContain('bg-transparent');
+    rest.unmount();
+
+    todayRoster.mockResolvedValue(roster([{ ...CLIENT, planned_exercises: 2 }]));
+    render(<MySchedulePage />);
+    const trainingStart = await screen.findByRole('button', { name: /^start .+'s session$/i });
+    expect(trainingStart.getAttribute('style') ?? '').toContain('gradient');
+    expect(trainingStart.className).not.toContain('bg-transparent');
+  });
+
+  it('shows no time rail on a row that has no time', async () => {
+    // The rail was a 74px filled block printing "—" whenever the row had no
+    // hour, and on a normal weekday most of the roster is programme rows with
+    // no hour. That made the largest, leftmost, first-scanned element on the
+    // screen the one carrying no information, on card after card.
+    mySessions.mockResolvedValue(linked);
+    todayRoster.mockResolvedValue(roster([{ ...CLIENT, start_time: null }]));
+    render(<MySchedulePage />);
+
+    await screen.findByText('Prakhar Sharma');
+    expect(screen.queryByText('—')).toBeNull();
+  });
+
+  it('still shows the time when the row has one', async () => {
+    // The other half of the rule. Removing the placeholder must not remove the
+    // time itself — the list is ordered by it, and a row whose hour you cannot
+    // read is a row you have to count places to locate.
+    mySessions.mockResolvedValue(linked);
+    todayRoster.mockResolvedValue(roster([{ ...CLIENT, start_time: '07:00' }]));
+    render(<MySchedulePage />);
+
+    expect(await screen.findByText(/7:00/)).toBeTruthy();
+  });
+
+  it('gives every row a face, so two rows differ by more than their text', async () => {
+    // The one field that tells clients apart at a glance. Today shows it; this
+    // page showed a grey block instead, which is why five cards read as five
+    // copies of the same card.
+    mySessions.mockResolvedValue(linked);
+    todayRoster.mockResolvedValue(roster([
+      { ...CLIENT, client_photo: 'https://cdn.example.test/prakhar.jpg' },
+    ]));
+    render(<MySchedulePage />);
+
+    const img = await screen.findByRole('img', { name: /prakhar sharma/i });
+    expect(img.getAttribute('src')).toContain('prakhar.jpg');
+  });
+
+  it('falls back to initials when the client has no photo', async () => {
+    mySessions.mockResolvedValue(linked);
+    todayRoster.mockResolvedValue(roster([{ ...CLIENT, client_photo: null }]));
+    render(<MySchedulePage />);
+
+    expect(await screen.findByText('PS')).toBeTruthy();
+  });
+
+  it('every action is a 44px touch target', async () => {
+    // These were size="sm" — h-8, 32px — with up to four in a row, on a screen
+    // only ever used with a thumb on a gym floor. 44px is the floor, not a
+    // preference.
+    mySessions.mockResolvedValue({
+      data: [{
+        id: 's1', client_id: 'c1', client_name: 'Prakhar Sharma',
+        session_date: TODAY, start_time: '07:00:00', status: 'scheduled',
+      }],
+      total: 1, trainer_linked: true,
+    });
+    todayRoster.mockResolvedValue(roster([{ ...CLIENT, source_rank: 1 }]));
+    render(<MySchedulePage />);
+
+    await screen.findByText('Prakhar Sharma');
+    const actions = screen.getAllByRole('button')
+      .filter((b) => /start|complete|no show|cancel/i.test(b.textContent ?? ''));
+    expect(actions.length).toBeGreaterThanOrEqual(4);
+    for (const b of actions) {
+      expect(b.className).toContain('min-h-[44px]');
+    }
   });
 
   it('counts the selected day, not the week, so the figures match the list', async () => {
