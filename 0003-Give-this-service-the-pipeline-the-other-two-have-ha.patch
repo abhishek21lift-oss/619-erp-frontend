@@ -1,7 +1,7 @@
 From 0e1e7e038ddd6a14ae3a8751687494e799a73718 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 11 Aug 2026 06:21:27 +0000
-Subject: [PATCH 3/3] Give this service the pipeline the other two have had for
+Subject: [PATCH 3/4] Give this service the pipeline the other two have had for
  months
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8

@@ -1,7 +1,7 @@
 From 31a9b74b619fa7cf40d588a14ff18b59bed28f57 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 11 Aug 2026 05:47:53 +0000
-Subject: [PATCH 2/3] Stream the answer instead of making the trainer wait for
+Subject: [PATCH 2/4] Stream the answer instead of making the trainer wait for
  all of it
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8

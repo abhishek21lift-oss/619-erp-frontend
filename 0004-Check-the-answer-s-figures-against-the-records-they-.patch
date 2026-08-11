@@ -1,0 +1,633 @@
+From 6b95dc2e8bf27dd7cda7b2e0ae5063ec0a42161d Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 11 Aug 2026 06:55:29 +0000
+Subject: [PATCH 4/4] Check the answer's figures against the records they came
+ from
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The system prompt already tells the model to ground every claim in retrieved
+data and to say "I don't have that" rather than fill a gap. That is an
+instruction, and an instruction is a hope. Nothing in the service checked
+whether the model complied, so "the assistant only answers from your data" was
+a claim we made on the model's behalf without evidence.
+
+verifyGrounding() closes that. After the model answers, every figure in the
+text is looked for in the data the tools actually returned, and graded:
+
+  in-source    the figure is in the retrieved payload
+  derived      it is a sum or difference of two figures that are
+               ("down 3.6 kg since January" is arithmetic, not invention)
+  unverified   it is neither
+
+Only the unverified ones travel to the caller, on both routes and in the
+per-turn log — so grounding becomes a rate you can watch move rather than an
+assurance, and a model swap that starts inventing figures shows up before a
+trainer has to notice it.
+
+Two decisions worth stating plainly, since both are limits:
+
+It checks NUMBERS, not prose. "Rahul is progressing well" is unfalsifiable
+here and always will be. The figures are what a trainer acts on — a weight, a
+session count, an expiry date, a balance — and a fabricated number is a wrong
+decision about a real person in a way a fabricated adjective is not.
+
+Small integers match by coincidence, so a hallucinated "3 sessions" will
+usually be graded in-source. That is a real false negative and no threshold
+fixes it — raising one would start hiding genuine findings instead. The
+distinctive figures are where this earns its keep, and they are also the ones
+that do damage when wrong.
+
+The check runs against the ERP payload, never the prompt. Mutation testing
+found that one: verifying against the conversation lets the model launder a
+figure by agreeing with a trainer's leading question ("his body fat is 22.7%,
+right?") — the one case a trainer most needs flagged, since they cannot catch
+it by reading. Seven mutants, seven caught, including "always report clean".
+---
+ __tests__/grounding.test.js      | 268 +++++++++++++++++++++++++++++++
+ src/agents/client/agent.js       |  36 ++++-
+ src/api/clientAgent.js           |   2 +
+ src/platform/grounding/verify.js | 181 +++++++++++++++++++++
+ 4 files changed, 482 insertions(+), 5 deletions(-)
+ create mode 100644 __tests__/grounding.test.js
+ create mode 100644 src/platform/grounding/verify.js
+
+diff --git a/__tests__/grounding.test.js b/__tests__/grounding.test.js
+new file mode 100644
+index 0000000..0cbaeb3
+--- /dev/null
++++ b/__tests__/grounding.test.js
+@@ -0,0 +1,268 @@
++'use strict';
++// The grounding check, tested against the thing it exists to catch.
++//
++// The system prompt tells the model to stay inside the retrieved data. These
++// tests do not check that the prompt says so — they check that when a model
++// ignores it, the service notices. So the central case is a fabricated figure,
++// and the assertion is that it comes back flagged.
++
++const request = require('supertest');
++const { buildApp } = require('../src/app');
++const { load } = require('../src/config');
++const { verifyGrounding, collectSourceNumbers, extractClaims } = require('../src/platform/grounding/verify');
++
++const config = load({
++  NODE_ENV: 'test',
++  AI_API_KEY: 'test-key',
++  ERP_BACKEND_URL: 'https://erp.example.test',
++  SERVICE_AUTH_SECRET: 'x'.repeat(48),
++  ALLOWED_ORIGINS: 'https://app.example.test',
++});
++
++describe('reading figures out of retrieved data', () => {
++  test('finds numbers however deeply they are buried', () => {
++    const found = collectSourceNumbers({
++      client: { weight_kg: 78.4 },
++      sessions: [{ id: 12, notes: 'completed 3 sets' }],
++    });
++
++    expect(found.has(78.4)).toBe(true);
++    expect(found.has(12)).toBe(true);
++    expect(found.has(3)).toBe(true);
++  });
++
++  test('reads figures out of strings, not just numeric fields', () => {
++    // The ERP returns plenty of these: "78.4 kg", "2026-03-15", "₹12,500".
++    // A collector that only walked typeof === 'number' would treat every one
++    // of them as absent, and then flag the model for quoting them correctly.
++    const found = collectSourceNumbers({
++      weight: '78.4 kg',
++      expires: '2026-03-15',
++      balance: '₹12,500',
++    });
++
++    expect(found.has(78.4)).toBe(true);
++    expect(found.has(2026)).toBe(true);
++    expect(found.has(15)).toBe(true);
++    expect(found.has(12500)).toBe(true);   // comma stripped, not read as 12
++  });
++
++  test('object keys count as source, because the model can quote them', () => {
++    const found = collectSourceNumbers({ week_12: { attended: true } });
++    expect(found.has(12)).toBe(true);
++  });
++});
++
++describe('reading claims out of an answer', () => {
++  test('list numbering is not a claim about the client', () => {
++    // Without this, every numbered answer reports "1", "2", "3" as figures —
++    // and a report that cries wolf on every turn is one nobody reads.
++    const claims = extractClaims('1. Weight is 78.4 kg\n2. Attendance is good');
++    expect(claims.map((c) => c.value)).toEqual([78.4]);
++  });
++
++  test('a number inside a sentence is a claim even when the line is numbered', () => {
++    const claims = extractClaims('1. He has 12 sessions left');
++    expect(claims.map((c) => c.value)).toEqual([12]);
++  });
++
++  test('each claim carries enough context to find it in the answer', () => {
++    const [claim] = extractClaims('Current weight is 78.4 kg, down from January.');
++    expect(claim.context).toContain('78.4');
++    expect(claim.line).toBe(1);
++  });
++});
++
++describe('grading an answer against its sources', () => {
++  const sources = [{ weight_kg: 78.4, sessions_remaining: 12 }];
++
++  test('a figure that is in the data is in-source', () => {
++    const g = verifyGrounding({ answer: 'Weight is 78.4 kg.', sources });
++    expect(g.inSource).toBe(1);
++    expect(g.unverified).toBe(0);
++    expect(g.figures).toEqual([]);
++  });
++
++  test('a fabricated figure is flagged — this is the whole point', () => {
++    // The model was told to ground every claim. It invented a body-fat number
++    // that appears nowhere in the data. Nothing about the answer's wording
++    // gives that away; only the comparison does.
++    const g = verifyGrounding({ answer: 'Body fat is 22.7%.', sources });
++
++    expect(g.unverified).toBe(1);
++    // Reported as written, percent sign and all — the flag is read by a human
++    // looking for that figure in the answer, so it has to look like it does
++    // there. The stripped 22.7 is what the comparison used.
++    expect(g.figures[0].text).toBe('22.7%');
++    expect(g.figures[0].value).toBe(22.7);
++    expect(g.figures[0].status).toBe('unverified');
++  });
++
++  test('a difference the model computed is derived, not flagged as invented', () => {
++    // 78.4 and 82.0 are both in the data; 3.6 is neither, but it is the
++    // subtraction a trainer actually asked for. Flagging it would punish the
++    // model for answering the question.
++    const g = verifyGrounding({
++      answer: 'Down 3.6 kg since January.',
++      sources: [{ current: 78.4, january: 82.0 }],
++    });
++
++    expect(g.derived).toBe(1);
++    expect(g.unverified).toBe(0);
++  });
++
++  test('grading is per figure — one bad number in a good answer still surfaces', () => {
++    const g = verifyGrounding({
++      answer: 'Weight is 78.4 kg and body fat is 22.7%.',
++      sources,
++    });
++
++    expect(g.checked).toBe(2);
++    expect(g.inSource).toBe(1);
++    expect(g.unverified).toBe(1);
++    expect(g.figures[0].text).toBe('22.7%');
++  });
++
++  test('an answer with no figures is not a failure', () => {
++    // "I don't have a recent recorded weight for this client" is exactly what
++    // the prompt asks for when data is missing. It must not be graded as
++    // suspicious for containing nothing to check.
++    const g = verifyGrounding({ answer: 'I have no recorded weight for this client.', sources });
++    expect(g.checked).toBe(0);
++    expect(g.unverified).toBe(0);
++  });
++
++  test('with no sources at all, every figure is unverified', () => {
++    // The state after every tool failed. If the model answers anyway — from
++    // general fitness knowledge, which the prompt forbids — every number it
++    // writes is unsupported, and this is what says so.
++    const g = verifyGrounding({ answer: 'Weight is around 80 kg.', sources: [] });
++    expect(g.unverified).toBe(1);
++  });
++
++  test('formatting differences do not create false alarms', () => {
++    // 12500 in the data, "12,500" in the answer. Same figure; a naive string
++    // comparison would report the model for correctly formatting currency.
++    const g = verifyGrounding({
++      answer: 'Outstanding balance is 12,500.',
++      sources: [{ balance: 12500 }],
++    });
++    expect(g.unverified).toBe(0);
++  });
++});
++
++describe('the service reports grounding on the wire', () => {
++  const fakeErp = (data) => ({
++    get: async (path) => (path.endsWith('/snapshot')
++      ? { data, latency_ms: 1 }
++      : { data: { data: { name: 'Rahul Sharma' } }, latency_ms: 1 }),
++  });
++
++  const providerSaying = (content) => ({
++    name: 'fake',
++    generate: async ({ model }) => ({
++      content, model: model || 'fake-model', usage: { prompt: 10, completion: 5 }, latency_ms: 1,
++    }),
++  });
++
++  test('a grounded answer reports nothing to flag', async () => {
++    const app = buildApp({
++      config,
++      erp: fakeErp({ weight_kg: 78.4 }),
++      provider: providerSaying('FACT — weight is 78.4 kg.'),
++    });
++
++    const res = await request(app).post('/ai/client-agent/chat')
++      .set('Authorization', 'Bearer user-jwt')
++      .send({ clientId: 'c-1', message: 'Summarize this client' });
++
++    expect(res.status).toBe(200);
++    expect(res.body.grounding.unverified).toBe(0);
++    expect(res.body.grounding.checked).toBeGreaterThan(0);
++  });
++
++  test('a fabricated figure reaches the caller as a flag, not a silent success', async () => {
++    // The response is still a 200 with the answer in it — the service does not
++    // suppress or rewrite what the model said. It hands the trainer the answer
++    // AND the fact that one figure in it is unsupported, and lets them judge.
++    const app = buildApp({
++      config,
++      erp: fakeErp({ weight_kg: 78.4 }),
++      provider: providerSaying('FACT — body fat is 22.7%.'),
++    });
++
++    const res = await request(app).post('/ai/client-agent/chat')
++      .set('Authorization', 'Bearer user-jwt')
++      .send({ clientId: 'c-1', message: 'Summarize this client' });
++
++    expect(res.status).toBe(200);
++    expect(res.body.message).toContain('22.7');
++    expect(res.body.grounding.unverified).toBe(1);
++    expect(res.body.grounding.figures[0].text).toBe('22.7%');
++  });
++
++  test('the streaming route reports it too, on the done event', async () => {
++    const app = buildApp({
++      config,
++      erp: fakeErp({ weight_kg: 78.4 }),
++      provider: providerSaying('FACT — body fat is 22.7%.'),
++    });
++
++    const res = await request(app).post('/ai/client-agent/chat/stream')
++      .set('Authorization', 'Bearer user-jwt')
++      .buffer(true)
++      .send({ clientId: 'c-1', message: 'Summarize this client' });
++
++    const done = String(res.text).split('\n')
++      .filter((l) => l.startsWith('data: '))
++      .map((l) => JSON.parse(l.slice(6)))
++      .find((e) => e.type === 'done');
++
++    expect(done.grounding.unverified).toBe(1);
++  });
++
++  test('a figure the trainer supplied cannot launder itself into the answer', async () => {
++    // The realistic version of the prompt-vs-data mistake. A trainer asks a
++    // leading question carrying a wrong number — "his body fat is 22.7%,
++    // right?" — and the model agrees and repeats it. That figure IS in the
++    // prompt, because the question is in the prompt. It is not in the client's
++    // record, and the record is what the trainer will act on.
++    //
++    // So the check must compare against what the ERP returned, never against
++    // the conversation. Otherwise the one thing a trainer most needs flagged —
++    // the model confirming their own mistaken figure — is the one thing that
++    // always passes.
++    const app = buildApp({
++      config,
++      erp: fakeErp({ weight_kg: 78.4 }),
++      provider: providerSaying('Yes — body fat is 22.7%.'),
++    });
++
++    const res = await request(app).post('/ai/client-agent/chat')
++      .set('Authorization', 'Bearer user-jwt')
++      .send({ clientId: 'c-1', message: 'His body fat is 22.7%, right?' });
++
++    expect(res.body.grounding.figures.map((f) => f.text)).toContain('22.7%');
++  });
++
++  test('the check runs against retrieved data, not against the prompt text', async () => {
++    // The fenced context block contains the fence id, the preamble and the
++    // postamble — all of which carry digits. Verifying against the prompt
++    // instead of the ERP payload would let that boilerplate launder a
++    // fabricated figure into "in-source".
++    const app = buildApp({
++      config,
++      erp: fakeErp({ weight_kg: 78.4 }),
++      // The fence nonce is base64url of 9 random bytes, so it frequently
++      // contains digits; asserting on a figure that is definitely not in the
++      // ERP payload catches the mistake regardless of what the nonce holds.
++      provider: providerSaying('Body fat is 91.37%.'),
++    });
++
++    const res = await request(app).post('/ai/client-agent/chat')
++      .set('Authorization', 'Bearer user-jwt')
++      .send({ clientId: 'c-1', message: 'Summarize this client' });
++
++    expect(res.body.grounding.figures.map((f) => f.text)).toContain('91.37%');
++  });
++});
+diff --git a/src/agents/client/agent.js b/src/agents/client/agent.js
+index 2f0782e..45da64b 100644
+--- a/src/agents/client/agent.js
++++ b/src/agents/client/agent.js
+@@ -26,6 +26,7 @@ const { planTools, planIntent } = require('./planner');
+ const { systemPrompt } = require('./prompt');
+ const { run: runTool } = require('../../platform/tools/registry');
+ const { newFenceId, buildContextBlock, neutralise } = require('../../platform/context/untrusted');
++const { verifyGrounding } = require('../../platform/grounding/verify');
+ const logger = require('../../lib/logger');
+ 
+ /** How many prior turns to replay. Enough for "what about his attendance?"; not
+@@ -139,11 +140,24 @@ function createClientAgent({ erp, router }) {
+       toolsUsed: okResults.map((r) => r.tool),
+       toolsUnavailable: failed.map((r) => ({ tool: r.tool, reason: r.message })),
+       counts: { ok: okResults.length, failed: failed.length },
++      // Kept for the grounding check after the model answers. This is the raw
++      // retrieved data, NOT the fenced prompt text — checking the answer
++      // against the prompt would let the fence's own boilerplate count as a
++      // source, and the point is to compare against what the ERP returned.
++      sources: okResults.map((r) => r.data),
+     };
+   }
+ 
+   /** The answer envelope both paths return, so the two shapes stay identical. */
+   function answer({ prepared, completion, clientId, elapsed }) {
++    // Check the figures BEFORE returning, so no caller can forget to. The
++    // prompt asks the model to stay inside the data; this is what tells us
++    // whether it did on this particular turn.
++    const grounding = verifyGrounding({
++      answer: completion.content,
++      sources: prepared.sources,
++    });
++
+     return {
+       ok: true,
+       status: 200,
+@@ -153,6 +167,7 @@ function createClientAgent({ erp, router }) {
+       // Provenance the UI can show, so a trainer can see what the answer rests on.
+       toolsUsed: prepared.toolsUsed,
+       toolsUnavailable: prepared.toolsUnavailable,
++      grounding,
+       // Phase 1 is read-only. The field exists so the confirmation contract in
+       // §27 has a shape from day one and adding a write is additive.
+       proposedAction: null,
+@@ -167,7 +182,7 @@ function createClientAgent({ erp, router }) {
+     };
+   }
+ 
+-  function logAnswered({ requestId, prepared, completion, elapsed, streamed }) {
++  function logAnswered({ requestId, prepared, completion, elapsed, streamed, grounding }) {
+     logger.info({
+       requestId,
+       intent: prepared.intent,
+@@ -178,6 +193,11 @@ function createClientAgent({ erp, router }) {
+       tools_failed: prepared.counts.failed,
+       tokens: completion.usage.prompt + completion.usage.completion,
+       latency_ms: elapsed,
++      // Logged per turn so grounding is a measurable rate over time rather than
++      // an assurance. A model change that starts inventing figures shows up
++      // here as a rising number, before a trainer has to notice it.
++      figures_checked: grounding?.checked ?? 0,
++      figures_unverified: grounding?.unverified ?? 0,
+     }, 'client_agent_answered');
+   }
+ 
+@@ -214,8 +234,11 @@ function createClientAgent({ erp, router }) {
+     }
+ 
+     const elapsed = Date.now() - started;
+-    logAnswered({ requestId, prepared, completion, elapsed });
+-    return answer({ prepared, completion, clientId, elapsed });
++    // Built before logging, because the log line reports the grounding result
++    // and answer() is what computes it.
++    const result = answer({ prepared, completion, clientId, elapsed });
++    logAnswered({ requestId, prepared, completion, elapsed, grounding: result.grounding });
++    return result;
+   }
+ 
+   /**
+@@ -262,8 +285,11 @@ function createClientAgent({ erp, router }) {
+     }
+ 
+     const elapsed = Date.now() - started;
+-    logAnswered({ requestId, prepared, completion, elapsed, streamed: true });
+-    return answer({ prepared, completion, clientId, elapsed });
++    const result = answer({ prepared, completion, clientId, elapsed });
++    logAnswered({
++      requestId, prepared, completion, elapsed, streamed: true, grounding: result.grounding,
++    });
++    return result;
+   }
+ 
+   return { ask, askStream };
+diff --git a/src/api/clientAgent.js b/src/api/clientAgent.js
+index f4c2d4c..777c5d3 100644
+--- a/src/api/clientAgent.js
++++ b/src/api/clientAgent.js
+@@ -218,6 +218,7 @@ function createClientAgentRouter({ agent }) {
+         clientName: result.clientName,
+         toolsUsed: result.toolsUsed,
+         toolsUnavailable: result.toolsUnavailable,
++        grounding: result.grounding,
+         proposedAction: result.proposedAction,
+         requiresConfirmation: result.requiresConfirmation,
+         meta: result.meta,
+@@ -275,6 +276,7 @@ function createClientAgentRouter({ agent }) {
+         clientName: result.clientName,
+         toolsUsed: result.toolsUsed,
+         toolsUnavailable: result.toolsUnavailable,
++        grounding: result.grounding,
+         proposedAction: result.proposedAction,
+         requiresConfirmation: result.requiresConfirmation,
+         meta: result.meta,
+diff --git a/src/platform/grounding/verify.js b/src/platform/grounding/verify.js
+new file mode 100644
+index 0000000..74eee14
+--- /dev/null
++++ b/src/platform/grounding/verify.js
+@@ -0,0 +1,181 @@
++'use strict';
++// Checking the answer against the data it was supposed to come from.
++//
++// The system prompt already tells the model to ground every claim in retrieved
++// data and to say "I don't have that" rather than fill a gap (prompt.js:19-24).
++// That is an instruction, and an instruction is a hope. This file is the part
++// that checks — after the model has written its answer, every figure in that
++// answer is looked for in the data the tools actually returned.
++//
++// ── What this can and cannot tell you ────────────────────────────────────────
++//
++// It verifies NUMBERS, not prose. "Rahul is progressing well" is unfalsifiable
++// here and always will be; "Rahul is 78.4 kg" is checkable, and it is the
++// figures a trainer acts on — a weight, a session count, an expiry date, an
++// outstanding balance. A fabricated adjective is a bad answer; a fabricated
++// number is a wrong decision about a real person.
++//
++// It is also deliberately one-directional. A figure found in the source is
++// evidence the model read the data. A figure NOT found is a flag for a human,
++// not a verdict — the model may have computed it legitimately (see DERIVED
++// below), or written it in a form this file does not recognise. So the output
++// is graded, never a pass/fail, and nothing here silently rewrites an answer.
++//
++// ── The known weakness, stated rather than hidden ────────────────────────────
++//
++// Small integers match by coincidence. "3" appears in almost any dataset, so a
++// hallucinated "3 sessions" will usually be marked in-source. That is a real
++// false negative and no threshold fixes it — raising one would start hiding
++// genuine findings instead. Distinctive figures (78.4, 12500, a date) are where
++// this earns its keep, and they are also the ones that do damage when wrong.
++
++/** Numbers this close are the same number. Guards float noise, not rounding. */
++const EPSILON = 1e-9;
++
++/** Ceiling on the pairwise derivation scan — see isDerivable(). */
++const DERIVATION_SCAN_LIMIT = 400;
++
++/**
++ * Every number appearing anywhere in a tool result, however deeply nested and
++ * whether it is stored as a number or inside a string ("78.4 kg", "2026-03-15").
++ */
++function collectSourceNumbers(value, out = new Set()) {
++  if (value == null) return out;
++
++  if (typeof value === 'number' && Number.isFinite(value)) {
++    out.add(value);
++    return out;
++  }
++
++  if (typeof value === 'string') {
++    // Strings carry figures the JSON type does not: "78.4 kg", "₹12,500",
++    // "2026-03-15". Pull every numeric run out of the text.
++    for (const m of value.matchAll(/\d[\d,]*(?:\.\d+)?/g)) {
++      const n = Number(m[0].replace(/,/g, ''));
++      if (Number.isFinite(n)) out.add(n);
++    }
++    return out;
++  }
++
++  if (Array.isArray(value)) {
++    for (const v of value) collectSourceNumbers(v, out);
++    return out;
++  }
++
++  if (typeof value === 'object') {
++    // Keys as well as values: a key like "week_12" carries a figure the model
++    // can legitimately quote.
++    for (const [k, v] of Object.entries(value)) {
++      collectSourceNumbers(k, out);
++      collectSourceNumbers(v, out);
++    }
++  }
++
++  return out;
++}
++
++/**
++ * Figures the model asserted, with enough surrounding text that a human reading
++ * the flag can find them in the answer.
++ */
++function extractClaims(answer) {
++  const claims = [];
++  const lines = String(answer || '').split('\n');
++
++  lines.forEach((line, lineNo) => {
++    // A leading "1." or "2)" is list furniture the model wrote, not a claim
++    // about the client. Counting it would flood the report with noise on every
++    // numbered answer.
++    const body = line.replace(/^\s*\d+[.)]\s+/, '');
++
++    for (const m of body.matchAll(/\d[\d,]*(?:\.\d+)?%?/g)) {
++      const raw = m[0];
++      const value = Number(raw.replace(/[,%]/g, ''));
++      if (!Number.isFinite(value)) continue;
++
++      claims.push({
++        text: raw,
++        value,
++        line: lineNo + 1,
++        // A short window around the figure, so "78.4" in the report reads as
++        // "current weight 78.4 kg, down from" rather than a bare number.
++        context: body.slice(Math.max(0, m.index - 40), m.index + raw.length + 40).trim(),
++      });
++    }
++  });
++
++  return claims;
++}
++
++const near = (a, b) => Math.abs(a - b) < EPSILON;
++
++/**
++ * Is this figure a simple arithmetic step from two figures in the source?
++ *
++ * The model is asked to report change ("down 1.2 kg since January"), and 1.2 is
++ * a difference that appears nowhere in the data. Marking that unverified would
++ * flag the model for doing exactly what a trainer wants. So a value reachable
++ * as a difference or a sum of two source figures is reported as DERIVED — true
++ * of the arithmetic, honest about the fact that it was not read directly.
++ *
++ * This does widen the net: a fabricated number that happens to equal some
++ * difference is graded derived rather than unverified. Sums and differences
++ * only, never products or ratios, precisely to keep that net as small as it can
++ * be while still covering the case that actually occurs.
++ */
++function isDerivable(value, sourceList) {
++  // Pairwise, so cost is quadratic in the number of distinct source figures. A
++  // client snapshot carries dozens; a long attendance history could carry
++  // thousands, and that squared is real time on a request a trainer is waiting
++  // on. Past the cap the check is skipped, which grades a derived figure as
++  // unverified — the safe direction to fail in.
++  const limit = Math.min(sourceList.length, DERIVATION_SCAN_LIMIT);
++  for (let i = 0; i < limit; i += 1) {
++    for (let j = i + 1; j < limit; j += 1) {
++      const a = sourceList[i];
++      const b = sourceList[j];
++      if (near(value, Math.abs(a - b)) || near(value, a + b)) return true;
++    }
++  }
++  return false;
++}
++
++/**
++ * Grade every figure in an answer against the data the tools returned.
++ *
++ * @param {object} o
++ * @param {string} o.answer   The model's completed text.
++ * @param {Array}  o.sources  The `data` of each successful tool result.
++ * @returns {{checked, inSource, derived, unverified, figures}}
++ */
++function verifyGrounding({ answer, sources = [] }) {
++  const sourceNumbers = new Set();
++  for (const s of sources) collectSourceNumbers(s, sourceNumbers);
++  const sourceList = [...sourceNumbers];
++
++  const figures = extractClaims(answer).map((claim) => {
++    let status;
++    if (sourceNumbers.has(claim.value) || sourceList.some((n) => near(n, claim.value))) {
++      status = 'in-source';
++    } else if (isDerivable(claim.value, sourceList)) {
++      status = 'derived';
++    } else {
++      status = 'unverified';
++    }
++    return { ...claim, status };
++  });
++
++  const unverified = figures.filter((f) => f.status === 'unverified');
++
++  return {
++    checked: figures.length,
++    inSource: figures.filter((f) => f.status === 'in-source').length,
++    derived: figures.filter((f) => f.status === 'derived').length,
++    unverified: unverified.length,
++    // Only the flagged ones travel to the caller. The full list is large, and
++    // the two states nobody needs to act on are the two that dominate it.
++    figures: unverified,
++  };
++}
++
++module.exports = { verifyGrounding, collectSourceNumbers, extractClaims, isDerivable };
+-- 
+2.43.0
+
