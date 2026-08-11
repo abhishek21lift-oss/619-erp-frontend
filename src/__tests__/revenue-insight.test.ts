@@ -29,7 +29,7 @@ describe('which insight wins', () => {
     // on information that is visible anyway.
     const out = insight({ collected: 10000, pending: 4000, owing: 3, overdue: 2 });
     expect(out.text).toContain('₹4,000 can be collected from 3 members');
-    expect(out.kind).toBe('collect');
+    expect(out.icon).toBe('🔥');
   });
 
   it('falls through to overdue only when the pending figure has nothing to point at', () => {
@@ -37,13 +37,13 @@ describe('which insight wins', () => {
     // not produce "collected from 0 members" — the next-best true thing is
     // the overdue count.
     const out = insight({ collected: 5000, pending: 4000, owing: 0, overdue: 2 });
-    expect(out.kind).toBe('overdue');
+    expect(out.icon).toBe('⚠️');
     expect(out.text).toBe('2 payments are overdue.');
   });
 
   it('reads as good news when everything is settled', () => {
     const out = insight({ collected: 50000, payments: 1 });
-    expect(out.kind).toBe('clear');
+    expect(out.icon).toBe('✅');
     expect(out.text).toBe('Nothing outstanding — 1 payment in today and every balance is clear.');
   });
 
@@ -52,7 +52,7 @@ describe('which insight wins', () => {
     // gets the neutral line, because "every balance is clear" before anyone
     // has walked in reads as a result that was earned.
     const out = insight({});
-    expect(out.kind).toBe('idle');
+    expect(out.icon).toBe('💡');
     expect(out.text).toBe('No payments yet today, and no balances outstanding.');
   });
 });
