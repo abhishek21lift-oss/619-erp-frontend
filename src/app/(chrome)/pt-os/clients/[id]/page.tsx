@@ -20,7 +20,8 @@ import Guard from '@/components/Guard';
 
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { PremiumAreaChart } from '@/components/ui';
+import { PremiumAreaChart, Button } from '@/components/ui';
+import ClientAiPanel from '@/components/pt-os/ClientAiPanel';
 import ClientSnapshot from '@/components/pt-os/ClientSnapshot';
 import ClientLoginCard from '@/components/pt-os/ClientLoginCard';
 import {
@@ -277,6 +278,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [recovery, setRecovery] = useState<ClientRecovery | undefined>(undefined);
   /** Which section of the workspace is open. Overview is where you land. */
   const [tab, setTab] = useState<TabKey>('overview');
+  /** Ask AI — the read-only assistant scoped to this client. */
+  const [aiOpen, setAiOpen] = useState(false);
 
   const [recentWeights, setRecentWeights] = useState<any[]>([]);
   const [activeGoals, setActiveGoals] = useState<any[]>([]);
@@ -1023,6 +1026,18 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   title="AI Coach"
                   body="The observations above the tabs are derived from this client's own readings. The assistant can go further — ask it about their programme, recovery or nutrition."
                   color={TAB_COLOR.warning}
+                  action={(
+                    // First, and a button rather than a link: this is the only
+                    // item here that answers a question about THIS client
+                    // instead of navigating away to generate an artefact.
+                    <Button
+                      iconLeft={<Sparkles size={15} />}
+                      onClick={() => setAiOpen(true)}
+                      style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff' }}
+                    >
+                      Ask AI about {client.name?.split(' ')[0] || 'this client'}
+                    </Button>
+                  )}
                   links={[
                     { label: 'AI progress analysis', href: `/ai/progress-analysis?client_id=${client.id}`, hint: 'Trend and recommendations', icon: <TrendingUp size={15} />, color: TAB_COLOR.primary },
                     { label: 'AI workout generator', href: `/ai/workout-generator?client_id=${client.id}`, hint: 'Draft a programme', icon: <Dumbbell size={15} />, color: TAB_COLOR.success },
@@ -1077,6 +1092,19 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
           )}
         </div>
       </div>
+
+      {/* Rendered only while open, and keyed by client id: remounting on a
+          different client is what guarantees no transcript survives the
+          switch. The service re-authorises every turn regardless, but the UI
+          should not be showing one client's answers under another's name. */}
+      {aiOpen && client && (
+        <ClientAiPanel
+          key={client.id}
+          clientId={client.id}
+          clientName={client.name || 'this client'}
+          onClose={() => setAiOpen(false)}
+        />
+      )}
     </Guard>
   );
 }

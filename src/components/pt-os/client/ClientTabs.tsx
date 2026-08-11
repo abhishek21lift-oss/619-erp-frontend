@@ -356,7 +356,7 @@ export function EmptyPanel({
  * itself rotates through, not a second palette invented for this list.
  */
 export function LinkPanel({
-  icon, title, body, links, color,
+  icon, title, body, links, color, action,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -364,6 +364,15 @@ export function LinkPanel({
   links: TabLink[];
   /** Tints the header icon tile with the tab's own colour. Grey when omitted. */
   color?: string;
+  /**
+   * A primary control that acts in place, rendered above the links.
+   *
+   * Every entry in `links` is an `<a href>` and navigates away. A panel whose
+   * main action opens a dialog on this page has nowhere to sit without this,
+   * and the alternative — a link with an onClick and no real href — breaks
+   * middle-click, copy-link, and what the element says it is.
+   */
+  action?: React.ReactNode;
 }) {
   return (
     <div className="rounded-[22px] bg-white p-4 sm:p-5"
@@ -376,6 +385,7 @@ export function LinkPanel({
         <h3 className="text-[13.5px] font-[740]" style={{ color: 'var(--text-primary)' }}>{title}</h3>
       </div>
       {body && <p className="mb-3 max-w-[62ch] text-[12px]" style={{ color: 'var(--text-muted)' }}>{body}</p>}
+      {action && <div className="mb-3">{action}</div>}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {links.map((l) => (
           <a key={l.href} href={l.href}
