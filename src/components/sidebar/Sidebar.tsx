@@ -491,6 +491,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
       <div className="shrink-0 flex flex-col items-center gap-2 border-t border-[var(--sidebar-border)] py-3">
         <Link
           href="/settings/profile"
+          onClick={onClose}
           title={`${user?.name || 'Profile'} · ${roleLabel(user?.role) || 'Trainer'}`}
           className="relative"
         >
@@ -589,6 +590,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
         <div className="flex items-center gap-1.5">
           <Link
             href="/settings/profile"
+            onClick={onClose}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-lg text-[12px] font-[600] text-white/[0.92] transition-colors duration-150 hover:bg-white/[0.18] hover:text-white"
             style={{ background: 'rgba(255,255,255,0.10)', height: 44 }}
           >
@@ -597,6 +599,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
           </Link>
           <Link
             href="/settings"
+            onClick={onClose}
             title="Settings"
             aria-label="Settings"
             className="flex items-center justify-center rounded-lg text-white/[0.92] transition-colors duration-150 hover:bg-white/[0.18] hover:text-white"
@@ -696,7 +699,20 @@ export default function Sidebar({
           <div className="absolute top-0 left-3 right-3 h-[1.5px] rounded-full bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent opacity-40" />
         )}
         <div className={cn('flex items-center', collapsed ? 'flex-col gap-2' : 'justify-between')}>
-          <Link href="/" className={cn('flex items-center group', collapsed ? 'justify-center' : 'gap-2.5')}>
+          {/* Closes the drawer on the way out, like every other link in it.
+              Without this the brand header navigated to the dashboard and left
+              the drawer sitting open on top of it — the one navigation path in
+              the sidebar that did not close itself, because it is the only one
+              that is not a SidebarItem or part of SidebarProfile, so neither
+              onLinkClick nor onClose reached it.
+
+              isMobile-gated to match the siblings below: on desktop the
+              sidebar is not a drawer and there is nothing to close. */}
+          <Link
+            href="/"
+            onClick={isMobile ? onMobileClose : undefined}
+            className={cn('flex items-center group', collapsed ? 'justify-center' : 'gap-2.5')}
+          >
             <div className="relative shrink-0">
               {/* White, explicitly. This drawer is navy in both themes, so the
                   default --bg-white plate goes dark with the theme and hides
