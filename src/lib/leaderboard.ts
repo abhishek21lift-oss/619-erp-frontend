@@ -6,6 +6,7 @@
 // week two members finish level.
 
 import type { Attendance } from '@/lib/api';
+import { isCheckIn } from '@/lib/checkin';
 
 export type BoardRow = {
   id: string;
@@ -24,7 +25,9 @@ export function buildBoard(
   for (const r of records) {
     // Only a body through the door counts. 'absent' and 'excused' rows exist
     // for the same member on the same day and would otherwise inflate them.
-    if (r.status !== 'present' && r.status !== 'late') continue;
+    // The rule itself lives in checkin.ts — this page was one of three
+    // answering it separately, and one of the three got it wrong.
+    if (!isCheckIn(r)) continue;
     const id = String(r.ref_id || '');
     if (!id) continue;
     const row = map.get(id) || { name: r.ref_name || 'Member', checkins: 0 };

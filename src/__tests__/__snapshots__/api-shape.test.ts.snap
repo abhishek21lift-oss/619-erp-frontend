@@ -353,6 +353,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "qr.scan → /api/qr/scan",
   "qr.staffReport → /api/qr/staff-report",
   "reports.dues → /api/reports/dues",
+  "reports.duesSummary → /api/reports/dues/summary",
   "reports.monthly → /api/reports/monthly?year=",
   "reports.revenue → /api/reports/revenue",
   "reports.trainerSummary → /api/reports/trainer-summary",

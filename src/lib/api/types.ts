@@ -392,6 +392,14 @@ export type DuesItem = {
   trainer_name?: string;
 };
 
+/** Shape of GET /api/reports/dues/summary — aggregates over ALL debtors. */
+export type DuesSummary = {
+  total_outstanding: number;
+  debtor_count: number;
+  high_risk_count: number;
+  medium_risk_count: number;
+};
+
 export type Payment = {
   id: string;
   receipt_no?: string;

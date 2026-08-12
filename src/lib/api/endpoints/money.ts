@@ -14,6 +14,17 @@ import type {
   UpiSubmitUtrInput,
 } from '../types';
 
+/** Shape of GET /api/payments/stats. All money values are rupees. */
+export type PaymentStats = {
+  count: number;
+  total: number;
+  cash: number;
+  upi: number;
+  card: number;
+  bank: number;
+  total_incentives: number;
+};
+
 export const payments = {
   list: async (params?: Record<string, string>): Promise<Payment[]> => {
     const raw = await http<Record<string, unknown>[]>(`/api/payments${buildQs(params)}`);
@@ -22,8 +33,17 @@ export const payments = {
   create: (data: Record<string, unknown>) =>
     http('/api/payments', { method: 'POST', body: JSON.stringify(data) }),
   delete: (id: string) => http(`/api/payments/${id}`, { method: 'DELETE' }),
+  /**
+   * Server-side aggregate over the WHOLE matching ledger.
+   *
+   * This is the only correct source for a money KPI. `list` is capped
+   * (LIMIT 200 by default on the server), so summing what it returns gives
+   * the total of the most recent page, not the total — which is exactly the
+   * bug this was introduced to fix on Collected Payments and Today's Sales.
+   * Accepts the same from/to/trainer_id/client_id filters as `list`.
+   */
   stats:  (params?: Record<string, string>) =>
-    http(`/api/payments/stats${buildQs(params)}`),
+    http<PaymentStats>(`/api/payments/stats${buildQs(params)}`),
 };
 
 // ── Invoices ──────────────────────────────────────────────────────

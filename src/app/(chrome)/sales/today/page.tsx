@@ -10,6 +10,7 @@ import {
 import Guard from '@/components/Guard';
 import { PullToRefresh } from '@/components/ui';
 import { api, Payment } from '@/lib/api';
+import type { PaymentStats } from '@/lib/api/endpoints/money';
 
 function fmtINR(n: number) {
   return '₹' + n.toLocaleString('en-IN');
@@ -52,13 +53,22 @@ function Inner() {
   const router = useRouter();
   const [rows, setRows] = React.useState<Payment[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [stats, setStats] = React.useState<PaymentStats | null>(null);
 
   const refresh = React.useCallback(async () => {
     setLoading(true);
     try {
       const today = new Date().toISOString().slice(0, 10);
-      const list = await api.payments.list({ from: today, to: today });
+      // Rows for the feed, aggregates from the server. GET /api/payments is
+      // capped (LIMIT 200), so on a day that takes more than 200 payments the
+      // reduce below would quietly understate the day's takings. Same fix as
+      // Collected Payments: /stats does the SUM in SQL, scoped to this date.
+      const [list, s] = await Promise.all([
+        api.payments.list({ from: today, to: today }),
+        api.payments.stats({ from: today, to: today }).catch(() => null),
+      ]);
       setRows(Array.isArray(list) ? list : []);
+      setStats(s);
     } catch {
       setRows([]);
     } finally {
@@ -76,7 +86,11 @@ function Inner() {
     date: p.date ? String(p.date).slice(0, 10) : '',
   })), [rows]);
 
-  const totalToday = React.useMemo(() => payments.reduce((s, p) => s + p.amount, 0), [payments]);
+  // The server's figure when it is available; the visible rows' sum only as a
+  // fallback, which is correct on any day under the 200-row cap and is the
+  // best available answer if /stats fails.
+  const shownTotal = React.useMemo(() => payments.reduce((s, p) => s + p.amount, 0), [payments]);
+  const totalToday = stats ? stats.total : shownTotal;
   const methodTotals = React.useMemo(() => {
     const map: Record<string, number> = {};
     for (const p of payments) {
