@@ -8,7 +8,28 @@
 
 import { useEffect, useState } from 'react';
 import { Eye, LogOut, LogIn } from 'lucide-react';
+import { api } from '@/lib/api';
 import { getImpersonation, clearImpersonation, type StoredImpersonation } from '@/lib/http';
+
+/**
+ * Tell the server the session is over.
+ *
+ * Deliberately swallows its own failure. The audit row matters, but an operator
+ * who cannot reach the API must still be able to stop acting as a studio admin
+ * — trapping them inside an impersonated session to protect a log entry gets
+ * the priorities backwards. The server-side ceiling is unchanged either way:
+ * the token expires on its own within IMPERSONATION_TTL.
+ */
+async function recordEnd(
+  s: Pick<StoredImpersonation, 'orgId' | 'adminId' | 'jti'>,
+  reason: 'manual' | 'expired',
+) {
+  try {
+    await api.superAdmin.endImpersonation({
+      organization_id: s.orgId, admin_id: s.adminId, jti: s.jti, reason,
+    });
+  } catch { /* see above */ }
+}
 
 export default function ImpersonationBanner() {
   const [imp, setImp] = useState<StoredImpersonation | null>(null);
@@ -16,8 +37,14 @@ export default function ImpersonationBanner() {
   useEffect(() => {
     setImp(getImpersonation());
     const sync = () => setImp(getImpersonation());
-    const onExpired = () => {
+    // http.ts has already cleared the token by the time this fires, so the
+    // session's identity arrives on the event rather than being read back.
+    const onExpired = (e: Event) => {
       setImp(null);
+      const d = (e as CustomEvent<{ orgId?: string; adminId?: string; jti?: string }>).detail;
+      if (d?.orgId || d?.adminId) {
+        void recordEnd({ orgId: d.orgId ?? '', adminId: d.adminId ?? '', jti: d.jti }, 'expired');
+      }
       if (typeof window !== 'undefined') window.location.href = '/platform';
     };
     window.addEventListener('impersonation-changed', sync);
@@ -30,7 +57,11 @@ export default function ImpersonationBanner() {
 
   if (!imp) return null;
 
-  const exit = () => {
+  const exit = async () => {
+    // Recorded before the local clear, because the call travels as the operator
+    // and needs nothing from the impersonation token — but the clear is not
+    // conditional on it succeeding.
+    await recordEnd(imp, 'manual');
     clearImpersonation();
     window.location.href = '/platform';
   };
@@ -61,7 +92,7 @@ export default function ImpersonationBanner() {
         </p>
       </div>
       <button
-        onClick={exit}
+        onClick={() => { void exit(); }}
         className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-[750] transition hover:opacity-90"
         style={{ background: 'rgba(255,255,255,0.16)', color: '#fff' }}
       >

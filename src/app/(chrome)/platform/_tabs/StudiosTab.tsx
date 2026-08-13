@@ -431,7 +431,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
       const r = await api.superAdmin.impersonate(org.id, { userId, mode });
       const d = r.data;
       setImpersonation({
-        token: d.token, readonly: d.readonly,
+        token: d.token, readonly: d.readonly, jti: d.jti,
         adminId: d.admin.id, adminName: d.admin.name,
         orgId: d.organization.id, orgName: d.organization.name, orgLogo: d.organization.logo_url,
       });

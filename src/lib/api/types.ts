@@ -2458,6 +2458,8 @@ export type SupportOverview = {
 
 export type ImpersonationSession = {
   token: string; readonly: boolean;
+  /** Identifies this session, so its start, its writes and its end line up in the audit log. */
+  jti?: string;
   admin: { id: string; name: string; email: string; role: string };
   organization: { id: string; name: string; slug: string; logo_url?: string | null };
 };
@@ -2771,17 +2773,6 @@ export type AiUsageStats = {
   requests_30d: string;
   tokens_30d: string;
   fallback_count_30d: string;
-};
-
-export type AiModelStat = {
-  model: string;
-  provider: string;
-  intent_type: string;
-  requests: string;
-  tokens_total: string;
-  requests_today: string;
-  avg_latency_ms: number;
-  fallback_count: string;
 };
 
 export type AiHealthResponse = {
