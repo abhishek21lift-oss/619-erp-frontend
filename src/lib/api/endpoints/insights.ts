@@ -9,7 +9,7 @@ import { buildQs } from '../qs';
 import type {
   ActivityFeed, AiActionPlan, AiActionResult, AiActionSummary,
   AiBusinessInsights, AiConversation, AiDietParams, AiDietPlan,
-  AiFitnessTestAnalysis, AiHealthResponse, AiKnowledgeDocument, AiMessage, AiModelStat,
+  AiFitnessTestAnalysis, AiHealthResponse, AiKnowledgeDocument, AiMessage,
   AiProgressAnalysis, AiProviderSettings, AiUsageStats, AiWorkoutParams, AiWorkoutPlan,
   DuesItem, DuesSummary, ProfileDevice, ProfileSession, SearchResponse, TrainerSummaryRow,
 } from '../types';
@@ -117,8 +117,16 @@ export const ai = {
   usage: () =>
     http<{ data: AiUsageStats }>('/api/ai/usage'),
 
-  modelStats: () =>
-    http<{ data: AiModelStat[] }>('/api/ai/model-stats'),
+  // modelStats() was here, calling GET /api/ai/model-stats. Both are gone.
+  //
+  // The endpoint aggregated ai_usage_log with no tenant filter — that table has
+  // no organization_id — and was gated on role === 'admin', which is the studio
+  // owner. Any studio could read every studio's AI consumption. The platform
+  // console's own properly-guarded version lives under /api/super-admin/ai.
+  //
+  // This method was declared here and called from nowhere in the app, so nothing
+  // rendered the data it fetched. Removed with the route rather than left
+  // pointing at a 404.
 
   health: () =>
     http<AiHealthResponse>('/api/ai/health'),

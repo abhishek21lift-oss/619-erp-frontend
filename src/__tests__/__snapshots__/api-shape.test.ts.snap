@@ -89,7 +89,6 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "ai.knowledge.list → /api/ai/knowledge",
   "ai.knowledge.reindex → /api/ai/knowledge/",
   "ai.knowledge.upload → /api/ai/knowledge",
-  "ai.modelStats → /api/ai/model-stats",
   "ai.providerSettings → /api/ai/provider-settings",
   "ai.test → /api/ai/test",
   "ai.updateConversation → /api/ai/conversations/",

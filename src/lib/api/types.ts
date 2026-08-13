@@ -2773,17 +2773,6 @@ export type AiUsageStats = {
   fallback_count_30d: string;
 };
 
-export type AiModelStat = {
-  model: string;
-  provider: string;
-  intent_type: string;
-  requests: string;
-  tokens_total: string;
-  requests_today: string;
-  avg_latency_ms: number;
-  fallback_count: string;
-};
-
 export type AiHealthResponse = {
   configured: boolean;
   overall?: string;
