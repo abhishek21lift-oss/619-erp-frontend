@@ -483,6 +483,27 @@ export const superAdmin = {
         ...(opts.mode ? { mode: opts.mode } : {}),
       }),
     }),
+
+  /**
+   * Record the end of an impersonation session.
+   *
+   * `asOperator` is load-bearing, not incidental: without it the impersonation
+   * Bearer would be attached and this would authenticate as the studio admin,
+   * which requireSuperAdmin refuses — so the session would never be recorded as
+   * ended. The operator's own cookie session is still underneath, untouched,
+   * and is what this travels on.
+   */
+  endImpersonation: (body: {
+    organization_id?: string;
+    admin_id?: string;
+    jti?: string;
+    reason?: 'manual' | 'expired';
+  }) =>
+    http<{ data: { ended: boolean } }>('/api/super-admin/impersonation/end', {
+      method: 'POST',
+      asOperator: true,
+      body: JSON.stringify(body),
+    }),
   // ── Subscription / billing management ──
   subscriptions: () =>
     http<{ data: { studios: SubStudio[]; kpis: SubKpis } }>('/api/super-admin/subscriptions'),

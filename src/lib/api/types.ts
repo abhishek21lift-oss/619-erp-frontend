@@ -2458,6 +2458,8 @@ export type SupportOverview = {
 
 export type ImpersonationSession = {
   token: string; readonly: boolean;
+  /** Identifies this session, so its start, its writes and its end line up in the audit log. */
+  jti?: string;
   admin: { id: string; name: string; email: string; role: string };
   organization: { id: string; name: string; slug: string; logo_url?: string | null };
 };

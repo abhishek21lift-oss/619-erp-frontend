@@ -124,6 +124,17 @@ export interface FetchOptions extends Omit<RequestInit, 'body'> {
   retries?:     number;
   signal?:      AbortSignal;
   skipAuth?:    boolean;
+  /**
+   * Send as the operator's own session rather than as the impersonated studio
+   * admin — i.e. do not attach the impersonation Bearer.
+   *
+   * Exists for exactly one call: ending an impersonation session. That endpoint
+   * lives under /api/super-admin and is guarded by requireSuperAdmin, so sending
+   * the impersonation token would authenticate as a studio admin and be refused
+   * — correctly, but for the wrong reason, and the session would then never be
+   * recorded as ended.
+   */
+  asOperator?:  boolean;
 }
 
 // ──────────────────────────────────────────────────────────────────────
@@ -162,6 +173,8 @@ export type StoredImpersonation = {
   orgId: string;
   orgName: string;
   orgLogo?: string | null;
+  /** Ties this session's start, writes and end together in the audit log. */
+  jti?: string;
 };
 
 export function getImpersonation(): StoredImpersonation | null {
@@ -321,7 +334,7 @@ export async function http<T = unknown>(
   const isMultipart = isFormDataBody(options.body);
   // While impersonating, the Bearer token IS the identity (that studio's admin),
   // so the operator's org-switcher header is suppressed — the org is implicit.
-  const imp = getImpersonation();
+  const imp = options.asOperator ? null : getImpersonation();
   const headers: Record<string, string> = {
     ...(!isMultipart && body !== undefined ? { 'Content-Type': 'application/json' } : {}),
     ...(imp ? { Authorization: `Bearer ${imp.token}` } : activeOrgHeader()),
@@ -386,10 +399,19 @@ export async function http<T = unknown>(
       // (that would refresh the super-admin, not the studio admin). A 401 here
       // means the read-only session expired — exit impersonation cleanly and
       // let the UI drop back to the platform.
-      if (getImpersonation()) {
-        clearImpersonation();
-        if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('impersonation-expired'));
-        throw err;
+      {
+        // Captured BEFORE the clear: the listener needs the session's identity
+        // to record that it ended, and clearImpersonation() destroys it.
+        const expiring = getImpersonation();
+        if (expiring) {
+          clearImpersonation();
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('impersonation-expired', {
+              detail: { orgId: expiring.orgId, adminId: expiring.adminId, jti: expiring.jti },
+            }));
+          }
+          throw err;
+        }
       }
 
       if (options.skipAuth) { handleUnauthorized(); throw err; }
