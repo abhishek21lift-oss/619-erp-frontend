@@ -141,8 +141,126 @@ function redirectToLogin(req: NextRequest, deleteTokenCookie = false): NextRespo
   return res;
 }
 
+// ── Host isolation for the Command Center ───────────────────────────────────
+//
+// The strongest separation available to a single Next.js deployment: the
+// control plane is SERVED only on its own hostname, and the studio app's
+// hostname does not have it at all.
+//
+// This is what turns "a route group the operator's role can reach" into "a
+// different site". A tenant admin poking at /platform on the app domain does
+// not get a login redirect or an empty console — they get a 404, the same
+// answer they would get for a path that was never built. Nothing about the
+// console's existence, its route names or its shape is observable from the
+// customer's domain.
+//
+// ── Opt-in, and why ─────────────────────────────────────────────────────────
+//
+// Unset COMMAND_CENTER_HOST means no host rule, and both surfaces answer on
+// whatever host is asked — which is exactly what local development and any
+// single-domain deployment need. Making it opt-in also means this change
+// cannot take the console offline on deploy: the boundary tightens when an
+// operator points a second hostname at the same container and sets this
+// variable, which is a DNS change plus an nginx server block, not a rewrite.
+//
+// Read at request time rather than captured at module scope so the value can
+// come from the runtime environment of the standalone server rather than
+// having to be baked in at build.
+export function commandCenterHost(): string | null {
+  const h = process.env.COMMAND_CENTER_HOST;
+  return h ? h.trim().toLowerCase() : null;
+}
+
+/** The hostname this request was made to, without the port. */
+export function requestHost(req: NextRequest): string {
+  const raw = req.headers.get('host') ?? '';
+  return raw.split(':')[0].trim().toLowerCase();
+}
+
+/** Pages that belong to the Command Center, including its own sign-in door. */
+export function isCommandCenterPath(pathname: string): boolean {
+  return pathname === '/platform'
+    || pathname.startsWith('/platform/')
+    || pathname === '/platform-login';
+}
+
+/**
+ * Paths the host rule must not touch: the same files, served identically to
+ * both sites.
+ *
+ * The matcher at the bottom of this file exempts image and font EXTENSIONS but
+ * not `.js` or `.json`, so /theme-init.js, /no-zoom.js and /manifest.json all
+ * reach this function. Without this list the host rule would 404 them on the
+ * Command Center host — and the first symptom would be the console flashing
+ * the wrong theme on every load, which is a long way from anything that would
+ * make somebody suspect a hostname check.
+ *
+ * Kept as its own list rather than reusing PUBLIC_PREFIXES because that one
+ * mixes pages with assets, and pages are precisely what the host rule exists
+ * to separate: folding them together would exempt /login and /start-free too,
+ * and the studio's sign-in page would answer on the operator's domain.
+ */
+const HOST_NEUTRAL_PREFIXES = [
+  '/_next',
+  '/api',
+  '/models',
+  '/icons',
+  '/images',
+  '/favicon.ico',
+  '/manifest.json',
+  '/theme-init.js',
+  '/no-zoom.js',
+  '/logo.png',
+  '/619-logo.png',
+  '/sitemap.xml',
+  '/robots.txt',
+];
+
+export function isHostNeutralPath(pathname: string): boolean {
+  return HOST_NEUTRAL_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(p + '/')
+  );
+}
+
+/**
+ * A 404 that looks like every other 404.
+ *
+ * `rewrite` to a path that does not exist rather than a redirect or a JSON
+ * body, so the response is Next's own not-found page — indistinguishable from
+ * a genuine typo. A distinctive error would answer the one question the host
+ * split is meant to leave unanswerable: whether there is anything here.
+ */
+function notFound(req: NextRequest): NextResponse {
+  const url = req.nextUrl.clone();
+  url.pathname = '/_not-found';
+  return NextResponse.rewrite(url);
+}
+
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  // Host isolation runs FIRST — before the public-path allowance, before the
+  // token check. /platform-login is a public page, so a check placed after
+  // isPublicPath would serve the Command Center's door on the studio domain to
+  // anyone who guessed the URL.
+  const ccHost = commandCenterHost();
+  if (ccHost && !isHostNeutralPath(pathname)) {
+    const onCommandCenter = requestHost(req) === ccHost;
+    if (onCommandCenter !== isCommandCenterPath(pathname)) {
+      // Two cases, one rule, both 404:
+      //   · a studio path asked for on the Command Center host
+      //   · a Command Center path asked for on the studio host
+      // The second is the security-relevant direction; the first keeps the
+      // operator's domain from quietly becoming a second front door to the
+      // customer app, which would put the studio login on a hostname none of
+      // its cookie, CORS or CSP configuration expects.
+      //
+      // Assets and framework routes never reach here — the matcher at the
+      // bottom of this file excludes /_next, /api and every image and font
+      // extension — so this only ever decides page requests.
+      return notFound(req);
+    }
+  }
 
   if (isPublicPath(pathname)) {
     return withReportOnlyCsp(req);

@@ -79,18 +79,31 @@ function Wordmark({ light = false, size = 34 }: { light?: boolean; size?: number
 
 export type { Portal };
 
-const COPY: Record<Portal, { title: string; blurb: string; otherHref: string; otherLabel: string }> = {
+const COPY: Record<Portal, { title: string; blurb: string; otherHref: string; otherLabel: string; otherCta: string }> = {
   staff: {
     title: 'Admin Login',
     blurb: 'For trainers and studio owners.',
     otherHref: '/member-login',
     otherLabel: 'Are you a member? Member Login',
+    otherCta: 'Member Login',
   },
   member: {
     title: 'Member Login',
     blurb: 'For clients training with a studio.',
     otherHref: '/login',
     otherLabel: 'Studio owner or trainer? Admin Login',
+    otherCta: 'Admin Login',
+  },
+  // The Command Center door. `otherHref` points back at the studio sign-in so
+  // somebody who lands here by mistake has a way out; there is deliberately no
+  // link pointing INTO this page from either of the others, because the only
+  // people who should know it exists already do.
+  platform: {
+    title: 'Command Center',
+    blurb: 'Platform operations. Authorized operators only.',
+    otherHref: '/login',
+    otherLabel: 'Studio owner or trainer? Admin Login',
+    otherCta: 'Admin Login',
   },
 };
 
@@ -455,7 +468,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
                       <>
                         {' '}
                         <Link href={copy.otherHref} className="font-[750] underline underline-offset-2">
-                          Go to {portal === 'staff' ? 'Member Login' : 'Admin Login'}
+                          Go to {copy.otherCta}
                         </Link>
                       </>
                     )}

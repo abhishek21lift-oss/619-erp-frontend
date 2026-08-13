@@ -162,14 +162,77 @@ export type StoredImpersonation = {
   orgId: string;
   orgName: string;
   orgLogo?: string | null;
+  /**
+   * Where "exit impersonation" goes back to — the Command Center the operator
+   * started from.
+   *
+   * Captured at hand-off rather than read from configuration, so the studio
+   * app never has to know the console's address. It is the console that knows
+   * where it is, and it says so on the way out.
+   *
+   * Absent on a same-origin hand-off, where '/platform' is still right.
+   */
+  returnTo?: string;
 };
+
+/**
+ * The cross-origin hand-off.
+ *
+ * sessionStorage is scoped to an ORIGIN. Once the Command Center lives on
+ * admin.myptstudio.com and the studio app on myptstudio.com, an impersonation
+ * token written by the console is simply not there when the studio app looks
+ * for it — the operator would land on a studio home as themselves, see a 403
+ * on every panel, and have nothing on screen explaining why.
+ *
+ * So the console passes it in the URL FRAGMENT. A fragment is never sent to
+ * the server: it does not reach nginx's access log, the Next.js server, or any
+ * Referer header — which matters, because the payload contains a live access
+ * token. The alternatives are worse in exactly that way; a query string would
+ * put the token in two log files before the page rendered.
+ *
+ * Consumed lazily, from getImpersonation(), rather than by a bootstrap
+ * component. That removes the ordering problem entirely: whoever asks first —
+ * AuthProvider, the banner, an API call — consumes it, and there is no window
+ * in which a request goes out before the token has been picked up.
+ */
+const HANDOFF_PARAM = 'imp';
+
+function consumeHandoff(): StoredImpersonation | null {
+  if (typeof window === 'undefined') return null;
+  const hash = window.location.hash;
+  if (!hash || !hash.includes(`${HANDOFF_PARAM}=`)) return null;
+  try {
+    const encoded = new URLSearchParams(hash.replace(/^#/, '')).get(HANDOFF_PARAM);
+    if (!encoded) return null;
+    const json = atob(encoded.replace(/-/g, '+').replace(/_/g, '/'));
+    const parsed = JSON.parse(json) as StoredImpersonation;
+    // Shape check before trusting it. The fragment is attacker-controllable —
+    // anybody can send the operator a link — so a malformed or partial payload
+    // must be dropped rather than stored. It cannot grant anything either way:
+    // `token` is checked by the API, which mints these itself and rejects
+    // anything it did not sign.
+    if (!parsed || typeof parsed.token !== 'string' || typeof parsed.orgId !== 'string') return null;
+    sessionStorage.setItem(IMPERSONATION_KEY, JSON.stringify(parsed));
+    // Strip it so the token is not left in the address bar, in the back/forward
+    // history, or in whatever the operator pastes into a support ticket next.
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    window.dispatchEvent(new CustomEvent('impersonation-changed'));
+    return parsed;
+  } catch { return null; }
+}
+
+/** Encode an impersonation for the fragment hand-off. */
+export function encodeImpersonationHandoff(s: StoredImpersonation): string {
+  return btoa(JSON.stringify(s)).replace(/\+/g, '-').replace(/\//g, '_');
+}
 
 export function getImpersonation(): StoredImpersonation | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = sessionStorage.getItem(IMPERSONATION_KEY);
-    return raw ? (JSON.parse(raw) as StoredImpersonation) : null;
-  } catch { return null; }
+    if (raw) return JSON.parse(raw) as StoredImpersonation;
+  } catch { /* fall through to the hand-off below */ }
+  return consumeHandoff();
 }
 
 export function setImpersonation(s: StoredImpersonation): void {

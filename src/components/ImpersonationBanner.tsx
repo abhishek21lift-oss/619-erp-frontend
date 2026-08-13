@@ -17,8 +17,9 @@ export default function ImpersonationBanner() {
     setImp(getImpersonation());
     const sync = () => setImp(getImpersonation());
     const onExpired = () => {
+      const returnTo = getImpersonation()?.returnTo;
       setImp(null);
-      if (typeof window !== 'undefined') window.location.href = '/platform';
+      if (typeof window !== 'undefined') window.location.href = returnTo ?? '/platform';
     };
     window.addEventListener('impersonation-changed', sync);
     window.addEventListener('impersonation-expired', onExpired);
@@ -31,8 +32,17 @@ export default function ImpersonationBanner() {
   if (!imp) return null;
 
   const exit = () => {
+    // Back to the Command Center the operator came from.
+    //
+    // `returnTo` is stamped on at hand-off by the console, which is the only
+    // side that knows its own address. A bare '/platform' is correct only on a
+    // single-origin deployment; once the console has its own hostname, that
+    // path 404s on the studio's domain and the operator is stranded in a
+    // studio with no way back. Falls back to it anyway, because that IS the
+    // right answer when the two share an origin.
+    const returnTo = imp.returnTo;
     clearImpersonation();
-    window.location.href = '/platform';
+    window.location.href = returnTo ?? '/platform';
   };
 
   const full = !imp.readonly;

@@ -1,18 +1,35 @@
 /**
- * The two doors.
+ * The three doors.
  *
- * There is one auth cookie per browser but two sign-in pages, and each refuses
- * the other's accounts: /login turns away a member, /member-login turns away a
- * trainer. Anything that has to know which door it is standing at belongs
- * here, so that knowledge is not re-derived — differently — in three places.
+ * There is one auth cookie per browser but three sign-in pages, and each
+ * refuses the others' accounts: /login turns away a member, /member-login
+ * turns away a trainer, /platform-login turns away everyone who is not the
+ * platform operator. Anything that has to know which door it is standing at
+ * belongs here, so that knowledge is not re-derived — differently — in three
+ * places.
  *
  * The routing half of this (which door to send somebody back to) lives in
  * public-paths.ts as signInPathFor, next to the list of pages that need no
  * session.
+ *
+ * ── Why 'platform' is a portal and not just a role ──────────────────────────
+ *
+ * The Command Center used to live at /platform inside the studio app's own
+ * route group, wrapped in the studio app's own chrome, reached with the studio
+ * app's own session. Its only separation was a role comparison — which meant
+ * the owner's control plane and the customer's application were one program
+ * that branched, and every gate between them was one forgotten `role ===` away
+ * from opening.
+ *
+ * Making it a portal puts it on the same footing as the member app: its own
+ * door, its own session audience (the server stamps `aud` from the door — see
+ * the backend's middleware/platformAuth.js), its own route group, its own
+ * shell, and its own host in production. The role still exists and is still
+ * checked; it is no longer the only thing standing there.
  */
 
 /** Which sign-in screen this is. Passed to the server, which enforces it. */
-export type Portal = 'staff' | 'member';
+export type Portal = 'staff' | 'member' | 'platform';
 
 /**
  * localStorage keys for the "continue as …" chip, namespaced per portal.
@@ -29,7 +46,7 @@ export type Portal = 'staff' | 'member';
  * this change; the member portal gets its own namespace.
  */
 export function rememberKeys(portal: Portal): { email: string; org: string; remember: string } {
-  const suffix = portal === 'member' ? '.member' : '';
+  const suffix = portal === 'member' ? '.member' : portal === 'platform' ? '.platform' : '';
   return {
     email: `myptstudio.lastEmail${suffix}`,
     org: `myptstudio.lastOrg${suffix}`,
@@ -37,9 +54,20 @@ export function rememberKeys(portal: Portal): { email: string; org: string; reme
   };
 }
 
-/** Which portal an account belongs to. Members are clients; everyone else is staff. */
+/**
+ * Which portal an account belongs to.
+ *
+ * Members are clients, the platform operator runs the Command Center, and
+ * everyone else is studio staff.
+ *
+ * Note this is the account's HOME portal, not the only place it may go — see
+ * mayEnterPortal, which is the asymmetry that lets an operator walk into a
+ * studio while no studio account can ever walk into the Command Center.
+ */
 export function portalForRole(role: string | null | undefined): Portal {
-  return role === 'member' ? 'member' : 'staff';
+  if (role === 'member') return 'member';
+  if (role === 'super_admin') return 'platform';
+  return 'staff';
 }
 
 /**
@@ -53,12 +81,52 @@ export function isMemberAppPage(pathname: string): boolean {
   return pathname === '/member' || pathname.startsWith('/member/');
 }
 
+/**
+ * True for a page in the Command Center.
+ *
+ * Matched exactly and with a trailing slash for the same reason
+ * isMemberAppPage is: '/platform-login'.startsWith('/platform') is true, and
+ * that page is the Command Center's PUBLIC door — folding it into the app it
+ * guards would make signing in require being signed in.
+ */
+export function isPlatformAppPage(pathname: string): boolean {
+  return pathname === '/platform' || pathname.startsWith('/platform/');
+}
+
 /** Which portal a page belongs to. */
 export function portalForPage(pathname: string): Portal {
+  if (isPlatformAppPage(pathname)) return 'platform';
   return isMemberAppPage(pathname) ? 'member' : 'staff';
+}
+
+/**
+ * May an account whose home is `userPortal` open a page in `pagePortal`?
+ *
+ * Deliberately NOT symmetric, and the asymmetry is the security property:
+ *
+ *   platform → staff   ALLOWED. The operator supporting a studio is the whole
+ *                      job. They arrive either through impersonation (which
+ *                      mints a studio session and writes an audit row) or with
+ *                      the org-switcher pinned to one tenant. Both are
+ *                      sanctioned, both are visible, and the server scopes
+ *                      them regardless of what this function says.
+ *
+ *   staff  → platform  REFUSED. So is member → platform, and member ↔ staff.
+ *                      No studio account has any business rendering the
+ *                      control plane, not even an empty frame of it.
+ *
+ * This is the client-side half only. The server enforces the same boundary and
+ * does not trust this one: requirePlatformOwner refuses a studio session at
+ * the API, so the worst a bypass here achieves is a blank console.
+ */
+export function mayEnterPortal(userPortal: Portal, pagePortal: Portal): boolean {
+  if (userPortal === pagePortal) return true;
+  return userPortal === 'platform' && pagePortal === 'staff';
 }
 
 /** Where a signed-in account of this portal belongs when it wanders out of it. */
 export function homeFor(portal: Portal): string {
-  return portal === 'member' ? '/member/dashboard' : '/';
+  if (portal === 'member') return '/member/dashboard';
+  if (portal === 'platform') return '/platform';
+  return '/';
 }

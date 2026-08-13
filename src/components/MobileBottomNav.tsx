@@ -1,12 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { Home, Users, ScanFace, Dumbbell, Bot, LayoutGrid, Layers, CreditCard, Activity } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Home, Users, ScanFace, Dumbbell, Bot } from 'lucide-react';
 import { m } from 'framer-motion';
-import { useAuth } from '@/lib/auth-context';
-import { getImpersonation } from '@/lib/http';
-import { normaliseRole, isVisibleForFeature } from '@/lib/nav-config';
+import { isVisibleForFeature } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
 import { useNavScroll } from '@/contexts/nav-scroll-context';
 
@@ -29,22 +27,17 @@ const BASE_ITEMS = [
   { href: '/checkin/qr-scanner', icon: ScanFace, label: 'Check-in', feature: 'attendance' },
 ];
 
-// Platform operators get control-plane tabs instead of studio tabs. These all
-// share the /platform pathname and differ only by ?tab=, so each carries an
-// explicit `tab` id — pathname alone can't tell Studios from Finance apart.
-const PLATFORM_ITEMS = [
-  { href: '/platform',              tab: 'overview', icon: LayoutGrid, label: 'Overview'  },
-  { href: '/platform?tab=studios',  tab: 'studios',  icon: Layers,     label: 'Studios'   },
-  { href: '/platform?tab=finance',  tab: 'finance',  icon: CreditCard, label: 'Finance'   },
-  { href: '/platform?tab=activity', tab: 'activity', icon: Activity,   label: 'Activity'  },
-];
-
-// Mirrors normalizeTab() in app/platform/page.tsx — legacy ?tab=billing/coupons
-// deep-links still land on the Finance tab.
-function normalizePlatformTab(raw: string | null): string {
-  if (raw === 'billing' || raw === 'coupons') return 'finance';
-  return raw ?? 'overview';
-}
+// This bar used to swap in four control-plane tabs — Overview, Studios,
+// Finance, Activity, all pointing at /platform — whenever the signed-in
+// account was a super_admin. That is gone, along with the rest of the mixing:
+// the Command Center is its own portal now, with its own shell and its own
+// navigation, served on its own host. This component belongs to the studio
+// app's chrome, so it shows the studio's tabs and only those.
+//
+// An operator who is in the studio app — supporting a customer through
+// impersonation, or with the org-switcher pinned to one tenant — is looking at
+// a studio, and the studio's navigation is the correct navigation to give
+// them. The console is a hostname away, not a tab away.
 
 interface MobileBottomNavProps {
   sidebarOpen?: boolean;
@@ -55,18 +48,8 @@ const SPRING = { type: 'spring', stiffness: 520, damping: 38, mass: 0.7 } as con
 
 export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNavProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentPlatformTab = normalizePlatformTab(searchParams.get('tab'));
-  const { user } = useAuth();
-  const role             = normaliseRole(user?.role);
-  // While impersonating, the operator acts as the studio admin — show studio
-  // tabs, not the platform control plane.
-  const isSuperAdmin     = role === 'super_admin' && !getImpersonation();
   const { features }     = useFeatures();
-  // Platform tabs are control-plane surfaces and are never tenant-gated.
-  const items            = isSuperAdmin
-    ? PLATFORM_ITEMS
-    : BASE_ITEMS.filter(i => isVisibleForFeature(i, features));
+  const items            = BASE_ITEMS.filter(i => isVisibleForFeature(i, features));
 
   const { reducedMotion } = useNavScroll();
   const dur = reducedMotion ? 0 : 0.28;
@@ -106,13 +89,9 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
       <div className="flex items-stretch" style={{ height: 'var(--bottom-nav-h, 52px)' }}>
         {items.map((item) => {
           const { href, icon: Icon, label } = item;
-          // Platform tabs all share the /platform pathname and differ only by
-          // ?tab=, so those items match on the normalised tab id instead.
-          const isActive = 'tab' in item
-            ? pathname === '/platform' && currentPlatformTab === item.tab
-            : href === '/'
-              ? pathname === '/'
-              : pathname === href || pathname.startsWith(href + '/');
+          const isActive = href === '/'
+            ? pathname === '/'
+            : pathname === href || pathname.startsWith(href + '/');
 
           return (
             <Link

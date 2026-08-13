@@ -55,7 +55,10 @@ describe('group filtering', () => {
   it('leaves the untagged groups alone — core product is never switchable', () => {
     // Clients and Sessions are is_core in the registry: decide() forces them
     // on, so tagging them would imply a control that does not exist.
-    for (const id of ['personal-training', 'session-management', 'platform']) {
+    // 'platform' used to be in this list. The control plane is not a nav
+    // group any more — see src/app/(platform)/layout.tsx — so there is nothing
+    // here to assert about it.
+    for (const id of ['personal-training', 'session-management']) {
       expect(group(id).feature).toBeUndefined();
       expect(isGroupVisibleForFeature(group(id), { finance: false })).toBe(true);
     }

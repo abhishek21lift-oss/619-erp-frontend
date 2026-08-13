@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { hasRole, normaliseRole } from '@/lib/roles';
-import { portalForRole, portalForPage, homeFor } from '@/lib/portals';
+import { portalForRole, portalForPage, homeFor, mayEnterPortal } from '@/lib/portals';
 import { signInPathFor } from '@/lib/public-paths';
 import type { Role } from '@/lib/roles';
 
@@ -55,11 +55,17 @@ export default function Guard({ children, role, roles }: Props) {
   // Deriving the verdict instead of storing it also makes the gate strictly
   // safer: `ready` was sticky, so a user whose role changed mid-session kept
   // passing until the component unmounted. This recomputes on every render.
+  // mayEnterPortal rather than `userPortal !== pagePortal`, because the rule
+  // stopped being symmetric when the Command Center became its own portal: the
+  // operator may walk into a studio (that is the support job), and no studio
+  // account may walk into the Command Center. Encoding that here rather than
+  // as an `if (role === 'super_admin')` escape hatch keeps the exception in one
+  // named function instead of scattered through the gates.
   const roleRequired = role !== undefined || roles !== undefined;
   const verdict: 'pending' | 'redirect' | 'pass' =
     loading ? 'pending'
       : (!user || userPortal === null) ? 'redirect'
-        : userPortal !== pagePortal ? 'redirect'
+        : !mayEnterPortal(userPortal, pagePortal) ? 'redirect'
           : (roleRequired && !hasRole(user.role, roles ?? role)) ? 'redirect'
             : 'pass';
 
