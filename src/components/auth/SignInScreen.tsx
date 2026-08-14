@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '@/lib/auth-context';
-import { rememberKeys, portalForRole, type Portal } from '@/lib/portals';
+import { rememberKeys, portalForRole, postSignInPath, type Portal } from '@/lib/portals';
 import { roleLabel } from '@/lib/roles';
 import { isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
 
@@ -202,9 +202,11 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
   // amount of care on the server can fix it from here.
   useEffect(() => {
     if (loading || !user || foreignSession) return;
-    if (user.role === 'trainer') router.replace('/trainer/dashboard');
-    else if (user.role === 'member') router.replace('/member/dashboard');
-    else router.replace('/pt-os');
+    // postSignInPath rather than a role ladder here. The ladder had no case for
+    // a platform operator, so they fell through its `else` and landed in the
+    // studio app after signing in at the Command Center's own door. See
+    // lib/portals.ts for why this moved out of the component.
+    router.replace(postSignInPath(user.role));
   }, [user, loading, foreignSession, router]);
 
   const emailValid = EMAIL_RE.test(email.trim());

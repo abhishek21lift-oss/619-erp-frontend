@@ -21,7 +21,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  portalForRole, portalForPage, homeFor, mayEnterPortal,
+  portalForRole, portalForPage, homeFor, mayEnterPortal, postSignInPath,
   isPlatformAppPage, isMemberAppPage, type Portal,
 } from '@/lib/portals';
 import { signInPathFor } from '@/lib/public-paths';
@@ -246,5 +246,56 @@ describe('the impersonation hand-off across origins', () => {
     window.history.replaceState(null, '', '/#section=billing');
     expect(getImpersonation()).toBeNull();
     expect(window.location.hash).toBe('#section=billing');
+  });
+});
+
+describe('where signing in lands you', () => {
+  // The regression this exists for: an operator signed in at the Command
+  // Center's own door and arrived in the studio app.
+  //
+  // SignInScreen routed with an inline role ladder that had no super_admin
+  // case, so the operator fell through its `else` to /pt-os. It was invisible
+  // while the studio dashboard bounced super_admins to /platform — and removing
+  // that redirect (it 404s once the console has its own hostname) left no path
+  // to the console at all.
+  //
+  // These call the function. The old behaviour could only be checked by
+  // matching the component's source, which is exactly how a routing table with
+  // a missing branch passed review twice.
+
+  it('sends the platform operator to the Command Center', () => {
+    expect(postSignInPath('super_admin')).toBe('/platform');
+  });
+
+  it('never sends the operator into the studio app', () => {
+    // Stated separately from the line above because this is the property that
+    // actually broke, and it stays true even if the console moves.
+    expect(postSignInPath('super_admin')).not.toBe('/pt-os');
+    expect(postSignInPath('super_admin')).not.toBe('/');
+  });
+
+  it('sends a client to the member app', () => {
+    expect(postSignInPath('member')).toBe('/member/dashboard');
+  });
+
+  it('leaves every studio role exactly where it was', () => {
+    // This change was allowed to move the operator and nobody else.
+    expect(postSignInPath('trainer')).toBe('/trainer/dashboard');
+    for (const role of ['admin', 'manager', 'reception', 'receptionist', 'staff']) {
+      expect([role, postSignInPath(role)]).toEqual([role, '/pt-os']);
+    }
+  });
+
+  it('lands every role inside the portal it belongs to', () => {
+    // The invariant behind all of the above: whatever destination is chosen, a
+    // person must not be dropped into a portal their account cannot enter.
+    // Without this, adding a role and forgetting its destination sends them to
+    // a page Guard immediately bounces them off.
+    for (const role of ['super_admin', 'admin', 'manager', 'trainer', 'reception', 'staff', 'member']) {
+      const dest = postSignInPath(role);
+      const userPortal = portalForRole(role);
+      expect([role, dest, mayEnterPortal(userPortal, portalForPage(dest))])
+        .toEqual([role, dest, true]);
+    }
   });
 });
