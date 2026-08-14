@@ -119,7 +119,19 @@ export function BarChart({ title, points, format = nf, hint, height = 96, accent
             key={p.label + i}
             type="button"
             className="group relative flex h-full flex-1 items-end"
-            style={{ minWidth: 4 }}
+            // maxWidth is what stops a sparse series rendering as a slab.
+            //
+            // Each bar is flex-1, so with ONE data point that bar took the
+            // full width — and its height is value/max, which for a single
+            // point is always 100%. The result was a solid filled rectangle
+            // the width and height of the plot area: it read as a broken
+            // chart rather than as "one month of data so far", which is what
+            // a new platform legitimately has.
+            //
+            // 40px is above the ~25px twelve bars get in this container, so a
+            // full year is unchanged; it only binds when there are few enough
+            // bars for them to stretch into blocks.
+            style={{ minWidth: 4, maxWidth: 40 }}
             aria-label={`${p.label}: ${format(p.value)}`}
             onMouseEnter={() => setHover(i)}
             onFocus={() => setHover(i)}

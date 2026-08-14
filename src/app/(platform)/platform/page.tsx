@@ -14,7 +14,7 @@
 //              suspend / impersonate)
 //   Activity — platform-wide audit feed
 import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Building2, UserPlus, Loader2, ShieldAlert, LayoutDashboard, Activity, CreditCard, Search, TrendingUp,
   ScrollText, HeartPulse, ToggleRight, Megaphone, Bot, LifeBuoy, HardDrive, Mail, Users2,
@@ -27,7 +27,7 @@ import {
   NotificationCentre, SecurityCentre, StorageCentre, SupportCentre, CommandCenterPanel,
 } from './_shared/panels';
 import { FINANCE_DEEP_LINKS, MODULES, TAB_LABELS, moduleForTab, normalizeTab } from './_shared/types';
-import type { FinanceSubTab, ModuleId, NavOpts, Tab } from './_shared/types';
+import type { FinanceSubTab, NavOpts, Tab } from './_shared/types';
 import { ActivityTab } from './_tabs/ActivityTab';
 import { FinanceTab } from './_tabs/FinanceTab';
 import { OverviewTab } from './_tabs/OverviewTab';
@@ -57,20 +57,26 @@ function PlatformContent() {
   useEffect(() => {
     if (getImpersonation()) window.location.replace('/');
   }, []);
-  const [tab, setTab] = useState<Tab>(() => normalizeTab(paramTab));
+  // The query string IS the tab. It used to be useState synced FROM ?tab= but
+  // never TO it, so clicking a tab changed the screen and not the address — no
+  // console view was linkable and the back button did nothing. It also could
+  // not be shared with the shell's sidebar, which lives in the layout and has
+  // no access to this component's state.
+  const router = useRouter();
+  const tab = normalizeTab(paramTab);
   const [financeSubTab, setFinanceSubTab] = useState<FinanceSubTab>(
     () => (paramTab && FINANCE_DEEP_LINKS[paramTab]) || 'dashboard',
   );
+  const setTab = (t: Tab) => {
+    router.push(t === 'overview' ? '/platform' : `/platform?tab=${t}`, { scroll: false });
+  };
   const [commandOpen, setCommandOpen] = useState(false);
 
-  // Keep the active tab in sync with the ?tab= query so the sidebar / bottom-nav
-  // deep-links land on the right section.
+  // Only the finance sub-tab needs syncing now — the tab itself is read from
+  // the query on every render, so it cannot fall out of step.
   useEffect(() => {
-    if (paramTab) {
-      setTab(normalizeTab(paramTab));
-      const sub = FINANCE_DEEP_LINKS[paramTab];
-      if (sub) setFinanceSubTab(sub);
-    }
+    const sub = paramTab ? FINANCE_DEEP_LINKS[paramTab] : undefined;
+    if (sub) setFinanceSubTab(sub);
   }, [paramTab]);
 
   // Cmd+K / Ctrl+K opens the global command bar from anywhere on the page.
@@ -105,17 +111,6 @@ function PlatformContent() {
     features: <ToggleRight size={15} />,
     announcements: <Megaphone size={15} />,
   };
-  const MODULE_ICON: Record<ModuleId, React.ReactNode> = {
-    overview: <LayoutDashboard size={15} />,
-    studios: <Building2 size={15} />,
-    users: <Users2 size={15} />,
-    revenue: <CreditCard size={15} />,
-    ai: <Bot size={15} />,
-    operations: <HeartPulse size={15} />,
-    security: <ShieldAlert size={15} />,
-    control: <ToggleRight size={15} />,
-  };
-
   // The active module is DERIVED from the active tab, never stored. That is
   // what keeps every existing ?tab= deep link working untouched: a link to
   // ?tab=audit still selects the Audit tab, and the Security module lights up
@@ -124,9 +119,6 @@ function PlatformContent() {
   const activeModule = moduleForTab(tab);
   const moduleTabs = MODULES.find((m) => m.id === activeModule)?.tabs ?? [];
 
-  const MODULE_ITEMS = MODULES.map((m) => ({
-    id: m.id, label: m.label, icon: MODULE_ICON[m.id],
-  }));
   const SUB_ITEMS = moduleTabs.map((t) => ({
     id: t, label: TAB_LABELS[t], icon: TAB_ICON[t],
   }));
@@ -142,13 +134,11 @@ function PlatformContent() {
       <AmbientField />
       {/* zIndex keeps content above the ambient field without creating a
           stacking context that would trap the app's dropdowns. */}
-      {/* Bottom padding clears the fixed MobileBottomNav (h-16) plus the home
-          indicator — without it the last row of every tab sat underneath the
-          nav bar and could not be reached. Matches the dashboard's pattern. */}
-      <div
-        className="relative mx-auto w-full max-w-5xl pt-6 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:pt-8 lg:pb-10"
-        style={{ zIndex: 1 }}
-      >
+      {/* No container here any more — no mx-auto, no max-w, no padding. The
+          shell's <main> provides all three, so this page shares its gutters
+          with the top bar and with every other console page. Adding them again
+          would double the padding and make this page narrower than the rest. */}
+      <div className="relative" style={{ zIndex: 1 }}>
         <ConsoleHeader
           icon={<Building2 size={20} />}
           title="Control Centre"
@@ -166,27 +156,12 @@ function PlatformContent() {
           }
         />
 
-        <Reveal delay={0.06}>
-          <div className="mb-4">
-            <SegmentedTabs
-              tabs={MODULE_ITEMS}
-              value={activeModule}
-              // Selecting a module lands on its FIRST tab. Modules are ordered
-              // so that first tab is the one an operator opening the module
-              // wants — All Studios, not Registrations.
-              onChange={(id) => {
-                const next = MODULES.find((m) => m.id === id)?.tabs[0];
-                if (next) setTab(next);
-              }}
-            />
-          </div>
-        </Reveal>
-
-        {/* The sub-row appears only where there is a choice to make. A single
-            tab rendering a one-item row would be furniture that looks
-            interactive and is not. */}
+        {/* The MODULE row is gone: the shell's sidebar (desktop) and bottom
+            bar (mobile) own it now, so it is not rendered twice. What stays is
+            the SUB-navigation, which is about this page's sections rather than
+            the console's structure. */}
         {SUB_ITEMS.length > 1 && (
-          <Reveal delay={0.09}>
+          <Reveal delay={0.06}>
             <div className="mb-6">
               <SegmentedTabs tabs={SUB_ITEMS} value={tab} onChange={setTab} />
             </div>
