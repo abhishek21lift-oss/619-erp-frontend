@@ -130,3 +130,43 @@ export function homeFor(portal: Portal): string {
   if (portal === 'platform') return '/platform';
   return '/';
 }
+
+/**
+ * Where to send somebody the moment they sign in.
+ *
+ * NOT the same as homeFor(), and the difference is why this exists as its own
+ * function. homeFor answers "where does this account belong when it wanders
+ * somewhere it may not be" — a fallback. This answers "what screen does this
+ * person want first", which for studio staff is the client list rather than the
+ * dashboard, and for a trainer is their own schedule.
+ *
+ * ── Why it is a function at all ─────────────────────────────────────────────
+ *
+ * It was three lines inline in SignInScreen's redirect effect:
+ *
+ *     if (user.role === 'trainer') router.replace('/trainer/dashboard');
+ *     else if (user.role === 'member') router.replace('/member/dashboard');
+ *     else router.replace('/pt-os');
+ *
+ * A platform operator has no case there, so they fell through the `else` and
+ * landed in the studio app — signing in at the Command Center's own door and
+ * arriving at somebody's client list. It stayed invisible for as long as the
+ * studio dashboard bounced super_admins to /platform, and the moment that
+ * redirect was removed (it 404s once the console has its own hostname) there
+ * was no path to the console left at all.
+ *
+ * Pulled out here because the version inside a component could only be tested
+ * by asserting on its source text, and a source assertion cannot tell working
+ * code from unreachable code — which is precisely how this shipped. As a plain
+ * function it is checked by calling it.
+ */
+export function postSignInPath(role: string | null | undefined): string {
+  const portal = portalForRole(role);
+  if (portal === 'platform') return '/platform';
+  if (portal === 'member') return '/member/dashboard';
+  // Studio staff. A trainer gets their own schedule; everyone else gets the
+  // client list. Both preserved exactly as they were — this function changed
+  // where the OPERATOR lands, and nothing else.
+  if (role === 'trainer') return '/trainer/dashboard';
+  return '/pt-os';
+}
