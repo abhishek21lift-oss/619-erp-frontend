@@ -78,6 +78,11 @@ function Inner() {
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [activeBodyPart, setActiveBodyPart] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  // The library holds 890 exercises; a page holds 50. `exercises` is one page,
+  // so it can never be the count — the card showed 50 for every studio no
+  // matter how large its library was. The API has always returned the real
+  // total beside the rows; nothing read it.
+  const [exerciseTotal, setExerciseTotal] = useState(0);
   const [exercises, setExercises] = useState<LibraryExercise[]>([]);
   const [bodyParts, setBodyParts] = useState<string[]>([]);
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
@@ -101,6 +106,23 @@ function Inner() {
 
   // ── Plan Builder state ──
 
+  // Server-side search, debounced. The old filter ran over the 50 rows the
+  // first page happened to contain, so typing "romanian" found nothing unless
+  // a Romanian deadlift was in that page — the exercise existed and the tab
+  // said it did not.
+  useEffect(() => {
+    const term = searchQuery.trim();
+    const t = setTimeout(() => {
+      api.exercises.list(term ? { q: term } : undefined)
+        .then((r) => {
+          setExercises(r.exercises || []);
+          setExerciseTotal(r.total ?? (r.exercises || []).length);
+        })
+        .catch(() => { /* keep what is on screen rather than blanking it */ });
+    }, 250);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
   const fetchData = useCallback(async () => {
     setDataLoading(true);
     try {
@@ -113,6 +135,7 @@ function Inner() {
       // /api/exercises returns a paged envelope, and its filter facets are
       // muscle regions rather than the old free-text body_part strings.
       setExercises(exRes.exercises || []);
+      setExerciseTotal(exRes.total ?? (exRes.exercises || []).length);
       setBodyParts(Object.keys(metaRes.muscles_by_region || {}));
       setPlans(Array.isArray(plRes) ? plRes : []);
       const clientArr = Array.isArray(clRes?.data) ? clRes.data : [];
@@ -176,8 +199,10 @@ function Inner() {
   const filteredExercises = exercises.filter((ex) => {
     // body_region is the normalized bucket; body_part is the legacy text the
     // same rows still carry, so this keeps matching either way.
+    // No name filter here any more — the server did it. Keeping both would
+    // re-filter the server's results against a stale query mid-debounce and
+    // blank the list for a moment on every keystroke.
     if (activeBodyPart !== 'All' && (ex.body_region ?? ex.body_part) !== activeBodyPart) return false;
-    if (searchQuery) return ex.name.toLowerCase().includes(searchQuery.toLowerCase());
     return true;
   });
 
@@ -249,12 +274,12 @@ function Inner() {
               ? [
                 { label: 'Their Plans', value: plans.length, icon: <FileText size={14} />, color: '#0067e0', spotColor: 'rgba(0,103,224,0.12)' },
                 { label: 'Brief Complete', value: briefClient ? briefCompleteness : 0, icon: <ClipboardList size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)', suffix: '%' },
-                { label: 'Exercises', value: exercises.length, icon: <Activity size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
+                { label: 'Exercises', value: exerciseTotal, icon: <Activity size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
                 { label: 'Completion', value: avgProgress, icon: <Trophy size={14} />, color: '#0067e0', spotColor: 'rgba(0,103,224,0.12)', suffix: '%' },
               ]
               : [
                 { label: 'Total Plans', value: plans.length, icon: <FileText size={14} />, color: '#0067e0', spotColor: 'rgba(0,103,224,0.12)' },
-                { label: 'Exercises', value: exercises.length, icon: <Activity size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)' },
+                { label: 'Exercises', value: exerciseTotal, icon: <Activity size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)' },
                 { label: 'Clients', value: clients.length, icon: <User size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
                 { label: 'Avg Completion', value: avgProgress, icon: <Trophy size={14} />, color: '#0067e0', spotColor: 'rgba(0,103,224,0.12)', suffix: '%' },
               ]
@@ -279,7 +304,7 @@ function Inner() {
             // Only with a client in scope — there is no brief for "the studio".
             ...(presetClientId ? [{ key: 'brief', label: 'Client Brief', color: '#0067e0' }] : []),
             { key: 'plans', label: presetClientId ? 'Their Plans' : 'Active Plans', count: plans.length, color: '#0067e0' },
-            { key: 'library', label: 'Exercise Library', count: filteredExercises.length, color: '#10b981' },
+            { key: 'library', label: 'Exercise Library', count: exerciseTotal, color: '#10b981' },
             { key: 'ai', label: 'AI Suggestions', color: '#0067e0' },
           ].map((tab) => (
             <button key={tab.key}
