@@ -18,6 +18,9 @@ import { auth, webauthn, accounts, profile } from './endpoints/auth';
 import { clients, trainers, leave, attendance } from './endpoints/people';
 import { payments, invoices, expenses, offers, upiPayments } from './endpoints/money';
 import { workouts, exercises, diet, classes, bookings, calendar } from './endpoints/training';
+// The Training OS domain (/api/training). Sits beside `workouts`, which still
+// points at the old /api/workouts, while the builder is rebuilt on top of it.
+import { training } from './endpoints/trainingOs';
 import { progress } from './endpoints/progress';
 import { pt } from './endpoints/ptOs';
 import { branches, gymSettings, qr, subscription, membershipPlans } from './endpoints/studio';
@@ -31,6 +34,17 @@ import { reports, search, activity, ai } from './endpoints/insights';
 export { http } from '../http';
 export { ROLES, normaliseRole, hasRole, isAdminOrManager } from '../roles';
 export * from './types';
+
+// Training OS types. Exported from here so consumers keep importing everything
+// from '@/lib/api', which is the property api-shape.test.ts pins.
+export type {
+  PrescriptionType, WorkoutSection, CardioType, SetType, LogsAs,
+  PrescriptionTypeMeta, TrainingMeta,
+  TrainingProgram, ProgramPhase, ProgramWeek,
+  WorkoutTemplate, TemplateExercise, TrainingAssignment,
+  TrainingSession, ExercisePerformance, SetPerformance, CardioPerformance,
+  SessionSummary, PersonalRecord,
+} from './endpoints/trainingOs';
 
 // qsOf and buildQs are deliberately NOT re-exported. They were private to
 // api.ts and they stay private to the directory: exporting them here would
@@ -52,6 +66,7 @@ export const api = {
   offers,
   upiPayments,
   workouts,
+  training,
   exercises,
   diet,
   classes,
