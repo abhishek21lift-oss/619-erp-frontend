@@ -37,6 +37,8 @@ interface PtClientDetail {
   email?: string; mobile?: string; gender?: string; dob?: string;
   address?: string; photo_url?: string;
   emergency_contact?: string;
+  emergency_contact_relationship?: string;
+  client_source?: string;
   trainer_id?: string; trainer_name?: string;
   package_type?: string;
   base_amount: number; discount: number; final_amount: number;
@@ -783,6 +785,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   <InfoRow label="Phone" value={client.mobile || '—'} />
                   <InfoRow label="Email" value={client.email || '—'} />
                   <InfoRow label="Joined" value={fmtDate(client.joining_date)} />
+                  {/* Asked at intake and, until now, never shown again — a
+                      question the operator answers into a void. It is also
+                      the one field here a studio owner reads on purpose. */}
+                  <InfoRow label="Source" value={client.client_source || '—'} />
                 </DarkCard>
                 {/* PT Assignment */}
                 <DarkCard title="PT Assignment" icon={<Dumbbell size={14} />} from="#0067e0">

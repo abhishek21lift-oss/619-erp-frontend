@@ -29,6 +29,14 @@ export function StepSignatures({ form, set, error }: StepSignaturesProps) {
         <SignaturePad label="Trainer Signature" onChange={(v) => set('trainerSignature', v)} required />
       </div>
 
+      {/* Moved here from step 1, where it dated a signature that is now
+          captured on this step. It defaults to today and is editable, because
+          a consent signed on paper at the counter and entered in the evening
+          is dated the day it was signed, not the day it was typed. */}
+      <div className="sm:max-w-[260px]">
+        <FloatInput label="Date" type="date" value={form.exerciseConsentDate} onChange={(v) => set('exerciseConsentDate', v)} required />
+      </div>
+
       <div className="space-y-3">
         <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Witness (optional)</p>
         <FloatInput label="Witness Name" value={form.witnessName} onChange={(v) => set('witnessName', v)} />

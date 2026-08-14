@@ -16,7 +16,9 @@ interface SearchableSelectProps {
   label: string;
   value: string;
   onChange: (v: string) => void;
-  options: (SearchableSelectOption | string)[];
+  /** `readonly` so an `as const` list can be passed without a defensive copy —
+   *  the component only maps over it. */
+  options: readonly (SearchableSelectOption | string)[];
   placeholder?: string;
   error?: string;
   required?: boolean;
