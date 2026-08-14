@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
   ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, FileSignature, Plus,
-  CheckCircle2, Download, Printer, Mail, History,
+  CheckCircle2, Download, Printer, Mail,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, EmptyState, PageContainer, PageHero } from '@/components/ui';
@@ -354,7 +354,7 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
   }
 
   if (submitResult) {
-    return <SubmitSuccess clientName={clientName} result={submitResult} onDone={() => onDone(true)} />;
+    return <SubmitSuccess clientId={clientId} clientName={clientName} result={submitResult} />;
   }
 
   return (
@@ -398,7 +398,8 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
 }
 
 /* ─────────────────────────────────────────────────────── POST-SUBMIT */
-function SubmitSuccess({ clientName, result, onDone }: { clientName: string; result: SubmitResult; onDone: () => void }) {
+function SubmitSuccess({ clientId, clientName, result }: { clientId: string; clientName: string; result: SubmitResult }) {
+  const router = useRouter();
   const mailBody = encodeURIComponent(
     `Personal Training Informed Consent for ${clientName}.${result.pdfUrl ? `\n\nSigned consent PDF: ${result.pdfUrl}` : ''}`,
   );
@@ -434,7 +435,24 @@ function SubmitSuccess({ clientName, result, onDone }: { clientName: string; res
         <p className="mt-3 text-[11.5px]" style={{ color: 'var(--text-disabled)' }}>The signed PDF will appear here once it finishes generating — check back shortly.</p>
       )}
 
-      <Button variant="ghost" className="mt-8" iconLeft={<History size={13} />} onClick={onDone}>Back to Consent</Button>
+      {/* Consent is step one of screening, not an errand on its own — PAR-Q
+          is what a trainer does next, every time. The button used to go back
+          to the consent hub, which is the one place the operator has just
+          finished with.
+
+          It lands on the client's PAR-Q hub rather than deep-linking into the
+          wizard. That hub's primary action is "Start First Screening", so it
+          is still one tap from starting — and it is the screen that knows
+          whether this client already HAS a PAR-Q. Jumping straight into a new
+          wizard would silently start a second form for a client who was
+          already screened. */}
+      <Button
+        className="mt-8"
+        iconRight={<ArrowRight size={14} />}
+        onClick={() => router.push(`/pt-os/parq?client_id=${encodeURIComponent(clientId)}`)}
+      >
+        Continue to PAR-Q
+      </Button>
     </div>
   );
 }
