@@ -6,7 +6,7 @@
 // Component bodies, props and rendered markup are unchanged.
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Building2, Loader2, Users, IndianRupee, Clock, Snowflake, Crown, Receipt, ArrowRight,
+  Building2, Loader2, Users, IndianRupee, Clock, Snowflake, Crown, Receipt, ArrowRight, UserMinus,
   TrendingUp, ChevronRight,
 } from 'lucide-react';
 import StudioMark from '@/components/StudioMark';
@@ -79,7 +79,25 @@ export function OverviewTab({ onNavigate }: { onNavigate: (tab: Tab, opts?: NavO
     { label: 'Outstanding', value: fmtINR(t.outstanding), sub: 'across all studios', tone: 'critical' as const, icon: <Receipt size={15} /> },
     { label: 'Renewals due', value: String(renewalsDue), sub: 'within 7 days', tone: 'caution' as const, icon: <Clock size={15} /> },
     { label: 'Frozen', value: subKpis ? String(subKpis.frozen) : '—', sub: 'need payment', tone: 'critical' as const, icon: <Snowflake size={15} /> },
-    { label: 'Founders', value: subKpis ? `${subKpis.founders}${metrics ? `/${metrics.founders.limit}` : ''}` : '—', sub: subKpis ? `${subKpis.founder_slots_remaining} slots left` : '', tone: 'brand' as const, icon: <Crown size={15} /> },
+    // Churn sits where a duplicate Founders tile used to. The Founder Club is
+    // already a ring further down this page with more detail than a tile can
+    // carry, and a headline SaaS number was missing entirely — so the slot buys
+    // more here than it did there.
+    //
+    // An em dash rather than 0% when the rate is null. The backend returns null
+    // when nobody is paying, because "no churn rate" and "0% churn" are
+    // opposite signals and only one of them is good news.
+    {
+      label: 'Churn 30d',
+      value: metrics?.churn?.rate_30d_pct == null ? '—' : `${metrics.churn.rate_30d_pct}%`,
+      sub: metrics
+        ? `${metrics.churn.cancelled_30d} cancelled · ${metrics.churn.cancelled_90d} in 90d`
+        : 'loading…',
+      // Ternary, so the type must be widened explicitly — `as const` cannot
+      // apply to a conditional expression.
+      tone: (metrics && metrics.churn.cancelled_30d > 0 ? 'critical' : 'positive') as 'critical' | 'positive',
+      icon: <UserMinus size={15} />,
+    },
   ];
 
   // Real, derived signals from the numbers already on this page — not an LLM
@@ -89,6 +107,14 @@ export function OverviewTab({ onNavigate }: { onNavigate: (tab: Tab, opts?: NavO
   if (pendingRequests > 0) signals.push({ text: `${pendingRequests} studio${pendingRequests === 1 ? '' : 's'} waiting on a plan request`, tone: 'caution', onClick: () => onNavigate('finance', { financeSubTab: 'billing' }) });
   if (renewalsDue > 0) signals.push({ text: `${renewalsDue} renewal${renewalsDue === 1 ? '' : 's'} due within 7 days`, tone: 'caution', onClick: () => onNavigate('finance', { financeSubTab: 'billing' }) });
   if (subKpis && subKpis.frozen > 0) signals.push({ text: `${subKpis.frozen} studio${subKpis.frozen === 1 ? '' : 's'} frozen, waiting on payment`, tone: 'critical', onClick: () => onNavigate('finance', { financeSubTab: 'billing' }) });
+  if (metrics && metrics.churn.cancelled_30d > 0) {
+    signals.push({
+      text: `${metrics.churn.cancelled_30d} studio${metrics.churn.cancelled_30d === 1 ? '' : 's'} cancelled in the last 30 days`
+        + (metrics.churn.rate_30d_pct == null ? '' : ` (${metrics.churn.rate_30d_pct}%)`),
+      tone: 'critical',
+      onClick: () => onNavigate('studios'),
+    });
+  }
   if (revDeltaPct != null) signals.push({ text: `Revenue collected ${revDeltaPct >= 0 ? 'up' : 'down'} ${Math.abs(revDeltaPct)}% vs last month`, tone: revDeltaPct >= 0 ? 'positive' : 'critical' });
   if (Number(t.outstanding) > 0) signals.push({ text: `${fmtINR(t.outstanding)} outstanding across all studios`, tone: 'neutral', onClick: () => onNavigate('finance', { financeSubTab: 'dashboard' }) });
 

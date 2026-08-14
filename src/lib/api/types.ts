@@ -2688,6 +2688,20 @@ export type SubscriptionMetrics = {
   }[];
   /** rate_pct is null when no trial has started yet — not 0%. */
   trial_conversion: { started: number; converted: number; rate_pct: number | null };
+  /**
+   * Cancellations, counted from activity_log where they are actually written.
+   *
+   * cancelled_30d/90d are FLOWS; currently_cancelled is a STOCK that only ever
+   * rises. They are named apart because presenting the stock as churn is the
+   * usual way this metric gets faked.
+   *
+   * rate_30d_pct is null, never 0, when nobody is paying — a platform with no
+   * paying studios has no churn rate, and 0% would read as "nobody is leaving".
+   */
+  churn: {
+    cancelled_30d: number; cancelled_90d: number;
+    currently_cancelled: number; rate_30d_pct: number | null;
+  };
   founders: {
     granted: number; limit: number; slots_remaining: number;
     locked_value_inr: number; highest_number: number | null;
