@@ -18,8 +18,8 @@ import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
 import {
   STEPS, type StepId, type InformedConsentFormData,
-  initInformedConsentForm, formFromRecord, nextStepId, prevStepId,
-  FINAL_ACK_FIELDS, buildCreatePayload, buildUpdatePayload,
+  initInformedConsentForm, formFromRecord, nextStepId, prevStepId, validateStep,
+  buildCreatePayload, buildUpdatePayload,
 } from '@/components/pt-os/informed-consent/types';
 import StepAgreements from '@/components/pt-os/informed-consent/StepAgreements';
 import StepExerciseProgrammeConsent from '@/components/pt-os/informed-consent/StepExerciseProgrammeConsent';
@@ -28,23 +28,6 @@ import StepSignatures from '@/components/pt-os/informed-consent/StepSignatures';
 interface FormErrors { [key: string]: string | undefined; }
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-
-function validateStep(step: StepId, form: InformedConsentFormData): string | undefined {
-  if (step === 1) {
-    if (!form.exerciseConsentChecked) return 'Please check the consent acknowledgement to continue.';
-    if (!form.exerciseConsentSignature) return 'Client signature is required.';
-    if (!form.exerciseConsentDate) return 'Date is required.';
-  }
-  if (step === 2) {
-    const missing = FINAL_ACK_FIELDS.some((f) => !form.acknowledgements[f.key]);
-    if (missing) return 'All agreement items must be checked.';
-  }
-  if (step === 3) {
-    if (!form.clientSignature) return 'Client signature is required.';
-    if (!form.trainerSignature) return 'Trainer signature is required.';
-  }
-  return undefined;
-}
 
 /** Force a real download of the generated PDF (rather than an inline preview,
  *  which on mobile Safari offers no save option). Fetches the file as a blob

@@ -10,7 +10,9 @@ import Guard from '@/components/Guard';
 import { Button } from '@/components/ui';
 import FloatInput from '@/components/ui/FloatInput';
 import PhotoCropModal from '@/components/pt-os/PhotoCropModal';
+import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import { api } from '@/lib/api';
+import { CLIENT_SOURCES, RELATIONSHIPS } from '@/lib/client-intake';
 import { useToast } from '@/lib/toast';
 
 function SectionCard({ title, icon, children, accent = '#F59E0B' }: {
@@ -89,6 +91,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   // dates and the amounts are not loaded, not held here and not sent back.
   const [form, setForm] = useState({
     name: '', mobile: '', email: '', gender: '', dob: '', address: '', emergency_contact: '', emergency_phone: '',
+    emergency_contact_relationship: '', client_source: '',
   });
 
   const set = (key: keyof typeof form) => (v: string) =>
@@ -113,6 +116,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
             address: c.address ?? '',
             emergency_contact: c.emergency_contact ?? '',
             emergency_phone: c.emergency_phone ?? '',
+            emergency_contact_relationship: c.emergency_contact_relationship ?? '',
+            client_source: c.client_source ?? '',
           });
         }
       } catch (err: any) {
@@ -170,6 +175,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         address: str(form.address),
         emergency_contact: str(form.emergency_contact),
         emergency_phone: str(form.emergency_phone),
+        emergency_contact_relationship: str(form.emergency_contact_relationship),
+        client_source: str(form.client_source),
       });
       toast.success('Client updated successfully');
       router.push(`/pt-os/clients/${id}`);
@@ -294,8 +301,27 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
               <div className="sm:col-span-2">
                 <FloatInput label="Address" value={form.address} onChange={set('address')} />
               </div>
-              <FloatInput label="Emergency Contact" value={form.emergency_contact} onChange={set('emergency_contact')} />
-              <FloatInput label="Emergency Number" type="tel" value={form.emergency_phone} onChange={set('emergency_phone')} />
+              {/* Labels, options and field order match the intake form. The
+                  same column called two different things on the screen that
+                  captures it and the screen that corrects it is how a studio
+                  ends up unsure which field it filled in. */}
+              <FloatInput label="Emergency Contact Name" value={form.emergency_contact} onChange={set('emergency_contact')} />
+              <FloatInput label="Emergency Contact Number" type="tel" value={form.emergency_phone} onChange={set('emergency_phone')} />
+              <SearchableSelect
+                label="Relationship"
+                placeholder="Relationship to the emergency contact"
+                value={form.emergency_contact_relationship}
+                onChange={set('emergency_contact_relationship')}
+                options={RELATIONSHIPS}
+              />
+              <SearchableSelect
+                label="Client Source"
+                placeholder="How did they find us?"
+                value={form.client_source}
+                onChange={set('client_source')}
+                options={CLIENT_SOURCES}
+                allowCustom={false}
+              />
             </div>
           </SectionCard>
 

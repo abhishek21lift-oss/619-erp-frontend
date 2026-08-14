@@ -13,6 +13,7 @@ import { api } from '@/lib/api';
 import FloatInput from '@/components/ui/FloatInput';
 import PhotoCropModal from '@/components/pt-os/PhotoCropModal';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
+import { CLIENT_SOURCES, RELATIONSHIPS } from '@/lib/client-intake';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useToast } from '@/lib/toast';
 
@@ -27,29 +28,47 @@ interface FormData {
   email: string;
   emergencyContact: string;
   emergencyPhone: string;
-  occupation: string;
+  /** How the emergency contact is related to the client — replaces Occupation. */
+  emergencyRelationship: string;
   address: string;
+  clientSource: string;
   photoDataUrl: string | null;
 }
 
+// No `address` key any more — nothing can fail on a field with no rule.
 interface FormErrors {
   name?: string; gender?: string; dob?: string; mobile?: string;
   whatsapp?: string; email?: string; emergencyPhone?: string;
-  occupation?: string; address?: string;
+  emergencyRelationship?: string;
 }
 
 const GENDERS: FormData['gender'][] = ['Male', 'Female', 'Other'];
 
-const OCCUPATIONS = [
-  'Student', 'Doctor', 'Engineer', 'Teacher', 'Business',
-  'Housewife', 'Police', 'Army', 'Lawyer', 'Retired', 'Other',
-];
+// Occupation used to sit in this slot. It was required, and nothing on the
+// intake path read it back — while the emergency contact beside it was a name
+// and a number with no way of saying who that person is. In an actual
+// emergency "Priya, 98xxxxxxxx" is a number the trainer cannot introduce
+// themselves to; mother, spouse and neighbour are three different calls.
+//
+// Occupation itself has not gone anywhere: the lifestyle assessment still
+// collects it and the training brief still reads it. This form just stopped
+// being the place it is asked for.
+//
+// RELATIONSHIPS and CLIENT_SOURCES come from lib/client-intake, shared with
+// the client edit form so the screen that corrects a value offers the same
+// options as the screen that captured it.
 
 function initForm(): FormData {
   return {
     name: '', gender: '', dob: '', mobile: '', whatsapp: '', whatsappSameAsMobile: true,
-    email: '', emergencyContact: '', emergencyPhone: '', occupation: '', address: '', photoDataUrl: null,
+    email: '', emergencyContact: '', emergencyPhone: '', emergencyRelationship: '',
+    address: '', clientSource: '', photoDataUrl: null,
   };
+}
+
+/** True once the operator has named an emergency contact in either field. */
+function hasEmergencyContact(form: FormData): boolean {
+  return Boolean(form.emergencyContact.trim() || form.emergencyPhone.trim());
 }
 
 /* ─────────────────────────────────────────────────────── VALIDATION */
@@ -108,11 +127,14 @@ function validateEmergencyPhone(v: string): string | undefined {
   if (!MOBILE_RE.test(digits)) return 'Enter a valid 10-digit Indian mobile number.';
   return undefined;
 }
-function validateOccupation(v: string): string | undefined {
-  return v.trim() ? undefined : 'Please select or enter an occupation.';
-}
-function validateAddress(v: string): string | undefined {
-  return v.trim() ? undefined : 'Address is required.';
+// Required only once there is a contact to be related TO. Occupation, which
+// this replaces, was unconditionally required — but the emergency contact's
+// name and number are both optional, so an unconditional star here would make
+// the operator declare somebody's relationship to nobody. The star on the
+// field appears and disappears with this same condition.
+function validateRelationship(form: FormData): string | undefined {
+  if (!hasEmergencyContact(form)) return undefined;
+  return form.emergencyRelationship.trim() ? undefined : 'Tell us how this person is related to the client.';
 }
 
 function validateAll(form: FormData): FormErrors {
@@ -124,8 +146,10 @@ function validateAll(form: FormData): FormErrors {
     whatsapp: validateWhatsapp(form.whatsapp, form.whatsappSameAsMobile),
     email: validateEmail(form.email),
     emergencyPhone: validateEmergencyPhone(form.emergencyPhone),
-    occupation: validateOccupation(form.occupation),
-    address: validateAddress(form.address),
+    emergencyRelationship: validateRelationship(form),
+    // Address is no longer required. It was never used to reach anybody — the
+    // studio calls or messages — and it was the field that most often stalled
+    // an otherwise complete signup at the counter.
   };
 }
 
@@ -133,22 +157,30 @@ function hasErrors(errors: FormErrors): boolean {
   return Object.values(errors).some(Boolean);
 }
 
+// Counts what the form asks for, not what it insists on: 3 required (name,
+// gender, mobile) plus 5 that fill the profile out. Address and Occupation
+// were counted as required here; with Occupation gone and Address optional,
+// both move into the optional half rather than out of the count, so a
+// complete-looking form still reads 100%.
 function computeProgress(form: FormData): number {
   let filled = 0;
-  const total = 8; // 5 required + 3 optional bonus (DOB, Email, Emergency Phone)
+  const total = 8;
   if (!validateName(form.name)) filled++;
   if (!validateGender(form.gender)) filled++;
   if (!validateMobile(form.mobile)) filled++;
-  if (!validateOccupation(form.occupation)) filled++;
-  if (!validateAddress(form.address)) filled++;
   if (form.dob.trim() && !validateDob(form.dob)) filled++;
   if (form.email.trim() && !validateEmail(form.email)) filled++;
   if (form.emergencyPhone.trim() && !validateEmergencyPhone(form.emergencyPhone)) filled++;
+  if (form.emergencyRelationship.trim()) filled++;
+  if (form.clientSource.trim()) filled++;
   return Math.round((filled / total) * 100);
 }
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-const DRAFT_KEY = 'pt-os.new-client.draft.v1';
+// v2: the shape changed (occupation out, emergencyRelationship and
+// clientSource in). Restoring a v1 draft would put a key in state that no
+// field renders and that the submit payload ignores.
+const DRAFT_KEY = 'pt-os.new-client.draft.v2';
 
 /* ─────────────────────────────────────────────────────── PAGE EXPORT */
 export default function NewPTClientPage() {
@@ -306,8 +338,9 @@ function NewClientForm() {
         email: form.email.trim() || undefined,
         emergency_contact: form.emergencyContact.trim() || undefined,
         emergency_phone: form.emergencyPhone.replace(/\D/g, '') || undefined,
-        occupation: form.occupation.trim(),
-        address: form.address.trim(),
+        emergency_contact_relationship: form.emergencyRelationship.trim() || undefined,
+        address: form.address.trim() || undefined,
+        client_source: form.clientSource || undefined,
       } as Record<string, unknown>);
       const created = (res as { data?: { id?: string } })?.data;
       clear();
@@ -534,31 +567,46 @@ function NewClientForm() {
                 error={errors.email}
               />
 
+              {/* The placeholder used to read "e.g. spouse, parent, friend",
+                  which asked for the relationship in the field that wants the
+                  name — the two are separate questions now, so it asks for a
+                  name. */}
               <FloatInput
-                label="Emergency Contact" placeholder="e.g. spouse, parent, friend" value={form.emergencyContact}
+                label="Emergency Contact Name" placeholder="e.g. Meera Rao" value={form.emergencyContact}
                 onChange={(v) => set('emergencyContact', v)}
               />
 
               <FloatInput
-                label="Emergency Number" type="tel" value={form.emergencyPhone}
+                label="Emergency Contact Number" type="tel" value={form.emergencyPhone}
                 onChange={(v) => set('emergencyPhone', v)}
                 onBlur={() => touchField('emergencyPhone')}
                 error={errors.emergencyPhone}
               />
 
               <SearchableSelect
-                label="Occupation" required value={form.occupation}
-                onChange={(v) => { set('occupation', v); setErrors((e) => ({ ...e, occupation: undefined })); }}
-                options={OCCUPATIONS}
-                error={errors.occupation}
+                label="Relationship"
+                placeholder="Relationship to the emergency contact"
+                required={hasEmergencyContact(form)}
+                value={form.emergencyRelationship}
+                onChange={(v) => { set('emergencyRelationship', v); setErrors((e) => ({ ...e, emergencyRelationship: undefined })); }}
+                options={RELATIONSHIPS}
+                error={errors.emergencyRelationship}
+              />
+
+              {/* Closed list — allowCustom off. See CLIENT_SOURCES above. */}
+              <SearchableSelect
+                label="Client Source"
+                placeholder="How did they find us?"
+                value={form.clientSource}
+                onChange={(v) => set('clientSource', v)}
+                options={CLIENT_SOURCES}
+                allowCustom={false}
               />
 
               <div className="sm:col-span-2">
                 <FloatInput
-                  label="Address" required value={form.address}
+                  label="Address" value={form.address}
                   onChange={(v) => set('address', v)}
-                  onBlur={() => touchField('address')}
-                  error={errors.address}
                   multiline autoGrow
                 />
               </div>
