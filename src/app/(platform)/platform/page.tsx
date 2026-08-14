@@ -17,7 +17,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Building2, UserPlus, Loader2, ShieldAlert, LayoutDashboard, Activity, CreditCard, Search, TrendingUp,
-  ScrollText, HeartPulse, ToggleRight, Megaphone, Bot, LifeBuoy, HardDrive, Mail,
+  ScrollText, HeartPulse, ToggleRight, Megaphone, Bot, LifeBuoy, HardDrive, Mail, Users2,
 } from 'lucide-react';
 import { AmbientField, ConsoleHeader, SegmentedTabs, Reveal } from '@/components/platform/console';
 import { getImpersonation } from '@/lib/http';
@@ -26,12 +26,13 @@ import {
   AiControlCentre, AnalyticsPanel, AuditCentre, FeatureManager, InvitationsPanel,
   NotificationCentre, SecurityCentre, StorageCentre, SupportCentre, CommandCenterPanel,
 } from './_shared/panels';
-import { FINANCE_DEEP_LINKS, normalizeTab } from './_shared/types';
-import type { FinanceSubTab, NavOpts, Tab } from './_shared/types';
+import { FINANCE_DEEP_LINKS, MODULES, TAB_LABELS, moduleForTab, normalizeTab } from './_shared/types';
+import type { FinanceSubTab, ModuleId, NavOpts, Tab } from './_shared/types';
 import { ActivityTab } from './_tabs/ActivityTab';
 import { FinanceTab } from './_tabs/FinanceTab';
 import { OverviewTab } from './_tabs/OverviewTab';
 import { StudiosTab } from './_tabs/StudiosTab';
+import { UsersTab } from './_tabs/UsersTab';
 import RegistrationsTab from './_tabs/RegistrationsTab';
 
 // The role gate moved up to (platform)/layout.tsx, which wraps this whole
@@ -84,23 +85,51 @@ function PlatformContent() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={15} /> },
-    { id: 'registrations', label: 'Registrations', icon: <UserPlus size={15} /> },
-    { id: 'studios', label: 'Studios', icon: <Building2 size={15} /> },
-    { id: 'invitations', label: 'Invitations', icon: <Mail size={15} /> },
-    { id: 'support', label: 'Support', icon: <LifeBuoy size={15} /> },
-    { id: 'analytics', label: 'Analytics', icon: <TrendingUp size={15} /> },
-    { id: 'finance', label: 'Finance', icon: <CreditCard size={15} /> },
-    { id: 'ai', label: 'AI', icon: <Bot size={15} /> },
-    { id: 'features', label: 'Features', icon: <ToggleRight size={15} /> },
-    { id: 'announcements', label: 'Announcements', icon: <Megaphone size={15} /> },
-    { id: 'activity', label: 'Activity', icon: <Activity size={15} /> },
-    { id: 'audit', label: 'Audit', icon: <ScrollText size={15} /> },
-    { id: 'security', label: 'Security', icon: <ShieldAlert size={15} /> },
-    { id: 'storage', label: 'Storage', icon: <HardDrive size={15} /> },
-    { id: 'health', label: 'Command Center', icon: <HeartPulse size={15} /> },
-  ];
+  // Icons live here rather than in _shared/types.ts so that file stays free of
+  // JSX and can be imported by tests without pulling React in.
+  const TAB_ICON: Record<Tab, React.ReactNode> = {
+    overview: <LayoutDashboard size={15} />,
+    studios: <Building2 size={15} />,
+    registrations: <UserPlus size={15} />,
+    invitations: <Mail size={15} />,
+    users: <Users2 size={15} />,
+    finance: <CreditCard size={15} />,
+    analytics: <TrendingUp size={15} />,
+    ai: <Bot size={15} />,
+    health: <HeartPulse size={15} />,
+    storage: <HardDrive size={15} />,
+    support: <LifeBuoy size={15} />,
+    security: <ShieldAlert size={15} />,
+    audit: <ScrollText size={15} />,
+    activity: <Activity size={15} />,
+    features: <ToggleRight size={15} />,
+    announcements: <Megaphone size={15} />,
+  };
+  const MODULE_ICON: Record<ModuleId, React.ReactNode> = {
+    overview: <LayoutDashboard size={15} />,
+    studios: <Building2 size={15} />,
+    users: <Users2 size={15} />,
+    revenue: <CreditCard size={15} />,
+    ai: <Bot size={15} />,
+    operations: <HeartPulse size={15} />,
+    security: <ShieldAlert size={15} />,
+    control: <ToggleRight size={15} />,
+  };
+
+  // The active module is DERIVED from the active tab, never stored. That is
+  // what keeps every existing ?tab= deep link working untouched: a link to
+  // ?tab=audit still selects the Audit tab, and the Security module lights up
+  // around it because it contains that tab. There is no second piece of state
+  // for the two to disagree about.
+  const activeModule = moduleForTab(tab);
+  const moduleTabs = MODULES.find((m) => m.id === activeModule)?.tabs ?? [];
+
+  const MODULE_ITEMS = MODULES.map((m) => ({
+    id: m.id, label: m.label, icon: MODULE_ICON[m.id],
+  }));
+  const SUB_ITEMS = moduleTabs.map((t) => ({
+    id: t, label: TAB_LABELS[t], icon: TAB_ICON[t],
+  }));
 
   const onNavigate = (t: Tab, opts?: NavOpts) => {
     if (opts?.financeSubTab) setFinanceSubTab(opts.financeSubTab);
@@ -138,10 +167,31 @@ function PlatformContent() {
         />
 
         <Reveal delay={0.06}>
-          <div className="mb-6">
-            <SegmentedTabs tabs={TABS} value={tab} onChange={setTab} />
+          <div className="mb-4">
+            <SegmentedTabs
+              tabs={MODULE_ITEMS}
+              value={activeModule}
+              // Selecting a module lands on its FIRST tab. Modules are ordered
+              // so that first tab is the one an operator opening the module
+              // wants — All Studios, not Registrations.
+              onChange={(id) => {
+                const next = MODULES.find((m) => m.id === id)?.tabs[0];
+                if (next) setTab(next);
+              }}
+            />
           </div>
         </Reveal>
+
+        {/* The sub-row appears only where there is a choice to make. A single
+            tab rendering a one-item row would be furniture that looks
+            interactive and is not. */}
+        {SUB_ITEMS.length > 1 && (
+          <Reveal delay={0.09}>
+            <div className="mb-6">
+              <SegmentedTabs tabs={SUB_ITEMS} value={tab} onChange={setTab} />
+            </div>
+          </Reveal>
+        )}
 
         {/* Keyed so switching tabs replays the stagger — it reads as the panel
             being assembled rather than content silently swapping underneath. */}
@@ -149,6 +199,7 @@ function PlatformContent() {
           {tab === 'overview' && <OverviewTab onNavigate={onNavigate} />}
           {tab === 'registrations' && <RegistrationsTab />}
           {tab === 'studios' && <StudiosTab />}
+          {tab === 'users' && <UsersTab />}
           {tab === 'analytics' && <AnalyticsPanel />}
           {tab === 'finance' && <FinanceTab subTab={financeSubTab} onSubTabChange={setFinanceSubTab} />}
           {tab === 'support' && <SupportCentre />}

@@ -1769,6 +1769,45 @@ export type OrgUser = {
 };
 export type OrganizationDetail = Organization & { users: OrgUser[] };
 
+/**
+ * A row in the platform user directory (GET /api/platform/users).
+ *
+ * Wider than OrgUser because the directory answers questions a per-studio user
+ * list never had to: which studio is this, does the account still exist, does it
+ * hold platform access, and is anybody signed in as it right now.
+ *
+ * `has_platform_grant` is the live platform_owners grant, NOT `role ===
+ * 'super_admin'`. The two can disagree — a role with no grant cannot reach the
+ * console — and the directory reports the one that decides access.
+ */
+export type PlatformUser = OrgUser & {
+  deleted_at: string | null;
+  organization_name: string | null;
+  organization_status: string | null;
+  has_platform_grant: boolean;
+  mfa_enabled: boolean;
+  active_sessions: number;
+};
+
+/** Header counts for the directory (GET /api/platform/users/summary). */
+export type PlatformUserSummary = {
+  total: number; active: number; inactive: number; deleted: number;
+  owners: number; trainers: number; members: number; platform: number;
+  never_signed_in: number; dormant_90d: number;
+};
+
+/** Filters the directory accepts. Every one is optional and they compose. */
+export type PlatformUserQuery = {
+  q?: string;
+  /** A studio role, or 'platform' for the operators. */
+  role?: string;
+  status?: 'active' | 'inactive' | 'deleted';
+  /** Organization id — the only way to scope the directory to one studio. */
+  org?: string;
+  limit?: number;
+  offset?: number;
+};
+
 export type StudioOverview = {
   id: string; name: string; slug: string;
   status: 'active' | 'suspended'; logo_url?: string | null; created_at: string;

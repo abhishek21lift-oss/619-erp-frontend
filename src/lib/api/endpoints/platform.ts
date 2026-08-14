@@ -15,6 +15,7 @@ import type {
   MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement,
   InvitationPreview, InvoiceQuery, InvoiceTotals, LoginEvent, LoginEventQuery,
   OrgBillingProfile, OrgInternalNotes, OrgUser, Organization, OrganizationDetail,
+  PlatformUser, PlatformUserQuery, PlatformUserSummary,
   PlanChangeQuote, PlatformAnalytics, PlatformBillingSettings, PlatformFeature,
   PlatformOverview, PlatformPaymentSettings, PlatformPaymentSettingsInput, ResolvedFeature,
   SecurityOverview, SecurityThreats, StorageObject, StorageOverview, StorageStudio,
@@ -77,6 +78,26 @@ export const superAdmin = {
       `/api/platform/registrations/${id}/reject`,
       { method: 'POST', body: JSON.stringify({ note: note ?? '' }) },
     ),
+  /**
+   * The platform user directory — every account, across every studio.
+   *
+   * Filters are sent only when set, so an empty query is the whole platform
+   * rather than a request full of blanks. The server caps `limit` at 200
+   * regardless of what is asked for, and returns the UNPAGED total alongside
+   * the page so the header count does not require fetching everything.
+   */
+  listUsers: (query: PlatformUserQuery = {}) => {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(query)) {
+      if (v !== undefined && v !== null && v !== '') qs.set(k, String(v));
+    }
+    const suffix = qs.toString() ? `?${qs}` : '';
+    return http<{ data: PlatformUser[]; total: number; limit: number; offset: number }>(
+      `/api/platform/users${suffix}`,
+    );
+  },
+  userSummary: () =>
+    http<{ data: PlatformUserSummary }>('/api/platform/users/summary'),
   listOrgs: () =>
     http<{ data: Organization[] }>('/api/platform/organizations'),
   getOrg: (id: string) =>
