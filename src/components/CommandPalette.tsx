@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSearchFieldFocus } from '@/lib/search-field-focus';
 import { useAuth } from '@/lib/auth-context';
 import { allNavItems, isVisibleForRole, isVisibleForFeature, QUICK_ACTIONS, NAV_GROUPS } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
@@ -72,9 +73,16 @@ export default function CommandPalette() {
       setQ('');
       setActiveIdx(0);
       setMemberResults([]);
-      setTimeout(() => inputRef.current?.focus(), 30);
     }
   }, [open]);
+
+  // The focus used to be `setTimeout(() => inputRef.current?.focus(), 30)`
+  // here. A timeout is always a new task, so on a phone the palette opened
+  // with the caret in the search box and no keyboard under it — the one
+  // control in the app that is useless without one. A layout effect runs
+  // during commit, inside the tap or keypress that opened the palette, which
+  // is what WebKit requires. See lib/search-field-focus.ts.
+  useSearchFieldFocus(open, inputRef);
 
   // ── Fetch members (debounced, with abort) ──
   useEffect(() => {

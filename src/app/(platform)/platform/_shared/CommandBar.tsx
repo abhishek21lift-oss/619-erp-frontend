@@ -10,6 +10,7 @@ import {
   HeartPulse, HardDrive,
 } from 'lucide-react';
 import StudioMark from '@/components/StudioMark';
+import { useSearchFieldFocus } from '@/lib/search-field-focus';
 import { Badge } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { StudioOverview, Coupon } from '@/lib/api';
@@ -46,9 +47,14 @@ export function CommandBar({ open, onClose, onNavigate }: { open: boolean; onClo
       api.superAdmin.overview().then((r) => setStudios(r.data.studios ?? [])).catch(() => {});
       api.superAdmin.listCoupons().then((r) => setCoupons(r.data ?? [])).catch(() => {});
     }
-    const t = setTimeout(() => inputRef.current?.focus(), 30);
-    return () => clearTimeout(t);
   }, [open]);
+
+  // Was `setTimeout(() => inputRef.current?.focus(), 30)` inside the effect
+  // above. A timeout is a new task, and WebKit only raises the on-screen
+  // keyboard for a focus made while it is still processing the gesture — so
+  // on a phone the palette opened with the caret placed and no keyboard.
+  // See lib/search-field-focus.ts.
+  useSearchFieldFocus(open, inputRef);
 
   const q = query.trim().toLowerCase();
   const navResults = q ? NAV_TARGETS.filter((n) => n.label.toLowerCase().includes(q)) : NAV_TARGETS;

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Dumbbell, X, Clock, Star, Loader2, CornerDownLeft, Check, PlusCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useSearchFieldFocus } from '@/lib/search-field-focus';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { cn } from '@/components/ui/cn';
@@ -61,6 +62,10 @@ export function ExercisePicker({
 }: ExercisePickerProps) {
   const { toast } = useToast();
   const searchRef = useRef<HTMLInputElement>(null);
+  // `autoFocus` put the caret here and left the phone keyboard down —
+  // WebKit wants the focus call inside the tap that opened the dialog, and
+  // a layout effect is the closest a child of a parent-owned `open` can get.
+  useSearchFieldFocus(open, searchRef);
 
   const [search, setSearch] = useState('');
   const [region, setRegion] = useState('');
@@ -202,7 +207,7 @@ export function ExercisePicker({
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
           <input
             ref={searchRef}
-            type="text" autoFocus value={search}
+            type="text" value={search}
             placeholder={allowCustom ? 'Search, or type a custom name…' : 'Search exercises…'}
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Search exercises"
