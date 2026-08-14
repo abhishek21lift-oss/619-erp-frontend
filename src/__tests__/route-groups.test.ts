@@ -111,9 +111,22 @@ describe('the route groups', () => {
 describe('the shell is mounted once', () => {
   const layout = readFileSync(join(APP_DIR, '(chrome)', 'layout.tsx'), 'utf8');
 
-  it('comes from the (chrome) layout, inside a Guard', () => {
+  it('comes from the (chrome) layout, through ChromeGate', () => {
+    // The layout used to write `<Guard><AppShell>{children}</AppShell></Guard>`
+    // inline and this test matched that string. It now delegates to
+    // ChromeGate, which renders the same two components in the same order for
+    // every route but one: `/` with no session is the public landing page, and
+    // wrapping THAT in Guard is what made the marketing site redirect to
+    // /login.
+    //
+    // What each half is actually worth: this assertion pins the wiring — that
+    // the layout has not gone back to gating every route itself. Whether the
+    // gate admits the right people is a rendered question, and
+    // landing-page-gate.test.tsx answers it by rendering ChromeGate under both
+    // session states. A regex here could not tell the two apart.
     expect(existsSync(join(APP_DIR, '(chrome)', 'layout.tsx'))).toBe(true);
-    expect(code(layout)).toMatch(/<Guard>\s*<AppShell>\{children\}<\/AppShell>\s*<\/Guard>/);
+    expect(code(layout)).toMatch(/<ChromeGate>\{children\}<\/ChromeGate>/);
+    expect(code(layout)).not.toMatch(/<AppShell>/);
   });
 
   it('is not re-mounted by any page under (chrome)', () => {
@@ -125,11 +138,16 @@ describe('the shell is mounted once', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('is mounted by exactly two things outside that layout', () => {
+  it('is mounted by exactly three things, and one of them is the gate', () => {
+    // ChromeGate, which IS the (chrome) layout's shell — the layout delegates
+    // to it so `/` can opt out for a visitor with no session;
     // RouteError, because src/app/error.tsx sits ABOVE the (chrome) layout and
     // has to rebuild the chrome itself; and /subscription, which renders a
     // standalone lockout for a frozen studio and so cannot inherit a shell it
     // is unable to opt out of.
+    //
+    // The point of the list is unchanged: a fourth entry means somebody has
+    // started mounting the application inside itself again.
     const seen = new Set<string>();
     const walk = (dir: string) => {
       for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -144,7 +162,7 @@ describe('the shell is mounted once', () => {
     walk(join(process.cwd(), 'src'));
     expect([...seen].sort()).toEqual([
       'src/app/(bare)/subscription/page.tsx',
-      'src/app/(chrome)/layout.tsx',
+      'src/components/ChromeGate.tsx',
       'src/components/RouteError.tsx',
     ]);
   });
