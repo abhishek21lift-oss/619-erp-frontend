@@ -5,6 +5,7 @@ import { Search, CornerDownLeft, Loader2, Star, Clock } from 'lucide-react';
 import { Badge, cn } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { LibraryExercise } from '@/lib/api';
+import { useSearchFieldFocus } from '@/lib/search-field-focus';
 
 /**
  * ⌘K over the whole library.
@@ -32,9 +33,14 @@ export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseComm
   const listRef  = React.useRef<HTMLUListElement>(null);
   const reqId    = React.useRef(0);
 
+  // The focus was a bare `inputRef.current?.focus()` in the passive effect
+  // below. Passive effects are scheduled rather than run inline, so on a phone
+  // the caret landed and the keyboard did not. A layout effect stays inside
+  // the gesture. See lib/search-field-focus.ts.
+  useSearchFieldFocus(open, inputRef);
+
   React.useEffect(() => {
     if (!open) { setQ(''); setResults([]); setActive(0); return; }
-    inputRef.current?.focus();
     api.exercises.recent(8).then((r) => setRecents(r.exercises)).catch(() => setRecents([]));
   }, [open]);
 

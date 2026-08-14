@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import { Check, ChevronDown, Plus } from 'lucide-react';
 import { cn } from '@/components/ui/cn';
+import { openWithKeyboard } from '@/lib/search-field-focus';
 
 export interface SearchableSelectOption {
   value: string;
@@ -42,17 +43,31 @@ export function SearchableSelect({
   const [dropUp, setDropUp] = useState(false);
   const [query, setQuery] = useState('');
   const wrapRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   // Open upward when the field sits low in the viewport: the fixed page
   // action bar + mobile bottom nav reserve the bottom ~160px, and a menu
   // opening downward there ends up painted behind them, untappable.
   const toggleOpen = () => {
-    if (!open && wrapRef.current) {
+    if (open) { setOpen(false); return; }
+
+    if (wrapRef.current) {
       const rect = wrapRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom - 160;
       setDropUp(spaceBelow < 320 && rect.top > spaceBelow);
     }
-    setOpen((o) => !o);
+
+    // The search box used to carry `autoFocus`, which put the caret in the
+    // right place and left the on-screen keyboard down: WebKit only raises it
+    // for a focus call made while the browser is still processing the tap, and
+    // React's autoFocus is inside that window only for as long as the update
+    // stays synchronous. So the operator tapped the field, got a dropdown they
+    // could not type into, and had to tap the search box as well.
+    //
+    // openWithKeyboard renders the panel with flushSync and focuses the input
+    // before this handler returns — same task, same gesture. See
+    // lib/search-field-focus.ts.
+    openWithKeyboard(() => setOpen(true), () => searchRef.current);
   };
 
   useEffect(() => {
@@ -106,8 +121,11 @@ export function SearchableSelect({
             style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(15,23,42,0.09)', boxShadow: dropUp ? '0 -12px 32px rgba(15,23,42,0.12)' : '0 12px 32px rgba(15,23,42,0.12)' }}
           >
             <div className="border-b p-2" style={{ borderColor: 'rgba(15,23,42,0.06)' }}>
+              {/* No `autoFocus`. toggleOpen focuses this ref inside the tap
+                  that opened the panel, which is the only way WebKit will
+                  raise the keyboard — see lib/search-field-focus.ts. */}
               <input aria-label={`Search ${label}`}
-                autoFocus
+                ref={searchRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search..."

@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { api, SearchItem, SearchResponse } from '@/lib/api';
 import { cn } from '@/components/ui/cn';
+import { useSearchFieldFocus } from '@/lib/search-field-focus';
 import { avatarGradient, initialsAvatar } from '@/lib/avatar';
 import {
   ViewedRecord, clearRecentQueries, clearRecentlyViewed, getRecentQueries,
@@ -619,9 +620,17 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
     if (!sheetOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    sheetInputRef.current?.focus();
     return () => { document.body.style.overflow = prev; };
   }, [sheetOpen]);
+
+  // The focus used to sit in the effect above, next to the scroll lock. It is
+  // separate now because the two want different effect types: the scroll lock
+  // needs a passive effect with a cleanup, while the focus has to run during
+  // commit — inside the tap that opened the sheet — or WebKit places the caret
+  // and leaves the keyboard down. This is the mobile search entry point, so it
+  // was the worst place in the app to lose a keyboard.
+  // See lib/search-field-focus.ts.
+  useSearchFieldFocus(sheetOpen, sheetInputRef);
 
   // Keep the highlighted row in view during keyboard navigation.
   React.useEffect(() => {
