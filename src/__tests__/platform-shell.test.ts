@@ -116,3 +116,23 @@ describe('navigation', () => {
     expect(page).toMatch(/router\.push\(/);
   });
 });
+
+describe('a chart with one data point is still a chart', () => {
+  // A new platform has one month of revenue. Each bar is flex-1, so a single
+  // point took the full width — and its height is value/max, which for one
+  // point is always 100%. The plot area rendered as a solid filled rectangle:
+  // it read as broken rather than as "one month of data so far".
+  const charts = readFileSync(
+    join(process.cwd(), 'src', 'components', 'platform', 'charts.tsx'), 'utf8',
+  );
+
+  it('caps how wide a single bar can stretch', () => {
+    expect(charts).toMatch(/maxWidth: 40/);
+  });
+
+  it('still lets a bar shrink for a full series', () => {
+    // The cap must not become a floor: twelve bars in this container are
+    // ~25px, well under it, so a full year is unchanged.
+    expect(charts).toMatch(/minWidth: 4, maxWidth: 40/);
+  });
+});
