@@ -36,7 +36,45 @@
 // Guard sits here rather than in the pages for the same reason it does in
 // (chrome)/layout.tsx: the shell must not paint before the session is known.
 
+import type { Metadata } from 'next';
 import Guard from '@/components/Guard';
+
+// ── The console is its own installable app ──────────────────────────────────
+//
+// Installing /platform to a home screen used to produce an icon that opened
+// the STUDIO app. iOS and Android ignore the page you installed from and honour
+// the manifest's `start_url`, and the only manifest on the origin declared
+// `"start_url": "/"`. So the operator installed the console and got the
+// customer's product — the home-screen version of the mixing this whole
+// separation exists to end.
+//
+// Next merges a nested segment's metadata over its parent's, so declaring
+// `manifest` here overrides the root layout's for every page under (platform)
+// and changes nothing anywhere else.
+//
+// ── Two choices inside platform-manifest.json worth stating ─────────────────
+//
+// `scope` is "/" rather than "/platform", which looks wrong and is deliberate.
+// Scope decides which URLs stay inside the installed app; anything outside it
+// opens in the browser instead. The operator legitimately navigates OUT of the
+// console — impersonating a studio, or pinning the org-switcher — and a
+// /platform scope would eject them into Safari halfway through supporting a
+// customer. Once the console has its own hostname the question disappears,
+// because the origin is the boundary.
+//
+// `id` is set on this manifest and deliberately NOT added to the studio's.
+// It is what keeps the two installs distinct, but adding an `id` to a manifest
+// whose app is ALREADY installed can orphan that install — so the new one
+// declares its identity and the existing one is left exactly as it is.
+//
+// Both manifests currently point at the same icons. A distinct mark for the
+// console would be better — two identical icons on one home screen is a poor
+// joke — but that is artwork, not code, and the labels differ ("Command
+// Center" vs "MY PT STUDIO") so they are at least tellable apart.
+export const metadata: Metadata = {
+  manifest: '/platform-manifest.json',
+  title: 'Command Center',
+};
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   return (
