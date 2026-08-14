@@ -46,7 +46,7 @@ describe('the accessible-name audit itself', () => {
 
 describe('the label wrappers wrap', () => {
   const wrappers: [string, string[]][] = [
-    ['app/(chrome)/platform/_shared/ui.tsx', ['export function Field']],
+    ['app/(platform)/platform/_shared/ui.tsx', ['export function Field']],
     ['app/(chrome)/ai/diet-generator/page.tsx', ['function Field']],
     ['app/(chrome)/ai/workout-generator/page.tsx', ['function Field']],
     ['components/fitness/AiCoachPanel.tsx', ['function Field']],

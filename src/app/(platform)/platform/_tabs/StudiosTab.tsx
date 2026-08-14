@@ -18,7 +18,7 @@ import type {
   Organization, OrganizationDetail, OrgUser, StudioOverview, SubStudio, OrgBillingProfile,
   ResolvedFeature,
 } from '@/lib/api';
-import { setImpersonation } from '@/lib/http';
+import { encodeImpersonationHandoff, setImpersonation, type StoredImpersonation } from '@/lib/http';
 import { clearCachedAuthUser } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
 import { roleLabel } from '@/lib/roles';
@@ -430,15 +430,36 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
     try {
       const r = await api.superAdmin.impersonate(org.id, { userId, mode });
       const d = r.data;
-      setImpersonation({
+      const imp: StoredImpersonation = {
         token: d.token, readonly: d.readonly,
         adminId: d.admin.id, adminName: d.admin.name,
         orgId: d.organization.id, orgName: d.organization.name, orgLogo: d.organization.logo_url,
-      });
-      // Drop the cached super-admin identity so the reload re-resolves as the
+        // Where the banner's Exit button goes. The console knows its own
+        // address; the studio app must not have to.
+        returnTo: `${window.location.origin}/platform`,
+      };
+
+      // Drop the cached super-admin identity so the studio app resolves as the
       // studio admin (studio nav + studio home), not the platform UI.
       clearCachedAuthUser();
-      window.location.href = '/';
+
+      // ── Which origin serves the studio app ────────────────────────────────
+      //
+      // Same origin unless the Command Center has been split onto its own
+      // hostname, in which case '/' here is a 404 — the console's host serves
+      // the console and nothing else (see the frontend's src/proxy.ts).
+      //
+      // sessionStorage does not cross an origin either, so a split deployment
+      // has to hand the token over in the URL fragment. A fragment never
+      // reaches a server, which is the only reason it is an acceptable place
+      // to put a live access token for one navigation.
+      const studioOrigin = (process.env.NEXT_PUBLIC_APP_ORIGIN || '').replace(/\/$/, '');
+      if (studioOrigin && studioOrigin !== window.location.origin) {
+        window.location.href = `${studioOrigin}/#imp=${encodeImpersonationHandoff(imp)}`;
+      } else {
+        setImpersonation(imp);
+        window.location.href = '/';
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not start impersonation');
       setImpLoading('');

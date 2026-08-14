@@ -16,8 +16,16 @@ import { join } from 'node:path';
 
 export const APP_DIR = join(process.cwd(), 'src', 'app');
 
-/** The route groups, in the order a lookup tries them. */
-export const ROUTE_GROUPS = ['(chrome)', '(bare)'] as const;
+/**
+ * The route groups, in the order a lookup tries them.
+ *
+ * `(platform)` is the Command Center — the platform control plane, which was
+ * carved out of `(chrome)` when the owner's console stopped being a page of
+ * the studio app. Listed here so tests that read a console page's source keep
+ * finding it without knowing which group it sits in, exactly as the comment
+ * above intends.
+ */
+export const ROUTE_GROUPS = ['(chrome)', '(bare)', '(platform)'] as const;
 
 /**
  * Absolute path to a file under src/app, given its path WITHOUT the route

@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { getImpersonation } from '@/lib/http';
 import Guard from '@/components/Guard';
 import PtOsDashboard from '@/components/dashboards/PtOsDashboard';
 import LandingPage from '@/components/LandingPage';
@@ -22,13 +21,23 @@ export default function Root() {
   const router = useRouter();
   const [timedOut, setTimedOut] = useState(false);
 
-  // Platform operators (super_admin) get the command centre as their home, not a
-  // studio dashboard — UNLESS they're impersonating a studio, in which case they
-  // are acting as that studio's admin and belong on the studio home.
-  const impersonating = typeof window !== 'undefined' && !!getImpersonation();
-  useEffect(() => {
-    if (!loading && user?.role === 'super_admin' && !impersonating) router.replace('/platform');
-  }, [loading, user, impersonating, router]);
+  // This used to bounce every super_admin off the studio dashboard to
+  // /platform. It is gone, for two reasons that arrived together.
+  //
+  // It BREAKS once the Command Center has its own hostname: /platform is not
+  // served on the studio's domain any more (see src/proxy.ts), so the redirect
+  // sends the operator from a page that works to a 404.
+  //
+  // And it was already fighting a real workflow. An operator reaches this
+  // dashboard deliberately — with the org-switcher pinned to one tenant, to
+  // see what that studio sees — and an unconditional redirect made the studio
+  // home the one studio page they could not open.
+  //
+  // Nothing is lost by removing it. Signing in at the Command Center's door
+  // lands on the console (SignInScreen routes by portal), and Guard still
+  // refuses every studio account at /platform. What the operator no longer has
+  // is a redirect deciding, on their behalf, which of the two products they
+  // meant to open.
 
   // 10-second safety net: if auth never resolves, bail out with an error screen
   // instead of spinning forever.
@@ -118,13 +127,10 @@ export default function Root() {
     return <LandingPage />;
   }
 
-  // super_admin (not impersonating) is being redirected to /platform (effect
-  // above) — render nothing rather than flashing the studio dashboard. While
-  // impersonating, fall through and render the studio home as that admin.
-  if (user.role === 'super_admin' && !impersonating) {
-    return <div style={{ minHeight: '100dvh', background: 'var(--bg-canvas)' }} />;
-  }
-
+  // The blank frame that paired with the redirect removed above is gone too.
+  // With nothing redirecting, holding the page empty for a super_admin would
+  // just be a permanently blank dashboard — so the operator gets the studio
+  // home, scoped by the API to whichever tenant they have pinned.
   return (
     <Guard>
       <PtOsDashboard />

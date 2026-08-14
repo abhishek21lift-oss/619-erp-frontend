@@ -1,8 +1,14 @@
 'use client';
 
-// Platform Super Admin command centre (multi-tenant SaaS). Hidden, role='super_admin'
-// only — tenant admins cannot reach it (enforced server-side by requireSuperAdmin +
-// requireSuperAdminMfa, and client-side by Guard role="super_admin"). Three tabs:
+// The Command Center — the platform control plane.
+//
+// Its own portal, not a page of the studio app: served on its own host, signed
+// in at its own door (/platform-login), wrapped in its own shell
+// ((platform)/layout.tsx, which carries the role gate), and talking to
+// /api/platform — which the backend gates on an explicit platform_owners grant
+// and a platform session audience, not merely on role='super_admin'.
+//
+// Tabs:
 //   Overview — cross-studio KPIs (revenue, clients, sessions, last activity)
 //   Studios  — manage tenants and their login accounts (edit / add / remove / reset /
 //              suspend / impersonate)
@@ -13,7 +19,6 @@ import {
   Building2, UserPlus, Loader2, ShieldAlert, LayoutDashboard, Activity, CreditCard, Search, TrendingUp,
   ScrollText, HeartPulse, ToggleRight, Megaphone, Bot, LifeBuoy, HardDrive, Mail,
 } from 'lucide-react';
-import Guard from '@/components/Guard';
 import { AmbientField, ConsoleHeader, SegmentedTabs, Reveal } from '@/components/platform/console';
 import { getImpersonation } from '@/lib/http';
 import { CommandBar } from './_shared/CommandBar';
@@ -29,13 +34,15 @@ import { OverviewTab } from './_tabs/OverviewTab';
 import { StudiosTab } from './_tabs/StudiosTab';
 import RegistrationsTab from './_tabs/RegistrationsTab';
 
+// The role gate moved up to (platform)/layout.tsx, which wraps this whole
+// route group — the console is not one super-admin page inside the studio app
+// any more, it is its own portal, and the gate belongs at its edge rather than
+// repeated on each page added to it.
 export default function PlatformAdminPage() {
   return (
-    <Guard role="super_admin">
-      <Suspense fallback={<div className="flex justify-center py-24"><Loader2 size={26} className="animate-spin" style={{ color: '#0067e0' }} /></div>}>
-        <PlatformContent />
-      </Suspense>
-    </Guard>
+    <Suspense fallback={<div className="flex justify-center py-24"><Loader2 size={26} className="animate-spin" style={{ color: '#0067e0' }} /></div>}>
+      <PlatformContent />
+    </Suspense>
   );
 }
 

@@ -58,6 +58,7 @@ const BARE = [
   'member/classes',              // the member portal has its own shell
   'member/dashboard',
   'member/payments',
+  'platform-login',              // the Command Center's door — no session yet
   'pt-os',                       // redirect to /pt-os/clients
   'pt-os/pdf-viewer',            // full-screen viewer
   'reset-password',
@@ -86,9 +87,23 @@ describe('the route groups', () => {
     expect(routesIn('(chrome)')).toContain('appointments');
   });
 
+  it('puts the Command Center under (platform), and nothing else', () => {
+    // The console is its own portal, not a page of the studio app. Keeping it
+    // alone in this group is what guarantees it cannot pick the studio's shell
+    // back up by being moved one folder — which is how it got mixed in to
+    // begin with.
+    expect(routesIn('(platform)')).toEqual(['platform']);
+  });
+
   it('serves each route from exactly one group', () => {
-    const chrome = new Set(routesIn('(chrome)'));
-    const clash = routesIn('(bare)').filter((r) => chrome.has(r));
+    const all = ROUTE_GROUPS.flatMap((g) => routesIn(g).map((r) => `${g}:${r}`));
+    const seen = new Map<string, string[]>();
+    for (const entry of all) {
+      const [group, ...rest] = entry.split(':');
+      const route = rest.join(':');
+      seen.set(route, [...(seen.get(route) ?? []), group]);
+    }
+    const clash = [...seen.entries()].filter(([, groups]) => groups.length > 1);
     expect(clash).toEqual([]);
   });
 });

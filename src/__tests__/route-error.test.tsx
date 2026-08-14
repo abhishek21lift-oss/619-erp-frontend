@@ -182,10 +182,21 @@ describe('every route segment has a boundary', () => {
     // The client-facing half of the sign-in split. Public for the same reason
     // 'login' is: nobody reaching it has a session yet.
     'member-login',
+    // The Command Center's own door. Public for the same reason the other two
+    // are: nobody standing at it has a session yet.
+    'platform-login',
     'reset-password', 'start-free',
   ]);
+  // A fallback rebuilds the shell only when NOTHING above it has one.
+  //
+  // That is true under (bare) alone. Both other groups bring their own layout:
+  // (chrome) mounts Guard + AppShell, and (platform) mounts the Command
+  // Center's own wrapper. Passing shell there would nest the STUDIO's sidebar,
+  // top bar and bottom nav inside the console — the exact mixing the console
+  // was pulled out of (chrome) to end, reappearing only on the error path,
+  // where nobody would think to look for it.
   const wantsShell = ({ group, name }: { group: string; name: string }) =>
-    group !== '(chrome)' && !PUBLIC.has(name);
+    group === '(bare)' && !PUBLIC.has(name);
 
   const errorFile = ({ dir }: { dir: string }) => path.join(dir, 'error.tsx');
 

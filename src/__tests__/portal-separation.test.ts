@@ -109,13 +109,15 @@ describe('a sign-in page will not walk into the other portal', () => {
   });
 
   it('classifies every role into exactly one portal', () => {
-    // The server's users_role_check permits exactly these. `member` is the
-    // only client role; everything else is studio staff, so a new staff role
+    // The server's users_role_check permits exactly these. There are three
+    // portals now: `member` is the only client role, `super_admin` is the only
+    // platform one, and everything else is studio staff — so a new staff role
     // added tomorrow lands on the staff side by default rather than being
-    // silently treated as a client.
-    for (const role of ['super_admin', 'admin', 'manager', 'trainer', 'reception', 'receptionist', 'staff']) {
+    // silently treated as a client or, far worse, as the platform operator.
+    for (const role of ['admin', 'manager', 'trainer', 'reception', 'receptionist', 'staff']) {
       expect(portalForRole(role), role).toBe('staff');
     }
+    expect(portalForRole('super_admin')).toBe('platform');
     expect(portalForRole('member')).toBe('member');
     expect(portalForRole(null)).toBe('staff');
     expect(portalForRole(undefined)).toBe('staff');

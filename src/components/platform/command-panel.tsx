@@ -31,7 +31,7 @@ import { api } from '@/lib/api';
 import { ApiError } from '@/lib/http';
 import { semantic, rgba } from '@/lib/palette';
 import type { CommandCenterCommand } from '@/lib/api';
-import { Center, ErrorState } from '@/app/(chrome)/platform/_shared/ui';
+import { Center, ErrorState } from '@/app/(platform)/platform/_shared/ui';
 
 /** What came back from the last press, per command. */
 type Outcome =

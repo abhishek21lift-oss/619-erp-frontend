@@ -55,8 +55,34 @@ describe('a client sees only their own surfaces', () => {
 });
 
 describe('the other roles are unchanged', () => {
-  it('still gives a platform operator only the control plane', () => {
-    expect(visibleTo('super_admin')).toEqual(['platform']);
+  it('has no control-plane group left in the studio nav at all', () => {
+    // This used to assert `visibleTo('super_admin') === ['platform']` — one
+    // sidebar rendering either the studio's navigation or the platform's,
+    // chosen from a role string at render time.
+    //
+    // The Command Center is its own portal now: its own route group, its own
+    // shell, its own sign-in door, its own hostname. So the assertion is no
+    // longer "the operator sees the platform group instead" but the stronger
+    // "there is no platform group here for anyone to see".
+    expect(NAV_GROUPS.map((g) => g.id)).not.toContain('platform');
+    for (const role of ['super_admin', 'admin', 'trainer', 'member']) {
+      expect(visibleTo(role)).not.toContain('platform');
+    }
+  });
+
+  it('gives an operator inside the studio app the studio nav', () => {
+    // The operator reaches these pages by impersonating a studio or pinning
+    // the org-switcher to one, and a studio is what they are looking at — so
+    // the studio's own navigation is the correct thing to render. The rule
+    // that used to send them to the control plane would now match nothing and
+    // leave them with an empty sidebar on exactly the screens they open when a
+    // customer reports a problem.
+    //
+    // Nothing here decides what they may DO: the API scopes every request to
+    // the org they have pinned, whatever the sidebar shows.
+    const operator = visibleTo('super_admin');
+    expect(operator.length).toBeGreaterThan(5);
+    expect(operator).toEqual(visibleTo('admin'));
   });
 
   it('still gives a studio admin the studio nav and not the control plane', () => {
@@ -67,11 +93,10 @@ describe('the other roles are unchanged', () => {
 
   it('still shows an untagged group to staff', () => {
     // The default this change did NOT touch. A group with no `roles` is for
-    // every staff role, and only the two explicitly-scoped roles opt out.
+    // every staff role; `member` is the one role that opts out.
     const untagged = NAV_GROUPS.find((g) => !g.roles?.length);
     expect(untagged).toBeTruthy();
     expect(isGroupVisibleForRole(untagged!, 'trainer')).toBe(true);
     expect(isGroupVisibleForRole(untagged!, 'member')).toBe(false);
-    expect(isGroupVisibleForRole(untagged!, 'super_admin')).toBe(false);
   });
 });

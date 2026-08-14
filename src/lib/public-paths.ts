@@ -36,7 +36,7 @@
  * session expired SHOULD be sent to sign in again.
  */
 
-import { isMemberAppPage } from './portals';
+import { isMemberAppPage, isPlatformAppPage } from './portals';
 
 /** Exact pathnames reachable with no session. */
 export const SESSIONLESS_PAGES = [
@@ -45,6 +45,11 @@ export const SESSIONLESS_PAGES = [
   // The client-facing sign-in. Same screen as /login with a different portal,
   // and just as public — a member arriving here has no session by definition.
   '/member-login',
+  // The Command Center's door. Public in the sense that matters here — the
+  // operator arriving at it has no session by definition — but it is the only
+  // page on the platform host that is, and on the studio host the edge proxy
+  // refuses it outright (see proxy.ts).
+  '/platform-login',
   '/forgot-password',
   // Token links. A redirect away from any of these takes the ?token= with it
   // — redirectToLogin preserves only the pathname — so the credential is gone
@@ -74,7 +79,14 @@ export function isSessionlessPage(pathname: string): boolean {
  * slash rather than as a prefix, because '/member-login'.startsWith('/member')
  * is true and would otherwise fold the sign-in page into the app it guards.
  */
-export function signInPathFor(pathname: string): '/login' | '/member-login' {
+export function signInPathFor(pathname: string): '/login' | '/member-login' | '/platform-login' {
   if (pathname === '/member-login') return '/member-login';
+  if (pathname === '/platform-login') return '/platform-login';
+  // The Command Center before the member app: both are exact-matched against
+  // their own app segment, so the order is not load-bearing, but a session
+  // that lapsed inside the console must come back to the console's own door —
+  // sending the operator to /login would hand them a studio session, which the
+  // control plane now refuses.
+  if (isPlatformAppPage(pathname)) return '/platform-login';
   return isMemberAppPage(pathname) ? '/member-login' : '/login';
 }
