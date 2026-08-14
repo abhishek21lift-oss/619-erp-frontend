@@ -57,6 +57,13 @@ const PUBLIC_PREFIXES: string[] = [
   // icon. It only describes the app's name, icons and start URL; nothing here
   // is private.
   '/manifest.json',
+  // The Command Center's manifest, public for exactly the same reason and
+  // discovered the same way: without it the browser's request for it 307s to
+  // /login, the manifest never parses, and "Add to Home Screen" silently falls
+  // back to the page's own URL and title. It describes the console's name,
+  // icons and start URL — nothing here is private, and anyone who can see the
+  // link tag in the HTML already knows the console exists.
+  '/platform-manifest.json',
   // The matcher below exempts image and font extensions but NOT .js, so
   // without this the pre-paint theme script 307s to /login for anyone signed
   // out — meaning the login page itself flashes the wrong theme. It only reads
@@ -77,6 +84,18 @@ const PUBLIC_PREFIXES: string[] = [
   '/icons',
   '/images',
 ];
+
+/**
+ * Reachable with no session.
+ *
+ * Exported as `isPublicProxyPath` for tests: the list mixes pages with assets,
+ * and an asset silently missing from it does not fail loudly — it 307s to
+ * /login, which for a manifest or a theme script looks like the feature simply
+ * not working rather than like an auth redirect.
+ */
+export function isPublicProxyPath(pathname: string): boolean {
+  return isPublicPath(pathname);
+}
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PREFIXES.some(
@@ -208,6 +227,13 @@ const HOST_NEUTRAL_PREFIXES = [
   '/images',
   '/favicon.ico',
   '/manifest.json',
+  // Host-neutral rather than Command-Center-only, which is the counter-intuitive
+  // half. isCommandCenterPath matches /platform, /platform/… and
+  // /platform-login — it does NOT match this file, so without an exemption the
+  // host rule would 404 the console's own manifest ON the console's host. The
+  // symptom would be an installable app that installs as the wrong app, which
+  // is precisely the bug this manifest exists to fix.
+  '/platform-manifest.json',
   '/theme-init.js',
   '/no-zoom.js',
   '/logo.png',

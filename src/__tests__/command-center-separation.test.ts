@@ -25,7 +25,9 @@ import {
   isPlatformAppPage, isMemberAppPage, type Portal,
 } from '@/lib/portals';
 import { signInPathFor } from '@/lib/public-paths';
-import { isCommandCenterPath, isHostNeutralPath } from '@/proxy';
+import { isCommandCenterPath, isHostNeutralPath, isPublicProxyPath } from '@/proxy';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const STUDIO_ROLES = ['admin', 'manager', 'trainer', 'reception', 'receptionist', 'staff'];
 
@@ -297,5 +299,67 @@ describe('where signing in lands you', () => {
       expect([role, dest, mayEnterPortal(userPortal, portalForPage(dest))])
         .toEqual([role, dest, true]);
     }
+  });
+});
+
+describe('the two installable apps', () => {
+  // Installing /platform to a home screen produced an icon that opened the
+  // STUDIO app. Browsers ignore the page you installed from and honour the
+  // manifest's start_url, and the only manifest on the origin said "/".
+  //
+  // These parse the real files rather than asserting on the layouts' source,
+  // for the same reason the sign-in tests post real requests: a source match
+  // cannot tell a declared manifest from a served one.
+  const read = (p: string) =>
+    JSON.parse(readFileSync(join(process.cwd(), 'public', p), 'utf8'));
+  const studio = read('manifest.json');
+  const console_ = read('platform-manifest.json');
+
+  it('opens the console at the console', () => {
+    expect(console_.start_url).toBe('/platform');
+    expect(portalForPage(console_.start_url)).toBe('platform');
+  });
+
+  it('leaves the studio app opening where it did', () => {
+    expect(studio.start_url).toBe('/');
+    expect(portalForPage(studio.start_url)).toBe('staff');
+  });
+
+  it('keeps the two installs distinct', () => {
+    // Same origin, so start_url and id are what stop a browser treating them
+    // as one app and replacing the other's icon.
+    expect(console_.start_url).not.toBe(studio.start_url);
+    expect(console_.id).toBe('/platform');
+    // Deliberately absent on the studio manifest: adding an id to a manifest
+    // whose app is already installed can orphan that install.
+    expect(studio.id).toBeUndefined();
+  });
+
+  it('names them differently, since they share an icon', () => {
+    expect(console_.short_name).not.toBe(studio.short_name);
+  });
+
+  it('points only at icons that exist', () => {
+    for (const m of [studio, console_]) {
+      for (const icon of m.icons) {
+        expect([icon.src, existsSync(join(process.cwd(), 'public', icon.src))])
+          .toEqual([icon.src, true]);
+      }
+    }
+  });
+
+  it('serves the console manifest without a session', () => {
+    // It is fetched by the browser before anyone signs in. Left out of the
+    // proxy's public list it 307s to /login, never parses, and "Add to Home
+    // Screen" silently falls back to the page URL — the original bug, one
+    // layer down. Found by requesting it, not by reading the list.
+    expect(isPublicProxyPath('/platform-manifest.json')).toBe(true);
+  });
+
+  it('serves the console manifest on the Command Center host', () => {
+    // isCommandCenterPath does not match it, so without a host-neutral
+    // exemption the host rule 404s the console's own manifest on the console's
+    // own hostname.
+    expect(isHostNeutralPath('/platform-manifest.json')).toBe(true);
   });
 });

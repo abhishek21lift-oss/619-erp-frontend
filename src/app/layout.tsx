@@ -54,6 +54,21 @@ export const metadata: Metadata = {
   description:
     'MY PT STUDIO — the operating system for fitness professionals. Clients, workouts, nutrition, attendance, payments and analytics, beautifully unified.',
   alternates: { canonical: '/' },
+  // The PWA manifest, declared through the Metadata API rather than as a
+  // <link> in the <head> below.
+  //
+  // It was the one metadata field written as raw JSX, and that is exactly what
+  // made it un-overridable: a nested layout can merge over a parent's
+  // `metadata` export, but it cannot reach into a parent's markup. So every
+  // page on the origin was served this manifest, including the Command
+  // Center — and installing the console to a home screen produced an icon that
+  // opened `start_url: "/"`, i.e. the studio app. The operator installed the
+  // page they were looking at and got a different product.
+  //
+  // Moving it here changes nothing for any existing page: Next emits the same
+  // <link rel="manifest" href="/manifest.json">. What it adds is the ability
+  // for src/app/(platform)/layout.tsx to declare its own.
+  manifest: '/manifest.json',
   icons: {
     icon: [
       { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
@@ -162,7 +177,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         */}
         <script src="/no-zoom.js" defer />
         <meta name="mobile-web-app-capable" content="yes" />
-        <link rel="manifest" href="/manifest.json" />
+        {/* The manifest link moved to the `metadata` export above so nested
+            layouts can override it. See the note there. */}
         {/* Skip-to-content link (Accessibility — Issue #16) */}
         <style>{`.skip-link{position:absolute;top:-999px;left:0;z-index:9999;padding:8px 16px;background:#fff;color:#111;font-weight:600;border-radius:0 0 8px 0;}.skip-link:focus{top:0}`}</style>
       </head>
