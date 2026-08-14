@@ -36,8 +36,10 @@
 // Guard sits here rather than in the pages for the same reason it does in
 // (chrome)/layout.tsx: the shell must not paint before the session is known.
 
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Guard from '@/components/Guard';
+import PlatformShell from '@/components/platform/PlatformShell';
 
 // ── The console is its own installable app ──────────────────────────────────
 //
@@ -76,10 +78,25 @@ export const metadata: Metadata = {
   title: 'Command Center',
 };
 
+// The shell — top bar, sidebar, mobile navigation and the content container —
+// is mounted HERE rather than in the page.
+//
+// It was `<div id="main-content">{children}</div>`, which is why the console
+// looked like content dumped on a canvas: with no container in the layout, the
+// page declared its own, and that one had vertical padding and no horizontal
+// padding at all. Everything sat flush against the viewport edges below
+// 1024px. Putting the container in the layout means every console page gets
+// the same gutters without asking, and a page added later cannot omit them.
+//
+// Suspense because PlatformShell reads useSearchParams (navigation is
+// URL-driven so the sidebar and the page agree on the active section without
+// sharing state). Next requires a boundary around that during prerender.
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   return (
     <Guard role="super_admin">
-      <div id="main-content">{children}</div>
+      <Suspense fallback={<div style={{ minHeight: '100dvh', background: 'var(--bg-canvas)' }} />}>
+        <PlatformShell>{children}</PlatformShell>
+      </Suspense>
     </Guard>
   );
 }
