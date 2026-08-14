@@ -6,6 +6,12 @@ import { cn } from './cn';
 interface FloatInputProps {
   label: string;
   type?: string;
+  /**
+   * Which on-screen keyboard mobile should open. `type="number"` alone gives
+   * iOS a keypad without a decimal point, which makes 62.5kg unenterable —
+   * the session logger needs `decimal` for weights and `numeric` for reps.
+   */
+  inputMode?: React.ComponentProps<'input'>['inputMode'];
   value: string;
   onChange: (v: string) => void;
   onBlur?: () => void;
@@ -62,6 +68,7 @@ const TONES = {
 export function FloatInput({
   label,
   type = 'text',
+  inputMode,
   value,
   onChange,
   onBlur,
@@ -171,6 +178,7 @@ export function FloatInput({
           <input
             id={id}
             type={type}
+            inputMode={inputMode}
             value={value}
             placeholder={lifted ? placeholder : ''}
             onChange={(e) => onChange(e.target.value)}
