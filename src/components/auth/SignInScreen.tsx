@@ -242,7 +242,20 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
     if (!email.trim()) { emailRef.current?.focus(); return fail('Email is required.'); }
     if (!emailValid) { emailRef.current?.focus(); return fail('Enter a valid email address.'); }
     if (!password) { pwRef.current?.focus(); return fail('Password is required.'); }
-    if (mfaRequired && !/^\d{6}$/.test(mfaCode.trim())) return fail('Enter the 6-digit code from your authenticator app.');
+    // A 6-digit TOTP, or a recovery code (10 Crockford-base32 characters,
+    // conventionally shown as XXXXX-XXXXX). This guard used to accept only
+    // the first shape, which blocked the recovery path here even once the
+    // server understood it. Deliberately permissive about separators and
+    // case — this is typed off paper by somebody who has lost their phone —
+    // and the server is what actually decides.
+    if (mfaRequired) {
+      const entered = mfaCode.trim();
+      const isTotp = /^\d{6}$/.test(entered);
+      const isRecovery = /^[0-9A-Za-z]{10}$/.test(entered.replace(/[\s-]/g, ''));
+      if (!isTotp && !isRecovery) {
+        return fail('Enter the 6-digit code from your authenticator app, or a recovery code.');
+      }
+    }
     if (busy) return;
     setBusy(true);
     try {
@@ -571,21 +584,37 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
                     <label htmlFor="mfa" className="mb-1.5 block text-[13px] font-[600]" style={{ color: INK }}>
                       Authentication code
                     </label>
+                    {/*
+                      Accepts a 6-digit TOTP OR a recovery code.
+
+                      This used to strip every non-digit and cap the length at
+                      6, so a recovery code could not physically be typed here
+                      — the codes handed out at enrolment, and the promise
+                      attached to them, were unreachable from the one screen
+                      that exists to use them. Letters, spaces and the hyphen
+                      now pass through; the server normalises case and
+                      separators before comparing.
+
+                      inputMode stays numeric: the 6-digit code is the
+                      overwhelmingly common case and a numeric keypad is the
+                      right default on a phone. It is a hint, not a filter, so
+                      a recovery code can still be typed or pasted.
+                    */}
                     <input
                       id="mfa"
                       type="text"
                       inputMode="numeric"
                       autoComplete="one-time-code"
-                      maxLength={6}
+                      maxLength={14}
                       value={mfaCode}
-                      onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      onChange={(e) => setMfaCode(e.target.value.replace(/[^0-9A-Za-z\s-]/g, '').slice(0, 14))}
                       placeholder="123456"
                       autoFocus
                       className="w-full rounded-xl bg-white text-center text-[20px] font-[700] tracking-[0.4em] outline-none transition-all"
                       style={{ height: 52, color: INK, border: `1px solid ${MAROON}`, boxShadow: `0 0 0 3px ${MAROON}1A` }}
                     />
                     <p className="mt-1.5 text-[12px]" style={{ color: MUTE }}>
-                      Enter the 6-digit code from your authenticator app.
+                      Enter the 6-digit code from your authenticator app, or one of your recovery codes.
                     </p>
                   </m.div>
                 )}
