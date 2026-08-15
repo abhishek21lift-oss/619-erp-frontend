@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ChevronDown, X, LogOut, User, Settings,
   PanelLeft, PanelLeftClose,
@@ -214,27 +214,45 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
     return () => { cancelled = true; };
   }, [isAdmin]);
 
-  const filterItem = (i: { href: string; role?: string; roles?: string[]; feature?: string }, groupId: string): boolean => {
-    if (!isVisibleForRole(i as Parameters<typeof isVisibleForRole>[0], user?.role)) return false;
-    // Feature flags sit alongside role and permission checks, never replacing
-    // them: an item has to clear all three. Fails open, so a studio never
-    // loses nav to a slow or failed /api/features.
-    if (!isVisibleForFeature(i, features)) return false;
-    return canSeeByPermission(i.href, groupId, isAdmin ? () => true : can);
-  };
+  // The whole nav tree, rebuilt only when something it actually reads changes.
+  //
+  // This ran on EVERY render, and this component re-renders on every
+  // navigation because it reads usePathname() to mark the active item. So a
+  // route change walked all of NAV_GROUPS and, for every item and every
+  // child, re-ran three predicates — role, feature flag, and
+  // canSeeByPermission, the last doing its own lookup per item. None of that
+  // can change as a result of the pathname changing: it depends on the user's
+  // role, their permissions, and the feature flags.
+  //
+  // The dependency list is exactly what the computation reads. `can` and
+  // `features` come from their own contexts, so this recomputes when
+  // permissions or flags finish loading, and not on navigation.
+  const navItems = useMemo(() => {
+    const filterItem = (
+      i: { href: string; role?: string; roles?: string[]; feature?: string },
+      groupId: string,
+    ): boolean => {
+      if (!isVisibleForRole(i as Parameters<typeof isVisibleForRole>[0], user?.role)) return false;
+      // Feature flags sit alongside role and permission checks, never replacing
+      // them: an item has to clear all three. Fails open, so a studio never
+      // loses nav to a slow or failed /api/features.
+      if (!isVisibleForFeature(i, features)) return false;
+      return canSeeByPermission(i.href, groupId, isAdmin ? () => true : can);
+    };
 
-  const navItems = NAV_GROUPS
-    .filter(g => isGroupVisibleForRole(g, user?.role))
-    .filter(g => isGroupVisibleForFeature(g, features))
-    .map(g => ({
-      ...g,
-      items: g.items.filter(i => filterItem(i, g.id)).flatMap(i =>
-        i.children ? i.children.filter(c => filterItem(c, g.id)) : [i]
-      ),
-      single: false,
-      href: '',
-    }))
-    .filter(g => g.items.length > 0);
+    return NAV_GROUPS
+      .filter(g => isGroupVisibleForRole(g, user?.role))
+      .filter(g => isGroupVisibleForFeature(g, features))
+      .map(g => ({
+        ...g,
+        items: g.items.filter(i => filterItem(i, g.id)).flatMap(i =>
+          i.children ? i.children.filter(c => filterItem(c, g.id)) : [i]
+        ),
+        single: false,
+        href: '',
+      }))
+      .filter(g => g.items.length > 0);
+  }, [user?.role, features, isAdmin, can]);
 
   const toggleGroup = (id: string) => setExpanded(p => ({ ...p, [id]: !p[id] }));
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
