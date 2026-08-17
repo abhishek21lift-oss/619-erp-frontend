@@ -24,6 +24,7 @@ import { PremiumAreaChart, Button } from '@/components/ui';
 import ClientAiPanel from '@/components/pt-os/ClientAiPanel';
 import ClientSnapshot from '@/components/pt-os/ClientSnapshot';
 import ClientLoginCard from '@/components/pt-os/ClientLoginCard';
+import ClientAiGenerateCard from '@/components/pt-os/ClientAiGenerateCard';
 import {
   ClientTabs, TabPanel, EmptyPanel, LinkPanel, TAB_COLOR, type TabKey,
 } from '@/components/pt-os/client/ClientTabs';
@@ -658,6 +659,17 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     <p className="mt-0.5 truncate text-[10px] font-[700]" style={{ color: 'var(--text-muted)' }}>{k.sub}</p>
                   </m.div>
                 ))}
+              </div>
+
+              {/* ── GENERATE AI WORKOUT / DIET ──
+                  One tap each, using the client already on screen. The
+                  generators take manual profile fields — the backend does not
+                  read the client's own record — so the card fills them from
+                  what the profile carries and says in the preview what it had
+                  to assume. The result is for review; nothing is written to
+                  the client's record. */}
+              <div className="mb-4">
+                <ClientAiGenerateCard client={client} goalType={activeGoals[0]?.goal_type} />
               </div>
 
               {/* ── CLIENT LOGIN ──
