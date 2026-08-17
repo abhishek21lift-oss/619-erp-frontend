@@ -156,26 +156,38 @@ export function ExercisePicker({
 
   const virtual = useVirtualList(rows, ROW_HEIGHT, VIEWPORT);
 
+  // The keydown handler must always read the CURRENT rows/active/customName,
+  // but re-attaching the document listener on every one of those changes
+  // leaves a window (between the render committing and the effect flushing)
+  // where the still-attached listener holds stale state. A real user pressing
+  // Enter in that window — or a test firing Enter the moment the rows render —
+  // lands on the old handler and the pick silently never happens. The ref
+  // pattern attaches the listener once per open and delegates to the latest
+  // handler, which the render phase updates synchronously, so the listener
+  // can never outlive the state it reads.
+  const onKeyRef = useRef<(e: KeyboardEvent) => void>(() => {});
+  onKeyRef.current = (e: KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive((i) => Math.min(i + 1, rows.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      const target = rows[active];
+      if (target) { e.preventDefault(); pick(target); }
+      // Nothing in the library matched what was typed, so Enter means "use
+      // it anyway" rather than doing nothing at the end of a search.
+      else if (allowCustom && customName) { e.preventDefault(); addCustom(); }
+    }
+  };
+
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setActive((i) => Math.min(i + 1, rows.length - 1));
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setActive((i) => Math.max(i - 1, 0));
-      } else if (e.key === 'Enter') {
-        const target = rows[active];
-        if (target) { e.preventDefault(); pick(target); }
-        // Nothing in the library matched what was typed, so Enter means "use
-        // it anyway" rather than doing nothing at the end of a search.
-        else if (allowCustom && customName) { e.preventDefault(); addCustom(); }
-      }
-    };
+    const onKey = (e: KeyboardEvent) => onKeyRef.current(e);
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [open, rows, active, pick, allowCustom, customName, addCustom]);
+  }, [open]);
 
   // Keep the highlighted row in view when arrowing beyond the visible window.
   useEffect(() => {
