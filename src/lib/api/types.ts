@@ -44,7 +44,7 @@ export type User = {
   email: string;
   role?: Role;
   trainer_id?: string;
-  member_id?: string;
+  pt_client_id?: string;
   is_active?: boolean;
   organization_id?: string | null;
   organization_name?: string | null;
