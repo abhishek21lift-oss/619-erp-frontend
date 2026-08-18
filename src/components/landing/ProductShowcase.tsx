@@ -390,7 +390,7 @@ function StudioPanel() {
     <div className="grid gap-3 lg:grid-cols-2">
       <div className="rounded-2xl border p-5" style={{ background: C.panelAlt, borderColor: C.lineSoft }}>
         <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: C.faint }}>Studio</p>
-        <p className="mt-1.5 text-[16px] font-[800] tracking-[-0.01em]" style={{ color: C.ink }}>619 FITNESS STUDIO</p>
+        <p className="mt-1.5 text-[16px] font-[800] tracking-[-0.01em]" style={{ color: C.ink }}>YOUR STUDIO</p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           <Chip>Main branch</Chip>
           <Chip color={C.gold}>Branch 02</Chip>

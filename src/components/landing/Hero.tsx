@@ -72,7 +72,7 @@ function CommandCenter() {
           style={{ color: C.muted, borderColor: C.lineSoft, background: 'rgba(148,163,184,0.06)' }}
         >
           <span className="h-1.5 w-1.5 rounded-full" style={{ background: C.emerald }} />
-          Studio Command Center · 619 FITNESS STUDIO
+          Studio Command Center · YOUR STUDIO
         </span>
         <span className="ml-auto flex items-center gap-2 sm:ml-0">
           <Bell size={13} style={{ color: C.faint }} aria-hidden />
@@ -118,7 +118,7 @@ function CommandCenter() {
           {/* greeting */}
           <div className="flex flex-wrap items-baseline justify-between gap-1">
             <p className="text-[13px] font-[750] tracking-[-0.01em]" style={{ color: C.ink }}>
-              Good morning · <span style={{ color: C.goldHi }}>619 FITNESS STUDIO</span>
+              Good morning · <span style={{ color: C.goldHi }}>YOUR STUDIO</span>
             </p>
             <p className="hidden text-[10.5px] font-medium sm:block" style={{ color: C.faint }}>
               Monday, 17 August 2026
