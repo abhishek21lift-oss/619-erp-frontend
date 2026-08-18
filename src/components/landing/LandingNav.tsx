@@ -64,7 +64,17 @@ export default function LandingNav() {
     >
       <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
         <nav aria-label="Main" className="flex h-16 items-center justify-between">
-          <Link href="/" aria-label="MY PT STUDIO home" className="shrink-0">
+          <Link
+            href="/"
+            aria-label="MY PT STUDIO home"
+            className="shrink-0 rounded-2xl border border-[rgba(148,163,184,0.16)] bg-[rgba(11,18,32,0.82)] px-3 py-2 transition-colors hover:border-[rgba(148,163,184,0.3)] hover:bg-[rgba(11,18,32,0.9)]"
+            style={{
+              backdropFilter: 'blur(14px) saturate(150%)',
+              WebkitBackdropFilter: 'blur(14px) saturate(150%)',
+              boxShadow:
+                '0 1px 2px rgba(0,0,0,0.4), 0 6px 20px -8px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)',
+            }}
+          >
             <Wordmark />
           </Link>
 
@@ -88,7 +98,7 @@ export default function LandingNav() {
               className="rounded-lg px-4 py-2 text-[13.5px] font-[650] transition-colors hover:bg-white/[0.06] hover:text-white"
               style={{ color: C.body }}
             >
-              Sign In
+              Log In
             </Link>
             <Link
               href="/start-free"
@@ -142,7 +152,7 @@ export default function LandingNav() {
                 className="flex-1 rounded-xl border py-2.5 text-center text-[14px] font-[650]"
                 style={{ color: C.ink, borderColor: C.line }}
               >
-                Sign In
+                Log In
               </Link>
               <Link
                 href="/start-free"

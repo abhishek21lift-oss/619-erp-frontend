@@ -514,7 +514,7 @@ export default function ProductShowcase() {
             <p className="mt-6 text-center text-[12.5px] font-medium" style={{ color: C.faint }}>
               Sample data shown for illustration — the live platform uses your studio&apos;s real records.
               <Link href="/login" className="ml-1.5 font-bold underline-offset-4 hover:underline" style={{ color: C.blueHi }}>
-                Sign in to explore →
+                Log in to explore →
               </Link>
             </p>
           </div>

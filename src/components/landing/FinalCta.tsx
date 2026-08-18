@@ -64,7 +64,7 @@ export default function FinalCta({ trialDays = 7 }: { trialDays?: number }) {
                   className="inline-flex items-center gap-2 rounded-xl border px-7 py-3.5 text-[15px] font-bold transition-all duration-200 hover:-translate-y-0.5"
                   style={{ borderColor: C.line, color: C.ink }}
                 >
-                  Sign in
+                  Log in
                 </Link>
               </div>
               <p className="mt-6 text-[12px] font-medium" style={{ color: C.faint }}>

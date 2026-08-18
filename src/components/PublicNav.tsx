@@ -20,10 +20,15 @@ import Image from 'next/image';
  * `action` is the one thing that differs by page: /login offers "Start free"
  * and /start-free offers "Sign in", because a bar that links to the page you
  * are already on is furniture rather than navigation.
+ *
+ * `dark` is the auth-page variant: the same glass bar in the landing page's
+ * near-black navy, so the redesigned login and signup surfaces keep the same
+ * navigation as the marketing site without a light strip cutting across the
+ * dark canvas. Labels and hrefs are identical in both themes.
  */
 export const PUBLIC_NAV_CLEARANCE = 'calc(max(env(safe-area-inset-top), 2.75rem) + 5.5rem)';
 
-export default function PublicNav({ action }: { action: 'sign-in' | 'start-free' }) {
+export default function PublicNav({ action, dark = false }: { action: 'sign-in' | 'start-free'; dark?: boolean }) {
   const href = action === 'sign-in' ? '/login' : '/start-free';
   const label = action === 'sign-in' ? 'Sign in' : 'Start free';
 
@@ -35,10 +40,10 @@ export default function PublicNav({ action }: { action: 'sign-in' | 'start-free'
         // where env(safe-area-inset-top) resolves to 0 — some in-app browsers
         // and non-cover viewports report no inset at all.
         paddingTop: 'max(env(safe-area-inset-top), 2.75rem)',
-        background: 'rgba(255,255,255,0.88)',
+        background: dark ? 'rgba(11,18,32,0.78)' : 'rgba(255,255,255,0.88)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(0,103,224,0.07)',
+        borderBottom: dark ? '1px solid rgba(148,163,184,0.14)' : '1px solid rgba(0,103,224,0.07)',
       }}
     >
       <div className="mx-auto max-w-6xl px-4">
@@ -53,15 +58,17 @@ export default function PublicNav({ action }: { action: 'sign-in' | 'start-free'
               className="h-9 w-9 shrink-0 object-contain"
             />
             <span className="text-[15px] font-[800] tracking-[-0.02em]">
-              <span style={{ color: '#0067E0' }}>MY PT</span>{' '}
-              <span style={{ color: '#0F172A' }}>STUDIO</span>
+              <span style={{ color: dark ? '#1CA3F9' : '#0067E0' }}>MY PT</span>{' '}
+              <span style={{ color: dark ? '#F8FAFC' : '#0F172A' }}>STUDIO</span>
             </span>
           </Link>
 
           <Link
             href={href}
-            className="rounded-xl px-3.5 py-2 text-[13.5px] font-[650] transition-colors hover:bg-black/[0.04]"
-            style={{ color: '#0F172A' }}
+            className={`rounded-xl px-3.5 py-2 text-[13.5px] font-[650] transition-colors ${
+              dark ? 'hover:bg-white/[0.06] hover:text-white' : 'hover:bg-black/[0.04]'
+            }`}
+            style={{ color: dark ? '#CBD5E1' : '#0F172A' }}
           >
             {label}
           </Link>

@@ -61,7 +61,7 @@ export default function PricingSection({
               <p className="text-[13.5px] font-medium" style={{ color: C.muted }}>
                 Plan pricing is loading — or{' '}
                 <Link href="/login" className="font-bold underline underline-offset-4" style={{ color: C.blueHi }}>
-                  sign in
+                  log in
                 </Link>{' '}
                 to see your options.
               </p>
