@@ -13,7 +13,7 @@
 // which is why the prose here names no hex codes.
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import { palette, semantic, band, identity, series, founderGold, tint, rgba } from '@/lib/palette';
 
 const FAMILIES = ['blue', 'emerald', 'amber', 'red', 'gray'] as const;
@@ -116,6 +116,11 @@ describe('the app uses only the palette', () => {
     // founderGold is the second deliberate non-semantic exception, after
     // `identity`. It is allowed through here and then confined to one file by
     // the assertion below — the scan alone would let it spread anywhere.
+    //
+    // The marketing page (components/landing) is the third: a self-contained
+    // dark cinematic surface that deliberately paints outside the five
+    // families, with its own token file. It is exempt here and confined to
+    // that one file by the assertion below — same pattern as founderGold.
     const known = new Set(
       [...allHexes(), ...Object.values(founderGold)].map((h) => h.toUpperCase())
     );
@@ -128,6 +133,8 @@ describe('the app uses only the palette', () => {
         if (!/\.(tsx?|css)$/.test(entry)) continue;
         // The palette module is where the canonical values are declared.
         if (p.endsWith(join('lib', 'palette.ts'))) continue;
+        // The marketing page is its own system — confined below.
+        if (p.includes(join('components', 'landing'))) continue;
         const text = readFileSync(p, 'utf8');
         for (const m of text.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
           if (!known.has(m.toUpperCase())) offenders.push(`${p}: ${m}`);
@@ -153,10 +160,33 @@ describe('the app uses only the palette', () => {
         if (!/\.(tsx?|css)$/.test(entry)) continue;
         if (p.endsWith(join('lib', 'palette.ts'))) continue;
         if (p.includes('__tests__')) continue;
-        if (/founderGold/.test(readFileSync(p, 'utf8'))) users.push(p.split('src/')[1]);
+        if (/founderGold/.test(readFileSync(p, 'utf8'))) users.push(p.split(join('src') + sep)[1].replaceAll(sep, '/'));
       }
     };
     walk(join(process.cwd(), 'src'));
     expect(users).toEqual(['components/FounderBadge.tsx']);
+  });
+
+  it('confines the marketing surface to its own token file', () => {
+    // The landing page may paint outside the five families (it runs its own
+    // dark canvas), but only through landing/tokens.ts. A stray hex in a
+    // landing component is the same decay the global scan guards against
+    // everywhere else — it would mean the token system stopped being the
+    // single source of the marketing look.
+    const offenders: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = join(dir, entry);
+        if (statSync(p).isDirectory()) { walk(p); continue; }
+        if (!/\.tsx?$/.test(entry)) continue;
+        if (p.endsWith(join('tokens.ts'))) continue;
+        const text = readFileSync(p, 'utf8');
+        for (const m of text.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
+          offenders.push(`${p}: ${m}`);
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src', 'components', 'landing'));
+    expect(offenders).toEqual([]);
   });
 });
