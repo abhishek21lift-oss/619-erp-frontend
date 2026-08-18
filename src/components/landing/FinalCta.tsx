@@ -38,9 +38,9 @@ export default function FinalCta({ trialDays = 7 }: { trialDays?: number }) {
                 className="mx-auto max-w-2xl text-[clamp(1.9rem,4.5vw,3rem)] font-[820] leading-[1.06] tracking-[-0.03em]"
                 style={{ color: C.ink }}
               >
-                Your gym deserves an{' '}
+                Your PT business deserves a{' '}
                 <span style={{ background: `linear-gradient(100deg, ${C.blueHi}, ${C.skyHi} 55%, ${C.goldHi})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                  operating system.
+                  professional platform.
                 </span>
               </h2>
               <p className="mx-auto mt-5 max-w-xl text-[15px] leading-[1.7]" style={{ color: C.muted }}>

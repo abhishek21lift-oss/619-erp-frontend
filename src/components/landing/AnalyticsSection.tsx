@@ -9,7 +9,7 @@ import { Container, Reveal, Section, SectionHeader } from './primitives';
 import { C, EASE, TABULAR } from './tokens';
 
 /**
- * Analytics — honest: the product reports on attendance, memberships,
+ * Analytics — honest: the product reports on attendance, packages,
  * payments and engagement (no fabricated marketing metrics). The left panel
  * shows what the platform measures; the right shows the AI's churn-risk view.
  */
@@ -18,7 +18,7 @@ export default function AnalyticsSection() {
   const metricBars = [
     { l: 'Collection rate', v: 72, c: C.emerald },
     { l: 'Attendance (30d)', v: 61, c: C.blueHi },
-    { l: 'Member retention', v: 84, c: C.gold },
+    { l: 'Client retention', v: 84, c: C.gold },
     { l: 'Engagement reach', v: 47, c: C.blue },
   ];
 
@@ -69,7 +69,7 @@ export default function AnalyticsSection() {
 
               <div className="mt-6 grid grid-cols-3 gap-3 border-t pt-5" style={{ borderColor: C.lineSoft }}>
                 {[
-                  { icon: <Users size={14} />, v: '248', l: 'Active members', c: C.blueHi },
+                  { icon: <Users size={14} />, v: '248', l: 'Active clients', c: C.blueHi },
                   { icon: <Wallet size={14} />, v: '₹4.3L', l: 'Collected MTD', c: C.emerald },
                   { icon: <TrendingUp size={14} />, v: '18%', l: 'YoY revenue', c: C.gold },
                 ].map((s) => (
@@ -98,10 +98,10 @@ export default function AnalyticsSection() {
 
               <ul className="mt-6 space-y-3">
                 {[
-                  { icon: <AlertTriangle size={15} />, c: C.red, t: 'Churn risk — 4 members', d: 'Attendance dropped below 40% in 3 weeks. Renewals due within 30 days.', a: 'Suggested: renewal WhatsApp + one call' },
-                  { icon: <Wallet size={15} />, c: C.gold, t: '₹42K in overdue dues', d: '12 members overdue, 3 beyond 14 days. All flagged with amounts.', a: 'Suggested: send the 3 due reminders today' },
-                  { icon: <CalendarClock size={15} />, c: C.blueHi, t: '7 renewals in 10 days', d: 'Long-standing members — high retention value, low effort.', a: 'Suggested: early-bird offer to lock renewals' },
-                  { icon: <BadgeCheck size={15} />, c: C.emerald, t: '3 wins to celebrate', d: 'Milestones hit this week — perfect for public shoutouts.', a: 'Suggested: WhatsApp wishes from the front desk' },
+                  { icon: <AlertTriangle size={15} />, c: C.red, t: 'Churn risk — 4 clients', d: 'Attendance dropped below 40% in 3 weeks. Renewals due within 30 days.', a: 'Suggested: renewal WhatsApp + one call' },
+                  { icon: <Wallet size={15} />, c: C.gold, t: '₹42K in overdue dues', d: '12 clients overdue, 3 beyond 14 days. All flagged with amounts.', a: 'Suggested: send the 3 due reminders today' },
+                  { icon: <CalendarClock size={15} />, c: C.blueHi, t: '7 renewals in 10 days', d: 'Long-standing clients — high retention value, low effort.', a: 'Suggested: early-bird offer to lock renewals' },
+                  { icon: <BadgeCheck size={15} />, c: C.emerald, t: '3 wins to celebrate', d: 'Milestones hit this week — perfect for public shoutouts.', a: 'Suggested: WhatsApp wishes from the studio' },
                 ].map((r) => (
                   <li
                     key={r.t}
@@ -119,7 +119,7 @@ export default function AnalyticsSection() {
               </ul>
 
               <p className="mt-5 text-[11px] font-medium leading-relaxed" style={{ color: C.faint }}>
-                The AI ranks every member by renewal likelihood and tells you the highest-leverage action — but the
+                The AI ranks every client by renewal likelihood and tells you the highest-leverage action — but the
                 call, the offer and the message are yours.
               </p>
             </div>

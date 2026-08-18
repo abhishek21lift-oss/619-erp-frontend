@@ -13,15 +13,15 @@ export default function ValueProposition() {
   const before = [
     'Programmes written by hand, repeated for every client',
     'Payments tracked on WhatsApp and a physical diary',
-    'Renewals missed until a member quietly disappears',
+    'Renewals missed until a client quietly disappears',
     'Revenue, attendance and results in three different places',
     'Every question answered with "let me check my notes"',
   ];
   const after = [
     'AI drafts client programmes in seconds — trainers keep final say',
-    'Membership, dues and collections tracked automatically',
+    'Packages, dues and collections tracked automatically',
     'Renewals flagged early, with a WhatsApp nudge ready to send',
-    'One dashboard: revenue, attendance, insights, together',
+    'One dashboard: revenue, sessions, insights, together',
     'Every client answer lives in a searchable profile',
   ];
 
@@ -31,8 +31,8 @@ export default function ValueProposition() {
         <SectionHeader
           id="the-gap-title"
           eyebrow="The problem"
-          title="Fitness businesses run on scraps — and it costs them"
-          sub="We rebuilt the operations a studio runs on every day. The gap between how fitness businesses run today and what MY PT STUDIO makes possible is visible within a single month."
+          title="Personal training businesses run on scraps — and it costs them"
+          sub="We rebuilt the operations a training business runs on every day. The gap between how PT businesses run today and what MY PT STUDIO makes possible is visible within a single month."
         />
 
         <div className="mt-14 grid items-stretch gap-4 lg:grid-cols-[1fr_auto_1fr]">

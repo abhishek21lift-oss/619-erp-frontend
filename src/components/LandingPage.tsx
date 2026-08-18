@@ -26,7 +26,7 @@ import Footer from './landing/Footer';
  * The public marketing page.
  *
  * Story order: hero → capability trust → product tour → the gap → AI training
- * layer → for trainers → for gyms → feature catalogue → workflow → analytics →
+ * layer → for trainers → for PT businesses → feature catalogue → workflow → analytics →
  * security → pricing → FAQ → closing CTA → footer.
  *
  * Live data comes from the public, unauthenticated endpoints. Failures are

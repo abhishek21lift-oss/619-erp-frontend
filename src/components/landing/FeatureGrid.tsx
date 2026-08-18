@@ -13,9 +13,9 @@ const CATEGORIES = [
     color: C.blueHi,
     wash: C.blueWash,
     features: [
-      { icon: <LayoutDashboard size={15} />, t: 'Command dashboard', d: 'Revenue, occupancy and session load at a glance.' },
+      { icon: <LayoutDashboard size={15} />, t: 'Command dashboard', d: 'Revenue, sessions and client load at a glance.' },
       { icon: <CalendarCheck2 size={15} />, t: 'Attendance & check-in', d: 'Mobile-first check-in and session tracking.' },
-      { icon: <Wallet size={15} />, t: 'Billing & collections', d: 'Memberships, dues, invoices and MTD collection.' },
+      { icon: <Wallet size={15} />, t: 'Billing & collections', d: 'Packages, dues, invoices and MTD collection.' },
       { icon: <ClipboardCheck size={15} />, t: 'Client lifecycle', d: 'Onboarding to renewal — one profile, all history.' },
     ],
   },
@@ -60,7 +60,7 @@ const CATEGORIES = [
 ];
 
 /**
- * Feature catalogue — grouped under the five operating systems the product
+ * Feature catalogue — grouped under the five core areas the product
  * genuinely ships. Only live, real features; nothing fabricated.
  */
 export default function FeatureGrid() {
@@ -70,7 +70,7 @@ export default function FeatureGrid() {
         <SectionHeader
           id="features-title"
           eyebrow="Everything included"
-          title="Five operating systems, one product"
+          title="Five core areas, one platform"
           sub="Every module below ships with MY PT STUDIO — no add-ons, no per-feature billing. What you see is what the platform does today."
         />
 

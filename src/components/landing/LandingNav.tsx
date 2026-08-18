@@ -11,7 +11,7 @@ const NAV = [
   { label: 'Product', href: '#product' },
   { label: 'AI', href: '#ai' },
   { label: 'Features', href: '#features' },
-  { label: 'For Gyms', href: '#for-gyms' },
+  { label: 'PT Business', href: '#for-pt-business' },
   { label: 'For Trainers', href: '#for-trainers' },
   { label: 'Pricing', href: '#pricing' },
   { label: 'Resources', href: '#resources' },

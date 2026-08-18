@@ -134,7 +134,7 @@ export default function AiSection() {
                   <div>
                     <h3 className="text-[14px] font-bold" style={{ color: C.ink }}>The trainer stays the expert</h3>
                     <p className="mt-1.5 text-[12.5px] leading-[1.6]" style={{ color: C.muted }}>
-                      Review, edit, personalise and send. The client sees the trainer’s name — the AI never talks to members directly.
+                      Review, edit, personalise and send. The client sees the trainer’s name — the AI never talks to clients directly.
                     </p>
                   </div>
                 </div>

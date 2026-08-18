@@ -214,7 +214,7 @@ function AiWorkoutPanel() {
           <div className="flex flex-wrap items-center gap-1.5">
             <Chip color={C.gold}>Muscle Gain</Chip>
             <Chip>Intermediate</Chip>
-            <Chip>Full Gym</Chip>
+            <Chip>Full Equipment</Chip>
             <Chip color={C.emerald}>4 days / week</Chip>
           </div>
           <div className="mt-3 flex items-center gap-2">
@@ -358,8 +358,8 @@ function RevenuePanel() {
 function InsightsPanel() {
   const rows = [
     { icon: <Wallet size={14} />, c: C.gold, t: '₹1.2L collectable', d: 'renewals due in the next 7 days', a: 'WhatsApp', ac: C.emerald },
-    { icon: <Users size={14} />, c: C.blueHi, t: '₹42K pending', d: 'across 12 members — 3 overdue', a: 'View dues', ac: C.gold },
-    { icon: <CalendarCheck size={14} />, c: C.blue, t: '3 birthdays today', d: 'wish them before the evening rush', a: 'Wish', ac: C.blueHi },
+    { icon: <Users size={14} />, c: C.blueHi, t: '₹42K pending', d: 'across 12 clients — 3 overdue', a: 'View dues', ac: C.gold },
+    { icon: <CalendarCheck size={14} />, c: C.blue, t: '3 birthdays today', d: 'wish them before today\'s sessions', a: 'Wish', ac: C.blueHi },
     { icon: <Target size={14} />, c: C.emerald, t: 'Month target on pace', d: '₹4.3L of ₹6.3L with 12 days left', a: 'Track', ac: C.emerald },
   ];
   return (
@@ -396,8 +396,8 @@ function StudioPanel() {
           <Chip color={C.gold}>Branch 02</Chip>
         </div>
         <div className="mt-4 space-y-2">
-          <BarRow name="Occupancy" pct={72} color={C.blueHi} right="72%" />
-          <BarRow name="Peak hour" pct={58} color={C.gold} right="7–9 AM" />
+          <BarRow name="Client retention" pct={72} color={C.blueHi} right="72%" />
+          <BarRow name="Renewals on track" pct={58} color={C.gold} right="58%" />
         </div>
       </div>
       <div className="rounded-2xl border p-5" style={{ background: C.panelAlt, borderColor: C.lineSoft }}>
@@ -443,8 +443,8 @@ export default function ProductShowcase() {
         <SectionHeader
           id="product-title"
           eyebrow="The platform"
-          title="One operating system. Every surface your business runs on."
-          sub="Dashboard, clients, training, AI generation, revenue, insights and studio settings — all connected to the same data. Pick a module."
+          title="One platform. Every surface your PT business runs on."
+          sub="Dashboard, clients, training, AI generation, revenue, insights and studio — all connected to the same data. Pick a module."
         />
 
         <Reveal delay={0.1} y={30}>

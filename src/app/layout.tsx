@@ -48,11 +48,11 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   metadataBase: new URL('https://myptstudio.com'),
   title: {
-    default: 'MY PT STUDIO — Operating System',
+    default: 'MY PT STUDIO — Personal Training Business Management',
     template: '%s | MY PT STUDIO',
   },
   description:
-    'MY PT STUDIO — the operating system for fitness professionals. Clients, workouts, nutrition, attendance, payments and analytics, beautifully unified.',
+    'MY PT STUDIO — the business management platform for personal trainers. Clients, training, nutrition, progress, payments and analytics, beautifully unified.',
   alternates: { canonical: '/' },
   // The PWA manifest, declared through the Metadata API rather than as a
   // <link> in the <head> below.
@@ -80,8 +80,8 @@ export const metadata: Metadata = {
     url: 'https://myptstudio.com',
     siteName: 'MY PT STUDIO',
     type: 'website',
-    title: 'MY PT STUDIO — Operating System',
-    description: 'The operating system for fitness professionals — clients, workouts, nutrition, attendance, payments and analytics, beautifully unified.',
+    title: 'MY PT STUDIO — Personal Training Business Management',
+    description: 'The business management platform for personal trainers — clients, training, nutrition, progress, payments and analytics, beautifully unified.',
     images: [
       {
         url: '/icon-512.png',

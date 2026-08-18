@@ -301,7 +301,7 @@ export default function Hero() {
           <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: EASE }}>
             <Eyebrow>
               <Sparkles size={12} />
-              AI-Powered Gym &amp; Personal Training Platform
+              Personal Training Business Management
             </Eyebrow>
           </m.div>
 
@@ -313,11 +313,11 @@ export default function Hero() {
             className="mt-7 text-[clamp(2.35rem,5.8vw,4.4rem)] font-[850] leading-[1.04] tracking-[-0.04em]"
             style={{ color: C.ink }}
           >
-            Run your gym.
+            Run your PT business.
             <br />
             Train your clients.
             <br />
-            Let <span style={GRAD_AI}>AI</span> handle the rest.
+            Let <span style={GRAD_AI}>AI</span> handle the busywork.
           </m.h1>
 
           <m.p
@@ -327,9 +327,9 @@ export default function Hero() {
             className="mx-auto mt-7 max-w-[640px] text-[16px] leading-[1.75] sm:text-[18px]"
             style={{ color: C.muted }}
           >
-            MY PT STUDIO is the operating system for modern fitness businesses — gym
-            management, personal training and AI workout &amp; diet intelligence,
-            working as one.
+            MY PT STUDIO is the business management platform for personal trainers —
+            client management, training, progress, payments, engagement and AI
+            workout &amp; diet intelligence, working as one.
           </m.p>
 
           <m.div
@@ -346,7 +346,7 @@ export default function Hero() {
                 boxShadow: '0 14px 36px -10px rgba(0,103,224,0.6), inset 0 1px 0 rgba(255,255,255,0.18)',
               }}
             >
-              Start Free
+              Start Your PT Business
               <ArrowRight size={17} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
             <a
@@ -355,7 +355,7 @@ export default function Hero() {
               style={{ color: C.body, borderColor: C.line }}
             >
               <CirclePlay size={17} style={{ color: C.blueHi }} />
-              Explore the platform
+              Explore MY PT STUDIO
             </a>
           </m.div>
 

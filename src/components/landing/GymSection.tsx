@@ -8,17 +8,17 @@ import { C } from './tokens';
 const BENEFITS = [
   {
     icon: <Building2 size={17} />,
-    title: 'Multi-branch, one view',
-    body: 'Run one studio or many — occupancy, collections and attendance roll up into a single dashboard.',
+    title: 'Multi-location, one view',
+    body: 'Run one studio or several training locations — collections, sessions and retention roll up into a single dashboard.',
   },
   {
     icon: <UserRoundCheck size={17} />,
-    title: 'Front-desk check-in',
-    body: 'Mobile-first check-in your staff can run on a phone at the desk — no desktop terminal required.',
+    title: 'Client check-in',
+    body: 'Mobile-first session check-in your staff can run on a phone — no desktop terminal required.',
   },
   {
     icon: <CalendarCheck2 size={17} />,
-    title: 'Memberships & renewals',
+    title: 'Packages & renewals',
     body: 'Plans, trials, renewals and lapses tracked automatically. See who is about to churn before they do.',
   },
   {
@@ -29,12 +29,12 @@ const BENEFITS = [
   {
     icon: <BadgePercent size={17} />,
     title: 'Offers & campaigns',
-    body: 'Run referral offers and WhatsApp campaigns to your member base — engagement that can be measured.',
+    body: 'Run referral offers and WhatsApp campaigns to your client base — engagement that can be measured.',
   },
   {
     icon: <MessageSquareText size={17} />,
     title: 'WhatsApp engagement',
-    body: 'Birthdays, renewals and nudges reach members on WhatsApp — where Indian fitness clients actually reply.',
+    body: 'Birthdays, renewals and nudges reach clients on WhatsApp — where Indian fitness clients actually reply.',
   },
   {
     icon: <Radar size={17} />,
@@ -49,18 +49,18 @@ const BENEFITS = [
 ];
 
 /**
- * For Gyms & Studios — the operator pitch. Bento grid, honest feature set
+ * For PT Businesses — the operator pitch. Bento grid, honest feature set
  * (no inventory module — deliberately excluded).
  */
 export default function GymSection() {
   return (
-    <Section id="for-gyms" alt aria-labelledby="for-gyms-title">
+    <Section id="for-pt-business" alt aria-labelledby="for-pt-business-title">
       <Container>
         <SectionHeader
-          id="for-gyms-title"
-          eyebrow="For gyms & studios"
-          title="The back office your front desk deserves"
-          sub="Memberships, check-ins, payments, renewals and engagement — the daily machinery of a gym, operated from one place that your whole team can actually use."
+          id="for-pt-business-title"
+          eyebrow="For PT businesses"
+          title="The business side of personal training, handled"
+          sub="Packages, client check-ins, payments, renewals and engagement — the daily machinery of a PT business, operated from one place that your whole team can actually use."
         />
 
         <div className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -83,7 +83,7 @@ export default function GymSection() {
         <Reveal delay={0.1}>
           <div className="mt-10 flex flex-col items-center justify-between gap-4 rounded-2xl border px-6 py-5 sm:flex-row" style={{ background: C.panelAlt, borderColor: C.lineSoft }}>
             <p className="text-center text-[13.5px] font-medium sm:text-left" style={{ color: C.body }}>
-              Front desk staff, managers and owners — the whole team works from the same data. No training academy required.
+              Trainers, managers and owners — the whole team works from the same data. No training academy required.
             </p>
             <Link
               href="/start-free"

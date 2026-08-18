@@ -7,12 +7,12 @@ import { Container, Reveal, Section, SectionHeader } from './primitives';
 import { C, EASE } from './tokens';
 
 const FAQ = [
-  { q: 'What is MY PT STUDIO?', a: 'A complete operating system for fitness professionals — CRM, workout and nutrition builders, attendance, progress tracking, payments and analytics in one platform, so you can run your entire business from a single place.' },
-  { q: 'Who is it for?', a: 'Personal trainers, online coaches, gym owners, fitness studios, strength coaches, sports academies and wellness businesses of any size — from solo coaches to multi-studio chains.' },
+  { q: 'What is MY PT STUDIO?', a: 'The business management platform for personal trainers — client management, workout and nutrition builders, progress tracking, payments and analytics in one platform, so you can run your entire training business from a single place.' },
+  { q: 'Who is it for?', a: 'Independent personal trainers, online coaches, PT studios and fitness businesses of any size — from solo trainers to multi-location training businesses.' },
   { q: 'Do my clients need to install anything?', a: 'No. The platform is fully web-based and mobile-friendly. You manage everything from any device, and clients can be onboarded in minutes.' },
-  { q: 'Can I run more than one studio?', a: 'Yes. Our multi-tenant architecture lets you run multiple studios from one account, each with fully isolated data, its own team, branding and permissions.' },
+  { q: 'Can I run more than one studio or training location?', a: 'Yes. Our multi-tenant architecture lets you run multiple training locations from one account, each with fully isolated data, its own team, branding and permissions.' },
   { q: 'Is my data secure?', a: 'Every studio is isolated at the database level with row-level security, encrypted connections and role-based access control. Your data is yours, and it is never shared across studios.' },
-  { q: 'How do I get started?', a: 'Start free — create your studio in a couple of minutes. Our team reviews it, then helps you import your clients so you are live in a day, not a month.' },
+  { q: 'How do I get started?', a: 'Start free — create your PT business in a couple of minutes. Our team reviews it, then helps you import your clients so you are live in a day, not a month.' },
 ];
 
 /**

@@ -31,7 +31,7 @@ const STEPS = [
   {
     icon: <Dumbbell size={17} />,
     title: 'Client trains',
-    body: 'Check-ins and attendance are recorded at the desk or by the trainer.',
+    body: 'Check-ins and attendance are recorded at the studio or by the trainer.',
     tag: 'Every session',
   },
   {
@@ -80,7 +80,7 @@ export default function WorkflowSection() {
         <SectionHeader
           id="workflow-title"
           eyebrow="The workflow"
-          title="From first enquiry to loyal member — one loop"
+          title="From first enquiry to loyal client — one loop"
           sub="Every step below is a real screen in the product. The AI removes the busywork at each stage; the trainer owns the outcome."
         />
 

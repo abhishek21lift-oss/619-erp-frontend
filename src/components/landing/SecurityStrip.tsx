@@ -18,22 +18,22 @@ const ITEMS = [
   {
     icon: <Fingerprint size={17} />,
     title: 'Passkey sign-in',
-    body: 'Passwordless, phishing-resistant authentication for owners and staff — no shared passwords at the front desk.',
+    body: 'Passwordless, phishing-resistant authentication for owners and staff — no shared passwords at the studio.',
   },
   {
     icon: <BrainCircuit size={17} />,
     title: 'Authorised AI knowledge',
-    body: 'The AI reads only what your role allows — a trainer’s questions never cross into other members’ private records.',
+    body: 'The AI reads only what your role allows — a trainer’s questions never cross into other clients’ private records.',
   },
   {
     icon: <ShieldCheck size={17} />,
     title: 'Role-based access',
-    body: 'Owner, admin, manager, trainer — distinct permissions for every surface, from billing to member lists.',
+    body: 'Owner, admin, manager, trainer — distinct permissions for every surface, from billing to client lists.',
   },
   {
     icon: <ServerCog size={17} />,
     title: 'No client-side secrets',
-    body: 'Membership and billing logic runs server-side; the browser never sees keys or privileged routes.',
+    body: 'Billing and access logic runs server-side; the browser never sees keys or privileged routes.',
   },
 ];
 
@@ -51,7 +51,7 @@ export default function SecurityStrip() {
               id="trust-title"
               eyebrow="Trust & security"
               align="left"
-              title="Your members' data is treated like your business depends on it"
+              title="Your clients' data is treated like your business depends on it"
               sub="Because it does. Every architectural decision below is enforced at the storage and API layers — not as a marketing promise."
             />
           </div>

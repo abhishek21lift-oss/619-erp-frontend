@@ -59,7 +59,7 @@ export default function Footer() {
           <div>
             <Wordmark />
             <p className="mt-5 max-w-sm text-[13px] leading-[1.7]" style={{ color: C.muted }}>
-              The operating system for fitness professionals — client management, AI-powered
+              The business management platform for personal trainers — client management, AI-powered
               training and diet plans, payments, analytics and engagement in one platform.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">

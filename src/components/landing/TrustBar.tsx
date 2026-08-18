@@ -6,9 +6,9 @@ import { C } from './tokens';
 import type { PublicStats } from './types';
 
 /**
- * "Built for modern fitness businesses" — replaces the fabricated logo band and
- * invented testimonials with three things the product genuinely is, plus live
- * platform figures that are only shown once they are worth stating.
+ * "Built for personal training businesses" — replaces the fabricated logo band
+ * and invented testimonials with three things the product genuinely is, plus
+ * live platform figures that are only shown once they are worth stating.
  */
 export default function TrustBar({ stats }: { stats: PublicStats | null }) {
   const statBand = stats
@@ -26,9 +26,9 @@ export default function TrustBar({ stats }: { stats: PublicStats | null }) {
       <Container>
         <SectionHeader
           id="built-for-title"
-          eyebrow="Built for modern fitness businesses"
-          title="Software made for how fitness businesses actually run"
-          sub="MY PT STUDIO was built around the way studios, personal trainers and coaches work in India — not adapted from a generic CRM."
+          eyebrow="Built for personal training businesses"
+          title="Software made for how personal training businesses actually run"
+          sub="MY PT STUDIO was built around the way independent trainers and PT studios work in India — not adapted from a generic CRM."
         />
 
         <div className="mt-12 grid gap-4 md:grid-cols-3">
@@ -45,12 +45,12 @@ export default function TrustBar({ stats }: { stats: PublicStats | null }) {
                 <Building2 size={18} />
               </span>
               <h3 className="mt-4 text-[15px] font-bold" style={{ color: C.ink }}>
-                One platform for every kind of fitness business
+                One platform for every kind of personal training business
               </h3>
               <p className="mt-2 text-[13px] leading-[1.65]" style={{ color: C.muted }}>
-                Boutique studios, strength gyms, independent personal trainers,
-                online coaches, sports academies — single studios or multi-branch
-                chains.
+                Independent personal trainers, boutique PT studios, strength
+                coaches and online coaches — single trainers or multi-location
+                businesses.
               </p>
             </div>
           </Reveal>
@@ -72,8 +72,8 @@ export default function TrustBar({ stats }: { stats: PublicStats | null }) {
               </h3>
               <p className="mt-2 text-[13px] leading-[1.65]" style={{ color: C.muted }}>
                 INR pricing in lakhs and crores, mobile-first signup, WhatsApp
-                follow-ups and a member check-in flow your staff can run on a
-                phone at the front desk.
+                follow-ups and a client check-in flow your staff can run on a
+                phone.
               </p>
             </div>
           </Reveal>
@@ -94,8 +94,8 @@ export default function TrustBar({ stats }: { stats: PublicStats | null }) {
                 One source of truth for the whole team
               </h3>
               <p className="mt-2 text-[13px] leading-[1.65]" style={{ color: C.muted }}>
-                Members, training, payments and analytics read from the same
-                data. The dashboard, the trainer and the front desk can never
+                Clients, training, payments and analytics read from the same
+                data. The dashboard, the trainer and the desk can never
                 disagree.
               </p>
             </div>
