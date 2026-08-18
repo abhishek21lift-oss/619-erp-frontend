@@ -133,7 +133,7 @@ export default function HelpPage() {
           <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Still need help?</p>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 20px' }}>Reach out to our support team</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <a href="mailto:support@619fitness.com"
+            <a href="mailto:support@myptstudio.com"
               style={{
                 display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
                 borderRadius: 16, background: 'var(--bg-subtle)',
@@ -150,7 +150,7 @@ export default function HelpPage() {
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Email Support</p>
-                <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '1px 0 0' }}>support@619fitness.com</p>
+                <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '1px 0 0' }}>support@myptstudio.com</p>
               </div>
             </a>
             <a href={`tel:${process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+918756562188'}`}

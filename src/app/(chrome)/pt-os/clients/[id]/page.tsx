@@ -20,6 +20,7 @@ import Guard from '@/components/Guard';
 
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { useAuth } from '@/lib/auth-context';
 import { PremiumAreaChart, Button } from '@/components/ui';
 import ClientAiPanel from '@/components/pt-os/ClientAiPanel';
 import ClientSnapshot from '@/components/pt-os/ClientSnapshot';
@@ -272,6 +273,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const { id } = use(params);
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [client, setClient] = useState<PtClientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -358,7 +360,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     const p = (phone ?? '').replace(/\D/g, '');
     if (!p) return '#';
     const num = p.startsWith('91') ? p : `91${p}`;
-    return `https://wa.me/${num}?text=${encodeURIComponent(`Hi ${name ?? 'there'}, this is your trainer from MY PT STUDIO.`)}`;
+    return `https://wa.me/${num}?text=${encodeURIComponent(`Hi ${name ?? 'there'}, this is your trainer from ${user?.organization_name || 'MY PT STUDIO'}.`)}`;
   };
 
   // Set only when the browser fails to load photo_url, so one bad path does

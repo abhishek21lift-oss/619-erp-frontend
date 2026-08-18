@@ -46,7 +46,7 @@ const jetBrainsMono = JetBrains_Mono({
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://619fitnessstudio.com'),
+  metadataBase: new URL('https://myptstudio.com'),
   title: {
     default: 'MY PT STUDIO — Operating System',
     template: '%s | MY PT STUDIO',
@@ -77,7 +77,7 @@ export const metadata: Metadata = {
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
   openGraph: {
-    url: 'https://619fitnessstudio.com',
+    url: 'https://myptstudio.com',
     siteName: 'MY PT STUDIO',
     type: 'website',
     title: 'MY PT STUDIO — Operating System',

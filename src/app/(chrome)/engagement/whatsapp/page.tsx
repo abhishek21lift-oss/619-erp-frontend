@@ -7,14 +7,17 @@ import { PageContainer, PageHero } from '@/components/ui';
 import { MessageCircle, Send, Users, CheckCircle2, Phone, Clock, Search, X, ExternalLink } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { useAuth } from '@/lib/auth-context';
 
-const TEMPLATES = [
-  { id:'renewal', name:'Renewal Reminder', body:`Hi {name}! 👋 Your membership with MY PT STUDIO expires on {date}. Renew today and keep your fitness streak going! Call us: ${process.env.NEXT_PUBLIC_SUPPORT_PHONE || '8756562188'}` },
-  { id:'birthday', name:'Birthday Wish', body:'Happy Birthday {name}! 🎂🎉 MY PT STUDIO wishes you a fantastic year ahead. Come in today for a special birthday session on us! 💪' },
-  { id:'due', name:'Due Reminder', body:'Hi {name}, you have a pending balance of ₹{amount} with MY PT STUDIO. Please clear it at your earliest convenience. Thank you! 🙏' },
-  { id:'welcome', name:'New Member Welcome', body:'Welcome to MY PT STUDIO, {name}! 🏋️ We are thrilled to have you. Your fitness journey starts today. Here to help you reach your goals. See you soon! 💪' },
-  { id:'custom', name:'Custom Message', body:'' },
-];
+function buildTemplates(studio: string) {
+  return [
+    { id:'renewal', name:'Renewal Reminder', body:`Hi {name}! 👋 Your membership with ${studio} expires on {date}. Renew today and keep your fitness streak going! Call us: ${process.env.NEXT_PUBLIC_SUPPORT_PHONE || '8756562188'}` },
+    { id:'birthday', name:'Birthday Wish', body:`Happy Birthday {name}! 🎂🎉 ${studio} wishes you a fantastic year ahead. Come in today for a special birthday session on us! 💪` },
+    { id:'due', name:'Due Reminder', body:`Hi {name}, you have a pending balance of ₹{amount} with ${studio}. Please clear it at your earliest convenience. Thank you! 🙏` },
+    { id:'welcome', name:'New Member Welcome', body:`Welcome to ${studio}, {name}! 🏋️ We are thrilled to have you. Your fitness journey starts today. Here to help you reach your goals. See you soon! 💪` },
+    { id:'custom', name:'Custom Message', body:'' },
+  ];
+}
 
 const KPIS = [
   { label:'Total Members', key:'members', color:'#0067e0', icon:<Users size={18}/>, bg:'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.05))' },
@@ -29,12 +32,15 @@ export default function WhatsAppPage() {
   return <Guard role="admin"><WAContent/></Guard>;
 }
 function WAContent() {
+  const { user } = useAuth();
+  const studioName = user?.organization_name || 'MY PT STUDIO';
+  const templates = useMemo(() => buildTemplates(studioName), [studioName]);
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
-  const [template, setTemplate] = useState(TEMPLATES[0]);
+  const [template, setTemplate] = useState(templates[0]);
   const [customMsg, setCustomMsg] = useState('');
   const [sent, setSent] = useState(0);
   const { toast } = useToast();
@@ -175,7 +181,7 @@ function WAContent() {
               <MessageCircle size={15} color="#0067e0"/> Message Template
             </h3>
             <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:14 }}>
-              {TEMPLATES.map(t=>(
+              {templates.map(t=>(
                 <button key={t.id} onClick={()=>setTemplate(t)}
                   style={{ padding:'10px 16px', borderRadius:10, border:`1px solid ${template.id===t.id?'#0067e0':'#e2e8f0'}`, background:template.id===t.id?'rgba(0,103,224,0.06)':'#f8fafc', textAlign:'left', cursor:'pointer', fontSize:13, fontWeight:template.id===t.id?700:500, color:template.id===t.id?'#0067e0':'#334155', transition:'all 150ms' }}>
                   {t.name}

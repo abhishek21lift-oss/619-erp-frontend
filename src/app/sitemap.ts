@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = 'https://619fitnessstudio.com';
+  const base = 'https://myptstudio.com';
 
   return [
     { url: base, lastModified: new Date(), changeFrequency: 'monthly', priority: 1 },
