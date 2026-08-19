@@ -6,7 +6,7 @@ import {
   Sparkles, X, Brain, Zap, Dumbbell, Salad, Send, User, ChevronDown, RotateCcw, BookOpen, Database,
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { apiBase } from '@/lib/http';
+import { streamAiChat } from '@/lib/ai-stream';
 import type { Client } from '@/lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -39,15 +39,10 @@ interface Message {
 }
 
 // ─── SSE stream event shape (from POST /api/ai/chat) ──────────────────────────
-
-interface ChatEvent {
-  type: 'start' | 'chunk' | 'sources' | 'tools' | 'done' | 'error';
-  content?: string;
-  message?: string;
-  conversation_id?: string;
-  sources?: string[];
-  tools?: string[];
-}
+//
+// The wire format is defined and parsed in lib/ai-stream (AiStreamEvent); this
+// panel only reacts to the parsed events it gets from streamAiChat. Keeping a
+// local copy of the shape here would be a second parser waiting to drift.
 
 function computeAge(dob?: string): number | undefined {
   if (!dob) return undefined;
@@ -229,59 +224,41 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
       setMessages(prev => prev.map(m2 => (m2.id === coachId ? { ...m2, content } : m2)));
 
     try {
-      const res = await fetch(`${apiBase()}/api/ai/chat`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
+      // The SSE parsing lives in lib/ai-stream — the same helper the AI Coach
+      // page and the Command Center assistant use — so no panel can drift from
+      // the wire format. This panel only reacts to parsed events.
+      const { aborted } = await streamAiChat(
+        {
           message: text,
-          conversation_id: conversationId ?? undefined,
-          client_id: selectedClient?.id,
-        }),
-      });
-
-      if (!res.ok || !res.body) throw new Error(res.status === 401 ? 'Your session has expired. Please sign in again.' : `Request failed (${res.status}).`);
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      for (;;) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? '';
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const jsonStr = line.slice(6).trim();
-          if (!jsonStr) continue;
-          let evt: ChatEvent;
-          try { evt = JSON.parse(jsonStr) as ChatEvent; } catch { continue; }
-
-          if (evt.type === 'start' && evt.conversation_id) {
-            setConversationId(evt.conversation_id);
-          } else if (evt.type === 'sources') {
-            pendingSources = evt.sources;
-          } else if (evt.type === 'tools') {
-            pendingTools = evt.tools;
-          } else if (evt.type === 'chunk') {
-            acc += evt.content ?? '';
+          conversationId,
+          clientId: selectedClient?.id,
+          signal: controller.signal,
+        },
+        {
+          onConversationId: setConversationId,
+          onSources: (srcs) => { pendingSources = srcs; },
+          onTools: (t) => { pendingTools = t; },
+          onText: (chunkText) => {
+            acc = chunkText;
             if (!started) { started = true; setIsTyping(false); pushCoach(acc); }
             else updateCoach(acc);
-          } else if (evt.type === 'done') {
-            if (evt.conversation_id) setConversationId(evt.conversation_id);
-          } else if (evt.type === 'error') {
-            throw new Error(evt.message || 'The AI coach ran into a problem.');
-          }
-        }
-      }
+          },
+        },
+      );
 
+      // Stop is a user decision, not a failure — keep whatever streamed.
+      if (aborted) return;
       if (!started) pushCoach('I couldn\'t generate a reply just now — please try again.', true);
     } catch (err) {
       if (controller.signal.aborted) return;
-      const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      // streamAiChat speaks the shared wording; this panel has always shown its
+      // own strings, so translate back to keep the UI text byte-identical.
+      const raw = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      const msg = raw === 'Your session has expired — please sign in again.'
+        ? 'Your session has expired. Please sign in again.'
+        : raw === 'The assistant ran into a problem.'
+          ? 'The AI coach ran into a problem.'
+          : raw;
       if (!started) { setIsTyping(false); pushCoach(`⚠️ ${msg}`, true); }
       else updateCoach(`${acc}\n\n⚠️ ${msg}`);
     } finally {
