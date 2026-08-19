@@ -64,6 +64,33 @@ export const C = {
 /** House easing curve (matches the app's EASE everywhere else). */
 export const EASE = [0.16, 1, 0.3, 1] as const;
 
+// ── Header system — the canonical top bar ─────────────────────────────────
+// The landing navbar (LandingNav) is the single source of truth for every
+// top bar in the product. Start Free, Sign In and the Command Center door
+// reuse these EXACT values so all of them occupy the same vertical space and
+// moving between pages never changes the header's height or proportions.
+// Do not restyle one header in isolation — change it here first.
+export const HEADER = {
+  // Top reserve above the bar for notched devices (landing: 1.5rem floor).
+  padTop: 'max(env(safe-area-inset-top), 1.5rem)',
+  // The bar row that holds the logo and the page actions (h-16 = 64px).
+  bar: 'flex h-16 items-center justify-between',
+  // Outer container — same width and horizontal gutters as the landing nav.
+  container: 'mx-auto w-full max-w-[1200px] px-5 sm:px-8',
+  // Glass chrome (the landing nav's scrolled state; always-on for the auth bars).
+  bg: 'rgba(11,18,32,0.78)',
+  blur: 'blur(18px) saturate(160%)',
+  border: 'rgba(148,163,184,0.10)',
+  // Logo chip — dark glass pill that holds the Wordmark tile + wordmark.
+  chipClass:
+    'rounded-2xl border border-[rgba(148,163,184,0.16)] bg-[rgba(11,18,32,0.82)] px-3 py-2 transition-colors hover:border-[rgba(148,163,184,0.3)] hover:bg-[rgba(11,18,32,0.9)]',
+  chipBlur: 'blur(14px) saturate(150%)',
+  chipShadow:
+    '0 1px 2px rgba(0,0,0,0.4), 0 6px 20px -8px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)',
+  // Logo lockup (Wordmark tile + wordmark text).
+  logoSize: 38,
+} as const;
+
 /** Elevation — deep, blue-tinted shadows for dark surfaces. */
 export const SHADOW = {
   card: '0 1px 2px rgba(0,0,0,0.35), 0 8px 24px -12px rgba(0,0,0,0.55)',

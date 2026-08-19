@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { m, useScroll, useSpring } from 'framer-motion';
 import { Menu, X, ArrowRight } from 'lucide-react';
 import { Wordmark } from './Wordmark';
-import { C } from './tokens';
+import { C, HEADER } from './tokens';
 
 const NAV = [
   { label: 'Product', href: '#product' },
@@ -54,28 +54,27 @@ export default function LandingNav() {
     <header
       className="fixed inset-x-0 top-0 z-50"
       style={{
-        paddingTop: 'max(env(safe-area-inset-top), 1.5rem)',
+        paddingTop: HEADER.padTop,
         transition: 'background 240ms ease, border-color 240ms ease, backdrop-filter 240ms ease',
-        background: scrolled ? 'rgba(11,18,32,0.78)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(18px) saturate(160%)' : 'none',
-        WebkitBackdropFilter: scrolled ? 'blur(18px) saturate(160%)' : 'none',
-        borderBottom: scrolled ? `1px solid ${C.lineSoft}` : '1px solid transparent',
+        background: scrolled ? HEADER.bg : 'transparent',
+        backdropFilter: scrolled ? HEADER.blur : 'none',
+        WebkitBackdropFilter: scrolled ? HEADER.blur : 'none',
+        borderBottom: scrolled ? `1px solid ${HEADER.border}` : '1px solid transparent',
       }}
     >
-      <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
-        <nav aria-label="Main" className="flex h-16 items-center justify-between">
+      <div className={HEADER.container}>
+        <nav aria-label="Main" className={HEADER.bar}>
           <Link
             href="/"
             aria-label="MY PT STUDIO home"
-            className="shrink-0 rounded-2xl border border-[rgba(148,163,184,0.16)] bg-[rgba(11,18,32,0.82)] px-3 py-2 transition-colors hover:border-[rgba(148,163,184,0.3)] hover:bg-[rgba(11,18,32,0.9)]"
+            className={HEADER.chipClass}
             style={{
-              backdropFilter: 'blur(14px) saturate(150%)',
-              WebkitBackdropFilter: 'blur(14px) saturate(150%)',
-              boxShadow:
-                '0 1px 2px rgba(0,0,0,0.4), 0 6px 20px -8px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)',
+              backdropFilter: HEADER.chipBlur,
+              WebkitBackdropFilter: HEADER.chipBlur,
+              boxShadow: HEADER.chipShadow,
             }}
           >
-            <Wordmark tile size={38} />
+            <Wordmark tile size={HEADER.logoSize} />
           </Link>
 
           {/* Desktop links */}
