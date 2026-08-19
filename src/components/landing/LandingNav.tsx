@@ -75,7 +75,7 @@ export default function LandingNav() {
                 '0 1px 2px rgba(0,0,0,0.4), 0 6px 20px -8px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)',
             }}
           >
-            <Wordmark />
+            <Wordmark tile size={38} />
           </Link>
 
           {/* Desktop links */}
