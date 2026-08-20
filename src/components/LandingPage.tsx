@@ -6,6 +6,7 @@ import { C } from './landing/tokens';
 import type { PublicPlan, PublicStats } from './landing/types';
 
 import LandingNav from './landing/LandingNav';
+import PublicPullToRefresh from './PublicPullToRefresh';
 import Hero from './landing/Hero';
 import TrustBar from './landing/TrustBar';
 import ProductShowcase from './landing/ProductShowcase';
@@ -87,6 +88,7 @@ export default function LandingPage() {
       </div>
 
       <LandingNav />
+      <PublicPullToRefresh />
 
       <main id="main-content">
         <Hero />

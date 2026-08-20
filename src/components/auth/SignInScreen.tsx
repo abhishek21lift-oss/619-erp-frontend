@@ -569,7 +569,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
               </AnimatePresence>
 
               {/* form */}
-              <form onSubmit={submit} noValidate className="mt-6">
+              <form data-no-pull-refresh onSubmit={submit} noValidate className="mt-6">
                 {/* email */}
                 <div>
                   <label htmlFor="email" className="mb-1.5 block text-[12px] font-[650] tracking-[0.02em]" style={{ color: C.body }}>Email address</label>

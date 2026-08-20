@@ -17,6 +17,7 @@ import { Wordmark } from '@/components/landing/Wordmark';
 import { C, SHADOW } from '@/components/landing/tokens';
 import { ArrowRight, Building2, CheckCircle2, Clock, Eye, EyeOff, Loader2, Lock, Mail, Phone, User } from 'lucide-react';
 import { api } from '@/lib/api';
+import PublicPullToRefresh from '@/components/PublicPullToRefresh';
 
 type Field = 'full_name' | 'business_name' | 'mobile' | 'email' | 'password';
 
@@ -96,7 +97,12 @@ export default function StartFreePage() {
     }
   }, [form, valid, submitting]);
 
-  if (done) return <PendingApproval email={form.email.trim()} trialDays={trialDays} />;
+  if (done) return (
+    <>
+      <PublicPullToRefresh />
+      <PendingApproval email={form.email.trim()} trialDays={trialDays} />
+    </>
+  );
 
   return (
     <div
@@ -112,6 +118,7 @@ export default function StartFreePage() {
       </div>
 
       {/* Clears the fixed bar: its own notch reserve plus its content height. */}
+      <PublicPullToRefresh />
       <main
         className="relative z-10 flex flex-1 items-start justify-center px-4 pb-14 sm:px-6"
         style={{ paddingTop: PUBLIC_NAV_CLEARANCE }}
@@ -134,6 +141,7 @@ export default function StartFreePage() {
           </div>
 
           <form
+            data-no-pull-refresh
             onSubmit={submit}
             noValidate
             className="rounded-[22px] border p-5 sm:p-6"

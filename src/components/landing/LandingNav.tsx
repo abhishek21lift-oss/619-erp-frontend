@@ -128,7 +128,7 @@ export default function LandingNav() {
         </nav>
 
         {/* Mobile drawer */}
-        <div id="landing-mobile-menu" hidden={!open} className="pb-4 lg:hidden">
+        <div id="landing-mobile-menu" data-no-pull-refresh hidden={!open} className="pb-4 lg:hidden">
           <div
             className="rounded-2xl border p-3"
             style={{ background: 'rgba(16,27,48,0.92)', borderColor: C.line, boxShadow: '0 24px 56px -20px rgba(0,0,0,0.7)' }}
