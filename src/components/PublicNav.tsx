@@ -46,7 +46,8 @@ export default function PublicNav({ action, dark = false }: { action: 'sign-in' 
         background: dark ? HEADER.bg : 'rgba(255,255,255,0.88)',
         backdropFilter: dark ? HEADER.blur : 'blur(20px)',
         WebkitBackdropFilter: dark ? HEADER.blur : 'blur(20px)',
-        borderBottom: dark ? `1px solid ${HEADER.border}` : '1px solid rgba(0,103,224,0.07)',
+        borderBottom: dark ? `1px solid ${HEADER.accentLine}` : '1px solid rgba(0,103,224,0.07)',
+        boxShadow: dark ? HEADER.accentGlow : undefined,
       }}
     >
       <div className={HEADER.container}>
@@ -86,9 +87,10 @@ export default function PublicNav({ action, dark = false }: { action: 'sign-in' 
           <Link
             href={href}
             className={`rounded-lg px-4 py-2 text-[13.5px] transition-colors ${
-              dark ? 'font-[650] hover:bg-white/[0.06] hover:text-white' : 'font-[650] hover:bg-black/[0.04]'
+              dark
+                ? 'font-[650] text-slate-300 hover:bg-white/[0.06] hover:text-[var(--saffron-500)]'
+                : 'font-[650] text-slate-900 hover:bg-black/[0.04]'
             }`}
-            style={{ color: dark ? '#CBD5E1' : '#0F172A' }}
           >
             {label}
           </Link>

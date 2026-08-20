@@ -81,6 +81,11 @@ export const HEADER = {
   bg: 'rgba(11,18,32,0.78)',
   blur: 'blur(18px) saturate(160%)',
   border: 'rgba(148,163,184,0.10)',
+  // Saffron accent — 1px hairline along the bar's bottom edge, kept at low
+  // opacity so it reads as a premium underline, not an orange border. The
+  // glow is the soft halo beneath that line.
+  accentLine: 'rgba(245,158,11,0.40)',
+  accentGlow: '0 10px 24px -12px rgba(245,158,11,0.35)',
   // Logo chip — dark glass pill that holds the Wordmark tile + wordmark.
   chipClass:
     'rounded-2xl border border-[rgba(148,163,184,0.16)] bg-[rgba(11,18,32,0.82)] px-3 py-2 transition-colors hover:border-[rgba(148,163,184,0.3)] hover:bg-[rgba(11,18,32,0.9)]',

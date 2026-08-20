@@ -55,11 +55,13 @@ export default function LandingNav() {
       className="fixed inset-x-0 top-0 z-50"
       style={{
         paddingTop: HEADER.padTop,
-        transition: 'background 240ms ease, border-color 240ms ease, backdrop-filter 240ms ease',
+        transition:
+          'background 240ms ease, border-color 240ms ease, backdrop-filter 240ms ease, box-shadow 240ms ease',
         background: scrolled ? HEADER.bg : 'transparent',
         backdropFilter: scrolled ? HEADER.blur : 'none',
         WebkitBackdropFilter: scrolled ? HEADER.blur : 'none',
-        borderBottom: scrolled ? `1px solid ${HEADER.border}` : '1px solid transparent',
+        borderBottom: `1px solid ${HEADER.accentLine}`,
+        boxShadow: open ? 'none' : HEADER.accentGlow,
       }}
     >
       <div className={HEADER.container}>
@@ -83,8 +85,7 @@ export default function LandingNav() {
               <a
                 key={n.label}
                 href={n.href}
-                className="rounded-lg px-3 py-2 text-[13.5px] font-[560] transition-colors hover:text-white"
-                style={{ color: C.muted }}
+                className="rounded-lg px-3 py-2 text-[13.5px] font-[560] transition-colors text-slate-400 hover:text-[var(--saffron-500)]"
               >
                 {n.label}
               </a>
@@ -94,8 +95,7 @@ export default function LandingNav() {
           <div className="hidden items-center gap-2 lg:flex">
             <Link
               href="/login"
-              className="rounded-lg px-4 py-2 text-[13.5px] font-[650] transition-colors hover:bg-white/[0.06] hover:text-white"
-              style={{ color: C.body }}
+              className="rounded-lg px-4 py-2 text-[13.5px] font-[650] transition-colors text-slate-300 hover:bg-white/[0.06] hover:text-[var(--saffron-500)]"
             >
               Log In
             </Link>
@@ -138,8 +138,7 @@ export default function LandingNav() {
                 key={n.label}
                 href={n.href}
                 onClick={() => setOpen(false)}
-                className="block rounded-xl px-3.5 py-3 text-[14px] font-[580] transition-colors hover:bg-white/[0.05] hover:text-white"
-                style={{ color: C.body }}
+                className="block rounded-xl px-3.5 py-3 text-[14px] font-[580] transition-colors text-slate-300 hover:bg-white/[0.05] hover:text-[var(--saffron-500)]"
               >
                 {n.label}
               </a>
