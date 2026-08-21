@@ -9,7 +9,7 @@ import { qsOf } from '../qs';
 import type {
   ActiveSession, ActivityEntry, AiModelRate, AiModelUsage, AiOverview, AiRouting,
   AiSettings, AiStudioUsage, AiTrendPoint, Announcement, AnnouncementInput,
-  AnnouncementPreview, AuditEntry, AuditFilters, AuditQuery, Coupon, FeatureCatalogue,
+  AnnouncementPreview, AuditEntry, AuditFilters, AuditPaging, AuditQuery, Coupon, FeatureCatalogue,
   FeatureOverrideRow, ImpersonationSession, Invitation, InvitationDetail,
   ClientActivationPreview, ClientLoginStatus,
   MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement,
@@ -204,7 +204,7 @@ export const superAdmin = {
       if (v !== undefined && v !== null && v !== '') qs.set(k, String(v));
     }
     const q = qs.toString();
-    return http<{ data: AuditEntry[]; paging: { limit: number; offset: number; total: number; count: number } }>(
+    return http<{ data: AuditEntry[]; paging: AuditPaging & { count: number } }>(
       `/api/platform/audit${q ? `?${q}` : ''}`,
     );
   },
@@ -331,12 +331,22 @@ export const superAdmin = {
 
   /** Persisted history: errors and above, durable across restarts, and the only
    *  place the WORKER container's errors are visible. */
-  commandCenterLogHistory: (opts: { level?: string; source?: 'api' | 'worker'; q?: string; limit?: number } = {}) => {
+  commandCenterLogHistory: (
+    opts: {
+      level?: string; source?: 'api' | 'worker'; q?: string; limit?: number;
+      /** Keyset cursor: the `next_before` from the previous page. */
+      before?: string;
+      /** Skip the stats aggregate. The poll tick passes false. */
+      stats?: boolean;
+    } = {},
+  ) => {
     const qs = new URLSearchParams();
     if (opts.level) qs.set('level', opts.level);
     if (opts.source) qs.set('source', opts.source);
     if (opts.q) qs.set('q', opts.q);
     if (opts.limit) qs.set('limit', String(opts.limit));
+    if (opts.before) qs.set('before', opts.before);
+    if (opts.stats === false) qs.set('stats', '0');
     const q = qs.toString();
     return http<{ data: LogHistory }>(`/api/platform/command-center/logs/history${q ? `?${q}` : ''}`);
   },
@@ -419,7 +429,7 @@ export const superAdmin = {
 
   securityOverview: () => http<{ data: SecurityOverview }>('/api/platform/security/overview'),
   loginEvents: (params: LoginEventQuery = {}) =>
-    http<{ data: LoginEvent[]; paging: { limit: number; offset: number; total: number } }>(
+    http<{ data: LoginEvent[]; paging: AuditPaging }>(
       `/api/platform/security/login-events${qsOf(params)}`,
     ),
   securityThreats: (params: { hours?: number; min?: number } = {}) =>

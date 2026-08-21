@@ -176,6 +176,10 @@ export default function AuditCentre() {
 
   const [rows, setRows] = useState<AuditEntry[]>([]);
   const [total, setTotal] = useState(0);
+  // The server counts to a ceiling rather than scanning a table that grows
+  // without bound. Below it the number is exact; at it, "10,000+" is the only
+  // honest thing to print.
+  const [totalCapped, setTotalCapped] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [opts, setOpts] = useState<{ actions: string[]; entity_types: string[] }>({ actions: [], entity_types: [] });
@@ -208,7 +212,7 @@ export default function AuditCentre() {
     setLoading(true);
     setError('');
     api.superAdmin.audit(query)
-      .then((r) => { setRows(r.data ?? []); setTotal(r.paging?.total ?? 0); })
+      .then((r) => { setRows(r.data ?? []); setTotal(r.paging?.total ?? 0); setTotalCapped(r.paging?.total_capped ?? false); })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load the audit log.'))
       .finally(() => setLoading(false));
   }, [query]);
@@ -334,7 +338,9 @@ export default function AuditCentre() {
       <div className="overflow-hidden rounded-[16px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
         <div className="flex items-center justify-between gap-3 px-3 py-2.5 sm:px-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <p className="text-[11.5px] font-[650]" style={{ color: 'var(--text-muted)' }}>
-            {loading ? 'Loading…' : `${total.toLocaleString('en-IN')} event${total === 1 ? '' : 's'}`}
+            {loading
+              ? 'Loading…'
+              : `${total.toLocaleString('en-IN')}${totalCapped ? '+' : ''} event${total === 1 ? '' : 's'}`}
           </p>
           {total > PAGE_SIZE && (
             <div className="flex items-center gap-1">

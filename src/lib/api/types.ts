@@ -2079,15 +2079,51 @@ export interface PersistedLogLine {
   context: unknown;
 }
 
+/**
+ * Paging for the two platform audit feeds.
+ *
+ * `total` is exact up to a ceiling and then stops counting. Both feeds read
+ * tables with no retention sweep — `activity_log` and `login_events` grow for
+ * as long as the platform is used — and an unfiltered count over either was a
+ * full scan plus joins with no upper bound. Past the ceiling the honest answer
+ * is "more than this", which `total_capped` says.
+ */
+export interface AuditPaging {
+  limit: number;
+  offset: number;
+  total: number;
+  /** True when `total` is the ceiling rather than a count. */
+  total_capped?: boolean;
+}
+
 export interface LogHistory {
   lines: PersistedLogLine[];
-  stats: {
-    total: number;
-    from_worker: number;
-    fatal: number;
-    last_24h: number;
-    oldest: string | null;
-  };
+  /**
+   * Null when the request asked to skip it (`stats=0`), which the poll tick
+   * does. The lines change every few seconds; this strip does not, and
+   * recomputing it per tick was most of the cost of leaving the tab open.
+   */
+  stats: LogHistoryStats | null;
+  /** Cursor for the next (older) page; null when the last page was short. */
+  next_before: string | null;
+}
+
+export interface LogHistoryStats {
+  /**
+   * Counts within `window_hours`, not over the whole table.
+   *
+   * The unwindowed COUNT(*) this replaced was a sequential scan of the largest
+   * table on the box, and it ran beside every page of a list that was already
+   * capped — so the endpoint looked paginated while half of it was not.
+   */
+  in_window: number;
+  from_worker: number;
+  fatal: number;
+  window_hours: number;
+  /** Oldest row in the whole table, which a windowed count cannot report. */
+  oldest: string | null;
+  /** Days of history the retention sweep keeps, so `oldest` has a context. */
+  retention_days: number;
 }
 
 export interface GuardianNarration {
