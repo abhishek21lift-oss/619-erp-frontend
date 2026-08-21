@@ -13,6 +13,7 @@ import Guard from '@/components/Guard';
 import { Button, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface Payment {
   id: string; client_id: string; trainer_id: string;
@@ -138,7 +139,17 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 20;
 
-  const formRef = useRef<HTMLDivElement>(null);
+  // Replaces a `formRef` that was attached to this dialog and never read —
+  // declared, wired up, and load-bearing for nothing.
+  //
+  // Escape, focus trap and focus restore for the Record Payment sheet. It
+  // declared `aria-modal="true"` while Tab left it for the payment history
+  // table behind, and it had no Escape handler, so the only way out was a
+  // click on the backdrop.
+  const dialogRef = useDialogA11y({
+    open: showPaymentPanel,
+    onClose: () => setShowPaymentPanel(false),
+  });
 
   const [form, setForm] = useState({
     amount: '',
@@ -585,7 +596,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                     onClick={() => setShowPaymentPanel(false)}
                   />
                   <m.div
-                    ref={formRef}
+                    ref={dialogRef}
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 40 }}

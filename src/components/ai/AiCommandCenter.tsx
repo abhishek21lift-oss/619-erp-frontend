@@ -35,6 +35,7 @@ import { AiStreamError, streamAiChat } from '@/lib/ai-stream';
 import { useVoiceInput } from '@/lib/use-voice-input';
 import { api } from '@/lib/api';
 import type { AiActionPlan, AiActionResult, AiConversation } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -88,12 +89,10 @@ export default function AiCommandCenter({
   }, [open]);
 
   /* ── Escape closes ────────────────────────────────────────────────── */
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  // Escape, focus trap and focus restore, replacing a bespoke Escape listener.
+  // The panel declared aria-modal while Tab walked out of it into the page
+  // behind, and closing dropped focus to the top of the document.
+  const dialogRef = useDialogA11y({ open, onClose });
 
   /* ── Recent conversations, refreshed each time it opens ───────────── */
   useEffect(() => {
@@ -255,6 +254,7 @@ export default function AiCommandCenter({
 
           <m.div
             key="ai-panel"
+            ref={dialogRef}
             data-no-pull-refresh
             role="dialog"
             aria-modal="true"

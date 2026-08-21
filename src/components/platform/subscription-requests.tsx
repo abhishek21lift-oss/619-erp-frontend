@@ -34,6 +34,7 @@ import type {
 } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { EmptyState } from '@/components/ui';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 const inr = (n: number) => '₹' + Number(n || 0).toLocaleString('en-IN');
 
@@ -297,11 +298,16 @@ function ActionDialog({
   const [error, setError] = useState<string | null>(null);
   const isApprove = kind === 'approve';
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !busy) onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [busy, onClose]);
+  // Escape, focus trap and focus restore. This used to be a bespoke Escape
+  // listener and nothing else: the dialog declared `aria-modal="true"` while
+  // Tab walked straight out of it into the Command Centre behind, and closing
+  // dropped focus to the top of the document. It approves and rejects
+  // payments, so "reachable only with a mouse" is not an acceptable state for
+  // it to be in.
+  //
+  // `escapeCloses` is gated on `busy` for the reason the old handler was: a
+  // request is in flight and dismissing the dialog would hide its outcome.
+  const dialogRef = useDialogA11y({ open: true, onClose, escapeCloses: !busy });
 
   const run = async () => {
     setBusy(true); setError(null);
@@ -324,10 +330,14 @@ function ActionDialog({
 
   return (
     <AnimatePresence>
-      <m.div data-no-pull-refresh className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
+      <m.div data-no-pull-refresh ref={dialogRef} className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         role="dialog" aria-modal="true" aria-labelledby="sub-action-title">
-        <div className="absolute inset-0" style={{ background: 'var(--bg-overlay)' }}
+        {/* aria-hidden: this is the click-outside target, and it is a mouse
+            affordance only. Giving it a key handler would add a tab stop that
+            does nothing; Escape is the keyboard equivalent and the hook above
+            provides it. */}
+        <div aria-hidden="true" className="absolute inset-0" style={{ background: 'var(--bg-overlay)' }}
           onClick={() => !busy && onClose()} />
         <m.div className="relative w-full max-w-[440px] overflow-hidden rounded-t-3xl sm:rounded-3xl"
           initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 16, opacity: 0 }}
@@ -421,6 +431,9 @@ function PlatformUpiDialog({
 }: { onClose: () => void; toast: ReturnType<typeof useToast>['toast'] }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  // Same treatment as the approve/reject dialog above: this one had no Escape
+  // handler at all, so it could only be dismissed by clicking the backdrop.
+  const dialogRef = useDialogA11y({ open: true, onClose, escapeCloses: !saving });
   const [error, setError] = useState<string | null>(null);
 
   const [upiId, setUpiId] = useState('');
@@ -461,10 +474,11 @@ function PlatformUpiDialog({
 
   return (
     <AnimatePresence>
-      <m.div data-no-pull-refresh className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
+      <m.div data-no-pull-refresh ref={dialogRef} className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         role="dialog" aria-modal="true" aria-labelledby="upi-settings-title">
-        <div className="absolute inset-0" style={{ background: 'var(--bg-overlay)' }}
+        {/* Mouse affordance only — see the note on the sibling dialog above. */}
+        <div aria-hidden="true" className="absolute inset-0" style={{ background: 'var(--bg-overlay)' }}
           onClick={() => !saving && onClose()} />
         <m.div className="relative max-h-[92vh] w-full max-w-[440px] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-3xl"
           initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 16, opacity: 0 }}

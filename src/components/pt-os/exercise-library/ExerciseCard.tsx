@@ -187,6 +187,15 @@ export const ExerciseCard = React.memo(function ExerciseCard({
               {menuOpen && (
                 <div
                   role="menu"
+                  // `menu` is an interactive role, so it has to be reachable.
+                  // tabIndex={-1} makes it programmatically focusable without
+                  // adding a tab stop of its own — the items inside are the
+                  // stops. Escape closes it, which it previously could not do
+                  // at all: the only way to dismiss this menu was a click.
+                  tabIndex={-1}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') { e.stopPropagation(); setMenuOpen(false); }
+                  }}
                   onClick={(e) => e.stopPropagation()}
                   data-no-pull-refresh className="absolute right-0 top-full z-30 mt-1 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl dark:border-white/10 dark:bg-[#0F172A]"
                 >

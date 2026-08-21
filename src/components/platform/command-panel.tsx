@@ -32,6 +32,7 @@ import { ApiError } from '@/lib/http';
 import { semantic, rgba } from '@/lib/palette';
 import type { CommandCenterCommand } from '@/lib/api';
 import { Center, ErrorState } from '@/app/(platform)/platform/_shared/ui';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 /** What came back from the last press, per command. */
 type Outcome =
@@ -72,6 +73,16 @@ function ConfirmDialog({
 }) {
   const [typed, setTyped] = useState('');
   const { cmd } = pending;
+  // Escape, focus trap and focus restore. This dialog gates the Command
+  // Centre's destructive operations — the ones that pause queues and delete
+  // failed jobs — behind typing the command's own name, and it had no Escape
+  // handler and no focus management at all. Focus stayed outside it, so the
+  // confirmation input a keyboard operator has to type into was not where
+  // their next keystroke went.
+  //
+  // `escapeCloses` is off while running: a command is in flight and dismissing
+  // the dialog would hide its outcome.
+  const dialogRef = useDialogA11y({ open: true, onClose: onCancel, escapeCloses: !running });
   // The exact string the server will compare against. Requiring the command's
   // own name — rather than a generic "DELETE" or an OK button — is what stops a
   // click-through: you cannot produce it without having read which command you
@@ -80,6 +91,7 @@ function ConfirmDialog({
 
   return (
     <div
+      ref={dialogRef}
       data-no-pull-refresh className="fixed inset-0 z-50 grid place-items-center p-4"
       style={{ background: rgba(semantic.ink, 0.55) }}
       role="dialog"
