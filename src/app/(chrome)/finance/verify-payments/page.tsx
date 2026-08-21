@@ -32,6 +32,7 @@ import type {
 } from '@/lib/api';
 import { PLAN_DURATION_MONTHS } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { PageHeader, EmptyState, cn } from '@/components/ui';
 import {
   REJECT_REASONS, REJECT_REASON_LABELS, UpiStatusBadge, fmtMoney, fmtMoneyExact,
@@ -410,12 +411,15 @@ function ActionDialog({
     if (action) { setReason('PAYMENT_NOT_RECEIVED'); setNote(''); setError(null); }
   }, [action]);
 
-  useEffect(() => {
-    if (!action) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !busy) onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [action, busy, onClose]);
+  // Escape, focus trap and focus restore, from one shared hook.
+  //
+  // Each of these three dialogs previously had a bespoke Escape listener and
+  // nothing else. They declared `aria-modal="true"` — a statement to assistive
+  // technology that the rest of the page is inert — while Tab walked straight
+  // out into that page, and closing dropped focus to the top of the document.
+  // This screen verifies and rejects client payments, so a keyboard user being
+  // unable to stay inside the dialog is not a cosmetic issue.
+  const dialogRef = useDialogA11y({ open: !!action, onClose, escapeCloses: !busy });
 
   if (!action) return null;
   const { row, kind } = action;
@@ -453,11 +457,15 @@ function ActionDialog({
   return (
     <AnimatePresence>
       <m.div
+        ref={dialogRef}
         data-no-pull-refresh className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         role="dialog" aria-modal="true" aria-labelledby="verify-dialog-title"
       >
-        <div className="absolute inset-0" style={{ background: 'var(--bg-overlay)' }}
+        {/* aria-hidden: the click-outside target is a mouse affordance only.
+            A key handler here would add a tab stop that does nothing; Escape
+            is the keyboard equivalent and the hook provides it. */}
+        <div aria-hidden="true" className="absolute inset-0" style={{ background: 'var(--bg-overlay)' }}
           onClick={() => !busy && onClose()} />
         <m.div
           className="relative w-full max-w-[440px] overflow-hidden rounded-t-3xl sm:rounded-3xl"
@@ -562,12 +570,9 @@ function ActionDialog({
 // ── Proof viewer ────────────────────────────────────────────────────────────
 
 function ProofDialog({ row, onClose }: { row: UpiQueueRow | null; onClose: () => void }) {
-  useEffect(() => {
-    if (!row) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [row, onClose]);
+  // Same hook as its siblings; a proof viewer has nothing in flight, so
+  // Escape is always available.
+  const dialogRef = useDialogA11y({ open: !!row, onClose });
 
   if (!row?.screenshot_url) return null;
   const isPdf = row.screenshot_url.toLowerCase().endsWith('.pdf');
@@ -575,11 +580,15 @@ function ProofDialog({ row, onClose }: { row: UpiQueueRow | null; onClose: () =>
   return (
     <AnimatePresence>
       <m.div
+        ref={dialogRef}
         data-no-pull-refresh className="fixed inset-0 z-[110] flex items-center justify-center p-4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         role="dialog" aria-modal="true" aria-label="Payment proof"
       >
-        <div className="absolute inset-0" style={{ background: 'rgba(15,23,42,0.82)' }} onClick={onClose} />
+        {/* aria-hidden: the click-outside target is a mouse affordance only.
+            A key handler here would add a tab stop that does nothing; Escape
+            is the keyboard equivalent and the hook provides it. */}
+        <div aria-hidden="true" className="absolute inset-0" style={{ background: 'rgba(15,23,42,0.82)' }} onClick={onClose} />
         <m.div
           className="relative flex max-h-[88vh] w-full max-w-[520px] flex-col overflow-hidden rounded-2xl"
           initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
@@ -669,11 +678,7 @@ function NewRequestDialog({
     void api.membershipPlans.list().then((rows) => setPlans(rows ?? [])).catch(() => setPlans([]));
   }, []);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !busy) onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [busy, onClose]);
+  const dialogRef = useDialogA11y({ open: true, onClose, escapeCloses: !busy });
 
   // Debounced member search.
   useEffect(() => {
@@ -731,11 +736,15 @@ function NewRequestDialog({
   return (
     <AnimatePresence>
       <m.div
+        ref={dialogRef}
         data-no-pull-refresh className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         role="dialog" aria-modal="true" aria-labelledby="new-request-title"
       >
-        <div className="absolute inset-0" style={{ background: 'var(--bg-overlay)' }}
+        {/* aria-hidden: the click-outside target is a mouse affordance only.
+            A key handler here would add a tab stop that does nothing; Escape
+            is the keyboard equivalent and the hook provides it. */}
+        <div aria-hidden="true" className="absolute inset-0" style={{ background: 'var(--bg-overlay)' }}
           onClick={() => !busy && onClose()} />
         <m.div
           className="relative max-h-[92vh] w-full max-w-[440px] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-3xl"

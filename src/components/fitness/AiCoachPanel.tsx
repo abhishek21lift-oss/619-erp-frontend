@@ -8,6 +8,7 @@ import {
 import { api } from '@/lib/api';
 import { streamAiChat } from '@/lib/ai-stream';
 import type { Client } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -107,12 +108,10 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
   }, [messages, isTyping, mode]);
 
   // Close on Escape
-  useEffect(() => {
-    if (!onClose) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  // Escape, focus trap and focus restore, replacing a bespoke Escape listener.
+  // The panel declared aria-modal while Tab walked out of it into the page
+  // behind, and closing dropped focus to the top of the document.
+  const dialogRef = useDialogA11y({ open: !!onClose, onClose });
 
   // Abort any in-flight stream on unmount
   useEffect(() => () => abortRef.current?.abort(), []);
@@ -298,7 +297,9 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: '100%', opacity: 0.6 }}
         transition={{ duration: 0.34, ease: [0.32, 0.72, 0, 1] }}
+        ref={dialogRef}
         role="dialog"
+        aria-modal="true"
         aria-label="AI Coach"
         style={{
           position: 'fixed', right: 0, top: 0, bottom: 0,

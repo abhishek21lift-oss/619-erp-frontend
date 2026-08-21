@@ -6,6 +6,7 @@ import { Badge, cn } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { LibraryExercise } from '@/lib/api';
 import { useSearchFieldFocus } from '@/lib/search-field-focus';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 /**
  * ⌘K over the whole library.
@@ -24,6 +25,10 @@ export interface ExerciseCommandPaletteProps {
 
 export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseCommandPaletteProps) {
   const [q, setQ] = React.useState('');
+  // Focus trap and focus restore only. Escape is already handled inside this
+  // palette's own keydown handler, alongside arrow navigation and Enter, so
+  // `escapeCloses` is off to avoid two listeners racing on the same key.
+  const dialogRef = useDialogA11y({ open: true, escapeCloses: false });
   const [results, setResults] = React.useState<LibraryExercise[]>([]);
   const [recents, setRecents] = React.useState<LibraryExercise[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -104,6 +109,7 @@ export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseComm
         aria-hidden
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Search exercises"

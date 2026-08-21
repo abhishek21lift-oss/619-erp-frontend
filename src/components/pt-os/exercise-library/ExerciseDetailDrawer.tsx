@@ -8,6 +8,7 @@ import {
 import { Badge, Skeleton, cn } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { ExerciseVersion, LibraryExercise } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 /**
  * Full exercise detail, in a right-hand drawer.
@@ -54,12 +55,10 @@ export function ExerciseDetailDrawer({
     return () => { alive = false; };
   }, [exerciseId]);
 
-  React.useEffect(() => {
-    if (!exerciseId) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [exerciseId, onClose]);
+  // Escape, focus trap and focus restore, replacing a bespoke Escape listener.
+  // The panel declared aria-modal while Tab walked out of it into the page
+  // behind, and closing dropped focus to the top of the document.
+  const dialogRef = useDialogA11y({ open: !!exerciseId, onClose });
 
   const loadVersions = React.useCallback(async () => {
     if (!ex) return;
@@ -83,6 +82,7 @@ export function ExerciseDetailDrawer({
         aria-hidden
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={ex?.name || 'Exercise details'}

@@ -23,6 +23,7 @@ import {
   streamClientAi, ClientAiError, SUGGESTED_QUESTIONS,
   type ClientAiTurn, type ClientAiGrounding,
 } from '@/lib/client-ai';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface Msg extends ClientAiTurn {
   id: string;
@@ -84,11 +85,10 @@ export default function ClientAiPanel({
     });
   }, [messages, busy]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  // Escape, focus trap and focus restore, replacing a bespoke Escape listener.
+  // The panel declared aria-modal while Tab walked out of it into the page
+  // behind, and closing dropped focus to the top of the document.
+  const dialogRef = useDialogA11y({ open: true, onClose });
 
   const send = useCallback(async (text: string) => {
     const question = text.trim();
@@ -169,6 +169,7 @@ export default function ClientAiPanel({
       // usePullToRefresh listens on window and claims any downward drag while
       // scrollY is 0. Without this, dragging the transcript at the top of its
       // own scroll pulls the whole page down BEHIND the open panel.
+      ref={dialogRef}
       data-no-pull-refresh
       className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center"
       role="dialog"

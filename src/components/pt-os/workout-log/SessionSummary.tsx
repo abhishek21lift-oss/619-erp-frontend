@@ -25,6 +25,7 @@ import { useEffect, useRef, useState } from 'react';
 import { m } from 'framer-motion';
 import { Check, Loader2, Timer, Trophy, X } from 'lucide-react';
 import type { WorkoutSessionDetail } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 export interface SessionSummaryProps {
   session: WorkoutSessionDetail;
@@ -42,6 +43,13 @@ export default function SessionSummary({ session, open, onCancel, onFinish }: Se
   );
   const [saving, setSaving] = useState(false);
   const noteRef = useRef<HTMLTextAreaElement>(null);
+  // Escape, focus trap and focus restore — this dialog had none of the three,
+  // so a keyboard user could open the end-of-workout summary and had no way
+  // to leave it or to reach the Finish button inside it.
+  //
+  // `open` is a real prop here, so the hook mounts and unmounts with the
+  // dialog and focus returns to whatever opened it.
+  const dialogRef = useDialogA11y({ open, onClose: onCancel, escapeCloses: !saving });
 
   // Adopt the stored values when the sheet opens, so reopening after a cancel
   // does not show a stale draft.
@@ -76,6 +84,7 @@ export default function SessionSummary({ session, open, onCancel, onFinish }: Se
       role="presentation"
     >
       <m.div
+        ref={dialogRef}
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}

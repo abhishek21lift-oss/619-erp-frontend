@@ -796,9 +796,15 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
   // `heightClass` differs by surface: the dropdown is capped, the sheet fills
   // whatever the on-screen keyboard leaves. The scroll container must be the
   // element that carries the constraint, or the list clips instead of scrolling.
-  const renderPanel = (heightClass: string) => (
+  // `id` is a parameter because this renders TWICE — once in the desktop
+  // dropdown and once in the mobile sheet — and an id has to be unique. The
+  // desktop input already carried `aria-controls="global-search-panel"`
+  // pointing at an element that did not exist anywhere in the tree: a
+  // dangling reference reads to a screen reader as no reference at all.
+  const renderPanel = (heightClass: string, id: string) => (
     <div
       ref={listRef}
+      id={id}
       role="listbox"
       aria-label="Search results"
       className={cn('overflow-y-auto overscroll-contain', heightClass)}
@@ -1002,7 +1008,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
                 boxShadow: '0 24px 60px rgba(15,23,42,0.22), 0 2px 8px rgba(15,23,42,0.06)',
               }}
             >
-              {renderPanel('max-h-[min(70vh,460px)]')}
+              {renderPanel('max-h-[min(70vh,460px)]', 'global-search-panel')}
             </m.div>
           )}
         </AnimatePresence>
@@ -1044,7 +1050,13 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
                       ref={sheetInputRef}
                       type="text"
                       role="combobox"
-                      aria-expanded
+                      // Was a bare `aria-expanded`, i.e. permanently "true",
+                      // and carried no aria-controls at all. `sheetOpen` is
+                      // the state that actually governs whether this panel is
+                      // showing, and it mirrors what the desktop input does
+                      // with `open`.
+                      aria-expanded={sheetOpen}
+                      aria-controls="global-search-sheet-panel"
                       aria-autocomplete="list"
                       aria-activedescendant={activeDescendant}
                       autoComplete="off"
@@ -1074,7 +1086,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
                     Cancel
                   </button>
                 </div>
-                <div className="min-h-0 flex-1 pb-2">{renderPanel('max-h-full')}</div>
+                <div className="min-h-0 flex-1 pb-2">{renderPanel('max-h-full', 'global-search-sheet-panel')}</div>
               </m.div>
             </m.div>
           )}

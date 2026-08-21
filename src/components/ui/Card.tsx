@@ -88,16 +88,23 @@ export function CardHeader({
 
 export function CardTitle({
   className,
+  children,
   ...props
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
+    // `children` is destructured and passed explicitly rather than arriving
+    // inside {...props}. Identical at runtime; the difference is that a
+    // heading whose content is spread in cannot be checked for having any,
+    // and an empty heading is announced as a landmark with nothing in it.
     <h3
       className={cn(
         'text-[15px] font-semibold tracking-tight text-[var(--text-primary)]',
         className,
       )}
       {...props}
-    />
+    >
+      {children}
+    </h3>
   );
 }
 

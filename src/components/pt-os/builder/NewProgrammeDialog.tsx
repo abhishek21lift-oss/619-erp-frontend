@@ -25,6 +25,7 @@ import { Loader2, Search, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { WorkoutPlan } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 export interface ClientOption { id: string; name: string; }
 
@@ -81,6 +82,9 @@ export default function NewProgrammeDialog({
   const { toast } = useToast();
 
   const [clients, setClients] = useState<ClientOption[]>([]);
+  // Escape, focus trap and focus restore. This dialog had none of the three:
+  // it could only be dismissed with a mouse, and Tab left it immediately.
+  const dialogRef = useDialogA11y({ open: true, onClose });
   const [search, setSearch] = useState('');
   const [clientId, setClientId] = useState<string | null>(presetClientId ?? null);
   const [name, setName] = useState('');
@@ -156,6 +160,7 @@ export default function NewProgrammeDialog({
       role="presentation"
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="New programme"
