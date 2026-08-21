@@ -790,6 +790,11 @@ export interface InformedConsentActivity {
 // Types matching the /api/pt-os/workout-log/* contract exactly. is_pr_* and
 // summary fields are always server-computed — never sent by the client.
 
+/** Distance unit for a logged cardio actual — stored with the value, never converted on read. */
+export type WorkoutDistanceUnit = 'm' | 'km' | 'mile';
+/** Speed unit for a logged cardio actual. */
+export type WorkoutSpeedUnit = 'kmh' | 'mph';
+
 export interface WorkoutSet {
   id: string;
   session_exercise_id: string;
@@ -800,6 +805,18 @@ export interface WorkoutSet {
   rir?: number | null;
   tempo?: string | null;
   rest_seconds?: number | null;
+  /** Cardio actuals — all NULL for strength sets (mirrors cardio_performances). */
+  duration_seconds?: number | null;
+  distance?: number | null;
+  distance_unit?: WorkoutDistanceUnit | null;
+  average_speed?: number | null;
+  speed_unit?: WorkoutSpeedUnit | null;
+  calories_burned?: number | null;
+  average_heart_rate?: number | null;
+  cadence?: number | null;
+  steps_completed?: number | null;
+  floors_completed?: number | null;
+  rounds_completed?: number | null;
   completed: boolean;
   notes?: string | null;
   is_pr_weight: boolean;
@@ -816,6 +833,11 @@ export interface WorkoutSessionExercise {
   exercise_name: string;
   sort_order: number;
   notes?: string | null;
+  /** Which fields this exercise can be logged AS. NULL for ad-hoc rows whose
+   *  library exercise went away — the logger falls back to strength fields. */
+  exercise_type?: string | null;
+  prescription_mode_primary?: string | null;
+  prescription_mode_allowed?: string[] | null;
   created_at: string;
   sets: WorkoutSet[];
 }
