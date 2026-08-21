@@ -30,7 +30,45 @@ import WorkoutTemplateBuilder from '@/components/pt-os/training/WorkoutTemplateB
 import { useTrainingMeta } from '@/lib/training/useTrainingMeta';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import type { TemplateExercise, WorkoutSection, WorkoutTemplate } from '@/lib/api';
+import type { PrescriptionType, TemplateExercise, WorkoutSection, WorkoutTemplate } from '@/lib/api';
+
+function starterPrescription(type: PrescriptionType): Record<string, unknown> {
+  switch (type) {
+    case 'DISTANCE':
+    case 'DISTANCE_LOAD':
+      return { target_distance: type === 'DISTANCE_LOAD' ? 20 : 1000, distance_unit: type === 'DISTANCE_LOAD' ? 'm' : 'm' };
+    case 'TIME_DISTANCE':
+      return { target_duration_seconds: 1200, target_distance: 2, distance_unit: 'km' };
+    case 'TIME_SPEED':
+      return { target_duration_seconds: 1200 };
+    case 'TIME_LOAD':
+      return { target_duration_seconds: 600 };
+    case 'PACE':
+      return { target_pace_seconds: 360, distance_unit: 'km' };
+    case 'SPEED':
+      return { target_speed: 8, target_duration_seconds: 1200 };
+    case 'CALORIES':
+      return { target_calories: 300 };
+    case 'HEART_RATE':
+      return { target_heart_rate: 140, target_duration_seconds: 1200 };
+    case 'RPE':
+      return { target_rpe: 7, target_duration_seconds: 1200 };
+    case 'RPM':
+      return { target_cadence: 60, target_duration_seconds: 1200 };
+    case 'STEPS':
+      return { target_steps: 500 };
+    case 'FLOORS':
+      return { target_floors: 10 };
+    case 'HOLD':
+      return { target_duration_seconds: 30, target_sets: 3, target_rest_seconds: 60 };
+    case 'INTERVAL':
+      return { work_interval_seconds: 30, rest_interval_seconds: 30, target_rounds: 10 };
+    case 'ROUNDS':
+      return { target_rounds: 5 };
+    default:
+      return { target_duration_seconds: 600 };
+  }
+}
 
 export default function TemplateBuilderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -66,20 +104,19 @@ function TemplateBuilder({ templateId }: { templateId: string }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const addExercise = useCallback(async (exercise: { id: string; name: string }) => {
+  const addExercise = useCallback(async (exercise: { id: string; name: string; prescription_mode_primary?: string | null }) => {
     const section = pickerSection ?? 'MAIN';
     setPickerSection(null);
     try {
+      const cardioSection = section === 'CARDIO' || section === 'CONDITIONING';
+      const type = (cardioSection
+        ? exercise.prescription_mode_primary || 'TIME'
+        : 'SETS_REPS') as PrescriptionType;
       await api.training.templates.addExercise(templateId, {
         exercise_id: exercise.id,
         section,
-        // Sensible defaults for the commonest case. A cardio section starts as
-        // a cardio prescription, so adding a treadmill to the Cardio block does
-        // not first present sets and reps that the trainer has to clear.
-        prescription_type: section === 'CARDIO' || section === 'CONDITIONING' ? 'TIME' : 'SETS_REPS',
-        ...(section === 'CARDIO' || section === 'CONDITIONING'
-          ? { target_duration_seconds: 600 }
-          : { target_sets: 3, target_reps_min: 10 }),
+        prescription_type: type,
+        ...(cardioSection ? starterPrescription(type) : { target_sets: 3, target_reps_min: 10 }),
         warmup: section === 'WARMUP',
       });
       await load();

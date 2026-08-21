@@ -10,7 +10,12 @@ import { cn } from '@/components/ui/cn';
 import type { ExerciseMeta, LibraryExercise } from '@/lib/api';
 import { useVirtualList } from '@/components/pt-os/exercise-library/useExerciseLibrary';
 
-export interface PickedExercise { id: string; name: string; }
+export interface PickedExercise {
+  id: string;
+  name: string;
+  prescription_mode_primary?: string | null;
+  prescription_mode_allowed?: string[];
+}
 
 interface ExercisePickerProps {
   open: boolean;
@@ -125,7 +130,12 @@ export function ExercisePicker({
 
   const pick = useCallback((ex: LibraryExercise) => {
     if (existing.has(ex.id)) return;
-    onSelect({ id: ex.id, name: ex.name });
+    onSelect({
+      id: ex.id,
+      name: ex.name,
+      prescription_mode_primary: ex.prescription_mode_primary,
+      prescription_mode_allowed: ex.prescription_mode_allowed,
+    });
     // Feeds "recently used" for this trainer. Fire-and-forget: failing to
     // record a usage stat must never block adding the exercise.
     void api.exercises.markUsed(ex.id).catch(() => {});

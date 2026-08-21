@@ -249,6 +249,12 @@ export function ExerciseDetailDrawer({
               <BulletSection title="Safety" icon={ShieldAlert} tone="danger" items={ex.safety_tips} />
               <BulletSection title="Contraindications" icon={ShieldAlert} tone="danger" items={ex.contraindications} />
 
+              {ex.progression_notes && (
+                <Section title="Recommended progression" icon={TrendingUp}>
+                  <p className="text-[13px] leading-relaxed text-[var(--text-primary)]">{ex.progression_notes}</p>
+                </Section>
+              )}
+
               {ex.breathing_tips && (
                 <Section title="Breathing" icon={Wind}>
                   <p className="text-[13px] leading-relaxed text-[var(--text-primary)]">{ex.breathing_tips}</p>
@@ -328,22 +334,41 @@ function Prescription({ exercise: ex }: { exercise: LibraryExercise }) {
     { label: 'Tempo', value: ex.tempo_recommendation },
   ].filter((c) => c.value);
 
-  if (!cells.length) return null;
+  if (!cells.length && !ex.prescription_mode_primary) return null;
 
   return (
     <Section title="Prescription" icon={Timer}>
-      {/* One strip, not a box each. At grid-cols-2 the usual three values —
-          sets, reps, rest — left the third stranded on a row of its own with a
-          gap beside it, which reads as a missing fourth. A single divided row
-          fits three or four without either looking short. */}
-      <div className="flex divide-x divide-slate-200/80 overflow-hidden rounded-xl border border-slate-200/80 dark:divide-white/[0.07] dark:border-white/[0.07]">
-        {cells.map((c) => (
-          <div key={c.label} className="flex-1 px-3 py-2.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">{c.label}</p>
-            <p className="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">{c.value}</p>
+      {ex.prescription_mode_primary && (
+        <div className="mb-3 space-y-2">
+          <div className="flex items-center gap-2 text-[12px] font-semibold text-[var(--text-primary)]">
+            <span>Primary mode</span>
+            <Badge tone="brand">{ex.prescription_mode_primary.replace(/_/g, ' ')}</Badge>
           </div>
-        ))}
-      </div>
+          {ex.prescription_mode_allowed && ex.prescription_mode_allowed.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {ex.prescription_mode_allowed.map((mode) => (
+                <Badge key={mode} tone="neutral">{mode.replace(/_/g, ' ')}</Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {cells.length > 0 && (
+        <>
+          {/* One strip, not a box each. At grid-cols-2 the usual three values —
+              sets, reps, rest — left the third stranded on a row of its own with a
+              gap beside it, which reads as a missing fourth. A single divided row
+              fits three or four without either looking short. */}
+          <div className="flex divide-x divide-slate-200/80 overflow-hidden rounded-xl border border-slate-200/80 dark:divide-white/[0.07] dark:border-white/[0.07]">
+            {cells.map((c) => (
+              <div key={c.label} className="flex-1 px-3 py-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">{c.label}</p>
+                <p className="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">{c.value}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </Section>
   );
 }

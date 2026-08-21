@@ -1234,6 +1234,7 @@ export interface LibraryExercise {
   contraindications?: string[];
   breathing_tips?: string | null;
   tempo_recommendation?: string | null;
+  progression_notes?: string | null;
   recommended_reps?: string | null;
   recommended_sets?: string | null;
   beginner_notes?: string | null;
@@ -1247,6 +1248,8 @@ export interface LibraryExercise {
   archived_at?: string | null;
   deleted_at?: string | null;
   version?: number;
+  prescription_mode_primary?: string | null;
+  prescription_mode_allowed?: string[];
 
   primary_muscle_id?: string | null;
   equipment_id?: string | null;
