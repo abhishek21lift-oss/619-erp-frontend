@@ -53,7 +53,13 @@ export const metadata: Metadata = {
   },
   description:
     'MY PT STUDIO — the business management platform for personal trainers. Clients, training, nutrition, progress, payments and analytics, beautifully unified.',
-  alternates: { canonical: '/' },
+  // No global `alternates.canonical` here, deliberately.
+  //
+  // It used to say `{ canonical: '/' }`, which every one of the 124 routes
+  // inherited — so each URL told a crawler it was really the homepage. That is
+  // inert while the whole origin is noindex and actively harmful the moment
+  // any of it is not. Canonical is a per-URL statement; it is now declared by
+  // the two routes that are actually indexable, beside their `robots` opt-in.
   // The PWA manifest, declared through the Metadata API rather than as a
   // <link> in the <head> below.
   //
@@ -92,6 +98,25 @@ export const metadata: Metadata = {
     ],
   },
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent' },
+  // Default-deny, and the default is the whole point.
+  //
+  // 122 of this app's 124 routes are authenticated and hold client health
+  // data, payment records, revenue and staff HR. Exactly two — `/` and
+  // `/start-free` — are marketing. Making noindex the default and requiring a
+  // page to opt IN means the failure mode of forgetting is "a marketing page
+  // is not indexed" (recoverable, visible in Search Console) rather than
+  // "/finance/revenue is in Google" (not recoverable — caches and scrapers
+  // keep it).
+  //
+  // The two opt-ins live in:
+  //   src/app/(chrome)/page.tsx              → /
+  //   src/app/(bare)/start-free/layout.tsx   → /start-free
+  //
+  // publicRoutes.seo.test.ts pins that list, so adding a third is a deliberate
+  // act rather than a side effect. Until this change the default applied with
+  // no exceptions at all, so `/` could not be indexed while `sitemap.ts` was
+  // advertising it at priority 1.0 — the sitemap invited crawlers to a page
+  // whose own meta tag turned them away.
   robots: { index: false, follow: false },
 };
 
