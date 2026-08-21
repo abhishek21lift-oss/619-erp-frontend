@@ -42,11 +42,29 @@ interface ExercisePickerProps {
    * it is worse than not offering it.
    */
   allowCustom?: boolean;
+  /**
+   * Collect a batch instead of adding one and closing.
+   *
+   * Opt-in, because the three other callers genuinely want one-at-a-time:
+   * a logged session, a template row and a plan detail row each add a single
+   * movement and then need the caller's own follow-up UI. Only the programme
+   * builder is a "sit down and lay out the day" screen, and there the
+   * add-one-then-reopen loop meant opening this dialog once per exercise —
+   * search state, filters and scroll position thrown away each time.
+   *
+   * `onSelectMany` is required when this is on; `onSelect` is then unused.
+   */
+  multiple?: boolean;
+  onSelectMany?: (exercises: PickedExercise[]) => void;
 }
 
 const PAGE_SIZE = 60;
 const ROW_HEIGHT = 56;
-const VIEWPORT = 360;
+// The scrolling list's height. Raised from 360 with batch mode: picking six
+// movements through a six-row window means scrolling the library more than
+// reading it, and the whole point of collecting a batch is seeing enough of
+// the library at once to build a day from it.
+const VIEWPORT = 440;
 
 /**
  * The Workout Builder's exercise picker, over the same library the Exercise
@@ -64,6 +82,7 @@ const VIEWPORT = 360;
  */
 export function ExercisePicker({
   open, onClose, onSelect, recentNames = [], existingIds = [], allowCustom = false,
+  multiple = false, onSelectMany,
 }: ExercisePickerProps) {
   const { toast } = useToast();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -128,19 +147,58 @@ export function ExercisePicker({
     return () => clearTimeout(t);
   }, [open, load]);
 
+  /**
+   * The batch, in the order it was built.
+   *
+   * An array rather than a Set: the order exercises are added in IS the order
+   * of the day, and a trainer picking Squat then Bench then Row means that
+   * sequence. A Set would preserve insertion order in practice but says
+   * nothing about intending to.
+   */
+  const [selected, setSelected] = useState<PickedExercise[]>([]);
+  const selectedIds = useMemo(() => new Set(selected.map((e) => e.id)), [selected]);
+
+  // Dropped whenever the dialog closes, so reopening never resurrects a batch
+  // the trainer walked away from — that would silently add exercises they
+  // chose in a different context, possibly for a different day.
+  useEffect(() => { if (!open) setSelected([]); }, [open]);
+
+  const toPicked = (ex: LibraryExercise): PickedExercise => ({
+    id: ex.id,
+    name: ex.name,
+    prescription_mode_primary: ex.prescription_mode_primary,
+    prescription_mode_allowed: ex.prescription_mode_allowed,
+  });
+
   const pick = useCallback((ex: LibraryExercise) => {
     if (existing.has(ex.id)) return;
-    onSelect({
-      id: ex.id,
-      name: ex.name,
-      prescription_mode_primary: ex.prescription_mode_primary,
-      prescription_mode_allowed: ex.prescription_mode_allowed,
-    });
+
+    if (multiple) {
+      // Toggle and stay open. markUsed is deliberately NOT fired here — it is
+      // a usage statistic, and a movement that was selected and then
+      // deselected was never used.
+      setSelected((prev) => prev.some((e) => e.id === ex.id)
+        ? prev.filter((e) => e.id !== ex.id)
+        : [...prev, toPicked(ex)]);
+      return;
+    }
+
+    onSelect(toPicked(ex));
     // Feeds "recently used" for this trainer. Fire-and-forget: failing to
     // record a usage stat must never block adding the exercise.
     void api.exercises.markUsed(ex.id).catch(() => {});
     onClose();
-  }, [existing, onSelect, onClose]);
+  }, [existing, multiple, onSelect, onClose]);
+
+  /** Commit the batch. */
+  const addSelected = useCallback(() => {
+    if (selected.length === 0) return;
+    onSelectMany?.(selected);
+    for (const e of selected) {
+      if (e.id) void api.exercises.markUsed(e.id).catch(() => {});
+    }
+    onClose();
+  }, [selected, onSelectMany, onClose]);
 
   /**
    * The typed name, as it would be stored.
@@ -184,6 +242,14 @@ export function ExercisePicker({
       e.preventDefault();
       setActive((i) => Math.max(i - 1, 0));
     } else if (e.key === 'Enter') {
+      // Cmd/Ctrl+Enter commits the batch. Without it, batch mode is the one
+      // path with no keyboard way to finish: plain Enter toggles a row, and
+      // reaching the Add button means tabbing past every visible result.
+      if (multiple && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        addSelected();
+        return;
+      }
       const target = rows[active];
       if (target) { e.preventDefault(); pick(target); }
       // Nothing in the library matched what was typed, so Enter means "use
@@ -215,13 +281,19 @@ export function ExercisePicker({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-lg">
+      {/* Wider than the other dialogs in the app on purpose. This one is a
+          workspace — search, filters and a long scrolling library — not a
+          question with two answers, and at max-w-lg the exercise names were
+          truncating while half the row sat empty. */}
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Add Exercise</DialogTitle>
+          <DialogTitle>{multiple ? 'Add exercises' : 'Add Exercise'}</DialogTitle>
           <DialogDescription>
-            {allowCustom
-              ? 'Search the library, pick a recent one, or add a custom exercise by name.'
-              : 'Search the exercise library or pick a recent one.'}
+            {multiple
+              ? 'Pick as many as you like, then add them all at once.'
+              : allowCustom
+                ? 'Search the library, pick a recent one, or add a custom exercise by name.'
+                : 'Search the exercise library or pick a recent one.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -352,26 +424,38 @@ export function ExercisePicker({
                 {virtual.slice.map((ex, i) => {
                   const index = rows.indexOf(ex);
                   const already = existing.has(ex.id);
+                  const chosen = selectedIds.has(ex.id);
                   return (
                     <button
                       key={ex.id}
                       onClick={() => pick(ex)}
                       onMouseEnter={() => setActive(index)}
                       disabled={already}
+                      // In batch mode the row is a toggle, so it reports its
+                      // state rather than behaving like a menu item that fires
+                      // once. Screen readers otherwise announce nothing at all
+                      // when a selection changes, because the dialog does not
+                      // move focus or close.
+                      aria-pressed={multiple ? chosen : undefined}
                       style={{ height: ROW_HEIGHT }}
                       className={cn(
                         'flex w-full items-center gap-3 rounded-[10px] px-3 text-left transition',
-                        index === active && !already && 'bg-slate-100 dark:bg-white/[0.06]',
+                        index === active && !already && !chosen && 'bg-slate-100 dark:bg-white/[0.06]',
                         already ? 'cursor-not-allowed opacity-45' : 'hover:bg-slate-50 dark:hover:bg-white/[0.04]',
                       )}
                     >
                       <span
-                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[8px]"
-                        style={{ background: 'var(--bg-subtle)' }}
+                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[8px] transition"
+                        style={{
+                          background: chosen ? 'var(--brand)' : 'var(--bg-subtle)',
+                          color: chosen ? '#fff' : undefined,
+                        }}
                       >
                         {already
                           ? <Check size={14} style={{ color: '#10b981' }} />
-                          : <Dumbbell size={14} style={{ color: '#94a3b8' }} />}
+                          : chosen
+                            ? <Check size={14} />
+                            : <Dumbbell size={14} style={{ color: '#94a3b8' }} />}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-1.5">
@@ -404,16 +488,59 @@ export function ExercisePicker({
           )}
         </div>
 
-        <div className="mt-2 flex items-center justify-between">
-          <span className="hidden text-[10.5px] text-slate-400 sm:block">↑↓ navigate · ↵ add</span>
-          <button
-            onClick={onClose}
-            className="flex h-[44px] items-center gap-1.5 rounded-[10px] px-3.5 text-[12px] font-[650]"
-            style={{ color: '#64748b' }}
+        {multiple ? (
+          <div
+            className="mt-3 flex items-center gap-3 pt-3"
+            style={{ borderTop: '1px solid var(--border)' }}
           >
-            <X size={13} /> Cancel
-          </button>
-        </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>
+                {selected.length === 0
+                  ? 'Nothing selected yet'
+                  : `${selected.length} selected`}
+              </p>
+              <p className="truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                {selected.length === 0
+                  ? 'Tap exercises to build the day — they are added in the order you pick them.'
+                  : selected.map((e) => e.name).join(' · ')}
+              </p>
+              <p className="hidden text-[10.5px] sm:block" style={{ color: 'var(--text-disabled)' }}>
+                ↑↓ navigate · ↵ toggle · ⌘↵ add
+              </p>
+            </div>
+            {selected.length > 0 && (
+              <button
+                onClick={() => setSelected([])}
+                className="h-[44px] shrink-0 rounded-[10px] px-3 text-[12px] font-[650]"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Clear
+              </button>
+            )}
+            <button
+              onClick={addSelected}
+              disabled={selected.length === 0}
+              className="flex h-[44px] shrink-0 items-center gap-1.5 rounded-[12px] px-4 text-[13px] font-[700] text-white transition-transform active:scale-[0.98] disabled:opacity-40"
+              style={{ background: 'var(--brand)' }}
+            >
+              <Check size={14} />
+              {selected.length === 0
+                ? 'Add'
+                : `Add ${selected.length}`}
+            </button>
+          </div>
+        ) : (
+          <div className="mt-2 flex items-center justify-between">
+            <span className="hidden text-[10.5px] text-slate-400 sm:block">↑↓ navigate · ↵ add</span>
+            <button
+              onClick={onClose}
+              className="flex h-[44px] items-center gap-1.5 rounded-[10px] px-3.5 text-[12px] font-[650]"
+              style={{ color: '#64748b' }}
+            >
+              <X size={13} /> Cancel
+            </button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

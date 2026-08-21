@@ -56,6 +56,7 @@ import type {
 import { useToast } from '@/lib/toast';
 import { EmptyState } from '@/components/ui';
 import { ExercisePicker } from '@/components/pt-os/workout-log/ExercisePicker';
+import { addSequentially } from './addSequentially';
 import ExerciseCard from './ExerciseCard';
 import PlanVersions from './PlanVersions';
 import ProgressionRule from './ProgressionRule';
@@ -210,18 +211,40 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
     enqueue(rowId, patch);
   }, [enqueue]);
 
-  const addExercise = useCallback(async (exercise: { id: string; name: string }) => {
+  /**
+   * Add a batch, in the order it was picked.
+   *
+   * SEQUENTIAL, not Promise.all. The server appends each row to the end of the
+   * day, so position is decided by arrival order — firing them together would
+   * hand the day's ordering to whichever request happened to land first, and a
+   * trainer who picked Squat, Bench, Row would get them back shuffled.
+   *
+   * A failure part-way through keeps what already landed rather than rolling
+   * back: those rows exist server-side, and discarding them locally would show
+   * a day that disagrees with the database until the next refresh. The count
+   * is reported so the trainer knows to re-add the rest rather than assuming
+   * silence meant success.
+   */
+  const addExercises = useCallback(async (picked: { id: string; name: string }[]) => {
     setPicking(false);
-    try {
-      const { exercise: created } = await api.workouts.plans.exercises.add(planId, {
-        exercise_id: exercise.id,
+    if (picked.length === 0) return;
+
+    const { created, failed } = await addSequentially(picked, async (exerciseId) => {
+      const res = await api.workouts.plans.exercises.add(planId, {
+        exercise_id: exerciseId,
         day_of_week: day,
       });
-      // Append the server's row rather than a locally-invented one: it carries
-      // the id every later PATCH is keyed on, plus the joined name and demo url.
-      setRows((prev) => [...prev, created]);
-    } catch {
-      toast.error('Could not add that exercise');
+      // The server's row, not a locally-invented one: it carries the id every
+      // later PATCH is keyed on, plus the joined name and demo url.
+      return res.exercise;
+    });
+
+    if (created.length) setRows((prev) => [...prev, ...created]);
+
+    if (failed === picked.length) {
+      toast.error(picked.length === 1 ? 'Could not add that exercise' : 'Could not add those exercises');
+    } else if (failed > 0) {
+      toast.error(`Added ${created.length}, but ${failed} could not be added`);
     }
   }, [planId, day, toast]);
 
@@ -484,7 +507,12 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
       <ExercisePicker
         open={picking}
         onClose={() => setPicking(false)}
-        onSelect={addExercise}
+        // Batch mode: this is the screen where a whole day gets laid out, so
+        // add-one-and-close meant reopening the dialog once per movement and
+        // losing the search, filters and scroll position each time.
+        multiple
+        onSelectMany={addExercises}
+        onSelect={() => {}}
         recentNames={recentNames}
         existingIds={existingExerciseIds}
       />
