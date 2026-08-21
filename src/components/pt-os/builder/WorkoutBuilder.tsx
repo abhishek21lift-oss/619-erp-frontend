@@ -55,8 +55,7 @@ import type {
 } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { EmptyState } from '@/components/ui';
-import { ExercisePicker } from '@/components/pt-os/workout-log/ExercisePicker';
-import { addSequentially } from './addSequentially';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import ExerciseCard from './ExerciseCard';
 import PlanVersions from './PlanVersions';
 import ProgressionRule from './ProgressionRule';
@@ -75,18 +74,47 @@ const DAYS = [
 
 export interface WorkoutBuilderProps {
   planId: string;
-  /** Recently logged exercise names, for the picker's quick-pick chips. */
-  recentNames?: string[];
+  /**
+   * The client whose programme this is. Needed because adding exercises is its
+   * own route now, and that route lives under the client, not the plan.
+   */
+  clientId: string;
 }
 
-export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuilderProps) {
+export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps) {
   const { toast } = useToast();
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
   const [rows, setRows] = useState<WorkoutPlanExercise[]>([]);
-  const [day, setDay] = useState(1);
+  // `day` lives in the URL, not in state.
+  //
+  // Adding exercises is now a separate route, so a trainer building Thursday
+  // leaves this screen and comes back. With local state that round trip always
+  // returned them to Monday, and the rows they had just added were on a tab
+  // they had to go and find. The URL survives the navigation, a refresh, and
+  // being shared.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const dayParam = Number(searchParams.get('day'));
+  const day = Number.isFinite(dayParam) && dayParam >= 1 && dayParam <= 7 ? Math.trunc(dayParam) : 1;
+
+  const setDay = useCallback((n: number) => {
+    const next = new URLSearchParams(searchParams.toString());
+    next.set('day', String(n));
+    // replace, not push: flicking between days is not navigation history a
+    // trainer wants to walk back through one tab at a time.
+    router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+  }, [router, pathname, searchParams]);
   const [week, setWeek] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [picking, setPicking] = useState(false);
+  /**
+   * Adding exercises is a route now, not a dialog.
+   *
+   * The day travels in the URL so the page knows which day it is filling, and
+   * so the builder is back on that same day when the trainer returns.
+   */
+  const addExercisesHref = `/pt-os/clients/${clientId}/training/builder/add-exercises`
+    + `?plan=${encodeURIComponent(planId)}&day=${day}`;
 
   const { status, enqueue, flushNow } = useAutosave<WorkoutExerciseInput>({
     save: (rowId, patch) => api.workouts.plans.exercises.patch(planId, rowId, patch),
@@ -176,16 +204,6 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
     [rows, day],
   );
 
-  /**
-   * What this day already contains, so the picker can refuse to add the same
-   * movement twice. Scoped to the day rather than the whole plan on purpose —
-   * benching on Monday and Thursday is a programme, not a mistake.
-   */
-  const existingExerciseIds = useMemo(
-    () => forDay.map((r) => r.exercise_id).filter((id): id is string => Boolean(id)),
-    [forDay],
-  );
-
   /** How many exercises each day holds — drives the count dots on the tabs. */
   const counts = useMemo(() => {
     const m = new Map<number, number>();
@@ -210,43 +228,6 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
     setRows((prev) => prev.map((r) => (r.id === rowId ? { ...r, ...patch } as WorkoutPlanExercise : r)));
     enqueue(rowId, patch);
   }, [enqueue]);
-
-  /**
-   * Add a batch, in the order it was picked.
-   *
-   * SEQUENTIAL, not Promise.all. The server appends each row to the end of the
-   * day, so position is decided by arrival order — firing them together would
-   * hand the day's ordering to whichever request happened to land first, and a
-   * trainer who picked Squat, Bench, Row would get them back shuffled.
-   *
-   * A failure part-way through keeps what already landed rather than rolling
-   * back: those rows exist server-side, and discarding them locally would show
-   * a day that disagrees with the database until the next refresh. The count
-   * is reported so the trainer knows to re-add the rest rather than assuming
-   * silence meant success.
-   */
-  const addExercises = useCallback(async (picked: { id: string; name: string }[]) => {
-    setPicking(false);
-    if (picked.length === 0) return;
-
-    const { created, failed } = await addSequentially(picked, async (exerciseId) => {
-      const res = await api.workouts.plans.exercises.add(planId, {
-        exercise_id: exerciseId,
-        day_of_week: day,
-      });
-      // The server's row, not a locally-invented one: it carries the id every
-      // later PATCH is keyed on, plus the joined name and demo url.
-      return res.exercise;
-    });
-
-    if (created.length) setRows((prev) => [...prev, ...created]);
-
-    if (failed === picked.length) {
-      toast.error(picked.length === 1 ? 'Could not add that exercise' : 'Could not add those exercises');
-    } else if (failed > 0) {
-      toast.error(`Added ${created.length}, but ${failed} could not be added`);
-    }
-  }, [planId, day, toast]);
 
   const duplicate = useCallback(async (row: WorkoutPlanExercise) => {
     try {
@@ -438,7 +419,7 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
           action={editable ? (
             <button
               type="button"
-              onClick={() => setPicking(true)}
+              onClick={() => router.push(addExercisesHref)}
               className="inline-flex h-[44px] items-center gap-2 rounded-[14px] px-4 text-[13.5px] font-[700] text-white"
               style={{ background: 'var(--brand)' }}
             >
@@ -473,7 +454,7 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
       {editable && forDay.length > 0 && (
         <button
           type="button"
-          onClick={() => setPicking(true)}
+          onClick={() => router.push(addExercisesHref)}
           className="mt-3 flex h-[48px] w-full items-center justify-center gap-2 rounded-[16px] text-[13.5px] font-[700] transition-colors"
           style={{
             background: 'var(--bg-card)',
@@ -491,7 +472,7 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
       {editable && (
         <button
           type="button"
-          onClick={() => setPicking(true)}
+          onClick={() => router.push(addExercisesHref)}
           aria-label="Add exercise"
           className="fixed right-4 z-40 flex h-[56px] w-[56px] items-center justify-center rounded-full text-white"
           style={{
@@ -503,19 +484,6 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
           <Plus size={24} />
         </button>
       )}
-
-      <ExercisePicker
-        open={picking}
-        onClose={() => setPicking(false)}
-        // Batch mode: this is the screen where a whole day gets laid out, so
-        // add-one-and-close meant reopening the dialog once per movement and
-        // losing the search, filters and scroll position each time.
-        multiple
-        onSelectMany={addExercises}
-        onSelect={() => {}}
-        recentNames={recentNames}
-        existingIds={existingExerciseIds}
-      />
     </div>
   );
 }

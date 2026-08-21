@@ -18,14 +18,14 @@ export default function WorkoutBuilderPage({
 }: { params: Promise<{ id: string }> }) {
   // `id` here is the CLIENT. Which programme to edit comes from ?plan=, so the
   // Programs screen can deep-link straight into a specific plan.
-  use(params);
+  const { id: clientId } = use(params);
   const planId = useSearchParams().get('plan');
 
   return (
     <Guard roles={['admin', 'manager', 'trainer']}>
       <div className="mx-auto max-w-screen-md px-4 py-4">
         {planId ? (
-          <WorkoutBuilder planId={planId} />
+          <WorkoutBuilder planId={planId} clientId={clientId} />
         ) : (
           <EmptyState
             icon={<Dumbbell size={22} />}

@@ -110,7 +110,22 @@ describe('adding the batch', () => {
     expect(onSelectMany).toHaveBeenCalledTimes(1);
     expect(onSelectMany.mock.calls[0][0].map((e: { name: string }) => e.name))
       .toEqual(['Barbell Row', 'Back Squat']);
-    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('does NOT dismiss itself — the caller owns that', async () => {
+    // Committing a batch is N sequential writes. If the panel dismissed
+    // itself on the button press, the caller's failure handling would run
+    // against a screen the trainer had already left, and a batch that failed
+    // outright would be gone with nothing to retry. The caller keeps the
+    // surface until it knows the writes landed.
+    const { onSelectMany, onClose } = setup();
+    await settle();
+
+    fireEvent.click(await screen.findByText('Back Squat'));
+    fireEvent.click(screen.getByRole('button', { name: /add 1/i }));
+
+    expect(onSelectMany).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it('records usage only for what was actually added', async () => {
@@ -164,6 +179,81 @@ describe('adding the batch', () => {
     fireEvent.click(await screen.findByText('Back Squat'));
     fireEvent.keyDown(document, { key: 'Enter', metaKey: true });
     expect(onSelectMany).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('arrowing past the visible window', () => {
+  it('scrolls the highlighted row into view', async () => {
+    // Regression guard. This effect keys on the HIGHLIGHTED ROW, and during
+    // the panel/dialog split its dependency was rewritten to the panel's
+    // live flag — which fires once, on mount, and never again. Keyboard
+    // navigation then walked the highlight off the bottom of a list that
+    // never moved: nothing throws, nothing looks broken, and the trainer
+    // arrows into empty space.
+    const many = Array.from({ length: 30 }, (_, i) => ex(`m${i}`, `Movement ${i}`));
+    listMock.mockResolvedValue({ exercises: many });
+    setup();
+    await settle();
+    await screen.findByText('Movement 0');
+
+    // jsdom lays nothing out, so a real element's scrollTop is permanently 0
+    // and a write to it is discarded — asserting on it directly would pass
+    // with the effect deleted. The property is replaced with a backing field
+    // so the write is observable.
+    // The last scroller on the sheet is the library; the first is the row of
+    // filter chips.
+    const scrollers = document.querySelectorAll('.overflow-y-auto');
+    const list = scrollers[scrollers.length - 1] as HTMLElement;
+    let scrollTop = 0;
+    Object.defineProperty(list, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: (v: number) => { scrollTop = v; },
+    });
+
+    // Past the ~7 rows a 440px window shows at 56px each.
+    for (let i = 0; i < 20; i += 1) fireEvent.keyDown(document, { key: 'ArrowDown' });
+
+    expect(scrollTop).toBeGreaterThan(0);
+  });
+});
+
+describe('while the caller is writing the batch', () => {
+  it('says so on the commit button', async () => {
+    const { view, onSelectMany, onClose } = setup();
+    await settle();
+    fireEvent.click(await screen.findByText('Back Squat'));
+
+    view.rerender(
+      <ExercisePicker
+        open busy multiple
+        onClose={onClose}
+        onSelect={() => {}}
+        onSelectMany={onSelectMany}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /adding/i })).toBeDisabled();
+  });
+
+  it('refuses a second commit', async () => {
+    // Two presses would write the batch twice. Driven through Cmd+Enter
+    // rather than the button, because a disabled button swallows a click and
+    // would pass whether or not the guard exists.
+    const { view, onSelectMany, onClose } = setup();
+    await settle();
+    fireEvent.click(await screen.findByText('Back Squat'));
+
+    view.rerender(
+      <ExercisePicker
+        open busy multiple
+        onClose={onClose}
+        onSelect={() => {}}
+        onSelectMany={onSelectMany}
+      />,
+    );
+    fireEvent.keyDown(document, { key: 'Enter', metaKey: true });
+
+    expect(onSelectMany).not.toHaveBeenCalled();
   });
 });
 
