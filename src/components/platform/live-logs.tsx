@@ -34,9 +34,19 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { semantic, rgba } from '@/lib/palette';
-import type { LogLine, LogTail, LogHistory, PersistedLogLine } from '@/lib/api';
+import type { LogLine, LogTail, LogHistory, LogHistoryStats, PersistedLogLine } from '@/lib/api';
 
 const POLL_MS = 3_000;
+
+/**
+ * The History tab polls far more slowly than the live tail.
+ *
+ * It reads `system_logs`, which only receives errors and above — on a healthy
+ * platform that is single digits per day, so a three-second poll asked the
+ * database the same question about a thousand times between answers changing.
+ * The live ring is genuinely live and keeps its cadence.
+ */
+const HISTORY_POLL_MS = 15_000;
 
 /** Pino levels. Colour carries the same meaning as everywhere else on the console. */
 const LEVEL_TONE: Record<number, { color: string; label: string }> = {
@@ -55,6 +65,21 @@ const FILTERS = [
   { key: 'info', label: 'Info+' },
   { key: 'warn', label: 'Warn+' },
   { key: 'error', label: 'Errors' },
+] as const;
+
+/**
+ * The History tab's own set.
+ *
+ * `system_logs` only ever receives error and above, so Info+ and Warn+ are
+ * filters for rows that cannot exist — offering them there would return an
+ * empty list and read as "the worker has stopped logging". Fatal is the
+ * distinction that IS available in this table and is not available in the
+ * live set, which is why the two lists differ rather than one being a subset.
+ */
+const HISTORY_FILTERS = [
+  { key: '', label: 'All' },
+  { key: 'error', label: 'Errors' },
+  { key: 'fatal', label: 'Fatal' },
 ] as const;
 
 function clockOf(v: number | string): string {
@@ -126,6 +151,12 @@ export default function LiveLogs() {
 
   const [tail, setTail] = useState<LogTail | null>(null);
   const [history, setHistory] = useState<LogHistory | null>(null);
+  // Held separately from `history` because a poll tick asks for lines WITHOUT
+  // the stats aggregate, so most responses carry `stats: null`. Rendering
+  // straight off the response would blank the strip on every tick.
+  const [histStats, setHistStats] = useState<LogHistoryStats | null>(null);
+  const [olderPages, setOlderPages] = useState<PersistedLogLine[]>([]);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [error, setError] = useState('');
 
   const scroller = useRef<HTMLDivElement | null>(null);
@@ -142,27 +173,72 @@ export default function LiveLogs() {
     }
   }, [level, query]);
 
-  const loadHistory = useCallback(async () => {
+  // `withStats` is false on poll ticks. The strip beside the lines is a
+  // windowed aggregate; it does not change between ticks and it was the
+  // expensive half of the request.
+  const loadHistory = useCallback(async (withStats: boolean) => {
     try {
-      const res = await api.superAdmin.commandCenterLogHistory({ q: query, limit: 200 });
+      const res = await api.superAdmin.commandCenterLogHistory({
+        // `level` was not being sent at all, so the level filter silently did
+        // nothing on this tab while appearing to work.
+        level: level || undefined,
+        q: query,
+        limit: 200,
+        stats: withStats,
+      });
       setHistory(res.data);
+      if (res.data.stats) setHistStats(res.data.stats);
+      // A fresh first page invalidates anything paged in below it.
+      setOlderPages([]);
       setError('');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to load log history');
     }
-  }, [query]);
+  }, [query, level]);
+
+  /** Walk backwards with the keyset cursor rather than an offset. */
+  const loadOlder = useCallback(async () => {
+    const cursor = history?.next_before;
+    if (!cursor || loadingOlder) return;
+    setLoadingOlder(true);
+    try {
+      const res = await api.superAdmin.commandCenterLogHistory({
+        level: level || undefined, q: query, limit: 200, before: cursor, stats: false,
+      });
+      setOlderPages((prev) => [...prev, ...res.data.lines]);
+      setHistory((h) => (h ? { ...h, next_before: res.data.next_before } : h));
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to load older lines');
+    } finally {
+      setLoadingOlder(false);
+    }
+  }, [history?.next_before, loadingOlder, level, query]);
 
   useEffect(() => {
     let alive = true;
+    let first = true;
     const tick = () => {
       if (!alive) return;
-      if (tab === 'history') { loadHistory(); return; }
-      // Pausing stops the REQUEST, not just the render — a paused tail should
+      // Pausing stops the REQUEST, not just the render — a paused view should
       // not keep polling a box that is already under strain.
-      if (!paused) loadTail();
+      //
+      // History used to `return` before reaching this check, so Pause did
+      // nothing on that tab: an operator who opened History and pressed Pause
+      // kept firing an unwindowed COUNT(*) over the largest table on the box
+      // every three seconds, for as long as the tab stayed open, during
+      // whatever incident brought them there.
+      if (paused) return;
+      if (tab === 'history') {
+        // Stats on the first load and on any filter change; lines only
+        // thereafter.
+        loadHistory(first);
+        first = false;
+        return;
+      }
+      loadTail();
     };
     tick();
-    const id = setInterval(tick, POLL_MS);
+    const id = setInterval(tick, tab === 'history' ? HISTORY_POLL_MS : POLL_MS);
     return () => { alive = false; clearInterval(id); };
   }, [tab, paused, loadTail, loadHistory]);
 
@@ -180,7 +256,10 @@ export default function LiveLogs() {
   }, []);
 
   const liveLines: LogLine[] = useMemo(() => tail?.lines ?? [], [tail]);
-  const histLines: PersistedLogLine[] = useMemo(() => history?.lines ?? [], [history]);
+  const histLines: PersistedLogLine[] = useMemo(
+    () => [...(history?.lines ?? []), ...olderPages],
+    [history, olderPages],
+  );
   const ring = tail?.stats;
   const capture = tail?.capture;
 
@@ -200,8 +279,13 @@ export default function LiveLogs() {
                 ? ring
                   ? `${ring.held} of ${ring.capacity} lines held · ${ring.total_recorded.toLocaleString('en-IN')} seen since restart`
                   : 'loading…'
-                : history
-                  ? `${history.stats.total} persisted · ${history.stats.from_worker} from the worker · ${history.stats.last_24h} in 24h`
+                : histStats
+                  ? `${histStats.in_window.toLocaleString('en-IN')} in ${histStats.window_hours}h`
+                    + ` · ${histStats.from_worker} from the worker`
+                    + ` · ${histStats.fatal} fatal`
+                    + (histStats.oldest
+                      ? ` · back to ${new Date(histStats.oldest).toLocaleDateString('en-IN')}`
+                      : '')
                   : 'loading…'}
             </p>
           </div>
@@ -211,7 +295,7 @@ export default function LiveLogs() {
           {(['live', 'history'] as const).map((t) => (
             <button
               key={t}
-              onClick={() => setTab(t)}
+              onClick={() => { setTab(t); setLevel(''); }}
               className="rounded-[9px] px-2.5 py-1.5 text-[11.5px] font-[650] capitalize"
               style={tab === t
                 ? { background: rgba(semantic.primary, 0.12), color: semantic.primary }
@@ -222,15 +306,14 @@ export default function LiveLogs() {
             </button>
           ))}
 
-          {tab === 'live' && (
-            <button
-              onClick={() => setPaused((p) => !p)}
-              className="flex items-center gap-1 rounded-[9px] px-2.5 py-1.5 text-[11.5px] font-[650]"
-              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-            >
-              {paused ? <><Play size={11} /> Resume</> : <><Pause size={11} /> Pause</>}
-            </button>
-          )}
+          {/* Offered on both tabs, because it now works on both. */}
+          <button
+            onClick={() => setPaused((p) => !p)}
+            className="flex items-center gap-1 rounded-[9px] px-2.5 py-1.5 text-[11.5px] font-[650]"
+            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          >
+            {paused ? <><Play size={11} /> Resume</> : <><Pause size={11} /> Pause</>}
+          </button>
         </div>
       </div>
 
@@ -245,7 +328,7 @@ export default function LiveLogs() {
       </p>
 
       <div className="flex flex-wrap items-center gap-1.5">
-        {tab === 'live' && FILTERS.map((f) => (
+        {(tab === 'history' ? HISTORY_FILTERS : FILTERS).map((f) => (
           <button
             key={f.key}
             onClick={() => setLevel(f.key)}
@@ -324,6 +407,19 @@ export default function LiveLogs() {
         {tab === 'history' && histLines.map((l) => (
           <Row key={l.id} time={l.logged_at} level={l.level} msg={l.msg} context={l.context} source={l.source} />
         ))}
+
+        {/* Keyset, so page 40 costs what page 1 costs. The cursor is only
+            present when the last page came back full; absent means the end. */}
+        {tab === 'history' && history?.next_before && (
+          <button
+            onClick={loadOlder}
+            disabled={loadingOlder}
+            className="mx-auto my-2 block rounded-[9px] px-3 py-1.5 text-[11.5px] font-[650] disabled:opacity-50"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          >
+            {loadingOlder ? 'Loading…' : 'Load older'}
+          </button>
+        )}
       </div>
 
       {tab === 'live' && !following.current && (
