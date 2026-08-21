@@ -144,8 +144,16 @@ export const STEPS = [
   { id: 2, key: 'medicalClearance', label: 'Medical Clearance', conditional: true },
   { id: 3, key: 'pastHistory', label: 'Past History' },
   { id: 4, key: 'currentHealth', label: 'Current Health' },
+  // Digital Consent is the LAST step, so its primary button reads "Submit"
+  // rather than "Next" — that falls out of `isLastStep`, which is
+  // `nextStepId(step) == null`, rather than being special-cased anywhere.
+  //
+  // A `review` step used to sit after it. It was removed: it restated answers
+  // the user had just given, one screen after giving them, and the signature
+  // captured on the consent step is the actual point of commitment. Asking
+  // someone to confirm after they have already signed puts the confirmation
+  // in the wrong place.
   { id: 5, key: 'consent', label: 'Digital Consent' },
-  { id: 6, key: 'review', label: 'Review' },
 ] as const;
 
 export type StepId = typeof STEPS[number]['id'];
