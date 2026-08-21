@@ -138,27 +138,40 @@ function ConsentHub({ clientId, toast }: ConsentHubProps) {
   // so it gets a real empty state and a single obvious next step rather than
   // the record layout with every section blank.
   if (!record) {
-    // Same treatment as the record view: pt-1 to match the dashboard, and no
-    // back link above the content.
+    // Carries the same PageHero as every other screen in this flow.
+    //
+    // It was the one state without one: PAR-Q and Goal Setting both open on a
+    // hero with the client's name and the primary action in it, and this
+    // screen opened on a bare card floating at the top of the page. The
+    // inconsistency was most visible exactly where it mattered least to the
+    // code and most to the user — the first screen of the intake sequence.
+    //
+    // The action lives in the hero, matching PAR-Q. The EmptyState below keeps
+    // its explanatory copy but no longer carries the button, so there is one
+    // obvious next step rather than two identical ones stacked.
     return (
-      <div className="mx-auto w-full max-w-3xl pt-1 pb-10">
-        <div>
+      <PageContainer>
+        <PageHero
+          icon={<FileSignature size={20} />}
+          title={`${clientName || 'This client'}'s Consent`}
+          subtitle="Informed Consent"
+          actions={
+            <button type="button" onClick={openWizard}
+              className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
+              style={{ background: '#fff', color: '#0F172A' }}>
+              <Plus size={16} /> Start Consent
+            </button>
+          }
+        />
+
+        <div className="mx-auto w-full max-w-3xl space-y-3">
           <EmptyState
             icon={<FileSignature size={20} />}
             title={`No informed consent for ${clientName || 'this client'}`}
             description="A signed consent is required before the first session. This takes a few minutes and produces a PDF you can keep."
-            action={
-              <Button
-                iconLeft={<Plus size={14} />}
-                onClick={openWizard}
-                style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
-              >
-                Start Consent
-              </Button>
-            }
           />
         </div>
-      </div>
+      </PageContainer>
     );
   }
 

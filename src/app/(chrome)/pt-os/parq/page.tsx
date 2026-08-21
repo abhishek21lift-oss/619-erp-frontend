@@ -27,7 +27,6 @@ import StepPastHistory from '@/components/pt-os/parq/StepPastHistory';
 import StepParqQuestionnaire from '@/components/pt-os/parq/StepParqQuestionnaire';
 import StepMedicalClearance from '@/components/pt-os/parq/StepMedicalClearance';
 import StepConsent from '@/components/pt-os/parq/StepConsent';
-import ParqReview from '@/components/pt-os/parq/ParqReview';
 import ParqCard from '@/components/pt-os/parq/ParqCard';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -322,7 +321,10 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
   const handleNext = async () => {
     const stepDef = STEPS.find((s) => s.id === step)!;
     const err = validateStep(step, form, riskLevel);
-    if (stepDef.key !== 'review') setErrors((e) => ({ ...e, [stepDef.key]: err }));
+    // The `stepDef.key !== 'review'` exclusion that used to wrap this is gone
+    // with the review step: every remaining step has its own error slot, so
+    // there is no longer a step whose validation result belongs nowhere.
+    setErrors((e) => ({ ...e, [stepDef.key]: err }));
     if (err) { toast.error(err); return; }
 
     if (step === 1 && !currentFormId) {
@@ -365,9 +367,9 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
   if (submitResult) {
     return (
       <SubmitSuccess
+        clientId={clientId}
         clientName={clientName}
         result={submitResult}
-        onDone={() => onDone(true)}
       />
     );
   }
@@ -398,7 +400,6 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
           {step === 3 && <StepPastHistory form={form} set={set} error={errors.pastHistory} stepLabel={stepPositionLabel('pastHistory', riskLevel)} />}
           {step === 4 && <StepCurrentHealth form={form} set={set} error={errors.currentHealth} stepLabel={stepPositionLabel('currentHealth', riskLevel)} />}
           {step === 5 && <StepConsent form={form} set={set} error={errors.consent} stepLabel={stepPositionLabel('consent', riskLevel)} />}
-          {step === 6 && <ParqReview form={form} onEditStep={setStep} stepLabel={stepPositionLabel('review', riskLevel)} />}
         </m.div>
       </div>
 
@@ -423,7 +424,8 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
 }
 
 /* ─────────────────────────────────────────────────────── POST-SUBMIT */
-function SubmitSuccess({ clientName, result, onDone }: { clientName: string; result: SubmitResult; onDone: () => void }) {
+function SubmitSuccess({ clientId, clientName, result }: { clientId: string; clientName: string; result: SubmitResult }) {
+  const router = useRouter();
   const mailBody = encodeURIComponent(
     `PAR-Q + Health Screening for ${clientName}.${result.pdfUrl ? `\n\nSigned consent PDF: ${result.pdfUrl}` : ''}`,
   );
@@ -464,7 +466,21 @@ function SubmitSuccess({ clientName, result, onDone }: { clientName: string; res
         <p className="mt-3 text-[11.5px]" style={{ color: 'var(--text-disabled)' }}>The signed PDF will appear here once it finishes generating — check the screening history shortly.</p>
       )}
 
-      <Button variant="ghost" className="mt-8" onClick={onDone}>Back to Screening History</Button>
+      {/* Continue to Goal Setting, not back to the screening history.
+          Screening is step one of an intake sequence — PAR-Q, then goals —
+          and the previous button sent the trainer backwards to a list of the
+          thing they had just finished. Goal Setting is the actual next task,
+          and it takes the same `client_id` this wizard was opened with, so
+          the client carries through rather than being picked again.
+          The screening history remains reachable from the PAR-Q nav entry. */}
+      <Button
+        className="mt-8"
+        iconLeft={<ArrowRight size={14} />}
+        onClick={() => router.push(`/pt-os/goals?client_id=${encodeURIComponent(clientId)}`)}
+        style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
+      >
+        Continue to Goal Setting
+      </Button>
     </div>
   );
 }
