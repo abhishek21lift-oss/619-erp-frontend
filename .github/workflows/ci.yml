@@ -57,12 +57,18 @@ jobs:
         # itself as unused.
         #
         # Frozen at the exact count again rather than given headroom, for the
-        # reason written above. The 72 are deliberately warnings, not errors:
-        # most are modal backdrops (`<div onClick={close}>`), and the correct
-        # fix for those is Escape plus a focus trap — see
+        # reason written above. The remaining jsx-a11y warnings are deliberately
+        # warnings, not errors: most are modal backdrops (`<div onClick={close}>`),
+        # and the correct fix for those is Escape plus a focus trap — see
         # src/hooks/useDialogA11y.ts — never an onKeyDown that adds a tab stop
         # doing nothing. Erroring would push the next person to the wrong fix.
-        run: npm run lint -- --max-warnings=271
+        #
+        # 271 -> 269: the New Programme sheet's backdrop moved to its own
+        # `aria-hidden` element, so the two warnings its `role="presentation"`
+        # wrapper carried are gone. That is the shape the fix above describes —
+        # an aria-hidden backdrop is a mouse-only affordance by definition, so
+        # the rule correctly stops asking for a key handler.
+        run: npm run lint -- --max-warnings=269
 
   # ── Job 2: Type-check ──────────────────────────────────────────────
   typecheck:

@@ -21,7 +21,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Search, X } from 'lucide-react';
+import { m } from 'framer-motion';
+import { Dumbbell, Loader2, Search, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { WorkoutPlan } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -147,140 +148,216 @@ export default function NewProgrammeDialog({
   };
 
   return (
-    <div
+    <m.div
       // z-[120], not z-50. The AI assistant's floating button is z-100 and
       // fixed to the bottom-right, so at z-50 this sheet opened UNDERNEATH it
       // and the FAB sat on top of the "Create and add exercises" button —
       // covering the sheet's primary action on a 390px screen. Above the FAB
       // and the nav, below the toasts (z-9999) and the impersonation banner
       // (z-10000), both of which should outrank a dialog.
-      data-no-pull-refresh className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center"
-      style={{ background: 'rgba(15,23,42,0.45)' }}
-      onClick={onClose}
-      role="presentation"
+      data-no-pull-refresh
+      className="fixed inset-0 z-[120] flex items-end justify-center p-0 sm:items-center sm:p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.18 }}
     >
+      {/* The backdrop is its own element, not the wrapper.
+          `aria-hidden` because it is a mouse affordance only: click-outside to
+          dismiss. Giving it a key handler would add a tab stop that announces
+          nothing and does nothing — Escape is the keyboard equivalent, and
+          useDialogA11y provides it. */}
       <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          background: 'var(--bg-overlay)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+        }}
+        onClick={onClose}
+      />
+
+      <m.div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label="New programme"
-        onClick={(e) => e.stopPropagation()}
-        className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-[24px] p-5 sm:rounded-[24px]"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+        aria-labelledby="new-programme-title"
+        className="relative flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl"
+        initial={{ y: 24, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          // --bg-elevated, NOT --bg-card. This is the bug that made the sheet
+          // look transparent: --bg-card is rgba(255,255,255,0.8) in light and
+          // rgba(30,41,59,0.7) in dark — a frosted-glass CARD token, which only
+          // reads as glass when something behind it is blurred. Used raw on a
+          // floating panel with no backdrop-filter, the page simply showed
+          // through it at 20-30%. --bg-elevated is the opaque surface token
+          // (#FFFFFF / #1E293B) and is what every other dialog in the app uses.
+          background: 'var(--bg-elevated)',
+          border: '1px solid var(--border)',
+          boxShadow: '0 24px 80px rgba(15,23,42,0.28)',
+        }}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-[17px] font-[800]" style={{ color: 'var(--text-primary)' }}>
-            New programme
-          </h2>
+        {/* Grab handle, mobile only — the affordance that says this sheet can
+            be dismissed downward, and the visual cue that it is a sheet rather
+            than a page. */}
+        <div className="flex justify-center pt-3 sm:hidden" aria-hidden="true">
+          <div className="h-1 w-9 rounded-full" style={{ background: 'var(--border)' }} />
+        </div>
+
+        {/* Header — outside the scroll area, so the title stays put while a
+            long client list moves underneath it. */}
+        <div
+          className="flex items-start justify-between gap-3 px-5 pb-4 pt-4 sm:pt-5"
+          style={{ borderBottom: '1px solid var(--border)' }}
+        >
+          <div className="flex min-w-0 items-center gap-3">
+            <span
+              className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-[12px]"
+              style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}
+            >
+              <Dumbbell size={18} />
+            </span>
+            <div className="min-w-0">
+              <h2
+                id="new-programme-title"
+                className="truncate text-[17px] font-[800] tracking-[-0.01em]"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                New programme
+              </h2>
+              <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                Name it and set its shape — exercises come next.
+              </p>
+            </div>
+          </div>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="flex h-[44px] w-[44px] items-center justify-center rounded-[12px]"
+            className="-mr-1.5 -mt-1 flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-[12px] transition-colors"
             style={{ color: 'var(--text-muted)' }}
           >
             <X size={18} />
           </button>
         </div>
 
-        <Field label="Programme name">
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoFocus
-            placeholder="e.g. Upper / Lower Split"
-            className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
-            style={inputStyle}
-          />
-        </Field>
-
-        <Field label="Goal">
-          <div className="flex flex-wrap gap-1.5">
-            {PROGRAMME_GOALS.map((g) => {
-              const active = g.value === goal;
-              return (
-                <button
-                  key={g.value}
-                  onClick={() => setGoal(g.value)}
-                  className="h-[44px] rounded-[12px] px-3 text-[12.5px] font-[700]"
-                  style={{
-                    background: active ? 'var(--brand)' : 'var(--bg-subtle)',
-                    color: active ? '#fff' : 'var(--text-muted)',
-                  }}
-                >
-                  {g.label}
-                </button>
-              );
-            })}
-          </div>
-        </Field>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Weeks">
+        {/* Body — the only part that scrolls. */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+          <Field label="Programme name">
             <input
-              type="number" min={WEEKS_MIN} max={WEEKS_MAX} value={weeks} inputMode="numeric"
-              onChange={(e) => setWeeks(e.target.value)}
-              onBlur={() => setWeeks(String(clamp(weeks, WEEKS_MIN, WEEKS_MAX)))}
-              className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoFocus
+              placeholder="e.g. Upper / Lower Split"
+              className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none transition-shadow focus:ring-2"
               style={inputStyle}
             />
           </Field>
-          <Field label="Sessions / week">
-            <input
-              type="number" min={PER_WEEK_MIN} max={PER_WEEK_MAX} value={perWeek} inputMode="numeric"
-              onChange={(e) => setPerWeek(e.target.value)}
-              onBlur={() => setPerWeek(String(clamp(perWeek, PER_WEEK_MIN, PER_WEEK_MAX)))}
-              className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
-              style={inputStyle}
-            />
-          </Field>
-        </div>
 
-        {!presetClientId && (
-          <Field label="Client">
-            <div className="relative mb-2">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+          <Field label="Goal">
+            <div className="flex flex-wrap gap-1.5">
+              {PROGRAMME_GOALS.map((g) => {
+                const active = g.value === goal;
+                return (
+                  <button
+                    key={g.value}
+                    onClick={() => setGoal(g.value)}
+                    aria-pressed={active}
+                    className="h-[44px] rounded-[12px] px-3 text-[12.5px] font-[700] transition-transform active:scale-95"
+                    style={{
+                      background: active ? 'var(--brand)' : 'var(--bg-subtle)',
+                      color: active ? '#fff' : 'var(--text-muted)',
+                      border: `1px solid ${active ? 'transparent' : 'var(--border)'}`,
+                    }}
+                  >
+                    {g.label}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Weeks">
               <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search clients…"
-                className="h-[44px] w-full rounded-[12px] pl-9 pr-3 text-[13.5px] outline-none"
+                type="number" min={WEEKS_MIN} max={WEEKS_MAX} value={weeks} inputMode="numeric"
+                onChange={(e) => setWeeks(e.target.value)}
+                onBlur={() => setWeeks(String(clamp(weeks, WEEKS_MIN, WEEKS_MAX)))}
+                className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
                 style={inputStyle}
               />
-            </div>
-            <div className="max-h-44 overflow-y-auto rounded-[12px]" style={{ border: '1px solid var(--border)' }}>
-              {filtered.length === 0 ? (
-                <p className="p-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>No clients found.</p>
-              ) : filtered.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => setClientId(c.id)}
-                  className="flex h-[44px] w-full items-center px-3 text-left text-[13.5px] font-[650]"
-                  style={{
-                    background: c.id === clientId ? 'var(--bg-subtle)' : 'transparent',
-                    color: c.id === clientId ? 'var(--brand)' : 'var(--text-primary)',
-                  }}
-                >
-                  {c.name}
-                </button>
-              ))}
-            </div>
-          </Field>
-        )}
+            </Field>
+            <Field label="Sessions / week">
+              <input
+                type="number" min={PER_WEEK_MIN} max={PER_WEEK_MAX} value={perWeek} inputMode="numeric"
+                onChange={(e) => setPerWeek(e.target.value)}
+                onBlur={() => setPerWeek(String(clamp(perWeek, PER_WEEK_MIN, PER_WEEK_MAX)))}
+                className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
+                style={inputStyle}
+              />
+            </Field>
+          </div>
 
-        <button
-          onClick={submit}
-          disabled={saving}
-          className="mt-2 flex h-[48px] w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-[700] text-white disabled:opacity-60"
-          style={{ background: 'var(--brand)' }}
+          {!presetClientId && (
+            <Field label="Client">
+              <div className="relative mb-2">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search clients…"
+                  className="h-[44px] w-full rounded-[12px] pl-9 pr-3 text-[13.5px] outline-none"
+                  style={inputStyle}
+                />
+              </div>
+              <div
+                className="max-h-44 overflow-y-auto overscroll-contain rounded-[12px]"
+                style={{ border: '1px solid var(--border)', background: 'var(--bg-subtle)' }}
+              >
+                {filtered.length === 0 ? (
+                  <p className="p-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>No clients found.</p>
+                ) : filtered.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setClientId(c.id)}
+                    aria-pressed={c.id === clientId}
+                    className="flex h-[44px] w-full items-center px-3 text-left text-[13.5px] font-[650]"
+                    style={{
+                      background: c.id === clientId ? 'var(--bg-elevated)' : 'transparent',
+                      color: c.id === clientId ? 'var(--brand)' : 'var(--text-primary)',
+                    }}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </Field>
+          )}
+        </div>
+
+        {/* Footer — pinned. The panel used to be one scrolling column, so on a
+            short screen with the client list open the primary action scrolled
+            out of view and the sheet looked like it had no way forward. */}
+        <div
+          className="px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4"
+          style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-elevated)' }}
         >
-          {saving && <Loader2 size={16} className="animate-spin" />}
-          {saving ? 'Creating…' : 'Create and add exercises'}
-        </button>
-        <p className="mt-2 text-center text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-          You will add exercises next, in the builder.
-        </p>
-      </div>
-    </div>
+          <button
+            onClick={submit}
+            disabled={saving}
+            className="flex h-[48px] w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-[700] text-white transition-transform active:scale-[0.98] disabled:opacity-60"
+            style={{ background: 'var(--brand)', boxShadow: '0 8px 24px rgba(2,113,235,0.24)' }}
+          >
+            {saving && <Loader2 size={16} className="animate-spin" />}
+            {saving ? 'Creating…' : 'Create and add exercises'}
+          </button>
+          <p className="mt-2 text-center text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+            You will add exercises next, in the builder.
+          </p>
+        </div>
+      </m.div>
+    </m.div>
   );
 }
 
