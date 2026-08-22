@@ -22,12 +22,14 @@ const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 
 const clientRow = vi.fn();
+const goalsList = vi.fn();
 vi.mock('@/lib/api', () => ({
   api: {
     pt: {
       clients: async () => ({ data: [{ id: 'c1', name: 'Rahul Sharma' }] }),
       client: (...a: unknown[]) => clientRow(...a),
     },
+    progress: { goals: { list: (...a: unknown[]) => goalsList(...a) } },
     workouts: {
       plans: { create: async () => ({ plan: { id: 'p1' } }) },
       assign: async () => ({}),
@@ -37,13 +39,15 @@ vi.mock('@/lib/api', () => ({
 vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn(), info: vi.fn() } }) }));
 
 import NewProgrammeDialog, {
-  goalFromClient, perWeekFromClient, programmeNameFor,
+  goalFromClient, perWeekFromClient,
 } from '@/components/pt-os/builder/NewProgrammeDialog';
 
 beforeEach(() => {
   push.mockClear();
   clientRow.mockReset();
   clientRow.mockResolvedValue({ data: { id: 'c1', name: 'Rahul Sharma' } });
+  goalsList.mockReset();
+  goalsList.mockResolvedValue({ data: [] });
 });
 afterEach(cleanup);
 
@@ -66,53 +70,84 @@ describe('the client is the first thing the form asks for', () => {
 });
 
 describe('picking a client fills the form', () => {
-  it('takes the goal and the sessions per week off the client record', async () => {
+  it('leaves the programme name empty for the trainer to write', async () => {
+    // What kind of plan this is — Push/Pull/Legs, Upper/Lower, a deload block
+    // — is the trainer's call, and nothing in the client's record knows it.
+    clientRow.mockResolvedValue({ data: { id: 'c1', name: 'Rahul Sharma', sessions_per_week: 4 } });
+    goalsList.mockResolvedValue({ data: [{ goal_type: 'fat_loss', is_active: true }] });
+    openDialog();
+    await pickClient();
+
+    await waitFor(() => expect((numbers()[1]).value).toBe('4'));
+    expect(nameField().value).toBe('');
+  });
+
+  it('takes the goal from the goal-setting screening', async () => {
+    // fat_loss is what the screening stores; Weight Loss is what a programme
+    // calls the same thing.
+    goalsList.mockResolvedValue({ data: [{ goal_type: 'fat_loss', is_active: true }] });
+    openDialog();
+    await pickClient();
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Weight Loss' })).toHaveAttribute('aria-pressed', 'true'));
+  });
+
+  it('takes sessions per week from what the client is enrolled at', async () => {
+    // pt_clients.sessions_per_week is the PT Enrollment field, and it beats
+    // the older free-text `frequency` when both are present.
     clientRow.mockResolvedValue({
-      data: { id: 'c1', name: 'Rahul Sharma', goal: 'weight_loss', frequency: '5x/week' },
+      data: { id: 'c1', name: 'Rahul Sharma', sessions_per_week: 5, frequency: '2x/week' },
     });
     openDialog();
     await pickClient();
 
-    await waitFor(() => expect(nameField().value).toContain('Rahul Sharma'));
-    const [weeks, perWeek] = numbers();
-    expect(weeks.value).toBe('4');
-    expect(perWeek.value).toBe('5');
-    expect(screen.getByRole('button', { name: 'Weight Loss' })).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() => expect((numbers()[1]).value).toBe('5'));
+    expect((numbers()[0]).value).toBe('4');
+  });
+
+  it('falls back to the onboarding frequency when the enrolment field is empty', async () => {
+    // Clients who predate migration 053 still fill the field.
+    clientRow.mockResolvedValue({ data: { id: 'c1', name: 'Rahul Sharma', frequency: '3 days' } });
+    openDialog();
+    await pickClient();
+
+    await waitFor(() => expect((numbers()[1]).value).toBe('3'));
+  });
+
+  it('leaves the goal alone when the client has never been screened', async () => {
+    goalsList.mockResolvedValue({ data: [] });
+    clientRow.mockResolvedValue({ data: { id: 'c1', name: 'Rahul Sharma', sessions_per_week: 2 } });
+    openDialog();
+    await pickClient();
+
+    await waitFor(() => expect((numbers()[1]).value).toBe('2'));
+    // By text, not by role name: `Field` wraps the whole group in a <label>,
+    // so the FIRST goal button inherits the label's text as its accessible
+    // name ("Goal Weight Loss Endurance …"). Pre-existing markup, unrelated
+    // to what this test is about.
+    expect(screen.getByText('Muscle Gain').closest('button')).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('leaves a field alone once the trainer has typed in it', async () => {
-    // Change your mind about the client after naming the programme and the
-    // name must survive. The obvious implementation overwrites it.
-    clientRow.mockResolvedValue({
-      data: { id: 'c1', name: 'Rahul Sharma', goal: 'weight_loss', frequency: '5' },
-    });
+    // Change your mind about the client after setting the sessions and the
+    // number must survive.
+    clientRow.mockResolvedValue({ data: { id: 'c1', name: 'Rahul Sharma', sessions_per_week: 5 } });
+    goalsList.mockResolvedValue({ data: [{ goal_type: 'fat_loss' }] });
     openDialog();
-    fireEvent.change(nameField(), { target: { value: 'Push Pull Legs' } });
     const [, perWeek] = numbers();
     fireEvent.change(perWeek, { target: { value: '2' } });
 
     await pickClient();
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Weight Loss' })).toHaveAttribute('aria-pressed', 'true'));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Weight Loss' })).toHaveAttribute('aria-pressed', 'true'));
 
-    expect(nameField().value).toBe('Push Pull Legs');
     expect((numbers()[1]).value).toBe('2');
   });
 
-  it('claims nothing when the record answers nothing', async () => {
-    // A client with no goal and no frequency leaves the form's own defaults
-    // standing rather than inventing a programme shape for them.
-    clientRow.mockResolvedValue({ data: { id: 'c1', name: 'Rahul Sharma' } });
-    openDialog();
-    await pickClient();
-
-    await waitFor(() => expect(nameField().value).toContain('Rahul Sharma'));
-    const [weeks, perWeek] = numbers();
-    expect(weeks.value).toBe('4');
-    expect(perWeek.value).toBe('3');
-  });
-
-  it('survives a client read that fails', async () => {
+  it('survives both reads failing', async () => {
     clientRow.mockRejectedValue(new Error('offline'));
+    goalsList.mockRejectedValue(new Error('offline'));
     openDialog();
     await pickClient();
     await waitFor(() => expect(clientRow).toHaveBeenCalled());
@@ -147,9 +182,19 @@ describe('reading a client record', () => {
     expect(perWeekFromClient(undefined)).toBeUndefined();
   });
 
-  it('names the programme after the client, with the goal when it knows it', () => {
-    expect(programmeNameFor('Rahul Sharma', 'muscle_gain')).toBe('Rahul Sharma — Muscle Gain');
-    expect(programmeNameFor('Rahul Sharma')).toBe('Rahul Sharma — Training Plan');
+  it('maps the screening vocabulary onto a programme goal where they agree', () => {
+    expect(goalFromClient('fat_loss')).toBe('weight_loss');
+    expect(goalFromClient('marathon_prep')).toBe('endurance');
+  });
+
+  it('refuses the screening goals that have no honest equivalent', () => {
+    // Five programme goals against fourteen screening ones. Mapping
+    // powerlifting onto Muscle Gain would put a goal on the programme that
+    // nobody chose.
+    for (const t of ['powerlifting', 'strength_gain', 'body_recomposition', 'mobility',
+      'medical_fitness', 'senior_fitness', 'athletic_performance', 'custom']) {
+      expect(goalFromClient(t)).toBeUndefined();
+    }
   });
 });
 

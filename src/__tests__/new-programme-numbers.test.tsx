@@ -34,6 +34,9 @@ vi.mock('@/lib/api', () => ({
       // case that must leave the typed values alone.
       client: async () => ({ data: { id: 'c1', name: 'Ajeet Yadav' } }),
     },
+    // The goal now comes from the goal-setting screening. This client has not
+    // been screened, which is the case that leaves the form's goal alone.
+    progress: { goals: { list: async () => ({ data: [] }) } },
     workouts: {
       plans: { create: (...a: unknown[]) => createPlan(...(a as [])) },
       assign: (...a: unknown[]) => assign(...(a as [])),

@@ -68,26 +68,53 @@ export function clamp(raw: string, min: number, max: number): number {
 }
 
 /**
- * Match a client's stored goal to one of the five programme goals.
+ * The programme goal a screening answer implies.
  *
- * `pt_clients.goal` is free TEXT (migration 050), filled by the onboarding
- * wizard, so it arrives as "muscle_gain", "Muscle Gain", "muscle gain" or
- * something nobody listed. Anything that does not map returns undefined and
- * the dialog leaves the current selection alone rather than guessing.
+ * Two vocabularies meet here. The Goal Assessment screening stores one of
+ * fourteen `goal_type` values (migration 055); a programme has five. Only the
+ * pairs that mean the same thing are mapped:
+ *
+ *   fat_loss      → Weight Loss    the same goal under two names
+ *   marathon_prep → Endurance      marathon preparation IS endurance work
+ *
+ * The rest — body_recomposition, strength_gain, powerlifting, mobility,
+ * wedding_transformation, medical_fitness, senior_fitness,
+ * athletic_performance, custom — have no honest equivalent among the five, so
+ * they map to nothing and the trainer's own selection stands. Guessing here
+ * would put a goal on the programme that nobody chose.
+ */
+const SCREENING_GOALS: Record<string, string> = {
+  fat_loss: 'weight_loss',
+  marathon_prep: 'endurance',
+};
+
+/**
+ * Match a stored goal to one of the five programme goals.
+ *
+ * Handles both sources: the screening's `goal_type` and `pt_clients.goal`,
+ * which is free TEXT (migration 050) filled by the onboarding wizard and so
+ * arrives as "muscle_gain", "Muscle Gain" or "muscle gain". Anything that does
+ * not map returns undefined and the dialog leaves the current selection alone.
  */
 export function goalFromClient(raw: unknown): string | undefined {
   const key = String(raw ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
   if (!key) return undefined;
-  return PROGRAMME_GOALS.find((g) => g.value === key)?.value;
+  return PROGRAMME_GOALS.find((g) => g.value === key)?.value ?? SCREENING_GOALS[key];
 }
 
 /**
- * Sessions per week, out of the client's own `frequency`.
+ * Sessions per week, as the client is actually enrolled.
  *
- * Also free TEXT: "3", "3x/week", "4 days", "twice weekly". The first integer
- * is the only part that can be read reliably, and it is only used when it
- * lands inside the range the field accepts — "twice weekly" yields nothing,
- * so the default stands rather than a number being invented for it.
+ * `pt_clients.sessions_per_week` is the PT Enrollment field (migration 053) —
+ * a real SMALLINT, and the number the studio sold. `frequency` is the older
+ * free-TEXT answer from the onboarding wizard ("3", "3x/week", "4 days",
+ * "twice weekly") and is read only when the enrolment column is empty, so a
+ * client who predates 053 still fills the field.
+ *
+ * Either way the first integer is the only part that can be read reliably, and
+ * it is used only when it lands inside the range the field accepts — "twice
+ * weekly" yields nothing, so the default stands rather than a number being
+ * invented for it.
  */
 export function perWeekFromClient(raw: unknown): number | undefined {
   const match = String(raw ?? '').match(/\d+/);
@@ -95,12 +122,6 @@ export function perWeekFromClient(raw: unknown): number | undefined {
   const n = Number(match[0]);
   if (!Number.isFinite(n) || n < PER_WEEK_MIN || n > PER_WEEK_MAX) return undefined;
   return n;
-}
-
-/** A name the trainer can accept or type over — never a name they cannot see. */
-export function programmeNameFor(clientName: string, goalValue?: string): string {
-  const label = PROGRAMME_GOALS.find((g) => g.value === goalValue)?.label;
-  return label ? `${clientName} — ${label}` : `${clientName} — Training Plan`;
 }
 
 export interface NewProgrammeDialogProps {
@@ -157,44 +178,55 @@ export default function NewProgrammeDialog({
   }, [open, presetClientId]);
 
   /**
-   * Fill the form from the chosen client.
+   * Fill the form from what is already known about the chosen client.
    *
-   * The client list carries only id and name, so the record is read on
-   * selection — /api/pt-os/clients/:id returns the whole row, including the
-   * `goal` and `frequency` the onboarding wizard collects. Nothing here is
-   * invented: a field is filled only when the client's record actually
-   * answers it, and the weeks default of 4 is the same default the form
-   * already opened with.
+   * Two reads, both of endpoints that already exist:
+   *
+   *   · the client row, for the sessions per week they are enrolled at
+   *     (pt_clients.sessions_per_week, the PT Enrollment field);
+   *   · their goal-setting screening, for the goal.
+   *
+   * The programme NAME is deliberately not filled. What kind of plan this is
+   * — Push/Pull/Legs, Upper/Lower, a deload block — is the trainer's call and
+   * nothing in the client's record knows it, so the field is left empty for
+   * them to write.
+   *
+   * Nothing else is invented either: a field is filled only when the record
+   * actually answers it, and the weeks default of 4 is the same default the
+   * form already opened with.
    */
   useEffect(() => {
     if (!open || !clientId) return;
     let cancelled = false;
 
-    api.pt.client(clientId)
-      .then((r: { data?: unknown }) => {
+    Promise.all([
+      api.pt.client(clientId).catch(() => null),
+      // The screening is the goal's source when it has been done. A client
+      // who has never been screened simply does not fill this field.
+      api.progress.goals.list({ client_id: clientId }).catch(() => null),
+    ])
+      .then(([clientRes, goalRes]) => {
         if (cancelled) return;
-        const row = (r?.data ?? {}) as Record<string, unknown>;
-        const clientName = String(row.name ?? clients.find((c) => c.id === clientId)?.name ?? '').trim();
-        const matchedGoal = goalFromClient(row.goal);
-        const matchedPerWeek = perWeekFromClient(row.frequency);
+        const row = ((clientRes as { data?: unknown } | null)?.data ?? {}) as Record<string, unknown>;
+        // Ordered is_active DESC, created_at DESC server-side, so the first
+        // row is the screening that is still in force.
+        const screening = (((goalRes as { data?: unknown[] } | null)?.data ?? [])[0] ?? {}) as Record<string, unknown>;
+
+        const matchedGoal = goalFromClient(screening.goal_type) ?? goalFromClient(row.goal);
+        const matchedPerWeek = perWeekFromClient(row.sessions_per_week)
+          ?? perWeekFromClient(row.frequency);
 
         setTouched((t) => {
           if (!t.goal && matchedGoal) setGoal(matchedGoal);
           if (!t.perWeek && matchedPerWeek) setPerWeek(String(matchedPerWeek));
           if (!t.weeks) setWeeks('4');
-          if (!t.name && clientName) {
-            setName(programmeNameFor(clientName, matchedGoal ?? (t.goal ? goal : undefined)));
-          }
           return t;
         });
       })
       .catch(() => { /* the form keeps its defaults; nothing is claimed */ });
 
     return () => { cancelled = true; };
-    // `goal` is read inside the updater only as a fallback for the name, and
-    // re-running on every goal keystroke would refetch the client.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, clientId, clients]);
+  }, [open, clientId]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
