@@ -37,6 +37,7 @@ import {
 import { semantic, rgba } from '@/lib/palette';
 import type { CommandCenterCard, CommandCenterStatus } from '@/lib/api';
 import { Center, ErrorState } from '@/app/(platform)/platform/_shared/ui';
+import { PremiumProgressChart, PremiumBarChart } from '@/components/visualizations';
 import CommandPanel from './command-panel';
 import AlertCenter from './alert-center';
 import Guardian from './guardian';
@@ -106,6 +107,25 @@ function fmtDuration(s: unknown): string {
   return `${m2}m`;
 }
 
+/**
+ * A value against a real ceiling — heap used against its limit, connections
+ * against the pool max — or `null` when either side is missing.
+ *
+ * The rule this follows is the file's own: never render a number it cannot
+ * measure. A collector that failed mid-probe may have the numerator but not
+ * the denominator (or vice versa); rendering a ring off a guessed or zeroed
+ * ceiling would show a percentage that is not real, so the caller falls back
+ * to the plain "— " a missing value has always rendered as here. Zero IS a
+ * measured value and passes through — a genuinely empty connection pool is
+ * real information, not a missing one.
+ */
+function ratio(value: unknown, max: unknown): { value: number; max: number } | null {
+  const v = Number(value);
+  const m = Number(max);
+  if (!Number.isFinite(v) || !Number.isFinite(m) || m <= 0) return null;
+  return { value: v, max: m };
+}
+
 /** A small labelled figure inside a card. */
 function Stat({ label, value, tone }: { label: string; value: React.ReactNode; tone?: string }) {
   return (
@@ -144,28 +164,52 @@ function CardBody({ card }: { card: CommandCenterCard }) {
   const d = (path: string) => pick(card.data, path);
 
   switch (card.name) {
-    case 'runtime':
+    case 'runtime': {
+      // Against the LIMIT, not against heapTotal. heapTotal is what V8 has
+      // committed and it tracks the live set by design, so "48MB / 50MB"
+      // read as nearly-full when the process had 8GB of room. The card
+      // showed the same misleading pair the alert was firing on.
+      const heap = ratio(d('memory.heap_used_bytes'), d('memory.heap_limit_bytes'));
       return (
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
-          {/* Against the LIMIT, not against heapTotal. heapTotal is what V8 has
-              committed and it tracks the live set by design, so "48MB / 50MB"
-              read as nearly-full when the process had 8GB of room. The card
-              showed the same misleading pair the alert was firing on. */}
-          <Stat label="Heap" value={`${fmtBytes(d('memory.heap_used_bytes'))} / ${fmtBytes(d('memory.heap_limit_bytes'))}`} />
+          {heap ? (
+            <PremiumProgressChart
+              data={[{ id: 'Heap', value: heap.value, max: heap.max }]}
+              height={100}
+              bordered={false}
+              formatValue={fmtBytes}
+              ariaLabel={`Heap: ${fmtBytes(heap.value)} of ${fmtBytes(heap.max)}`}
+            />
+          ) : (
+            <Stat label="Heap" value={`${fmtBytes(d('memory.heap_used_bytes'))} / ${fmtBytes(d('memory.heap_limit_bytes'))}`} />
+          )}
           <Stat label="RSS" value={fmtBytes(d('memory.rss_bytes'))} />
           <Stat label="Loop lag p99" value={fmtMs(d('event_loop_lag_ms.p99'))} />
           <Stat label="Uptime" value={fmtDuration(d('uptime_seconds'))} />
         </div>
       );
-    case 'database':
+    }
+    case 'database': {
+      const conn = ratio(d('connections.total'), d('connections.max_connections'));
       return (
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
           <Stat label="Latency" value={fmtMs(d('latency_ms'))} />
-          <Stat label="Connections" value={d('connections') ? `${d('connections.total')} / ${d('connections.max_connections')}` : '—'} />
+          {conn ? (
+            <PremiumProgressChart
+              data={[{ id: 'Connections', value: conn.value, max: conn.max }]}
+              height={100}
+              bordered={false}
+              formatValue={fmtNum}
+              ariaLabel={`Connections: ${fmtNum(conn.value)} of ${fmtNum(conn.max)}`}
+            />
+          ) : (
+            <Stat label="Connections" value={d('connections') ? `${d('connections.total')} / ${d('connections.max_connections')}` : '—'} />
+          )}
           <Stat label="Pool waiting" value={fmtNum(d('pool.waiting'))} />
           <Stat label="Size" value={fmtBytes(d('size_bytes'))} />
         </div>
       );
+    }
     case 'redis':
       return (
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
@@ -175,15 +219,41 @@ function CardBody({ card }: { card: CommandCenterCard }) {
           <Stat label="Ops/sec" value={fmtNum(d('stats.ops_per_sec'))} />
         </div>
       );
-    case 'queues':
+    case 'queues': {
+      const waiting = Number(d('totals.waiting'));
+      const active = Number(d('totals.active'));
+      const failed = Number(d('totals.failed'));
+      const allMeasured = [waiting, active, failed].every(Number.isFinite);
       return (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
-          <Stat label="Waiting" value={fmtNum(d('totals.waiting'))} />
-          <Stat label="Active" value={fmtNum(d('totals.active'))} />
-          <Stat label="Failed" value={fmtNum(d('totals.failed'))} tone={d('totals.failed') ? semantic.danger : undefined} />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {allMeasured ? (
+            <div className="col-span-2 sm:col-span-3">
+              <PremiumBarChart
+                data={[{ name: 'Jobs', waiting, active, failed }]}
+                xKey="name"
+                bars={[
+                  { key: 'waiting', label: 'Waiting' },
+                  { key: 'active', label: 'Active' },
+                  // Same rule as the plain-text card: red only once a job has
+                  // actually failed, never as a standing colour.
+                  { key: 'failed', label: 'Failed', color: failed > 0 ? semantic.danger : undefined },
+                ]}
+                height={120}
+                bordered={false}
+                formatValue={fmtNum}
+              />
+            </div>
+          ) : (
+            <>
+              <Stat label="Waiting" value={fmtNum(d('totals.waiting'))} />
+              <Stat label="Active" value={fmtNum(d('totals.active'))} />
+              <Stat label="Failed" value={fmtNum(d('totals.failed'))} tone={d('totals.failed') ? semantic.danger : undefined} />
+            </>
+          )}
           <Stat label="Queues" value={fmtNum(d('queues.length'))} />
         </div>
       );
+    }
     case 'http':
       return (
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
@@ -195,38 +265,75 @@ function CardBody({ card }: { card: CommandCenterCard }) {
           <Stat label="Samples" value={fmtNum(d('samples'))} />
         </div>
       );
-    case 'ai':
+    case 'ai': {
+      const rawFallback = d('last_hour.fallback_rate');
+      const fallback = typeof rawFallback === 'number' && Number.isFinite(rawFallback) ? rawFallback * 100 : null;
       return (
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
           <Stat label="Requests today" value={fmtNum(d('today.requests'))} />
           <Stat label="Avg latency (1h)" value={fmtMs(d('last_hour.avg_latency_ms'))} />
           {/* Named "fallback", never "success" — ai_usage_log records returned
               calls only, so a success rate would read 100% during an outage. */}
-          <Stat label="Fallback rate (1h)"
-            value={fmtPct(d('last_hour.fallback_rate'))} />
+          {fallback !== null ? (
+            <PremiumProgressChart
+              data={[{ id: 'Fallback (1h)', value: fallback, max: 100 }]}
+              height={100}
+              bordered={false}
+              formatValue={(v) => `${Math.round(v)}%`}
+              ariaLabel={`Fallback rate, last hour: ${Math.round(fallback)}%`}
+            />
+          ) : (
+            <Stat label="Fallback rate (1h)" value={fmtPct(rawFallback)} />
+          )}
           <Stat label="Active model" value={fmtText(d('active_model'))} />
         </div>
       );
-    case 'security':
+    }
+    case 'security': {
+      const rawPosture = d('posture.score');
+      const posture = typeof rawPosture === 'number' && Number.isFinite(rawPosture) ? rawPosture : null;
+      const postureFailing = Boolean(d('posture.failed_count'));
       return (
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
           <Stat label="Failed logins (1h)" value={fmtNum(d('auth.failed_1h'))} tone={d('auth.failed_1h') ? semantic.warning : undefined} />
           <Stat label="From addresses" value={fmtNum(d('auth.failing_ips_1h'))} />
           <Stat label="Active sessions" value={fmtNum(d('auth.active_sessions'))} />
-          <Stat label="Posture" value={`${d('posture.score') ?? '—'}%`}
-            tone={d('posture.failed_count') ? semantic.warning : undefined} />
+          {posture !== null ? (
+            <PremiumProgressChart
+              data={[{ id: 'Posture', value: posture, max: 100, color: postureFailing ? semantic.warning : undefined }]}
+              height={100}
+              bordered={false}
+              formatValue={(v) => `${Math.round(v)}%`}
+              ariaLabel={`Security posture: ${Math.round(posture)}%`}
+            />
+          ) : (
+            <Stat label="Posture" value={`${d('posture.score') ?? '—'}%`} tone={postureFailing ? semantic.warning : undefined} />
+          )}
         </div>
       );
-    case 'smtp':
+    }
+    case 'smtp': {
+      const invitations = ratio(d('delivery.invitations_sent'), d('delivery.invitations_total'));
       return (
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
           <Stat label="Configured" value={d('configured') ? 'Yes' : 'No'} tone={d('configured') ? undefined : semantic.danger} />
-          <Stat label="Invitations sent" value={d('delivery') ? `${d('delivery.invitations_sent')} / ${d('delivery.invitations_total')}` : '—'} />
+          {invitations ? (
+            <PremiumProgressChart
+              data={[{ id: 'Invitations', value: invitations.value, max: invitations.max }]}
+              height={100}
+              bordered={false}
+              formatValue={fmtNum}
+              ariaLabel={`Invitations sent: ${fmtNum(invitations.value)} of ${fmtNum(invitations.max)}`}
+            />
+          ) : (
+            <Stat label="Invitations sent" value={d('delivery') ? `${d('delivery.invitations_sent')} / ${d('delivery.invitations_total')}` : '—'} />
+          )}
           <Stat label="Never delivered" value={fmtNum(d('delivery.attempted_never_sent'))}
             tone={d('delivery.attempted_never_sent') ? semantic.danger : undefined} />
           <Stat label="Host" value={fmtText(d('host'))} />
         </div>
       );
+    }
     default:
       return null;
   }
@@ -374,13 +481,21 @@ export default function CommandCenterTab() {
           <p className="truncate text-[15px] font-[800]" style={{ color: 'var(--text-primary)' }}>
             Platform {overall.label.toLowerCase()}
           </p>
-          <p className="text-[11.5px]" style={{ color: 'var(--text-tertiary)' }}>
-            {counts.map((c) => `${c.n} ${TONE[c.s].label.toLowerCase()}`).join(' · ')}
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11.5px]" style={{ color: 'var(--text-tertiary)' }}>
+            {/* Each count in its own status colour — a scan for "is anything
+                red" no longer has to read the words first. */}
+            {counts.map((c, i) => (
+              <span key={c.s} className="flex items-center gap-1">
+                {i > 0 && <span aria-hidden style={{ color: 'var(--text-disabled)' }}>·</span>}
+                <span className="font-[700] tabular-nums" style={{ color: TONE[c.s].color }}>{c.n}</span>
+                {TONE[c.s].label.toLowerCase()}
+              </span>
+            ))}
             {/* How long the collect took is a number for someone tuning the
                 console, not for someone reading it on a phone during an
                 incident. It was the clause that pushed this to two lines. */}
             <span className="hidden sm:inline">{' · '}collected in {snap.duration_ms} ms</span>
-          </p>
+          </div>
         </div>
 
         <div className="flex flex-shrink-0 items-center gap-1.5 sm:gap-2">

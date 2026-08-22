@@ -32,6 +32,8 @@ export interface PremiumProgressChartProps {
   subtitle?: React.ReactNode;
   icon?: React.ReactNode;
   surface?: Surface;
+  /** Renders ChartShell's own card frame. Set false when embedding this chart inside a card that already has one. */
+  bordered?: boolean;
   loading?: boolean;
   error?: string | null;
   onRetry?: () => void;
@@ -95,6 +97,7 @@ export function PremiumProgressChart({
   subtitle,
   icon,
   surface = 'auto',
+  bordered = true,
   loading = false,
   error = null,
   onRetry,
@@ -132,6 +135,7 @@ export function PremiumProgressChart({
     subtitle,
     icon,
     surface,
+    bordered,
     height,
     className,
     ariaLabel: ariaLabel ?? rings.map((r) => `${r.id}: ${Math.round(r.pct)}%`).join(', '),

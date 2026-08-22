@@ -20,6 +20,8 @@ export interface PremiumAreaChartProps {
   subtitle?: React.ReactNode;
   icon?: React.ReactNode;
   surface?: Surface;
+  /** Renders ChartShell's own card frame. Set false when embedding this chart inside a card that already has one. */
+  bordered?: boolean;
   curve?: LineCurveFactoryId;
   showPoints?: boolean;
   loading?: boolean;
@@ -48,6 +50,7 @@ export function PremiumAreaChart({
   subtitle,
   icon,
   surface = 'auto',
+  bordered = true,
   curve = 'monotoneX',
   showPoints = false,
   loading = false,
@@ -82,6 +85,7 @@ export function PremiumAreaChart({
     subtitle,
     icon,
     surface,
+    bordered,
     height,
     className,
     ariaLabel: ariaLabel ?? `${title ? `${title}: ` : ''}area chart with ${areas.length} series across ${data.length} points`,

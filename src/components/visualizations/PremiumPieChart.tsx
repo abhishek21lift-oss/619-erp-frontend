@@ -15,6 +15,8 @@ export interface PremiumPieChartProps {
   subtitle?: React.ReactNode;
   icon?: React.ReactNode;
   surface?: Surface;
+  /** Renders ChartShell's own card frame. Set false when embedding this chart inside a card that already has one. */
+  bordered?: boolean;
   loading?: boolean;
   error?: string | null;
   onRetry?: () => void;
@@ -38,6 +40,7 @@ export function PremiumPieChart({
   subtitle,
   icon,
   surface = 'auto',
+  bordered = true,
   loading = false,
   error = null,
   onRetry,
@@ -63,6 +66,7 @@ export function PremiumPieChart({
     subtitle,
     icon,
     surface,
+    bordered,
     height,
     className,
     ariaLabel: ariaLabel ?? `${title ? `${title}: ` : ''}pie chart, ${cleaned.length} segments, total ${formatValue(total)}`,

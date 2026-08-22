@@ -20,6 +20,8 @@ export interface PremiumLineChartProps {
   subtitle?: React.ReactNode;
   icon?: React.ReactNode;
   surface?: Surface;
+  /** Renders ChartShell's own card frame. Set false when embedding this chart inside a card that already has one. */
+  bordered?: boolean;
   curve?: LineCurveFactoryId;
   showPoints?: boolean;
   loading?: boolean;
@@ -48,6 +50,7 @@ export function PremiumLineChart({
   subtitle,
   icon,
   surface = 'auto',
+  bordered = true,
   curve = 'monotoneX',
   showPoints = true,
   loading = false,
@@ -82,6 +85,7 @@ export function PremiumLineChart({
     subtitle,
     icon,
     surface,
+    bordered,
     height,
     className,
     ariaLabel: ariaLabel ?? `${title ? `${title}: ` : ''}line chart with ${lines.length} series across ${data.length} points`,

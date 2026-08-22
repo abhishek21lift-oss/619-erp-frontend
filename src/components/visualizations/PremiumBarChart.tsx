@@ -32,6 +32,8 @@ export interface PremiumBarChartProps {
   subtitle?: React.ReactNode;
   icon?: React.ReactNode;
   surface?: Surface;
+  /** Renders ChartShell's own card frame. Set false when embedding this chart inside a card that already has one. */
+  bordered?: boolean;
   layout?: 'vertical' | 'horizontal';
   /** 'grouped' (default) sits series side by side; 'stacked' sums them. */
   groupMode?: 'grouped' | 'stacked';
@@ -62,6 +64,7 @@ export function PremiumBarChart({
   subtitle,
   icon,
   surface = 'auto',
+  bordered = true,
   layout = 'vertical',
   groupMode = 'grouped',
   loading = false,
@@ -83,7 +86,11 @@ export function PremiumBarChart({
     return map;
   }, [bars]);
 
-  const hasData = data.length > 0 && bars.some((b) => data.some((row) => Number(row[b.key]) > 0));
+  // A finite value, not a positive one — an all-zero series (zero jobs
+  // waiting, zero failed) is real, measured data and must render as a
+  // zero-anchored chart, not the empty state. Only the absence of any
+  // numeric value at all (undefined/null/NaN everywhere) means "no data."
+  const hasData = data.length > 0 && bars.some((b) => data.some((row) => Number.isFinite(Number(row[b.key]))));
   const legendItems = bars.map((b) => ({ label: b.label, color: colorByKey[b.key] }));
   const resolvedShowLegend = showLegend ?? bars.length > 1;
 
@@ -97,6 +104,7 @@ export function PremiumBarChart({
     subtitle,
     icon,
     surface,
+    bordered,
     height,
     className,
     ariaLabel: ariaLabel ?? `${title ? `${title}: ` : ''}bar chart with ${bars.length} series across ${data.length} categories`,

@@ -20,6 +20,8 @@ export interface PremiumDonutChartProps {
   subtitle?: React.ReactNode;
   icon?: React.ReactNode;
   surface?: Surface;
+  /** Renders ChartShell's own card frame. Set false when embedding this chart inside a card that already has one. */
+  bordered?: boolean;
   loading?: boolean;
   error?: string | null;
   onRetry?: () => void;
@@ -45,6 +47,7 @@ export function PremiumDonutChart({
   subtitle,
   icon,
   surface = 'auto',
+  bordered = true,
   loading = false,
   error = null,
   onRetry,
@@ -70,6 +73,7 @@ export function PremiumDonutChart({
     subtitle,
     icon,
     surface,
+    bordered,
     height,
     className,
     ariaLabel: ariaLabel ?? `${title ? `${title}: ` : ''}donut chart, ${cleaned.length} segments, total ${formatValue(total)}`,
