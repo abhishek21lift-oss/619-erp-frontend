@@ -173,6 +173,39 @@ describe('the running session comes first', () => {
   });
 });
 
+describe('each row knows whether it is running', () => {
+  // The card labels rows LIVE and NEXT, and it cannot work that out from the
+  // position alone: the queue puts a running session first, so "row one is
+  // running" is false on every morning nobody has started yet — which is most
+  // of them. The flag travels with the row.
+
+  it('marks a started session live', () => {
+    const q = buildTodayQueue([row({ client_id: 'a', session_status: 'in_progress' })]);
+    expect(q[0].live).toBe(true);
+  });
+
+  it('does not mark a session nobody has started', () => {
+    const q = buildTodayQueue([row({ client_id: 'a' })]);
+    expect(q[0].live).toBe(false);
+  });
+
+  it('marks only the ones that are actually running', () => {
+    const q = buildTodayQueue([
+      row({ client_id: 'running', session_status: 'in_progress' }),
+      row({ client_id: 'waiting' }),
+      row({ client_id: 'also-waiting' }),
+    ]);
+    expect(q.map((r) => r.live)).toEqual([true, false, false]);
+  });
+
+  it('a queue with nothing running has no live row at all', () => {
+    // The case that made this necessary. Every row false, so the card labels
+    // row one NEXT rather than telling the trainer somebody is mid-set.
+    const q = buildTodayQueue([row({ client_id: 'a' }), row({ client_id: 'b' })]);
+    expect(q.some((r) => r.live)).toBe(false);
+  });
+});
+
 describe('two at a time', () => {
   it('shows two', () => {
     expect(TODAY_VISIBLE).toBe(2);
