@@ -380,6 +380,20 @@ export function ExercisePickerPanel({
     [meta]
   );
 
+  /**
+   * The equipment filter chips.
+   *
+   * Read the same defensive way as `regions` above, which is the point: the
+   * chip row below tested `meta && meta.equipment.length`, guarding the object
+   * and not the field. /api/exercises/meta answering without `equipment` —
+   * an older deployment, a partial response, a proxy trimming the body — then
+   * threw on `.length` during render, and a throw in render takes the whole
+   * /pt-os segment to its error boundary. The trainer sees "Something went
+   * wrong" where they wanted a list of exercises, over a filter row that is
+   * decoration.
+   */
+  const equipmentFilters = useMemo(() => meta?.equipment ?? [], [meta]);
+
   return (
     <>
 
@@ -480,9 +494,9 @@ export function ExercisePickerPanel({
           ))}
         </div>
 
-        {meta && meta.equipment.length > 0 && (
+        {equipmentFilters.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-1.5">
-            {meta.equipment.slice(0, 7).map((q) => (
+            {equipmentFilters.slice(0, 7).map((q) => (
               <Chip key={q.slug} small active={equipment === q.slug} onClick={() => setEquipment(q.slug === equipment ? '' : q.slug)}>
                 {q.name}
               </Chip>
