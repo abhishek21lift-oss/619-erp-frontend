@@ -1,0 +1,124 @@
+'use client';
+
+import * as React from 'react';
+import { cn } from '@/components/ui/cn';
+import { navy, iconChip } from '../theme/colors';
+import { fontFamily } from '../theme/typography';
+import { radius, border, shadow } from '../theme/shape';
+import { spacing } from '../theme/spacing';
+import { useIsCompactChart, responsiveScale } from '../theme/responsive';
+import type { Surface } from '../theme/surface';
+
+export interface ChartShellProps {
+  /** Card title. Omit for a chart meant to sit bare inside a page's own card. */
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  icon?: React.ReactNode;
+  /** Right-aligned slot — a legend, a range picker, a "view all" link. */
+  action?: React.ReactNode;
+  /** Slot below the chart body — a legend row, a footnote. */
+  footer?: React.ReactNode;
+  /** Fixed plot height in px. Nivo's Responsive* components need a sized parent. */
+  height: number;
+  surface?: Surface;
+  /**
+   * Read by assistive tech in place of the (otherwise purely visual) SVG —
+   * every Premium* component builds a sensible default and lets the caller
+   * override it, the same rule KpiSparkline already followed.
+   */
+  ariaLabel?: string;
+  /** Renders the card frame (border/background/padding) around the chart. */
+  bordered?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}
+
+/**
+ * The one card frame every Premium* component renders into. Title row,
+ * fixed-height plot area, optional footer — sized and spaced identically
+ * everywhere, so "no duplicated chart styling" holds at the layout level too,
+ * not just inside the SVG. Every value below is a theme token; nothing here
+ * is a number or colour typed for this component alone.
+ */
+export function ChartShell({
+  title,
+  subtitle,
+  icon,
+  action,
+  footer,
+  height,
+  surface = 'auto',
+  ariaLabel,
+  bordered = true,
+  className,
+  children,
+}: ChartShellProps) {
+  const dark = surface === 'dark';
+  const compact = useIsCompactChart();
+  const padding = compact ? Math.round(spacing.cardPadding * responsiveScale.padding) : spacing.cardPadding;
+
+  return (
+    <div
+      className={cn('relative flex flex-col', className)}
+      style={
+        bordered
+          ? {
+              borderRadius: radius.card,
+              padding,
+              background: dark
+                ? `linear-gradient(155deg, ${navy.panel} 0%, ${navy.canvasAlt} 100%)`
+                : 'var(--bg-card, #fff)',
+              border: `${border.width}px solid ${dark ? navy.line : border.default}`,
+              boxShadow: dark ? shadow.cardDark : shadow.card,
+            }
+          : undefined
+      }
+    >
+      {(title || action) && (
+        <div className="mb-3.5 flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            {icon && (
+              <span
+                className="grid flex-shrink-0 place-items-center"
+                style={{
+                  width: spacing.iconChip,
+                  height: spacing.iconChip,
+                  borderRadius: radius.chip,
+                  background: dark ? iconChip.bgDark : iconChip.bg,
+                  color: dark ? iconChip.fgDark : iconChip.fg,
+                }}
+              >
+                {icon}
+              </span>
+            )}
+            <div className="min-w-0">
+              {title && (
+                <h3
+                  className="truncate text-[13.5px] font-[750]"
+                  style={{ fontFamily: fontFamily.sans, color: dark ? navy.ink : 'var(--text-primary)' }}
+                >
+                  {title}
+                </h3>
+              )}
+              {subtitle && (
+                <p
+                  className="truncate text-[11.5px]"
+                  style={{ color: dark ? navy.muted : 'var(--text-muted)' }}
+                >
+                  {subtitle}
+                </p>
+              )}
+            </div>
+          </div>
+          {action && <div className="flex flex-shrink-0 items-center gap-2">{action}</div>}
+        </div>
+      )}
+
+      <div role="img" aria-label={ariaLabel} style={{ height, width: '100%' }}>
+        {children}
+      </div>
+
+      {footer && <div style={{ marginTop: spacing.gap / 2 }}>{footer}</div>}
+    </div>
+  );
+}

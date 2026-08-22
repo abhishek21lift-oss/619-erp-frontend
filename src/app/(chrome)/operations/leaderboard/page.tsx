@@ -39,6 +39,7 @@ import { AlertTriangle, CalendarRange, Crown, RotateCw, Trophy, UserCheck, Users
 import Guard from '@/components/Guard';
 import ClientAvatar, { initialsOf } from '@/components/pt-os/ClientAvatar';
 import { EmptyState, PageContainer, PageHero, Skeleton } from '@/components/ui';
+import { PremiumBarChart } from '@/components/visualizations';
 import { api } from '@/lib/api';
 import type { Attendance, Client } from '@/lib/api';
 import { fmtDate, toInputDate } from '@/lib/format';
@@ -248,6 +249,17 @@ function Inner() {
           />
         ) : (
           <>
+            {board.length > 1 && (
+              <PremiumBarChart
+                title="Top performers"
+                data={[...board].slice(0, 8).reverse().map((r) => ({ name: r.name, checkins: r.checkins }))}
+                xKey="name"
+                bars={[{ key: 'checkins', label: 'Check-ins' }]}
+                layout="horizontal"
+                showLegend={false}
+                height={Math.min(8, board.length) * 44 + 40}
+              />
+            )}
             <ol className="flex list-none flex-col gap-2.5 p-0">
               {board.map((r, i) => (
                 <BoardRow key={r.id} row={r} top={top} i={i} reduce={!!reduce} />

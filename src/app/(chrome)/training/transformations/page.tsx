@@ -4,9 +4,10 @@ import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import Link from 'next/link';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
-import { Sparkles, Users, UserCheck, Weight, TrendingUp, Search, ArrowUpRight, ArrowDownRight, Minus, Flame, Target, Trophy, Activity } from 'lucide-react';
+import { Sparkles, Users, UserCheck, Weight, TrendingUp, Search, ArrowUpRight, ArrowDownRight, Minus, Target, Trophy, Activity } from 'lucide-react';
 import { api, Client } from '@/lib/api';
 import { fmtDate } from '@/lib/format';
+import { PremiumMetricCardStandard, MetricGroup, metricTone } from '@/components/visualizations';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -17,38 +18,11 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const } }
 };
 
-const KPI_COLORS = [
-  { from: '#0067e0', to: '#0067e0', glow: 'rgba(0,103,224,0.12)' },
-  { from: '#10b981', to: '#34d399', glow: 'rgba(16,185,129,0.12)' },
-  { from: '#f59e0b', to: '#fbbf24', glow: 'rgba(245,158,11,0.12)' },
-  { from: '#0067e0', to: '#0067e0', glow: 'rgba(0,103,224,0.12)' },
-];
-
-function KpiCard({ label, value, icon, gradient, colorIndex }: {
-  label: string; value: string | number; icon?: React.ReactNode; gradient: string; colorIndex: number
-}) {
-  const c = KPI_COLORS[colorIndex % KPI_COLORS.length];
-  return (
-    <m.div variants={itemVariants}
-      style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '24px 22px', background: gradient, border: '1px solid var(--border)', boxShadow: `0 2px 8px ${c.glow}`, cursor: 'default', transition: 'transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s ease' }}
-      onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)'; e.currentTarget.style.boxShadow = `0 12px 32px ${c.glow}`; }}
-      onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = `0 2px 8px ${c.glow}`; }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, position: 'relative', zIndex: 1 }}>
-        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text-muted)' }}>{label}</span>
-        {icon && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,0.7)', border: '1px solid var(--border)', color: c.from }}>
-            {icon}
-          </div>
-        )}
-      </div>
-      <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{value}</div>
-    </m.div>
-  );
-}
-
 const th = { padding: '12px 16px', textAlign: 'left' as const, fontWeight: 700, fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: 'var(--text-muted)' };
 const td = { padding: '12px 16px', fontSize: 13 };
 
+/** A drop in weight is the good direction here, so the tone is inverted
+ *  from a plain "up is good" trend — a gain reads as the concerning one. */
 function WeightChange({ start, current }: { start?: number | null; current?: number | null }) {
   const s = Number(start || 0);
   const c = Number(current || 0);
@@ -56,10 +30,10 @@ function WeightChange({ start, current }: { start?: number | null; current?: num
   const diff = c - s;
   const isUp = diff > 0;
   const isDown = diff < 0;
-  const color = isUp ? '#f87171' : isDown ? '#34d399' : '#94a3b8';
+  const tone = isUp ? metricTone.negative : isDown ? metricTone.positive : metricTone.neutral;
   const Icon = isUp ? ArrowUpRight : isDown ? ArrowDownRight : Minus;
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color, fontWeight: 700, fontSize: 13 }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: tone.color, fontWeight: 700, fontSize: 13 }}>
       {c.toFixed(1)} kg
       <Icon size={15} />
     </span>
@@ -131,52 +105,50 @@ function Inner() {
         )}
 
         {/* ── KPI Grid ── */}
-        <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
-          <KpiCard label="Total Members" value={clients.length} icon={<Users size={16} />} colorIndex={0}
-            gradient="linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.03))" />
-          <KpiCard label="Active Coaches" value={coaches} icon={<UserCheck size={16} />} colorIndex={1}
-            gradient="linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.03))" />
-          <KpiCard label="Avg Weight" value={avgWeight > 0 ? `${avgWeight.toFixed(0)} kg` : '—'} icon={<Weight size={16} />} colorIndex={2}
-            gradient="linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.03))" />
-          <KpiCard label="With Progress" value={clients.filter((c) => c.weight && Number(c.weight) > 0).length} icon={<TrendingUp size={16} />} colorIndex={3}
-            gradient="linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.03))" />
-        </m.div>
+        <div style={{ marginBottom: 28 }}>
+          <MetricGroup columns={4}>
+            <PremiumMetricCardStandard label="Total Members" value={clients.length} icon={<Users size={16} />} loading={loading} />
+            <PremiumMetricCardStandard label="Active Coaches" value={coaches} icon={<UserCheck size={16} />} loading={loading} />
+            <PremiumMetricCardStandard label="Avg Weight" value={avgWeight > 0 ? `${avgWeight.toFixed(0)} kg` : '—'} icon={<Weight size={16} />} loading={loading} />
+            <PremiumMetricCardStandard label="With Progress" value={clients.filter((c) => c.weight && Number(c.weight) > 0).length} icon={<TrendingUp size={16} />} loading={loading} />
+          </MetricGroup>
+        </div>
 
         {/* ── Quick Stats Row ── */}
-        <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
-          {[
-            { label: 'Avg Progress per Member', value: clients.length ? `${((clients.filter(c => c.weight && Number(c.weight) > 0).length / clients.length) * 100).toFixed(0)}%` : '—', icon: <Activity size={14} />, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-            { label: 'Goal Completion Rate', value: clients.length ? (() => {
-              const achieved = clients.filter(c => {
-                const start = Number((c as Record<string, unknown>).initial_weight ?? (c as Record<string, unknown>).start_weight ?? 0);
-                const curr = Number(c.weight ?? 0);
-                return start > 0 && curr > 0 && curr < start;
-              }).length;
-              return `${((achieved / clients.length) * 100).toFixed(0)}%`;
-            })() : '—', icon: <Target size={14} />, color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
-            { label: 'Top Performer', value: clients.length ? (() => {
-              const best = clients.reduce((b, c) => {
-                const cStart = Number((c as Record<string, unknown>).initial_weight ?? (c as Record<string, unknown>).start_weight ?? 0);
-                const cCurr = Number(c.weight ?? 0);
-                const cLoss = cStart > 0 && cCurr > 0 ? cStart - cCurr : 0;
-                const bStart = Number((b as Record<string, unknown>).initial_weight ?? (b as Record<string, unknown>).start_weight ?? 0);
-                const bCurr = Number(b.weight ?? 0);
-                const bLoss = bStart > 0 && bCurr > 0 ? bStart - bCurr : 0;
-                return cLoss > bLoss ? c : b;
-              }, clients[0]);
-              return best.name ?? '—';
-            })() : '—', icon: <Trophy size={14} />, color: '#0067e0', bg: 'rgba(0,103,224,0.1)' },
-          ].map((stat, i) => (
-            <m.div key={stat.label} variants={itemVariants}
-              style={{ borderRadius: 16, padding: '16px 18px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: stat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: stat.color }}>{stat.icon}</div>
-                <span style={{ fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>{stat.label}</span>
-              </div>
-              <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{stat.value}</span>
-            </m.div>
-          ))}
-        </m.div>
+        <div style={{ marginBottom: 28 }}>
+          <MetricGroup columns={3}>
+            <PremiumMetricCardStandard
+              label="Avg Progress per Member" icon={<Activity size={14} />} loading={loading}
+              value={clients.length ? `${((clients.filter(c => c.weight && Number(c.weight) > 0).length / clients.length) * 100).toFixed(0)}%` : '—'}
+            />
+            <PremiumMetricCardStandard
+              label="Goal Completion Rate" icon={<Target size={14} />} loading={loading}
+              value={clients.length ? (() => {
+                const achieved = clients.filter(c => {
+                  const start = Number((c as Record<string, unknown>).initial_weight ?? (c as Record<string, unknown>).start_weight ?? 0);
+                  const curr = Number(c.weight ?? 0);
+                  return start > 0 && curr > 0 && curr < start;
+                }).length;
+                return `${((achieved / clients.length) * 100).toFixed(0)}%`;
+              })() : '—'}
+            />
+            <PremiumMetricCardStandard
+              label="Top Performer" icon={<Trophy size={14} />} loading={loading}
+              value={clients.length ? (() => {
+                const best = clients.reduce((b, c) => {
+                  const cStart = Number((c as Record<string, unknown>).initial_weight ?? (c as Record<string, unknown>).start_weight ?? 0);
+                  const cCurr = Number(c.weight ?? 0);
+                  const cLoss = cStart > 0 && cCurr > 0 ? cStart - cCurr : 0;
+                  const bStart = Number((b as Record<string, unknown>).initial_weight ?? (b as Record<string, unknown>).start_weight ?? 0);
+                  const bCurr = Number(b.weight ?? 0);
+                  const bLoss = bStart > 0 && bCurr > 0 ? bStart - bCurr : 0;
+                  return cLoss > bLoss ? c : b;
+                }, clients[0]);
+                return best.name ?? '—';
+              })() : '—'}
+            />
+          </MetricGroup>
+        </div>
 
         {/* ── Members Table ── */}
         <m.div variants={containerVariants} initial="hidden" animate="visible">

@@ -44,6 +44,13 @@ export interface CommandCenterFeed {
   refreshing: boolean;
   /** Which transport is currently delivering data. */
   transport: Transport;
+  /**
+   * Every snapshot this hook has actually received this visit, oldest first,
+   * capped at HISTORY_LIMIT. Not a backend history endpoint — there isn't
+   * one — just the real frames that already flowed through this hook,
+   * retained instead of discarded. What a card's trend sparkline reads.
+   */
+  history: CommandCenterSnapshot[];
   /** Force a fresh probe — over the socket when it is up, over HTTP otherwise. */
   refresh: () => void;
 }
@@ -55,6 +62,10 @@ const RETRY_MAX_MS = 30_000;
 /** The spinner cannot wait forever on a frame that may never come. */
 const REFRESH_SPINNER_TIMEOUT_MS = 5_000;
 
+/** Enough points for a real shape (a stream tick every second, a poll every
+ *  five) without holding the whole visit in memory. */
+const HISTORY_LIMIT = 30;
+
 function isSnapshot(v: unknown): v is CommandCenterSnapshot {
   return !!v && typeof v === 'object' && 'cards' in v && 'status' in v;
 }
@@ -65,6 +76,7 @@ export function useCommandCenterSnapshot(pollMs: number): CommandCenterFeed {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [transport, setTransport] = useState<Transport>('polling');
+  const [history, setHistory] = useState<CommandCenterSnapshot[]>([]);
 
   // The whole machine lives in one effect so the pieces can call each other
   // without a dependency cycle between useCallbacks. `refreshRef` is how the
@@ -82,6 +94,7 @@ export function useCommandCenterSnapshot(pollMs: number): CommandCenterFeed {
     const apply = (data: CommandCenterSnapshot) => {
       if (!alive) return;
       setSnap(data);
+      setHistory((prev) => [...prev, data].slice(-HISTORY_LIMIT));
       setError('');
       setLoading(false);
       setRefreshing(false);
@@ -261,5 +274,5 @@ export function useCommandCenterSnapshot(pollMs: number): CommandCenterFeed {
 
   const refresh = useCallback(() => { refreshRef.current(); }, []);
 
-  return { snap, error, loading, refreshing, transport, refresh };
+  return { snap, error, loading, refreshing, transport, history, refresh };
 }

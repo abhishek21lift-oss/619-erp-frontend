@@ -1,11 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { m } from 'framer-motion';
 import { ClipboardCheck, Plus, Loader2, Check } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { useAsync } from '@/lib/use-async';
 import { api, Client } from '@/lib/api';
 import { Button, FormField, TextInput, TextArea, SelectInput } from '@/components/ui';
+import { PremiumAreaChart } from '@/components/visualizations';
 
 const MOODS = [
   { value: 'great', label: 'Great', color: '#10b981' },
@@ -38,6 +39,17 @@ export default function WeeklyCheckinPage() {
 
   const clients = useAsync<any[]>(() => api.pt.clients().then(r => r.data), []);
   const checkins = useAsync(() => api.progress.weeklyCheckins.list(clientId ? { client_id: clientId } : {}).then(r => r.data), [clientId]);
+
+  // Oldest-first, real weight readings only — a check-in logged without a
+  // weight (mood/sleep only) contributes nothing to this trend rather than a
+  // gap plotted as zero.
+  const weightTrend = useMemo(() => {
+    const rows = (checkins.data ?? []) as { week_start_date?: unknown; weight?: unknown }[];
+    return rows
+      .filter((c): c is { week_start_date?: unknown; weight: number } => typeof c.weight === 'number' && Number.isFinite(c.weight))
+      .sort((a, b) => String(a.week_start_date).localeCompare(String(b.week_start_date)))
+      .map((c) => ({ week: String(c.week_start_date), weight: c.weight }));
+  }, [checkins.data]);
 
   const pageError = clients.error || checkins.error;
 
@@ -232,6 +244,19 @@ export default function WeeklyCheckinPage() {
           <m.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
             className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'var(--text-primary)' }}>Recent Check-Ins</h2>
+            {/* Only drawn once a client is picked — the list otherwise mixes
+                every client's check-ins, and a weight trend across different
+                people is not a trend. Needs two real readings for a line to
+                describe a direction. */}
+            {clientId && weightTrend.length >= 2 && (
+              <PremiumAreaChart
+                data={weightTrend}
+                xKey="week"
+                areas={[{ key: 'weight', label: 'Weight (kg)' }]}
+                height={160}
+                className="mb-5"
+              />
+            )}
             <div className="space-y-3 max-h-[500px] overflow-y-auto">
               {(checkins.data as any[] || []).map((c: any) => (
                 <div key={c.id} className="rounded-[14px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
