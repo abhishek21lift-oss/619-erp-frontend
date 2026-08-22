@@ -1,14 +1,21 @@
-// A generated week must not be editable.
+// ExerciseCard's read-only mode, and the progression ramp line.
 //
-// This is the one part of "author one week, get twelve" that can lose a
-// programme. Weeks 2..N are DERIVED: they have no rows of their own, so every
-// card in week 6 carries the WEEK-1 row's id. An input left live in a derived
-// week would PATCH week 1 — and because every other week is computed from
-// week 1, one keystroke in week 6 silently moves weeks 2 through 12 with it.
+// ── A note on what this used to be ────────────────────────────────────────
 //
-// Nothing about the rendering makes that visible. The card looks identical,
-// the autosave pill says "Saved", and the trainer finds out in week 9. So the
-// guard is asserted directly rather than trusted to a screenshot.
+// This file was called "a generated week must not be editable". That was the
+// old model: weeks 2..N had no rows of their own, so a card in week 6 carried
+// week 1's row id and a live input there would have PATCHed week 1 — one
+// keystroke in week 6 moving weeks 2 through 12 with it.
+//
+// That is no longer how the builder works. Every week is editable; the first
+// edit to a computed week makes the server write that week out and land the
+// edit on its own row (see workout-builder-weeks.test.tsx and the backend's
+// workouts.weeks.test.js). So this file no longer describes a rule about
+// weeks — it describes the component's read-only mode, which is still a real
+// capability worth holding to its contract: show every number, offer nothing
+// that writes.
+//
+// The ramp line below is unchanged and always was about the ramp.
 
 import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -34,8 +41,8 @@ const SQUAT: WorkoutPlanExercise = {
   config: null,
 };
 
-describe('ExerciseCard in a derived week', () => {
-  it('renders no inputs at all, so there is nothing to type into week 1 by mistake', () => {
+describe('ExerciseCard in read-only mode', () => {
+  it('renders no inputs at all', () => {
     const { container } = render(<ExerciseCard exercise={SQUAT} readOnly />);
     expect(container.querySelectorAll('input')).toHaveLength(0);
     expect(container.querySelectorAll('textarea')).toHaveLength(0);

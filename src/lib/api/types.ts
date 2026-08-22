@@ -1437,8 +1437,15 @@ export interface WorkoutPlan {
   progression_every_weeks?: number;
   /** Which week the returned exercises describe. 1 unless ?week= was passed. */
   week?: number;
-  /** 'base' = the stored week 1, 'derived' = week 1 + rule, 'override' = hand-written. */
+  /** 'base' = the stored week 1, 'derived' = an earlier week + rule, 'override' = this week was edited. */
   week_source?: 'base' | 'derived' | 'override';
+  /**
+   * The week these numbers are built from — week 1, or the latest earlier week
+   * the trainer edited. Equal to `week` when this week is itself an edit.
+   */
+  anchor_week?: number;
+  /** Weeks that have been edited, so the builder can mark them. Never includes 1. */
+  override_weeks?: number[];
   /** null when there is no rule to preview. */
   progression_preview?: ProgressionPreview[] | null;
   version?: number;

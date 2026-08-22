@@ -95,20 +95,30 @@ export const workouts = {
      * keystroke and an exercise keeps its id for its whole life.
      */
     exercises: {
-      add: (planId: string, data: WorkoutExerciseInput & { exercise_id: string }) =>
+      add: (planId: string, data: WorkoutExerciseInput & { exercise_id: string; week_number?: number }) =>
         http<{ message: string; exercise: WorkoutPlanExercise }>(
           `/api/workouts/plans/${planId}/exercises`,
           { method: 'POST', body: JSON.stringify(data) },
         ),
-      /** Send only the fields that changed; `null` clears, `0` is kept. */
-      patch: (planId: string, rowId: string, data: WorkoutExerciseInput) =>
+      /**
+       * Send only the fields that changed; `null` clears, `0` is kept.
+       *
+       * `week_number` says WHICH WEEK is being edited, and it matters most
+       * when the week has never been written down. A card shown in week 6
+       * carries week 1's row id until the server writes week 6 out, so the id
+       * in the URL is not necessarily the row that gets changed — the server
+       * resolves it to that week's counterpart. Omitting the week edits week
+       * 1, which moves every week of the programme at once.
+       */
+      patch: (planId: string, rowId: string, data: WorkoutExerciseInput & { week_number?: number }) =>
         http<{ message: string; exercise: WorkoutPlanExercise }>(
           `/api/workouts/plans/${planId}/exercises/${rowId}`,
           { method: 'PATCH', body: JSON.stringify(data) },
         ),
-      remove: (planId: string, rowId: string) =>
+      /** Removing from week 6 removes it from week 6 onwards, not from week 1. */
+      remove: (planId: string, rowId: string, week?: number) =>
         http<{ message: string }>(
-          `/api/workouts/plans/${planId}/exercises/${rowId}`,
+          `/api/workouts/plans/${planId}/exercises/${rowId}${week && week > 1 ? `?week=${week}` : ''}`,
           { method: 'DELETE' },
         ),
       /**
@@ -116,12 +126,25 @@ export const workouts = {
        * on that day, in their new order — the server rejects anything else
        * rather than silently moving a row in from elsewhere.
        */
-      reorder: (planId: string, day: number, exerciseIds: string[]) =>
+      reorder: (planId: string, day: number, exerciseIds: string[], week?: number) =>
         http<{ message: string; count: number }>(
-          `/api/workouts/plans/${planId}/days/${day}/order`,
+          `/api/workouts/plans/${planId}/days/${day}/order${week && week > 1 ? `?week=${week}` : ''}`,
           { method: 'PUT', body: JSON.stringify({ exercise_ids: exerciseIds }) },
         ),
     },
+
+    /**
+     * Put an edited week back on the progression rule.
+     *
+     * Deletes that week's own rows, so it derives again — and so do the weeks
+     * after it, unless they carry edits of their own. Week 1 is refused by the
+     * server: it is the programme, not an edit of it.
+     */
+    resetWeek: (planId: string, week: number) =>
+      http<{ message: string; week: number; removed: number }>(
+        `/api/workouts/plans/${planId}/weeks/${week}`,
+        { method: 'DELETE' },
+      ),
   },
   assignments: {
     list: (params: { client_id: string; status?: string }) =>
