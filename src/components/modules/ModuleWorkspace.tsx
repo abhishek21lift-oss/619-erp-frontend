@@ -10,7 +10,6 @@ import {
   ChevronRight,
   Download,
   Filter,
-  LineChart,
   Loader2,
   Plus,
   RefreshCw,
@@ -20,16 +19,10 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, m } from 'framer-motion';
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
   Cell,
   Pie,
   PieChart,
   ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
 } from 'recharts';
 import Guard from '@/components/Guard';
 import { Button } from '@/components/ui/Button';
@@ -130,17 +123,7 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
   const pageRecords = filtered.slice((page - 1) * pageSize, page * pageSize);
   const activeCount = records.filter((r) => ['Active', 'Approved', 'Confirmed', 'On Track', 'Online', 'Published', 'Assigned'].includes(r.status)).length;
   const pendingCount = records.filter((r) => ['Pending', 'Draft', 'Requested', 'Scheduled', 'Syncing', 'Queued'].includes(r.status)).length;
-  const totalValue = records.reduce((sum, record) => sum + Number(record.amount || 0), 0);
   const urgentCount = records.filter((r) => ['High', 'Urgent'].includes(r.priority)).length;
-
-  const trend = React.useMemo(
-    () =>
-      Array.from({ length: 8 }).map((_, index) => ({
-        label: `W${index + 1}`,
-        value: Math.round((totalValue / Math.max(records.length, 1) / 500) + activeCount * 4 + index * 8 + (index % 2) * 11),
-      })),
-    [activeCount, records.length, totalValue],
-  );
 
   const statusData = React.useMemo(
     () =>
@@ -335,59 +318,64 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
                 </div>
               </form>
 
-              <section className="grid gap-4 lg:grid-cols-2">
-                <div className="rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0F172A] p-4 shadow-sm">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h2 className="m-0 text-base font-bold text-slate-900 dark:text-white">Performance Trend</h2>
-                    <LineChart className="h-4 w-4 text-slate-500 dark:text-white/50" />
-                  </div>
-                  <div className="h-56">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={trend} margin={{ left: -22, right: 8, top: 8, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id={`trend-${config.key}`} x1="0" x2="0" y1="0" y2="1">
-                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.45} />
-                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.02} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                        <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} />
-                        <YAxis tickLine={false} axisLine={false} fontSize={11} />
-                        <Tooltip />
-                        <Area type="monotone" dataKey="value" stroke="#f59e0b" fill={`url(#trend-${config.key})`} strokeWidth={2} />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
+              {/* One card, not two.
+                *
+                * The card that used to sit beside this one was titled
+                * "Performance Trend" and plotted eight points built from
+                * `index * 8 + (index % 2) * 11` — a line that rose because the
+                * arithmetic made it rise, on every tab of eight route groups.
+                * The panel that used to sit inside this one showed
+                * `(records.length + index * 3) % 19` beside labels like
+                * "Campaign ROI". Neither number came from a record.
+                *
+                * The status mix below is real: it counts `records` by status.
+                * The breakdown beside it replaces the invented figures with
+                * the counts the chart is actually drawn from, which also
+                * means the slices carry their values in text — the reason
+                * there is no tooltip here.
+                *
+                * A genuine trend needs a server-side aggregate: this client
+                * only ever holds 500 rows, ordered by due date, so it cannot
+                * see a module's history well enough to chart it. */}
+              <section className="rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0F172A] p-4 shadow-sm">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="m-0 text-base font-bold text-slate-900 dark:text-white">Status Mix</h2>
+                  <SlidersHorizontal className="h-4 w-4 text-slate-500 dark:text-white/50" />
                 </div>
-
-                <div className="rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0F172A] p-4 shadow-sm">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h2 className="m-0 text-base font-bold text-slate-900 dark:text-white">Status Mix</h2>
-                    <SlidersHorizontal className="h-4 w-4 text-slate-500 dark:text-white/50" />
-                  </div>
+                {statusData.length === 0 ? (
+                  <p className="m-0 py-10 text-center text-sm text-slate-500 dark:text-white/50">
+                    {loading ? 'Loading…' : `No ${config.entityName.toLowerCase()}s yet — add one above and the mix appears here.`}
+                  </p>
+                ) : (
                   <div className="grid gap-3 sm:grid-cols-[0.9fr_1fr] sm:items-center">
-                    <div className="h-48">
+                    <div
+                      className="h-48"
+                      role="img"
+                      aria-label={`${config.entityName} status mix: ${statusData.map((d) => `${d.name} ${d.value}`).join(', ')}`}
+                    >
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                          <Pie data={statusData.length ? statusData : [{ name: 'Empty', value: 1 }]} dataKey="value" nameKey="name" innerRadius={42} outerRadius={72} paddingAngle={3}>
-                            {(statusData.length ? statusData : [{ name: 'Empty', value: 1 }]).map((entry, index) => (
-                              <Cell key={entry.name} fill={statusData.length ? chartColors[index % chartColors.length] : '#e2e8f0'} />
+                          <Pie data={statusData} dataKey="value" nameKey="name" innerRadius={42} outerRadius={72} paddingAngle={3} isAnimationActive={false}>
+                            {statusData.map((entry, index) => (
+                              <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />
                             ))}
                           </Pie>
-                          <Tooltip />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
                     <div className="grid gap-2">
-                      {config.insights.map((item, index) => (
-                        <div key={item} className="flex items-center justify-between gap-3 rounded border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5 px-3 py-2">
-                          <span className="text-xs font-semibold text-slate-600 dark:text-white/60">{item}</span>
-                          <span className="text-sm font-extrabold text-slate-900 dark:text-white">{Math.max(1, (records.length + index * 3) % 19)}</span>
+                      {statusData.map((entry, index) => (
+                        <div key={entry.name} className="flex items-center justify-between gap-3 rounded border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5 px-3 py-2">
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: chartColors[index % chartColors.length] }} />
+                            <span className="truncate text-xs font-semibold text-slate-600 dark:text-white/60">{entry.name}</span>
+                          </span>
+                          <span className="shrink-0 text-sm font-extrabold tabular-nums text-slate-900 dark:text-white">{entry.value}</span>
                         </div>
                       ))}
                     </div>
                   </div>
-                </div>
+                )}
               </section>
             </section>
 
