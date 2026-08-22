@@ -68,7 +68,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
         WebkitBackdropFilter: 'blur(24px) saturate(180%)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         willChange: 'transform',
-        boxShadow: '0 -12px 32px rgba(0,0,0,0.28)',
+        boxShadow: '0 -1px 16px rgba(0,0,0,0.16)',
       }}
       animate={{ y: sidebarOpen ? '100%' : 0 }}
       transition={{ duration: dur, ease: EASE }}
@@ -79,7 +79,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
       <div
         className="absolute top-0 left-0 right-0 h-px"
         style={{
-          background: 'linear-gradient(90deg, transparent 0%, rgba(127,180,255,0.4) 25%, rgba(127,180,255,0.65) 50%, rgba(127,180,255,0.4) 75%, transparent 100%)',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(127,180,255,0.18) 30%, rgba(127,180,255,0.30) 50%, rgba(127,180,255,0.18) 70%, transparent 100%)',
         }}
       />
 
@@ -99,7 +99,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
               href={href}
               className="relative flex flex-1 flex-col items-center justify-center overflow-hidden focus-visible:outline-none"
               aria-current={isActive ? 'page' : undefined}
-              style={{ gap: 2, minHeight: 44 }}
+              style={{ gap: 1, minHeight: 44 }}
             >
               {/* Focus ring for keyboard nav */}
               <span
@@ -113,11 +113,9 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                   layoutId="bottom-nav-active"
                   className="absolute inset-x-1.5 rounded-xl pointer-events-none"
                   style={{
-                    top:    4,
-                    bottom: 4,
-                    background: 'linear-gradient(135deg, rgba(127,180,255,0.22) 0%, rgba(0,103,224,0.14) 100%)',
-                    border: '1px solid rgba(127,180,255,0.28)',
-                    boxShadow: '0 2px 14px rgba(127,180,255,0.18), inset 0 1px 0 rgba(255,255,255,0.07)',
+                    top:    3,
+                    bottom: 3,
+                    background: 'rgba(127,180,255,0.13)',
                   }}
                   transition={SPRING}
                 />
@@ -125,17 +123,16 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
 
               {/* Icon */}
               <m.span
-                className="relative z-10 flex h-[22px] w-[22px] items-center justify-center"
+                className="relative z-10 flex h-[20px] w-[20px] items-center justify-center"
                 whileTap={reducedMotion ? {} : { scale: 0.76 }}
                 transition={{ type: 'spring', stiffness: 700, damping: 22 }}
               >
                 <Icon
-                  size={18}
+                  size={17}
                   strokeWidth={isActive ? 2.3 : 1.7}
                   style={{
                     color: isActive ? '#7fb4ff' : 'rgba(255,255,255,0.40)',
-                    filter: isActive ? 'drop-shadow(0 0 7px rgba(127,180,255,0.55))' : 'none',
-                    transition: 'color 200ms ease, filter 200ms ease',
+                    transition: 'color 200ms ease',
                   }}
                   aria-hidden="true"
                 />

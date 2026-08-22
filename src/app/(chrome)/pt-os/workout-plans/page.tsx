@@ -10,7 +10,7 @@ import {
 import Guard from '@/components/Guard';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
-import type { WorkoutPlan, LibraryExercise, TrainingBrief, WorkoutAssignment } from '@/lib/api';
+import type { WorkoutPlan, LibraryExercise, TrainingBrief, WorkoutPlanAssignment } from '@/lib/api';
 import { ApiError } from '@/lib/http';
 import { useToast } from '@/lib/toast';
 import { AnimatedCounter } from '@/components/fitness/AnimatedCounter';
@@ -82,17 +82,6 @@ function Inner() {
   const [bodyParts, setBodyParts] = useState<string[]>([]);
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
   const [clients, setClients] = useState<ClientOption[]>([]);
-  /**
-   * Active assignments — who is running which plan, from when, and how far in.
-   *
-   * The plan row itself carries none of that: it is a prescription, not a
-   * person's copy of one. This is the existing assignments endpoint the
-   * client profile and workout log already read; nothing new is computed
-   * server-side. `null` means the read failed, which is deliberately
-   * distinct from `[]` (nobody is assigned) — the KPIs below print an em
-   * dash for the first and a real zero for the second.
-   */
-  const [assignments, setAssignments] = useState<WorkoutAssignment[] | null>([]);
   const [assignPlan, setAssignPlan] = useState<WorkoutPlan | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
@@ -132,21 +121,11 @@ function Inner() {
   const fetchData = useCallback(async () => {
     setDataLoading(true);
     try {
-      const [exRes, metaRes, plRes, clRes, asRes] = await Promise.all([
+      const [exRes, metaRes, plRes, clRes] = await Promise.all([
         api.exercises.list(),
         api.exercises.meta(),
         api.workouts.plans.list(presetClientId ? { client_id: presetClientId } : undefined),
         api.pt.clients(),
-        // Only with a client in scope. /api/workouts/assignments requires a
-        // client_id, so a studio-wide view would mean one request per client
-        // — a request storm to decorate a card. With no client we simply do
-        // not claim who is on a plan.
-        //
-        // Non-fatal either way: a failure costs the client name and the week
-        // counter, not the screen.
-        presetClientId
-          ? api.workouts.assignments.list({ client_id: presetClientId, status: 'active' }).catch(() => null)
-          : Promise.resolve(null),
       ]);
       // /api/exercises returns a paged envelope, and its filter facets are
       // muscle regions rather than the old free-text body_part strings.
@@ -156,7 +135,6 @@ function Inner() {
       setPlans(Array.isArray(plRes) ? plRes : []);
       const clientArr = Array.isArray(clRes?.data) ? clRes.data : [];
       setClients((clientArr as Record<string, unknown>[]).map((c) => ({ id: String(c.id), name: String(c.name ?? '') })));
-      setAssignments(Array.isArray(asRes) ? asRes : null);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to load data');
     } finally { setDataLoading(false); }
@@ -234,13 +212,21 @@ function Inner() {
    * for now the extra rows still count toward the KPIs below.
    */
   const assignmentByPlan = React.useMemo(() => {
-    const map = new Map<string, WorkoutAssignment>();
-    for (const a of assignments ?? []) {
-      const prev = map.get(a.workout_plan_id);
-      if (!prev || (a.start_date ?? '') > (prev.start_date ?? '')) map.set(a.workout_plan_id, a);
+    const map = new Map<string, WorkoutPlanAssignment>();
+    for (const p of plans) {
+      for (const a of p.assignments ?? []) {
+        const prev = map.get(p.id);
+        if (!prev || (a.start_date ?? '') > (prev.start_date ?? '')) map.set(p.id, a);
+      }
     }
     return map;
-  }, [assignments]);
+  }, [plans]);
+
+  /** Every enrolment on screen, flattened — the basis of the two people KPIs. */
+  const roster = React.useMemo(
+    () => plans.flatMap((p) => p.assignments ?? []),
+    [plans],
+  );
 
   const clientNameById = React.useMemo(
     () => new Map(clients.map((c) => [c.id, c.name])),
@@ -257,23 +243,36 @@ function Inner() {
    */
   const activePlans = plans.filter((p) => p.is_active !== false).length;
 
-  const avgProgress = plans.length
-    ? Math.round(plans.reduce((s, p) => s + (p.progress || 0), 0) / plans.length)
+  /**
+   * Averaged across the people training, not across the plans.
+   *
+   * Dividing by plans folds every unassigned draft in as a zero, so the
+   * studio's completion fell every time a trainer started writing something.
+   */
+  const avgProgress = roster.length
+    ? Math.round(roster.reduce((sum, a) => sum + (Number(a.progress_pct) || 0), 0) / roster.length)
     : 0;
 
+  /** People, not enrolments: one client on three programmes is one client. */
+  const assignedClients = React.useMemo(
+    () => new Set(roster.map((a) => a.client_id)).size,
+    [roster],
+  );
+
   /**
-   * Sessions a week.
+   * Sessions a week — the load the trainer has to actually deliver.
    *
-   * With a client in scope this is what they are actually assigned — their
-   * real weekly load. Studio-wide it is the prescribed load across active
-   * plans, because assignments are not readable without a client_id (see the
-   * fetch above). Two different questions, so the label below changes with
-   * the mode rather than presenting one as the other.
+   * Multiplied by the roster rather than summed over plans: two clients on
+   * one 3x/week programme is six sessions to run, not three. One meaning in
+   * both modes now, so the label no longer has to change with the mode.
    */
-  const sessionsPerWeek = assignments && assignments.length
-    ? assignments.reduce((s, a) => s + (a.sessions_per_week || 0), 0)
-    : plans.filter((p) => p.is_active !== false)
-      .reduce((s, p) => s + (p.sessions_per_week || 0), 0);
+  const sessionsPerWeek = React.useMemo(
+    () => plans.reduce(
+      (sum, p) => sum + (p.assignments?.length ?? 0) * (Number(p.sessions_per_week) || 0),
+      0,
+    ),
+    [plans],
+  );
 
   return (
     <div style={{ minHeight: '100%', position: 'relative' }}>
@@ -314,7 +313,7 @@ function Inner() {
                   aria-label={v === 'grid' ? 'Grid view' : 'List view'}
                   className="flex items-center justify-center rounded-[9px] transition-colors"
                   style={{
-                    height: 38, width: 40,
+                    height: 44, width: 44,
                     background: view === v ? 'var(--bg-card)' : 'transparent',
                     color: view === v ? ACCENT : 'var(--text-disabled)',
                     boxShadow: view === v ? '0 1px 2px rgba(15,23,42,0.10)' : 'none',
@@ -364,9 +363,9 @@ function Inner() {
             and one large number, so the row reads as context above the
             content rather than competing with it.
 
-            A metric that could not be read shows an em dash. `null` here
-            means the assignments call failed — printing 0 clients would be a
-            claim about the studio rather than about the request. */}
+            A metric that could not be read still shows an em dash rather
+            than a zero, which would be a claim about the studio rather than
+            about the request. */}
         <m.div variants={containerVariants} initial="hidden" animate="visible"
           className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
             {(presetClientId
@@ -378,11 +377,12 @@ function Inner() {
               ]
               : [
                 { label: 'Active Plans', value: activePlans as number | null, icon: <FileText size={13} /> },
-                // "Clients", not "Assigned Clients": assignments cannot be
-                // read studio-wide (see the fetch), so this is the roster
-                // this trainer has — which is measured — rather than a
-                // narrower number the page cannot actually see.
-                { label: 'Clients', value: clients.length, icon: <Users size={13} /> },
+                // "Assigned Clients" is sayable now: the plans endpoint
+                // returns each plan's roster, already narrowed server-side to
+                // this caller's studio and, for a trainer, their own clients.
+                // It used to read "Clients" and count the whole roster,
+                // because assignments could not be read without a client_id.
+                { label: 'Assigned Clients', value: assignedClients, icon: <Users size={13} /> },
                 { label: 'Avg Completion', value: avgProgress, icon: <Trophy size={13} />, suffix: '%' },
                 { label: 'Sessions / Week', value: sessionsPerWeek, icon: <CalendarDays size={13} /> },
               ]
@@ -514,6 +514,14 @@ function Inner() {
                     const builderHref = presetClientId
                       ? `/pt-os/clients/${presetClientId}/training/builder?plan=${plan.id}`
                       : `/pt-os/workout-plans/${plan.id}`;
+                    // Edit and "add exercises" are the same intent — start
+                    // changing the prescription — and with a client in scope
+                    // the builder already opens in that state. Studio-wide
+                    // they would land on exactly the page Open lands on, so
+                    // ?edit=1 takes the detail view straight into its
+                    // exercise editor and the two actions stop being the same
+                    // button drawn twice.
+                    const editHref = presetClientId ? builderHref : `${builderHref}?edit=1`;
                     return (
                       <m.div key={plan.id} variants={itemVariants}>
                         <WorkoutPlanCard
@@ -534,15 +542,15 @@ function Inner() {
                           // one, since that is the number the week counter
                           // beside it describes; the plan's own otherwise.
                           progress={assignment?.progress_pct ?? plan.progress}
-                          clientName={assignment ? clientNameById.get(assignment.client_id) ?? null : null}
+                          clientName={assignment?.client_name ?? null}
                           currentWeek={currentWeekOf(assignment?.start_date, plan.duration_weeks)}
                           durationWeeks={plan.duration_weeks}
                           compact={view === 'list'}
                           onOpen={() => router.push(builderHref)}
-                          onEdit={() => router.push(builderHref)}
+                          onEdit={() => router.push(editHref)}
                           onAssign={() => setAssignPlan(plan)}
                           onDelete={() => handleDeletePlan(plan)}
-                          onAddExercises={() => router.push(builderHref)}
+                          onAddExercises={() => router.push(editHref)}
                         />
                       </m.div>
                     );
