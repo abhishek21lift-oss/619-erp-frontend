@@ -80,7 +80,10 @@ beforeEach(() => exercisesList.mockClear());
  */
 async function openLibrary() {
   render(<WorkoutPlansPage />);
-  const tab = await screen.findByRole('button', { name: /Exercise Library/ });
+  // The tab is labelled "Exercises" since the page redesign — the count sits
+  // beside the word rather than inside it, so the name matches on the label
+  // alone. What this file asserts about the count is unchanged.
+  const tab = await screen.findByRole('tab', { name: /Exercises/ });
   fireEvent.click(tab);
   return screen.getByLabelText('Search exercises');
 }
