@@ -1,6 +1,17 @@
 'use client';
 
 /**
+ * NOT MOUNTED. Nothing renders this.
+ *
+ * The floating launcher was removed from AppShell: on a phone it sat on top
+ * of the content of every screen, and AI already has a permanent home in the
+ * bottom nav's AI Coach tab. This file and the two components below it are
+ * kept intact rather than deleted, because the decision that removed them was
+ * about where the button sits, not about the code being wrong — restoring it
+ * is one line in AppShell.
+ *
+ * ── What it did ───────────────────────────────────────────────────────────
+ *
  * Mounts the assistant on every screen.
  *
  * Lives in AppShell, which every authenticated page renders, so this is the

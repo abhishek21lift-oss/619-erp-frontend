@@ -24,20 +24,24 @@
 // says so — an optimistic UI that hides a failed write is worse than a save
 // button, because the trainer leaves believing the programme is stored.
 //
-// ── One week, not twelve ──────────────────────────────────────────────────
+// ── One week, until you change one ────────────────────────────────────────
 //
-// The builder authors WEEK 1 and a progression rule; weeks 2..N are derived
-// from those and are not stored. So the week control here is a viewer, not a
-// second editing surface: week 1 is editable, every later week is what the
-// rule produces, read-only.
+// The builder authors WEEK 1 and a progression rule; weeks 2..N are computed
+// from those and are not stored. But every week is EDITABLE, and an edit means
+// "from here on": editing week 4 leaves weeks 1-3 alone and restarts the climb
+// from week 4's new numbers.
 //
-// That read-only-ness is load-bearing rather than a simplification. A derived
-// row carries the WEEK-1 row's id — it has none of its own — so an "edit" of
-// week 6 would PATCH week 1 and silently move every other week with it. The
-// honest options were to make later weeks read-only or to mint real override
-// rows on first edit; the first is right for now because the trainer's actual
-// intent ("make week 4 a deload") is a different, deliberate action, and
-// guessing it from a keystroke in a preview is how you lose a programme.
+// The server does the hard part. A computed week has no rows, so a card shown
+// in week 6 carries WEEK 1's row id — which is why later weeks used to be
+// read-only, since an "edit" of week 6 would have PATCHed week 1 and moved
+// every other week with it. Now the first edit to a computed week makes the
+// server write that week out and land the edit on the new row, and every
+// later write resolves the id it is given to that week's counterpart.
+//
+// So the one rule this file has to hold up: EVERY WRITE CARRIES ITS WEEK.
+// A patch, a delete, a reorder or an add that forgets it edits week 1, and
+// week 1 is the week every other week is computed from — one forgotten
+// parameter moves the whole programme.
 //
 // ── Why the sizes are h-[44px] and not h-11 ───────────────────────────────
 //
@@ -116,7 +120,11 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
   const addExercisesHref = `/pt-os/clients/${clientId}/training/builder/add-exercises`
     + `?plan=${encodeURIComponent(planId)}&day=${day}`;
 
-  const { status, enqueue, flushNow } = useAutosave<WorkoutExerciseInput>({
+  const { status, enqueue, flushNow } = useAutosave<WorkoutExerciseInput & { week_number?: number }>({
+    // The week travels INSIDE the patch, put there by patchRow at the moment
+    // the trainer typed. Reading `week` here instead would take whichever week
+    // is on screen when the debounce fires — switch tabs mid-edit and the
+    // keystroke lands on the week you switched to.
     save: (rowId, patch) => api.workouts.plans.exercises.patch(planId, rowId, patch),
     onError: () => toast.error('Could not save that change'),
   });
@@ -220,40 +228,73 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
 
   const weeks = Math.max(1, plan?.duration_weeks ?? 1);
   const hasRule = (plan?.progression_type ?? 'none') !== 'none';
-  // Later weeks are derived, and a derived row has no id of its own to write
-  // to. Editing is week 1's job.
-  const editable = week === 1;
+  /** Whether this week has been written by hand, rather than computed. */
+  const edited = week > 1 && plan?.week_source === 'override';
+  /** Which week these numbers are computed from — this one, or an earlier edit. */
+  const anchor = plan?.anchor_week ?? 1;
+
+  /**
+   * Note that this week now stands on its own.
+   *
+   * The server decides this — the first write to a computed week makes it
+   * real — but the client has to say so immediately, or the banner keeps
+   * calling the week computed while the trainer is editing it. Local rather
+   * than a refetch: a refetch would replace the rows underneath whatever they
+   * are typing next.
+   */
+  const markEdited = useCallback(() => {
+    setPlan((p) => (p ? { ...p, week_source: 'override', anchor_week: week } : p));
+  }, [week]);
+
+  /** Put this week back on the rule, and take the rule's numbers with it. */
+  const resetWeek = useCallback(async () => {
+    try {
+      await api.workouts.plans.resetWeek(planId, week);
+      const fresh = await api.workouts.plans.detail(planId, { week });
+      setPlan(fresh);
+      setRows(fresh.exercises ?? []);
+      toast.success(`Week ${week} follows the rule again`);
+    } catch {
+      toast.error('Could not reset this week');
+    }
+  }, [planId, week, toast]);
 
   const patchRow = useCallback((rowId: string, patch: WorkoutExerciseInput) => {
     setRows((prev) => prev.map((r) => (r.id === rowId ? { ...r, ...patch } as WorkoutPlanExercise : r)));
-    enqueue(rowId, patch);
-  }, [enqueue]);
+    // week_number rides along with the fields, so the edit is bound to the
+    // week it was made in rather than the week that happens to be on screen
+    // when it saves.
+    enqueue(rowId, week > 1 ? { ...patch, week_number: week } : patch);
+  }, [enqueue, week]);
 
   const duplicate = useCallback(async (row: WorkoutPlanExercise) => {
     try {
       const { exercise: created } = await api.workouts.plans.exercises.add(planId, {
         exercise_id: row.exercise_id ?? '',
         day_of_week: row.day_of_week,
+        week_number: week,
         sets: row.sets, reps: row.reps, rest_seconds: row.rest_seconds,
         notes: row.notes, target_weight: row.target_weight, tempo: row.tempo,
         rpe: row.rpe, warmup_sets: row.warmup_sets, superset_group: row.superset_group,
       });
       setRows((prev) => [...prev, created]);
+      if (week > 1) markEdited();
     } catch {
       toast.error('Could not duplicate that exercise');
     }
-  }, [planId, toast]);
+  }, [planId, week, markEdited, toast]);
 
   const remove = useCallback(async (rowId: string) => {
     const snapshot = rows;
     setRows((prev) => prev.filter((r) => r.id !== rowId));   // optimistic
     try {
-      await api.workouts.plans.exercises.remove(planId, rowId);
+      await api.workouts.plans.exercises.remove(planId, rowId, week);
+      if (week > 1) markEdited();
     } catch {
       setRows(snapshot);                                      // put it back
       toast.error('Could not remove that exercise');
     }
-  }, [planId, rows, toast]);
+  }, [planId, rows, week, markEdited, toast]);
 
   const reorder = useCallback(async (next: WorkoutPlanExercise[]) => {
     // Paint the new order, and renumber sort_order locally so the memo above
@@ -261,11 +302,12 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
     const renumbered = next.map((r, i) => ({ ...r, sort_order: i }));
     setRows((prev) => [...prev.filter((r) => r.day_of_week !== day), ...renumbered]);
     try {
-      await api.workouts.plans.exercises.reorder(planId, day, next.map((r) => r.id));
+      await api.workouts.plans.exercises.reorder(planId, day, next.map((r) => r.id), week);
+      if (week > 1) markEdited();
     } catch {
       toast.error('Could not save the new order');
     }
-  }, [planId, day, toast]);
+  }, [planId, day, week, markEdited, toast]);
 
   if (loading) {
     return (
@@ -290,13 +332,13 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
         <SaveIndicator status={status} />
       </div>
 
-      {/* ── The rule that generates weeks 2..N ──
-          Only on week 1: it describes how the authored week grows, and offering
-          it from inside a derived week would suggest the derived week is what
-          it applies to. */}
-      {plan && editable && <ProgressionRule plan={plan} onChange={saveRule} />}
+      {/* ── The rule ──
+          Only on week 1. It describes how the programme grows from its first
+          week, and offering it from inside week 6 would read as a rule about
+          week 6. */}
+      {plan && week === 1 && <ProgressionRule plan={plan} onChange={saveRule} />}
 
-      {plan && editable && (
+      {plan && week === 1 && (
         <PlanVersions
           planId={planId}
           version={plan.version ?? 1}
@@ -306,11 +348,14 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
 
       {/* ── Week stepper ──
           Hidden without a rule, because then every week is byte-identical and a
-          control that changes nothing is worse than no control. */}
+          control that changes nothing is worse than no control.
+
+          No box around it: it is a heading for what follows, not a panel. The
+          hairline is the whole separation the page needs. */}
       {hasRule && weeks > 1 && (
         <div
-          className="mb-4 flex items-center justify-between gap-2 rounded-[16px] px-2 py-1.5"
-          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+          className="mb-3 flex items-center justify-between gap-2 pb-3"
+          style={{ borderBottom: '1px solid var(--border)' }}
         >
           <WeekStep
             label="Previous week"
@@ -326,8 +371,8 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
             </p>
             <p className="text-[10.5px] font-[650]" style={{ color: 'var(--text-muted)' }}>
               {week === 1 ? 'The week you write'
-                : plan?.week_source === 'override' ? 'Written by hand'
-                  : 'Generated from week 1'}
+                : edited ? 'Edited — later weeks build on this'
+                  : anchor > 1 ? `Following week ${anchor}` : 'Following week 1'}
             </p>
           </div>
           <WeekStep
@@ -340,32 +385,37 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
         </div>
       )}
 
-      {!editable && (
-        <div
-          className="mb-4 rounded-[14px] px-3.5 py-2.5"
-          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
-        >
+      {/* ── What this week is ──
+          A sentence, not a panel. It used to be a bordered notice saying the
+          week was read-only; the week is editable now, so what is left to say
+          is where its numbers came from and — once it has been edited — how to
+          undo that.
+
+          The action is its own control below the sentence, not a link inside
+          it. Set inline, it inherits the paragraph's 12px line box — a ~15px
+          tall tap target on the screen this is designed for, which the device
+          check failed it for. A sentence cannot carry a 44px target without
+          wrecking its own leading, so the two are separated. */}
+      {week > 1 && (
+        <div className="mb-3">
           <div className="flex items-start gap-2">
             <Eye size={14} className="mt-0.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
             <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-              Week {week} is generated from week 1, so it is read-only. Edit week 1 to change it.
+              {edited
+                ? `Week ${week} is written by hand. Weeks after it build on these numbers; weeks before it are unchanged.`
+                : `Week ${week} follows week ${anchor}${hasRule ? ' plus the rule' : ''}. Change anything here and it becomes this week's own — weeks before it stay as they are.`}
             </p>
           </div>
-          {/*
-            The action is its own control below the sentence, not a link inside
-            it. Set inline, it inherits the paragraph's 12px line box — a ~15px
-            tall tap target on the screen this is designed for, which the device
-            check failed it for. A sentence cannot carry a 44px target without
-            wrecking its own leading, so the two are separated.
-          */}
-          <button
-            type="button"
-            onClick={() => setWeek(1)}
-            className="mt-1 flex h-[44px] items-center text-[12.5px] font-[700]"
-            style={{ color: 'var(--brand)' }}
-          >
-            Go to week 1
-          </button>
+          {edited && (
+            <button
+              type="button"
+              onClick={resetWeek}
+              className="mt-1 flex h-[44px] items-center text-[12.5px] font-[700]"
+              style={{ color: 'var(--brand)' }}
+            >
+              Put week {week} back on the rule
+            </button>
+          )}
         </div>
       )}
 
@@ -382,11 +432,14 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
               role="tab"
               aria-selected={active}
               onClick={() => setDay(d.n)}
+              // Only the selected day carries a shape. Seven outlined pills in
+              // a row is six boxes drawn to say "not this one"; the selection
+              // is the only thing that needs a background to read.
               className="flex h-[44px] shrink-0 items-center gap-1.5 rounded-[14px] px-3.5 text-[13px] font-[700] transition-colors"
               style={{
-                background: active ? 'var(--brand)' : 'var(--bg-card)',
+                background: active ? 'var(--brand)' : 'transparent',
                 color: active ? '#fff' : 'var(--text-muted)',
-                border: `1px solid ${active ? 'var(--brand)' : 'var(--border)'}`,
+                border: '1px solid transparent',
               }}
             >
               {d.short}
@@ -394,8 +447,8 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
                 <span
                   className="rounded-full px-1.5 text-[10px] font-[800]"
                   style={{
-                    background: active ? 'rgba(255,255,255,0.25)' : 'var(--bg-subtle)',
-                    color: active ? '#fff' : 'var(--text-muted)',
+                    background: active ? 'rgba(255,255,255,0.25)' : 'transparent',
+                    color: active ? '#fff' : 'var(--text-disabled)',
                   }}
                 >
                   {count}
@@ -406,17 +459,16 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
         })}
       </div>
 
-      {/* ── The day's exercises ── */}
+      {/* ── The day's exercises ──
+          One branch, not two. Every week is editable now, so the read-only
+          list that used to render for weeks 2..N is gone — and with it the
+          second copy of this list that could drift from the first. */}
       {forDay.length === 0 ? (
         <EmptyState
           icon={<Dumbbell size={22} />}
-          title={editable
-            ? `Nothing on ${DAYS.find((d) => d.n === day)?.long} yet`
-            : `${DAYS.find((d) => d.n === day)?.long} is a rest day`}
-          description={editable
-            ? 'Add the first exercise and it becomes a card you can edit, duplicate and reorder.'
-            : 'Nothing is prescribed on this day in week 1, so nothing is generated here.'}
-          action={editable ? (
+          title={`Nothing on ${DAYS.find((d) => d.n === day)?.long} yet`}
+          description="Add the first exercise and it becomes a card you can edit, duplicate and reorder."
+          action={(
             <button
               type="button"
               onClick={() => router.push(addExercisesHref)}
@@ -425,10 +477,12 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
             >
               <Plus size={16} /> Add exercise
             </button>
-          ) : undefined}
+          )}
         />
-      ) : editable ? (
-        <Reorder.Group axis="y" values={forDay} onReorder={reorder} className="flex flex-col gap-3">
+      ) : (
+        // No gap between the rows: each exercise carries its own hairline, so
+        // the day reads as one list rather than a stack of separate cards.
+        <Reorder.Group axis="y" values={forDay} onReorder={reorder} className="flex flex-col">
           <AnimatePresence initial={false}>
             {forDay.map((row) => (
               <DraggableExercise
@@ -442,25 +496,15 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
             ))}
           </AnimatePresence>
         </Reorder.Group>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {forDay.map((row) => (
-            <ExerciseCard key={row.id} exercise={row} readOnly />
-          ))}
-        </div>
       )}
 
       {/* ── Add, inline after the list ── */}
-      {editable && forDay.length > 0 && (
+      {forDay.length > 0 && (
         <button
           type="button"
           onClick={() => router.push(addExercisesHref)}
-          className="mt-3 flex h-[48px] w-full items-center justify-center gap-2 rounded-[16px] text-[13.5px] font-[700] transition-colors"
-          style={{
-            background: 'var(--bg-card)',
-            border: '1px dashed var(--border)',
-            color: 'var(--brand)',
-          }}
+          className="mt-1 flex h-[48px] w-full items-center justify-center gap-2 text-[13.5px] font-[700] transition-colors"
+          style={{ color: 'var(--brand)' }}
         >
           <Plus size={16} /> Add exercise
         </button>
@@ -469,21 +513,19 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
       {/* ── Floating action button ──
           Sits above the bottom nav via the --bottom-nav-h token rather than a
           magic number, so it stays put if the nav height changes. */}
-      {editable && (
-        <button
-          type="button"
-          onClick={() => router.push(addExercisesHref)}
-          aria-label="Add exercise"
-          className="fixed right-4 z-40 flex h-[56px] w-[56px] items-center justify-center rounded-full text-white"
-          style={{
-            bottom: 'calc(var(--bottom-nav-h, 52px) + env(safe-area-inset-bottom, 0px) + 16px)',
-            background: 'var(--brand)',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
-          }}
-        >
-          <Plus size={24} />
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => router.push(addExercisesHref)}
+        aria-label="Add exercise"
+        className="fixed right-4 z-40 flex h-[56px] w-[56px] items-center justify-center rounded-full text-white"
+        style={{
+          bottom: 'calc(var(--bottom-nav-h, 52px) + env(safe-area-inset-bottom, 0px) + 16px)',
+          background: 'var(--brand)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
+        }}
+      >
+        <Plus size={24} />
+      </button>
     </div>
   );
 }
