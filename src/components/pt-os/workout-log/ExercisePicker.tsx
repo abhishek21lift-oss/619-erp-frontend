@@ -1,9 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Search, Dumbbell, X, Clock, Star, Loader2, CornerDownLeft, Check, PlusCircle } from 'lucide-react';
+import { Search, Dumbbell, X, Clock, Star, Loader2, CornerDownLeft, Check, PlusCircle, Mic } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useSearchFieldFocus } from '@/lib/search-field-focus';
+import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { cn } from '@/components/ui/cn';
@@ -95,6 +96,23 @@ export interface ExercisePickerPanelProps {
    * Ignored outside batch mode.
    */
   busy?: boolean;
+  /**
+   * Offer a microphone in the search box — speak the movement instead of
+   * typing it.
+   *
+   * Opt-in for the same reason `multiple` is. This earns its place on the
+   * full-page builder, where a trainer is laying out a day with a phone in
+   * one hand and is often standing on a gym floor rather than sitting at a
+   * keyboard. The three dialog callers add one exercise mid-task from a
+   * surface that is already small; another control in their search row buys
+   * them nothing, and a mic that appears in four places is four places to
+   * ask for permission.
+   *
+   * Feeds the SAME `search` state typing does, so there is one filter path,
+   * one debounce and one request — voice sets the field and the existing
+   * pipeline takes it from there.
+   */
+  voiceSearch?: boolean;
 }
 
 
@@ -122,7 +140,7 @@ const VIEWPORT = 440;
  */
 export function ExercisePickerPanel({
   live, onClose, onSelect, recentNames = [], existingIds = [], allowCustom = false,
-  multiple = false, onSelectMany, busy = false,
+  multiple = false, onSelectMany, busy = false, voiceSearch = false,
 }: ExercisePickerPanelProps) {
   const { toast } = useToast();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -145,6 +163,33 @@ export function ExercisePickerPanel({
   const listRef = useRef<HTMLDivElement>(null);
 
   const existing = useMemo(() => new Set(existingIds), [existingIds]);
+
+  /**
+   * Voice search writes into the SAME `search` state the keyboard does.
+   *
+   * That is the whole integration: no second query, no second debounce, no
+   * second request path. The transcript lands in the field, the existing
+   * effect below debounces it and calls the existing loader, and everything
+   * downstream — filters, the virtualised list, the custom-name row, Enter to
+   * pick — cannot tell the difference between a spoken word and a typed one.
+   */
+  const voice = useVoiceSearch({
+    onResult: useCallback((transcript: string) => {
+      setSearch(transcript);
+      // The highlight belongs on the first result of the NEW query; leaving it
+      // where the previous search left it means Enter picks something the
+      // trainer never saw.
+      setActive(0);
+    }, []),
+  });
+
+  // A dialog that closes, or a page that unmounts, must not leave the mic
+  // live behind it.
+  const voiceStop = voice.stop;
+  const voiceListening = voice.listening;
+  useEffect(() => {
+    if (!live && voiceListening) voiceStop();
+  }, [live, voiceListening, voiceStop]);
 
   useEffect(() => {
     if (!live) return;
@@ -262,6 +307,18 @@ export function ExercisePickerPanel({
     onClose();
   }, [customName, onSelect, onClose]);
 
+  /**
+   * The mic is offered only where it can work.
+   *
+   * A browser with no recognizer (Firefox, older WebKit) gets no button at
+   * all rather than one that explains itself after being pressed — an
+   * affordance that cannot do its job is worse than its absence. Permission
+   * being denied is different: the button stays, because the fix is in the
+   * user's own browser settings and they may well grant it and retry.
+   */
+  const showVoice = voiceSearch && voice.supported;
+  const voiceNote = voice.error || (voice.listening ? 'Listening… say an exercise name.' : '');
+
   const showRecentChips = !search && !region && !equipment && !favoritesOnly && recentNames.length > 0;
   const showRecentList  = !search && !region && !equipment && !favoritesOnly && recent.length > 0;
   const rows = showRecentList ? recent : exercises;
@@ -326,20 +383,86 @@ export function ExercisePickerPanel({
   return (
     <>
 
-        <div className="relative mb-3">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-          <input
-            ref={searchRef}
-            type="text" value={search}
-            placeholder={allowCustom ? 'Search, or type a custom name…' : 'Search exercises…'}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label="Search exercises"
-            className="w-full pl-9 pr-9 py-2.5 rounded-[10px] text-[13px] outline-none"
-            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-          />
-          {loading && (
-            <Loader2 size={13} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin" style={{ color: 'var(--text-disabled)' }} />
-          )}
+        <div className="mb-3">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+            <input
+              ref={searchRef}
+              type="text" value={search}
+              placeholder={allowCustom ? 'Search, or type a custom name…' : 'Search exercises…'}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search exercises"
+              // The right inset clears whatever sits in the gutter: the
+              // spinner alone, or the spinner beside the mic.
+              className={cn(
+                'w-full rounded-[10px] py-2.5 pl-9 text-[13px] outline-none',
+                showVoice ? 'pr-[76px]' : 'pr-9',
+              )}
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            />
+            <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
+              {loading && (
+                <Loader2 size={13} className="animate-spin" style={{ color: 'var(--text-disabled)' }} />
+              )}
+              {showVoice && (
+                <button
+                  type="button"
+                  onClick={voice.toggle}
+                  // A toggle, so it reports its state rather than reading as a
+                  // button that fires once. The label changes with it, because
+                  // "Search by voice" while already listening describes the
+                  // wrong action.
+                  aria-pressed={voice.listening}
+                  aria-label={voice.listening ? 'Stop listening' : 'Search by voice'}
+                  title={voice.listening ? 'Stop listening' : 'Search by voice'}
+                  // 44px of TARGET around a 32px circle of PAINT. This file
+                  // already argues the case a few lines up — the sheet opens
+                  // on a phone mid-session, where a 24px control is
+                  // unhittable — but a 44px disc would tower over a 40px
+                  // input, so the hit area overhangs the field by ~2px and
+                  // only the inner span is ever visible.
+                  className="group relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-transparent"
+                >
+                  <span
+                    className="flex h-8 w-8 items-center justify-center rounded-full transition"
+                    style={{
+                      background: voice.listening ? 'var(--brand)' : 'transparent',
+                      color: voice.listening ? '#fff' : 'var(--text-disabled)',
+                    }}
+                  >
+                    {/* The listening cue is a ring around the disc rather than
+                        a fade on the icon, so the mic never dims mid-press.
+                        Decorative, and the app's global reduced-motion rule
+                        already freezes .animate-pulse for anyone who asked. */}
+                    {voice.listening && (
+                      <span
+                        aria-hidden
+                        className="animate-pulse absolute inset-1.5 rounded-full"
+                        style={{ boxShadow: '0 0 0 3px color-mix(in srgb, var(--brand) 30%, transparent)' }}
+                      />
+                    )}
+                    <Mic size={15} className="relative" />
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Spoken state and failures, in one live region.
+              polite, not assertive: this narrates a control the user just
+              pressed, so it should queue behind whatever they are reading
+              rather than interrupt it. Rendered always (empty when idle) so
+              the region exists before it has anything to say — a live region
+              added to the DOM at the same moment as its text is frequently
+              not announced at all. */}
+          <p
+            role="status"
+            aria-live="polite"
+            className={cn('mt-1.5 text-[11px]', !voiceNote && 'sr-only')}
+            style={{ color: voice.error ? 'var(--danger-text)' : 'var(--text-muted)' }}
+          >
+            {voiceNote}
+          </p>
         </div>
 
         <div className="mb-3 flex flex-wrap gap-1.5">

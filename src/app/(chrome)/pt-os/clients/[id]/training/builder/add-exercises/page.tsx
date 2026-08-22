@@ -149,6 +149,11 @@ export default function AddExercisesPage({
             <ExercisePickerPanel
               live
               multiple
+              // A trainer builds a day standing on the gym floor with a phone
+              // in one hand. Speaking "barbell bench press" is the difference
+              // between that and thumb-typing it — see the prop's own note for
+              // why the three dialog callers do not get this.
+              voiceSearch
               busy={saving}
               onClose={goBack}
               // Unused in batch mode; the panel takes the batch through
