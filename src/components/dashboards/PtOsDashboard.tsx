@@ -576,43 +576,64 @@ function StatCard({
       transition={{ delay, duration: 0.4, ease: EASE }}
       whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }}
       onClick={() => href && router.push(href)}
-      className={cn('group relative overflow-hidden rounded-[18px] p-3.5 sm:p-4 cursor-pointer', className)}
+      className={cn('group relative flex cursor-pointer flex-col overflow-hidden rounded-[18px] pt-3.5 sm:pt-4', className)}
       style={{
-        // A quiet card. The gradient is a single soft wash of the card's hue
-        // rather than a tinted panel, so four of these in a row read as one
-        // grid instead of four competing swatches.
-        background: `linear-gradient(158deg, ${color}0f 0%, rgba(255,255,255,0.92) 58%)`,
-        border: `1px solid ${color}1f`,
-        boxShadow: `0 6px 22px ${color}0f, inset 0 1px 0 rgba(255,255,255,0.75)`,
+        // The wash is the card's own hue, and stronger than it was: four
+        // near-white rectangles in a grid read as a spreadsheet, which is the
+        // opposite of the intent. It still stops well short of a tinted panel
+        // — the number has to stay the loudest thing on the card.
+        background: `linear-gradient(158deg, ${color}1c 0%, ${color}0a 34%, rgba(255,255,255,0.94) 76%)`,
+        border: `1px solid ${color}2b`,
+        boxShadow: `0 8px 24px ${color}14, inset 0 1px 0 rgba(255,255,255,0.8)`,
         backdropFilter: 'blur(16px)',
       }}
     >
       {/* The hairline of hue along the top edge, which is where the card's
           identity lives now that the number is ink. */}
-      <div className="absolute inset-x-0 top-0 h-[3px] rounded-t-[18px]"
+      <div className="absolute inset-x-0 top-0 h-[3px]"
         style={{ background: `linear-gradient(90deg, ${color}, ${accent})` }} />
 
-      <div className="relative z-10 mb-2.5 flex items-start justify-between pt-0.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white transition-transform duration-200 group-hover:scale-105 sm:h-9 sm:w-9 sm:rounded-[12px]"
-          style={{ background: `linear-gradient(135deg, ${color}, ${accent})`, boxShadow: `0 4px 12px ${color}3d` }}>
-          {icon}
+      <div className="relative z-10 flex flex-1 flex-col px-3.5 sm:px-4">
+        <div className="mb-2.5 flex items-start justify-between pt-0.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white transition-transform duration-200 group-hover:scale-105 sm:h-9 sm:w-9 sm:rounded-[12px]"
+            style={{ background: `linear-gradient(135deg, ${color}, ${accent})`, boxShadow: `0 5px 14px ${color}4a` }}>
+            {icon}
+          </div>
+          {pct !== undefined && <TrendBadge pct={pct ?? null} />}
         </div>
-        {pct !== undefined && <TrendBadge pct={pct ?? null} />}
+
+        {/* mt-auto pins this block to the bottom of whatever height the grid
+            row settles on, so a card with no chart is not a number floating
+            in a pool of white — which is exactly how Active Clients and
+            Retention were reading beside the two that had one. */}
+        <div className="mt-auto pb-3">
+          <p className="mb-1 text-[9px] font-[750] uppercase tracking-[0.1em] sm:text-[9.5px]" style={{ color: C.muted }}>{label}</p>
+          <p className="text-[19px] font-[880] leading-none tracking-[-0.03em] tabular-nums sm:text-[22px]" style={{ color: C.ink }}>{value}</p>
+          {sub && <p className="mt-1 text-[9.5px] font-[500]" style={{ color: C.muted }}>{sub}</p>}
+        </div>
       </div>
 
-      <div className="relative z-10">
-        <p className="mb-1 text-[9px] font-[750] uppercase tracking-[0.1em] sm:text-[9.5px]" style={{ color: C.muted }}>{label}</p>
-        <p className="text-[19px] font-[880] leading-none tracking-[-0.03em] tabular-nums sm:text-[22px]" style={{ color: C.ink }}>{value}</p>
-        {sub && <p className="mt-1 text-[9.5px] font-[500]" style={{ color: C.muted }}>{sub}</p>}
-      </div>
+      {/* Every card ends on the same 30px band, so the four of them line up
+          whatever they carry. A chart where there is a series worth drawing;
+          a wash of the card's hue where there is not.
 
-      {trend && trend.length > 0 && (
-        // Six months, oldest to newest, the last one solid. Hover any month
-        // for its figure — the chart is small enough that direct labels would
-        // not fit and large enough that the shape is worth reading.
-        <div className="relative z-10 mt-2.5">
-          <KpiSparkline data={trend} color={color} metric={label} format={format} />
+          THREE POINTS IS THE FLOOR. Two months render as two half-width
+          slabs — one pale, one solid — which is not a sparkline, it is a
+          broken-looking pair of blocks, and that is what a new studio with
+          two months of history was being shown. A shape needs three readings
+          before it is a shape. */}
+      {/* data-kpi-foot marks the band on BOTH branches. It is what makes
+          "every card ends the same way" assertable: without it a test can
+          only see the chart, and the fallback could be deleted — taking the
+          grid's level bottom edge with it — while every assertion still
+          passed. */}
+      {trend && trend.length >= 3 ? (
+        <div data-kpi-foot className="w-full">
+          <KpiSparkline data={trend} color={color} metric={label} format={format} height={30} />
         </div>
+      ) : (
+        <div data-kpi-foot className="h-[30px] w-full"
+          style={{ background: `linear-gradient(180deg, transparent, ${color}1f)` }} aria-hidden />
       )}
     </m.div>
   );
@@ -980,57 +1001,6 @@ function RevenueBar({
   );
 }
 
-/**
- * What to do next, in one line.
- *
- * Exported and pure because the ordering is the judgement in this card and the
- * uplift figure is arithmetic that can be wrong without looking wrong. Only
- * ever one insight is returned: a stack of advice is a stack nobody reads.
- *
- * The order is by what would change the day — money still collectable first,
- * then anything overdue, then the all-clear. Note that money-to-collect
- * outranks overdue deliberately: overdue is a subset of what is owed, so
- * leading with it would report the smaller number and bury the bigger one.
- */
-export function revenueInsight({ collected, pending, owing, overdue, payments }: {
-  collected: number; pending: number; owing: number; overdue: number; payments: number;
-}): { icon: string; text: string; tone: string } {
-  const total = collected + pending;
-
-  if (pending > 0 && owing > 0) {
-    // Share of today's total that is still out — i.e. how much bigger today
-    // gets if it all lands. Guarded on total because pending > 0 implies
-    // total > 0, but a caller passing negatives should not divide by zero.
-    const share = total > 0 ? Math.round((pending / total) * 100) : 100;
-    return {
-      icon: '\u{1F525}',
-      tone: C.warning,
-      text: `${fmtINR(pending)} can be collected from ${owing} member${owing === 1 ? '' : 's'}`
-        + (collected > 0 ? ` \u2014 that would lift today by ${share}%.` : '.'),
-    };
-  }
-
-  // Reachable when a balance is overdue but `owing` did not come through —
-  // defensive rather than expected, since overdue implies a balance.
-  if (overdue > 0) {
-    return {
-      icon: '\u26A0\uFE0F',
-      tone: C.danger,
-      text: `${overdue} payment${overdue === 1 ? ' is' : 's are'} overdue.`,
-    };
-  }
-
-  if (collected > 0) {
-    return {
-      icon: '\u2705',
-      tone: C.success,
-      text: `Nothing outstanding \u2014 ${payments} payment${payments === 1 ? '' : 's'} in today and every balance is clear.`,
-    };
-  }
-
-  return { icon: '\u{1F4A1}', tone: C.muted, text: 'No payments yet today, and no balances outstanding.' };
-}
-
 function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
   const router = useRouter();
   const reduce = useReducedMotion() ?? false;
@@ -1043,11 +1013,6 @@ function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
 
   const total = collected + pending;
   const pct = total > 0 ? (collected / total) * 100 : 0;
-
-  const insight = useMemo(
-    () => revenueInsight({ collected, pending, owing, overdue, payments }),
-    [collected, pending, owing, overdue, payments],
-  );
 
   return (
     // The whole card opens today's payments; the two halves override that with
@@ -1147,20 +1112,6 @@ function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
         </div>
       )}
 
-      {insight && (
-        <m.div
-          initial={reduce ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="mt-3 flex items-start gap-2 rounded-[13px] px-3 py-2.5"
-          style={{ background: `${insight.tone}0f`, border: `1px solid ${insight.tone}20` }}
-        >
-          <span className="text-[12px] leading-[1.3]" aria-hidden>{insight.icon}</span>
-          <p className="text-[11.5px] font-[640] leading-[1.45]" style={{ color: C.ink }}>
-            {insight.text}
-          </p>
-        </m.div>
-      )}
     </Glass>
   );
 }
