@@ -28,6 +28,9 @@ vi.mock('@/lib/api', () => ({
       // that must leave the form's own defaults standing.
       client: async () => ({ data: { id: 'c1', name: 'Ajeet Yadav' } }),
     },
+    // The goal now comes from the goal-setting screening. This client has not
+    // been screened, which is the case that leaves the form's goal alone.
+    progress: { goals: { list: async () => ({ data: [] }) } },
   },
 }));
 
