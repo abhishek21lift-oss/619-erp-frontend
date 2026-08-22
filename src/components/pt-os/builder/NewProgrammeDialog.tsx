@@ -67,6 +67,42 @@ export function clamp(raw: string, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 
+/**
+ * Match a client's stored goal to one of the five programme goals.
+ *
+ * `pt_clients.goal` is free TEXT (migration 050), filled by the onboarding
+ * wizard, so it arrives as "muscle_gain", "Muscle Gain", "muscle gain" or
+ * something nobody listed. Anything that does not map returns undefined and
+ * the dialog leaves the current selection alone rather than guessing.
+ */
+export function goalFromClient(raw: unknown): string | undefined {
+  const key = String(raw ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  if (!key) return undefined;
+  return PROGRAMME_GOALS.find((g) => g.value === key)?.value;
+}
+
+/**
+ * Sessions per week, out of the client's own `frequency`.
+ *
+ * Also free TEXT: "3", "3x/week", "4 days", "twice weekly". The first integer
+ * is the only part that can be read reliably, and it is only used when it
+ * lands inside the range the field accepts — "twice weekly" yields nothing,
+ * so the default stands rather than a number being invented for it.
+ */
+export function perWeekFromClient(raw: unknown): number | undefined {
+  const match = String(raw ?? '').match(/\d+/);
+  if (!match) return undefined;
+  const n = Number(match[0]);
+  if (!Number.isFinite(n) || n < PER_WEEK_MIN || n > PER_WEEK_MAX) return undefined;
+  return n;
+}
+
+/** A name the trainer can accept or type over — never a name they cannot see. */
+export function programmeNameFor(clientName: string, goalValue?: string): string {
+  const label = PROGRAMME_GOALS.find((g) => g.value === goalValue)?.label;
+  return label ? `${clientName} — ${label}` : `${clientName} — Training Plan`;
+}
+
 export interface NewProgrammeDialogProps {
   open: boolean;
   onClose: () => void;
@@ -95,6 +131,19 @@ export default function NewProgrammeDialog({
   const [weeks, setWeeks] = useState('4');
   const [perWeek, setPerWeek] = useState('3');
   const [saving, setSaving] = useState(false);
+  /**
+   * Which fields the trainer has typed in themselves.
+   *
+   * Picking a client fills the rest of the form from that client's record —
+   * but a trainer who has already named the programme and then changes their
+   * mind about the client must not watch their own typing disappear. Only
+   * untouched fields are filled.
+   */
+  const [touched, setTouched] = useState<Record<'name' | 'goal' | 'weeks' | 'perWeek', boolean>>({
+    name: false, goal: false, weeks: false, perWeek: false,
+  });
+  const touch = (k: 'name' | 'goal' | 'weeks' | 'perWeek') =>
+    setTouched((t) => (t[k] ? t : { ...t, [k]: true }));
 
   useEffect(() => {
     if (!open) return;
@@ -106,6 +155,46 @@ export default function NewProgrammeDialog({
       })
       .catch(() => setClients([]));
   }, [open, presetClientId]);
+
+  /**
+   * Fill the form from the chosen client.
+   *
+   * The client list carries only id and name, so the record is read on
+   * selection — /api/pt-os/clients/:id returns the whole row, including the
+   * `goal` and `frequency` the onboarding wizard collects. Nothing here is
+   * invented: a field is filled only when the client's record actually
+   * answers it, and the weeks default of 4 is the same default the form
+   * already opened with.
+   */
+  useEffect(() => {
+    if (!open || !clientId) return;
+    let cancelled = false;
+
+    api.pt.client(clientId)
+      .then((r: { data?: unknown }) => {
+        if (cancelled) return;
+        const row = (r?.data ?? {}) as Record<string, unknown>;
+        const clientName = String(row.name ?? clients.find((c) => c.id === clientId)?.name ?? '').trim();
+        const matchedGoal = goalFromClient(row.goal);
+        const matchedPerWeek = perWeekFromClient(row.frequency);
+
+        setTouched((t) => {
+          if (!t.goal && matchedGoal) setGoal(matchedGoal);
+          if (!t.perWeek && matchedPerWeek) setPerWeek(String(matchedPerWeek));
+          if (!t.weeks) setWeeks('4');
+          if (!t.name && clientName) {
+            setName(programmeNameFor(clientName, matchedGoal ?? (t.goal ? goal : undefined)));
+          }
+          return t;
+        });
+      })
+      .catch(() => { /* the form keeps its defaults; nothing is claimed */ });
+
+    return () => { cancelled = true; };
+    // `goal` is read inside the updater only as a fallback for the name, and
+    // re-running on every goal keystroke would refetch the client.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, clientId, clients]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -244,61 +333,6 @@ export default function NewProgrammeDialog({
 
         {/* Body — the only part that scrolls. */}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
-          <Field label="Programme name">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoFocus
-              placeholder="e.g. Upper / Lower Split"
-              className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none transition-shadow focus:ring-2"
-              style={inputStyle}
-            />
-          </Field>
-
-          <Field label="Goal">
-            <div className="flex flex-wrap gap-1.5">
-              {PROGRAMME_GOALS.map((g) => {
-                const active = g.value === goal;
-                return (
-                  <button
-                    key={g.value}
-                    onClick={() => setGoal(g.value)}
-                    aria-pressed={active}
-                    className="h-[44px] rounded-[12px] px-3 text-[12.5px] font-[700] transition-transform active:scale-95"
-                    style={{
-                      background: active ? 'var(--brand)' : 'var(--bg-subtle)',
-                      color: active ? '#fff' : 'var(--text-muted)',
-                      border: `1px solid ${active ? 'transparent' : 'var(--border)'}`,
-                    }}
-                  >
-                    {g.label}
-                  </button>
-                );
-              })}
-            </div>
-          </Field>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Weeks">
-              <input
-                type="number" min={WEEKS_MIN} max={WEEKS_MAX} value={weeks} inputMode="numeric"
-                onChange={(e) => setWeeks(e.target.value)}
-                onBlur={() => setWeeks(String(clamp(weeks, WEEKS_MIN, WEEKS_MAX)))}
-                className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
-                style={inputStyle}
-              />
-            </Field>
-            <Field label="Sessions / week">
-              <input
-                type="number" min={PER_WEEK_MIN} max={PER_WEEK_MAX} value={perWeek} inputMode="numeric"
-                onChange={(e) => setPerWeek(e.target.value)}
-                onBlur={() => setPerWeek(String(clamp(perWeek, PER_WEEK_MIN, PER_WEEK_MAX)))}
-                className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
-                style={inputStyle}
-              />
-            </Field>
-          </div>
-
           {!presetClientId && (
             <Field label="Client">
               <div className="relative mb-2">
@@ -306,6 +340,7 @@ export default function NewProgrammeDialog({
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
+                  autoFocus
                   placeholder="Search clients…"
                   className="h-[44px] w-full rounded-[12px] pl-9 pr-3 text-[13.5px] outline-none"
                   style={inputStyle}
@@ -334,6 +369,60 @@ export default function NewProgrammeDialog({
               </div>
             </Field>
           )}
+          <Field label="Programme name">
+            <input
+              value={name}
+              onChange={(e) => { setName(e.target.value); touch('name'); }}
+              placeholder="e.g. Upper / Lower Split"
+              className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none transition-shadow focus:ring-2"
+              style={inputStyle}
+            />
+          </Field>
+
+          <Field label="Goal">
+            <div className="flex flex-wrap gap-1.5">
+              {PROGRAMME_GOALS.map((g) => {
+                const active = g.value === goal;
+                return (
+                  <button
+                    key={g.value}
+                    onClick={() => { setGoal(g.value); touch('goal'); }}
+                    aria-pressed={active}
+                    className="h-[44px] rounded-[12px] px-3 text-[12.5px] font-[700] transition-transform active:scale-95"
+                    style={{
+                      background: active ? 'var(--brand)' : 'var(--bg-subtle)',
+                      color: active ? '#fff' : 'var(--text-muted)',
+                      border: `1px solid ${active ? 'transparent' : 'var(--border)'}`,
+                    }}
+                  >
+                    {g.label}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Weeks">
+              <input
+                type="number" min={WEEKS_MIN} max={WEEKS_MAX} value={weeks} inputMode="numeric"
+                onChange={(e) => { setWeeks(e.target.value); touch('weeks'); }}
+                onBlur={() => setWeeks(String(clamp(weeks, WEEKS_MIN, WEEKS_MAX)))}
+                className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
+                style={inputStyle}
+              />
+            </Field>
+            <Field label="Sessions / week">
+              <input
+                type="number" min={PER_WEEK_MIN} max={PER_WEEK_MAX} value={perWeek} inputMode="numeric"
+                onChange={(e) => { setPerWeek(e.target.value); touch('perWeek'); }}
+                onBlur={() => setPerWeek(String(clamp(perWeek, PER_WEEK_MIN, PER_WEEK_MAX)))}
+                className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
+                style={inputStyle}
+              />
+            </Field>
+          </div>
+
         </div>
 
         {/* Footer — pinned. The panel used to be one scrolling column, so on a
