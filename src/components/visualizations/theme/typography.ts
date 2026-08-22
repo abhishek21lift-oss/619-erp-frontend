@@ -30,6 +30,8 @@ export const fontSize = {
   value: 20,
   /** Large emphasis — reserved for the one number a chart exists to show. */
   valueLg: 22,
+  /** A KPI card's primary figure — the single largest number on the page it sits on. */
+  hero: 30,
 } as const;
 
 export const fontWeight = {

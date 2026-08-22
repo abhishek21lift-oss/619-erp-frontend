@@ -24,12 +24,13 @@
  *   format.ts      the default number formatter
  */
 
-export { saffron, navy, series, semantic, band, rgba, iconChip } from './colors';
+export { saffron, navy, series, semantic, band, rgba, iconChip, metricTone } from './colors';
+export type { MetricTone } from './colors';
 export { fontFamily, fontSize, fontWeight, letterSpacing, typography } from './typography';
 export { EASE, duration, spring, framerTransition, framerTransitionReduced, motion } from './motion';
 export { radius, border, shadow, shape } from './shape';
 export {
-  spacing, chartHeight, chartMargin, barPadding, pieLayout, radialLayout, pointLayout,
+  spacing, chartHeight, chartMargin, barPadding, pieLayout, radialLayout, pointLayout, metricCard,
 } from './spacing';
 export { grid, axis, tooltipChrome, legendChrome } from './chartStyle';
 export { gradientPreset, buildGradientFill } from './gradients';

@@ -123,3 +123,27 @@ export const iconChip = {
   fg: saffron[600],
   fgDark: saffron[400],
 } as const;
+
+/**
+ * The five states a KPI card's trend, status pill or progress mark can be
+ * in — `positive`/`negative`/`warning`/`neutral` read `semantic` above so a
+ * metric card and a chart never disagree about what "danger" looks like;
+ * `brand` is the saffron identity mark for a value that is not being judged
+ * good or bad at all (a plain count, an icon chip).
+ *
+ * Colour is never the only signal here — every consumer of this map pairs
+ * the tone with an icon (▲/▼/—) and a text label, because `warning` and
+ * `brand` resolve to the same saffron hex by the same rule as everywhere
+ * else in this system (see the file header), and a colour-blind reader must
+ * still be able to tell "this is the brand mark" from "this needs attention"
+ * without relying on hue alone.
+ */
+export const metricTone = {
+  positive: { color: semantic.success, bg: rgba(semantic.success, 0.10) },
+  negative: { color: semantic.danger, bg: rgba(semantic.danger, 0.10) },
+  warning: { color: semantic.warning, bg: rgba(semantic.warning, 0.10) },
+  neutral: { color: 'var(--text-muted)', bg: 'var(--bg-subtle)' },
+  brand: { color: saffron[500], bg: rgba(saffron[500], 0.10) },
+} as const;
+
+export type MetricTone = keyof typeof metricTone;

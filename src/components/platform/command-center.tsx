@@ -37,7 +37,7 @@ import {
 import { semantic, rgba } from '@/lib/palette';
 import type { CommandCenterCard, CommandCenterStatus } from '@/lib/api';
 import { Center, ErrorState } from '@/app/(platform)/platform/_shared/ui';
-import { PremiumProgressChart, PremiumBarChart } from '@/components/visualizations';
+import { PremiumProgressChart, PremiumBarChart, PremiumMetricCard } from '@/components/visualizations';
 import CommandPanel from './command-panel';
 import AlertCenter from './alert-center';
 import Guardian from './guardian';
@@ -126,18 +126,17 @@ function ratio(value: unknown, max: unknown): { value: number; max: number } | n
   return { value: v, max: m };
 }
 
-/** A small labelled figure inside a card. */
+/**
+ * A small labelled figure inside a card — the canonical KPI system's
+ * `compact`, `bordered={false}` density, so every diagnostic figure on this
+ * screen (and any future one) shares one card implementation instead of a
+ * page-local lookalike. `tone` is this card's own already-computed colour
+ * (a red for a real failure count), so it is forwarded as `valueColor`
+ * rather than routed through `status`/`trend`, which this figure has
+ * neither of.
+ */
 function Stat({ label, value, tone }: { label: string; value: React.ReactNode; tone?: string }) {
-  return (
-    <div className="min-w-0">
-      <p className="truncate text-[10.5px] font-[650] uppercase tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
-        {label}
-      </p>
-      <p className="truncate text-[14px] font-[700] tabular-nums" style={{ color: tone || 'var(--text-primary)' }}>
-        {value}
-      </p>
-    </div>
-  );
+  return <PremiumMetricCard label={label} value={value} valueColor={tone} bordered={false} density="compact" />;
 }
 
 /**

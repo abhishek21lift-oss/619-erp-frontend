@@ -80,3 +80,27 @@ export const pointLayout = {
   size: 7,
   sparklineDot: 3,
 } as const;
+
+/**
+ * PremiumMetricCard's own rhythm — the vertical hierarchy the whole KPI
+ * system is built on (value → label → context → supporting visual). Kept
+ * separate from the chart-card `spacing` group above because a metric card
+ * is a different shape of thing: one figure and a short stack of context
+ * lines, not a title bar over a plot.
+ */
+export const metricCard = {
+  padding: 20,
+  paddingSm: 16,
+  /** Value → label. Tight — the label is the value's own caption. */
+  valueGap: 4,
+  /** Label → trend/comparison line. */
+  contextGap: 8,
+  /** Context line → the supporting sparkline/progress mark. */
+  vizGap: 12,
+  /** Height of the supporting sparkline/progress bar inside a card. */
+  vizHeight: 40,
+  /** The icon chip — a touch larger than a chart card's, since on a KPI
+   *  card the icon is often the single most prominent mark besides the
+   *  number itself. */
+  iconChip: 36,
+} as const;

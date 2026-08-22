@@ -12,6 +12,14 @@
  * shared tooltip, loading/empty/error states) is what every Premium*
  * component below is built from. An eighth chart type is built the same
  * way: read layout/colour/motion from theme/, never write a literal.
+ *
+ * metrics/ is the MY PT STUDIO Premium KPI System — PremiumMetricCard and
+ * its named variants (MetricWithTrend, MetricWithSparkline, …) are the one
+ * KPI card implementation every page should reach for instead of building
+ * its own. It composes the seven chart components above (PremiumSparkline
+ * for its sparkline variant) and reads every colour/type/spacing value from
+ * the same theme/ tokens, so a metric card and a chart card are always one
+ * visual system, never two that happen to sit near each other.
  */
 
 export { PremiumBarChart } from './PremiumBarChart';
@@ -38,6 +46,21 @@ export type { PremiumSparklineProps, PremiumSparklineDatum } from './PremiumSpar
 export type { PremiumSeriesSpec } from './primitives';
 export type { PieDatum } from './primitives';
 
+// The Premium KPI System — the canonical metric/stat card for the whole app.
+export {
+  PremiumMetricCard, PremiumMetricCardStandard,
+  MetricWithTrend, MetricWithSparkline, MetricWithProgress,
+  MetricWithComparison, MetricWithStatus, MetricWithIcon,
+  MetricGroup,
+} from './metrics';
+export type {
+  PremiumMetricCardProps,
+  MetricWithTrendProps, MetricWithSparklineProps, MetricWithProgressProps,
+  MetricWithComparisonProps, MetricWithStatusProps, MetricWithIconProps,
+  MetricGroupProps,
+  MetricTrend, MetricComparison, MetricStatus, MetricSparklineSpec, MetricProgressSpec,
+} from './metrics';
+
 // Shell + tooltip + states, for a page composing something the seven
 // components above don't cover yet — a custom chart still gets the same
 // card frame, tooltip, loading/empty/error states and surface handling.
@@ -49,7 +72,7 @@ export type { ChartShellProps, ChartTooltipRow } from './primitives';
 // not inside, one) or a future chart type built outside these seven.
 export {
   // colour
-  saffron, navy, series, semantic, band, rgba, iconChip,
+  saffron, navy, series, semantic, band, rgba, iconChip, metricTone,
   // typography
   fontFamily, fontSize, fontWeight, letterSpacing, typography,
   // motion
@@ -57,7 +80,7 @@ export {
   // shape (radius / border / shadow)
   radius, border, shadow, shape,
   // spacing (padding, gaps, plot margins, per-chart-type defaults)
-  spacing, chartHeight, chartMargin, barPadding, pieLayout, radialLayout, pointLayout,
+  spacing, chartHeight, chartMargin, barPadding, pieLayout, radialLayout, pointLayout, metricCard,
   // grid / axis / tooltip / legend chrome
   grid, axis, tooltipChrome, legendChrome,
   // gradients
@@ -67,4 +90,4 @@ export {
   // the assembled Nivo themes, and the default formatter
   nivoThemeFor, defaultFormat,
 } from './theme';
-export type { Surface, GradientPreset } from './theme';
+export type { Surface, GradientPreset, MetricTone } from './theme';
