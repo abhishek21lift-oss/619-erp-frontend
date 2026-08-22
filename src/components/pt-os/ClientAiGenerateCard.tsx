@@ -104,51 +104,78 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: EASE }}
-      className="overflow-hidden rounded-[16px]"
+      className="relative overflow-hidden rounded-[18px]"
       style={{
-        background: 'var(--bg-card)',
+        // An elevated surface rather than the translucent card, with the two
+        // actions' own hues washed in from the top corners — the card is the
+        // one place on this profile where something is generated rather than
+        // read, and it should look like it.
+        background: `linear-gradient(150deg, ${rgba(BLUE, 0.09)} 0%, var(--bg-elevated) 46%, ${rgba(GREEN, 0.07)} 100%)`,
         border: '1px solid var(--border)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',
+        boxShadow: `0 8px 26px ${rgba(BLUE, 0.10)}, inset 0 1px 0 rgba(255,255,255,0.55)`,
       }}
     >
-      <div className="flex items-center gap-2.5 px-4 py-3"
-        style={{ background: `linear-gradient(135deg, ${rgba(BLUE, 0.10)}, transparent)` }}>
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px]"
-          style={{ background: rgba(BLUE, 0.14), color: BLUE }}>
-          <Sparkles size={15} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-[790]" style={{ color: 'var(--text-primary)' }}>Generate with AI</p>
-          <p className="text-[11px] font-[600]" style={{ color: 'var(--text-muted)' }}>
-            Uses this client&rsquo;s profile &mdash; review before saving
-          </p>
+      <div className="px-4 pt-4">
+        <div className="flex items-center gap-2.5">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[12px] text-white"
+            style={{
+              background: `linear-gradient(135deg, ${BLUE}, ${GREEN})`,
+              boxShadow: `0 5px 14px ${rgba(BLUE, 0.38)}`,
+            }}>
+            <Sparkles size={15} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[13.5px] font-[800] tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>Generate with AI</p>
+            <p className="text-[11px] font-[600]" style={{ color: 'var(--text-muted)' }}>
+              Uses this client&rsquo;s profile &mdash; review before saving
+            </p>
+          </div>
         </div>
+        {/* The same blue→green the two buttons carry, as one gesture. */}
+        <div className="mt-3 h-[2px] w-full rounded-full"
+          style={{ background: `linear-gradient(90deg, ${BLUE}, ${GREEN}, transparent)` }} />
       </div>
 
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-4 pt-3">
+        {/* Still one above the other, and still full width.
+            Two half-width buttons was the first cut of this and it does not
+            survive its own busy state: "Generating AI Workout..." needs most
+            of the card's width at 12.5px, so the label would wrap or clip on
+            exactly the screen where the trainer is watching for it.
+
+            h-[44px], not h-10. globals.css sets `html { font-size: 14px }`,
+            so Tailwind's rem sizes render at 87.5% of their names — h-10 is
+            35px here, a third under the touch target this app holds
+            everything else to. Anything that has to be exactly 44 says 44. */}
         <div className="flex flex-col gap-2">
           <button
             type="button"
             onClick={() => void generate('workout')}
             disabled={busy !== null}
-            className="flex h-10 w-full items-center justify-center gap-1.5 rounded-[11px] px-3 text-[12.5px] font-[720] text-white transition-opacity disabled:opacity-45"
-            style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)' }}
+            className="flex h-[44px] w-full items-center justify-center gap-1.5 rounded-[13px] px-3 text-[12.5px] font-[720] text-white transition-transform active:scale-[0.985] disabled:opacity-45"
+            style={{
+              background: `linear-gradient(135deg, ${BLUE}, ${palette.blue[600]})`,
+              boxShadow: `0 5px 14px ${rgba(BLUE, 0.32)}`,
+            }}
           >
             {busy === 'workout'
               ? <><Loader2 size={14} className="animate-spin" /> Generating AI Workout...</>
-              : <><Dumbbell size={13} /> Generate AI Workout</>}
+              : <><Dumbbell size={14} /> Generate AI Workout</>}
           </button>
 
           <button
             type="button"
             onClick={() => void generate('diet')}
             disabled={busy !== null}
-            className="flex h-10 w-full items-center justify-center gap-1.5 rounded-[11px] px-3 text-[12.5px] font-[720] text-white transition-opacity disabled:opacity-45"
-            style={{ background: `linear-gradient(135deg, ${GREEN}, ${palette.emerald[600]})` }}
+            className="flex h-[44px] w-full items-center justify-center gap-1.5 rounded-[13px] px-3 text-[12.5px] font-[720] text-white transition-transform active:scale-[0.985] disabled:opacity-45"
+            style={{
+              background: `linear-gradient(135deg, ${GREEN}, ${palette.emerald[600]})`,
+              boxShadow: `0 5px 14px ${rgba(GREEN, 0.32)}`,
+            }}
           >
             {busy === 'diet'
               ? <><Loader2 size={14} className="animate-spin" /> Generating AI Diet...</>
-              : <><Salad size={13} /> Generate AI Diet</>}
+              : <><Salad size={14} /> Generate AI Diet</>}
           </button>
         </div>
 

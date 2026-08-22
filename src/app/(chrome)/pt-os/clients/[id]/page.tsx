@@ -10,11 +10,11 @@ import {
   CheckCircle, AlertTriangle, Clock, IndianRupee,
   Camera, Zap, Repeat, ChevronRight,
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
-  Award, HeartPulse, Salad, Flag, Phone,
+  Award, HeartPulse, Salad, Phone,
   ShieldCheck, FileSignature, ClipboardList,
-  QrCode, Printer, ScrollText, ChevronDown, Mail, Ruler, ClipboardCheck,
+  QrCode, Printer, ScrollText, ChevronDown, Mail, ClipboardCheck,
   StickyNote, FileBarChart, Sparkles,
-  Gauge, Apple, PersonStanding, Accessibility,
+  Gauge, PersonStanding, Accessibility,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 
@@ -627,38 +627,56 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 {[
                   {
                     label: 'Term Fee', value: fmtNum(currentTermFee), sub: 'Current term',
-                    icon: <IndianRupee size={16} />, color: '#0067e0',
+                    icon: <IndianRupee size={13} />, color: '#0067e0',
                   },
                   {
                     label: 'Paid', value: fmtNum(currentTermPaid), sub: `${completionPct}% complete`,
-                    icon: <CheckCircle size={16} />, color: '#10b981',
+                    icon: <CheckCircle size={13} />, color: '#10b981',
                   },
                   {
                     label: 'Balance', value: fmtNum(currentTermBalance),
                     sub: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'Overdue' : 'Due') : 'Cleared',
-                    icon: currentTermBalance > 0 ? <AlertTriangle size={16} /> : <CheckCircle size={16} />,
+                    icon: currentTermBalance > 0 ? <AlertTriangle size={13} /> : <CheckCircle size={13} />,
                     color: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? '#ef4444' : '#f59e0b') : '#10b981',
                   },
                 ].map((k, i) => (
+                  // Square, and smaller.
+                  //
+                  // The icon chip was 36px with a 16px glyph, sitting above a
+                  // number that then had to compete with it — the mark read
+                  // as the loudest thing on a card whose whole job is the
+                  // figure. It is 26px with a 13px glyph now, which puts it
+                  // back where a mark belongs: identifying the card, not
+                  // announcing it.
+                  //
+                  // aspect-square rather than a fixed height: three of these
+                  // sit in a grid that is a third of the viewport wide, so a
+                  // pixel height is right on one phone and wrong on the next,
+                  // while a square is a square everywhere. The content is
+                  // pushed apart with justify-between so the number sits on
+                  // the card's optical centre line instead of drifting up
+                  // when the sub-label is short.
                   <m.div key={k.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.08 + i * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                    className="rounded-[20px] p-3 sm:p-4"
+                    className="flex aspect-square flex-col justify-between rounded-[18px] p-2.5 sm:p-3"
                     style={{
                       background: `linear-gradient(160deg, ${k.color}14 0%, ${k.color}05 100%)`,
                       border: `1px solid ${k.color}22`,
                       boxShadow: `0 4px 14px ${k.color}14`,
                     }}>
-                    <span className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white"
-                      style={{ background: `linear-gradient(135deg, ${k.color}, ${k.color}cc)`, boxShadow: `0 4px 10px ${k.color}45` }}>
+                    <span className="flex h-[26px] w-[26px] items-center justify-center rounded-[9px] text-white"
+                      style={{ background: `linear-gradient(135deg, ${k.color}, ${k.color}cc)`, boxShadow: `0 3px 8px ${k.color}40` }}>
                       {k.icon}
                     </span>
-                    <p className="mt-2.5 text-[9px] font-[750] uppercase tracking-wider" style={{ color: `${k.color}b3` }}>
-                      {k.label}
-                    </p>
-                    <p className="mt-0.5 truncate text-[23px] font-[860] tracking-[-0.02em] sm:text-[27px]" style={{ color: k.color }}>
-                      {k.value}
-                    </p>
-                    <p className="mt-0.5 truncate text-[10px] font-[700]" style={{ color: 'var(--text-muted)' }}>{k.sub}</p>
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-[750] uppercase tracking-wider" style={{ color: `${k.color}b3` }}>
+                        {k.label}
+                      </p>
+                      <p className="mt-0.5 truncate text-[21px] font-[860] leading-none tracking-[-0.02em] tabular-nums sm:text-[25px]" style={{ color: k.color }}>
+                        {k.value}
+                      </p>
+                      <p className="mt-1 truncate text-[9.5px] font-[700]" style={{ color: 'var(--text-muted)' }}>{k.sub}</p>
+                    </div>
                   </m.div>
                 ))}
               </div>
@@ -734,7 +752,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   keep the trainer on the client, and a tab says what it
                   holds before you open it. Every destination the grid had is
                   still reachable, inside the section it belongs to. */}
-              <ClientTabs active={tab} onChange={setTab} />
+              <ClientTabs active={tab} onChange={setTab} clientId={client.id} />
 
               <TabPanel id="overview" active={tab}>
 
@@ -964,52 +982,17 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     { label: 'Workout programmes', href: `/pt-os/workout-plans?client_id=${client.id}`, hint: 'Design or assign a plan', icon: <ScrollText size={15} />, color: TAB_COLOR.primary },
                     { label: 'Assigned programme', href: `/pt-os/clients/${client.id}/training/assigned`, hint: 'What they are on now', icon: <ClipboardList size={15} />, color: TAB_COLOR.success },
                     { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume, intensity, trend', icon: <TrendingUp size={15} />, color: TAB_COLOR.warning },
-                    { label: 'Strength tracking', href: `/pt-os/strength-tracking?client_id=${client.id}`, hint: 'Estimated 1RM and lifts', icon: <Dumbbell size={15} />, color: TAB_COLOR.success },
-                    { label: 'Sessions', href: `/pt-os/sessions?client_id=${client.id}`, hint: 'Book and review sessions', icon: <Clock size={15} />, color: TAB_COLOR.danger },
-                    { label: 'Goals', href: `/pt-os/goals?client_id=${client.id}`, hint: 'What they are training for', icon: <Target size={15} />, color: TAB_COLOR.dangerDeep },
                   ]}
                 />
               </TabPanel>
 
-              <TabPanel id="log" active={tab}>
-                <LinkPanel
-                  icon={<ScrollText size={16} />}
-                  title="Workout log"
-                  body="Every set that was actually performed — weight, reps, and the records they beat."
-                  color={TAB_COLOR.warning}
-                  links={[
-                    { label: 'Open the workout log', href: `/pt-os/clients/${client.id}/workout-log`, hint: 'Sets, reps, RPE, notes', icon: <ScrollText size={15} />, color: TAB_COLOR.primary },
-                    { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume and trend over time', icon: <TrendingUp size={15} />, color: TAB_COLOR.warning },
-                  ]}
-                />
-              </TabPanel>
-
-              <TabPanel id="measurements" active={tab}>
-                <LinkPanel
-                  icon={<Ruler size={16} />}
-                  title="Measurements"
-                  body="Weight and body composition come from the fitness test. Circumference tracking fills in as measurements are recorded."
-                  color={TAB_COLOR.danger}
-                  links={[
-                    { label: 'Measurements', href: `/pt-os/measurements?client_id=${client.id}`, hint: 'Weight, body fat, circumferences', icon: <Ruler size={15} />, color: TAB_COLOR.primary },
-                    { label: 'Record a fitness test', href: `/pt-os/assessment?client_id=${client.id}`, hint: 'Weight, BMI, body fat, scores', icon: <Gauge size={15} />, color: TAB_COLOR.warning },
-                    { label: 'Progress tracking overview', href: `/pt-os/progress-tracking-setup?client_id=${client.id}`, hint: "What's on file, and what's missing", icon: <Flag size={15} />, color: TAB_COLOR.success },
-                  ]}
-                />
-              </TabPanel>
-
-              <TabPanel id="nutrition" active={tab}>
-                <LinkPanel
-                  icon={<Salad size={16} />}
-                  title="Nutrition"
-                  body="Calories, macros and compliance appear here once meals are being logged against a plan."
-                  color={TAB_COLOR.dangerDeep}
-                  links={[
-                    { label: 'Nutrition assessment', href: `/pt-os/nutrition-assessment?client_id=${client.id}`, hint: 'Habits, preferences, targets', icon: <Apple size={15} />, color: TAB_COLOR.primary },
-                    { label: 'Diet plans', href: `/pt-os/diet-plans?client_id=${client.id}`, hint: 'Assign a meal plan', icon: <ScrollText size={15} />, color: TAB_COLOR.success },
-                  ]}
-                />
-              </TabPanel>
+              {/* Workout Log, Measurements and Nutrition have no panels.
+                  Each of those was a panel whose entire content was a list of
+                  links to the screen that already does the job — a tap to
+                  reach a tap, with a paragraph in between explaining what you
+                  would find if you took the second one. Their tabs go
+                  straight there now (see ClientTabs, where the destination
+                  lives beside the tab). */}
 
               <TabPanel id="checkins" active={tab}>
                 {/* Real readiness now, not a placeholder: the score, the four

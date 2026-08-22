@@ -45,10 +45,16 @@ describe('Progress Tracking Overview is named consistently everywhere', () => {
     expect(page).not.toMatch(/>Progress Tracking Setup</);
   });
 
-  it('the link from a client\'s profile agrees, and drops the phantom "choose what to measure"', () => {
-    // There is no control anywhere on this page that lets a trainer choose
-    // what gets measured — it only reports what already has been.
-    expect(clientDetail).toContain("label: 'Progress tracking overview'");
+  it('is no longer linked from a client\'s profile, which now goes straight to Measurements', () => {
+    // The Measurements tab used to open a panel of three links — Measurements,
+    // Record a fitness test, and this one. The tab goes straight to
+    // Measurements now, so the panel and its links are gone.
+    //
+    // The naming assertions above still carry this screen: they are about the
+    // page, the nav entry and the heading, none of which moved. What this one
+    // guards is only that the profile does not resurrect a link the tab
+    // replaced.
+    expect(clientDetail).not.toContain("label: 'Progress tracking overview'");
     expect(clientDetail).not.toContain('Choose what to measure');
   });
 });
