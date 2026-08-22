@@ -44,11 +44,11 @@ export default function WeeklyCheckinPage() {
   // weight (mood/sleep only) contributes nothing to this trend rather than a
   // gap plotted as zero.
   const weightTrend = useMemo(() => {
-    const rows = (checkins.data as any[]) || [];
+    const rows = (checkins.data ?? []) as { week_start_date?: unknown; weight?: unknown }[];
     return rows
-      .filter((c) => typeof c.weight === 'number' && Number.isFinite(c.weight))
+      .filter((c): c is { week_start_date?: unknown; weight: number } => typeof c.weight === 'number' && Number.isFinite(c.weight))
       .sort((a, b) => String(a.week_start_date).localeCompare(String(b.week_start_date)))
-      .map((c) => ({ week: c.week_start_date, weight: c.weight as number }));
+      .map((c) => ({ week: String(c.week_start_date), weight: c.weight }));
   }, [checkins.data]);
 
   const pageError = clients.error || checkins.error;
