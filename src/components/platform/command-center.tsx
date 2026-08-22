@@ -35,9 +35,9 @@ import {
   ChevronDown, Layers, Mail, RadioTower, RefreshCw, Server, ShieldAlert, Timer, XCircle,
 } from 'lucide-react';
 import { semantic, rgba } from '@/lib/palette';
-import type { CommandCenterCard, CommandCenterStatus } from '@/lib/api';
+import type { CommandCenterCard, CommandCenterSnapshot, CommandCenterStatus } from '@/lib/api';
 import { Center, ErrorState } from '@/app/(platform)/platform/_shared/ui';
-import { PremiumProgressChart, PremiumBarChart, PremiumMetricCard } from '@/components/visualizations';
+import { PremiumProgressChart, PremiumBarChart, PremiumMetricCard, PremiumSparkline } from '@/components/visualizations';
 import CommandPanel from './command-panel';
 import AlertCenter from './alert-center';
 import Guardian from './guardian';
@@ -338,7 +338,19 @@ function CardBody({ card }: { card: CommandCenterCard }) {
   }
 }
 
-function StatusCard({ card, index }: { card: CommandCenterCard; index: number }) {
+/**
+ * A card's own probe latency, oldest first — real frames this hook has
+ * already received this visit (see useCommandCenterSnapshot's `history`),
+ * not a backend history endpoint. `null`/missing probes (the collector was
+ * skipped or `unavailable`) are dropped rather than plotted as zero.
+ */
+function latencyTrend(history: CommandCenterSnapshot[], name: string): { label: string; value: number }[] {
+  return history
+    .map((h) => ({ label: h.collected_at, value: h.cards[name]?.latency_ms }))
+    .filter((p): p is { label: string; value: number } => typeof p.value === 'number' && Number.isFinite(p.value));
+}
+
+function StatusCard({ card, index, history }: { card: CommandCenterCard; index: number; history: CommandCenterSnapshot[] }) {
   const tone = TONE[card.status] ?? TONE.unavailable;
   const meta = metaFor(card.name);
   const { Icon } = meta;
@@ -422,12 +434,25 @@ function StatusCard({ card, index }: { card: CommandCenterCard; index: number })
 
           <CardBody card={card} />
 
-          <div className="mt-3 flex items-center gap-2 text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
-            <span>{card.latency_ms == null ? 'not probed' : `probed in ${card.latency_ms} ms`}</span>
-            {card.cached && (
-              // Says so rather than passing a stale latency off as live.
-              <span className="rounded px-1.5 py-0.5" style={{ background: 'var(--bg-subtle)' }}>cached</span>
-            )}
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
+              <span>{card.latency_ms == null ? 'not probed' : `probed in ${card.latency_ms} ms`}</span>
+              {card.cached && (
+                // Says so rather than passing a stale latency off as live.
+                <span className="rounded px-1.5 py-0.5" style={{ background: 'var(--bg-subtle)' }}>cached</span>
+              )}
+            </div>
+            {/* This visit's own probe-latency history for this one card — real
+                frames already received, not fetched or fabricated. Needs two
+                real points before a line means anything. */}
+            {(() => {
+              const trend = latencyTrend(history, card.name);
+              return trend.length >= 2 ? (
+                <div className="h-[20px] w-[72px] flex-shrink-0" title={`Probe latency, last ${trend.length} reads`}>
+                  <PremiumSparkline data={trend} color={tone.color} metric={`${meta.title} probe latency`} height={20} showArea={false} />
+                </div>
+              ) : null;
+            })()}
           </div>
         </>
       )}
@@ -440,7 +465,7 @@ export default function CommandCenterTab() {
   // know whether it arrived over a socket or a poll — which is the point: the
   // stream can fail at any moment and the screen must not change shape when it
   // does. See useCommandCenterSnapshot.ts.
-  const { snap, error, loading, refreshing, transport, refresh } = useCommandCenterSnapshot(POLL_MS);
+  const { snap, error, loading, refreshing, transport, history, refresh } = useCommandCenterSnapshot(POLL_MS);
 
   if (loading) {
     return (
@@ -547,7 +572,7 @@ export default function CommandCenterTab() {
       <Guardian />
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {sorted.map((c, i) => <StatusCard key={c.name} card={c} index={i} />)}
+        {sorted.map((c, i) => <StatusCard key={c.name} card={c} index={i} history={history} />)}
       </div>
 
       {/* Below the cards on purpose. You diagnose, then you act — and the panel
