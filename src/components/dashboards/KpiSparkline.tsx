@@ -47,6 +47,8 @@ export default function KpiSparkline({
 
   return (
     <div
+      // Full-bleed: the chart is the card's bottom edge, not a box inside it.
+      className="w-full"
       style={{ height }}
       // The chart is one image as far as assistive tech is concerned, and the
       // label carries the numbers — a bar chart nobody can read is a decoration.
@@ -54,7 +56,7 @@ export default function KpiSparkline({
       aria-label={`${metric}, last ${data.length} months: ${data.map((d) => Math.round(d.value)).join(', ')}`}
     >
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 2, right: 0, bottom: 0, left: 0 }} barCategoryGap={3}>
+        <BarChart data={data} margin={{ top: 4, right: 0, bottom: 0, left: 0 }} barCategoryGap={3}>
           {/* Hidden, but present: without a domain floor at zero a flat six
               months of the same number renders as six full-height bars, which
               reads as growth. */}

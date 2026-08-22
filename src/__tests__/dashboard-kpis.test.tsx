@@ -42,7 +42,10 @@ const dashData = {
   total_monthly_commission: 20000,
   total_outstanding: 15000,
   trainers: [],
+  // Three months, which is the floor for drawing a sparkline at all — see
+  // "too few months to be a shape" below.
   revenueTrend: [
+    { label: 'May', month: '2026-05', revenue: 70000, incentives: 16000 },
     { label: 'Jun', month: '2026-06', revenue: 80000, incentives: 18000 },
     { label: 'Jul', month: '2026-07', revenue: 90000, incentives: 20000 },
   ],
@@ -61,14 +64,32 @@ vi.mock('@/lib/http', () => ({
 
 import PtOsDashboard from '@/components/dashboards/PtOsDashboard';
 
+const FULL_TREND = [...dashData.revenueTrend];
+
 describe('PT-OS dashboard KPIs', () => {
-  beforeEach(() => { requested.length = 0; });
+  beforeEach(() => {
+    requested.length = 0;
+    // One test trims the series to prove the floor; put it back.
+    dashData.revenueTrend = [...FULL_TREND];
+  });
 
   it('shows the three metrics that are on every screen size', async () => {
     render(<PtOsDashboard />);
     for (const label of ['Active Clients', 'PT Revenue', 'Retention']) {
       expect(await screen.findByText(label)).toBeTruthy();
     }
+  });
+
+  it('no longer offers advice under the revenue split', async () => {
+    // "₹10,000 can be collected from 1 member" sat under Today's Revenue,
+    // restating the two figures directly above it as a sentence. The card
+    // already says what was collected, what is pending, and from how many
+    // members; the strip was the same facts a second time in prose.
+    render(<PtOsDashboard />);
+    await screen.findByText('Active Clients');
+    expect(screen.queryByText(/can be collected from/i)).toBeNull();
+    expect(screen.queryByText(/Nothing outstanding/i)).toBeNull();
+    expect(screen.queryByText(/No payments yet today/i)).toBeNull();
   });
 
   it('no longer shows Outstanding', async () => {
@@ -121,7 +142,34 @@ describe('PT-OS dashboard KPIs', () => {
     const chart = card!.querySelector('[role="img"]');
     expect(chart!.getAttribute('aria-label')).toMatch(/^PT Revenue,/);
     // dashData's revenue series, not its incentives series.
-    expect(chart!.getAttribute('aria-label')).toContain('80000, 90000');
+    expect(chart!.getAttribute('aria-label')).toContain('70000, 80000, 90000');
+  });
+
+  it('ends every card on the same band, charted or not', async () => {
+    // The grid stretches all four cards to one height. Two of them have a
+    // series and two never will, so without a matching band on the others
+    // the row's bottom edge is level only by accident — and the two without
+    // read as a number floating in a pool of white, which is how they looked
+    // before this.
+    render(<PtOsDashboard />);
+    await screen.findByText('Active Clients');
+    for (const label of ['Active Clients', 'PT Revenue', 'Commission', 'Retention']) {
+      const card = (await screen.findByText(label)).closest('.group');
+      expect(card!.querySelectorAll('[data-kpi-foot]'), `${label}'s foot`).toHaveLength(1);
+    }
+  });
+
+  it('draws no sparkline at all on too few months to be a shape', async () => {
+    // Two months render as two half-width slabs — one pale, one solid. That
+    // is not a sparkline, it is a broken-looking pair of blocks, and it is
+    // what every studio in its second month was shown. A shape needs three
+    // readings before it is one.
+    dashData.revenueTrend = dashData.revenueTrend.slice(-2);
+    render(<PtOsDashboard />);
+    const card = (await screen.findByText('PT Revenue')).closest('.group');
+    expect(card!.querySelector('[role="img"]')).toBeNull();
+    // The card still ends on the same band, so the grid stays level.
+    expect(card!.textContent).toContain('₹90K');
   });
 
   it('gives Active Clients no percentage badge either', async () => {
