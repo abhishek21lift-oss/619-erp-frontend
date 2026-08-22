@@ -1,0 +1,139 @@
+'use client';
+
+import * as React from 'react';
+import { ResponsiveBar } from '@nivo/bar';
+import type { BarDatum } from '@nivo/bar';
+import { ChartShell, ChartLegend, ChartLoading, ChartEmpty, ChartError, ChartTooltipCard, useChartMotion } from './primitives';
+import { nivoThemeFor, series as seriesPalette, defaultFormat } from './theme';
+import { buildGradientFill } from './theme/gradients';
+import type { Surface } from './theme/surface';
+
+export interface PremiumBarSeries {
+  /** Field in each data row this series reads. */
+  key: string;
+  /** Series name — shown in the tooltip and legend. */
+  label: string;
+  color?: string;
+}
+
+export interface PremiumBarChartProps {
+  data: Record<string, unknown>[];
+  /** Field used for the category axis. */
+  xKey: string;
+  bars: PremiumBarSeries[];
+  height?: number;
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  icon?: React.ReactNode;
+  surface?: Surface;
+  layout?: 'vertical' | 'horizontal';
+  /** 'grouped' (default) sits series side by side; 'stacked' sums them. */
+  groupMode?: 'grouped' | 'stacked';
+  loading?: boolean;
+  error?: string | null;
+  onRetry?: () => void;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  /** Formats values in the tooltip and the value axis. */
+  formatValue?: (v: number) => string;
+  showLegend?: boolean;
+  ariaLabel?: string;
+  className?: string;
+}
+
+/**
+ * The system's bar chart — revenue by month, check-ins by day, sessions by
+ * trainer. One or many series, grouped or stacked, zero-anchored always.
+ */
+export function PremiumBarChart({
+  data,
+  xKey,
+  bars,
+  height = 240,
+  title,
+  subtitle,
+  icon,
+  surface = 'auto',
+  layout = 'vertical',
+  groupMode = 'grouped',
+  loading = false,
+  error = null,
+  onRetry,
+  emptyTitle = 'No data for this period',
+  emptyDescription,
+  formatValue = defaultFormat,
+  showLegend,
+  ariaLabel,
+  className,
+}: PremiumBarChartProps) {
+  const motionProps = useChartMotion();
+
+  const colorByKey = React.useMemo(() => {
+    const map: Record<string, string> = {};
+    bars.forEach((b, i) => { map[b.key] = b.color ?? seriesPalette[i % seriesPalette.length]; });
+    return map;
+  }, [bars]);
+
+  const hasData = data.length > 0 && bars.some((b) => data.some((row) => Number(row[b.key]) > 0));
+  const legendItems = bars.map((b) => ({ label: b.label, color: colorByKey[b.key] }));
+  const resolvedShowLegend = showLegend ?? bars.length > 1;
+
+  const gradient = React.useMemo(
+    () => buildGradientFill(bars.map((b) => ({ id: b.key, color: colorByKey[b.key] }))),
+    [bars, colorByKey],
+  );
+
+  const shellProps = {
+    title,
+    subtitle,
+    icon,
+    surface,
+    height,
+    className,
+    ariaLabel: ariaLabel ?? `${title ? `${title}: ` : ''}bar chart with ${bars.length} series across ${data.length} categories`,
+    action: resolvedShowLegend && !loading && !error && hasData
+      ? <ChartLegend items={legendItems} surface={surface} />
+      : undefined,
+  };
+
+  if (loading) return <ChartShell {...shellProps}><ChartLoading height={height} /></ChartShell>;
+  if (error) return <ChartShell {...shellProps}><ChartError height={height} message={error} onRetry={onRetry} /></ChartShell>;
+  if (!hasData) return <ChartShell {...shellProps}><ChartEmpty height={height} title={emptyTitle} description={emptyDescription} /></ChartShell>;
+
+  return (
+    <ChartShell {...shellProps}>
+      <ResponsiveBar
+        data={data as unknown as BarDatum[]}
+        keys={bars.map((b) => b.key)}
+        indexBy={xKey}
+        layout={layout}
+        groupMode={groupMode}
+        margin={{ top: 8, right: 6, bottom: 28, left: 44 }}
+        padding={bars.length > 1 ? 0.32 : 0.42}
+        innerPadding={bars.length > 1 ? 3 : 0}
+        borderRadius={5}
+        colors={(d) => colorByKey[String(d.id)] ?? seriesPalette[0]}
+        defs={gradient.defs}
+        fill={gradient.fill}
+        enableGridX={layout === 'horizontal'}
+        enableGridY={layout === 'vertical'}
+        axisTop={null}
+        axisRight={null}
+        axisBottom={{ tickSize: 0, tickPadding: 10 }}
+        axisLeft={layout === 'vertical' ? { tickSize: 0, tickPadding: 8, format: (v) => formatValue(Number(v)) } : null}
+        enableLabel={false}
+        role="img"
+        isFocusable
+        theme={nivoThemeFor(surface)}
+        {...motionProps}
+        tooltip={({ label, value, color, indexValue }) => (
+          <ChartTooltipCard
+            heading={String(indexValue)}
+            rows={[{ label, value: formatValue(value), color }]}
+            surface={surface}
+          />
+        )}
+      />
+    </ChartShell>
+  );
+}

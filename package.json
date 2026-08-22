@@ -20,6 +20,12 @@
     "e2e:api": "playwright test --project=api"
   },
   "dependencies": {
+    "@nivo/bar": "^0.99.0",
+    "@nivo/core": "^0.99.0",
+    "@nivo/line": "^0.99.0",
+    "@nivo/pie": "^0.99.0",
+    "@nivo/radial-bar": "^0.99.0",
+    "@nivo/theming": "^0.99.0",
     "@radix-ui/react-dialog": "^1.1.19",
     "@react-oauth/google": "^0.13.5",
     "@sentry/browser": "^10.65.0",

@@ -121,6 +121,12 @@ describe('the app uses only the palette', () => {
     // dark cinematic surface that deliberately paints outside the five
     // families, with its own token file. It is exempt here and confined to
     // that one file by the assertion below — same pattern as founderGold.
+    //
+    // The visualization system (components/visualizations) is the fourth,
+    // same shape again: MY PT STUDIO's chart identity (saffron accent, navy
+    // "premium" surface, a wider categorical series ramp than five semantic
+    // families can carry) lives entirely in theme/tokens.ts and is confined
+    // there by the assertion below.
     const known = new Set(
       [...allHexes(), ...Object.values(founderGold)].map((h) => h.toUpperCase())
     );
@@ -135,6 +141,8 @@ describe('the app uses only the palette', () => {
         if (p.endsWith(join('lib', 'palette.ts'))) continue;
         // The marketing page is its own system — confined below.
         if (p.includes(join('components', 'landing'))) continue;
+        // The visualization system is its own system too — confined below.
+        if (p.includes(join('components', 'visualizations'))) continue;
         const text = readFileSync(p, 'utf8');
         for (const m of text.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
           if (!known.has(m.toUpperCase())) offenders.push(`${p}: ${m}`);
@@ -187,6 +195,33 @@ describe('the app uses only the palette', () => {
       }
     };
     walk(join(process.cwd(), 'src', 'components', 'landing'));
+    expect(offenders).toEqual([]);
+  });
+
+  it('confines the visualization surface to its own token file', () => {
+    // Same rule as the marketing page, same reason: MY PT STUDIO's chart
+    // identity (saffron, navy, the wider series ramp) lives once, in
+    // visualizations/theme/tokens.ts. Every other file in the folder must
+    // reach it through that module (or through a var(--token, #fallback)
+    // whose fallback is itself a sanctioned five-family value — that's not a
+    // new colour, it's the existing one spelled defensively) rather than
+    // hand-writing a new hex, or the seven chart components stop being one
+    // system the moment a second file starts inventing its own colours.
+    const offenders: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = join(dir, entry);
+        if (statSync(p).isDirectory()) { walk(p); continue; }
+        if (!/\.tsx?$/.test(entry)) continue;
+        if (p.endsWith(join('theme', 'tokens.ts'))) continue;
+        const text = readFileSync(p, 'utf8');
+        const known = new Set(allHexes().map((h) => h.toUpperCase()));
+        for (const m of text.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
+          if (!known.has(m.toUpperCase())) offenders.push(`${p}: ${m}`);
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src', 'components', 'visualizations'));
     expect(offenders).toEqual([]);
   });
 });
