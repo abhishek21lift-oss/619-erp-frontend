@@ -142,7 +142,7 @@ export function WorkoutPlanCard({
                 type="button"
                 onClick={onAddExercises}
                 className="mt-1.5 inline-flex items-center gap-1 text-[12.5px] font-[700]"
-                style={{ color: ACCENT, minHeight: 32 }}
+                style={{ color: ACCENT, minHeight: 44 }}
               >
                 <Plus size={13} /> Add exercises
               </button>
@@ -181,7 +181,7 @@ export function WorkoutPlanCard({
               type="button"
               onClick={onOpen}
               className="flex flex-1 items-center justify-center rounded-[10px] text-[12.5px] font-[700] text-white transition-opacity active:opacity-80"
-              style={{ background: ACCENT, minHeight: 40 }}
+              style={{ background: ACCENT, minHeight: 44 }}
             >
               Open Plan
             </button>
@@ -193,7 +193,7 @@ export function WorkoutPlanCard({
               aria-label={`Edit ${name}`}
               className="flex items-center justify-center gap-1.5 rounded-[10px] px-3 text-[12.5px] font-[650] transition-colors"
               style={{
-                minHeight: 40,
+                minHeight: 44,
                 border: '1px solid var(--border)',
                 color: 'var(--text-secondary)',
                 background: 'var(--bg-card)',
@@ -209,7 +209,7 @@ export function WorkoutPlanCard({
               aria-label={`Assign ${name} to a client`}
               className="flex items-center justify-center gap-1.5 rounded-[10px] px-3 text-[12.5px] font-[650] transition-colors"
               style={{
-                minHeight: 40,
+                minHeight: 44,
                 border: '1px solid var(--border)',
                 color: 'var(--text-secondary)',
                 background: 'var(--bg-card)',

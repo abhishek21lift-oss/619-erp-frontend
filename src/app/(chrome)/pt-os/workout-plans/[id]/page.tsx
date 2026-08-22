@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import { ClipboardList, Dumbbell, Pencil, Plus, Trash2, Loader2, Check, Target, Clock } from 'lucide-react';
@@ -73,14 +73,26 @@ function Inner() {
 
   useEffect(() => { load(); }, [load]);
 
-  const startEditing = () => {
+  const startEditing = useCallback(() => {
     if (!plan) return;
     setDraft(plan.exercises.map((ex) => ({
       exercise_id: ex.exercise_id || '', name: ex.name, day_of_week: ex.day_of_week,
       sets: ex.sets, reps: ex.reps, rest_seconds: ex.rest_seconds,
     })));
     setEditing(true);
-  };
+  }, [plan]);
+
+  // Arriving with ?edit=1 is the plan card's Edit action, which would
+  // otherwise land on exactly the page its Open action lands on. Gated on the
+  // plan being loaded, because startEditing seeds the draft from it, and run
+  // once — re-entering edit mode on every render would make Cancel do nothing.
+  const editRequested = searchParams.get('edit') === '1';
+  const autoEditedRef = useRef(false);
+  useEffect(() => {
+    if (!editRequested || !plan || autoEditedRef.current) return;
+    autoEditedRef.current = true;
+    startEditing();
+  }, [editRequested, plan, startEditing]);
 
   const handlePick = (ex: PickedExercise) => {
     if (!ex.id) return;
