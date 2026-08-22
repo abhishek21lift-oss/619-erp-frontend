@@ -43,6 +43,7 @@ import { useAuth } from '@/lib/auth-context';
 import FounderBadge from '@/components/FounderBadge';
 import { useFounder } from '@/lib/use-founder';
 import http from '@/lib/http';
+import dynamic from 'next/dynamic';
 import { fmtTime12 } from '@/lib/format';
 import type { TodayClient, TodayRoster } from '@/lib/api';
 
@@ -169,6 +170,19 @@ const TRAINER_COLORS = identity;
  * Retention's step falls under 3:1 against the card, which is why the hue
  * never carries meaning alone: every tile shows its label in ink beside it.
  */
+/**
+ * The KPI sparkline, loaded on demand.
+ *
+ * recharts is ~100KB and this is the home screen, which did not import it at
+ * all. Loading it eagerly would put a chart library in front of every
+ * trainer's first paint for the sake of four 32px charts. The placeholder is
+ * the chart's exact height, so the tile does not resize when the bars arrive.
+ */
+const KpiSparkline = dynamic(() => import('@/components/dashboards/KpiSparkline'), {
+  ssr: false,
+  loading: () => <div className="h-8" />,
+});
+
 const KPI = {
   clients:    palette.blue[500],
   revenue:    palette.emerald[500],
@@ -543,18 +557,19 @@ function MobileQuickActions() {
 // against the surface, which is why every one of them is always accompanied
 // by its visible text label.
 function StatCard({
-  icon, label, value, sub, color, accent, delay = 0, href, trend, pct, className,
+  icon, label, value, sub, color, accent, delay = 0, href, trend, pct, format, className,
 }: {
   icon: React.ReactNode; label: string; value: string; sub?: string;
   color: string; accent: string; delay?: number; href?: string;
   /** Six months of THIS metric. Omit it unless the series is genuinely this card's. */
-  trend?: number[]; pct?: number | null;
+  trend?: { label: string; value: number }[]; pct?: number | null;
+  /** How the sparkline's tooltip renders a value. */
+  format?: (n: number) => string;
   /** Responsive visibility, for cards that only belong on some screen sizes. */
   className?: string;
 }) {
   const router = useRouter();
   const reduce = useReducedMotion() ?? false;
-  const max = trend && trend.length > 0 ? Math.max(...trend, 1) : 1;
   return (
     <m.div
       initial={reduce ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
@@ -592,29 +607,11 @@ function StatCard({
       </div>
 
       {trend && trend.length > 0 && (
-        // Six months, oldest to newest, the last one solid.
-        //
-        // Bars rather than a line: six points is too few for a line to
-        // describe a shape, and a bar anchored to the baseline reads as a
-        // magnitude, which is what a month of revenue is. 3px round ends, a
-        // 3px gap so adjacent months never touch, and a floor of 3px on the
-        // bar itself so a zero month is visibly a zero rather than absent.
-        <div className="relative z-10 mt-2.5 flex h-7 items-end gap-[3px] sm:h-8"
-          role="img"
-          aria-label={`${label}, last ${trend.length} months: ${trend.map((v) => Math.round(v)).join(', ')}`}>
-          {trend.map((v, i) => {
-            const last = i === trend.length - 1;
-            return (
-              <m.div key={i}
-                initial={reduce ? false : { scaleY: 0 }} animate={{ scaleY: 1 }}
-                transition={{ delay: delay + 0.2 + i * 0.04, duration: 0.35, ease: EASE }}
-                className="flex-1 origin-bottom rounded-[3px]"
-                style={{
-                  height: `max(3px, ${(v / max) * 100}%)`,
-                  background: last ? color : `${color}2e`,
-                }} />
-            );
-          })}
+        // Six months, oldest to newest, the last one solid. Hover any month
+        // for its figure — the chart is small enough that direct labels would
+        // not fit and large enough that the shape is worth reading.
+        <div className="relative z-10 mt-2.5">
+          <KpiSparkline data={trend} color={color} metric={label} format={format} />
         </div>
       )}
     </m.div>
@@ -2006,8 +2003,10 @@ export default function PtOsDashboard() {
     return () => { stop(); document.removeEventListener('visibilitychange', onVisibility); };
   }, [refreshAll]);
 
-  const revTrend = d?.revenueTrend?.map(x => Number(x.revenue)) ?? [];
-  const incTrend = d?.revenueTrend?.map(x => Number(x.incentives)) ?? [];
+  // The month label travels with the number now, so a hovered bar can say
+  // which month it is rather than just how tall it is.
+  const revTrend = d?.revenueTrend?.map(x => ({ label: x.label, value: Number(x.revenue) })) ?? [];
+  const incTrend = d?.revenueTrend?.map(x => ({ label: x.label, value: Number(x.incentives) })) ?? [];
   const revMoM   = momPct(d?.revenueTrend, 'revenue');
   const incMoM   = momPct(d?.revenueTrend, 'incentives');
 
@@ -2114,7 +2113,7 @@ export default function PtOsDashboard() {
                 <StatCard icon={<Users size={14} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
                   sub={`${d.expired_clients} expired`} color={KPI.clients} accent={palette.blue[300]} delay={0} href="/pt-os/clients" />
                 <StatCard icon={<Wallet size={14} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
-                  sub="this month" color={KPI.revenue} accent={palette.emerald[400]} delay={0.05} href="/pt-os/reports" trend={revTrend} pct={revMoM} />
+                  sub="this month" color={KPI.revenue} accent={palette.emerald[400]} delay={0.05} href="/pt-os/reports" trend={revTrend} pct={revMoM} format={fmtINR} />
                 {/* Phone and tablet only. Still rendered there, so the numbers
                     stay one tap away on the devices a trainer carries around
                     the floor; the desktop row is the one being kept lean.
@@ -2122,7 +2121,7 @@ export default function PtOsDashboard() {
                     Incentives, not revenue — this is the one card whose
                     series was already its own. */}
                 <StatCard icon={<Percent size={14} />} label="Commission" value={fmtCompact(d.total_monthly_commission)}
-                  sub={commRate} color={KPI.commission} accent={palette.blue[400]} delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM}
+                  sub={commRate} color={KPI.commission} accent={palette.blue[400]} delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM} format={fmtINR}
                   className="lg:hidden" />
                 <StatCard icon={<Gauge size={14} />} label="Retention" value={retentionPct !== null ? `${retentionPct.toFixed(0)}%` : '—'}
                   sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active`} color={KPI.retention} accent={palette.blue[200]} delay={0.15} href="/pt-os/clients" />

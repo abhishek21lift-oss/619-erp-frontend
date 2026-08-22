@@ -27,14 +27,35 @@ if (typeof window !== 'undefined' && !window.localStorage) {
 // Without this they throw during layout effects and the failure looks like a
 // component bug rather than a missing test global.
 //
-// It observes nothing (there is nothing to observe) but does fire the callback
-// once on observe(), which is what a real ResizeObserver does and what a test
-// stubbing element dimensions needs in order to see them read.
+// It observes nothing that can change (there is no layout) but does fire the
+// callback once on observe(), which is what a real ResizeObserver does and
+// what a test stubbing element dimensions needs in order to see them read.
+//
+// The entry it fires WITH matters. This used to pass an empty array, on the
+// grounds that there was nothing to report — but a real ResizeObserver never
+// calls back with zero entries, so anything that reads entries[0] crashed
+// here rather than in its own code. recharts' ResponsiveContainer was the
+// first to do it, and the stack pointed at this file, which is exactly the
+// "looks like a component bug" failure the stub exists to avoid.
+//
+// So it now reports the observed element at whatever size the test has
+// stubbed onto it, and zeroes when nothing is stubbed.
 if (typeof globalThis.ResizeObserver === 'undefined') {
   globalThis.ResizeObserver = class {
     private cb: ResizeObserverCallback;
     constructor(cb: ResizeObserverCallback) { this.cb = cb; }
-    observe() { this.cb([], this as unknown as ResizeObserver); }
+    observe(target: Element) {
+      const rect = target?.getBoundingClientRect?.()
+        ?? { width: 0, height: 0, top: 0, left: 0, bottom: 0, right: 0, x: 0, y: 0 };
+      const entry = {
+        target,
+        contentRect: rect,
+        borderBoxSize: [{ inlineSize: rect.width, blockSize: rect.height }],
+        contentBoxSize: [{ inlineSize: rect.width, blockSize: rect.height }],
+        devicePixelContentBoxSize: [{ inlineSize: rect.width, blockSize: rect.height }],
+      } as unknown as ResizeObserverEntry;
+      this.cb([entry], this as unknown as ResizeObserver);
+    }
     unobserve() {}
     disconnect() {}
   } as unknown as typeof ResizeObserver;

@@ -77,13 +77,29 @@ describe('the ring exists', () => {
   });
 });
 
+/**
+ * Source with comments blanked out, line numbers intact.
+ *
+ * A comment cannot style anything, and this guard has been tripped by a
+ * component whose comment EXPLAINED why it does not suppress the outline —
+ * the guard read its own subject matter as a violation. Blanking rather than
+ * deleting keeps every line where it was, so the offender list still points
+ * at the right line.
+ */
+function withoutComments(src: string): string {
+  const blank = (m: string) => m.replace(/[^\n]/g, ' ');
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, blank)
+    .replace(/(^|[^:])\/\/[^\n]*/g, (m, lead) => lead + blank(m.slice(lead.length)));
+}
+
 describe('nothing defeats it inline', () => {
   it('has no inline outline:none anywhere', () => {
     // An inline declaration beats a stylesheet rule, so this is the one form
     // of outline suppression that actually removes the focus ring.
     const offenders: string[] = [];
     for (const f of sources()) {
-      readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
+      withoutComments(readFileSync(f, 'utf8')).split('\n').forEach((line, i) => {
         if (/outline:\s*['"`]none['"`]/.test(line)) {
           offenders.push(`${relative(process.cwd(), f).replace(/\\/g, '/')}:${i + 1}`);
         }
