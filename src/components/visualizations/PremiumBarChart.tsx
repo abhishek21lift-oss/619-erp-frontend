@@ -20,6 +20,15 @@ export interface PremiumBarSeries {
   /** Series name — shown in the tooltip and legend. */
   label: string;
   color?: string;
+  /**
+   * Field in each data row holding that row's own colour for this series —
+   * e.g. a week that hit its target vs one that fell short. Overrides `color`
+   * for that one bar; every row without it still falls back to `color`. The
+   * legend still shows the series' single `color`, since a legend swatch
+   * cannot represent a per-row condition — the chart's own bars are where
+   * that signal reads.
+   */
+  colorKey?: string;
 }
 
 export interface PremiumBarChartProps {
@@ -94,8 +103,14 @@ export function PremiumBarChart({
   const legendItems = bars.map((b) => ({ label: b.label, color: colorByKey[b.key] }));
   const resolvedShowLegend = showLegend ?? bars.length > 1;
 
+  // A series with a `colorKey` picks its colour per row, which a single
+  // gradient-per-series cannot express — nivo's `fill` pattern matches by
+  // series id, so every bar in that series would share one gradient
+  // regardless of the row it belongs to. Excluded from the gradient fill
+  // here so those bars fall through to the flat, per-row `colors` result
+  // below instead of a gradient that would silently outrank it.
   const gradient = React.useMemo(
-    () => buildGradientFill(bars.map((b) => ({ id: b.key, color: colorByKey[b.key] }))),
+    () => buildGradientFill(bars.filter((b) => !b.colorKey).map((b) => ({ id: b.key, color: colorByKey[b.key] }))),
     [bars, colorByKey],
   );
 
@@ -129,7 +144,11 @@ export function PremiumBarChart({
         padding={bars.length > 1 ? barPadding.multiSeries : barPadding.singleSeries}
         innerPadding={bars.length > 1 ? barPadding.innerPadding : 0}
         borderRadius={radius.bar}
-        colors={(d) => colorByKey[String(d.id)] ?? seriesPalette[0]}
+        colors={(d) => {
+          const series = bars.find((b) => b.key === String(d.id));
+          const rowColor = series?.colorKey ? (d.data as Record<string, unknown>)[series.colorKey] : undefined;
+          return (typeof rowColor === 'string' ? rowColor : undefined) ?? colorByKey[String(d.id)] ?? seriesPalette[0];
+        }}
         defs={gradient.defs}
         fill={gradient.fill}
         enableGridX={layout === 'horizontal'}

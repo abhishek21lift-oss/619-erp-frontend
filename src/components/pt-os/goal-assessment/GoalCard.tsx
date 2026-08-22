@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronRight, Target } from 'lucide-react';
-import { DonutChart } from '@/components/ui';
+import { PremiumProgressChart } from '@/components/visualizations';
 import { calcCompletionPct, calcAchievementStatus, daysRemaining } from '@/lib/goal-calculations';
 import { GOAL_TYPE_META } from './types';
 
@@ -44,15 +44,25 @@ export function GoalCard({ goal, latestWeight, onClick }: GoalCardProps) {
       className="flex w-full items-center gap-4 rounded-[20px] p-5 text-left transition-all hover:scale-[1.01]"
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 16px rgba(15,23,42,0.06)' }}
     >
+      {/* Only drawn when the server could compute a completion percentage —
+          a ring at 0% and "no starting weight on file" look identical, and
+          the first one is a claim about this goal rather than the record. */}
       <div className="flex-shrink-0" style={{ width: 64 }}>
-        <DonutChart
-          data={[
-            { name: 'Complete', value: completion ?? 0, color: '#0067E0' },
-            { name: 'Remaining', value: 100 - (completion ?? 0), color: '#f1f5f9' },
-          ]}
-          centerValue={<span style={{ fontSize: 13 }}>{completion != null ? `${completion}%` : '—'}</span>}
-          hideLegend thin height={64}
-        />
+        {completion != null ? (
+          <PremiumProgressChart
+            data={[{ id: label, value: completion, max: 100 }]}
+            height={64}
+            bordered={false}
+            showLegend={false}
+          />
+        ) : (
+          <div
+            className="flex h-16 w-16 items-center justify-center rounded-full text-[13px] font-[700]"
+            style={{ border: '3px solid var(--bg-subtle)', color: 'var(--text-muted)' }}
+          >
+            —
+          </div>
+        )}
       </div>
 
       <div className="flex-1 min-w-0">
