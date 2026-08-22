@@ -54,6 +54,33 @@ describe('the Term Fee / Paid / Balance cards are not a copy of the hero', () =>
   it('switches the Balance icon with the same state its colour already reads', () => {
     // A red balance with a "things are fine" checkmark would contradict its
     // own colour. The icon and the colour are driven by the same condition.
-    expect(page).toContain('currentTermBalance > 0 ? <AlertTriangle size={16} /> : <CheckCircle size={16} />');
+    //
+    // The SIZE is not part of that claim and is no longer written into it:
+    // this used to pin `size={16}` inside the match, so shrinking the mark on
+    // all three cards failed a test about which icon shows, not how big it
+    // is. What must hold is the shared condition and the pairing.
+    expect(page).toMatch(
+      /currentTermBalance > 0 \? <AlertTriangle size=\{\d+\} \/> : <CheckCircle size=\{\d+\} \/>/,
+    );
+  });
+
+  it('keeps the mark smaller than the figure it belongs to', () => {
+    // The reason these cards were rebuilt: a 36px chip with a 16px glyph sat
+    // above the number and read as the loudest thing on a card whose whole
+    // job is the figure. A mark identifies a card; it does not announce it.
+    const chip = page.match(/className="flex h-\[(\d+)px\] w-\[\d+px\] items-center justify-center rounded-\[9px\] text-white"/);
+    expect(chip, 'the money cards\' icon chip').not.toBeNull();
+    expect(Number(chip![1])).toBeLessThanOrEqual(28);
+
+    const glyphs = [...page.matchAll(/<(?:IndianRupee|CheckCircle|AlertTriangle) size=\{(\d+)\} \/>/g)]
+      .map((m) => Number(m[1]));
+    expect(glyphs.length).toBeGreaterThanOrEqual(3);
+    for (const g of glyphs) expect(g).toBeLessThanOrEqual(14);
+  });
+
+  it('makes them square, so three across a phone stay the same shape', () => {
+    // A pixel height is right on one handset and wrong on the next; a square
+    // is a square on every one of them.
+    expect(page).toContain('flex aspect-square flex-col justify-between');
   });
 });

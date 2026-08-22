@@ -6,6 +6,8 @@
 // plan was saved when nothing was written — the backend generate endpoints
 // only stream a plan back, and this card must not say otherwise.
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import type { ClientLoginStatus } from '@/lib/api';
 import ClientAiGenerateCard from '@/components/pt-os/ClientAiGenerateCard';
@@ -136,6 +138,32 @@ describe('the two buttons', () => {
     expect(workout).toBeGreaterThanOrEqual(0);
     expect(diet).toBeGreaterThan(workout);
     expect(activate).toBeGreaterThan(diet);
+  });
+});
+
+describe('the touch targets', () => {
+  // globals.css sets `html { font-size: 14px }`, so every rem-based Tailwind
+  // size renders at 87.5% of its name: h-10 is 35px, not 40. Both of these
+  // buttons shipped as h-10 and measured 35 — a third under the 44px this app
+  // holds every other control to, on a card whose whole purpose is two taps.
+  //
+  // Read off the source rather than the DOM: jsdom has no layout, so a
+  // rendered element's height is 0 and any assertion on it passes whatever
+  // the class says.
+  const src = readFileSync(
+    join(process.cwd(), 'src', 'components', 'pt-os', 'ClientAiGenerateCard.tsx'),
+    'utf8',
+  );
+
+  it('are 44px, in pixels rather than a rem class', () => {
+    const heights = [...src.matchAll(/className="flex h-\[(\d+)px\] w-full items-center justify-center/g)]
+      .map((m) => Number(m[1]));
+    expect(heights).toHaveLength(2);
+    for (const h of heights) expect(h).toBe(44);
+  });
+
+  it('uses no rem height class on either of them', () => {
+    expect(src).not.toMatch(/className="flex h-\d+ w-full items-center justify-center/);
   });
 });
 
