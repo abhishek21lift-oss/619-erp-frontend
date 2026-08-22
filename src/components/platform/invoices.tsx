@@ -142,7 +142,7 @@ function Row({ inv }: { inv: SubscriptionInvoice }) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`Open invoice ${inv.invoice_number} as PDF`}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px]"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[9px]"
         style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}
       >
         <FileText size={14} />
@@ -391,7 +391,7 @@ export default function InvoicesPanel() {
             <button
               key={p.label}
               onClick={() => applyRange(p.from, p.to)}
-              className="min-h-[32px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
+              className="min-h-[44px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
               style={from === p.from && to === p.to
                 ? { background: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(15,23,42,0.10)' }
                 : { color: 'var(--text-muted)' }}
@@ -455,7 +455,7 @@ export default function InvoicesPanel() {
                   className="h-10 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={inputStyle} />
               </label>
               <div className="flex items-end">
-                <button onClick={reset} className="flex min-h-[36px] items-center gap-1.5 text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}>
+                <button onClick={reset} className="flex min-h-[44px] items-center gap-1.5 text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}>
                   <RotateCcw size={12} /> Reset
                 </button>
               </div>
@@ -482,13 +482,13 @@ export default function InvoicesPanel() {
           {total > PAGE_SIZE && (
             <div className="flex items-center gap-1">
               <button onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))} disabled={offset === 0}
-                aria-label="Previous page" className="flex h-8 w-8 items-center justify-center rounded-[8px] disabled:opacity-40"
+                aria-label="Previous page" className="flex h-11 w-11 items-center justify-center rounded-[8px] disabled:opacity-40"
                 style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                 <ChevronLeft size={14} />
               </button>
               <span className="px-1.5 text-[11.5px] font-[650] tabular-nums" style={{ color: 'var(--text-muted)' }}>{page} / {pages}</span>
               <button onClick={() => setOffset(offset + PAGE_SIZE)} disabled={offset + PAGE_SIZE >= total}
-                aria-label="Next page" className="flex h-8 w-8 items-center justify-center rounded-[8px] disabled:opacity-40"
+                aria-label="Next page" className="flex h-11 w-11 items-center justify-center rounded-[8px] disabled:opacity-40"
                 style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                 <ChevronRight size={14} />
               </button>

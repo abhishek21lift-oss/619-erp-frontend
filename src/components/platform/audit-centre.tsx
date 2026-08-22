@@ -253,7 +253,7 @@ export default function AuditCentre() {
             <button
               key={r.id}
               onClick={() => { setRange(r.id); setFrom(''); setTo(''); setOffset(0); }}
-              className="min-h-[32px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
+              className="min-h-[44px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
               style={range === r.id && !from && !to
                 ? { background: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(15,23,42,0.10)' }
                 : { color: 'var(--text-muted)' }}
@@ -325,7 +325,7 @@ export default function AuditCentre() {
                   className="h-10 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={selectStyle} />
               </label>
               <div className="sm:col-span-2 lg:col-span-4">
-                <button onClick={reset} className="flex min-h-[36px] items-center gap-1.5 text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}>
+                <button onClick={reset} className="flex min-h-[44px] items-center gap-1.5 text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}>
                   <RotateCcw size={12} /> Reset filters
                 </button>
               </div>
@@ -348,7 +348,7 @@ export default function AuditCentre() {
                 onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
                 disabled={offset === 0}
                 aria-label="Previous page"
-                className="flex h-8 w-8 items-center justify-center rounded-[8px] disabled:opacity-40"
+                className="flex h-11 w-11 items-center justify-center rounded-[8px] disabled:opacity-40"
                 style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}
               >
                 <ChevronLeft size={14} />
@@ -360,7 +360,7 @@ export default function AuditCentre() {
                 onClick={() => setOffset(offset + PAGE_SIZE)}
                 disabled={offset + PAGE_SIZE >= total}
                 aria-label="Next page"
-                className="flex h-8 w-8 items-center justify-center rounded-[8px] disabled:opacity-40"
+                className="flex h-11 w-11 items-center justify-center rounded-[8px] disabled:opacity-40"
                 style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}
               >
                 <ChevronRight size={14} />

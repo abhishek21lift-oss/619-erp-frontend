@@ -203,7 +203,7 @@ export function UsersTab() {
 
         <button
           onClick={load}
-          className="flex items-center gap-1.5 rounded-[11px] px-3 py-2 text-[12px] font-[650]"
+          className="flex min-h-[44px] items-center gap-1.5 rounded-[11px] px-3 text-[12px] font-[650]"
           style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
           title="Refresh"
         >
@@ -300,7 +300,7 @@ export function UsersTab() {
               <button
                 disabled={offset === 0 || loading}
                 onClick={() => setOffset(Math.max(0, offset - PAGE))}
-                className="rounded-[10px] px-3 py-1.5 font-[650] disabled:opacity-40"
+                className="min-h-[44px] rounded-[10px] px-3 font-[650] disabled:opacity-40"
                 style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
               >
                 Previous
@@ -308,7 +308,7 @@ export function UsersTab() {
               <button
                 disabled={offset + rows.length >= total || loading}
                 onClick={() => setOffset(offset + PAGE)}
-                className="rounded-[10px] px-3 py-1.5 font-[650] disabled:opacity-40"
+                className="min-h-[44px] rounded-[10px] px-3 font-[650] disabled:opacity-40"
                 style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
               >
                 Next

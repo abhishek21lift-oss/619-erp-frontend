@@ -38,8 +38,8 @@ export function IconBtn({ children, title, onClick, tone, busy }: {
   const border = tone === 'danger' ? 'rgba(239,68,68,0.20)' : tone === 'success' ? 'rgba(16,185,129,0.25)' : 'var(--border)';
   return (
     <button onClick={onClick} title={title} disabled={busy}
-      className="flex h-8 items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[650] transition hover:opacity-80 disabled:opacity-50"
-      style={{ border: `1px solid ${border}`, color }}>
+      className="flex items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[650] transition hover:opacity-80 disabled:opacity-50"
+      style={{ border: `1px solid ${border}`, color, minHeight: 44 }}>
       {busy ? <Loader2 size={12} className="animate-spin" /> : children}
     </button>
   );

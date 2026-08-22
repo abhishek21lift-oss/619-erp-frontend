@@ -350,7 +350,7 @@ export default function SecurityCentre() {
               <div className="flex items-end">
                 <button
                   onClick={() => { setOutcome(''); setQ(''); setDebouncedQ(''); setFailedOnly(true); setOffset(0); }}
-                  className="flex min-h-[36px] items-center gap-1.5 text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}
+                  className="flex min-h-[44px] items-center gap-1.5 text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}
                 >
                   <RotateCcw size={12} /> Reset
                 </button>
@@ -368,13 +368,13 @@ export default function SecurityCentre() {
           {total > PAGE_SIZE && (
             <div className="flex items-center gap-1">
               <button onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))} disabled={offset === 0}
-                aria-label="Previous page" className="flex h-8 w-8 items-center justify-center rounded-[8px] disabled:opacity-40"
+                aria-label="Previous page" className="flex h-11 w-11 items-center justify-center rounded-[8px] disabled:opacity-40"
                 style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                 <ChevronLeft size={14} />
               </button>
               <span className="px-1.5 text-[11.5px] font-[650] tabular-nums" style={{ color: 'var(--text-muted)' }}>{page} / {pages}</span>
               <button onClick={() => setOffset(offset + PAGE_SIZE)} disabled={offset + PAGE_SIZE >= total}
-                aria-label="Next page" className="flex h-8 w-8 items-center justify-center rounded-[8px] disabled:opacity-40"
+                aria-label="Next page" className="flex h-11 w-11 items-center justify-center rounded-[8px] disabled:opacity-40"
                 style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                 <ChevronRight size={14} />
               </button>

@@ -193,7 +193,7 @@ function Row({ inv, onChanged }: { inv: Invitation; onChanged: () => void }) {
                 key={a.key}
                 onClick={a.fn}
                 disabled={busy !== null}
-                className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-[11.5px] font-[650] transition-opacity disabled:opacity-40"
+                className="flex min-h-[44px] items-center gap-1.5 rounded-[8px] px-2.5 text-[11.5px] font-[650] transition-opacity disabled:opacity-40"
                 style={{
                   background: 'var(--bg-subtle)',
                   border: '1px solid var(--border)',
@@ -340,7 +340,7 @@ export default function InvitationsPanel() {
             <button
               key={f.id}
               onClick={() => setStatus(f.id)}
-              className="rounded-[8px] px-2.5 py-1.5 text-[11.5px] font-[700]"
+              className="min-h-[44px] rounded-[8px] px-2.5 text-[11.5px] font-[700]"
               style={{
                 background: status === f.id ? 'var(--brand)' : 'var(--bg-subtle)',
                 color: status === f.id ? '#fff' : 'var(--text-muted)',

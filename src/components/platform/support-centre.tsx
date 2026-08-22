@@ -137,7 +137,7 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
             value={ticket.status} disabled={busy}
             onChange={(e) => patch({ status: e.target.value as TicketStatus })}
             aria-label="Ticket status"
-            className="h-8 rounded-[9px] px-2 text-[11.5px] outline-none"
+            className="h-11 rounded-[9px] px-2 text-[11.5px] outline-none"
             style={{ ...cardStyle, color: 'var(--text-primary)' }}
           >
             {(Object.keys(STATUS) as TicketStatus[]).map((s) => <option key={s} value={s}>{STATUS[s].label}</option>)}
@@ -146,7 +146,7 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
             value={ticket.priority} disabled={busy}
             onChange={(e) => patch({ priority: e.target.value as TicketPriority })}
             aria-label="Ticket priority"
-            className="h-8 rounded-[9px] px-2 text-[11.5px] outline-none"
+            className="h-11 rounded-[9px] px-2 text-[11.5px] outline-none"
             style={{ ...cardStyle, color: 'var(--text-primary)' }}
           >
             {(Object.keys(PRIORITY) as TicketPriority[]).map((p) => <option key={p} value={p}>{PRIORITY[p].label}</option>)}
@@ -217,7 +217,7 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
             />
             <button
               onClick={send} disabled={busy || !body.trim()}
-              className="mt-2 flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] text-white disabled:opacity-50"
+              className="mt-2 flex h-11 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] text-white disabled:opacity-50"
               style={{ background: internal ? '#b45309' : 'var(--brand)' }}
             >
               {busy ? <Loader2 size={12} className="animate-spin" /> : internal ? <EyeOff size={12} /> : <Send size={12} />}
@@ -317,7 +317,7 @@ export default function SupportCentre() {
           {FILTERS.map((f) => (
             <button
               key={f.id} onClick={() => setStatus(f.id)}
-              className="min-h-[32px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
+              className="min-h-[44px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
               style={status === f.id
                 ? { background: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(15,23,42,0.10)' }
                 : { color: 'var(--text-muted)' }}
@@ -328,7 +328,7 @@ export default function SupportCentre() {
         </div>
         <button
           onClick={() => setUnassignedOnly((v) => !v)} aria-pressed={unassignedOnly}
-          className="flex h-10 items-center gap-1.5 rounded-[11px] px-3 text-[12px] font-[700]"
+          className="flex h-11 items-center gap-1.5 rounded-[11px] px-3 text-[12px] font-[700]"
           style={unassignedOnly
             ? { background: 'rgba(245,158,11,0.12)', color: '#b45309', border: '1px solid rgba(245,158,11,0.28)' }
             : { ...cardStyle, color: 'var(--text-secondary)' }}
