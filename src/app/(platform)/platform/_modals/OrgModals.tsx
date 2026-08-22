@@ -246,7 +246,7 @@ export function ResetPasswordModal({ user, onClose }: { user: OrgUser; onClose: 
         {([['email', 'Email them a link'], ['manual', 'Set one myself']] as const).map(([id, label]) => (
           <button
             key={id} onClick={() => setMode(id)} disabled={saving}
-            className="min-h-[36px] flex-1 rounded-[8px] px-2 text-[12px] font-[700] transition-colors disabled:opacity-60"
+            className="min-h-[44px] flex-1 rounded-[8px] px-2 text-[12px] font-[700] transition-colors disabled:opacity-60"
             style={mode === id
               ? { background: 'var(--bg-elevated)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(15,23,42,0.10)' }
               : { color: 'var(--text-muted)' }}

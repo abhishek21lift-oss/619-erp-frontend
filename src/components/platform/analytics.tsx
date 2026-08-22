@@ -340,7 +340,7 @@ export default function AnalyticsPanel() {
             <button
               key={w}
               onClick={() => setMonths(w)}
-              className="rounded-[8px] px-2.5 py-1 text-[11px] font-[700] transition-colors"
+              className="min-h-[44px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
               style={{
                 background: months === w ? 'var(--brand)' : 'var(--bg-subtle)',
                 color: months === w ? '#fff' : 'var(--text-muted)',
@@ -352,8 +352,8 @@ export default function AnalyticsPanel() {
           ))}
           <button
             onClick={() => load(months)} aria-label="Refresh analytics"
-            className="rounded-[8px] p-1.5 transition-colors"
-            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
+            className="flex items-center justify-center rounded-[8px] transition-colors"
+            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)', minHeight: 44, minWidth: 44 }}
           >
             <RefreshCw size={13} className={loading ? 'animate-spin' : undefined} />
           </button>

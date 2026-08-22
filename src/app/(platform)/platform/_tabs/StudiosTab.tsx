@@ -183,13 +183,13 @@ export function StudiosTab() {
           <input aria-label="Search studios"
             value={query} onChange={(e) => setQuery(e.target.value)}
             placeholder="Search studios…"
-            className="h-9 w-full rounded-[10px] pl-8 pr-3 text-[12.5px] outline-none"
+            className="h-11 w-full rounded-[10px] pl-8 pr-3 text-[12.5px] outline-none"
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           />
         </div>
         <div className="relative">
           <select aria-label="Sort studios" value={sortBy} onChange={(e) => setSortBy(e.target.value as StudioSort)}
-            className="h-9 appearance-none rounded-[10px] py-1.5 pl-8 pr-8 text-[12px] font-[650] outline-none"
+            className="h-11 appearance-none rounded-[10px] py-1.5 pl-8 pr-8 text-[12px] font-[650] outline-none"
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
             {SORTS.map((s) => <option key={s.id} value={s.id}>Sort · {s.label}</option>)}
           </select>
@@ -203,7 +203,7 @@ export function StudiosTab() {
       <div className="mb-4 flex flex-wrap items-center gap-1.5">
         {FILTERS.map((f) => (
           <button key={f.id} onClick={() => setFilter(f.id)}
-            className="rounded-full px-3 py-1.5 text-[11.5px] font-[650] transition-colors"
+            className="min-h-[44px] rounded-full px-3 text-[11.5px] font-[650] transition-colors"
             style={filter === f.id
               ? { background: 'var(--brand)', color: '#fff' }
               : { background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
@@ -218,17 +218,17 @@ export function StudiosTab() {
           style={{ background: 'var(--brand-soft)', border: '1px solid var(--brand)' }}>
           <span className="text-[12.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>{selected.size} selected</span>
           <button onClick={() => bulkSetStatus('active')} disabled={bulkBusy}
-            className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-[11.5px] font-[700] transition hover:opacity-80 disabled:opacity-50"
+            className="flex min-h-[44px] items-center gap-1.5 rounded-[8px] px-2.5 text-[11.5px] font-[700] transition hover:opacity-80 disabled:opacity-50"
             style={{ background: 'rgba(16,185,129,0.12)', color: '#059669' }}>
             <Power size={12} /> Activate
           </button>
           <button onClick={() => bulkSetStatus('suspended')} disabled={bulkBusy}
-            className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-[11.5px] font-[700] transition hover:opacity-80 disabled:opacity-50"
+            className="flex min-h-[44px] items-center gap-1.5 rounded-[8px] px-2.5 text-[11.5px] font-[700] transition hover:opacity-80 disabled:opacity-50"
             style={{ background: 'rgba(239,68,68,0.10)', color: '#dc2626' }}>
             <Power size={12} /> Suspend
           </button>
           <button onClick={bulkExport} disabled={bulkBusy}
-            className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-[11.5px] font-[700] transition hover:opacity-80 disabled:opacity-50"
+            className="flex min-h-[44px] items-center gap-1.5 rounded-[8px] px-2.5 text-[11.5px] font-[700] transition hover:opacity-80 disabled:opacity-50"
             style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
             <Download size={12} /> Export
           </button>
@@ -297,7 +297,7 @@ export function MoreMenu({ suspended, onToggleStatus, onSupportAccess, supportBu
   return (
     <div ref={ref} className="relative">
       <button onClick={() => setOpen((s) => !s)} title="More"
-        className="flex h-9 w-9 items-center justify-center rounded-[10px] transition hover:bg-black/5"
+        className="flex h-11 w-11 items-center justify-center rounded-[10px] transition hover:bg-black/5"
         style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
         <MoreVertical size={15} />
       </button>
@@ -492,16 +492,16 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
             it down to "A..", with every badge and stat wrapping one per
             line below. Actions now get their own full-width row. */}
         <div className="flex items-start gap-3">
-          <button onClick={onToggleSelect} title="Select" className="mt-2.5 flex-shrink-0" style={{ color: selected ? 'var(--brand)' : 'var(--text-disabled)' }}>
+          <button onClick={onToggleSelect} title="Select" className="-m-1.5 flex flex-shrink-0 items-center justify-center rounded-[8px] p-1.5" style={{ color: selected ? 'var(--brand)' : 'var(--text-disabled)', minHeight: 44, minWidth: 44 }}>
             {selected ? <CheckSquare size={16} /> : <Square size={16} />}
           </button>
           <div className="relative flex-shrink-0">
             <StudioMark name={org.name} logoUrl={org.logo_url} size={44} />
             <input aria-label="Upload a studio logo" ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onLogoPick} />
             <button onClick={() => fileRef.current?.click()} disabled={uploading} title="Upload / change logo"
-              className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full transition hover:opacity-80"
+              className="absolute -bottom-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full transition hover:opacity-80"
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-              {uploading ? <Loader2 size={11} className="animate-spin" /> : <ImagePlus size={11} />}
+              {uploading ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />}
             </button>
           </div>
           <div className="min-w-0 flex-1 pt-0.5">
@@ -533,12 +533,12 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
         {/* Actions — dedicated row, never shares space with the name again. */}
         <div className="mt-3 flex items-center gap-2">
           <button onClick={toggleExpand} title="Open studio — manage accounts"
-            className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80"
+            className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80"
             style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
             Open <ChevronDown size={14} style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
           </button>
           <button onClick={() => impersonate('read_only')} disabled={suspended || impLoading === 'read_only:primary'} title="View this studio as its admin (read-only)"
-            className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80 disabled:opacity-40"
+            className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80 disabled:opacity-40"
             style={{ background: 'rgba(0,103,224,0.10)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.25)' }}>
             {impLoading === 'read_only:primary' ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />} View as
           </button>
@@ -672,7 +672,7 @@ export function StudioOperatorPanel({ org, onChanged }: { org: Organization; onC
           />
           <button
             onClick={grant} disabled={granting}
-            className="flex h-9 items-center gap-1.5 rounded-[9px] px-3 text-[11.5px] font-[700] text-white disabled:opacity-50"
+            className="flex h-11 items-center gap-1.5 rounded-[9px] px-3 text-[11.5px] font-[700] text-white disabled:opacity-50"
             style={{ background: '#0067e0' }}
           >
             {granting ? <Loader2 size={12} className="animate-spin" /> : <Gift size={12} />} Grant
@@ -698,7 +698,7 @@ export function StudioOperatorPanel({ org, onChanged }: { org: Organization; onC
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
           <button
             onClick={saveNotes} disabled={savingNotes || !dirty}
-            className="flex h-8 items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[700] disabled:opacity-40"
+            className="flex h-11 items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[700] disabled:opacity-40"
             style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
           >
             {savingNotes ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />} Save
@@ -928,7 +928,7 @@ export function BillingProfileEditor({ orgId }: { orgId: string }) {
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <button
               onClick={save} disabled={saving || !dirty}
-              className="flex h-8 items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[700] disabled:opacity-40"
+              className="flex h-11 items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[700] disabled:opacity-40"
               style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
             >
               {saving ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />} Save

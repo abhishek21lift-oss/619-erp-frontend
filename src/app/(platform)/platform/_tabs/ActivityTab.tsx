@@ -56,14 +56,14 @@ export function ActivityTab() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <select aria-label="Filter by studio" value={orgFilter} onChange={(e) => setOrgFilter(e.target.value)}
-          className="rounded-[10px] px-3 py-2 text-[12.5px] outline-none"
+          className="min-h-[44px] min-w-0 flex-1 rounded-[10px] px-3 text-[12.5px] outline-none"
           style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
           <option value="">All studios</option>
           {orgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
         </select>
-        <button onClick={load} className="flex h-9 w-9 items-center justify-center rounded-[10px] transition hover:bg-black/5"
+        <button onClick={load} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[10px] transition hover:bg-black/5"
           style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }} title="Refresh"><RefreshCw size={14} /></button>
       </div>
 

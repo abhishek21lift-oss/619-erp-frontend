@@ -129,7 +129,7 @@ export function FinanceDashboardTab({ onNavigate }: { onNavigate: (t: FinanceSub
 
       <div>
         <SectionLabel hint={
-          <button onClick={() => onNavigate('billing')} className="flex items-center gap-1 font-[650]" style={{ color: 'var(--brand)' }}>
+          <button onClick={() => onNavigate('billing')} className="-my-2.5 flex items-center gap-1 py-2.5 font-[650]" style={{ color: 'var(--brand)', minHeight: 44 }}>
             Manage in Billing <ArrowRight size={11} />
           </button>
         }>
@@ -239,7 +239,7 @@ export function BillingTab() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <button onClick={() => setPayTarget(s)}
-                    className="flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] text-white transition hover:opacity-90"
+                    className="flex h-11 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] text-white transition hover:opacity-90"
                     style={{ background: 'linear-gradient(135deg,#059669,#10b981)' }}>
                     <IndianRupee size={13} /> Record Payment
                   </button>
@@ -305,7 +305,7 @@ export function RecordPaymentModal({ studio, plans, onClose, onDone }: { studio:
           <input className={inputCls} style={inputStyle} type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
           {studio.is_founder && <p className="mt-1 text-[11px]" style={{ color: '#b45309' }}>Founder — lifetime-locked price ₹{studio.locked_price_inr?.toLocaleString('en-IN')}.</p>}
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Method">
             <select className={inputCls} style={inputStyle} value={method} onChange={(e) => setMethod(e.target.value)}>
               {['upi', 'bank', 'cash', 'razorpay', 'comp'].map((m) => <option key={m} value={m}>{m}</option>)}
@@ -387,7 +387,7 @@ export function ExecuteChangeModal({ studio, planCode, onClose, onDone }: { stud
           <Field label="Amount received (₹)">
             <input className={inputCls} style={inputStyle} type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Method">
               <select className={inputCls} style={inputStyle} value={method} onChange={(e) => setMethod(e.target.value)}>
                 {['upi', 'bank', 'cash', 'razorpay', 'comp'].map((m) => <option key={m} value={m}>{m}</option>)}
@@ -490,7 +490,8 @@ export function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStud
                       already looking at, rather than making them go to Finance
                       and search for the number. */}
                   <a href={api.superAdmin.invoicePdfUrl(inv.id)} target="_blank" rel="noopener noreferrer"
-                    aria-label={`Open invoice ${inv.invoice_number} as PDF`} style={{ color: 'var(--text-muted)' }}>
+                    aria-label={`Open invoice ${inv.invoice_number} as PDF`}
+                    className="-m-2.5 flex items-center justify-center p-2.5" style={{ color: 'var(--text-muted)', minHeight: 44, minWidth: 44 }}>
                     <FileText size={13} />
                   </a>
                 </span>
@@ -505,7 +506,7 @@ export function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStud
             {detail.payments.map((p) => (
               <div key={p.id} className="flex items-center justify-between gap-2 py-1.5 text-[12px]" style={{ borderTop: '1px solid var(--border)' }}>
                 <span className="min-w-0 truncate" style={{ color: 'var(--text-secondary)' }}>{fmtDate(p.created_at)} · {p.method || '—'} · {fmtINR(p.amount_inr)}{p.status === 'refunded' ? ' (refunded)' : ''}</span>
-                {p.status === 'paid' && <button onClick={() => { if (window.confirm('Refund this payment?')) act(() => api.superAdmin.refundPayment(p.id), 'Payment refunded.'); }} className="flex-shrink-0 text-[11px] font-[650]" style={{ color: '#dc2626' }}>Refund</button>}
+                {p.status === 'paid' && <button onClick={() => { if (window.confirm('Refund this payment?')) act(() => api.superAdmin.refundPayment(p.id), 'Payment refunded.'); }} className="-my-2 flex-shrink-0 px-2 py-2 text-[11px] font-[650]" style={{ color: '#dc2626', minHeight: 44 }}>Refund</button>}
               </div>
             ))}
           </div>

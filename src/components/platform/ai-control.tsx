@@ -344,7 +344,7 @@ function SettingsPanel({ settings, onChanged }: { settings: AiSettings; onChange
             warn_at_pct: Number(warn),
           })}
           disabled={saving}
-          className="flex h-9 items-center gap-1.5 rounded-[9px] px-3 text-[12px] font-[700] text-white disabled:opacity-50"
+          className="flex h-11 items-center gap-1.5 rounded-[9px] px-3 text-[12px] font-[700] text-white disabled:opacity-50"
           style={{ background: 'var(--brand)' }}
         >
           {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />} Save
@@ -460,7 +460,7 @@ function RoutingPanel({ routing, onChanged }: { routing: AiRouting; onChanged: (
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <button
           onClick={save} disabled={!dirty || busy}
-          className="flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[700] transition-opacity disabled:opacity-40"
+          className="flex min-h-[44px] items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition-opacity disabled:opacity-40"
           style={{ background: 'var(--brand)', color: '#fff' }}
         >
           {busy ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
@@ -469,7 +469,7 @@ function RoutingPanel({ routing, onChanged }: { routing: AiRouting; onChanged: (
         {dirty && (
           <button
             onClick={reset}
-            className="flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[650]"
+            className="flex min-h-[44px] items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[650]"
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
           >
             <RotateCcw size={13} /> Discard
@@ -564,7 +564,7 @@ export default function AiControlCentre() {
           {RANGES.map((d) => (
             <button
               key={d} onClick={() => setDays(d)}
-              className="min-h-[32px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
+              className="min-h-[44px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
               style={days === d
                 ? { background: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(15,23,42,0.10)' }
                 : { color: 'var(--text-muted)' }}
