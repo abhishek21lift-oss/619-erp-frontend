@@ -34,7 +34,7 @@ import {
   FileSignature, HeartPulse, Apple, PersonStanding, MessageCircle, Phone,
   AlertTriangle, Clock, IndianRupee,
   Accessibility, Dumbbell,
-  Lock, PartyPopper, TrendingUp,
+  PartyPopper, TrendingUp,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAsync } from '@/lib/use-async';
@@ -848,55 +848,53 @@ function MonthlyTarget() {
 
   return (
     <Glass
-      className="overflow-hidden p-4 sm:p-5"
+      className="relative overflow-hidden p-4 sm:p-5"
       onClick={() => router.push('/insights/revenue')}
-      style={{ cursor: 'pointer' }}
+      style={{
+        cursor: 'pointer',
+        // The card takes the month's own colour. Ahead is green, behind is
+        // amber, badly behind is red — so the state is legible from across a
+        // room, before a single word has been read.
+        background: `linear-gradient(150deg, ${rgba(tone.ring, 0.13)} 0%, var(--bg-card) 52%)`,
+        border: `1px solid ${rgba(tone.ring, 0.24)}`,
+        boxShadow: `0 8px 26px ${rgba(tone.ring, 0.13)}`,
+      }}
     >
       <div className="flex items-center gap-4 sm:gap-5">
         <TargetRing pct={pct} colour={tone.ring} />
 
         <div className="min-w-0 flex-1">
-          {/* Month, and how much of it is left — the number that makes the
-              percentage mean something. */}
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="text-[11px] font-[750] uppercase tracking-[0.1em]" style={{ color: C.muted }}>
-              {month}
-            </p>
-            {data.locked && (
-              <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-[750]"
-                style={{ background: 'rgba(15,23,42,0.05)', color: C.muted }}>
-                <Lock size={8} /> Locked
-              </span>
-            )}
-          </div>
+          {/* Four lines, down from six.
+              The "Locked" chip and the status chip both went: the ring's
+              colour already says how the month is going, and whether the
+              target can still be edited is a fact about a form on another
+              screen, not about the month. What is left is the month, what
+              came in, what it was measured against, and the one figure that
+              follows — over, or still to go. */}
+          <p className="text-[11px] font-[750] uppercase tracking-[0.1em]" style={{ color: C.muted }}>
+            {month}
+          </p>
 
           {/* The headline is what came IN, not the percentage — a trainer
               scanning this wants the money, and the ring already carries the
               ratio. Counted up, like every other money figure here. */}
-          <p className="mt-1 tabular-nums text-[24px] sm:text-[27px] font-[860] leading-none"
+          <p className="mt-1 tabular-nums text-[26px] sm:text-[30px] font-[860] leading-none"
             style={{ color: C.ink, letterSpacing: '-0.03em' }}>
             <CountUp value={Number(data.achieved)} format={fmtCompact} reduce={!!reduce} />
           </p>
-          <p className="mt-1 text-[11.5px]" style={{ color: C.muted }}>
+          <p className="mt-1.5 text-[11.5px]" style={{ color: C.muted }}>
             of <span className="font-[750]" style={{ color: C.ink }}>{fmtCompact(data.target_amount)}</span>
             {' · '}{daysLeft} day{daysLeft === 1 ? '' : 's'} left
           </p>
 
-          {/* Status, and the one figure that follows from it: what is still to
-              collect, or what has been made over. Only one of the two is ever
-              true, so only one is shown. */}
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-[10px] font-[780]"
-              style={{ background: rgba(tone.ring, 0.12), color: tone.ring }}>
-              {tone.icon === 'smashed' ? <PartyPopper size={10} />
-                : tone.icon === 'up' ? <TrendingUp size={10} />
-                : <AlertTriangle size={10} />}
-              {tone.label}
-            </span>
-            <span className="text-[10.5px] font-[700] tabular-nums" style={{ color: beat ? C.success : C.muted }}>
-              {beat ? `+${fmtCompact(surplus)} over` : `${fmtCompact(balance)} to go`}
-            </span>
-          </div>
+          <span className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-[4px] text-[11px] font-[800] tabular-nums text-white"
+            style={{
+              background: `linear-gradient(135deg, ${tone.ring}, ${tone.ring}bb)`,
+              boxShadow: `0 3px 10px ${rgba(tone.ring, 0.4)}`,
+            }}>
+            {beat ? <PartyPopper size={11} /> : <TrendingUp size={11} />}
+            {beat ? `${fmtCompact(surplus)} over` : `${fmtCompact(balance)} to go`}
+          </span>
         </div>
 
         <ChevronRight size={16} className="hidden shrink-0 sm:block" style={{ color: C.muted }} />
@@ -1479,6 +1477,15 @@ export type TodayRow = {
   /** Wall-clock start, or null for a due client nobody has scheduled. */
   time: string | null;
   href: string;
+  /**
+   * This session has been started and not finished.
+   *
+   * The card cannot work this out for itself: the queue is already ordered
+   * with the running session first, so a card that assumed "row one is
+   * running" would label the first row LIVE on a morning where nobody has
+   * started yet. Which is most mornings.
+   */
+  live: boolean;
 };
 
 /**
@@ -1523,6 +1530,7 @@ export function buildTodayQueue(roster: TodayClient[]): TodayRow[] {
       key: c.client_id,
       name: c.client_name,
       photo: c.client_photo,
+      live: running(c),
       sub: !c.plan_name
         ? 'No programme yet'
         : c.planned_exercises > 0
@@ -1566,12 +1574,15 @@ function TodaySchedule() {
 
   return (
     <Glass className="overflow-hidden">
-      {/* Header. Flat, on the card's own surface — the tinted band and the
-          gradient icon that used to be here were what made this compete with
-          the hero. */}
+      {/* Header. The mark carries the card's colour so the rows below do not
+          have to shout — an earlier version put a tinted band across the whole
+          top and ended up competing with the hero directly above it. */}
       <div className="flex items-center gap-2.5 px-4 pt-3.5 pb-2.5 sm:px-5">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]"
-          style={{ background: `${C.danger}12`, color: C.danger }}>
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] text-white"
+          style={{
+            background: `linear-gradient(135deg, ${C.danger}, ${palette.amber[400]})`,
+            boxShadow: `0 4px 12px ${C.danger}40`,
+          }}>
           <CalendarClock size={14} />
         </span>
         <div className="min-w-0 flex-1">
@@ -1628,51 +1639,88 @@ function TodaySchedule() {
         )}
 
         {shown.length > 0 && (
-          <div className="space-y-1.5">
-            {shown.map((r, i) => (
-              <m.button
-                key={r.key}
-                type="button"
-                onClick={() => router.push(r.href)}
-                initial={reduce ? false : { opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: reduce ? 0 : i * 0.05, duration: 0.24, ease: EASE }}
-                className="flex w-full items-center gap-2.5 rounded-[13px] p-2.5 text-left transition-colors hover:bg-[rgba(15,23,42,0.03)]"
-                style={{ border: '1px solid rgba(15,23,42,0.07)' }}
-              >
-                <ClientAvatar
-                  name={r.name}
-                  photoUrl={r.photo}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-[820]"
-                  style={{ background: 'rgba(100,116,139,0.13)', color: C.ink }} />
+          <div className="space-y-2">
+            {shown.map((r, i) => {
+              // Two different promises, and the row has to say which it is.
+              //
+              // ON THE FLOOR is the session that has been started and not
+              // finished — the person the trainer is standing in front of.
+              // NEXT is the first one that has not, whether that is row one on
+              // a morning nobody has begun, or row two behind a live session.
+              //
+              // The queue is already ordered so this is a matter of reading
+              // `live` rather than counting rows: labelling by index alone
+              // would put NEXT on a client who is mid-set.
+              const nextUp = !r.live && !shown.slice(0, i).some((p) => !p.live);
+              const accent = r.live ? C.success : nextUp ? C.primary : C.muted;
+              return (
+                <m.button
+                  key={r.key}
+                  type="button"
+                  onClick={() => router.push(r.href)}
+                  initial={reduce ? false : { opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: reduce ? 0 : i * 0.05, duration: 0.24, ease: EASE }}
+                  className="relative flex w-full items-center gap-2.5 overflow-hidden rounded-[14px] p-2.5 pl-3 text-left transition-transform active:scale-[0.99]"
+                  style={{
+                    background: `linear-gradient(115deg, ${accent}12 0%, ${accent}05 40%, transparent 88%)`,
+                    border: `1px solid ${accent}2b`,
+                    boxShadow: r.live ? `0 4px 16px ${accent}1f` : 'none',
+                  }}
+                >
+                  {/* The one bar of solid colour. It reads down the list as a
+                      spine: green while somebody is training, blue for who is
+                      up next, grey for everyone waiting behind them. */}
+                  <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full"
+                    style={{ background: accent }} aria-hidden />
 
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5">
-                    <span className="truncate text-[12.5px] font-[730]" style={{ color: C.ink }}>
-                      {r.name ?? 'Unknown client'}
-                    </span>
-                    {/* The whole of "next up". A chip, where there used to be a
-                        navy gradient card fighting the hero for attention. */}
-                    {i === 0 && (
-                      <span className="shrink-0 rounded-full px-1.5 py-[1px] text-[8px] font-[820] uppercase tracking-[0.08em]"
-                        style={{ background: `${C.primary}14`, color: C.primary }}>
-                        Next
+                  <ClientAvatar
+                    name={r.name}
+                    photoUrl={r.photo}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-[820]"
+                    style={{ background: `${accent}1f`, color: C.ink }} />
+
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="truncate text-[12.5px] font-[730]" style={{ color: C.ink }}>
+                        {r.name ?? 'Unknown client'}
                       </span>
-                    )}
+                      {(r.live || nextUp) && (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-[1px] text-[8px] font-[820] uppercase tracking-[0.08em]"
+                          style={{ background: `${accent}1a`, color: accent }}>
+                          {r.live && (
+                            // Breathing, because a live session is the one
+                            // thing on this card that is changing while it is
+                            // being looked at. Held still for anybody who has
+                            // asked for less motion.
+                            <span
+                              className={reduce ? 'h-[5px] w-[5px] rounded-full' : 'h-[5px] w-[5px] animate-pulse rounded-full'}
+                              style={{ background: accent }} aria-hidden />
+                          )}
+                          {r.live ? 'On the floor' : 'Next'}
+                        </span>
+                      )}
+                    </span>
+                    <span className="block truncate text-[10px] font-[540]" style={{ color: C.muted }}>
+                      {/* A time when there is one; the row is a due client when
+                          there is not, and inventing one would be a lie. */}
+                      {r.time ? `${fmtTime12(r.time)} · ` : ''}{r.sub}
+                    </span>
                   </span>
-                  <span className="block truncate text-[10px] font-[540]" style={{ color: C.muted }}>
-                    {/* A time when there is one; the row is a due client when
-                        there is not, and inventing one would be a lie. */}
-                    {r.time ? `${fmtTime12(r.time)} · ` : ''}{r.sub}
-                  </span>
-                </span>
 
-                <span className="inline-flex h-[26px] shrink-0 items-center gap-1 rounded-full px-2.5 text-[10px] font-[780]"
-                  style={{ background: `${C.danger}10`, color: C.danger }}>
-                  Start <ChevronRight size={11} />
-                </span>
-              </m.button>
-            ))}
+                  {/* Resume, not Start, once a log is open — pressing Start on
+                      a session already running is how a trainer ends up with
+                      two logs for one workout. */}
+                  <span className="inline-flex h-[28px] shrink-0 items-center gap-1 rounded-full px-2.5 text-[10px] font-[800] text-white"
+                    style={{
+                      background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+                      boxShadow: `0 3px 9px ${accent}45`,
+                    }}>
+                    {r.live ? 'Resume' : 'Start'} <ChevronRight size={11} />
+                  </span>
+                </m.button>
+              );
+            })}
 
             {hidden > 0 && (
               <button
