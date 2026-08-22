@@ -125,7 +125,7 @@ describe('the app uses only the palette', () => {
     // The visualization system (components/visualizations) is the fourth,
     // same shape again: MY PT STUDIO's chart identity (saffron accent, navy
     // "premium" surface, a wider categorical series ramp than five semantic
-    // families can carry) lives entirely in theme/tokens.ts and is confined
+    // families can carry) lives entirely in theme/colors.ts and is confined
     // there by the assertion below.
     const known = new Set(
       [...allHexes(), ...Object.values(founderGold)].map((h) => h.toUpperCase())
@@ -201,7 +201,7 @@ describe('the app uses only the palette', () => {
   it('confines the visualization surface to its own token file', () => {
     // Same rule as the marketing page, same reason: MY PT STUDIO's chart
     // identity (saffron, navy, the wider series ramp) lives once, in
-    // visualizations/theme/tokens.ts. Every other file in the folder must
+    // visualizations/theme/colors.ts. Every other file in the folder must
     // reach it through that module (or through a var(--token, #fallback)
     // whose fallback is itself a sanctioned five-family value — that's not a
     // new colour, it's the existing one spelled defensively) rather than
@@ -213,7 +213,7 @@ describe('the app uses only the palette', () => {
         const p = join(dir, entry);
         if (statSync(p).isDirectory()) { walk(p); continue; }
         if (!/\.tsx?$/.test(entry)) continue;
-        if (p.endsWith(join('theme', 'tokens.ts'))) continue;
+        if (p.endsWith(join('theme', 'colors.ts'))) continue;
         const text = readFileSync(p, 'utf8');
         const known = new Set(allHexes().map((h) => h.toUpperCase()));
         for (const m of text.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {

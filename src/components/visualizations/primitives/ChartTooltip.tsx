@@ -1,7 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { navy, typography } from '../theme';
+import { navy } from '../theme/colors';
+import { fontFamily, fontSize, fontWeight, letterSpacing } from '../theme/typography';
+import { radius, shadow } from '../theme/shape';
+import { spacing } from '../theme/spacing';
+import { tooltipChrome } from '../theme/chartStyle';
 import type { Surface } from '../theme/surface';
 
 /**
@@ -9,7 +13,7 @@ import type { Surface } from '../theme/surface';
  * render prop constructs a <ChartTooltipCard> instead of styling its own —
  * this is what "premium tooltips" and "no duplicated chart styling" cash out
  * to: one glass card, one shadow recipe, reused by all seven chart types and
- * both surfaces.
+ * both surfaces. Every value below is a theme token.
  */
 
 export interface ChartTooltipRow {
@@ -31,27 +35,25 @@ export function ChartTooltipCard({ heading, rows, surface = 'auto' }: ChartToolt
     <div
       role="tooltip"
       style={{
-        fontFamily: typography.sans,
-        fontSize: typography.size.base,
-        minWidth: 140,
-        borderRadius: 12,
-        padding: '10px 12px',
+        fontFamily: fontFamily.sans,
+        fontSize: fontSize.base,
+        minWidth: tooltipChrome.minWidth,
+        borderRadius: radius.tooltip,
+        padding: spacing.tooltipPadding,
         background: dark ? 'rgba(16,27,48,0.96)' : 'var(--bg-elevated, #fff)',
         border: `1px solid ${dark ? navy.line : 'var(--border, rgba(15,23,42,0.08))'}`,
-        boxShadow: dark
-          ? '0 16px 40px -12px rgba(0,0,0,0.6)'
-          : '0 16px 40px -12px rgba(15,23,42,0.22)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
+        boxShadow: dark ? shadow.tooltipDark : shadow.tooltip,
+        backdropFilter: `blur(${tooltipChrome.blur}px)`,
+        WebkitBackdropFilter: `blur(${tooltipChrome.blur}px)`,
       }}
     >
       {heading && (
         <div
           style={{
-            marginBottom: 6,
-            fontSize: typography.size.xs,
-            fontWeight: 700,
-            letterSpacing: '0.04em',
+            marginBottom: spacing.tooltipRowGap + 2,
+            fontSize: fontSize.xs,
+            fontWeight: fontWeight.bold,
+            letterSpacing: letterSpacing.wide,
             textTransform: 'uppercase',
             color: dark ? navy.faint : 'var(--text-muted, #64748b)',
           }}
@@ -59,26 +61,26 @@ export function ChartTooltipCard({ heading, rows, surface = 'auto' }: ChartToolt
           {heading}
         </div>
       )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.tooltipRowGap }}>
         {rows.map((row, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: spacing.tooltipItemGap }}>
             {row.color && (
               <span
                 aria-hidden
                 style={{
                   width: 8,
                   height: 8,
-                  borderRadius: 999,
+                  borderRadius: radius.tooltipDot,
                   background: row.color,
                   flexShrink: 0,
-                  boxShadow: `0 0 0 2px ${dark ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.03)'}`,
+                  boxShadow: dark ? shadow.dotRingDark : shadow.dotRing,
                 }}
               />
             )}
             <span
               style={{
                 color: dark ? navy.body : 'var(--text-muted, #64748b)',
-                fontWeight: 500,
+                fontWeight: fontWeight.medium,
               }}
             >
               {row.label}
@@ -86,9 +88,9 @@ export function ChartTooltipCard({ heading, rows, surface = 'auto' }: ChartToolt
             <span
               style={{
                 marginLeft: 'auto',
-                paddingLeft: 16,
-                fontFamily: typography.mono,
-                fontWeight: 700,
+                paddingLeft: spacing.tooltipValueGap,
+                fontFamily: fontFamily.mono,
+                fontWeight: fontWeight.bold,
                 fontVariantNumeric: 'tabular-nums',
                 color: dark ? navy.ink : 'var(--text-primary, #0f172a)',
               }}

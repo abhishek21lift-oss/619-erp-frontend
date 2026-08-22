@@ -4,7 +4,13 @@ import * as React from 'react';
 import { ResponsiveBar } from '@nivo/bar';
 import type { BarDatum } from '@nivo/bar';
 import { ChartShell, ChartLegend, ChartLoading, ChartEmpty, ChartError, ChartTooltipCard, useChartMotion } from './primitives';
-import { nivoThemeFor, series as seriesPalette, defaultFormat } from './theme';
+import { series as seriesPalette } from './theme/colors';
+import { radius } from './theme/shape';
+import { chartHeight, chartMargin, barPadding } from './theme/spacing';
+import { axis } from './theme/chartStyle';
+import { useIsCompactChart, scaleMargin } from './theme/responsive';
+import { nivoThemeFor } from './theme/nivoTheme';
+import { defaultFormat } from './theme/format';
 import { buildGradientFill } from './theme/gradients';
 import type { Surface } from './theme/surface';
 
@@ -44,12 +50,14 @@ export interface PremiumBarChartProps {
 /**
  * The system's bar chart — revenue by month, check-ins by day, sessions by
  * trainer. One or many series, grouped or stacked, zero-anchored always.
+ * Every layout constant below is a theme token (shape.ts / spacing.ts /
+ * chartStyle.ts), not a number chosen for this component alone.
  */
 export function PremiumBarChart({
   data,
   xKey,
   bars,
-  height = 240,
+  height = chartHeight.bar,
   title,
   subtitle,
   icon,
@@ -67,6 +75,7 @@ export function PremiumBarChart({
   className,
 }: PremiumBarChartProps) {
   const motionProps = useChartMotion();
+  const compact = useIsCompactChart();
 
   const colorByKey = React.useMemo(() => {
     const map: Record<string, string> = {};
@@ -108,10 +117,10 @@ export function PremiumBarChart({
         indexBy={xKey}
         layout={layout}
         groupMode={groupMode}
-        margin={{ top: 8, right: 6, bottom: 28, left: 44 }}
-        padding={bars.length > 1 ? 0.32 : 0.42}
-        innerPadding={bars.length > 1 ? 3 : 0}
-        borderRadius={5}
+        margin={scaleMargin(chartMargin.bar, compact)}
+        padding={bars.length > 1 ? barPadding.multiSeries : barPadding.singleSeries}
+        innerPadding={bars.length > 1 ? barPadding.innerPadding : 0}
+        borderRadius={radius.bar}
         colors={(d) => colorByKey[String(d.id)] ?? seriesPalette[0]}
         defs={gradient.defs}
         fill={gradient.fill}
@@ -119,8 +128,8 @@ export function PremiumBarChart({
         enableGridY={layout === 'vertical'}
         axisTop={null}
         axisRight={null}
-        axisBottom={{ tickSize: 0, tickPadding: 10 }}
-        axisLeft={layout === 'vertical' ? { tickSize: 0, tickPadding: 8, format: (v) => formatValue(Number(v)) } : null}
+        axisBottom={{ tickSize: axis.tickSize, tickPadding: axis.tickPaddingX }}
+        axisLeft={layout === 'vertical' ? { tickSize: axis.tickSize, tickPadding: axis.tickPaddingY, format: (v) => formatValue(Number(v)) } : null}
         enableLabel={false}
         role="img"
         isFocusable

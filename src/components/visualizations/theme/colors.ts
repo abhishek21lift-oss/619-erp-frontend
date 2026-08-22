@@ -1,9 +1,6 @@
 /**
- * MY PT STUDIO visualization tokens — the single source of colour, motion and
- * spacing values for every chart in src/components/visualizations.
- *
- * Nothing here is invented. It's assembled from what the app already declared
- * as its brand:
+ * MY PT STUDIO visualization colours — chart colour, gradient colour and
+ * status colour all trace back to this one file. Nothing here is invented:
  *
  *   · Saffron (#F59E0B and its ramp) is already the app's public-facing accent
  *     — see --saffron-* in src/app/globals.css and the "gold" tokens in
@@ -13,13 +10,15 @@
  *   · The near-black navy surface (canvas/panel) is the landing page's dark
  *     canvas, verbatim — the "premium SaaS" dark card look this system needs
  *     for hero metrics already exists; this reuses it instead of redrawing it.
- *   · Neutrals for the "auto" surface (the default — charts that sit inside
- *     an ordinary light/dark-toggle-aware card) are CSS custom properties
- *     (var(--text-muted), var(--border), …) from globals.css, not literals —
- *     so a chart re-colours itself the instant [data-theme] flips, with zero
- *     JS branching and no light/dark duplication of this file.
- *   · The house easing curve [0.16, 1, 0.3, 1] is the same one already named
- *     EASE across PtOsDashboard.tsx and the landing components.
+ *
+ * Every other visualization/theme/*.ts file, and every chart component, reads
+ * colour through this module (or through a CSS var(--token, #fallback) whose
+ * fallback is one of the app's own sanctioned five-family values) — never a
+ * hand-written hex. src/__tests__/palette.test.ts enforces that: it confines
+ * every literal hex under components/visualizations to this one file, the
+ * same way the marketing page is confined to landing/tokens.ts. Changing the
+ * studio's accent, in the future, is a one-line edit to `saffron[500]` here —
+ * every chart, every gradient, every ring picks it up.
  *
  * SAFFRON IS THE ACCENT, NOT THE WARNING COLOUR. The app's semantic amber
  * (pending / due soon) happens to share saffron's hex — that's an existing
@@ -102,52 +101,25 @@ export const band = {
   worst: '#DC2626',
 } as const;
 
-/** House easing — identical to EASE in PtOsDashboard.tsx and the landing page. */
-export const EASE = [0.16, 1, 0.3, 1] as const;
-
-export const motion = {
-  /** Nivo's own transition duration for entrance/update animation. */
-  duration: 650,
-  /** Framer-motion transition, for anything hand-animated inside a chart shell. */
-  spring: { duration: 0.65, ease: EASE },
-  reducedSpring: { duration: 0 },
-} as const;
+/** Hex → `rgba(r,g,b,a)`, for tints and glows derived from a token above. */
+export function rgba(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
 
 /**
- * Spacing and radii — aliases onto the app's own --radius-* (and --shadow-*)
- * custom properties so a chart card is dimensionally identical to every
- * other card around it. Kept as CSS var() strings, not literals, so a global
- * radius/shadow change still reaches every chart with zero edits here.
+ * The icon chip every ChartShell header renders behind its icon. Always
+ * saffron — it's brand identity, not app state, so unlike everything else in
+ * the "auto" surface it does NOT read `var(--brand)`: that CSS var resolves
+ * to the app's operational blue, not the studio's saffron accent, and routing
+ * through it here would silently paint every chart's icon chip blue.
  */
-export const shape = {
-  radius: 'var(--radius-md, 16px)',
-  radiusSm: 'var(--radius-sm, 10px)',
-  radiusFull: 'var(--radius-full, 9999px)',
-  border: 'var(--border, rgba(15,23,42,0.08))',
-  shadow: 'var(--shadow-card, 0 1px 2px rgba(15,23,42,0.04), 0 4px 16px rgba(15,23,42,0.05))',
-  padding: 20,
-  paddingSm: 14,
-  gap: 14,
+export const iconChip = {
+  bg: rgba(saffron[500], 0.12),
+  bgDark: rgba(saffron[500], 0.14),
+  fg: saffron[600],
+  fgDark: saffron[400],
 } as const;
-
-/** Font stacks — the app's own, never a chart-specific typeface. */
-export const type = {
-  sans: 'var(--font-sans, Inter, system-ui, sans-serif)',
-  mono: 'var(--font-mono, "JetBrains Mono", "Fira Code", monospace)',
-  size: {
-    xs: 10,
-    sm: 11,
-    base: 12,
-    label: 13,
-    value: 20,
-  },
-} as const;
-
-/** Formats a number the same way across every chart unless a caller overrides it. */
-export function defaultFormat(n: number): string {
-  if (!Number.isFinite(n)) return '—';
-  if (Math.abs(n) >= 1_00_00_000) return `${(n / 1_00_00_000).toFixed(1)}Cr`;
-  if (Math.abs(n) >= 1_00_000) return `${(n / 1_00_000).toFixed(1)}L`;
-  if (Math.abs(n) >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toLocaleString('en-IN');
-}

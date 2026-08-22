@@ -6,7 +6,9 @@ import {
   ChartShell, ChartLegend, ChartLoading, ChartEmpty, ChartError, LineChartCore,
   type PremiumSeriesSpec,
 } from './primitives';
-import { series as seriesPalette, defaultFormat } from './theme';
+import { series as seriesPalette } from './theme/colors';
+import { chartHeight } from './theme/spacing';
+import { defaultFormat } from './theme/format';
 import type { Surface } from './theme/surface';
 
 export interface PremiumAreaChartProps {
@@ -41,7 +43,7 @@ export function PremiumAreaChart({
   data,
   xKey,
   areas,
-  height = 220,
+  height = chartHeight.area,
   title,
   subtitle,
   icon,
@@ -101,7 +103,6 @@ export function PremiumAreaChart({
         colorByKey={colorByKey}
         labelByKey={labelByKey}
         enableArea
-        areaOpacity={1}
         curve={curve}
         formatValue={formatValue}
         surface={surface}

@@ -3,8 +3,12 @@
 import * as React from 'react';
 import { ResponsiveLine } from '@nivo/line';
 import type { CommonCustomLayerProps } from '@nivo/line';
-import { nivoThemeFor, defaultFormat, saffron } from './theme';
-import { buildGradientFill } from './theme/gradients';
+import { saffron } from './theme/colors';
+import { border } from './theme/shape';
+import { chartHeight, chartMargin, pointLayout } from './theme/spacing';
+import { nivoThemeFor } from './theme/nivoTheme';
+import { defaultFormat } from './theme/format';
+import { buildGradientFill, gradientPreset } from './theme/gradients';
 import { ChartTooltipCard, useChartMotion } from './primitives';
 import type { Surface } from './theme/surface';
 
@@ -32,21 +36,23 @@ type SparkSeries = { id: string; data: { x: string; y: number | null }[] };
 function LastPointLayer({ points }: CommonCustomLayerProps<SparkSeries>) {
   const last = points[points.length - 1];
   if (!last) return null;
-  return <circle cx={last.x} cy={last.y} r={3} fill={last.seriesColor} stroke="none" />;
+  return <circle cx={last.x} cy={last.y} r={pointLayout.sparklineDot} fill={last.seriesColor} stroke="none" />;
 }
 
 /**
  * The system's sparkline — a compact trend with no axes, no grid, no legend.
  * Full-bleed by design: it's meant to sit as a card's own bottom edge (a KPI
  * tile's six-month trend), not inside a bordered ChartShell, so unlike the
- * other six components it renders no card frame of its own.
+ * other six components it renders no card frame of its own. Every layout
+ * constant below is a theme token (shape.ts / spacing.ts), not a number
+ * chosen for this component alone.
  */
 export function PremiumSparkline({
   data,
   color = saffron[500],
   metric,
   format = defaultFormat,
-  height = 32,
+  height = chartHeight.sparkline,
   surface = 'auto',
   showArea = true,
   className,
@@ -58,7 +64,7 @@ export function PremiumSparkline({
   const nivoData: SparkSeries[] = [
     { id: metric, data: data.map((d) => ({ x: d.label, y: Number.isFinite(d.value) ? d.value : null })) },
   ];
-  const gradient = buildGradientFill([{ id: metric, color }], { fromOpacity: 0.28, toOpacity: 0.02 });
+  const gradient = buildGradientFill([{ id: metric, color }], gradientPreset.sparkline);
   const ariaLabel = `${metric}, last ${data.length} points: ${data.map((d) => Math.round(d.value)).join(', ')}`;
 
   return (
@@ -68,9 +74,9 @@ export function PremiumSparkline({
         xScale={{ type: 'point' }}
         yScale={{ type: 'linear', min: 0, max: 'auto', nice: false }}
         curve="monotoneX"
-        margin={{ top: 4, right: 3, bottom: 2, left: 3 }}
+        margin={chartMargin.sparkline}
         colors={[color]}
-        lineWidth={2}
+        lineWidth={border.sparklineWidth}
         enableArea={showArea}
         areaOpacity={showArea ? 1 : 0}
         areaBaselineValue={0}

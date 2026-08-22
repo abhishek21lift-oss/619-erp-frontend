@@ -2,7 +2,11 @@
 
 import * as React from 'react';
 import { cn } from '@/components/ui/cn';
-import { navy, shape, typography } from '../theme';
+import { navy, iconChip } from '../theme/colors';
+import { fontFamily } from '../theme/typography';
+import { radius, border, shadow } from '../theme/shape';
+import { spacing } from '../theme/spacing';
+import { useIsCompactChart, responsiveScale } from '../theme/responsive';
 import type { Surface } from '../theme/surface';
 
 export interface ChartShellProps {
@@ -33,7 +37,8 @@ export interface ChartShellProps {
  * The one card frame every Premium* component renders into. Title row,
  * fixed-height plot area, optional footer — sized and spaced identically
  * everywhere, so "no duplicated chart styling" holds at the layout level too,
- * not just inside the SVG.
+ * not just inside the SVG. Every value below is a theme token; nothing here
+ * is a number or colour typed for this component alone.
  */
 export function ChartShell({
   title,
@@ -49,6 +54,8 @@ export function ChartShell({
   children,
 }: ChartShellProps) {
   const dark = surface === 'dark';
+  const compact = useIsCompactChart();
+  const padding = compact ? Math.round(spacing.cardPadding * responsiveScale.padding) : spacing.cardPadding;
 
   return (
     <div
@@ -56,13 +63,13 @@ export function ChartShell({
       style={
         bordered
           ? {
-              borderRadius: shape.radius,
-              padding: shape.padding,
+              borderRadius: radius.card,
+              padding,
               background: dark
                 ? `linear-gradient(155deg, ${navy.panel} 0%, ${navy.canvasAlt} 100%)`
                 : 'var(--bg-card, #fff)',
-              border: `1px solid ${dark ? navy.line : shape.border}`,
-              boxShadow: dark ? '0 20px 48px -20px rgba(0,0,0,0.55)' : shape.shadow,
+              border: `${border.width}px solid ${dark ? navy.line : border.default}`,
+              boxShadow: dark ? shadow.cardDark : shadow.card,
             }
           : undefined
       }
@@ -72,10 +79,13 @@ export function ChartShell({
           <div className="flex min-w-0 items-center gap-2.5">
             {icon && (
               <span
-                className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-[10px]"
+                className="grid flex-shrink-0 place-items-center"
                 style={{
-                  background: dark ? 'rgba(245,158,11,0.14)' : 'var(--brand-soft, rgba(245,158,11,0.10))',
-                  color: dark ? '#FBBF24' : 'var(--brand, #F59E0B)',
+                  width: spacing.iconChip,
+                  height: spacing.iconChip,
+                  borderRadius: radius.chip,
+                  background: dark ? iconChip.bgDark : iconChip.bg,
+                  color: dark ? iconChip.fgDark : iconChip.fg,
                 }}
               >
                 {icon}
@@ -85,7 +95,7 @@ export function ChartShell({
               {title && (
                 <h3
                   className="truncate text-[13.5px] font-[750]"
-                  style={{ fontFamily: typography.sans, color: dark ? navy.ink : 'var(--text-primary)' }}
+                  style={{ fontFamily: fontFamily.sans, color: dark ? navy.ink : 'var(--text-primary)' }}
                 >
                   {title}
                 </h3>
@@ -108,7 +118,7 @@ export function ChartShell({
         {children}
       </div>
 
-      {footer && <div className="mt-3">{footer}</div>}
+      {footer && <div style={{ marginTop: spacing.gap / 2 }}>{footer}</div>}
     </div>
   );
 }

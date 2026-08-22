@@ -1,7 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { navy } from '../theme';
+import { navy } from '../theme/colors';
+import { fontSize, fontWeight } from '../theme/typography';
+import { radius } from '../theme/shape';
+import { spacing } from '../theme/spacing';
+import { legendChrome } from '../theme/chartStyle';
 import type { Surface } from '../theme/surface';
 
 export interface ChartLegendItem {
@@ -18,17 +22,28 @@ export function ChartLegend({ items, surface = 'auto' }: { items: ChartLegendIte
   if (!items.length) return null;
   const dark = surface === 'dark';
   return (
-    <ul className="m-0 flex flex-wrap items-center gap-x-4 gap-y-1.5 p-0" style={{ listStyle: 'none' }}>
+    <ul
+      className="m-0 flex flex-wrap items-center p-0"
+      style={{ listStyle: 'none', columnGap: spacing.legendGapX, rowGap: spacing.legendGapY }}
+    >
       {items.map((item) => (
-        <li key={item.label} className="flex items-center gap-1.5">
+        <li key={item.label} className="flex items-center" style={{ gap: spacing.legendItemGap }}>
           <span
             aria-hidden
-            className="h-2.5 w-2.5 flex-shrink-0 rounded-[3px]"
-            style={{ background: item.color }}
+            className="flex-shrink-0"
+            style={{
+              width: legendChrome.swatchSize,
+              height: legendChrome.swatchSize,
+              borderRadius: radius.legendSwatch,
+              background: item.color,
+            }}
           />
           <span
-            className="text-[11px] font-semibold"
-            style={{ color: dark ? navy.body : 'var(--text-secondary)' }}
+            style={{
+              fontSize: fontSize.sm,
+              fontWeight: fontWeight.semibold,
+              color: dark ? navy.body : 'var(--text-secondary)',
+            }}
           >
             {item.label}
           </span>

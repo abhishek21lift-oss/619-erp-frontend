@@ -2,7 +2,9 @@
 
 import * as React from 'react';
 import { ChartShell, ChartLegend, ChartLoading, ChartEmpty, ChartError, PieBase, type PieDatum } from './primitives';
-import { series as seriesPalette, defaultFormat } from './theme';
+import { series as seriesPalette } from './theme/colors';
+import { chartHeight } from './theme/spacing';
+import { defaultFormat } from './theme/format';
 import type { Surface } from './theme/surface';
 
 export interface PremiumPieChartProps {
@@ -31,7 +33,7 @@ export interface PremiumPieChartProps {
 export function PremiumPieChart({
   data,
   formatValue = defaultFormat,
-  height = 240,
+  height = chartHeight.pie,
   title,
   subtitle,
   icon,

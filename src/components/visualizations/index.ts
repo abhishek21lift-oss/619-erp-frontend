@@ -5,10 +5,13 @@
  * reaching into individual files, so the barrel stays the one place that
  * knows the full component list.
  *
- * Layout: theme/ (colour, motion, spacing tokens + the two Nivo themes) and
- * primitives/ (ChartShell, the shared tooltip, loading/empty/error states,
- * the reduced-motion hook) are what every Premium* component below is built
- * from — an eighth chart type should be built the same way, not from scratch.
+ * Layout: theme/ is the MY PT STUDIO Visualization Design System — colour,
+ * gradients, typography, grid lines, axis style, tooltip style, legends,
+ * radius, shadow, animation and spacing, plus the two Nivo themes and the
+ * responsive hook assembled from them — and primitives/ (ChartShell, the
+ * shared tooltip, loading/empty/error states) is what every Premium*
+ * component below is built from. An eighth chart type is built the same
+ * way: read layout/colour/motion from theme/, never write a literal.
  */
 
 export { PremiumBarChart } from './PremiumBarChart';
@@ -41,10 +44,27 @@ export type { PieDatum } from './primitives';
 export { ChartShell, ChartTooltipCard, ChartLegend, ChartLoading, ChartEmpty, ChartError, useChartMotion } from './primitives';
 export type { ChartShellProps, ChartTooltipRow } from './primitives';
 
-// Theme — for a page that needs a raw colour or the formatter outside a
-// chart (e.g. colouring a legend chip that lives next to, not inside, one).
+// The full design system — every token group, for a page that needs a raw
+// value outside a chart (e.g. colouring a legend chip that lives next to,
+// not inside, one) or a future chart type built outside these seven.
 export {
-  saffron, navy, series, semantic, band, EASE, motion, shape, typography, defaultFormat,
-  nivoThemeFor,
+  // colour
+  saffron, navy, series, semantic, band, rgba, iconChip,
+  // typography
+  fontFamily, fontSize, fontWeight, letterSpacing, typography,
+  // motion
+  EASE, duration, spring, framerTransition, framerTransitionReduced, motion,
+  // shape (radius / border / shadow)
+  radius, border, shadow, shape,
+  // spacing (padding, gaps, plot margins, per-chart-type defaults)
+  spacing, chartHeight, chartMargin, barPadding, pieLayout, radialLayout, pointLayout,
+  // grid / axis / tooltip / legend chrome
+  grid, axis, tooltipChrome, legendChrome,
+  // gradients
+  gradientPreset, buildGradientFill,
+  // responsive behaviour
+  breakpoint, responsiveScale, useIsCompactChart, scaleMargin,
+  // the assembled Nivo themes, and the default formatter
+  nivoThemeFor, defaultFormat,
 } from './theme';
-export type { Surface } from './theme/surface';
+export type { Surface, GradientPreset } from './theme';

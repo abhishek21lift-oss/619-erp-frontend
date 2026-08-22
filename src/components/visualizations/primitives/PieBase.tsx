@@ -3,7 +3,13 @@
 import * as React from 'react';
 import { ResponsivePie } from '@nivo/pie';
 import type { PieCustomLayerProps } from '@nivo/pie';
-import { nivoThemeFor, series as seriesPalette, defaultFormat, navy } from '../theme';
+import { navy, series as seriesPalette } from '../theme/colors';
+import { fontFamily, fontSize, fontWeight, letterSpacing } from '../theme/typography';
+import { radius, border } from '../theme/shape';
+import { pieLayout, chartMargin } from '../theme/spacing';
+import { useIsCompactChart, scaleMargin } from '../theme/responsive';
+import { nivoThemeFor } from '../theme/nivoTheme';
+import { defaultFormat } from '../theme/format';
 import { ChartTooltipCard } from './ChartTooltip';
 import { useChartMotion } from './useChartMotion';
 import type { Surface } from '../theme/surface';
@@ -36,9 +42,9 @@ function CenterLabelLayer(centerValue: React.ReactNode, centerLabel: string | un
           textAnchor="middle"
           dominantBaseline="central"
           style={{
-            fontFamily: 'var(--font-sans, Inter, sans-serif)',
-            fontSize: 22,
-            fontWeight: 700,
+            fontFamily: fontFamily.sans,
+            fontSize: fontSize.valueLg,
+            fontWeight: fontWeight.bold,
             fill: dark ? navy.ink : 'var(--text-primary, #0f172a)',
           }}
         >
@@ -51,10 +57,10 @@ function CenterLabelLayer(centerValue: React.ReactNode, centerLabel: string | un
             textAnchor="middle"
             dominantBaseline="central"
             style={{
-              fontFamily: 'var(--font-sans, Inter, sans-serif)',
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: '0.06em',
+              fontFamily: fontFamily.sans,
+              fontSize: fontSize.xs,
+              fontWeight: fontWeight.bold,
+              letterSpacing: letterSpacing.label,
               textTransform: 'uppercase',
               fill: dark ? navy.muted : 'var(--text-muted, #64748b)',
             }}
@@ -70,7 +76,9 @@ function CenterLabelLayer(centerValue: React.ReactNode, centerLabel: string | un
 /**
  * Shared render internals for PremiumDonutChart and PremiumPieChart — the
  * only difference between the two is `innerRadius` and whether a centre
- * label layer is added, so this is where <ResponsivePie> lives, once.
+ * label layer is added, so this is where <ResponsivePie> lives, once. Every
+ * layout constant below is a theme token (shape.ts / spacing.ts), not a
+ * number chosen for this component alone.
  */
 export function PieBase({
   data,
@@ -81,6 +89,7 @@ export function PieBase({
   surface = 'auto',
 }: PieBaseProps) {
   const motionProps = useChartMotion();
+  const compact = useIsCompactChart();
 
   const nivoData: NivoPieDatum[] = React.useMemo(
     () => data.map((d, i) => ({
@@ -105,13 +114,13 @@ export function PieBase({
     <ResponsivePie
       data={nivoData}
       innerRadius={innerRadius}
-      padAngle={data.length > 1 ? 1.6 : 0}
-      cornerRadius={3}
-      activeOuterRadiusOffset={4}
+      padAngle={data.length > 1 ? pieLayout.padAngleMulti : pieLayout.padAngleSingle}
+      cornerRadius={radius.pieCorner}
+      activeOuterRadiusOffset={pieLayout.activeOuterRadiusOffset}
       colors={{ datum: 'data.color' }}
-      borderWidth={2}
+      borderWidth={border.pieSliceWidth}
       borderColor={surface === 'dark' ? navy.panel : 'var(--bg-elevated, #fff)'}
-      margin={{ top: 8, right: 8, bottom: 8, left: 8 }}
+      margin={scaleMargin(chartMargin.pie, compact)}
       enableArcLabels={false}
       enableArcLinkLabels={false}
       isInteractive

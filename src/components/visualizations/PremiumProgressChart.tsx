@@ -6,7 +6,13 @@ import type { RadialBarCustomLayerProps, RadialBarDatum } from '@nivo/radial-bar
 import {
   ChartShell, ChartLegend, ChartLoading, ChartEmpty, ChartError, ChartTooltipCard, useChartMotion,
 } from './primitives';
-import { nivoThemeFor, series as seriesPalette, defaultFormat, navy } from './theme';
+import { navy, series as seriesPalette } from './theme/colors';
+import { fontFamily, fontSize, fontWeight, letterSpacing } from './theme/typography';
+import { radius } from './theme/shape';
+import { chartHeight, chartMargin, radialLayout } from './theme/spacing';
+import { useIsCompactChart, scaleMargin } from './theme/responsive';
+import { nivoThemeFor } from './theme/nivoTheme';
+import { defaultFormat } from './theme/format';
 import type { Surface } from './theme/surface';
 
 export interface PremiumProgressDatum {
@@ -48,7 +54,7 @@ function centerLabelLayer(pct: number, label: string, color: string, surface: Su
           y={cy - 6}
           textAnchor="middle"
           dominantBaseline="central"
-          style={{ fontFamily: 'var(--font-sans, Inter, sans-serif)', fontSize: 22, fontWeight: 800, fill: color }}
+          style={{ fontFamily: fontFamily.sans, fontSize: fontSize.valueLg, fontWeight: fontWeight.black, fill: color }}
         >
           {Math.round(pct)}%
         </text>
@@ -58,10 +64,10 @@ function centerLabelLayer(pct: number, label: string, color: string, surface: Su
           textAnchor="middle"
           dominantBaseline="central"
           style={{
-            fontFamily: 'var(--font-sans, Inter, sans-serif)',
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: '0.06em',
+            fontFamily: fontFamily.sans,
+            fontSize: fontSize.xs,
+            fontWeight: fontWeight.bold,
+            letterSpacing: letterSpacing.label,
             textTransform: 'uppercase',
             fill: dark ? navy.muted : 'var(--text-muted, #64748b)',
           }}
@@ -79,10 +85,12 @@ function centerLabelLayer(pct: number, label: string, color: string, surface: Su
  * hand-rolled SVG rings the chart audit found (platform/charts.tsx's Ring,
  * PtOsDashboard's HealthRing and TargetRing) with one component that also
  * supports several rings at once, concentric, for a multi-metric readout.
+ * Every layout constant below is a theme token (spacing.ts), not a number
+ * chosen for this component alone.
  */
 export function PremiumProgressChart({
   data,
-  height = 200,
+  height = chartHeight.progress,
   title,
   subtitle,
   icon,
@@ -98,6 +106,7 @@ export function PremiumProgressChart({
   className,
 }: PremiumProgressChartProps) {
   const motionProps = useChartMotion();
+  const compact = useIsCompactChart();
 
   const rings = React.useMemo(
     () => data.map((d, i) => {
@@ -143,11 +152,11 @@ export function PremiumProgressChart({
         maxValue={100}
         startAngle={0}
         endAngle={360}
-        innerRadius={rings.length > 1 ? 0.3 : 0.72}
-        padding={rings.length > 1 ? 0.25 : 0}
-        padAngle={0.6}
-        cornerRadius={999}
-        margin={{ top: 6, right: 6, bottom: 6, left: 6 }}
+        innerRadius={rings.length > 1 ? radialLayout.innerRadiusMulti : radialLayout.innerRadiusSingle}
+        padding={rings.length > 1 ? radialLayout.paddingMulti : radialLayout.paddingSingle}
+        padAngle={radialLayout.padAngle}
+        cornerRadius={radius.progressCap}
+        margin={scaleMargin(chartMargin.radial, compact)}
         colors={(d) => rings.find((r) => r.id === d.id)?.color ?? seriesPalette[0]}
         enableTracks
         tracksColor={surface === 'dark' ? 'rgba(255,255,255,0.06)' : 'var(--bg-subtle, #f1f5f9)'}
