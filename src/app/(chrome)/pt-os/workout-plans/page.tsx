@@ -4,9 +4,9 @@ import React, { Suspense, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  Dumbbell, Plus, Search, User, Clock, Target,
-  Activity, FileText, LayoutGrid, List, Check,
-  Trophy, Sparkles, ChevronRight, X, ShieldAlert, Loader2, Trash2, ClipboardList,
+  Dumbbell, Plus, Search, User, LayoutGrid, List,
+  FileText, Trophy, Sparkles, X, ShieldAlert, Loader2, ClipboardList,
+  CalendarDays, Users,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, PageContainer, PageHero } from '@/components/ui';
@@ -24,24 +24,6 @@ import TrainingBriefPanel from '@/components/pt-os/TrainingBriefPanel';
 
 interface ClientOption { id: string; name: string; }
 
-
-const GOALS: Array<{ value: string; label: string; color: string }> = [
-  { value: 'muscle_gain', label: 'Muscle Gain', color: '#0067e0' },
-  { value: 'weight_loss', label: 'Weight Loss', color: '#10b981' },
-  { value: 'endurance', label: 'Endurance', color: '#0067e0' },
-  { value: 'general_fitness', label: 'General Fitness', color: '#0067e0' },
-  { value: 'recovery', label: 'Recovery', color: '#0067e0' },
-];
-
-const PLAN_COLORS = [
-  'linear-gradient(135deg, #0067e0, #0059ce)',
-  'linear-gradient(135deg, #10b981, #34d399)',
-  'linear-gradient(135deg, #f59e0b, #fbbf24)',
-  'linear-gradient(135deg, #0067e0, #0059ce)',
-  'linear-gradient(135deg, #0067e0, #0059ce)',
-  'linear-gradient(135deg, #ef4444, #f87171)',
-];
-
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
@@ -51,13 +33,6 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const } },
 };
 
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)',
-  background: 'var(--bg-subtle)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit',
-};
-const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em',
-};
 
 export default function WorkoutPlansPage() {
   return (
@@ -207,22 +182,104 @@ function Inner() {
   });
 
 
-  const avgProgress = plans.length
-    ? Math.round(plans.reduce((s, p) => s + (p.progress || 0), 0) / plans.length)
+  // ── What the KPI row is counting ──
+  //
+  // Every figure here is derived from the rows on screen. Two of them could
+  // not be derived at all until the plans endpoint began returning who is on
+  // each plan: before that, `progress` was a literal 0 for every studio-wide
+  // read, so "Avg Completion" showed 0% no matter how much training had
+  // happened, and there was no assigned-client field to count.
+  //
+  // The server has already narrowed each plan's roster to what this caller
+  // may see — their own studio, and for a trainer their own clients — so
+  // these are counts of what is in front of them, not of the whole studio.
+  const roster = React.useMemo(
+    () => plans.flatMap((p) => p.assignments ?? []),
+    [plans],
+  );
+
+  /** One person on three programmes is one assigned client, not three. */
+  const assignedClients = React.useMemo(
+    () => new Set(roster.map((a) => a.client_id)).size,
+    [roster],
+  );
+
+  /** Averaged across the people actually running something. A plan nobody is
+   *  on has no completion to contribute, and folding its zero in would drag
+   *  the studio's average down every time a trainer drafted a new programme. */
+  const avgProgress = roster.length
+    ? Math.round(roster.reduce((sum, a) => sum + (Number(a.progress_pct) || 0), 0) / roster.length)
     : 0;
+
+  /** Sessions the roster is prescribed each week — the trainer's actual load.
+   *  Summed per assignment, because two clients on one 3x/week plan is six
+   *  sessions to deliver, not three. */
+  const sessionsPerWeek = React.useMemo(
+    () => plans.reduce(
+      (sum, p) => sum + (p.assignments?.length ?? 0) * (Number(p.sessions_per_week) || 0),
+      0,
+    ),
+    [plans],
+  );
+
+  const kpis = React.useMemo(() => (presetClientId
+    ? [
+      { label: 'Their Plans', display: plans.length, icon: <FileText size={13} />, color: '#0067E0' },
+      { label: 'Brief Complete', display: `${briefClient ? briefCompleteness : 0}%`, icon: <ClipboardList size={13} />, color: '#10B981' },
+      { label: 'Avg Completion', display: `${avgProgress}%`, icon: <Trophy size={13} />, color: '#F59E0B' },
+      { label: 'Sessions/Week', display: sessionsPerWeek, icon: <CalendarDays size={13} />, color: '#0067E0' },
+    ]
+    : [
+      { label: 'Active Plans', display: plans.length, icon: <FileText size={13} />, color: '#0067E0' },
+      { label: 'Assigned Clients', display: assignedClients, icon: <Users size={13} />, color: '#10B981' },
+      { label: 'Avg Completion', display: `${avgProgress}%`, icon: <Trophy size={13} />, color: '#F59E0B' },
+      { label: 'Sessions/Week', display: sessionsPerWeek, icon: <CalendarDays size={13} />, color: '#0067E0' },
+    ]
+  ), [presetClientId, plans.length, briefClient, briefCompleteness, avgProgress, assignedClients, sessionsPerWeek]);
+
+  /**
+   * Where each of the card's three navigations goes.
+   *
+   * With a client in scope the builder is the working surface for all of
+   * them — it is that client's programme. Studio-wide, Open lands on the
+   * plan and Edit lands on the plan already in its exercise editor, so the
+   * two actions are not the same button drawn twice.
+   */
+  const planHref = useCallback(
+    (plan: WorkoutPlan, mode: 'open' | 'edit' = 'open') => (presetClientId
+      ? `/pt-os/clients/${presetClientId}/training/builder?plan=${plan.id}`
+      : `/pt-os/workout-plans/${plan.id}${mode === 'edit' ? '?edit=1' : ''}`),
+    [presetClientId],
+  );
+
+  const tabs = React.useMemo(() => [
+    // Only with a client in scope — there is no brief for "the studio".
+    ...(presetClientId ? [{ key: 'brief', label: 'Brief' }] : []),
+    { key: 'plans', label: 'Plans', count: plans.length },
+    { key: 'library', label: 'Exercises', count: exerciseTotal },
+    { key: 'ai', label: 'AI Assistant' },
+  ] as Array<{ key: string; label: string; count?: number }>,
+  [presetClientId, plans.length, exerciseTotal]);
 
   return (
     <div style={{ minHeight: '100%', position: 'relative' }}>
       <PageContainer>
-        {/* ── Hero ──
-            This was a lavender-to-pink gradient card with its own corner
-            glows and its own max-w-[1400px] container — a different surface
-            from every other page's header, 120px wider than the dashboard,
-            and starting at mt-1 instead of matching the dashboard's own gap.
-            The stat tiles that lived inside it move out below, where they
-            are cards like every other KPI row in the app. */}
+        {/* ── Header ──
+            The hero was the tallest thing on a phone before any work was
+            visible: a full-bleed gradient panel with corner glows, a grid
+            overlay and 28px of padding, carrying a title, one line of prose
+            and two controls. `compact` keeps the surface and the identity and
+            gives back roughly a third of the height, which is a whole plan
+            card's worth of screen on a 390px viewport.
+
+            AI moves in here as a peer of the other header controls. It used
+            to be a 52px fixed circle floating over the content, and on this
+            page it landed exactly on top of the first card's Assign button —
+            the most prominent control on the screen sat on top of a real one
+            and swallowed its taps. */}
         <PageHero
-          icon={<Dumbbell size={20} />}
+          compact
+          icon={<Dumbbell size={17} />}
           title={briefClient?.name ?? 'Workout Plans'}
           subtitle={briefClient
             ? [
@@ -232,16 +289,15 @@ function Inner() {
             ].filter(Boolean).join(' · ') || 'Design their programme'
             : 'Build and manage personalized training programs'}
         >
-          {/* View toggle + New Plan, on the hero. The pill row and the title
-              used to share a flex row that wrapped awkwardly on a phone. */}
           <div className="flex items-center gap-2">
-            <div className="flex shrink-0 gap-1 rounded-[11px] p-1"
+            {/* Grid/list, as small as it can be and still be a 44px target. */}
+            <div className="flex shrink-0 gap-0.5 rounded-[11px] p-[3px]"
               style={{ background: 'rgba(255,255,255,0.12)' }}>
               {(['grid', 'list'] as const).map((v) => (
                 <button key={v} type="button" onClick={() => setView(v)}
                   aria-pressed={view === v}
                   aria-label={v === 'grid' ? 'Grid view' : 'List view'}
-                  className="flex h-[36px] w-[38px] cursor-pointer items-center justify-center rounded-[8px] transition-colors"
+                  className="flex h-[38px] w-[38px] cursor-pointer items-center justify-center rounded-[9px] transition-colors"
                   style={{
                     background: view === v ? '#fff' : 'transparent',
                     color: view === v ? '#0F172A' : 'rgba(255,255,255,0.8)',
@@ -250,82 +306,110 @@ function Inner() {
                 </button>
               ))}
             </div>
+
+            {/* Primary. The one filled control in the header. */}
             <button
               type="button"
               onClick={() => setCreateOpen(true)}
-              className="inline-flex h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] transition-transform active:scale-95 sm:flex-none"
+              className="inline-flex h-[44px] flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-[13px] px-4 text-[13px] font-[750] transition-transform active:scale-[0.98] sm:flex-none sm:px-5"
               style={{ background: '#fff', color: '#0F172A' }}>
               <Plus size={16} /> New Plan
+            </button>
+
+            {/* Available, not dominant. */}
+            <button
+              type="button"
+              onClick={() => setAiPanelOpen(true)}
+              aria-label="Open the AI coach"
+              className="inline-flex h-[44px] shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[13px] px-3 text-[12.5px] font-[700] text-white transition-colors sm:px-4"
+              style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.20)' }}>
+              <Sparkles size={15} />
+              <span className="hidden sm:inline">AI Assist</span>
             </button>
           </div>
         </PageHero>
 
-        {/* ── KPI cards ──
-            Out of the hero and onto the page, as cards like every other KPI
-            row in the app. Inside a tinted gradient panel they were tiles on a
-            tile. */}
-        <m.div variants={containerVariants} initial="hidden" animate="visible"
-          className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {/* Scoped to whoever is in view. Opening ONE client's plans and
-                being told the studio has 11 clients and 200 library exercises
-                answers a question nobody asked from here; what matters is how
-                complete this client's brief is and what they are running. */}
-            {(presetClientId
-              ? [
-                { label: 'Their Plans', value: plans.length, icon: <FileText size={14} />, color: '#0067e0', spotColor: 'rgba(0,103,224,0.12)' },
-                { label: 'Brief Complete', value: briefClient ? briefCompleteness : 0, icon: <ClipboardList size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)', suffix: '%' },
-                { label: 'Exercises', value: exerciseTotal, icon: <Activity size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
-                { label: 'Completion', value: avgProgress, icon: <Trophy size={14} />, color: '#0067e0', spotColor: 'rgba(0,103,224,0.12)', suffix: '%' },
-              ]
-              : [
-                { label: 'Total Plans', value: plans.length, icon: <FileText size={14} />, color: '#0067e0', spotColor: 'rgba(0,103,224,0.12)' },
-                { label: 'Exercises', value: exerciseTotal, icon: <Activity size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)' },
-                { label: 'Clients', value: clients.length, icon: <User size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
-                { label: 'Avg Completion', value: avgProgress, icon: <Trophy size={14} />, color: '#0067e0', spotColor: 'rgba(0,103,224,0.12)', suffix: '%' },
-              ]
-            ).map((s) => (
-              <m.div key={s.label} variants={itemVariants}>
-                <SpotlightCard spotlightColor={s.spotColor} style={{ padding: '14px 16px', cursor: 'default' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 8 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-disabled)', lineHeight: 1.3 }}>{s.label}</span>
-                    <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: `${s.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>{s.icon}</div>
-                  </div>
-                  <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>
-                    {dataLoading ? '—' : <AnimatedCounter value={s.value} suffix={s.suffix} />}
-                  </div>
-                </SpotlightCard>
-              </m.div>
-            ))}
-        </m.div>
+        {/* ── KPIs ──
+            Four numbers a trainer acts on, and deliberately quieter than the
+            plan cards below them: no spotlight surface, no 30px icon tile, no
+            count-up animation. They were the heaviest objects on the page and
+            they are the least important — the plans are the page.
 
-        {/* ── Tabs (horizontally scrollable on mobile) ── */}
-        <div className="flex gap-1 overflow-x-auto" style={{ background: 'var(--bg-subtle)', borderRadius: 11, padding: 3, scrollbarWidth: 'none' }}>
-          {[
-            // Only with a client in scope — there is no brief for "the studio".
-            ...(presetClientId ? [{ key: 'brief', label: 'Client Brief', color: '#0067e0' }] : []),
-            { key: 'plans', label: presetClientId ? 'Their Plans' : 'Active Plans', count: plans.length, color: '#0067e0' },
-            { key: 'library', label: 'Exercise Library', count: exerciseTotal, color: '#10b981' },
-            { key: 'ai', label: 'AI Suggestions', color: '#0067e0' },
-          ].map((tab) => (
-            <button key={tab.key}
-              onClick={() => setActiveTab(tab.key as typeof activeTab)}
-              style={{
-                flexShrink: 0, whiteSpace: 'nowrap',
-                // 44px explicitly, not padding: globals.css sets the root font
-                // size to 14px, so anything expressed in rem lands at 87.5% of
-                // its nominal value and a "44px" tab measures 38.
-                height: 44, padding: '0 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                fontSize: 12, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s',
-                background: activeTab === tab.key ? 'var(--bg-card)' : 'transparent',
-                color: activeTab === tab.key ? tab.color : 'var(--text-muted)',
-                boxShadow: activeTab === tab.key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-              }}>
-              {tab.label}
-              {tab.count !== undefined && (
-                <span style={{ marginLeft: 5, padding: '1px 6px', borderRadius: 9, fontSize: 10, fontWeight: 700, background: `${tab.color}18`, color: tab.color }}>{tab.count}</span>
-              )}
-            </button>
+            Every one of these is now a real figure. "Assigned Clients" and
+            "Avg Completion" could not be computed at all until the plans
+            endpoint started returning who is on each plan; before that the
+            completion KPI read 0% for every studio because the SQL emitted a
+            literal zero. */}
+        <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+          {kpis.map((k) => (
+            <div
+              key={k.label}
+              className="rounded-[16px] border border-[var(--border)] bg-[var(--bg-card)] px-3.5 py-3"
+            >
+              <div className="flex items-center gap-1.5">
+                <span style={{ color: k.color }} aria-hidden>{k.icon}</span>
+                <span className="truncate text-[10.5px] font-[700] uppercase tracking-[0.07em] text-[var(--text-disabled)]">
+                  {k.label}
+                </span>
+              </div>
+              <div className="mt-1.5 text-[24px] font-[800] leading-none tracking-[-0.03em] text-[var(--text-primary)]">
+                {dataLoading ? <span className="text-[var(--text-disabled)]">—</span> : k.display}
+              </div>
+            </div>
           ))}
+        </div>
+
+        {/* ── Tabs ──
+            The old row was a flex strip with `overflow-x: auto`, so on a
+            390px screen the last tab ran off the right edge mid-word — the
+            AI tab read "AI Suggest" with no way to tell it was cut. Three
+            equal columns fit the viewport instead of scrolling out of it, and
+            the labels are short enough to survive at that width. */}
+        <div
+          role="tablist"
+          aria-label="Workout plans sections"
+          className="grid gap-1 rounded-[13px] p-1 lg:max-w-[520px]"
+          style={{
+            background: 'var(--bg-subtle)',
+            gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
+          }}
+        >
+          {tabs.map((tab) => {
+            const active = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setActiveTab(tab.key as typeof activeTab)}
+                className={`flex min-w-0 items-center justify-center gap-1.5 rounded-[10px] text-[12.5px] font-[700] transition-colors ${
+                  active ? 'shadow-[0_1px_3px_rgba(15,23,42,0.10)]' : ''
+                }`}
+                style={{
+                  // 44px explicitly, not padding: globals.css sets the root
+                  // font size to 14px, so anything in rem lands at 87.5% of
+                  // its nominal value and a "44px" tab measures 38.
+                  height: 44,
+                  background: active ? 'var(--bg-card)' : 'transparent',
+                  color: active ? '#0067E0' : 'var(--text-muted)',
+                }}
+              >
+                <span className="truncate">{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span
+                    className="shrink-0 rounded-[7px] px-1.5 py-[1px] text-[10px] font-[700] tabular-nums"
+                    style={{
+                      background: active ? 'rgba(0,103,224,0.12)' : 'var(--bg-card)',
+                      color: active ? '#0067E0' : 'var(--text-disabled)',
+                    }}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         <AnimatePresence mode="wait">
@@ -343,23 +427,41 @@ function Inner() {
               {dataLoading ? (
                 <div style={{ display: 'grid', gridTemplateColumns: view === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr', gap: 14 }}>
                   {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} style={{ height: 180, borderRadius: 18, background: 'var(--bg-subtle)', animation: 'pulse 1.5s ease-in-out infinite', opacity: 0.6 }} />
+                    <div key={i} style={{ height: 196, borderRadius: 18, background: 'var(--bg-subtle)', animation: 'pulse 1.5s ease-in-out infinite', opacity: 0.6 }} />
                   ))}
                 </div>
               ) : plans.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
-                  <Dumbbell size={32} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
-                  <p style={{ margin: 0, fontSize: 14 }}>No workout plans yet. Create your first plan to get started.</p>
+                <div className="flex flex-col items-center rounded-[18px] border border-dashed border-[var(--border)] px-5 py-14 text-center">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-[15px]"
+                    style={{ background: 'rgba(0,103,224,0.09)' }}>
+                    <Dumbbell size={22} color="#0067E0" />
+                  </span>
+                  <p className="mt-3.5 text-[15px] font-[700] text-[var(--text-primary)]">
+                    No programmes yet
+                  </p>
+                  <p className="mt-1 max-w-[300px] text-[12.5px] leading-relaxed text-[var(--text-muted)]">
+                    Build one from scratch, or let the AI coach draft it from your client&rsquo;s goal and history.
+                  </p>
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                    <button type="button" onClick={() => setCreateOpen(true)}
+                      className="inline-flex h-[44px] items-center gap-1.5 rounded-[13px] px-4 text-[13px] font-[700] text-white transition-transform active:scale-[0.98]"
+                      style={{ background: 'linear-gradient(135deg, #0067E0 0%, #0059CE 100%)' }}>
+                      <Plus size={15} /> New Plan
+                    </button>
+                    <button type="button" onClick={() => setAiPanelOpen(true)}
+                      className="inline-flex h-[44px] items-center gap-1.5 rounded-[13px] border border-[var(--border)] px-4 text-[13px] font-[650] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-subtle)]">
+                      <Sparkles size={15} /> Draft with AI
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <m.div variants={containerVariants} initial="hidden" animate="visible"
                   style={{ display: 'grid', gridTemplateColumns: view === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr', gap: 14 }}>
-                  {plans.map((plan, i) => (
+                  {plans.map((plan) => (
                     <m.div key={plan.id} variants={itemVariants}>
                       <WorkoutPlanCard
                         id={plan.id}
                         name={plan.name}
-                        description={plan.description ?? undefined}
                         // Both are read rather than trusted. They are NOT NULL
                         // in the schema today, but a plan built by an older
                         // migration or an import can arrive without them, and
@@ -370,17 +472,16 @@ function Inner() {
                         difficulty={plan.difficulty
                           ? plan.difficulty.charAt(0).toUpperCase() + plan.difficulty.slice(1)
                           : undefined}
-                        duration={`${plan.sessions_per_week}x/wk · ${plan.duration_weeks}wk`}
+                        durationWeeks={plan.duration_weeks}
+                        sessionsPerWeek={plan.sessions_per_week}
                         exerciseCount={plan.exercise_count}
                         progress={plan.progress}
-                        color={PLAN_COLORS[i % PLAN_COLORS.length]}
+                        assignments={plan.assignments}
                         compact={view === 'list'}
+                        onOpen={() => router.push(planHref(plan))}
+                        onEdit={() => router.push(planHref(plan, 'edit'))}
+                        onAddExercises={() => router.push(planHref(plan, 'edit'))}
                         onAssign={() => setAssignPlan(plan)}
-                        onEdit={() => router.push(
-                          presetClientId
-                            ? `/pt-os/clients/${presetClientId}/training/builder?plan=${plan.id}`
-                            : `/pt-os/workout-plans/${plan.id}`,
-                        )}
                         onDelete={() => handleDeletePlan(plan)}
                       />
                     </m.div>
@@ -453,7 +554,7 @@ function Inner() {
                 <div style={{ width: 64, height: 64, borderRadius: 20, background: 'linear-gradient(135deg, rgba(0,103,224,0.15), rgba(0,103,224,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                   <Sparkles size={28} color="#0067e0" />
                 </div>
-                <h2 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>AI Workout Coach</h2>
+                <h2 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>AI Assistant</h2>
                 <p style={{ margin: '0 0 24px', fontSize: 14, color: 'var(--text-muted)', maxWidth: 400, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
                   Generate personalized workout plans using AI. Just provide your client's details and let the AI build a complete training program.
                 </p>
@@ -481,16 +582,11 @@ function Inner() {
         </AnimatePresence>
       </PageContainer>
 
-      {/* ── Floating AI button ── */}
-      <m.button
-        onClick={() => setAiPanelOpen(true)}
-        whileHover={{ scale: 1.06 }}
-        whileTap={{ scale: 0.96 }}
-        className="above-bottom-nav" style={{ position: 'fixed', right: 28, width: 52, height: 52, borderRadius: 16, border: 'none', background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 24px rgba(0,103,224,0.45)', zIndex: 100 }}
-        title="Open AI Coach"
-      >
-        <Sparkles size={20} />
-      </m.button>
+      {/* The floating AI button is gone. It was a 52px fixed circle at
+          right: 28px, above-bottom-nav — which on this page put it directly
+          over the first card's Assign button, so the loudest thing on the
+          screen sat on top of a real control and ate its taps. AI is now a
+          header action and a tab; the panel below is unchanged. */}
 
       {/* ── AI Coach Panel ── */}
       <AnimatePresence>

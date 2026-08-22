@@ -80,7 +80,12 @@ beforeEach(() => exercisesList.mockClear());
  */
 async function openLibrary() {
   render(<WorkoutPlansPage />);
-  const tab = await screen.findByRole('button', { name: /Exercise Library/ });
+  // The strip is a real tablist now, and the label lost the word "Library":
+  // three tabs used to run off the right edge of a phone mid-word, so they
+  // are equal columns of the viewport and the labels are short enough to fit
+  // one. `role: 'tab'` rather than 'button' for the same reason — the strip
+  // announces itself as tabs instead of as a row of unrelated buttons.
+  const tab = await screen.findByRole('tab', { name: /Exercises/ });
   fireEvent.click(tab);
   return screen.getByLabelText('Search exercises');
 }

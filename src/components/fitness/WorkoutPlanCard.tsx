@@ -1,301 +1,371 @@
 'use client'
 
-import { m, type Variants } from 'framer-motion'
-import { Edit3, Trash2, UserPlus, Target, Clock, Dumbbell } from 'lucide-react'
-import { cn } from '@/components/ui/cn'
+// A programme, as the trainer needs to read it.
+//
+// ── What the card used to say ─────────────────────────────────────────────
+//
+// A name, a difficulty pill, and three more pills carrying "muscle gain",
+// "3x/wk · 4wk" and "0 exercises" — five bordered objects stacked inside a
+// bordered card with a coloured bar across the top, and the colour chosen by
+// the plan's index in the list, so it meant nothing at all. Underneath, a
+// progress bar that was always at zero, because the endpoint feeding it hard-
+// coded `0 AS progress` for every studio-wide read.
+//
+// It never said who was running the programme. That is the first thing a
+// trainer looks for on this screen, and the only reason a plan is interesting.
+//
+// ── What it says now ──────────────────────────────────────────────────────
+//
+//   Hypertrophy Foundation          ← the programme
+//   Rahul Sharma                    ← who is on it
+//   Muscle Gain · 4 weeks · 3/week · 12 exercises
+//   Week 2 of 4                52%  ← where they are
+//   ▓▓▓▓▓▓░░░░░░
+//
+// One line of metadata instead of four pills: these are four facts of the same
+// kind and the same weight, and four rounded boxes said they were four
+// different kinds of thing.
+//
+// ── Honesty rules, which are why the shape branches ───────────────────────
+//
+// The week number is derived from the assignment's start_date, so it exists
+// only when somebody is actually running the plan. A plan nobody has been
+// assigned has no week, no percentage and no bar — it says "Not assigned yet",
+// because a 0% bar on an unassigned plan is a measurement of nothing dressed
+// as a measurement of zero. With several clients on one plan they are in
+// different weeks, so the week line gives way to the roster and the percentage
+// is explicitly labelled as an average.
 
-interface WorkoutPlanCardProps {
+import * as React from 'react'
+import { m, type Variants } from 'framer-motion'
+import {
+  Pencil, Trash2, UserPlus, MoreHorizontal, Plus, ChevronRight, User,
+} from 'lucide-react'
+import { cn } from '@/components/ui/cn'
+import type { WorkoutPlanAssignment } from '@/lib/api'
+
+export interface WorkoutPlanCardProps {
   id: string
   name: string
   description?: string
   goal?: string
   difficulty?: string
-  duration?: string
+  /** Total length of the programme, in weeks. */
+  durationWeeks?: number
+  /** Prescribed sessions per week. */
+  sessionsPerWeek?: number
   exerciseCount?: number
+  /** 0-100. Only rendered when somebody is running the plan. */
   progress?: number
-  color?: string
-  onAssign?: () => void
+  /** The clients on this plan, already scoped by the server to what you may see. */
+  assignments?: WorkoutPlanAssignment[]
+  onOpen?: () => void
   onEdit?: () => void
+  onAssign?: () => void
   onDelete?: () => void
+  onAddExercises?: () => void
   compact?: boolean
   className?: string
   variants?: Variants
 }
 
-const DIFFICULTY_STYLES: Record<string, { label: string; bg: string; color: string }> = {
-  Beginner: { label: 'Beginner', bg: '#d1fae5', color: '#10b981' },
-  Intermediate: { label: 'Intermediate', bg: '#fef3c7', color: '#f59e0b' },
-  Advanced: { label: 'Advanced', bg: '#fee2e2', color: '#ef4444' },
+/** Difficulty is the one pill left, because it is the one fact that is a grade. */
+const DIFFICULTY: Record<string, { bg: string; color: string }> = {
+  Beginner:     { bg: 'rgba(16,185,129,0.12)',  color: '#059669' },
+  Intermediate: { bg: 'rgba(245,158,11,0.14)',  color: '#B45309' },
+  Advanced:     { bg: 'rgba(239,68,68,0.12)',   color: '#DC2626' },
+}
+
+const DAY = 86_400_000
+
+/**
+ * Which week of the programme a client is in, 1-based, or null.
+ *
+ * Null rather than 1 when there is no start date: "Week 1 of 4" is a claim
+ * about someone's training, and defaulting it would state that claim about
+ * every plan whose assignment predates the column.
+ */
+export function weekOfProgramme(
+  startDate: string | null | undefined,
+  durationWeeks: number | undefined,
+  now: number = Date.now(),
+): number | null {
+  if (!startDate || !durationWeeks || durationWeeks < 1) return null
+  const started = Date.parse(startDate)
+  if (Number.isNaN(started)) return null
+  // Before the start date the client has not begun; that is week 1, not week 0
+  // or a negative one.
+  const elapsedDays = Math.floor((now - started) / DAY)
+  const week = Math.floor(Math.max(0, elapsedDays) / 7) + 1
+  // A client past the end of the programme is on its last week, not week 9 of 8.
+  return Math.min(week, durationWeeks)
 }
 
 export function WorkoutPlanCard({
   id: _id,
   name,
-  description,
   goal,
   difficulty,
-  duration,
+  durationWeeks,
+  sessionsPerWeek,
   exerciseCount,
   progress = 0,
-  color = 'linear-gradient(135deg, #0067e0, #0059ce)',
-  onAssign,
+  assignments = [],
+  onOpen,
   onEdit,
+  onAssign,
   onDelete,
+  onAddExercises,
   compact = false,
   className,
   variants,
 }: WorkoutPlanCardProps) {
-  const diffStyle = difficulty ? DIFFICULTY_STYLES[difficulty] : undefined
-  const clampedProgress = Math.min(100, Math.max(0, progress))
+  const [menuOpen, setMenuOpen] = React.useState(false)
+  const menuRef = React.useRef<HTMLDivElement>(null)
+  const triggerRef = React.useRef<HTMLButtonElement>(null)
 
-  if (compact) {
-    return (
-      <m.div
-        variants={variants}
-        whileHover={{ translateY: -3, boxShadow: '0 12px 40px rgba(0,0,0,0.10)' }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
-        className={cn('relative overflow-hidden rounded-[18px]', className)}
-        style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-        }}
-      >
-        {/* Top color bar */}
-        <div style={{ height: 4, background: color, width: '100%' }} />
+  React.useEffect(() => {
+    if (!menuOpen) return
+    const onClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    // Escape is bound to the document, not to the menu.
+    //
+    // The usual shape of this — onKeyDown on the menu div with tabIndex={-1} —
+    // only fires if something inside the menu has focus, and opening it by
+    // pointer leaves focus on the trigger. So the key never reached the
+    // handler and the only way out was a click, which is exactly the thing
+    // Escape is there to avoid for a keyboard user.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        setMenuOpen(false)
+        triggerRef.current?.focus()
+      }
+    }
+    document.addEventListener('mousedown', onClick)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onClick)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [menuOpen])
 
-        {/* Horizontal compact layout */}
-        <div className="flex items-center gap-3 px-4 py-3">
-          {/* Color dot */}
-          <div
-            className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center"
-            style={{ background: color }}
-          >
-            <Dumbbell size={14} color="#fff" />
-          </div>
+  const diff = difficulty ? DIFFICULTY[difficulty] : undefined
+  const pct = Math.min(100, Math.max(0, Math.round(progress)))
+  const assigned = assignments.length
+  const solo = assigned === 1 ? assignments[0] : null
+  const week = solo ? weekOfProgramme(solo.start_date, durationWeeks) : null
+  const hasExercises = (exerciseCount ?? 0) > 0
 
-          {/* Name + chips */}
-          <div className="flex-1 min-w-0">
-            <p className="font-bold truncate" style={{ fontSize: 14 }}>
-              {name}
-            </p>
-            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-              {goal && (
-                <span
-                  className="flex items-center gap-1"
-                  style={{ fontSize: 11, color: 'var(--text-muted)' }}
-                >
-                  <Target size={10} />
-                  {goal}
-                </span>
-              )}
-              {duration && (
-                <span
-                  className="flex items-center gap-1"
-                  style={{ fontSize: 11, color: 'var(--text-muted)' }}
-                >
-                  <Clock size={10} />
-                  {duration}
-                </span>
-              )}
-              {exerciseCount !== undefined && (
-                <span
-                  className="flex items-center gap-1"
-                  style={{ fontSize: 11, color: 'var(--text-muted)' }}
-                >
-                  <Dumbbell size={10} />
-                  {exerciseCount} exercises
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-1 shrink-0">
-            {onEdit && (
-              <button
-                onClick={onEdit}
-                className="p-1.5 rounded-lg transition-colors"
-                style={{ color: 'var(--text-muted)' }}
-                aria-label="Edit plan"
-              >
-                <Edit3 size={13} />
-              </button>
-            )}
-            {onDelete && (
-              <button
-                onClick={onDelete}
-                className="p-1.5 rounded-lg transition-colors"
-                style={{ color: 'var(--text-muted)' }}
-                aria-label="Delete plan"
-              >
-                <Trash2 size={13} />
-              </button>
-            )}
-            {onAssign && (
-              <button
-                onClick={onAssign}
-                className="p-1.5 rounded-lg transition-colors"
-                style={{ color: 'var(--text-muted)' }}
-                aria-label="Assign plan"
-              >
-                <UserPlus size={13} />
-              </button>
-            )}
-          </div>
-        </div>
-      </m.div>
-    )
-  }
+  // Four facts of the same kind, on one line, in the order a trainer reads
+  // them: what it is for, how long, how often, how much.
+  const meta = [
+    goal,
+    durationWeeks ? `${durationWeeks} week${durationWeeks === 1 ? '' : 's'}` : null,
+    sessionsPerWeek ? `${sessionsPerWeek}/week` : null,
+    hasExercises ? `${exerciseCount} exercise${exerciseCount === 1 ? '' : 's'}` : null,
+  ].filter(Boolean) as string[]
 
   return (
     <m.div
       variants={variants}
-      whileHover={{ translateY: -3, boxShadow: '0 12px 40px rgba(0,0,0,0.10)' }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
-      className={cn('relative overflow-hidden rounded-[18px]', className)}
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-      }}
+      className={cn(
+        'group relative flex flex-col rounded-[18px] transition-shadow',
+        'bg-[var(--bg-card)] border border-[var(--border)]',
+        'hover:shadow-[0_10px_30px_-14px_rgba(15,23,42,0.30)]',
+        compact ? 'p-3.5' : 'p-4',
+        className,
+      )}
     >
-      {/* Top color bar */}
-      <div style={{ height: 4, background: color, width: '100%' }} />
-
-      {/* Body */}
-      <div style={{ padding: 20 }}>
-        {/* Header row: badge + name */}
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <p className="font-bold leading-tight flex-1" style={{ fontSize: 15 }}>
+      {/* ── Identity ── */}
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-[15px] font-[750] leading-tight tracking-[-0.01em] text-[var(--text-primary)]">
             {name}
+          </h3>
+
+          {/* Who is on it. The first thing this card exists to answer. */}
+          <p className="mt-1 flex items-center gap-1.5 text-[12.5px] leading-none">
+            <User size={12} className="shrink-0 text-[var(--text-disabled)]" aria-hidden />
+            {solo ? (
+              <span className="truncate font-[600] text-[var(--text-secondary)]">{solo.client_name}</span>
+            ) : assigned > 1 ? (
+              <span className="truncate font-[600] text-[var(--text-secondary)]">
+                {assignments[0].client_name}
+                <span className="font-[500] text-[var(--text-muted)]"> +{assigned - 1} more</span>
+              </span>
+            ) : (
+              <span className="truncate text-[var(--text-muted)]">Not assigned yet</span>
+            )}
           </p>
-          {diffStyle && (
-            <span
-              className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-              style={{ background: diffStyle.bg, color: diffStyle.color }}
-            >
-              {diffStyle.label}
-            </span>
-          )}
         </div>
 
-        {/* Description */}
-        {description && (
-          <p
-            className="mb-3"
-            style={{
-              fontSize: 12,
-              color: 'var(--text-muted)',
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}
+        {diff && (
+          <span
+            className="shrink-0 rounded-full px-2 py-[3px] text-[10px] font-[700] uppercase tracking-[0.04em]"
+            style={{ background: diff.bg, color: diff.color }}
           >
-            {description}
-          </p>
+            {difficulty}
+          </span>
         )}
+      </div>
 
-        {/* Meta chips */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {goal && (
-            <span
-              className="flex items-center gap-1 rounded-full px-2 py-1"
-              style={{
-                fontSize: 11,
-                background: 'var(--bg-subtle, rgba(0,103,224,0.08))',
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <Target size={11} />
-              {goal}
-            </span>
-          )}
-          {duration && (
-            <span
-              className="flex items-center gap-1 rounded-full px-2 py-1"
-              style={{
-                fontSize: 11,
-                background: 'var(--bg-subtle, rgba(0,103,224,0.08))',
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <Clock size={11} />
-              {duration}
-            </span>
-          )}
-          {exerciseCount !== undefined && (
-            <span
-              className="flex items-center gap-1 rounded-full px-2 py-1"
-              style={{
-                fontSize: 11,
-                background: 'var(--bg-subtle, rgba(0,103,224,0.08))',
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <Dumbbell size={11} />
-              {exerciseCount} exercises
-            </span>
-          )}
-        </div>
+      {/* ── Shape of the programme ── */}
+      {meta.length > 0 && (
+        <p className="mt-2.5 text-[12px] leading-relaxed text-[var(--text-muted)]">
+          {meta.join(' · ')}
+        </p>
+      )}
 
-        {/* Progress bar */}
-        <div className="mb-1">
+      {/* ── The empty state that used to read "0 exercises" ──
+          A programme with no exercises is not a programme with a count of
+          zero; it is one that has not been written yet, and the useful thing
+          to put in front of the trainer is the way to write it. */}
+      {!hasExercises && (
+        <button
+          type="button"
+          onClick={onAddExercises ?? onOpen}
+          className={cn(
+            'mt-2.5 flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-[12px]',
+            'border border-dashed border-[var(--border)] px-3',
+            'text-[12.5px] font-[650] text-[var(--text-muted)] transition-colors',
+            'hover:border-[rgba(0,103,224,0.35)] hover:text-[#0067E0]',
+          )}
+        >
+          <Plus size={14} aria-hidden />
+          No exercises added yet — add exercises
+        </button>
+      )}
+
+      {/* ── Where they are ── */}
+      {assigned > 0 && (
+        <div className="mt-3">
+          <div className="mb-1.5 flex items-baseline justify-between gap-2">
+            <span className="text-[11.5px] font-[650] text-[var(--text-secondary)]">
+              {week && durationWeeks
+                ? `Week ${week} of ${durationWeeks}`
+                : `${assigned} client${assigned === 1 ? '' : 's'} training`}
+            </span>
+            <span className="text-[12px] font-[750] tabular-nums text-[var(--text-primary)]">
+              {pct}%
+              {assigned > 1 && (
+                <span className="ml-1 text-[10.5px] font-[550] text-[var(--text-muted)]">avg</span>
+              )}
+            </span>
+          </div>
           <div
-            className="w-full rounded-full overflow-hidden"
-            style={{ height: 6, background: 'var(--bg-subtle, rgba(0,0,0,0.06))' }}
+            className="h-[6px] w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]"
+            role="progressbar"
+            aria-valuenow={pct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${name} completion`}
           >
-            <m.div
-              initial={{ width: 0 }}
-              animate={{ width: `${clampedProgress}%` }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
-              className="h-full rounded-full"
-              style={{ background: color }}
+            <div
+              className="h-full rounded-full transition-[width] duration-700 ease-out"
+              style={{
+                width: `${pct}%`,
+                background: 'linear-gradient(90deg, #0067E0 0%, #3B8DF5 100%)',
+              }}
             />
           </div>
-          <p
-            className="mt-1 text-right"
-            style={{ fontSize: 11, color: 'var(--text-muted)' }}
-          >
-            {clampedProgress}% complete
-          </p>
         </div>
+      )}
 
-        {/* Actions row */}
-        <div className="flex items-center justify-end gap-1 mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
-          {onEdit && (
+      {/* ── Actions ──
+          Open is the verb this card is for, so it is the only filled control.
+          Edit and Assign sit beside it as peers. Delete is not a peer of any
+          of them and does not belong in the row: it used to sit between Edit
+          and Assign in full red, which made the most destructive action the
+          most eye-catching thing on the card. */}
+      <div className="mt-3.5 flex items-center gap-1.5 border-t border-[var(--border)] pt-3">
+        {onOpen && (
+          <button
+            type="button"
+            onClick={onOpen}
+            className={cn(
+              'inline-flex min-h-[40px] flex-1 items-center justify-center gap-1 rounded-[11px] px-3',
+              'whitespace-nowrap text-[12.5px] font-[700] text-white transition-transform active:scale-[0.98]',
+            )}
+            style={{ background: 'linear-gradient(135deg, #0067E0 0%, #0059CE 100%)' }}
+          >
+            Open plan
+            <ChevronRight size={14} aria-hidden />
+          </button>
+        )}
+        {onEdit && (
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label={`Edit ${name}`}
+            className={cn(
+              'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-[11px] px-3',
+              'whitespace-nowrap text-[12.5px] font-[650] text-[var(--text-secondary)] transition-colors',
+              'hover:bg-[var(--bg-subtle)]',
+            )}
+          >
+            <Pencil size={13} aria-hidden />
+            <span className="hidden sm:inline">Edit</span>
+          </button>
+        )}
+        {onAssign && (
+          <button
+            type="button"
+            onClick={onAssign}
+            aria-label={`Assign ${name} to a client`}
+            className={cn(
+              'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-[11px] px-3',
+              'whitespace-nowrap text-[12.5px] font-[650] text-[var(--text-secondary)] transition-colors',
+              'hover:bg-[var(--bg-subtle)]',
+            )}
+          >
+            <UserPlus size={13} aria-hidden />
+            <span className="hidden sm:inline">Assign</span>
+          </button>
+        )}
+
+        {onDelete && (
+          <div className="relative shrink-0" ref={menuRef}>
             <button
-              onClick={onEdit}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10"
-              style={{ color: 'var(--text-muted)' }}
-              aria-label="Edit plan"
+              ref={triggerRef}
+              type="button"
+              aria-label={`More actions for ${name}`}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((v) => !v)}
+              className={cn(
+                'inline-flex h-[40px] w-[40px] items-center justify-center rounded-[11px]',
+                'text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-subtle)]',
+              )}
             >
-              <Edit3 size={13} />
-              <span>Edit</span>
+              <MoreHorizontal size={16} aria-hidden />
             </button>
-          )}
-          {onDelete && (
-            <button
-              onClick={onDelete}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
-              style={{ color: '#ef4444' }}
-              aria-label="Delete plan"
-            >
-              <Trash2 size={13} />
-              <span>Delete</span>
-            </button>
-          )}
-          {onAssign && (
-            <button
-              onClick={onAssign}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors"
-              style={{ background: color, color: '#fff' }}
-              aria-label="Assign plan"
-            >
-              <UserPlus size={13} />
-              <span>Assign</span>
-            </button>
-          )}
-        </div>
+
+            {menuOpen && (
+              <div
+                role="menu"
+                // Floating overlay: a drag that starts inside it is a scroll
+                // of the menu, not a pull-to-refresh of the page behind it.
+                data-no-pull-refresh
+                className={cn(
+                  'absolute bottom-full right-0 z-30 mb-1.5 w-44 overflow-hidden rounded-[12px] py-1',
+                  'border border-[var(--border)] bg-[var(--bg-elevated)] shadow-xl',
+                )}
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => { setMenuOpen(false); onDelete() }}
+                  className="flex min-h-[40px] w-full items-center gap-2.5 px-3 text-left text-[13px] text-[#DC2626] transition-colors hover:bg-[rgba(239,68,68,0.08)]"
+                >
+                  <Trash2 size={14} aria-hidden />
+                  Delete plan
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </m.div>
   )

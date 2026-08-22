@@ -46,10 +46,22 @@ export interface PageHeroProps {
   children?: React.ReactNode;
   /** Right-aligned actions, beside the title on desktop. */
   actions?: React.ReactNode;
+  /**
+   * A shorter, quieter hero for pages whose content is the point.
+   *
+   * Opt-in, and nothing about the default changes: the full hero is still
+   * what every other page renders. On a screen that is a working surface —
+   * a list of programmes a trainer scans and acts on — the tall gradient
+   * panel is the largest thing on a phone before any of the work is
+   * visible. Compact trims the padding, drops the icon tile to a smaller
+   * size, and removes the corner glows and the grid, which cost height in
+   * perceived weight without carrying anything.
+   */
+  compact?: boolean;
   className?: string;
 }
 
-export function PageHero({ title, subtitle, icon, children, actions, className }: PageHeroProps) {
+export function PageHero({ title, subtitle, icon, children, actions, compact = false, className }: PageHeroProps) {
   const reduce = useReducedMotion();
 
   return (
@@ -57,19 +69,28 @@ export function PageHero({ title, subtitle, icon, children, actions, className }
       initial={reduce ? false : { opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: reduce ? 0 : 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className={cn('relative overflow-hidden rounded-[24px] p-5 sm:rounded-[30px] sm:p-7', className)}
+      className={cn(
+        'relative overflow-hidden',
+        compact
+          ? 'rounded-[20px] px-4 py-3.5 sm:rounded-[24px] sm:px-5 sm:py-4'
+          : 'rounded-[24px] p-5 sm:rounded-[30px] sm:p-7',
+        className,
+      )}
       style={{
         background:
           'radial-gradient(130% 150% at 50% -25%, #0050AD 0%, transparent 55%),'
           + 'linear-gradient(158deg, #0F172A 0%, #0050AD 42%, #0F172A 72%, #0050AD 100%)',
-        boxShadow:
-          '0 24px 64px -14px rgba(15,23,42,0.78), 0 8px 26px rgba(0,103,224,0.22),'
-          + 'inset 0 1px 0 rgba(255,255,255,0.10)',
+        boxShadow: compact
+          ? '0 10px 30px -12px rgba(15,23,42,0.55), inset 0 1px 0 rgba(255,255,255,0.10)'
+          : '0 24px 64px -14px rgba(15,23,42,0.78), 0 8px 26px rgba(0,103,224,0.22),'
+            + 'inset 0 1px 0 rgba(255,255,255,0.10)',
       }}
     >
       {/* Decorative layers, matching the dashboard hero. All non-interactive
           and all behind the content — a hero you cannot read is not a hero. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        {!compact && (
+          <>
         <div
           className="absolute -right-14 -top-20 h-60 w-60 rounded-full opacity-35"
           style={{ background: 'radial-gradient(circle, #FCD34D 0%, transparent 70%)', filter: 'blur(46px)' }}
@@ -86,6 +107,8 @@ export function PageHero({ title, subtitle, icon, children, actions, className }
           </defs>
           <rect width="100%" height="100%" fill="url(#ph-grid)" />
         </svg>
+          </>
+        )}
         <div
           className="absolute inset-0"
           style={{ background: 'radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(15,23,42,0.55) 100%)' }}
@@ -93,10 +116,13 @@ export function PageHero({ title, subtitle, icon, children, actions, className }
       </div>
 
       <div className="relative z-10">
-        <div className="flex items-start gap-3.5">
+        <div className={cn('flex items-start', compact ? 'gap-3' : 'gap-3.5')}>
           {icon && (
             <span
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-white sm:h-12 sm:w-12"
+              className={cn(
+                'flex shrink-0 items-center justify-center rounded-[14px] text-white',
+                compact ? 'h-9 w-9 rounded-[11px]' : 'h-11 w-11 sm:h-12 sm:w-12',
+              )}
               style={{
                 background: 'rgba(255,255,255,0.12)',
                 border: '1px solid rgba(255,255,255,0.18)',
@@ -109,11 +135,17 @@ export function PageHero({ title, subtitle, icon, children, actions, className }
           <div className="min-w-0 flex-1">
             {/* Wraps. These titles are two and three words and the old markup
                 let them run into the actions on a narrow screen. */}
-            <h1 className="text-[21px] font-[800] leading-tight tracking-[-0.02em] text-white sm:text-[26px]">
+            <h1 className={cn(
+              'font-[800] leading-tight tracking-[-0.02em] text-white',
+              compact ? 'text-[18px] sm:text-[21px]' : 'text-[21px] sm:text-[26px]',
+            )}>
               {title}
             </h1>
             {subtitle && (
-              <p className="mt-1 text-[12.5px] leading-snug sm:text-[13.5px]" style={{ color: 'rgba(255,255,255,0.72)' }}>
+              <p className={cn(
+                'leading-snug',
+                compact ? 'mt-0.5 text-[11.5px] sm:text-[12.5px]' : 'mt-1 text-[12.5px] sm:text-[13.5px]',
+              )} style={{ color: 'rgba(255,255,255,0.72)' }}>
                 {subtitle}
               </p>
             )}
@@ -121,8 +153,8 @@ export function PageHero({ title, subtitle, icon, children, actions, className }
           {actions && <div className="hidden shrink-0 sm:block">{actions}</div>}
         </div>
 
-        {children && <div className="mt-4">{children}</div>}
-        {actions && <div className="mt-4 sm:hidden">{actions}</div>}
+        {children && <div className={compact ? 'mt-3' : 'mt-4'}>{children}</div>}
+        {actions && <div className={cn('sm:hidden', compact ? 'mt-3' : 'mt-4')}>{actions}</div>}
       </div>
     </m.div>
   );

@@ -1413,6 +1413,16 @@ export interface WorkoutPlanVersion {
   exercise_count: number;
 }
 
+/** One client's enrolment on a plan, as the plans list returns it. */
+export interface WorkoutPlanAssignment {
+  client_id: string;
+  client_name: string;
+  /** That client's own progress through the plan, 0-100. */
+  progress_pct: number;
+  /** ISO date the client started, used to work out which week they are in. */
+  start_date: string | null;
+}
+
 export interface WorkoutPlan {
   id: string;
   name: string;
@@ -1427,7 +1437,23 @@ export interface WorkoutPlan {
   created_at: string;
   updated_at: string;
   exercise_count: number;
+  /**
+   * How far along the plan is, 0-100.
+   *
+   * Scoped to one client (`?client_id=`), this is that client's own figure.
+   * Studio-wide it is the mean across `assignments` — it used to be the
+   * literal 0 the SQL emitted when no client was named, which is why every
+   * card on the plans screen read "0% complete".
+   */
   progress: number;
+  /**
+   * The clients actually running this plan, newest API field.
+   *
+   * Filtered server-side to the caller's studio, and for a trainer to their
+   * own clients — so `length` is "assigned clients you can see", not a
+   * studio-wide count. Empty for a plan nobody has been assigned.
+   */
+  assignments: WorkoutPlanAssignment[];
   exercises: WorkoutPlanExercise[];
 
   // ── Weeks and progression (migration 137) ───────────────────────────────
