@@ -514,14 +514,21 @@ function Inner() {
                     const builderHref = presetClientId
                       ? `/pt-os/clients/${presetClientId}/training/builder?plan=${plan.id}`
                       : `/pt-os/workout-plans/${plan.id}`;
-                    // Edit and "add exercises" are the same intent — start
-                    // changing the prescription — and with a client in scope
-                    // the builder already opens in that state. Studio-wide
-                    // they would land on exactly the page Open lands on, so
-                    // ?edit=1 takes the detail view straight into its
-                    // exercise editor and the two actions stop being the same
-                    // button drawn twice.
-                    const editHref = presetClientId ? builderHref : `${builderHref}?edit=1`;
+                    /**
+                     * Editing a programme opens the Workout Builder.
+                     *
+                     * With a client in scope that is their builder. Without
+                     * one, the plan's own builder route — a plan nobody is
+                     * assigned to has no client route to live under, and it
+                     * still has to be editable. `assignment` is whoever is on
+                     * it, so a plan with a roster opens under that client and
+                     * keeps the workout-log link the client route provides.
+                     */
+                    const editHref = presetClientId
+                      ? builderHref
+                      : assignment
+                        ? `/pt-os/clients/${assignment.client_id}/training/builder?plan=${plan.id}`
+                        : `/pt-os/workout-plans/${plan.id}/builder`;
                     return (
                       <m.div key={plan.id} variants={itemVariants}>
                         <WorkoutPlanCard

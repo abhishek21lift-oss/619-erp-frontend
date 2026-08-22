@@ -21,7 +21,13 @@ const clients = vi.fn();
 vi.mock('@/lib/api', () => ({
   api: {
     workouts: { plans: { create: (...a: unknown[]) => create(...a) }, assign: (...a: unknown[]) => assign(...a) },
-    pt: { clients: () => clients() },
+    pt: {
+      clients: () => clients(),
+      // Selecting a client now fills the form from that client's record, so
+      // the dialog reads the row. This one answers nothing, which is the case
+      // that must leave the form's own defaults standing.
+      client: async () => ({ data: { id: 'c1', name: 'Ajeet Yadav' } }),
+    },
   },
 }));
 
