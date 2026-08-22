@@ -28,11 +28,11 @@ import {
 import {
   Users, Wallet, Percent,
   ChevronRight, Sparkles, ArrowUpRight, ArrowDownRight, Activity,
-  UserPlus, CalendarPlus, Receipt,
+  UserPlus, CalendarPlus,
   ShieldCheck, Target, Gauge, Crown,
   CalendarClock, CheckCircle2,
   FileSignature, HeartPulse, Apple, PersonStanding, MessageCircle, Phone,
-  AlertTriangle, Clock,
+  AlertTriangle, Clock, IndianRupee,
   Accessibility, Dumbbell,
   Lock, PartyPopper, TrendingUp,
 } from 'lucide-react';
@@ -43,6 +43,7 @@ import { useAuth } from '@/lib/auth-context';
 import FounderBadge from '@/components/FounderBadge';
 import { useFounder } from '@/lib/use-founder';
 import http from '@/lib/http';
+import dynamic from 'next/dynamic';
 import { fmtTime12 } from '@/lib/format';
 import type { TodayClient, TodayRoster } from '@/lib/api';
 
@@ -154,6 +155,40 @@ const C = {
 // Trainers are told apart, not judged — so this walks the non-semantic ramp
 // rather than handing someone the "overdue" red.
 const TRAINER_COLORS = identity;
+
+/**
+ * One hue per KPI tile.
+ *
+ * Four metrics that are merely DIFFERENT, not good or bad, so this walks the
+ * blue ramp and borrows emerald once for the money card, where "success"
+ * genuinely is the meaning. Nothing here takes amber or red: those mean
+ * pending and overdue everywhere else in the app, and Commission wearing the
+ * overdue red told a studio their own payroll was a problem.
+ *
+ * Validated as a categorical set against the light surface — worst adjacent
+ * pair ΔE 28.8 (deutan) and 30.5 (normal vision), well clear of the floors.
+ * Retention's step falls under 3:1 against the card, which is why the hue
+ * never carries meaning alone: every tile shows its label in ink beside it.
+ */
+/**
+ * The KPI sparkline, loaded on demand.
+ *
+ * recharts is ~100KB and this is the home screen, which did not import it at
+ * all. Loading it eagerly would put a chart library in front of every
+ * trainer's first paint for the sake of four 32px charts. The placeholder is
+ * the chart's exact height, so the tile does not resize when the bars arrive.
+ */
+const KpiSparkline = dynamic(() => import('@/components/dashboards/KpiSparkline'), {
+  ssr: false,
+  loading: () => <div className="h-8" />,
+});
+
+const KPI = {
+  clients:    palette.blue[500],
+  revenue:    palette.emerald[500],
+  commission: palette.blue[700],
+  retention:  palette.blue[300],
+} as const;
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmtINR(n: number | string | null | undefined) {
   return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
@@ -487,63 +522,96 @@ function MobileQuickActions() {
 }
 
 // ─── Section 3 — KPI Stat Cards ────────────────────────────────────────────────
+//
+// ── What these are, as a form ─────────────────────────────────────────────
+//
+// Each card answers with ONE number, so each card is a stat tile. A tile is
+// allowed to carry a sparkline, but only where a real series belongs to that
+// metric — and only two of these have one. `revenueTrend` carries six months
+// of revenue and of incentives, and nothing else on this endpoint is a
+// series at all.
+//
+// That mattered more than it sounds. Active Clients used to render
+// `trend={revTrend} pct={revMoM}` — the REVENUE sparkline, under the client
+// count, with revenue's month-on-month percentage in the badge beside it. A
+// studio reading "Active Clients 42 ↑12%" was being told revenue grew 12%.
+// Both numbers were true and neither was about clients. Nothing in the
+// rendering could give it away: a plausible chart under a plausible number.
+//
+// So a tile takes a series only when the series is its own, and Active
+// Clients and Retention are now bare numbers. A stat tile with no chart is a
+// legitimate answer; a chart of the wrong thing is not.
+//
+// ── Colour ────────────────────────────────────────────────────────────────
+//
+// The hue lives on the icon chip and the mark, never on the text. The value
+// used to be set in the card's own colour, which put a 21px number at 2.5:1
+// against the card on two of the five and made "Commission" read in the
+// same red the app uses for overdue — commission is a cost, not a fault, and
+// the status colours are reserved for status. Ink for the number, muted for
+// the label, hue only where it is a mark.
+//
+// The four hues are stepped off the app's own ramps and validated as a
+// categorical set (worst adjacent pair ΔE 28.8 deutan, 30.5 normal). They
+// clear CVD separation comfortably; the two lighter ones fall under 3:1
+// against the surface, which is why every one of them is always accompanied
+// by its visible text label.
 function StatCard({
-  icon, label, value, sub, color, accent, delay = 0, href, trend, pct, className,
+  icon, label, value, sub, color, accent, delay = 0, href, trend, pct, format, className,
 }: {
   icon: React.ReactNode; label: string; value: string; sub?: string;
   color: string; accent: string; delay?: number; href?: string;
-  trend?: number[]; pct?: number | null;
+  /** Six months of THIS metric. Omit it unless the series is genuinely this card's. */
+  trend?: { label: string; value: number }[]; pct?: number | null;
+  /** How the sparkline's tooltip renders a value. */
+  format?: (n: number) => string;
   /** Responsive visibility, for cards that only belong on some screen sizes. */
   className?: string;
 }) {
   const router = useRouter();
-  const max = trend && trend.length > 0 ? Math.max(...trend, 1) : 1;
+  const reduce = useReducedMotion() ?? false;
   return (
     <m.div
-      initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      whileHover={{ y: -4, scale: 1.015 }} whileTap={{ scale: 0.97 }}
+      initial={reduce ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.4, ease: EASE }}
+      whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }}
       onClick={() => href && router.push(href)}
       className={cn('group relative overflow-hidden rounded-[18px] p-3.5 sm:p-4 cursor-pointer', className)}
       style={{
-        background: `linear-gradient(155deg, ${color}11 0%, rgba(255,255,255,0.88) 65%)`,
-        border: `1px solid ${color}22`,
-        boxShadow: `0 4px 20px ${color}0d, inset 0 1px 0 rgba(255,255,255,0.7)`,
+        // A quiet card. The gradient is a single soft wash of the card's hue
+        // rather than a tinted panel, so four of these in a row read as one
+        // grid instead of four competing swatches.
+        background: `linear-gradient(158deg, ${color}0f 0%, rgba(255,255,255,0.92) 58%)`,
+        border: `1px solid ${color}1f`,
+        boxShadow: `0 6px 22px ${color}0f, inset 0 1px 0 rgba(255,255,255,0.75)`,
         backdropFilter: 'blur(16px)',
       }}
     >
-      {/* shimmer */}
-      <div className="pointer-events-none absolute inset-0 -translate-x-full skew-x-[-12deg] bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-      {/* top accent */}
-      <div className="absolute top-0 inset-x-0 h-[3px] rounded-t-[18px]"
+      {/* The hairline of hue along the top edge, which is where the card's
+          identity lives now that the number is ink. */}
+      <div className="absolute inset-x-0 top-0 h-[3px] rounded-t-[18px]"
         style={{ background: `linear-gradient(90deg, ${color}, ${accent})` }} />
 
-      <div className="relative z-10 flex items-start justify-between mb-2.5 pt-0.5">
-        <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-[10px] sm:rounded-[12px] text-white transition-all duration-200 group-hover:scale-110 group-hover:-rotate-6"
-          style={{ background: `linear-gradient(135deg, ${color}, ${accent})`, boxShadow: `0 4px 12px ${color}40` }}>
+      <div className="relative z-10 mb-2.5 flex items-start justify-between pt-0.5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white transition-transform duration-200 group-hover:scale-105 sm:h-9 sm:w-9 sm:rounded-[12px]"
+          style={{ background: `linear-gradient(135deg, ${color}, ${accent})`, boxShadow: `0 4px 12px ${color}3d` }}>
           {icon}
         </div>
         {pct !== undefined && <TrendBadge pct={pct ?? null} />}
       </div>
 
       <div className="relative z-10">
-        <p className="text-[9px] sm:text-[9.5px] font-[750] uppercase tracking-[0.1em] mb-1" style={{ color: `${color}aa` }}>{label}</p>
-        <p className="text-[18px] sm:text-[21px] font-[880] tracking-[-0.03em] leading-none" style={{ color }}>{value}</p>
+        <p className="mb-1 text-[9px] font-[750] uppercase tracking-[0.1em] sm:text-[9.5px]" style={{ color: C.muted }}>{label}</p>
+        <p className="text-[19px] font-[880] leading-none tracking-[-0.03em] tabular-nums sm:text-[22px]" style={{ color: C.ink }}>{value}</p>
         {sub && <p className="mt-1 text-[9.5px] font-[500]" style={{ color: C.muted }}>{sub}</p>}
       </div>
 
       {trend && trend.length > 0 && (
-        <div className="relative z-10 flex items-end gap-[2px] h-7 sm:h-8 mt-2.5">
-          {trend.map((v, i) => (
-            <m.div key={i}
-              initial={{ scaleY: 0 }} animate={{ scaleY: 1 }}
-              transition={{ delay: delay + 0.2 + i * 0.04, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="flex-1 rounded-t-[3px] origin-bottom"
-              style={{
-                height: `${Math.max((v / max) * 100, 8)}%`,
-                background: i === trend.length - 1 ? `linear-gradient(to top, ${color}, ${accent})` : `${color}22`,
-              }} />
-          ))}
+        // Six months, oldest to newest, the last one solid. Hover any month
+        // for its figure — the chart is small enough that direct labels would
+        // not fit and large enough that the shape is worth reading.
+        <div className="relative z-10 mt-2.5">
+          <KpiSparkline data={trend} color={color} metric={label} format={format} />
         </div>
       )}
     </m.div>
@@ -842,23 +910,26 @@ function MonthlyTarget() {
  * collected opens the payments that made it up, pending opens the people it is
  * owed by.
  *
- * The ring is a thick donut rather than a thin progress hairline (same
- * construction as `TargetRing`, just smaller) — its fill is this figure's
- * share of the money in play today (collected + pending), so the two donuts
- * read as complements of one whole rather than two unrelated gauges.
+ * ── Why this is a bar and not a ring ──────────────────────────────────────
+ *
+ * These two are parts of one whole — collected and pending are today's money,
+ * split. Two separate donuts is the worst available form for that: a reader
+ * has to compare two arc lengths, on two different circles, in two different
+ * hues, to work out a ratio that a single line answers at a glance. Arc
+ * length is the hardest magnitude judgement there is; length along a common
+ * baseline is the easiest.
+ *
+ * So each figure gets a bar on the same scale, one under the other, and the
+ * card carries the split itself as a single stacked line beneath them. Same
+ * numbers, same links, three lengths a reader can actually compare.
  */
-function RevenueDonut({
-  emoji, label, value, sub, color, pct, onClick, reduce, delay,
+function RevenueBar({
+  icon, label, value, sub, color, accent, pct, onClick, reduce, delay,
 }: {
-  emoji: string; label: string; value: number; sub: string;
-  color: string; pct: number; onClick: () => void; reduce: boolean; delay: number;
+  icon: React.ReactNode; label: string; value: number; sub: string;
+  color: string; accent: string; pct: number; onClick: () => void; reduce: boolean; delay: number;
 }) {
-  const size = 72;
-  const stroke = 12;
-  const r = (size - stroke) / 2;
-  const circ = 2 * Math.PI * r;
-  const dash = (Math.max(0, Math.min(100, pct)) / 100) * circ;
-
+  const width = Math.max(0, Math.min(100, pct));
   return (
     <m.button
       type="button"
@@ -866,41 +937,47 @@ function RevenueDonut({
       initial={reduce ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.35, ease: EASE }}
-      className="flex flex-1 items-center gap-3 rounded-[16px] p-3.5 text-left transition-transform active:scale-[0.985]"
+      className="group flex flex-1 flex-col gap-2 rounded-[16px] p-3.5 text-left transition-transform active:scale-[0.985]"
       style={{
-        background: `linear-gradient(150deg, ${color}14 0%, ${color}08 60%, transparent 100%)`,
-        border: `1px solid ${color}24`,
-        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5)`,
+        background: `linear-gradient(150deg, ${color}16 0%, ${color}07 62%, transparent 100%)`,
+        border: `1px solid ${color}26`,
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.55)',
       }}
     >
-      <div className="relative shrink-0" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="-rotate-90">
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none"
-            stroke={`${color}22`} strokeWidth={stroke} />
-          <m.circle
-            cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color}
-            strokeWidth={stroke} strokeLinecap="round" strokeDasharray={circ}
-            initial={{ strokeDashoffset: reduce ? circ - dash : circ }}
-            animate={{ strokeDashoffset: circ - dash }}
-            transition={{ duration: reduce ? 0 : 1.1, ease: EASE, delay }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center text-[19px]" aria-hidden>
-          {emoji}
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-white"
+          style={{ background: `linear-gradient(135deg, ${color}, ${accent})`, boxShadow: `0 4px 12px ${color}40` }}>
+          {icon}
+        </span>
+        <div className="min-w-0 flex-1">
+          <span className="text-[9.5px] font-[800] uppercase tracking-[0.11em]" style={{ color: C.muted }}>
+            {label}
+          </span>
+          {/* The number is the point of the card, so it gets the size — in ink,
+              so it is readable rather than tinted to match its own bar. */}
+          <p className="mt-0.5 truncate text-[19px] font-[880] leading-none tracking-[-0.03em] tabular-nums sm:text-[21px]"
+            style={{ color: C.ink }}>
+            <CountUp value={value} format={fmtINR} reduce={reduce} />
+          </p>
         </div>
+        <span className="shrink-0 text-[11px] font-[800] tabular-nums" style={{ color: C.muted }}>
+          {Math.round(width)}%
+        </span>
       </div>
 
-      <div className="min-w-0 flex-1">
-        <span className="text-[9.5px] font-[800] uppercase tracking-[0.11em]" style={{ color: `${color}cc` }}>
-          {label}
-        </span>
-        {/* The number is the point of the card, so it gets the size. */}
-        <p className="mt-0.5 truncate text-[19px] font-[880] leading-none tracking-[-0.03em] tabular-nums sm:text-[21px]"
-          style={{ color }}>
-          <CountUp value={value} format={fmtINR} reduce={reduce} />
-        </p>
-        <p className="mt-1 truncate text-[10.5px] font-[600]" style={{ color: C.muted }}>{sub}</p>
+      {/* This figure's share of the money in play today, on a track the other
+          bar shares — so the two lengths are directly comparable. */}
+      <div className="h-[7px] w-full overflow-hidden rounded-full" style={{ background: `${color}1f` }}>
+        <m.div
+          className="h-full rounded-full"
+          style={{ background: `linear-gradient(90deg, ${color}, ${accent})` }}
+          initial={reduce ? false : { width: 0 }}
+          animate={{ width: `${width}%` }}
+          transition={{ duration: reduce ? 0 : 0.85, ease: EASE, delay }}
+        />
       </div>
+
+      <p className="truncate text-[10.5px] font-[600]" style={{ color: C.muted }}>{sub}</p>
     </m.button>
   );
 }
@@ -982,57 +1059,93 @@ function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
       className="cursor-pointer p-4 sm:p-5"
       onClick={() => router.push('/finance/collected-payments')}
     >
-      <div className="mb-3 flex items-center justify-between">
-        <div>
-          <h3 className="text-[14px] font-[780] tracking-[-0.01em] sm:text-[15px]" style={{ color: C.ink }}>
-            Today&apos;s Revenue
-          </h3>
-          <p className="mt-0.5 text-[10.5px] font-[500]" style={{ color: C.muted }}>
-            {loading ? 'Refreshing…' : `${payments} payment${payments === 1 ? '' : 's'} today`}
-          </p>
+      {/* The header carries the card's colour, so the money below it does not
+          have to. A single emerald→amber wash on the rule under the title is
+          the same split the bars describe, read as one gesture. */}
+      <div className="mb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] text-white"
+              style={{
+                background: `linear-gradient(135deg, ${palette.emerald[600]}, ${palette.emerald[400]})`,
+                boxShadow: `0 5px 14px ${C.success}45`,
+              }}>
+              <IndianRupee size={15} />
+            </span>
+            <div>
+              <h3 className="text-[14px] font-[780] tracking-[-0.01em] sm:text-[15px]" style={{ color: C.ink }}>
+                Today&apos;s Revenue
+              </h3>
+              <p className="mt-0.5 text-[10.5px] font-[500]" style={{ color: C.muted }}>
+                {loading ? 'Refreshing…' : `${payments} payment${payments === 1 ? '' : 's'} today`}
+              </p>
+            </div>
+          </div>
+          {overdue > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-[750] uppercase tracking-[0.08em]"
+              style={{ background: `${C.danger}14`, color: C.danger }}>
+              {overdue} overdue
+            </span>
+          )}
         </div>
-        {overdue > 0 && (
-          <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-[750] uppercase tracking-[0.08em]"
-            style={{ background: `${C.danger}14`, color: C.danger }}>
-            {overdue} overdue
-          </span>
-        )}
+        <div className="mt-3 h-[2px] w-full rounded-full"
+          style={{ background: `linear-gradient(90deg, ${palette.emerald[500]}, ${palette.amber[400]}, transparent)` }} />
       </div>
 
       <div className="flex flex-col gap-2.5 sm:flex-row">
-        <RevenueDonut
-          emoji="💰" label="Collected Today" value={collected}
+        <RevenueBar
+          icon={<Wallet size={15} />} label="Collected Today" value={collected}
           pct={pct}
           sub={payments > 0 ? `across ${payments} payment${payments === 1 ? '' : 's'}` : 'nothing yet today'}
-          color={C.success} reduce={reduce} delay={0}
+          color={C.success} accent={palette.emerald[400]} reduce={reduce} delay={0}
           onClick={() => router.push('/finance/collected-payments')}
         />
-        <RevenueDonut
-          emoji="⏳" label="Pending" value={pending}
+        <RevenueBar
+          icon={<Clock size={15} />} label="Pending" value={pending}
           pct={total > 0 ? 100 - pct : 0}
           sub={owing > 0 ? `from ${owing} member${owing === 1 ? '' : 's'}` : 'all balances clear'}
-          color={C.warning} reduce={reduce} delay={0.07}
+          color={C.warning} accent={palette.amber[400]} reduce={reduce} delay={0.07}
           onClick={() => router.push('/finance/dues')}
         />
       </div>
 
-      {/* Collected against collected + pending. Hidden when there is nothing
-          at all to show, because an empty bar reads as 0% collected rather
-          than as "no money in play". */}
+      {/* The split itself, as one line.
+          Two segments of one whole rather than two bars side by side, with a
+          2px gap so the fills never touch and the boundary is a real edge
+          rather than a colour change. Hidden when there is nothing at all in
+          play, because an empty bar reads as 0% collected rather than as "no
+          money today". */}
       {total > 0 && (
         <div className="mt-3.5">
-          <div className="h-[5px] w-full overflow-hidden rounded-full" style={{ background: `${C.warning}26` }}>
+          <div className="flex h-[9px] w-full gap-[2px] overflow-hidden rounded-full">
             <m.div
               className="h-full rounded-full"
-              style={{ background: `linear-gradient(90deg, ${C.success}, ${C.success}bb)` }}
+              style={{ background: `linear-gradient(90deg, ${palette.emerald[600]}, ${palette.emerald[400]})` }}
               initial={reduce ? false : { width: 0 }}
               animate={{ width: `${pct}%` }}
-              transition={{ duration: reduce ? 0 : 0.7, ease: EASE }}
+              transition={{ duration: reduce ? 0 : 0.8, ease: EASE }}
+            />
+            <m.div
+              className="h-full flex-1 rounded-full"
+              style={{ background: `linear-gradient(90deg, ${palette.amber[300]}, ${palette.amber[500]})` }}
+              initial={reduce ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: reduce ? 0 : 0.5, ease: EASE, delay: 0.25 }}
             />
           </div>
-          <p className="mt-1.5 text-[10px] font-[650]" style={{ color: C.muted }}>
-            {Math.round(pct)}% of {fmtINR(total)} in play collected
-          </p>
+          {/* Direct labels rather than a legend box: two series, both named
+              right here, so identity never rests on the colour alone. */}
+          <div className="mt-2 flex items-center justify-between text-[10px] font-[650]" style={{ color: C.muted }}>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-[7px] w-[7px] rounded-full" style={{ background: palette.emerald[500] }} aria-hidden />
+              {Math.round(pct)}% collected
+            </span>
+            <span className="tabular-nums">{fmtINR(total)} in play</span>
+            <span className="inline-flex items-center gap-1.5">
+              {Math.round(100 - pct)}% pending
+              <span className="h-[7px] w-[7px] rounded-full" style={{ background: palette.amber[500] }} aria-hidden />
+            </span>
+          </div>
         </div>
       )}
 
@@ -1371,20 +1484,41 @@ export type TodayRow = {
 /**
  * Everything still to do today, in the order the day happens.
  *
- * Exported and pure because the three rules in it are the ones that are easy
- * to get quietly wrong and impossible to see in a screenshot: a completed
- * session that stays in the list, an out-of-order queue, a cap that counts
- * the wrong rows. Testing them through the rendered dashboard would mean
- * mocking half the app to assert on data.
+ * Exported and pure because the rules in it are the ones that are easy to get
+ * quietly wrong and impossible to see in a screenshot: a completed session
+ * that stays in the list, an out-of-order queue, a cap that counts the wrong
+ * rows. Testing them through the rendered dashboard would mean mocking half
+ * the app to assert on data.
+ *
+ * ── Now, then next ────────────────────────────────────────────────────────
+ *
+ * Two rows are visible, and they answer two different questions: who is on
+ * the floor right now, and who walks in after them. So a session that has
+ * been STARTED comes first, whatever the clock says — a 07:00 client still
+ * training at 07:40 is the one the trainer is standing in front of, and the
+ * 07:30 client who has not arrived is not.
+ *
+ * That is the only reordering this does, and it is a STABLE partition: within
+ * the running rows and within the rest, the server's order is untouched. The
+ * roster arrives ordered — earliest first, untimed after, rest days last —
+ * and a second opinion about the clock here would put this card and the full
+ * list at /pt-os/today into disagreement about who is next.
+ *
+ * Finishing a workout sets the session to completed, which drops it out
+ * entirely; whoever was second becomes first, and the queue closes up behind
+ * them without anything else having to happen.
  */
 export function buildTodayQueue(roster: TodayClient[]): TodayRow[] {
-  return roster
+  const running = (c: TodayClient) => c.session_status === 'in_progress';
+  const remaining = roster
     // A finished session is not "left to do". With two rows visible, one spent
     // on somebody already trained is a row wasted.
     .filter((c) => c.session_status !== 'completed')
     // A rest day is a real answer on the full list, where there is room to say
     // "nothing scheduled". It is not one of the two things left to do.
-    .filter((c) => !c.is_rest_day)
+    .filter((c) => !c.is_rest_day);
+
+  return [...remaining.filter(running), ...remaining.filter((c) => !running(c))]
     .map((c) => ({
       key: c.client_id,
       name: c.client_name,
@@ -1649,7 +1783,7 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
           </span>
           <div>
             <h3 className="text-[14px] sm:text-[15px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>Session Activity</h3>
-            <p className="text-[10px] font-[500]" style={{ color: C.muted }}>This month</p>
+            <p className="text-[10px] font-[500]" style={{ color: C.muted }}>Workouts logged this month</p>
           </div>
         </div>
         {momDelta !== null && <TrendBadge pct={momDelta} />}
@@ -1659,15 +1793,32 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
 
       {stats && (
         <>
+          {/* Three counts off the workout log — sessions STARTED this month,
+              the subset FINISHED, and last month's finished total to read this
+              month against.
+
+              They used to come off pt_sessions, the booking diary, where
+              nothing ever moves a row past 'scheduled': Done and Last month
+              were counting a status no code path writes, so both read 0 next
+              to a real Total however many workouts the studio ran. Finishing a
+              workout sets workout_sessions.status, which is where these count
+              from now.
+
+              Number in ink, label muted, hue only on the marker beside it —
+              a 20px figure set in a tint of its own colour was the least
+              readable text on the card. */}
           <div className="grid grid-cols-3 gap-2 mb-3.5">
             {[
-              { label: 'Total',    value: stats.this_month_total,     color: C.primary },
+              { label: 'Total',    value: stats.this_month_total,     color: KPI.clients },
               { label: 'Done',     value: stats.this_month_completed, color: C.success },
-              { label: 'Last mo.', value: stats.last_month_completed, color: C.primary },
+              { label: 'Last mo.', value: stats.last_month_completed, color: KPI.retention },
             ].map(t => (
-              <div key={t.label} className="rounded-[13px] p-2.5" style={{ background: `${t.color}0d` }}>
-                <p className="text-[8px] font-[700] uppercase tracking-[0.09em] mb-0.5" style={{ color: `${t.color}aa` }}>{t.label}</p>
-                <p className="text-[20px] font-[860] tracking-[-0.02em]" style={{ color: t.color }}>{t.value}</p>
+              <div key={t.label} className="rounded-[13px] p-2.5" style={{ background: `${t.color}0f` }}>
+                <p className="mb-0.5 flex items-center gap-1 text-[8px] font-[700] uppercase tracking-[0.09em]" style={{ color: C.muted }}>
+                  <span className="h-[6px] w-[6px] shrink-0 rounded-full" style={{ background: t.color }} aria-hidden />
+                  {t.label}
+                </p>
+                <p className="text-[20px] font-[860] tracking-[-0.02em] tabular-nums" style={{ color: C.ink }}>{t.value}</p>
               </div>
             ))}
           </div>
@@ -1852,8 +2003,10 @@ export default function PtOsDashboard() {
     return () => { stop(); document.removeEventListener('visibilitychange', onVisibility); };
   }, [refreshAll]);
 
-  const revTrend = d?.revenueTrend?.map(x => Number(x.revenue)) ?? [];
-  const incTrend = d?.revenueTrend?.map(x => Number(x.incentives)) ?? [];
+  // The month label travels with the number now, so a hovered bar can say
+  // which month it is rather than just how tall it is.
+  const revTrend = d?.revenueTrend?.map(x => ({ label: x.label, value: Number(x.revenue) })) ?? [];
+  const incTrend = d?.revenueTrend?.map(x => ({ label: x.label, value: Number(x.incentives) })) ?? [];
   const revMoM   = momPct(d?.revenueTrend, 'revenue');
   const incMoM   = momPct(d?.revenueTrend, 'incentives');
 
@@ -1924,10 +2077,17 @@ export default function PtOsDashboard() {
             {/* 3 — Mobile quick actions (desktop uses the dock) */}
             <MobileQuickActions />
 
-            {/* 3 — KPI grid: 2 cols mobile → 3 tablet → 4 desktop.
-                Four rather than five on desktop because Commission is hidden
-                there (lg:hidden below) and the row would otherwise sit a card
-                short. Small screens still show all five. */}
+            {/* 3 — KPI grid.
+                Four cards, and four is now the whole set on every screen:
+                Outstanding has gone. It was the fifth, and it was the same
+                figure Today's Revenue already shows as Pending, one section
+                below — with the people it is owed by, how many are overdue,
+                and a link into the dues list. A tile carrying a duplicate of
+                a number that is better answered further down the page is a
+                tile spent saying something twice.
+
+                Commission stays phone-and-tablet-only, so the desktop row is
+                Clients / Revenue / Retention and the grid still fills. */}
             {/* 3.5 — The month's revenue target.
                 Above Key Metrics because it frames them: "PT Revenue ₹95.5K"
                 is a fact, and whether that is good depends entirely on what
@@ -1945,20 +2105,26 @@ export default function PtOsDashboard() {
             <div>
               <SectionLabel>Key Metrics</SectionLabel>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                {/* No sparkline and no percentage. The only series this
+                    endpoint carries is revenue, and revenue is not a client
+                    count — putting it here is what made this card claim
+                    revenue's growth as its own. A number with nothing under
+                    it is the honest render. */}
                 <StatCard icon={<Users size={14} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
-                  sub={`${d.expired_clients} expired`} color={C.primary} accent="#7fb4ff" delay={0} href="/pt-os/clients" trend={revTrend} pct={revMoM} />
+                  sub={`${d.expired_clients} expired`} color={KPI.clients} accent={palette.blue[300]} delay={0} href="/pt-os/clients" />
                 <StatCard icon={<Wallet size={14} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
-                  color={C.success} accent="#34d399" delay={0.05} href="/pt-os/reports" trend={revTrend} pct={revMoM} />
+                  sub="this month" color={KPI.revenue} accent={palette.emerald[400]} delay={0.05} href="/pt-os/reports" trend={revTrend} pct={revMoM} format={fmtINR} />
                 {/* Phone and tablet only. Still rendered there, so the numbers
                     stay one tap away on the devices a trainer carries around
-                    the floor; the desktop row is the one being kept lean. */}
+                    the floor; the desktop row is the one being kept lean.
+
+                    Incentives, not revenue — this is the one card whose
+                    series was already its own. */}
                 <StatCard icon={<Percent size={14} />} label="Commission" value={fmtCompact(d.total_monthly_commission)}
-                  sub={commRate} color={C.danger} accent="#f87171" delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM}
+                  sub={commRate} color={KPI.commission} accent={palette.blue[400]} delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM} format={fmtINR}
                   className="lg:hidden" />
                 <StatCard icon={<Gauge size={14} />} label="Retention" value={retentionPct !== null ? `${retentionPct.toFixed(0)}%` : '—'}
-                  sub={`${d.active_pt_clients}/${d.active_pt_clients + d.expired_clients}`} color={C.primary} accent="#0067e0" delay={0.15} href="/pt-os/clients" />
-                <StatCard icon={<Receipt size={14} />} label="Outstanding" value={fmtCompact(d.total_outstanding)}
-                  sub={`${d.clients_with_balance} client${d.clients_with_balance !== 1 ? 's' : ''}`} color={C.warning} accent="#fbbf24" delay={0.20} href="/pt-os/balance-sheet" />
+                  sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active`} color={KPI.retention} accent={palette.blue[200]} delay={0.15} href="/pt-os/clients" />
               </div>
             </div>
 
