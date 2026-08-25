@@ -16,18 +16,19 @@ import type { PlatformAnalytics } from '@/lib/api';
 import { EmptyState } from '@/components/ui';
 import { Panel, SectionLabel, StatTile } from './console';
 
+type ChartTooltipProps = {
+  active?: boolean;
+  payload?: Array<{ value?: number | string }>;
+  label?: string | number;
+};
+
 const nf = (n: number) => n.toLocaleString('en-IN');
 
-const chartTooltip = ({ active, payload, label }: any) => {
+const chartTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null;
   return (
-    <div
-      className="rounded-xl border px-3 py-2 shadow-xl"
-      style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)' }}
-    >
-      <div className="mb-1 text-[10px] font-[750] uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)' }}>
-        {label}
-      </div>
+    <div className="rounded-xl border px-3 py-2 shadow-xl" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)' }}>
+      <div className="mb-1 text-[10px] font-[750] uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)' }}>{label}</div>
       <div className="text-[13px] font-[800] tabular-nums" style={{ color: 'var(--text-primary)' }}>
         {nf(Number(payload[0].value))} active studios
       </div>
@@ -54,8 +55,7 @@ export default function PlatformPulse() {
   const snapshot = useMemo(() => {
     const trend = data?.trend ?? [];
     const last = trend[trend.length - 1];
-    const sum = (key: 'sessions' | 'clients_added' | 'check_ins') =>
-      trend.reduce((total, point) => total + Number(point[key] ?? 0), 0);
+    const sum = (key: 'sessions' | 'clients_added' | 'check_ins') => trend.reduce((total, point) => total + Number(point[key] ?? 0), 0);
     return {
       active: Number(last?.active_studios ?? 0),
       sessions: sum('sessions'),
@@ -65,24 +65,14 @@ export default function PlatformPulse() {
   }, [data]);
 
   if (loading && !data) {
-    return (
-      <Panel>
-        <div className="flex min-h-[180px] items-center justify-center text-[12px]" style={{ color: 'var(--text-muted)' }}>
-          Loading Platform Pulse…
-        </div>
-      </Panel>
-    );
+    return <Panel><div className="flex min-h-[180px] items-center justify-center text-[12px]" style={{ color: 'var(--text-muted)' }}>Loading Platform Pulse…</div></Panel>;
   }
 
   if (error) {
     return (
       <Panel>
         <EmptyState icon={<AlertTriangle size={20} />} title="Platform Pulse unavailable" description={error} />
-        <button
-          onClick={load}
-          className="mt-3 inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-[11px] font-[700]"
-          style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
-        >
+        <button onClick={load} className="mt-3 inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-[11px] font-[700]" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
           <RefreshCw size={13} /> Retry
         </button>
       </Panel>
@@ -94,25 +84,17 @@ export default function PlatformPulse() {
   return (
     <section className="space-y-4" aria-labelledby="platform-pulse-title">
       <div className="flex items-end justify-between gap-3">
-        <SectionLabel hint={`${data.studios.live} live · ${data.studios.total} total`}>
-          <span id="platform-pulse-title">Platform Pulse</span>
-        </SectionLabel>
-        <button
-          onClick={load}
-          disabled={loading}
-          aria-label="Refresh Platform Pulse"
-          className="flex h-9 w-9 items-center justify-center rounded-lg border"
-          style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
-        >
+        <SectionLabel hint={`${data.studios.live} live · ${data.studios.total} total`}><span id="platform-pulse-title">Platform Pulse</span></SectionLabel>
+        <button onClick={load} disabled={loading} aria-label="Refresh Platform Pulse" className="flex h-9 w-9 items-center justify-center rounded-lg border" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
           <RefreshCw size={13} className={loading ? 'animate-spin' : undefined} />
         </button>
       </div>
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <StatTile icon={<Building2 size={15} />} label="Active studios" value={nf(snapshot.active)} hint="latest month" />
-        <StatTile icon={<Activity size={15} />} label="Sessions" value={nf(snapshot.sessions)} hint="12-month activity" />
-        <StatTile icon={<Users2 size={15} />} label="Clients added" value={nf(snapshot.clients)} hint="12-month activity" />
-        <StatTile icon={<CalendarCheck2 size={15} />} label="Check-ins" value={nf(snapshot.checkIns)} hint="12-month activity" />
+        <StatTile icon={<Building2 size={15} />} label="Active studios" value={nf(snapshot.active)} sub="latest month" />
+        <StatTile icon={<Activity size={15} />} label="Sessions" value={nf(snapshot.sessions)} sub="12-month activity" />
+        <StatTile icon={<Users2 size={15} />} label="Clients added" value={nf(snapshot.clients)} sub="12-month activity" />
+        <StatTile icon={<CalendarCheck2 size={15} />} label="Check-ins" value={nf(snapshot.checkIns)} sub="12-month activity" />
       </div>
 
       <Panel>
