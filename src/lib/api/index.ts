@@ -10,16 +10,11 @@
 // from '@/lib/api' after it — the same `api` object, the same types, the same
 // re-exported helpers. No consumer file was touched, which is the property
 // __tests__/api-shape.test.ts pins with a snapshot of all 462 endpoints.
-//
-// Moving api.ts to api/index.ts is what keeps the specifier working: the
-// directory resolves to this file, so no import path anywhere had to change.
 
 import { auth, webauthn, accounts, profile } from './endpoints/auth';
 import { clients, trainers, leave, attendance } from './endpoints/people';
 import { payments, invoices, expenses, offers, upiPayments } from './endpoints/money';
 import { workouts, exercises, diet, classes, bookings, calendar } from './endpoints/training';
-// The Training OS domain (/api/training). Sits beside `workouts`, which still
-// points at the old /api/workouts, while the builder is rebuilt on top of it.
 import { training } from './endpoints/trainingOs';
 import { progress } from './endpoints/progress';
 import { pt } from './endpoints/ptOs';
@@ -28,15 +23,15 @@ import {
   superAdmin, settings, features, invitations, integrations,
   clientActivation, clientLogin, me,
 } from './endpoints/platform';
+import { commandCenter } from './endpoints/commandCenter';
 import { campaigns, feedback, communication, notifications, automation, support } from './endpoints/engagement';
 import { reports, search, activity, ai } from './endpoints/insights';
 
 export { http } from '../http';
 export { ROLES, normaliseRole, hasRole, isAdminOrManager } from '../roles';
 export * from './types';
+export type { PlatformRiskDomain, PlatformRiskFinding, PlatformRiskReport } from './endpoints/commandCenter';
 
-// Training OS types. Exported from here so consumers keep importing everything
-// from '@/lib/api', which is the property api-shape.test.ts pins.
 export type {
   PrescriptionType, WorkoutSection, CardioType, SetType, LogsAs,
   PrescriptionTypeMeta, TrainingMeta,
@@ -46,10 +41,7 @@ export type {
   SessionSummary, PersonalRecord,
 } from './endpoints/trainingOs';
 
-// qsOf and buildQs are deliberately NOT re-exported. They were private to
-// api.ts and they stay private to the directory: exporting them here would
-// widen '@/lib/api' by two names, which is a surface change however small.
-// The endpoint modules import them from './qs' directly.
+// qsOf and buildQs remain private to the endpoint modules.
 
 export const api = {
   auth,
@@ -80,6 +72,7 @@ export const api = {
   subscription,
   membershipPlans,
   superAdmin,
+  commandCenter,
   settings,
   features,
   invitations,
