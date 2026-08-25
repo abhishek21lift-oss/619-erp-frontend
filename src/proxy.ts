@@ -5,37 +5,17 @@ import { buildReportOnlyCsp } from '@/lib/security-headers';
 import { SESSIONLESS_PAGES, signInPathFor } from '@/lib/public-paths';
 
 const PUBLIC_ASSET_PREFIXES: string[] = [
-  '/checkin',
-  '/_next',
-  '/api/health',
-  '/api/auth',
-  '/models',
-  '/favicon.ico',
-  '/manifest.json',
-  '/platform-manifest.json',
-  '/theme-init.js',
-  '/no-zoom.js',
-  '/logo.png',
-  '/619-logo.png',
-  '/sitemap.xml',
-  '/robots.txt',
-  '/icons',
-  '/images',
+  '/checkin', '/_next', '/api/health', '/api/auth', '/models', '/favicon.ico',
+  '/manifest.json', '/platform-manifest.json', '/theme-init.js', '/no-zoom.js',
+  '/logo.png', '/619-logo.png', '/sitemap.xml', '/robots.txt', '/icons', '/images',
 ];
 
-export function isPublicProxyPath(pathname: string): boolean {
-  return isPublicPath(pathname);
-}
+const PUBLIC_PREFIXES: string[] = [...SESSIONLESS_PAGES, ...PUBLIC_ASSET_PREFIXES];
+
+export function isPublicProxyPath(pathname: string): boolean { return isPublicPath(pathname); }
 
 function isPublicPath(pathname: string): boolean {
-  // Sessionless pages are exact routes. This is important because `/pt-os` is
-  // a public marketing page while `/pt-os/clients` and its other app routes
-  // remain authenticated.
-  if ((SESSIONLESS_PAGES as readonly string[]).includes(pathname)) return true;
-
-  return PUBLIC_ASSET_PREFIXES.some(
-    (p) => pathname === p || pathname.startsWith(p + '/') || pathname.startsWith(p + '?')
-  );
+  return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/') || pathname.startsWith(p + '?'));
 }
 
 function makeNonce(): string {
@@ -60,18 +40,16 @@ function redirectToLogin(req: NextRequest, deleteTokenCookie = false): NextRespo
   const { pathname } = req.nextUrl;
   const signIn = signInPathFor(pathname);
   loginUrl.pathname = signIn;
-  if (pathname !== '/' && pathname !== signIn) {
-    loginUrl.searchParams.set('redirect', pathname);
-  }
+  if (pathname !== '/' && pathname !== signIn) loginUrl.searchParams.set('redirect', pathname);
   const res = NextResponse.redirect(loginUrl);
   if (deleteTokenCookie) res.cookies.delete('token');
   return res;
 }
 
 const HOST_NEUTRAL_PREFIXES = [
-  '/_next', '/api', '/models', '/icons', '/images', '/favicon.ico',
-  '/manifest.json', '/platform-manifest.json', '/theme-init.js', '/no-zoom.js',
-  '/logo.png', '/619-logo.png', '/sitemap.xml', '/robots.txt',
+  '/_next', '/api', '/models', '/icons', '/images', '/favicon.ico', '/manifest.json',
+  '/platform-manifest.json', '/theme-init.js', '/no-zoom.js', '/logo.png',
+  '/619-logo.png', '/sitemap.xml', '/robots.txt',
 ];
 
 export function commandCenterHost(): string | null {
@@ -80,20 +58,15 @@ export function commandCenterHost(): string | null {
 }
 
 export function requestHost(req: NextRequest): string {
-  const raw = req.headers.get('host') ?? '';
-  return raw.split(':')[0].trim().toLowerCase();
+  return (req.headers.get('host') ?? '').split(':')[0].trim().toLowerCase();
 }
 
 export function isCommandCenterPath(pathname: string): boolean {
-  return pathname === '/platform'
-    || pathname.startsWith('/platform/')
-    || pathname === '/platform-login';
+  return pathname === '/platform' || pathname.startsWith('/platform/') || pathname === '/platform-login';
 }
 
 export function isHostNeutralPath(pathname: string): boolean {
-  return HOST_NEUTRAL_PREFIXES.some(
-    (p) => pathname === p || pathname.startsWith(p + '/')
-  );
+  return HOST_NEUTRAL_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'));
 }
 
 function notFound(req: NextRequest): NextResponse {
@@ -104,27 +77,16 @@ function notFound(req: NextRequest): NextResponse {
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
   const ccHost = commandCenterHost();
   if (ccHost && !isHostNeutralPath(pathname)) {
     const onCommandCenter = requestHost(req) === ccHost;
-    if (onCommandCenter !== isCommandCenterPath(pathname)) {
-      return notFound(req);
-    }
+    if (onCommandCenter !== isCommandCenterPath(pathname)) return notFound(req);
   }
+  if (isPublicPath(pathname)) return withReportOnlyCsp(req);
 
-  if (isPublicPath(pathname)) {
-    return withReportOnlyCsp(req);
-  }
-
-  const token =
-    req.cookies.get('token')?.value ??
-    req.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim();
-
+  const token = req.cookies.get('token')?.value ?? req.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim();
   if (!token) {
-    if (pathname.startsWith('/api/')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (pathname.startsWith('/api/')) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     return redirectToLogin(req);
   }
 
@@ -140,21 +102,16 @@ export async function proxy(req: NextRequest) {
 
   try {
     const parts = token.split('.');
-    if (parts.length !== 3 || !parts.every(s => s.length > 0)) throw new Error('malformed');
+    if (parts.length !== 3 || !parts.every((s) => s.length > 0)) throw new Error('malformed');
     const padded = parts[1].replace(/-/g, '+').replace(/_/g, '/');
     const payload = JSON.parse(atob(padded)) as { exp?: number };
-    if (payload.exp && Date.now() / 1000 > payload.exp) {
-      return redirectToLogin(req, true);
-    }
+    if (payload.exp && Date.now() / 1000 > payload.exp) return redirectToLogin(req, true);
   } catch {
     return redirectToLogin(req, true);
   }
-
   return withReportOnlyCsp(req);
 }
 
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon\\.ico|models|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|avif|woff2|woff|ttf|otf)).*)',
-  ],
+  matcher: ['/((?!api|_next/static|_next/image|favicon\\.ico|models|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|avif|woff2|woff|ttf|otf)).*)'],
 };
