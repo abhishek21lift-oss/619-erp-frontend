@@ -1,24 +1,17 @@
 'use client';
 
 // Lazily-loaded panels for the platform console.
-//
-// Extracted verbatim from the 3,197-line platform/page.tsx (audit H-03).
-// Component bodies, props and rendered markup are unchanged.
 import dynamic from 'next/dynamic';
 import { PanelSkeleton } from './ui';
 
-// Code-split: neither panel is on the default tab, and Audit pulls a filter
-// drawer + expandable rows that the Overview visitor should not pay for.
 export const AuditCentre = dynamic(() => import('@/components/platform/audit-centre'), {
   loading: () => <PanelSkeleton label="Loading audit trail…" />,
 });
-// The Health tab now renders the Command Center: the same database/process/
-// queue figures the old system-health panel showed, plus redis, http latency,
-// ai, security posture and smtp, all from the collector snapshot. Two health
-// screens reading two endpoints is exactly the drift the audit flagged, so the
-// old panel was removed rather than kept alongside.
 export const CommandCenterPanel = dynamic(() => import('@/components/platform/command-center'), {
   loading: () => <PanelSkeleton label="Collecting system state…" />,
+});
+export const PlatformRiskCentre = dynamic(() => import('@/components/platform/platform-risk'), {
+  loading: () => <PanelSkeleton label="Calculating platform risk…" />,
 });
 export const InvoicesPanel = dynamic(() => import('@/components/platform/invoices'), {
   loading: () => <PanelSkeleton label="Loading invoices…" />,
