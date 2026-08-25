@@ -13,8 +13,7 @@ function realSegments(): string[] {
     const dir = path.join(APP, group);
     if (!fs.existsSync(dir)) continue;
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (!e.isDirectory()) continue;
-      if (e.name.startsWith('(') || e.name.startsWith('[')) continue;
+      if (!e.isDirectory() || e.name.startsWith('(') || e.name.startsWith('[')) continue;
       out.add(`/${e.name}`);
     }
   }
@@ -28,8 +27,7 @@ describe('indexable marketing routes', () => {
   });
 
   it('/login is not in the sitemap', () => {
-    const urls = sitemap().map((e) => e.url);
-    expect(urls.some((u) => u.endsWith('/login'))).toBe(false);
+    expect(sitemap().some((e) => e.url.endsWith('/login'))).toBe(false);
   });
 
   it('every public route exports metadata that opts in to indexing', () => {
@@ -53,13 +51,11 @@ describe('indexable marketing routes', () => {
   });
 
   it('the root layout does not declare a global canonical', () => {
-    const root = read('layout.tsx');
-    const alternates = root.match(/alternates:\s*\{[^}]*\}/);
-    expect(alternates).toBeNull();
+    expect(read('layout.tsx').match(/alternates:\s*\{[^}]*\}/)).toBeNull();
   });
 
   it('the root layout still defaults to noindex', () => {
-    expect(read('layout.tsx')).toMatch(/robots:\s*\{\s*index:\s*false,\s*follow:\s*false\}/);
+    expect(read('layout.tsx')).toContain('robots: { index: false, follow: false }');
   });
 });
 
@@ -76,16 +72,13 @@ describe('robots.txt describes routes that exist', () => {
   it('every disallowed top-level segment is a real route', () => {
     const real = new Set(realSegments());
     const topLevel = PRIVATE_SEGMENTS.filter((s) => !s.startsWith('/api/'));
-    const phantom = topLevel.filter((s) => !real.has(s));
-    expect(phantom).toEqual([]);
+    expect(topLevel.filter((s) => !real.has(s))).toEqual([]);
   });
 
   it('no real top-level segment is left unclassified', () => {
     const publicTop = new Set(['/start-free', '/pt-os']);
     const listed = new Set(PRIVATE_SEGMENTS);
-    const unclassified = realSegments().filter(
-      (s) => !listed.has(s) && !publicTop.has(s) && s !== '/login',
-    );
+    const unclassified = realSegments().filter((s) => !listed.has(s) && !publicTop.has(s) && s !== '/login');
     expect(unclassified).toEqual([]);
   });
 
@@ -95,9 +88,7 @@ describe('robots.txt describes routes that exist', () => {
   });
 
   it('does not disallow public marketing routes', () => {
-    for (const route of PUBLIC_ROUTES) {
-      expect(disallow).not.toContain(route);
-    }
+    for (const route of PUBLIC_ROUTES) expect(disallow).not.toContain(route);
   });
 
   it('points at the sitemap', () => {
