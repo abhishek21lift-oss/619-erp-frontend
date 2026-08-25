@@ -29,16 +29,38 @@ export interface PlatformRiskReport {
   methodology: string;
 }
 
+export interface PlatformActionItem {
+  id: string;
+  source: 'guardian' | 'alert';
+  severity: 'critical' | 'warning' | 'info';
+  title: string;
+  description: string;
+  evidence: unknown;
+  recommended_commands: string[];
+  recovery_available: boolean;
+  confidence: number | null;
+  status: 'open' | 'acknowledged';
+}
+
+export interface PlatformActionCenterReport {
+  checked_at: string;
+  counts: { critical: number; warning: number; info: number; total: number };
+  items: PlatformActionItem[];
+}
+
 /**
- * Command Center risk API.
+ * Command Center risk/action APIs.
  *
- * The score is deterministic and comes from the backend's platform telemetry
- * plus existing Guardian findings. This client never calculates or rewrites
- * the risk score, which keeps the backend as the source of truth.
+ * Both are read-only deterministic views. The client never calculates or
+ * rewrites risk or findings, keeping the backend as the source of truth.
  */
 export const commandCenter = {
   risk: (fresh = false) =>
     http<{ data: PlatformRiskReport }>(
       `/api/platform/command-center/risk${fresh ? '?fresh=1' : ''}`,
+    ),
+  actionCenter: (fresh = false) =>
+    http<{ data: PlatformActionCenterReport }>(
+      `/api/platform/command-center/action-center${fresh ? '?fresh=1' : ''}`,
     ),
 };
