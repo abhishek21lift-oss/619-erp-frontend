@@ -2,18 +2,19 @@
 
 import CommandCenter from './command-center';
 import PlatformRiskCentre from './platform-risk';
+import ActionCenter from './action-center';
 
 /**
- * Composite operational console: preserve the existing live infrastructure
- * Command Center and add the deterministic Platform Risk layer underneath it.
- * The risk layer is intentionally separate so an analytics/risk failure can
- * never blank the live health console.
+ * Composite operational console. The existing live infrastructure console is
+ * preserved intact; deterministic risk and operator actions are layered below
+ * it as independently failing panels.
  */
 export default function CommandCenterWithRisk() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <CommandCenter />
       <PlatformRiskCentre />
+      <ActionCenter />
     </div>
   );
 }
