@@ -7,7 +7,7 @@ import { PanelSkeleton } from './ui';
 export const AuditCentre = dynamic(() => import('@/components/platform/audit-centre'), {
   loading: () => <PanelSkeleton label="Loading audit trail…" />,
 });
-export const CommandCenterPanel = dynamic(() => import('@/components/platform/command-center'), {
+export const CommandCenterPanel = dynamic(() => import('@/components/platform/command-center-with-risk'), {
   loading: () => <PanelSkeleton label="Collecting system state…" />,
 });
 export const PlatformRiskCentre = dynamic(() => import('@/components/platform/platform-risk'), {
