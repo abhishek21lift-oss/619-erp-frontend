@@ -16,9 +16,11 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { ClientIntelligenceSummary } from '@/lib/api';
+import { blue } from '@/lib/palette';
 
-const ACCENT = '#0067E0';
+const ACCENT = blue[500];
 const ACCENT_DIM = 'rgba(0,103,224,0.10)';
+const KNOWS_ACCENT = blue[600];
 
 function IntelRow({ label, items, color }: { label: string; items: string[]; color: string }) {
   if (items.length === 0) return null;
@@ -157,7 +159,7 @@ export default function ClientIntelligencePanel({ clientId }: Props) {
         <IntelRow
           label="What AI Knows"
           items={intel.what_ai_knows.map((m) => `${m.category}: ${m.fact}`)}
-          color="#6366f1"
+          color={KNOWS_ACCENT}
         />
         <IntelRow
           label="What AI Suggests"

@@ -11,18 +11,19 @@
 import { useState } from 'react';
 import { Brain, Check, X, AlertTriangle, Clock, Shield, Loader2 } from 'lucide-react';
 import type { AiMemoryCandidate } from '@/lib/api';
+import { blue, red, emerald, amber } from '@/lib/palette';
 
-const ACCENT = '#0067E0';
+const ACCENT = blue[500];
 const ACCENT_DIM = 'rgba(0,103,224,0.10)';
 
 const CATEGORY_COLORS: Record<string, string> = {
-  preference: '#6366f1',
-  constraint: '#dc2626',
-  observation: '#059669',
-  goal: '#d97706',
-  medical: '#dc2626',
-  schedule: '#7c3aed',
-  equipment: '#0891b2',
+  preference: blue[600],
+  constraint: red[600],
+  observation: emerald[600],
+  goal: amber[600],
+  medical: red[600],
+  schedule: amber[500],
+  equipment: emerald[500],
 };
 
 const SOURCE_LABELS: Record<string, string> = {

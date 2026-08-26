@@ -32,9 +32,12 @@ import { useToast } from '@/lib/toast';
 import MemoryCandidateCard from '@/components/ai/MemoryCandidateCard';
 import ProgrammerProposalCard from '@/components/ai/ProgrammerProposalCard';
 import AuditTrailPanel from '@/components/ai/AuditTrailPanel';
+import { blue } from '@/lib/palette';
 
-const ACCENT = '#0067E0';
+const ACCENT = blue[500];
 const ACCENT_DIM = 'rgba(0,103,224,0.10)';
+const MEMORY_ACCENT = blue[600];
+const MEMORY_ACCENT_DIM = 'rgba(0,89,206,0.10)';
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 16 },
@@ -106,8 +109,8 @@ function PendingItemRow({ item, onSelect }: {
       className="flex items-center gap-3 w-full rounded-[14px] px-4 py-3.5 text-left transition-all hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]"
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
       <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[10px]"
-        style={{ background: isMemory ? 'rgba(99,102,241,0.1)' : ACCENT_DIM }}>
-        {isMemory ? <Brain size={15} color="#6366f1" /> : <Dumbbell size={15} color={ACCENT} />}
+        style={{ background: isMemory ? MEMORY_ACCENT_DIM : ACCENT_DIM }}>
+        {isMemory ? <Brain size={15} color={MEMORY_ACCENT} /> : <Dumbbell size={15} color={ACCENT} />}
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-[650]" style={{ color: 'var(--text-primary)' }}>
@@ -115,8 +118,8 @@ function PendingItemRow({ item, onSelect }: {
         </p>
         <div className="mt-0.5 flex items-center gap-2">
           <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]"
-            style={{ background: isMemory ? 'rgba(99,102,241,0.08)' : 'rgba(0,103,224,0.08)',
-              color: isMemory ? '#6366f1' : ACCENT }}>
+            style={{ background: isMemory ? 'rgba(0,89,206,0.08)' : 'rgba(0,103,224,0.08)',
+              color: isMemory ? MEMORY_ACCENT : ACCENT }}>
             {isMemory ? (data as AiMemoryCandidate).category : (data as AiProgrammerProposal).proposal_type.replace(/_/g, ' ')}
           </span>
           <span className="text-[10px] font-[600]" style={{ color: 'var(--text-disabled)' }}>
@@ -461,7 +464,7 @@ export default function IntelligenceCenterPage() {
                   title="What AI Knows"
                   icon={<Brain size={13} />}
                   items={intel.what_ai_knows.map((m) => `${m.category}: ${m.fact}`)}
-                  color="#6366f1"
+                  color={MEMORY_ACCENT}
                 />
                 <IntelSection
                   title="What AI Suggests"
