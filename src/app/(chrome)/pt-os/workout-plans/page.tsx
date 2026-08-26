@@ -388,7 +388,12 @@ function Inner() {
               ]
             ).map((s) => (
               <m.div key={s.label} variants={itemVariants}
-                className="rounded-[14px] px-3.5 py-3"
+                whileHover={{ y: -2 }}
+                transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                // Same treatment on all four, never a per-metric colour — the
+                // row stays context, it just answers "is this interactive"
+                // now, which a flat hairline card did not.
+                className="rounded-[14px] px-3.5 py-3 transition-shadow hover:shadow-[0_10px_24px_-10px_rgba(15,23,42,0.14)]"
                 style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-1.5">
                   <span style={{ color: 'var(--text-disabled)' }}>{s.icon}</span>
@@ -480,14 +485,14 @@ function Inner() {
               {dataLoading ? (
                 <div style={{ display: 'grid', gridTemplateColumns: view === 'grid' ? 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))' : '1fr', gap: 12 }}>
                   {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} style={{ height: 180, borderRadius: 18, background: 'var(--bg-subtle)', animation: 'pulse 1.5s ease-in-out infinite', opacity: 0.6 }} />
+                    <div key={i} className="animate-shimmer" style={{ height: 180, borderRadius: 16, border: '1px solid var(--border)' }} />
                   ))}
                 </div>
               ) : plans.length === 0 ? (
                 <div className="flex flex-col items-center px-5 py-14 text-center">
                   <span
-                    className="mb-3.5 flex h-12 w-12 items-center justify-center rounded-[15px]"
-                    style={{ background: 'rgba(0,103,224,0.08)', color: ACCENT }}
+                    className="mb-3.5 flex h-12 w-12 items-center justify-center rounded-[15px] text-white"
+                    style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 6px 16px -4px rgba(0,103,224,0.40)' }}
                   >
                     <Dumbbell size={22} />
                   </span>
@@ -500,8 +505,8 @@ function Inner() {
                   <button
                     type="button"
                     onClick={() => setCreateOpen(true)}
-                    className="mt-4 inline-flex items-center gap-1.5 rounded-[11px] px-4 text-[13px] font-[700] text-white"
-                    style={{ background: ACCENT, minHeight: 44 }}
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-[11px] px-4 text-[13px] font-[700] text-white transition-transform active:scale-[0.98]"
+                    style={{ background: 'linear-gradient(135deg, #0067e0, #3B8DF5)', minHeight: 44, boxShadow: '0 3px 12px -2px rgba(0,103,224,0.40)' }}
                   >
                     <Plus size={15} /> New Plan
                   </button>
@@ -592,7 +597,7 @@ function Inner() {
               {dataLoading ? (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                   {Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} style={{ height: 220, borderRadius: 18, background: 'var(--bg-subtle)', opacity: 0.6 }} />
+                    <div key={i} className="animate-shimmer" style={{ height: 220, borderRadius: 16, border: '1px solid var(--border)' }} />
                   ))}
                 </div>
               ) : (
@@ -628,8 +633,8 @@ function Inner() {
             <m.div key="ai" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               <div className="mx-auto max-w-[640px] px-1 py-6 text-center sm:py-8">
                 <span
-                  className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[18px]"
-                  style={{ background: 'rgba(0,103,224,0.08)', color: ACCENT }}
+                  className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[18px] text-white"
+                  style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 6px 18px -4px rgba(0,103,224,0.45)' }}
                 >
                   <Sparkles size={24} />
                 </span>
@@ -640,8 +645,8 @@ function Inner() {
                   Generate a personalised programme from a client&apos;s details, then edit it like any other plan.
                 </p>
                 <button onClick={() => setAiPanelOpen(true)}
-                  className="mt-5 inline-flex items-center gap-2 rounded-[12px] px-5 text-[13.5px] font-[700] text-white"
-                  style={{ background: ACCENT, minHeight: 44, boxShadow: '0 2px 10px rgba(0,103,224,0.28)' }}>
+                  className="mt-5 inline-flex items-center gap-2 rounded-[12px] px-5 text-[13.5px] font-[700] text-white transition-transform active:scale-[0.98]"
+                  style={{ background: 'linear-gradient(135deg, #0067e0, #3B8DF5)', minHeight: 44, boxShadow: '0 4px 16px -3px rgba(0,103,224,0.45)' }}>
                   <Sparkles size={15} /> Open AI Coach
                 </button>
 
@@ -651,7 +656,8 @@ function Inner() {
                     { title: 'Weekly schedule', desc: 'A day-by-day split with exercises already chosen.' },
                     { title: 'Progression notes', desc: 'How to load the programme week over week.' },
                   ].map((f) => (
-                    <div key={f.title} className="rounded-[14px] p-3.5"
+                    <div key={f.title}
+                      className="rounded-[14px] p-3.5 transition-shadow hover:shadow-[0_10px_24px_-10px_rgba(15,23,42,0.14)]"
                       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                       <h4 className="text-[12.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>{f.title}</h4>
                       <p className="mt-1 text-[11.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{f.desc}</p>
@@ -682,13 +688,6 @@ function Inner() {
           </>
         )}
       </AnimatePresence>
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 0.6; }
-          50% { opacity: 0.3; }
-        }
-      `}</style>
 
       <NewProgrammeDialog
         open={createOpen}
