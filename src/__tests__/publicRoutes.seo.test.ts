@@ -59,7 +59,14 @@ describe('indexable marketing routes', () => {
   });
 
   it('the root layout still defaults to noindex', () => {
-    expect(read('layout.tsx')).toMatch(/robots:\s*\{\s*index:\s*false,\s*follow:\s*false\}/);
+    // `\s*` before the closing brace, like the opt-in assertion above it. It
+    // was the one position in this pattern without it, so the invariant it
+    // guards — the whole origin is noindex unless a route opts in — was being
+    // reported as broken by `robots: { index: false, follow: false },`, which
+    // is exactly the thing it wants to see. A formatting-sensitive assertion
+    // on a security default is worse than no assertion: it cries wolf until
+    // somebody "fixes" it by loosening what it checks.
+    expect(read('layout.tsx')).toMatch(/robots:\s*\{\s*index:\s*false,\s*follow:\s*false\s*\}/);
   });
 });
 
