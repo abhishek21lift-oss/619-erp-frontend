@@ -30,6 +30,7 @@ import {
   ClientTabs, TabPanel, EmptyPanel, LinkPanel, TAB_COLOR, type TabKey,
 } from '@/components/pt-os/client/ClientTabs';
 import RecoveryPanel from '@/components/pt-os/client/RecoveryPanel';
+import ClientIntelligencePanel from '@/components/ai/ClientIntelligencePanel';
 import type { ClientRecovery } from '@/lib/api';
 import { printWindowCloseButtonHtml } from '@/lib/printWindowChrome';
 import { activatable } from '@/lib/a11y';
@@ -711,6 +712,11 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   something. Activity Mix went entirely — the ratio of
                   payments to check-ins is not a question anybody asks. */}
               <ClientSnapshot clientId={client.id} onLoaded={(s) => { setBaselineDone(s.baseline_done); setRecovery(s.recovery); }} />
+
+              {/* AI Intelligence summary — compact panel showing what AI knows, suggests, and needs attention. */}
+              <div className="mb-5">
+                <ClientIntelligencePanel clientId={client.id} />
+              </div>
 
               {/* PT term, as a bar. The one donut worth keeping as a figure,
                   because "days left" is what gets asked, but a bar shows how

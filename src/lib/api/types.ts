@@ -3331,3 +3331,93 @@ export interface AiActionResult {
   warnings: string[];
   results: Array<{ id: string; name: string; status: string; error: string | null }>;
 }
+
+// ── Trainer Intelligence (Phase 2F/2G) ──────────────────────────────────
+
+export interface AiMemoryCandidate {
+  id: string;
+  organization_id: string;
+  client_id: string;
+  category: string;
+  subcategory?: string | null;
+  fact: string;
+  confidence: number;
+  source_type: string;
+  source_id?: string | null;
+  source_text?: string | null;
+  status: string;
+  verified_at?: string | null;
+  as_of?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+  /** Attached by the pending-queue, not stored in DB. */
+  _conflicts?: Array<{ id: string; fact: string; category: string }>;
+}
+
+export interface AiProgrammerProposal {
+  id: string;
+  organization_id: string;
+  client_id: string;
+  proposal_type: string;
+  summary: string;
+  reason: string;
+  evidence: Array<{ type: string; description: string; source: string; value: string }>;
+  current_state: Record<string, unknown>;
+  deterministic_recommendation: Record<string, unknown>;
+  ai_recommendation: Record<string, unknown> | null;
+  confidence: number;
+  safety_flags: string[];
+  requires_trainer_approval: boolean;
+  status: string;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  rejection_reason?: string | null;
+  fingerprint?: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  expires_at: string;
+}
+
+export interface PendingWorkItem {
+  type: 'memory' | 'proposal';
+  data: AiMemoryCandidate | AiProgrammerProposal;
+  priority: number;
+}
+
+export interface PendingWorkQueue {
+  memory_candidates: PendingWorkItem[];
+  programmer_proposals: PendingWorkItem[];
+  total_pending: number;
+}
+
+export interface ClientIntelligenceSummary {
+  client_id: string;
+  client_name: string;
+  generated_at: string;
+  what_changed: Array<{ type: string; text: string }>;
+  what_ai_knows: Array<{ category: string; fact: string; confidence: number; source_type: string; as_of: string | null }>;
+  what_ai_suggests: Array<{ id: string; type: string; summary: string; confidence: number; safety_flags: string[]; expires_at: string }>;
+  what_needs_attention: Array<{ type: string; text: string }>;
+  what_is_missing: Array<string>;
+  next_best_action: { type: string; text: string; proposal_id?: string; memory_id?: string } | null;
+}
+
+export interface AiIntelligenceAudit {
+  id: string;
+  organization_id: string;
+  actor_id: string;
+  target_type: string;
+  target_id: string;
+  action: string;
+  previous_state: string | null;
+  new_state: string | null;
+  reason: string | null;
+  request_id: string | null;
+  created_at: string;
+  /** Human-readable description from the target row (memory fact or proposal summary). */
+  target_description?: string | null;
+  /** The client ID this audit event is associated with (via the target). */
+  client_id?: string | null;
+}

@@ -94,6 +94,7 @@ describe('no page draws a container box around its own title', () => {
     ['app', 'engagement', 'whatsapp', 'page.tsx'],
     ['app', 'ai', 'workout-generator', 'page.tsx'],
     ['app', 'ai', 'diet-generator', 'page.tsx'],
+    ['app', 'ai', 'intelligence', 'page.tsx'],
     ['app', 'ai', 'progress-analysis', 'page.tsx'],
     ['app', 'ai', 'business-insights', 'page.tsx'],
     ['app', 'ai-coach', 'knowledge', 'page.tsx'],
@@ -418,6 +419,7 @@ describe('the AI suite (Workout/Diet Generator, Progress Analyzer, Business Insi
   const aiPages = [
     ['app', 'ai', 'workout-generator', 'page.tsx'],
     ['app', 'ai', 'diet-generator', 'page.tsx'],
+    ['app', 'ai', 'intelligence', 'page.tsx'],
     ['app', 'ai', 'progress-analysis', 'page.tsx'],
     ['app', 'ai', 'business-insights', 'page.tsx'],
     ['app', 'ai-coach', 'knowledge', 'page.tsx'],
