@@ -269,7 +269,7 @@ export default function IntelligenceCenterPage() {
 
   const handleReverseProposal = async (id: string, reason?: string) => {
     const res = await api.ai.trainer.reverseProposal(id, reason);
-    if (res.status === 'already_reversed') {
+    if (res.data.status === 'already_reversed') {
       toast.info('Already reversed');
     } else {
       toast.success('Change reversed successfully');

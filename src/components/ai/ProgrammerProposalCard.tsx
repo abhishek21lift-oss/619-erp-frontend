@@ -62,14 +62,14 @@ function EvidenceBadge({ evidence }: { evidence: AiProgrammerProposal['evidence'
 }
 
 export default function ProgrammerProposalCard({ proposal, onApprove, onReject, onReverse, executable = true }: Props) {
-  const [acting, setActing] = useState<'approve' | 'reject' | null>(null);
+  const [acting, setActing] = useState<'approve' | 'reject' | 'reverse' | null>(null);
   const [showReject, setShowReject] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
 
   const confidencePct = Math.round((proposal.confidence ?? 0) * 100);
-  const isExpired = proposal.expires_at && new Date(proposal.expires_at).getTime() <= Date.now();
+  const isExpired = Boolean(proposal.expires_at) && new Date(proposal.expires_at).getTime() <= Date.now();
   const hasSafetyFlags = proposal.safety_flags && proposal.safety_flags.length > 0;
 
   // Check if AI and deterministic recommendations differ

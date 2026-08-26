@@ -148,7 +148,7 @@ export default function ClientIntelligencePanel({ clientId }: Props) {
       </div>
 
       {/* Content */}
-      <div className="px-4 py-2 divide-y" style={{ divideColor: 'var(--border)' }}>
+      <div className="px-4 py-2 divide-y divide-[color:var(--border)]">
         <IntelRow
           label="What Changed"
           items={intel.what_changed.map((c) => c.text)}
