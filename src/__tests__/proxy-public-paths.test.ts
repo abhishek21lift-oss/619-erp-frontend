@@ -21,7 +21,8 @@
 // would quietly pass the day somebody forgets Guard on a private page.
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
-import { SESSIONLESS_PAGES, isSessionlessPage } from '@/lib/public-paths';
+import { isSessionlessPage } from '@/lib/public-paths';
+import { isPublicProxyPath } from '@/proxy';
 import path from 'node:path';
 import { srcPath } from '@/__tests__/helpers/app-routes';
 
@@ -30,25 +31,28 @@ const proxySrc = fs.readFileSync(path.join(SRC, 'proxy.ts'), 'utf8');
 
 const httpSrc = fs.readFileSync(path.join(SRC, 'lib', 'http.ts'), 'utf8');
 
-/** PUBLIC_PREFIXES as the proxy actually declares it. */
-function publicPrefixes(): string[] {
-  const block = proxySrc.match(/const PUBLIC_PREFIXES:\s*string\[\]\s*=\s*\[([\s\S]*?)\n\];/);
-  if (!block) throw new Error('PUBLIC_PREFIXES not found — has proxy.ts been restructured?');
-  const withoutComments = block[1].replace(/\/\/[^\n]*/g, ' ');
-  return Array.from(withoutComments.matchAll(/'([^']+)'/g)).map((m) => m[1]);
-}
-
-/** The proxy's own matching rule, copied so the test exercises real semantics. */
-function isPublic(pathname: string): boolean {
-  const literals = publicPrefixes();
-  // The proxy spreads SESSIONLESS_PAGES in, so the shared list is part of the
-  // effective set even though it is not spelled out in proxy.ts.
-  const all = proxySrc.includes('...SESSIONLESS_PAGES')
-    ? [...SESSIONLESS_PAGES, ...literals]
-    : literals;
-  return all.some(
-    (p) => pathname === p || pathname.startsWith(p + '/') || pathname.startsWith(p + '?'),
-  );
+/**
+ * The proxy's own decision, asked of the proxy.
+ *
+ * This used to scrape `const PUBLIC_PREFIXES` out of proxy.ts with a regex and
+ * re-implement the matching over the strings it found. That is how this file
+ * came to fail on a change it should have been indifferent to: the proxy split
+ * its one list into exact `SESSIONLESS_PAGES` and prefix-matched
+ * `PUBLIC_ASSET_PREFIXES`, and the regex stopped finding a name that no longer
+ * existed. Worse than the false alarm is the direction it cannot catch — a
+ * copied rule can drift from the real one silently, which is the whole failure
+ * mode this suite exists to prevent.
+ *
+ * `isPublicProxyPath` is exported for this; command-center-separation.test.ts
+ * already calls it.
+ *
+ * The query string comes off first because that is what the proxy is handed:
+ * Next resolves `req.nextUrl.pathname` without one. The fixtures keep their
+ * `?token=abc` deliberately — that is the URL a person actually clicks — so the
+ * stripping belongs here rather than in the list.
+ */
+function isPublic(url: string): boolean {
+  return isPublicProxyPath(url.split('?')[0]);
 }
 
 /**
@@ -118,7 +122,14 @@ describe('the 401 handler lets them stay', () => {
   });
 
   it('and so does the proxy', () => {
-    expect(proxySrc).toMatch(/\.\.\.SESSIONLESS_PAGES/);
+    // Asserted as "imports the shared list", not as a particular syntax. This
+    // read `/\.\.\.SESSIONLESS_PAGES/` and so failed when the proxy stopped
+    // spreading the list into a prefix array and started matching it exactly —
+    // a change that strengthened the very rule this test guards. What matters
+    // is that there is one list, not how the proxy consumes it.
+    expect(proxySrc).toMatch(/import\s*\{[^}]*\bSESSIONLESS_PAGES\b[^}]*\}\s*from\s*'@\/lib\/public-paths'/);
+    // And that it has not grown a second copy alongside the import.
+    expect(proxySrc).not.toMatch(/const\s+SESSIONLESS_PAGES\s*[:=]/);
   });
 
   it('still bounces a signed-out visitor out of the back office', () => {
@@ -153,7 +164,7 @@ describe('being public is not accidentally contagious', () => {
 
 describe('the matcher actually runs on these paths', () => {
   it('does not exempt /client/activate', () => {
-    // Belt and braces: if the matcher skipped this path the PUBLIC_PREFIXES
+    // Belt and braces: if the matcher skipped this path the SESSIONLESS_PAGES
     // entry would be decorative, and a future tightening of the matcher would
     // reintroduce the bug with the entry still sitting there looking correct.
     const m = proxySrc.match(/matcher:\s*\[\s*'([^']+)'/);

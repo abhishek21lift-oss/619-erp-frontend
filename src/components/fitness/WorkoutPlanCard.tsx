@@ -80,9 +80,12 @@ export function WorkoutPlanCard({
   return (
     <m.div
       variants={variants}
+      whileHover={{ y: -3 }}
+      transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        'group relative flex flex-col overflow-hidden rounded-[16px] transition-shadow',
-        'hover:shadow-[0_8px_28px_-8px_rgba(15,23,42,0.16)]',
+        'group relative flex flex-col overflow-hidden rounded-[16px]',
+        'transition-[box-shadow,border-color] duration-200',
+        'hover:shadow-[0_14px_34px_-10px_rgba(15,23,42,0.20)] hover:border-[color:rgba(0,103,224,0.28)]',
         className,
       )}
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
@@ -160,14 +163,31 @@ export function WorkoutPlanCard({
                 {pct}%
               </span>
             </div>
-            <div className="h-[5px] w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}>
+            {/* The bar's own track gets a hairline inset shadow rather than a
+                flat fill — the one place on the card that carries depth,
+                because it is the one number a trainer is here to check. */}
+            <div
+              className="relative h-[5px] w-full overflow-hidden rounded-full"
+              style={{ background: 'var(--bg-subtle)', boxShadow: 'inset 0 1px 2px rgba(15,23,42,0.06)' }}
+            >
               <m.div
                 initial={{ width: 0 }}
                 animate={{ width: `${pct}%` }}
                 transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                className="h-full rounded-full"
+                className="relative h-full rounded-full"
                 style={{ background: `linear-gradient(90deg, ${ACCENT}, ${ACCENT_LIGHT})` }}
-              />
+              >
+                {/* Leading-edge highlight — a premium fill has a bright cap,
+                    not just a flat gradient end. Skipped under 6%, where it
+                    would be the entire bar rather than an accent on it. */}
+                {pct >= 6 && (
+                  <span
+                    aria-hidden
+                    className="absolute right-0 top-1/2 h-[9px] w-[9px] -translate-y-1/2 translate-x-[3px] rounded-full"
+                    style={{ background: ACCENT_LIGHT, boxShadow: `0 0 6px 1px ${ACCENT_LIGHT}` }}
+                  />
+                )}
+              </m.div>
             </div>
           </div>
         )}
@@ -180,8 +200,15 @@ export function WorkoutPlanCard({
             <button
               type="button"
               onClick={onOpen}
-              className="flex flex-1 items-center justify-center rounded-[10px] text-[12.5px] font-[700] text-white transition-opacity active:opacity-80"
-              style={{ background: ACCENT, minHeight: 44 }}
+              className="flex flex-1 items-center justify-center rounded-[10px] text-[12.5px] font-[700] text-white transition-[opacity,box-shadow] active:opacity-80"
+              style={{
+                // Same two stops the progress bar already carries — one
+                // gradient meaning "this plan" reused everywhere it appears
+                // on the card, not a second decoration invented for the button.
+                background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_LIGHT})`,
+                minHeight: 44,
+                boxShadow: '0 2px 10px -2px rgba(0,103,224,0.45)',
+              }}
             >
               Open Plan
             </button>
