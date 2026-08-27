@@ -574,32 +574,37 @@ function StatCard({
     <m.div
       initial={reduce ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: EASE }}
-      whileHover={{ y: -4, boxShadow: `0 14px 32px ${color}26, inset 0 1px 0 rgba(255,255,255,0.8)` }}
+      whileHover={{ y: -4, boxShadow: `0 18px 38px ${color}33, inset 0 1px 0 rgba(255,255,255,0.9)` }}
       whileTap={{ scale: 0.98 }}
       onClick={() => href && router.push(href)}
-      className={cn('group relative flex cursor-pointer flex-col overflow-hidden rounded-[18px] pt-3.5 sm:pt-4', className)}
+      className={cn('group relative flex cursor-pointer flex-col overflow-hidden rounded-[20px] pt-4', className)}
       style={{
-        // The wash is the card's own hue, and stronger than it was: four
-        // near-white rectangles in a grid read as a spreadsheet, which is the
-        // opposite of the intent. It still stops well short of a tinted panel
-        // — the number has to stay the loudest thing on the card.
-        background: `linear-gradient(158deg, ${color}1c 0%, ${color}0a 34%, rgba(255,255,255,0.94) 76%)`,
-        border: `1px solid ${color}2b`,
-        boxShadow: `0 8px 24px ${color}14, inset 0 1px 0 rgba(255,255,255,0.8)`,
+        // A card with a COLOUR, not a white card with a hint of one. The
+        // previous wash topped out at 11% alpha and faded to plain white by
+        // a third of the way down, so four of these in a grid read as a
+        // spreadsheet — which is the opposite of the intent. The number is
+        // still ink and still the loudest thing here; what changed is that
+        // the card behind it is now visibly the metric's own colour.
+        background:
+          `radial-gradient(120% 90% at 100% 0%, ${color}3d 0%, transparent 58%),`
+          + `linear-gradient(160deg, ${color}2b 0%, ${color}12 45%, ${color}08 100%)`,
+        border: `1px solid ${color}3d`,
+        boxShadow: `0 10px 26px ${color}1f, inset 0 1px 0 rgba(255,255,255,0.85)`,
         backdropFilter: 'blur(16px)',
       }}
     >
-      {/* The hairline of hue along the top edge, which is where the card's
-          identity lives now that the number is ink. */}
-      <div className="absolute inset-x-0 top-0 h-[3px]"
-        style={{ background: `linear-gradient(90deg, ${color}, ${accent})` }} />
+      {/* The band of hue along the top edge, which is where the card's
+          identity lives now that the number is ink. Thicker than a hairline
+          — at 3px on a phone it was a detail nobody saw. */}
+      <div className="absolute inset-x-0 top-0 h-[5px]"
+        style={{ background: `linear-gradient(90deg, ${color}, ${accent}, ${color})` }} />
 
       <div className="relative z-10 flex flex-1 flex-col px-3.5 sm:px-4">
         <div className="mb-2.5 flex items-start justify-between pt-0.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white transition-transform duration-200 group-hover:scale-105 sm:h-9 sm:w-9 sm:rounded-[12px]"
+          <div className="flex h-10 w-10 items-center justify-center rounded-[13px] text-white transition-transform duration-200 group-hover:scale-105 sm:h-11 sm:w-11 sm:rounded-[14px]"
             style={{
               background: `linear-gradient(135deg, ${color}, ${accent})`,
-              boxShadow: `0 6px 16px ${color}55, inset 0 1px 0 rgba(255,255,255,0.35)`,
+              boxShadow: `0 8px 20px ${color}66, inset 0 1px 0 rgba(255,255,255,0.4)`,
             }}>
             {icon}
           </div>
@@ -610,10 +615,10 @@ function StatCard({
             row settles on, so a card with no chart is not a number floating
             in a pool of white — which is exactly how Active Clients and
             Retention were reading beside the two that had one. */}
-        <div className="mt-auto pb-3">
-          <p className="mb-1 text-[9px] font-[750] uppercase tracking-[0.1em] sm:text-[9.5px]" style={{ color: C.muted }}>{label}</p>
-          <p className="text-[20px] font-[880] leading-none tracking-[-0.035em] tabular-nums sm:text-[23px]" style={{ color: C.ink }}>{value}</p>
-          {sub && <p className="mt-1 text-[9.5px] font-[500]" style={{ color: C.muted }}>{sub}</p>}
+        <div className="mt-auto pb-3.5">
+          <p className="mb-1.5 text-[9.5px] font-[800] uppercase tracking-[0.12em] sm:text-[10px]" style={{ color: C.muted }}>{label}</p>
+          <p className="text-[26px] font-[900] leading-none tracking-[-0.04em] tabular-nums sm:text-[30px]" style={{ color: C.ink }}>{value}</p>
+          {sub && <p className="mt-1.5 text-[10px] font-[560]" style={{ color: C.muted }}>{sub}</p>}
         </div>
       </div>
 
@@ -636,12 +641,15 @@ function StatCard({
           <KpiSparkline data={trend} color={color} metric={label} format={format} height={30} />
         </div>
       ) : (
-        <div data-kpi-foot className="h-[30px] w-full"
-          style={{
-            background:
-              `linear-gradient(180deg, transparent, ${color}12),`
-              + `radial-gradient(60% 100% at 50% 100%, ${color}2e 0%, transparent 75%)`,
-          }} aria-hidden />
+        <div data-kpi-foot className="relative h-[30px] w-full overflow-hidden" aria-hidden>
+          {/* A wash rising to a solid edge. The old version faded to 18%
+              alpha and simply was not there on a phone — the card looked
+              like it stopped an inch above its own border. */}
+          <div className="absolute inset-0"
+            style={{ background: `linear-gradient(180deg, transparent, ${color}30)` }} />
+          <div className="absolute inset-x-0 bottom-0 h-[4px]"
+            style={{ background: `linear-gradient(90deg, ${color}, ${accent})`, opacity: 0.55 }} />
+        </div>
       )}
     </m.div>
   );
@@ -759,10 +767,28 @@ export function daysLeftInMonth(now = new Date()): number {
   return last - now.getDate() + 1;
 }
 
-function TargetRing({ pct, colour, size = 116 }: { pct: number; colour: string; size?: number }) {
+/**
+ * The month's progress, as a ring on a dark face.
+ *
+ * ── Why it moved onto navy ────────────────────────────────────────────────
+ *
+ * It used to be a pale green arc on a near-white card, and the whole section
+ * read as a form field rather than as the headline of the screen. The app
+ * already owns a premium surface — the navy hero at the top of this same
+ * dashboard — and a ring is exactly the kind of mark that only comes alive
+ * against a dark ground: the stroke can actually glow, and the track can be a
+ * real recess instead of a grey line that disappears.
+ *
+ * So the tone colour stops tinting an entire card and becomes what it should
+ * always have been: the one lit thing on a dark face. Green, amber and red
+ * still mean what they meant, and they are far more legible for it.
+ */
+function TargetRing({ pct, colour, size = 132 }: { pct: number; colour: string; size?: number }) {
   const reduce = useReducedMotion();
-  const gradId = `target-ring-${useId().replace(/:/g, '')}`;
-  const stroke = 11;
+  const uid = useId().replace(/:/g, '');
+  const gradId = `target-ring-${uid}`;
+  const glowId = `target-glow-${uid}`;
+  const stroke = 12;
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   // The STROKE clamps — a ring cannot draw past full. The NUMBER does not.
@@ -773,49 +799,56 @@ function TargetRing({ pct, colour, size = 116 }: { pct: number; colour: string; 
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
-      {/* A soft halo behind the ring, the colour's own glow rather than a
-          second decoration — the same trick the hero header's corner blobs
-          use, scaled down to fit a stat instead of a whole card. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-[-14%] rounded-full"
-        style={{ background: `radial-gradient(circle, ${colour}22 0%, transparent 68%)` }}
-      />
       <svg width={size} height={size} className="-rotate-90">
         <defs>
-          {/* The stroke sweeps from the tile's hue into a lighter tint of
-              itself, so a ring that is 100% one flat colour for its whole
-              length reads as a bar bent into a circle. A two-stop gradient
-              along the arc is the difference between "coloured" and "lit". */}
+          {/* Two stops that are genuinely different colours, not two opacities
+              of one. The arc runs from a washed tint into the full tone, so it
+              reads as lit from one side rather than painted flat. */}
           <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={colour} stopOpacity={0.75} />
-            <stop offset="100%" stopColor={colour} stopOpacity={1} />
+            <stop offset="0%" stopColor="#ffffff" stopOpacity={0.92} />
+            <stop offset="55%" stopColor={colour} stopOpacity={1} />
+            <stop offset="100%" stopColor={colour} stopOpacity={0.85} />
           </linearGradient>
+          {/* A real blur, not a drop-shadow: the arc's own light spilling onto
+              the navy behind it. This is what a drop-shadow cannot do. */}
+          <filter id={glowId} x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
+
+        {/* The track is a recess in the dark face — light enough to read the
+            full circumference against, so the arc always has something to be
+            a fraction OF. */}
         <circle cx={size / 2} cy={size / 2} r={r} fill="none"
-          stroke="rgba(15,23,42,0.06)" strokeWidth={stroke} />
+          stroke="rgba(255,255,255,0.10)" strokeWidth={stroke} />
+
         <m.circle
           cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`url(#${gradId})`}
           strokeWidth={stroke} strokeLinecap="round" strokeDasharray={circ}
+          filter={`url(#${glowId})`}
           initial={{ strokeDashoffset: reduce ? circ - dash : circ }}
           animate={{ strokeDashoffset: circ - dash }}
-          transition={{ duration: reduce ? 0 : 1.1, ease: EASE }}
-          style={{ filter: `drop-shadow(0 0 9px ${colour}70)` }}
+          transition={{ duration: reduce ? 0 : 1.2, ease: EASE }}
         />
       </svg>
+
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="tabular-nums font-[900] leading-none"
+        <span className="tabular-nums font-[900] leading-none text-white"
           style={{
-            color: C.ink,
-            letterSpacing: '-0.035em',
+            letterSpacing: '-0.04em',
+            textShadow: `0 2px 18px ${colour}80`,
             // Steps down so 2000% fits the same ring 40% sits in, rather than
             // overflowing it or being truncated.
-            fontSize: pct >= 1000 ? 19 : pct >= 100 ? 23 : 26,
+            fontSize: pct >= 1000 ? 23 : pct >= 100 ? 28 : 32,
           }}>
           {Math.round(pct)}%
         </span>
-        <span className="mt-0.5 text-[9.5px] font-[750] uppercase tracking-[0.12em]"
-          style={{ color: C.muted }}>
+        <span className="mt-1 text-[9px] font-[800] uppercase tracking-[0.16em]"
+          style={{ color: 'rgba(255,255,255,0.5)' }}>
           of target
         </span>
       </div>
@@ -850,7 +883,7 @@ function MonthlyTarget() {
     return (
       <Glass className="p-4 sm:p-5">
         <div className="flex items-center gap-4">
-          <Skel w="w-[104px]" h="h-[104px]" r="rounded-full" />
+          <Skel w="w-[132px]" h="h-[132px]" r="rounded-full" />
           <div className="flex-1 space-y-2.5">
             <Skel w="w-32" h="h-3" /><Skel w="w-40" h="h-6" /><Skel w="w-28" h="h-3" />
           </div>
@@ -895,31 +928,49 @@ function MonthlyTarget() {
   const beat = pct >= 100;
 
   return (
+    // Glass, not a bare <div onClick>: it carries this file's a11y exemption
+    // (the card's function is reachable from a real control inside it), and a
+    // raw div here would add two jsx-a11y warnings to a CI ceiling that is
+    // frozen at the current count.
     <Glass
-      className="relative overflow-hidden p-4 sm:p-6"
+      className="relative cursor-pointer overflow-hidden p-5 sm:p-6"
       onClick={() => router.push('/insights/revenue')}
       style={{
-        cursor: 'pointer',
-        // The card takes the month's own colour. Ahead is green, behind is
-        // amber, badly behind is red — so the state is legible from across a
-        // room, before a single word has been read.
-        background: `linear-gradient(150deg, ${rgba(tone.ring, 0.16)} 0%, var(--bg-card) 58%)`,
-        border: `1px solid ${rgba(tone.ring, 0.26)}`,
-        boxShadow: `0 10px 32px ${rgba(tone.ring, 0.16)}, inset 0 1px 0 rgba(255,255,255,0.6)`,
+        // The dashboard's own hero surface, borrowed deliberately. The month
+        // is the headline of this screen and it was dressed as a form field;
+        // this is the one card that earns the navy.
+        // gray[900] → gray[800] → gray[900], straight off the ramp. The mid
+        // stop started as a hand-picked navy that was in no family at all;
+        // the palette test caught it, which is what that test is for.
+        background:
+          `radial-gradient(125% 145% at 12% -10%, ${rgba(tone.ring, 0.42)} 0%, transparent 52%),`
+          + `linear-gradient(152deg, ${palette.gray[900]} 0%, ${palette.gray[800]} 46%, ${palette.gray[900]} 100%)`,
+        border: '1px solid rgba(255,255,255,0.10)',
+        boxShadow:
+          `0 20px 48px -16px rgba(15,23,42,0.62), 0 6px 20px ${rgba(tone.ring, 0.22)},`
+          + 'inset 0 1px 0 rgba(255,255,255,0.08)',
       }}
     >
-      {/* The same hairline-of-hue the KPI tiles wear along their own top
-          edge, so "This Month" and "Key Metrics" read as one family rather
-          than two different cards that happen to sit near each other. */}
-      <div className="absolute inset-x-0 top-0 h-[3px]"
-        style={{ background: `linear-gradient(90deg, transparent, ${tone.ring}, transparent)` }} />
-      {/* A wash of the month's own colour, bleeding off the corner behind
-          the ring — decoration only, so it sits under everything and never
-          competes with the figures for the eye. */}
-      <div aria-hidden className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full opacity-[0.16]"
-        style={{ background: `radial-gradient(circle, ${tone.ring} 0%, transparent 70%)`, filter: 'blur(30px)' }} />
+      {/* Decorative layers, the same three the hero header uses: a corner
+          bloom in the month's own colour, a cool counterweight, and the fine
+          grid that keeps a large dark panel from reading as a flat slab.
+          All non-interactive and all behind the content. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full opacity-40"
+          style={{ background: `radial-gradient(circle, ${tone.ring} 0%, transparent 70%)`, filter: 'blur(46px)' }} />
+        <div className="absolute -bottom-24 -left-10 h-52 w-52 rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #7fb4ff 0%, transparent 70%)', filter: 'blur(52px)' }} />
+        <svg className="absolute inset-0 h-full w-full opacity-[0.05]" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="mt-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+              <path d="M 30 0 L 0 0 0 30" fill="none" stroke="white" strokeWidth="0.6" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#mt-grid)" />
+        </svg>
+      </div>
 
-      <div className="relative flex items-center gap-4 sm:gap-5">
+      <div className="relative flex items-center gap-4 sm:gap-6">
         <TargetRing pct={pct} colour={tone.ring} />
 
         <div className="min-w-0 flex-1">
@@ -930,33 +981,34 @@ function MonthlyTarget() {
               screen, not about the month. What is left is the month, what
               came in, what it was measured against, and the one figure that
               follows — over, or still to go. */}
-          <p className="text-[11px] font-[750] uppercase tracking-[0.1em]" style={{ color: C.muted }}>
+          <p className="text-[10.5px] font-[800] uppercase tracking-[0.18em]"
+            style={{ color: 'rgba(255,255,255,0.44)' }}>
             {month}
           </p>
 
           {/* The headline is what came IN, not the percentage — a trainer
               scanning this wants the money, and the ring already carries the
               ratio. Counted up, like every other money figure here. */}
-          <p className="mt-1 tabular-nums text-[28px] sm:text-[32px] font-[880] leading-none"
-            style={{ color: C.ink, letterSpacing: '-0.035em' }}>
+          <p className="mt-1.5 tabular-nums text-[34px] font-[900] leading-none text-white sm:text-[40px]"
+            style={{ letterSpacing: '-0.04em', textShadow: '0 2px 24px rgba(0,0,0,0.45)' }}>
             <CountUp value={Number(data.achieved)} format={fmtCompact} reduce={!!reduce} />
           </p>
-          <p className="mt-1.5 text-[11.5px]" style={{ color: C.muted }}>
-            of <span className="font-[750]" style={{ color: C.ink }}>{fmtCompact(data.target_amount)}</span>
+          <p className="mt-2 text-[11.5px]" style={{ color: 'rgba(255,255,255,0.52)' }}>
+            of <span className="font-[800] text-white">{fmtCompact(data.target_amount)}</span>
             {' · '}{daysLeft} day{daysLeft === 1 ? '' : 's'} left
           </p>
 
-          <span className="mt-2.5 inline-flex items-center gap-1.5 rounded-full px-3 py-[5px] text-[11.5px] font-[800] tabular-nums text-white"
+          <span className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3.5 py-[6px] text-[12px] font-[850] tabular-nums text-white"
             style={{
-              background: `linear-gradient(135deg, ${tone.ring}, ${tone.ring}bb)`,
-              boxShadow: `0 4px 14px ${rgba(tone.ring, 0.45)}`,
+              background: `linear-gradient(135deg, ${tone.ring}, ${tone.ring}c0)`,
+              boxShadow: `0 6px 18px ${rgba(tone.ring, 0.5)}, inset 0 1px 0 rgba(255,255,255,0.3)`,
             }}>
-            {beat ? <PartyPopper size={11} /> : <TrendingUp size={11} />}
+            {beat ? <PartyPopper size={12} /> : <TrendingUp size={12} />}
             {beat ? `${fmtCompact(surplus)} over` : `${fmtCompact(balance)} to go`}
           </span>
         </div>
 
-        <ChevronRight size={16} className="hidden shrink-0 sm:block" style={{ color: C.muted }} />
+        <ChevronRight size={17} className="hidden shrink-0 sm:block" style={{ color: 'rgba(255,255,255,0.4)' }} />
       </div>
     </Glass>
   );
@@ -2147,9 +2199,9 @@ export default function PtOsDashboard() {
                     count — putting it here is what made this card claim
                     revenue's growth as its own. A number with nothing under
                     it is the honest render. */}
-                <StatCard icon={<Users size={14} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
+                <StatCard icon={<Users size={17} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
                   sub={`${d.expired_clients} expired`} color={KPI.clients} accent={palette.blue[300]} delay={0} href="/pt-os/clients" />
-                <StatCard icon={<Wallet size={14} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
+                <StatCard icon={<Wallet size={17} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
                   sub="this month" color={KPI.revenue} accent={palette.emerald[400]} delay={0.05} href="/pt-os/reports" trend={revTrend} pct={revMoM} format={fmtINR} />
                 {/* Phone and tablet only. Still rendered there, so the numbers
                     stay one tap away on the devices a trainer carries around
@@ -2157,10 +2209,10 @@ export default function PtOsDashboard() {
 
                     Incentives, not revenue — this is the one card whose
                     series was already its own. */}
-                <StatCard icon={<Percent size={14} />} label="Commission" value={fmtCompact(d.total_monthly_commission)}
+                <StatCard icon={<Percent size={17} />} label="Commission" value={fmtCompact(d.total_monthly_commission)}
                   sub={commRate} color={KPI.commission} accent={palette.blue[400]} delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM} format={fmtINR}
                   className="lg:hidden" />
-                <StatCard icon={<Gauge size={14} />} label="Retention" value={retentionPct !== null ? `${retentionPct.toFixed(0)}%` : '—'}
+                <StatCard icon={<Gauge size={17} />} label="Retention" value={retentionPct !== null ? `${retentionPct.toFixed(0)}%` : '—'}
                   sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active`} color={KPI.retention} accent={palette.blue[200]} delay={0.15} href="/pt-os/clients" />
               </div>
             </div>

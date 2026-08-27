@@ -91,6 +91,14 @@ export const AI_ACTIONS: AiAction[] = [
     relevantTo: ['/finance', '/finance/dues'],
   },
   {
+    id: 'lead-followup',
+    emoji: '📞',
+    label: 'Send lead follow-ups',
+    kind: 'execute',
+    actionId: 'lead_followup',
+    relevantTo: ['/pt-os/leads'],
+  },
+  {
     id: 'message-everyone',
     emoji: '📲',
     label: 'Message everyone',

@@ -14,18 +14,20 @@
 
 export const C = {
   // ── Surfaces ────────────────────────────────────────────────────────────
-  canvas: '#0B1220', // near-black navy — page base
-  canvasAlt: '#0D1728', // alternate section band
-  panel: '#101B30', // elevated panels, product frames
-  panelAlt: '#0E182A', // nested surfaces inside a panel
+  // Lightened one step from the original near-black (#0B1220 family) — still
+  // a dark cinematic canvas, just no longer reading as pure black at a glance.
+  canvas: '#0E1A2E', // navy — page base
+  canvasAlt: '#101D34', // alternate section band
+  panel: '#16233D', // elevated panels, product frames
+  panelAlt: '#13203A', // nested surfaces inside a panel
   line: 'rgba(148,163,184,0.16)', // hairline borders
   lineSoft: 'rgba(148,163,184,0.10)',
   lineBlue: 'rgba(0,103,224,0.40)', // active-state borders
 
   // ── Text ────────────────────────────────────────────────────────────────
   ink: '#F8FAFC', // primary text on canvas
-  body: '#CBD5E1', // body copy (≈12.9:1 on canvas)
-  muted: '#94A3B8', // secondary text (≈7.7:1 on canvas)
+  body: '#CBD5E1', // body copy (≈11.7:1 on canvas)
+  muted: '#94A3B8', // secondary text (≈6.8:1 on canvas)
   faint: '#64748B', // captions, disabled
 
   // ── Brand ───────────────────────────────────────────────────────────────
@@ -70,6 +72,11 @@ export const EASE = [0.16, 1, 0.3, 1] as const;
 // reuse these EXACT values so all of them occupy the same vertical space and
 // moving between pages never changes the header's height or proportions.
 // Do not restyle one header in isolation — change it here first.
+//
+// The bar is deliberately a different, bluer, lighter tone than the page
+// canvas (C.canvas / C.panel) rather than a translucent copy of it — the
+// point of a top bar is to read as its own strip, not as a see-through
+// window onto the page behind it.
 export const HEADER = {
   // Top reserve above the bar for notched devices (landing: 1.5rem floor).
   padTop: 'max(env(safe-area-inset-top), 1.5rem)',
@@ -77,21 +84,28 @@ export const HEADER = {
   bar: 'flex h-16 items-center justify-between',
   // Outer container — same width and horizontal gutters as the landing nav.
   container: 'mx-auto w-full max-w-[1200px] px-5 sm:px-8',
-  // Glass chrome (the landing nav's scrolled state; always-on for the auth bars).
-  bg: 'rgba(11,18,32,0.78)',
+  // Glass chrome, scrolled state (and always-on for the auth bars) — solid
+  // enough to read as a distinct strip against any section behind it.
+  bg: 'rgba(23,41,74,0.90)',
   blur: 'blur(18px) saturate(160%)',
+  // Idle state, landing nav only: still tinted rather than fully transparent,
+  // so the bar never fully dissolves into the hero and the logo has a strip
+  // to sit on from the very first frame, before any scrolling happens.
+  bgIdle: 'rgba(23,41,74,0.46)',
+  blurIdle: 'blur(9px) saturate(140%)',
   border: 'rgba(148,163,184,0.10)',
   // Saffron accent — 1px hairline along the bar's bottom edge, kept at low
   // opacity so it reads as a premium underline, not an orange border. The
   // glow is the soft halo beneath that line.
   accentLine: 'rgba(245,158,11,0.40)',
   accentGlow: '0 10px 24px -12px rgba(245,158,11,0.35)',
-  // Logo chip — dark glass pill that holds the Wordmark tile + wordmark.
+  // Logo chip — a glass pill one step lighter than the bar itself, so the
+  // logo clearly sits ON the bar rather than blending into it.
   chipClass:
-    'rounded-2xl border border-[rgba(148,163,184,0.16)] bg-[rgba(11,18,32,0.82)] px-3 py-2 transition-colors hover:border-[rgba(148,163,184,0.3)] hover:bg-[rgba(11,18,32,0.9)]',
+    'rounded-2xl border border-[rgba(148,163,184,0.18)] bg-[rgba(31,52,89,0.92)] px-3 py-2 transition-colors hover:border-[rgba(148,163,184,0.32)] hover:bg-[rgba(31,52,89,0.98)]',
   chipBlur: 'blur(14px) saturate(150%)',
   chipShadow:
-    '0 1px 2px rgba(0,0,0,0.4), 0 6px 20px -8px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)',
+    '0 1px 2px rgba(0,0,0,0.4), 0 6px 20px -8px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.10)',
   // Logo lockup (Wordmark tile + wordmark text).
   logoSize: 38,
 } as const;

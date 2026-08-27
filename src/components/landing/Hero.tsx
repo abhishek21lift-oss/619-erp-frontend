@@ -254,7 +254,7 @@ function FloatingCard({
       <div
         className="hero-float rounded-2xl border p-3.5"
         style={{
-          background: 'rgba(16,27,48,0.92)',
+          background: 'rgba(22,35,61,0.92)',
           borderColor: C.line,
           boxShadow: SHADOW.float,
           backdropFilter: 'blur(14px)',

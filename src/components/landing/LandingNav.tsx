@@ -57,9 +57,9 @@ export default function LandingNav() {
         paddingTop: HEADER.padTop,
         transition:
           'background 240ms ease, border-color 240ms ease, backdrop-filter 240ms ease, box-shadow 240ms ease',
-        background: scrolled ? HEADER.bg : 'transparent',
-        backdropFilter: scrolled ? HEADER.blur : 'none',
-        WebkitBackdropFilter: scrolled ? HEADER.blur : 'none',
+        background: scrolled ? HEADER.bg : HEADER.bgIdle,
+        backdropFilter: scrolled ? HEADER.blur : HEADER.blurIdle,
+        WebkitBackdropFilter: scrolled ? HEADER.blur : HEADER.blurIdle,
         borderBottom: `1px solid ${HEADER.accentLine}`,
         boxShadow: open ? 'none' : HEADER.accentGlow,
       }}
@@ -131,7 +131,7 @@ export default function LandingNav() {
         <div id="landing-mobile-menu" data-no-pull-refresh hidden={!open} className="pb-4 lg:hidden">
           <div
             className="rounded-2xl border p-3"
-            style={{ background: 'rgba(16,27,48,0.92)', borderColor: C.line, boxShadow: '0 24px 56px -20px rgba(0,0,0,0.7)' }}
+            style={{ background: 'rgba(23,41,74,0.94)', borderColor: C.line, boxShadow: '0 24px 56px -20px rgba(0,0,0,0.7)' }}
           >
             {NAV.map((n) => (
               <a

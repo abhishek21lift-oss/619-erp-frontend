@@ -3262,6 +3262,24 @@ export interface CoachGeneration {
   facts_key: string;
 }
 
+/**
+ * A short, advisory read of a client's recent weekly check-ins. Purely
+ * informational — nothing behind this endpoint writes to any client record.
+ * `available: false` (too little history, the model was unreachable, or its
+ * reply didn't parse) means "there is nothing to show", not an error — there
+ * is no rule-based substitute for "what changed in the notes", so the card
+ * simply doesn't render rather than showing something invented.
+ */
+export type CheckinInsight =
+  | {
+      available: true;
+      summary: string;
+      notable_change: string | null;
+      suggested_action: string | null;
+      model: string | null;
+    }
+  | { available: false; reason: string; checkins_count?: number };
+
 /** One readiness component, 0-100, or null when that question was not answered. */
 export interface RecoveryComponents {
   sleep: number | null;
