@@ -15,7 +15,7 @@
  * All figures are raw backend values or honestly-derived metrics.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { PullToRefresh } from '@/components/ui';
@@ -574,7 +574,8 @@ function StatCard({
     <m.div
       initial={reduce ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: EASE }}
-      whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }}
+      whileHover={{ y: -4, boxShadow: `0 14px 32px ${color}26, inset 0 1px 0 rgba(255,255,255,0.8)` }}
+      whileTap={{ scale: 0.98 }}
       onClick={() => href && router.push(href)}
       className={cn('group relative flex cursor-pointer flex-col overflow-hidden rounded-[18px] pt-3.5 sm:pt-4', className)}
       style={{
@@ -596,7 +597,10 @@ function StatCard({
       <div className="relative z-10 flex flex-1 flex-col px-3.5 sm:px-4">
         <div className="mb-2.5 flex items-start justify-between pt-0.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white transition-transform duration-200 group-hover:scale-105 sm:h-9 sm:w-9 sm:rounded-[12px]"
-            style={{ background: `linear-gradient(135deg, ${color}, ${accent})`, boxShadow: `0 5px 14px ${color}4a` }}>
+            style={{
+              background: `linear-gradient(135deg, ${color}, ${accent})`,
+              boxShadow: `0 6px 16px ${color}55, inset 0 1px 0 rgba(255,255,255,0.35)`,
+            }}>
             {icon}
           </div>
           {pct !== undefined && <TrendBadge pct={pct ?? null} />}
@@ -608,7 +612,7 @@ function StatCard({
             Retention were reading beside the two that had one. */}
         <div className="mt-auto pb-3">
           <p className="mb-1 text-[9px] font-[750] uppercase tracking-[0.1em] sm:text-[9.5px]" style={{ color: C.muted }}>{label}</p>
-          <p className="text-[19px] font-[880] leading-none tracking-[-0.03em] tabular-nums sm:text-[22px]" style={{ color: C.ink }}>{value}</p>
+          <p className="text-[20px] font-[880] leading-none tracking-[-0.035em] tabular-nums sm:text-[23px]" style={{ color: C.ink }}>{value}</p>
           {sub && <p className="mt-1 text-[9.5px] font-[500]" style={{ color: C.muted }}>{sub}</p>}
         </div>
       </div>
@@ -633,7 +637,11 @@ function StatCard({
         </div>
       ) : (
         <div data-kpi-foot className="h-[30px] w-full"
-          style={{ background: `linear-gradient(180deg, transparent, ${color}1f)` }} aria-hidden />
+          style={{
+            background:
+              `linear-gradient(180deg, transparent, ${color}12),`
+              + `radial-gradient(60% 100% at 50% 100%, ${color}2e 0%, transparent 75%)`,
+          }} aria-hidden />
       )}
     </m.div>
   );
@@ -751,9 +759,10 @@ export function daysLeftInMonth(now = new Date()): number {
   return last - now.getDate() + 1;
 }
 
-function TargetRing({ pct, colour, size = 104 }: { pct: number; colour: string; size?: number }) {
+function TargetRing({ pct, colour, size = 116 }: { pct: number; colour: string; size?: number }) {
   const reduce = useReducedMotion();
-  const stroke = 10;
+  const gradId = `target-ring-${useId().replace(/:/g, '')}`;
+  const stroke = 11;
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   // The STROKE clamps — a ring cannot draw past full. The NUMBER does not.
@@ -764,30 +773,48 @@ function TargetRing({ pct, colour, size = 104 }: { pct: number; colour: string; 
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
+      {/* A soft halo behind the ring, the colour's own glow rather than a
+          second decoration — the same trick the hero header's corner blobs
+          use, scaled down to fit a stat instead of a whole card. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-[-14%] rounded-full"
+        style={{ background: `radial-gradient(circle, ${colour}22 0%, transparent 68%)` }}
+      />
       <svg width={size} height={size} className="-rotate-90">
+        <defs>
+          {/* The stroke sweeps from the tile's hue into a lighter tint of
+              itself, so a ring that is 100% one flat colour for its whole
+              length reads as a bar bent into a circle. A two-stop gradient
+              along the arc is the difference between "coloured" and "lit". */}
+          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={colour} stopOpacity={0.75} />
+            <stop offset="100%" stopColor={colour} stopOpacity={1} />
+          </linearGradient>
+        </defs>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none"
           stroke="rgba(15,23,42,0.06)" strokeWidth={stroke} />
         <m.circle
-          cx={size / 2} cy={size / 2} r={r} fill="none" stroke={colour}
+          cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`url(#${gradId})`}
           strokeWidth={stroke} strokeLinecap="round" strokeDasharray={circ}
           initial={{ strokeDashoffset: reduce ? circ - dash : circ }}
           animate={{ strokeDashoffset: circ - dash }}
           transition={{ duration: reduce ? 0 : 1.1, ease: EASE }}
-          style={{ filter: `drop-shadow(0 0 7px ${colour}55)` }}
+          style={{ filter: `drop-shadow(0 0 9px ${colour}70)` }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="tabular-nums font-[860] leading-none"
+        <span className="tabular-nums font-[900] leading-none"
           style={{
             color: C.ink,
-            letterSpacing: '-0.03em',
+            letterSpacing: '-0.035em',
             // Steps down so 2000% fits the same ring 40% sits in, rather than
             // overflowing it or being truncated.
-            fontSize: pct >= 1000 ? 17 : pct >= 100 ? 20 : 23,
+            fontSize: pct >= 1000 ? 19 : pct >= 100 ? 23 : 26,
           }}>
           {Math.round(pct)}%
         </span>
-        <span className="mt-0.5 text-[9px] font-[750] uppercase tracking-[0.12em]"
+        <span className="mt-0.5 text-[9.5px] font-[750] uppercase tracking-[0.12em]"
           style={{ color: C.muted }}>
           of target
         </span>
@@ -869,19 +896,30 @@ function MonthlyTarget() {
 
   return (
     <Glass
-      className="relative overflow-hidden p-4 sm:p-5"
+      className="relative overflow-hidden p-4 sm:p-6"
       onClick={() => router.push('/insights/revenue')}
       style={{
         cursor: 'pointer',
         // The card takes the month's own colour. Ahead is green, behind is
         // amber, badly behind is red — so the state is legible from across a
         // room, before a single word has been read.
-        background: `linear-gradient(150deg, ${rgba(tone.ring, 0.13)} 0%, var(--bg-card) 52%)`,
-        border: `1px solid ${rgba(tone.ring, 0.24)}`,
-        boxShadow: `0 8px 26px ${rgba(tone.ring, 0.13)}`,
+        background: `linear-gradient(150deg, ${rgba(tone.ring, 0.16)} 0%, var(--bg-card) 58%)`,
+        border: `1px solid ${rgba(tone.ring, 0.26)}`,
+        boxShadow: `0 10px 32px ${rgba(tone.ring, 0.16)}, inset 0 1px 0 rgba(255,255,255,0.6)`,
       }}
     >
-      <div className="flex items-center gap-4 sm:gap-5">
+      {/* The same hairline-of-hue the KPI tiles wear along their own top
+          edge, so "This Month" and "Key Metrics" read as one family rather
+          than two different cards that happen to sit near each other. */}
+      <div className="absolute inset-x-0 top-0 h-[3px]"
+        style={{ background: `linear-gradient(90deg, transparent, ${tone.ring}, transparent)` }} />
+      {/* A wash of the month's own colour, bleeding off the corner behind
+          the ring — decoration only, so it sits under everything and never
+          competes with the figures for the eye. */}
+      <div aria-hidden className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full opacity-[0.16]"
+        style={{ background: `radial-gradient(circle, ${tone.ring} 0%, transparent 70%)`, filter: 'blur(30px)' }} />
+
+      <div className="relative flex items-center gap-4 sm:gap-5">
         <TargetRing pct={pct} colour={tone.ring} />
 
         <div className="min-w-0 flex-1">
@@ -899,8 +937,8 @@ function MonthlyTarget() {
           {/* The headline is what came IN, not the percentage — a trainer
               scanning this wants the money, and the ring already carries the
               ratio. Counted up, like every other money figure here. */}
-          <p className="mt-1 tabular-nums text-[26px] sm:text-[30px] font-[860] leading-none"
-            style={{ color: C.ink, letterSpacing: '-0.03em' }}>
+          <p className="mt-1 tabular-nums text-[28px] sm:text-[32px] font-[880] leading-none"
+            style={{ color: C.ink, letterSpacing: '-0.035em' }}>
             <CountUp value={Number(data.achieved)} format={fmtCompact} reduce={!!reduce} />
           </p>
           <p className="mt-1.5 text-[11.5px]" style={{ color: C.muted }}>
@@ -908,10 +946,10 @@ function MonthlyTarget() {
             {' · '}{daysLeft} day{daysLeft === 1 ? '' : 's'} left
           </p>
 
-          <span className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-[4px] text-[11px] font-[800] tabular-nums text-white"
+          <span className="mt-2.5 inline-flex items-center gap-1.5 rounded-full px-3 py-[5px] text-[11.5px] font-[800] tabular-nums text-white"
             style={{
               background: `linear-gradient(135deg, ${tone.ring}, ${tone.ring}bb)`,
-              boxShadow: `0 3px 10px ${rgba(tone.ring, 0.4)}`,
+              boxShadow: `0 4px 14px ${rgba(tone.ring, 0.45)}`,
             }}>
             {beat ? <PartyPopper size={11} /> : <TrendingUp size={11} />}
             {beat ? `${fmtCompact(surplus)} over` : `${fmtCompact(balance)} to go`}
