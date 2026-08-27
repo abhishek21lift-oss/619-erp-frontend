@@ -7,6 +7,7 @@ import { useAsync } from '@/lib/use-async';
 import { api, Client } from '@/lib/api';
 import { Button, FormField, TextInput, TextArea, SelectInput } from '@/components/ui';
 import { PremiumAreaChart } from '@/components/visualizations';
+import WeeklyCheckinInsightCard from '@/components/pt-os/WeeklyCheckinInsightCard';
 
 const MOODS = [
   { value: 'great', label: 'Great', color: '#10b981' },
@@ -15,6 +16,15 @@ const MOODS = [
   { value: 'tired', label: 'Tired', color: '#f59e0b' },
   { value: 'stressed', label: 'Stressed', color: '#ef4444' },
 ];
+
+interface CheckinRow {
+  id: string;
+  week_start_date?: unknown;
+  weight?: number;
+  workout_count?: number;
+  mood?: string;
+  adherence_pct?: number;
+}
 
 export default function WeeklyCheckinPage() {
   const [clientId, setClientId] = useState('');
@@ -39,17 +49,19 @@ export default function WeeklyCheckinPage() {
 
   const clients = useAsync<any[]>(() => api.pt.clients().then(r => r.data), []);
   const checkins = useAsync(() => api.progress.weeklyCheckins.list(clientId ? { client_id: clientId } : {}).then(r => r.data), [clientId]);
+  // One typed view of the check-in rows, reused everywhere below instead of
+  // an `any[]` cast at each call site.
+  const checkinRows = (checkins.data ?? []) as CheckinRow[];
 
   // Oldest-first, real weight readings only — a check-in logged without a
   // weight (mood/sleep only) contributes nothing to this trend rather than a
   // gap plotted as zero.
   const weightTrend = useMemo(() => {
-    const rows = (checkins.data ?? []) as { week_start_date?: unknown; weight?: unknown }[];
-    return rows
-      .filter((c): c is { week_start_date?: unknown; weight: number } => typeof c.weight === 'number' && Number.isFinite(c.weight))
+    return checkinRows
+      .filter((c): c is CheckinRow & { weight: number } => typeof c.weight === 'number' && Number.isFinite(c.weight))
       .sort((a, b) => String(a.week_start_date).localeCompare(String(b.week_start_date)))
       .map((c) => ({ week: String(c.week_start_date), weight: c.weight }));
-  }, [checkins.data]);
+  }, [checkinRows]);
 
   const pageError = clients.error || checkins.error;
 
@@ -244,6 +256,11 @@ export default function WeeklyCheckinPage() {
           <m.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
             className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'var(--text-primary)' }}>Recent Check-Ins</h2>
+            {clientId && checkinRows.length > 0 ? (
+              <div className="mb-5">
+                <WeeklyCheckinInsightCard clientId={clientId} checkinsCount={checkinRows.length} />
+              </div>
+            ) : null}
             {/* Only drawn once a client is picked — the list otherwise mixes
                 every client's check-ins, and a weight trend across different
                 people is not a trend. Needs two real readings for a line to
@@ -258,24 +275,24 @@ export default function WeeklyCheckinPage() {
               />
             )}
             <div className="space-y-3 max-h-[500px] overflow-y-auto">
-              {(checkins.data as any[] || []).map((c: any) => (
+              {checkinRows.map((c) => (
                 <div key={c.id} className="rounded-[14px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                   <div className="flex justify-between mb-2">
-                    <span className="text-[12px] font-semibold" style={{ color: 'var(--text-muted)' }}>Week of {c.week_start_date}</span>
-                    {c.adherence_pct && (
+                    <span className="text-[12px] font-semibold" style={{ color: 'var(--text-muted)' }}>Week of {String(c.week_start_date)}</span>
+                    {!!c.adherence_pct && (
                       <span className="text-[11px] font-bold" style={{ color: c.adherence_pct >= 80 ? '#10b981' : c.adherence_pct >= 60 ? '#f59e0b' : '#ef4444' }}>
                         {c.adherence_pct}%
                       </span>
                     )}
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-[11px]">
-                    {c.weight && <div><span style={{ color: 'var(--text-muted)' }}>Wt: </span><span className="font-semibold">{c.weight}kg</span></div>}
-                    {c.workout_count > 0 && <div><span style={{ color: 'var(--text-muted)' }}>WOs: </span><span className="font-semibold">{c.workout_count}</span></div>}
-                    {c.mood && <div><span style={{ color: 'var(--text-muted)' }}>Mood: </span><span className="font-semibold capitalize">{c.mood}</span></div>}
+                    {!!c.weight && <div><span style={{ color: 'var(--text-muted)' }}>Wt: </span><span className="font-semibold">{c.weight}kg</span></div>}
+                    {!!c.workout_count && c.workout_count > 0 && <div><span style={{ color: 'var(--text-muted)' }}>WOs: </span><span className="font-semibold">{c.workout_count}</span></div>}
+                    {!!c.mood && <div><span style={{ color: 'var(--text-muted)' }}>Mood: </span><span className="font-semibold capitalize">{c.mood}</span></div>}
                   </div>
                 </div>
               ))}
-              {(!checkins.data || (checkins.data as any[]).length === 0) && (
+              {checkinRows.length === 0 && (
                 <p className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>No check-ins yet.</p>
               )}
             </div>
