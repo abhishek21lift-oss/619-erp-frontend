@@ -12,6 +12,7 @@ import { Button, EmptyState, PageContainer, PageHero, PullToRefresh } from '@/co
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { LeadFormFields, SOURCE_OPTIONS, emptyLeadForm } from '@/components/pt-os/leads/LeadFormFields';
 import type { LeadFormState } from '@/components/pt-os/leads/LeadFormFields';
+import LeadFollowupAction from '@/components/pt-os/leads/LeadFollowupAction';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
 import type { PtLead } from '@/lib/api';
@@ -275,13 +276,16 @@ export default function LeadsPage() {
               title="Leads"
               subtitle="Prospective clients, before they enrol in PT"
               actions={(
-                <button
-                  type="button"
-                  onClick={() => router.push('/pt-os/leads/new')}
-                  className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
-                  style={{ background: '#fff', color: '#0F172A' }}>
-                  <Plus size={16} /> Add Lead
-                </button>
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                  <LeadFollowupAction />
+                  <button
+                    type="button"
+                    onClick={() => router.push('/pt-os/leads/new')}
+                    className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
+                    style={{ background: '#fff', color: '#0F172A' }}>
+                    <Plus size={16} /> Add Lead
+                  </button>
+                </div>
               )}
             />
 
