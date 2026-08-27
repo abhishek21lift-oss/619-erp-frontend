@@ -485,7 +485,7 @@ export default function ProductShowcase() {
               {/* Stage */}
               <div
                 className="relative overflow-hidden rounded-[24px] border p-4 sm:p-6"
-                style={{ background: 'rgba(16,27,48,0.66)', borderColor: C.line, boxShadow: SHADOW.panel, backdropFilter: 'blur(14px)' }}
+                style={{ background: 'rgba(22,35,61,0.66)', borderColor: C.line, boxShadow: SHADOW.panel, backdropFilter: 'blur(14px)' }}
               >
                 {/* stage glow */}
                 <div
