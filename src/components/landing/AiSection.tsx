@@ -70,7 +70,7 @@ export default function AiSection() {
         <Reveal delay={0.08}>
           <div
             className="relative mt-14 overflow-hidden rounded-[28px] border p-6 sm:p-8"
-            style={{ background: 'linear-gradient(180deg, rgba(0,103,224,0.10) 0%, rgba(11,18,32,0.4) 100%)', borderColor: C.line, boxShadow: SHADOW.panel }}
+            style={{ background: 'linear-gradient(180deg, rgba(0,103,224,0.10) 0%, rgba(14,26,46,0.4) 100%)', borderColor: C.line, boxShadow: SHADOW.panel }}
           >
             <div
               aria-hidden
