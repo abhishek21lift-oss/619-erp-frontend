@@ -24,6 +24,7 @@
 // a single series is named by the tile it sits in. The last month is solid
 // and the earlier ones are a tint of the same hue, so the eye lands on now.
 
+import { useId } from 'react';
 import {
   Bar, BarChart, Cell, ResponsiveContainer, Tooltip, YAxis,
 } from 'recharts';
@@ -43,6 +44,14 @@ export interface KpiSparklineProps {
 export default function KpiSparkline({
   data, color, metric, format = (n) => String(Math.round(n)), height = 32,
 }: KpiSparklineProps) {
+  // Unique per mount, not a fixed string: PT Revenue and Commission both
+  // render this component at once, and two <linearGradient id="grad">
+  // definitions in one document resolve to whichever painted last — every
+  // bar on the page silently taking one tile's colour.
+  //
+  // Called before the early return below — Hooks cannot be conditional.
+  const gradId = `kpi-spark-${useId().replace(/:/g, '')}`;
+
   if (data.length === 0) return null;
 
   return (
@@ -57,6 +66,15 @@ export default function KpiSparkline({
     >
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 4, right: 0, bottom: 0, left: 0 }} barCategoryGap={3}>
+          {/* Same top-to-bottom fade PremiumBarChart already uses, so a
+              sparkline and a full chart in this app read as one family
+              rather than two different ideas of "bar". */}
+          <defs>
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity={0.95} />
+              <stop offset="100%" stopColor={color} stopOpacity={0.55} />
+            </linearGradient>
+          </defs>
           {/* Hidden, but present: without a domain floor at zero a flat six
               months of the same number renders as six full-height bars, which
               reads as growth. */}
@@ -81,9 +99,9 @@ export default function KpiSparkline({
             formatter={(v: number) => [format(v), metric]}
             labelFormatter={(l: string) => l}
           />
-          <Bar dataKey="value" radius={[3, 3, 0, 0]} isAnimationActive={false} minPointSize={3}>
+          <Bar dataKey="value" radius={[4, 4, 0, 0]} isAnimationActive={false} minPointSize={3}>
             {data.map((d, i) => (
-              <Cell key={d.label} fill={i === data.length - 1 ? color : `${color}2e`} />
+              <Cell key={d.label} fill={i === data.length - 1 ? `url(#${gradId})` : `${color}38`} />
             ))}
           </Bar>
         </BarChart>
