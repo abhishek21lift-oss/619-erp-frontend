@@ -10,6 +10,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { Button, FloatInput } from '@/components/ui';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 export default function NewWorkoutDialog({ onClose, onCreate, onError }: {
   onClose: () => void;
@@ -20,6 +21,12 @@ export default function NewWorkoutDialog({ onClose, onCreate, onError }: {
   const [goal, setGoal] = useState('');
   const [dayLabel, setDayLabel] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // No `open` prop of its own — the parent only renders this component while
+  // it should be open, so the dialog is open for the whole of its mounted
+  // lifetime. escapeCloses stays default: unlike a save-in-flight sheet,
+  // losing typed fields here is a name and two optional labels, not money.
+  const dialogRef = useDialogA11y({ open: true, onClose });
 
   const submit = async () => {
     if (!name.trim() || saving) return;
@@ -39,6 +46,7 @@ export default function NewWorkoutDialog({ onClose, onCreate, onError }: {
       // usePullToRefresh listens on window, so without this a downward drag
       // inside the dialog pulls the page behind it.
       data-no-pull-refresh
+      ref={dialogRef}
       className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center"
       style={{ background: 'rgba(15,23,42,0.55)' }}
       role="dialog"

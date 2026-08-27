@@ -22,7 +22,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Building2, LayoutDashboard, Activity, CreditCard, Receipt, Ticket, Search, ScrollText,
-  HeartPulse, HardDrive, User, UserCog,
+  HeartPulse, HardDrive, User, UserCog, Users,
 } from 'lucide-react';
 import StudioMark from '@/components/StudioMark';
 import { useSearchFieldFocus } from '@/lib/search-field-focus';

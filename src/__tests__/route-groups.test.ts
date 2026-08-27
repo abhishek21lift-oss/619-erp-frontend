@@ -92,7 +92,12 @@ describe('the route groups', () => {
     // alone in this group is what guarantees it cannot pick the studio's shell
     // back up by being moved one folder — which is how it got mixed in to
     // begin with.
-    expect(routesIn('(platform)')).toEqual(['platform']);
+    //
+    // platform/studios/[id] is Studio 360, a genuine second route inside the
+    // same portal (see platform-split.test.ts's ROUTE_DIRS) — still nothing
+    // outside (platform) has picked up the console's shell, which is the
+    // property this test actually guards.
+    expect(routesIn('(platform)')).toEqual(['platform', 'platform/studios/[id]']);
   });
 
   it('serves each route from exactly one group', () => {

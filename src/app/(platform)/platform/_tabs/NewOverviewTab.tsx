@@ -195,7 +195,7 @@ export function NewOverviewTab() {
                         {s.active_clients}/{s.total_clients} clients · {fmtINR(s.revenue)} revenue
                       </p>
                     </div>
-                    <Badge tone={s.status === 'suspended' ? 'danger' : s.status === 'trial' ? 'info' : 'success'}>{s.status}</Badge>
+                    <Badge tone={s.status === 'suspended' ? 'danger' : 'success'}>{s.status}</Badge>
                     <ChevronRight size={14} style={{ color: 'var(--text-disabled)' }} />
                   </button>
                 </li>
