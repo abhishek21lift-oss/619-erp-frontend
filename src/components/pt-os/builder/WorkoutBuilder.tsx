@@ -58,7 +58,7 @@ import type {
   ProgressionPreview, ProgressionType, WorkoutPlan, WorkoutPlanExercise, WorkoutExerciseInput,
 } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { EmptyState } from '@/components/ui';
+import { EmptyState, PageContainer, PageHero } from '@/components/ui';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import ExerciseCard from './ExerciseCard';
 import PlanVersions from './PlanVersions';
@@ -324,20 +324,15 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
   }
 
   return (
-    <div className="pb-28">
-      {/* ── Header: plan name + live save status ── */}
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="truncate text-[20px] font-[800]" style={{ color: 'var(--text-primary)' }}>
-            {plan?.name ?? 'Workout'}
-          </h1>
-          <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-            {forDay.length} exercise{forDay.length === 1 ? '' : 's'} on {DAYS.find((d) => d.n === day)?.long}
-          </p>
-        </div>
-        <SaveIndicator status={status} />
-      </div>
+    <PageContainer>
+      <PageHero
+        icon={<Dumbbell size={20} />}
+        title={plan?.name ?? 'Workout'}
+        subtitle={`${forDay.length} exercise${forDay.length === 1 ? '' : 's'} on ${DAYS.find((d) => d.n === day)?.long}`}
+        actions={<SaveIndicator status={status} />}
+      />
 
+      <div className="mx-auto w-full max-w-screen-md">
       {/* ── The rule ──
           Only on week 1. It describes how the programme grows from its first
           week, and offering it from inside week 6 would read as a rule about
@@ -441,11 +436,12 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
               // Only the selected day carries a shape. Seven outlined pills in
               // a row is six boxes drawn to say "not this one"; the selection
               // is the only thing that needs a background to read.
-              className="flex h-[44px] shrink-0 items-center gap-1.5 rounded-[14px] px-3.5 text-[13px] font-[700] transition-colors"
+              className="flex h-[44px] shrink-0 items-center gap-1.5 rounded-[14px] px-3.5 text-[13px] font-[700] transition-[background,box-shadow]"
               style={{
-                background: active ? 'var(--brand)' : 'transparent',
+                background: active ? 'linear-gradient(135deg, #0067e0, #0059ce)' : 'transparent',
                 color: active ? '#fff' : 'var(--text-muted)',
                 border: '1px solid transparent',
+                boxShadow: active ? '0 4px 14px -4px rgba(0,103,224,0.5)' : 'none',
               }}
             >
               {d.short}
@@ -479,7 +475,10 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
               type="button"
               onClick={() => router.push(addExercisesHref)}
               className="inline-flex h-[44px] items-center gap-2 rounded-[14px] px-4 text-[13.5px] font-[700] text-white"
-              style={{ background: 'var(--brand)' }}
+              style={{
+                background: 'linear-gradient(135deg, #0067e0, #0059ce)',
+                boxShadow: '0 4px 14px -4px rgba(0,103,224,0.5)',
+              }}
             >
               <Plus size={16} /> Add exercise
             </button>
@@ -523,16 +522,17 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
         type="button"
         onClick={() => router.push(addExercisesHref)}
         aria-label="Add exercise"
-        className="fixed right-4 z-40 flex h-[56px] w-[56px] items-center justify-center rounded-full text-white"
+        className="fixed right-4 z-40 flex h-[56px] w-[56px] items-center justify-center rounded-full text-white transition-transform active:scale-95"
         style={{
           bottom: 'calc(var(--bottom-nav-h, 52px) + env(safe-area-inset-bottom, 0px) + 16px)',
-          background: 'var(--brand)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
+          background: 'linear-gradient(135deg, #0067e0, #3B8DF5)',
+          boxShadow: '0 8px 24px -4px rgba(0,103,224,0.55)',
         }}
       >
         <Plus size={24} />
       </button>
-    </div>
+      </div>
+    </PageContainer>
   );
 }
 

@@ -18,9 +18,7 @@ export default function PlanBuilderPage({
 
   return (
     <Guard roles={['admin', 'manager', 'trainer']}>
-      <div className="mx-auto max-w-screen-md px-4 py-4">
-        <WorkoutBuilder planId={planId} />
-      </div>
+      <WorkoutBuilder planId={planId} />
     </Guard>
   );
 }
