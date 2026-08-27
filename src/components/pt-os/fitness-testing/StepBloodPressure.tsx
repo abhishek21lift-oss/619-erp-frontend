@@ -47,7 +47,7 @@ export function StepBloodPressure({ form, set, error }: StepBloodPressureProps) 
         <FloatInput label="Resting SpO₂ (%)" type="number" value={form.restingSpo2} onChange={(v) => set('restingSpo2', v)} />
       </div>
 
-      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
       {category && badge && (
         <div className="mt-6 flex items-center gap-2">

@@ -33,57 +33,60 @@ const ACCENTS: Record<
     bg: string;        // full gradient background
     glow: string;      // shadow glow color
     iconBg: string;    // glassmorphic icon background
-    decorative: string; // decorative blob color
+    /** Decorative glow, as "R,G,B" — a VALUE not a class, because it is
+     *  composed into a background-image rather than applied to an element. */
+    decoRgb: string;
+    decoAlpha: number;
   }
 > = {
   blue: {
     bg: 'bg-gradient-to-br from-[#0067E0] via-[#0067E0] to-[#0067E0]',
     glow: 'shadow-[0_8px_32px_-8px_rgba(59,130,246,0.45)]',
     iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
-    decorative: 'bg-blue-300/30',
+    decoRgb: '147,197,253', decoAlpha: 0.3,
   },
   emerald: {
     bg: 'bg-gradient-to-br from-[#10B981] via-[#059669] to-[#047857]',
     glow: 'shadow-[0_8px_32px_-8px_rgba(16,185,129,0.45)]',
     iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
-    decorative: 'bg-emerald-300/30',
+    decoRgb: '110,231,183', decoAlpha: 0.3,
   },
   amber: {
     bg: 'bg-gradient-to-br from-[#F59E0B] via-[#D97706] to-[#B45309]',
     glow: 'shadow-[0_8px_32px_-8px_rgba(245,158,11,0.45)]',
     iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
-    decorative: 'bg-amber-300/30',
+    decoRgb: '252,211,77', decoAlpha: 0.3,
   },
   cyan: {
     bg: 'bg-gradient-to-br from-[#0067E0] via-[#0059CE] to-[#0059CE]',
     glow: 'shadow-[0_8px_32px_-8px_rgba(6,182,212,0.45)]',
     iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
-    decorative: 'bg-cyan-300/30',
+    decoRgb: '103,232,249', decoAlpha: 0.3,
   },
   purple: {
     bg: 'bg-gradient-to-br from-[#0067E0] via-[#0067E0] to-[#0067E0]',
     glow: 'shadow-[0_8px_32px_-8px_rgba(139,92,246,0.45)]',
     iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
-    decorative: 'bg-violet-300/30',
+    decoRgb: '196,181,253', decoAlpha: 0.3,
   },
   coral: {
     bg: 'bg-gradient-to-br from-[#EF4444] via-[#DC2626] to-[#B91C1C]',
     glow: 'shadow-[0_8px_32px_-8px_rgba(239,68,68,0.45)]',
     iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
-    decorative: 'bg-red-300/30',
+    decoRgb: '252,165,165', decoAlpha: 0.3,
   },
   graphite: {
     bg: 'bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A]',
     glow: 'shadow-[0_8px_32px_-8px_rgba(42,45,53,0.5)]',
     iconBg: 'bg-white/15 backdrop-blur-md ring-1 ring-white/25',
-    decorative: 'bg-slate-500/20',
+    decoRgb: '100,116,139', decoAlpha: 0.2,
   },
   // backward-compat aliases
-  rose:   { bg: 'bg-gradient-to-br from-[#EF4444] via-[#DC2626] to-[#B91C1C]', glow: 'shadow-[0_8px_32px_-8px_rgba(244,63,94,0.45)]', iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40', decorative: 'bg-rose-300/30' },
-  sky:    { bg: 'bg-gradient-to-br from-[#0067E0] via-[#0059CE] to-[#0059CE]', glow: 'shadow-[0_8px_32px_-8px_rgba(6,182,212,0.45)]', iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40', decorative: 'bg-cyan-300/30' },
-  violet: { bg: 'bg-gradient-to-br from-[#0067E0] via-[#0067E0] to-[#0067E0]', glow: 'shadow-[0_8px_32px_-8px_rgba(139,92,246,0.45)]', iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40', decorative: 'bg-violet-300/30' },
-  orange: { bg: 'bg-gradient-to-br from-[#EF4444] via-[#DC2626] to-[#B91C1C]', glow: 'shadow-[0_8px_32px_-8px_rgba(239,68,68,0.45)]', iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40', decorative: 'bg-red-300/30' },
-  slate:  { bg: 'bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A]', glow: 'shadow-[0_8px_32px_-8px_rgba(42,45,53,0.5)]', iconBg: 'bg-white/15 backdrop-blur-md ring-1 ring-white/25', decorative: 'bg-slate-500/20' },
+  rose:   { bg: 'bg-gradient-to-br from-[#EF4444] via-[#DC2626] to-[#B91C1C]', glow: 'shadow-[0_8px_32px_-8px_rgba(244,63,94,0.45)]', iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40', decoRgb: '253,164,175', decoAlpha: 0.3 },
+  sky:    { bg: 'bg-gradient-to-br from-[#0067E0] via-[#0059CE] to-[#0059CE]', glow: 'shadow-[0_8px_32px_-8px_rgba(6,182,212,0.45)]', iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40', decoRgb: '103,232,249', decoAlpha: 0.3 },
+  violet: { bg: 'bg-gradient-to-br from-[#0067E0] via-[#0067E0] to-[#0067E0]', glow: 'shadow-[0_8px_32px_-8px_rgba(139,92,246,0.45)]', iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40', decoRgb: '196,181,253', decoAlpha: 0.3 },
+  orange: { bg: 'bg-gradient-to-br from-[#EF4444] via-[#DC2626] to-[#B91C1C]', glow: 'shadow-[0_8px_32px_-8px_rgba(239,68,68,0.45)]', iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40', decoRgb: '252,165,165', decoAlpha: 0.3 },
+  slate:  { bg: 'bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A]', glow: 'shadow-[0_8px_32px_-8px_rgba(42,45,53,0.5)]', iconBg: 'bg-white/15 backdrop-blur-md ring-1 ring-white/25', decoRgb: '100,116,139', decoAlpha: 0.2 },
 };
 
 export interface KpiCardProps {
@@ -131,20 +134,24 @@ export function KpiCard({
         className,
       )}
     >
-      {/* Decorative top-right blob (large soft circle) */}
+      {/* Decorative corner glows.
+          ONE unfiltered layer, not two blurred circles. `filter: blur()`
+          promotes a child to its own compositing layer, and WebKit then applies
+          the card's `overflow-hidden` + `rounded-2xl` clip to that layer as a
+          RECTANGLE — so the blob's square corner paints outside the card's
+          rounded corner. Reported on iOS against the client profile card, which
+          carries the identical pattern.
+          A gradient needs no filter, so nothing is promoted and the clip holds.
+          Radii fitted against the old rendering by pixel comparison: 140px,
+          mean difference under 0.5/255 for both blobs. */}
       <div
-        className={cn(
-          'pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full blur-2xl',
-          tone.decorative,
-        )}
-        aria-hidden
-      />
-      {/* Decorative bottom-left blob */}
-      <div
-        className={cn(
-          'pointer-events-none absolute -bottom-12 -left-12 h-32 w-32 rounded-full blur-3xl opacity-50',
-          tone.decorative,
-        )}
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage: [
+            `radial-gradient(circle 140px at calc(100% - 32px) 32px, rgba(${tone.decoRgb},${tone.decoAlpha}), transparent 70%)`,
+            `radial-gradient(circle 140px at 16px calc(100% - 16px), rgba(${tone.decoRgb},${tone.decoAlpha / 2}), transparent 70%)`,
+          ].join(', '),
+        }}
         aria-hidden
       />
 

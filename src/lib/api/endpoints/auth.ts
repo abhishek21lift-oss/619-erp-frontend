@@ -20,10 +20,29 @@ export const auth = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
-  login: (email: string, password: string, mfaCode?: string) =>
+  /**
+   * `portal` says which sign-in screen the person used: 'staff' for Admin
+   * Login, 'member' for Member Login, 'platform' for the Command Center. The
+   * server refuses the mismatch — a client cannot sign in through Admin Login
+   * and vice versa — so this is not a UI hint, it is part of the request.
+   *
+   * For 'platform' it is more than a refusal: the door decides the SESSION's
+   * audience. A token minted at the studio door cannot drive the platform
+   * control plane whatever role the account holds, and one minted here cannot
+   * act inside a studio. See the backend's middleware/platformAuth.js.
+   *
+   * Omitted rather than defaulted here, so the server's own default ('staff')
+   * is the single place that decision lives.
+   */
+  login: (email: string, password: string, mfaCode?: string, portal?: 'staff' | 'member' | 'platform') =>
     http<{ user: User }>('/api/auth/login', {
       method: 'POST',
-      body: mfaCode ? { email, password, mfa_code: mfaCode } : { email, password },
+      body: {
+        email,
+        password,
+        ...(mfaCode ? { mfa_code: mfaCode } : {}),
+        ...(portal ? { portal } : {}),
+      },
     }),
   googleLogin: (credential: string) =>
     http<{ user: User }>('/api/auth/google-login', {
@@ -86,7 +105,7 @@ export const webauthn = {
       body: JSON.stringify(body ?? {}),
     }),
   loginVerify: (body: { authentication: Record<string, unknown> }) =>
-    http<{ user: { id: string; name?: string; email: string; role?: string; trainer_id?: string; member_id?: string } }>(
+    http<{ user: { id: string; name?: string; email: string; role?: string; trainer_id?: string; pt_client_id?: string } }>(
       '/api/auth/webauthn/login/verify', { method: 'POST', body: JSON.stringify(body) }
     ),
 

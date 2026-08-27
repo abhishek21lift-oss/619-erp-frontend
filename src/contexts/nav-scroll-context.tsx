@@ -1,19 +1,62 @@
 'use client';
 
 /**
- * NavScrollContext — unified scroll state machine for the top bar and bottom bar.
+ * NavScrollContext — scroll state machine for the top bar.
  *
  * Single RAF loop. Direction hysteresis prevents flicker. Scroll-stop debounce.
  *
- * State machine (Instagram / WhatsApp native-mobile pattern):
- *   scroll down  → topBar: hidden  (off screen)         bottomBar: expanded
- *   scroll up    → topBar: compact (visible, shrunk)   bottomBar: hidden
- *   at page top  → topBar: expanded                     bottomBar: expanded
- *   at page btm  → topBar: expanded                     bottomBar: expanded
- *   route change → topBar: expanded                     bottomBar: expanded (instant reset)
+ * State machine:
+ *   scroll up    → topBar: compact (visible, shrunk)
+ *   scroll down  → topBar: expanded
+ *   at page top  → topBar: expanded
+ *   at page btm  → topBar: expanded
+ *   route change → topBar: expanded (instant reset)
+ *
+ * ── There used to be a third state, and it never did anything ─────────────
+ *
+ * Scrolling down returned 'hidden', documented here as the Instagram pattern
+ * of sliding the bar off-screen. Nothing implemented it: AppShell's header
+ * animates `y: 0` unconditionally, and its height reads
+ * `topBar === 'compact' ? 32 : 46` — so 'hidden' rendered a full-height,
+ * fully-visible bar, pixel for pixel identical to 'expanded'. The state was
+ * dead in exactly the way `bottomBar` and `scrollY` were before it.
+ *
+ * It is collapsed into 'expanded' rather than implemented, because rendering
+ * it would be a new UI behaviour rather than a fix. If sliding the bar away
+ * on scroll-down is wanted, that is a deliberate change: give the header a
+ * `y: -100%` branch and keep the spacer at its expanded height, which is what
+ * it now is anyway.
  *
  * Direction hysteresis: DIRECTION_HYSTERESIS px must accumulate in a new direction
  * before the state transitions — prevents flicker from micro-jitter.
+ *
+ * ── What this deliberately does NOT publish, and why ───────────────────────
+ *
+ * It used to expose scrollY, isAtTop and a bottomBar state as well. Nothing
+ * read any of the three — and scrollY was rewritten on EVERY animation frame
+ * of every scroll, into a context value rebuilt as a fresh object each time.
+ * So all three consumers re-rendered ~60 times a second whenever the page
+ * moved, for a value none of them looked at:
+ *
+ *   · AppShell        — the whole shell: sidebar, top bar, the wrapper around
+ *                       every page, the bottom nav, the AI assistant
+ *   · MobileBottomNav — which carries a framer-motion `layoutId` shared-layout
+ *                       animation on its active pill
+ *   · PullToRefresh   — which wraps all page content
+ *
+ * Re-rendering a tree full of layout animations at frame rate is what the
+ * bottom bar's flicker and jitter while scrolling was made of. Two of those
+ * three consumers only ever wanted `reducedMotion`, which changes about once
+ * a year.
+ *
+ * So the state is now exactly what somebody reads. The value only changes
+ * when topBar actually crosses a state boundary — a handful of times per
+ * scroll instead of hundreds — and it is memoised so that identity is stable
+ * when the contents are.
+ *
+ * If a future feature genuinely needs live scrollY, it should take it from a
+ * ref or its own subscription rather than being put back here: a per-frame
+ * value in a context shared with the app shell is the shape of this bug.
  */
 
 import {
@@ -21,26 +64,21 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
 import { usePathname } from 'next/navigation';
 
-export type BarState = 'expanded' | 'compact' | 'hidden';
+export type BarState = 'expanded' | 'compact';
 
 export interface NavScrollValue {
   topBar: BarState;
-  bottomBar: BarState;
-  isAtTop: boolean;
-  scrollY: number;
   reducedMotion: boolean;
 }
 
 const DEFAULT: NavScrollValue = {
   topBar: 'expanded',
-  bottomBar: 'expanded',
-  isAtTop: true,
-  scrollY: 0,
   reducedMotion: false,
 };
 
@@ -55,20 +93,8 @@ const MICRO_THRESHOLD = 3;
 // Must accumulate this many px in a new direction before committing to it
 const DIRECTION_HYSTERESIS = 12;
 
-interface NavState {
-  topBar: BarState;
-  bottomBar: BarState;
-  isAtTop: boolean;
-  scrollY: number;
-}
-
 export function NavScrollProvider({ children }: { children: React.ReactNode }) {
-  const [nav, setNav] = useState<NavState>({
-    topBar: 'expanded',
-    bottomBar: 'expanded',
-    isAtTop: true,
-    scrollY: 0,
-  });
+  const [topBar, setTopBar] = useState<BarState>('expanded');
   const [reducedMotion, setReducedMotion] = useState(false);
   const pathname = usePathname();
 
@@ -94,9 +120,9 @@ export function NavScrollProvider({ children }: { children: React.ReactNode }) {
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  // Reset both bars on every route change
+  // Reset on every route change
   useEffect(() => {
-    setNav({ topBar: 'expanded', bottomBar: 'expanded', isAtTop: true, scrollY: 0 });
+    setTopBar('expanded');
     lastY.current        = 0;
     velEMA.current       = 0;
     committedDir.current = 'down';
@@ -122,19 +148,22 @@ export function NavScrollProvider({ children }: { children: React.ReactNode }) {
     lastY.current  = currentY;
     lastTs.current = now;
 
-    setNav(prev => {
-      // Page edges — always expand both bars regardless of direction
+    // Every branch below either returns `prev` unchanged or a single string.
+    // React bails out of a re-render when a useState setter is given the value
+    // it already holds, so a scroll that does not cross a state boundary now
+    // costs nothing at all — where the old shape rebuilt an object containing
+    // the live scrollY on every frame and re-rendered the whole shell with it.
+    setTopBar(prev => {
+      // Page edges — always expand, regardless of direction
       if (atTop || atBottom) {
         committedDir.current = atBottom ? committedDir.current : 'down';
         pendingDir.current   = null;
         pendingAccum.current = 0;
-        return { topBar: 'expanded', bottomBar: 'expanded', isAtTop: atTop, scrollY: currentY };
+        return 'expanded';
       }
 
-      // Sub-pixel jitter — update position only, no state change
-      if (Math.abs(dy) < MICRO_THRESHOLD) {
-        return { ...prev, isAtTop: atTop, scrollY: currentY };
-      }
+      // Sub-pixel jitter — no state change
+      if (Math.abs(dy) < MICRO_THRESHOLD) return prev;
 
       // ── Direction detection with hysteresis ──────────────────────────────
       const rawDir: 'down' | 'up' = dy > 0 ? 'down' : 'up';
@@ -161,23 +190,14 @@ export function NavScrollProvider({ children }: { children: React.ReactNode }) {
           resolvedDir = rawDir;
         } else {
           // Not committed yet — hold current state
-          return { ...prev, isAtTop: atTop, scrollY: currentY };
+          return prev;
         }
       }
 
-      let { topBar, bottomBar } = prev;
-
-      if (resolvedDir === 'down') {
-        // Scroll down: top bar hides; bottom bar reappears
-        topBar    = 'hidden';
-        bottomBar = 'expanded';
-      } else {
-        // Scroll up: top bar stays visible (compact); bottom bar hides
-        topBar    = 'compact';
-        bottomBar = 'hidden';
-      }
-
-      return { topBar, bottomBar, isAtTop: atTop, scrollY: currentY };
+      // Scroll up shrinks the bar; scroll down restores it. (Scrolling down
+      // used to return 'hidden' — see the note at the top of this file for why
+      // that state is gone rather than implemented.)
+      return resolvedDir === 'down' ? 'expanded' : 'compact';
     });
 
     // After scroll settles, reset velocity accumulator
@@ -203,8 +223,13 @@ export function NavScrollProvider({ children }: { children: React.ReactNode }) {
     };
   }, [onScroll]);
 
+  // Memoised so consumers re-render when the STATE changes, not merely because
+  // the provider re-rendered and handed them a new object with the same
+  // contents in it.
+  const value = useMemo<NavScrollValue>(() => ({ topBar, reducedMotion }), [topBar, reducedMotion]);
+
   return (
-    <NavScrollContext.Provider value={{ ...nav, reducedMotion }}>
+    <NavScrollContext.Provider value={value}>
       {children}
     </NavScrollContext.Provider>
   );

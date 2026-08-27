@@ -158,7 +158,7 @@ export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabl
       </div>
       <div className="mt-2 flex items-center justify-between">
         {error ? (
-          <p className="text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>
+          <p className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>
         ) : <span />}
         <button
           type="button"

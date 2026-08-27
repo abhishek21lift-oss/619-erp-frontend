@@ -38,13 +38,10 @@ export function AssessmentInfoCard({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FloatInput label="Client Name" value={clientName} onChange={() => {}} disabled />
-        <div>
-          <FloatInput
-            label="Assessment Number" value={nextAssessmentNumber != null ? `#${nextAssessmentNumber}` : ''}
-            onChange={() => {}} disabled
-          />
-          <p className="mt-1.5 text-[11px] text-slate-400">Auto-generated on save.</p>
-        </div>
+        <FloatInput
+          label="Assessment Number" value={nextAssessmentNumber != null ? String(nextAssessmentNumber) : ''}
+          onChange={() => {}} disabled
+        />
 
         <FloatInput label="Assessment Date" type="date" value={form.assessmentDate} onChange={(v) => set('assessmentDate', v)} />
 

@@ -103,8 +103,15 @@ function ProgressRing({ pct, colour, size = 148 }: { pct: number; colour: string
   const stroke = 13;
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
+  // The STROKE clamps — a ring cannot draw past full. The NUMBER must not:
+  // this rendered "100% OF TARGET" for a studio that had collected ₹20,000
+  // against a ₹1,000 target, directly above a line reading "₹20,000 collected
+  // of ₹1,000 target". The card contradicted itself, and the wrong half was
+  // the one in the largest type. The ring is decoration; the figure is the
+  // claim being made.
   const clamped = Math.max(0, Math.min(100, pct));
   const dash = (clamped / 100) * circ;
+  const shown = Math.max(0, pct);
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -121,9 +128,15 @@ function ProgressRing({ pct, colour, size = 148 }: { pct: number; colour: string
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="tabular-nums text-[26px] font-[860] leading-none"
-          style={{ color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
-          {Math.round(clamped)}%
+        <span className="tabular-nums font-[860] leading-none"
+          style={{
+            color: 'var(--text-primary)',
+            letterSpacing: '-0.03em',
+            // Steps down so a four-digit percentage fits the ring it is
+            // centred in instead of overflowing it.
+            fontSize: shown >= 1000 ? 19 : shown >= 100 ? 22 : 26,
+          }}>
+          {Math.round(shown)}%
         </span>
         <span className="mt-0.5 text-[9.5px] font-[750] uppercase tracking-[0.12em]"
           style={{ color: 'var(--text-muted)' }}>
@@ -138,7 +151,12 @@ function Figure({ label, value, colour, icon }: {
   label: string; value: string; colour?: string; icon: React.ReactNode;
 }) {
   return (
-    <div className="min-w-0 flex-1">
+    // basis, not min-w-0. All three were free to shrink to nothing, so on a
+    // phone they stayed on one line and truncated instead of wrapping — the
+    // surplus rendered as "+₹19,..." , which is the one figure on the card a
+    // studio owner actually wants to read. A basis makes the row wrap to two
+    // lines before any value is cut; truncate stays as the last resort.
+    <div className="flex-1 basis-[104px]">
       <div className="mb-1 flex items-center gap-1.5">
         <span style={{ color: colour ?? 'var(--text-muted)' }}>{icon}</span>
         <span className="text-[10px] font-[750] uppercase tracking-[0.12em]"
@@ -258,9 +276,9 @@ export default function MonthlyTargetHero({ onTargetSet }: { onTargetSet?: () =>
     return (
       <Shell>
         <div className="flex items-center gap-2.5">
-          <AlertTriangle size={16} style={{ color: 'var(--danger)' }} />
-          <p className="flex-1 text-[13px]" style={{ color: 'var(--danger)' }}>{error}</p>
-          <button onClick={load} className="text-[12px] font-[700] underline" style={{ color: 'var(--danger)' }}>
+          <AlertTriangle size={16} style={{ color: 'var(--danger-text)' }} />
+          <p className="flex-1 text-[13px]" style={{ color: 'var(--danger-text)' }}>{error}</p>
+          <button onClick={load} className="text-[12px] font-[700] underline" style={{ color: 'var(--danger-text)' }}>
             Retry
           </button>
         </div>
@@ -315,7 +333,7 @@ export default function MonthlyTargetHero({ onTargetSet }: { onTargetSet?: () =>
           <div className="rounded-[14px] p-4"
             style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-border)' }}>
             <div className="flex items-start gap-2.5">
-              <AlertTriangle size={16} className="mt-0.5 shrink-0" style={{ color: 'var(--warning)' }} />
+              <AlertTriangle size={16} className="mt-0.5 shrink-0" style={{ color: 'var(--warning-text)' }} />
               <div className="min-w-0">
                 <p className="text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>
                   Set {fmtINR(amount)} as the target for {monthLabel()}?

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
+import { useTheme } from '@/components/ThemeProvider';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/components/ui/cn';
@@ -18,21 +19,27 @@ import { api } from '@/lib/api';
 import { roleLabel } from '@/lib/roles';
 import { allNavItems, isVisibleForFeature } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
-import { NavScrollProvider, useNavScroll } from '@/contexts/nav-scroll-context';
+import { useNavScroll } from '@/contexts/nav-scroll-context';
 import { PullRefreshRegistryProvider } from '@/contexts/pull-refresh-context';
 import PullToRefresh from '@/components/common/PullToRefresh';
 import OrgSwitcher from '@/components/OrgSwitcher';
 import ImpersonationBanner from '@/components/ImpersonationBanner';
 import TrialBanner from '@/components/TrialBanner';
 import GlobalSearch, { type PageEntry } from '@/components/search/GlobalSearch';
-import useKeyboardViewportFix from '@/hooks/useKeyboardViewportFix';
+import useViewportDesyncFix from '@/hooks/useViewportDesyncFix';
 import { clearSearchHistory } from '@/components/search/recent';
 
 interface AppShellProps {
   children: React.ReactNode;
-  title?: string;
-  headerLeft?: React.ReactNode;
 }
+
+// The top bar's two heights, in px, excluding the safe-area inset.
+//
+// EXPANDED is also the layout reserve: the spacer below the fixed header is
+// this tall at all times, never the compact height. That is deliberate — see
+// the spacer for what animating it cost.
+const TOPBAR_EXPANDED_H = 46;
+const TOPBAR_COMPACT_H = 32;
 
 interface Notification {
   id: string;
@@ -50,6 +57,7 @@ const NAV_KEYWORDS: Record<string, string> = {
   // dead route.
   '/checkin/qr-scanner':         'walk-in walkin drop-in checkin daily visit attendance qr scanner scan code kiosk self service',
 '/ai-coach':                   'ai coach chatbot gpt workout nutrition fitness assistant 619',
+  '/ai/intelligence':            'ai intelligence center memory proposals approval review trainer',
   '/ai/workout-generator':       'ai workout plan generator create programme training',
   '/ai/diet-generator':          'ai diet nutrition plan generator meal food macros calories',
   '/ai/progress-analysis':       'ai progress analysis analyzer client report insights',
@@ -112,10 +120,21 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-function AppShellContent({ children, title, headerLeft }: AppShellProps) {
+function AppShellContent({ children }: AppShellProps) {
   // Every page in the shell has fields, so the iOS keyboard-dismiss gap is a
   // shell-level problem, not a per-page one.
-  useKeyboardViewportFix();
+  //
+  // Two mechanisms, and they cover different halves of the same bug:
+  //  · useViewportDesyncFix re-asserts the DOCUMENT's scroll position, which
+  //    makes Safari recompute — but only works where there is a document
+  //    scroll to re-assert, so it cannot help a viewport-height page like the
+  //    AI Coach console.
+  //
+  // There was a second mechanism here — useVisualViewportAnchor — which
+  // measured the layout/visual viewport gap and offset the bottom chrome by
+  // it. It is gone: both signs of that measurement moved the nav when nothing
+  // was wrong. BOTTOM-NAV.md has the full account.
+  useViewportDesyncFix();
 
   const { features } = useFeatures();
   const searchPages = useMemo(() => buildSearchPages(features), [features]);
@@ -130,25 +149,18 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const notifLastFetchedRef = useRef<number>(0);
-  const [darkMode, setDarkMode] = useState(false);
-
-  // Persist dark mode preference
-  useEffect(() => {
-    const saved = localStorage.getItem('619-theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = saved ? saved === 'dark' : prefersDark;
-    setDarkMode(isDark);
-    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    document.documentElement.classList.toggle('dark', isDark);
-  }, []);
-
-  const toggleDark = () => {
-    const next = !darkMode;
-    setDarkMode(next);
-    localStorage.setItem('619-theme', next ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light');
-    document.documentElement.classList.toggle('dark', next);
-  };
+  // Theme comes from ThemeProvider — this component does NOT keep its own copy.
+  //
+  // It used to: local `darkMode` state, its own mount effect, and a toggle that
+  // wrote localStorage['619-theme'], while ThemeProvider and the pre-paint
+  // script used localStorage['theme']. Two systems, two keys, no connection.
+  // Pressing this button changed the page but left every useTheme() consumer
+  // stale (the diet-plan charts kept their light palette in dark mode), and on
+  // the next load the pre-paint script found nothing under 'theme' and fell
+  // back to the system preference — throwing away the choice the user had just
+  // made. See public/theme-init.js for the one-time migration of the old key.
+  const { theme, toggle: toggleDark } = useTheme();
+  const darkMode = theme === 'dark';
 
   const { user, logout } = useAuth();
   const studioName = user?.organization_name || 'PT Studio';
@@ -266,7 +278,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
             // Live top-bar height for page-level sticky headers (.below-topbar):
             // tracks the expanded/compact animation so stuck headers never
             // slide under (or paint over) the fixed shell header.
-            ['--topbar-h' as string]: `calc(${topBar === 'compact' ? 32 : 46}px + env(safe-area-inset-top, 0px))`,
+            ['--topbar-h' as string]: `calc(${topBar === 'compact' ? TOPBAR_COMPACT_H : TOPBAR_EXPANDED_H}px + env(safe-area-inset-top, 0px))`,
           }}
         >
           {/* Scoped blur overlay — background stays in place, only blurs + dims */}
@@ -310,7 +322,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 
             <m.div
               className="flex items-center gap-1.5 px-3 sm:gap-2.5 sm:px-4 lg:gap-3 lg:px-6"
-              animate={{ height: topBar === 'compact' ? 32 : 46 }}
+              animate={{ height: topBar === 'compact' ? TOPBAR_COMPACT_H : TOPBAR_EXPANDED_H }}
               transition={transConfig}
             >
               {/* Mobile menu toggle.
@@ -439,6 +451,10 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.96 }}
                       transition={{ duration: 0.12, ease: 'easeOut' }}
+                      // The notification list owns every vertical drag inside
+                      // it; pulling the page down behind it is wrong at any
+                      // scroll position.
+                      data-no-pull-refresh
                       className="notif-panel absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_16px_48px_rgba(0,0,0,0.15)]"
                     >
                       {/* Header */}
@@ -575,7 +591,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                         </Link>
                         <hr className="my-1 border-[var(--border)]" />
                         <button onClick={handleLogout}
-                          className="flex w-full items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--danger)] hover:bg-[var(--danger)]/5 transition-colors">
+                          className="flex w-full items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--danger-text)] hover:bg-[var(--danger)]/5 transition-colors">
                           <LogOut size={14} strokeWidth={1.5} /> Logout
                         </button>
                       </div>
@@ -586,25 +602,33 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
             </m.div>
           </m.header>
 
-          {/* Spacer — tracks fixed header height so content always starts below it.
-              marginTop (not paddingTop) for the safe-area inset: box-sizing:border-box
-              means an explicit `height` clamps the box to that height regardless of
-              padding, so padding-based inset would get silently swallowed on notched
-              devices. margin sits outside the height calculation, so it's additive. */}
-          <m.div
+          {/* Spacer — reserves the room the fixed header occupies, so content
+              starts below it.
+
+              Fixed at the EXPANDED height, and not animated. It used to track
+              the header (46 ↔ 32), which meant every scroll-direction change
+              moved this in-flow box by 14px and pushed the entire page's
+              content with it — a layout shift on a plain scroll, hundreds of
+              times a session. Scroll is not an input CLS forgives, so it
+              scored too.
+
+              The header still shrinks; only the reserve is constant. The 14px
+              band that opens under a compact bar is never actually seen: the
+              bar is only compact while scrolling mid-document, where the
+              content behind it has already scrolled up under it. At the top of
+              the page — the one place a gap would show — the state machine
+              always reports 'expanded'.
+
+              marginTop (not paddingTop) for the safe-area inset:
+              box-sizing:border-box means an explicit `height` clamps the box
+              to that height regardless of padding, so a padding-based inset
+              would get silently swallowed on notched devices. margin sits
+              outside the height calculation, so it is additive. */}
+          <div
             aria-hidden="true"
             className="flex-shrink-0 pointer-events-none"
-            style={{ marginTop: 'env(safe-area-inset-top, 0px)' }}
-            animate={{ height: topBar === 'compact' ? 32 : 46 }}
-            transition={transConfig}
-            initial={false}
+            style={{ height: TOPBAR_EXPANDED_H, marginTop: 'env(safe-area-inset-top, 0px)' }}
           />
-
-          {headerLeft && (
-            <div className="flex items-center gap-3 px-4 sm:px-6 lg:px-8">
-              {headerLeft}
-            </div>
-          )}
 
           {/* Width/max-width/margin/padding all come from .shell-main in globals.css —
               the equivalent Tailwind utilities (mx-auto w-full max-w-[1440px] px-4
@@ -613,24 +637,27 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
           <main id="main-content" className="flex-1 min-w-0 overflow-x-hidden shell-main"
           >
             {pathname === '/' && <TrialBanner />}
-            <AnimatePresence mode="popLayout" initial={false}>
-              <m.div
-                key={pathname}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, transition: { duration: 0.1 } }}
-                transition={{ duration: 0.22, ease: [0.21, 0.47, 0.32, 0.98] }}
-              >
-                {title && (
-                  <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
-                    {title}
-                  </h1>
-                )}
-                <PullToRefresh global onRefresh={globalRefresh}>
-                  <div key={refreshKey}>{children}</div>
-                </PullToRefresh>
-              </m.div>
-            </AnimatePresence>
+            {/* Keyed on pathname so each route fades in on arrival. There is
+                deliberately no AnimatePresence and no exit animation here.
+                There used to be one — `mode="popLayout"`, a 0.1s fade out —
+                and it had never run once: this whole subtree was destroyed
+                with the page on every navigation, so nothing was left mounted
+                to animate out. Now that the shell is a layout and does
+                persist, that exit WOULD start running, which is a new
+                transition nobody has looked at on a device — and the exiting
+                page is absolutely positioned over the arriving one while it
+                plays. Enabling it is a UI change, not part of moving the
+                shell, so what shipped for years is what still ships. */}
+            <m.div
+              key={pathname}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.22, ease: [0.21, 0.47, 0.32, 0.98] }}
+            >
+              <PullToRefresh global onRefresh={globalRefresh}>
+                <div key={refreshKey}>{children}</div>
+              </PullToRefresh>
+            </m.div>
           </main>
 
           {/* Mobile bottom navigation — hidden when sidebar drawer is open.
@@ -639,6 +666,14 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
               fixed footers (e.g. form Save/Submit bars) instead of always
               painting on top of them regardless of their z-index. */}
           <MobileBottomNav sidebarOpen={mobileMenuOpen} />
+
+          {/* The floating AI launcher used to sit here, inside this stacking
+              context. It is gone: on a phone it sat on top of the content of
+              every screen in the app, and AI already has a permanent home —
+              the AI Coach tab in the bottom nav, which is a full chat console
+              rather than a corner button. The components it opened are still
+              in src/components/ai/ and nothing renders them; putting the
+              button back is this one line. */}
         </div>
       </div>
     </LazyMotion>
@@ -646,11 +681,16 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 }
 
 export default function AppShell(props: AppShellProps) {
+  // Mounted once, from src/app/(chrome)/layout.tsx — see the note there. It
+  // used to be rendered by each of 97 pages instead, which destroyed and
+  // rebuilt the entire shell on every navigation.
+  //
+  // NavScrollProvider is the one piece that still lives further up, in
+  // app/layout.tsx: the member portal has no AppShell at all and still needs
+  // the scroll state.
   return (
-    <NavScrollProvider>
-      <PullRefreshRegistryProvider>
-        <AppShellContent {...props} />
-      </PullRefreshRegistryProvider>
-    </NavScrollProvider>
+    <PullRefreshRegistryProvider>
+      <AppShellContent {...props} />
+    </PullRefreshRegistryProvider>
   );
 }

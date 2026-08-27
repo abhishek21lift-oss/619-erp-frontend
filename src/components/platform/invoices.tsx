@@ -74,7 +74,7 @@ function Tile({ label, value, sub, tone, subTone }: {
   label: string; value: string; sub?: string;
   tone?: 'positive' | 'neutral' | 'critical'; subTone?: 'caution';
 }) {
-  const colour = tone === 'positive' ? 'var(--success)' : tone === 'critical' ? 'var(--danger)' : 'var(--text-primary)';
+  const colour = tone === 'positive' ? 'var(--success-text)' : tone === 'critical' ? 'var(--danger-text)' : 'var(--text-primary)';
   return (
     <div className="rounded-[14px] p-3.5" style={cardStyle}>
       <p className="text-[10px] font-[750] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>{label}</p>
@@ -142,7 +142,7 @@ function Row({ inv }: { inv: SubscriptionInvoice }) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`Open invoice ${inv.invoice_number} as PDF`}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px]"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[9px]"
         style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}
       >
         <FileText size={14} />
@@ -270,7 +270,7 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
           </div>
 
           {error && (
-            <p className="mt-3 text-[12px] font-[650]" style={{ color: 'var(--danger)' }}>{error}</p>
+            <p className="mt-3 text-[12px] font-[650]" style={{ color: 'var(--danger-text)' }}>{error}</p>
           )}
 
           <div className="mt-4 flex items-center gap-2">
@@ -292,7 +292,7 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
       )}
 
       {error && !form && (
-        <p className="py-6 text-center text-[12.5px]" style={{ color: 'var(--danger)' }}>{error}</p>
+        <p className="py-6 text-center text-[12.5px]" style={{ color: 'var(--danger-text)' }}>{error}</p>
       )}
     </div>
   );
@@ -391,7 +391,7 @@ export default function InvoicesPanel() {
             <button
               key={p.label}
               onClick={() => applyRange(p.from, p.to)}
-              className="min-h-[32px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
+              className="min-h-[44px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
               style={from === p.from && to === p.to
                 ? { background: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(15,23,42,0.10)' }
                 : { color: 'var(--text-muted)' }}
@@ -455,7 +455,7 @@ export default function InvoicesPanel() {
                   className="h-10 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={inputStyle} />
               </label>
               <div className="flex items-end">
-                <button onClick={reset} className="flex min-h-[36px] items-center gap-1.5 text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}>
+                <button onClick={reset} className="flex min-h-[44px] items-center gap-1.5 text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}>
                   <RotateCcw size={12} /> Reset
                 </button>
               </div>
@@ -482,13 +482,13 @@ export default function InvoicesPanel() {
           {total > PAGE_SIZE && (
             <div className="flex items-center gap-1">
               <button onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))} disabled={offset === 0}
-                aria-label="Previous page" className="flex h-8 w-8 items-center justify-center rounded-[8px] disabled:opacity-40"
+                aria-label="Previous page" className="flex h-11 w-11 items-center justify-center rounded-[8px] disabled:opacity-40"
                 style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                 <ChevronLeft size={14} />
               </button>
               <span className="px-1.5 text-[11.5px] font-[650] tabular-nums" style={{ color: 'var(--text-muted)' }}>{page} / {pages}</span>
               <button onClick={() => setOffset(offset + PAGE_SIZE)} disabled={offset + PAGE_SIZE >= total}
-                aria-label="Next page" className="flex h-8 w-8 items-center justify-center rounded-[8px] disabled:opacity-40"
+                aria-label="Next page" className="flex h-11 w-11 items-center justify-center rounded-[8px] disabled:opacity-40"
                 style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                 <ChevronRight size={14} />
               </button>
@@ -505,7 +505,7 @@ export default function InvoicesPanel() {
 
         {error && !loading && (
           <div className="flex flex-col items-center gap-2.5 py-14 text-center">
-            <AlertTriangle size={22} style={{ color: 'var(--danger)' }} />
+            <AlertTriangle size={22} style={{ color: 'var(--danger-text)' }} />
             <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{error}</p>
             <button onClick={load} className="mt-1 text-[12px] font-[700]" style={{ color: 'var(--brand)' }}>Try again</button>
           </div>

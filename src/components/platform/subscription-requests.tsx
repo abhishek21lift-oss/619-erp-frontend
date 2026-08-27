@@ -34,6 +34,7 @@ import type {
 } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { EmptyState } from '@/components/ui';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 const inr = (n: number) => '₹' + Number(n || 0).toLocaleString('en-IN');
 
@@ -49,9 +50,9 @@ const REASONS = Object.keys(REASON_LABELS) as UpiRejectReason[];
 
 const STATUS_META: Record<string, { label: string; tone: string }> = {
   AWAITING_PAYMENT: { label: 'Not paid yet', tone: 'var(--text-muted)' },
-  AWAITING_VERIFICATION: { label: 'To verify', tone: 'var(--warning)' },
-  APPROVED: { label: 'Approved', tone: 'var(--success)' },
-  REJECTED: { label: 'Rejected', tone: 'var(--danger)' },
+  AWAITING_VERIFICATION: { label: 'To verify', tone: 'var(--warning-text)' },
+  APPROVED: { label: 'Approved', tone: 'var(--success-text)' },
+  REJECTED: { label: 'Rejected', tone: 'var(--danger-text)' },
   CANCELLED: { label: 'Cancelled', tone: 'var(--text-muted)' },
   EXPIRED: { label: 'Expired', tone: 'var(--text-muted)' },
 };
@@ -138,7 +139,7 @@ export default function SubscriptionRequestsTab() {
       <div className="mt-4">
         {error ? (
           <div className="flex items-start gap-2.5 rounded-xl p-4"
-            style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
+            style={{ background: 'var(--danger-soft)', color: 'var(--danger-text)' }}>
             <AlertTriangle size={17} className="mt-px shrink-0" />
             <span className="text-[13.5px]">{error}</span>
           </div>
@@ -234,7 +235,7 @@ function RequestCard({
             {inr(row.amount_inr)}
           </p>
           {row.discount_inr > 0 && (
-            <p className="text-[11.5px]" style={{ color: 'var(--success)' }}>
+            <p className="text-[11.5px]" style={{ color: 'var(--success-text)' }}>
               {inr(row.list_price_inr)} − {inr(row.discount_inr)}
               {row.coupon_code ? ` (${row.coupon_code})` : ''}
             </p>
@@ -271,7 +272,7 @@ function RequestCard({
           </button>
           <button type="button" onClick={onReject}
             className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-[13.5px] font-[700] sm:flex-none"
-            style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
+            style={{ background: 'var(--danger-soft)', color: 'var(--danger-text)' }}>
             <X size={15} /> Reject
           </button>
         </div>
@@ -297,11 +298,16 @@ function ActionDialog({
   const [error, setError] = useState<string | null>(null);
   const isApprove = kind === 'approve';
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !busy) onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [busy, onClose]);
+  // Escape, focus trap and focus restore. This used to be a bespoke Escape
+  // listener and nothing else: the dialog declared `aria-modal="true"` while
+  // Tab walked straight out of it into the Command Centre behind, and closing
+  // dropped focus to the top of the document. It approves and rejects
+  // payments, so "reachable only with a mouse" is not an acceptable state for
+  // it to be in.
+  //
+  // `escapeCloses` is gated on `busy` for the reason the old handler was: a
+  // request is in flight and dismissing the dialog would hide its outcome.
+  const dialogRef = useDialogA11y({ open: true, onClose, escapeCloses: !busy });
 
   const run = async () => {
     setBusy(true); setError(null);
@@ -324,10 +330,14 @@ function ActionDialog({
 
   return (
     <AnimatePresence>
-      <m.div className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
+      <m.div data-no-pull-refresh ref={dialogRef} className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         role="dialog" aria-modal="true" aria-labelledby="sub-action-title">
-        <div className="absolute inset-0" style={{ background: 'var(--bg-overlay)' }}
+        {/* aria-hidden: this is the click-outside target, and it is a mouse
+            affordance only. Giving it a key handler would add a tab stop that
+            does nothing; Escape is the keyboard equivalent and the hook above
+            provides it. */}
+        <div aria-hidden="true" className="absolute inset-0" style={{ background: 'var(--bg-overlay)' }}
           onClick={() => !busy && onClose()} />
         <m.div className="relative w-full max-w-[440px] overflow-hidden rounded-t-3xl sm:rounded-3xl"
           initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 16, opacity: 0 }}
@@ -388,7 +398,7 @@ function ActionDialog({
             )}
 
             {error && (
-              <p className="mt-3 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger)' }}>
+              <p className="mt-3 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
                 <AlertTriangle size={14} className="mt-px shrink-0" /> {error}
               </p>
             )}
@@ -421,6 +431,9 @@ function PlatformUpiDialog({
 }: { onClose: () => void; toast: ReturnType<typeof useToast>['toast'] }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  // Same treatment as the approve/reject dialog above: this one had no Escape
+  // handler at all, so it could only be dismissed by clicking the backdrop.
+  const dialogRef = useDialogA11y({ open: true, onClose, escapeCloses: !saving });
   const [error, setError] = useState<string | null>(null);
 
   const [upiId, setUpiId] = useState('');
@@ -461,10 +474,11 @@ function PlatformUpiDialog({
 
   return (
     <AnimatePresence>
-      <m.div className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
+      <m.div data-no-pull-refresh ref={dialogRef} className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         role="dialog" aria-modal="true" aria-labelledby="upi-settings-title">
-        <div className="absolute inset-0" style={{ background: 'var(--bg-overlay)' }}
+        {/* Mouse affordance only — see the note on the sibling dialog above. */}
+        <div aria-hidden="true" className="absolute inset-0" style={{ background: 'var(--bg-overlay)' }}
           onClick={() => !saving && onClose()} />
         <m.div className="relative max-h-[92vh] w-full max-w-[440px] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-3xl"
           initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 16, opacity: 0 }}
@@ -493,7 +507,7 @@ function PlatformUpiDialog({
                     border: `1px solid ${upiId && !vpaOk ? 'var(--danger)' : 'var(--border-2)'}`,
                   }} />
                 {upiId.length > 0 && !vpaOk && (
-                  <p className="mt-1.5 text-[11.5px]" style={{ color: 'var(--danger)' }}>
+                  <p className="mt-1.5 text-[11.5px]" style={{ color: 'var(--danger-text)' }}>
                     Must look like name@bank.
                   </p>
                 )}
@@ -518,7 +532,7 @@ function PlatformUpiDialog({
                 <div className="mt-4 flex items-start gap-3 rounded-xl p-3.5"
                   style={{ background: enabled ? 'var(--success-soft)' : 'var(--bg-subtle)' }}>
                   <ShieldCheck size={18} className="mt-0.5 shrink-0"
-                    style={{ color: enabled ? 'var(--success)' : 'var(--text-muted)' }} />
+                    style={{ color: enabled ? 'var(--success-text)' : 'var(--text-muted)' }} />
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>
                       {enabled ? 'Self-checkout is on' : 'Self-checkout is off'}
@@ -540,7 +554,7 @@ function PlatformUpiDialog({
                 </div>
 
                 {error && (
-                  <p className="mt-3 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger)' }}>
+                  <p className="mt-3 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
                     <AlertTriangle size={14} className="mt-px shrink-0" /> {error}
                   </p>
                 )}

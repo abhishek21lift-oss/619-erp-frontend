@@ -14,7 +14,8 @@
  * next.config.js headers() can, and applies to rewritten paths too.
  *
  * There is exactly one place that sets these. Do not re-add them to proxy.ts
- * or vercel.json — a middleware headers.set() silently wins over this file and
+ * (there is no vercel.json — the app is served from the VPS, not Vercel) — a
+ * middleware headers.set() silently wins over this file and
  * leaves a second copy to rot, which is how the two drifted before.
  */
 
@@ -51,7 +52,33 @@ function hostOf(url) {
 function buildCsp(env = process.env, opts = {}) {
   const supabaseHost = hostOf(env.NEXT_PUBLIC_SUPABASE_URL) || '*.supabase.co';
   const apiOrigin = originOf(env.NEXT_PUBLIC_API_URL);
-  const apiConnect = apiOrigin ? ` ${apiOrigin}` : '';
+
+  // ── Why the wss:// origin is listed SEPARATELY ────────────────────────────
+  //
+  // `https://api.example.com` in connect-src does NOT permit
+  // `wss://api.example.com`. It reads as though it should, and the reverse is
+  // true — a `wss:` source expression matches an `https:` URL — but not this
+  // direction. CSP3's scheme-part matching allows http→https/ws/wss, ws→wss and
+  // wss→https, and stops there.
+  //
+  // Verified in Chromium rather than inferred: with only the https origin
+  // listed, `new WebSocket('wss://api…')` fires
+  // `securitypolicyviolation[connect-src]` and the socket never opens. The
+  // Command Center's realtime stream (Phase 3) is exactly that request, so
+  // without this line the console would silently sit on its polling fallback in
+  // production and look like a backend or nginx fault.
+  //
+  // A schemeless `api.example.com` would also work — it inherits the page's
+  // scheme and covers https and wss together — but it is implicit in a file
+  // where every other entry names its scheme. Derived by the same swap as
+  // `wsBase()` in lib/http.ts so one env var stays the source of truth.
+  const apiWsOrigin = apiOrigin.startsWith('https://')
+    ? `wss://${apiOrigin.slice('https://'.length)}`
+    : apiOrigin.startsWith('http://')
+      ? `ws://${apiOrigin.slice('http://'.length)}`
+      : '';
+
+  const apiConnect = apiOrigin ? ` ${apiOrigin}${apiWsOrigin ? ` ${apiWsOrigin}` : ''}` : '';
 
   // With a nonce, script-src trades 'unsafe-inline' for the nonce itself —
   // Next.js stamps its own hydration scripts with it, and the app no longer

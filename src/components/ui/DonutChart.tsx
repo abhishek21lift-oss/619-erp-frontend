@@ -23,6 +23,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
+import { series } from '@/lib/palette';
 import { cn } from './cn';
 
 export interface DonutDatum {
@@ -53,20 +54,20 @@ export interface DonutChartProps {
 }
 
 /**
- * Brand-aligned, accessible palette. Picked so adjacent slices don't muddle
- * (no two pure greens, no two reds). Roughly orders rose → amber → emerald
- * → sky → violet so a "good/active" slice tends to read warm and in-brand.
+ * Slice colours, in order.
+ *
+ * This used to be a local list of eight entries whose comments named eight
+ * hues — "cyan", "purple", "teal", "indigo" — while five of them held the
+ * identical brand blue. A donut with five or more slices drew four slices the
+ * eye could not tell apart, and the legend then named four things that looked
+ * the same. The comments were the only place those hues ever existed.
+ *
+ * It now reads the app's own categorical ramp, which exists for exactly this
+ * ("where a chart is genuinely categorical rather than semantic") and is held
+ * distinct by a test. Six colours instead of eight, all of them different,
+ * which is six more usable slices than before.
  */
-const PALETTE = [
-  '#0067E0', // electric blue (brand)
-  '#0067E0', // cyan
-  '#10B981', // emerald
-  '#F59E0B', // amber
-  '#0067E0', // purple
-  '#EF4444', // coral
-  '#0067E0', // teal
-  '#0067E0', // indigo
-];
+const PALETTE = series;
 
 export function DonutChart({
   data,

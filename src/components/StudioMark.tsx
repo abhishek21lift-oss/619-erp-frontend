@@ -26,11 +26,23 @@ export default function StudioMark({
   logoUrl,
   size = 36,
   radius,
+  background,
 }: {
   name: string;
   logoUrl?: string | null;
   size?: number;
   radius?: number;
+  /**
+   * The plate the logo sits on. Defaults to --bg-white, which is correct
+   * anywhere that follows the theme.
+   *
+   * The side drawer does not: it is a hardcoded navy gradient in BOTH themes,
+   * so --bg-white resolved there to #1E293B in dark mode and put a dark plate
+   * behind a logo with black in it. A caller on a permanently-dark surface
+   * passes its own colour rather than inheriting a token that means
+   * "whatever the page is".
+   */
+  background?: string;
 }) {
   const [failed, setFailed] = useState(false);
   const r = radius ?? Math.round(size * 0.26);
@@ -40,7 +52,7 @@ export default function StudioMark({
       <div
         style={{
           width: size, height: size, borderRadius: r, flexShrink: 0,
-          overflow: 'hidden', background: 'var(--bg-white)',
+          overflow: 'hidden', background: background ?? 'var(--bg-white)',
           border: '1px solid var(--border)',
           boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',

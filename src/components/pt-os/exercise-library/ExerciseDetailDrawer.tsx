@@ -8,6 +8,7 @@ import {
 import { Badge, Skeleton, cn } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { ExerciseVersion, LibraryExercise } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 /**
  * Full exercise detail, in a right-hand drawer.
@@ -54,12 +55,10 @@ export function ExerciseDetailDrawer({
     return () => { alive = false; };
   }, [exerciseId]);
 
-  React.useEffect(() => {
-    if (!exerciseId) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [exerciseId, onClose]);
+  // Escape, focus trap and focus restore, replacing a bespoke Escape listener.
+  // The panel declared aria-modal while Tab walked out of it into the page
+  // behind, and closing dropped focus to the top of the document.
+  const dialogRef = useDialogA11y({ open: !!exerciseId, onClose });
 
   const loadVersions = React.useCallback(async () => {
     if (!ex) return;
@@ -78,17 +77,33 @@ export function ExerciseDetailDrawer({
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-slate-900/25 backdrop-blur-[2px] animate-in fade-in duration-200"
+        data-no-pull-refresh className="fixed inset-0 z-40 bg-slate-900/25 backdrop-blur-[2px] animate-in fade-in duration-200"
         onClick={onClose}
         aria-hidden
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={ex?.name || 'Exercise details'}
-        className="fixed right-0 top-0 z-50 flex h-full w-full max-w-[520px] flex-col border-l border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0f172a] animate-in slide-in-from-right duration-250"
+        data-no-pull-refresh className="fixed right-0 top-0 z-50 flex h-full w-full max-w-[520px] flex-col border-l border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0f172a] animate-in slide-in-from-right duration-250"
       >
-        <header className="flex items-start justify-between gap-3 border-b border-slate-200/80 px-5 py-4 dark:border-white/[0.07]">
+        {/* ── The status bar is not free space ─────────────────────────────
+            This panel is `fixed top-0 h-full`, so on a phone its header began
+            at y=0 — behind the notch. The title collided with the clock and
+            the close button sat between the wifi and battery icons.
+            The app already knows the answer: --topbar-h is
+            `46px + env(safe-area-inset-top)`. Same idea here, applied as
+            padding so the header keeps its own height and simply starts below
+            the inset. Zero on a device without one, so nothing changes on a
+            desktop.
+            Sticky as well: the actions were scrolling away with the title, and
+            on a long exercise there was no way back to Close without
+            scrolling to the top. */}
+        <header
+          className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-200/80 bg-white/95 px-5 pb-4 backdrop-blur-xl dark:border-white/[0.07] dark:bg-[#0f172a]/95"
+          style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
+        >
           <div className="min-w-0 flex-1">
             {loading && !ex ? (
               <Skeleton className="h-6 w-48" />
@@ -137,9 +152,12 @@ export function ExerciseDetailDrawer({
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div
+          className="flex-1 overflow-y-auto px-5 py-4"
+          style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
+        >
           {error && (
-            <div className="rounded-xl border border-[var(--danger)]/20 bg-[var(--danger)]/5 p-4 text-sm text-[var(--danger)]">
+            <div className="rounded-xl border border-[var(--danger)]/20 bg-[var(--danger)]/5 p-4 text-sm text-[var(--danger-text)]">
               {error}
             </div>
           )}
@@ -231,6 +249,12 @@ export function ExerciseDetailDrawer({
               <BulletSection title="Safety" icon={ShieldAlert} tone="danger" items={ex.safety_tips} />
               <BulletSection title="Contraindications" icon={ShieldAlert} tone="danger" items={ex.contraindications} />
 
+              {ex.progression_notes && (
+                <Section title="Recommended progression" icon={TrendingUp}>
+                  <p className="text-[13px] leading-relaxed text-[var(--text-primary)]">{ex.progression_notes}</p>
+                </Section>
+              )}
+
               {ex.breathing_tips && (
                 <Section title="Breathing" icon={Wind}>
                   <p className="text-[13px] leading-relaxed text-[var(--text-primary)]">{ex.breathing_tips}</p>
@@ -310,18 +334,41 @@ function Prescription({ exercise: ex }: { exercise: LibraryExercise }) {
     { label: 'Tempo', value: ex.tempo_recommendation },
   ].filter((c) => c.value);
 
-  if (!cells.length) return null;
+  if (!cells.length && !ex.prescription_mode_primary) return null;
 
   return (
     <Section title="Prescription" icon={Timer}>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {cells.map((c) => (
-          <div key={c.label} className="rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-2.5 dark:border-white/[0.07] dark:bg-white/[0.03]">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">{c.label}</p>
-            <p className="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">{c.value}</p>
+      {ex.prescription_mode_primary && (
+        <div className="mb-3 space-y-2">
+          <div className="flex items-center gap-2 text-[12px] font-semibold text-[var(--text-primary)]">
+            <span>Primary mode</span>
+            <Badge tone="brand">{ex.prescription_mode_primary.replace(/_/g, ' ')}</Badge>
           </div>
-        ))}
-      </div>
+          {ex.prescription_mode_allowed && ex.prescription_mode_allowed.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {ex.prescription_mode_allowed.map((mode) => (
+                <Badge key={mode} tone="neutral">{mode.replace(/_/g, ' ')}</Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {cells.length > 0 && (
+        <>
+          {/* One strip, not a box each. At grid-cols-2 the usual three values —
+              sets, reps, rest — left the third stranded on a row of its own with a
+              gap beside it, which reads as a missing fourth. A single divided row
+              fits three or four without either looking short. */}
+          <div className="flex divide-x divide-slate-200/80 overflow-hidden rounded-xl border border-slate-200/80 dark:divide-white/[0.07] dark:border-white/[0.07]">
+            {cells.map((c) => (
+              <div key={c.label} className="flex-1 px-3 py-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">{c.label}</p>
+                <p className="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">{c.value}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </Section>
   );
 }

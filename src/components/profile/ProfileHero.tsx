@@ -148,9 +148,20 @@ export function ProfileHero({
             banner should look designed rather than unfinished. */}
         <div
           className="absolute inset-0"
-          style={{ background: 'linear-gradient(135deg,#0067e0 0%,#0067e0 40%,#0067e0 70%,#7fb4ff 100%)' }}
+          style={{
+            // The top-right glow is a layer on this gradient, not a separate
+            // `blur-3xl` circle. WebKit promotes a filtered child to its own
+            // compositing layer and then clips that layer to a RECTANGLE, so
+            // the circle's square corner painted outside the section's
+            // `rounded-3xl overflow-hidden`. Reported on iOS against the client
+            // profile card, which carried the identical pattern. 260px was
+            // fitted against the old rendering by pixel comparison: 0.30/255.
+            background: [
+              'radial-gradient(circle 260px at calc(100% - 48px) 48px, rgba(255,255,255,0.1), transparent 70%)',
+              'linear-gradient(135deg,#0067e0 0%,#0067e0 40%,#0067e0 70%,#7fb4ff 100%)',
+            ].join(', '),
+          }}
         />
-        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
 
         {cover && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -169,7 +180,7 @@ export function ProfileHero({
           style={{ background: 'linear-gradient(to bottom,rgba(15,23,42,0.28),transparent)' }} />
 
         <div className="absolute right-3 top-3 flex items-center gap-2 sm:right-4 sm:top-4">
-          <input ref={coverInput} type="file" accept={ACCEPT} className="hidden"
+          <input aria-label="Upload a banner image" ref={coverInput} type="file" accept={ACCEPT} className="hidden"
             onChange={(e) => take(e, onPickCover)} />
           <CoverAction
             icon={coverBusy ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />}
@@ -189,7 +200,7 @@ export function ProfileHero({
             beside it aligned to the row's baseline rather than pulled up too. */}
         <div className="flex items-end justify-between gap-3">
           <div className="relative -mt-8 shrink-0 sm:-mt-10">
-            <input ref={avatarInput} type="file" accept={ACCEPT} className="hidden"
+            <input aria-label="Upload a profile photo" ref={avatarInput} type="file" accept={ACCEPT} className="hidden"
               onChange={(e) => take(e, onPickAvatar)} />
             <button
               type="button"

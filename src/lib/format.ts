@@ -98,6 +98,22 @@ export function toHHMM(value?: string | null): string {
   return `${m[1].padStart(2, '0')}:${m[2]}`;
 }
 
+/**
+ * "06:00" / "06:00:00" → "6:00 AM".
+ *
+ * Lives here rather than in a component because two screens render the same
+ * field: the dashboard's Today card and the /pt-os/today list it links to.
+ * They had a private copy each and only one of them had it, so the same 6am
+ * slot read "6:00 AM" on the card and "06:00" on the page you reached by
+ * tapping the card. Returns the input unchanged if it is not a time.
+ */
+export function fmtTime12(value?: string | null): string | null {
+  if (!value) return null;
+  const [h, m] = String(value).split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return String(value);
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+}
+
 /** ₹ formatter with Indian grouping. */
 export function fmtMoney(n: number | string | null | undefined): string {
   return '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });

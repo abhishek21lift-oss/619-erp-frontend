@@ -55,3 +55,8 @@ __pycache__/
 
 # device-check screenshots — output to look at, not artefacts to version
 /.device-check/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/

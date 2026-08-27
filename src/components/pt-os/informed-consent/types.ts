@@ -93,6 +93,35 @@ export const EXERCISE_PROGRAMME_CONSENT_TEXT = EXERCISE_PROGRAMME_CONSENT_PARAGR
 export const EXERCISE_PROGRAMME_CHECKBOX_LABEL =
   'I have read and understood the above consent and agree to participate in the exercise programme.';
 
+/**
+ * What must be true before a step may be left.
+ *
+ * Lives here, beside STEPS, rather than in the page: it is a pure function of
+ * (step, form) and the steps it guards are declared two lines above it. It is
+ * also the only executable statement of the wizard's shape — that the client
+ * signs on the step called Signature and nowhere else — so it is worth being
+ * callable from a test rather than reachable only through a rendered wizard.
+ */
+export function validateStep(step: StepId, form: InformedConsentFormData): string | undefined {
+  // Step 1 is the consent text and its acknowledgement, nothing else. It used
+  // to demand a signature and a date as well, which had the client signing
+  // before they had read the agreement on step 2 — and then signing again on
+  // step 3. One document, one signature, taken last.
+  if (step === 1) {
+    if (!form.exerciseConsentChecked) return 'Please check the consent acknowledgement to continue.';
+  }
+  if (step === 2) {
+    const missing = FINAL_ACK_FIELDS.some((f) => !form.acknowledgements[f.key]);
+    if (missing) return 'All agreement items must be checked.';
+  }
+  if (step === 3) {
+    if (!form.clientSignature) return 'Client signature is required.';
+    if (!form.trainerSignature) return 'Trainer signature is required.';
+    if (!form.exerciseConsentDate) return 'Date is required.';
+  }
+  return undefined;
+}
+
 export function nextStepId(current: StepId): StepId | null {
   const idx = STEPS.findIndex((s) => s.id === current);
   return idx >= 0 && idx < STEPS.length - 1 ? STEPS[idx + 1].id : null;
@@ -145,6 +174,15 @@ export function buildUpdatePayload(form: InformedConsentFormData): Record<string
     exercise_consent_text: EXERCISE_PROGRAMME_CONSENT_TEXT,
     exercise_consent_checked: form.exerciseConsentChecked,
     exercise_consent_date: form.exerciseConsentDate || null,
-    exercise_consent_signature: form.exerciseConsentSignature || null,
+    // The client signs once, on step 3, and that signature covers the whole
+    // document — the exercise programme consent included. Step 1 used to have
+    // a pad of its own, which asked the same person to sign the same document
+    // twice, the first time before they had read the agreement.
+    //
+    // Falls back to the stored value rather than sending null when the step-3
+    // pad is still blank: persist() runs at the end of every step, so on steps
+    // 1 and 2 of an amendment `clientSignature` is empty and an unguarded
+    // `|| null` would wipe the signature already on the record.
+    exercise_consent_signature: form.clientSignature || form.exerciseConsentSignature || null,
   };
 }

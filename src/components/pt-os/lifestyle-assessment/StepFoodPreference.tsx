@@ -39,7 +39,7 @@ export function StepFoodPreference({ form, set, error }: StepFoodPreferenceProps
         <FloatInput label="Other" value={form.foodPreferenceOther} onChange={(v) => set('foodPreferenceOther', v)} />
       </div>
 
-      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
     </div>
   );
 }

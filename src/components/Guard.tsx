@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { hasRole, normaliseRole } from '@/lib/roles';
+import { portalForRole, portalForPage, homeFor, mayEnterPortal } from '@/lib/portals';
+import { signInPathFor } from '@/lib/public-paths';
 import type { Role } from '@/lib/roles';
 
 interface Props {
@@ -15,31 +17,75 @@ interface Props {
 export default function Guard({ children, role, roles }: Props) {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [ready, setReady] = useState(false);
+  const pathname = usePathname() ?? '';
 
+  // Which app this page belongs to, and which app this account belongs in.
+  //
+  // Checked before role/roles and independently of them, because the default —
+  // a bare <Guard> — means "any authenticated user", and about a hundred staff
+  // pages use it. A member with a valid session could therefore open
+  // /pt-os/clients and be handed the entire staff shell: sidebar, nav, the
+  // trainer's application. The API refuses them (requireStaff sits on the
+  // mount, so the lists come back 403 rather than populated), but an empty
+  // copy of somebody else's app is still the thing the client reported seeing
+  // — and adding role props to a hundred pages is the kind of fix that is
+  // correct on page 99 and forgotten on page 100.
+  //
+  // It runs in the other direction too: /member/payments is a bare <Guard>, so
+  // without this a trainer could open a client's payments screen.
+  const pagePortal = portalForPage(pathname);
+  const userPortal = user ? portalForRole(user.role) : null;
+
+  // ── The verdict is computed during render, not stored in state ─────────────
+  //
+  // This used to be `useState(false)` flipped to true by the effect below, so
+  // the FIRST render pass of every Guard returned the splash regardless of
+  // whether the answer was already known. Effects run after the commit, which
+  // means that splash was committed to the DOM and painted, then replaced —
+  // and 112 pages in this app nest their own <Guard> inside the one in the
+  // chrome layout, so it happened on every single navigation.
+  //
+  // Two bugs came out of that one frame. The visible one was the blink. The
+  // other was subtler: the splash is `minHeight: 100dvh`, so on every
+  // navigation the document collapsed to roughly one viewport at exactly the
+  // moment the browser tried to restore scroll — a saved offset of 720px
+  // cannot be applied to a 700px document, so it was clamped to the top and
+  // the real content arrived underneath an already-lost position.
+  //
+  // Deriving the verdict instead of storing it also makes the gate strictly
+  // safer: `ready` was sticky, so a user whose role changed mid-session kept
+  // passing until the component unmounted. This recomputes on every render.
+  // mayEnterPortal rather than `userPortal !== pagePortal`, because the rule
+  // stopped being symmetric when the Command Center became its own portal: the
+  // operator may walk into a studio (that is the support job), and no studio
+  // account may walk into the Command Center. Encoding that here rather than
+  // as an `if (role === 'super_admin')` escape hatch keeps the exception in one
+  // named function instead of scattered through the gates.
+  const roleRequired = role !== undefined || roles !== undefined;
+  const verdict: 'pending' | 'redirect' | 'pass' =
+    loading ? 'pending'
+      : (!user || userPortal === null) ? 'redirect'
+        : !mayEnterPortal(userPortal, pagePortal) ? 'redirect'
+          : (roleRequired && !hasRole(user.role, roles ?? role)) ? 'redirect'
+            : 'pass';
+
+  // The effect now carries only the side-effect — the navigation itself. It no
+  // longer decides what is rendered.
   useEffect(() => {
-    if (loading) return;
+    if (verdict !== 'redirect') return;
 
-    if (!user) {
-      router.replace('/login');
+    if (!user || userPortal === null) {
+      router.replace(signInPathFor(pathname));
       return;
     }
 
-    // When no role constraint is specified, any authenticated user passes.
-    // hasRole(x, undefined) returns false for everyone — so we must skip the
-    // check when neither `role` nor `roles` was provided.
-    const roleRequired = role !== undefined || roles !== undefined;
-    if (roleRequired && !hasRole(user.role, roles ?? role)) {
-      // User is logged in but lacks the required role — send them home rather
-      // than to /login, which would just detect the session and bounce back here.
-      router.replace('/');
-      return;
-    }
+    // Either the account belongs to a different portal, or it lacks the role
+    // this page requires. Both go home rather than to a sign-in page, which
+    // would just detect the session and bounce straight back here.
+    router.replace(homeFor(userPortal));
+  }, [verdict, user, userPortal, router, pathname]);
 
-    setReady(true);
-  }, [user, loading, role, roles, router]);
-
-  if (loading || !ready) {
+  if (verdict === 'pending') {
     return (
       <div
         style={{
@@ -94,10 +140,11 @@ export default function Guard({ children, role, roles }: Props) {
     );
   }
 
-  const roleRequired = role !== undefined || roles !== undefined;
-  if (!user || (roleRequired && !hasRole(user.role, roles ?? role))) {
-    return null;
-  }
+  // A redirect is asynchronous, so render nothing while it is in flight rather
+  // than a frame of a page this account may not see — a frame of the trainer's
+  // sidebar is still a frame of it. This is the same check the effect above
+  // acts on, which is why the two can no longer disagree: both read `verdict`.
+  if (verdict === 'redirect') return null;
 
   return <>{children}</>;
 }

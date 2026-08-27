@@ -16,6 +16,10 @@ const DialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
+    // The backdrop needs this as much as the content does: it is what a drag
+    // outside the panel actually lands on, and pulling the page down behind an
+    // open dialog is wrong at any scroll position.
+    data-no-pull-refresh
     className={cn(
       'fixed inset-0 z-50 bg-black/40 backdrop-blur-sm',
       'data-[state=open]:animate-in data-[state=closed]:animate-out',

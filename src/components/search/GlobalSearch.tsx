@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { api, SearchItem, SearchResponse } from '@/lib/api';
 import { cn } from '@/components/ui/cn';
+import { useSearchFieldFocus } from '@/lib/search-field-focus';
 import { avatarGradient, initialsAvatar } from '@/lib/avatar';
 import {
   ViewedRecord, clearRecentQueries, clearRecentlyViewed, getRecentQueries,
@@ -619,9 +620,17 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
     if (!sheetOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    sheetInputRef.current?.focus();
     return () => { document.body.style.overflow = prev; };
   }, [sheetOpen]);
+
+  // The focus used to sit in the effect above, next to the scroll lock. It is
+  // separate now because the two want different effect types: the scroll lock
+  // needs a passive effect with a cleanup, while the focus has to run during
+  // commit — inside the tap that opened the sheet — or WebKit places the caret
+  // and leaves the keyboard down. This is the mobile search entry point, so it
+  // was the worst place in the app to lose a keyboard.
+  // See lib/search-field-focus.ts.
+  useSearchFieldFocus(sheetOpen, sheetInputRef);
 
   // Keep the highlighted row in view during keyboard navigation.
   React.useEffect(() => {
@@ -787,9 +796,15 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
   // `heightClass` differs by surface: the dropdown is capped, the sheet fills
   // whatever the on-screen keyboard leaves. The scroll container must be the
   // element that carries the constraint, or the list clips instead of scrolling.
-  const renderPanel = (heightClass: string) => (
+  // `id` is a parameter because this renders TWICE — once in the desktop
+  // dropdown and once in the mobile sheet — and an id has to be unique. The
+  // desktop input already carried `aria-controls="global-search-panel"`
+  // pointing at an element that did not exist anywhere in the tree: a
+  // dangling reference reads to a screen reader as no reference at all.
+  const renderPanel = (heightClass: string, id: string) => (
     <div
       ref={listRef}
+      id={id}
       role="listbox"
       aria-label="Search results"
       className={cn('overflow-y-auto overscroll-contain', heightClass)}
@@ -939,7 +954,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
               darkMode ? 'text-slate-500 group-focus-within:text-slate-300' : 'text-slate-400 group-focus-within:text-slate-600',
             )}
           />
-          <input
+          <input aria-label="Search clients"
             ref={inputRef}
             type="text"
             role="combobox"
@@ -985,7 +1000,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.985 }}
               transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-[18px]"
+              data-no-pull-refresh className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-[18px]"
               style={{
                 transformOrigin: 'top center',
                 background: 'var(--bg-elevated)',
@@ -993,7 +1008,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
                 boxShadow: '0 24px 60px rgba(15,23,42,0.22), 0 2px 8px rgba(15,23,42,0.06)',
               }}
             >
-              {renderPanel('max-h-[min(70vh,460px)]')}
+              {renderPanel('max-h-[min(70vh,460px)]', 'global-search-panel')}
             </m.div>
           )}
         </AnimatePresence>
@@ -1004,7 +1019,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
         <AnimatePresence>
           {sheetOpen && (
             <m.div
-              className="fixed inset-0 z-[120] sm:hidden"
+              data-no-pull-refresh className="fixed inset-0 z-[120] sm:hidden"
               initial={reduce ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -1031,11 +1046,17 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
                 <div className="flex items-center gap-2 px-3 py-2.5">
                   <div className="relative flex flex-1 items-center">
                     <Search size={15} strokeWidth={2} className="absolute left-3 z-10" style={{ color: 'var(--text-disabled)' }} />
-                    <input
+                    <input aria-label="Search by name or mobile"
                       ref={sheetInputRef}
                       type="text"
                       role="combobox"
-                      aria-expanded
+                      // Was a bare `aria-expanded`, i.e. permanently "true",
+                      // and carried no aria-controls at all. `sheetOpen` is
+                      // the state that actually governs whether this panel is
+                      // showing, and it mirrors what the desktop input does
+                      // with `open`.
+                      aria-expanded={sheetOpen}
+                      aria-controls="global-search-sheet-panel"
                       aria-autocomplete="list"
                       aria-activedescendant={activeDescendant}
                       autoComplete="off"
@@ -1065,7 +1086,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
                     Cancel
                   </button>
                 </div>
-                <div className="min-h-0 flex-1 pb-2">{renderPanel('max-h-full')}</div>
+                <div className="min-h-0 flex-1 pb-2">{renderPanel('max-h-full', 'global-search-sheet-panel')}</div>
               </m.div>
             </m.div>
           )}

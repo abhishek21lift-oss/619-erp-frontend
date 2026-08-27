@@ -5,6 +5,8 @@ import { Search, CornerDownLeft, Loader2, Star, Clock } from 'lucide-react';
 import { Badge, cn } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { LibraryExercise } from '@/lib/api';
+import { useSearchFieldFocus } from '@/lib/search-field-focus';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 /**
  * ⌘K over the whole library.
@@ -23,6 +25,10 @@ export interface ExerciseCommandPaletteProps {
 
 export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseCommandPaletteProps) {
   const [q, setQ] = React.useState('');
+  // Focus trap and focus restore only. Escape is already handled inside this
+  // palette's own keydown handler, alongside arrow navigation and Enter, so
+  // `escapeCloses` is off to avoid two listeners racing on the same key.
+  const dialogRef = useDialogA11y({ open: true, escapeCloses: false });
   const [results, setResults] = React.useState<LibraryExercise[]>([]);
   const [recents, setRecents] = React.useState<LibraryExercise[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -32,9 +38,14 @@ export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseComm
   const listRef  = React.useRef<HTMLUListElement>(null);
   const reqId    = React.useRef(0);
 
+  // The focus was a bare `inputRef.current?.focus()` in the passive effect
+  // below. Passive effects are scheduled rather than run inline, so on a phone
+  // the caret landed and the keyboard did not. A layout effect stays inside
+  // the gesture. See lib/search-field-focus.ts.
+  useSearchFieldFocus(open, inputRef);
+
   React.useEffect(() => {
     if (!open) { setQ(''); setResults([]); setActive(0); return; }
-    inputRef.current?.focus();
     api.exercises.recent(8).then((r) => setRecents(r.exercises)).catch(() => setRecents([]));
   }, [open]);
 
@@ -89,13 +100,16 @@ export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseComm
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center px-4 pt-[12vh]">
+    // Covers the backdrop as well as the panel: a drag anywhere over an open
+    // palette belongs to the palette, never to the page behind it.
+    <div data-no-pull-refresh className="fixed inset-0 z-[60] flex items-start justify-center px-4 pt-[12vh]">
       <div
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-[3px] animate-in fade-in duration-150"
         onClick={onClose}
         aria-hidden
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Search exercises"
@@ -105,7 +119,7 @@ export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseComm
           {loading
             ? <Loader2 size={16} className="shrink-0 animate-spin text-[var(--text-muted)]" />
             : <Search size={16} className="shrink-0 text-[var(--text-muted)]" />}
-          <input
+          <input aria-label="Search exercises"
             ref={inputRef}
             value={q}
             onChange={(e) => setQ(e.target.value)}

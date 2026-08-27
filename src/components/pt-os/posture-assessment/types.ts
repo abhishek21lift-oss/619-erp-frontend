@@ -45,3 +45,14 @@ export function initPostureForm(): PostureFormData {
     },
   };
 }
+
+/** The Coach Notes areas for this assessment, beside the type they key into.
+ *  Passed to the shared CoachNotesPanel — see components/pt-os/shared. */
+export const COACH_NOTE_FIELDS: { key: keyof CoachNotes & string; label: string }[] = [
+  { key: 'initial_observations', label: 'Initial Observations' },
+  { key: 'corrective_strategy', label: 'Corrective Strategy' },
+  { key: 'training_focus', label: 'Training Focus' },
+  { key: 'nutrition_focus', label: 'Nutrition Focus' },
+  { key: 'recovery_focus', label: 'Recovery Focus' },
+  { key: 'special_instructions', label: 'Special Instructions' },
+];

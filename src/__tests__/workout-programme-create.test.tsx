@@ -8,10 +8,9 @@
 // So these assert the contract that replaced it: create the shell, assign it,
 // then hand over to the builder with the id the server returned.
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, cleanup, fireEvent } from '@testing-library/react';
+import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest';
+import {render, screen, waitFor, cleanup, fireEvent} from '@testing-library/react';
 import fs from 'node:fs';
-import path from 'node:path';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
@@ -22,14 +21,27 @@ const clients = vi.fn();
 vi.mock('@/lib/api', () => ({
   api: {
     workouts: { plans: { create: (...a: unknown[]) => create(...a) }, assign: (...a: unknown[]) => assign(...a) },
-    pt: { clients: () => clients() },
+    pt: {
+      clients: () => clients(),
+      // Selecting a client now fills the form from that client's record, so
+      // the dialog reads the row. This one answers nothing, which is the case
+      // that must leave the form's own defaults standing.
+      client: async () => ({ data: { id: 'c1', name: 'Ajeet Yadav' } }),
+    },
+    // The goal now comes from the goal-setting screening. This client has not
+    // been screened, which is the case that leaves the form's goal alone.
+    progress: { goals: { list: async () => ({ data: [] }) } },
   },
 }));
 
 const toastError = vi.fn();
-vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast: { error: toastError, success: vi.fn() } }) }));
+vi.mock('@/lib/toast', () => ({
+  useToast: () => ({ toast: { error: toastError, success: vi.fn(), warning: vi.fn() } }),
+}));
 
 import NewProgrammeDialog from '@/components/pt-os/builder/NewProgrammeDialog';
+import { ApiError } from '@/lib/http';
+import {appPath, routeExists} from '@/__tests__/helpers/app-routes';
 
 beforeEach(() => {
   push.mockReset(); create.mockReset(); assign.mockReset(); toastError.mockReset();
@@ -96,6 +108,24 @@ describe('NewProgrammeDialog — the replacement for the deleted wizard', () => 
     expect(push).toHaveBeenCalledWith('/pt-os/clients/cl-1/training/builder?plan=plan-99');
   });
 
+  it('names PAR-Q, not a generic failure, when the client is medically blocked', async () => {
+    // This is the bug report: assignment silently failing behind one generic
+    // toast that nobody read before the page moved on to the builder. The
+    // trainer would only discover the plan was never assigned by later
+    // opening the client's own profile. A PARQ_BLOCKED rejection now has to
+    // read as PAR-Q, specifically — the same message the Workout Plans
+    // page's own "Assign" button already gives.
+    assign.mockRejectedValue(new ApiError('blocked', 403, 'PARQ_BLOCKED'));
+    render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
+    await fillAndSubmit();
+    await waitFor(() => expect(toastError).toHaveBeenCalled());
+    expect(toastError.mock.calls[0][0]).toMatch(/PAR-Q/);
+    // Never auto-dismisses — the whole point is that it must still be
+    // visible after navigation.
+    expect(toastError.mock.calls[0][1]).toMatchObject({ duration: 0 });
+    expect(push).toHaveBeenCalledWith('/pt-os/clients/cl-1/training/builder?plan=plan-99');
+  });
+
   it('does not navigate when creation itself fails', async () => {
     create.mockRejectedValue(new Error('nope'));
     render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
@@ -111,7 +141,7 @@ describe('NewProgrammeDialog — the replacement for the deleted wizard', () => 
 });
 
 describe('the Programs screen no longer carries the old wizard', () => {
-  const PAGE = path.join(process.cwd(), 'src/app/pt-os/workout-plans/page.tsx');
+  const PAGE = appPath('pt-os/workout-plans/page.tsx');
   const src = fs.readFileSync(PAGE, 'utf8');
 
   it('has no builder tab or wizard state left behind', () => {
@@ -131,7 +161,7 @@ describe('the Programs screen no longer carries the old wizard', () => {
 });
 
 describe('Training navigation', () => {
-  const PROFILE = path.join(process.cwd(), 'src/app/pt-os/clients/[id]/page.tsx');
+  const PROFILE = appPath('pt-os/clients/[id]/page.tsx');
   const src = fs.readFileSync(PROFILE, 'utf8');
 
   it('offers the Training section on the client profile', () => {
@@ -148,7 +178,6 @@ describe('Training navigation', () => {
     // The orphan-link check. A tile pointing at a route nobody created 404s,
     // and nothing in the build would say so — the same class of miss the
     // platform-split orphan check caught.
-    const APP = path.join(process.cwd(), 'src/app');
     for (const route of [
       'pt-os/workout-plans',
       'pt-os/clients/[id]/training/assigned',
@@ -156,7 +185,7 @@ describe('Training navigation', () => {
       'pt-os/clients/[id]/training/builder',
       'pt-os/clients/[id]/workout-log',
     ]) {
-      expect(fs.existsSync(path.join(APP, route, 'page.tsx')), `${route} missing`).toBe(true);
+      expect(routeExists(route), `${route} missing`).toBe(true);
     }
   });
 });

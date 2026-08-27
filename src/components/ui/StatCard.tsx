@@ -41,7 +41,7 @@ export function StatCard({ label, value, icon, trend, className }: StatCardProps
       {typeof trend === 'number' && (
         <p className={cn(
           'mt-1 text-[12px] font-semibold',
-          trend === 0 ? 'text-[var(--text-muted)]' : positive ? 'text-[var(--success)]' : 'text-[var(--danger)]',
+          trend === 0 ? 'text-[var(--text-muted)]' : positive ? 'text-[var(--success-text)]' : 'text-[var(--danger-text)]',
         )}>
           {positive ? '+' : ''}{trend}%
         </p>

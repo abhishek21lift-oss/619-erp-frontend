@@ -84,7 +84,7 @@ export function StepPastHistory({ form, set, error, stepLabel }: StepPastHistory
           <span className="text-[12.5px] font-[650]" style={{ color: ph.previous_physiotherapy ? '#0f172a' : '#475569' }}>Previous Physiotherapy</span>
         </button>
 
-      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
     </div>
   );
 }

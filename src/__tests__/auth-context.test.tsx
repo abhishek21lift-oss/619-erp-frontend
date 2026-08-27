@@ -29,6 +29,7 @@ const mocks = vi.hoisted(() => ({
   mockRouterReplace: vi.fn(),
   mockResetLock: vi.fn(),
   mockRefreshSession: vi.fn(),
+  mockClearImpersonation: vi.fn(),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -39,6 +40,7 @@ vi.mock('@/lib/api', () => ({
 vi.mock('@/lib/http', () => ({
   resetRedirectLock: () => mocks.mockResetLock(),
   refreshSession: () => mocks.mockRefreshSession(),
+  clearImpersonation: () => mocks.mockClearImpersonation(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -182,5 +184,81 @@ describe('AuthProvider', () => {
     wrap(<Probe />);
     await waitFor(() => expect(screen.getByTestId('loading').textContent).toBe('false'));
     expect(screen.getByTestId('user').textContent).toBe('none');
+  });
+});
+
+// ── Impersonation must not outlive the session it was minted under ──────────
+//
+// Reported from production: a Command Centre operator opened a studio in
+// read-only impersonation, logged out, signed back in with the TRAINER's
+// credentials — and the tab was still the Command Centre.
+//
+// The mechanism, and why logout alone looked sufficient:
+//
+//   The impersonation token is a Bearer in sessionStorage, not a cookie.
+//   logout() cleared the cookie and the cached user, so everything visible
+//   looked clean. But http.ts attaches that Bearer whenever it is present, and
+//   the backend reads Authorization BEFORE the cookie
+//   (middleware/auth.js:77-82). So the trainer's fresh cookie was issued,
+//   ignored, and every request resolved as the operator's impersonated
+//   session instead.
+//
+// Cleared in BOTH directions on purpose. Logout is the reported path; login is
+// the one that still bites when a session expires without a logout ever
+// running, which is the common case on a shared machine.
+describe('impersonation does not survive a session change', () => {
+  it('is cleared on logout', async () => {
+    mocks.mockHttp.mockResolvedValue({ user: FRESH });
+    let ctx: ReturnType<typeof useAuth> | null = null;
+    function Grab() { ctx = useAuth(); return null; }
+
+    render(<AuthProvider><Grab /></AuthProvider>);
+    await waitFor(() => expect(ctx).not.toBeNull());
+
+    mocks.mockClearImpersonation.mockClear();
+    await act(async () => { ctx!.logout(); });
+
+    expect(mocks.mockClearImpersonation).toHaveBeenCalled();
+  });
+
+  it('is cleared on sign-in, so an expired session cannot leave one behind', async () => {
+    // No logout in this path at all — the operator's tab simply timed out and
+    // somebody signed in on it.
+    mocks.mockHttp.mockRejectedValue(Object.assign(new Error('401'), { status: 401 }));
+    mocks.mockLoginApi.mockResolvedValue({ user: FRESH });
+
+    let ctx: ReturnType<typeof useAuth> | null = null;
+    function Grab() { ctx = useAuth(); return null; }
+
+    render(<AuthProvider><Grab /></AuthProvider>);
+    await waitFor(() => expect(ctx).not.toBeNull());
+
+    mocks.mockClearImpersonation.mockClear();
+    await act(async () => { await ctx!.login('trainer@studio.com', 'pw'); });
+
+    expect(mocks.mockClearImpersonation).toHaveBeenCalled();
+  });
+
+  it('is cleared by every sign-in path, not just the password one', async () => {
+    // The three paths carried three copies of the same lines, which is how a
+    // fix applied to one of them would go missing from the other two.
+    const src = await import('node:fs').then((fs) =>
+      fs.readFileSync('src/lib/auth-context.tsx', 'utf8'));
+
+    // One adoption routine, used by all three — asserted on the source because
+    // exercising Google and passkey needs their whole SDK surface mocked, and a
+    // test that heavy tends to be the one that gets deleted.
+    expect(src).toMatch(/const _adoptSession = useCallback/);
+    // Three call sites: password, Google, passkey. The definition itself is
+    // `= useCallback` and the dep arrays carry no paren, so this counts calls
+    // and nothing else.
+    expect(src.match(/_adoptSession\(/g) ?? []).toHaveLength(3);
+    // No sign-in path may still write the cache itself — that is the shape the
+    // triplication had, and the shape a fourth login would copy.
+    const logins = src.slice(src.indexOf('const login ='));
+    expect(logins).not.toMatch(/writeCachedUser\(/);
+    // And the clear lives inside it, not beside one caller.
+    const adopt = src.slice(src.indexOf('const _adoptSession'), src.indexOf('const login ='));
+    expect(adopt).toMatch(/clearImpersonation\(\)/);
   });
 });

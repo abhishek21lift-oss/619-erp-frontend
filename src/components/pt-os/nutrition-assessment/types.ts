@@ -119,3 +119,13 @@ export const n = (v: string): number | null => {
   const f = parseFloat(t);
   return Number.isFinite(f) ? f : null;
 };
+
+/** The Coach Notes areas for this assessment, beside the type they key into.
+ *  Passed to the shared CoachNotesPanel — see components/pt-os/shared. */
+export const COACH_NOTE_FIELDS: { key: keyof CoachNotes & string; label: string }[] = [
+  { key: 'dietary_advice', label: 'Dietary Advice' },
+  { key: 'meal_planning', label: 'Meal Planning' },
+  { key: 'supplement_advice', label: 'Supplement Advice' },
+  { key: 'medical_notes', label: 'Medical Notes' },
+  { key: 'special_instructions', label: 'Special Instructions' },
+];

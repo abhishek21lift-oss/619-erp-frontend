@@ -1,7 +1,7 @@
 // The desktop Quick Dock has to actually show all ten actions.
 //
-// Posture Assessment and Strength Tracking — the last two in QUICK_ACTIONS —
-// were unreachable on tablet and laptop. The dock was a single m.div carrying
+// Posture and Strength — the last two in QUICK_ACTIONS — were unreachable
+// on tablet and laptop. The dock was a single m.div carrying
 // `fixed left-1/2 -translate-x-1/2`, and framer-motion writes `transform`
 // inline on everything it animates. That inline `translateY(...)` replaced the
 // class's `translateX(-50%)` outright, so the centering never applied: the
@@ -33,8 +33,8 @@ describe('<QuickDock />', () => {
       expect(screen.getByRole('button', { name: a.label })).toBeTruthy();
     }
     // Named outright, because these are the two that were missing.
-    expect(screen.getByRole('button', { name: 'Posture Assessment' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Strength Tracking' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Posture' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Strength' })).toBeTruthy();
   });
 
   it('never centres a positioned element with a translate utility', () => {

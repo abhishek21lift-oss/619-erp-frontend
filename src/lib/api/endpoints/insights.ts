@@ -7,21 +7,41 @@
 import { http, httpSSE } from '../../http';
 import { buildQs } from '../qs';
 import type {
-  ActivityFeed, AiBusinessInsights, AiConversation, AiDietParams, AiDietPlan,
+  ActivityFeed, AiActionPlan, AiActionResult, AiActionSummary,
+  AiBusinessInsights, AiConversation, AiDietParams, AiDietPlan,
   AiFitnessTestAnalysis, AiHealthResponse, AiKnowledgeDocument, AiMessage, AiModelStat,
   AiProgressAnalysis, AiProviderSettings, AiUsageStats, AiWorkoutParams, AiWorkoutPlan,
-  DuesItem, ProfileDevice, ProfileSession, SearchResponse, TrainerSummaryRow,
+  AiMemoryCandidate, AiProgrammerProposal, PendingWorkQueue, ClientIntelligenceSummary,
+  AiIntelligenceAudit,
+  DuesItem, DuesSummary, ProfileDevice, ProfileSession, SearchResponse, TrainerSummaryRow,
 } from '../types';
 
 export const reports = {
   revenue: (params?: Record<string, string>) =>
     http(`/api/reports/revenue${buildQs(params)}`),
-  members: (params?: Record<string, string>) =>
-    http(`/api/reports/members${buildQs(params)}`),
+  // members() removed: /api/reports/members does not exist — reports.js serves
+  // monthly, revenue, dues, trainers, trainer-summary and revenue-target — and
+  // nothing called it.
   monthly: (year: number | string) =>
     http<unknown[]>(`/api/reports/monthly?year=${year}`),
+  /** Top 100 debtors by balance. For a TOTAL use `duesSummary` — see below. */
   dues: () =>
     http<DuesItem[]>('/api/reports/dues'),
+  /**
+   * Authoritative outstanding aggregates over every debtor.
+   *
+   * `dues` above is capped at 100 rows server-side, so summing it in the
+   * browser gave "outstanding among the hundred who owe most" under a label
+   * that said Outstanding. Same population, no cap, aggregated in SQL.
+   * `high`/`medium` are the risk-band thresholds, passed from the page so the
+   * numbers are not defined twice.
+   */
+  duesSummary: (params?: { high?: number; medium?: number }) =>
+    http<DuesSummary>(`/api/reports/dues/summary${buildQs(
+      params ? Object.fromEntries(
+        Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]),
+      ) : undefined,
+    )}`),
   trainerSummary: () =>
     http<TrainerSummaryRow[]>('/api/reports/trainer-summary'),
 };
@@ -73,6 +93,27 @@ export const ai = {
     http<{ data: AiConversation }>(`/api/ai/conversations/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
+    }),
+
+  /* ── Executable actions ───────────────────────────────────────────────
+   * Two calls, deliberately. plan() is read-only and returns exactly what
+   * would happen; execute() quotes the plan id back and is the only thing
+   * that writes or sends. There is no one-shot variant, because the
+   * confirmation step is the safety property and an endpoint that skipped it
+   * would eventually get called. */
+  actions: () =>
+    http<{ data: AiActionSummary[] }>('/api/ai/actions'),
+
+  actionPlan: (id: string, params?: Record<string, unknown>) =>
+    http<{ data: AiActionPlan }>(`/api/ai/actions/${id}/plan`, {
+      method: 'POST',
+      body: JSON.stringify(params ?? {}),
+    }),
+
+  actionExecute: (id: string, planId: string) =>
+    http<{ data: AiActionResult }>(`/api/ai/actions/${id}/execute`, {
+      method: 'POST',
+      body: JSON.stringify({ plan_id: planId }),
     }),
 
   usage: () =>
@@ -138,5 +179,138 @@ export const ai = {
       http<{ message: string }>(`/api/ai/knowledge/${id}`, { method: 'DELETE' }),
     reindex: (id: string) =>
       http<{ message: string }>(`/api/ai/knowledge/${id}/reindex`, { method: 'POST' }),
+  },
+
+  // ── Trainer Intelligence (Phase 2F) ─────────────────────────────────
+  trainer: {
+    /** Unified pending work queue — memory candidates + programmer proposals. */
+    pending: (params?: { client_id?: string; limit?: number }) =>
+      http<{ data: PendingWorkQueue }>(
+        `/api/ai/trainer/pending${buildQs(
+          params ? Object.fromEntries(
+            Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]),
+          ) : undefined,
+        )}`,
+      ),
+
+    /** Client intelligence summary — what changed, what AI knows, suggests, missing. */
+    intelligence: (clientId: string) =>
+      http<{ data: ClientIntelligenceSummary }>(`/api/ai/trainer/intelligence/${clientId}`),
+
+    /** Confirm a memory candidate → becomes active. */
+    confirmMemory: (id: string) =>
+      http<{ data: AiMemoryCandidate }>(`/api/ai/trainer/memory/${id}/confirm`, { method: 'POST' }),
+
+    /** Reject a memory candidate. */
+    rejectMemory: (id: string, reason?: string) =>
+      http<{ data: AiMemoryCandidate }>(`/api/ai/trainer/memory/${id}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason: reason ?? null }),
+      }),
+
+    /** Approve a programmer proposal (returns 409 stale_proposal if data changed). */
+    approveProposal: (id: string, opts?: { execute?: boolean }) =>
+      http<{ data: AiProgrammerProposal; execution_error?: string; execution_status?: string }>(
+        `/api/ai/trainer/proposal/${id}/approve`,
+        { method: 'POST', body: JSON.stringify({ execute: opts?.execute ?? false }) },
+      ),
+
+    /** Execute an already-approved proposal. */
+    executeProposal: (id: string) =>
+      http<{ data: { status: string; proposal_type?: string; changes?: Record<string, unknown> } }>(
+        `/api/ai/trainer/proposal/${id}/execute`,
+        { method: 'POST' },
+      ),
+
+    /** Reverse an executed proposal — restore exact previous state. */
+    reverseProposal: (id: string, reason?: string) =>
+      http<{ data: { status: string; proposal_type?: string; restored?: Record<string, unknown> } }>(
+        `/api/ai/trainer/proposal/${id}/reverse`,
+        { method: 'POST', body: JSON.stringify({ reason: reason ?? null }) },
+      ),
+
+    /** Reject a programmer proposal. */
+    rejectProposal: (id: string, reason?: string) =>
+      http<{ data: AiProgrammerProposal }>(`/api/ai/trainer/proposal/${id}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason: reason ?? null }),
+      }),
+
+    /** Audit trail for intelligence actions. */
+    audit: (params?: { client_id?: string; target_type?: string; limit?: number }) =>
+      http<{ data: AiIntelligenceAudit[] }>(
+        `/api/ai/trainer/audit${buildQs(
+          params ? Object.fromEntries(
+            Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]),
+          ) : undefined,
+        )}`,
+      ),
+  },
+
+  // ── Memory CRUD (Phase 2D) ──────────────────────────────────────────
+  memory: {
+    /** List all memories for a client. */
+    list: (clientId: string, params?: { category?: string; status?: string; limit?: number }) =>
+      http<{ data: AiMemoryCandidate[] }>(
+        `/api/ai/memory/${clientId}${buildQs(
+          params ? Object.fromEntries(
+            Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]),
+          ) : undefined,
+        )}`,
+      ),
+
+    /** List pending candidate memories. */
+    pending: (clientId: string) =>
+      http<{ data: AiMemoryCandidate[] }>(`/api/ai/memory/${clientId}/pending`),
+
+    /** Confirm a candidate memory. */
+    confirm: (clientId: string, memoryId: string) =>
+      http<{ data: AiMemoryCandidate }>(`/api/ai/memory/${clientId}/confirm/${memoryId}`, { method: 'POST' }),
+
+    /** Reject a candidate memory. */
+    reject: (clientId: string, memoryId: string) =>
+      http<{ data: AiMemoryCandidate }>(`/api/ai/memory/${clientId}/reject/${memoryId}`, { method: 'POST' }),
+
+    /** Delete a memory. */
+    remove: (memoryId: string) =>
+      http<{ data: AiMemoryCandidate }>(`/api/ai/memory/${memoryId}`, { method: 'DELETE' }),
+
+    /** Supersede an old memory with a new one. */
+    supersede: (clientId: string, oldMemoryId: string, newFact: string, opts?: { category?: string; subcategory?: string }) =>
+      http<{ data: { old: AiMemoryCandidate; new: AiMemoryCandidate } }>(`/api/ai/memory/${clientId}/supersede`, {
+        method: 'POST',
+        body: JSON.stringify({ old_memory_id: oldMemoryId, new_fact: newFact, ...opts }),
+      }),
+  },
+
+  // ── Programmer Agent (Phase 2E) ─────────────────────────────────────
+  programmer: {
+    /** Generate proposals for a client. */
+    propose: (params: { client_id: string; exercise_name?: string; context?: string }) =>
+      http<{ data: { proposals: AiProgrammerProposal[]; safety: Record<string, unknown>; errors: string[] } }>(
+        '/api/ai/programmer/propose',
+        { method: 'POST', body: JSON.stringify(params) },
+      ),
+
+    /** List proposals for a client. */
+    proposals: (clientId: string, params?: { status?: string; limit?: number }) =>
+      http<{ data: AiProgrammerProposal[] }>(
+        `/api/ai/programmer/proposals/${clientId}${buildQs(
+          params ? Object.fromEntries(
+            Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]),
+          ) : undefined,
+        )}`,
+      ),
+
+    /** Approve a proposal. */
+    approve: (id: string) =>
+      http<{ data: AiProgrammerProposal }>(`/api/ai/programmer/proposals/${id}/approve`, { method: 'POST' }),
+
+    /** Reject a proposal. */
+    reject: (id: string, reason?: string) =>
+      http<{ data: AiProgrammerProposal }>(`/api/ai/programmer/proposals/${id}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason: reason ?? null }),
+      }),
   },
 };

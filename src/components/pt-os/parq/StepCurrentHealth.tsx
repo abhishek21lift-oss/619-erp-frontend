@@ -77,7 +77,7 @@ export function StepCurrentHealth({ form, set, error, stepLabel }: StepCurrentHe
           )}
         </div>
 
-      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
     </div>
   );
 }

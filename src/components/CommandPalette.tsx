@@ -1,11 +1,13 @@
 'use client';
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSearchFieldFocus } from '@/lib/search-field-focus';
 import { useAuth } from '@/lib/auth-context';
 import { allNavItems, isVisibleForRole, isVisibleForFeature, QUICK_ACTIONS, NAV_GROUPS } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
 import type { Role } from '@/lib/nav-config';
 import { api, type Client } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 type Result = {
   id: string;
@@ -37,6 +39,15 @@ export default function CommandPalette() {
   const { features } = useFeatures();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  // Focus trap and focus restore only — `escapeCloses: false`.
+  //
+  // This palette's Escape handling lives inside a larger keydown handler that
+  // also drives arrow-key navigation and the open shortcut. Letting the hook
+  // close it too would mean two listeners racing on the same key, so the
+  // existing one keeps Escape and the hook supplies the two things the
+  // palette never had: Tab confined to the dialog, and focus returned to
+  // wherever it was opened from.
+  const dialogRef = useDialogA11y({ open, escapeCloses: false });
   const [q, setQ] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
   const [memberResults, setMemberResults] = useState<Client[]>([]);
@@ -72,9 +83,16 @@ export default function CommandPalette() {
       setQ('');
       setActiveIdx(0);
       setMemberResults([]);
-      setTimeout(() => inputRef.current?.focus(), 30);
     }
   }, [open]);
+
+  // The focus used to be `setTimeout(() => inputRef.current?.focus(), 30)`
+  // here. A timeout is always a new task, so on a phone the palette opened
+  // with the caret in the search box and no keyboard under it — the one
+  // control in the app that is useless without one. A layout effect runs
+  // during commit, inside the tap or keypress that opened the palette, which
+  // is what WebKit requires. See lib/search-field-focus.ts.
+  useSearchFieldFocus(open, inputRef);
 
   // ── Fetch members (debounced, with abort) ──
   useEffect(() => {
@@ -197,8 +215,9 @@ export default function CommandPalette() {
   let runningIdx = 0;
 
   return (
-    <div className="cmdk-backdrop" onMouseDown={() => setOpen(false)}>
+    <div className="cmdk-backdrop" onMouseDown={() => setOpen(false)} aria-hidden="true">
       <div
+        ref={dialogRef}
         className="cmdk-modal"
         role="dialog"
         aria-label="Command palette"
@@ -207,7 +226,7 @@ export default function CommandPalette() {
         {/* ── Input row ── */}
         <div className="cmdk-input-wrap">
           <span className="cmdk-icon" aria-hidden="true">⌕</span>
-          <input
+          <input aria-label="Search members, jump to pages, run actions"
             ref={inputRef}
             className="cmdk-input"
             placeholder="Search members, jump to pages, run actions"
