@@ -108,7 +108,15 @@ export function moduleForTab(tab: Tab): ModuleId {
 export function tabsInModules(): Tab[] {
   return MODULES.flatMap((m) => m.tabs);
 }
-export type FinanceSubTab = 'dashboard' | 'billing' | 'payments' | 'invoices' | 'coupons';
+// Phase 8: 'dashboard' removed. The run-rate view now lives on the home
+// (NewOverviewTab), and the brief explicitly says the home is the
+// platform's "RIGHT NOW" answer — duplicating the same numbers in a
+// Finance sub-tab is the same anti-pattern (two surfaces disagreeing
+// about the same metric) that motivated the home redesign in the first
+// place. Deep links to ?tab=billing/coupons/payments/invoices still
+// land on the matching sub-tab; opening Finance without a deep link
+// defaults to 'billing' (the most common next step).
+export type FinanceSubTab = 'billing' | 'payments' | 'invoices' | 'coupons';
 export type NavOpts = { financeSubTab?: FinanceSubTab };
 // Billing and Coupons used to be separate top-level tabs; both now live inside
 // Finance as an in-page sub-tab. Old bookmarks/sidebar links still point at
