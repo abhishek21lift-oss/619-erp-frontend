@@ -613,7 +613,7 @@ export function ExercisePickerPanel({
                       <span
                         className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[8px] transition"
                         style={{
-                          background: chosen ? 'var(--brand)' : 'var(--bg-subtle)',
+                          background: chosen ? 'linear-gradient(135deg, #0067e0, #3B8DF5)' : 'var(--bg-subtle)',
                           color: chosen ? '#fff' : undefined,
                         }}
                       >
@@ -687,7 +687,10 @@ export function ExercisePickerPanel({
               onClick={addSelected}
               disabled={selected.length === 0 || busy}
               className="flex h-[44px] shrink-0 items-center gap-1.5 rounded-[12px] px-4 text-[13px] font-[700] text-white transition-transform active:scale-[0.98] disabled:opacity-40"
-              style={{ background: 'var(--brand)' }}
+              style={{
+                background: 'linear-gradient(135deg, #0067e0, #3B8DF5)',
+                boxShadow: selected.length > 0 ? '0 4px 14px -4px rgba(0,103,224,0.5)' : 'none',
+              }}
             >
               {busy ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
               {busy

@@ -148,7 +148,11 @@ export default function AddExercisesScreen({ planId, day, backHref }: AddExercis
         <div className="mx-auto w-full max-w-3xl">
           <div
             className="rounded-[20px] p-4 sm:p-5"
-            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
+            style={{
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border)',
+              boxShadow: '0 4px 24px rgba(15,23,42,0.06)',
+            }}
           >
             <ExercisePickerPanel
               live
