@@ -11,6 +11,8 @@ import type {
   AiBusinessInsights, AiConversation, AiDietParams, AiDietPlan,
   AiFitnessTestAnalysis, AiHealthResponse, AiKnowledgeDocument, AiMessage, AiModelStat,
   AiProgressAnalysis, AiProviderSettings, AiUsageStats, AiWorkoutParams, AiWorkoutPlan,
+  AiMemoryCandidate, AiProgrammerProposal, PendingWorkQueue, ClientIntelligenceSummary,
+  AiIntelligenceAudit,
   DuesItem, DuesSummary, ProfileDevice, ProfileSession, SearchResponse, TrainerSummaryRow,
 } from '../types';
 
@@ -177,5 +179,138 @@ export const ai = {
       http<{ message: string }>(`/api/ai/knowledge/${id}`, { method: 'DELETE' }),
     reindex: (id: string) =>
       http<{ message: string }>(`/api/ai/knowledge/${id}/reindex`, { method: 'POST' }),
+  },
+
+  // ── Trainer Intelligence (Phase 2F) ─────────────────────────────────
+  trainer: {
+    /** Unified pending work queue — memory candidates + programmer proposals. */
+    pending: (params?: { client_id?: string; limit?: number }) =>
+      http<{ data: PendingWorkQueue }>(
+        `/api/ai/trainer/pending${buildQs(
+          params ? Object.fromEntries(
+            Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]),
+          ) : undefined,
+        )}`,
+      ),
+
+    /** Client intelligence summary — what changed, what AI knows, suggests, missing. */
+    intelligence: (clientId: string) =>
+      http<{ data: ClientIntelligenceSummary }>(`/api/ai/trainer/intelligence/${clientId}`),
+
+    /** Confirm a memory candidate → becomes active. */
+    confirmMemory: (id: string) =>
+      http<{ data: AiMemoryCandidate }>(`/api/ai/trainer/memory/${id}/confirm`, { method: 'POST' }),
+
+    /** Reject a memory candidate. */
+    rejectMemory: (id: string, reason?: string) =>
+      http<{ data: AiMemoryCandidate }>(`/api/ai/trainer/memory/${id}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason: reason ?? null }),
+      }),
+
+    /** Approve a programmer proposal (returns 409 stale_proposal if data changed). */
+    approveProposal: (id: string, opts?: { execute?: boolean }) =>
+      http<{ data: AiProgrammerProposal; execution_error?: string; execution_status?: string }>(
+        `/api/ai/trainer/proposal/${id}/approve`,
+        { method: 'POST', body: JSON.stringify({ execute: opts?.execute ?? false }) },
+      ),
+
+    /** Execute an already-approved proposal. */
+    executeProposal: (id: string) =>
+      http<{ data: { status: string; proposal_type?: string; changes?: Record<string, unknown> } }>(
+        `/api/ai/trainer/proposal/${id}/execute`,
+        { method: 'POST' },
+      ),
+
+    /** Reverse an executed proposal — restore exact previous state. */
+    reverseProposal: (id: string, reason?: string) =>
+      http<{ data: { status: string; proposal_type?: string; restored?: Record<string, unknown> } }>(
+        `/api/ai/trainer/proposal/${id}/reverse`,
+        { method: 'POST', body: JSON.stringify({ reason: reason ?? null }) },
+      ),
+
+    /** Reject a programmer proposal. */
+    rejectProposal: (id: string, reason?: string) =>
+      http<{ data: AiProgrammerProposal }>(`/api/ai/trainer/proposal/${id}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason: reason ?? null }),
+      }),
+
+    /** Audit trail for intelligence actions. */
+    audit: (params?: { client_id?: string; target_type?: string; limit?: number }) =>
+      http<{ data: AiIntelligenceAudit[] }>(
+        `/api/ai/trainer/audit${buildQs(
+          params ? Object.fromEntries(
+            Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]),
+          ) : undefined,
+        )}`,
+      ),
+  },
+
+  // ── Memory CRUD (Phase 2D) ──────────────────────────────────────────
+  memory: {
+    /** List all memories for a client. */
+    list: (clientId: string, params?: { category?: string; status?: string; limit?: number }) =>
+      http<{ data: AiMemoryCandidate[] }>(
+        `/api/ai/memory/${clientId}${buildQs(
+          params ? Object.fromEntries(
+            Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]),
+          ) : undefined,
+        )}`,
+      ),
+
+    /** List pending candidate memories. */
+    pending: (clientId: string) =>
+      http<{ data: AiMemoryCandidate[] }>(`/api/ai/memory/${clientId}/pending`),
+
+    /** Confirm a candidate memory. */
+    confirm: (clientId: string, memoryId: string) =>
+      http<{ data: AiMemoryCandidate }>(`/api/ai/memory/${clientId}/confirm/${memoryId}`, { method: 'POST' }),
+
+    /** Reject a candidate memory. */
+    reject: (clientId: string, memoryId: string) =>
+      http<{ data: AiMemoryCandidate }>(`/api/ai/memory/${clientId}/reject/${memoryId}`, { method: 'POST' }),
+
+    /** Delete a memory. */
+    remove: (memoryId: string) =>
+      http<{ data: AiMemoryCandidate }>(`/api/ai/memory/${memoryId}`, { method: 'DELETE' }),
+
+    /** Supersede an old memory with a new one. */
+    supersede: (clientId: string, oldMemoryId: string, newFact: string, opts?: { category?: string; subcategory?: string }) =>
+      http<{ data: { old: AiMemoryCandidate; new: AiMemoryCandidate } }>(`/api/ai/memory/${clientId}/supersede`, {
+        method: 'POST',
+        body: JSON.stringify({ old_memory_id: oldMemoryId, new_fact: newFact, ...opts }),
+      }),
+  },
+
+  // ── Programmer Agent (Phase 2E) ─────────────────────────────────────
+  programmer: {
+    /** Generate proposals for a client. */
+    propose: (params: { client_id: string; exercise_name?: string; context?: string }) =>
+      http<{ data: { proposals: AiProgrammerProposal[]; safety: Record<string, unknown>; errors: string[] } }>(
+        '/api/ai/programmer/propose',
+        { method: 'POST', body: JSON.stringify(params) },
+      ),
+
+    /** List proposals for a client. */
+    proposals: (clientId: string, params?: { status?: string; limit?: number }) =>
+      http<{ data: AiProgrammerProposal[] }>(
+        `/api/ai/programmer/proposals/${clientId}${buildQs(
+          params ? Object.fromEntries(
+            Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]),
+          ) : undefined,
+        )}`,
+      ),
+
+    /** Approve a proposal. */
+    approve: (id: string) =>
+      http<{ data: AiProgrammerProposal }>(`/api/ai/programmer/proposals/${id}/approve`, { method: 'POST' }),
+
+    /** Reject a proposal. */
+    reject: (id: string, reason?: string) =>
+      http<{ data: AiProgrammerProposal }>(`/api/ai/programmer/proposals/${id}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason: reason ?? null }),
+      }),
   },
 };

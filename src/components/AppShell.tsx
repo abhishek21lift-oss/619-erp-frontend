@@ -57,6 +57,7 @@ const NAV_KEYWORDS: Record<string, string> = {
   // dead route.
   '/checkin/qr-scanner':         'walk-in walkin drop-in checkin daily visit attendance qr scanner scan code kiosk self service',
 '/ai-coach':                   'ai coach chatbot gpt workout nutrition fitness assistant 619',
+  '/ai/intelligence':            'ai intelligence center memory proposals approval review trainer',
   '/ai/workout-generator':       'ai workout plan generator create programme training',
   '/ai/diet-generator':          'ai diet nutrition plan generator meal food macros calories',
   '/ai/progress-analysis':       'ai progress analysis analyzer client report insights',
