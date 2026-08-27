@@ -11,8 +11,8 @@ import Guard from '@/components/Guard';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { WorkoutPlan, LibraryExercise, TrainingBrief, WorkoutPlanAssignment } from '@/lib/api';
-import { ApiError } from '@/lib/http';
 import { useToast } from '@/lib/toast';
+import { assignWorkoutPlan } from '@/lib/workoutAssign';
 import { AnimatedCounter } from '@/components/fitness/AnimatedCounter';
 import { WorkoutPlanCard } from '@/components/fitness/WorkoutPlanCard';
 import NewProgrammeDialog from '@/components/pt-os/builder/NewProgrammeDialog';
@@ -147,31 +147,14 @@ function Inner() {
   /** Assign a plan. The backend screening gate hard-blocks only clients
    *  whose PAR-Q explicitly flags them as medically blocked; missing
    *  paperwork assigns fine and comes back as screening_warnings, which we
-   *  surface as a nudge with a direct link to start the PAR-Q. */
-  const assignPlanToClient = useCallback(async (plan: WorkoutPlan, client: ClientOption): Promise<boolean> => {
-    try {
-      const res = await api.workouts.assign({ workout_plan_id: plan.id, client_id: client.id });
-      toast.success(`Assigned "${plan.name}" to ${client.name}.`);
-      if (res?.screening_warnings?.length) {
-        toast.warning(`${client.name}: ${res.screening_warnings.join(' ')}`, {
-          duration: 8000,
-          action: { label: 'Start PAR-Q', onClick: () => router.push(`/pt-os/parq?client_id=${client.id}`) },
-        });
-      }
-      return true;
-    } catch (err: unknown) {
-      const code = err instanceof ApiError ? err.code : undefined;
-      if (code === 'PARQ_BLOCKED') {
-        toast.error(`${client.name}'s PAR-Q screening flags them as medically blocked — clearance is required before assigning a workout.`, {
-          duration: 0,
-          action: { label: 'Review PAR-Q', onClick: () => router.push(`/pt-os/parq?client_id=${client.id}`) },
-        });
-      } else {
-        toast.error(err instanceof Error ? err.message : 'Failed to assign workout plan.');
-      }
-      return false;
-    }
-  }, [toast, router]);
+   *  surface as a nudge with a direct link to start the PAR-Q. Shared with
+   *  New Programme's own assign-on-create call — see workoutAssign.ts for
+   *  why that sharing matters. */
+  const assignPlanToClient = useCallback(
+    (plan: WorkoutPlan, client: ClientOption) =>
+      assignWorkoutPlan(plan, client, toast, (clientId) => router.push(`/pt-os/parq?client_id=${clientId}`)),
+    [toast, router],
+  );
 
   const handleAssignFromModal = useCallback(async (client: ClientOption) => {
     if (!assignPlan) return;
