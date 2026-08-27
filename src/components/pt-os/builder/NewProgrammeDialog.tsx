@@ -27,6 +27,7 @@ import { api } from '@/lib/api';
 import type { WorkoutPlan } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
+import { assignWorkoutPlan } from '@/lib/workoutAssign';
 
 export interface ClientOption { id: string; name: string; }
 
@@ -253,11 +254,17 @@ export default function NewProgrammeDialog({
 
       // Assign before navigating. A failure here must not swallow the plan —
       // it exists either way, so report and continue rather than roll back.
-      try {
-        await api.workouts.assign({ workout_plan_id: plan.id, client_id: clientId });
-      } catch {
-        toast.error('Programme created, but could not assign it to the client');
-      }
+      // Shared with the Workout Plans page's own "Assign" button so a
+      // PARQ_BLOCKED client gets the same persistent, actionable toast here
+      // that it gets there, rather than one generic line that can vanish
+      // before it's read on the way to the builder.
+      const clientName = clients.find((c) => c.id === clientId)?.name ?? 'the client';
+      await assignWorkoutPlan(
+        plan,
+        { id: clientId, name: clientName },
+        toast,
+        (cid) => router.push(`/pt-os/parq?client_id=${cid}`),
+      );
 
       onCreated?.(plan);
       router.push(`/pt-os/clients/${clientId}/training/builder?plan=${plan.id}`);
