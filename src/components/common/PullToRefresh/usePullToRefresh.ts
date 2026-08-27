@@ -29,6 +29,39 @@ const AXIS_LOCK_DEADZONE = 6;
 const AXIS_LOCK_RATIO = 1.15;
 const SUCCESS_HOLD_MS = 620;
 
+/**
+ * Is the finger inside something that can still be scrolled UP?
+ *
+ * `window.scrollY === 0` is not enough to claim a downward drag. A dropdown, a
+ * command palette, a `max-h-*` list inside a form — any of these can be scrolled
+ * halfway down while the PAGE is still at the top. Dragging down inside one of
+ * them has an unambiguous local meaning: scroll that list back up. Taking it for
+ * a page refresh instead is the bug this exists to prevent, and it is a
+ * miserable one to diagnose — dragging UP works perfectly (the hook releases the
+ * gesture on `dy <= 0`), so it reads as "scrolling one direction is broken".
+ *
+ * Reported against the client picker on Record Payment: the page is short enough
+ * to never scroll, so `scrollY` is always 0 and every downward drag inside the
+ * open dropdown pulled the whole page down.
+ *
+ * `scrollTop > 0` is checked BEFORE the computed style on purpose. It is a plain
+ * property read, and it is 0 for the overwhelming majority of ancestors, so the
+ * expensive part — getComputedStyle, which forces a style recalc — runs only for
+ * the one or two elements that are genuinely scrolled. Once per gesture, not per
+ * frame.
+ */
+function insideScrollerNotAtTop(start: EventTarget | null): boolean {
+  let el = start instanceof Element ? start : null;
+  while (el && el !== document.body && el !== document.documentElement) {
+    if (el.scrollTop > 0) {
+      const oy = getComputedStyle(el).overflowY;
+      if (oy === 'auto' || oy === 'scroll' || oy === 'overlay') return true;
+    }
+    el = el.parentElement;
+  }
+  return false;
+}
+
 export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRefreshResult {
   const { onRefresh, onError, threshold = DEFAULT_THRESHOLD, maxPull, disabled = false } = options;
   const cap = maxPull ?? threshold * MAX_PULL_RATIO;
@@ -87,6 +120,9 @@ export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRef
       // Let opted-out subtrees (modals, crop tools, drawers) keep the gesture.
       const target = e.target as HTMLElement | null;
       if (target?.closest('[data-no-pull-refresh]')) return;
+      // …and let anything already scrolled keep it too, whether or not it
+      // remembered to opt out. See insideScrollerNotAtTop.
+      if (insideScrollerNotAtTop(target)) return;
       s.dragging = true;
       s.axis = null;
       s.armed = false;

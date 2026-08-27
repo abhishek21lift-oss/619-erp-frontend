@@ -113,13 +113,24 @@ export default function ExerciseCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-      className="rounded-[20px] p-4"
+      // A row, not a card.
+      //
+      // Every exercise used to sit in its own filled, bordered, shadowed box,
+      // inside a page that is itself a column of boxes — and each box then
+      // held four more around its numbers. Boxes inside boxes is what a
+      // spreadsheet looks like, which is the thing this builder exists to
+      // stop being. The hairline between rows does the whole job of saying
+      // where one exercise ends.
+      //
+      // Dragging is the exception: a row being carried has to lift off the
+      // page, so it takes a surface and a shadow for exactly as long as it is
+      // in the air.
+      className={isDragging ? 'rounded-[20px] p-4' : 'py-4'}
       style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        boxShadow: isDragging
-          ? '0 12px 32px rgba(15,23,42,0.18)'
-          : '0 1px 4px rgba(0,0,0,0.05)',
+        background: isDragging ? 'var(--bg-elevated)' : 'transparent',
+        borderTop: isDragging ? '1px solid var(--border)' : 'none',
+        borderBottom: '1px solid var(--border)',
+        boxShadow: isDragging ? '0 12px 32px rgba(15,23,42,0.18)' : 'none',
       }}
     >
       {/* ── Name → muscle group → actions ── */}
@@ -251,7 +262,7 @@ export default function ExerciseCard({
         <div className="mt-3 flex items-start gap-2">
           <StickyNote size={14} className="mt-2.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
           {readOnly ? (
-            <p className="min-h-[44px] w-full rounded-[12px] px-3 py-2.5 text-[13px]" style={{ ...inputStyle, color: 'var(--text-muted)' }}>
+            <p className="min-h-[44px] w-full px-1 py-2.5 text-[13px]" style={{ ...inputStyle, color: 'var(--text-muted)' }}>
               {exercise.notes}
             </p>
           ) : (
@@ -316,8 +327,8 @@ function StaticField({ spec, exercise }: { spec: FieldSpec; exercise: WorkoutPla
         {spec.label}
       </span>
       <div
-        className="flex h-[44px] items-center justify-center gap-0.5 rounded-[12px] px-1.5"
-        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+        className="flex h-[44px] items-center justify-center gap-0.5 px-1.5"
+        style={inputStyle}
       >
         <span className="truncate text-[14px] font-[700]" style={{ color: 'var(--text-primary)' }}>{text}</span>
         {spec.suffix && text !== '—' && (
@@ -383,7 +394,7 @@ function DropSetField({
               onClick={() => set(n)}
               className="flex h-[44px] min-w-[44px] items-center justify-center rounded-[12px] px-2.5 text-[12.5px] font-[700]"
               style={{
-                background: active ? 'var(--brand)' : 'var(--bg-subtle)',
+                background: active ? 'var(--brand)' : 'transparent',
                 color: active ? '#fff' : 'var(--text-muted)',
                 border: `1px solid ${active ? 'var(--brand)' : 'var(--border)'}`,
               }}
@@ -406,16 +417,24 @@ function IconButton({
       aria-label={label}
       onClick={onClick}
       className="flex h-[44px] w-[44px] items-center justify-center rounded-[12px] transition-colors"
-      style={{ color: danger ? 'var(--danger)' : 'var(--text-muted)' }}
+      style={{ color: danger ? 'var(--danger-text)' : 'var(--text-muted)' }}
     >
       {children}
     </button>
   );
 }
 
+/**
+ * A field, drawn as a rule rather than a box.
+ *
+ * Four filled boxes per exercise, inside a page of boxes, is the look this
+ * screen was asked to lose. An underline still reads as "type here" — it is
+ * the oldest form-field affordance there is — and the 44px height that makes
+ * it thumb-sized is unchanged, so nothing about the target moves.
+ */
 const inputStyle: React.CSSProperties = {
-  background: 'var(--bg-subtle)',
-  border: '1px solid var(--border)',
+  background: 'transparent',
+  borderBottom: '1px solid var(--border)',
   color: 'var(--text-primary)',
 };
 
@@ -480,7 +499,7 @@ function InlineField({
         value scrolls within its own box and can never collide.
       */}
       <div
-        className="flex items-center overflow-hidden rounded-[12px]"
+        className="flex items-center overflow-hidden"
         style={inputStyle}
       >
         <input
@@ -552,7 +571,7 @@ function NotesField({
       rows={1}
       placeholder="Coach notes…"
       aria-label={`Coach notes for ${exercise.name}`}
-      className="min-h-[44px] w-full resize-none overflow-hidden rounded-[12px] px-3 py-2.5 text-[13px] outline-none"
+      className="min-h-[44px] w-full resize-none overflow-hidden px-1 py-2.5 text-[13px] outline-none"
       style={inputStyle}
     />
   );

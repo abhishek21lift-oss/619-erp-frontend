@@ -1,58 +1,20 @@
-/**
- * proxy.ts — Server-side auth guard (Next.js 16+)
- *
- * Security headers used to be set here too; they now live in next.config.js
- * (see src/lib/security-headers.js) so they also cover /api and static assets,
- * which this file's matcher excludes.
- *
- * Renamed from middleware.ts to proxy.ts per Next.js 16 convention.
- * https://nextjs.org/docs/messages/middleware-to-proxy
- *
- * Runs at the Next.js edge BEFORE any page component renders.
- * Unauthenticated requests to protected routes are redirected to /login
- * with the original destination preserved as ?redirect= for post-login
- * deep-link restoration.
- *
- * IMPORTANT: /api/* routes are EXCLUDED from this proxy entirely.
- * The backend (Render) handles its own authentication. Intercepting
- * /api/* here would block the rewrite proxy and cause HTTP 405 errors.
- */
-
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 import { buildReportOnlyCsp } from '@/lib/security-headers';
+import { SESSIONLESS_PAGES, signInPathFor } from '@/lib/public-paths';
 
-const PUBLIC_PREFIXES: string[] = [
-  '/',
-  '/login',
-  '/reset-password',
-  '/forgot-password',
-  // An invited admin has no session yet — that is the entire point. Without
-  // this the invitation link 307s to /login and the studio can never be
-  // claimed.
-  '/auth/set-password',
+const PUBLIC_ASSET_PREFIXES: string[] = [
   '/checkin',
-  '/start-free',
   '/_next',
   '/api/health',
-  // The member fingerprint-enrolment prefix sat here, for the biometric
-  // check-in screens. That check-in path is gone; staff passkey login lives
-  // under the auth prefix below and is still covered.
   '/api/auth',
   '/models',
   '/favicon.ico',
-  // The matcher below exempts image and font extensions but NOT .json, so
-  // without this the PWA manifest 307s to /login for anyone not signed in —
-  // and a manifest the browser can't read means no install prompt and no app
-  // icon. It only describes the app's name, icons and start URL; nothing here
-  // is private.
   '/manifest.json',
-  // The matcher below exempts image and font extensions but NOT .js, so
-  // without this the pre-paint theme script 307s to /login for anyone signed
-  // out — meaning the login page itself flashes the wrong theme. It only reads
-  // localStorage and sets a class name.
+  '/platform-manifest.json',
   '/theme-init.js',
+  '/no-zoom.js',
   '/logo.png',
   '/619-logo.png',
   '/sitemap.xml',
@@ -61,48 +23,33 @@ const PUBLIC_PREFIXES: string[] = [
   '/images',
 ];
 
+export function isPublicProxyPath(pathname: string): boolean {
+  return isPublicPath(pathname);
+}
+
 function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PREFIXES.some(
+  // Sessionless pages are exact routes. This is important because `/pt-os` is
+  // a public marketing page while `/pt-os/clients` and its other app routes
+  // remain authenticated.
+  if ((SESSIONLESS_PAGES as readonly string[]).includes(pathname)) return true;
+
+  return PUBLIC_ASSET_PREFIXES.some(
     (p) => pathname === p || pathname.startsWith(p + '/') || pathname.startsWith(p + '?')
   );
 }
 
-// The ENFORCED security headers (CSP, HSTS, COOP, CORP, …) are NOT set here.
-// They live in next.config.js via src/lib/security-headers.js, because the
-// matcher at the bottom of this file deliberately skips `api`,
-// `_next/static`, `_next/image`, favicon and every image/font extension — so
-// anything set there would miss API responses and every static asset.
-// Re-adding them here would silently override that single source of truth.
-//
-// What DOES belong here is the Report-Only policy, because it needs a
-// per-request nonce and next.config.js headers() are static. It only applies
-// to documents, which is the only place a CSP does anything at all.
-
-/** Base64 nonce. crypto.getRandomValues is available in the edge runtime. */
 function makeNonce(): string {
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
   return btoa(String.fromCharCode(...bytes));
 }
 
-/**
- * Attach the candidate strict CSP as Report-Only, so violations are measured
- * against real traffic before 'unsafe-inline' is removed from the enforced
- * policy.
- *
- * Next.js reads the nonce out of the Content-Security-Policy REQUEST header
- * and stamps its own inline hydration scripts with it. That is why the request
- * header is set as well as the response header — without it every Next.js
- * bootstrap script would report a violation and the signal would be all noise.
- */
 function withReportOnlyCsp(req: NextRequest): NextResponse {
   const nonce = makeNonce();
   const csp = buildReportOnlyCsp(process.env, nonce, process.env.CSP_REPORT_URI);
-
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', csp);
-
   const res = NextResponse.next({ request: { headers: requestHeaders } });
   res.headers.set('Content-Security-Policy-Report-Only', csp);
   return res;
@@ -110,9 +57,10 @@ function withReportOnlyCsp(req: NextRequest): NextResponse {
 
 function redirectToLogin(req: NextRequest, deleteTokenCookie = false): NextResponse {
   const loginUrl = req.nextUrl.clone();
-  loginUrl.pathname = '/login';
   const { pathname } = req.nextUrl;
-  if (pathname !== '/' && !pathname.startsWith('/login')) {
+  const signIn = signInPathFor(pathname);
+  loginUrl.pathname = signIn;
+  if (pathname !== '/' && pathname !== signIn) {
     loginUrl.searchParams.set('redirect', pathname);
   }
   const res = NextResponse.redirect(loginUrl);
@@ -120,14 +68,55 @@ function redirectToLogin(req: NextRequest, deleteTokenCookie = false): NextRespo
   return res;
 }
 
+const HOST_NEUTRAL_PREFIXES = [
+  '/_next', '/api', '/models', '/icons', '/images', '/favicon.ico',
+  '/manifest.json', '/platform-manifest.json', '/theme-init.js', '/no-zoom.js',
+  '/logo.png', '/619-logo.png', '/sitemap.xml', '/robots.txt',
+];
+
+export function commandCenterHost(): string | null {
+  const h = process.env.COMMAND_CENTER_HOST;
+  return h ? h.trim().toLowerCase() : null;
+}
+
+export function requestHost(req: NextRequest): string {
+  const raw = req.headers.get('host') ?? '';
+  return raw.split(':')[0].trim().toLowerCase();
+}
+
+export function isCommandCenterPath(pathname: string): boolean {
+  return pathname === '/platform'
+    || pathname.startsWith('/platform/')
+    || pathname === '/platform-login';
+}
+
+export function isHostNeutralPath(pathname: string): boolean {
+  return HOST_NEUTRAL_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(p + '/')
+  );
+}
+
+function notFound(req: NextRequest): NextResponse {
+  const url = req.nextUrl.clone();
+  url.pathname = '/_not-found';
+  return NextResponse.rewrite(url);
+}
+
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  const ccHost = commandCenterHost();
+  if (ccHost && !isHostNeutralPath(pathname)) {
+    const onCommandCenter = requestHost(req) === ccHost;
+    if (onCommandCenter !== isCommandCenterPath(pathname)) {
+      return notFound(req);
+    }
+  }
 
   if (isPublicPath(pathname)) {
     return withReportOnlyCsp(req);
   }
 
-  // Accept token from cookie or Authorization: Bearer header
   const token =
     req.cookies.get('token')?.value ??
     req.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim();
@@ -141,7 +130,6 @@ export async function proxy(req: NextRequest) {
 
   const secret = process.env.JWT_SECRET;
   if (secret) {
-    // Full cryptographic verification — requires JWT_SECRET in frontend env
     try {
       await jwtVerify(token, new TextEncoder().encode(secret));
       return withReportOnlyCsp(req);
@@ -150,8 +138,6 @@ export async function proxy(req: NextRequest) {
     }
   }
 
-  // Fallback: decode without verify, check expiry only.
-  // Signature is still verified by the backend on every API call.
   try {
     const parts = token.split('.');
     if (parts.length !== 3 || !parts.every(s => s.length > 0)) throw new Error('malformed');

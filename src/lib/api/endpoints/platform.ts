@@ -9,25 +9,44 @@ import { qsOf } from '../qs';
 import type {
   ActiveSession, ActivityEntry, AiModelRate, AiModelUsage, AiOverview, AiRouting,
   AiSettings, AiStudioUsage, AiTrendPoint, Announcement, AnnouncementInput,
-  AnnouncementPreview, AuditEntry, AuditFilters, AuditQuery, Coupon, FeatureCatalogue,
+  AnnouncementPreview, AuditEntry, AuditFilters, AuditPaging, AuditQuery, Coupon, FeatureCatalogue,
   FeatureOverrideRow, ImpersonationSession, Invitation, InvitationDetail,
+  ClientActivationPreview, ClientLoginStatus,
+  MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement,
   InvitationPreview, InvoiceQuery, InvoiceTotals, LoginEvent, LoginEventQuery,
   OrgBillingProfile, OrgInternalNotes, OrgUser, Organization, OrganizationDetail,
+  PlatformUser, PlatformUserQuery, PlatformUserSummary,
   PlanChangeQuote, PlatformAnalytics, PlatformBillingSettings, PlatformFeature,
   PlatformOverview, PlatformPaymentSettings, PlatformPaymentSettingsInput, ResolvedFeature,
   SecurityOverview, SecurityThreats, StorageObject, StorageOverview, StorageStudio,
   StorageTrendPoint, SubCheckoutQueueRow, SubCheckoutStats, SubDetail, SubKpis, SubStudio,
   SubscriptionInvoice, SubscriptionMetrics, SupportOverview, SupportTicket, SystemHealth,
   TicketMessage, TicketPriority, TicketStatus, UpiRejectReason,
+  CommandCenterSnapshot, CommandCenterCommand, CommandCenterRunResult, CommandCenterDryRun,
+  CommandCenterStreamTicket,
+  SystemAlert, SystemAlertList, GuardianReport, GuardianNarration,
+  LogTail, LogHistory,
 } from '../types';
 
-export const admin = {
-  exportDatabase: () => http<{ message?: string; url?: string }>('/api/admin/export-database'),
-  backupDatabase: () => http<{ message?: string }>('/api/admin/backup-database', { method: 'POST' }),
-};
+// The `admin` namespace held exportDatabase() and backupDatabase(). Both are
+// gone: neither had a backend route — /api/admin serves only the four reset
+// operations — and nothing in the app called either, so they were two ways to
+// wire a button straight to a 404. If database export/backup is wanted, add it
+// as a feature with a route behind it, not as a client stub.
 
-// ── Platform Super Admin (multi-tenant SaaS) ──────────────────────────────
-// Backed by /api/super-admin/* — reachable only by role='super_admin'.
+// ── The Command Center API (platform control plane) ───────────────────────
+//
+// Backed by /api/platform/*. These calls were addressed to /api/super-admin
+// until the control plane was separated out; the backend still mounts that
+// path, so the rename here is not a cutover and nothing breaks if one is
+// missed. The new name is the boundary's name rather than a role's — see the
+// mount comment in the backend's src/server.js for why that distinction is
+// worth a rename.
+//
+// Reaching any of it requires more than a role. The backend gates the whole
+// namespace on requirePlatformOwner: role='super_admin', a live grant in
+// platform_owners, a session opened at the Command Center door, and no
+// impersonation in flight.
 /** A studio application awaiting review in the Command Centre. */
 export interface StudioRegistration {
   id: string;
@@ -47,22 +66,42 @@ export interface StudioRegistration {
 export const superAdmin = {
   registrations: (status: 'pending' | 'approved' | 'rejected' | 'all' = 'pending') =>
     http<{ data: StudioRegistration[]; counts: Record<string, number> }>(
-      `/api/super-admin/registrations?status=${status}`,
+      `/api/platform/registrations?status=${status}`,
     ),
   approveRegistration: (id: string, note?: string) =>
     http<{ data: { id: string; status: string; organization_id: string } }>(
-      `/api/super-admin/registrations/${id}/approve`,
+      `/api/platform/registrations/${id}/approve`,
       { method: 'POST', body: JSON.stringify({ note: note ?? '' }) },
     ),
   rejectRegistration: (id: string, note?: string) =>
     http<{ data: StudioRegistration }>(
-      `/api/super-admin/registrations/${id}/reject`,
+      `/api/platform/registrations/${id}/reject`,
       { method: 'POST', body: JSON.stringify({ note: note ?? '' }) },
     ),
+  /**
+   * The platform user directory — every account, across every studio.
+   *
+   * Filters are sent only when set, so an empty query is the whole platform
+   * rather than a request full of blanks. The server caps `limit` at 200
+   * regardless of what is asked for, and returns the UNPAGED total alongside
+   * the page so the header count does not require fetching everything.
+   */
+  listUsers: (query: PlatformUserQuery = {}) => {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(query)) {
+      if (v !== undefined && v !== null && v !== '') qs.set(k, String(v));
+    }
+    const suffix = qs.toString() ? `?${qs}` : '';
+    return http<{ data: PlatformUser[]; total: number; limit: number; offset: number }>(
+      `/api/platform/users${suffix}`,
+    );
+  },
+  userSummary: () =>
+    http<{ data: PlatformUserSummary }>('/api/platform/users/summary'),
   listOrgs: () =>
-    http<{ data: Organization[] }>('/api/super-admin/organizations'),
+    http<{ data: Organization[] }>('/api/platform/organizations'),
   getOrg: (id: string) =>
-    http<{ data: OrganizationDetail }>(`/api/super-admin/organizations/${id}`),
+    http<{ data: OrganizationDetail }>(`/api/platform/organizations/${id}`),
   /**
    * Omitting `password` selects the INVITATION path: the account is created
    * with no usable password and the owner is emailed a single-use link.
@@ -77,19 +116,19 @@ export const superAdmin = {
       /** Whether the invitation email actually left. False is actionable. */
       email_sent: boolean;
       email_error: string | null;
-    } }>('/api/super-admin/organizations', {
+    } }>('/api/platform/organizations', {
       method: 'POST', body: JSON.stringify(data),
     }),
   updateOrg: (id: string, data: { name?: string; status?: 'active' | 'suspended' }) =>
-    http<{ data: Organization }>(`/api/super-admin/organizations/${id}`, {
+    http<{ data: Organization }>(`/api/platform/organizations/${id}`, {
       method: 'PATCH', body: JSON.stringify(data),
     }),
   setUserActive: (id: string, is_active: boolean) =>
-    http<{ data: OrgUser }>(`/api/super-admin/users/${id}`, {
+    http<{ data: OrgUser }>(`/api/platform/users/${id}`, {
       method: 'PATCH', body: JSON.stringify({ is_active }),
     }),
   resetPassword: (id: string, password: string) =>
-    http<{ data: { id: string; message: string } }>(`/api/super-admin/users/${id}/reset-password`, {
+    http<{ data: { id: string; message: string } }>(`/api/platform/users/${id}/reset-password`, {
       method: 'POST', body: JSON.stringify({ password }),
     }),
   /**
@@ -100,27 +139,27 @@ export const superAdmin = {
    */
   sendPasswordSetup: (id: string) =>
     http<{ data: { id: string; email: string; expires_in_minutes: number; message: string } }>(
-      `/api/super-admin/users/${id}/send-password-setup`, { method: 'POST' },
+      `/api/platform/users/${id}/send-password-setup`, { method: 'POST' },
     ),
   uploadOrgLogo: (id: string, file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    return http<{ data: Organization }>(`/api/super-admin/organizations/${id}/logo`, {
+    return http<{ data: Organization }>(`/api/platform/organizations/${id}/logo`, {
       method: 'POST', body: formData,
     });
   },
   overview: () =>
-    http<{ data: PlatformOverview }>('/api/super-admin/overview'),
+    http<{ data: PlatformOverview }>('/api/platform/overview'),
   updateUser: (id: string, data: { name?: string; email?: string; role?: string; is_active?: boolean }) =>
-    http<{ data: OrgUser }>(`/api/super-admin/users/${id}`, {
+    http<{ data: OrgUser }>(`/api/platform/users/${id}`, {
       method: 'PATCH', body: JSON.stringify(data),
     }),
   addUser: (orgId: string, data: { name: string; email: string; password: string; role?: string }) =>
-    http<{ data: OrgUser }>(`/api/super-admin/organizations/${orgId}/users`, {
+    http<{ data: OrgUser }>(`/api/platform/organizations/${orgId}/users`, {
       method: 'POST', body: JSON.stringify(data),
     }),
   deleteUser: (id: string) =>
-    http<{ data: { id: string; message: string } }>(`/api/super-admin/users/${id}`, {
+    http<{ data: { id: string; message: string } }>(`/api/platform/users/${id}`, {
       method: 'DELETE',
     }),
   listActivity: (params: { org_id?: string; user_id?: string; action?: string; limit?: number; offset?: number } = {}) => {
@@ -132,27 +171,27 @@ export const superAdmin = {
     if (params.offset != null) qs.set('offset', String(params.offset));
     const q = qs.toString();
     return http<{ data: ActivityEntry[]; paging: { limit: number; offset: number; count: number } }>(
-      `/api/super-admin/activity${q ? `?${q}` : ''}`,
+      `/api/platform/activity${q ? `?${q}` : ''}`,
     );
   },
   // ── Admin Management operator actions ──────────────────────────────
   /** Revokes every live session for one account (bumps token_version).
    *  Deliberately does not touch the password. */
   forceLogout: (userId: string) =>
-    http<{ data: { id: string; message: string } }>(`/api/super-admin/users/${userId}/force-logout`, { method: 'POST' }),
+    http<{ data: { id: string; message: string } }>(`/api/platform/users/${userId}/force-logout`, { method: 'POST' }),
   /** Clears the enrolled authenticator and revokes sessions with it. */
   resetMfa: (userId: string) =>
-    http<{ data: { id: string; was_enabled: boolean; message: string } }>(`/api/super-admin/users/${userId}/reset-mfa`, { method: 'POST' }),
+    http<{ data: { id: string; was_enabled: boolean; message: string } }>(`/api/platform/users/${userId}/reset-mfa`, { method: 'POST' }),
   /** Extends the studio's current period (or trial) by a delta. */
   bonusDays: (orgId: string, days: number, reason?: string) =>
     http<{ data: { id: string; field: string; previous: string | null; days: number } }>(
-      `/api/super-admin/organizations/${orgId}/subscription/bonus-days`,
+      `/api/platform/organizations/${orgId}/subscription/bonus-days`,
       { method: 'POST', body: JSON.stringify({ days, ...(reason ? { reason } : {}) }) },
     ),
   orgNotes: (orgId: string) =>
-    http<{ data: OrgInternalNotes }>(`/api/super-admin/organizations/${orgId}/notes`),
+    http<{ data: OrgInternalNotes }>(`/api/platform/organizations/${orgId}/notes`),
   saveOrgNotes: (orgId: string, notes: string) =>
-    http<{ data: OrgInternalNotes }>(`/api/super-admin/organizations/${orgId}/notes`, {
+    http<{ data: OrgInternalNotes }>(`/api/platform/organizations/${orgId}/notes`, {
       method: 'PUT', body: JSON.stringify({ notes }),
     }),
 
@@ -165,11 +204,11 @@ export const superAdmin = {
       if (v !== undefined && v !== null && v !== '') qs.set(k, String(v));
     }
     const q = qs.toString();
-    return http<{ data: AuditEntry[]; paging: { limit: number; offset: number; total: number; count: number } }>(
-      `/api/super-admin/audit${q ? `?${q}` : ''}`,
+    return http<{ data: AuditEntry[]; paging: AuditPaging & { count: number } }>(
+      `/api/platform/audit${q ? `?${q}` : ''}`,
     );
   },
-  auditFilters: () => http<AuditFilters>('/api/super-admin/audit/filters'),
+  auditFilters: () => http<AuditFilters>('/api/platform/audit/filters'),
   /** Built rather than fetched: the browser must navigate to it so the file
    *  downloads with the server's Content-Disposition. */
   auditExportUrl: (params: AuditQuery = {}) => {
@@ -178,126 +217,256 @@ export const superAdmin = {
       if (v !== undefined && v !== null && v !== '' && k !== 'limit' && k !== 'offset') qs.set(k, String(v));
     }
     const q = qs.toString();
-    return `${apiBase()}/api/super-admin/audit/export${q ? `?${q}` : ''}`;
+    return `${apiBase()}/api/platform/audit/export${q ? `?${q}` : ''}`;
   },
-  systemHealth: () => http<SystemHealth>('/api/super-admin/system-health'),
+  systemHealth: () => http<SystemHealth>('/api/platform/system-health'),
+
+  /** Command Center. One call returns every card; a card that failed reports
+   *  its own status inside the payload rather than failing the request, so this
+   *  never rejects just because one dependency is down. */
+  commandCenter: (opts: { cards?: string[]; fresh?: boolean } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.cards?.length) qs.set('cards', opts.cards.join(','));
+    if (opts.fresh) qs.set('fresh', '1');
+    const q = qs.toString();
+    return http<{ data: CommandCenterSnapshot }>(
+      `/api/platform/command-center/snapshot${q ? `?${q}` : ''}`,
+    );
+  },
+
+  /** Mint the single-use ticket that authenticates the realtime stream.
+   *
+   *  A POST because it creates a credential. Called on connect and again on
+   *  every reconnect: a ticket is spent by the socket it opens and expires in
+   *  well under a minute, so it is never worth caching. */
+  commandCenterStreamTicket: () =>
+    http<{ data: CommandCenterStreamTicket }>(
+      '/api/platform/command-center/stream-ticket',
+      { method: 'POST' },
+    ),
+
+  /** The server's allow-list of operational commands, including the ones that
+   *  cannot run here — each carries its own `unavailable_reason`. The client
+   *  keeps no list of its own, so what it gates and what the server enforces
+   *  cannot drift apart. */
+  commandCenterCommands: () =>
+    http<{ data: { commands: CommandCenterCommand[] } }>(
+      '/api/platform/command-center/commands',
+    ),
+
+  /**
+   * Run one allow-listed command.
+   *
+   * The failure statuses are meaningful and callers are expected to branch on
+   * them, since each needs a different response from the UI: 428 means a typed
+   * confirmation is required (re-send `confirm` equal to the command name), 429
+   * means the command is on cooldown, 503 means the capability is absent on
+   * this deployment. They arrive as `ApiError.status`.
+   */
+  runCommandCenterCommand: (
+    name: string,
+    body: { queue?: string; confirm?: string; dryRun?: boolean } = {},
+  ) =>
+    http<{ data: CommandCenterRunResult | CommandCenterDryRun }>(
+      `/api/platform/command-center/commands/${encodeURIComponent(name)}`,
+      { method: 'POST', body },
+    ),
+
+  /** Alert Center. Returns the alerts and the badge counts in one call — the
+   *  console polls this and would otherwise ask for both every tick. */
+  commandCenterAlerts: (opts: { scope?: 'live' | 'resolved' | 'all'; limit?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.scope) qs.set('scope', opts.scope);
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    const q = qs.toString();
+    return http<{ data: SystemAlertList }>(
+      `/api/platform/command-center/alerts${q ? `?${q}` : ''}`,
+    );
+  },
+
+  /** "Seen, I am on it." Does not stop the alert tracking the condition, so an
+   *  acknowledged alert that fixes itself still auto-resolves. */
+  acknowledgeAlert: (id: string) =>
+    http<{ data: SystemAlert }>(
+      `/api/platform/command-center/alerts/${encodeURIComponent(id)}/ack`,
+      { method: 'POST' },
+    ),
+
+  /** Close by hand. Recorded as `manual`, which is what keeps bad detection
+   *  visible: a wall of manual closures means the thresholds are wrong. */
+  resolveAlert: (id: string) =>
+    http<{ data: SystemAlert }>(
+      `/api/platform/command-center/alerts/${encodeURIComponent(id)}/resolve`,
+      { method: 'POST' },
+    ),
+
+  /** AI Guardian. Deterministic correlations across cards — no AI is called on
+   *  this path, so it is safe to poll. */
+  commandCenterGuardian: (opts: { fresh?: boolean } = {}) =>
+    http<{ data: GuardianReport }>(
+      `/api/platform/command-center/guardian${opts.fresh ? '?fresh=1' : ''}`,
+    ),
+
+  /** Narrate ONE finding. A POST, and separate from the read above, because it
+   *  costs money: narrating on every poll would spend tokens restating text
+   *  already on screen. The model is given the finding and its evidence, never
+   *  the raw metrics, and cannot change the diagnosis or the confidence. */
+  explainGuardianFinding: (id: string) =>
+    http<{ data: GuardianNarration }>(
+      `/api/platform/command-center/guardian/${encodeURIComponent(id)}/explain`,
+      { method: 'POST' },
+    ),
+
+  /** The live tail: the API process's in-memory ring. Pass `since` to poll
+   *  without re-shipping the whole window. */
+  commandCenterLogs: (opts: { level?: string; q?: string; since?: number; limit?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.level) qs.set('level', opts.level);
+    if (opts.q) qs.set('q', opts.q);
+    if (opts.since) qs.set('since', String(opts.since));
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    const q = qs.toString();
+    return http<{ data: LogTail }>(`/api/platform/command-center/logs${q ? `?${q}` : ''}`);
+  },
+
+  /** Persisted history: errors and above, durable across restarts, and the only
+   *  place the WORKER container's errors are visible. */
+  commandCenterLogHistory: (
+    opts: {
+      level?: string; source?: 'api' | 'worker'; q?: string; limit?: number;
+      /** Keyset cursor: the `next_before` from the previous page. */
+      before?: string;
+      /** Skip the stats aggregate. The poll tick passes false. */
+      stats?: boolean;
+    } = {},
+  ) => {
+    const qs = new URLSearchParams();
+    if (opts.level) qs.set('level', opts.level);
+    if (opts.source) qs.set('source', opts.source);
+    if (opts.q) qs.set('q', opts.q);
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    if (opts.before) qs.set('before', opts.before);
+    if (opts.stats === false) qs.set('stats', '0');
+    const q = qs.toString();
+    return http<{ data: LogHistory }>(`/api/platform/command-center/logs/history${q ? `?${q}` : ''}`);
+  },
 
   // ── Billing Centre ──────────────────────────────────────────────────────
-  billingSettings: () => http<{ data: PlatformBillingSettings }>('/api/super-admin/billing/settings'),
+  billingSettings: () => http<{ data: PlatformBillingSettings }>('/api/platform/billing/settings'),
   saveBillingSettings: (patch: Partial<PlatformBillingSettings>) =>
-    http<{ data: PlatformBillingSettings }>('/api/super-admin/billing/settings', {
+    http<{ data: PlatformBillingSettings }>('/api/platform/billing/settings', {
       method: 'PUT', body: JSON.stringify(patch),
     }),
   invoices: (params: InvoiceQuery = {}) =>
     http<{ data: SubscriptionInvoice[]; totals: InvoiceTotals; page: { limit: number; offset: number; has_more: boolean } }>(
-      `/api/super-admin/billing/invoices${qsOf(params)}`,
+      `/api/platform/billing/invoices${qsOf(params)}`,
     ),
   /** Built rather than fetched, same as auditExportUrl: the browser must
    *  navigate to it so the file lands with the server's Content-Disposition. */
   invoicesExportUrl: (params: InvoiceQuery = {}) =>
-    `${apiBase()}/api/super-admin/billing/invoices/export${qsOf(params, ['limit', 'offset'])}`,
-  invoicePdfUrl: (id: string) => `${apiBase()}/api/super-admin/billing/invoices/${id}/pdf`,
+    `${apiBase()}/api/platform/billing/invoices/export${qsOf(params, ['limit', 'offset'])}`,
+  invoicePdfUrl: (id: string) => `${apiBase()}/api/platform/billing/invoices/${id}/pdf`,
   orgBillingProfile: (orgId: string) =>
-    http<{ data: OrgBillingProfile }>(`/api/super-admin/organizations/${orgId}/billing-profile`),
+    http<{ data: OrgBillingProfile }>(`/api/platform/organizations/${orgId}/billing-profile`),
   saveOrgBillingProfile: (orgId: string, patch: Partial<OrgBillingProfile>) =>
-    http<{ data: OrgBillingProfile }>(`/api/super-admin/organizations/${orgId}/billing-profile`, {
+    http<{ data: OrgBillingProfile }>(`/api/platform/organizations/${orgId}/billing-profile`, {
       method: 'PUT', body: JSON.stringify(patch),
     }),
 
   // ── Feature Manager ─────────────────────────────────────────────────────
-  features: () => http<{ data: FeatureCatalogue }>('/api/super-admin/features'),
+  features: () => http<{ data: FeatureCatalogue }>('/api/platform/features'),
   updateFeature: (key: string, patch: { global_enabled?: boolean; default_enabled?: boolean; is_plan_gated?: boolean }) =>
-    http<{ data: PlatformFeature }>(`/api/super-admin/features/${key}`, {
+    http<{ data: PlatformFeature }>(`/api/platform/features/${key}`, {
       method: 'PATCH', body: JSON.stringify(patch),
     }),
   setFeaturePlans: (key: string, plans: Record<string, boolean>) =>
-    http<{ data: unknown }>(`/api/super-admin/features/${key}/plans`, {
+    http<{ data: unknown }>(`/api/platform/features/${key}/plans`, {
       method: 'PUT', body: JSON.stringify({ plans }),
     }),
   featureOverrides: (key: string) =>
-    http<{ data: FeatureOverrideRow[] }>(`/api/super-admin/features/${key}/overrides`),
+    http<{ data: FeatureOverrideRow[] }>(`/api/platform/features/${key}/overrides`),
   orgFeatures: (orgId: string) =>
-    http<{ data: ResolvedFeature[] }>(`/api/super-admin/organizations/${orgId}/features`),
+    http<{ data: ResolvedFeature[] }>(`/api/platform/organizations/${orgId}/features`),
   setOrgFeature: (orgId: string, key: string, body: { enabled: boolean; reason: string; expires_at?: string }) =>
-    http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/features/${key}`, {
+    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/features/${key}`, {
       method: 'PUT', body: JSON.stringify(body),
     }),
   clearOrgFeature: (orgId: string, key: string) =>
-    http<{ data: { cleared: boolean } }>(`/api/super-admin/organizations/${orgId}/features/${key}`, {
+    http<{ data: { cleared: boolean } }>(`/api/platform/organizations/${orgId}/features/${key}`, {
       method: 'DELETE',
     }),
 
   // ── Notification Centre ─────────────────────────────────────────────────
   announcements: (status?: string) =>
-    http<{ data: Announcement[] }>(`/api/super-admin/announcements${status ? `?status=${status}` : ''}`),
+    http<{ data: Announcement[] }>(`/api/platform/announcements${status ? `?status=${status}` : ''}`),
   createAnnouncement: (body: AnnouncementInput) =>
-    http<{ data: Announcement }>('/api/super-admin/announcements', {
+    http<{ data: Announcement }>('/api/platform/announcements', {
       method: 'POST', body: JSON.stringify(body),
     }),
   updateAnnouncement: (id: string, patch: Partial<AnnouncementInput>) =>
-    http<{ data: Announcement }>(`/api/super-admin/announcements/${id}`, {
+    http<{ data: Announcement }>(`/api/platform/announcements/${id}`, {
       method: 'PATCH', body: JSON.stringify(patch),
     }),
   /** Read-only: computes reach without delivering anything. */
   previewAnnouncement: (id: string) =>
-    http<{ data: AnnouncementPreview }>(`/api/super-admin/announcements/${id}/preview`, { method: 'POST' }),
+    http<{ data: AnnouncementPreview }>(`/api/platform/announcements/${id}/preview`, { method: 'POST' }),
   sendAnnouncement: (id: string) =>
-    http<{ data: Announcement }>(`/api/super-admin/announcements/${id}/send`, { method: 'POST' }),
+    http<{ data: Announcement }>(`/api/platform/announcements/${id}/send`, { method: 'POST' }),
   scheduleAnnouncement: (id: string, scheduledFor: string) =>
-    http<{ data: Announcement }>(`/api/super-admin/announcements/${id}/schedule`, {
+    http<{ data: Announcement }>(`/api/platform/announcements/${id}/schedule`, {
       method: 'POST', body: JSON.stringify({ scheduled_for: scheduledFor }),
     }),
   cancelAnnouncement: (id: string) =>
-    http<{ data: Announcement }>(`/api/super-admin/announcements/${id}/cancel`, { method: 'POST' }),
+    http<{ data: Announcement }>(`/api/platform/announcements/${id}/cancel`, { method: 'POST' }),
   deleteAnnouncement: (id: string) =>
-    http<{ data: { deleted: boolean } }>(`/api/super-admin/announcements/${id}`, { method: 'DELETE' }),
+    http<{ data: { deleted: boolean } }>(`/api/platform/announcements/${id}`, { method: 'DELETE' }),
 
   // ── Security Centre ─────────────────────────────────────────────────────
   /** Cross-studio product analytics. Read-only; `months` is clamped 3–24 server-side. */
   analytics: (months?: number) =>
     http<{ data: PlatformAnalytics }>(
-      `/api/super-admin/analytics${months ? `?months=${months}` : ''}`),
+      `/api/platform/analytics${months ? `?months=${months}` : ''}`),
 
-  securityOverview: () => http<{ data: SecurityOverview }>('/api/super-admin/security/overview'),
+  securityOverview: () => http<{ data: SecurityOverview }>('/api/platform/security/overview'),
   loginEvents: (params: LoginEventQuery = {}) =>
-    http<{ data: LoginEvent[]; paging: { limit: number; offset: number; total: number } }>(
-      `/api/super-admin/security/login-events${qsOf(params)}`,
+    http<{ data: LoginEvent[]; paging: AuditPaging }>(
+      `/api/platform/security/login-events${qsOf(params)}`,
     ),
   securityThreats: (params: { hours?: number; min?: number } = {}) =>
-    http<{ data: SecurityThreats }>(`/api/super-admin/security/threats${qsOf(params)}`),
+    http<{ data: SecurityThreats }>(`/api/platform/security/threats${qsOf(params)}`),
   activeSessions: (orgId?: string) =>
-    http<{ data: ActiveSession[] }>(`/api/super-admin/security/sessions${orgId ? `?org_id=${orgId}` : ''}`),
+    http<{ data: ActiveSession[] }>(`/api/platform/security/sessions${orgId ? `?org_id=${orgId}` : ''}`),
 
   // ── AI Control Centre ───────────────────────────────────────────────────
   /** Invitation management. `status` filters on the DERIVED status. */
   listInvitations: (params: { org_id?: string; status?: string; q?: string } = {}) =>
     http<{ data: Invitation[]; counts: Record<string, number>; smtp_configured: boolean }>(
-      `/api/super-admin/invitations${qsOf(params)}`),
+      `/api/platform/invitations${qsOf(params)}`),
   resendInvitation: (id: string) =>
-    http<{ data: Invitation }>(`/api/super-admin/invitations/${id}/resend`, { method: 'POST' }),
+    http<{ data: Invitation }>(`/api/platform/invitations/${id}/resend`, { method: 'POST' }),
   /**
    * A POST because it MUTATES: the raw token is never stored, so there is no
    * existing link to read. This mints a new one and invalidates the old.
    */
   invitationLink: (id: string) =>
     http<{ data: { url: string; expires_at: string; invitation: Invitation } }>(
-      `/api/super-admin/invitations/${id}/link`, { method: 'POST' }),
+      `/api/platform/invitations/${id}/link`, { method: 'POST' }),
   cancelInvitation: (id: string) =>
-    http<{ data: Invitation }>(`/api/super-admin/invitations/${id}/cancel`, { method: 'POST' }),
+    http<{ data: Invitation }>(`/api/platform/invitations/${id}/cancel`, { method: 'POST' }),
   invitationEvents: (id: string) =>
-    http<{ data: InvitationDetail }>(`/api/super-admin/invitations/${id}/events`),
+    http<{ data: InvitationDetail }>(`/api/platform/invitations/${id}/events`),
 
-  aiOverview: (days = 30) => http<{ data: AiOverview }>(`/api/super-admin/ai/overview?days=${days}`),
-  aiByStudio: (days = 30) => http<{ data: AiStudioUsage[] }>(`/api/super-admin/ai/by-studio?days=${days}`),
-  aiByModel: (days = 30) => http<{ data: AiModelUsage[] }>(`/api/super-admin/ai/by-model?days=${days}`),
-  aiTrend: (days = 30) => http<{ data: AiTrendPoint[] }>(`/api/super-admin/ai/trend?days=${days}`),
-  aiSettings: () => http<{ data: AiSettings }>('/api/super-admin/ai/settings'),
+  aiOverview: (days = 30) => http<{ data: AiOverview }>(`/api/platform/ai/overview?days=${days}`),
+  aiByStudio: (days = 30) => http<{ data: AiStudioUsage[] }>(`/api/platform/ai/by-studio?days=${days}`),
+  aiByModel: (days = 30) => http<{ data: AiModelUsage[] }>(`/api/platform/ai/by-model?days=${days}`),
+  aiTrend: (days = 30) => http<{ data: AiTrendPoint[] }>(`/api/platform/ai/trend?days=${days}`),
+  aiSettings: () => http<{ data: AiSettings }>('/api/platform/ai/settings'),
 
   /**
    * Which MODEL each tier routes to — separate from aiSettings, which governs
    * how much a studio may spend rather than what it spends it on.
    */
-  aiRouting: () => http<{ data: AiRouting }>('/api/super-admin/ai/routing'),
+  aiRouting: () => http<{ data: AiRouting }>('/api/platform/ai/routing'),
   /**
    * Omit a tier to leave it alone; send null to clear its override and fall
    * back to the deploy's environment variable. Those are different intents.
@@ -306,35 +475,35 @@ export const superAdmin = {
     primary_model?: string | null;
     secondary_model?: string | null;
     fallback_model?: string | null;
-  }) => http<{ data: unknown }>('/api/super-admin/ai/routing', {
+  }) => http<{ data: unknown }>('/api/platform/ai/routing', {
     method: 'PUT', body: JSON.stringify(patch),
   }),
   saveAiSettings: (patch: { enforcement_enabled?: boolean; default_monthly_tokens?: number | null; warn_at_pct?: number }) =>
-    http<{ data: AiSettings; studios_already_over: number | null }>('/api/super-admin/ai/settings', {
+    http<{ data: AiSettings; studios_already_over: number | null }>('/api/platform/ai/settings', {
       method: 'PUT', body: JSON.stringify(patch),
     }),
   saveAiRate: (model: string, body: { provider?: string | null; prompt_per_1k_inr: number; completion_per_1k_inr: number }) =>
-    http<{ data: AiModelRate }>(`/api/super-admin/ai/rates/${encodeURIComponent(model)}`, {
+    http<{ data: AiModelRate }>(`/api/platform/ai/rates/${encodeURIComponent(model)}`, {
       method: 'PUT', body: JSON.stringify(body),
     }),
   setOrgAiLimit: (orgId: string, body: { monthly_tokens: number | null; reason?: string }) =>
-    http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/ai-limit`, {
+    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/ai-limit`, {
       method: 'PUT', body: JSON.stringify(body),
     }),
   clearOrgAiLimit: (orgId: string) =>
-    http<{ data: { cleared: boolean } }>(`/api/super-admin/organizations/${orgId}/ai-limit`, { method: 'DELETE' }),
+    http<{ data: { cleared: boolean } }>(`/api/platform/organizations/${orgId}/ai-limit`, { method: 'DELETE' }),
 
   // ── Support Centre (platform side) ──────────────────────────────────────
-  supportOverview: () => http<{ data: SupportOverview }>('/api/super-admin/support/overview'),
+  supportOverview: () => http<{ data: SupportOverview }>('/api/platform/support/overview'),
   supportTickets: (params: { status?: string; priority?: string; category?: string; org_id?: string; unassigned?: string; q?: string; limit?: number } = {}) =>
-    http<{ data: SupportTicket[] }>(`/api/super-admin/support/tickets${qsOf(params)}`),
-  supportTicket: (id: string) => http<{ data: SupportTicket }>(`/api/super-admin/support/tickets/${id}`),
+    http<{ data: SupportTicket[] }>(`/api/platform/support/tickets${qsOf(params)}`),
+  supportTicket: (id: string) => http<{ data: SupportTicket }>(`/api/platform/support/tickets/${id}`),
   replyToTicket: (id: string, body: string, isInternal = false) =>
-    http<{ data: TicketMessage }>(`/api/super-admin/support/tickets/${id}/messages`, {
+    http<{ data: TicketMessage }>(`/api/platform/support/tickets/${id}/messages`, {
       method: 'POST', body: JSON.stringify({ body, is_internal: isInternal }),
     }),
   updateTicket: (id: string, patch: { status?: TicketStatus; priority?: TicketPriority; assigned_to?: string | null }) =>
-    http<{ data: SupportTicket }>(`/api/super-admin/support/tickets/${id}`, {
+    http<{ data: SupportTicket }>(`/api/platform/support/tickets/${id}`, {
       method: 'PATCH', body: JSON.stringify(patch),
     }),
 
@@ -342,14 +511,14 @@ export const superAdmin = {
   // Every response carries `measuring_since`: objects written before the
   // ledger existed have no row, so these are bytes ACCOUNTED, not bytes in
   // the bucket. The UI is expected to say so.
-  storageOverview: (days = 30) => http<{ data: StorageOverview }>(`/api/super-admin/storage/overview?days=${days}`),
+  storageOverview: (days = 30) => http<{ data: StorageOverview }>(`/api/platform/storage/overview?days=${days}`),
   storageByStudio: () =>
-    http<{ data: StorageStudio[]; meta: { measuring_since: string | null } }>('/api/super-admin/storage/by-studio'),
-  storageTrend: (days = 30) => http<{ data: StorageTrendPoint[] }>(`/api/super-admin/storage/trend?days=${days}`),
-  storageLargest: (limit = 25) => http<{ data: StorageObject[] }>(`/api/super-admin/storage/largest?limit=${limit}`),
+    http<{ data: StorageStudio[]; meta: { measuring_since: string | null } }>('/api/platform/storage/by-studio'),
+  storageTrend: (days = 30) => http<{ data: StorageTrendPoint[] }>(`/api/platform/storage/trend?days=${days}`),
+  storageLargest: (limit = 25) => http<{ data: StorageObject[] }>(`/api/platform/storage/largest?limit=${limit}`),
 
   impersonate: (orgId: string, opts: { userId?: string; mode?: 'read_only' | 'full' } = {}) =>
-    http<{ data: ImpersonationSession }>(`/api/super-admin/organizations/${orgId}/impersonate`, {
+    http<{ data: ImpersonationSession }>(`/api/platform/organizations/${orgId}/impersonate`, {
       method: 'POST',
       body: JSON.stringify({
         ...(opts.userId ? { user_id: opts.userId } : {}),
@@ -358,16 +527,16 @@ export const superAdmin = {
     }),
   // ── Subscription / billing management ──
   subscriptions: () =>
-    http<{ data: { studios: SubStudio[]; kpis: SubKpis } }>('/api/super-admin/subscriptions'),
+    http<{ data: { studios: SubStudio[]; kpis: SubKpis } }>('/api/platform/subscriptions'),
   /** SaaS run-rate metrics: MRR/ARR, plan mix, conversion, founders, trends. */
   subscriptionMetrics: () =>
-    http<{ data: SubscriptionMetrics }>('/api/super-admin/subscription-metrics'),
+    http<{ data: SubscriptionMetrics }>('/api/platform/subscription-metrics'),
 
   // ── Coupons ──────────────────────────────────────────────────────────────
-  listCoupons: () => http<{ data: Coupon[] }>('/api/super-admin/coupons'),
+  listCoupons: () => http<{ data: Coupon[] }>('/api/platform/coupons'),
   couponRedemptions: (id: string) =>
     http<{ data: { id: string; organization_name: string | null; gross_amount_inr: number; discount_inr: number; net_amount_inr: number; redeemed_at: string }[] }>(
-      `/api/super-admin/coupons/${id}/redemptions`),
+      `/api/platform/coupons/${id}/redemptions`),
   createCoupon: (data: {
     code: string; description?: string;
     discount_type: 'percent' | 'fixed'; discount_value: number;
@@ -375,32 +544,32 @@ export const superAdmin = {
     applies_to_plans?: string[] | null;
     max_redemptions?: number | null; max_per_org?: number | null;
     valid_from?: string | null; valid_until?: string | null;
-  }) => http<{ data: Coupon }>('/api/super-admin/coupons', { method: 'POST', body: JSON.stringify(data) }),
+  }) => http<{ data: Coupon }>('/api/platform/coupons', { method: 'POST', body: JSON.stringify(data) }),
   updateCoupon: (id: string, data: Partial<Pick<Coupon, 'description' | 'is_active' | 'max_redemptions' | 'max_per_org' | 'valid_from' | 'valid_until' | 'min_amount_inr' | 'max_discount_inr'>>) =>
-    http<{ data: Coupon }>(`/api/super-admin/coupons/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    http<{ data: Coupon }>(`/api/platform/coupons/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   /** Only possible while unused — a redeemed coupon is deactivated, not deleted. */
   deleteCoupon: (id: string) =>
-    http<{ data: { deleted: boolean } }>(`/api/super-admin/coupons/${id}`, { method: 'DELETE' }),
+    http<{ data: { deleted: boolean } }>(`/api/platform/coupons/${id}`, { method: 'DELETE' }),
   getSubscription: (orgId: string) =>
-    http<{ data: SubDetail }>(`/api/super-admin/organizations/${orgId}/subscription`),
+    http<{ data: SubDetail }>(`/api/platform/organizations/${orgId}/subscription`),
   activateSubscription: (orgId: string, body: { plan_code: string; amount_inr?: number; method?: string; reference?: string; notes?: string; period_months?: number }) =>
-    http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/activate`, { method: 'POST', body: JSON.stringify(body) }),
+    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/activate`, { method: 'POST', body: JSON.stringify(body) }),
   freezeSubscription: (orgId: string, reason?: string) =>
-    http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/freeze`, { method: 'POST', body: JSON.stringify({ reason }) }),
+    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/freeze`, { method: 'POST', body: JSON.stringify({ reason }) }),
   reactivateSubscription: (orgId: string) =>
-    http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/reactivate`, { method: 'POST', body: JSON.stringify({}) }),
+    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/reactivate`, { method: 'POST', body: JSON.stringify({}) }),
   cancelSubscription: (orgId: string) =>
-    http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/cancel`, { method: 'POST', body: JSON.stringify({}) }),
+    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/cancel`, { method: 'POST', body: JSON.stringify({}) }),
   changeExpiry: (orgId: string, body: { trial_ends_at?: string | null; current_period_end?: string | null }) =>
-    http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/expiry`, { method: 'PATCH', body: JSON.stringify(body) }),
+    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/expiry`, { method: 'PATCH', body: JSON.stringify(body) }),
   grantFounder: (orgId: string) =>
-    http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/founder`, { method: 'POST', body: JSON.stringify({}) }),
+    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/founder`, { method: 'POST', body: JSON.stringify({}) }),
   // ── Subscription self-checkout queue (the command centre) ───────────────
   platformPaymentSettings: () =>
     http<{ data: PlatformPaymentSettings | null; configured: boolean; enabled: boolean }>(
-      '/api/super-admin/platform-payment-settings'),
+      '/api/platform/platform-payment-settings'),
   savePlatformPaymentSettings: (body: PlatformPaymentSettingsInput) =>
-    http<{ data: PlatformPaymentSettings }>('/api/super-admin/platform-payment-settings', {
+    http<{ data: PlatformPaymentSettings }>('/api/platform/platform-payment-settings', {
       method: 'PUT', body: JSON.stringify(body),
     }),
   subscriptionRequests: (params: { status?: string; q?: string; limit?: number; offset?: number } = {}) => {
@@ -410,27 +579,27 @@ export const superAdmin = {
     return http<{
       data: SubCheckoutQueueRow[]; total: number; stats: SubCheckoutStats;
       reject_reasons: Record<UpiRejectReason, string>;
-    }>(`/api/super-admin/subscription-requests${q ? `?${q}` : ''}`);
+    }>(`/api/platform/subscription-requests${q ? `?${q}` : ''}`);
   },
   approveSubscriptionRequest: (id: string) =>
     http<{ data: { request: SubCheckoutQueueRow; activation: unknown } }>(
-      `/api/super-admin/subscription-requests/${id}/approve`, { method: 'POST' }),
+      `/api/platform/subscription-requests/${id}/approve`, { method: 'POST' }),
   rejectSubscriptionRequest: (id: string, reason: UpiRejectReason, note?: string) =>
     http<{ data: { reason: UpiRejectReason; note: string | null } }>(
-      `/api/super-admin/subscription-requests/${id}/reject`, {
+      `/api/platform/subscription-requests/${id}/reject`, {
         method: 'POST', body: JSON.stringify({ reason, note }),
       }),
 
   refundPayment: (paymentId: string) =>
-    http<{ data: unknown }>(`/api/super-admin/subscription-payments/${paymentId}/refund`, { method: 'POST', body: JSON.stringify({}) }),
+    http<{ data: unknown }>(`/api/platform/subscription-payments/${paymentId}/refund`, { method: 'POST', body: JSON.stringify({}) }),
   /** Price a studio's requested plan change before executing it (proration credit, amount due). */
   changeQuote: (orgId: string, planCode: string) =>
-    http<{ data: PlanChangeQuote }>(`/api/super-admin/organizations/${orgId}/subscription/change-quote?plan_code=${encodeURIComponent(planCode)}`),
+    http<{ data: PlanChangeQuote }>(`/api/platform/organizations/${orgId}/subscription/change-quote?plan_code=${encodeURIComponent(planCode)}`),
   /** Execute a studio's requested upgrade/renewal once payment is confirmed — credits unused
    *  time on the current plan and restarts the period from now (never use activateSubscription
    *  for this: it stacks time on top instead of crediting it, double-granting days). */
   changePlan: (orgId: string, body: { plan_code: string; amount_inr?: number; method?: string; reference?: string; notes?: string }) =>
-    http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/change`, { method: 'POST', body: JSON.stringify(body) }),
+    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/change`, { method: 'POST', body: JSON.stringify(body) }),
 };
 
 // ── Settings ──────────────────────────────────────────────
@@ -506,6 +675,52 @@ export const invitations = {
     http<{ data: { activated: boolean; email: string } }>(
       `/api/invitations/${encodeURIComponent(token)}/accept`,
       { method: 'POST', body: JSON.stringify({ password }) }
+    ),
+};
+
+// ── The signed-in member's own data ───────────────────────
+// Every one of these is scoped server-side to req.user.pt_client_id — no
+// route takes an id, so there is nothing here for a caller to tamper with.
+// See src/modules/client-portal on the backend.
+export const me = {
+  profile: () => http<{ data: MeProfile }>('/api/me/profile'),
+  membership: () => http<{ data: MeMembership }>('/api/me/membership'),
+  payments: () => http<{ data: MePayment[] }>('/api/me/payments'),
+  attendance: () => http<{ data: MeAttendance[] }>('/api/me/attendance'),
+  measurements: () => http<{ data: MeMeasurement[] }>('/api/me/measurements'),
+};
+
+// ── Client activation (public) ────────────────────────────
+// Used by a CLIENT who has no session yet — the token in the URL is the only
+// credential, so nothing here sends an Authorization header. Sibling of
+// `invitations` above, which does the same for studio owners.
+export const clientActivation = {
+  preview: (token: string) =>
+    http<{ data: ClientActivationPreview }>(`/api/client-activation/${encodeURIComponent(token)}`),
+  accept: (token: string, password: string) =>
+    http<{ data: { activated: boolean; email: string } }>(
+      `/api/client-activation/${encodeURIComponent(token)}/accept`,
+      { method: 'POST', body: JSON.stringify({ password }) }
+    ),
+};
+
+// ── Client logins (trainer side) ──────────────────────────
+// Staff only and org-scoped on the server; a client id from here is checked
+// against the caller's studio before anything is read or written.
+export const clientLogin = {
+  status: (clientId: string) =>
+    http<{ data: ClientLoginStatus }>(`/api/client-login/${encodeURIComponent(clientId)}`),
+  activate: (clientId: string) =>
+    http<{ data: ClientLoginStatus; email_sent: boolean }>(
+      `/api/client-login/${encodeURIComponent(clientId)}/activate`, { method: 'POST', body: '{}' }
+    ),
+  resend: (clientId: string) =>
+    http<{ data: ClientLoginStatus; email_sent: boolean }>(
+      `/api/client-login/${encodeURIComponent(clientId)}/resend`, { method: 'POST', body: '{}' }
+    ),
+  deactivate: (clientId: string) =>
+    http<{ data: ClientLoginStatus }>(
+      `/api/client-login/${encodeURIComponent(clientId)}/deactivate`, { method: 'POST', body: '{}' }
     ),
 };
 

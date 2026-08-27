@@ -1,12 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { Home, Users, ScanFace, Dumbbell, Bot, LayoutGrid, Layers, CreditCard, Activity } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Home, Users, ScanFace, Dumbbell, Bot } from 'lucide-react';
 import { m } from 'framer-motion';
-import { useAuth } from '@/lib/auth-context';
-import { getImpersonation } from '@/lib/http';
-import { normaliseRole, isVisibleForFeature } from '@/lib/nav-config';
+import { isVisibleForFeature } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
 import { useNavScroll } from '@/contexts/nav-scroll-context';
 
@@ -29,22 +27,17 @@ const BASE_ITEMS = [
   { href: '/checkin/qr-scanner', icon: ScanFace, label: 'Check-in', feature: 'attendance' },
 ];
 
-// Platform operators get control-plane tabs instead of studio tabs. These all
-// share the /platform pathname and differ only by ?tab=, so each carries an
-// explicit `tab` id — pathname alone can't tell Studios from Finance apart.
-const PLATFORM_ITEMS = [
-  { href: '/platform',              tab: 'overview', icon: LayoutGrid, label: 'Overview'  },
-  { href: '/platform?tab=studios',  tab: 'studios',  icon: Layers,     label: 'Studios'   },
-  { href: '/platform?tab=finance',  tab: 'finance',  icon: CreditCard, label: 'Finance'   },
-  { href: '/platform?tab=activity', tab: 'activity', icon: Activity,   label: 'Activity'  },
-];
-
-// Mirrors normalizeTab() in app/platform/page.tsx — legacy ?tab=billing/coupons
-// deep-links still land on the Finance tab.
-function normalizePlatformTab(raw: string | null): string {
-  if (raw === 'billing' || raw === 'coupons') return 'finance';
-  return raw ?? 'overview';
-}
+// This bar used to swap in four control-plane tabs — Overview, Studios,
+// Finance, Activity, all pointing at /platform — whenever the signed-in
+// account was a super_admin. That is gone, along with the rest of the mixing:
+// the Command Center is its own portal now, with its own shell and its own
+// navigation, served on its own host. This component belongs to the studio
+// app's chrome, so it shows the studio's tabs and only those.
+//
+// An operator who is in the studio app — supporting a customer through
+// impersonation, or with the org-switcher pinned to one tenant — is looking at
+// a studio, and the studio's navigation is the correct navigation to give
+// them. The console is a hostname away, not a tab away.
 
 interface MobileBottomNavProps {
   sidebarOpen?: boolean;
@@ -55,25 +48,19 @@ const SPRING = { type: 'spring', stiffness: 520, damping: 38, mass: 0.7 } as con
 
 export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNavProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentPlatformTab = normalizePlatformTab(searchParams.get('tab'));
-  const { user } = useAuth();
-  const role             = normaliseRole(user?.role);
-  // While impersonating, the operator acts as the studio admin — show studio
-  // tabs, not the platform control plane.
-  const isSuperAdmin     = role === 'super_admin' && !getImpersonation();
   const { features }     = useFeatures();
-  // Platform tabs are control-plane surfaces and are never tenant-gated.
-  const items            = isSuperAdmin
-    ? PLATFORM_ITEMS
-    : BASE_ITEMS.filter(i => isVisibleForFeature(i, features));
+  const items            = BASE_ITEMS.filter(i => isVisibleForFeature(i, features));
 
   const { reducedMotion } = useNavScroll();
   const dur = reducedMotion ? 0 : 0.28;
 
   return (
     <m.nav
-      className="fixed bottom-0 left-0 right-0 z-40 lg:hidden"
+      // `bottom` comes from .mobile-bottom-nav rather than Tailwind's
+      // bottom-0, so exactly one rule in the app decides where this bar sits.
+      // That rule is `bottom: 0`. See BOTTOM-NAV.md for the two attempts at
+      // making it cleverer than that, and why both were wrong.
+      className="mobile-bottom-nav fixed left-0 right-0 z-40 lg:hidden"
       data-no-pull-refresh
       style={{
         background: 'rgba(15,23,42,0.94)',
@@ -81,7 +68,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
         WebkitBackdropFilter: 'blur(24px) saturate(180%)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         willChange: 'transform',
-        boxShadow: '0 -12px 32px rgba(0,0,0,0.28)',
+        boxShadow: '0 -1px 16px rgba(0,0,0,0.16)',
       }}
       animate={{ y: sidebarOpen ? '100%' : 0 }}
       transition={{ duration: dur, ease: EASE }}
@@ -92,7 +79,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
       <div
         className="absolute top-0 left-0 right-0 h-px"
         style={{
-          background: 'linear-gradient(90deg, transparent 0%, rgba(127,180,255,0.4) 25%, rgba(127,180,255,0.65) 50%, rgba(127,180,255,0.4) 75%, transparent 100%)',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(127,180,255,0.18) 30%, rgba(127,180,255,0.30) 50%, rgba(127,180,255,0.18) 70%, transparent 100%)',
         }}
       />
 
@@ -102,13 +89,9 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
       <div className="flex items-stretch" style={{ height: 'var(--bottom-nav-h, 52px)' }}>
         {items.map((item) => {
           const { href, icon: Icon, label } = item;
-          // Platform tabs all share the /platform pathname and differ only by
-          // ?tab=, so those items match on the normalised tab id instead.
-          const isActive = 'tab' in item
-            ? pathname === '/platform' && currentPlatformTab === item.tab
-            : href === '/'
-              ? pathname === '/'
-              : pathname === href || pathname.startsWith(href + '/');
+          const isActive = href === '/'
+            ? pathname === '/'
+            : pathname === href || pathname.startsWith(href + '/');
 
           return (
             <Link
@@ -116,7 +99,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
               href={href}
               className="relative flex flex-1 flex-col items-center justify-center overflow-hidden focus-visible:outline-none"
               aria-current={isActive ? 'page' : undefined}
-              style={{ gap: 2, minHeight: 44 }}
+              style={{ gap: 1, minHeight: 44 }}
             >
               {/* Focus ring for keyboard nav */}
               <span
@@ -130,11 +113,9 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                   layoutId="bottom-nav-active"
                   className="absolute inset-x-1.5 rounded-xl pointer-events-none"
                   style={{
-                    top:    4,
-                    bottom: 4,
-                    background: 'linear-gradient(135deg, rgba(127,180,255,0.22) 0%, rgba(0,103,224,0.14) 100%)',
-                    border: '1px solid rgba(127,180,255,0.28)',
-                    boxShadow: '0 2px 14px rgba(127,180,255,0.18), inset 0 1px 0 rgba(255,255,255,0.07)',
+                    top:    3,
+                    bottom: 3,
+                    background: 'rgba(127,180,255,0.13)',
                   }}
                   transition={SPRING}
                 />
@@ -142,17 +123,16 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
 
               {/* Icon */}
               <m.span
-                className="relative z-10 flex h-[22px] w-[22px] items-center justify-center"
+                className="relative z-10 flex h-[20px] w-[20px] items-center justify-center"
                 whileTap={reducedMotion ? {} : { scale: 0.76 }}
                 transition={{ type: 'spring', stiffness: 700, damping: 22 }}
               >
                 <Icon
-                  size={18}
+                  size={17}
                   strokeWidth={isActive ? 2.3 : 1.7}
                   style={{
                     color: isActive ? '#7fb4ff' : 'rgba(255,255,255,0.40)',
-                    filter: isActive ? 'drop-shadow(0 0 7px rgba(127,180,255,0.55))' : 'none',
-                    transition: 'color 200ms ease, filter 200ms ease',
+                    transition: 'color 200ms ease',
                   }}
                   aria-hidden="true"
                 />

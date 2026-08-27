@@ -21,10 +21,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Search, X } from 'lucide-react';
+import { m } from 'framer-motion';
+import { Dumbbell, Loader2, Search, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { WorkoutPlan } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
+import { assignWorkoutPlan } from '@/lib/workoutAssign';
 
 export interface ClientOption { id: string; name: string; }
 
@@ -65,6 +68,63 @@ export function clamp(raw: string, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 
+/**
+ * The programme goal a screening answer implies.
+ *
+ * Two vocabularies meet here. The Goal Assessment screening stores one of
+ * fourteen `goal_type` values (migration 055); a programme has five. Only the
+ * pairs that mean the same thing are mapped:
+ *
+ *   fat_loss      → Weight Loss    the same goal under two names
+ *   marathon_prep → Endurance      marathon preparation IS endurance work
+ *
+ * The rest — body_recomposition, strength_gain, powerlifting, mobility,
+ * wedding_transformation, medical_fitness, senior_fitness,
+ * athletic_performance, custom — have no honest equivalent among the five, so
+ * they map to nothing and the trainer's own selection stands. Guessing here
+ * would put a goal on the programme that nobody chose.
+ */
+const SCREENING_GOALS: Record<string, string> = {
+  fat_loss: 'weight_loss',
+  marathon_prep: 'endurance',
+};
+
+/**
+ * Match a stored goal to one of the five programme goals.
+ *
+ * Handles both sources: the screening's `goal_type` and `pt_clients.goal`,
+ * which is free TEXT (migration 050) filled by the onboarding wizard and so
+ * arrives as "muscle_gain", "Muscle Gain" or "muscle gain". Anything that does
+ * not map returns undefined and the dialog leaves the current selection alone.
+ */
+export function goalFromClient(raw: unknown): string | undefined {
+  const key = String(raw ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  if (!key) return undefined;
+  return PROGRAMME_GOALS.find((g) => g.value === key)?.value ?? SCREENING_GOALS[key];
+}
+
+/**
+ * Sessions per week, as the client is actually enrolled.
+ *
+ * `pt_clients.sessions_per_week` is the PT Enrollment field (migration 053) —
+ * a real SMALLINT, and the number the studio sold. `frequency` is the older
+ * free-TEXT answer from the onboarding wizard ("3", "3x/week", "4 days",
+ * "twice weekly") and is read only when the enrolment column is empty, so a
+ * client who predates 053 still fills the field.
+ *
+ * Either way the first integer is the only part that can be read reliably, and
+ * it is used only when it lands inside the range the field accepts — "twice
+ * weekly" yields nothing, so the default stands rather than a number being
+ * invented for it.
+ */
+export function perWeekFromClient(raw: unknown): number | undefined {
+  const match = String(raw ?? '').match(/\d+/);
+  if (!match) return undefined;
+  const n = Number(match[0]);
+  if (!Number.isFinite(n) || n < PER_WEEK_MIN || n > PER_WEEK_MAX) return undefined;
+  return n;
+}
+
 export interface NewProgrammeDialogProps {
   open: boolean;
   onClose: () => void;
@@ -81,6 +141,9 @@ export default function NewProgrammeDialog({
   const { toast } = useToast();
 
   const [clients, setClients] = useState<ClientOption[]>([]);
+  // Escape, focus trap and focus restore. This dialog had none of the three:
+  // it could only be dismissed with a mouse, and Tab left it immediately.
+  const dialogRef = useDialogA11y({ open: true, onClose });
   const [search, setSearch] = useState('');
   const [clientId, setClientId] = useState<string | null>(presetClientId ?? null);
   const [name, setName] = useState('');
@@ -90,6 +153,19 @@ export default function NewProgrammeDialog({
   const [weeks, setWeeks] = useState('4');
   const [perWeek, setPerWeek] = useState('3');
   const [saving, setSaving] = useState(false);
+  /**
+   * Which fields the trainer has typed in themselves.
+   *
+   * Picking a client fills the rest of the form from that client's record —
+   * but a trainer who has already named the programme and then changes their
+   * mind about the client must not watch their own typing disappear. Only
+   * untouched fields are filled.
+   */
+  const [touched, setTouched] = useState<Record<'name' | 'goal' | 'weeks' | 'perWeek', boolean>>({
+    name: false, goal: false, weeks: false, perWeek: false,
+  });
+  const touch = (k: 'name' | 'goal' | 'weeks' | 'perWeek') =>
+    setTouched((t) => (t[k] ? t : { ...t, [k]: true }));
 
   useEffect(() => {
     if (!open) return;
@@ -101,6 +177,57 @@ export default function NewProgrammeDialog({
       })
       .catch(() => setClients([]));
   }, [open, presetClientId]);
+
+  /**
+   * Fill the form from what is already known about the chosen client.
+   *
+   * Two reads, both of endpoints that already exist:
+   *
+   *   · the client row, for the sessions per week they are enrolled at
+   *     (pt_clients.sessions_per_week, the PT Enrollment field);
+   *   · their goal-setting screening, for the goal.
+   *
+   * The programme NAME is deliberately not filled. What kind of plan this is
+   * — Push/Pull/Legs, Upper/Lower, a deload block — is the trainer's call and
+   * nothing in the client's record knows it, so the field is left empty for
+   * them to write.
+   *
+   * Nothing else is invented either: a field is filled only when the record
+   * actually answers it, and the weeks default of 4 is the same default the
+   * form already opened with.
+   */
+  useEffect(() => {
+    if (!open || !clientId) return;
+    let cancelled = false;
+
+    Promise.all([
+      api.pt.client(clientId).catch(() => null),
+      // The screening is the goal's source when it has been done. A client
+      // who has never been screened simply does not fill this field.
+      api.progress.goals.list({ client_id: clientId }).catch(() => null),
+    ])
+      .then(([clientRes, goalRes]) => {
+        if (cancelled) return;
+        const row = ((clientRes as { data?: unknown } | null)?.data ?? {}) as Record<string, unknown>;
+        // Ordered is_active DESC, created_at DESC server-side, so the first
+        // row is the screening that is still in force.
+        const screening = (((goalRes as { data?: unknown[] } | null)?.data ?? [])[0] ?? {}) as Record<string, unknown>;
+
+        const matchedGoal = goalFromClient(screening.goal_type) ?? goalFromClient(row.goal);
+        const matchedPerWeek = perWeekFromClient(row.sessions_per_week)
+          ?? perWeekFromClient(row.frequency);
+
+        setTouched((t) => {
+          if (!t.goal && matchedGoal) setGoal(matchedGoal);
+          if (!t.perWeek && matchedPerWeek) setPerWeek(String(matchedPerWeek));
+          if (!t.weeks) setWeeks('4');
+          return t;
+        });
+      })
+      .catch(() => { /* the form keeps its defaults; nothing is claimed */ });
+
+    return () => { cancelled = true; };
+  }, [open, clientId]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -127,11 +254,17 @@ export default function NewProgrammeDialog({
 
       // Assign before navigating. A failure here must not swallow the plan —
       // it exists either way, so report and continue rather than roll back.
-      try {
-        await api.workouts.assign({ workout_plan_id: plan.id, client_id: clientId });
-      } catch {
-        toast.error('Programme created, but could not assign it to the client');
-      }
+      // Shared with the Workout Plans page's own "Assign" button so a
+      // PARQ_BLOCKED client gets the same persistent, actionable toast here
+      // that it gets there, rather than one generic line that can vanish
+      // before it's read on the way to the builder.
+      const clientName = clients.find((c) => c.id === clientId)?.name ?? 'the client';
+      await assignWorkoutPlan(
+        plan,
+        { id: clientId, name: clientName },
+        toast,
+        (cid) => router.push(`/pt-os/parq?client_id=${cid}`),
+      );
 
       onCreated?.(plan);
       router.push(`/pt-os/clients/${clientId}/training/builder?plan=${plan.id}`);
@@ -143,139 +276,216 @@ export default function NewProgrammeDialog({
   };
 
   return (
-    <div
+    <m.div
       // z-[120], not z-50. The AI assistant's floating button is z-100 and
       // fixed to the bottom-right, so at z-50 this sheet opened UNDERNEATH it
       // and the FAB sat on top of the "Create and add exercises" button —
       // covering the sheet's primary action on a 390px screen. Above the FAB
       // and the nav, below the toasts (z-9999) and the impersonation banner
       // (z-10000), both of which should outrank a dialog.
-      className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center"
-      style={{ background: 'rgba(15,23,42,0.45)' }}
-      onClick={onClose}
-      role="presentation"
+      data-no-pull-refresh
+      className="fixed inset-0 z-[120] flex items-end justify-center p-0 sm:items-center sm:p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.18 }}
     >
+      {/* The backdrop is its own element, not the wrapper.
+          `aria-hidden` because it is a mouse affordance only: click-outside to
+          dismiss. Giving it a key handler would add a tab stop that announces
+          nothing and does nothing — Escape is the keyboard equivalent, and
+          useDialogA11y provides it. */}
       <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          background: 'var(--bg-overlay)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+        }}
+        onClick={onClose}
+      />
+
+      <m.div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label="New programme"
-        onClick={(e) => e.stopPropagation()}
-        className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-[24px] p-5 sm:rounded-[24px]"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+        aria-labelledby="new-programme-title"
+        className="relative flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl"
+        initial={{ y: 24, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          // --bg-elevated, NOT --bg-card. This is the bug that made the sheet
+          // look transparent: --bg-card is rgba(255,255,255,0.8) in light and
+          // rgba(30,41,59,0.7) in dark — a frosted-glass CARD token, which only
+          // reads as glass when something behind it is blurred. Used raw on a
+          // floating panel with no backdrop-filter, the page simply showed
+          // through it at 20-30%. --bg-elevated is the opaque surface token
+          // (#FFFFFF / #1E293B) and is what every other dialog in the app uses.
+          background: 'var(--bg-elevated)',
+          border: '1px solid var(--border)',
+          boxShadow: '0 24px 80px rgba(15,23,42,0.28)',
+        }}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-[17px] font-[800]" style={{ color: 'var(--text-primary)' }}>
-            New programme
-          </h2>
+        {/* Grab handle, mobile only — the affordance that says this sheet can
+            be dismissed downward, and the visual cue that it is a sheet rather
+            than a page. */}
+        <div className="flex justify-center pt-3 sm:hidden" aria-hidden="true">
+          <div className="h-1 w-9 rounded-full" style={{ background: 'var(--border)' }} />
+        </div>
+
+        {/* Header — outside the scroll area, so the title stays put while a
+            long client list moves underneath it. */}
+        <div
+          className="flex items-start justify-between gap-3 px-5 pb-4 pt-4 sm:pt-5"
+          style={{ borderBottom: '1px solid var(--border)' }}
+        >
+          <div className="flex min-w-0 items-center gap-3">
+            <span
+              className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-[12px]"
+              style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}
+            >
+              <Dumbbell size={18} />
+            </span>
+            <div className="min-w-0">
+              <h2
+                id="new-programme-title"
+                className="truncate text-[17px] font-[800] tracking-[-0.01em]"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                New programme
+              </h2>
+              <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                Name it and set its shape — exercises come next.
+              </p>
+            </div>
+          </div>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="flex h-[44px] w-[44px] items-center justify-center rounded-[12px]"
+            className="-mr-1.5 -mt-1 flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-[12px] transition-colors"
             style={{ color: 'var(--text-muted)' }}
           >
             <X size={18} />
           </button>
         </div>
 
-        <Field label="Programme name">
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoFocus
-            placeholder="e.g. Upper / Lower Split"
-            className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
-            style={inputStyle}
-          />
-        </Field>
-
-        <Field label="Goal">
-          <div className="flex flex-wrap gap-1.5">
-            {PROGRAMME_GOALS.map((g) => {
-              const active = g.value === goal;
-              return (
-                <button
-                  key={g.value}
-                  onClick={() => setGoal(g.value)}
-                  className="h-[44px] rounded-[12px] px-3 text-[12.5px] font-[700]"
-                  style={{
-                    background: active ? 'var(--brand)' : 'var(--bg-subtle)',
-                    color: active ? '#fff' : 'var(--text-muted)',
-                  }}
-                >
-                  {g.label}
-                </button>
-              );
-            })}
-          </div>
-        </Field>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Weeks">
+        {/* Body — the only part that scrolls. */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+          {!presetClientId && (
+            <Field label="Client">
+              <div className="relative mb-2">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  autoFocus
+                  placeholder="Search clients…"
+                  className="h-[44px] w-full rounded-[12px] pl-9 pr-3 text-[13.5px] outline-none"
+                  style={inputStyle}
+                />
+              </div>
+              <div
+                className="max-h-44 overflow-y-auto overscroll-contain rounded-[12px]"
+                style={{ border: '1px solid var(--border)', background: 'var(--bg-subtle)' }}
+              >
+                {filtered.length === 0 ? (
+                  <p className="p-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>No clients found.</p>
+                ) : filtered.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setClientId(c.id)}
+                    aria-pressed={c.id === clientId}
+                    className="flex h-[44px] w-full items-center px-3 text-left text-[13.5px] font-[650]"
+                    style={{
+                      background: c.id === clientId ? 'var(--bg-elevated)' : 'transparent',
+                      color: c.id === clientId ? 'var(--brand)' : 'var(--text-primary)',
+                    }}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </Field>
+          )}
+          <Field label="Programme name">
             <input
-              type="number" min={WEEKS_MIN} max={WEEKS_MAX} value={weeks} inputMode="numeric"
-              onChange={(e) => setWeeks(e.target.value)}
-              onBlur={() => setWeeks(String(clamp(weeks, WEEKS_MIN, WEEKS_MAX)))}
-              className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
+              value={name}
+              onChange={(e) => { setName(e.target.value); touch('name'); }}
+              placeholder="e.g. Upper / Lower Split"
+              className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none transition-shadow focus:ring-2"
               style={inputStyle}
             />
           </Field>
-          <Field label="Sessions / week">
-            <input
-              type="number" min={PER_WEEK_MIN} max={PER_WEEK_MAX} value={perWeek} inputMode="numeric"
-              onChange={(e) => setPerWeek(e.target.value)}
-              onBlur={() => setPerWeek(String(clamp(perWeek, PER_WEEK_MIN, PER_WEEK_MAX)))}
-              className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
-              style={inputStyle}
-            />
-          </Field>
-        </div>
 
-        {!presetClientId && (
-          <Field label="Client">
-            <div className="relative mb-2">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+          <Field label="Goal">
+            <div className="flex flex-wrap gap-1.5">
+              {PROGRAMME_GOALS.map((g) => {
+                const active = g.value === goal;
+                return (
+                  <button
+                    key={g.value}
+                    onClick={() => { setGoal(g.value); touch('goal'); }}
+                    aria-pressed={active}
+                    className="h-[44px] rounded-[12px] px-3 text-[12.5px] font-[700] transition-transform active:scale-95"
+                    style={{
+                      background: active ? 'var(--brand)' : 'var(--bg-subtle)',
+                      color: active ? '#fff' : 'var(--text-muted)',
+                      border: `1px solid ${active ? 'transparent' : 'var(--border)'}`,
+                    }}
+                  >
+                    {g.label}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Weeks">
               <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search clients…"
-                className="h-[44px] w-full rounded-[12px] pl-9 pr-3 text-[13.5px] outline-none"
+                type="number" min={WEEKS_MIN} max={WEEKS_MAX} value={weeks} inputMode="numeric"
+                onChange={(e) => { setWeeks(e.target.value); touch('weeks'); }}
+                onBlur={() => setWeeks(String(clamp(weeks, WEEKS_MIN, WEEKS_MAX)))}
+                className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
                 style={inputStyle}
               />
-            </div>
-            <div className="max-h-44 overflow-y-auto rounded-[12px]" style={{ border: '1px solid var(--border)' }}>
-              {filtered.length === 0 ? (
-                <p className="p-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>No clients found.</p>
-              ) : filtered.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => setClientId(c.id)}
-                  className="flex h-[44px] w-full items-center px-3 text-left text-[13.5px] font-[650]"
-                  style={{
-                    background: c.id === clientId ? 'var(--bg-subtle)' : 'transparent',
-                    color: c.id === clientId ? 'var(--brand)' : 'var(--text-primary)',
-                  }}
-                >
-                  {c.name}
-                </button>
-              ))}
-            </div>
-          </Field>
-        )}
+            </Field>
+            <Field label="Sessions / week">
+              <input
+                type="number" min={PER_WEEK_MIN} max={PER_WEEK_MAX} value={perWeek} inputMode="numeric"
+                onChange={(e) => { setPerWeek(e.target.value); touch('perWeek'); }}
+                onBlur={() => setPerWeek(String(clamp(perWeek, PER_WEEK_MIN, PER_WEEK_MAX)))}
+                className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
+                style={inputStyle}
+              />
+            </Field>
+          </div>
 
-        <button
-          onClick={submit}
-          disabled={saving}
-          className="mt-2 flex h-[48px] w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-[700] text-white disabled:opacity-60"
-          style={{ background: 'var(--brand)' }}
+        </div>
+
+        {/* Footer — pinned. The panel used to be one scrolling column, so on a
+            short screen with the client list open the primary action scrolled
+            out of view and the sheet looked like it had no way forward. */}
+        <div
+          className="px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4"
+          style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-elevated)' }}
         >
-          {saving && <Loader2 size={16} className="animate-spin" />}
-          {saving ? 'Creating…' : 'Create and add exercises'}
-        </button>
-        <p className="mt-2 text-center text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-          You will add exercises next, in the builder.
-        </p>
-      </div>
-    </div>
+          <button
+            onClick={submit}
+            disabled={saving}
+            className="flex h-[48px] w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-[700] text-white transition-transform active:scale-[0.98] disabled:opacity-60"
+            style={{ background: 'var(--brand)', boxShadow: '0 8px 24px rgba(2,113,235,0.24)' }}
+          >
+            {saving && <Loader2 size={16} className="animate-spin" />}
+            {saving ? 'Creating…' : 'Create and add exercises'}
+          </button>
+          <p className="mt-2 text-center text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+            You will add exercises next, in the builder.
+          </p>
+        </div>
+      </m.div>
+    </m.div>
   );
 }
 

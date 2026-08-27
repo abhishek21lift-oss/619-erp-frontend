@@ -44,7 +44,7 @@ export type User = {
   email: string;
   role?: Role;
   trainer_id?: string;
-  member_id?: string;
+  pt_client_id?: string;
   is_active?: boolean;
   organization_id?: string | null;
   organization_name?: string | null;
@@ -385,10 +385,19 @@ export type DuesItem = {
   name?: string;
   client_id?: string;
   mobile?: string;
+  photo_url?: string | null;
   balance_amount?: number;
   pt_end_date?: string;
   status?: string;
   trainer_name?: string;
+};
+
+/** Shape of GET /api/reports/dues/summary — aggregates over ALL debtors. */
+export type DuesSummary = {
+  total_outstanding: number;
+  debtor_count: number;
+  high_risk_count: number;
+  medium_risk_count: number;
 };
 
 export type Payment = {
@@ -650,7 +659,8 @@ export type ClearanceApprovalStatus = 'pending' | 'approved' | 'rejected';
 
 export interface MedicalClearance {
   id?: string;
-  form_id?: string;
+  /** Column is `parq_form_id`; the route returns the row with SELECT *. */
+  parq_form_id?: string;
   doctor_name: string;
   hospital: string;
   clearance_date: string;
@@ -672,7 +682,8 @@ export interface ConsentCheckboxes {
 
 export interface ConsentRecord {
   id?: string;
-  form_id?: string;
+  /** Column is `parq_form_id`; the route returns the row with SELECT *. */
+  parq_form_id?: string;
   consent_checkboxes: ConsentCheckboxes;
   client_signature: string;
   trainer_signature: string;
@@ -685,11 +696,13 @@ export type ParqDocumentType = 'medical_report' | 'medical_certificate' | 'other
 
 export interface ParqDocument {
   id: string;
-  form_id?: string;
+  /** Column is `parq_form_id`; the route returns the row with SELECT *. */
+  parq_form_id?: string;
   doc_type: ParqDocumentType;
   file_url: string;
   file_name?: string;
-  uploaded_at?: string;
+  /** Column is `created_at`; there is no `uploaded_at`. */
+  created_at?: string;
 }
 
 export interface ParqGateStatus {
@@ -777,6 +790,11 @@ export interface InformedConsentActivity {
 // Types matching the /api/pt-os/workout-log/* contract exactly. is_pr_* and
 // summary fields are always server-computed — never sent by the client.
 
+/** Distance unit for a logged cardio actual — stored with the value, never converted on read. */
+export type WorkoutDistanceUnit = 'm' | 'km' | 'mile';
+/** Speed unit for a logged cardio actual. */
+export type WorkoutSpeedUnit = 'kmh' | 'mph';
+
 export interface WorkoutSet {
   id: string;
   session_exercise_id: string;
@@ -787,6 +805,18 @@ export interface WorkoutSet {
   rir?: number | null;
   tempo?: string | null;
   rest_seconds?: number | null;
+  /** Cardio actuals — all NULL for strength sets (mirrors cardio_performances). */
+  duration_seconds?: number | null;
+  distance?: number | null;
+  distance_unit?: WorkoutDistanceUnit | null;
+  average_speed?: number | null;
+  speed_unit?: WorkoutSpeedUnit | null;
+  calories_burned?: number | null;
+  average_heart_rate?: number | null;
+  cadence?: number | null;
+  steps_completed?: number | null;
+  floors_completed?: number | null;
+  rounds_completed?: number | null;
   completed: boolean;
   notes?: string | null;
   is_pr_weight: boolean;
@@ -803,6 +833,11 @@ export interface WorkoutSessionExercise {
   exercise_name: string;
   sort_order: number;
   notes?: string | null;
+  /** Which fields this exercise can be logged AS. NULL for ad-hoc rows whose
+   *  library exercise went away — the logger falls back to strength fields. */
+  exercise_type?: string | null;
+  prescription_mode_primary?: string | null;
+  prescription_mode_allowed?: string[] | null;
   created_at: string;
   sets: WorkoutSet[];
 }
@@ -824,15 +859,28 @@ export interface WorkoutSessionSummary {
 
 /** One client on a trainer's roster for a given day. */
 export interface TodayClient {
-  assignment_id: string;
+  /** Null for a client on today's list who has no programme assigned. */
+  assignment_id: string | null;
   client_id: string;
   client_name: string;
   client_photo: string | null;
-  plan_id: string;
-  plan_name: string;
+  plan_id: string | null;
+  plan_name: string | null;
   progress_pct: number | null;
   planned_exercises: number;
-  /** The programme prescribes nothing for this weekday — an answer, not a gap. */
+  /**
+   * Wall-clock 'HH:MM', or null when nobody has said when.
+   *
+   * A booked slot carries a real appointment time and an enrolment carries the
+   * hour the client usually arrives; a programme names a weekday and never an
+   * hour. The roster is ordered by this server-side.
+   */
+  start_time: string | null;
+  /** Why this client is on today's list — the server's answer, not a guess. */
+  source: 'booked' | 'programme' | 'enrolled';
+  /** The programme prescribes nothing for this weekday — an answer, not a gap.
+   *  Only ever true for a `programme` row: a booked client with no plan also
+   *  has zero planned exercises and is emphatically not resting. */
   is_rest_day: boolean;
   session_id: string | null;
   session_status: WorkoutSessionStatus | null;
@@ -1079,6 +1127,25 @@ export interface PtLead {
   updated_at: string;
 }
 
+/**
+ * A row from a studio's own business-write audit trail (GET
+ * /api/pt-os/activity-log) — client/payment/commission writes made by the
+ * studio's own staff. Unlike the platform Audit Centre's AuditEntry, this is
+ * always scoped to one organization, so there is no organization_id/name to
+ * carry.
+ */
+export interface ActivityLogEntry {
+  id: string | number;
+  user_id: string | null;
+  user_name: string | null;
+  action: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  old_data?: unknown;
+  new_data?: unknown;
+  created_at: string;
+}
+
 export interface ClientBirthday {
   id: string;
   name: string;
@@ -1189,6 +1256,7 @@ export interface LibraryExercise {
   contraindications?: string[];
   breathing_tips?: string | null;
   tempo_recommendation?: string | null;
+  progression_notes?: string | null;
   recommended_reps?: string | null;
   recommended_sets?: string | null;
   beginner_notes?: string | null;
@@ -1202,6 +1270,8 @@ export interface LibraryExercise {
   archived_at?: string | null;
   deleted_at?: string | null;
   version?: number;
+  prescription_mode_primary?: string | null;
+  prescription_mode_allowed?: string[];
 
   primary_muscle_id?: string | null;
   equipment_id?: string | null;
@@ -1343,6 +1413,16 @@ export interface WorkoutPlanVersion {
   exercise_count: number;
 }
 
+/** One client's enrolment on a plan, as the plans list returns it. */
+export interface WorkoutPlanAssignment {
+  client_id: string;
+  client_name: string;
+  /** That client's own progress through the plan, 0-100. */
+  progress_pct: number;
+  /** ISO date the client started, used to work out which week they are in. */
+  start_date: string | null;
+}
+
 export interface WorkoutPlan {
   id: string;
   name: string;
@@ -1357,7 +1437,23 @@ export interface WorkoutPlan {
   created_at: string;
   updated_at: string;
   exercise_count: number;
+  /**
+   * How far along the plan is, 0-100.
+   *
+   * Scoped to one client (`?client_id=`), this is that client's own figure.
+   * Studio-wide it is the mean across `assignments` — it used to be the
+   * literal 0 the SQL emitted when no client was named, which is why every
+   * card on the plans screen read "0% complete".
+   */
   progress: number;
+  /**
+   * The clients actually running this plan.
+   *
+   * Filtered server-side to the caller's studio, and for a trainer to their
+   * own clients — so `length` is "assigned clients you can see", not a
+   * studio-wide count. Empty for a plan nobody has been assigned.
+   */
+  assignments: WorkoutPlanAssignment[];
   exercises: WorkoutPlanExercise[];
 
   // ── Weeks and progression (migration 137) ───────────────────────────────
@@ -1367,8 +1463,15 @@ export interface WorkoutPlan {
   progression_every_weeks?: number;
   /** Which week the returned exercises describe. 1 unless ?week= was passed. */
   week?: number;
-  /** 'base' = the stored week 1, 'derived' = week 1 + rule, 'override' = hand-written. */
+  /** 'base' = the stored week 1, 'derived' = an earlier week + rule, 'override' = this week was edited. */
   week_source?: 'base' | 'derived' | 'override';
+  /**
+   * The week these numbers are built from — week 1, or the latest earlier week
+   * the trainer edited. Equal to `week` when this week is itself an edit.
+   */
+  anchor_week?: number;
+  /** Weeks that have been edited, so the builder can mark them. Never includes 1. */
+  override_weeks?: number[];
   /** null when there is no rule to preview. */
   progression_preview?: ProgressionPreview[] | null;
   version?: number;
@@ -1724,6 +1827,45 @@ export type OrgUser = {
 };
 export type OrganizationDetail = Organization & { users: OrgUser[] };
 
+/**
+ * A row in the platform user directory (GET /api/platform/users).
+ *
+ * Wider than OrgUser because the directory answers questions a per-studio user
+ * list never had to: which studio is this, does the account still exist, does it
+ * hold platform access, and is anybody signed in as it right now.
+ *
+ * `has_platform_grant` is the live platform_owners grant, NOT `role ===
+ * 'super_admin'`. The two can disagree — a role with no grant cannot reach the
+ * console — and the directory reports the one that decides access.
+ */
+export type PlatformUser = OrgUser & {
+  deleted_at: string | null;
+  organization_name: string | null;
+  organization_status: string | null;
+  has_platform_grant: boolean;
+  mfa_enabled: boolean;
+  active_sessions: number;
+};
+
+/** Header counts for the directory (GET /api/platform/users/summary). */
+export type PlatformUserSummary = {
+  total: number; active: number; inactive: number; deleted: number;
+  owners: number; trainers: number; members: number; platform: number;
+  never_signed_in: number; dormant_90d: number;
+};
+
+/** Filters the directory accepts. Every one is optional and they compose. */
+export type PlatformUserQuery = {
+  q?: string;
+  /** A studio role, or 'platform' for the operators. */
+  role?: string;
+  status?: 'active' | 'inactive' | 'deleted';
+  /** Organization id — the only way to scope the directory to one studio. */
+  org?: string;
+  limit?: number;
+  offset?: number;
+};
+
 export type StudioOverview = {
   id: string; name: string; slug: string;
   status: 'active' | 'suspended'; logo_url?: string | null; created_at: string;
@@ -1765,6 +1907,293 @@ export type AuditQuery = {
   org_id?: string; user_id?: string; action?: string; entity_type?: string;
   from?: string; to?: string; q?: string; limit?: number; offset?: number;
 };
+
+// ── Command Center ────────────────────────────────────────────────────────────
+/** How a card is graded. `unavailable` is a gap in observability, not an
+ *  outage — a probe that cannot run (no Docker socket, no REDIS_URL) rather
+ *  than one that ran and found trouble. It deliberately ranks BELOW `warning`
+ *  so an un-wired dependency does not paint the console amber forever. */
+export type CommandCenterStatus =
+  | 'healthy' | 'warning' | 'critical' | 'unavailable' | 'timeout';
+
+/** One card. Every collector returns this shape, including on failure, so the
+ *  client never has to special-case a missing card. */
+export interface CommandCenterCard {
+  name: string;
+  status: CommandCenterStatus;
+  /** Collector-specific payload. Typed per card at the render site. */
+  data: unknown;
+  latency_ms: number | null;
+  /** Why the card is not green, in words an operator can act on. */
+  reason: string | null;
+  checked_at: string;
+  /** Served from the per-collector TTL cache rather than freshly probed. */
+  cached?: boolean;
+}
+
+export interface CommandCenterSnapshot {
+  status: CommandCenterStatus;
+  collected_at: string;
+  duration_ms: number;
+  cards: Record<string, CommandCenterCard>;
+}
+
+/** A single-use ticket for the realtime stream (Phase 3).
+ *
+ *  The socket cannot present the session cookie: it addresses the API host
+ *  directly, because the Next.js rewrite that carries ordinary /api/* calls
+ *  does not forward an Upgrade, and the cookie belongs to the app host. The
+ *  ticket is minted over the authenticated HTTPS channel and spent once, within
+ *  `expires_in_ms`. `path` comes from the server so the two cannot drift; the
+ *  origin is the client's, from `wsBase()`. */
+export interface CommandCenterStreamTicket {
+  ticket: string;
+  expires_in_ms: number;
+  path: string;
+  tick_ms: number;
+}
+
+/** One entry in the server's allow-list of operational commands.
+ *
+ *  The UI must not keep its own idea of which commands exist, which are
+ *  destructive, or which queues are valid — all three come from here, so the
+ *  gate the client renders and the gate the server enforces cannot drift. */
+export interface CommandCenterCommand {
+  name: string;
+  label: string;
+  description: string;
+  /** What running it does, in plain words. Shown in the confirmation prompt. */
+  blast_radius: string;
+  /** Requires a typed confirmation equal to `name`. */
+  destructive: boolean;
+  accepts_queue: boolean;
+  /** The valid queue names, or null when the command takes no queue. */
+  queues: string[] | null;
+  /** Non-null means the command cannot run on this deployment, and why. */
+  unavailable_reason: string | null;
+  cooldown_ms: number;
+}
+
+export interface CommandCenterRunResult {
+  command: string;
+  queue: string | null;
+  outcome: 'ok' | 'error';
+  duration_ms: number;
+  /** Command-specific payload. Rendered as formatted JSON, not parsed. */
+  output: unknown;
+}
+
+/** What a `dryRun` returns instead of running anything. */
+export interface CommandCenterDryRun {
+  dry_run: true;
+  command: string;
+  queue: string | null;
+  would_run: string;
+  blast_radius: string;
+}
+
+// ── Alert Center ──────────────────────────────────────────────────────────────
+
+/** Note the absence of `unavailable`: a probe that could not run is a gap in
+ *  observability, not an outage, and never opens an alert. */
+export type SystemAlertSeverity = 'warning' | 'timeout' | 'critical';
+export type SystemAlertStatus = 'open' | 'acknowledged' | 'resolved';
+
+/** One PROBLEM with a lifetime — not one observation. The same condition seen a
+ *  thousand times is this single row with `occurrences` climbing. */
+export interface SystemAlert {
+  id: string;
+  /** Identity of the condition; the collector name. */
+  fingerprint: string;
+  source: string;
+  severity: SystemAlertSeverity;
+  title: string;
+  /** The collector's own sentence, refreshed on each observation. */
+  reason: string | null;
+  status: SystemAlertStatus;
+  occurrences: number;
+  first_seen_at: string;
+  last_seen_at: string;
+  acknowledged_at: string | null;
+  acknowledged_by_name: string | null;
+  resolved_at: string | null;
+  /** `auto` when the condition cleared itself, `manual` when a human closed it. */
+  resolution: 'auto' | 'manual' | null;
+  notified_at: string | null;
+  /** The card as it stood when the alert opened. Typed at the render site. */
+  snapshot: unknown;
+  created_at: string;
+}
+
+export interface SystemAlertStats {
+  open: number;
+  acknowledged: number;
+  critical: number;
+  resolved_24h: number;
+}
+
+export interface SystemAlertList {
+  alerts: SystemAlert[];
+  stats: SystemAlertStats;
+}
+
+// ── AI Guardian ───────────────────────────────────────────────────────────────
+
+/** One evidence line. `detail` is the readable sentence; `key` identifies the
+ *  signal so the UI can be stable across wording changes. */
+export interface GuardianEvidence {
+  key: string;
+  detail: string;
+}
+
+export interface GuardianFinding {
+  id: string;
+  title: string;
+  severity: 'critical' | 'warning' | 'info';
+  /** The deterministic diagnosis. This — not any AI narration — is the product. */
+  conclusion: string;
+  /** 0..1, capped below certainty. A summary of `evidence`, which is shown too. */
+  confidence: number;
+  evidence: {
+    /** Signals that had to fire for the finding to exist at all. */
+    triggers: GuardianEvidence[];
+    /** Corroborating signals that fired. */
+    supporting: GuardianEvidence[];
+    /** Checked, and not true. */
+    absent: GuardianEvidence[];
+    /** Could NOT be checked — a different claim from `absent`, and the reason
+     *  the confidence is lower than it would otherwise be. */
+    unchecked: GuardianEvidence[];
+  };
+  /** Command Center command names. Advisory: the Guardian never runs anything. */
+  recommend: string[];
+  /** Written next step when no command can help. */
+  advice: string | null;
+  /** True when One Click Recovery applies to this finding. */
+  recovery: boolean;
+  sources: string[];
+}
+
+export interface GuardianReport {
+  findings: GuardianFinding[];
+  checked_at: string;
+  rules_evaluated: number;
+  /** Set when there are no findings, so "ran and matched nothing" is
+   *  distinguishable from "did not run". */
+  note: string | null;
+}
+
+// ── Live Logs (D4) ────────────────────────────────────────────────────────────
+
+export type LogLevelName = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+
+/** One line from the in-memory ring. `level` is pino's number: 50 error, 60 fatal. */
+export interface LogLine {
+  time: number;
+  level: number;
+  msg: string;
+  /** Everything pino carried besides time/level/msg. Typed at the render site. */
+  context: unknown;
+}
+
+export interface LogRingStats {
+  held: number;
+  capacity: number;
+  total_recorded: number;
+  /** Lines the capture layer had to discard — a real fault, unlike ring overwrite. */
+  dropped: number;
+  oldest_at: string | null;
+  counts: Record<LogLevelName, number>;
+}
+
+export interface LogCaptureStats {
+  /** Which process this ring belongs to. */
+  source: 'api' | 'worker';
+  pending: number;
+  pending_capacity: number;
+  dropped_pending: number;
+  persist_from_level: number;
+  persist_enabled: boolean;
+}
+
+export interface LogTail {
+  lines: LogLine[];
+  stats: LogRingStats;
+  capture: LogCaptureStats;
+  /** Says out loud that the ring covers one process only. */
+  scope_note: string;
+}
+
+/** A persisted line. Unlike the ring, this covers the worker container too. */
+export interface PersistedLogLine {
+  id: number;
+  level: number;
+  level_label: LogLevelName;
+  logged_at: string;
+  msg: string;
+  source: 'api' | 'worker';
+  pid: number | null;
+  hostname: string | null;
+  context: unknown;
+}
+
+/**
+ * Paging for the two platform audit feeds.
+ *
+ * `total` is exact up to a ceiling and then stops counting. Both feeds read
+ * tables with no retention sweep — `activity_log` and `login_events` grow for
+ * as long as the platform is used — and an unfiltered count over either was a
+ * full scan plus joins with no upper bound. Past the ceiling the honest answer
+ * is "more than this", which `total_capped` says.
+ */
+export interface AuditPaging {
+  limit: number;
+  offset: number;
+  total: number;
+  /** True when `total` is the ceiling rather than a count. */
+  total_capped?: boolean;
+}
+
+export interface LogHistory {
+  lines: PersistedLogLine[];
+  /**
+   * Null when the request asked to skip it (`stats=0`), which the poll tick
+   * does. The lines change every few seconds; this strip does not, and
+   * recomputing it per tick was most of the cost of leaving the tab open.
+   */
+  stats: LogHistoryStats | null;
+  /** Cursor for the next (older) page; null when the last page was short. */
+  next_before: string | null;
+}
+
+export interface LogHistoryStats {
+  /**
+   * Counts within `window_hours`, not over the whole table.
+   *
+   * The unwindowed COUNT(*) this replaced was a sequential scan of the largest
+   * table on the box, and it ran beside every page of a list that was already
+   * capped — so the endpoint looked paginated while half of it was not.
+   */
+  in_window: number;
+  from_worker: number;
+  fatal: number;
+  window_hours: number;
+  /** Oldest row in the whole table, which a windowed count cannot report. */
+  oldest: string | null;
+  /** Days of history the retention sweep keeps, so `oldest` has a context. */
+  retention_days: number;
+}
+
+export interface GuardianNarration {
+  finding_id: string;
+  /** Null when the model was unavailable — the finding still stands without it. */
+  narration: string | null;
+  model?: string | null;
+  used_fallback?: boolean | null;
+  /** Present so the UI can label machine-written text as such. */
+  generated?: boolean;
+  unavailable_reason?: string;
+}
 
 export type SystemHealth = {
   checked_at: string;
@@ -2238,6 +2667,105 @@ export type InvitationPreview = {
   expires_at: string;
 };
 
+/** What the public client-activation page may know before anyone logs in. */
+export type ClientActivationPreview = {
+  studio_name: string;
+  /** First name only. Enough to confirm "this is me", nothing more. */
+  client_name: string;
+  /** Masked — this endpoint must not become an email-disclosure oracle. */
+  email_masked: string;
+  expires_at: string;
+};
+
+/** The state of one client's login, as the trainer's card renders it. */
+export type ClientLoginStatus = {
+  client_id: string;
+  login_activated: boolean;
+  login_enabled: boolean;
+  login_email: string | null;
+  email_verified_at: string | null;
+  last_login_at: string | null;
+  locked_until: string | null;
+  activation_sent_at: string | null;
+  /** Decided server-side. The button must not re-derive this rule. */
+  can_activate: boolean;
+  blocked_reason: string | null;
+  blocked_message: string | null;
+  invitation: {
+    id: string;
+    status: string;
+    expires_at: string | null;
+    sent_at: string | null;
+    activated_at: string | null;
+    send_attempts: number;
+    last_error: string | null;
+    invited_by_name: string | null;
+    created_at: string;
+  } | null;
+};
+
+/** The member's own record, as /api/me/profile returns it. */
+export type MeProfile = {
+  id: string;
+  member_code: string | null;
+  name: string;
+  email: string | null;
+  mobile: string | null;
+  gender: string | null;
+  dob: string | null;
+  photo_url: string | null;
+  address: string | null;
+  package_type: string | null;
+  goal: string | null;
+  height: number | null;
+  weight: number | null;
+  joining_date: string | null;
+  pt_start_date: string | null;
+  pt_end_date: string | null;
+  duration_months: number | null;
+  status: string | null;
+  trainer_name: string | null;
+  trainer_photo: string | null;
+  trainer_specialization: string | null;
+  studio_name: string | null;
+  studio_logo: string | null;
+};
+
+export type MeMembership = {
+  id: string;
+  package_type: string | null;
+  base_amount: number | string;
+  discount: number | string;
+  final_amount: number | string;
+  paid_amount: number | string;
+  balance_amount: number | string;
+  monthly_pt_amount: number | string;
+  pt_start_date: string | null;
+  pt_end_date: string | null;
+  duration_months: number | null;
+  status: string | null;
+};
+
+export type MePayment = {
+  id: string;
+  amount: number | string;
+  date: string;
+  payment_method: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
+export type MeAttendance = {
+  id: string;
+  date: string;
+  check_in_time: string | null;
+  check_out_time: string | null;
+  method: string | null;
+  status: string | null;
+};
+
+export type MeMeasurement = { weight_kg: number | string; measured_at: string };
+
 export type SubscriptionMetrics = {
   mrr_inr: number;
   arr_inr: number;
@@ -2254,6 +2782,20 @@ export type SubscriptionMetrics = {
   }[];
   /** rate_pct is null when no trial has started yet — not 0%. */
   trial_conversion: { started: number; converted: number; rate_pct: number | null };
+  /**
+   * Cancellations, counted from activity_log where they are actually written.
+   *
+   * cancelled_30d/90d are FLOWS; currently_cancelled is a STOCK that only ever
+   * rises. They are named apart because presenting the stock as churn is the
+   * usual way this metric gets faked.
+   *
+   * rate_30d_pct is null, never 0, when nobody is paying — a platform with no
+   * paying studios has no churn rate, and 0% would read as "nobody is leaving".
+   */
+  churn: {
+    cancelled_30d: number; cancelled_90d: number;
+    currently_cancelled: number; rate_30d_pct: number | null;
+  };
   founders: {
     granted: number; limit: number; slots_remaining: number;
     locked_value_inr: number; highest_number: number | null;
@@ -2720,6 +3262,24 @@ export interface CoachGeneration {
   facts_key: string;
 }
 
+/**
+ * A short, advisory read of a client's recent weekly check-ins. Purely
+ * informational — nothing behind this endpoint writes to any client record.
+ * `available: false` (too little history, the model was unreachable, or its
+ * reply didn't parse) means "there is nothing to show", not an error — there
+ * is no rule-based substitute for "what changed in the notes", so the card
+ * simply doesn't render rather than showing something invented.
+ */
+export type CheckinInsight =
+  | {
+      available: true;
+      summary: string;
+      notable_change: string | null;
+      suggested_action: string | null;
+      model: string | null;
+    }
+  | { available: false; reason: string; checkins_count?: number };
+
 /** One readiness component, 0-100, or null when that question was not answered. */
 export interface RecoveryComponents {
   sleep: number | null;
@@ -2747,4 +3307,135 @@ export interface ClientRecovery {
   /** Null until three scored weeks exist — two points is a line through noise. */
   trend?: 'improving' | 'steady' | 'declining' | null;
   weeks: RecoveryWeek[];
+}
+
+/* ── AI executable actions ──────────────────────────────────────────────
+ * The assistant proposes; the operator confirms; the server executes. These
+ * three types are the three steps.
+ */
+
+export interface AiActionSummary {
+  id: string;
+  title: string;
+  /** True when running this sends something to real clients. The confirm
+   *  screen keys its warning off this, so it must not be optimistic. */
+  outward: boolean;
+}
+
+export interface AiActionPlan {
+  plan_id: string;
+  action_id: string;
+  title: string;
+  description: string;
+  outward: boolean;
+  /** How many people will actually be messaged. */
+  count: number;
+  preview: Array<{ name: string; detail: string }>;
+  sample_message: string | null;
+  /** Shown BEFORE confirming — an unconfigured channel belongs here, not in
+   *  the results afterwards. */
+  warnings: string[];
+  truncated: boolean;
+  expires_at: string;
+}
+
+export interface AiActionResult {
+  /** Counts by delivery status. `sent` is the only one that means a message
+   *  left the building; `not_configured` and `failed` are reported as
+   *  themselves. */
+  tally: Record<string, number>;
+  sent: number;
+  total: number;
+  warnings: string[];
+  results: Array<{ id: string; name: string; status: string; error: string | null }>;
+}
+
+// ── Trainer Intelligence (Phase 2F/2G) ──────────────────────────────────
+
+export interface AiMemoryCandidate {
+  id: string;
+  organization_id: string;
+  client_id: string;
+  category: string;
+  subcategory?: string | null;
+  fact: string;
+  confidence: number;
+  source_type: string;
+  source_id?: string | null;
+  source_text?: string | null;
+  status: string;
+  verified_at?: string | null;
+  as_of?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+  /** Attached by the pending-queue, not stored in DB. */
+  _conflicts?: Array<{ id: string; fact: string; category: string }>;
+}
+
+export interface AiProgrammerProposal {
+  id: string;
+  organization_id: string;
+  client_id: string;
+  proposal_type: string;
+  summary: string;
+  reason: string;
+  evidence: Array<{ type: string; description: string; source: string; value: string }>;
+  current_state: Record<string, unknown>;
+  deterministic_recommendation: Record<string, unknown>;
+  ai_recommendation: Record<string, unknown> | null;
+  confidence: number;
+  safety_flags: string[];
+  requires_trainer_approval: boolean;
+  status: string;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  rejection_reason?: string | null;
+  fingerprint?: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  expires_at: string;
+}
+
+export interface PendingWorkItem {
+  type: 'memory' | 'proposal';
+  data: AiMemoryCandidate | AiProgrammerProposal;
+  priority: number;
+}
+
+export interface PendingWorkQueue {
+  memory_candidates: PendingWorkItem[];
+  programmer_proposals: PendingWorkItem[];
+  total_pending: number;
+}
+
+export interface ClientIntelligenceSummary {
+  client_id: string;
+  client_name: string;
+  generated_at: string;
+  what_changed: Array<{ type: string; text: string }>;
+  what_ai_knows: Array<{ category: string; fact: string; confidence: number; source_type: string; as_of: string | null }>;
+  what_ai_suggests: Array<{ id: string; type: string; summary: string; confidence: number; safety_flags: string[]; expires_at: string }>;
+  what_needs_attention: Array<{ type: string; text: string }>;
+  what_is_missing: Array<string>;
+  next_best_action: { type: string; text: string; proposal_id?: string; memory_id?: string } | null;
+}
+
+export interface AiIntelligenceAudit {
+  id: string;
+  organization_id: string;
+  actor_id: string;
+  target_type: string;
+  target_id: string;
+  action: string;
+  previous_state: string | null;
+  new_state: string | null;
+  reason: string | null;
+  request_id: string | null;
+  created_at: string;
+  /** Human-readable description from the target row (memory fact or proposal summary). */
+  target_description?: string | null;
+  /** The client ID this audit event is associated with (via the target). */
+  client_id?: string | null;
 }

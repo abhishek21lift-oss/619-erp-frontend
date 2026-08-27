@@ -16,16 +16,18 @@
 
 **Local dev:** Copy `.env.local.example` → `.env.local` and fill in values.
 
-**Vercel:**
-1. Project → Settings → Environment Variables
-2. Add `NEXT_PUBLIC_API_URL` = your backend URL (e.g. `https://api.619fitness.in`)
-3. Scope to Production / Preview as needed
+**Production (the VPS):** set as a build arg in `/opt/myptstudio/docker-compose.yml`
+on the box. It is a `NEXT_PUBLIC_*` variable, so it is baked in at BUILD time —
+changing it needs a rebuild, not just a restart.
 
-**Docker:**
 ```bash
-docker build --build-arg NEXT_PUBLIC_API_URL=https://api.619fitness.in -t 619-erp .
+docker build --build-arg NEXT_PUBLIC_API_URL=https://api.myptstudio.com -t 619-erp .
 docker run -p 3000:3000 619-erp
 ```
+
+`NEXT_PUBLIC_API_URL` is the single source of truth for both the API origin and
+the WebSocket origin — `wsBase()` in `src/lib/http.ts` swaps the scheme
+(`https` → `wss`), so a domain change is one edit and the two cannot disagree.
 
 ## Authentication — Cookie Migration (Issue #2)
 
@@ -70,12 +72,38 @@ curl http://localhost:3000/api/health
 docker logs 619-erp
 ```
 
-## Vercel Deployment
+## How this actually deploys
 
-1. Connect GitHub repo to Vercel
-2. Set `NEXT_PUBLIC_API_URL` in Vercel dashboard
-3. Deploy — Next.js standalone output is NOT needed on Vercel (Vercel handles this)
-4. Verify: visit `https://your-domain.vercel.app/api/health`
+**Not Vercel.** There is no Vercel project in the request path, and there is no
+`vercel.json` — it was removed because it described a deployment that does not
+happen and had already misled a reader into thinking Vercel proxied the API.
+
+Push to `main` → `.github/workflows/deploy.yml` → SSH to the VPS →
+`docker compose build frontend && docker compose up -d frontend`. The container
+serves Next.js standalone on port 3000, bound to localhost; nginx on the host
+terminates TLS and routes by Host header:
+
+| Host | nginx sends it to |
+|---|---|
+| `myptstudio.com`, `www.myptstudio.com` | frontend container, `127.0.0.1:3000` |
+| `api.myptstudio.com` | backend container, `127.0.0.1:5000` |
+
+Both names resolve to the same VPS address.
+
+**The request path has two shapes, and the difference matters:**
+
+```
+API calls    browser → nginx → frontend container → Next rewrite → backend
+WebSocket    browser → nginx ──────────────────────────────────→ backend
+```
+
+Ordinary calls use relative URLs and are forwarded by the Next.js rewrite in
+`next.config.js`. That hop is an HTTP proxy and does **not** carry a WebSocket
+Upgrade, which is why realtime traffic addresses `api.myptstudio.com` directly
+via `wsBase()`.
+
+The nginx configuration is version-controlled in the **backend** repo under
+`infra/nginx/` — including the WebSocket block, which nginx needs explicitly.
 
 ## Content Security Policy — /checkin route
 

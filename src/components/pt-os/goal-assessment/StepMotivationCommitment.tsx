@@ -59,7 +59,7 @@ export function StepMotivationCommitment({ form, set }: StepMotivationCommitment
               return <Face size={24} strokeWidth={1.75} style={{ color: commitmentColor(motivation) }} />;
             })()}
           </div>
-          <Slider label="" value={motivation} min={1} max={10} onChange={(v) => set('motivationLevel', String(v))}
+          <Slider label="" ariaLabel="Motivation Level" value={motivation} min={1} max={10} onChange={(v) => set('motivationLevel', String(v))}
             scaleLabels={['1 · Not Motivated', '5 · Moderately Motivated', '10 · Extremely Motivated']} />
         </div>
 
@@ -68,7 +68,7 @@ export function StepMotivationCommitment({ form, set }: StepMotivationCommitment
             <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Commitment Level</p>
             <span className="h-3 w-3 rounded-full" style={{ background: commitmentColor(commitment) }} />
           </div>
-          <Slider label="" value={commitment} min={1} max={10} onChange={(v) => set('commitmentLevel', String(v))}
+          <Slider label="" ariaLabel="Commitment Level" value={commitment} min={1} max={10} onChange={(v) => set('commitmentLevel', String(v))}
             scaleLabels={['1 · Low', '5 · Moderate', '10 · Fully Committed']} />
         </div>
       </div>

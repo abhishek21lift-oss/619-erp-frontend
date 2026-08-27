@@ -39,7 +39,7 @@ export function PremiumModal({ open, onClose, title, subtitle, icon, size = 'md'
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div data-no-pull-refresh className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <m.div
             ref={overlayRef}
             initial={{ opacity: 0 }}

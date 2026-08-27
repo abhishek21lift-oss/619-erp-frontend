@@ -14,9 +14,10 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import PublicNav, { PUBLIC_NAV_CLEARANCE } from '@/components/PublicNav';
+import { srcPath } from '@/__tests__/helpers/app-routes';
 
 const SRC = join(process.cwd(), 'src');
-const read = (p: string) => readFileSync(join(SRC, p), 'utf8');
+const read = (p: string) => readFileSync(srcPath(...p.split('/')), 'utf8');
 
 describe('<PublicNav />', () => {
   it('always links the wordmark back to the marketing site', () => {
@@ -54,8 +55,14 @@ describe('<PublicNav />', () => {
 });
 
 describe('signed-out pages', () => {
+  // The sign-in screen moved to a shared component when /login and
+  // /member-login became two doors onto it — one file, because they share
+  // Google sign-in, passkeys, the 2FA challenge and remembered accounts, and
+  // two copies of that would drift. The assertions below follow the content,
+  // so they now cover BOTH routes at once rather than only the staff one.
+  const SIGN_IN = 'components/auth/SignInScreen.tsx';
   const pages: Array<[string, string]> = [
-    ['login', 'app/login/page.tsx'],
+    ['login', SIGN_IN],
     ['start-free', 'app/start-free/page.tsx'],
   ];
 
@@ -71,7 +78,7 @@ describe('signed-out pages', () => {
 
   it('/login no longer floats a Home pill over the form', () => {
     // Superseded by the wordmark in the bar, which is where a way back belongs.
-    expect(read('app/login/page.tsx')).not.toMatch(/<ArrowLeft[^>]*\/>\s*Home/);
+    expect(read(SIGN_IN)).not.toMatch(/<ArrowLeft[^>]*\/>\s*Home/);
   });
 
   it('/login offers exactly one way to reset a password', () => {
@@ -81,7 +88,7 @@ describe('signed-out pages', () => {
     // UI; once it had one the page contradicted itself in two places at once.
     // Comment lines are stripped first: the file's own header explains why
     // there is only one, and counting that would defeat the point.
-    const src = read('app/login/page.tsx');
+    const src = read(SIGN_IN);
     const code = src.split('\n').filter((l) => !/^\s*(\*|\/\/)/.test(l)).join('\n');
     expect(code.match(/Forgot password\?/g) ?? []).toHaveLength(1);
     expect(src).toContain('href="/forgot-password"');

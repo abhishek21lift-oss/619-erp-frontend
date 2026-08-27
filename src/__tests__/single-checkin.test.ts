@@ -10,13 +10,14 @@
 // These are cheap structural assertions on purpose: the failure mode here is
 // not a subtle bug, it is someone adding a second check-in screen back without
 // noticing there already is one.
-import { describe, expect, it } from 'vitest';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import {describe, expect, it} from 'vitest';
+import {readdirSync, readFileSync} from 'node:fs';
+import {join} from 'node:path';
 
-import { NAV_GROUPS, QUICK_ACTIONS } from '@/lib/nav-config';
+import {NAV_GROUPS, QUICK_ACTIONS} from '@/lib/nav-config';
+import {appPath, routeExists} from '@/__tests__/helpers/app-routes';
 
-const APP = join(process.cwd(), 'src/app');
+
 
 /** Every href in the nav tree, groups and quick actions alike. */
 function allHrefs(): string[] {
@@ -27,7 +28,7 @@ function allHrefs(): string[] {
 describe('there is exactly one check-in system', () => {
   it('ships exactly one route under /checkin that checks anyone in', () => {
     // /checkin/dashboard is read-only stats, not a way in — hence the filter.
-    const routes = readdirSync(APP + '/checkin', { withFileTypes: true })
+    const routes = readdirSync(appPath('checkin'), { withFileTypes: true })
       .filter((d) => d.isDirectory())
       .map((d) => d.name)
       .filter((name) => name !== 'dashboard');
@@ -44,7 +45,7 @@ describe('there is exactly one check-in system', () => {
     // still looking perfectly healthy in the sidebar.
     const missing = allHrefs()
       .filter((h) => h.startsWith('/checkin'))
-      .filter((h) => !existsSync(join(APP, h, 'page.tsx')));
+      .filter((h) => !routeExists(h));
     expect(missing).toEqual([]);
   });
 

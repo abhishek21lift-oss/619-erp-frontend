@@ -57,7 +57,7 @@ export function StepChallenges({ form, set, error }: StepChallengesProps) {
           <div className="mt-3 max-w-sm">
             <FloatInput label="Other" value={form.challengeOther} onChange={(v) => set('challengeOther', v)} />
           </div>
-          {error && <p className="mt-2 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+          {error && <p className="mt-2 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
         </div>
       </div>
     </div>

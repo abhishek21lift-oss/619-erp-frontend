@@ -7,7 +7,7 @@
 import { http } from '../../http';
 import { buildQs } from '../qs';
 import type {
-  ClientBirthday, ClientSnapshot, CoachGeneration, DuplicateGroup, MergeResult, PtLead, PtSession, TrainingBrief,
+  ActivityLogEntry, CheckinInsight, ClientBirthday, ClientSnapshot, CoachGeneration, DuplicateGroup, MergeResult, PtLead, PtSession, TrainingBrief,
 } from '../types';
 
 // ── PT OS ────────────────────────────────────────────────────
@@ -46,6 +46,13 @@ export const pt = {
    */
   coach: (id: string) =>
     http<{ data: CoachGeneration }>(`/api/pt-os/clients/${id}/coach`, { method: 'POST' }),
+  /**
+   * Ask a model what's notable in this client's recent weekly check-ins.
+   * POST and on demand, same reasoning as coach() above — check-in history
+   * doesn't change between two page opens an hour apart.
+   */
+  checkinInsight: (id: string) =>
+    http<{ data: CheckinInsight }>(`/api/pt-os/clients/${id}/checkin-insight`, { method: 'POST' }),
   create: (data: Record<string, unknown>) =>
     http<{ data: unknown }>('/api/pt-os/clients', { method: 'POST', body: JSON.stringify(data) }),
   uploadPhoto: (id: string, photo: string) =>
@@ -111,6 +118,15 @@ export const pt = {
     http<{ data: DuplicateGroup[]; total_groups: number; total_records: number; total_duplicates: number; total_financial_value: number }>('/api/pt-os/clients/duplicates'),
   mergeDuplicates: () =>
     http<{ success: boolean; run_id: string; merged_groups: number; records_removed: number; results: MergeResult[] }>('/api/pt-os/clients/merge-duplicates', { method: 'POST' }),
+  /**
+   * The studio's own business-write audit trail — client/payment/commission
+   * changes made by its own staff. Always scoped server-side to the caller's
+   * organization; no org filter to pass here.
+   */
+  activityLog: (params?: { action?: string; entity_type?: string; entity_id?: string; limit?: number; offset?: number }) =>
+    http<{ data: ActivityLogEntry[]; paging: { limit: number; offset: number; total: number; count: number } }>(
+      `/api/pt-os/activity-log${buildQs(params)}`,
+    ),
   leads: {
     list: (params?: { status?: string; q?: string }) =>
       http<{ data: PtLead[]; total: number }>(`/api/pt-os/leads${buildQs(params)}`),

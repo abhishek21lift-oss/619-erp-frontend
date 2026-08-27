@@ -32,6 +32,7 @@ import { Loader2, RotateCcw, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { MuscleLandmark } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 export interface LandmarkEditorProps {
   open: boolean;
@@ -58,6 +59,10 @@ export default function LandmarkEditor({ open, onClose, onSaved }: LandmarkEdito
   // Tell the parent once, on close, rather than after every field — the
   // analytics page refetch is not cheap and nobody needs it mid-edit.
   const close = () => { if (dirty) onSaved(); onClose(); };
+  // Escape, focus trap and focus restore. Routed through `close` rather than
+  // `onClose` so dismissing with the keyboard saves the same way dismissing
+  // with the mouse does — Escape must not be the one exit that loses edits.
+  const dialogRef = useDialogA11y({ open, onClose: close, escapeCloses: !savingMuscle });
 
   if (!open) return null;
 
@@ -97,12 +102,13 @@ export default function LandmarkEditor({ open, onClose, onSaved }: LandmarkEdito
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center"
+      data-no-pull-refresh className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center"
       style={{ background: 'rgba(15,23,42,0.45)' }}
       onClick={close}
       role="presentation"
     >
       <m.div
+        ref={dialogRef}
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}

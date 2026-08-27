@@ -36,8 +36,8 @@ function Switch({ on, disabled, onClick, label }: {
     <button
       role="switch" aria-checked={on} aria-label={label}
       disabled={disabled} onClick={onClick}
-      className="flex h-8 items-center rounded-full transition-opacity disabled:opacity-40"
-      style={{ color: on ? 'var(--success)' : 'var(--text-disabled)' }}
+      className="flex items-center justify-center rounded-full transition-opacity disabled:opacity-40"
+      style={{ color: on ? 'var(--success-text)' : 'var(--text-disabled)', minHeight: 44, minWidth: 44 }}
     >
       {on ? <ToggleRight size={30} /> : <ToggleLeft size={30} />}
     </button>
@@ -172,7 +172,7 @@ function FeatureRow({ feature, plans, planRow, onChanged }: {
               ) : (
                 <>
                   <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-                    <label className="flex cursor-pointer items-center gap-2">
+                    <label className="flex min-h-[44px] cursor-pointer items-center gap-2">
                       <input
                         type="checkbox" checked={feature.is_plan_gated} className="h-4 w-4"
                         onChange={() => patch({ is_plan_gated: !feature.is_plan_gated })}
@@ -181,7 +181,7 @@ function FeatureRow({ feature, plans, planRow, onChanged }: {
                         Restrict to plans
                       </span>
                     </label>
-                    <label className="flex cursor-pointer items-center gap-2">
+                    <label className="flex min-h-[44px] cursor-pointer items-center gap-2">
                       <input
                         type="checkbox" checked={feature.default_enabled} className="h-4 w-4"
                         onChange={() => patch({ default_enabled: !feature.default_enabled })}
@@ -204,7 +204,7 @@ function FeatureRow({ feature, plans, planRow, onChanged }: {
                             key={p.code} disabled={busy || !feature.is_plan_gated}
                             onClick={() => togglePlan(p.code)}
                             aria-pressed={on}
-                            className="min-h-[32px] rounded-[9px] px-2.5 text-[11.5px] font-[700] transition disabled:opacity-45"
+                            className="min-h-[44px] rounded-[9px] px-2.5 text-[11.5px] font-[700] transition disabled:opacity-45"
                             style={on
                               ? { background: 'rgba(16,185,129,0.12)', color: '#059669', border: '1px solid rgba(16,185,129,0.25)' }
                               : { background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
@@ -307,7 +307,7 @@ export default function FeatureManager() {
   if (error) {
     return (
       <div className="flex flex-col items-center gap-2.5 py-16 text-center">
-        <AlertTriangle size={22} style={{ color: 'var(--danger)' }} />
+        <AlertTriangle size={22} style={{ color: 'var(--danger-text)' }} />
         <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{error}</p>
         <button onClick={load} className="mt-1 text-[12px] font-[700]" style={{ color: 'var(--brand)' }}>Try again</button>
       </div>

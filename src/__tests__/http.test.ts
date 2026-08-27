@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { http, ApiError, resetRedirectLock } from '@/lib/http';
+import { writeCachedUser, readCachedUser, clearCachedUser } from '@/lib/session-cache';
 
 const API_URL = 'http://localhost:5000';
 
@@ -13,6 +14,7 @@ beforeEach(() => {
   });
   vi.stubGlobal('fetch', vi.fn());
   if (typeof window !== 'undefined' && window.localStorage) window.localStorage.clear();
+  clearCachedUser();
 });
 
 afterEach(() => {
@@ -100,7 +102,12 @@ describe('http()', () => {
 
     const handler = vi.fn();
     window.addEventListener('session-expired', handler);
-    window.localStorage.setItem('619_user_v2', 'cached');
+    // Seeded through the same helper AuthProvider writes with. This line used
+    // to read localStorage.setItem('619_user_v2', …) and the assertion below
+    // used to read it back — a matched pair that agreed with each other and
+    // with nothing else in the codebase, so it passed for as long as the
+    // cached user was never actually being cleared.
+    writeCachedUser('cached');
 
     vi.mocked(fetch)
       .mockResolvedValueOnce(mockJsonResponse(401, { error: { message: 'Token expired' } }))
@@ -108,7 +115,7 @@ describe('http()', () => {
 
     await expect(http('/api/me')).rejects.toBeInstanceOf(ApiError);
     expect(handler).toHaveBeenCalledTimes(1);
-    expect(window.localStorage.getItem('619_user_v2')).toBeNull();
+    expect(readCachedUser()).toBeNull();
     window.removeEventListener('session-expired', handler);
   });
 
@@ -140,6 +147,65 @@ describe('http()', () => {
     await http('/api/x', { method: 'POST', body: { a: 1 } });
     await http('/api/x', { method: 'POST', body: { a: 2 } });
     expect(fetch).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('the one-owner / one-trainer 409s reach the user readably', () => {
+  // The backend refuses a second trainer or a second owner with a 409 whose
+  // message names the account already holding the slot, so the studio owner can
+  // go and edit it. Those messages are only useful if they survive the trip.
+  //
+  // The two guards answer in DIFFERENT shapes, deliberately: src/routes/*
+  // answer `{ error: 'message', code }` and src/modules/* answer
+  // `{ error: { code, message } }`, each matching its neighbours rather than
+  // imposing one convention on a file that does not use it. fetchOnce already
+  // reads both — this pins that, because a regression here does not throw or
+  // log, it just replaces a sentence the owner can act on with "HTTP 409".
+
+  it('surfaces TRAINER_LIMIT from the flat shape (POST /api/trainers)', async () => {
+    const message = "Asha is already this studio's trainer. A studio has one trainer — edit them instead of adding another.";
+    vi.mocked(fetch).mockResolvedValueOnce(mockJsonResponse(409, {
+      error: message, code: 'TRAINER_LIMIT', trainer: { id: 'tr-1', name: 'Asha' },
+    }));
+
+    await expect(http('/api/trainers')).rejects.toMatchObject({
+      name: 'ApiError', status: 409, code: 'TRAINER_LIMIT', message,
+    });
+  });
+
+  it('surfaces TRAINER_LIMIT from the nested shape (POST /pt-os/trainers)', async () => {
+    const message = "Asha is already this studio's trainer. A studio has one trainer — edit them instead of adding another.";
+    vi.mocked(fetch).mockResolvedValueOnce(mockJsonResponse(409, {
+      error: { code: 'TRAINER_LIMIT', message, trainer: { id: 'tr-1', name: 'Asha' } },
+    }));
+
+    await expect(http('/api/pt-os/trainers')).rejects.toMatchObject({
+      name: 'ApiError', status: 409, code: 'TRAINER_LIMIT', message,
+    });
+  });
+
+  it('surfaces OWNER_EXISTS in both shapes', async () => {
+    const message = 'Deepak already owns this studio. A studio has one owner.';
+    for (const body of [
+      { error: message, code: 'OWNER_EXISTS', owner: { id: 'u1', email: 'd@s.test' } },
+      { error: { code: 'OWNER_EXISTS', message, owner: { id: 'u1', email: 'd@s.test' } } },
+    ]) {
+      vi.mocked(fetch).mockResolvedValueOnce(mockJsonResponse(409, body));
+      await expect(http('/api/auth/create-user')).rejects.toMatchObject({
+        status: 409, code: 'OWNER_EXISTS', message,
+      });
+    }
+  });
+
+  it('keeps the payload, so a caller can offer a link to the existing trainer', async () => {
+    // The id is in the body precisely so the Add Coach screen can say "edit
+    // Asha" rather than only telling the owner they cannot proceed.
+    vi.mocked(fetch).mockResolvedValueOnce(mockJsonResponse(409, {
+      error: 'x', code: 'TRAINER_LIMIT', trainer: { id: 'tr-1', name: 'Asha' },
+    }));
+
+    const err = await http('/api/trainers').catch((e: unknown) => e as ApiError);
+    expect((err.payload as { trainer: { id: string } }).trainer.id).toBe('tr-1');
   });
 });
 

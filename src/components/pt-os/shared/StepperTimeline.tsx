@@ -42,9 +42,9 @@ export function StepperTimeline({ steps, current, onStep }: StepperTimelineProps
                 <div
                   className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[13px] font-[800] transition-all duration-300"
                   style={{
-                    background: done ? '#0067E0' : active ? '#0f172a' : '#f1f5f9',
-                    color: done || active ? '#fff' : '#94a3b8',
-                    boxShadow: active ? '0 0 0 4px rgba(15,23,42,0.10), 0 2px 8px rgba(15,23,42,0.14)' : 'none',
+                    background: done ? '#0067E0' : active ? '#fff' : 'rgba(255,255,255,0.14)',
+                    color: done ? '#fff' : active ? '#0F172A' : 'rgba(255,255,255,0.7)',
+                    boxShadow: active ? '0 0 0 4px rgba(255,255,255,0.18), 0 2px 8px rgba(0,0,0,0.2)' : 'none',
                     transform: active ? 'scale(1.08)' : 'scale(1)',
                   }}
                 >
@@ -62,13 +62,13 @@ export function StepperTimeline({ steps, current, onStep }: StepperTimelineProps
                 </div>
                 <span
                   className="text-[10.5px] font-[680] tracking-tight whitespace-nowrap max-w-[90px] text-center leading-tight"
-                  style={{ color: active ? '#0f172a' : done ? '#0067E0' : '#94a3b8' }}
+                  style={{ color: active ? '#fff' : done ? '#7FB4FF' : 'rgba(255,255,255,0.55)' }}
                 >
                   {s.label}
                 </span>
               </button>
               {i < steps.length - 1 && (
-                <div className="relative h-[2px] w-8 sm:w-12 mx-1.5 mb-5 rounded-full overflow-hidden" style={{ background: '#e2e8f0' }}>
+                <div className="relative h-[2px] w-8 sm:w-12 mx-1.5 mb-5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.18)' }}>
                   <m.div
                     className="absolute inset-y-0 left-0 rounded-full"
                     style={{ background: 'linear-gradient(90deg, #0067E0, #0059CE)' }}

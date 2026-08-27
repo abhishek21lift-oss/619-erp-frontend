@@ -109,17 +109,17 @@ const TONE_STYLES: Record<StatusMeta['tone'], { bg: string; fg: string; ring: st
   },
   warn: {
     bg: 'color-mix(in srgb, var(--warning) 14%, transparent)',
-    fg: 'var(--warning)',
+    fg: 'var(--warning-text)',
     ring: 'color-mix(in srgb, var(--warning) 32%, transparent)',
   },
   success: {
     bg: 'color-mix(in srgb, var(--success) 13%, transparent)',
-    fg: 'var(--success)',
+    fg: 'var(--success-text)',
     ring: 'color-mix(in srgb, var(--success) 30%, transparent)',
   },
   danger: {
     bg: 'color-mix(in srgb, var(--danger) 13%, transparent)',
-    fg: 'var(--danger)',
+    fg: 'var(--danger-text)',
     ring: 'color-mix(in srgb, var(--danger) 30%, transparent)',
   },
 };

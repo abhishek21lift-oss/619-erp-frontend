@@ -36,8 +36,23 @@ import {
   LayoutGrid, Dumbbell, Salad, Ruler, ScrollText, ClipboardCheck, Camera,
   FileSignature, Wallet, StickyNote, Sparkles, FileBarChart, ChevronRight,
 } from 'lucide-react';
+import { palette } from '@/lib/palette';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+// Same five-colour rotation the dashboard's Quick Actions strip uses — this
+// strip is built to read as that strip's twin, not a coincidentally similar
+// one, so it draws from the exact same rotation rather than its own set.
+// Exported so the panels each tab opens (LinkPanel, below) can colour their
+// own icon tiles from the exact same five values, rather than the page that
+// renders them inventing a second rotation that could drift from this one.
+export const TAB_COLOR = {
+  primary:    palette.blue[500],
+  success:    palette.emerald[500],
+  warning:    palette.amber[500],
+  danger:     palette.red[600],
+  dangerDeep: palette.red[900],
+};
 
 export type TabKey =
   | 'overview' | 'training' | 'nutrition' | 'measurements' | 'log' | 'checkins'
@@ -47,32 +62,63 @@ interface TabDef {
   key: TabKey;
   label: string;
   icon: React.ReactNode;
+  color: string;
   /** Shown on the tab when there is something to count. */
   count?: number;
+  /**
+   * This tab LEAVES the page instead of switching a panel.
+   *
+   * Three of these used to open a panel whose entire content was a list of
+   * links to the screen that actually does the job — a tap to reach a tap.
+   * Where that was the whole panel, the tab now goes straight there. Built
+   * from the client's id, because that is the only thing these destinations
+   * need.
+   *
+   * A tab with an `href` renders as a LINK, not a button: middle-click,
+   * long-press and "open in new tab" all have to work, and a button with an
+   * onClick that calls router.push has none of them.
+   */
+  href?: (clientId: string) => string;
 }
 
 /**
  * One link out of a tab, into the screen that already owns this job.
+ *
+ * `icon`/`color` are optional so a caller that has neither yet still
+ * type-checks and renders a plain row rather than a broken one — but every
+ * link in this app supplies both, for the icon-tile treatment `LinkPanel`
+ * gives a row when they're there.
  */
 export interface TabLink {
   label: string;
   href: string;
   hint?: string;
+  icon?: React.ReactNode;
+  color?: string;
 }
 
 const TABS: TabDef[] = [
-  { key: 'overview', label: 'Overview', icon: <LayoutGrid size={14} /> },
-  { key: 'training', label: 'Training', icon: <Dumbbell size={14} /> },
-  { key: 'log', label: 'Workout Log', icon: <ScrollText size={14} /> },
-  { key: 'measurements', label: 'Measurements', icon: <Ruler size={14} /> },
-  { key: 'nutrition', label: 'Nutrition', icon: <Salad size={14} /> },
-  { key: 'checkins', label: 'Check-ins', icon: <ClipboardCheck size={14} /> },
-  { key: 'photos', label: 'Photos', icon: <Camera size={14} /> },
-  { key: 'ai', label: 'AI Coach', icon: <Sparkles size={14} /> },
-  { key: 'payments', label: 'Payments', icon: <Wallet size={14} /> },
-  { key: 'documents', label: 'Documents', icon: <FileSignature size={14} /> },
-  { key: 'notes', label: 'Notes', icon: <StickyNote size={14} /> },
-  { key: 'reports', label: 'Reports', icon: <FileBarChart size={14} /> },
+  { key: 'overview', label: 'Overview', icon: <LayoutGrid size={16} />, color: TAB_COLOR.primary },
+  { key: 'training', label: 'Training', icon: <Dumbbell size={16} />, color: TAB_COLOR.success },
+  {
+    key: 'log', label: 'Workout Log', icon: <ScrollText size={16} />, color: TAB_COLOR.warning,
+    href: (id) => `/pt-os/clients/${id}/workout-log`,
+  },
+  {
+    key: 'measurements', label: 'Measurements', icon: <Ruler size={16} />, color: TAB_COLOR.danger,
+    href: (id) => `/pt-os/measurements?client_id=${id}`,
+  },
+  {
+    key: 'nutrition', label: 'Nutrition', icon: <Salad size={16} />, color: TAB_COLOR.dangerDeep,
+    href: (id) => `/pt-os/diet-plans?client_id=${id}`,
+  },
+  { key: 'checkins', label: 'Check-ins', icon: <ClipboardCheck size={16} />, color: TAB_COLOR.primary },
+  { key: 'photos', label: 'Photos', icon: <Camera size={16} />, color: TAB_COLOR.success },
+  { key: 'ai', label: 'AI Coach', icon: <Sparkles size={16} />, color: TAB_COLOR.warning },
+  { key: 'payments', label: 'Payments', icon: <Wallet size={16} />, color: TAB_COLOR.danger },
+  { key: 'documents', label: 'Documents', icon: <FileSignature size={16} />, color: TAB_COLOR.dangerDeep },
+  { key: 'notes', label: 'Notes', icon: <StickyNote size={16} />, color: TAB_COLOR.primary },
+  { key: 'reports', label: 'Reports', icon: <FileBarChart size={16} />, color: TAB_COLOR.success },
 ];
 
 export interface ClientTabsProps {
@@ -80,14 +126,34 @@ export interface ClientTabsProps {
   onChange: (key: TabKey) => void;
   /** Badge counts, only for tabs where a number means something. */
   counts?: Partial<Record<TabKey, number>>;
+  /** Whose profile this is. Tabs that navigate build their destination from it. */
+  clientId: string;
 }
 
 /**
  * The tab strip.
  *
+ * An icon grid, the way iOS's own Health or Settings tiles are: a solid
+ * coloured squircle with a white glyph, a label under it, nothing else. The
+ * first version of this redesign kept the pill strip's card underneath —
+ * each tile sat in a rectangle tinted to match its icon — which put every
+ * colour on screen twice and read as busier than the plain icon grid it was
+ * reaching for. Dropping the rectangle and letting the icon carry its own
+ * colour alone is what made it actually read as simple.
+ *
  * Horizontally scrollable rather than wrapped: twelve tabs wrap to three rows
  * on a phone, and a three-row tab bar is a menu pretending to be a tab bar.
  * Scrolling keeps it one line.
+ *
+ * ── What still makes it a tab strip, not an icon-grid launcher ────────────
+ *
+ * A Quick Actions tile or a home-screen icon always does the same thing —
+ * open something else — so none of them need a "current" state. This strip
+ * switches what is on screen without leaving the page, so exactly one tile
+ * is always the selected one: its icon carries a ring in its own colour and
+ * sits very slightly larger, and its label picks up that same colour instead
+ * of staying neutral grey. Losing that distinction would turn every tap into
+ * a guess about what is currently showing.
  *
  * ── Why the edges fade ─────────────────────────────────────────────────────
  *
@@ -106,7 +172,7 @@ export interface ClientTabsProps {
  * — a permanent fade over a strip that is not scrollable is a lie about the
  * content, and on a desktop where all twelve fit it would dim two real tabs.
  */
-export function ClientTabs({ active, onChange, counts }: ClientTabsProps) {
+export function ClientTabs({ active, onChange, counts, clientId }: ClientTabsProps) {
   const reduce = useReducedMotion();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ left: false, right: false });
@@ -174,62 +240,64 @@ export function ClientTabs({ active, onChange, counts }: ClientTabsProps) {
         aria-label="Client sections"
         data-fade={fade}
         onScroll={measure}
-        className="flex gap-1 overflow-x-auto rounded-[16px] p-1.5 [&::-webkit-scrollbar]:hidden"
+        className="flex gap-2.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden"
         style={{
-          background: 'var(--bg-subtle)',
-          border: '1px solid var(--border)',
           scrollbarWidth: 'none',
           WebkitMaskImage: mask,
           maskImage: mask,
         }}
       >
-        {TABS.map((t) => {
+        {TABS.map((t, i) => {
           const on = t.key === active;
           const n = counts?.[t.key];
+          const to = t.href?.(clientId);
+          // A tab that leaves the page is a link and never the selected one;
+          // a tab that switches a panel is a button that can be. Same tile,
+          // same label, two different promises — and role="tab" on something
+          // that navigates would promise the wrong one to a screen reader.
+          const Tag = to ? 'a' : 'button';
+          const nav = to
+            ? { href: to }
+            : { role: 'tab' as const, 'aria-selected': on, onClick: () => onChange(t.key) };
           return (
-            <button
+            <Tag
               key={t.key}
               data-tab={t.key}
-              role="tab"
-              aria-selected={on}
-              onClick={() => onChange(t.key)}
-              // 44px explicitly: globals.css sets a 14px root, so a rem-based
-              // height lands at 87.5% and a "44px" tab measures 38.
-              className="relative flex shrink-0 items-center gap-1.5 rounded-[12px] px-3 text-[12px] font-[720] transition-colors"
-              style={{ height: 44, color: on ? 'var(--text-primary)' : 'var(--text-muted)' }}
+              {...nav}
+              className="flex shrink-0 flex-col items-center gap-1.5 rounded-[14px] px-1 py-1 text-center transition-transform active:scale-95"
+              style={{ minWidth: 64 }}
             >
-              {on && (
-                <m.span
-                  layoutId="client-tab-pill"
-                  transition={reduce ? { duration: 0 } : { duration: 0.28, ease: EASE }}
-                  className="absolute inset-0 rounded-[12px]"
-                  // Opaque white, not --bg-card's 80% — the pill sits on a grey
-                  // trough, and a translucent one picks the trough up and reads
-                  // as a disabled control rather than the selected one. The
-                  // brand-tinted ring and lift are what make it read as raised;
-                  // the shadow alone was too faint against --bg-subtle to
-                  // separate them at all.
-                  style={{
-                    background: 'var(--bg-white)',
-                    boxShadow: '0 1px 1px rgba(15,23,42,0.04), 0 4px 12px -2px var(--brand-glow-2)',
-                    border: '1px solid var(--brand-soft)',
-                  }}
-                />
-              )}
-              <span
-                className="relative flex items-center gap-1.5 whitespace-nowrap"
-                // The icon carries the selection as well as the pill does, and
-                // it reads before the label at a glance.
-                style={on ? { color: 'var(--brand)' } : undefined}
+              {/* No card, no tint rectangle behind it — an icon-grid tile
+                  carries its own colour and nothing else does, the way an
+                  iOS Health or Settings tile does. Selection is a ring on the
+                  tile itself, not a second box wrapped around it; two
+                  concentric coloured boxes was the "little busy" this
+                  simplified. */}
+              <m.span
+                className="relative flex h-11 w-11 items-center justify-center rounded-[14px] text-white"
+                initial={reduce ? false : { opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: on ? 1.06 : 1 }}
+                transition={{ delay: reduce ? 0 : i * 0.03, duration: 0.25, ease: EASE }}
+                style={{
+                  background: `linear-gradient(135deg, ${t.color}, ${t.color}cc)`,
+                  boxShadow: on
+                    ? `0 0 0 2.5px ${t.color}59, 0 6px 16px ${t.color}55`
+                    : `0 4px 10px ${t.color}35`,
+                }}
               >
                 {t.icon}
-                <span style={on ? { color: 'var(--text-primary)' } : undefined}>{t.label}</span>
                 {n != null && n > 0 && (
-                  <span className="rounded-full px-1.5 py-px text-[9.5px] font-[800]"
-                    style={{ background: 'var(--brand)', color: 'var(--text-inverse)' }}>{n}</span>
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-[800]"
+                    style={{ background: 'var(--brand)', color: '#fff', border: '2px solid var(--bg-canvas)' }}>
+                    {n}
+                  </span>
                 )}
+              </m.span>
+              <span className="text-[9.5px] font-[680] leading-tight whitespace-nowrap"
+                style={{ color: on ? t.color : 'var(--text-muted)' }}>
+                {t.label}
               </span>
-            </button>
+            </Tag>
           );
         })}
       </div>
@@ -265,18 +333,22 @@ export function TabPanel({ id, active, children }: { id: TabKey; active: TabKey;
  * "No data" on its own reads as a broken screen; this reads as an instruction.
  */
 export function EmptyPanel({
-  icon, title, body, actions,
+  icon, title, body, actions, color,
 }: {
   icon: React.ReactNode;
   title: string;
   body: string;
   actions?: TabLink[];
+  /** Tints the icon tile with the tab's own colour. Grey when omitted. */
+  color?: string;
 }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-[22px] bg-white px-6 py-12 text-center"
       style={{ border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
       <div className="flex h-12 w-12 items-center justify-center rounded-[16px]"
-        style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+        style={color
+          ? { background: `linear-gradient(135deg, ${color}, ${color}cc)`, color: '#fff', boxShadow: `0 4px 12px ${color}40` }
+          : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
         {icon}
       </div>
       <p className="text-[14px] font-[780]" style={{ color: 'var(--text-primary)' }}>{title}</p>
@@ -304,29 +376,59 @@ export function EmptyPanel({
  * Carries a short summary and sends you to the page that owns the job, rather
  * than re-implementing it here — two copies of the workout log is two things
  * to keep correct, and the second one always drifts.
+ *
+ * ── Why every row gets an icon tile now ────────────────────────────────────
+ *
+ * This was a plain list — a grey chevron row per link, one flat colour for
+ * all of them. It is what opens when a tab is tapped, so a row here reads as
+ * a continuation of the icon grid above it rather than a different kind of
+ * control; giving each row its own coloured tile is what makes tapping a tab
+ * and finding what it opens feel like the same interaction instead of two.
+ * Colours are drawn from `TAB_COLOR`, the exact five values the tab strip
+ * itself rotates through, not a second palette invented for this list.
  */
 export function LinkPanel({
-  icon, title, body, links,
+  icon, title, body, links, color, action,
 }: {
   icon: React.ReactNode;
   title: string;
   body?: string;
   links: TabLink[];
+  /** Tints the header icon tile with the tab's own colour. Grey when omitted. */
+  color?: string;
+  /**
+   * A primary control that acts in place, rendered above the links.
+   *
+   * Every entry in `links` is an `<a href>` and navigates away. A panel whose
+   * main action opens a dialog on this page has nowhere to sit without this,
+   * and the alternative — a link with an onClick and no real href — breaks
+   * middle-click, copy-link, and what the element says it is.
+   */
+  action?: React.ReactNode;
 }) {
   return (
     <div className="rounded-[22px] bg-white p-4 sm:p-5"
       style={{ border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
       <div className="mb-3.5 flex items-center gap-2.5 pb-3.5" style={{ borderBottom: '1px solid var(--border)' }}>
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
-          style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>{icon}</div>
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
+          style={color
+            ? { background: `linear-gradient(135deg, ${color}, ${color}cc)`, color: '#fff', boxShadow: `0 3px 10px ${color}40` }
+            : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>{icon}</div>
         <h3 className="text-[13.5px] font-[740]" style={{ color: 'var(--text-primary)' }}>{title}</h3>
       </div>
       {body && <p className="mb-3 max-w-[62ch] text-[12px]" style={{ color: 'var(--text-muted)' }}>{body}</p>}
+      {action && <div className="mb-3">{action}</div>}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {links.map((l) => (
           <a key={l.href} href={l.href}
-            className="flex min-h-[52px] items-center gap-3 rounded-[14px] px-3.5 py-2.5 transition-all hover:-translate-y-0.5"
+            className="flex min-h-[56px] items-center gap-3 rounded-[14px] px-3 py-2.5 transition-all hover:-translate-y-0.5"
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+            {l.icon && l.color && (
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] text-white"
+                style={{ background: `linear-gradient(135deg, ${l.color}, ${l.color}cc)`, boxShadow: `0 3px 8px ${l.color}40` }}>
+                {l.icon}
+              </span>
+            )}
             <span className="min-w-0 flex-1">
               <span className="block text-[12.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{l.label}</span>
               {l.hint && <span className="mt-0.5 block text-[10.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>{l.hint}</span>}

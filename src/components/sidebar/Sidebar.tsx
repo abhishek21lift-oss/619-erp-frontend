@@ -5,6 +5,7 @@ import {
   ChevronDown, X, LogOut, User, Settings,
   PanelLeft, PanelLeftClose,
 } from 'lucide-react';
+import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import FounderBadge from '@/components/FounderBadge';
 import { useFounder } from '@/lib/use-founder';
@@ -181,23 +182,41 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
   const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
 
+  // Nav badge counts, via the api client rather than hand-written fetch so they
+  // inherit the 401 refresh and the x-org-id header every other call gets.
+  //
+  // Both URLs used to be wrong. /api/finance/dues does not exist — there is no
+  // /api/finance mount at all, the route is /api/reports/dues. And
+  // /api/trainers/leave is not a route either: it matched /api/trainers/:id
+  // with id='leave' and answered 404 "Trainer not found"; the leave list lives
+  // at /api/leave. Neither failure surfaced — allSettled never rejects, the
+  // shape-sniffing fell through to `?? 0`, and the trailing .catch swallowed
+  // whatever was left, so both badges read zero indefinitely. Rejections are
+  // logged now for exactly that reason: a counter that quietly reports
+  // "nothing pending" is worse than no counter at all.
   useEffect(() => {
     if (!isAdmin) return;
+    let cancelled = false;
+
     Promise.allSettled([
-      fetch('/api/trainers/leave?status=pending', { credentials: 'include' }).then(r => r.json()),
-      fetch('/api/finance/dues', { credentials: 'include' }).then(r => r.json()),
-    ]).then(([leavesRes, duesRes]) => {
-      const counts: Record<string, number> = {};
-      if (leavesRes.status === 'fulfilled') {
-        const d = leavesRes.value;
-        counts.pendingLeaves = Array.isArray(d?.data) ? d.data.length : Array.isArray(d) ? d.length : (d?.count ?? 0);
-      }
-      if (duesRes.status === 'fulfilled') {
-        const d = duesRes.value;
-        counts.duesCount = Array.isArray(d?.data) ? d.data.length : Array.isArray(d) ? d.length : (d?.count ?? 0);
-      }
-      setBadgeCounts(counts);
-    }).catch(() => {});
+      api.leave.list({ status: 'pending' }),
+      api.reports.dues(),
+      api.ai.trainer.pending({ limit: 1 }).catch(() => null),
+    ]).then(([leavesRes, duesRes, aiRes]) => {
+      if (cancelled) return;
+      if (leavesRes.status === 'rejected') console.warn('[sidebar] pending-leave count failed', leavesRes.reason);
+      if (duesRes.status === 'rejected') console.warn('[sidebar] dues count failed', duesRes.reason);
+      const aiPending = aiRes.status === 'fulfilled' && aiRes.value && typeof aiRes.value === 'object' && 'data' in aiRes.value
+        ? (aiRes.value as { data: { total_pending?: number } }).data?.total_pending ?? 0
+        : 0;
+      setBadgeCounts({
+        pendingLeaves: leavesRes.status === 'fulfilled' ? leavesRes.value.length : 0,
+        duesCount: duesRes.status === 'fulfilled' ? duesRes.value.length : 0,
+        aiPendingCount: aiPending,
+      });
+    });
+
+    return () => { cancelled = true; };
   }, [isAdmin]);
 
   const filterItem = (i: { href: string; role?: string; roles?: string[]; feature?: string }, groupId: string): boolean => {
@@ -477,6 +496,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
       <div className="shrink-0 flex flex-col items-center gap-2 border-t border-[var(--sidebar-border)] py-3">
         <Link
           href="/settings/profile"
+          onClick={onClose}
           title={`${user?.name || 'Profile'} · ${roleLabel(user?.role) || 'Trainer'}`}
           className="relative"
         >
@@ -575,6 +595,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
         <div className="flex items-center gap-1.5">
           <Link
             href="/settings/profile"
+            onClick={onClose}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-lg text-[12px] font-[600] text-white/[0.92] transition-colors duration-150 hover:bg-white/[0.18] hover:text-white"
             style={{ background: 'rgba(255,255,255,0.10)', height: 44 }}
           >
@@ -583,6 +604,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
           </Link>
           <Link
             href="/settings"
+            onClick={onClose}
             title="Settings"
             aria-label="Settings"
             className="flex items-center justify-center rounded-lg text-white/[0.92] transition-colors duration-150 hover:bg-white/[0.18] hover:text-white"
@@ -682,9 +704,30 @@ export default function Sidebar({
           <div className="absolute top-0 left-3 right-3 h-[1.5px] rounded-full bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent opacity-40" />
         )}
         <div className={cn('flex items-center', collapsed ? 'flex-col gap-2' : 'justify-between')}>
-          <Link href="/" className={cn('flex items-center group', collapsed ? 'justify-center' : 'gap-2.5')}>
+          {/* Closes the drawer on the way out, like every other link in it.
+              Without this the brand header navigated to the dashboard and left
+              the drawer sitting open on top of it — the one navigation path in
+              the sidebar that did not close itself, because it is the only one
+              that is not a SidebarItem or part of SidebarProfile, so neither
+              onLinkClick nor onClose reached it.
+
+              isMobile-gated to match the siblings below: on desktop the
+              sidebar is not a drawer and there is nothing to close. */}
+          <Link
+            href="/"
+            onClick={isMobile ? onMobileClose : undefined}
+            className={cn('flex items-center group', collapsed ? 'justify-center' : 'gap-2.5')}
+          >
             <div className="relative shrink-0">
-              <StudioMark name={studioName} logoUrl={user?.organization_logo_url} size={collapsed ? 32 : 38} />
+              {/* White, explicitly. This drawer is navy in both themes, so the
+                  default --bg-white plate goes dark with the theme and hides
+                  the black half of a two-tone logo. */}
+              <StudioMark
+                name={studioName}
+                logoUrl={user?.organization_logo_url}
+                size={collapsed ? 32 : 38}
+                background="#FFFFFF"
+              />
             </div>
             <AnimatePresence initial={false}>
               {!collapsed && (

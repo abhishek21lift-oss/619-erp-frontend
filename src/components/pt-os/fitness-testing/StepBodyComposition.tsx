@@ -41,7 +41,7 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
 
       <div className="mb-5">
         <SearchableSelect
-          label="Assessment Method" allowCustom={false}
+          label="Assessment Method" allowCustom={false} hideLabel
           value={form.bodyCompMethod}
           onChange={(v) => set('bodyCompMethod', v)}
           options={METHODS}
@@ -68,7 +68,7 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
         <FloatInput label="Metabolic Age" type="number" value={form.metabolicAge} onChange={(v) => set('metabolicAge', v)} />
       </div>
 
-      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
       {(leanBodyMass != null || fatMass != null) && (
         <div className="mt-6 rounded-[16px] p-5" style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)' }}>

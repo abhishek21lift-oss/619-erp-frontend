@@ -1,8 +1,0 @@
-User-agent: *
-Disallow: /api/
-Disallow: /admin/
-Disallow: /reset-password
-Disallow: /wireframes.html
-Allow: /
-
-Sitemap: https://619fitnessstudio.com/sitemap.xml

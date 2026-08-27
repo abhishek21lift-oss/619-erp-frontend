@@ -20,13 +20,14 @@
  */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import SharedClientAvatar from '@/components/pt-os/ClientAvatar';
 import { m } from 'framer-motion';
 import { AlertCircle, ArrowRight, Search, Users } from 'lucide-react';
-import { EmptyState } from '@/components/ui';
+import { EmptyState, PageContainer, PageHero } from '@/components/ui';
 import { BRAND_HERO_GRADIENT, BRAND_HERO_SHADOW, ON_BRAND_BORDER, ON_BRAND_TEXT } from '@/lib/brand';
 import { api } from '@/lib/api';
 
-interface ClientOption { id: string; name: string; }
+interface ClientOption { id: string; name: string; photoUrl: string | null; }
 
 // Deterministic per-name, so a client keeps the same colour across every tool
 // and across reloads. Picking at random, or by list index, would reshuffle the
@@ -41,22 +42,23 @@ const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #ef4444, #f87171)',
 ];
 
-export function ClientAvatar({ name }: { name: string }) {
+export function ClientAvatar({ name, photoUrl }: { name: string; photoUrl?: string | null }) {
   const idx = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_GRADIENTS.length;
-  const initials = name.split(' ').map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
   return (
-    <div
+    <SharedClientAvatar
+      name={name}
+      photoUrl={photoUrl}
       className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[12px] font-[700] text-white"
       style={{ background: AVATAR_GRADIENTS[idx] }}
-    >
-      {initials || '?'}
-    </div>
+    />
   );
 }
 
 interface ClientPickerProps {
   /** Shown in the banner. The tool's name, not a slogan — 'Informed Consent'. */
   title: string;
+  /** One line under the title. Optional — several pickers have nothing to add. */
+  subtitle?: string;
   /** The tool's lucide icon, already sized: <FileSignature size={20} color="#fff" />. */
   icon: React.ReactNode;
   /** The page this picker is rendered on — e.g. '/pt-os/goals'. Picking a
@@ -68,7 +70,7 @@ interface ClientPickerProps {
   hrefFor?: (clientId: string) => string;
 }
 
-export default function ClientPicker({ title, icon, basePath, hrefFor }: ClientPickerProps) {
+export default function ClientPicker({ title, subtitle, icon, basePath, hrefFor }: ClientPickerProps) {
   const router = useRouter();
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [search, setSearch] = useState('');
@@ -80,40 +82,29 @@ export default function ClientPicker({ title, icon, basePath, hrefFor }: ClientP
     setLoadError(false);
     api.pt.clients().then((r: { data?: unknown[] }) => {
       const arr = Array.isArray(r?.data) ? r.data : [];
-      setClients((arr as Record<string, unknown>[]).map((c) => ({ id: String(c.id), name: String(c.name ?? '') })));
+      setClients((arr as Record<string, unknown>[]).map((c) => ({
+        id: String(c.id),
+        name: String(c.name ?? ''),
+        photoUrl: c.photo_url ? String(c.photo_url) : null,
+      })));
     }).catch(() => setLoadError(true)).finally(() => setLoading(false));
   }, []);
 
   const filtered = clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="mx-auto w-full max-w-4xl pt-3 pb-6">
-      <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-        className="mb-5 flex items-center gap-3 rounded-[20px] px-5 py-4"
-        style={{ background: BRAND_HERO_GRADIENT, boxShadow: BRAND_HERO_SHADOW }}>
-        <div
-          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]"
-          style={{ border: `1.5px solid ${ON_BRAND_BORDER}` }}
-        >
-          {icon}
-        </div>
-        {/* Steps down for the longer tool names so 'Progress Tracking Session'
-            does not run into the icon tile on a phone. Several of the copies
-            this replaced had already been hand-tuned to the smaller size for
-            exactly that reason. leading is set either way, because at the
-            small size the long ones still take two lines. */}
-        <h1
-          className={`${title.length > 18 ? 'text-[20px] sm:text-[26px]' : 'text-[24px] sm:text-[30px]'} font-[860] tracking-[-0.03em] leading-[1.1]`}
-          style={{ color: ON_BRAND_TEXT }}
-        >
-          {title}
-        </h1>
-      </m.div>
+    <PageContainer>
+      {/* This was a flat brand-blue strip: a coloured bar with the tool name
+          in it, on its own max-w-4xl container with pt-3. It is PageHero now,
+          so every picker sits where the dashboard sits and looks like the rest
+          of the app rather than like a banner. The per-length type stepping
+          the strip needed is gone with it — the hero wraps. */}
+      <PageHero icon={icon} title={title} subtitle={subtitle} />
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="relative min-w-[220px] flex-1">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-          <input
+          <input aria-label="Search clients"
             type="text" placeholder="Search clients..." value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#0271EB]"
@@ -167,13 +158,13 @@ export default function ClientPicker({ title, icon, basePath, hrefFor }: ClientP
               className="group flex items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#7FB4FF] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
             >
-              <ClientAvatar name={c.name} />
+              <ClientAvatar name={c.name} photoUrl={c.photoUrl} />
               <span className="flex-1 truncate text-[13.5px] font-[650]" style={{ color: 'var(--text-primary)' }}>{c.name}</span>
               <ArrowRight size={14} className="flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" style={{ color: 'var(--text-disabled)' }} />
             </button>
           ))}
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

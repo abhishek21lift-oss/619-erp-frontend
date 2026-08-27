@@ -1,4 +1,4 @@
-// API endpoints: clients, trainers, member, leave, attendance.
+// API endpoints: clients, trainers, leave, attendance.
 //
 // Lifted verbatim from the single `api` object in the 4,185-line api.ts.
 // Method names, URLs and request shapes are unchanged; index.ts composes these
@@ -14,21 +14,26 @@ export const clients = {
   list: (params?: Record<string, string | number>) =>
     http<Client[]>(`/api/clients${buildQs(params)}`),
   get:    (id: string) => http<Client>(`/api/clients/${id}`),
-  create: (data: Partial<Client>) => http<Client>('/api/clients', { method: 'POST', body: JSON.stringify(data) }),
+  // create() removed with POST /api/clients. Clients are created through
+  // api.pt.create() -> POST /api/pt-os/clients, which stamps the studio's
+  // organization_id and enforces the plan's client limit. The old route did
+  // neither, and wrote to a table no read path reads.
   update: (id: string, data: Partial<Client>) =>
     http<Client>(`/api/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: string) => http(`/api/clients/${id}`, { method: 'DELETE' }),
   search: (q: string) => http<Client[]>(`/api/clients/search?q=${encodeURIComponent(q)}`),
-  uploadPhoto: (id: string, dataUrl: string) =>
-    http<{ message?: string; photo_url?: string }>(`/api/clients/${id}/photo`, {
-      method: 'POST',
-      body: JSON.stringify({ photo: dataUrl }),
-    }),
-  assignPt: (id: string, data: Record<string, unknown>) =>
-    http<{ message?: string }>(`/api/clients/${id}/assign-pt`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  // uploadPhoto, assignPt, combo, upgrade, downgrade, transfer, trial, freeze
+  // and unfreeze are gone with routes/client-actions.js on the backend.
+  //
+  // All nine posted to /api/clients/:id/*, which read and wrote the legacy
+  // `clients` table — 0 rows since PT-OS enrolment shipped, and no
+  // organization_id column, so nothing on that mount could be tenant-scoped.
+  // No component ever called any of them; they were API surface with no caller
+  // and no working route behind it.
+  //
+  // The org-scoped equivalents are api.pt.* → /api/pt-os/clients/*, which is
+  // what the app already uses: renewPt and renewalHistory below both point
+  // there, which is why they stay.
   renewPt: (id: string, data: Record<string, unknown>) =>
     http<{ message?: string; data?: unknown }>(`/api/pt-os/clients/${id}/renew`, {
       method: 'POST',
@@ -36,40 +41,6 @@ export const clients = {
     }),
   renewalHistory: (id: string) =>
     http<{ data: unknown[] }>(`/api/pt-os/clients/${id}/renewals`),
-  combo: (id: string, data: Record<string, unknown>) =>
-    http<{ message?: string }>(`/api/clients/${id}/combo`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  upgrade: (id: string, data: Record<string, unknown>) =>
-    http<{ message?: string }>(`/api/clients/${id}/upgrade`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  downgrade: (id: string, data: Record<string, unknown>) =>
-    http<{ message?: string }>(`/api/clients/${id}/downgrade`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  transfer: (id: string, data: Record<string, unknown>) =>
-    http<{ message?: string }>(`/api/clients/${id}/transfer`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  trial: (id: string, data: Record<string, unknown>) =>
-    http<{ message?: string }>(`/api/clients/${id}/trial`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  freeze: (id: string, data: Record<string, unknown>) =>
-    http<{ message?: string }>(`/api/clients/${id}/freeze`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  unfreeze: (id: string) =>
-    http<{ message?: string }>(`/api/clients/${id}/unfreeze`, {
-      method: 'POST',
-    }),
 };
 
 export const trainers = {
@@ -87,13 +58,6 @@ export const trainers = {
   }) => http<{ data: unknown }>('/api/trainers/sessions', {
     method: 'POST', body: JSON.stringify(data),
   }),
-};
-
-export const member = {
-  get: (id: string) =>
-    http<{ data: unknown }>(`/api/v1/members/${id}`),
-  metrics: (id: string) =>
-    http<{ membership: unknown; stats: unknown }>(`/api/v1/members/${id}/metrics`),
 };
 
 export const leave = {

@@ -96,13 +96,29 @@ const nextConfig = {
 
     if (!backendUrl) {
       throw new Error(
-        'NEXT_PUBLIC_API_URL is not set. Set it in Vercel project settings or .env.local'
+        'NEXT_PUBLIC_API_URL is not set. Set it as a build arg in the compose file '
+        + 'on the VPS (see infra/nginx/README.md in the backend repo), or in .env.local '
+        + 'for local development.'
       );
     }
+
+    // The AI service (repo: mps-ai) runs as its own container. It is routed
+    // through the same same-origin rewrite as /api so the browser never makes a
+    // cross-origin call. That keeps CORS out of the picture, and — the part
+    // that actually matters — means the httpOnly `token` cookie is sent: it is
+    // sameSite:'strict' and would not survive a cross-site request. Without
+    // this the Ask AI panel would be unauthenticated in production while
+    // working fine against localhost.
+    //
+    // Optional on purpose. A deploy that has not stood the AI service up yet
+    // omits AI_SERVICE_URL and /ai/* simply 404s, rather than the whole
+    // frontend refusing to build.
+    const aiUrl = (process.env.AI_SERVICE_URL || '').trim().replace(/\/+$/, '');
 
     return [
       { source: '/api/:path*', destination: `${backendUrl}/api/:path*` },
       { source: '/uploads/:path*', destination: `${backendUrl}/uploads/:path*` },
+      ...(aiUrl ? [{ source: '/ai/:path*', destination: `${aiUrl}/ai/:path*` }] : []),
     ];
   },
 };

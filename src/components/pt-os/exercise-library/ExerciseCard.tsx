@@ -25,10 +25,10 @@ const DIFFICULTY_TONE = {
 
 /** Region accent. Colour carries the muscle group at a glance, not decoration. */
 const REGION_ACCENT: Record<string, string> = {
-  Chest:       'var(--danger)',
+  Chest:       'var(--danger-text)',
   Back:        'var(--info)',
-  Legs:        'var(--success)',
-  Shoulders:   'var(--warning)',
+  Legs:        'var(--success-text)',
+  Shoulders:   'var(--warning-text)',
   Arms:        'var(--brand)',
   Core:        'var(--accent)',
   Cardio:      'var(--info)',
@@ -98,29 +98,41 @@ export const ExerciseCard = React.memo(function ExerciseCard({
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(ex); }
       }}
       className={cn(
-        'group relative flex flex-col rounded-2xl border text-left transition-all duration-200',
-        'bg-white/70 dark:bg-white/[0.04] backdrop-blur-xl',
-        'border-slate-200/80 dark:border-white/10',
-        'hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-900/5 dark:hover:shadow-black/20',
-        'hover:border-slate-300 dark:hover:border-white/20',
+        // ── No container box on a phone ─────────────────────────────────
+        // 48 exercises, each in its own rounded, bordered, blurred card with
+        // 16px of padding and 12px of gap, is a column of boxes you scroll
+        // through rather than a list you read. Below sm this is a flat row
+        // with a hairline under it — the divider does the separating that the
+        // border was doing, in one pixel instead of a frame.
+        // The card returns at sm, where the layout is a 2-4 column grid and
+        // cells genuinely need edges to read as cells. The list container
+        // matches it: gap-0 below sm so these hairlines meet and read as one
+        // list, gap-3 from sm so the cards stand apart.
+        'group relative flex flex-col text-left transition-colors duration-200',
+        'border-b border-slate-200/70 dark:border-white/[0.07]',
+        'sm:rounded-2xl sm:border sm:border-slate-200/80 sm:dark:border-white/10',
+        'sm:bg-white/70 sm:dark:bg-white/[0.04] sm:backdrop-blur-xl',
+        'hover:bg-slate-50/70 dark:hover:bg-white/[0.03]',
+        'sm:hover:-translate-y-0.5 sm:hover:shadow-lg sm:hover:shadow-slate-900/5 sm:dark:hover:shadow-black/20',
+        'sm:hover:border-slate-300 sm:dark:hover:border-white/20 sm:transition-all',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]/40',
-        selected && 'ring-2 ring-[var(--brand)]/50 border-[var(--brand)]/40',
+        selected && 'ring-2 ring-[var(--brand)]/50 sm:border-[var(--brand)]/40',
         archived && 'opacity-60',
-        dense ? 'p-3 gap-2' : 'p-4 gap-3',
-        // The row menu hangs below this card and over the next one, and the
-        // z-30 it carries cannot get it there on its own: `backdrop-blur-xl`
-        // above makes every card its own stacking context, so that z-index is
-        // resolved *inside* this card and the following sibling — later in DOM
-        // order — paints straight over the top of it. The menu was being cut
-        // off mid-item. Lifting the whole card while its menu is open is what
-        // actually reorders it against its siblings.
+        dense ? 'p-3 gap-2' : 'gap-2 px-1 py-3.5 sm:gap-3 sm:p-4',
+        // The row menu hangs below this row and over the next one. At sm and
+        // up `backdrop-blur-xl` makes every card its own stacking context, so
+        // the menu's z-30 is resolved INSIDE the card and the next sibling —
+        // later in DOM order — paints over it; the menu was cut off mid-item.
+        // Below sm there is no blur and so no stacking context, but a later
+        // sibling still wins on equal footing. Lifting the whole row while its
+        // menu is open fixes both cases with one line.
         menuOpen && 'z-50',
       )}
     >
       {/* Region accent rail. The only colour on the card that is not a badge. */}
       <span
         aria-hidden
-        className="absolute left-0 top-4 bottom-4 w-[3px] rounded-full"
+        className="absolute left-0 top-3.5 bottom-3.5 w-[3px] rounded-full sm:top-4 sm:bottom-4"
         style={{ background: accent }}
       />
 
@@ -175,8 +187,17 @@ export const ExerciseCard = React.memo(function ExerciseCard({
               {menuOpen && (
                 <div
                   role="menu"
+                  // `menu` is an interactive role, so it has to be reachable.
+                  // tabIndex={-1} makes it programmatically focusable without
+                  // adding a tab stop of its own — the items inside are the
+                  // stops. Escape closes it, which it previously could not do
+                  // at all: the only way to dismiss this menu was a click.
+                  tabIndex={-1}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') { e.stopPropagation(); setMenuOpen(false); }
+                  }}
                   onClick={(e) => e.stopPropagation()}
-                  className="absolute right-0 top-full z-30 mt-1 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl dark:border-white/10 dark:bg-[#0F172A]"
+                  data-no-pull-refresh className="absolute right-0 top-full z-30 mt-1 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl dark:border-white/10 dark:bg-[#0F172A]"
                 >
                   <MenuItem icon={Eye} label="View details" onClick={() => { setMenuOpen(false); onOpen(ex); }} />
                   {onEdit && (
@@ -273,7 +294,7 @@ function MenuItem({
         disabled
           ? 'cursor-not-allowed opacity-40'
           : 'hover:bg-slate-50 dark:hover:bg-white/5',
-        destructive ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]',
+        destructive ? 'text-[var(--danger-text)]' : 'text-[var(--text-primary)]',
       )}
     >
       <Icon size={14} />

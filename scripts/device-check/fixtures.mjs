@@ -576,6 +576,22 @@ const ROUTES = [
       ],
     },
   })],
+  // Birthdays MUST come before /clients/:id — `birthdays` is a literal path
+  // segment, not an id, so the general handler matched it and returned ONE
+  // CLIENT OBJECT where an array is expected. AICoach hands that to
+  // buildCoachInsights, which calls .filter on it, so every dashboard run in
+  // this harness rendered "Something went wrong" and the route listed first
+  // in the table below has never actually had its layout checked at 390px.
+  //
+  // The real backend orders these correctly and says so on the line above its
+  // own route (pt-os.routes.js:220 — "MUST be before /clients/:id"), which is
+  // precisely the hazard this table reproduced.
+  [/^\/api\/pt-os\/clients\/birthdays$/, () => ({
+    data: [
+      { id: 'c-2', name: 'Rahul Mehta', mobile: '+91 98111 22233', days_until_birthday: 0 },
+      { id: 'c-3', name: 'Deeksha Tomar', mobile: null, days_until_birthday: 4 },
+    ],
+  })],
   [/^\/api\/pt-os\/clients\/[^/]+$/, () => ({ data: CLIENT })],
   [/^\/api\/pt-os\/clients$/, () => ({ data: [CLIENT] })],
 

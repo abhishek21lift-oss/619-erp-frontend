@@ -251,7 +251,7 @@ function Lightbox({ item, resolveUrl, onClose }: {
       role="dialog"
       aria-modal="true"
       aria-label={item.title || 'Portfolio item'}
-      className="fixed inset-0 z-[70] flex flex-col"
+      data-no-pull-refresh className="fixed inset-0 z-[70] flex flex-col"
       style={{
         // dvh, because 100vh on mobile Safari is taller than the visible area
         // and puts the caption behind the browser chrome.
@@ -348,7 +348,7 @@ function FilePick({ label, file, onPick, max }: {
       <span className="mb-1 block text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
         {label}
       </span>
-      <input
+      <input aria-label={label}
         ref={input}
         type="file"
         accept="image/png,image/jpeg,image/webp,image/gif"

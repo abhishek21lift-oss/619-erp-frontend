@@ -34,12 +34,22 @@ export { DonutChart } from './DonutChart';
 export type { DonutChartProps, DonutDatum } from './DonutChart';
 
 export { PageHeader } from './PageHeader';
+export { PageTitle } from './PageTitle';
 export type { PageHeaderProps } from './PageHeader';
+
+// The form system. FormField is the layout + accessibility primitive that
+// wraps any control; the natives and SearchField consume its wiring. FloatInput
+// below is the floating-label alternative, kept for the auth and onboarding
+// forms — FORM-SYSTEM.md says which to use where.
+export {
+  FormField, useFieldWiring, fieldControlProps,
+  TextInput, TextArea, SelectInput, SearchField, TextFieldRow,
+  controlClassName, controlStyle,
+} from './form';
+export type { FormFieldProps, FieldWiring, SearchFieldProps } from './form';
 
 export { FloatInput } from './FloatInput';
 export { Slider } from './Slider';
-export { SearchInput } from './SearchInput';
-export type { SearchInputProps } from './SearchInput';
 
 export { FilterChips } from './FilterChips';
 export type { FilterChipsProps, FilterChip } from './FilterChips';
@@ -100,3 +110,6 @@ export type {
   PremiumBarEntry,
   PremiumAreaEntry,
 } from './chart';
+
+export { PageHero, PageContainer } from './PageHero';
+export type { PageHeroProps } from './PageHero';

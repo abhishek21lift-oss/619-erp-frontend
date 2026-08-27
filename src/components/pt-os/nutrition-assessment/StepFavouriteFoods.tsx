@@ -47,7 +47,7 @@ export function StepFavouriteFoods({ form, set, error }: StepFavouriteFoodsProps
         </div>
       )}
 
-      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
     </div>
   );
 }

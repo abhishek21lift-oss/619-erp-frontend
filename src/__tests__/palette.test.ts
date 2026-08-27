@@ -13,7 +13,7 @@
 // which is why the prose here names no hex codes.
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import { palette, semantic, band, identity, series, founderGold, tint, rgba } from '@/lib/palette';
 
 const FAMILIES = ['blue', 'emerald', 'amber', 'red', 'gray'] as const;
@@ -116,6 +116,17 @@ describe('the app uses only the palette', () => {
     // founderGold is the second deliberate non-semantic exception, after
     // `identity`. It is allowed through here and then confined to one file by
     // the assertion below — the scan alone would let it spread anywhere.
+    //
+    // The marketing page (components/landing) is the third: a self-contained
+    // dark cinematic surface that deliberately paints outside the five
+    // families, with its own token file. It is exempt here and confined to
+    // that one file by the assertion below — same pattern as founderGold.
+    //
+    // The visualization system (components/visualizations) is the fourth,
+    // same shape again: MY PT STUDIO's chart identity (saffron accent, navy
+    // "premium" surface, a wider categorical series ramp than five semantic
+    // families can carry) lives entirely in theme/colors.ts and is confined
+    // there by the assertion below.
     const known = new Set(
       [...allHexes(), ...Object.values(founderGold)].map((h) => h.toUpperCase())
     );
@@ -128,6 +139,10 @@ describe('the app uses only the palette', () => {
         if (!/\.(tsx?|css)$/.test(entry)) continue;
         // The palette module is where the canonical values are declared.
         if (p.endsWith(join('lib', 'palette.ts'))) continue;
+        // The marketing page is its own system — confined below.
+        if (p.includes(join('components', 'landing'))) continue;
+        // The visualization system is its own system too — confined below.
+        if (p.includes(join('components', 'visualizations'))) continue;
         const text = readFileSync(p, 'utf8');
         for (const m of text.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
           if (!known.has(m.toUpperCase())) offenders.push(`${p}: ${m}`);
@@ -153,10 +168,60 @@ describe('the app uses only the palette', () => {
         if (!/\.(tsx?|css)$/.test(entry)) continue;
         if (p.endsWith(join('lib', 'palette.ts'))) continue;
         if (p.includes('__tests__')) continue;
-        if (/founderGold/.test(readFileSync(p, 'utf8'))) users.push(p.split('src/')[1]);
+        if (/founderGold/.test(readFileSync(p, 'utf8'))) users.push(p.split(join('src') + sep)[1].replaceAll(sep, '/'));
       }
     };
     walk(join(process.cwd(), 'src'));
     expect(users).toEqual(['components/FounderBadge.tsx']);
+  });
+
+  it('confines the marketing surface to its own token file', () => {
+    // The landing page may paint outside the five families (it runs its own
+    // dark canvas), but only through landing/tokens.ts. A stray hex in a
+    // landing component is the same decay the global scan guards against
+    // everywhere else — it would mean the token system stopped being the
+    // single source of the marketing look.
+    const offenders: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = join(dir, entry);
+        if (statSync(p).isDirectory()) { walk(p); continue; }
+        if (!/\.tsx?$/.test(entry)) continue;
+        if (p.endsWith(join('tokens.ts'))) continue;
+        const text = readFileSync(p, 'utf8');
+        for (const m of text.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
+          offenders.push(`${p}: ${m}`);
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src', 'components', 'landing'));
+    expect(offenders).toEqual([]);
+  });
+
+  it('confines the visualization surface to its own token file', () => {
+    // Same rule as the marketing page, same reason: MY PT STUDIO's chart
+    // identity (saffron, navy, the wider series ramp) lives once, in
+    // visualizations/theme/colors.ts. Every other file in the folder must
+    // reach it through that module (or through a var(--token, #fallback)
+    // whose fallback is itself a sanctioned five-family value — that's not a
+    // new colour, it's the existing one spelled defensively) rather than
+    // hand-writing a new hex, or the seven chart components stop being one
+    // system the moment a second file starts inventing its own colours.
+    const offenders: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = join(dir, entry);
+        if (statSync(p).isDirectory()) { walk(p); continue; }
+        if (!/\.tsx?$/.test(entry)) continue;
+        if (p.endsWith(join('theme', 'colors.ts'))) continue;
+        const text = readFileSync(p, 'utf8');
+        const known = new Set(allHexes().map((h) => h.toUpperCase()));
+        for (const m of text.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
+          if (!known.has(m.toUpperCase())) offenders.push(`${p}: ${m}`);
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src', 'components', 'visualizations'));
+    expect(offenders).toEqual([]);
   });
 });

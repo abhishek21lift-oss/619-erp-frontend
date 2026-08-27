@@ -6,8 +6,9 @@ import {
   Sparkles, X, Brain, Zap, Dumbbell, Salad, Send, User, ChevronDown, RotateCcw, BookOpen, Database,
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { apiBase } from '@/lib/http';
+import { streamAiChat } from '@/lib/ai-stream';
 import type { Client } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,15 +40,10 @@ interface Message {
 }
 
 // ─── SSE stream event shape (from POST /api/ai/chat) ──────────────────────────
-
-interface ChatEvent {
-  type: 'start' | 'chunk' | 'sources' | 'tools' | 'done' | 'error';
-  content?: string;
-  message?: string;
-  conversation_id?: string;
-  sources?: string[];
-  tools?: string[];
-}
+//
+// The wire format is defined and parsed in lib/ai-stream (AiStreamEvent); this
+// panel only reacts to the parsed events it gets from streamAiChat. Keeping a
+// local copy of the shape here would be a second parser waiting to drift.
 
 function computeAge(dob?: string): number | undefined {
   if (!dob) return undefined;
@@ -112,12 +108,10 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
   }, [messages, isTyping, mode]);
 
   // Close on Escape
-  useEffect(() => {
-    if (!onClose) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  // Escape, focus trap and focus restore, replacing a bespoke Escape listener.
+  // The panel declared aria-modal while Tab walked out of it into the page
+  // behind, and closing dropped focus to the top of the document.
+  const dialogRef = useDialogA11y({ open: !!onClose, onClose });
 
   // Abort any in-flight stream on unmount
   useEffect(() => () => abortRef.current?.abort(), []);
@@ -229,59 +223,41 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
       setMessages(prev => prev.map(m2 => (m2.id === coachId ? { ...m2, content } : m2)));
 
     try {
-      const res = await fetch(`${apiBase()}/api/ai/chat`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
+      // The SSE parsing lives in lib/ai-stream — the same helper the AI Coach
+      // page and the Command Center assistant use — so no panel can drift from
+      // the wire format. This panel only reacts to parsed events.
+      const { aborted } = await streamAiChat(
+        {
           message: text,
-          conversation_id: conversationId ?? undefined,
-          client_id: selectedClient?.id,
-        }),
-      });
-
-      if (!res.ok || !res.body) throw new Error(res.status === 401 ? 'Your session has expired. Please sign in again.' : `Request failed (${res.status}).`);
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      for (;;) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? '';
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const jsonStr = line.slice(6).trim();
-          if (!jsonStr) continue;
-          let evt: ChatEvent;
-          try { evt = JSON.parse(jsonStr) as ChatEvent; } catch { continue; }
-
-          if (evt.type === 'start' && evt.conversation_id) {
-            setConversationId(evt.conversation_id);
-          } else if (evt.type === 'sources') {
-            pendingSources = evt.sources;
-          } else if (evt.type === 'tools') {
-            pendingTools = evt.tools;
-          } else if (evt.type === 'chunk') {
-            acc += evt.content ?? '';
+          conversationId,
+          clientId: selectedClient?.id,
+          signal: controller.signal,
+        },
+        {
+          onConversationId: setConversationId,
+          onSources: (srcs) => { pendingSources = srcs; },
+          onTools: (t) => { pendingTools = t; },
+          onText: (chunkText) => {
+            acc = chunkText;
             if (!started) { started = true; setIsTyping(false); pushCoach(acc); }
             else updateCoach(acc);
-          } else if (evt.type === 'done') {
-            if (evt.conversation_id) setConversationId(evt.conversation_id);
-          } else if (evt.type === 'error') {
-            throw new Error(evt.message || 'The AI coach ran into a problem.');
-          }
-        }
-      }
+          },
+        },
+      );
 
+      // Stop is a user decision, not a failure — keep whatever streamed.
+      if (aborted) return;
       if (!started) pushCoach('I couldn\'t generate a reply just now — please try again.', true);
     } catch (err) {
       if (controller.signal.aborted) return;
-      const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      // streamAiChat speaks the shared wording; this panel has always shown its
+      // own strings, so translate back to keep the UI text byte-identical.
+      const raw = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      const msg = raw === 'Your session has expired — please sign in again.'
+        ? 'Your session has expired. Please sign in again.'
+        : raw === 'The assistant ran into a problem.'
+          ? 'The AI coach ran into a problem.'
+          : raw;
       if (!started) { setIsTyping(false); pushCoach(`⚠️ ${msg}`, true); }
       else updateCoach(`${acc}\n\n⚠️ ${msg}`);
     } finally {
@@ -321,7 +297,9 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: '100%', opacity: 0.6 }}
         transition={{ duration: 0.34, ease: [0.32, 0.72, 0, 1] }}
+        ref={dialogRef}
         role="dialog"
+        aria-modal="true"
         aria-label="AI Coach"
         style={{
           position: 'fixed', right: 0, top: 0, bottom: 0,
@@ -356,7 +334,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
             </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 15.5, fontWeight: 700, color: 'rgba(255,255,255,0.92)', margin: 0, lineHeight: 1.2 }}>
+              <p style={{ fontSize: 15, fontWeight: 700, color: 'rgba(255,255,255,0.92)', margin: 0, lineHeight: 1.2 }}>
                 AI Coach
               </p>
               <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.42)', margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -704,7 +682,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                     style={{
                       flex: 1, resize: 'none', background: 'rgba(255,255,255,0.06)',
                       border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px',
-                      fontSize: 13, color: '#fff', outline: 'none', fontFamily: 'inherit',
+                      fontSize: 13, color: '#fff', fontFamily: 'inherit',
                       lineHeight: 1.4, maxHeight: 100, overflowY: 'auto',
                     }}
                   />
@@ -767,7 +745,7 @@ function ClientPicker({
   }
   return (
     <div style={{ position: 'relative' }}>
-      <input
+      <input aria-label="Search clients"
         type="text"
         value={selectedClient ? selectedClient.name : clientQuery}
         onFocus={onFocus}
@@ -806,12 +784,13 @@ function ClientPicker({
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-      <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.50)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+    // Wrapper, not sibling — see the note in ai/diet-generator's Field.
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+      <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.50)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
         {label}
-      </label>
+      </span>
       {children}
-    </div>
+    </label>
   );
 }
 
@@ -820,7 +799,7 @@ function SelectInput({
 }: { value: string; onChange: (v: string) => void; placeholder: string; children: React.ReactNode }) {
   return (
     <div style={{ position: 'relative' }}>
-      <select
+      <select aria-label={placeholder}
         value={value}
         onChange={e => onChange(e.target.value)}
         style={{ ...inputStyle, paddingRight: 34, cursor: 'pointer', color: value ? '#fff' : 'rgba(255,255,255,0.45)' }}
@@ -861,7 +840,6 @@ const inputStyle: React.CSSProperties = {
   padding: '10px 12px',
   fontSize: 13,
   color: '#fff',
-  outline: 'none',
   fontFamily: 'inherit',
   boxSizing: 'border-box',
   appearance: 'none',

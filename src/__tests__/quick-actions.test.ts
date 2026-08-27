@@ -5,27 +5,26 @@
 // to the mobile list and the desktop dock was missed, which is easy to do and
 // easy to miss in review because only one of the two is ever on screen. They
 // now share QUICK_ACTIONS, and these tests pin what that list must satisfy.
-import { describe, expect, it } from 'vitest';
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import {describe, expect, it} from 'vitest';
 
-import { QUICK_ACTIONS } from '@/components/dashboards/PtOsDashboard';
+import {QUICK_ACTIONS} from '@/components/dashboards/PtOsDashboard';
+import {routeExists} from '@/__tests__/helpers/app-routes';
 
 describe('QUICK_ACTIONS', () => {
   it('is in the order a trainer works through a new client', () => {
-    // Onboard, clear to train, agree the goal, then assess — general first,
-    // then the specific assessments.
+    // Onboard, clear to train, run the general fitness assessment, agree
+    // the goal, then the remaining specific assessments.
     expect(QUICK_ACTIONS.map((a) => a.label)).toEqual([
       'Add Client',
       'Consent',
       'PAR-Q',
-      'Goal Setting',
-      'Fitness Testing',
+      'Fitness',
+      'Goal',
       'Lifestyle',
-      'Nutrition Assessment',
-      'Mobility Assessment',
-      'Posture Assessment',
-      'Strength Tracking',
+      'Nutrition',
+      'Mobility',
+      'Posture',
+      'Strength',
     ]);
   });
 
@@ -34,7 +33,7 @@ describe('QUICK_ACTIONS', () => {
     // and the tile looks perfectly healthy until they do.
     const missing = QUICK_ACTIONS
       .map((a) => a.href)
-      .filter((href) => !existsSync(join(process.cwd(), 'src/app', href, 'page.tsx')));
+      .filter((href) => !routeExists(href));
     expect(missing).toEqual([]);
   });
 

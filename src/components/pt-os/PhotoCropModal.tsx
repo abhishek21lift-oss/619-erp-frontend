@@ -9,6 +9,7 @@ import { Button } from '@/components/ui';
 import { useCamera } from '@/hooks/useCamera';
 import { cropAndCompressImage } from '@/lib/image';
 import { useToast } from '@/lib/toast';
+import { activatable } from '@/lib/a11y';
 
 type Mode = 'select' | 'camera' | 'crop';
 
@@ -30,7 +31,16 @@ interface PhotoCropModalProps {
 
 export default function PhotoCropModal({
   open, onClose, onConfirm, initialImageSrc,
-  title = 'Profile Photo', cropShape = 'round', aspect = 1, maxDim = 800,
+  // ── Why the default is 'rect' ────────────────────────────────────────────
+  // 'round' clips the canvas to a circle and cropAndCompressImage then encodes
+  // it as JPEG — which has no alpha channel, so the corners outside the circle
+  // are filled. Verified in Chromium: they come back rgb(0,0,0), pure black,
+  // baked into the file.
+  // Every avatar in this app is a rounded SQUARE (rounded-[22px] on the edit
+  // hero, [24px] on the client profile, [30px] at sm), so a circular crop
+  // guaranteed four black corners showing through the squircle. A round crop is
+  // only safe with a format that keeps alpha, and nothing here wants one.
+  title = 'Profile Photo', cropShape = 'rect', aspect = 1, maxDim = 800,
 }: PhotoCropModalProps) {
   const { toast } = useToast();
   const camera = useCamera();
@@ -146,7 +156,7 @@ export default function PhotoCropModal({
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={(e) => { e.preventDefault(); setDragOver(false); loadFile(e.dataTransfer.files?.[0]); }}
-              onClick={() => fileRef.current?.click()}
+              {...activatable(() => fileRef.current?.click(), { label: 'Choose a photo to upload' })}
               className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-colors"
               style={{
                 borderColor: dragOver ? 'var(--logo-blue, #0067E0)' : 'var(--border-2)',
@@ -159,7 +169,7 @@ export default function PhotoCropModal({
               </p>
               <p className="text-[11px] text-[var(--text-disabled)]">JPG or PNG</p>
             </div>
-            <input
+            <input aria-label="Choose a photo"
               ref={fileRef} type="file" accept="image/*" className="hidden"
               onChange={(e) => loadFile(e.target.files?.[0])}
             />

@@ -37,7 +37,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
     try { localStorage.setItem('theme', t); } catch { /* private mode */ }
+    // Both hooks: globals.css targets `[data-theme="dark"], .dark`, and the
+    // header toggle used to set the attribute while this set only the class.
+    // Now that AppShell delegates here, this is the one place either is
+    // written, so it has to write both or half the rules would miss.
     document.documentElement.classList.toggle('dark', t === 'dark');
+    document.documentElement.setAttribute('data-theme', t);
   }, []);
 
   const toggle = useCallback(() => {

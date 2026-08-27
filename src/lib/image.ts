@@ -47,7 +47,16 @@ export async function getCroppedImageCanvas(
   return canvas;
 }
 
-/** Resizes `sourceCanvas` so its longest side is `maxDim`, and re-encodes as JPEG at `quality`. */
+/**
+ * Resizes `sourceCanvas` so its longest side is `maxDim`, and re-encodes as
+ * JPEG at `quality`.
+ *
+ * JPEG, so: no alpha. A canvas clipped to a circle by getCroppedImageCanvas
+ * arrives here with transparent corners and leaves with BLACK ones — measured,
+ * rgb(0,0,0). Pair `shape: 'round'` with this and the circle is baked into the
+ * file, which then shows four black corners in any square or rounded-square
+ * frame. If a round crop is ever genuinely wanted, it needs a PNG path.
+ */
 export function compressCanvas(sourceCanvas: HTMLCanvasElement, maxDim = 800, quality = 0.8): string {
   const { width, height } = sourceCanvas;
   const scale = Math.min(1, maxDim / Math.max(width, height));

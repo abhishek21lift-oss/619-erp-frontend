@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import { Check, ChevronDown, Plus } from 'lucide-react';
 import { cn } from '@/components/ui/cn';
+import { openWithKeyboard } from '@/lib/search-field-focus';
 
 export interface SearchableSelectOption {
   value: string;
@@ -16,17 +17,23 @@ interface SearchableSelectProps {
   label: string;
   value: string;
   onChange: (v: string) => void;
-  options: (SearchableSelectOption | string)[];
+  /** `readonly` so an `as const` list can be passed without a defensive copy —
+   *  the component only maps over it. */
+  options: readonly (SearchableSelectOption | string)[];
   placeholder?: string;
   error?: string;
   required?: boolean;
   /** When true (default), unmatched search text can be used as a freeform value. */
   allowCustom?: boolean;
+  /** Hides the visible uppercase label above the field — `label` still drives
+   *  the accessible name and the closed-state placeholder ("Select …"), so a
+   *  screen reader and an empty field both still say what it is. */
+  hideLabel?: boolean;
 }
 
 /** A closed dropdown with an in-list filter input, and an optional freeform fallback. */
 export function SearchableSelect({
-  label, value, onChange, options, placeholder, error, required, allowCustom = true,
+  label, value, onChange, options, placeholder, error, required, allowCustom = true, hideLabel = false,
 }: SearchableSelectProps) {
   const normalized: SearchableSelectOption[] = options.map((o) =>
     typeof o === 'string' ? { value: o, label: o } : o,
@@ -36,17 +43,31 @@ export function SearchableSelect({
   const [dropUp, setDropUp] = useState(false);
   const [query, setQuery] = useState('');
   const wrapRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   // Open upward when the field sits low in the viewport: the fixed page
   // action bar + mobile bottom nav reserve the bottom ~160px, and a menu
   // opening downward there ends up painted behind them, untappable.
   const toggleOpen = () => {
-    if (!open && wrapRef.current) {
+    if (open) { setOpen(false); return; }
+
+    if (wrapRef.current) {
       const rect = wrapRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom - 160;
       setDropUp(spaceBelow < 320 && rect.top > spaceBelow);
     }
-    setOpen((o) => !o);
+
+    // The search box used to carry `autoFocus`, which put the caret in the
+    // right place and left the on-screen keyboard down: WebKit only raises it
+    // for a focus call made while the browser is still processing the tap, and
+    // React's autoFocus is inside that window only for as long as the update
+    // stays synchronous. So the operator tapped the field, got a dropdown they
+    // could not type into, and had to tap the search box as well.
+    //
+    // openWithKeyboard renders the panel with flushSync and focuses the input
+    // before this handler returns — same task, same gesture. See
+    // lib/search-field-focus.ts.
+    openWithKeyboard(() => setOpen(true), () => searchRef.current);
   };
 
   useEffect(() => {
@@ -63,11 +84,14 @@ export function SearchableSelect({
 
   return (
     <div className="relative" ref={wrapRef}>
-      <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
-        {label} {required && <span style={{ color: '#0067E0' }}>*</span>}
-      </p>
+      {!hideLabel && (
+        <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
+          {label} {required && <span style={{ color: '#0067E0' }}>*</span>}
+        </p>
+      )}
       <button
         type="button"
+        aria-label={label}
         onClick={toggleOpen}
         className="flex w-full items-center gap-3 rounded-[13px] px-4 py-3.5 text-left transition-all"
         style={{
@@ -81,12 +105,15 @@ export function SearchableSelect({
         </span>
         <ChevronDown size={14} style={{ color: 'rgb(148,163,184)', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 200ms', flexShrink: 0 }} />
       </button>
-      {error && <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
       <AnimatePresence>
         {open && (
           <m.div
             initial={{ opacity: 0, y: dropUp ? 6 : -6, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: dropUp ? 6 : -6, scale: 0.98 }}
             transition={{ duration: 0.15 }}
+            // An open picker owns every vertical drag inside it; pulling the
+            // page down behind one is wrong at any scroll position.
+            data-no-pull-refresh
             className={cn(
               'absolute left-0 right-0 z-[60] overflow-hidden rounded-[14px]',
               dropUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5',
@@ -94,8 +121,11 @@ export function SearchableSelect({
             style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(15,23,42,0.09)', boxShadow: dropUp ? '0 -12px 32px rgba(15,23,42,0.12)' : '0 12px 32px rgba(15,23,42,0.12)' }}
           >
             <div className="border-b p-2" style={{ borderColor: 'rgba(15,23,42,0.06)' }}>
-              <input
-                autoFocus
+              {/* No `autoFocus`. toggleOpen focuses this ref inside the tap
+                  that opened the panel, which is the only way WebKit will
+                  raise the keyboard — see lib/search-field-focus.ts. */}
+              <input aria-label={`Search ${label}`}
+                ref={searchRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search..."

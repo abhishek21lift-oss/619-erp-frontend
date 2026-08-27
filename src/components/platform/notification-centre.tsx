@@ -71,7 +71,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
   return (
     <button
       type="button" onClick={onClick} aria-pressed={on}
-      className="min-h-[32px] rounded-[9px] px-2.5 text-[11.5px] font-[700] transition"
+      className="min-h-[44px] rounded-[9px] px-2.5 text-[11.5px] font-[700] transition"
       style={on
         ? { background: 'rgba(0,103,224,0.12)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.25)' }
         : { background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
@@ -142,7 +142,7 @@ function Composer({ initial, plans, onClose, onSaved }: {
             Saves as a draft. Nothing is delivered until you send it.
           </p>
         </div>
-        <button onClick={onClose} aria-label="Close composer" style={{ color: 'var(--text-muted)' }}><X size={16} /></button>
+        <button onClick={onClose} aria-label="Close composer" className="flex items-center justify-center rounded-[9px]" style={{ color: 'var(--text-muted)', minHeight: 44, minWidth: 44 }}><X size={16} /></button>
       </div>
 
       <div className="space-y-3">
@@ -347,27 +347,27 @@ function Row({ a, onChanged, onEdit }: { a: Announcement; onChanged: () => void;
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
           <button
             onClick={doPreview} disabled={busy === 'preview'}
-            className="flex h-8 items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[700] disabled:opacity-50"
+            className="flex min-h-[44px] items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[700] disabled:opacity-50"
             style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
           >
             {busy === 'preview' ? <Loader2 size={11} className="animate-spin" /> : <Eye size={11} />} Preview
           </button>
           <button
             onClick={doSend} disabled={!!busy}
-            className="flex h-8 items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[700] text-white disabled:opacity-50"
+            className="flex min-h-[44px] items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[700] text-white disabled:opacity-50"
             style={{ background: 'var(--brand)' }}
           >
             {busy === 'send' ? <Loader2 size={11} className="animate-spin" /> : <Send size={11} />} Send now
           </button>
           <button
             onClick={doSchedule} disabled={!!busy}
-            className="flex h-8 items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[650] disabled:opacity-50"
+            className="flex min-h-[44px] items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[650] disabled:opacity-50"
             style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
           >
             <Clock size={11} /> {a.status === 'scheduled' ? 'Reschedule' : 'Schedule'}
           </button>
           {a.status === 'draft' && (
-            <button onClick={onEdit} className="flex h-8 items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[650]"
+            <button onClick={onEdit} className="flex min-h-[44px] items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[650]"
               style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
               <Pencil size={11} /> Edit
             </button>
@@ -376,7 +376,7 @@ function Row({ a, onChanged, onEdit }: { a: Announcement; onChanged: () => void;
             <button
               onClick={() => act('cancel', () => api.superAdmin.cancelAnnouncement(a.id), 'Cancelled.')}
               disabled={!!busy}
-              className="flex h-8 items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[650] disabled:opacity-50"
+              className="flex min-h-[44px] items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[650] disabled:opacity-50"
               style={{ border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626' }}
             >
               <Ban size={11} /> Cancel
@@ -387,7 +387,7 @@ function Row({ a, onChanged, onEdit }: { a: Announcement; onChanged: () => void;
               onClick={() => { if (window.confirm(`Delete the draft “${a.title}”?`)) act('delete', () => api.superAdmin.deleteAnnouncement(a.id), 'Draft deleted.'); }}
               disabled={!!busy}
               aria-label={`Delete draft ${a.title}`}
-              className="flex h-8 w-8 items-center justify-center rounded-[9px] disabled:opacity-50"
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[9px] disabled:opacity-50"
               style={{ border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626' }}
             >
               <Trash2 size={12} />
@@ -488,7 +488,7 @@ export default function NotificationCentre() {
           {filters.map((f) => (
             <button
               key={f.id} onClick={() => setFilter(f.id)}
-              className="min-h-[32px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
+              className="min-h-[44px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
               style={filter === f.id
                 ? { background: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(15,23,42,0.10)' }
                 : { color: 'var(--text-muted)' }}
@@ -528,7 +528,7 @@ export default function NotificationCentre() {
         )}
         {error && (
           <div className="flex flex-col items-center gap-2.5 py-14 text-center">
-            <AlertTriangle size={22} style={{ color: 'var(--danger)' }} />
+            <AlertTriangle size={22} style={{ color: 'var(--danger-text)' }} />
             <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{error}</p>
             <button onClick={load} className="mt-1 text-[12px] font-[700]" style={{ color: 'var(--brand)' }}>Try again</button>
           </div>

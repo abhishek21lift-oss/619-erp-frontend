@@ -176,6 +176,10 @@ export default function AuditCentre() {
 
   const [rows, setRows] = useState<AuditEntry[]>([]);
   const [total, setTotal] = useState(0);
+  // The server counts to a ceiling rather than scanning a table that grows
+  // without bound. Below it the number is exact; at it, "10,000+" is the only
+  // honest thing to print.
+  const [totalCapped, setTotalCapped] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [opts, setOpts] = useState<{ actions: string[]; entity_types: string[] }>({ actions: [], entity_types: [] });
@@ -208,7 +212,7 @@ export default function AuditCentre() {
     setLoading(true);
     setError('');
     api.superAdmin.audit(query)
-      .then((r) => { setRows(r.data ?? []); setTotal(r.paging?.total ?? 0); })
+      .then((r) => { setRows(r.data ?? []); setTotal(r.paging?.total ?? 0); setTotalCapped(r.paging?.total_capped ?? false); })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load the audit log.'))
       .finally(() => setLoading(false));
   }, [query]);
@@ -249,7 +253,7 @@ export default function AuditCentre() {
             <button
               key={r.id}
               onClick={() => { setRange(r.id); setFrom(''); setTo(''); setOffset(0); }}
-              className="min-h-[32px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
+              className="min-h-[44px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
               style={range === r.id && !from && !to
                 ? { background: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(15,23,42,0.10)' }
                 : { color: 'var(--text-muted)' }}
@@ -321,7 +325,7 @@ export default function AuditCentre() {
                   className="h-10 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={selectStyle} />
               </label>
               <div className="sm:col-span-2 lg:col-span-4">
-                <button onClick={reset} className="flex min-h-[36px] items-center gap-1.5 text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}>
+                <button onClick={reset} className="flex min-h-[44px] items-center gap-1.5 text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}>
                   <RotateCcw size={12} /> Reset filters
                 </button>
               </div>
@@ -334,7 +338,9 @@ export default function AuditCentre() {
       <div className="overflow-hidden rounded-[16px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
         <div className="flex items-center justify-between gap-3 px-3 py-2.5 sm:px-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <p className="text-[11.5px] font-[650]" style={{ color: 'var(--text-muted)' }}>
-            {loading ? 'Loading…' : `${total.toLocaleString('en-IN')} event${total === 1 ? '' : 's'}`}
+            {loading
+              ? 'Loading…'
+              : `${total.toLocaleString('en-IN')}${totalCapped ? '+' : ''} event${total === 1 ? '' : 's'}`}
           </p>
           {total > PAGE_SIZE && (
             <div className="flex items-center gap-1">
@@ -342,7 +348,7 @@ export default function AuditCentre() {
                 onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
                 disabled={offset === 0}
                 aria-label="Previous page"
-                className="flex h-8 w-8 items-center justify-center rounded-[8px] disabled:opacity-40"
+                className="flex h-11 w-11 items-center justify-center rounded-[8px] disabled:opacity-40"
                 style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}
               >
                 <ChevronLeft size={14} />
@@ -354,7 +360,7 @@ export default function AuditCentre() {
                 onClick={() => setOffset(offset + PAGE_SIZE)}
                 disabled={offset + PAGE_SIZE >= total}
                 aria-label="Next page"
-                className="flex h-8 w-8 items-center justify-center rounded-[8px] disabled:opacity-40"
+                className="flex h-11 w-11 items-center justify-center rounded-[8px] disabled:opacity-40"
                 style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}
               >
                 <ChevronRight size={14} />
@@ -372,7 +378,7 @@ export default function AuditCentre() {
 
         {error && !loading && (
           <div className="flex flex-col items-center gap-2.5 py-14 text-center">
-            <AlertTriangle size={22} style={{ color: 'var(--danger)' }} />
+            <AlertTriangle size={22} style={{ color: 'var(--danger-text)' }} />
             <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{error}</p>
             <button onClick={load} className="mt-1 text-[12px] font-[700]" style={{ color: 'var(--brand)' }}>Try again</button>
           </div>

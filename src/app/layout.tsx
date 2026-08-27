@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
-import { LazyMotion, domAnimation } from 'framer-motion';
+import { LazyMotion, MotionConfig, domAnimation } from 'framer-motion';
 import { AuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/lib/toast';
 import { PermissionsProvider } from '@/lib/permissions-context';
@@ -8,8 +8,11 @@ import { FeaturesProvider } from '@/lib/features-context';
 import CommandPalette from '@/components/CommandPalette';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import SentryInit from '@/components/SentryInit';
+import ScrollRestoration from '@/components/ScrollRestoration';
+import ViewportProbe from '@/components/dev/ViewportProbe';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { GoogleAuthWrapper } from '@/components/GoogleAuthWrapper';
+import { NavScrollProvider } from '@/contexts/nav-scroll-context';
 import './globals.css';
 
 const inter = Inter({
@@ -43,14 +46,35 @@ const jetBrainsMono = JetBrains_Mono({
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://619fitnessstudio.com'),
+  metadataBase: new URL('https://myptstudio.com'),
   title: {
-    default: 'MY PT STUDIO — Operating System',
+    default: 'MY PT STUDIO — Personal Training Business Management',
     template: '%s | MY PT STUDIO',
   },
   description:
-    'MY PT STUDIO — the operating system for fitness professionals. Clients, workouts, nutrition, attendance, payments and analytics, beautifully unified.',
-  alternates: { canonical: '/' },
+    'MY PT STUDIO — the business management platform for personal trainers. Clients, training, nutrition, progress, payments and analytics, beautifully unified.',
+  // No global `alternates.canonical` here, deliberately.
+  //
+  // It used to say `{ canonical: '/' }`, which every one of the 124 routes
+  // inherited — so each URL told a crawler it was really the homepage. That is
+  // inert while the whole origin is noindex and actively harmful the moment
+  // any of it is not. Canonical is a per-URL statement; it is now declared by
+  // the two routes that are actually indexable, beside their `robots` opt-in.
+  // The PWA manifest, declared through the Metadata API rather than as a
+  // <link> in the <head> below.
+  //
+  // It was the one metadata field written as raw JSX, and that is exactly what
+  // made it un-overridable: a nested layout can merge over a parent's
+  // `metadata` export, but it cannot reach into a parent's markup. So every
+  // page on the origin was served this manifest, including the Command
+  // Center — and installing the console to a home screen produced an icon that
+  // opened `start_url: "/"`, i.e. the studio app. The operator installed the
+  // page they were looking at and got a different product.
+  //
+  // Moving it here changes nothing for any existing page: Next emits the same
+  // <link rel="manifest" href="/manifest.json">. What it adds is the ability
+  // for src/app/(platform)/layout.tsx to declare its own.
+  manifest: '/manifest.json',
   icons: {
     icon: [
       { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
@@ -59,11 +83,11 @@ export const metadata: Metadata = {
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
   openGraph: {
-    url: 'https://619fitnessstudio.com',
+    url: 'https://myptstudio.com',
     siteName: 'MY PT STUDIO',
     type: 'website',
-    title: 'MY PT STUDIO — Operating System',
-    description: 'The operating system for fitness professionals — clients, workouts, nutrition, attendance, payments and analytics, beautifully unified.',
+    title: 'MY PT STUDIO — Personal Training Business Management',
+    description: 'The business management platform for personal trainers — clients, training, nutrition, progress, payments and analytics, beautifully unified.',
     images: [
       {
         url: '/icon-512.png',
@@ -74,13 +98,50 @@ export const metadata: Metadata = {
     ],
   },
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent' },
+  // Default-deny, and the default is the whole point.
+  //
+  // 122 of this app's 124 routes are authenticated and hold client health
+  // data, payment records, revenue and staff HR. Exactly two — `/` and
+  // `/start-free` — are marketing. Making noindex the default and requiring a
+  // page to opt IN means the failure mode of forgetting is "a marketing page
+  // is not indexed" (recoverable, visible in Search Console) rather than
+  // "/finance/revenue is in Google" (not recoverable — caches and scrapers
+  // keep it).
+  //
+  // The two opt-ins live in:
+  //   src/app/(chrome)/page.tsx              → /
+  //   src/app/(bare)/start-free/layout.tsx   → /start-free
+  //
+  // publicRoutes.seo.test.ts pins that list, so adding a third is a deliberate
+  // act rather than a side effect. Until this change the default applied with
+  // no exceptions at all, so `/` could not be indexed while `sitemap.ts` was
+  // advertising it at priority 1.0 — the sitemap invited crawlers to a page
+  // whose own meta tag turned them away.
   robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  // maximumScale removed — WCAG 1.4.4: users must be able to resize text
+  // Pinch-zoom is off, by product decision.
+  //
+  // These two lines were previously REMOVED on purpose, with the note "WCAG
+  // 1.4.4: users must be able to resize text". That reasoning was sound and is
+  // being overridden knowingly, not by accident, so the trade is written down
+  // rather than quietly reversed: an operator running this on a studio iPad
+  // kept zooming the layout by brushing the screen with two fingers, and a
+  // half-zoomed till screen during a client's payment is its own kind of
+  // unusable. Browser-level page zoom (desktop Ctrl +/-, and the OS-level
+  // Zoom accessibility setting on iOS/Android) is unaffected by any of this
+  // and remains the route for anyone who needs larger text.
+  //
+  // On their own these do nothing on an iPhone or iPad: Safari has ignored
+  // user-scalable and maximum-scale since iOS 10, precisely because sites
+  // abused them. They still matter for Android Chrome and desktop touch. The
+  // iOS half is handled by /no-zoom.js, and double-tap by touch-action in
+  // globals.css — all three are needed, none is sufficient alone.
+  maximumScale: 1,
+  userScalable: false,
   // iOS auto-zoom on inputs is prevented by ensuring font-size >= 16px on all inputs
   viewportFit: 'cover',
   // themeColor per scheme so the mobile browser chrome matches the app instead
@@ -133,8 +194,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="/theme-init.js" />
+        {/*
+          Cancels the pinch gesture on iOS, where the viewport meta tag above is
+          ignored — see /no-zoom.js. `defer` rather than blocking: unlike the
+          theme script this has nothing to do with the first paint, and a
+          gesture cannot happen before the page is interactive anyway.
+        */}
+        <script src="/no-zoom.js" defer />
         <meta name="mobile-web-app-capable" content="yes" />
-        <link rel="manifest" href="/manifest.json" />
+        {/* The manifest link moved to the `metadata` export above so nested
+            layouts can override it. See the note there. */}
         {/* Skip-to-content link (Accessibility — Issue #16) */}
         <style>{`.skip-link{position:absolute;top:-999px;left:0;z-index:9999;padding:8px 16px;background:#fff;color:#111;font-weight:600;border-radius:0 0 8px 0;}.skip-link:focus{top:0}`}</style>
       </head>
@@ -178,11 +247,62 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <PermissionsProvider>
                   <FeaturesProvider>
                     <ToastProvider>
-                      <LazyMotion features={domAnimation}>
-                        <SentryInit />
-                        {children}
-                        <CommandPalette />
-                      </LazyMotion>
+                      {/*
+                       * NavScrollProvider belongs HERE, not inside AppShell.
+                       *
+                       * Originally because AppShell was rendered by each of ~97
+                       * pages rather than from a layout, so it — and everything
+                       * it wrapped — remounted on every client-side navigation.
+                       * That reset topBar to 'expanded' each time, which
+                       * snapped --topbar-h from 32px back to 46px and animated
+                       * the header spacer, shifting every page's content down
+                       * and then back up on arrival.
+                       *
+                       * AppShell is a layout now — (chrome)/layout.tsx — so
+                       * that particular reason is gone. This one is not: the
+                       * member portal never renders AppShell at all, and its
+                       * pages would fall back to the context default if the
+                       * provider sat inside the staff shell.
+                       */}
+                      <NavScrollProvider>
+                        {/*
+                         * reducedMotion="user" is the only thing that reaches
+                         * framer-motion for a visitor who asks for less motion.
+                         *
+                         * globals.css has the standard
+                         * `@media (prefers-reduced-motion: reduce)` reset, and
+                         * it covers nothing here: it caps animation- and
+                         * transition-duration, and framer-motion uses neither.
+                         * It animates by writing inline styles from its own
+                         * rAF loop, which no CSS rule can cap and no media
+                         * query can see. So ~190 `initial={{ opacity: 0, y }}`
+                         * mount animations across the app played their full
+                         * translate for a user with a vestibular disorder, on
+                         * every page, on every navigation.
+                         *
+                         * This is framer's own mechanism rather than a
+                         * workaround: transform and layout animations are
+                         * dropped when the OS setting is on, opacity ones are
+                         * kept, and anything explicitly opted out with
+                         * `reducedMotion: false` at the component level still
+                         * runs. Nothing changes for anyone who has not asked
+                         * for it.
+                         */}
+                        <MotionConfig reducedMotion="user">
+                          <LazyMotion features={domAnimation}>
+                            <SentryInit />
+                            <ScrollRestoration />
+                            {children}
+                            <CommandPalette />
+                            {/* Renders nothing unless NODE_ENV is not
+                                production AND ?vvprobe=1 is in the URL. It is
+                                mounted here rather than in AppShell so the
+                                member portal, which has no AppShell, can be
+                                diagnosed too. */}
+                            <ViewportProbe />
+                          </LazyMotion>
+                        </MotionConfig>
+                      </NavScrollProvider>
                     </ToastProvider>
                   </FeaturesProvider>
                 </PermissionsProvider>

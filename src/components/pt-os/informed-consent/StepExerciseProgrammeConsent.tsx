@@ -1,8 +1,6 @@
 'use client';
 
 import { Check, FileSignature } from 'lucide-react';
-import FloatInput from '@/components/ui/FloatInput';
-import SignaturePad from '@/components/pt-os/shared/SignaturePad';
 import type { InformedConsentFormData } from './types';
 import { EXERCISE_PROGRAMME_CONSENT_PARAGRAPHS, EXERCISE_PROGRAMME_CHECKBOX_LABEL } from './types';
 
@@ -52,12 +50,20 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
         </span>
       </button>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-        <SignaturePad label="Client signature" onChange={(v) => set('exerciseConsentSignature', v)} required />
-        <FloatInput label="Date" type="date" value={form.exerciseConsentDate} onChange={(v) => set('exerciseConsentDate', v)} required />
-      </div>
+      {/* No signature pad and no date field here any more.
+          The wizard is Consent → Agreement → Signature, and step 3 is the step
+          named after signing. Asking the client to sign on step 1 meant they
+          signed the consent, then read the agreement, then signed again — two
+          signatures for one document, the first of them given before the
+          client had seen everything they were agreeing to.
+          The date moved with it: it is the date the document was signed, so it
+          belongs beside the signature that dates it.
+          The record still carries exercise_consent_signature and
+          exercise_consent_date; buildUpdatePayload now fills both from the
+          step-3 signature and date, so the PDF's Exercise Programme Consent
+          block is unchanged. */}
 
-      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
     </div>
   );
 }

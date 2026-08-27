@@ -13,6 +13,9 @@
 //     hard-navigating via window.location.href. AuthProvider listens to this
 //     event, clears state, and uses the Next.js router for a soft redirect.
 
+import { SESSIONLESS_PAGES } from './public-paths';
+import { clearCachedUser } from './session-cache';
+
 export function apiBase(): string {
   if (typeof window === 'undefined') {
     // SSR: use the configured URL directly (server-to-server, no proxy needed)
@@ -22,8 +25,13 @@ export function apiBase(): string {
 
   const hostname = window.location.hostname;
 
-  // Non-localhost hostname (e.g. the live Vercel domain) — same-origin
-  // fetch works, return '' (relative URLs).
+  // Any non-localhost hostname is the deployed app, served from the VPS behind
+  // nginx. nginx routes myptstudio.com to the frontend container and that
+  // container's Next.js rewrite forwards /api/* to the backend, so a
+  // same-origin relative URL works and needs no CORS.
+  //
+  // Note this path CANNOT carry a WebSocket: the Next.js rewrite hop does not
+  // proxy an Upgrade. See wsBase() below.
   if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
     return '';
   }
@@ -37,6 +45,44 @@ export function apiBase(): string {
     );
   }
   return raw;
+}
+
+/**
+ * The WebSocket origin, derived from `NEXT_PUBLIC_API_URL`.
+ *
+ * ── Why this is not simply `apiBase()` ──────────────────────────────────────
+ *
+ * Ordinary API calls go same-origin and are forwarded by the frontend
+ * container's Next.js rewrite. That hop is an HTTP proxy and does NOT carry a
+ * WebSocket Upgrade, so `wss://myptstudio.com/...` would be dropped before it
+ * ever reached nginx. A WebSocket has to address the backend directly:
+ *
+ *   API calls   browser → nginx → frontend container → rewrite → backend
+ *   WebSocket   browser → nginx ────────────────────────────────→ backend
+ *
+ * Both hostnames resolve to the same VPS; nginx routes on the Host header.
+ *
+ * ── One source of truth ─────────────────────────────────────────────────────
+ *
+ * The scheme is swapped rather than read from a second variable, so a domain
+ * change is one env edit and the two can never disagree. https → wss, http →
+ * ws, which also means a plaintext dev backend does not silently get asked for
+ * a secure socket.
+ *
+ * Returns '' when nothing is configured; callers treat that as "no realtime
+ * transport available" and stay on polling rather than guessing a URL.
+ */
+export function wsBase(): string {
+  const raw = (process.env.NEXT_PUBLIC_API_URL ?? '').trim().replace(/\/+$/, '');
+  if (!raw) return '';
+  if (raw.startsWith('https://')) return `wss://${raw.slice('https://'.length)}`;
+  if (raw.startsWith('http://')) return `ws://${raw.slice('http://'.length)}`;
+  // A protocol-relative or bare host. Infer from how the page itself was
+  // loaded: a secure page cannot open an insecure socket, and browsers block it.
+  if (typeof window !== 'undefined') {
+    return `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${raw.replace(/^\/\//, '')}`;
+  }
+  return '';
 }
 
 // ──────────────────────────────────────────────────────────────────────
@@ -116,14 +162,77 @@ export type StoredImpersonation = {
   orgId: string;
   orgName: string;
   orgLogo?: string | null;
+  /**
+   * Where "exit impersonation" goes back to — the Command Center the operator
+   * started from.
+   *
+   * Captured at hand-off rather than read from configuration, so the studio
+   * app never has to know the console's address. It is the console that knows
+   * where it is, and it says so on the way out.
+   *
+   * Absent on a same-origin hand-off, where '/platform' is still right.
+   */
+  returnTo?: string;
 };
+
+/**
+ * The cross-origin hand-off.
+ *
+ * sessionStorage is scoped to an ORIGIN. Once the Command Center lives on
+ * admin.myptstudio.com and the studio app on myptstudio.com, an impersonation
+ * token written by the console is simply not there when the studio app looks
+ * for it — the operator would land on a studio home as themselves, see a 403
+ * on every panel, and have nothing on screen explaining why.
+ *
+ * So the console passes it in the URL FRAGMENT. A fragment is never sent to
+ * the server: it does not reach nginx's access log, the Next.js server, or any
+ * Referer header — which matters, because the payload contains a live access
+ * token. The alternatives are worse in exactly that way; a query string would
+ * put the token in two log files before the page rendered.
+ *
+ * Consumed lazily, from getImpersonation(), rather than by a bootstrap
+ * component. That removes the ordering problem entirely: whoever asks first —
+ * AuthProvider, the banner, an API call — consumes it, and there is no window
+ * in which a request goes out before the token has been picked up.
+ */
+const HANDOFF_PARAM = 'imp';
+
+function consumeHandoff(): StoredImpersonation | null {
+  if (typeof window === 'undefined') return null;
+  const hash = window.location.hash;
+  if (!hash || !hash.includes(`${HANDOFF_PARAM}=`)) return null;
+  try {
+    const encoded = new URLSearchParams(hash.replace(/^#/, '')).get(HANDOFF_PARAM);
+    if (!encoded) return null;
+    const json = atob(encoded.replace(/-/g, '+').replace(/_/g, '/'));
+    const parsed = JSON.parse(json) as StoredImpersonation;
+    // Shape check before trusting it. The fragment is attacker-controllable —
+    // anybody can send the operator a link — so a malformed or partial payload
+    // must be dropped rather than stored. It cannot grant anything either way:
+    // `token` is checked by the API, which mints these itself and rejects
+    // anything it did not sign.
+    if (!parsed || typeof parsed.token !== 'string' || typeof parsed.orgId !== 'string') return null;
+    sessionStorage.setItem(IMPERSONATION_KEY, JSON.stringify(parsed));
+    // Strip it so the token is not left in the address bar, in the back/forward
+    // history, or in whatever the operator pastes into a support ticket next.
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    window.dispatchEvent(new CustomEvent('impersonation-changed'));
+    return parsed;
+  } catch { return null; }
+}
+
+/** Encode an impersonation for the fragment hand-off. */
+export function encodeImpersonationHandoff(s: StoredImpersonation): string {
+  return btoa(JSON.stringify(s)).replace(/\+/g, '-').replace(/\//g, '_');
+}
 
 export function getImpersonation(): StoredImpersonation | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = sessionStorage.getItem(IMPERSONATION_KEY);
-    return raw ? (JSON.parse(raw) as StoredImpersonation) : null;
-  } catch { return null; }
+    if (raw) return JSON.parse(raw) as StoredImpersonation;
+  } catch { /* fall through to the hand-off below */ }
+  return consumeHandoff();
 }
 
 export function setImpersonation(s: StoredImpersonation): void {
@@ -157,7 +266,6 @@ function serializeBody(body: unknown): BodyInit | undefined {
 // ──────────────────────────────────────────────────────────────────────
 //  Global 401 handler + token refresh
 // ──────────────────────────────────────────────────────────────────────
-const SESSION_USER_KEY = '619_user_v2';
 let _redirecting = false;
 
 /** Reset the redirect lock — called by AuthProvider after login() succeeds. */
@@ -165,13 +273,22 @@ export function resetRedirectLock(): void {
   _redirecting = false;
 }
 
-const PUBLIC_CLIENT_PATHS = ['/', '/login', '/reset-password'];
+// Imported, not re-declared. This previously read
+// `['/', '/login', '/reset-password']` and omitted every token link but one,
+// so a client on /client/activate saw the page for half a second and was then
+// redirected to /login — with the ?token= dropped, destroying the credential.
+// See src/lib/public-paths.ts for why there is now a single source.
+const PUBLIC_CLIENT_PATHS: readonly string[] = SESSIONLESS_PAGES;
 
 function handleUnauthorized(): void {
   if (typeof window === 'undefined' || _redirecting) return;
   if (PUBLIC_CLIENT_PATHS.includes(window.location.pathname)) return;
   _redirecting = true;
-  try { localStorage.removeItem(SESSION_USER_KEY); } catch { /* noop */ }
+  // Imported, not re-declared. This used to remove '619_user_v2' from
+  // localStorage while AuthProvider was writing '619_user_minimal_v3' to
+  // sessionStorage — wrong key, wrong store, so a 401 left the previous
+  // person's identity cached and the next mount painted as them.
+  clearCachedUser();
   window.dispatchEvent(new CustomEvent('session-expired'));
 }
 

@@ -226,7 +226,7 @@ export function useWebAuthn() {
 
   // ── Login with passkey (returns user object on success) ───────────────────
 
-  const login = useCallback(async (email?: string): Promise<{ id: string; name?: string; email: string; role?: string; trainer_id?: string; member_id?: string } | null> => {
+  const login = useCallback(async (email?: string): Promise<{ id: string; name?: string; email: string; role?: string; trainer_id?: string; pt_client_id?: string } | null> => {
     setBusy(true);
     try {
       const options = await api.webauthn.loginOptions({ email });

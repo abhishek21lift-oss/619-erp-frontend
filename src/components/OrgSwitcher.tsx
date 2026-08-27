@@ -89,8 +89,10 @@ export default function OrgSwitcher() {
         <ChevronDown size={12} strokeWidth={2} className="hidden shrink-0 opacity-60 sm:block" />
       </button>
 
+      {/* data-no-pull-refresh: an open menu owns every vertical drag inside it;
+          pulling the page down behind one is wrong at any scroll position. */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_16px_48px_rgba(0,0,0,0.18)] z-50">
+        <div data-no-pull-refresh className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_16px_48px_rgba(0,0,0,0.18)] z-50">
           <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-disabled)]">
             Platform · view as
           </div>

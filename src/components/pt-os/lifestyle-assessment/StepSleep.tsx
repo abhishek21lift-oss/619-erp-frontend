@@ -57,7 +57,7 @@ export function StepSleep({ form, set, error }: StepSleepProps) {
         scaleLabels={['1 · Poor', '5 · Okay', '10 · Excellent']}
       />
 
-      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
       {category && badge && (
         <div className="flex items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>
