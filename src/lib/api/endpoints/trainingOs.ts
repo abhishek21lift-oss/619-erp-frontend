@@ -18,8 +18,9 @@ import { buildQs } from '../qs';
 
 export type PrescriptionType =
   | 'SETS_REPS' | 'WEIGHT_REPS' | 'RPE_BASED' | 'RIR_BASED' | 'PERCENT_1RM'
-  | 'TIME' | 'DISTANCE' | 'TIME_DISTANCE' | 'PACE' | 'SPEED'
-  | 'INTERVAL' | 'AMRAP' | 'EMOM' | 'CIRCUIT' | 'BODYWEIGHT' | 'MOBILITY' | 'CUSTOM';
+  | 'TIME' | 'DISTANCE' | 'TIME_DISTANCE' | 'TIME_SPEED' | 'DISTANCE_LOAD' | 'TIME_LOAD'
+  | 'PACE' | 'SPEED' | 'CALORIES' | 'HEART_RATE' | 'RPE' | 'RPM' | 'STEPS' | 'FLOORS' | 'HOLD'
+  | 'INTERVAL' | 'ROUNDS' | 'AMRAP' | 'EMOM' | 'CIRCUIT' | 'BODYWEIGHT' | 'MOBILITY' | 'CUSTOM';
 
 export type WorkoutSection =
   | 'WARMUP' | 'ACTIVATION' | 'MAIN' | 'ACCESSORY'
@@ -27,7 +28,8 @@ export type WorkoutSection =
 
 export type CardioType =
   | 'TREADMILL' | 'RUNNING' | 'CYCLING' | 'STATIONARY_BIKE' | 'ROWING' | 'ELLIPTICAL'
-  | 'STAIRMASTER' | 'SKI_ERG' | 'SWIMMING' | 'WALKING' | 'HIIT' | 'CIRCUIT' | 'OTHER';
+  | 'STAIRMASTER' | 'STEP_MILL' | 'SKI_ERG' | 'SWIMMING' | 'WALKING' | 'SKATING'
+  | 'PROWLER' | 'JUMP_ROPE' | 'HIIT' | 'CIRCUIT' | 'OTHER';
 
 export type SetType = 'WARMUP' | 'WORKING' | 'BACKOFF' | 'DROP' | 'AMRAP' | 'FAILURE' | 'CUSTOM';
 
@@ -130,6 +132,9 @@ export interface TemplateExercise {
   target_speed: number | null;
   target_incline: number | null;
   target_resistance: number | null;
+  target_cadence: number | null;
+  target_floors: number | null;
+  target_steps: number | null;
   target_heart_rate: number | null;
   target_calories: number | null;
   target_pace_seconds: number | null;
@@ -171,9 +176,13 @@ export interface CardioPerformance {
   id: string; exercise_performance_id: string; cardio_type: CardioType;
   duration_seconds: number | null; distance: number | null;
   distance_unit: 'm' | 'km' | 'mile' | null;
-  average_speed: number | null; incline: number | null; resistance: number | null;
-  average_heart_rate: number | null; calories_burned: number | null;
-  pace_seconds: number | null; rounds_completed: number | null;
+  average_speed: number | null; max_speed?: number | null; speed_unit?: string | null;
+  incline: number | null; resistance: number | null;
+  average_heart_rate: number | null; max_heart_rate?: number | null; calories_burned: number | null;
+  pace_seconds: number | null; pace_distance?: number | null; cadence?: number | null;
+  floors_completed?: number | null; steps_completed?: number | null; elevation_gain?: number | null;
+  work_interval_seconds?: number | null; rest_interval_seconds?: number | null;
+  rounds_completed: number | null;
   rpe: number | null; completed: boolean; notes: string | null;
 }
 

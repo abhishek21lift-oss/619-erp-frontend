@@ -5,6 +5,7 @@ import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
+import { PremiumAreaChart } from '@/components/visualizations';
 
 type Earnings = { base: number; incentive: number; total: number; month: string };
 type ScheduleItem = {
@@ -309,6 +310,21 @@ function TrainerInner() {
             <div style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--line)' }}>
               <div className="card-title" style={{ marginBottom: 0 }}>Last 6 months</div>
             </div>
+            {earningsHistory.length >= 2 && (
+              <div style={{ padding: '0.85rem 1rem 0' }}>
+                <PremiumAreaChart
+                  data={earningsHistory}
+                  xKey="month"
+                  areas={[
+                    { key: 'total', label: 'Payout' },
+                    { key: 'incentive', label: 'Incentive' },
+                  ]}
+                  height={180}
+                  bordered={false}
+                  formatValue={fmt}
+                />
+              </div>
+            )}
             <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
               <table style={{ minWidth: 420 }}>
                 <thead>

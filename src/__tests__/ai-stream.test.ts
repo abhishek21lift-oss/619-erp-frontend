@@ -77,6 +77,21 @@ describe('streamAiChat', () => {
     expect(res.text).toBe('ok');
   });
 
+  // The backend heartbeats with ': ping' comment lines so proxies with an idle
+  // read timeout never cut a quiet stream. They must be invisible to callers —
+  // the one way they can break the app is by leaking into the answer text.
+  it('ignores SSE comment keep-alives so they never become answer text', async () => {
+    vi.stubGlobal('fetch', mockFetchStreaming([
+      ': ping\n\n',
+      ': ping\n\n',
+      sse({ type: 'chunk', content: 'answer' }),
+    ]));
+    const seen: string[] = [];
+    const res = await streamAiChat({ message: 'hi' }, { onText: (t) => seen.push(t) });
+    expect(seen).toEqual(['answer']);
+    expect(res.text).toBe('answer');
+  });
+
   it('surfaces sources and tools to the caller', async () => {
     vi.stubGlobal('fetch', mockFetchStreaming([
       sse({ type: 'sources', sources: ['Handbook'] }),

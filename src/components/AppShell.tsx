@@ -15,7 +15,6 @@ import { cn } from '@/components/ui/cn';
 import Sidebar from '@/components/sidebar';
 import StudioMark from '@/components/StudioMark';
 import MobileBottomNav from '@/components/MobileBottomNav';
-import AiAssistant from '@/components/ai/AiAssistant';
 import { api } from '@/lib/api';
 import { roleLabel } from '@/lib/roles';
 import { allNavItems, isVisibleForFeature } from '@/lib/nav-config';
@@ -58,6 +57,7 @@ const NAV_KEYWORDS: Record<string, string> = {
   // dead route.
   '/checkin/qr-scanner':         'walk-in walkin drop-in checkin daily visit attendance qr scanner scan code kiosk self service',
 '/ai-coach':                   'ai coach chatbot gpt workout nutrition fitness assistant 619',
+  '/ai/intelligence':            'ai intelligence center memory proposals approval review trainer',
   '/ai/workout-generator':       'ai workout plan generator create programme training',
   '/ai/diet-generator':          'ai diet nutrition plan generator meal food macros calories',
   '/ai/progress-analysis':       'ai progress analysis analyzer client report insights',
@@ -667,11 +667,13 @@ function AppShellContent({ children }: AppShellProps) {
               painting on top of them regardless of their z-index. */}
           <MobileBottomNav sidebarOpen={mobileMenuOpen} />
 
-          {/* The assistant sits inside this stacking context for the same
-              reason the bottom nav does — so its z-index is compared against
-              page-level fixed bars rather than always winning or always
-              losing against them. */}
-          <AiAssistant />
+          {/* The floating AI launcher used to sit here, inside this stacking
+              context. It is gone: on a phone it sat on top of the content of
+              every screen in the app, and AI already has a permanent home —
+              the AI Coach tab in the bottom nav, which is a full chat console
+              rather than a corner button. The components it opened are still
+              in src/components/ai/ and nothing renders them; putting the
+              button back is this one line. */}
         </div>
       </div>
     </LazyMotion>

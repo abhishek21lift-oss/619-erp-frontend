@@ -47,7 +47,15 @@ export function webAuthnError(err: unknown): string {
     case 'NotSupportedError':
       return 'This device does not support biometric authentication.';
     case 'SecurityError':
-      return 'Security error — make sure you are using HTTPS.';
+      // Almost never HTTPS on a deployed site, and saying so sends whoever
+      // reads it to check something that was already fine. The browser raises
+      // SecurityError here when the passkey domain the server asked for (rpId)
+      // is not this site's domain — a stale RP_ID after a rebrand or a move is
+      // the usual cause, and it fails exactly like this: the request succeeds,
+      // the browser refuses, nothing appears.
+      return 'This site is not allowed to create passkeys — the passkey domain the '
+        + 'server asked for does not match this site. Check RP_ID and WEBAUTHN_ORIGIN '
+        + 'on the backend (GET /api/auth/webauthn/admin/config reports both).';
     case 'InvalidStateError':
       return 'This passkey is already registered.';
     case 'AbortError':
@@ -218,7 +226,7 @@ export function useWebAuthn() {
 
   // ── Login with passkey (returns user object on success) ───────────────────
 
-  const login = useCallback(async (email?: string): Promise<{ id: string; name?: string; email: string; role?: string; trainer_id?: string; member_id?: string } | null> => {
+  const login = useCallback(async (email?: string): Promise<{ id: string; name?: string; email: string; role?: string; trainer_id?: string; pt_client_id?: string } | null> => {
     setBusy(true);
     try {
       const options = await api.webauthn.loginOptions({ email });

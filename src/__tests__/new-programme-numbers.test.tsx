@@ -26,7 +26,17 @@ const createPlan = vi.fn(async () => ({ plan: { id: 'p1' } }));
 const assign = vi.fn(async () => ({}));
 vi.mock('@/lib/api', () => ({
   api: {
-    pt: { clients: async () => ({ data: [{ id: 'c1', name: 'Ajeet Yadav' }] }) },
+    pt: {
+      clients: async () => ({ data: [{ id: 'c1', name: 'Ajeet Yadav' }] }),
+      // Picking a client fills the rest of the form from that client's record,
+      // so the dialog reads the row on selection. These tests are about the
+      // number fields, and this client answers none of them — which is the
+      // case that must leave the typed values alone.
+      client: async () => ({ data: { id: 'c1', name: 'Ajeet Yadav' } }),
+    },
+    // The goal now comes from the goal-setting screening. This client has not
+    // been screened, which is the case that leaves the form's goal alone.
+    progress: { goals: { list: async () => ({ data: [] }) } },
     workouts: {
       plans: { create: (...a: unknown[]) => createPlan(...(a as [])) },
       assign: (...a: unknown[]) => assign(...(a as [])),

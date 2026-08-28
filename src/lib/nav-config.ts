@@ -98,6 +98,10 @@ export const NAV_GROUPS: NavGroup[] = [
       // First in the group on purpose: it is the only item here a trainer
       // opens every day. The rest are authoring and reference.
       { href: '/pt-os/today',               label: 'Today',                icon: 'CalendarDays' },
+      // Sits above Workout Plans, which reads the old workout_plans tables and
+      // stays until the cutover finishes. Two entries for a while is the cost
+      // of migrating without a flag day; the old one goes when nothing needs it.
+      { href: '/pt-os/training/templates',  label: 'Workouts',             icon: 'Dumbbell',    matchPrefix: '/pt-os/training/templates' },
       { href: '/pt-os/workout-plans',       label: 'Workout Plans',        icon: 'Dumbbell' },
       { href: '/pt-os/workout-log',         label: 'Workout Log',          icon: 'ClipboardList', matchPrefix: '/pt-os/workout-log' },
       { href: '/pt-os/exercise-library',    label: 'Exercise Library',     icon: 'BookOpen',    feature: 'exercise_library' },
@@ -196,12 +200,13 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'Bot',
     feature: 'ai_suite',
     items: [
-      { href: '/ai-coach',            label: 'AI Coach',           icon: 'Bot' },
-      { href: '/ai/workout-generator',label: 'Workout Generator',  icon: 'Dumbbell' },
-      { href: '/ai/diet-generator',   label: 'Diet Generator',     icon: 'Apple' },
-      { href: '/ai/progress-analysis',label: 'Progress Analyzer',  icon: 'TrendingUp' },
-      { href: '/ai/business-insights',label: 'Business Insights',  icon: 'BarChart3',  roles: ['admin'] },
-      { href: '/ai-coach/knowledge',  label: 'Knowledge Base',     icon: 'BookOpen',   roles: ['admin', 'manager'], feature: 'ai_knowledge_base' },
+      { href: '/ai-coach',              label: 'AI Coach',            icon: 'Bot' },
+      { href: '/ai/intelligence',       label: 'Intelligence Center', icon: 'Brain',      badge: 'aiPendingCount', isNew: true },
+      { href: '/ai/workout-generator', label: 'Workout Generator',   icon: 'Dumbbell' },
+      { href: '/ai/diet-generator',    label: 'Diet Generator',      icon: 'Apple' },
+      { href: '/ai/progress-analysis', label: 'Progress Analyzer',   icon: 'TrendingUp' },
+      { href: '/ai/business-insights', label: 'Business Insights',   icon: 'BarChart3',  roles: ['admin'] },
+      { href: '/ai-coach/knowledge',   label: 'Knowledge Base',      icon: 'BookOpen',   roles: ['admin', 'manager'], feature: 'ai_knowledge_base' },
     ],
   },
   {

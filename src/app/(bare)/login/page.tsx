@@ -12,7 +12,13 @@
 // separate is not separate: the same POST works from either page, or from curl.
 
 import SignInScreen from '@/components/auth/SignInScreen';
+import PublicPullToRefresh from '@/components/PublicPullToRefresh';
 
 export default function LoginPage() {
-  return <SignInScreen portal="staff" />;
+  return (
+    <>
+      <PublicPullToRefresh />
+      <SignInScreen portal="staff" />
+    </>
+  );
 }

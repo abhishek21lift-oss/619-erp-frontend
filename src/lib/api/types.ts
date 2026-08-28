@@ -44,7 +44,7 @@ export type User = {
   email: string;
   role?: Role;
   trainer_id?: string;
-  member_id?: string;
+  pt_client_id?: string;
   is_active?: boolean;
   organization_id?: string | null;
   organization_name?: string | null;
@@ -790,6 +790,11 @@ export interface InformedConsentActivity {
 // Types matching the /api/pt-os/workout-log/* contract exactly. is_pr_* and
 // summary fields are always server-computed — never sent by the client.
 
+/** Distance unit for a logged cardio actual — stored with the value, never converted on read. */
+export type WorkoutDistanceUnit = 'm' | 'km' | 'mile';
+/** Speed unit for a logged cardio actual. */
+export type WorkoutSpeedUnit = 'kmh' | 'mph';
+
 export interface WorkoutSet {
   id: string;
   session_exercise_id: string;
@@ -800,6 +805,18 @@ export interface WorkoutSet {
   rir?: number | null;
   tempo?: string | null;
   rest_seconds?: number | null;
+  /** Cardio actuals — all NULL for strength sets (mirrors cardio_performances). */
+  duration_seconds?: number | null;
+  distance?: number | null;
+  distance_unit?: WorkoutDistanceUnit | null;
+  average_speed?: number | null;
+  speed_unit?: WorkoutSpeedUnit | null;
+  calories_burned?: number | null;
+  average_heart_rate?: number | null;
+  cadence?: number | null;
+  steps_completed?: number | null;
+  floors_completed?: number | null;
+  rounds_completed?: number | null;
   completed: boolean;
   notes?: string | null;
   is_pr_weight: boolean;
@@ -816,6 +833,11 @@ export interface WorkoutSessionExercise {
   exercise_name: string;
   sort_order: number;
   notes?: string | null;
+  /** Which fields this exercise can be logged AS. NULL for ad-hoc rows whose
+   *  library exercise went away — the logger falls back to strength fields. */
+  exercise_type?: string | null;
+  prescription_mode_primary?: string | null;
+  prescription_mode_allowed?: string[] | null;
   created_at: string;
   sets: WorkoutSet[];
 }
@@ -1234,6 +1256,7 @@ export interface LibraryExercise {
   contraindications?: string[];
   breathing_tips?: string | null;
   tempo_recommendation?: string | null;
+  progression_notes?: string | null;
   recommended_reps?: string | null;
   recommended_sets?: string | null;
   beginner_notes?: string | null;
@@ -1247,6 +1270,8 @@ export interface LibraryExercise {
   archived_at?: string | null;
   deleted_at?: string | null;
   version?: number;
+  prescription_mode_primary?: string | null;
+  prescription_mode_allowed?: string[];
 
   primary_muscle_id?: string | null;
   equipment_id?: string | null;
@@ -1388,6 +1413,16 @@ export interface WorkoutPlanVersion {
   exercise_count: number;
 }
 
+/** One client's enrolment on a plan, as the plans list returns it. */
+export interface WorkoutPlanAssignment {
+  client_id: string;
+  client_name: string;
+  /** That client's own progress through the plan, 0-100. */
+  progress_pct: number;
+  /** ISO date the client started, used to work out which week they are in. */
+  start_date: string | null;
+}
+
 export interface WorkoutPlan {
   id: string;
   name: string;
@@ -1402,7 +1437,23 @@ export interface WorkoutPlan {
   created_at: string;
   updated_at: string;
   exercise_count: number;
+  /**
+   * How far along the plan is, 0-100.
+   *
+   * Scoped to one client (`?client_id=`), this is that client's own figure.
+   * Studio-wide it is the mean across `assignments` — it used to be the
+   * literal 0 the SQL emitted when no client was named, which is why every
+   * card on the plans screen read "0% complete".
+   */
   progress: number;
+  /**
+   * The clients actually running this plan.
+   *
+   * Filtered server-side to the caller's studio, and for a trainer to their
+   * own clients — so `length` is "assigned clients you can see", not a
+   * studio-wide count. Empty for a plan nobody has been assigned.
+   */
+  assignments: WorkoutPlanAssignment[];
   exercises: WorkoutPlanExercise[];
 
   // ── Weeks and progression (migration 137) ───────────────────────────────
@@ -1412,8 +1463,15 @@ export interface WorkoutPlan {
   progression_every_weeks?: number;
   /** Which week the returned exercises describe. 1 unless ?week= was passed. */
   week?: number;
-  /** 'base' = the stored week 1, 'derived' = week 1 + rule, 'override' = hand-written. */
+  /** 'base' = the stored week 1, 'derived' = an earlier week + rule, 'override' = this week was edited. */
   week_source?: 'base' | 'derived' | 'override';
+  /**
+   * The week these numbers are built from — week 1, or the latest earlier week
+   * the trainer edited. Equal to `week` when this week is itself an edit.
+   */
+  anchor_week?: number;
+  /** Weeks that have been edited, so the builder can mark them. Never includes 1. */
+  override_weeks?: number[];
   /** null when there is no rule to preview. */
   progression_preview?: ProgressionPreview[] | null;
   version?: number;
@@ -2079,15 +2137,51 @@ export interface PersistedLogLine {
   context: unknown;
 }
 
+/**
+ * Paging for the two platform audit feeds.
+ *
+ * `total` is exact up to a ceiling and then stops counting. Both feeds read
+ * tables with no retention sweep — `activity_log` and `login_events` grow for
+ * as long as the platform is used — and an unfiltered count over either was a
+ * full scan plus joins with no upper bound. Past the ceiling the honest answer
+ * is "more than this", which `total_capped` says.
+ */
+export interface AuditPaging {
+  limit: number;
+  offset: number;
+  total: number;
+  /** True when `total` is the ceiling rather than a count. */
+  total_capped?: boolean;
+}
+
 export interface LogHistory {
   lines: PersistedLogLine[];
-  stats: {
-    total: number;
-    from_worker: number;
-    fatal: number;
-    last_24h: number;
-    oldest: string | null;
-  };
+  /**
+   * Null when the request asked to skip it (`stats=0`), which the poll tick
+   * does. The lines change every few seconds; this strip does not, and
+   * recomputing it per tick was most of the cost of leaving the tab open.
+   */
+  stats: LogHistoryStats | null;
+  /** Cursor for the next (older) page; null when the last page was short. */
+  next_before: string | null;
+}
+
+export interface LogHistoryStats {
+  /**
+   * Counts within `window_hours`, not over the whole table.
+   *
+   * The unwindowed COUNT(*) this replaced was a sequential scan of the largest
+   * table on the box, and it ran beside every page of a list that was already
+   * capped — so the endpoint looked paginated while half of it was not.
+   */
+  in_window: number;
+  from_worker: number;
+  fatal: number;
+  window_hours: number;
+  /** Oldest row in the whole table, which a windowed count cannot report. */
+  oldest: string | null;
+  /** Days of history the retention sweep keeps, so `oldest` has a context. */
+  retention_days: number;
 }
 
 export interface GuardianNarration {
@@ -3168,6 +3262,24 @@ export interface CoachGeneration {
   facts_key: string;
 }
 
+/**
+ * A short, advisory read of a client's recent weekly check-ins. Purely
+ * informational — nothing behind this endpoint writes to any client record.
+ * `available: false` (too little history, the model was unreachable, or its
+ * reply didn't parse) means "there is nothing to show", not an error — there
+ * is no rule-based substitute for "what changed in the notes", so the card
+ * simply doesn't render rather than showing something invented.
+ */
+export type CheckinInsight =
+  | {
+      available: true;
+      summary: string;
+      notable_change: string | null;
+      suggested_action: string | null;
+      model: string | null;
+    }
+  | { available: false; reason: string; checkins_count?: number };
+
 /** One readiness component, 0-100, or null when that question was not answered. */
 export interface RecoveryComponents {
   sleep: number | null;
@@ -3236,4 +3348,279 @@ export interface AiActionResult {
   total: number;
   warnings: string[];
   results: Array<{ id: string; name: string; status: string; error: string | null }>;
+}
+
+// ── Trainer Intelligence (Phase 2F/2G) ──────────────────────────────────
+
+export interface AiMemoryCandidate {
+  id: string;
+  organization_id: string;
+  client_id: string;
+  category: string;
+  subcategory?: string | null;
+  fact: string;
+  confidence: number;
+  source_type: string;
+  source_id?: string | null;
+  source_text?: string | null;
+  status: string;
+  verified_at?: string | null;
+  as_of?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+  /** Attached by the pending-queue, not stored in DB. */
+  _conflicts?: Array<{ id: string; fact: string; category: string }>;
+}
+
+export interface AiProgrammerProposal {
+  id: string;
+  organization_id: string;
+  client_id: string;
+  proposal_type: string;
+  summary: string;
+  reason: string;
+  evidence: Array<{ type: string; description: string; source: string; value: string }>;
+  current_state: Record<string, unknown>;
+  deterministic_recommendation: Record<string, unknown>;
+  ai_recommendation: Record<string, unknown> | null;
+  confidence: number;
+  safety_flags: string[];
+  requires_trainer_approval: boolean;
+  status: string;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  rejection_reason?: string | null;
+  fingerprint?: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  expires_at: string;
+}
+
+export interface PendingWorkItem {
+  type: 'memory' | 'proposal';
+  data: AiMemoryCandidate | AiProgrammerProposal;
+  priority: number;
+}
+
+export interface PendingWorkQueue {
+  memory_candidates: PendingWorkItem[];
+  programmer_proposals: PendingWorkItem[];
+  total_pending: number;
+}
+
+export interface ClientIntelligenceSummary {
+  client_id: string;
+  client_name: string;
+  generated_at: string;
+  what_changed: Array<{ type: string; text: string }>;
+  what_ai_knows: Array<{ category: string; fact: string; confidence: number; source_type: string; as_of: string | null }>;
+  what_ai_suggests: Array<{ id: string; type: string; summary: string; confidence: number; safety_flags: string[]; expires_at: string }>;
+  what_needs_attention: Array<{ type: string; text: string }>;
+  what_is_missing: Array<string>;
+  next_best_action: { type: string; text: string; proposal_id?: string; memory_id?: string } | null;
+}
+
+export interface AiIntelligenceAudit {
+  id: string;
+  organization_id: string;
+  actor_id: string;
+  target_type: string;
+  target_id: string;
+  action: string;
+  previous_state: string | null;
+  new_state: string | null;
+  reason: string | null;
+  request_id: string | null;
+  created_at: string;
+  /** Human-readable description from the target row (memory fact or proposal summary). */
+  target_description?: string | null;
+  /** The client ID this audit event is associated with (via the target). */
+  client_id?: string | null;
+}
+
+// ── Command Centre Phase 5 — platform KPIs, tenancy health, studio 360, search ──
+// tenancy, studios, search}.js exactly. If a field name drifts in the backend,
+// the compile error points here, not at a render that just shows "undefined".
+//
+// Critical rule from the brief: search results MUST carry `org_id` so the UI
+// cannot render "Acme Fitness" without showing the org. The PlatformSearchResult
+// interface enforces that structurally.
+
+/** GET /api/platform/overview/kpis — home-screen numbers. */
+export interface PlatformKpis {
+  business: {
+    total_studios: number;
+    active_studios: number;
+    pending_studios: number;
+    suspended_studios: number;
+    trial_studios: number;
+    total_owners: number;
+    total_trainers: number;
+    total_clients: number;
+    active_clients: number;
+    new_clients_30d: number;
+  };
+  platform_revenue: {
+    mrr_inr: number;
+    active_subscriptions: number;
+    trial_subscriptions: number;
+    expiring_in_7d: number;
+  };
+  operations: {
+    failed_payments_30d: number;
+  };
+  security: {
+    critical_alerts: number;
+    high_alerts: number;
+    medium_alerts: number;
+  };
+}
+
+/** Per-section status. Each is independent — one WARNING does not cascade. */
+export type TenancySectionStatus = 'HEALTHY' | 'WARNING' | 'CRITICAL' | 'UNKNOWN';
+
+/** GET /api/platform/tenancy-health — 5-line honest summary. */
+export interface TenancyHealth {
+  /** RLS posture: 247 policies on public, 0 are org-scoped today. */
+  rls: { status: TenancySectionStatus; policy_count: number; org_scoped_count: number; note: string };
+  /** Tenant-scope enforcement: the app-layer tenantScope() chain. */
+  isolation: { status: TenancySectionStatus; tables_under_scope: number; note: string };
+  /** Rows with NULL organization_id across tenant tables (MV). */
+  orphans: { status: TenancySectionStatus; total: number; top_table: string | null; note: string };
+  /** Cross-tenant attempts blocked in activity_log. */
+  cross_tenant: { status: TenancySectionStatus; attempts_30d: number; note: string };
+  /** Known unfixed gaps from the convention test. */
+  known_gaps: { status: TenancySectionStatus; open: number; high: number; note: string };
+}
+
+/** GET /api/platform/tenancy/orphans — drilldown from orphans_mv. */
+export interface TenancyOrphanRow {
+  table_name: string;
+  null_org_rows: number;
+  total_rows: number;
+  ratio: number;
+}
+
+export interface TenancyOrphans {
+  data: TenancyOrphanRow[];
+  total: number;
+}
+
+/** GET /api/platform/tenancy/cross-tenant-attempts. */
+export interface TenancyAttemptRow {
+  id: string;
+  action: string;
+  user_name: string | null;
+  org_name: string | null;
+  created_at: string;
+  meta: Record<string, unknown> | null;
+}
+
+export interface TenancyAttempts {
+  data: TenancyAttemptRow[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+/** GET /api/platform/tenancy/known-gaps. */
+export interface TenancyKnownGap {
+  table_name: string;
+  reason: string;
+  severity: 'high' | 'medium' | 'low';
+  added_at: string;
+  verified_at: string | null;
+  closed_at: string | null;
+}
+
+/** POST /api/platform/tenancy/run-isolation-tests. */
+export interface TenancyIsolationTestCase {
+  name: string;
+  passed: boolean;
+  detail: string;
+}
+
+export interface TenancyIsolationRunResult {
+  run_id: number;
+  passed: boolean;
+  total_tests: number;
+  failed_tests: number;
+  duration_ms: number;
+  cases: TenancyIsolationTestCase[];
+  ran_at: string;
+  cooldown_remaining_s: number;
+}
+
+/** GET /api/platform/studios/:id/health. */
+export interface StudioHealth {
+  organization: { id: string; name: string; status: string };
+  activity: {
+    status: TenancySectionStatus;
+    total_events_24h: number;
+    error_events_24h: number;
+  };
+  logins: {
+    status: TenancySectionStatus;
+    success_24h: number;
+    failed_24h: number;
+  };
+  storage: { object_count: number };
+  subscription: { status: string; ends_at: string | null; plan_code: string } | null;
+}
+
+/** GET /api/platform/studios/:id/memberships. */
+export interface StudioMembership {
+  id: string;
+  name: string;
+  status: string;
+  start_date: string | null;
+  end_date: string | null;
+  paid_amount: number | null;
+  balance_amount: number | null;
+  plan_name: string | null;
+}
+
+export interface StudioMemberships {
+  data: StudioMembership[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+/** GET /api/platform/studios/:id/pt-revenue. */
+export interface StudioPtRevenue {
+  total_collected: number;
+  total_outstanding: number;
+  collected_30d: number;
+  collected_90d: number;
+  collected_365d: number;
+  active_memberships: number;
+  expired_memberships: number;
+}
+
+/** GET /api/platform/search — global ⌘K results.
+ *  `org_id` is REQUIRED on every result. The backend never returns a row
+ *  without it, and this interface makes the type system refuse one too. */
+export type PlatformSearchKind =
+  | 'studio' | 'owner' | 'trainer' | 'client'
+  | 'subscription' | 'invoice' | 'audit';
+
+export interface PlatformSearchResult {
+  kind: PlatformSearchKind;
+  id: string;
+  /** Always present. Frontend cannot render this result without knowing the org. */
+  org_id: string | null;
+  title: string;
+  subtitle: string;
+  status?: string;
+  url: string;
+}
+
+export interface PlatformSearchResponse {
+  data: PlatformSearchResult[];
+  query: string;
+  kinds: PlatformSearchKind[];
+  total: number;
 }

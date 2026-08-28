@@ -36,6 +36,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { srcPath } from '@/__tests__/helpers/app-routes';
+import { stripComments } from '@/__tests__/helpers/strip-comments';
 
 const css = readFileSync(srcPath('app', 'globals.css'), 'utf8');
 
@@ -83,7 +84,7 @@ describe('nothing defeats it inline', () => {
     // of outline suppression that actually removes the focus ring.
     const offenders: string[] = [];
     for (const f of sources()) {
-      readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
+      stripComments(readFileSync(f, 'utf8')).split('\n').forEach((line, i) => {
         if (/outline:\s*['"`]none['"`]/.test(line)) {
           offenders.push(`${relative(process.cwd(), f).replace(/\\/g, '/')}:${i + 1}`);
         }

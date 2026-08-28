@@ -375,8 +375,13 @@ export default function AddCoachPage() {
           <button type="button" onClick={() => photoRef.current?.click()}
             className="group relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-[28px] transition-all duration-300"
             style={{ background: photoPreview ? 'transparent' : ag, boxShadow: `0 10px 36px ${ac}45` }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             {photoPreview
+              // A local object-URL preview of a file the user just picked.
+              // next/image cannot optimise a blob: URL, and this never leaves
+              // the client. The directive has to be the line IMMEDIATELY
+              // above the element — it was previously three lines up, where it
+              // suppressed nothing and reported itself as unused.
+              // eslint-disable-next-line @next/next/no-img-element
               ? <img src={photoPreview} alt="" className="h-full w-full rounded-[28px] object-cover" />
               : <Camera size={30} className="text-white" />
             }

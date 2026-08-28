@@ -17,6 +17,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { stripComments } from '@/__tests__/helpers/strip-comments';
 import { targetTone, daysLeftInMonth } from '@/components/dashboards/PtOsDashboard';
 
 // A 30-day month, for readable arithmetic.
@@ -102,8 +103,12 @@ describe('the percentage is never clamped, only the stroke', () => {
 });
 
 describe('the dashboard card does not invent a month', () => {
-  const dashboard = readFileSync(
-    join(__dirname, '..', 'components', 'dashboards', 'PtOsDashboard.tsx'), 'utf8');
+  // Comments blanked: this file's own explanation of what was REMOVED
+  // from the card names every string the assertions below look for, so a
+  // raw read finds "Locked" inside the sentence saying the Locked chip
+  // is gone. See helpers/strip-comments for how often that has happened.
+  const dashboard = stripComments(readFileSync(
+    join(__dirname, '..', 'components', 'dashboards', 'PtOsDashboard.tsx'), 'utf8'));
 
   it('renders nothing when the read failed', () => {
     // "₹0 of ₹0, behind pace" is a claim about the studio's month. A card that
@@ -114,8 +119,41 @@ describe('the dashboard card does not invent a month', () => {
   it('is read-only — the irreversible form stays on the revenue page', () => {
     // Setting a target is once per month and cannot be undone; the dashboard
     // must not offer it without the confirmation flow that explains the lock.
-    const card = dashboard.slice(dashboard.indexOf('function MonthlyTarget()'));
-    const end = card.indexOf('function RevenueDonut');
-    expect(card.slice(0, end)).not.toMatch(/method:\s*'POST'/);
+    //
+    // The slice is asserted before it is used. This cut to `function
+    // RevenueDonut`, which was later renamed — indexOf returned -1, slice(0,
+    // -1) kept almost the whole file, and the guard quietly went from
+    // checking one component to checking the rest of the module. It still
+    // passed, which is the problem: a scope that silently widens is a guard
+    // that stops being about anything.
+    const start = dashboard.indexOf('function MonthlyTarget()');
+    const card = dashboard.slice(start);
+    const end = card.indexOf('\nfunction ', 1);
+    expect(start, 'MonthlyTarget in the dashboard').toBeGreaterThan(-1);
+    expect(end, 'the function after MonthlyTarget').toBeGreaterThan(0);
+
+    const body = card.slice(0, end);
+    // And that the slice is the component, not the file: MonthlyTarget is a
+    // few hundred lines, the module is a few thousand.
+    expect(body.length).toBeLessThan(dashboard.length / 3);
+    expect(body).not.toMatch(/method:\s*'POST'/);
+  });
+
+  it('says the month, the money and one figure — and nothing else', () => {
+    // Six lines became four. The "Locked" chip went (whether the target can
+    // still be edited is a fact about a form on another screen, not about the
+    // month) and so did the status chip (the ring's colour already carries
+    // how the month is going, in the one place the eye lands first).
+    const start = dashboard.indexOf('function MonthlyTarget()');
+    const body = dashboard.slice(start, start + dashboard.slice(start).indexOf('\nfunction ', 1));
+
+    expect(body).not.toMatch(/Locked/);
+    expect(body).not.toMatch(/\{tone\.label\}/);
+    // What must stay: the month, what came in, what it is measured against,
+    // and whether that is over or short.
+    expect(body).toContain('{month}');
+    expect(body).toContain('value={Number(data.achieved)}');
+    expect(body).toContain('fmtCompact(data.target_amount)');
+    expect(body).toMatch(/over`\s*:\s*`.*to go`/);
   });
 });

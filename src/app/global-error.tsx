@@ -12,7 +12,11 @@ export default function GlobalError({
   useEffect(() => { console.error(error); }, [error]);
 
   return (
-    <html>
+    // lang, because this component supplies the whole document. It is the
+    // page shown when the root layout itself has thrown, so nothing else is
+    // there to declare it — and it is the one page where a user is already
+    // confused.
+    <html lang="en">
       <body style={{ margin: 0, fontFamily: 'Inter, sans-serif', background: '#f1f5f9' }}>
         <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center' }}>
           <div style={{ width: 64, height: 64, borderRadius: 16, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>

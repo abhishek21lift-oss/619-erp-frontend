@@ -21,14 +21,26 @@ const clients = vi.fn();
 vi.mock('@/lib/api', () => ({
   api: {
     workouts: { plans: { create: (...a: unknown[]) => create(...a) }, assign: (...a: unknown[]) => assign(...a) },
-    pt: { clients: () => clients() },
+    pt: {
+      clients: () => clients(),
+      // Selecting a client now fills the form from that client's record, so
+      // the dialog reads the row. This one answers nothing, which is the case
+      // that must leave the form's own defaults standing.
+      client: async () => ({ data: { id: 'c1', name: 'Ajeet Yadav' } }),
+    },
+    // The goal now comes from the goal-setting screening. This client has not
+    // been screened, which is the case that leaves the form's goal alone.
+    progress: { goals: { list: async () => ({ data: [] }) } },
   },
 }));
 
 const toastError = vi.fn();
-vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast: { error: toastError, success: vi.fn() } }) }));
+vi.mock('@/lib/toast', () => ({
+  useToast: () => ({ toast: { error: toastError, success: vi.fn(), warning: vi.fn() } }),
+}));
 
 import NewProgrammeDialog from '@/components/pt-os/builder/NewProgrammeDialog';
+import { ApiError } from '@/lib/http';
 import {appPath, routeExists} from '@/__tests__/helpers/app-routes';
 
 beforeEach(() => {
@@ -93,6 +105,24 @@ describe('NewProgrammeDialog — the replacement for the deleted wizard', () => 
     render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
     await fillAndSubmit();
     await waitFor(() => expect(toastError).toHaveBeenCalled());
+    expect(push).toHaveBeenCalledWith('/pt-os/clients/cl-1/training/builder?plan=plan-99');
+  });
+
+  it('names PAR-Q, not a generic failure, when the client is medically blocked', async () => {
+    // This is the bug report: assignment silently failing behind one generic
+    // toast that nobody read before the page moved on to the builder. The
+    // trainer would only discover the plan was never assigned by later
+    // opening the client's own profile. A PARQ_BLOCKED rejection now has to
+    // read as PAR-Q, specifically — the same message the Workout Plans
+    // page's own "Assign" button already gives.
+    assign.mockRejectedValue(new ApiError('blocked', 403, 'PARQ_BLOCKED'));
+    render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
+    await fillAndSubmit();
+    await waitFor(() => expect(toastError).toHaveBeenCalled());
+    expect(toastError.mock.calls[0][0]).toMatch(/PAR-Q/);
+    // Never auto-dismisses — the whole point is that it must still be
+    // visible after navigation.
+    expect(toastError.mock.calls[0][1]).toMatchObject({ duration: 0 });
     expect(push).toHaveBeenCalledWith('/pt-os/clients/cl-1/training/builder?plan=plan-99');
   });
 

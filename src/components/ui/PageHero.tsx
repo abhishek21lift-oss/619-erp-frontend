@@ -47,10 +47,63 @@ export interface PageHeroProps {
   /** Right-aligned actions, beside the title on desktop. */
   actions?: React.ReactNode;
   className?: string;
+  /**
+   * The short, light treatment: no gradient slab, no glow, no grid, no
+   * vignette — a title, a line of context and the page's own actions on the
+   * page's own background.
+   *
+   * Opt-in, and every existing caller keeps the full hero untouched. It
+   * exists for content-dense screens where the header is furniture rather
+   * than the arrival moment: a trainer opening Workout Plans is there to
+   * read a list, and ~200px of decorated navy above it is 200px of scroll
+   * before the first card on a phone. Same component, so the shared hero
+   * stays the one place a page's title is built and the two treatments
+   * cannot drift into two different headers.
+   */
+  compact?: boolean;
 }
 
-export function PageHero({ title, subtitle, icon, children, actions, className }: PageHeroProps) {
+export function PageHero({ title, subtitle, icon, children, actions, className, compact }: PageHeroProps) {
   const reduce = useReducedMotion();
+
+  if (compact) {
+    return (
+      <m.div
+        initial={reduce ? false : { opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: reduce ? 0 : 0.35, ease: [0.16, 1, 0.3, 1] }}
+        className={cn('pt-1', className)}
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            {icon && (
+              <span
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-white"
+                style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)' }}
+              >
+                {icon}
+              </span>
+            )}
+            <div className="min-w-0">
+              <h1
+                className="truncate text-[20px] font-[800] leading-tight sm:text-[23px]"
+                style={{ color: 'var(--text-primary)', letterSpacing: '-0.022em' }}
+              >
+                {title}
+              </h1>
+              {subtitle && (
+                <p className="mt-0.5 truncate text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+                  {subtitle}
+                </p>
+              )}
+            </div>
+          </div>
+          {actions && <div className="shrink-0">{actions}</div>}
+        </div>
+        {children && <div className="mt-3">{children}</div>}
+      </m.div>
+    );
+  }
 
   return (
     <m.div

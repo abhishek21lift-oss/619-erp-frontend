@@ -55,6 +55,9 @@ export const FIELD_SPECS: Record<string, FieldSpec> = {
   target_speed:        { label: 'Speed', suffix: 'km/h', step: 0.1, min: 0, max: 100 },
   target_incline:      { label: 'Incline', suffix: '%', step: 0.5, min: -30, max: 100 },
   target_resistance:   { label: 'Resistance', step: 1, min: 0, max: 100 },
+  target_cadence:      { label: 'Cadence', suffix: 'rpm', integer: true, min: 0, max: 300 },
+  target_floors:       { label: 'Floors', integer: true, min: 0, max: 100000 },
+  target_steps:        { label: 'Steps', integer: true, min: 0, max: 1000000 },
   target_heart_rate:   { label: 'Target HR', suffix: 'bpm', integer: true, min: 20, max: 250 },
   target_calories:     { label: 'Calories', suffix: 'kcal', integer: true, min: 0 },
   target_pace_seconds: { label: 'Pace', suffix: 'sec', integer: true, min: 0,
@@ -105,7 +108,7 @@ const ORDER = [
   'target_rounds', 'work_interval_seconds', 'rest_interval_seconds',
   'target_duration_seconds', 'target_distance', 'target_pace_seconds',
   'target_speed', 'target_incline', 'target_resistance',
-  'target_heart_rate', 'target_calories',
+  'target_heart_rate', 'target_cadence', 'target_floors', 'target_steps', 'target_calories',
   'target_rest_seconds',
 ];
 

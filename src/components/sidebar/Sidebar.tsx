@@ -201,13 +201,18 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
     Promise.allSettled([
       api.leave.list({ status: 'pending' }),
       api.reports.dues(),
-    ]).then(([leavesRes, duesRes]) => {
+      api.ai.trainer.pending({ limit: 1 }).catch(() => null),
+    ]).then(([leavesRes, duesRes, aiRes]) => {
       if (cancelled) return;
       if (leavesRes.status === 'rejected') console.warn('[sidebar] pending-leave count failed', leavesRes.reason);
       if (duesRes.status === 'rejected') console.warn('[sidebar] dues count failed', duesRes.reason);
+      const aiPending = aiRes.status === 'fulfilled' && aiRes.value && typeof aiRes.value === 'object' && 'data' in aiRes.value
+        ? (aiRes.value as { data: { total_pending?: number } }).data?.total_pending ?? 0
+        : 0;
       setBadgeCounts({
         pendingLeaves: leavesRes.status === 'fulfilled' ? leavesRes.value.length : 0,
         duesCount: duesRes.status === 'fulfilled' ? duesRes.value.length : 0,
+        aiPendingCount: aiPending,
       });
     });
 

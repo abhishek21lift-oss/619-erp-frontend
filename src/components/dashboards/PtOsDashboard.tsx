@@ -15,7 +15,7 @@
  * All figures are raw backend values or honestly-derived metrics.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { PullToRefresh } from '@/components/ui';
@@ -28,13 +28,13 @@ import {
 import {
   Users, Wallet, Percent,
   ChevronRight, Sparkles, ArrowUpRight, ArrowDownRight, Activity,
-  UserPlus, CalendarPlus, Receipt,
+  UserPlus, CalendarPlus,
   ShieldCheck, Target, Gauge, Crown,
   CalendarClock, CheckCircle2,
   FileSignature, HeartPulse, Apple, PersonStanding, MessageCircle, Phone,
-  AlertTriangle, Clock,
+  AlertTriangle, Clock, IndianRupee,
   Accessibility, Dumbbell,
-  Lock, PartyPopper, TrendingUp,
+  PartyPopper, TrendingUp,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAsync } from '@/lib/use-async';
@@ -43,6 +43,7 @@ import { useAuth } from '@/lib/auth-context';
 import FounderBadge from '@/components/FounderBadge';
 import { useFounder } from '@/lib/use-founder';
 import http from '@/lib/http';
+import dynamic from 'next/dynamic';
 import { fmtTime12 } from '@/lib/format';
 import type { TodayClient, TodayRoster } from '@/lib/api';
 
@@ -154,6 +155,40 @@ const C = {
 // Trainers are told apart, not judged — so this walks the non-semantic ramp
 // rather than handing someone the "overdue" red.
 const TRAINER_COLORS = identity;
+
+/**
+ * One hue per KPI tile.
+ *
+ * Four metrics that are merely DIFFERENT, not good or bad, so this walks the
+ * blue ramp and borrows emerald once for the money card, where "success"
+ * genuinely is the meaning. Nothing here takes amber or red: those mean
+ * pending and overdue everywhere else in the app, and Commission wearing the
+ * overdue red told a studio their own payroll was a problem.
+ *
+ * Validated as a categorical set against the light surface — worst adjacent
+ * pair ΔE 28.8 (deutan) and 30.5 (normal vision), well clear of the floors.
+ * Retention's step falls under 3:1 against the card, which is why the hue
+ * never carries meaning alone: every tile shows its label in ink beside it.
+ */
+/**
+ * The KPI sparkline, loaded on demand.
+ *
+ * recharts is ~100KB and this is the home screen, which did not import it at
+ * all. Loading it eagerly would put a chart library in front of every
+ * trainer's first paint for the sake of four 32px charts. The placeholder is
+ * the chart's exact height, so the tile does not resize when the bars arrive.
+ */
+const KpiSparkline = dynamic(() => import('@/components/dashboards/KpiSparkline'), {
+  ssr: false,
+  loading: () => <div className="h-8" />,
+});
+
+const KPI = {
+  clients:    palette.blue[500],
+  revenue:    palette.emerald[500],
+  commission: palette.blue[700],
+  retention:  palette.blue[300],
+} as const;
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmtINR(n: number | string | null | undefined) {
   return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
@@ -487,63 +522,133 @@ function MobileQuickActions() {
 }
 
 // ─── Section 3 — KPI Stat Cards ────────────────────────────────────────────────
+//
+// ── What these are, as a form ─────────────────────────────────────────────
+//
+// Each card answers with ONE number, so each card is a stat tile. A tile is
+// allowed to carry a sparkline, but only where a real series belongs to that
+// metric — and only two of these have one. `revenueTrend` carries six months
+// of revenue and of incentives, and nothing else on this endpoint is a
+// series at all.
+//
+// That mattered more than it sounds. Active Clients used to render
+// `trend={revTrend} pct={revMoM}` — the REVENUE sparkline, under the client
+// count, with revenue's month-on-month percentage in the badge beside it. A
+// studio reading "Active Clients 42 ↑12%" was being told revenue grew 12%.
+// Both numbers were true and neither was about clients. Nothing in the
+// rendering could give it away: a plausible chart under a plausible number.
+//
+// So a tile takes a series only when the series is its own, and Active
+// Clients and Retention are now bare numbers. A stat tile with no chart is a
+// legitimate answer; a chart of the wrong thing is not.
+//
+// ── Colour ────────────────────────────────────────────────────────────────
+//
+// The hue lives on the icon chip and the mark, never on the text. The value
+// used to be set in the card's own colour, which put a 21px number at 2.5:1
+// against the card on two of the five and made "Commission" read in the
+// same red the app uses for overdue — commission is a cost, not a fault, and
+// the status colours are reserved for status. Ink for the number, muted for
+// the label, hue only where it is a mark.
+//
+// The four hues are stepped off the app's own ramps and validated as a
+// categorical set (worst adjacent pair ΔE 28.8 deutan, 30.5 normal). They
+// clear CVD separation comfortably; the two lighter ones fall under 3:1
+// against the surface, which is why every one of them is always accompanied
+// by its visible text label.
 function StatCard({
-  icon, label, value, sub, color, accent, delay = 0, href, trend, pct, className,
+  icon, label, value, sub, color, accent, delay = 0, href, trend, pct, format, className,
 }: {
   icon: React.ReactNode; label: string; value: string; sub?: string;
   color: string; accent: string; delay?: number; href?: string;
-  trend?: number[]; pct?: number | null;
+  /** Six months of THIS metric. Omit it unless the series is genuinely this card's. */
+  trend?: { label: string; value: number }[]; pct?: number | null;
+  /** How the sparkline's tooltip renders a value. */
+  format?: (n: number) => string;
   /** Responsive visibility, for cards that only belong on some screen sizes. */
   className?: string;
 }) {
   const router = useRouter();
-  const max = trend && trend.length > 0 ? Math.max(...trend, 1) : 1;
+  const reduce = useReducedMotion() ?? false;
   return (
     <m.div
-      initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      whileHover={{ y: -4, scale: 1.015 }} whileTap={{ scale: 0.97 }}
+      initial={reduce ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.4, ease: EASE }}
+      whileHover={{ y: -4, boxShadow: `0 18px 38px ${color}33, inset 0 1px 0 rgba(255,255,255,0.9)` }}
+      whileTap={{ scale: 0.98 }}
       onClick={() => href && router.push(href)}
-      className={cn('group relative overflow-hidden rounded-[18px] p-3.5 sm:p-4 cursor-pointer', className)}
+      className={cn('group relative flex cursor-pointer flex-col overflow-hidden rounded-[20px] pt-4', className)}
       style={{
-        background: `linear-gradient(155deg, ${color}11 0%, rgba(255,255,255,0.88) 65%)`,
-        border: `1px solid ${color}22`,
-        boxShadow: `0 4px 20px ${color}0d, inset 0 1px 0 rgba(255,255,255,0.7)`,
+        // A card with a COLOUR, not a white card with a hint of one. The
+        // previous wash topped out at 11% alpha and faded to plain white by
+        // a third of the way down, so four of these in a grid read as a
+        // spreadsheet — which is the opposite of the intent. The number is
+        // still ink and still the loudest thing here; what changed is that
+        // the card behind it is now visibly the metric's own colour.
+        background:
+          `radial-gradient(120% 90% at 100% 0%, ${color}3d 0%, transparent 58%),`
+          + `linear-gradient(160deg, ${color}2b 0%, ${color}12 45%, ${color}08 100%)`,
+        border: `1px solid ${color}3d`,
+        boxShadow: `0 10px 26px ${color}1f, inset 0 1px 0 rgba(255,255,255,0.85)`,
         backdropFilter: 'blur(16px)',
       }}
     >
-      {/* shimmer */}
-      <div className="pointer-events-none absolute inset-0 -translate-x-full skew-x-[-12deg] bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-      {/* top accent */}
-      <div className="absolute top-0 inset-x-0 h-[3px] rounded-t-[18px]"
-        style={{ background: `linear-gradient(90deg, ${color}, ${accent})` }} />
+      {/* The band of hue along the top edge, which is where the card's
+          identity lives now that the number is ink. Thicker than a hairline
+          — at 3px on a phone it was a detail nobody saw. */}
+      <div className="absolute inset-x-0 top-0 h-[5px]"
+        style={{ background: `linear-gradient(90deg, ${color}, ${accent}, ${color})` }} />
 
-      <div className="relative z-10 flex items-start justify-between mb-2.5 pt-0.5">
-        <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-[10px] sm:rounded-[12px] text-white transition-all duration-200 group-hover:scale-110 group-hover:-rotate-6"
-          style={{ background: `linear-gradient(135deg, ${color}, ${accent})`, boxShadow: `0 4px 12px ${color}40` }}>
-          {icon}
+      <div className="relative z-10 flex flex-1 flex-col px-3.5 sm:px-4">
+        <div className="mb-2.5 flex items-start justify-between pt-0.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-[13px] text-white transition-transform duration-200 group-hover:scale-105 sm:h-11 sm:w-11 sm:rounded-[14px]"
+            style={{
+              background: `linear-gradient(135deg, ${color}, ${accent})`,
+              boxShadow: `0 8px 20px ${color}66, inset 0 1px 0 rgba(255,255,255,0.4)`,
+            }}>
+            {icon}
+          </div>
+          {pct !== undefined && <TrendBadge pct={pct ?? null} />}
         </div>
-        {pct !== undefined && <TrendBadge pct={pct ?? null} />}
+
+        {/* mt-auto pins this block to the bottom of whatever height the grid
+            row settles on, so a card with no chart is not a number floating
+            in a pool of white — which is exactly how Active Clients and
+            Retention were reading beside the two that had one. */}
+        <div className="mt-auto pb-3.5">
+          <p className="mb-1.5 text-[9.5px] font-[800] uppercase tracking-[0.12em] sm:text-[10px]" style={{ color: C.muted }}>{label}</p>
+          <p className="text-[26px] font-[900] leading-none tracking-[-0.04em] tabular-nums sm:text-[30px]" style={{ color: C.ink }}>{value}</p>
+          {sub && <p className="mt-1.5 text-[10px] font-[560]" style={{ color: C.muted }}>{sub}</p>}
+        </div>
       </div>
 
-      <div className="relative z-10">
-        <p className="text-[9px] sm:text-[9.5px] font-[750] uppercase tracking-[0.1em] mb-1" style={{ color: `${color}aa` }}>{label}</p>
-        <p className="text-[18px] sm:text-[21px] font-[880] tracking-[-0.03em] leading-none" style={{ color }}>{value}</p>
-        {sub && <p className="mt-1 text-[9.5px] font-[500]" style={{ color: C.muted }}>{sub}</p>}
-      </div>
+      {/* Every card ends on the same 30px band, so the four of them line up
+          whatever they carry. A chart where there is a series worth drawing;
+          a wash of the card's hue where there is not.
 
-      {trend && trend.length > 0 && (
-        <div className="relative z-10 flex items-end gap-[2px] h-7 sm:h-8 mt-2.5">
-          {trend.map((v, i) => (
-            <m.div key={i}
-              initial={{ scaleY: 0 }} animate={{ scaleY: 1 }}
-              transition={{ delay: delay + 0.2 + i * 0.04, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="flex-1 rounded-t-[3px] origin-bottom"
-              style={{
-                height: `${Math.max((v / max) * 100, 8)}%`,
-                background: i === trend.length - 1 ? `linear-gradient(to top, ${color}, ${accent})` : `${color}22`,
-              }} />
-          ))}
+          THREE POINTS IS THE FLOOR. Two months render as two half-width
+          slabs — one pale, one solid — which is not a sparkline, it is a
+          broken-looking pair of blocks, and that is what a new studio with
+          two months of history was being shown. A shape needs three readings
+          before it is a shape. */}
+      {/* data-kpi-foot marks the band on BOTH branches. It is what makes
+          "every card ends the same way" assertable: without it a test can
+          only see the chart, and the fallback could be deleted — taking the
+          grid's level bottom edge with it — while every assertion still
+          passed. */}
+      {trend && trend.length >= 3 ? (
+        <div data-kpi-foot className="w-full">
+          <KpiSparkline data={trend} color={color} metric={label} format={format} height={30} />
+        </div>
+      ) : (
+        <div data-kpi-foot className="relative h-[30px] w-full overflow-hidden" aria-hidden>
+          {/* A wash rising to a solid edge. The old version faded to 18%
+              alpha and simply was not there on a phone — the card looked
+              like it stopped an inch above its own border. */}
+          <div className="absolute inset-0"
+            style={{ background: `linear-gradient(180deg, transparent, ${color}30)` }} />
+          <div className="absolute inset-x-0 bottom-0 h-[4px]"
+            style={{ background: `linear-gradient(90deg, ${color}, ${accent})`, opacity: 0.55 }} />
         </div>
       )}
     </m.div>
@@ -662,9 +767,28 @@ export function daysLeftInMonth(now = new Date()): number {
   return last - now.getDate() + 1;
 }
 
-function TargetRing({ pct, colour, size = 104 }: { pct: number; colour: string; size?: number }) {
+/**
+ * The month's progress, as a ring on a dark face.
+ *
+ * ── Why it moved onto navy ────────────────────────────────────────────────
+ *
+ * It used to be a pale green arc on a near-white card, and the whole section
+ * read as a form field rather than as the headline of the screen. The app
+ * already owns a premium surface — the navy hero at the top of this same
+ * dashboard — and a ring is exactly the kind of mark that only comes alive
+ * against a dark ground: the stroke can actually glow, and the track can be a
+ * real recess instead of a grey line that disappears.
+ *
+ * So the tone colour stops tinting an entire card and becomes what it should
+ * always have been: the one lit thing on a dark face. Green, amber and red
+ * still mean what they meant, and they are far more legible for it.
+ */
+function TargetRing({ pct, colour, size = 132 }: { pct: number; colour: string; size?: number }) {
   const reduce = useReducedMotion();
-  const stroke = 10;
+  const uid = useId().replace(/:/g, '');
+  const gradId = `target-ring-${uid}`;
+  const glowId = `target-glow-${uid}`;
+  const stroke = 12;
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   // The STROKE clamps — a ring cannot draw past full. The NUMBER does not.
@@ -676,30 +800,55 @@ function TargetRing({ pct, colour, size = 104 }: { pct: number; colour: string; 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
+        <defs>
+          {/* Two stops that are genuinely different colours, not two opacities
+              of one. The arc runs from a washed tint into the full tone, so it
+              reads as lit from one side rather than painted flat. */}
+          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity={0.92} />
+            <stop offset="55%" stopColor={colour} stopOpacity={1} />
+            <stop offset="100%" stopColor={colour} stopOpacity={0.85} />
+          </linearGradient>
+          {/* A real blur, not a drop-shadow: the arc's own light spilling onto
+              the navy behind it. This is what a drop-shadow cannot do. */}
+          <filter id={glowId} x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* The track is a recess in the dark face — light enough to read the
+            full circumference against, so the arc always has something to be
+            a fraction OF. */}
         <circle cx={size / 2} cy={size / 2} r={r} fill="none"
-          stroke="rgba(15,23,42,0.06)" strokeWidth={stroke} />
+          stroke="rgba(255,255,255,0.10)" strokeWidth={stroke} />
+
         <m.circle
-          cx={size / 2} cy={size / 2} r={r} fill="none" stroke={colour}
+          cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`url(#${gradId})`}
           strokeWidth={stroke} strokeLinecap="round" strokeDasharray={circ}
+          filter={`url(#${glowId})`}
           initial={{ strokeDashoffset: reduce ? circ - dash : circ }}
           animate={{ strokeDashoffset: circ - dash }}
-          transition={{ duration: reduce ? 0 : 1.1, ease: EASE }}
-          style={{ filter: `drop-shadow(0 0 7px ${colour}55)` }}
+          transition={{ duration: reduce ? 0 : 1.2, ease: EASE }}
         />
       </svg>
+
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="tabular-nums font-[860] leading-none"
+        <span className="tabular-nums font-[900] leading-none text-white"
           style={{
-            color: C.ink,
-            letterSpacing: '-0.03em',
+            letterSpacing: '-0.04em',
+            textShadow: `0 2px 18px ${colour}80`,
             // Steps down so 2000% fits the same ring 40% sits in, rather than
             // overflowing it or being truncated.
-            fontSize: pct >= 1000 ? 17 : pct >= 100 ? 20 : 23,
+            fontSize: pct >= 1000 ? 23 : pct >= 100 ? 28 : 32,
           }}>
           {Math.round(pct)}%
         </span>
-        <span className="mt-0.5 text-[9px] font-[750] uppercase tracking-[0.12em]"
-          style={{ color: C.muted }}>
+        <span className="mt-1 text-[9px] font-[800] uppercase tracking-[0.16em]"
+          style={{ color: 'rgba(255,255,255,0.5)' }}>
           of target
         </span>
       </div>
@@ -734,7 +883,7 @@ function MonthlyTarget() {
     return (
       <Glass className="p-4 sm:p-5">
         <div className="flex items-center gap-4">
-          <Skel w="w-[104px]" h="h-[104px]" r="rounded-full" />
+          <Skel w="w-[132px]" h="h-[132px]" r="rounded-full" />
           <div className="flex-1 space-y-2.5">
             <Skel w="w-32" h="h-3" /><Skel w="w-40" h="h-6" /><Skel w="w-28" h="h-3" />
           </div>
@@ -779,59 +928,87 @@ function MonthlyTarget() {
   const beat = pct >= 100;
 
   return (
+    // Glass, not a bare <div onClick>: it carries this file's a11y exemption
+    // (the card's function is reachable from a real control inside it), and a
+    // raw div here would add two jsx-a11y warnings to a CI ceiling that is
+    // frozen at the current count.
     <Glass
-      className="overflow-hidden p-4 sm:p-5"
+      className="relative cursor-pointer overflow-hidden p-5 sm:p-6"
       onClick={() => router.push('/insights/revenue')}
-      style={{ cursor: 'pointer' }}
+      style={{
+        // The dashboard's own hero surface, borrowed deliberately. The month
+        // is the headline of this screen and it was dressed as a form field;
+        // this is the one card that earns the navy.
+        // gray[900] → gray[800] → gray[900], straight off the ramp. The mid
+        // stop started as a hand-picked navy that was in no family at all;
+        // the palette test caught it, which is what that test is for.
+        background:
+          `radial-gradient(125% 145% at 12% -10%, ${rgba(tone.ring, 0.42)} 0%, transparent 52%),`
+          + `linear-gradient(152deg, ${palette.gray[900]} 0%, ${palette.gray[800]} 46%, ${palette.gray[900]} 100%)`,
+        border: '1px solid rgba(255,255,255,0.10)',
+        boxShadow:
+          `0 20px 48px -16px rgba(15,23,42,0.62), 0 6px 20px ${rgba(tone.ring, 0.22)},`
+          + 'inset 0 1px 0 rgba(255,255,255,0.08)',
+      }}
     >
-      <div className="flex items-center gap-4 sm:gap-5">
+      {/* Decorative layers, the same three the hero header uses: a corner
+          bloom in the month's own colour, a cool counterweight, and the fine
+          grid that keeps a large dark panel from reading as a flat slab.
+          All non-interactive and all behind the content. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full opacity-40"
+          style={{ background: `radial-gradient(circle, ${tone.ring} 0%, transparent 70%)`, filter: 'blur(46px)' }} />
+        <div className="absolute -bottom-24 -left-10 h-52 w-52 rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #7fb4ff 0%, transparent 70%)', filter: 'blur(52px)' }} />
+        <svg className="absolute inset-0 h-full w-full opacity-[0.05]" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="mt-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+              <path d="M 30 0 L 0 0 0 30" fill="none" stroke="white" strokeWidth="0.6" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#mt-grid)" />
+        </svg>
+      </div>
+
+      <div className="relative flex items-center gap-4 sm:gap-6">
         <TargetRing pct={pct} colour={tone.ring} />
 
         <div className="min-w-0 flex-1">
-          {/* Month, and how much of it is left — the number that makes the
-              percentage mean something. */}
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="text-[11px] font-[750] uppercase tracking-[0.1em]" style={{ color: C.muted }}>
-              {month}
-            </p>
-            {data.locked && (
-              <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-[750]"
-                style={{ background: 'rgba(15,23,42,0.05)', color: C.muted }}>
-                <Lock size={8} /> Locked
-              </span>
-            )}
-          </div>
+          {/* Four lines, down from six.
+              The "Locked" chip and the status chip both went: the ring's
+              colour already says how the month is going, and whether the
+              target can still be edited is a fact about a form on another
+              screen, not about the month. What is left is the month, what
+              came in, what it was measured against, and the one figure that
+              follows — over, or still to go. */}
+          <p className="text-[10.5px] font-[800] uppercase tracking-[0.18em]"
+            style={{ color: 'rgba(255,255,255,0.44)' }}>
+            {month}
+          </p>
 
           {/* The headline is what came IN, not the percentage — a trainer
               scanning this wants the money, and the ring already carries the
               ratio. Counted up, like every other money figure here. */}
-          <p className="mt-1 tabular-nums text-[24px] sm:text-[27px] font-[860] leading-none"
-            style={{ color: C.ink, letterSpacing: '-0.03em' }}>
+          <p className="mt-1.5 tabular-nums text-[34px] font-[900] leading-none text-white sm:text-[40px]"
+            style={{ letterSpacing: '-0.04em', textShadow: '0 2px 24px rgba(0,0,0,0.45)' }}>
             <CountUp value={Number(data.achieved)} format={fmtCompact} reduce={!!reduce} />
           </p>
-          <p className="mt-1 text-[11.5px]" style={{ color: C.muted }}>
-            of <span className="font-[750]" style={{ color: C.ink }}>{fmtCompact(data.target_amount)}</span>
+          <p className="mt-2 text-[11.5px]" style={{ color: 'rgba(255,255,255,0.52)' }}>
+            of <span className="font-[800] text-white">{fmtCompact(data.target_amount)}</span>
             {' · '}{daysLeft} day{daysLeft === 1 ? '' : 's'} left
           </p>
 
-          {/* Status, and the one figure that follows from it: what is still to
-              collect, or what has been made over. Only one of the two is ever
-              true, so only one is shown. */}
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-[10px] font-[780]"
-              style={{ background: rgba(tone.ring, 0.12), color: tone.ring }}>
-              {tone.icon === 'smashed' ? <PartyPopper size={10} />
-                : tone.icon === 'up' ? <TrendingUp size={10} />
-                : <AlertTriangle size={10} />}
-              {tone.label}
-            </span>
-            <span className="text-[10.5px] font-[700] tabular-nums" style={{ color: beat ? C.success : C.muted }}>
-              {beat ? `+${fmtCompact(surplus)} over` : `${fmtCompact(balance)} to go`}
-            </span>
-          </div>
+          <span className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3.5 py-[6px] text-[12px] font-[850] tabular-nums text-white"
+            style={{
+              background: `linear-gradient(135deg, ${tone.ring}, ${tone.ring}c0)`,
+              boxShadow: `0 6px 18px ${rgba(tone.ring, 0.5)}, inset 0 1px 0 rgba(255,255,255,0.3)`,
+            }}>
+            {beat ? <PartyPopper size={12} /> : <TrendingUp size={12} />}
+            {beat ? `${fmtCompact(surplus)} over` : `${fmtCompact(balance)} to go`}
+          </span>
         </div>
 
-        <ChevronRight size={16} className="hidden shrink-0 sm:block" style={{ color: C.muted }} />
+        <ChevronRight size={17} className="hidden shrink-0 sm:block" style={{ color: 'rgba(255,255,255,0.4)' }} />
       </div>
     </Glass>
   );
@@ -842,23 +1019,26 @@ function MonthlyTarget() {
  * collected opens the payments that made it up, pending opens the people it is
  * owed by.
  *
- * The ring is a thick donut rather than a thin progress hairline (same
- * construction as `TargetRing`, just smaller) — its fill is this figure's
- * share of the money in play today (collected + pending), so the two donuts
- * read as complements of one whole rather than two unrelated gauges.
+ * ── Why this is a bar and not a ring ──────────────────────────────────────
+ *
+ * These two are parts of one whole — collected and pending are today's money,
+ * split. Two separate donuts is the worst available form for that: a reader
+ * has to compare two arc lengths, on two different circles, in two different
+ * hues, to work out a ratio that a single line answers at a glance. Arc
+ * length is the hardest magnitude judgement there is; length along a common
+ * baseline is the easiest.
+ *
+ * So each figure gets a bar on the same scale, one under the other, and the
+ * card carries the split itself as a single stacked line beneath them. Same
+ * numbers, same links, three lengths a reader can actually compare.
  */
-function RevenueDonut({
-  emoji, label, value, sub, color, pct, onClick, reduce, delay,
+function RevenueBar({
+  icon, label, value, sub, color, accent, pct, onClick, reduce, delay,
 }: {
-  emoji: string; label: string; value: number; sub: string;
-  color: string; pct: number; onClick: () => void; reduce: boolean; delay: number;
+  icon: React.ReactNode; label: string; value: number; sub: string;
+  color: string; accent: string; pct: number; onClick: () => void; reduce: boolean; delay: number;
 }) {
-  const size = 72;
-  const stroke = 12;
-  const r = (size - stroke) / 2;
-  const circ = 2 * Math.PI * r;
-  const dash = (Math.max(0, Math.min(100, pct)) / 100) * circ;
-
+  const width = Math.max(0, Math.min(100, pct));
   return (
     <m.button
       type="button"
@@ -866,94 +1046,49 @@ function RevenueDonut({
       initial={reduce ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.35, ease: EASE }}
-      className="flex flex-1 items-center gap-3 rounded-[16px] p-3.5 text-left transition-transform active:scale-[0.985]"
+      className="group flex flex-1 flex-col gap-2 rounded-[16px] p-3.5 text-left transition-transform active:scale-[0.985]"
       style={{
-        background: `linear-gradient(150deg, ${color}14 0%, ${color}08 60%, transparent 100%)`,
-        border: `1px solid ${color}24`,
-        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5)`,
+        background: `linear-gradient(150deg, ${color}16 0%, ${color}07 62%, transparent 100%)`,
+        border: `1px solid ${color}26`,
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.55)',
       }}
     >
-      <div className="relative shrink-0" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="-rotate-90">
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none"
-            stroke={`${color}22`} strokeWidth={stroke} />
-          <m.circle
-            cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color}
-            strokeWidth={stroke} strokeLinecap="round" strokeDasharray={circ}
-            initial={{ strokeDashoffset: reduce ? circ - dash : circ }}
-            animate={{ strokeDashoffset: circ - dash }}
-            transition={{ duration: reduce ? 0 : 1.1, ease: EASE, delay }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center text-[19px]" aria-hidden>
-          {emoji}
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-white"
+          style={{ background: `linear-gradient(135deg, ${color}, ${accent})`, boxShadow: `0 4px 12px ${color}40` }}>
+          {icon}
+        </span>
+        <div className="min-w-0 flex-1">
+          <span className="text-[9.5px] font-[800] uppercase tracking-[0.11em]" style={{ color: C.muted }}>
+            {label}
+          </span>
+          {/* The number is the point of the card, so it gets the size — in ink,
+              so it is readable rather than tinted to match its own bar. */}
+          <p className="mt-0.5 truncate text-[19px] font-[880] leading-none tracking-[-0.03em] tabular-nums sm:text-[21px]"
+            style={{ color: C.ink }}>
+            <CountUp value={value} format={fmtINR} reduce={reduce} />
+          </p>
         </div>
+        <span className="shrink-0 text-[11px] font-[800] tabular-nums" style={{ color: C.muted }}>
+          {Math.round(width)}%
+        </span>
       </div>
 
-      <div className="min-w-0 flex-1">
-        <span className="text-[9.5px] font-[800] uppercase tracking-[0.11em]" style={{ color: `${color}cc` }}>
-          {label}
-        </span>
-        {/* The number is the point of the card, so it gets the size. */}
-        <p className="mt-0.5 truncate text-[19px] font-[880] leading-none tracking-[-0.03em] tabular-nums sm:text-[21px]"
-          style={{ color }}>
-          <CountUp value={value} format={fmtINR} reduce={reduce} />
-        </p>
-        <p className="mt-1 truncate text-[10.5px] font-[600]" style={{ color: C.muted }}>{sub}</p>
+      {/* This figure's share of the money in play today, on a track the other
+          bar shares — so the two lengths are directly comparable. */}
+      <div className="h-[7px] w-full overflow-hidden rounded-full" style={{ background: `${color}1f` }}>
+        <m.div
+          className="h-full rounded-full"
+          style={{ background: `linear-gradient(90deg, ${color}, ${accent})` }}
+          initial={reduce ? false : { width: 0 }}
+          animate={{ width: `${width}%` }}
+          transition={{ duration: reduce ? 0 : 0.85, ease: EASE, delay }}
+        />
       </div>
+
+      <p className="truncate text-[10.5px] font-[600]" style={{ color: C.muted }}>{sub}</p>
     </m.button>
   );
-}
-
-/**
- * What to do next, in one line.
- *
- * Exported and pure because the ordering is the judgement in this card and the
- * uplift figure is arithmetic that can be wrong without looking wrong. Only
- * ever one insight is returned: a stack of advice is a stack nobody reads.
- *
- * The order is by what would change the day — money still collectable first,
- * then anything overdue, then the all-clear. Note that money-to-collect
- * outranks overdue deliberately: overdue is a subset of what is owed, so
- * leading with it would report the smaller number and bury the bigger one.
- */
-export function revenueInsight({ collected, pending, owing, overdue, payments }: {
-  collected: number; pending: number; owing: number; overdue: number; payments: number;
-}): { icon: string; text: string; tone: string } {
-  const total = collected + pending;
-
-  if (pending > 0 && owing > 0) {
-    // Share of today's total that is still out — i.e. how much bigger today
-    // gets if it all lands. Guarded on total because pending > 0 implies
-    // total > 0, but a caller passing negatives should not divide by zero.
-    const share = total > 0 ? Math.round((pending / total) * 100) : 100;
-    return {
-      icon: '\u{1F525}',
-      tone: C.warning,
-      text: `${fmtINR(pending)} can be collected from ${owing} member${owing === 1 ? '' : 's'}`
-        + (collected > 0 ? ` \u2014 that would lift today by ${share}%.` : '.'),
-    };
-  }
-
-  // Reachable when a balance is overdue but `owing` did not come through —
-  // defensive rather than expected, since overdue implies a balance.
-  if (overdue > 0) {
-    return {
-      icon: '\u26A0\uFE0F',
-      tone: C.danger,
-      text: `${overdue} payment${overdue === 1 ? ' is' : 's are'} overdue.`,
-    };
-  }
-
-  if (collected > 0) {
-    return {
-      icon: '\u2705',
-      tone: C.success,
-      text: `Nothing outstanding \u2014 ${payments} payment${payments === 1 ? '' : 's'} in today and every balance is clear.`,
-    };
-  }
-
-  return { icon: '\u{1F4A1}', tone: C.muted, text: 'No payments yet today, and no balances outstanding.' };
 }
 
 function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
@@ -969,11 +1104,6 @@ function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
   const total = collected + pending;
   const pct = total > 0 ? (collected / total) * 100 : 0;
 
-  const insight = useMemo(
-    () => revenueInsight({ collected, pending, owing, overdue, payments }),
-    [collected, pending, owing, overdue, payments],
-  );
-
   return (
     // The whole card opens today's payments; the two halves override that with
     // their own destinations. A div rather than a button so the halves are not
@@ -982,74 +1112,96 @@ function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
       className="cursor-pointer p-4 sm:p-5"
       onClick={() => router.push('/finance/collected-payments')}
     >
-      <div className="mb-3 flex items-center justify-between">
-        <div>
-          <h3 className="text-[14px] font-[780] tracking-[-0.01em] sm:text-[15px]" style={{ color: C.ink }}>
-            Today&apos;s Revenue
-          </h3>
-          <p className="mt-0.5 text-[10.5px] font-[500]" style={{ color: C.muted }}>
-            {loading ? 'Refreshing…' : `${payments} payment${payments === 1 ? '' : 's'} today`}
-          </p>
+      {/* The header carries the card's colour, so the money below it does not
+          have to. A single emerald→amber wash on the rule under the title is
+          the same split the bars describe, read as one gesture. */}
+      <div className="mb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] text-white"
+              style={{
+                background: `linear-gradient(135deg, ${palette.emerald[600]}, ${palette.emerald[400]})`,
+                boxShadow: `0 5px 14px ${C.success}45`,
+              }}>
+              <IndianRupee size={15} />
+            </span>
+            <div>
+              <h3 className="text-[14px] font-[780] tracking-[-0.01em] sm:text-[15px]" style={{ color: C.ink }}>
+                Today&apos;s Revenue
+              </h3>
+              <p className="mt-0.5 text-[10.5px] font-[500]" style={{ color: C.muted }}>
+                {loading ? 'Refreshing…' : `${payments} payment${payments === 1 ? '' : 's'} today`}
+              </p>
+            </div>
+          </div>
+          {overdue > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-[750] uppercase tracking-[0.08em]"
+              style={{ background: `${C.danger}14`, color: C.danger }}>
+              {overdue} overdue
+            </span>
+          )}
         </div>
-        {overdue > 0 && (
-          <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-[750] uppercase tracking-[0.08em]"
-            style={{ background: `${C.danger}14`, color: C.danger }}>
-            {overdue} overdue
-          </span>
-        )}
+        <div className="mt-3 h-[2px] w-full rounded-full"
+          style={{ background: `linear-gradient(90deg, ${palette.emerald[500]}, ${palette.amber[400]}, transparent)` }} />
       </div>
 
       <div className="flex flex-col gap-2.5 sm:flex-row">
-        <RevenueDonut
-          emoji="💰" label="Collected Today" value={collected}
+        <RevenueBar
+          icon={<Wallet size={15} />} label="Collected Today" value={collected}
           pct={pct}
           sub={payments > 0 ? `across ${payments} payment${payments === 1 ? '' : 's'}` : 'nothing yet today'}
-          color={C.success} reduce={reduce} delay={0}
+          color={C.success} accent={palette.emerald[400]} reduce={reduce} delay={0}
           onClick={() => router.push('/finance/collected-payments')}
         />
-        <RevenueDonut
-          emoji="⏳" label="Pending" value={pending}
+        <RevenueBar
+          icon={<Clock size={15} />} label="Pending" value={pending}
           pct={total > 0 ? 100 - pct : 0}
           sub={owing > 0 ? `from ${owing} member${owing === 1 ? '' : 's'}` : 'all balances clear'}
-          color={C.warning} reduce={reduce} delay={0.07}
+          color={C.warning} accent={palette.amber[400]} reduce={reduce} delay={0.07}
           onClick={() => router.push('/finance/dues')}
         />
       </div>
 
-      {/* Collected against collected + pending. Hidden when there is nothing
-          at all to show, because an empty bar reads as 0% collected rather
-          than as "no money in play". */}
+      {/* The split itself, as one line.
+          Two segments of one whole rather than two bars side by side, with a
+          2px gap so the fills never touch and the boundary is a real edge
+          rather than a colour change. Hidden when there is nothing at all in
+          play, because an empty bar reads as 0% collected rather than as "no
+          money today". */}
       {total > 0 && (
         <div className="mt-3.5">
-          <div className="h-[5px] w-full overflow-hidden rounded-full" style={{ background: `${C.warning}26` }}>
+          <div className="flex h-[9px] w-full gap-[2px] overflow-hidden rounded-full">
             <m.div
               className="h-full rounded-full"
-              style={{ background: `linear-gradient(90deg, ${C.success}, ${C.success}bb)` }}
+              style={{ background: `linear-gradient(90deg, ${palette.emerald[600]}, ${palette.emerald[400]})` }}
               initial={reduce ? false : { width: 0 }}
               animate={{ width: `${pct}%` }}
-              transition={{ duration: reduce ? 0 : 0.7, ease: EASE }}
+              transition={{ duration: reduce ? 0 : 0.8, ease: EASE }}
+            />
+            <m.div
+              className="h-full flex-1 rounded-full"
+              style={{ background: `linear-gradient(90deg, ${palette.amber[300]}, ${palette.amber[500]})` }}
+              initial={reduce ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: reduce ? 0 : 0.5, ease: EASE, delay: 0.25 }}
             />
           </div>
-          <p className="mt-1.5 text-[10px] font-[650]" style={{ color: C.muted }}>
-            {Math.round(pct)}% of {fmtINR(total)} in play collected
-          </p>
+          {/* Direct labels rather than a legend box: two series, both named
+              right here, so identity never rests on the colour alone. */}
+          <div className="mt-2 flex items-center justify-between text-[10px] font-[650]" style={{ color: C.muted }}>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-[7px] w-[7px] rounded-full" style={{ background: palette.emerald[500] }} aria-hidden />
+              {Math.round(pct)}% collected
+            </span>
+            <span className="tabular-nums">{fmtINR(total)} in play</span>
+            <span className="inline-flex items-center gap-1.5">
+              {Math.round(100 - pct)}% pending
+              <span className="h-[7px] w-[7px] rounded-full" style={{ background: palette.amber[500] }} aria-hidden />
+            </span>
+          </div>
         </div>
       )}
 
-      {insight && (
-        <m.div
-          initial={reduce ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="mt-3 flex items-start gap-2 rounded-[13px] px-3 py-2.5"
-          style={{ background: `${insight.tone}0f`, border: `1px solid ${insight.tone}20` }}
-        >
-          <span className="text-[12px] leading-[1.3]" aria-hidden>{insight.icon}</span>
-          <p className="text-[11.5px] font-[640] leading-[1.45]" style={{ color: C.ink }}>
-            {insight.text}
-          </p>
-        </m.div>
-      )}
     </Glass>
   );
 }
@@ -1366,29 +1518,60 @@ export type TodayRow = {
   /** Wall-clock start, or null for a due client nobody has scheduled. */
   time: string | null;
   href: string;
+  /**
+   * This session has been started and not finished.
+   *
+   * The card cannot work this out for itself: the queue is already ordered
+   * with the running session first, so a card that assumed "row one is
+   * running" would label the first row LIVE on a morning where nobody has
+   * started yet. Which is most mornings.
+   */
+  live: boolean;
 };
 
 /**
  * Everything still to do today, in the order the day happens.
  *
- * Exported and pure because the three rules in it are the ones that are easy
- * to get quietly wrong and impossible to see in a screenshot: a completed
- * session that stays in the list, an out-of-order queue, a cap that counts
- * the wrong rows. Testing them through the rendered dashboard would mean
- * mocking half the app to assert on data.
+ * Exported and pure because the rules in it are the ones that are easy to get
+ * quietly wrong and impossible to see in a screenshot: a completed session
+ * that stays in the list, an out-of-order queue, a cap that counts the wrong
+ * rows. Testing them through the rendered dashboard would mean mocking half
+ * the app to assert on data.
+ *
+ * ── Now, then next ────────────────────────────────────────────────────────
+ *
+ * Two rows are visible, and they answer two different questions: who is on
+ * the floor right now, and who walks in after them. So a session that has
+ * been STARTED comes first, whatever the clock says — a 07:00 client still
+ * training at 07:40 is the one the trainer is standing in front of, and the
+ * 07:30 client who has not arrived is not.
+ *
+ * That is the only reordering this does, and it is a STABLE partition: within
+ * the running rows and within the rest, the server's order is untouched. The
+ * roster arrives ordered — earliest first, untimed after, rest days last —
+ * and a second opinion about the clock here would put this card and the full
+ * list at /pt-os/today into disagreement about who is next.
+ *
+ * Finishing a workout sets the session to completed, which drops it out
+ * entirely; whoever was second becomes first, and the queue closes up behind
+ * them without anything else having to happen.
  */
 export function buildTodayQueue(roster: TodayClient[]): TodayRow[] {
-  return roster
+  const running = (c: TodayClient) => c.session_status === 'in_progress';
+  const remaining = roster
     // A finished session is not "left to do". With two rows visible, one spent
     // on somebody already trained is a row wasted.
     .filter((c) => c.session_status !== 'completed')
     // A rest day is a real answer on the full list, where there is room to say
     // "nothing scheduled". It is not one of the two things left to do.
-    .filter((c) => !c.is_rest_day)
+    .filter((c) => !c.is_rest_day);
+
+  return [...remaining.filter(running), ...remaining.filter((c) => !running(c))]
     .map((c) => ({
       key: c.client_id,
       name: c.client_name,
       photo: c.client_photo,
+      live: running(c),
       sub: !c.plan_name
         ? 'No programme yet'
         : c.planned_exercises > 0
@@ -1432,12 +1615,15 @@ function TodaySchedule() {
 
   return (
     <Glass className="overflow-hidden">
-      {/* Header. Flat, on the card's own surface — the tinted band and the
-          gradient icon that used to be here were what made this compete with
-          the hero. */}
+      {/* Header. The mark carries the card's colour so the rows below do not
+          have to shout — an earlier version put a tinted band across the whole
+          top and ended up competing with the hero directly above it. */}
       <div className="flex items-center gap-2.5 px-4 pt-3.5 pb-2.5 sm:px-5">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]"
-          style={{ background: `${C.danger}12`, color: C.danger }}>
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] text-white"
+          style={{
+            background: `linear-gradient(135deg, ${C.danger}, ${palette.amber[400]})`,
+            boxShadow: `0 4px 12px ${C.danger}40`,
+          }}>
           <CalendarClock size={14} />
         </span>
         <div className="min-w-0 flex-1">
@@ -1494,51 +1680,88 @@ function TodaySchedule() {
         )}
 
         {shown.length > 0 && (
-          <div className="space-y-1.5">
-            {shown.map((r, i) => (
-              <m.button
-                key={r.key}
-                type="button"
-                onClick={() => router.push(r.href)}
-                initial={reduce ? false : { opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: reduce ? 0 : i * 0.05, duration: 0.24, ease: EASE }}
-                className="flex w-full items-center gap-2.5 rounded-[13px] p-2.5 text-left transition-colors hover:bg-[rgba(15,23,42,0.03)]"
-                style={{ border: '1px solid rgba(15,23,42,0.07)' }}
-              >
-                <ClientAvatar
-                  name={r.name}
-                  photoUrl={r.photo}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-[820]"
-                  style={{ background: 'rgba(100,116,139,0.13)', color: C.ink }} />
+          <div className="space-y-2">
+            {shown.map((r, i) => {
+              // Two different promises, and the row has to say which it is.
+              //
+              // ON THE FLOOR is the session that has been started and not
+              // finished — the person the trainer is standing in front of.
+              // NEXT is the first one that has not, whether that is row one on
+              // a morning nobody has begun, or row two behind a live session.
+              //
+              // The queue is already ordered so this is a matter of reading
+              // `live` rather than counting rows: labelling by index alone
+              // would put NEXT on a client who is mid-set.
+              const nextUp = !r.live && !shown.slice(0, i).some((p) => !p.live);
+              const accent = r.live ? C.success : nextUp ? C.primary : C.muted;
+              return (
+                <m.button
+                  key={r.key}
+                  type="button"
+                  onClick={() => router.push(r.href)}
+                  initial={reduce ? false : { opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: reduce ? 0 : i * 0.05, duration: 0.24, ease: EASE }}
+                  className="relative flex w-full items-center gap-2.5 overflow-hidden rounded-[14px] p-2.5 pl-3 text-left transition-transform active:scale-[0.99]"
+                  style={{
+                    background: `linear-gradient(115deg, ${accent}12 0%, ${accent}05 40%, transparent 88%)`,
+                    border: `1px solid ${accent}2b`,
+                    boxShadow: r.live ? `0 4px 16px ${accent}1f` : 'none',
+                  }}
+                >
+                  {/* The one bar of solid colour. It reads down the list as a
+                      spine: green while somebody is training, blue for who is
+                      up next, grey for everyone waiting behind them. */}
+                  <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full"
+                    style={{ background: accent }} aria-hidden />
 
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5">
-                    <span className="truncate text-[12.5px] font-[730]" style={{ color: C.ink }}>
-                      {r.name ?? 'Unknown client'}
-                    </span>
-                    {/* The whole of "next up". A chip, where there used to be a
-                        navy gradient card fighting the hero for attention. */}
-                    {i === 0 && (
-                      <span className="shrink-0 rounded-full px-1.5 py-[1px] text-[8px] font-[820] uppercase tracking-[0.08em]"
-                        style={{ background: `${C.primary}14`, color: C.primary }}>
-                        Next
+                  <ClientAvatar
+                    name={r.name}
+                    photoUrl={r.photo}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-[820]"
+                    style={{ background: `${accent}1f`, color: C.ink }} />
+
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="truncate text-[12.5px] font-[730]" style={{ color: C.ink }}>
+                        {r.name ?? 'Unknown client'}
                       </span>
-                    )}
+                      {(r.live || nextUp) && (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-[1px] text-[8px] font-[820] uppercase tracking-[0.08em]"
+                          style={{ background: `${accent}1a`, color: accent }}>
+                          {r.live && (
+                            // Breathing, because a live session is the one
+                            // thing on this card that is changing while it is
+                            // being looked at. Held still for anybody who has
+                            // asked for less motion.
+                            <span
+                              className={reduce ? 'h-[5px] w-[5px] rounded-full' : 'h-[5px] w-[5px] animate-pulse rounded-full'}
+                              style={{ background: accent }} aria-hidden />
+                          )}
+                          {r.live ? 'On the floor' : 'Next'}
+                        </span>
+                      )}
+                    </span>
+                    <span className="block truncate text-[10px] font-[540]" style={{ color: C.muted }}>
+                      {/* A time when there is one; the row is a due client when
+                          there is not, and inventing one would be a lie. */}
+                      {r.time ? `${fmtTime12(r.time)} · ` : ''}{r.sub}
+                    </span>
                   </span>
-                  <span className="block truncate text-[10px] font-[540]" style={{ color: C.muted }}>
-                    {/* A time when there is one; the row is a due client when
-                        there is not, and inventing one would be a lie. */}
-                    {r.time ? `${fmtTime12(r.time)} · ` : ''}{r.sub}
-                  </span>
-                </span>
 
-                <span className="inline-flex h-[26px] shrink-0 items-center gap-1 rounded-full px-2.5 text-[10px] font-[780]"
-                  style={{ background: `${C.danger}10`, color: C.danger }}>
-                  Start <ChevronRight size={11} />
-                </span>
-              </m.button>
-            ))}
+                  {/* Resume, not Start, once a log is open — pressing Start on
+                      a session already running is how a trainer ends up with
+                      two logs for one workout. */}
+                  <span className="inline-flex h-[28px] shrink-0 items-center gap-1 rounded-full px-2.5 text-[10px] font-[800] text-white"
+                    style={{
+                      background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+                      boxShadow: `0 3px 9px ${accent}45`,
+                    }}>
+                    {r.live ? 'Resume' : 'Start'} <ChevronRight size={11} />
+                  </span>
+                </m.button>
+              );
+            })}
 
             {hidden > 0 && (
               <button
@@ -1649,7 +1872,7 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
           </span>
           <div>
             <h3 className="text-[14px] sm:text-[15px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>Session Activity</h3>
-            <p className="text-[10px] font-[500]" style={{ color: C.muted }}>This month</p>
+            <p className="text-[10px] font-[500]" style={{ color: C.muted }}>Workouts logged this month</p>
           </div>
         </div>
         {momDelta !== null && <TrendBadge pct={momDelta} />}
@@ -1659,15 +1882,32 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
 
       {stats && (
         <>
+          {/* Three counts off the workout log — sessions STARTED this month,
+              the subset FINISHED, and last month's finished total to read this
+              month against.
+
+              They used to come off pt_sessions, the booking diary, where
+              nothing ever moves a row past 'scheduled': Done and Last month
+              were counting a status no code path writes, so both read 0 next
+              to a real Total however many workouts the studio ran. Finishing a
+              workout sets workout_sessions.status, which is where these count
+              from now.
+
+              Number in ink, label muted, hue only on the marker beside it —
+              a 20px figure set in a tint of its own colour was the least
+              readable text on the card. */}
           <div className="grid grid-cols-3 gap-2 mb-3.5">
             {[
-              { label: 'Total',    value: stats.this_month_total,     color: C.primary },
+              { label: 'Total',    value: stats.this_month_total,     color: KPI.clients },
               { label: 'Done',     value: stats.this_month_completed, color: C.success },
-              { label: 'Last mo.', value: stats.last_month_completed, color: C.primary },
+              { label: 'Last mo.', value: stats.last_month_completed, color: KPI.retention },
             ].map(t => (
-              <div key={t.label} className="rounded-[13px] p-2.5" style={{ background: `${t.color}0d` }}>
-                <p className="text-[8px] font-[700] uppercase tracking-[0.09em] mb-0.5" style={{ color: `${t.color}aa` }}>{t.label}</p>
-                <p className="text-[20px] font-[860] tracking-[-0.02em]" style={{ color: t.color }}>{t.value}</p>
+              <div key={t.label} className="rounded-[13px] p-2.5" style={{ background: `${t.color}0f` }}>
+                <p className="mb-0.5 flex items-center gap-1 text-[8px] font-[700] uppercase tracking-[0.09em]" style={{ color: C.muted }}>
+                  <span className="h-[6px] w-[6px] shrink-0 rounded-full" style={{ background: t.color }} aria-hidden />
+                  {t.label}
+                </p>
+                <p className="text-[20px] font-[860] tracking-[-0.02em] tabular-nums" style={{ color: C.ink }}>{t.value}</p>
               </div>
             ))}
           </div>
@@ -1852,8 +2092,10 @@ export default function PtOsDashboard() {
     return () => { stop(); document.removeEventListener('visibilitychange', onVisibility); };
   }, [refreshAll]);
 
-  const revTrend = d?.revenueTrend?.map(x => Number(x.revenue)) ?? [];
-  const incTrend = d?.revenueTrend?.map(x => Number(x.incentives)) ?? [];
+  // The month label travels with the number now, so a hovered bar can say
+  // which month it is rather than just how tall it is.
+  const revTrend = d?.revenueTrend?.map(x => ({ label: x.label, value: Number(x.revenue) })) ?? [];
+  const incTrend = d?.revenueTrend?.map(x => ({ label: x.label, value: Number(x.incentives) })) ?? [];
   const revMoM   = momPct(d?.revenueTrend, 'revenue');
   const incMoM   = momPct(d?.revenueTrend, 'incentives');
 
@@ -1924,10 +2166,17 @@ export default function PtOsDashboard() {
             {/* 3 — Mobile quick actions (desktop uses the dock) */}
             <MobileQuickActions />
 
-            {/* 3 — KPI grid: 2 cols mobile → 3 tablet → 4 desktop.
-                Four rather than five on desktop because Commission is hidden
-                there (lg:hidden below) and the row would otherwise sit a card
-                short. Small screens still show all five. */}
+            {/* 3 — KPI grid.
+                Four cards, and four is now the whole set on every screen:
+                Outstanding has gone. It was the fifth, and it was the same
+                figure Today's Revenue already shows as Pending, one section
+                below — with the people it is owed by, how many are overdue,
+                and a link into the dues list. A tile carrying a duplicate of
+                a number that is better answered further down the page is a
+                tile spent saying something twice.
+
+                Commission stays phone-and-tablet-only, so the desktop row is
+                Clients / Revenue / Retention and the grid still fills. */}
             {/* 3.5 — The month's revenue target.
                 Above Key Metrics because it frames them: "PT Revenue ₹95.5K"
                 is a fact, and whether that is good depends entirely on what
@@ -1945,20 +2194,26 @@ export default function PtOsDashboard() {
             <div>
               <SectionLabel>Key Metrics</SectionLabel>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-                <StatCard icon={<Users size={14} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
-                  sub={`${d.expired_clients} expired`} color={C.primary} accent="#7fb4ff" delay={0} href="/pt-os/clients" trend={revTrend} pct={revMoM} />
-                <StatCard icon={<Wallet size={14} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
-                  color={C.success} accent="#34d399" delay={0.05} href="/pt-os/reports" trend={revTrend} pct={revMoM} />
+                {/* No sparkline and no percentage. The only series this
+                    endpoint carries is revenue, and revenue is not a client
+                    count — putting it here is what made this card claim
+                    revenue's growth as its own. A number with nothing under
+                    it is the honest render. */}
+                <StatCard icon={<Users size={17} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
+                  sub={`${d.expired_clients} expired`} color={KPI.clients} accent={palette.blue[300]} delay={0} href="/pt-os/clients" />
+                <StatCard icon={<Wallet size={17} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
+                  sub="this month" color={KPI.revenue} accent={palette.emerald[400]} delay={0.05} href="/pt-os/reports" trend={revTrend} pct={revMoM} format={fmtINR} />
                 {/* Phone and tablet only. Still rendered there, so the numbers
                     stay one tap away on the devices a trainer carries around
-                    the floor; the desktop row is the one being kept lean. */}
-                <StatCard icon={<Percent size={14} />} label="Commission" value={fmtCompact(d.total_monthly_commission)}
-                  sub={commRate} color={C.danger} accent="#f87171" delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM}
+                    the floor; the desktop row is the one being kept lean.
+
+                    Incentives, not revenue — this is the one card whose
+                    series was already its own. */}
+                <StatCard icon={<Percent size={17} />} label="Commission" value={fmtCompact(d.total_monthly_commission)}
+                  sub={commRate} color={KPI.commission} accent={palette.blue[400]} delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM} format={fmtINR}
                   className="lg:hidden" />
-                <StatCard icon={<Gauge size={14} />} label="Retention" value={retentionPct !== null ? `${retentionPct.toFixed(0)}%` : '—'}
-                  sub={`${d.active_pt_clients}/${d.active_pt_clients + d.expired_clients}`} color={C.primary} accent="#0067e0" delay={0.15} href="/pt-os/clients" />
-                <StatCard icon={<Receipt size={14} />} label="Outstanding" value={fmtCompact(d.total_outstanding)}
-                  sub={`${d.clients_with_balance} client${d.clients_with_balance !== 1 ? 's' : ''}`} color={C.warning} accent="#fbbf24" delay={0.20} href="/pt-os/balance-sheet" />
+                <StatCard icon={<Gauge size={17} />} label="Retention" value={retentionPct !== null ? `${retentionPct.toFixed(0)}%` : '—'}
+                  sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active`} color={KPI.retention} accent={palette.blue[200]} delay={0.15} href="/pt-os/clients" />
               </div>
             </div>
 

@@ -267,8 +267,14 @@ describe('when the service says no', () => {
     open();
     fireEvent.click(screen.getByRole('button', { name: 'Summarize this client' }));
 
+    // Both assertions wait. The text and the incomplete marker are written by
+    // two SEPARATE commits — onText patches the bubble, and the marker is set
+    // in the catch block on the far side of an await — so a synchronous
+    // getByText here races the second one. It won locally and lost on CI,
+    // where the suite runs slower and more contended: an intermittent red on
+    // a test whose subject had not changed in months.
     expect(await screen.findByText(/Rahul has been training/)).toBeTruthy();
-    expect(screen.getByText(/treat this as incomplete/i)).toBeTruthy();
+    expect(await screen.findByText(/treat this as incomplete/i)).toBeTruthy();
   });
 
   it('does not leave an empty bubble behind when the failure came before any text', async () => {

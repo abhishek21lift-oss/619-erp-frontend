@@ -90,6 +90,10 @@ export default function SecurityCentre() {
   const [sessions, setSessions] = useState<ActiveSession[] | null>(null);
   const [events, setEvents] = useState<LoginEvent[]>([]);
   const [total, setTotal] = useState(0);
+  // The server counts to a ceiling rather than scanning a table that grows
+  // without bound. Below it the number is exact; at it, "10,000+" is the only
+  // honest thing to print.
+  const [totalCapped, setTotalCapped] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -129,7 +133,7 @@ export default function SecurityCentre() {
 
   const loadEvents = useCallback(() => {
     api.superAdmin.loginEvents(query)
-      .then((r) => { setEvents(r.data ?? []); setTotal(r.paging?.total ?? 0); })
+      .then((r) => { setEvents(r.data ?? []); setTotal(r.paging?.total ?? 0); setTotalCapped(r.paging?.total_capped ?? false); })
       .catch(() => { /* the feed is supplementary; the tiles above still stand */ });
   }, [query]);
 
@@ -346,7 +350,7 @@ export default function SecurityCentre() {
               <div className="flex items-end">
                 <button
                   onClick={() => { setOutcome(''); setQ(''); setDebouncedQ(''); setFailedOnly(true); setOffset(0); }}
-                  className="flex min-h-[36px] items-center gap-1.5 text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}
+                  className="flex min-h-[44px] items-center gap-1.5 text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}
                 >
                   <RotateCcw size={12} /> Reset
                 </button>
@@ -359,18 +363,18 @@ export default function SecurityCentre() {
       <div className="overflow-hidden rounded-[16px]" style={cardStyle}>
         <div className="flex items-center justify-between gap-3 px-3 py-2.5 sm:px-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <p className="text-[11.5px] font-[650]" style={{ color: 'var(--text-muted)' }}>
-            {total.toLocaleString('en-IN')} attempt{total === 1 ? '' : 's'}
+            {total.toLocaleString('en-IN')}{totalCapped ? '+' : ''} attempt{total === 1 ? '' : 's'}
           </p>
           {total > PAGE_SIZE && (
             <div className="flex items-center gap-1">
               <button onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))} disabled={offset === 0}
-                aria-label="Previous page" className="flex h-8 w-8 items-center justify-center rounded-[8px] disabled:opacity-40"
+                aria-label="Previous page" className="flex h-11 w-11 items-center justify-center rounded-[8px] disabled:opacity-40"
                 style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                 <ChevronLeft size={14} />
               </button>
               <span className="px-1.5 text-[11.5px] font-[650] tabular-nums" style={{ color: 'var(--text-muted)' }}>{page} / {pages}</span>
               <button onClick={() => setOffset(offset + PAGE_SIZE)} disabled={offset + PAGE_SIZE >= total}
-                aria-label="Next page" className="flex h-8 w-8 items-center justify-center rounded-[8px] disabled:opacity-40"
+                aria-label="Next page" className="flex h-11 w-11 items-center justify-center rounded-[8px] disabled:opacity-40"
                 style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                 <ChevronRight size={14} />
               </button>

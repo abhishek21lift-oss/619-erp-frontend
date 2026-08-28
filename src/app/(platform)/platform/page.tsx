@@ -9,7 +9,9 @@
 // and a platform session audience, not merely on role='super_admin'.
 //
 // Tabs:
-//   Overview — cross-studio KPIs (revenue, clients, sessions, last activity)
+//   Overview — NewOverviewTab: KPIs from one payload, Tenancy Health card,
+//              per-studio strip. Phase 8 removed the legacy chart-and-table
+//              view; the home is the platform's "RIGHT NOW" answer.
 //   Studios  — manage tenants and their login accounts (edit / add / remove / reset /
 //              suspend / impersonate)
 //   Activity — platform-wide audit feed
@@ -30,7 +32,7 @@ import { FINANCE_DEEP_LINKS, MODULES, TAB_LABELS, moduleForTab, normalizeTab } f
 import type { FinanceSubTab, NavOpts, Tab } from './_shared/types';
 import { ActivityTab } from './_tabs/ActivityTab';
 import { FinanceTab } from './_tabs/FinanceTab';
-import { OverviewTab } from './_tabs/OverviewTab';
+import { NewOverviewTab } from './_tabs/NewOverviewTab';
 import { StudiosTab } from './_tabs/StudiosTab';
 import { UsersTab } from './_tabs/UsersTab';
 import RegistrationsTab from './_tabs/RegistrationsTab';
@@ -65,7 +67,11 @@ function PlatformContent() {
   const router = useRouter();
   const tab = normalizeTab(paramTab);
   const [financeSubTab, setFinanceSubTab] = useState<FinanceSubTab>(
-    () => (paramTab && FINANCE_DEEP_LINKS[paramTab]) || 'dashboard',
+    // Phase 8: the dashboard subtab is gone (the new home is the
+    // dashboard). Deep links to ?tab=billing/coupons/payments/invoices
+    // still land on the matching sub-tab; opening Finance without a
+    // deep link lands on Billing, the operator's most-common next step.
+    () => (paramTab && FINANCE_DEEP_LINKS[paramTab]) || 'billing',
   );
   const setTab = (t: Tab) => {
     router.push(t === 'overview' ? '/platform' : `/platform?tab=${t}`, { scroll: false });
@@ -171,7 +177,7 @@ function PlatformContent() {
         {/* Keyed so switching tabs replays the stagger — it reads as the panel
             being assembled rather than content silently swapping underneath. */}
         <div key={tab}>
-          {tab === 'overview' && <OverviewTab onNavigate={onNavigate} />}
+          {tab === 'overview' && <NewOverviewTab />}
           {tab === 'registrations' && <RegistrationsTab />}
           {tab === 'studios' && <StudiosTab />}
           {tab === 'users' && <UsersTab />}

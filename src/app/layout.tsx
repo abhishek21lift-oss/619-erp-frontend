@@ -46,14 +46,20 @@ const jetBrainsMono = JetBrains_Mono({
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://619fitnessstudio.com'),
+  metadataBase: new URL('https://myptstudio.com'),
   title: {
-    default: 'MY PT STUDIO — Operating System',
+    default: 'MY PT STUDIO — Personal Training Business Management',
     template: '%s | MY PT STUDIO',
   },
   description:
-    'MY PT STUDIO — the operating system for fitness professionals. Clients, workouts, nutrition, attendance, payments and analytics, beautifully unified.',
-  alternates: { canonical: '/' },
+    'MY PT STUDIO — the business management platform for personal trainers. Clients, training, nutrition, progress, payments and analytics, beautifully unified.',
+  // No global `alternates.canonical` here, deliberately.
+  //
+  // It used to say `{ canonical: '/' }`, which every one of the 124 routes
+  // inherited — so each URL told a crawler it was really the homepage. That is
+  // inert while the whole origin is noindex and actively harmful the moment
+  // any of it is not. Canonical is a per-URL statement; it is now declared by
+  // the two routes that are actually indexable, beside their `robots` opt-in.
   // The PWA manifest, declared through the Metadata API rather than as a
   // <link> in the <head> below.
   //
@@ -77,11 +83,11 @@ export const metadata: Metadata = {
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
   openGraph: {
-    url: 'https://619fitnessstudio.com',
+    url: 'https://myptstudio.com',
     siteName: 'MY PT STUDIO',
     type: 'website',
-    title: 'MY PT STUDIO — Operating System',
-    description: 'The operating system for fitness professionals — clients, workouts, nutrition, attendance, payments and analytics, beautifully unified.',
+    title: 'MY PT STUDIO — Personal Training Business Management',
+    description: 'The business management platform for personal trainers — clients, training, nutrition, progress, payments and analytics, beautifully unified.',
     images: [
       {
         url: '/icon-512.png',
@@ -92,6 +98,25 @@ export const metadata: Metadata = {
     ],
   },
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent' },
+  // Default-deny, and the default is the whole point.
+  //
+  // 122 of this app's 124 routes are authenticated and hold client health
+  // data, payment records, revenue and staff HR. Exactly two — `/` and
+  // `/start-free` — are marketing. Making noindex the default and requiring a
+  // page to opt IN means the failure mode of forgetting is "a marketing page
+  // is not indexed" (recoverable, visible in Search Console) rather than
+  // "/finance/revenue is in Google" (not recoverable — caches and scrapers
+  // keep it).
+  //
+  // The two opt-ins live in:
+  //   src/app/(chrome)/page.tsx              → /
+  //   src/app/(bare)/start-free/layout.tsx   → /start-free
+  //
+  // publicRoutes.seo.test.ts pins that list, so adding a third is a deliberate
+  // act rather than a side effect. Until this change the default applied with
+  // no exceptions at all, so `/` could not be indexed while `sitemap.ts` was
+  // advertising it at priority 1.0 — the sitemap invited crawlers to a page
+  // whose own meta tag turned them away.
   robots: { index: false, follow: false },
 };
 

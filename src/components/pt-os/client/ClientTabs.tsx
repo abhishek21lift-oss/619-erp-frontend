@@ -65,6 +65,20 @@ interface TabDef {
   color: string;
   /** Shown on the tab when there is something to count. */
   count?: number;
+  /**
+   * This tab LEAVES the page instead of switching a panel.
+   *
+   * Three of these used to open a panel whose entire content was a list of
+   * links to the screen that actually does the job — a tap to reach a tap.
+   * Where that was the whole panel, the tab now goes straight there. Built
+   * from the client's id, because that is the only thing these destinations
+   * need.
+   *
+   * A tab with an `href` renders as a LINK, not a button: middle-click,
+   * long-press and "open in new tab" all have to work, and a button with an
+   * onClick that calls router.push has none of them.
+   */
+  href?: (clientId: string) => string;
 }
 
 /**
@@ -86,9 +100,18 @@ export interface TabLink {
 const TABS: TabDef[] = [
   { key: 'overview', label: 'Overview', icon: <LayoutGrid size={16} />, color: TAB_COLOR.primary },
   { key: 'training', label: 'Training', icon: <Dumbbell size={16} />, color: TAB_COLOR.success },
-  { key: 'log', label: 'Workout Log', icon: <ScrollText size={16} />, color: TAB_COLOR.warning },
-  { key: 'measurements', label: 'Measurements', icon: <Ruler size={16} />, color: TAB_COLOR.danger },
-  { key: 'nutrition', label: 'Nutrition', icon: <Salad size={16} />, color: TAB_COLOR.dangerDeep },
+  {
+    key: 'log', label: 'Workout Log', icon: <ScrollText size={16} />, color: TAB_COLOR.warning,
+    href: (id) => `/pt-os/clients/${id}/workout-log`,
+  },
+  {
+    key: 'measurements', label: 'Measurements', icon: <Ruler size={16} />, color: TAB_COLOR.danger,
+    href: (id) => `/pt-os/measurements?client_id=${id}`,
+  },
+  {
+    key: 'nutrition', label: 'Nutrition', icon: <Salad size={16} />, color: TAB_COLOR.dangerDeep,
+    href: (id) => `/pt-os/diet-plans?client_id=${id}`,
+  },
   { key: 'checkins', label: 'Check-ins', icon: <ClipboardCheck size={16} />, color: TAB_COLOR.primary },
   { key: 'photos', label: 'Photos', icon: <Camera size={16} />, color: TAB_COLOR.success },
   { key: 'ai', label: 'AI Coach', icon: <Sparkles size={16} />, color: TAB_COLOR.warning },
@@ -103,6 +126,8 @@ export interface ClientTabsProps {
   onChange: (key: TabKey) => void;
   /** Badge counts, only for tabs where a number means something. */
   counts?: Partial<Record<TabKey, number>>;
+  /** Whose profile this is. Tabs that navigate build their destination from it. */
+  clientId: string;
 }
 
 /**
@@ -147,7 +172,7 @@ export interface ClientTabsProps {
  * — a permanent fade over a strip that is not scrollable is a lie about the
  * content, and on a desktop where all twelve fit it would dim two real tabs.
  */
-export function ClientTabs({ active, onChange, counts }: ClientTabsProps) {
+export function ClientTabs({ active, onChange, counts, clientId }: ClientTabsProps) {
   const reduce = useReducedMotion();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ left: false, right: false });
@@ -225,13 +250,20 @@ export function ClientTabs({ active, onChange, counts }: ClientTabsProps) {
         {TABS.map((t, i) => {
           const on = t.key === active;
           const n = counts?.[t.key];
+          const to = t.href?.(clientId);
+          // A tab that leaves the page is a link and never the selected one;
+          // a tab that switches a panel is a button that can be. Same tile,
+          // same label, two different promises — and role="tab" on something
+          // that navigates would promise the wrong one to a screen reader.
+          const Tag = to ? 'a' : 'button';
+          const nav = to
+            ? { href: to }
+            : { role: 'tab' as const, 'aria-selected': on, onClick: () => onChange(t.key) };
           return (
-            <button
+            <Tag
               key={t.key}
               data-tab={t.key}
-              role="tab"
-              aria-selected={on}
-              onClick={() => onChange(t.key)}
+              {...nav}
               className="flex shrink-0 flex-col items-center gap-1.5 rounded-[14px] px-1 py-1 text-center transition-transform active:scale-95"
               style={{ minWidth: 64 }}
             >
@@ -265,7 +297,7 @@ export function ClientTabs({ active, onChange, counts }: ClientTabsProps) {
                 style={{ color: on ? t.color : 'var(--text-muted)' }}>
                 {t.label}
               </span>
-            </button>
+            </Tag>
           );
         })}
       </div>

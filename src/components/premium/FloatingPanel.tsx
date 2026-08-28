@@ -34,6 +34,7 @@ import { useEffect } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 type FloatingPanelProps = {
   open: boolean;
@@ -55,12 +56,10 @@ type FloatingPanelProps = {
 const HEADER_TOP = 'calc(env(safe-area-inset-top, 0px) + 1.15rem)';
 
 export function FloatingPanel({ open, onClose, title, subtitle, icon, size = 'md', children }: FloatingPanelProps) {
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [open, onClose]);
+  // Escape, focus trap and focus restore, replacing a bespoke Escape listener.
+  // The panel declared aria-modal while Tab walked out of it into the page
+  // behind, and closing dropped focus to the top of the document.
+  const dialogRef = useDialogA11y({ open, onClose });
 
   // The body must not scroll behind an open panel. Without this the page
   // underneath scrolls when the panel's own content reaches its end, which on
@@ -81,7 +80,7 @@ export function FloatingPanel({ open, onClose, title, subtitle, icon, size = 'md
   return (
     <AnimatePresence>
       {open && (
-        <div data-no-pull-refresh className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label={title}>
+        <div ref={dialogRef} data-no-pull-refresh className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label={title}>
           <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

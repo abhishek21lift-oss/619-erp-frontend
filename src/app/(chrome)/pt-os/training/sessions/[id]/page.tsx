@@ -187,7 +187,12 @@ function SessionLogger({ sessionId }: { sessionId: string }) {
             </header>
 
             {shape === 'cardio'
-              ? <CardioLogger performance={p} prescription={prescription} onLog={logCardio} />
+              ? <CardioLogger
+                  performance={p}
+                  prescription={prescription}
+                  typeMeta={meta?.prescription_types.find((t) => t.type === prescription?.prescription_type)}
+                  onLog={logCardio}
+                />
               : <SetLogger performance={p} prescription={prescription} onLog={onLogSet} />}
           </section>
         ))}

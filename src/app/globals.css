@@ -61,7 +61,15 @@
      home-indicator safe area. Every "clear the bottom nav" offset below is
      derived from this, so the nav's height and the space pages reserve for it
      can never drift apart — they did, and pages ended up overlapping it. */
-  --bottom-nav-h: 52px;
+  /* 46px, down from 52. Every "clear the bottom nav" offset in the app is
+     derived from this token (see BOTTOM-NAV.md), so the bar and the space
+     reserved for it cannot come apart.
+
+     It does not go lower: each tab is a 44px touch target, and a bar shorter
+     than that either shrinks the targets or clips the labels. Most of the
+     bar's apparent bulk on a notched phone is the safe-area inset below it,
+     which is the hardware, not the design. */
+  --bottom-nav-h: 46px;
 
   /* ── Brand (blue) ─────────────────────────────────────────── */
   --brand:        var(--blue-500);

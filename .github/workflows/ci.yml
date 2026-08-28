@@ -44,7 +44,31 @@ jobs:
         # Was 310 while the real count was 230, leaving 80 warnings of silent
         # headroom: new debt could accumulate for months without CI noticing,
         # which defeats the point of a ratchet. Re-measured and tightened.
-        run: npm run lint -- --max-warnings=230
+        #
+        # 230 -> 271 when eslint-plugin-jsx-a11y was added. That number is a
+        # new rule CATEGORY appearing, not new debt appearing:
+        #
+        #   jsx-a11y (new, was never linted)                 72
+        #   everything else                                 199   <- was 201
+        #
+        # The pre-existing count went DOWN by two, from moving an
+        # eslint-disable directive onto the line it was meant to guard — it sat
+        # three lines above the element, so it suppressed nothing and reported
+        # itself as unused.
+        #
+        # Frozen at the exact count again rather than given headroom, for the
+        # reason written above. The remaining jsx-a11y warnings are deliberately
+        # warnings, not errors: most are modal backdrops (`<div onClick={close}>`),
+        # and the correct fix for those is Escape plus a focus trap — see
+        # src/hooks/useDialogA11y.ts — never an onKeyDown that adds a tab stop
+        # doing nothing. Erroring would push the next person to the wrong fix.
+        #
+        # 271 -> 269: the New Programme sheet's backdrop moved to its own
+        # `aria-hidden` element, so the two warnings its `role="presentation"`
+        # wrapper carried are gone. That is the shape the fix above describes —
+        # an aria-hidden backdrop is a mouse-only affordance by definition, so
+        # the rule correctly stops asking for a key handler.
+        run: npm run lint -- --max-warnings=269
 
   # ── Job 2: Type-check ──────────────────────────────────────────────
   typecheck:

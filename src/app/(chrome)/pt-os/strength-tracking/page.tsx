@@ -9,6 +9,7 @@ import {
 import Guard from '@/components/Guard';
 import { Button, PageContainer, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
+import { PremiumSparkline } from '@/components/visualizations';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { calc1RM, classifyStrength } from '@/lib/fitness-calculations';
@@ -106,6 +107,18 @@ function StrengthHub({ clientId }: StrengthHubProps) {
     return out;
   }, [logs]);
 
+  // Oldest-first per exercise, for the trend sparkline — 1RM where the log
+  // has one (the real measure of progress), the logged weight otherwise.
+  const trendByExercise = useMemo(() => {
+    const out: Record<string, { label: string; value: number }[]> = {};
+    for (const l of [...logs].sort((a, b) => a.log_date.localeCompare(b.log_date))) {
+      const v = l.one_rm_estimate ?? l.weight_kg;
+      if (!Number.isFinite(v)) continue;
+      (out[l.exercise_name] ??= []).push({ label: l.log_date, value: v });
+    }
+    return out;
+  }, [logs]);
+
   const handleLog = async (exercise: string, weightKg: number, setsDone: number, repsDone: number) => {
     try {
       await api.progress.strengthLogs.create({
@@ -159,7 +172,8 @@ function StrengthHub({ clientId }: StrengthHubProps) {
             {cat.exercises.map((ex) => (
               <ExerciseCard
                 key={ex} exercise={ex} accent={CATEGORY_COLOR[cat.label]}
-                latest={latestByExercise[ex]} gender={gender} bodyWeightKg={bodyWeightKg}
+                latest={latestByExercise[ex]} trend={trendByExercise[ex]}
+                gender={gender} bodyWeightKg={bodyWeightKg}
                 onLog={(w, s, r) => handleLog(ex, w, s, r)}
               />
             ))}
@@ -205,11 +219,12 @@ function StrengthHub({ clientId }: StrengthHubProps) {
 interface ExerciseCardProps {
   exercise: string; accent: string;
   latest: StrengthLog | undefined;
+  trend: { label: string; value: number }[] | undefined;
   gender: Gender | null; bodyWeightKg: number | null;
   onLog: (weightKg: number, setsDone: number, repsDone: number) => void;
 }
 
-function ExerciseCard({ exercise, accent, latest, gender, bodyWeightKg, onLog }: ExerciseCardProps) {
+function ExerciseCard({ exercise, accent, latest, trend, gender, bodyWeightKg, onLog }: ExerciseCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [weight, setWeight] = useState('');
   const [sets, setSets] = useState('3');
@@ -256,6 +271,14 @@ function ExerciseCard({ exercise, accent, latest, gender, bodyWeightKg, onLog }:
         </div>
         <ChevronDown size={15} style={{ color: '#94a3b8', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
       </button>
+
+      {/* A trend needs at least two readings — one point is a number, not a
+          shape, so the strip stays silent rather than draw a flat line. */}
+      {trend && trend.length >= 2 && (
+        <div className="px-4 pb-3">
+          <PremiumSparkline data={trend} color={accent} metric={`${exercise} 1RM`} height={28} />
+        </div>
+      )}
 
       {expanded && (
         <div className="px-4 pb-4">

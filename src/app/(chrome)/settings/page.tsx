@@ -523,7 +523,7 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
             {name || 'New Account'}
           </p>
           <p className="text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>
-            {email || 'email@619fitness.com'}
+            {email || 'you@example.com'}
           </p>
         </div>
       </div>

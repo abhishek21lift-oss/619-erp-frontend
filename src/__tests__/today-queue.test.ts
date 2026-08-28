@@ -110,6 +110,102 @@ describe('the server\'s order is preserved exactly', () => {
   });
 });
 
+describe('the running session comes first', () => {
+  // The two visible rows answer two questions: who is on the floor now, and
+  // who is next. A client who is mid-session is the first of those whatever
+  // the clock says, and the roster arrives in clock order, so this is the one
+  // thing this function reorders.
+
+  it('floats a started session above an earlier one that has not started', () => {
+    const q = buildTodayQueue([
+      row({ client_id: 'early', start_time: '06:00' }),
+      row({ client_id: 'running', start_time: '07:30', session_status: 'in_progress' }),
+    ]);
+    expect(names(q)).toEqual(['Client running', 'Client early']);
+  });
+
+  it('leaves the rest in the server\'s order behind it', () => {
+    const q = buildTodayQueue([
+      row({ client_id: 'first', start_time: '06:00' }),
+      row({ client_id: 'second', start_time: '07:00' }),
+      row({ client_id: 'running', start_time: '09:00', session_status: 'in_progress' }),
+      row({ client_id: 'third', start_time: '08:00' }),
+    ]);
+    // Note 'third' stays after 'second' even though its clock time is later
+    // than 'running' and earlier than nothing — the queue is not re-sorted,
+    // only partitioned.
+    expect(names(q)).toEqual(['Client running', 'Client first', 'Client second', 'Client third']);
+  });
+
+  it('keeps two running sessions in the order the server gave them', () => {
+    // Two logs open at once is unusual but real — a trainer running a pair.
+    const q = buildTodayQueue([
+      row({ client_id: 'a', start_time: '07:00', session_status: 'in_progress' }),
+      row({ client_id: 'b', start_time: '06:00', session_status: 'in_progress' }),
+    ]);
+    expect(names(q)).toEqual(['Client a', 'Client b']);
+  });
+
+  it('promotes the next client the moment the running one finishes', () => {
+    // The whole sequence, as the trainer lives it. Finish workout sets the
+    // session to completed; the row drops out and second becomes first with
+    // nothing else having to happen.
+    const roster = [
+      row({ client_id: 'a', start_time: '06:00', session_status: 'in_progress' }),
+      row({ client_id: 'b', start_time: '07:00' }),
+      row({ client_id: 'c', start_time: '08:00' }),
+    ];
+    expect(names(buildTodayQueue(roster))).toEqual(['Client a', 'Client b', 'Client c']);
+
+    const afterFinish = roster.map((r) => (r.client_id === 'a' ? { ...r, session_status: 'completed' as const } : r));
+    expect(names(buildTodayQueue(afterFinish))).toEqual(['Client b', 'Client c']);
+
+    const bStarts = afterFinish.map((r) => (r.client_id === 'b' ? { ...r, session_status: 'in_progress' as const } : r));
+    expect(names(buildTodayQueue(bStarts))).toEqual(['Client b', 'Client c']);
+  });
+
+  it('does not promote a rest day just because something is running', () => {
+    const q = buildTodayQueue([
+      row({ client_id: 'rest', is_rest_day: true, session_status: 'in_progress' }),
+      row({ client_id: 'b' }),
+    ]);
+    expect(names(q)).toEqual(['Client b']);
+  });
+});
+
+describe('each row knows whether it is running', () => {
+  // The card labels rows LIVE and NEXT, and it cannot work that out from the
+  // position alone: the queue puts a running session first, so "row one is
+  // running" is false on every morning nobody has started yet — which is most
+  // of them. The flag travels with the row.
+
+  it('marks a started session live', () => {
+    const q = buildTodayQueue([row({ client_id: 'a', session_status: 'in_progress' })]);
+    expect(q[0].live).toBe(true);
+  });
+
+  it('does not mark a session nobody has started', () => {
+    const q = buildTodayQueue([row({ client_id: 'a' })]);
+    expect(q[0].live).toBe(false);
+  });
+
+  it('marks only the ones that are actually running', () => {
+    const q = buildTodayQueue([
+      row({ client_id: 'running', session_status: 'in_progress' }),
+      row({ client_id: 'waiting' }),
+      row({ client_id: 'also-waiting' }),
+    ]);
+    expect(q.map((r) => r.live)).toEqual([true, false, false]);
+  });
+
+  it('a queue with nothing running has no live row at all', () => {
+    // The case that made this necessary. Every row false, so the card labels
+    // row one NEXT rather than telling the trainer somebody is mid-set.
+    const q = buildTodayQueue([row({ client_id: 'a' }), row({ client_id: 'b' })]);
+    expect(q.some((r) => r.live)).toBe(false);
+  });
+});
+
 describe('two at a time', () => {
   it('shows two', () => {
     expect(TODAY_VISIBLE).toBe(2);

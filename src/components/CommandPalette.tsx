@@ -7,6 +7,7 @@ import { allNavItems, isVisibleForRole, isVisibleForFeature, QUICK_ACTIONS, NAV_
 import { useFeatures } from '@/lib/features-context';
 import type { Role } from '@/lib/nav-config';
 import { api, type Client } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 type Result = {
   id: string;
@@ -38,6 +39,15 @@ export default function CommandPalette() {
   const { features } = useFeatures();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  // Focus trap and focus restore only — `escapeCloses: false`.
+  //
+  // This palette's Escape handling lives inside a larger keydown handler that
+  // also drives arrow-key navigation and the open shortcut. Letting the hook
+  // close it too would mean two listeners racing on the same key, so the
+  // existing one keeps Escape and the hook supplies the two things the
+  // palette never had: Tab confined to the dialog, and focus returned to
+  // wherever it was opened from.
+  const dialogRef = useDialogA11y({ open, escapeCloses: false });
   const [q, setQ] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
   const [memberResults, setMemberResults] = useState<Client[]>([]);
@@ -205,8 +215,9 @@ export default function CommandPalette() {
   let runningIdx = 0;
 
   return (
-    <div className="cmdk-backdrop" onMouseDown={() => setOpen(false)}>
+    <div className="cmdk-backdrop" onMouseDown={() => setOpen(false)} aria-hidden="true">
       <div
+        ref={dialogRef}
         className="cmdk-modal"
         role="dialog"
         aria-label="Command palette"

@@ -1,19 +1,47 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Search, Dumbbell, X, Clock, Star, Loader2, CornerDownLeft, Check, PlusCircle } from 'lucide-react';
+import { Search, Dumbbell, X, Clock, Star, Loader2, CornerDownLeft, Check, PlusCircle, Mic } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useSearchFieldFocus } from '@/lib/search-field-focus';
+import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { cn } from '@/components/ui/cn';
 import type { ExerciseMeta, LibraryExercise } from '@/lib/api';
 import { useVirtualList } from '@/components/pt-os/exercise-library/useExerciseLibrary';
 
-export interface PickedExercise { id: string; name: string; }
+export interface PickedExercise {
+  id: string;
+  name: string;
+  prescription_mode_primary?: string | null;
+  prescription_mode_allowed?: string[];
+}
 
-interface ExercisePickerProps {
-  open: boolean;
+
+/**
+ * The picker's contents, with no shell of its own.
+ *
+ * Split out because the same search, filters, virtualised library and batch
+ * footer are needed in two places with completely different framing: the
+ * dialog three callers still open, and the full page the programme builder
+ * navigates to. Duplicating four hundred lines to change the frame around them
+ * would guarantee the two drift.
+ *
+ * It renders a fragment on purpose — the caller owns the surface, the padding
+ * and the heading, because those are exactly what differ between a modal and
+ * a page.
+ */
+export interface ExercisePickerPanelProps {
+  /**
+   * Whether this panel is live: the dialog is open, or the page is mounted.
+   *
+   * Gates the fetch and the document-level key listener, and clears the batch
+   * when it goes false — a closed dialog must not keep loading the library or
+   * answering arrow keys behind whatever is now on top of it.
+   */
+  live: boolean;
+  /** Dismiss. The dialog closes; the page goes back to the builder. */
   onClose: () => void;
   onSelect: (exercise: PickedExercise) => void;
   /** Exercise names this client has logged recently — quick-pick chips. */
@@ -37,11 +65,64 @@ interface ExercisePickerProps {
    * it is worse than not offering it.
    */
   allowCustom?: boolean;
+  /**
+   * Collect a batch instead of adding one and closing.
+   *
+   * Opt-in, because the three other callers genuinely want one-at-a-time:
+   * a logged session, a template row and a plan detail row each add a single
+   * movement and then need the caller's own follow-up UI. Only the programme
+   * builder is a "sit down and lay out the day" screen, and there the
+   * add-one-then-reopen loop meant opening this dialog once per exercise —
+   * search state, filters and scroll position thrown away each time.
+   *
+   * `onSelectMany` is required when this is on; `onSelect` is then unused.
+   */
+  multiple?: boolean;
+  /**
+   * Receives the batch. In batch mode the panel does NOT dismiss itself after
+   * calling this — the caller does.
+   *
+   * That is deliberate, and it is the difference between a dialog and a page.
+   * Adding a batch is N sequential requests; if the panel closed itself the
+   * moment the button was pressed, the caller's own failure handling would be
+   * running against a screen the trainer had already left, and a batch that
+   * failed entirely would vanish with nothing to retry. So the caller keeps
+   * the surface until it knows the writes landed, and reports `busy` while
+   * they are in flight.
+   */
+  onSelectMany?: (exercises: PickedExercise[]) => void;
+  /**
+   * The caller is writing the batch right now: disable the commit, say so.
+   * Ignored outside batch mode.
+   */
+  busy?: boolean;
+  /**
+   * Offer a microphone in the search box — speak the movement instead of
+   * typing it.
+   *
+   * Opt-in for the same reason `multiple` is. This earns its place on the
+   * full-page builder, where a trainer is laying out a day with a phone in
+   * one hand and is often standing on a gym floor rather than sitting at a
+   * keyboard. The three dialog callers add one exercise mid-task from a
+   * surface that is already small; another control in their search row buys
+   * them nothing, and a mic that appears in four places is four places to
+   * ask for permission.
+   *
+   * Feeds the SAME `search` state typing does, so there is one filter path,
+   * one debounce and one request — voice sets the field and the existing
+   * pipeline takes it from there.
+   */
+  voiceSearch?: boolean;
 }
+
 
 const PAGE_SIZE = 60;
 const ROW_HEIGHT = 56;
-const VIEWPORT = 360;
+// The scrolling list's height. Raised from 360 with batch mode: picking six
+// movements through a six-row window means scrolling the library more than
+// reading it, and the whole point of collecting a batch is seeing enough of
+// the library at once to build a day from it.
+const VIEWPORT = 440;
 
 /**
  * The Workout Builder's exercise picker, over the same library the Exercise
@@ -57,15 +138,16 @@ const VIEWPORT = 360;
  * target. The chips and Cancel button keep explicit 44px heights — this sheet
  * opens on a phone, mid-session, where a 24px chip is unhittable.
  */
-export function ExercisePicker({
-  open, onClose, onSelect, recentNames = [], existingIds = [], allowCustom = false,
-}: ExercisePickerProps) {
+export function ExercisePickerPanel({
+  live, onClose, onSelect, recentNames = [], existingIds = [], allowCustom = false,
+  multiple = false, onSelectMany, busy = false, voiceSearch = false,
+}: ExercisePickerPanelProps) {
   const { toast } = useToast();
   const searchRef = useRef<HTMLInputElement>(null);
   // `autoFocus` put the caret here and left the phone keyboard down —
   // WebKit wants the focus call inside the tap that opened the dialog, and
-  // a layout effect is the closest a child of a parent-owned `open` can get.
-  useSearchFieldFocus(open, searchRef);
+  // a layout effect is the closest a child of a parent-owned `live` can get.
+  useSearchFieldFocus(live, searchRef);
 
   const [search, setSearch] = useState('');
   const [region, setRegion] = useState('');
@@ -82,18 +164,45 @@ export function ExercisePicker({
 
   const existing = useMemo(() => new Set(existingIds), [existingIds]);
 
+  /**
+   * Voice search writes into the SAME `search` state the keyboard does.
+   *
+   * That is the whole integration: no second query, no second debounce, no
+   * second request path. The transcript lands in the field, the existing
+   * effect below debounces it and calls the existing loader, and everything
+   * downstream — filters, the virtualised list, the custom-name row, Enter to
+   * pick — cannot tell the difference between a spoken word and a typed one.
+   */
+  const voice = useVoiceSearch({
+    onResult: useCallback((transcript: string) => {
+      setSearch(transcript);
+      // The highlight belongs on the first result of the NEW query; leaving it
+      // where the previous search left it means Enter picks something the
+      // trainer never saw.
+      setActive(0);
+    }, []),
+  });
+
+  // A dialog that closes, or a page that unmounts, must not leave the mic
+  // live behind it.
+  const voiceStop = voice.stop;
+  const voiceListening = voice.listening;
   useEffect(() => {
-    if (!open) return;
-    api.exercises.meta().then(setMeta).catch(() => { /* filters degrade, list still works */ });
-    api.exercises.recent(10).then((r) => setRecent(r.exercises)).catch(() => setRecent([]));
-  }, [open]);
+    if (!live && voiceListening) voiceStop();
+  }, [live, voiceListening, voiceStop]);
 
   useEffect(() => {
-    if (!open) {
+    if (!live) return;
+    api.exercises.meta().then(setMeta).catch(() => { /* filters degrade, list still works */ });
+    api.exercises.recent(10).then((r) => setRecent(r.exercises)).catch(() => setRecent([]));
+  }, [live]);
+
+  useEffect(() => {
+    if (!live) {
       setSearch(''); setRegion(''); setEquipment('');
       setFavoritesOnly(false); setActive(0);
     }
-  }, [open]);
+  }, [live]);
 
   const load = useCallback(async () => {
     const id = ++reqId.current;
@@ -118,19 +227,67 @@ export function ExercisePicker({
   }, [search, region, equipment, favoritesOnly, toast]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!live) return;
     const t = setTimeout(() => { void load(); }, 220);
     return () => clearTimeout(t);
-  }, [open, load]);
+  }, [live, load]);
+
+  /**
+   * The batch, in the order it was built.
+   *
+   * An array rather than a Set: the order exercises are added in IS the order
+   * of the day, and a trainer picking Squat then Bench then Row means that
+   * sequence. A Set would preserve insertion order in practice but says
+   * nothing about intending to.
+   */
+  const [selected, setSelected] = useState<PickedExercise[]>([]);
+  const selectedIds = useMemo(() => new Set(selected.map((e) => e.id)), [selected]);
+
+  // Dropped whenever the dialog closes, so reopening never resurrects a batch
+  // the trainer walked away from — that would silently add exercises they
+  // chose in a different context, possibly for a different day.
+  useEffect(() => { if (!live) setSelected([]); }, [live]);
+
+  const toPicked = (ex: LibraryExercise): PickedExercise => ({
+    id: ex.id,
+    name: ex.name,
+    prescription_mode_primary: ex.prescription_mode_primary,
+    prescription_mode_allowed: ex.prescription_mode_allowed,
+  });
 
   const pick = useCallback((ex: LibraryExercise) => {
     if (existing.has(ex.id)) return;
-    onSelect({ id: ex.id, name: ex.name });
+
+    if (multiple) {
+      // Toggle and stay open. markUsed is deliberately NOT fired here — it is
+      // a usage statistic, and a movement that was selected and then
+      // deselected was never used.
+      setSelected((prev) => prev.some((e) => e.id === ex.id)
+        ? prev.filter((e) => e.id !== ex.id)
+        : [...prev, toPicked(ex)]);
+      return;
+    }
+
+    onSelect(toPicked(ex));
     // Feeds "recently used" for this trainer. Fire-and-forget: failing to
     // record a usage stat must never block adding the exercise.
     void api.exercises.markUsed(ex.id).catch(() => {});
     onClose();
-  }, [existing, onSelect, onClose]);
+  }, [existing, multiple, onSelect, onClose]);
+
+  /**
+   * Commit the batch.
+   *
+   * Hands the selection to the caller and stops there — see `onSelectMany`
+   * for why dismissal is the caller's, not ours.
+   */
+  const addSelected = useCallback(() => {
+    if (selected.length === 0 || busy) return;
+    onSelectMany?.(selected);
+    for (const e of selected) {
+      if (e.id) void api.exercises.markUsed(e.id).catch(() => {});
+    }
+  }, [selected, busy, onSelectMany]);
 
   /**
    * The typed name, as it would be stored.
@@ -150,32 +307,64 @@ export function ExercisePicker({
     onClose();
   }, [customName, onSelect, onClose]);
 
+  /**
+   * The mic is offered only where it can work.
+   *
+   * A browser with no recognizer (Firefox, older WebKit) gets no button at
+   * all rather than one that explains itself after being pressed — an
+   * affordance that cannot do its job is worse than its absence. Permission
+   * being denied is different: the button stays, because the fix is in the
+   * user's own browser settings and they may well grant it and retry.
+   */
+  const showVoice = voiceSearch && voice.supported;
+  const voiceNote = voice.error || (voice.listening ? 'Listening… say an exercise name.' : '');
+
   const showRecentChips = !search && !region && !equipment && !favoritesOnly && recentNames.length > 0;
   const showRecentList  = !search && !region && !equipment && !favoritesOnly && recent.length > 0;
   const rows = showRecentList ? recent : exercises;
 
   const virtual = useVirtualList(rows, ROW_HEIGHT, VIEWPORT);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown') {
+  // The keydown handler must always read the CURRENT rows/active/customName,
+  // but re-attaching the document listener on every one of those changes
+  // leaves a window (between the render committing and the effect flushing)
+  // where the still-attached listener holds stale state. A real user pressing
+  // Enter in that window — or a test firing Enter the moment the rows render —
+  // lands on the old handler and the pick silently never happens. The ref
+  // pattern attaches the listener once per open and delegates to the latest
+  // handler, which the render phase updates synchronously, so the listener
+  // can never outlive the state it reads.
+  const onKeyRef = useRef<(e: KeyboardEvent) => void>(() => {});
+  onKeyRef.current = (e: KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive((i) => Math.min(i + 1, rows.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      // Cmd/Ctrl+Enter commits the batch. Without it, batch mode is the one
+      // path with no keyboard way to finish: plain Enter toggles a row, and
+      // reaching the Add button means tabbing past every visible result.
+      if (multiple && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setActive((i) => Math.min(i + 1, rows.length - 1));
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setActive((i) => Math.max(i - 1, 0));
-      } else if (e.key === 'Enter') {
-        const target = rows[active];
-        if (target) { e.preventDefault(); pick(target); }
-        // Nothing in the library matched what was typed, so Enter means "use
-        // it anyway" rather than doing nothing at the end of a search.
-        else if (allowCustom && customName) { e.preventDefault(); addCustom(); }
+        addSelected();
+        return;
       }
-    };
+      const target = rows[active];
+      if (target) { e.preventDefault(); pick(target); }
+      // Nothing in the library matched what was typed, so Enter means "use
+      // it anyway" rather than doing nothing at the end of a search.
+      else if (allowCustom && customName) { e.preventDefault(); addCustom(); }
+    }
+  };
+
+  useEffect(() => {
+    if (!live) return;
+    const onKey = (e: KeyboardEvent) => onKeyRef.current(e);
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [open, rows, active, pick, allowCustom, customName, addCustom]);
+  }, [live]);
 
   // Keep the highlighted row in view when arrowing beyond the visible window.
   useEffect(() => {
@@ -191,32 +380,103 @@ export function ExercisePicker({
     [meta]
   );
 
-  return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Add Exercise</DialogTitle>
-          <DialogDescription>
-            {allowCustom
-              ? 'Search the library, pick a recent one, or add a custom exercise by name.'
-              : 'Search the exercise library or pick a recent one.'}
-          </DialogDescription>
-        </DialogHeader>
+  /**
+   * The equipment filter chips.
+   *
+   * Read the same defensive way as `regions` above, which is the point: the
+   * chip row below tested `meta && meta.equipment.length`, guarding the object
+   * and not the field. /api/exercises/meta answering without `equipment` —
+   * an older deployment, a partial response, a proxy trimming the body — then
+   * threw on `.length` during render, and a throw in render takes the whole
+   * /pt-os segment to its error boundary. The trainer sees "Something went
+   * wrong" where they wanted a list of exercises, over a filter row that is
+   * decoration.
+   */
+  const equipmentFilters = useMemo(() => meta?.equipment ?? [], [meta]);
 
-        <div className="relative mb-3">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-          <input
-            ref={searchRef}
-            type="text" value={search}
-            placeholder={allowCustom ? 'Search, or type a custom name…' : 'Search exercises…'}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label="Search exercises"
-            className="w-full pl-9 pr-9 py-2.5 rounded-[10px] text-[13px] outline-none"
-            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-          />
-          {loading && (
-            <Loader2 size={13} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin" style={{ color: 'var(--text-disabled)' }} />
-          )}
+  return (
+    <>
+
+        <div className="mb-3">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+            <input
+              ref={searchRef}
+              type="text" value={search}
+              placeholder={allowCustom ? 'Search, or type a custom name…' : 'Search exercises…'}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search exercises"
+              // The right inset clears whatever sits in the gutter: the
+              // spinner alone, or the spinner beside the mic.
+              className={cn(
+                'w-full rounded-[10px] py-2.5 pl-9 text-[13px] outline-none',
+                showVoice ? 'pr-[76px]' : 'pr-9',
+              )}
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            />
+            <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
+              {loading && (
+                <Loader2 size={13} className="animate-spin" style={{ color: 'var(--text-disabled)' }} />
+              )}
+              {showVoice && (
+                <button
+                  type="button"
+                  onClick={voice.toggle}
+                  // A toggle, so it reports its state rather than reading as a
+                  // button that fires once. The label changes with it, because
+                  // "Search by voice" while already listening describes the
+                  // wrong action.
+                  aria-pressed={voice.listening}
+                  aria-label={voice.listening ? 'Stop listening' : 'Search by voice'}
+                  title={voice.listening ? 'Stop listening' : 'Search by voice'}
+                  // 44px of TARGET around a 32px circle of PAINT. This file
+                  // already argues the case a few lines up — the sheet opens
+                  // on a phone mid-session, where a 24px control is
+                  // unhittable — but a 44px disc would tower over a 40px
+                  // input, so the hit area overhangs the field by ~2px and
+                  // only the inner span is ever visible.
+                  className="group relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-transparent"
+                >
+                  <span
+                    className="flex h-8 w-8 items-center justify-center rounded-full transition"
+                    style={{
+                      background: voice.listening ? 'var(--brand)' : 'transparent',
+                      color: voice.listening ? '#fff' : 'var(--text-disabled)',
+                    }}
+                  >
+                    {/* The listening cue is a ring around the disc rather than
+                        a fade on the icon, so the mic never dims mid-press.
+                        Decorative, and the app's global reduced-motion rule
+                        already freezes .animate-pulse for anyone who asked. */}
+                    {voice.listening && (
+                      <span
+                        aria-hidden
+                        className="animate-pulse absolute inset-1.5 rounded-full"
+                        style={{ boxShadow: '0 0 0 3px color-mix(in srgb, var(--brand) 30%, transparent)' }}
+                      />
+                    )}
+                    <Mic size={15} className="relative" />
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Spoken state and failures, in one live region.
+              polite, not assertive: this narrates a control the user just
+              pressed, so it should queue behind whatever they are reading
+              rather than interrupt it. Rendered always (empty when idle) so
+              the region exists before it has anything to say — a live region
+              added to the DOM at the same moment as its text is frequently
+              not announced at all. */}
+          <p
+            role="status"
+            aria-live="polite"
+            className={cn('mt-1.5 text-[11px]', !voiceNote && 'sr-only')}
+            style={{ color: voice.error ? 'var(--danger-text)' : 'var(--text-muted)' }}
+          >
+            {voiceNote}
+          </p>
         </div>
 
         <div className="mb-3 flex flex-wrap gap-1.5">
@@ -234,9 +494,9 @@ export function ExercisePicker({
           ))}
         </div>
 
-        {meta && meta.equipment.length > 0 && (
+        {equipmentFilters.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-1.5">
-            {meta.equipment.slice(0, 7).map((q) => (
+            {equipmentFilters.slice(0, 7).map((q) => (
               <Chip key={q.slug} small active={equipment === q.slug} onClick={() => setEquipment(q.slug === equipment ? '' : q.slug)}>
                 {q.name}
               </Chip>
@@ -330,26 +590,38 @@ export function ExercisePicker({
                 {virtual.slice.map((ex, i) => {
                   const index = rows.indexOf(ex);
                   const already = existing.has(ex.id);
+                  const chosen = selectedIds.has(ex.id);
                   return (
                     <button
                       key={ex.id}
                       onClick={() => pick(ex)}
                       onMouseEnter={() => setActive(index)}
                       disabled={already}
+                      // In batch mode the row is a toggle, so it reports its
+                      // state rather than behaving like a menu item that fires
+                      // once. Screen readers otherwise announce nothing at all
+                      // when a selection changes, because the dialog does not
+                      // move focus or close.
+                      aria-pressed={multiple ? chosen : undefined}
                       style={{ height: ROW_HEIGHT }}
                       className={cn(
                         'flex w-full items-center gap-3 rounded-[10px] px-3 text-left transition',
-                        index === active && !already && 'bg-slate-100 dark:bg-white/[0.06]',
+                        index === active && !already && !chosen && 'bg-slate-100 dark:bg-white/[0.06]',
                         already ? 'cursor-not-allowed opacity-45' : 'hover:bg-slate-50 dark:hover:bg-white/[0.04]',
                       )}
                     >
                       <span
-                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[8px]"
-                        style={{ background: 'var(--bg-subtle)' }}
+                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[8px] transition"
+                        style={{
+                          background: chosen ? 'linear-gradient(135deg, #0067e0, #3B8DF5)' : 'var(--bg-subtle)',
+                          color: chosen ? '#fff' : undefined,
+                        }}
                       >
                         {already
                           ? <Check size={14} style={{ color: '#10b981' }} />
-                          : <Dumbbell size={14} style={{ color: '#94a3b8' }} />}
+                          : chosen
+                            ? <Check size={14} />
+                            : <Dumbbell size={14} style={{ color: '#94a3b8' }} />}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-1.5">
@@ -382,20 +654,99 @@ export function ExercisePicker({
           )}
         </div>
 
-        <div className="mt-2 flex items-center justify-between">
-          <span className="hidden text-[10.5px] text-slate-400 sm:block">↑↓ navigate · ↵ add</span>
-          <button
-            onClick={onClose}
-            className="flex h-[44px] items-center gap-1.5 rounded-[10px] px-3.5 text-[12px] font-[650]"
-            style={{ color: '#64748b' }}
+        {multiple ? (
+          <div
+            className="mt-3 flex items-center gap-3 pt-3"
+            style={{ borderTop: '1px solid var(--border)' }}
           >
-            <X size={13} /> Cancel
-          </button>
-        </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>
+                {selected.length === 0
+                  ? 'Nothing selected yet'
+                  : `${selected.length} selected`}
+              </p>
+              <p className="truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                {selected.length === 0
+                  ? 'Tap exercises to build the day — they are added in the order you pick them.'
+                  : selected.map((e) => e.name).join(' · ')}
+              </p>
+              <p className="hidden text-[10.5px] sm:block" style={{ color: 'var(--text-disabled)' }}>
+                ↑↓ navigate · ↵ toggle · ⌘↵ add
+              </p>
+            </div>
+            {selected.length > 0 && (
+              <button
+                onClick={() => setSelected([])}
+                className="h-[44px] shrink-0 rounded-[10px] px-3 text-[12px] font-[650]"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Clear
+              </button>
+            )}
+            <button
+              onClick={addSelected}
+              disabled={selected.length === 0 || busy}
+              className="flex h-[44px] shrink-0 items-center gap-1.5 rounded-[12px] px-4 text-[13px] font-[700] text-white transition-transform active:scale-[0.98] disabled:opacity-40"
+              style={{
+                background: 'linear-gradient(135deg, #0067e0, #3B8DF5)',
+                boxShadow: selected.length > 0 ? '0 4px 14px -4px rgba(0,103,224,0.5)' : 'none',
+              }}
+            >
+              {busy ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              {busy
+                ? 'Adding…'
+                : selected.length === 0
+                  ? 'Add'
+                  : `Add ${selected.length}`}
+            </button>
+          </div>
+        ) : (
+          <div className="mt-2 flex items-center justify-between">
+            <span className="hidden text-[10.5px] text-slate-400 sm:block">↑↓ navigate · ↵ add</span>
+            <button
+              onClick={onClose}
+              className="flex h-[44px] items-center gap-1.5 rounded-[10px] px-3.5 text-[12px] font-[650]"
+              style={{ color: '#64748b' }}
+            >
+              <X size={13} /> Cancel
+            </button>
+          </div>
+        )}
+    </>
+  );
+}
+
+interface ExercisePickerProps extends Omit<ExercisePickerPanelProps, 'live'> {
+  open: boolean;
+}
+
+/**
+ * The dialog form, unchanged for every caller that adds one exercise and moves
+ * on: a logged session row, a template row, a plan-detail row.
+ */
+export function ExercisePicker({ open, ...rest }: ExercisePickerProps) {
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) rest.onClose(); }}>
+      {/* Wider than the other dialogs in the app on purpose. This one is a
+          workspace — search, filters and a long scrolling library — not a
+          question with two answers. */}
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{rest.multiple ? 'Add exercises' : 'Add Exercise'}</DialogTitle>
+          <DialogDescription>
+            {rest.multiple
+              ? 'Pick as many as you like, then add them all at once.'
+              : rest.allowCustom
+                ? 'Search the library, pick a recent one, or add a custom exercise by name.'
+                : 'Search the exercise library or pick a recent one.'}
+          </DialogDescription>
+        </DialogHeader>
+        <ExercisePickerPanel {...rest} live={open} />
       </DialogContent>
     </Dialog>
   );
 }
+
 
 function Chip({
   active, onClick, children, small,

@@ -6,6 +6,7 @@ import Guard from '@/components/Guard';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { KpiCard, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import type { DuesItem, DuesSummary } from '@/lib/api';
 import {
   Search, AlertTriangle, CheckCircle2, TrendingDown,
@@ -38,11 +39,11 @@ function nameGradient(name: string): string {
   for (let i = 0; i < name.length; i++) h = ((h << 5) - h + name.charCodeAt(i)) | 0;
   return palettes[Math.abs(h) % palettes.length];
 }
-function whatsappHref(phone?: string, name?: string) {
+function whatsappHref(phone?: string, name?: string, studio?: string) {
   const p = (phone ?? '').replace(/\D/g, '');
   if (!p) return '#';
   const num = p.startsWith('91') ? p : `91${p}`;
-  return `https://wa.me/${num}?text=${encodeURIComponent(`Hi ${name ?? 'there'}, kindly clear your outstanding dues at MY PT STUDIO. Thank you.`)}`;
+  return `https://wa.me/${num}?text=${encodeURIComponent(`Hi ${name ?? 'there'}, kindly clear your outstanding dues at ${studio || 'MY PT STUDIO'}. Thank you.`)}`;
 }
 
 // The risk bands, named once. They are sent to /dues/summary so the server
@@ -58,6 +59,7 @@ function riskLevel(amount: number): { label: string; color: string; bg: string }
 }
 
 function Inner() {
+  const { user } = useAuth();
   const [dues, setDues]   = useState<DuesItem[]>([]);
   const [summary, setSummary] = useState<DuesSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -234,7 +236,7 @@ function Inner() {
                       <td style={{ padding: '14px 16px' }}>
                         <div style={{ display: 'flex', gap: 6 }}>
                           {d.mobile && (
-                            <a href={whatsappHref(d.mobile, d.name)} target="_blank" rel="noopener noreferrer"
+                            <a href={whatsappHref(d.mobile, d.name, user?.organization_name || 'MY PT STUDIO')} target="_blank" rel="noopener noreferrer"
                               style={{ width: 30, height: 30, borderRadius: 10, border: '1.5px solid #a7f3d0', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', textDecoration: 'none' }}
                               title="Send WhatsApp reminder">
                               <MessageCircle size={13} />

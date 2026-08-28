@@ -10,7 +10,7 @@ import { use } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Guard from '@/components/Guard';
 import WorkoutBuilder from '@/components/pt-os/builder/WorkoutBuilder';
-import { EmptyState } from '@/components/ui';
+import { EmptyState, PageContainer } from '@/components/ui';
 import { Dumbbell } from 'lucide-react';
 
 export default function WorkoutBuilderPage({
@@ -18,22 +18,22 @@ export default function WorkoutBuilderPage({
 }: { params: Promise<{ id: string }> }) {
   // `id` here is the CLIENT. Which programme to edit comes from ?plan=, so the
   // Programs screen can deep-link straight into a specific plan.
-  use(params);
+  const { id: clientId } = use(params);
   const planId = useSearchParams().get('plan');
 
   return (
     <Guard roles={['admin', 'manager', 'trainer']}>
-      <div className="mx-auto max-w-screen-md px-4 py-4">
-        {planId ? (
-          <WorkoutBuilder planId={planId} />
-        ) : (
+      {planId ? (
+        <WorkoutBuilder planId={planId} clientId={clientId} />
+      ) : (
+        <PageContainer>
           <EmptyState
             icon={<Dumbbell size={22} />}
             title="No programme selected"
             description="Open a programme from Workout Programs to start building."
           />
-        )}
-      </div>
+        </PageContainer>
+      )}
     </Guard>
   );
 }

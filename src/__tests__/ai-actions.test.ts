@@ -41,9 +41,9 @@ describe('the action registry', () => {
     }
   });
 
-  it('names the two executable actions the server actually exposes', () => {
+  it('names the three executable actions the server actually exposes', () => {
     expect(AI_ACTIONS.filter((a) => a.kind === 'execute').map((a) => a.actionId).sort())
-      .toEqual(['dues_reminders', 'renewal_reminders']);
+      .toEqual(['dues_reminders', 'lead_followup', 'renewal_reminders']);
   });
 
   it('has no duplicate ids', () => {

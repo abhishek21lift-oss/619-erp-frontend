@@ -18,6 +18,7 @@ import { ApiError, apiBase } from '@/lib/http';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth-context';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 /* ─────────────────────────────────────────────────────── TYPES */
 interface EnrollFormData {
@@ -225,6 +226,13 @@ function EnrollForm({ clientId }: { clientId: string }) {
   const [clientMeta, setClientMeta] = useState<ClientMeta | null>(null);
   // The agreement gate, and what comes after it.
   const [agreementOpen, setAgreementOpen] = useState(false);
+  // The digital agreement sheet: a document the client signs, previously
+  // dismissible only by tapping the backdrop and with focus left on the page
+  // behind it.
+  const agreementRef = useDialogA11y({
+    open: agreementOpen,
+    onClose: () => setAgreementOpen(false),
+  });
   const [agreementChecked, setAgreementChecked] = useState(false);
   const [signature, setSignature] = useState('');
   const [enrolled, setEnrolled] = useState(false);
@@ -1005,6 +1013,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
             />
             <m.div
               key="agree-sheet"
+              ref={agreementRef}
               data-no-pull-refresh
               role="dialog" aria-modal="true" aria-label="Digital agreement"
               className="fixed inset-x-0 bottom-0 z-[140] flex max-h-[88dvh] flex-col overflow-hidden rounded-t-[24px] bg-white sm:inset-x-auto sm:bottom-8 sm:left-1/2 sm:w-[520px] sm:-translate-x-1/2 sm:rounded-[24px]"

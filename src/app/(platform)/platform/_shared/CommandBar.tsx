@@ -4,22 +4,56 @@
 //
 // Extracted verbatim from the 3,197-line platform/page.tsx (audit H-03).
 // Component bodies, props and rendered markup are unchanged.
+//
+// Phase 6 — global search backend.
+//
+// The original CommandBar searched only the studio list and the coupon list
+// in memory. That covered the two entity types whose data was already on
+// hand when the palette opened. For the rest (trainers, clients,
+// subscriptions, invoices, audit log), the home had no answer.
+//
+// The new /api/platform/search endpoint does. We hit it on a 250ms debounce
+// after the user types at least 2 characters, and we group results by
+// `kind`. Every result carries an `org_id`; the brief's rule is "never
+// return ambiguous records without showing their org", and the type system
+// enforces that. We render the org name as the subtitle, falling back to
+// "—" when the backend could not resolve one (e.g. an orphan audit row).
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Building2, LayoutDashboard, Activity, CreditCard, Receipt, Ticket, Search, ScrollText,
-  HeartPulse, HardDrive,
+  HeartPulse, HardDrive, User, UserCog, Users,
 } from 'lucide-react';
 import StudioMark from '@/components/StudioMark';
 import { useSearchFieldFocus } from '@/lib/search-field-focus';
 import { Badge } from '@/components/ui';
 import { api } from '@/lib/api';
-import type { StudioOverview, Coupon } from '@/lib/api';
+import type { StudioOverview, Coupon, PlatformSearchResult, PlatformSearchKind } from '@/lib/api';
 import type { NavOpts, Tab } from './types';
+
+const SERVER_ICON: Record<PlatformSearchKind, React.ReactNode> = {
+  studio:       <Building2 size={14} />,
+  owner:        <UserCog size={14} />,
+  trainer:      <User size={14} />,
+  client:       <Users size={14} />,
+  subscription: <CreditCard size={14} />,
+  invoice:      <Receipt size={14} />,
+  audit:        <ScrollText size={14} />,
+};
+
+const SERVER_LABEL: Record<PlatformSearchKind, string> = {
+  studio: 'Studios',
+  owner: 'Owners',
+  trainer: 'Trainers',
+  client: 'Clients',
+  subscription: 'Subscriptions',
+  invoice: 'Invoices',
+  audit: 'Audit',
+};
 
 export const NAV_TARGETS: { tab: Tab; label: string; icon: React.ReactNode; opts?: NavOpts }[] = [
   { tab: 'overview', label: 'Go to Overview', icon: <LayoutDashboard size={14} /> },
   { tab: 'studios', label: 'Go to Studios', icon: <Building2 size={14} /> },
-  { tab: 'finance', label: 'Go to Finance · Dashboard', icon: <CreditCard size={14} />, opts: { financeSubTab: 'dashboard' } },
   { tab: 'finance', label: 'Go to Finance · Billing', icon: <CreditCard size={14} />, opts: { financeSubTab: 'billing' } },
   { tab: 'finance', label: 'Go to Finance · Invoices', icon: <Receipt size={14} />, opts: { financeSubTab: 'invoices' } },
   { tab: 'finance', label: 'Go to Finance · Coupons', icon: <Ticket size={14} />, opts: { financeSubTab: 'coupons' } },
@@ -30,9 +64,12 @@ export const NAV_TARGETS: { tab: Tab; label: string; icon: React.ReactNode; opts
 ];
 
 export function CommandBar({ open, onClose, onNavigate }: { open: boolean; onClose: () => void; onNavigate: (tab: Tab, opts?: NavOpts) => void }) {
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [studios, setStudios] = useState<StudioOverview[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [searchResults, setSearchResults] = useState<PlatformSearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
   const loadedRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -56,21 +93,46 @@ export function CommandBar({ open, onClose, onNavigate }: { open: boolean; onClo
   // See lib/search-field-focus.ts.
   useSearchFieldFocus(open, inputRef);
 
+  // Global search — debounced 250ms. The backend already enforces a 2-char
+  // minimum; we add the local guard too so we don't burn a round trip on
+  // the first keystroke. The search endpoint accepts a `kinds` list; the
+  // default covers studio/owner/trainer/client which are the cases the
+  // local cache could never have answered.
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) { setSearchResults([]); setSearching(false); return; }
+    setSearching(true);
+    const t = setTimeout(() => {
+      api.superAdmin.search(q)
+        .then((r) => setSearchResults(r.data ?? []))
+        .catch(() => setSearchResults([]))
+        .finally(() => setSearching(false));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [query]);
+
   const q = query.trim().toLowerCase();
   const navResults = q ? NAV_TARGETS.filter((n) => n.label.toLowerCase().includes(q)) : NAV_TARGETS;
   const studioResults = q ? studios.filter((s) => s.name.toLowerCase().includes(q)).slice(0, 6) : [];
   const couponResults = q ? coupons.filter((c) => c.code.toLowerCase().includes(q)).slice(0, 6) : [];
+  // Group server results by kind for the section headers. The backend
+  // already caps each kind at 10 and the total at 50, so we trust its
+  // ordering and just bucket the array.
+  const serverByKind = (kind: PlatformSearchKind) => searchResults.filter((r) => r.kind === kind);
 
   // One flat, ordered list so Up/Down/Enter can move through every visible
   // row regardless of which section it's in.
   type Row =
     | { kind: 'nav'; item: typeof NAV_TARGETS[number] }
     | { kind: 'studio'; item: StudioOverview }
-    | { kind: 'coupon'; item: Coupon };
+    | { kind: 'coupon'; item: Coupon }
+    | { kind: 'server'; item: PlatformSearchResult };
+  const serverRows: Row[] = searchResults.map((item): Row => ({ kind: 'server', item }));
   const rows: Row[] = [
     ...navResults.map((item): Row => ({ kind: 'nav', item })),
     ...studioResults.map((item): Row => ({ kind: 'studio', item })),
     ...couponResults.map((item): Row => ({ kind: 'coupon', item })),
+    ...serverRows,
   ];
   const [active, setActive] = useState(0);
   useEffect(() => { setActive(0); }, [query]);
@@ -78,7 +140,16 @@ export function CommandBar({ open, onClose, onNavigate }: { open: boolean; onClo
   const activate = (row: Row) => {
     if (row.kind === 'nav') onNavigate(row.item.tab, row.item.opts);
     else if (row.kind === 'studio') onNavigate('studios');
-    else onNavigate('finance', { financeSubTab: 'coupons' });
+    else if (row.kind === 'coupon') onNavigate('finance', { financeSubTab: 'coupons' });
+    else if (row.kind === 'server') {
+      // Server results carry their own URL (the backend builds it). We close
+      // the palette and route via Next's router so the SPA tree stays
+      // intact. /platform/studios/[id] is a real route segment we added
+      // for Studio 360; the in-page tabs use ?tab= to preserve the
+      // existing deep-link behaviour.
+      onClose();
+      router.push(row.item.url);
+    }
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -175,8 +246,40 @@ export function CommandBar({ open, onClose, onNavigate }: { open: boolean; onClo
             </div>
           )}
 
-          {q && rows.length === 0 && (
+          {/* Server results, grouped by kind. Rendered only when the
+              debounced call has returned at least once (q.length >= 2).
+              Each row carries the org in its subtitle so two studios with
+              the same trainer name never collide visually. */}
+          {searchResults.length > 0 && (() => {
+            const kinds: PlatformSearchKind[] = ['studio', 'owner', 'trainer', 'client', 'subscription', 'invoice', 'audit'];
+            return kinds.map((k) => {
+              const items = serverByKind(k);
+              if (items.length === 0) return null;
+              return (
+                <div key={k} className="mb-1">
+                  <p className="px-3 py-1.5 text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>{SERVER_LABEL[k]}</p>
+                  {items.map((r) => {
+                    rowIndex++;
+                    const i = rowIndex;
+                    return (
+                      <button key={`${k}-${r.id}`} className={rowCls} style={rowStyle(i)} onMouseEnter={() => setActive(i)} onClick={() => activate({ kind: 'server', item: r })}>
+                        <span style={{ color: 'var(--text-muted)' }}>{SERVER_ICON[k]}</span>
+                        <span className="text-[13px] font-[600] truncate" style={{ color: 'var(--text-primary)' }}>{r.title}</span>
+                        <span className="ml-1 truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{r.subtitle}</span>
+                        {r.status && <Badge tone={r.status === 'suspended' ? 'danger' : r.status === 'failed' ? 'danger' : r.status === 'active' ? 'success' : 'neutral'}>{r.status}</Badge>}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            });
+          })()}
+
+          {q && !searching && searchResults.length === 0 && studioResults.length === 0 && couponResults.length === 0 && navResults.length === 0 && (
             <p className="py-8 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>No matches for &quot;{query}&quot;.</p>
+          )}
+          {q.length >= 2 && searching && searchResults.length === 0 && (
+            <p className="py-6 text-center text-[11.5px]" style={{ color: 'var(--text-muted)' }}>Searching…</p>
           )}
         </div>
       </div>

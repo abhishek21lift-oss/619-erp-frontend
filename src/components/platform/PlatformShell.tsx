@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import { MODULES, TAB_LABELS, moduleForTab, normalizeTab } from '@/app/(platform)/platform/_shared/types';
 import type { ModuleId, Tab } from '@/app/(platform)/platform/_shared/types';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 const MODULE_ICON: Record<ModuleId, React.ReactNode> = {
   overview: <LayoutDashboard size={17} />,
@@ -121,6 +122,10 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
   const tab = normalizeTab(sp.get('tab'));
   const active = moduleForTab(tab);
   const [moreOpen, setMoreOpen] = useState(false);
+  // The More sheet is a modal menu: it declares aria-modal and covers the
+  // screen, but had no Escape handler and no focus management, so a keyboard
+  // operator could open it and then tab through the console behind it.
+  const moreRef = useDialogA11y({ open: moreOpen, onClose: () => setMoreOpen(false) });
 
   // Close the sheet on navigation. Without this it stays open over the page it
   // just navigated to, which reads as the tap not having worked.
@@ -296,6 +301,7 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
           behind it stays visible — it is a menu, not a destination. */}
       {moreOpen && (
         <div
+          ref={moreRef}
           className="fixed inset-0 z-40 lg:hidden"
           role="dialog"
           aria-modal="true"

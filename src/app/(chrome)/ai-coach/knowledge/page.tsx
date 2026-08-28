@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { m } from 'framer-motion';
 import {
   BookOpen, Upload, FileText, RefreshCw, Trash2, CheckCircle2,
@@ -46,7 +46,33 @@ export default function AiKnowledgeBasePage() {
   const [category, setCategory] = useState<AiKnowledgeDocument['category']>('sop');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [reindexingId, setReindexingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pollAttemptsRef = useRef(0);
+
+  // Reindexing runs in the background (BullMQ) — never wait for it in the
+  // HTTP request. Once the doc's own status stops being `processing`
+  // (ready, failed, or deleted), drop the loading state. Decided during
+  // render from the current list, so there is no stale-read race.
+  useEffect(() => {
+    if (!reindexingId) return;
+    const doc = docs.find((d) => d.id === reindexingId);
+    if (!doc || doc.status !== 'processing') setReindexingId(null);
+  }, [docs, reindexingId]);
+
+  // While a reindex is running, keep refreshing the list until the status
+  // settles. Bounded: ~15 ticks (60s), then the user can pull-to-refresh
+  // or click again.
+  useEffect(() => {
+    if (!reindexingId) return;
+    pollAttemptsRef.current = 0;
+    const interval = setInterval(() => {
+      pollAttemptsRef.current += 1;
+      if (pollAttemptsRef.current >= 15) { setReindexingId(null); return; }
+      kb.refetch().catch(() => {});
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [reindexingId, kb.refetch]);
 
   const resetForm = useCallback(() => {
     setTitle('');
@@ -83,12 +109,17 @@ export default function AiKnowledgeBasePage() {
   };
 
   const handleReindex = async (id: string) => {
+    setReindexingId(id);
     try {
       await api.ai.knowledge.reindex(id);
       toast.success('Reindexing started.');
+      // Reindexing runs in the background (BullMQ) — never wait for it in
+      // the HTTP request. Effects above keep refreshing the list and clear
+      // the loading state once the document leaves `processing`.
       kb.refetch();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to start reindexing.');
+      setReindexingId(null);
     }
   };
 
@@ -161,9 +192,10 @@ export default function AiKnowledgeBasePage() {
                     </span>
                     {(doc.status === 'failed' || doc.status === 'processing') && (
                       <button onClick={() => handleReindex(doc.id)}
+                        disabled={reindexingId === doc.id}
                         title={doc.status === 'failed' ? 'Retry indexing' : 'Stuck on Processing for a while? Click to restart indexing.'}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-muted)', cursor: 'pointer', flexShrink: 0 }}>
-                        <RefreshCw size={13} />
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-muted)', cursor: reindexingId === doc.id ? 'default' : 'pointer', opacity: reindexingId === doc.id ? 0.6 : 1, flexShrink: 0 }}>
+                        {reindexingId === doc.id ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
                       </button>
                     )}
                     <button onClick={() => handleDelete(doc.id, doc.title)} title="Delete"

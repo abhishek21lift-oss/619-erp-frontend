@@ -93,7 +93,7 @@ export default function RegistrationsTab() {
         {(['pending', 'approved', 'rejected', 'all'] as Filter[]).map((f) => (
           <button key={f} type="button" onClick={() => setFilter(f)}
             aria-pressed={filter === f}
-            className="flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-[700] capitalize transition"
+            className="flex h-11 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-[700] capitalize transition"
             style={filter === f
               ? { background: '#0F172A', color: '#fff' }
               : { background: 'var(--bg-subtle)', color: '#64748B' }}>
@@ -107,7 +107,7 @@ export default function RegistrationsTab() {
           </button>
         ))}
         <button type="button" onClick={() => load(filter)} aria-label="Refresh"
-          className="ml-auto flex h-9 w-9 items-center justify-center rounded-full"
+          className="ml-auto flex h-11 w-11 items-center justify-center rounded-full"
           style={{ background: 'var(--bg-subtle)', color: '#64748B' }}>
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
         </button>

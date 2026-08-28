@@ -15,7 +15,7 @@ import StudioMark from '@/components/StudioMark';
 import { Button, Badge, EmptyState } from '@/components/ui';
 import { api } from '@/lib/api';
 import type {
-  PlatformOverview, SubStudio, SubKpis, SubDetail, SubPlan, SubEvent, SubscriptionMetrics,
+  SubStudio, SubDetail, SubPlan, SubEvent, SubscriptionMetrics,
   PlanChangeQuote,
 } from '@/lib/api';
 import {
@@ -30,12 +30,16 @@ import { Center, ErrorState, Field, IconBtn, Modal, inputCls, inputStyle } from 
 import { CouponsTab } from './CouponsTab';
 
 export function FinanceTab({ subTab, onSubTabChange }: { subTab: FinanceSubTab; onSubTabChange: (t: FinanceSubTab) => void }) {
+  // Phase 8: the dashboard subtab is removed. The run-rate view lived
+  // here and now lives on the home (NewOverviewTab's revenue section),
+  // and the brief explicitly says the home is the platform's
+  // "RIGHT NOW" answer. Billing, Payments, Invoices, Coupons remain
+  // here because they are operational surfaces, not a status card.
   return (
     <div>
       <div className="mb-5 max-w-[500px]">
         <SegmentedTabs
           tabs={[
-            { id: 'dashboard' as const, label: 'Dashboard', icon: <TrendingUp size={13} /> },
             { id: 'billing' as const, label: 'Billing', icon: <CreditCard size={13} /> },
             { id: 'payments' as const, label: 'Payments', icon: <Wallet size={13} /> },
             { id: 'invoices' as const, label: 'Invoices', icon: <Receipt size={13} /> },
@@ -46,7 +50,6 @@ export function FinanceTab({ subTab, onSubTabChange }: { subTab: FinanceSubTab; 
         />
       </div>
       <div key={subTab}>
-        {subTab === 'dashboard' && <FinanceDashboardTab onNavigate={onSubTabChange} />}
         {subTab === 'billing' && <BillingTab />}
         {subTab === 'payments' && <SubscriptionRequestsTab />}
         {subTab === 'invoices' && <InvoicesPanel />}
@@ -67,99 +70,12 @@ export const SUB_STATE: Record<string, { label: string; tone: 'success' | 'dange
   suspended: { label: 'Suspended', tone: 'danger' },
 };
 
-// ── Finance Dashboard ─────────────────────────────────────────────────────────
-// The run-rate view: MRR/ARR/ARPU/outstanding, the revenue trend + plan
-// distribution + lifecycle breakdown already built for the old Billing tab
-// (SaasMetrics, untouched), and a renewals/expiring list derived from the
-// same subscriptions() call every other Finance surface uses. No LTV, no
-// churn-rate percentage: this backend has no cohort/retention tracking to
-// compute either honestly, and a made-up formula presented as a real metric
-// is worse than not having the tile. The Lifecycle panel inside SaasMetrics
-// already tells the churn story as real counts (frozen/lapsed/cancelled)
-// instead of a single number that would need caveats to be true.
-export function FinanceDashboardTab({ onNavigate }: { onNavigate: (t: FinanceSubTab) => void }) {
-  const [kpis, setKpis] = useState<SubKpis | null>(null);
-  const [studios, setStudios] = useState<SubStudio[]>([]);
-  const [totals, setTotals] = useState<PlatformOverview['totals'] | null>(null);
-  const [metrics, setMetrics] = useState<SubscriptionMetrics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const load = useCallback(() => {
-    setLoading(true); setError('');
-    Promise.all([api.superAdmin.subscriptions(), api.superAdmin.overview()])
-      .then(([subs, ov]) => {
-        setKpis(subs.data.kpis ?? null);
-        setStudios(subs.data.studios ?? []);
-        setTotals(ov.data.totals);
-      })
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load finance data'))
-      .finally(() => setLoading(false));
-  }, []);
-  useEffect(() => { load(); }, [load]);
-  useEffect(() => { api.superAdmin.subscriptionMetrics().then((r) => setMetrics(r.data)).catch(() => setMetrics(null)); }, []);
-
-  if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#0067e0' }} /></Center>;
-  if (error) return <ErrorState error={error} onRetry={load} />;
-
-  const renewalsDue = studios
-    .filter((s) => s.renewal_due || s.requested_at)
-    .sort((a, b) => (a.period_days_left ?? 99) - (b.period_days_left ?? 99));
-
-  const kpiCards = [
-    { label: 'MRR', value: metrics ? fmtINR(metrics.mrr_inr) : '—', sub: metrics ? `${fmtINR(metrics.arr_inr)} ARR` : 'loading…', tone: 'positive' as const, icon: <TrendingUp size={15} /> },
-    { label: 'ARPU', value: metrics ? fmtINR(metrics.arpu_inr) : '—', sub: metrics ? `${metrics.paying_studios} paying studios` : 'loading…', tone: 'brand' as const, icon: <IndianRupee size={15} /> },
-    { label: 'Outstanding', value: totals ? fmtINR(totals.outstanding) : '—', sub: 'across all studios', tone: 'critical' as const, icon: <Receipt size={15} /> },
-    { label: 'Founders', value: kpis && metrics ? `${kpis.founders}/${metrics.founders.limit}` : '—', sub: kpis ? `${kpis.founder_slots_remaining} slots left` : '', tone: 'caution' as const, icon: <Crown size={15} /> },
-  ];
-
-  return (
-    <div className="space-y-5">
-      <div>
-        <SectionLabel>Run-rate</SectionLabel>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {kpiCards.map((k, i) => (
-            <StatTile key={k.label} label={k.label} value={k.value} sub={k.sub}
-              icon={k.icon} tone={k.tone} delay={i * 0.04} />
-          ))}
-        </div>
-      </div>
-
-      {metrics && <SaasMetrics data={metrics} />}
-
-      <div>
-        <SectionLabel hint={
-          <button onClick={() => onNavigate('billing')} className="flex items-center gap-1 font-[650]" style={{ color: 'var(--brand)' }}>
-            Manage in Billing <ArrowRight size={11} />
-          </button>
-        }>
-          Renewals &amp; requests
-        </SectionLabel>
-        <Reveal delay={0.2}>
-          <Panel padded={false} className="overflow-hidden">
-            {renewalsDue.length === 0 ? (
-              <p className="py-8 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>Nothing due right now.</p>
-            ) : (
-              renewalsDue.slice(0, 10).map((s, i) => (
-                <button key={s.id} onClick={() => onNavigate('billing')}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-[12.5px] transition-colors hover:bg-black/[0.03]"
-                  style={{ borderTop: i ? '1px solid var(--border)' : 'none' }}>
-                  <span className="min-w-0 truncate" style={{ color: 'var(--text-secondary)' }}>
-                    <span style={{ color: 'var(--text-primary)', fontWeight: 650 }}>{s.name}</span> · {s.plan_name || 'No plan'}
-                  </span>
-                  <span className="flex flex-shrink-0 items-center gap-2">
-                    {s.requested_at && <Badge tone="warning">requested</Badge>}
-                    {s.period_days_left != null && <span className="tabular-nums" style={{ color: 'var(--text-muted)' }}>{s.period_days_left}d left</span>}
-                  </span>
-                </button>
-              ))
-            )}
-          </Panel>
-        </Reveal>
-      </div>
-    </div>
-  );
-}
+// Phase 8: the run-rate dashboard used to live here (FinanceDashboardTab).
+// It was deleted in this phase. The new home (NewOverviewTab) is now the
+// platform's "RIGHT NOW" answer; finance keeps the operational surfaces
+// (Billing, Payments, Invoices, Coupons) but no longer duplicates the
+// home's revenue view. The home already surfaces MRR, active subscriptions,
+// failed payments, and expiring-in-7d — every number the old dashboard had.
 
 export function BillingTab() {
   const { toast } = useToast();
@@ -239,7 +155,7 @@ export function BillingTab() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <button onClick={() => setPayTarget(s)}
-                    className="flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] text-white transition hover:opacity-90"
+                    className="flex h-11 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] text-white transition hover:opacity-90"
                     style={{ background: 'linear-gradient(135deg,#059669,#10b981)' }}>
                     <IndianRupee size={13} /> Record Payment
                   </button>
@@ -305,7 +221,7 @@ export function RecordPaymentModal({ studio, plans, onClose, onDone }: { studio:
           <input className={inputCls} style={inputStyle} type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
           {studio.is_founder && <p className="mt-1 text-[11px]" style={{ color: '#b45309' }}>Founder — lifetime-locked price ₹{studio.locked_price_inr?.toLocaleString('en-IN')}.</p>}
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Method">
             <select className={inputCls} style={inputStyle} value={method} onChange={(e) => setMethod(e.target.value)}>
               {['upi', 'bank', 'cash', 'razorpay', 'comp'].map((m) => <option key={m} value={m}>{m}</option>)}
@@ -387,7 +303,7 @@ export function ExecuteChangeModal({ studio, planCode, onClose, onDone }: { stud
           <Field label="Amount received (₹)">
             <input className={inputCls} style={inputStyle} type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Method">
               <select className={inputCls} style={inputStyle} value={method} onChange={(e) => setMethod(e.target.value)}>
                 {['upi', 'bank', 'cash', 'razorpay', 'comp'].map((m) => <option key={m} value={m}>{m}</option>)}
@@ -490,7 +406,8 @@ export function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStud
                       already looking at, rather than making them go to Finance
                       and search for the number. */}
                   <a href={api.superAdmin.invoicePdfUrl(inv.id)} target="_blank" rel="noopener noreferrer"
-                    aria-label={`Open invoice ${inv.invoice_number} as PDF`} style={{ color: 'var(--text-muted)' }}>
+                    aria-label={`Open invoice ${inv.invoice_number} as PDF`}
+                    className="-m-2.5 flex items-center justify-center p-2.5" style={{ color: 'var(--text-muted)', minHeight: 44, minWidth: 44 }}>
                     <FileText size={13} />
                   </a>
                 </span>
@@ -505,7 +422,7 @@ export function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStud
             {detail.payments.map((p) => (
               <div key={p.id} className="flex items-center justify-between gap-2 py-1.5 text-[12px]" style={{ borderTop: '1px solid var(--border)' }}>
                 <span className="min-w-0 truncate" style={{ color: 'var(--text-secondary)' }}>{fmtDate(p.created_at)} · {p.method || '—'} · {fmtINR(p.amount_inr)}{p.status === 'refunded' ? ' (refunded)' : ''}</span>
-                {p.status === 'paid' && <button onClick={() => { if (window.confirm('Refund this payment?')) act(() => api.superAdmin.refundPayment(p.id), 'Payment refunded.'); }} className="flex-shrink-0 text-[11px] font-[650]" style={{ color: '#dc2626' }}>Refund</button>}
+                {p.status === 'paid' && <button onClick={() => { if (window.confirm('Refund this payment?')) act(() => api.superAdmin.refundPayment(p.id), 'Payment refunded.'); }} className="-my-2 flex-shrink-0 px-2 py-2 text-[11px] font-[650]" style={{ color: '#dc2626', minHeight: 44 }}>Refund</button>}
               </div>
             ))}
           </div>

@@ -407,7 +407,7 @@ export default function StorageCentre() {
           {RANGES.map((d) => (
             <button
               key={d} onClick={() => setDays(d)}
-              className="min-h-[32px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
+              className="min-h-[44px] rounded-[8px] px-2.5 text-[11px] font-[700] transition-colors"
               style={days === d
                 ? { background: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(15,23,42,0.10)' }
                 : { color: 'var(--text-muted)' }}

@@ -14,11 +14,57 @@ import ExercisePicker from '@/components/pt-os/workout-log/ExercisePicker';
 import SessionSummary from '@/components/pt-os/workout-log/SessionSummary';
 import SessionClock from '@/components/pt-os/workout-log/SessionClock';
 import { api } from '@/lib/api';
-import type { WorkoutSessionDetail, WorkoutSessionExercise, WorkoutSet, WorkoutPreviousExercise } from '@/lib/api';
+import type { WorkoutSessionDetail, WorkoutSessionExercise, WorkoutSet, WorkoutPreviousExercise, WorkoutDistanceUnit, WorkoutSpeedUnit } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { fmtDate } from '@/lib/format';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+// Cardio actuals carried on every set write — mirrors workout_sets columns
+// (migration 179) and the Training OS cardio_performances vocabulary.
+const CARDIO_PASSTHROUGH_KEYS = [
+  'duration_seconds', 'distance', 'distance_unit', 'average_speed', 'speed_unit',
+  'calories_burned', 'average_heart_rate', 'cadence', 'steps_completed',
+  'floors_completed', 'rounds_completed',
+] as const;
+
+type CardioFieldKey = (typeof CARDIO_PASSTHROUGH_KEYS)[number];
+
+// Which actuals a cardio set shows, and which prescription modes publish them.
+// Duration is entered in MINUTES and stored as seconds.
+const CARDIO_FIELDS: Array<{
+  key: CardioFieldKey; label: string; modes: string[]; minutes?: boolean; unit?: 'distance' | 'speed';
+}> = [
+  { key: 'duration_seconds', label: 'Duration (min)', modes: ['TIME', 'TIME_SPEED', 'TIME_DISTANCE', 'TIME_LOAD', 'PACE'], minutes: true },
+  { key: 'distance', label: 'Distance', modes: ['DISTANCE', 'TIME_DISTANCE', 'DISTANCE_LOAD'], unit: 'distance' },
+  { key: 'average_speed', label: 'Speed', modes: ['SPEED', 'TIME_SPEED'], unit: 'speed' },
+  { key: 'calories_burned', label: 'Calories', modes: ['CALORIES'] },
+  { key: 'average_heart_rate', label: 'Avg HR', modes: ['HEART_RATE'] },
+  { key: 'cadence', label: 'Cadence (rpm)', modes: ['RPM'] },
+  { key: 'steps_completed', label: 'Steps', modes: ['STEPS'] },
+  { key: 'floors_completed', label: 'Floors', modes: ['FLOORS'] },
+  { key: 'rounds_completed', label: 'Rounds', modes: ['ROUNDS'] },
+];
+
+const DISTANCE_UNITS: WorkoutDistanceUnit[] = ['km', 'm', 'mile'];
+const SPEED_UNITS: WorkoutSpeedUnit[] = ['kmh', 'mph'];
+
+/** One chip in the "Previous" strip. Strength keeps kg × reps; a cardio set
+ *  reads back only the numbers that were actually logged, joined by ·. */
+function previousChip(ps: WorkoutSet): string {
+  const parts: string[] = [];
+  if (ps.duration_seconds != null) parts.push(`${Math.round((ps.duration_seconds / 60) * 10) / 10} min`);
+  if (ps.distance != null) parts.push(`${ps.distance} ${ps.distance_unit ?? ''}`.trim());
+  if (ps.average_speed != null) parts.push(`${ps.average_speed} ${ps.speed_unit ?? ''}`.trim());
+  if (ps.calories_burned != null) parts.push(`${ps.calories_burned} cal`);
+  if (ps.average_heart_rate != null) parts.push(`${ps.average_heart_rate} bpm`);
+  if (ps.cadence != null) parts.push(`${ps.cadence} rpm`);
+  if (ps.steps_completed != null) parts.push(`${ps.steps_completed} steps`);
+  if (ps.floors_completed != null) parts.push(`${ps.floors_completed} fl`);
+  if (ps.rounds_completed != null) parts.push(`×${ps.rounds_completed}`);
+  if (parts.length > 0) return parts.join(' · ');
+  return `${ps.weight_kg ?? '—'}kg × ${ps.reps ?? '—'}`;
+}
 
 export default function WorkoutSessionPage({ params }: { params: Promise<{ id: string; sessionId: string }> }) {
   const { id, sessionId } = use(params);
@@ -523,6 +569,16 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
 
   const nextSetNumber = exercise.sets.length + 1;
 
+  // What this exercise can be logged AS. Cardio exercises render actuals
+  // (time/distance/speed/…) instead of weight × reps; anything without a
+  // library type — ad-hoc rows whose exercise went away — stays strength.
+  const isCardio = exercise.exercise_type === 'Cardio';
+  const cardioModes = exercise.prescription_mode_allowed?.length
+    ? exercise.prescription_mode_allowed
+    : exercise.prescription_mode_primary
+      ? [exercise.prescription_mode_primary]
+      : [];
+
   const handleAddSet = async (prefill?: Partial<WorkoutSet>) => {
     setBusy(true);
     try {
@@ -535,6 +591,7 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
         tempo: prefill?.tempo ?? null,
         rest_seconds: prefill?.rest_seconds ?? null,
         completed: false,
+        ...Object.fromEntries(CARDIO_PASSTHROUGH_KEYS.map((key) => [key, prefill?.[key] ?? null])),
       });
       await onChanged();
     } catch (err: unknown) {
@@ -547,7 +604,10 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
   const handleDuplicateLast = () => {
     const last = exercise.sets[exercise.sets.length - 1];
     if (!last) { handleAddSet(); return; }
-    handleAddSet({ weight_kg: last.weight_kg, reps: last.reps, rpe: last.rpe, rir: last.rir, tempo: last.tempo, rest_seconds: last.rest_seconds });
+    handleAddSet({
+      weight_kg: last.weight_kg, reps: last.reps, rpe: last.rpe, rir: last.rir, tempo: last.tempo, rest_seconds: last.rest_seconds,
+      ...Object.fromEntries(CARDIO_PASSTHROUGH_KEYS.map((key) => [key, last[key]])),
+    });
   };
 
   const handleAutoFillPrevious = async () => {
@@ -558,7 +618,8 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
       for (const ps of previous.sets) {
         n += 1;
         await api.progress.workoutLog.sets.add(exercise.id, {
-          set_number: n, weight_kg: ps.weight_kg, reps: ps.reps, rpe: null, rir: null, tempo: ps.tempo, rest_seconds: ps.rest_seconds, completed: false,
+          set_number: n, weight_kg: ps.weight_kg, reps: ps.reps, rpe: ps.rpe, rir: null, tempo: ps.tempo, rest_seconds: ps.rest_seconds, completed: false,
+          ...Object.fromEntries(CARDIO_PASSTHROUGH_KEYS.map((key) => [key, ps[key]])),
         });
       }
       await onChanged();
@@ -639,7 +700,7 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
                   <div className="flex flex-wrap gap-1.5">
                     {previous.sets.map((ps) => (
                       <span key={ps.id} className="rounded-full px-2.5 py-1 text-[11px] font-[650]" style={{ background: '#fff', color: '#64748b', border: '1px solid var(--border)' }}>
-                        {ps.weight_kg ?? '—'}kg × {ps.reps ?? '—'}
+                        {previousChip(ps)}
                       </span>
                     ))}
                   </div>
@@ -648,7 +709,7 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
 
               <div className="space-y-2.5">
                 {exercise.sets.map((set) => (
-                  <SetRow key={set.id} set={set} onChanged={onChanged} />
+                  <SetRow key={set.id} set={set} isCardio={isCardio} modes={cardioModes} onChanged={onChanged} />
                 ))}
               </div>
 
@@ -711,7 +772,12 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
 // completion target are the whole point of "easy to fill" on a phone —
 // weight/reps are what get logged on nearly every set, so they get the
 // most tappable real estate; RPE/RIR are secondary, smaller fields below.
-function SetRow({ set, onChanged }: { set: WorkoutSet; onChanged: () => Promise<void> }) {
+//
+// Cardio sets swap the strength fields for the actuals this exercise's
+// prescription vocabulary publishes — duration/distance/speed/calories/
+// heart-rate/cadence/steps/floors/rounds — driven by the allowed modes the
+// server sends with each exercise. Nothing here is hard-coded per exercise.
+function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio: boolean; modes: string[]; onChanged: () => Promise<void> }) {
   const { toast } = useToast();
   const [weight, setWeight] = useState(set.weight_kg != null ? String(set.weight_kg) : '');
   const [reps, setReps] = useState(set.reps != null ? String(set.reps) : '');
@@ -719,12 +785,46 @@ function SetRow({ set, onChanged }: { set: WorkoutSet; onChanged: () => Promise<
   const [rir, setRir] = useState(set.rir != null ? String(set.rir) : '');
   const [saving, setSaving] = useState(false);
 
+  // Cardio actuals, keyed like CARDIO_FIELDS. Duration is edited in minutes
+  // and stored as seconds; distance/speed carry a unit select beside them.
+  const [cardio, setCardio] = useState<Record<string, string>>(() => ({
+    duration_seconds: set.duration_seconds != null ? String(Math.round((set.duration_seconds / 60) * 10) / 10) : '',
+    distance: set.distance != null ? String(set.distance) : '',
+    average_speed: set.average_speed != null ? String(set.average_speed) : '',
+    calories_burned: set.calories_burned != null ? String(set.calories_burned) : '',
+    average_heart_rate: set.average_heart_rate != null ? String(set.average_heart_rate) : '',
+    cadence: set.cadence != null ? String(set.cadence) : '',
+    steps_completed: set.steps_completed != null ? String(set.steps_completed) : '',
+    floors_completed: set.floors_completed != null ? String(set.floors_completed) : '',
+    rounds_completed: set.rounds_completed != null ? String(set.rounds_completed) : '',
+  }));
+  const [distUnit, setDistUnit] = useState<WorkoutDistanceUnit>(set.distance_unit ?? 'km');
+  const [speedUnit, setSpeedUnit] = useState<WorkoutSpeedUnit>(set.speed_unit ?? 'kmh');
+
   useEffect(() => {
     setWeight(set.weight_kg != null ? String(set.weight_kg) : '');
     setReps(set.reps != null ? String(set.reps) : '');
     setRpe(set.rpe != null ? String(set.rpe) : '');
     setRir(set.rir != null ? String(set.rir) : '');
-  }, [set.weight_kg, set.reps, set.rpe, set.rir]);
+    setCardio({
+      duration_seconds: set.duration_seconds != null ? String(Math.round((set.duration_seconds / 60) * 10) / 10) : '',
+      distance: set.distance != null ? String(set.distance) : '',
+      average_speed: set.average_speed != null ? String(set.average_speed) : '',
+      calories_burned: set.calories_burned != null ? String(set.calories_burned) : '',
+      average_heart_rate: set.average_heart_rate != null ? String(set.average_heart_rate) : '',
+      cadence: set.cadence != null ? String(set.cadence) : '',
+      steps_completed: set.steps_completed != null ? String(set.steps_completed) : '',
+      floors_completed: set.floors_completed != null ? String(set.floors_completed) : '',
+      rounds_completed: set.rounds_completed != null ? String(set.rounds_completed) : '',
+    });
+    setDistUnit(set.distance_unit ?? 'km');
+    setSpeedUnit(set.speed_unit ?? 'kmh');
+  }, [set]);
+
+  const visibleCardioFields = isCardio
+    ? CARDIO_FIELDS.filter((f) => f.modes.some((m) => modes.includes(m)))
+    : [];
+  const showCardioRpe = isCardio && modes.includes('RPE');
 
   const save = async (patch: Record<string, unknown>) => {
     setSaving(true);
@@ -748,6 +848,30 @@ function SetRow({ set, onChanged }: { set: WorkoutSet; onChanged: () => Promise<
   };
 
   const numField = (val: string) => (val.trim() === '' ? null : Number(val));
+
+  // One cardio actual per blur. Duration arrives in minutes and is stored as
+  // seconds; distance/speed always travel with their unit — the DB refuses a
+  // unitless distance, and clearing the number clears the unit with it so a
+  // corrected entry never leaves a stray 'mile' behind.
+  const saveCardio = (field: (typeof CARDIO_FIELDS)[number]) => {
+    const raw = (cardio[field.key] ?? '').trim();
+    let value: number | null = raw === '' ? null : Number(raw);
+    if (value != null && Number.isNaN(value)) return;
+    if (field.minutes && value != null) value = Math.round(value * 60);
+    const patch: Record<string, unknown> = { [field.key]: value };
+    if (field.unit === 'distance') patch.distance_unit = value == null ? null : distUnit;
+    if (field.unit === 'speed') patch.speed_unit = value == null ? null : speedUnit;
+    save(patch);
+  };
+
+  const saveDistanceUnit = (unit: WorkoutDistanceUnit) => {
+    setDistUnit(unit);
+    save({ distance_unit: unit });
+  };
+  const saveSpeedUnit = (unit: WorkoutSpeedUnit) => {
+    setSpeedUnit(unit);
+    save({ speed_unit: unit });
+  };
 
   const adjustWeight = (delta: number) => {
     const cur = weight.trim() === '' ? 0 : Number(weight);
@@ -790,6 +914,49 @@ function SetRow({ set, onChanged }: { set: WorkoutSet; onChanged: () => Promise<
         </button>
       </div>
 
+      {/* Cardio actuals: only the fields this exercise's prescription
+          vocabulary publishes, two per row at thumb height. No weight/reps —
+          forcing cardio into sets × reps is exactly what the prescription
+          upgrade removed everywhere else. */}
+      {isCardio && (
+        <div className="grid grid-cols-2 gap-2.5">
+          {visibleCardioFields.map((field) => (
+            <label key={field.key} className="flex items-center gap-1 rounded-[10px] px-1 pl-2.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
+              <span className="shrink-0 text-[9.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>{field.label}</span>
+              <input type="number" inputMode="decimal" min={0} value={cardio[field.key] ?? ''} placeholder="—"
+                onChange={(e) => setCardio((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                onBlur={() => saveCardio(field)}
+                className="h-[44px] w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: '#0f172a' }} />
+              {field.unit === 'distance' && (
+                <select aria-label={`Distance unit for ${field.label}`} value={distUnit}
+                  onChange={(e) => saveDistanceUnit(e.target.value as WorkoutDistanceUnit)}
+                  className="h-[44px] shrink-0 bg-transparent pr-1 text-[11px] font-[700] outline-none" style={{ color: '#64748b' }}>
+                  {DISTANCE_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                </select>
+              )}
+              {field.unit === 'speed' && (
+                <select aria-label={`Speed unit for ${field.label}`} value={speedUnit}
+                  onChange={(e) => saveSpeedUnit(e.target.value as WorkoutSpeedUnit)}
+                  className="h-[44px] shrink-0 bg-transparent pr-1 text-[11px] font-[700] outline-none" style={{ color: '#64748b' }}>
+                  {SPEED_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                </select>
+              )}
+            </label>
+          ))}
+          {showCardioRpe && (
+            <label className="flex items-center gap-1.5 rounded-[10px] px-2.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
+              <span className="text-[10px] font-[700]" style={{ color: '#94a3b8' }}>RPE</span>
+              <input type="number" inputMode="decimal" min={0} max={10} value={rpe} placeholder="—"
+                onChange={(e) => setRpe(e.target.value)}
+                onBlur={() => save({ rpe: numField(rpe) })}
+                className="h-[44px] w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: '#0f172a' }} />
+            </label>
+          )}
+        </div>
+      )}
+
+      {!isCardio && (
+        <>
       <div className="grid grid-cols-2 gap-2.5">
         <div>
           <p className="mb-1 text-center text-[9.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Weight (kg)</p>
@@ -861,6 +1028,8 @@ function SetRow({ set, onChanged }: { set: WorkoutSet; onChanged: () => Promise<
             className="h-[44px] w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: "#0f172a" }} />
         </label>
       </div>
+        </>
+      )}
 
       {/*
         ── The most important control on this screen ──────────────────────

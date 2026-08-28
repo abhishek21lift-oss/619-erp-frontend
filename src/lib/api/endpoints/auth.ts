@@ -105,7 +105,7 @@ export const webauthn = {
       body: JSON.stringify(body ?? {}),
     }),
   loginVerify: (body: { authentication: Record<string, unknown> }) =>
-    http<{ user: { id: string; name?: string; email: string; role?: string; trainer_id?: string; member_id?: string } }>(
+    http<{ user: { id: string; name?: string; email: string; role?: string; trainer_id?: string; pt_client_id?: string } }>(
       '/api/auth/webauthn/login/verify', { method: 'POST', body: JSON.stringify(body) }
     ),
 
