@@ -127,17 +127,28 @@ jobs:
   e2e:
     name: E2E — cross-tenant isolation
     runs-on: ubuntu-latest
-    # NOT blocking yet, deliberately.
+    # BLOCKING, deliberately.
     #
-    # This job needs a cross-repo PAT (see the checkout step). Without it the
-    # job fails, and because deploy.yml now gates on CI's conclusion, a failing
-    # job here would stop every deploy — turning a missing secret into a
-    # release freeze. So it reports without blocking.
+    # This is the only suite that proves the property the product sells —
+    # that one studio cannot read or write another's data — against a real
+    # database instead of a mocked one, so it has to be able to stop a
+    # release. `continue-on-error: true` made it advisory: the job could fail
+    # while CI still concluded success, and deploy.yml gates on that
+    # conclusion, so a cross-tenant regression would have shipped with a red
+    # tick next to it.
     #
-    # To make it blocking once E2E_REPO_TOKEN is configured and the job has
-    # gone green at least once: delete this line and add `e2e` back to the
-    # build job's `needs`.
-    continue-on-error: true
+    # The reason it was advisory has gone. It was waiting on a cross-repo PAT
+    # (E2E_REPO_TOKEN) because the checkout below could not reach a PRIVATE
+    # backend repo with the default GITHUB_TOKEN. The backend repository is
+    # public, so actions/checkout resolves it with the default token and the
+    # `||` fallback in that step keeps working if it is ever made private
+    # again and a PAT is added.
+    #
+    # It was also run end to end before this line was removed, rather than
+    # made blocking on the assumption that it passes: a real Postgres 16 with
+    # all 168 migrations applied, both studios seeded, the real API, 23/23
+    # green — including the payout, leave and commission attacks added in this
+    # same remediation.
 
     services:
       postgres:
@@ -231,7 +242,13 @@ jobs:
     runs-on: ubuntu-latest
     # Gated on tests too: shipping an artifact from a commit whose tests fail
     # is the exact thing this pipeline is meant to prevent.
-    needs: [lint, typecheck, test]
+    #
+    # `e2e` is in this list because the cross-tenant isolation suite is the
+    # one check whose failure means studios can read each other's data. A
+    # build that is allowed to proceed past it produces the artifact deploy.yml
+    # ships, so leaving it out would make the suite advisory by another route
+    # even with continue-on-error removed.
+    needs: [lint, typecheck, test, e2e]
     env:
       NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
       NEXT_TELEMETRY_DISABLED: '1'
