@@ -99,8 +99,19 @@ describe('platform console — the H-03 split', () => {
     // Next.js App Router turns any folder under app/ into a URL segment unless
     // it is a private folder (_name). A directory renamed from _tabs to tabs
     // would silently publish /platform/tabs.
+    //
+    // `studios` is the one deliberate exception: Studio 360
+    // (studios/[id]/page.tsx) is a genuine second route under /platform, not
+    // a colocated module — it must NOT start with `_` or Next.js would never
+    // publish it. Listed explicitly rather than inferred (e.g. "contains a
+    // page.tsx"), so adding a real new route here stays a decision, not
+    // something the test silently allows.
+    const ROUTE_DIRS = new Set(['studios']);
     const dirs = new Set(files.map((f) => rel(f).split(path.sep)[0]).filter((d) => d.endsWith('.tsx') === false));
-    for (const d of dirs) expect(d.startsWith('_')).toBe(true);
+    for (const d of dirs) {
+      if (ROUTE_DIRS.has(d)) continue;
+      expect(d.startsWith('_')).toBe(true);
+    }
   });
 
   it('declares the client boundary on every module with a component', () => {

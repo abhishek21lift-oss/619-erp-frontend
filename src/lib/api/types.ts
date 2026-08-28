@@ -3439,3 +3439,188 @@ export interface AiIntelligenceAudit {
   /** The client ID this audit event is associated with (via the target). */
   client_id?: string | null;
 }
+
+// ── Command Centre Phase 5 — platform KPIs, tenancy health, studio 360, search ──
+// tenancy, studios, search}.js exactly. If a field name drifts in the backend,
+// the compile error points here, not at a render that just shows "undefined".
+//
+// Critical rule from the brief: search results MUST carry `org_id` so the UI
+// cannot render "Acme Fitness" without showing the org. The PlatformSearchResult
+// interface enforces that structurally.
+
+/** GET /api/platform/overview/kpis — home-screen numbers. */
+export interface PlatformKpis {
+  business: {
+    total_studios: number;
+    active_studios: number;
+    pending_studios: number;
+    suspended_studios: number;
+    trial_studios: number;
+    total_owners: number;
+    total_trainers: number;
+    total_clients: number;
+    active_clients: number;
+    new_clients_30d: number;
+  };
+  platform_revenue: {
+    mrr_inr: number;
+    active_subscriptions: number;
+    trial_subscriptions: number;
+    expiring_in_7d: number;
+  };
+  operations: {
+    failed_payments_30d: number;
+  };
+  security: {
+    critical_alerts: number;
+    high_alerts: number;
+    medium_alerts: number;
+  };
+}
+
+/** Per-section status. Each is independent — one WARNING does not cascade. */
+export type TenancySectionStatus = 'HEALTHY' | 'WARNING' | 'CRITICAL' | 'UNKNOWN';
+
+/** GET /api/platform/tenancy-health — 5-line honest summary. */
+export interface TenancyHealth {
+  /** RLS posture: 247 policies on public, 0 are org-scoped today. */
+  rls: { status: TenancySectionStatus; policy_count: number; org_scoped_count: number; note: string };
+  /** Tenant-scope enforcement: the app-layer tenantScope() chain. */
+  isolation: { status: TenancySectionStatus; tables_under_scope: number; note: string };
+  /** Rows with NULL organization_id across tenant tables (MV). */
+  orphans: { status: TenancySectionStatus; total: number; top_table: string | null; note: string };
+  /** Cross-tenant attempts blocked in activity_log. */
+  cross_tenant: { status: TenancySectionStatus; attempts_30d: number; note: string };
+  /** Known unfixed gaps from the convention test. */
+  known_gaps: { status: TenancySectionStatus; open: number; high: number; note: string };
+}
+
+/** GET /api/platform/tenancy/orphans — drilldown from orphans_mv. */
+export interface TenancyOrphanRow {
+  table_name: string;
+  null_org_rows: number;
+  total_rows: number;
+  ratio: number;
+}
+
+export interface TenancyOrphans {
+  data: TenancyOrphanRow[];
+  total: number;
+}
+
+/** GET /api/platform/tenancy/cross-tenant-attempts. */
+export interface TenancyAttemptRow {
+  id: string;
+  action: string;
+  user_name: string | null;
+  org_name: string | null;
+  created_at: string;
+  meta: Record<string, unknown> | null;
+}
+
+export interface TenancyAttempts {
+  data: TenancyAttemptRow[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+/** GET /api/platform/tenancy/known-gaps. */
+export interface TenancyKnownGap {
+  table_name: string;
+  reason: string;
+  severity: 'high' | 'medium' | 'low';
+  added_at: string;
+  verified_at: string | null;
+  closed_at: string | null;
+}
+
+/** POST /api/platform/tenancy/run-isolation-tests. */
+export interface TenancyIsolationTestCase {
+  name: string;
+  passed: boolean;
+  detail: string;
+}
+
+export interface TenancyIsolationRunResult {
+  run_id: number;
+  passed: boolean;
+  total_tests: number;
+  failed_tests: number;
+  duration_ms: number;
+  cases: TenancyIsolationTestCase[];
+  ran_at: string;
+  cooldown_remaining_s: number;
+}
+
+/** GET /api/platform/studios/:id/health. */
+export interface StudioHealth {
+  organization: { id: string; name: string; status: string };
+  activity: {
+    status: TenancySectionStatus;
+    total_events_24h: number;
+    error_events_24h: number;
+  };
+  logins: {
+    status: TenancySectionStatus;
+    success_24h: number;
+    failed_24h: number;
+  };
+  storage: { object_count: number };
+  subscription: { status: string; ends_at: string | null; plan_code: string } | null;
+}
+
+/** GET /api/platform/studios/:id/memberships. */
+export interface StudioMembership {
+  id: string;
+  name: string;
+  status: string;
+  start_date: string | null;
+  end_date: string | null;
+  paid_amount: number | null;
+  balance_amount: number | null;
+  plan_name: string | null;
+}
+
+export interface StudioMemberships {
+  data: StudioMembership[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+/** GET /api/platform/studios/:id/pt-revenue. */
+export interface StudioPtRevenue {
+  total_collected: number;
+  total_outstanding: number;
+  collected_30d: number;
+  collected_90d: number;
+  collected_365d: number;
+  active_memberships: number;
+  expired_memberships: number;
+}
+
+/** GET /api/platform/search — global ⌘K results.
+ *  `org_id` is REQUIRED on every result. The backend never returns a row
+ *  without it, and this interface makes the type system refuse one too. */
+export type PlatformSearchKind =
+  | 'studio' | 'owner' | 'trainer' | 'client'
+  | 'subscription' | 'invoice' | 'audit';
+
+export interface PlatformSearchResult {
+  kind: PlatformSearchKind;
+  id: string;
+  /** Always present. Frontend cannot render this result without knowing the org. */
+  org_id: string | null;
+  title: string;
+  subtitle: string;
+  status?: string;
+  url: string;
+}
+
+export interface PlatformSearchResponse {
+  data: PlatformSearchResult[];
+  query: string;
+  kinds: PlatformSearchKind[];
+  total: number;
+}

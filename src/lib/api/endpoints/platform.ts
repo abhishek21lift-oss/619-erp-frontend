@@ -26,6 +26,10 @@ import type {
   CommandCenterStreamTicket,
   SystemAlert, SystemAlertList, GuardianReport, GuardianNarration,
   LogTail, LogHistory,
+  PlatformKpis, TenancyHealth, TenancyOrphans, TenancyOrphanRow,
+  TenancyAttempts, TenancyAttemptRow, TenancyKnownGap,
+  TenancyIsolationRunResult, StudioHealth, StudioMemberships,
+  StudioPtRevenue, PlatformSearchResponse, PlatformSearchKind,
 } from '../types';
 
 // The `admin` namespace held exportDatabase() and backupDatabase(). Both are
@@ -600,6 +604,47 @@ export const superAdmin = {
    *  for this: it stacks time on top instead of crediting it, double-granting days). */
   changePlan: (orgId: string, body: { plan_code: string; amount_inr?: number; method?: string; reference?: string; notes?: string }) =>
     http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/change`, { method: 'POST', body: JSON.stringify(body) }),
+
+  // ── Command Centre Phase 5 — home-screen KPIs, tenancy health, studio 360, search ──
+  // Every endpoint here is server-gated by PLATFORM_GUARD; the client treats
+  // the response as already-trusted. Shapes mirror the actual server payload
+  // so a name drift surfaces as a TS error rather than a runtime "undefined"
+  // deep in a render. Mounted in super-admin.routes.js after the mail router.
+  kpis: () =>
+    http<{ data: PlatformKpis; cached: boolean }>('/api/platform/overview/kpis'),
+
+  // Tenancy Health card — five independent sections, no aggregation. Honest
+  // state: 247 RLS policies on public, 0 org-scoped today. Surfacing that as
+  // WARNING is the point; green-padded "everything is fine" would be the lie.
+  tenancyHealth: () =>
+    http<{ data: TenancyHealth }>('/api/platform/tenancy-health'),
+  tenancyOrphans: () =>
+    http<{ data: TenancyOrphans }>('/api/platform/tenancy/orphans'),
+  tenancyCrossTenantAttempts: (limit = 50, offset = 0) =>
+    http<{ data: TenancyAttempts }>(`/api/platform/tenancy/cross-tenant-attempts?limit=${limit}&offset=${offset}`),
+  tenancyKnownGaps: () =>
+    http<{ data: TenancyKnownGap[] }>('/api/platform/tenancy/known-gaps'),
+  // POST is the only mutation. 5-min per-user cooldown; backend returns
+  // `cooldown_remaining_s` so the UI can show "Run again in 4m 12s".
+  runIsolationTests: () =>
+    http<{ data: TenancyIsolationRunResult }>('/api/platform/tenancy/run-isolation-tests', { method: 'POST', body: JSON.stringify({}) }),
+
+  // Studio 360 — read-only, scoped to a single org_id in the URL. The path
+  // is the auth: UUID_RE validated server-side, never a body-supplied id.
+  studioHealth: (id: string) =>
+    http<{ data: StudioHealth }>(`/api/platform/studios/${id}/health`),
+  studioMemberships: (id: string, limit = 50, offset = 0) =>
+    http<{ data: StudioMemberships }>(`/api/platform/studios/${id}/memberships?limit=${limit}&offset=${offset}`),
+  studioPtRevenue: (id: string) =>
+    http<{ data: StudioPtRevenue }>(`/api/platform/studios/${id}/pt-revenue`),
+
+  // Global ⌘K search. `kinds` defaults server-side to studio/owner/trainer/client
+  // when omitted. Every result carries `org_id`; the type system makes that
+  // visible to consumers.
+  search: (q: string, kinds?: PlatformSearchKind[]) =>
+    http<{ data: PlatformSearchResponse['data']; query: string; kinds: PlatformSearchKind[]; total: number }>(
+      `/api/platform/search?q=${encodeURIComponent(q)}${kinds && kinds.length ? `&kinds=${kinds.join(',')}` : ''}`
+    ),
 };
 
 // ── Settings ──────────────────────────────────────────────
