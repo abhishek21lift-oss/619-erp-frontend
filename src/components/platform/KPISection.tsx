@@ -50,24 +50,21 @@ export const KPISection: React.FC = () => {
     {
       label: 'MRR',
       value: fmtINR(platform_revenue.mrr_inr),
-      sub: `${platform_revenue.active_subscriptions} active · ${platform_revenue.trial_subscriptions} trial`,
     },
     {
       label: 'Failed payments (30d)',
       value: String(operations.failed_payments_30d),
-      sub: `${platform_revenue.expiring_in_7d} subs expiring in 7d`,
     },
     {
       label: 'Open critical alerts',
       value: String(security.critical_alerts),
-      sub: `${security.high_alerts} high · ${security.medium_alerts} medium`,
     },
   ];
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 p-4">
       {cards.map((c) => (
-        <PremiumMetricCard key={c.label} label={c.label} value={c.value} sub={c.sub} bordered={false} density="compact" />
+        <PremiumMetricCard key={c.label} label={c.label} value={c.value} bordered={false} density="compact" />
       ))}
     </div>
   );
