@@ -21,23 +21,11 @@ import { TONE } from '@/components/platform/command-center-utils';
 export const CommandCenterRoot: React.FC = () => {
   const { snap, error, loading, refreshing, transport, history, refresh } = useCommandCenterSnapshot(5_000);
 
-  // Loading / error handling identical to previous implementation.
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 size={32} className="animate-spin" />
-      </div>
-    );
-  }
-
-  if (error && !snap) return <Center><ErrorState error={error} onRetry={() => refresh()} /></Center>;
-  if (!snap) return null;
-
-  const cards = Object.values(snap.cards);
-  const overall = TONE[snap.status] ?? TONE.unavailable;
-
-  // Compute counts per status for HeroHealth.
+  // Compute counts per status for HeroHealth - moved up to ensure hooks are unconditional
   const statusCounts = useMemo(() => {
+    if (!snap) return []; // Safe fallback for when snap is null
+
+    const cards = Object.values(snap.cards);
     const map: Record<string, { n: number; color: string }> = {
       critical: { n: 0, color: TONE.critical.color },
       timeout: { n: 0, color: TONE.timeout.color },
@@ -57,7 +45,22 @@ export const CommandCenterRoot: React.FC = () => {
       { label: 'unavailable', n: map.unavailable.n, color: map.unavailable.color },
       { label: 'healthy', n: map.healthy.n, color: map.healthy.color },
     ].filter((c) => c.n > 0);
-  }, [cards]);
+  }, [snap]); // Depend on snap instead of cards for stability
+
+  // Loading / error handling identical to previous implementation.
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 size={32} className="animate-spin" />
+      </div>
+    );
+  }
+
+  if (error && !snap) return <Center><ErrorState error={error} onRetry={() => refresh()} /></Center>;
+  if (!snap) return null;
+
+  const cards = Object.values(snap.cards);
+  const overall = TONE[snap.status] ?? TONE.unavailable;
 
   return (
     <div className="space-y-4" data-test-id="command-center-root">
