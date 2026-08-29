@@ -13,14 +13,15 @@ const viewports = [
 ];
 
 test.describe('Command Center visual polish – screenshots', () => {
+  test.describe.configure({ timeout: 60_000 });
   for (const vp of viewports) {
-    test(`screenshot @ ${vp.width}x${vp.height}`, { timeout: 60_000 }, async ({ page }) => {
+    test(`screenshot @ ${vp.width}x${vp.height}`, async ({ page }) => {
       // Set viewport size
       page.setViewportSize({ width: vp.width, height: vp.height });
       // Navigate to the Command Center page
       await page.goto('/platform?tab=health', { waitUntil: 'networkidle', timeout: 60000 });
-          // Ensure all network requests have settled before screenshot
-          await page.waitForLoadState('networkidle');
+      // Ensure all network requests have settled before screenshot
+      await page.waitForLoadState('networkidle');
       // Wait for the Command Center root to appear (spinner gone)
       await page.waitForSelector('[data-test-id="command-center-root"]', { timeout: 30_000 });
       // Capture a clean screenshot of the viewport.
