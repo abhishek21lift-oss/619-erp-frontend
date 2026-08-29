@@ -9,6 +9,9 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
+  // Allow cross-origin requests from 127.0.0.1 (used by Playwright tests).
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
+
   experimental: {
     optimizePackageImports: [
       'lucide-react',

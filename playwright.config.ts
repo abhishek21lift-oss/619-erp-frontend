@@ -5,8 +5,7 @@ import { defineConfig, devices } from '@playwright/test';
 // Everything that existed tested one side of a boundary — Jest with a mocked
 // pg pool on the backend, Vitest with a mocked fetch on the frontend. Nothing
 // exercised a real browser against a real API against a real database, so the
-// property this product actually sells — that one studio cannot see another's
-// data — had never been checked end to end. It was asserted by unit tests that
+// product this actually sells — that one studio cannot see another's data — had never been checked end to end. It was asserted by unit tests that
 // mock away the very layer where it could fail.
 //
 // ── The stack these tests need ─────────────────────────────────────────────
@@ -18,14 +17,8 @@ import { defineConfig, devices } from '@playwright/test';
 // Kept out of `npm test` on purpose: Vitest is the fast inner loop and must
 // stay runnable with no database. E2E runs as its own CI job.
 
-// Which projects this run will execute. Playwright has no per-project
-// webServer, so the frontend is started only when a browser project is in play.
-const projectArgs = process.argv.filter((a) => a.startsWith('--project'));
-const needsBrowser =
-  projectArgs.length === 0 || projectArgs.some((a) => a.includes('chromium'));
-
 const API_URL = process.env.E2E_API_URL ?? 'http://127.0.0.1:5100';
-const APP_URL = process.env.E2E_APP_URL ?? 'http://127.0.0.1:3100';
+const APP_URL = process.env.E2E_APP_URL ?? 'http://127.0.0.1:3101';
 
 export default defineConfig({
   testDir: './e2e',
@@ -81,13 +74,13 @@ export default defineConfig({
   // `--webpack` is explicit because Next 16 defaults to Turbopack and this app
   // still carries a webpack config; without the flag `next dev` exits 1 rather
   // than picking one.
-  webServer: needsBrowser
+  webServer: true
     ? {
         command: `npx next dev --webpack -p ${new URL(APP_URL).port}`,
         url: APP_URL,
         reuseExistingServer: !process.env.CI,
-        timeout: 180_000,
-        env: { NEXT_PUBLIC_API_URL: API_URL },
+        timeout: 300_000,
+        env: { NEXT_PUBLIC_API_URL: API_URL, OUTPUT_FILE_TRACING_ROOT: '.' },
       }
     : undefined,
 });
