@@ -1,1 +1,0 @@
-Temporary marker for Command Center Overview redesign work.
