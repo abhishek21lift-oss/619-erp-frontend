@@ -88,7 +88,9 @@ const mockProposal = {
   created_by: 'system',
   created_at: '2026-08-23T10:00:00Z',
   updated_at: '2026-08-23T10:00:00Z',
-  expires_at: '2026-08-30T10:00:00Z',
+  // Keep the default fixture valid for action tests regardless of wall-clock time.
+  // Expiry behavior is covered explicitly by the dedicated expired-proposal test.
+  expires_at: '2099-12-31T23:59:59Z',
 };
 
 const mockPendingQueue = {
