@@ -81,9 +81,6 @@ export default function Studio360Page() {
         </button>
       </Reveal>
 
-      {/* Section sub-nav, scoped to the page. The brief says Studio 360
-          has three sections; the existing SegmentedTabs primitive makes
-          the switch read like the rest of the console. */}
       <Reveal delay={0.04}>
         <div className="max-w-[500px]">
           <SectionLabel>{id.slice(0, 8)}…</SectionLabel>
@@ -109,14 +106,13 @@ export default function Studio360Page() {
         </div>
       </Reveal>
 
-      {section === 'health'     && <HealthSection id={id} />}
+      {section === 'health' && <HealthSection id={id} />}
       {section === 'memberships' && <MembershipsSection id={id} />}
-      {section === 'revenue'    && <RevenueSection id={id} />}
+      {section === 'revenue' && <RevenueSection id={id} />}
     </div>
   );
 }
 
-/* ── Health ───────────────────────────────────────────────────────────── */
 function HealthSection({ id }: { id: string }) {
   const [data, setData] = useState<StudioHealth | null>(null);
   const [loading, setLoading] = useState(true);
@@ -163,10 +159,10 @@ function HealthSection({ id }: { id: string }) {
 
       <Reveal delay={0.1}>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <HealthStat label="Activity (24h)"     value={String(data.activity.total_events_24h)} sub={`${data.activity.error_events_24h} errors`}        status={data.activity.status} icon={<ActivityDot />} />
-          <HealthStat label="Successful logins"  value={String(data.logins.success_24h)}      sub={`${data.logins.failed_24h} failed`}                status={data.logins.status}   icon={<Users size={15} />} />
-          <HealthStat label="Storage objects"    value={String(data.storage.object_count)}   sub="in this tenant"                                    status="HEALTHY"               icon={<Database size={15} />} />
-          <HealthStat label="Subscription"       value={sub ? sub.status : 'none'}           sub={sub?.plan_code ?? 'no active sub'}                status={sub ? (sub.status === 'active' ? 'HEALTHY' : 'WARNING') : 'UNKNOWN'} icon={<IndianRupee size={15} />} />
+          <HealthStat label="Activity (24h)" value={String(data.activity.total_events_24h)} sub={`${data.activity.error_events_24h} errors`} status={data.activity.status} icon={<ActivityDot />} />
+          <HealthStat label="Successful logins" value={String(data.logins.success_24h)} sub={`${data.logins.failed_24h} failed`} status={data.logins.status} icon={<Users size={15} />} />
+          <HealthStat label="Storage objects" value={String(data.storage.object_count)} sub="in this tenant" status="HEALTHY" icon={<Database size={15} />} />
+          <HealthStat label="Subscription" value={sub ? sub.status : 'none'} sub={sub?.plan_code ?? 'no active sub'} status={sub ? (sub.status === 'active' ? 'HEALTHY' : 'WARNING') : 'UNKNOWN'} icon={<IndianRupee size={15} />} />
         </div>
       </Reveal>
 
@@ -175,25 +171,17 @@ function HealthSection({ id }: { id: string }) {
           <div className="flex items-center justify-between gap-3 px-4 pt-3.5 pb-2">
             <p className="text-[13px] font-[720]" style={{ color: 'var(--text-primary)' }}>Honest state</p>
             <span className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-              Per-studio view, derived from existing data. The platform-level
-              Tenancy Health card is the source of truth for the platform.
+              Per-studio view, derived from existing data. The platform-level Tenancy Health card is the source of truth for the platform.
             </span>
           </div>
           <ul className="px-4 pb-4 text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
             <li className="mt-1.5 flex items-start gap-2">
               <span className="mt-[3px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: data.activity.status === 'HEALTHY' ? 'var(--success)' : data.activity.status === 'WARNING' ? 'var(--warning)' : data.activity.status === 'CRITICAL' ? 'var(--danger)' : 'var(--text-disabled)' }} />
-              <span>
-                <strong>Activity:</strong> {data.activity.total_events_24h} events in 24h,
-                {' '}{data.activity.error_events_24h} with <code>failed</code> or <code>error</code> in the action name.
-                HEALTHY when errors &le; 10% of total, WARNING above, UNKNOWN when zero events.
-              </span>
+              <span><strong>Activity:</strong> {data.activity.total_events_24h} events in 24h, {data.activity.error_events_24h} with <code>failed</code> or <code>error</code> in the action name. HEALTHY when errors &le; 10% of total, WARNING above, UNKNOWN when zero events.</span>
             </li>
             <li className="mt-1.5 flex items-start gap-2">
               <span className="mt-[3px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: data.logins.status === 'HEALTHY' ? 'var(--success)' : data.logins.status === 'WARNING' ? 'var(--warning)' : 'var(--danger)' }} />
-              <span>
-                <strong>Logins:</strong> {data.logins.success_24h} successful,
-                {' '}{data.logins.failed_24h} failed. WARNING above 50 failures, CAUTION above 0.
-              </span>
+              <span><strong>Logins:</strong> {data.logins.success_24h} successful, {data.logins.failed_24h} failed. WARNING above 50 failures, CAUTION above 0.</span>
             </li>
           </ul>
         </Panel>
@@ -202,30 +190,23 @@ function HealthSection({ id }: { id: string }) {
   );
 }
 
-function HealthStat({ label, value, sub, status, icon }: {
-  label: string; value: string; sub: string; status: TenancySectionStatus; icon: React.ReactNode;
-}) {
+function HealthStat({ label, value, sub, status, icon }: { label: string; value: string; sub: string; status: TenancySectionStatus; icon: React.ReactNode }) {
   return (
     <div className="rounded-[14px] p-3.5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
       <div className="flex items-center justify-between gap-2">
         <span className="text-[10.5px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</span>
         <Badge tone={STATUS_TONE[status]} dot>{status}</Badge>
       </div>
-      <p className="mt-2 flex items-center gap-1.5 text-[15px] font-[800] tabular-nums" style={{ color: 'var(--text-primary)' }}>
-        {icon}{value}
-      </p>
+      <p className="mt-2 flex items-center gap-1.5 text-[15px] font-[800] tabular-nums" style={{ color: 'var(--text-primary)' }}>{icon}{value}</p>
       <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{sub}</p>
     </div>
   );
 }
 
 function ActivityDot() {
-  // A small inline ring; using a fresh component so the call site reads as
-  // "activity icon" without a third-party import.
   return <span aria-hidden style={{ display: 'inline-block', width: 14, height: 14, borderRadius: '50%', border: '2px solid var(--brand)', background: 'transparent' }} />;
 }
 
-/* ── Memberships ──────────────────────────────────────────────────────── */
 function MembershipsSection({ id }: { id: string }) {
   const [data, setData] = useState<StudioMemberships | null>(null);
   const [loading, setLoading] = useState(true);
@@ -236,7 +217,19 @@ function MembershipsSection({ id }: { id: string }) {
   const load = useCallback(() => {
     setLoading(true); setError('');
     api.superAdmin.studioMemberships(id, LIMIT, page * LIMIT)
-      .then((r) => setData(r.data))
+      .then((r) => {
+        // The backend returns { data: rows, total, limit, offset } for this
+        // endpoint, while most platform APIs wrap their payload inside data.
+        // Normalize that one legacy shape here so the rest of Studio 360 can
+        // keep using the strongly typed StudioMemberships model.
+        const response = r as unknown as {
+          data: StudioMembership[];
+          total: number;
+          limit: number;
+          offset: number;
+        };
+        setData(response);
+      })
       .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load memberships'))
       .finally(() => setLoading(false));
   }, [id, page]);
@@ -254,26 +247,18 @@ function MembershipsSection({ id }: { id: string }) {
     <Reveal delay={0.08}>
       <Panel padded={false} className="overflow-hidden">
         <div className="flex items-center justify-between gap-3 px-4 pt-3.5 pb-2">
-          <p className="text-[13px] font-[720]" style={{ color: 'var(--text-primary)' }}>
-            {total} membership{total === 1 ? '' : 's'}
-          </p>
-          <span className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-            Client name, plan, dates. No phone, no email — those are the
-            tenant admin's view.
-          </span>
+          <p className="text-[13px] font-[720]" style={{ color: 'var(--text-primary)' }}>{total} membership{total === 1 ? '' : 's'}</p>
+          <span className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>Client name, plan, dates. No phone, no email — those are the tenant admin's view.</span>
         </div>
         {data.data.length === 0 ? (
           <p className="px-4 pb-4 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>No memberships yet.</p>
         ) : (
           <ul>
             {data.data.map((m: StudioMembership, i: number) => (
-              <li key={m.id} className="flex items-center gap-3 px-4 py-2.5 text-[12.5px]"
-                style={{ borderTop: i ? '1px solid var(--border)' : 'none' }}>
+              <li key={m.id} className="flex items-center gap-3 px-4 py-2.5 text-[12.5px]" style={{ borderTop: i ? '1px solid var(--border)' : 'none' }}>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] font-[680]" style={{ color: 'var(--text-primary)' }}>{m.name}</p>
-                  <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                    {m.plan_name ?? 'No plan'} · {m.start_date ? fmtDate(m.start_date) : '—'} → {m.end_date ? fmtDate(m.end_date) : '—'}
-                  </p>
+                  <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{m.plan_name ?? 'No plan'} · {m.start_date ? fmtDate(m.start_date) : '—'} → {m.end_date ? fmtDate(m.end_date) : '—'}</p>
                 </div>
                 <Badge tone={m.status === 'active' ? 'success' : m.status === 'expired' ? 'danger' : 'warning'}>{m.status}</Badge>
                 <span className="w-[88px] text-right tabular-nums" style={{ color: 'var(--text-secondary)' }}>{fmtINR(m.paid_amount)}</span>
@@ -285,10 +270,8 @@ function MembershipsSection({ id }: { id: string }) {
           <div className="flex items-center justify-between gap-3 border-t px-4 py-2.5 text-[12px]" style={{ borderColor: 'var(--border)' }}>
             <span style={{ color: 'var(--text-muted)' }}>Page {page + 1} of {lastPage + 1}</span>
             <div className="flex gap-2">
-              <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}
-                className="rounded-[9px] px-2.5 py-1 disabled:opacity-50" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>Prev</button>
-              <button onClick={() => setPage((p) => Math.min(lastPage, p + 1))} disabled={page === lastPage}
-                className="rounded-[9px] px-2.5 py-1 disabled:opacity-50" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>Next</button>
+              <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} className="rounded-[9px] px-2.5 py-1 disabled:opacity-50" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>Prev</button>
+              <button onClick={() => setPage((p) => Math.min(lastPage, p + 1))} disabled={page === lastPage} className="rounded-[9px] px-2.5 py-1 disabled:opacity-50" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>Next</button>
             </div>
           </div>
         )}
@@ -297,7 +280,6 @@ function MembershipsSection({ id }: { id: string }) {
   );
 }
 
-/* ── PT revenue ───────────────────────────────────────────────────────── */
 function RevenueSection({ id }: { id: string }) {
   const [data, setData] = useState<StudioPtRevenue | null>(null);
   const [loading, setLoading] = useState(true);
@@ -321,10 +303,10 @@ function RevenueSection({ id }: { id: string }) {
     <div className="space-y-4">
       <Reveal delay={0.08}>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatTile label="Total collected"  value={fmtINR(data.total_collected)}   sub="all-time"                tone="positive" icon={<IndianRupee size={15} />} />
-          <StatTile label="Outstanding"      value={fmtINR(data.total_outstanding)} sub="balance across clients"  tone={data.total_outstanding > 0 ? 'critical' : 'positive'} icon={<Receipt size={15} />} />
-          <StatTile label="Active"           value={String(data.active_memberships)} sub="current memberships"    tone="brand" icon={<Users size={15} />} />
-          <StatTile label="Expired"          value={String(data.expired_memberships)} sub="lifetime total"        tone="neutral" icon={<TrendingUp size={15} />} />
+          <StatTile label="Total collected" value={fmtINR(data.total_collected)} sub="all-time" tone="positive" icon={<IndianRupee size={15} />} />
+          <StatTile label="Outstanding" value={fmtINR(data.total_outstanding)} sub="balance across clients" tone={data.total_outstanding > 0 ? 'critical' : 'positive'} icon={<Receipt size={15} />} />
+          <StatTile label="Active" value={String(data.active_memberships)} sub="current memberships" tone="brand" icon={<Users size={15} />} />
+          <StatTile label="Expired" value={String(data.expired_memberships)} sub="lifetime total" tone="neutral" icon={<TrendingUp size={15} />} />
         </div>
       </Reveal>
 
@@ -332,16 +314,12 @@ function RevenueSection({ id }: { id: string }) {
         <Panel padded={false} className="overflow-hidden">
           <div className="px-4 pt-3.5 pb-2">
             <p className="text-[13px] font-[720]" style={{ color: 'var(--text-primary)' }}>Collected by window</p>
-            <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-              Sum of <code>paid_amount</code> on this studio's clients, filtered
-              by <code>created_at</code>. Distinct from the subscription MRR —
-              this is the PT business only.
-            </p>
+            <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>Sum of <code>paid_amount</code> on this studio's clients, filtered by <code>created_at</code>. Distinct from the subscription MRR — this is the PT business only.</p>
           </div>
           <ul className="space-y-1.5 px-4 pb-4 text-[13px]">
             {[
-              { label: '30 days',  value: data.collected_30d },
-              { label: '90 days',  value: data.collected_90d },
+              { label: '30 days', value: data.collected_30d },
+              { label: '90 days', value: data.collected_90d },
               { label: '365 days', value: data.collected_365d },
             ].map((r, i) => (
               <li key={r.label} className="flex items-center justify-between gap-3" style={{ borderTop: i ? '1px solid var(--border)' : 'none' }}>
