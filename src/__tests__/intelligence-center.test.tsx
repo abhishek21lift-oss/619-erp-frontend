@@ -88,7 +88,9 @@ const mockProposal = {
   created_by: 'system',
   created_at: '2026-08-23T10:00:00Z',
   updated_at: '2026-08-23T10:00:00Z',
-  expires_at: '2026-08-30T10:00:00Z',
+  // Keep the default fixture safely in the future so the suite is not
+  // dependent on the exact wall-clock time when CI happens to run.
+  expires_at: '2026-09-30T10:00:00Z',
 };
 
 const mockPendingQueue = {
@@ -103,7 +105,7 @@ const mockIntelligence = {
   generated_at: '2026-08-23T10:00:00Z',
   what_changed: [{ type: 'pr', text: 'New PR: Bench Press 60kg × 8 on 2026-08-22' }],
   what_ai_knows: [{ category: 'preference', fact: 'Prefers morning training', confidence: 0.85, source_type: 'ai_detected', as_of: '2026-08-20' }],
-  what_ai_suggests: [{ id: 'prop-1', type: 'progress_load', summary: 'Increase bench press', confidence: 0.88, safety_flags: [], expires_at: '2026-08-30T10:00:00Z' }],
+  what_ai_suggests: [{ id: 'prop-1', type: 'progress_load', summary: 'Increase bench press', confidence: 0.88, safety_flags: [], expires_at: '2026-09-30T10:00:00Z' }],
   what_needs_attention: [{ type: 'safety', text: 'No PAR-Q screening on file' }],
   what_is_missing: ['Body composition measurements'],
   next_best_action: { type: 'proposal_review', text: 'Review bench press progression proposal', proposal_id: 'prop-1' },
