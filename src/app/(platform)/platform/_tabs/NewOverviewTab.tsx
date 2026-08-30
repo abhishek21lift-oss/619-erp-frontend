@@ -55,11 +55,14 @@ export function NewOverviewTab() {
   const openAlerts = sec.critical_alerts + sec.high_alerts;
   const renewalDue = subs.filter((s) => s.renewal_due).length;
   const requested = subs.filter((s) => s.requested_at).length;
+  const collected30d = 'collected_30d_inr' in rev && typeof rev.collected_30d_inr === 'number'
+    ? rev.collected_30d_inr
+    : rev.mrr_inr;
 
   const tiles = [
     { label: 'Studios', value: String(biz.total_studios), sub: `${biz.active_studios} active`, tone: 'brand' as const, icon: <Building2 size={15} /> },
     { label: 'Active clients', value: String(biz.active_clients), sub: `${biz.total_clients} total · ${biz.new_clients_30d} new 30d`, tone: 'caution' as const, icon: <Users size={15} /> },
-    { label: 'Collected revenue (30d)', value: fmtINR(rev.collected_30d_inr ?? rev.mrr_inr), sub: `${rev.active_subscriptions} active · ${rev.trial_subscriptions} trial`, tone: 'positive' as const, icon: <TrendingUp size={15} /> },
+    { label: 'Collected revenue (30d)', value: fmtINR(collected30d), sub: `${rev.active_subscriptions} active · ${rev.trial_subscriptions} trial`, tone: 'positive' as const, icon: <TrendingUp size={15} /> },
     { label: 'Failed payments 30d', value: String(ops.failed_payments_30d), sub: `${rev.expiring_in_7d} subs expiring in 7d`, tone: ops.failed_payments_30d > 0 ? 'critical' as const : 'neutral' as const, icon: <CreditCard size={15} /> },
     { label: 'Open alerts', value: String(openAlerts), sub: `${sec.critical_alerts} critical · ${sec.high_alerts} high`, tone: openAlerts > 0 ? 'critical' as const : 'positive' as const, icon: <AlertOctagon size={15} /> },
   ];
