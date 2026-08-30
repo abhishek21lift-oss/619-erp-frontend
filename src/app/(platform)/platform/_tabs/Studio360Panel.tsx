@@ -9,12 +9,47 @@ import { fmtDate, fmtINR, fmtWhen } from '../_shared/format';
 
 type Props = { orgId: string; onBack: () => void };
 type View = 'overview' | 'people' | 'activity' | 'billing';
+type StudioOverview = {
+  id: string;
+  revenue?: number;
+  outstanding?: number;
+  active_clients?: number;
+  total_clients?: number;
+  sessions_this_month?: number;
+  last_login?: string | null;
+};
+type StudioSubscription = {
+  id: string;
+  renewal_due?: boolean;
+  requested_at?: string | null;
+  effective_state?: string | null;
+  plan_name?: string | null;
+  current_period_end?: string | null;
+};
+type StudioUser = { id: string; name?: string; email?: string; role?: string | null; is_active?: boolean };
+type Studio360Data = {
+  org: {
+    name: string;
+    slug: string;
+    status?: string;
+    logo_url?: string | null;
+    user_count?: number;
+    trainer_count?: number;
+    created_at?: string | null;
+    users?: StudioUser[];
+  };
+  ov?: StudioOverview;
+  sub?: StudioSubscription;
+  activity: Array<{ id: string; action?: string; event?: string; description?: string; detail?: string; created_at?: string; createdAt?: string }>;
+  notes?: { internal_notes?: string | null; internal_notes_updated_at?: string | null };
+  billing?: { billing_name?: string | null; billing_gstin?: string | null; billing_email?: string | null };
+};
 
 const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 8px 28px rgba(15,23,42,0.06)' } as const;
 
 export function Studio360Panel({ orgId, onBack }: Props) {
   const [view, setView] = useState<View>('overview');
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<Studio360Data | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -30,8 +65,8 @@ export function Studio360Panel({ orgId, onBack }: Props) {
       api.superAdmin.orgBillingProfile(orgId),
     ]).then(([detail, overview, subscriptions, activity, notes, billing]) => {
       if (!alive) return;
-      const ov = (overview.data?.studios ?? []).find((s: any) => s.id === orgId);
-      const sub = (subscriptions.data?.studios ?? []).find((s: any) => s.id === orgId);
+      const ov = (overview.data?.studios ?? []).find((s: StudioOverview) => s.id === orgId);
+      const sub = (subscriptions.data?.studios ?? []).find((s: StudioSubscription) => s.id === orgId);
       setData({ org: detail.data, ov, sub, activity: activity.data ?? [], notes: notes.data, billing: billing.data });
     }).catch((e) => {
       if (alive) setError(e instanceof Error ? e.message : 'Could not load Studio 360');
@@ -117,9 +152,9 @@ export function Studio360Panel({ orgId, onBack }: Props) {
         <section className="rounded-[18px] p-5" style={cardStyle}><h3 className="text-[15px] font-[800]">Operator notes</h3><p className="mt-3 whitespace-pre-wrap text-[12px] leading-5" style={{ color: notes.internal_notes ? 'var(--text-secondary)' : 'var(--text-disabled)' }}>{notes.internal_notes || 'No internal notes recorded.'}</p>{notes.internal_notes_updated_at && <p className="mt-3 text-[10.5px]" style={{ color: 'var(--text-disabled)' }}>Updated {fmtWhen(notes.internal_notes_updated_at)}</p>}</section>
       </div>}
 
-      {view === 'people' && <section className="overflow-hidden rounded-[18px]" style={cardStyle}><div className="p-5"><h3 className="text-[15px] font-[800]">Studio accounts</h3><p className="mt-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{users.length} accounts attached to this studio</p></div>{users.length === 0 ? <div className="border-t p-5 text-[12px]" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>No accounts.</div> : users.map((u: any) => <div key={u.id} className="flex flex-wrap items-center gap-3 border-t px-5 py-3.5" style={{ borderColor: 'var(--border)' }}><div className="min-w-0 flex-1"><p className="truncate text-[12.5px] font-[750]">{u.name}</p><p className="truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>{u.email} · {roleLabel(u.role)}</p></div><span className="rounded-full px-2.5 py-1 text-[10px] font-[700]" style={{ background: u.is_active ? 'rgba(16,185,129,0.10)' : 'rgba(239,68,68,0.10)', color: u.is_active ? '#059669' : '#dc2626' }}>{u.is_active ? 'active' : 'disabled'}</span></div>)}</section>}
+      {view === 'people' && <section className="overflow-hidden rounded-[18px]" style={cardStyle}><div className="p-5"><h3 className="text-[15px] font-[800]">Studio accounts</h3><p className="mt-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{users.length} accounts attached to this studio</p></div>{users.length === 0 ? <div className="border-t p-5 text-[12px]" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>No accounts.</div> : users.map((u) => <div key={u.id} className="flex flex-wrap items-center gap-3 border-t px-5 py-3.5" style={{ borderColor: 'var(--border)' }}><div className="min-w-0 flex-1"><p className="truncate text-[12.5px] font-[750]">{u.name}</p><p className="truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>{u.email} · {roleLabel(u.role)}</p></div><span className="rounded-full px-2.5 py-1 text-[10px] font-[700]" style={{ background: u.is_active ? 'rgba(16,185,129,0.10)' : 'rgba(239,68,68,0.10)', color: u.is_active ? '#059669' : '#dc2626' }}>{u.is_active ? 'active' : 'disabled'}</span></div>)}</section>}
 
-      {view === 'activity' && <section className="overflow-hidden rounded-[18px]" style={cardStyle}><div className="p-5"><h3 className="text-[15px] font-[800]">Recent activity</h3></div>{data.activity.length === 0 ? <div className="border-t p-5 text-[12px]" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>No recent activity.</div> : data.activity.map((a: any) => <div key={a.id} className="border-t px-5 py-3.5" style={{ borderColor: 'var(--border)' }}><p className="text-[12px] font-[700]">{a.action || a.event || 'Activity'}</p><p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>{a.description || a.detail || ''} · {fmtWhen(a.created_at || a.createdAt)}</p></div>)}</section>}
+      {view === 'activity' && <section className="overflow-hidden rounded-[18px]" style={cardStyle}><div className="p-5"><h3 className="text-[15px] font-[800]">Recent activity</h3></div>{data.activity.length === 0 ? <div className="border-t p-5 text-[12px]" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>No recent activity.</div> : data.activity.map((a) => <div key={a.id} className="border-t px-5 py-3.5" style={{ borderColor: 'var(--border)' }}><p className="text-[12px] font-[700]">{a.action || a.event || 'Activity'}</p><p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>{a.description || a.detail || ''} · {fmtWhen(a.created_at || a.createdAt)}</p></div>)}</section>}
 
       {view === 'billing' && <div className="grid grid-cols-1 gap-4 lg:grid-cols-2"><section className="rounded-[18px] p-5" style={cardStyle}><h3 className="text-[15px] font-[800]">Subscription</h3><div className="mt-4 space-y-3 text-[12px]" style={{ color: 'var(--text-secondary)' }}><div className="flex justify-between"><span>Plan</span><b>{sub?.plan_name || 'No plan'}</b></div><div className="flex justify-between"><span>State</span><b>{sub?.effective_state || 'none'}</b></div><div className="flex justify-between"><span>Renewal due</span><b>{sub?.renewal_due ? 'Yes' : 'No'}</b></div><div className="flex justify-between"><span>Ends</span><b>{sub?.current_period_end ? fmtDate(sub.current_period_end) : '—'}</b></div></div></section><section className="rounded-[18px] p-5" style={cardStyle}><h3 className="text-[15px] font-[800]">Billing identity</h3><div className="mt-4 space-y-3 text-[12px]" style={{ color: 'var(--text-secondary)' }}><div><span className="block text-[10px] font-[700] uppercase" style={{ color: 'var(--text-disabled)' }}>Registered name</span>{billing.billing_name || '—'}</div><div><span className="block text-[10px] font-[700] uppercase" style={{ color: 'var(--text-disabled)' }}>GSTIN</span>{billing.billing_gstin || '—'}</div><div><span className="block text-[10px] font-[700] uppercase" style={{ color: 'var(--text-disabled)' }}>Billing email</span>{billing.billing_email || '—'}</div></div></section></div>}
     </div>
