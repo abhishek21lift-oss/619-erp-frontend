@@ -1,40 +1,9 @@
 'use client';
 
 // The Command Center's application shell.
-//
-// ── Why this exists at all ──────────────────────────────────────────────────
-//
-// It did not, and that was the bug. (platform)/layout.tsx rendered
-// `<div id="main-content">{children}</div>` — no container, no gutters, no
-// navigation — so the page had to declare its own, and did so like this:
-//
-//     mx-auto w-full max-w-5xl pt-6 pb-[…] sm:pt-8 lg:pb-10
-//
-// Vertical padding only. No `px-*` anywhere. Below max-w-5xl (1024px) every
-// card, table and chart sat flush against both viewport edges, which is most
-// of what "it doesn't feel like a control center" was describing. On a phone
-// the content was literally touching the glass.
-//
-// The fix is not margins on cards. It is that the shell owns the container, so
-// every console page gets the same gutters without asking, and a page added
-// tomorrow cannot get them wrong by omission.
-//
-// ── Navigation lives here, and is URL-driven ────────────────────────────────
-//
-// The tab used to be `useState` inside page.tsx, synced FROM the query string
-// but never TO it — so clicking a tab changed the screen and not the address,
-// and no console view was linkable. A sidebar in the layout cannot share that
-// state anyway (different component trees), so making `?tab=` the single
-// source of truth solves both problems with one change: the shell renders
-// links, the page reads the query, and the back button works.
-//
-// ── The two navigations are different shapes on purpose ─────────────────────
-//
-// Desktop gets a persistent sidebar: eight modules, always visible, so the
-// operator's mental map of the platform is on screen rather than recalled.
-// Mobile gets a bottom bar of the five most-used modules plus More, because a
-// 256px sidebar on a 390px screen is either a drawer nobody opens or a
-// squeezed row of unreadable labels. Every module stays reachable in both.
+// Navigation, URL state, mobile navigation and the modal More sheet stay
+// unchanged; the shell owns the premium platform topbar so every section gets
+// the same operator chrome.
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -58,40 +27,13 @@ const MODULE_ICON: Record<ModuleId, React.ReactNode> = {
   control: <ToggleRight size={17} />,
 };
 
-/**
- * The five modules the bottom bar shows directly; the rest live under More.
- *
- * Chosen by how often an operator opens them, not by the order of MODULES —
- * five is what fits a 390px screen with a readable label under each icon, and
- * a sixth turns them into initials.
- */
 const MOBILE_PRIMARY: ModuleId[] = ['overview', 'studios', 'users', 'revenue', 'operations'];
 
-/** `/platform?tab=…`, the one place the console's URLs are built. */
 function hrefFor(tab: Tab): string {
   return tab === 'overview' ? '/platform' : `/platform?tab=${tab}`;
 }
 
-/**
- * The content container.
- *
- * Gutters step 16 → 24 → 32px and then the width caps, so on a wide monitor
- * the console is a centred column rather than a line of text a metre wide.
- * 1440 rather than something narrower because this is a data-dense control
- * surface — tables want the room, and max-w-5xl (1024) was cramping them on
- * exactly the screens an operator uses.
- */
-// Gutters in PIXELS, not Tailwind's rem scale.
-//
-// This app sets a 14px root font size, so `px-4 sm:px-6 lg:px-8` measured
-// 14/21/28px rather than the intended 16/24/32 — every value quietly 12.5%
-// short, which is exactly the kind of drift that makes a layout feel slightly
-// wrong without anything looking obviously broken. Explicit px is immune to
-// the root size, and these three numbers are the layout contract.
 const CONTAINER = 'mx-auto w-full max-w-[1440px] px-[16px] sm:px-[24px] lg:px-[32px]';
-
-/** Sidebar width. In px for the same reason, and used by BOTH the aside and
- *  the content offset so they cannot drift apart. */
 const SIDEBAR_W = 256;
 
 function SidebarLink({ id, active }: { id: ModuleId; active: boolean }) {
@@ -104,9 +46,6 @@ function SidebarLink({ id, active }: { id: ModuleId; active: boolean }) {
       style={{
         background: active ? 'var(--brand-soft, rgba(0,103,224,0.10))' : 'transparent',
         color: active ? '#0067E0' : 'var(--text-muted)',
-        // The active row carries a left rule as well as a fill: on a dark
-        // theme the fill alone is nearly invisible, and "which section am I in"
-        // is the one question a sidebar exists to answer.
         boxShadow: active ? 'inset 2px 0 0 0 #0067E0' : 'none',
       }}
     >
@@ -122,31 +61,21 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
   const tab = normalizeTab(sp.get('tab'));
   const active = moduleForTab(tab);
   const [moreOpen, setMoreOpen] = useState(false);
-  // The More sheet is a modal menu: it declares aria-modal and covers the
-  // screen, but had no Escape handler and no focus management, so a keyboard
-  // operator could open it and then tab through the console behind it.
   const moreRef = useDialogA11y({ open: moreOpen, onClose: () => setMoreOpen(false) });
 
-  // Close the sheet on navigation. Without this it stays open over the page it
-  // just navigated to, which reads as the tap not having worked.
   useEffect(() => { setMoreOpen(false); }, [pathname, tab]);
 
   const overflow = MODULES.filter((m) => !MOBILE_PRIMARY.includes(m.id));
+  const activeModule = MODULES.find((m) => m.id === active);
+  const activeLabel = activeModule?.label ?? 'Overview';
+  const activeTabLabel = TAB_LABELS[tab] ?? activeLabel;
 
   return (
     <div className="min-h-[100dvh]" style={{ background: 'var(--bg-canvas)' }}>
-      {/* The offset is a media-query-scoped custom property rather than a
-          Tailwind class, because the value comes from SIDEBAR_W and Tailwind
-          cannot read a JS constant. One declaration, both breakpoints. */}
       <style>{`@media (min-width: 1024px) { .cc-content { --cc-sidebar-offset: ${SIDEBAR_W}px; } }`}</style>
-      {/* ── Desktop sidebar ────────────────────────────────────────────────
-          Fixed, so it does not scroll away from a long table, and the content
-          column is offset by exactly its width — never overlapped. */}
+
       <aside
         className="fixed inset-y-0 left-0 z-30 hidden flex-col lg:flex"
-        // Dragging inside a fixed overlay must not pull-to-refresh the page
-        // underneath it. pull-refresh-optout.test.ts holds this for every
-        // floating surface in the app.
         data-no-pull-refresh
         style={{
           width: SIDEBAR_W,
@@ -181,65 +110,94 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
         </nav>
       </aside>
 
-      {/* ── Content column ─────────────────────────────────────────────────
-          lg:pl-64 matches the sidebar width exactly. This is the only place
-          the two are related, so they cannot drift apart. */}
-      {/* The offset is the sidebar's width, read from the same constant, so a
-          change to one cannot leave the content overlapped by the other. */}
       <div style={{ paddingLeft: 'var(--cc-sidebar-offset, 0px)' }} className="cc-content">
-        {/* Top bar. Sticky rather than fixed: it participates in the layout, so
-            nothing needs a magic top offset to clear it. Its inner row uses the
-            same CONTAINER as the page below, which is what makes the logo, the
-            page heading and the first card share one left edge. */}
+        {/* Premium platform topbar. This is shell chrome, so it remains stable
+            while every Command Center page changes underneath it. */}
         <header
           className="sticky top-0 z-20"
           style={{
-            background: 'var(--bg-elevated)',
+            background: 'linear-gradient(180deg, color-mix(in srgb, var(--bg-elevated) 94%, #0067E0 6%) 0%, color-mix(in srgb, var(--bg-elevated) 98%, white 2%) 100%)',
             borderBottom: '1px solid var(--border)',
-            // The notch. Padding rather than margin so the bar's background
-            // extends INTO the inset instead of leaving a transparent strip.
             paddingTop: 'env(safe-area-inset-top, 0px)',
-            backdropFilter: 'blur(12px)',
+            backdropFilter: 'blur(18px) saturate(150%)',
+            boxShadow: '0 8px 28px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255,255,255,0.55)',
           }}
         >
           <div className={CONTAINER}>
-            <div className="flex items-center justify-between gap-3" style={{ height: 60 }}>
-              <div className="flex min-w-0 items-center gap-2.5">
-                {/* The wordmark is the sidebar's job on desktop; showing it in
-                    both places wastes the row's only wide slot. */}
-                <div className="lg:hidden">
-                  <div className="text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>
-                    Command Center
-                  </div>
-                  <div className="text-[10.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
-                    {MODULES.find((m) => m.id === active)?.label}
-                  </div>
+            <div className="relative flex items-center justify-between gap-3" style={{ minHeight: 68 }}>
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -left-8 -top-12 h-28 w-28 rounded-full"
+                style={{ background: 'radial-gradient(circle, #0067E0 0%, transparent 70%)', opacity: 0.10, filter: 'blur(22px)' }}
+              />
+
+              <div className="relative flex min-w-0 items-center gap-2.5 sm:gap-3">
+                <div
+                  className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[13px] sm:h-11 sm:w-11 sm:rounded-[14px]"
+                  style={{
+                    background: 'linear-gradient(145deg, #7FB4FF 0%, #0067E0 48%, #0053B8 100%)',
+                    color: '#fff',
+                    boxShadow: '0 7px 18px rgba(0,103,224,0.28), inset 0 1px 0 rgba(255,255,255,0.35)',
+                  }}
+                >
+                  <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.28), transparent 58%)' }} />
+                  <LayoutDashboard size={19} className="relative sm:h-5 sm:w-5" />
                 </div>
-                <div className="hidden min-w-0 lg:block">
-                  <div className="truncate text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>
-                    {MODULES.find((m) => m.id === active)?.label}
+
+                <div className="min-w-0">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span
+                      className="truncate text-[15px] font-[850] tracking-[-0.02em] sm:text-[17px]"
+                      style={{
+                        backgroundImage: 'linear-gradient(90deg, var(--text-primary) 0%, color-mix(in srgb, var(--brand) 68%, var(--text-primary)) 100%)',
+                        WebkitBackgroundClip: 'text',
+                        backgroundClip: 'text',
+                        color: 'transparent',
+                      }}
+                    >
+                      Command Center
+                    </span>
+                    <span
+                      className="hidden items-center gap-1.5 rounded-full px-2 py-1 text-[9px] font-[800] uppercase tracking-[0.08em] sm:inline-flex"
+                      style={{
+                        color: '#059669',
+                        background: 'rgba(16,185,129,0.10)',
+                        border: '1px solid rgba(16,185,129,0.18)',
+                      }}
+                    >
+                      <span className="relative flex h-1.5 w-1.5"><span className="absolute h-full w-full animate-ping rounded-full bg-emerald-500 opacity-50" /><span className="relative h-1.5 w-1.5 rounded-full bg-emerald-500" /></span>
+                      Live
+                    </span>
                   </div>
-                  <div className="truncate text-[10.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
-                    {TAB_LABELS[tab]}
+                  <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[10.5px] font-[650] sm:text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                    <span className="truncate">{activeLabel}</span>
+                    <span aria-hidden>•</span>
+                    <span className="truncate">{activeTabLabel}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Reserved for the page's own actions. The command bar lives in
-                  page.tsx because it needs the page's navigation callback; this
-                  slot exists so it has somewhere aligned to sit. */}
-              <div id="platform-topbar-actions" className="flex shrink-0 items-center gap-2" />
+              <div className="relative flex shrink-0 items-center gap-2">
+                <div
+                  className="hidden items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[10px] font-[750] md:flex"
+                  style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
+                >
+                  <Activity size={12} />
+                  <span>Platform</span>
+                </div>
+                <div
+                  className="flex items-center rounded-[11px] px-2.5 py-2 text-[10px] font-[750] sm:px-3"
+                  style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-muted)', boxShadow: '0 3px 10px rgba(15,23,42,0.05)' }}
+                  aria-label="Current section"
+                >
+                  <span className="hidden sm:inline">{activeLabel}</span>
+                  <span className="sm:hidden">{activeTabLabel}</span>
+                </div>
+              </div>
             </div>
           </div>
         </header>
 
-        {/* The page. Same container as the top bar, so every section on every
-            console page shares one left and right edge.
-
-            Bottom padding clears the mobile bar and the home indicator, and
-            drops to a normal gap at lg where that bar is hidden. The old value
-            cleared the STUDIO app's bottom nav, which this portal does not
-            render at all — left over from when /platform lived in (chrome). */}
         <main
           id="main-content"
           className={`${CONTAINER} pt-5 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pt-6 lg:pb-12`}
@@ -248,9 +206,6 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
         </main>
       </div>
 
-      {/* ── Mobile bottom navigation ───────────────────────────────────────
-          Five modules plus More. Fixed, thumb-reachable, and every target is
-          at least 44px tall before the safe-area padding is added. */}
       <nav
         className="fixed inset-x-0 bottom-0 z-30 lg:hidden"
         aria-label="Command Center sections"
@@ -286,8 +241,6 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
             className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2"
             style={{
               minHeight: 52,
-              // More is highlighted when the section you are in lives inside
-              // it, so the bar never shows nothing selected.
               color: overflow.some((m) => m.id === active) ? '#0067E0' : 'var(--text-muted)',
             }}
           >
@@ -297,8 +250,6 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
         </div>
       </nav>
 
-      {/* The More sheet. A sheet rather than a full-screen page so the context
-          behind it stays visible — it is a menu, not a destination. */}
       {moreOpen && (
         <div
           ref={moreRef}
@@ -359,7 +310,3 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
     </div>
   );
 }
-
-/** Exported for tests: the container's classes are the layout contract. */
-export const PLATFORM_CONTAINER = CONTAINER;
-export { MOBILE_PRIMARY };
