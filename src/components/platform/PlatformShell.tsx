@@ -30,7 +30,7 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
   const overflow = MODULES.filter((m) => !MOBILE_PRIMARY.includes(m.id)); const activeModule = MODULES.find((m) => m.id === active);
   const activeLabel = activeModule?.label ?? 'Overview'; const activeTabLabel = TAB_LABELS[tab] ?? activeLabel;
   return <div className="min-h-[100dvh]" style={{ background: 'var(--bg-canvas)' }}>
-    <style>{`@media (min-width: 1024px) { .cc-content { --cc-sidebar-offset: ${SIDEBAR_W}px; } }`}</style>
+    <style>{`@media (min-width: 1024px) { .cc-content { --cc-sidebar-offset: ${SIDEBAR_W}px; } }\n      #main-content > .relative > div:first-child { display: none !important; }`}</style>
     <aside className="fixed inset-y-0 left-0 z-30 hidden flex-col lg:flex" data-no-pull-refresh style={{ width: SIDEBAR_W, background: 'var(--bg-elevated)', borderRight: '1px solid var(--border)' }}>
       <div className="flex items-center gap-2.5 px-5" style={{ height: 64, borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center justify-center rounded-[9px]" style={{ width: 30, height: 30, background: '#0067E0', color: '#fff' }}><LayoutDashboard size={16} /></div>
