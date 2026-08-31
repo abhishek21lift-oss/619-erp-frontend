@@ -15,7 +15,7 @@ import { TONE } from '@/components/platform/command-center-utils';
 const sectionStyle: React.CSSProperties = {
   border: '1px solid var(--border)',
   background: 'color-mix(in srgb, var(--surface) 88%, transparent)',
-  borderRadius: 22,
+  borderRadius: 20,
   boxShadow: '0 18px 60px rgba(15, 23, 42, 0.06)',
 };
 
@@ -164,15 +164,15 @@ export const CommandCenterRoot: React.FC = () => {
 
       {/* Risk first: alerts and Guardian form the operator's decision layer. */}
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(360px,0.82fr)]">
-        <div className="min-w-0 rounded-[22px] p-1" style={sectionStyle}>
+        <div className="min-w-0 rounded-[20px] p-1" style={sectionStyle}>
           <AlertCenter onChanged={() => refresh()} />
         </div>
-        <div className="min-w-0 rounded-[22px] p-1" style={sectionStyle}>
+        <div className="min-w-0 rounded-[20px] p-1" style={sectionStyle}>
           <Guardian />
         </div>
       </section>
 
-      <section className="rounded-[22px] p-1" style={sectionStyle}>
+      <section className="rounded-[20px] p-1" style={sectionStyle}>
         <div className="flex items-center gap-2 px-4 pt-4 sm:px-5">
           <Sparkles size={14} style={{ color: 'var(--text-tertiary)' }} />
           <div>
@@ -186,14 +186,14 @@ export const CommandCenterRoot: React.FC = () => {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
-        <div className="min-w-0 rounded-[22px] p-1" style={sectionStyle}>
+        <div className="min-w-0 rounded-[20px] p-1" style={sectionStyle}>
           <div className="px-4 pt-4 sm:px-5">
             <p style={eyebrowStyle}>Production controls</p>
             <h2 className="mt-0.5 text-[16px] font-[800]" style={{ color: 'var(--text-primary)' }}>Operations</h2>
           </div>
           <div className="pt-2"><CommandPanel onRan={() => refresh()} /></div>
         </div>
-        <div className="min-w-0 rounded-[22px] p-1" style={sectionStyle}>
+        <div className="min-w-0 rounded-[20px] p-1" style={sectionStyle}>
           <div className="px-4 pt-4 sm:px-5">
             <p style={eyebrowStyle}>Observability</p>
             <h2 className="mt-0.5 text-[16px] font-[800]" style={{ color: 'var(--text-primary)' }}>Live system stream</h2>
