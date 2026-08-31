@@ -65,7 +65,7 @@ export function NewOverviewTab() {
 
   const cards = [
     { label: 'Studios', value: String(biz.total_studios), sub: `${biz.active_studios} active`, tone: 'brand', icon: <Building2 size={18} />, action: () => router.push('/platform?tab=studios') },
-    { label: 'Active clients', value: String(biz.active_clients), sub: `${biz.total_clients} total · ${biz.new_clients_30d} new 30d`, tone: 'caution', icon: <Users size={18} /> },
+    { label: 'Active clients', value: String(biz.active_clients), sub: `${biz.total_clients} total · ${biz.new_clients_30d} new 30d`, tone: 'caution', icon: <Users size={18} />, action: undefined },
     { label: 'Collected revenue', value: fmtINR(collected30d), sub: `last 30 days · ${rev.active_subscriptions} active`, tone: 'positive', icon: <TrendingUp size={18} />, action: () => router.push('/platform?tab=finance&sub=payments') },
     { label: 'Failed payments', value: String(ops.failed_payments_30d), sub: `${rev.expiring_in_7d} subscriptions expiring in 7d`, tone: ops.failed_payments_30d > 0 ? 'critical' : 'neutral', icon: <CreditCard size={18} />, action: () => router.push('/platform?tab=finance&sub=payments') },
   ] as const;
@@ -76,7 +76,7 @@ export function NewOverviewTab() {
   return (
     <div className="space-y-6 pb-6 sm:space-y-7">
       <Reveal delay={0.02}>
-        <section className="relative overflow-hidden rounded-[24px] border px-4 py-4 sm:px-6 sm:py-5" style={{ borderColor: platformHealthy ? 'color-mix(in srgb, var(--success) 24%, var(--border))' : 'color-mix(in srgb, var(--danger) 26%, var(--border))', background: platformHealthy ? 'linear-gradient(135deg, color-mix(in srgb, var(--success) 8%, var(--bg-elevated)) 0%, color-mix(in srgb, var(--brand) 5%, var(--bg-elevated)) 48%, var(--bg-elevated) 100%)' : 'linear-gradient(135deg, color-mix(in srgb, var(--danger) 8%, var(--bg-elevated)) 0%, color-mix(in srgb, var(--warning) 5%, var(--bg-elevated)) 52%, var(--bg-elevated) 100%)', boxShadow: 'var(--shadow-card), inset 0 1px 0 rgba(255,255,255,0.35)' }}>
+        <section className="relative overflow-hidden rounded-[22px] border px-4 py-4 sm:px-6 sm:py-5" style={{ borderColor: platformHealthy ? 'color-mix(in srgb, var(--success) 24%, var(--border))' : 'color-mix(in srgb, var(--danger) 26%, var(--border))', background: platformHealthy ? 'linear-gradient(135deg, color-mix(in srgb, var(--success) 8%, var(--bg-elevated)) 0%, color-mix(in srgb, var(--brand) 5%, var(--bg-elevated)) 48%, var(--bg-elevated) 100%)' : 'linear-gradient(135deg, color-mix(in srgb, var(--danger) 8%, var(--bg-elevated)) 0%, color-mix(in srgb, var(--warning) 5%, var(--bg-elevated)) 52%, var(--bg-elevated) 100%)', boxShadow: 'var(--shadow-card), inset 0 1px 0 rgba(255,255,255,0.35)' }}>
           <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full" style={{ background: `radial-gradient(circle, ${platformHealthy ? 'var(--brand)' : 'var(--danger)'} 0%, transparent 68%)`, opacity: 0.12, filter: 'blur(26px)' }} />
           <div aria-hidden className="pointer-events-none absolute -bottom-20 left-[22%] h-36 w-36 rounded-full" style={{ background: `radial-gradient(circle, ${platformHealthy ? 'var(--success)' : 'var(--warning)'} 0%, transparent 70%)`, opacity: 0.10, filter: 'blur(24px)' }} />
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
