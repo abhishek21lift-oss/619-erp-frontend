@@ -6,15 +6,17 @@ import { useRouter } from 'next/navigation';
 import {
   Activity, ArrowUpRight, BarChart3, Bot, Boxes, BrainCircuit, CheckCircle2,
   CircleAlert, Database, Gauge, GitBranch, HeartPulse, KeyRound, Layers3,
-  LineChart, LockKeyhole, MessageSquare, Mic2, Network, PlayCircle, RefreshCw,
+  LineChart, LockKeyhole, MessageSquare, Network, PlayCircle, RefreshCw,
   ServerCog, ShieldCheck, Sparkles, TerminalSquare, Timer, Users2, Volume2,
   WandSparkles, Workflow, Zap,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { palette } from '@/lib/palette';
 
 const C = {
-  blue: '#2563eb', cyan: '#06b6d4', violet: '#7c3aed', emerald: '#10b981',
-  amber: '#f59e0b', rose: '#f43f5e', slate: '#64748b', indigo: '#4f46e5',
+  blue: palette.blue[500], cyan: palette.blue[300], violet: palette.blue[700],
+  emerald: palette.emerald[500], amber: palette.amber[500], rose: palette.red[500],
+  slate: palette.gray[500], indigo: palette.blue[600],
 };
 
 const fmt = (n: number) => n >= 1e9 ? `${(n / 1e9).toFixed(2)}B` : n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : Math.round(n).toLocaleString('en-IN');
@@ -74,7 +76,11 @@ export default function Phase2CommandCenterOverview() {
       ['support', () => api.superAdmin.supportOverview()],
     ] as const;
     const results = await Promise.allSettled(jobs.map(([, fn]) => fn())); const next: any = {};
-    results.forEach((r, i) => { if (r.status === 'fulfilled') next[jobs[i][0]] = r.value?.data ?? r.value; });
+    results.forEach((r, i) => {
+      if (r.status !== 'fulfilled') return;
+      const value = r.value;
+      next[jobs[i][0]] = value && typeof value === 'object' && 'data' in value ? value.data : value;
+    });
     setD(next);
     if (!next.snapshot && !next.ai) setError('Command Center telemetry is temporarily unavailable.');
     setLoading(false); setRefreshing(false);
@@ -85,7 +91,7 @@ export default function Phase2CommandCenterOverview() {
   const counts = cards.reduce((a: any, c: any) => { a[c.status] = (a[c.status] ?? 0) + 1; return a; }, {});
   const healthy = counts.healthy ?? 0; const warning = (counts.warning ?? 0) + (counts.timeout ?? 0); const critical = counts.critical ?? 0;
   const ai = d.ai ?? {}; const models = Array.isArray(d.models) ? d.models : []; const studios = Array.isArray(d.studios) ? d.studios : []; const trend = Array.isArray(d.trend) ? d.trend : [];
-  const modelBars = useMemo(() => models.slice(0, 8).map((m: any) => ({ label: String(m.model ?? 'unknown').split('/').pop().slice(0, 22), value: Number(m.requests ?? 0) })), [models]);
+  const modelBars = useMemo(() => models.slice(0, 8).map((m: any) => ({ label: String(m.model ?? 'unknown').split('/').pop()?.slice(0, 22) ?? 'unknown', value: Number(m.requests ?? 0) })), [models]);
   const studioBars = useMemo(() => studios.slice(0, 7).map((s: any) => ({ label: String(s.organization_name ?? 'Unknown').slice(0, 20), value: Number(s.tokens ?? 0) })), [studios]);
   const tokenSeries = useMemo(() => trend.map((x: any) => Number(x.tokens ?? 0)), [trend]);
   const fallback = Number(ai.fallback_pct ?? 0); const requests = Number(ai.requests ?? 0); const tokens = Number(ai.tokens ?? 0);
