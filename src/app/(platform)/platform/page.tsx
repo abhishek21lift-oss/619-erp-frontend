@@ -24,9 +24,8 @@ import { FINANCE_DEEP_LINKS, MODULES, TAB_LABELS, moduleForTab, normalizeTab } f
 import type { FinanceSubTab, NavOpts, Tab } from './_shared/types';
 import { ActivityTab } from './_tabs/ActivityTab';
 import { FinanceTab } from './_tabs/FinanceTab';
-import PremiumCommandCenterOverview from '@/components/platform/PremiumCommandCenterOverview';
+import PremiumCommandCenterOverviewFixed from '@/components/platform/PremiumCommandCenterOverviewFixed';
 import { StudiosTab } from './_tabs/StudiosTab';
-import { NewOverviewTab } from './_tabs/NewOverviewTab';
 import { UsersTab } from './_tabs/UsersTab';
 import RegistrationsTab from './_tabs/RegistrationsTab';
 
@@ -130,7 +129,7 @@ function PlatformContent() {
         )}
 
         <div key={tab}>
-          {tab === 'overview' && <PremiumCommandCenterOverview />}
+          {tab === 'overview' && <PremiumCommandCenterOverviewFixed />}
           {tab === 'registrations' && <RegistrationsTab />}
           {tab === 'studios' && <StudiosTab />}
           {tab === 'users' && <UsersTab />}
