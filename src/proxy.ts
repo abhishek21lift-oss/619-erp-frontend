@@ -138,19 +138,12 @@ export async function proxy(req: NextRequest) {
     }
   }
 
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3 || !parts.every(s => s.length > 0)) throw new Error('malformed');
-    const padded = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const payload = JSON.parse(atob(padded)) as { exp?: number };
-    if (payload.exp && Date.now() / 1000 > payload.exp) {
-      return redirectToLogin(req, true);
-    }
-  } catch {
-    return redirectToLogin(req, true);
-  }
-
-  return withReportOnlyCsp(req);
+  // JWT_SECRET is not set — refuse authentication rather than falling back to
+  // expiry-only validation. The fallback decoded the payload without verifying
+  // the signature, so a tampered token with a future expiry would pass.
+  // The real auth is the backend cookie anyway; this proxy runs before the
+  // Next.js rewrite, so nothing is lost by requiring a valid JWT_SECRET.
+  return redirectToLogin(req, true);
 }
 
 export const config = {
