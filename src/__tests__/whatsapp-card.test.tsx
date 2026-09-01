@@ -103,7 +103,7 @@ describe('the risk disclosure', () => {
     render(<WhatsAppCard />);
 
     await click(await screen.findByRole('button', { name: /connect whatsapp/i }));
-    await click(screen.getByRole('button', { name: /i understand/i }));
+    await click(await screen.findByRole('button', { name: /i understand/i }));
 
     await waitFor(() => expect(connect).toHaveBeenCalledTimes(1));
   });
@@ -112,7 +112,7 @@ describe('the risk disclosure', () => {
     render(<WhatsAppCard />);
 
     await click(await screen.findByRole('button', { name: /connect whatsapp/i }));
-    await click(screen.getByRole('button', { name: /^cancel$/i }));
+    await click(await screen.findByRole('button', { name: /^cancel$/i }));
 
     expect(connect).not.toHaveBeenCalled();
     expect(screen.queryByText(/before you connect/i)).not.toBeInTheDocument();
@@ -120,10 +120,21 @@ describe('the risk disclosure', () => {
 });
 
 describe('pairing', () => {
+  // `getByRole` right after the click that opens it was the fragile version:
+  // the risk modal mounts through a plain `{modal === 'risk' && …}` — no
+  // Suspense, no lazy import — but it is also wrapped in AnimatePresence and
+  // rendered inside `Overlay`, whose useDialogA11y hook does its own
+  // ref/focus-trap setup on mount. None of that should defer the DOM update
+  // past the `act()` the click helper already wraps it in — but CI caught
+  // exactly one flake here (this file: 18/18 locally, isolated and as part of
+  // the full suite, every time) and it is cheap to stop assuming zero ticks
+  // rather than chase a race that reproduces on CI's runner and not here.
+  // `findByRole` verifies the identical thing; it only stops insisting the
+  // element exists on the very next microtask.
   async function openPairing(): Promise<void> {
     render(<WhatsAppCard />);
     await click(await screen.findByRole('button', { name: /connect whatsapp/i }));
-    await click(screen.getByRole('button', { name: /i understand/i }));
+    await click(await screen.findByRole('button', { name: /i understand/i }));
   }
 
   it('renders the QR as an inline SVG built from the raw string', async () => {
@@ -228,7 +239,7 @@ describe('unlink is separated from disconnect', () => {
     render(<WhatsAppCard />);
 
     await click(await screen.findByRole('button', { name: /unlink this number/i }));
-    await click(screen.getByRole('button', { name: /keep it connected/i }));
+    await click(await screen.findByRole('button', { name: /keep it connected/i }));
 
     expect(unlink).not.toHaveBeenCalled();
   });
@@ -237,7 +248,7 @@ describe('unlink is separated from disconnect', () => {
     render(<WhatsAppCard />);
 
     await click(await screen.findByRole('button', { name: /unlink this number/i }));
-    await click(screen.getByRole('button', { name: /^unlink$/i }));
+    await click(await screen.findByRole('button', { name: /^unlink$/i }));
 
     await waitFor(() => expect(unlink).toHaveBeenCalledTimes(1));
   });
