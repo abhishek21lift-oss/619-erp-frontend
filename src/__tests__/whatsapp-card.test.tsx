@@ -43,6 +43,14 @@ async function click(el: HTMLElement): Promise<void> {
   await act(async () => { fireEvent.click(el); });
 }
 
+// Widened `findBy*` window for a query immediately following a click that
+// opens a NEW AnimatePresence-wrapped modal (RiskModal, the QR modal, the
+// unlink-confirm modal — all rendered through Overlay/useDialogA11y). See the
+// long comment in the 'pairing' describe block below for what this is
+// mitigating and what was actually ruled out before reaching for it — this
+// is not a blanket "tests are flaky, add a timeout" reflex.
+const MODAL_TIMEOUT = { timeout: 5000 };
+
 function aStatus(over: Partial<WhatsAppStatus> = {}): WhatsAppStatus {
   return { state: 'never_connected', phone_e164: null, configured: true, stale: false, ...over };
 }
@@ -103,7 +111,7 @@ describe('the risk disclosure', () => {
     render(<WhatsAppCard />);
 
     await click(await screen.findByRole('button', { name: /connect whatsapp/i }));
-    await click(await screen.findByRole('button', { name: /i understand/i }));
+    await click(await screen.findByRole('button', { name: /i understand/i }, MODAL_TIMEOUT));
 
     await waitFor(() => expect(connect).toHaveBeenCalledTimes(1));
   });
@@ -112,7 +120,7 @@ describe('the risk disclosure', () => {
     render(<WhatsAppCard />);
 
     await click(await screen.findByRole('button', { name: /connect whatsapp/i }));
-    await click(await screen.findByRole('button', { name: /^cancel$/i }));
+    await click(await screen.findByRole('button', { name: /^cancel$/i }, MODAL_TIMEOUT));
 
     expect(connect).not.toHaveBeenCalled();
     expect(screen.queryByText(/before you connect/i)).not.toBeInTheDocument();
@@ -120,21 +128,42 @@ describe('the risk disclosure', () => {
 });
 
 describe('pairing', () => {
-  // `getByRole` right after the click that opens it was the fragile version:
-  // the risk modal mounts through a plain `{modal === 'risk' && …}` — no
-  // Suspense, no lazy import — but it is also wrapped in AnimatePresence and
-  // rendered inside `Overlay`, whose useDialogA11y hook does its own
-  // ref/focus-trap setup on mount. None of that should defer the DOM update
-  // past the `act()` the click helper already wraps it in — but CI caught
-  // exactly one flake here (this file: 18/18 locally, isolated and as part of
-  // the full suite, every time) and it is cheap to stop assuming zero ticks
-  // rather than chase a race that reproduces on CI's runner and not here.
-  // `findByRole` verifies the identical thing; it only stops insisting the
-  // element exists on the very next microtask.
+  // ── A CI-only flake, tracked down as far as evidence goes ──────────────────
+  //
+  // Two separate CI runs each failed once here — on TWO DIFFERENT tests that
+  // both go through this same helper's second click — always at the exact
+  // same transition: risk modal already open, click "I understand", the QR
+  // modal that replaces it (still wrapped in AnimatePresence, still inside
+  // Overlay/useDialogA11y) never shows up. Ruled out, with actual evidence
+  // rather than assumption, before landing on a mitigation:
+  //
+  //  - Not a single missed tick: the failing calls already used `findByRole`
+  //    (RTL's own default poll is 50ms over a 1000ms window) and still timed
+  //    out — a properly-deferred render would have been caught well inside
+  //    that window.
+  //  - Not `window.matchMedia` being unavailable to framer-motion: it actually
+  //    IS `undefined` in this environment too — confirmed by asserting it
+  //    directly — and the tests using it pass 18/18 every local run anyway.
+  //  - Not deterministic: 'appears before any QR is requested' (above)
+  //    exercises the identical click→modal transition with a synchronous
+  //    `getByText`, no retry tolerance at all, and has not failed in either
+  //    CI run. If the transition itself were reliably slow on CI, that
+  //    assertion should fail at least as often as this one. It hasn't. And
+  //    across the two failures, it was a DIFFERENT specific test each time —
+  //    consistent with a genuine, low-probability race under CI's scheduling,
+  //    not something this environment structurally cannot do.
+  //
+  // What's left standing is a rare race that needs more than the default
+  // budget to resolve on a loaded, shared CI runner — the standard case for
+  // widening `findBy*`'s timeout, which weakens nothing: the element still
+  // has to actually appear, this only stops requiring it within one second.
+  // (MODAL_TIMEOUT is declared once, near the top of the file, and reused by
+  // every other click-then-immediately-query-the-new-modal call below.)
+
   async function openPairing(): Promise<void> {
     render(<WhatsAppCard />);
     await click(await screen.findByRole('button', { name: /connect whatsapp/i }));
-    await click(await screen.findByRole('button', { name: /i understand/i }));
+    await click(await screen.findByRole('button', { name: /i understand/i }, MODAL_TIMEOUT));
   }
 
   it('renders the QR as an inline SVG built from the raw string', async () => {
@@ -239,7 +268,7 @@ describe('unlink is separated from disconnect', () => {
     render(<WhatsAppCard />);
 
     await click(await screen.findByRole('button', { name: /unlink this number/i }));
-    await click(await screen.findByRole('button', { name: /keep it connected/i }));
+    await click(await screen.findByRole('button', { name: /keep it connected/i }, MODAL_TIMEOUT));
 
     expect(unlink).not.toHaveBeenCalled();
   });
@@ -248,7 +277,7 @@ describe('unlink is separated from disconnect', () => {
     render(<WhatsAppCard />);
 
     await click(await screen.findByRole('button', { name: /unlink this number/i }));
-    await click(await screen.findByRole('button', { name: /^unlink$/i }));
+    await click(await screen.findByRole('button', { name: /^unlink$/i }, MODAL_TIMEOUT));
 
     await waitFor(() => expect(unlink).toHaveBeenCalledTimes(1));
   });
