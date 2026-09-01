@@ -20,7 +20,7 @@ import { progress } from './endpoints/progress';
 import { pt } from './endpoints/ptOs';
 import { branches, gymSettings, qr, subscription, membershipPlans } from './endpoints/studio';
 import {
-  superAdmin, settings, features, invitations, integrations,
+  superAdmin, settings, features, invitations, integrations, whatsapp,
   clientActivation, clientLogin, me,
 } from './endpoints/platform';
 import { commandCenter } from './endpoints/commandCenter';
@@ -31,6 +31,7 @@ export { http } from '../http';
 export { ROLES, normaliseRole, hasRole, isAdminOrManager } from '../roles';
 export * from './types';
 export type { PlatformRiskDomain, PlatformRiskFinding, PlatformRiskReport } from './endpoints/commandCenter';
+export type { WhatsAppState, WhatsAppStatus, WhatsAppQr } from './endpoints/platform';
 
 export type {
   PrescriptionType, WorkoutSection, CardioType, SetType, LogsAs,
@@ -80,6 +81,7 @@ export const api = {
   clientLogin,
   me,
   integrations,
+  whatsapp,
   campaigns,
   feedback,
   communication,
