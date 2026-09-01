@@ -779,3 +779,72 @@ export const integrations = {
   disconnect: (id: string) =>
     http<{ success: boolean; message: string }>(`/api/integrations/${id}/disconnect`, { method: 'POST' }),
 };
+
+// ── WhatsApp (self-hosted gateway) ─────────────────────────────
+//
+// A separate namespace from `integrations` above, matching the backend: those
+// routes are generic `/:id/connect` handlers over a table of API keys, and this
+// is a device pairing with a lifecycle. The backend mounts
+// /api/integrations/whatsapp BEFORE the generic router precisely so these paths
+// are not swallowed by `/:id/connect` with id='whatsapp'.
+
+/** The states the gateway can report. Mirrors whatsapp_instances.status. */
+export type WhatsAppState =
+  | 'never_connected'
+  | 'connecting'
+  | 'connected'
+  | 'disconnected'
+  | 'reconnecting'
+  | 'logged_out'
+  | 'qr_timeout'
+  | 'failed';
+
+export interface WhatsAppStatus {
+  state: WhatsAppState;
+  phone_e164: string | null;
+  connected_at?: string | null;
+  disconnected_at?: string | null;
+  last_error_code?: string | null;
+  updated_at?: string | null;
+  /** False when the gateway is not deployed — the card says so rather than erroring. */
+  configured: boolean;
+  /** True when the gateway could not be reached and this is the last known state. */
+  stale: boolean;
+}
+
+export interface WhatsAppQr {
+  /**
+   * The raw pairing string, rendered to a QR client-side.
+   *
+   * Never persisted anywhere. Anyone who scans it links a device to the
+   * studio's WhatsApp account, so it lives only in component state for the
+   * seconds it is on screen.
+   */
+  qr: string;
+  expires_in_ms: number;
+}
+
+export const whatsapp = {
+  // No ttl passed anywhere in this namespace: http.ts only caches when a `ttl`
+  // or `cacheMs` is given, and a cached WhatsApp status is a status that has
+  // stopped tracking the connection it exists to report.
+  status: () => http<WhatsAppStatus>('/api/integrations/whatsapp/status'),
+  connect: () =>
+    http<{ success: boolean; state: WhatsAppState }>('/api/integrations/whatsapp/connect', {
+      method: 'POST',
+    }),
+  // Polled every couple of seconds while the modal is open; a cached QR is a
+  // QR that has already expired.
+  qr: () => http<WhatsAppQr>('/api/integrations/whatsapp/qr'),
+  reconnect: () =>
+    http<{ success: boolean; state: WhatsAppState }>('/api/integrations/whatsapp/reconnect', {
+      method: 'POST',
+    }),
+  /** Pause: the socket closes but credentials are kept, so no new QR is needed. */
+  disconnect: () =>
+    http<{ success: boolean; state: WhatsAppState }>('/api/integrations/whatsapp/disconnect', {
+      method: 'POST',
+    }),
+  /** Unlink: logs out of WhatsApp and destroys the session. A new QR is required. */
+  unlink: () => http<{ success: boolean }>('/api/integrations/whatsapp', { method: 'DELETE' }),
+};

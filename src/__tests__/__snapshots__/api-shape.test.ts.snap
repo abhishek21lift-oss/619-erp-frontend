@@ -60,6 +60,7 @@ exports[`api surface > exposes every namespace it did before the split 1`] = `
   "training",
   "upiPayments",
   "webauthn",
+  "whatsapp",
   "workouts",
 ]
 `;
@@ -600,6 +601,12 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "webauthn.registerVerify → /api/auth/webauthn/register/verify",
   "webauthn.renameCredential → /api/auth/webauthn/credentials/",
   "webauthn.toggleCredential → /api/auth/webauthn/credentials/",
+  "whatsapp.connect → /api/integrations/whatsapp/connect",
+  "whatsapp.disconnect → /api/integrations/whatsapp/disconnect",
+  "whatsapp.qr → /api/integrations/whatsapp/qr",
+  "whatsapp.reconnect → /api/integrations/whatsapp/reconnect",
+  "whatsapp.status → /api/integrations/whatsapp/status",
+  "whatsapp.unlink → /api/integrations/whatsapp",
   "workouts.assign → /api/workouts/assign",
   "workouts.assignments.detail → /api/workouts/assignments/",
   "workouts.assignments.list → /api/workouts/assignments",

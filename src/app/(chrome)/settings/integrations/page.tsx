@@ -9,6 +9,7 @@ import {
   Settings, Clock, CheckCircle2, RefreshCw, Bot, Activity,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
+import WhatsAppCard from '@/components/modules/WhatsAppCard';
 import { api } from '@/lib/api';
 
 type Status = 'connected' | 'error' | 'pending' | 'unavailable';
@@ -24,7 +25,14 @@ const STATIC_INTEGRATIONS: Integration[] = [
   { id: 'razorpay',  name: 'Razorpay',          description: 'Payment gateway for fees, memberships & PT packages', category: 'payments',      icon: 'CreditCard',    color: '#0067e0', bg: '#f1f5f9', status: 'pending' },
   { id: 'paytm',     name: 'Paytm',              description: 'UPI & wallet payment processing',                     category: 'payments',      icon: 'Smartphone',    color: '#0067e0', bg: '#f1f5f9', status: 'pending' },
   { id: 'stripe',    name: 'Stripe',             description: 'International payment processing',                    category: 'payments',      icon: 'CreditCard',    color: '#0067e0', bg: '#f1f5f9', status: 'pending' },
-  { id: 'whatsapp',  name: 'WhatsApp Business',  description: 'Send notifications, reminders & marketing via WhatsApp', category: 'communication', icon: 'MessageSquare', color: '#34d399', bg: '#ecfdf5', status: 'pending' },
+  // WhatsApp is NOT in this list. It is rendered as a live <WhatsAppCard />
+  // below, like the calendar and AI cards, because it is a device pairing with
+  // a lifecycle rather than a stored API key.
+  //
+  // The entry that was here fed the generic ConnectModal, which wrote an
+  // api_key into the integrations table. Nothing has ever read that key — see
+  // routes/integrations.js in the backend — so the card reported "Connected"
+  // while sending exactly nothing.
   { id: 'twilio',    name: 'Twilio SMS',         description: 'SMS alerts for dues, check-ins & announcements',     category: 'communication', icon: 'MessageSquare', color: '#ef4444', bg: '#fef2f2', status: 'pending' },
   { id: 'sendgrid',  name: 'SendGrid',           description: 'Email marketing & transactional emails',             category: 'communication', icon: 'Send',          color: '#0067e0', bg: '#f1f5f9', status: 'unavailable', comingSoon: true },
   // AI Coach card is rendered as a live AiCoachCard — not in this static list
@@ -553,7 +561,10 @@ export default function IntegrationsPage() {
     const showOpenRouter =
       (category === 'all' || category === 'ai') &&
       (!search || 'openrouter ai'.includes(search.toLowerCase()) || 'coaching workout diet insights'.includes(search.toLowerCase()));
-    return { staticFiltered, showCalendar, showOpenRouter };
+    const showWhatsApp =
+      (category === 'all' || category === 'communication') &&
+      (!search || 'whatsapp'.includes(search.toLowerCase()) || 'messages reminders receipts qr'.includes(search.toLowerCase()));
+    return { staticFiltered, showCalendar, showOpenRouter, showWhatsApp };
   }, [category, search]);
 
   const modalIntegration = modalId ? STATIC_INTEGRATIONS.find((i) => i.id === modalId) ?? null : null;
@@ -616,10 +627,13 @@ export default function IntegrationsPage() {
             {filtered.showOpenRouter && (
               <OpenRouterCard key="openrouter" />
             )}
+            {filtered.showWhatsApp && (
+              <WhatsAppCard key="whatsapp" />
+            )}
           </AnimatePresence>
         </div>
 
-        {!filtered.staticFiltered.length && !filtered.showCalendar && !filtered.showOpenRouter && (
+        {!filtered.staticFiltered.length && !filtered.showCalendar && !filtered.showOpenRouter && !filtered.showWhatsApp && (
           <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             style={{ textAlign: 'center', padding: '60px 20px', ...glass, borderRadius: 20, marginTop: 16 }}>
             <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
