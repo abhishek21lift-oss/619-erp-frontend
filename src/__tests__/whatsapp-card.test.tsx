@@ -51,6 +51,25 @@ async function click(el: HTMLElement): Promise<void> {
 // is not a blanket "tests are flaky, add a timeout" reflex.
 const MODAL_TIMEOUT = { timeout: 5000 };
 
+// ── Why the test budget has to exceed the query budget ─────────────────────
+//
+// MODAL_TIMEOUT was 5000ms while vitest's default testTimeout is ALSO 5000ms,
+// which made the widening unreachable: the moment a query actually needed its
+// widened window, the test's own budget expired first and vitest killed it.
+// The failure then reports as `Test timed out in 5000ms` pointing at the
+// `it(...)` line rather than at the assertion — which reads like a hang, not
+// like the slow modal transition it actually is, and is exactly how this
+// looked when it blocked a deploy from main.
+//
+// A test that goes through `openPairing` spends up to MODAL_TIMEOUT on the
+// risk-modal click and then queries the QR modal that replaces it, so one test
+// can legitimately need two of these windows back to back. The budget below is
+// sized for that with room over, and it costs nothing on a passing run:
+// `findBy*` resolves as soon as the element appears, so this only changes how
+// long a genuinely slow transition is allowed to take, never how long a
+// healthy one does.
+const MODAL_TEST_TIMEOUT = 20_000;
+
 function aStatus(over: Partial<WhatsAppStatus> = {}): WhatsAppStatus {
   return { state: 'never_connected', phone_e164: null, configured: true, stale: false, ...over };
 }
@@ -114,7 +133,7 @@ describe('the risk disclosure', () => {
     await click(await screen.findByRole('button', { name: /i understand/i }, MODAL_TIMEOUT));
 
     await waitFor(() => expect(connect).toHaveBeenCalledTimes(1));
-  });
+  }, MODAL_TEST_TIMEOUT);
 
   it('cancels without starting anything', async () => {
     render(<WhatsAppCard />);
@@ -124,7 +143,7 @@ describe('the risk disclosure', () => {
 
     expect(connect).not.toHaveBeenCalled();
     expect(screen.queryByText(/before you connect/i)).not.toBeInTheDocument();
-  });
+  }, MODAL_TEST_TIMEOUT);
 });
 
 describe('pairing', () => {
@@ -169,19 +188,21 @@ describe('pairing', () => {
   it('renders the QR as an inline SVG built from the raw string', async () => {
     await openPairing();
 
-    const holder = await screen.findByLabelText(/pairing qr code/i);
+    // Same click-then-query-the-new-modal shape as the calls above, and it was
+    // the one still left on the default 1000ms window.
+    const holder = await screen.findByLabelText(/pairing qr code/i, MODAL_TIMEOUT);
     expect(holder.innerHTML).toContain('<svg');
 
     // The credential itself is never written into the DOM as text — only the
     // rendered code. Anyone who can read the string can link a device.
     expect(document.body.textContent).not.toContain('PAIRING-CREDENTIAL-STRING');
-  });
+  }, MODAL_TEST_TIMEOUT);
 
   it('shows the Linked Devices steps a studio owner has to follow', async () => {
     await openPairing();
     expect(await screen.findByText(/linked devices/i)).toBeInTheDocument();
     expect(screen.getByText(/link a device/i)).toBeInTheDocument();
-  });
+  }, MODAL_TEST_TIMEOUT);
 
   it('explains an expired code instead of showing a generic error', async () => {
     const { ApiError } = await import('@/lib/http');
@@ -190,7 +211,7 @@ describe('pairing', () => {
     await openPairing();
 
     expect(await screen.findByText(/code expired/i)).toBeInTheDocument();
-  });
+  }, MODAL_TEST_TIMEOUT);
 
   it('closes itself once the phone has scanned', async () => {
     // Leaving a scanned QR on screen invites a second scan, which WhatsApp
@@ -201,7 +222,7 @@ describe('pairing', () => {
       .mockResolvedValue(aStatus({ state: 'connected', phone_e164: '+919876543210' }));
 
     await openPairing();
-    await screen.findByLabelText(/pairing qr code/i);
+    await screen.findByLabelText(/pairing qr code/i, MODAL_TIMEOUT);
 
     await waitFor(
       () => expect(screen.queryByLabelText(/pairing qr code/i)).not.toBeInTheDocument(),
@@ -215,7 +236,7 @@ describe('connected state', () => {
     status.mockResolvedValue(
       aStatus({ state: 'connected', phone_e164: '+919876543210', connected_at: '2026-09-01T10:00:00.000Z' }),
     );
-  });
+  }, MODAL_TEST_TIMEOUT);
 
   it('shows Connected with the number masked to its last four digits', async () => {
     render(<WhatsAppCard />);
@@ -271,7 +292,7 @@ describe('unlink is separated from disconnect', () => {
     await click(await screen.findByRole('button', { name: /keep it connected/i }, MODAL_TIMEOUT));
 
     expect(unlink).not.toHaveBeenCalled();
-  });
+  }, MODAL_TEST_TIMEOUT);
 
   it('unlinks once confirmed', async () => {
     render(<WhatsAppCard />);
@@ -280,7 +301,7 @@ describe('unlink is separated from disconnect', () => {
     await click(await screen.findByRole('button', { name: /^unlink$/i }, MODAL_TIMEOUT));
 
     await waitFor(() => expect(unlink).toHaveBeenCalledTimes(1));
-  });
+  }, MODAL_TEST_TIMEOUT);
 });
 
 describe('state copy', () => {
