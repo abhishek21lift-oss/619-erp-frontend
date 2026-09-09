@@ -159,6 +159,43 @@ describe('pairing', () => {
   // has to actually appear, this only stops requiring it within one second.
   // (MODAL_TIMEOUT is declared once, near the top of the file, and reused by
   // every other click-then-immediately-query-the-new-modal call below.)
+  //
+  // ── Two more failures, and three more hypotheses ruled out ─────────────────
+  //
+  // It has since failed twice more, both blocking a deploy from main. Four
+  // occurrences now, across three different tests, always the same transition.
+  // The widened window above did NOT stop it. What the two extra rounds bought
+  // is a much narrower search space, recorded here so nobody pays for it again:
+  //
+  //  - NOT a cumulative timeout ceiling. MODAL_TIMEOUT (5000ms) equals vitest's
+  //    default testTimeout, so a query using its full window leaves the test no
+  //    room — real, and not the cause. Raising the test budget to 20s was tried
+  //    on a branch and CI failed anyway. Its one benefit was diagnostic: the
+  //    error stopped being `Test timed out in 5000ms` at the `it(...)` line and
+  //    became `Unable to find role="button"` with a DOM dump, which is what
+  //    made the next two testable at all.
+  //  - NOT requestAnimationFrame starvation. The DOM dump showed the card's own
+  //    wrapper still at `opacity: 0; transform: scale(0.92)` — framer-motion's
+  //    initial state, never advanced — which looked conclusive. It is not:
+  //    overriding rAF to fire only after 4000ms, far beyond any window here,
+  //    still passes 18/18. AnimatePresence mounts its children immediately and
+  //    defers only the EXIT, so the modal's presence does not depend on the
+  //    animation having run. The stalled animation is a symptom of a loaded
+  //    runner, not the mechanism.
+  //  - NOT fixable by mocking framer-motion, the pattern three other test files
+  //    here use. It introduces an order-dependent failure: 'starts pairing only
+  //    after it is acknowledged' passes in isolation and fails with the file.
+  //    That trades a rare flake for a reliable break.
+  //
+  // What is actually established: the click takes NO EFFECT. The button is in
+  // the DOM, its onClick is a plain synchronous setModal('risk') with no async
+  // gate, and afterwards the modal is absent — not late, absent. Never
+  // reproduced locally, including under simulated starvation.
+  //
+  // The next person should start there rather than at the timeouts: something
+  // is discarding or not flushing that state update, and the remaining
+  // suspects are React 18 scheduling under act() and cross-test pollution of
+  // the `status` mock's once-queue (vi.clearAllMocks does not drain it).
 
   async function openPairing(): Promise<void> {
     render(<WhatsAppCard />);
