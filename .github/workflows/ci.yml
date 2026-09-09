@@ -257,6 +257,48 @@ jobs:
         # leak has to be impossible at the source rather than merely unrendered.
         run: npx playwright test --project=api
 
+      # ── Prove the suite above actually exercised app_tenant ──────────────
+      #
+      # Without this the job is not self-evidencing, which is the exact
+      # failure mode E2E_TENANT_ROLE exists to end. A green run would be
+      # ambiguous between two very different states: the suite passed with
+      # row-level security enforcing isolation, or the knob silently did not
+      # engage, the API served as the table owner, RLS was bypassed entirely,
+      # and the run proved only what it already proved before the flag
+      # existed.
+      #
+      # e2e-setup.sh does print "Serving as app_tenant" and the role's
+      # bypassrls flag — into /tmp/api.log, which was tailed only on FAILURE.
+      # So the evidence was discarded on precisely the runs that were
+      # claiming it.
+      #
+      # This asks the database rather than trusting what a script echoed:
+      # which role did the API's pool actually connect as. It runs AFTER the
+      # suite deliberately. Before it, the only queries made are the startup
+      # probe and /api/health, which carry no tenant context — so db/pool.js's
+      # useOwnerConnection() routes them to the owner pool, correctly, and
+      # pg_stat_activity shows postgres alone. Asserting at that point fails
+      # against a perfectly configured stack; verified by doing it and
+      # watching it fail. app_tenant appears once real tenant requests flow,
+      # and idleTimeoutMillis is 30s, so the connection is still there to see.
+      #
+      # Both roles present is the correct end state, not a smell: tenant
+      # requests on app_tenant, platform-wide and pre-auth work on the owner.
+      - name: Prove the suite ran against app_tenant, not the owner
+        run: |
+          tail -30 /tmp/api.log || true
+          echo "── roles connected to erp_e2e after the suite ──"
+          for _ in $(seq 1 5); do
+            roles=$(PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d erp_e2e -tAc \
+              "SELECT DISTINCT usename FROM pg_stat_activity WHERE datname='erp_e2e' AND usename IS NOT NULL" 2>/dev/null || true)
+            echo "  $(echo "$roles" | tr '\n' ' ')"
+            case "$roles" in *app_tenant*) echo "OK: the API served tenant requests as app_tenant (RLS enforced)."; exit 0 ;; esac
+            sleep 2
+          done
+          echo "::error::No app_tenant connection was made. E2E_TENANT_ROLE did not take effect, so these 23 tests ran against the owner role, which bypasses RLS — they prove nothing about the row policies."
+          tail -60 /tmp/api.log || true
+          exit 1
+
       - name: API log on failure
         if: failure()
         run: tail -100 /tmp/api.log
