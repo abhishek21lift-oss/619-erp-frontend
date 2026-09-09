@@ -7,6 +7,7 @@ import { PageContainer, PageHero } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import WhatsAppAutomationPermission from '@/components/modules/WhatsAppAutomationPermission';
 
 const TRIGGER_EVENTS = [
   { value: 'member_created', label: 'Member Created', channel: 'whatsapp' },
@@ -117,6 +118,12 @@ function AutoContent() {
           })}
         </m.div>
       )}
+
+      {/* Permission first, deliberately. A studio that writes three rules and
+          wonders why nothing sends should find the answer above the form
+          rather than in Settings — and it is the reason the log below stays
+          empty until somebody switches this on. */}
+      <WhatsAppAutomationPermission />
 
       {/* ── CREATE/EDIT FORM ── */}
       {showForm && (

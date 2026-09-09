@@ -10,6 +10,21 @@ import type {
   SupportTicket, TicketCategory, TicketMessage, TicketPriority,
 } from '../types';
 
+/** A trainer, and whether automated messages may go out on their behalf. */
+export interface AutomationTrainerGrant {
+  id: string;
+  name: string;
+  status: string | null;
+  whatsapp_automation_granted: boolean;
+  granted_at: string | null;
+}
+
+export interface WhatsappAutomationSettings {
+  automation_enabled: boolean;
+  daily_send_limit: number;
+  trainers?: AutomationTrainerGrant[];
+}
+
 // ── Campaigns (Marketing) ──────────────────────────────────────
 export const campaigns = {
   list: (params?: Record<string, string | number>) =>
@@ -75,6 +90,25 @@ export const automation = {
     list: (params?: Record<string, string | number>) =>
       http<{ data: unknown[]; total: number }>(`/api/automation/communication-logs${buildQs(params)}`),
     stats: () => http<{ data: unknown }>('/api/automation/communication-logs/stats'),
+  },
+  // Permission for automated WhatsApp sending: the studio switch, and the
+  // per-trainer grants that say on whose behalf a message may go out. Both
+  // must be on before the engine queues anything, and both are re-checked when
+  // it sends — a rule's delay can be hours.
+  whatsappSettings: {
+    get: () => http<{ data: WhatsappAutomationSettings }>('/api/automation/whatsapp-settings'),
+    update: (data: { automation_enabled?: boolean; daily_send_limit?: number }) =>
+      http<{ data: WhatsappAutomationSettings }>('/api/automation/whatsapp-settings', {
+        method: 'PUT', body: JSON.stringify(data),
+      }),
+    grantTrainer: (trainerId: string) =>
+      http<{ data: { trainer_id: string; whatsapp_automation_granted: boolean } }>(
+        `/api/automation/whatsapp-settings/trainers/${trainerId}`, { method: 'PUT' },
+      ),
+    revokeTrainer: (trainerId: string) =>
+      http<{ data: { trainer_id: string; whatsapp_automation_granted: boolean } }>(
+        `/api/automation/whatsapp-settings/trainers/${trainerId}`, { method: 'DELETE' },
+      ),
   },
   ptPackages: {
     list: (params?: Record<string, string | number>) =>
