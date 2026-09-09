@@ -48,8 +48,12 @@ export default function WhatsAppAutomationPermission() {
       await api.automation.whatsappSettings.update({ automation_enabled: !enabled });
       toast.success(enabled ? 'Automated messaging switched off' : 'Automated messaging switched on');
       settings.refetch();
-    } catch (e: any) {
-      toast.error(e?.message || 'Could not save');
+    } catch (err) {
+      // `instanceof Error`, matching WhatsAppCard and ModuleWorkspace. `any`
+      // here would type-check and would also lose the fallback the moment the
+      // thrown value is not an Error — a rejected fetch, a string — leaving
+      // the studio with an empty toast.
+      toast.error(err instanceof Error ? err.message : 'Could not save');
     } finally {
       setBusy(null);
     }
@@ -61,8 +65,8 @@ export default function WhatsAppAutomationPermission() {
       if (t.whatsapp_automation_granted) await api.automation.whatsappSettings.revokeTrainer(t.id);
       else await api.automation.whatsappSettings.grantTrainer(t.id);
       settings.refetch();
-    } catch (e: any) {
-      toast.error(e?.message || 'Could not save');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save');
     } finally {
       setBusy(null);
     }
