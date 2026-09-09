@@ -38,8 +38,24 @@ vi.mock('@/lib/api', async (importOriginal) => {
 
 const { default: WhatsAppCard } = await import('@/components/modules/WhatsAppCard');
 
-/** A click wrapped in act(), so state updates it triggers are flushed. */
-async function click(el: HTMLElement): Promise<void> {
+/**
+ * Find a button by its accessible name and click it once it can ACTUALLY be
+ * clicked.
+ *
+ * The `toBeEnabled` wait is the whole point and is not defensive padding — see
+ * the long note in the 'pairing' describe block. This card renders its primary
+ * button `disabled` until the status request resolves, `findByRole` matches a
+ * disabled button perfectly happily, and `fireEvent.click` on a disabled button
+ * is a silent no-op. Querying and clicking in one step is therefore a race with
+ * the status mock's microtask, and on a loaded runner the test loses it: the
+ * click evaporates and the modal it should have opened never arrives.
+ *
+ * Waiting for enabled is also the more honest assertion. A person cannot click
+ * a disabled button either.
+ */
+async function clickButton(name: RegExp, options: { timeout?: number } = {}): Promise<void> {
+  const el = await screen.findByRole('button', { name }, options);
+  await waitFor(() => expect(el).toBeEnabled(), options);
   await act(async () => { fireEvent.click(el); });
 }
 
@@ -49,7 +65,7 @@ async function click(el: HTMLElement): Promise<void> {
 // long comment in the 'pairing' describe block below for what this is
 // mitigating and what was actually ruled out before reaching for it — this
 // is not a blanket "tests are flaky, add a timeout" reflex.
-const MODAL_TIMEOUT = { timeout: 5000 };
+const MODAL_TIMEOUT = { timeout: 3000 };
 
 function aStatus(over: Partial<WhatsAppStatus> = {}): WhatsAppStatus {
   return { state: 'never_connected', phone_e164: null, configured: true, stale: false, ...over };
@@ -99,7 +115,7 @@ describe('the risk disclosure', () => {
     // until the ban risk has been shown. Meta can permanently ban the number.
     render(<WhatsAppCard />);
 
-    await click(await screen.findByRole('button', { name: /connect whatsapp/i }));
+    await clickButton(/connect whatsapp/i);
 
     expect(screen.getByText(/before you connect/i)).toBeInTheDocument();
     expect(screen.getByText(/permanently ban the number/i)).toBeInTheDocument();
@@ -110,8 +126,8 @@ describe('the risk disclosure', () => {
   it('starts pairing only after it is acknowledged', async () => {
     render(<WhatsAppCard />);
 
-    await click(await screen.findByRole('button', { name: /connect whatsapp/i }));
-    await click(await screen.findByRole('button', { name: /i understand/i }, MODAL_TIMEOUT));
+    await clickButton(/connect whatsapp/i);
+    await clickButton(/i understand/i, MODAL_TIMEOUT);
 
     await waitFor(() => expect(connect).toHaveBeenCalledTimes(1));
   });
@@ -119,8 +135,8 @@ describe('the risk disclosure', () => {
   it('cancels without starting anything', async () => {
     render(<WhatsAppCard />);
 
-    await click(await screen.findByRole('button', { name: /connect whatsapp/i }));
-    await click(await screen.findByRole('button', { name: /^cancel$/i }, MODAL_TIMEOUT));
+    await clickButton(/connect whatsapp/i);
+    await clickButton(/^cancel$/i, MODAL_TIMEOUT);
 
     expect(connect).not.toHaveBeenCalled();
     expect(screen.queryByText(/before you connect/i)).not.toBeInTheDocument();
@@ -128,79 +144,97 @@ describe('the risk disclosure', () => {
 });
 
 describe('pairing', () => {
-  // ── A CI-only flake, tracked down as far as evidence goes ──────────────────
+  // ── A CI-only flake, and six rounds of wrong answers ──────────────────────
   //
-  // Two separate CI runs each failed once here — on TWO DIFFERENT tests that
-  // both go through this same helper's second click — always at the exact
-  // same transition: risk modal already open, click "I understand", the QR
-  // modal that replaces it (still wrapped in AnimatePresence, still inside
-  // Overlay/useDialogA11y) never shows up. Ruled out, with actual evidence
-  // rather than assumption, before landing on a mitigation:
+  // This block cost more than any other test in the repository, so what was
+  // ruled out is kept rather than deleted — a wrong theory that leaves no
+  // trace is one somebody pays for twice.
   //
-  //  - Not a single missed tick: the failing calls already used `findByRole`
-  //    (RTL's own default poll is 50ms over a 1000ms window) and still timed
-  //    out — a properly-deferred render would have been caught well inside
-  //    that window.
-  //  - Not `window.matchMedia` being unavailable to framer-motion: it actually
-  //    IS `undefined` in this environment too — confirmed by asserting it
-  //    directly — and the tests using it pass 18/18 every local run anyway.
-  //  - Not deterministic: 'appears before any QR is requested' (above)
-  //    exercises the identical click→modal transition with a synchronous
-  //    `getByText`, no retry tolerance at all, and has not failed in either
-  //    CI run. If the transition itself were reliably slow on CI, that
-  //    assertion should fail at least as often as this one. It hasn't. And
-  //    across the two failures, it was a DIFFERENT specific test each time —
-  //    consistent with a genuine, low-probability race under CI's scheduling,
-  //    not something this environment structurally cannot do.
+  // The symptom: a CI run fails on one of the tests below, always at the same
+  // transition — a click that should open a modal, and then a wait for a modal
+  // that never arrives. A different test each time. Never locally.
   //
-  // What's left standing is a rare race that needs more than the default
-  // budget to resolve on a loaded, shared CI runner — the standard case for
-  // widening `findBy*`'s timeout, which weakens nothing: the element still
-  // has to actually appear, this only stops requiring it within one second.
-  // (MODAL_TIMEOUT is declared once, near the top of the file, and reused by
-  // every other click-then-immediately-query-the-new-modal call below.)
+  // Ruled out, each with evidence rather than assumption:
   //
-  // ── Two more failures, and three more hypotheses ruled out ─────────────────
+  //  - Not a single missed tick. The failing calls already used `findByRole`,
+  //    whose default poll is 50ms over a 1000ms window; a merely deferred
+  //    render would have been caught well inside it.
+  //  - Not `window.matchMedia` missing for framer-motion. It is `undefined`
+  //    locally too, and these pass 18/18 every local run.
+  //  - Not the default `findBy*` budget. MODAL_TIMEOUT was widened to 5000ms
+  //    and CI failed again.
+  //  - Not a cumulative timeout ceiling. Raising the test budget to 20s was
+  //    tried on a branch; CI failed anyway. Its one benefit was diagnostic —
+  //    the error stopped being `Test timed out in 5000ms` at the `it(...)`
+  //    line and became a real `Unable to find role=` with a DOM dump.
+  //  - Not requestAnimationFrame starvation, though the DOM dump made it look
+  //    certain: the card's wrapper sat at framer-motion's initial
+  //    `opacity: 0; transform: scale(0.92)`, never advanced. Overriding rAF to
+  //    fire only after 4000ms still passes 18/18. AnimatePresence mounts its
+  //    children immediately and defers only the EXIT, so a modal's presence
+  //    never depended on the animation. The stalled transform is a symptom of
+  //    a loaded runner, not the mechanism.
+  //  - Not fixable by mocking framer-motion, as three other files here do. It
+  //    introduces an order-dependent failure — 'starts pairing only after it
+  //    is acknowledged' then passes alone and fails with the file — trading a
+  //    rare flake for a reliable break.
   //
-  // It has since failed twice more, both blocking a deploy from main. Four
-  // occurrences now, across three different tests, always the same transition.
-  // The widened window above did NOT stop it. What the two extra rounds bought
-  // is a much narrower search space, recorded here so nobody pays for it again:
+  // ── Found. It was never a timeout. ────────────────────────────────────────
   //
-  //  - NOT a cumulative timeout ceiling. MODAL_TIMEOUT (5000ms) equals vitest's
-  //    default testTimeout, so a query using its full window leaves the test no
-  //    room — real, and not the cause. Raising the test budget to 20s was tried
-  //    on a branch and CI failed anyway. Its one benefit was diagnostic: the
-  //    error stopped being `Test timed out in 5000ms` at the `it(...)` line and
-  //    became `Unable to find role="button"` with a DOM dump, which is what
-  //    made the next two testable at all.
-  //  - NOT requestAnimationFrame starvation. The DOM dump showed the card's own
-  //    wrapper still at `opacity: 0; transform: scale(0.92)` — framer-motion's
-  //    initial state, never advanced — which looked conclusive. It is not:
-  //    overriding rAF to fire only after 4000ms, far beyond any window here,
-  //    still passes 18/18. AnimatePresence mounts its children immediately and
-  //    defers only the EXIT, so the modal's presence does not depend on the
-  //    animation having run. The stalled animation is a symptom of a loaded
-  //    runner, not the mechanism.
-  //  - NOT fixable by mocking framer-motion, the pattern three other test files
-  //    here use. It introduces an order-dependent failure: 'starts pairing only
-  //    after it is acknowledged' passes in isolation and fails with the file.
-  //    That trades a rare flake for a reliable break.
+  // Six occurrences across three different tests, all of them the same
+  // transition, and everything above was chasing the wrong layer. The cause:
   //
-  // What is actually established: the click takes NO EFFECT. The button is in
-  // the DOM, its onClick is a plain synchronous setModal('risk') with no async
-  // gate, and afterwards the modal is absent — not late, absent. Never
-  // reproduced locally, including under simulated starvation.
+  //   <button onClick={() => setModal('risk')}
+  //           disabled={loading || notConfigured || busy !== null}>
   //
-  // The next person should start there rather than at the timeouts: something
-  // is discarding or not flushing that state update, and the remaining
-  // suspects are React 18 scheduling under act() and cross-test pollution of
-  // the `status` mock's once-queue (vi.clearAllMocks does not drain it).
+  // `loading` starts TRUE and only clears when the status request resolves.
+  // The button is in the DOM the whole time, with its final label, so
+  // `findByRole('button', { name: /connect whatsapp/i })` matches it on the
+  // first poll — disabled buttons are matched by role queries, correctly. And
+  // `fireEvent.click` on a disabled button dispatches nothing: no onClick, no
+  // state change, no error. So `click(await findByRole(...))` is a race with
+  // the status mock's microtask. Win it and the test passes; lose it and the
+  // click evaporates, and every subsequent wait is for a modal that no longer
+  // has any reason to appear.
+  //
+  // This accounts for every observation recorded above, which is how it was
+  // finally believed:
+  //
+  //  - "the click takes NO EFFECT ... the modal is absent, not late" — exactly
+  //    right, and the reason a longer window never helped. Waiting does not
+  //    re-fire a click that was swallowed.
+  //  - Raising testTimeout to 20s changed nothing but the error message. Of
+  //    course: the budget was never the constraint.
+  //  - A different test each time — whichever one happens to lose the race.
+  //  - Never reproduced locally — a warm, idle machine resolves the mock
+  //    before RTL's first 50ms poll essentially every time.
+  //
+  // Reproducing it needed load, not cleverness: six `yes > /dev/null` against
+  // the full 140-file suite fails it within one or two runs. Once reproduced,
+  // this pins it with no load at all — a status promise that never resolves,
+  // and the button is found, is disabled, and swallows its click:
+  //
+  //   status.mockReturnValue(new Promise(() => {}));
+  //   render(<WhatsAppCard />);
+  //   const btn = await screen.findByRole('button', { name: /connect whatsapp/i });
+  //   expect(btn).toBeDisabled();                       // passes
+  //   fireEvent.click(btn);
+  //   expect(screen.queryByText(/before you connect/i)).not.toBeInTheDocument();
+  //
+  // The fix is `clickButton` near the top of this file: wait for the button to
+  // be ENABLED, then click. It is not a widened timeout wearing a disguise —
+  // the wait is on a state the component genuinely passes through, and it is
+  // what a real person does, since nobody can click a disabled button either.
+  //
+  // MODAL_TIMEOUT survives at 3000ms, deliberately BELOW vitest's 5000ms
+  // default. If any of this ever regresses, an inner query has to be the thing
+  // that fails, with its DOM dump, rather than the test budget expiring first
+  // and reporting only a line number.
 
   async function openPairing(): Promise<void> {
     render(<WhatsAppCard />);
-    await click(await screen.findByRole('button', { name: /connect whatsapp/i }));
-    await click(await screen.findByRole('button', { name: /i understand/i }, MODAL_TIMEOUT));
+    await clickButton(/connect whatsapp/i);
+    await clickButton(/i understand/i, MODAL_TIMEOUT);
   }
 
   it('renders the QR as an inline SVG built from the raw string', async () => {
@@ -276,7 +310,7 @@ describe('connected state', () => {
     // through a scan.
     render(<WhatsAppCard />);
 
-    await click(await screen.findByRole('button', { name: /reconnect/i }));
+    await clickButton(/reconnect/i);
 
     await waitFor(() => expect(reconnect).toHaveBeenCalledTimes(1));
     expect(screen.queryByLabelText(/pairing qr code/i)).not.toBeInTheDocument();
@@ -294,7 +328,7 @@ describe('unlink is separated from disconnect', () => {
     // re-pairing, so the confirmation says which is which.
     render(<WhatsAppCard />);
 
-    await click(await screen.findByRole('button', { name: /unlink this number/i }));
+    await clickButton(/unlink this number/i);
 
     expect(screen.getByText(/unlink whatsapp\?/i)).toBeInTheDocument();
     expect(screen.getByText(/new qr scan/i)).toBeInTheDocument();
@@ -304,8 +338,8 @@ describe('unlink is separated from disconnect', () => {
   it('does nothing when the confirmation is declined', async () => {
     render(<WhatsAppCard />);
 
-    await click(await screen.findByRole('button', { name: /unlink this number/i }));
-    await click(await screen.findByRole('button', { name: /keep it connected/i }, MODAL_TIMEOUT));
+    await clickButton(/unlink this number/i);
+    await clickButton(/keep it connected/i, MODAL_TIMEOUT);
 
     expect(unlink).not.toHaveBeenCalled();
   });
@@ -313,8 +347,8 @@ describe('unlink is separated from disconnect', () => {
   it('unlinks once confirmed', async () => {
     render(<WhatsAppCard />);
 
-    await click(await screen.findByRole('button', { name: /unlink this number/i }));
-    await click(await screen.findByRole('button', { name: /^unlink$/i }, MODAL_TIMEOUT));
+    await clickButton(/unlink this number/i);
+    await clickButton(/^unlink$/i, MODAL_TIMEOUT);
 
     await waitFor(() => expect(unlink).toHaveBeenCalledTimes(1));
   });
