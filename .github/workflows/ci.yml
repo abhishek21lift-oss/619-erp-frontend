@@ -178,6 +178,31 @@ jobs:
       # on the runner's own loopback, and e2e-setup.sh refuses to run against
       # anything that looks like a real environment.
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/erp_e2e?sslmode=disable
+
+      # ── Serve the API as app_tenant, not as the table owner ──────────────
+      #
+      # DATABASE_URL above stays the owner connection because the setup half
+      # needs it: schema.sql and the migrations need DDL rights, and
+      # seed-e2e.js writes both studios in one pass. E2E_TENANT_ROLE tells
+      # the backend's scripts/e2e-setup.sh to swap credentials for the
+      # SERVING step only — DATABASE_URL to app_tenant (NOBYPASSRLS),
+      # ADMIN_DATABASE_URL keeping the owner for platform-wide work. Exactly
+      # the configuration the production cutover leaves behind.
+      #
+      # Without this the suite ran against the owner role, which bypasses RLS
+      # completely. It therefore proved that the application remembers its
+      # WHERE clauses and proved nothing about the row policies — and it
+      # passed 23/23 while fifty-five tenant tables had no app_tenant policy
+      # at all, because every table it happens to touch was one of the ones
+      # that did. A blocking suite that cannot fail for the reason the
+      # cutover would break is not evidence about the cutover.
+      #
+      # Requires backend PR #109 (the E2E_TENANT_ROLE knob) on main. The flag
+      # is inert against a backend that predates it — an unrecognised env var
+      # the script never reads — so this can land in either order without
+      # breaking the job.
+      E2E_TENANT_ROLE: 'on'
+
       JWT_SECRET: ci-e2e-secret-at-least-32-characters-long!!
       FRONTEND_URL: http://127.0.0.1:3100
       E2E_API_URL: http://127.0.0.1:5100
