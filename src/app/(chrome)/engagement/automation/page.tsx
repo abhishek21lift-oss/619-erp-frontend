@@ -9,18 +9,32 @@ import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import WhatsAppAutomationPermission from '@/components/modules/WhatsAppAutomationPermission';
 
+// The eleven events that something in the backend actually emits, and a note
+// on when each one fires — because "Missed Attendance" tells a studio owner
+// what the rule is called and not whether it will reach anybody today.
+//
+// The twelfth value the database allows, `trial_completed`, is deliberately
+// absent: nothing writes a completed trial anywhere in the product, so a rule
+// bound to it could never fire. It has never been offered here, and it stays
+// unoffered rather than becoming a switch that does nothing.
+//
+// Every one of these is `whatsapp`. The channel column accepts sms and email
+// too and two entries in this list used to default to sms — which produced a
+// rule the automation engine filters out on the way past, because there is no
+// SMS transport behind it. The rule saved, showed as Active, and could never
+// fire. See the channel selector below.
 const TRIGGER_EVENTS = [
-  { value: 'member_created', label: 'Member Created', channel: 'whatsapp' },
-  { value: 'lead_created', label: 'Lead Created', channel: 'whatsapp' },
-  { value: 'membership_expiring', label: 'Membership Expiring', channel: 'whatsapp' },
-  { value: 'membership_expired', label: 'Membership Expired', channel: 'sms' },
-  { value: 'payment_received', label: 'Payment Received', channel: 'whatsapp' },
-  { value: 'session_low', label: 'Low Session Balance', channel: 'sms' },
-  { value: 'birthday', label: 'Birthday', channel: 'whatsapp' },
-  { value: 'anniversary', label: 'Anniversary', channel: 'whatsapp' },
-  { value: 'attendance_missed', label: 'Missed Attendance', channel: 'whatsapp' },
-  { value: 'trial_scheduled', label: 'Trial Scheduled', channel: 'whatsapp' },
-  { value: 'followup_due', label: 'Follow-Up Due', channel: 'whatsapp' },
+  { value: 'member_created', label: 'Member Created', hint: 'when a client is enrolled' },
+  { value: 'lead_created', label: 'Lead Created', hint: 'when a lead is captured' },
+  { value: 'payment_received', label: 'Payment Received', hint: 'when a payment is recorded' },
+  { value: 'session_low', label: 'Low Session Balance', hint: 'at 3 sessions or fewer remaining' },
+  { value: 'trial_scheduled', label: 'Trial Scheduled', hint: 'when a lead is marked trial scheduled' },
+  { value: 'membership_expiring', label: 'Membership Expiring', hint: '7, 3 and 1 days before expiry' },
+  { value: 'membership_expired', label: 'Membership Expired', hint: 'the morning after expiry' },
+  { value: 'birthday', label: 'Birthday', hint: 'on the day, current clients only' },
+  { value: 'anniversary', label: 'Anniversary', hint: 'each year they joined' },
+  { value: 'attendance_missed', label: 'Missed Attendance', hint: 'after 14 days without a check-in' },
+  { value: 'followup_due', label: 'Follow-Up Due', hint: "when a lead's follow-up date passes" },
 ];
 
 const KPIS = [
@@ -40,7 +54,6 @@ function AutoContent() {
   const [editing, setEditing] = useState<any>(null);
   const [name, setName] = useState('');
   const [triggerEvent, setTriggerEvent] = useState('member_created');
-  const [channel, setChannel] = useState('whatsapp');
   const [template, setTemplate] = useState('');
   const [delayMinutes, setDelayMinutes] = useState('0');
   const [saving, setSaving] = useState(false);
@@ -53,7 +66,14 @@ function AutoContent() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault(); setSaving(true);
     try {
-      const payload = { name, trigger_event: triggerEvent, channel, template, delay_minutes: parseInt(delayMinutes) };
+      // 'whatsapp' rather than a form value. The engine serves this channel
+      // and no other, so saving an edited rule as anything else stores a rule
+      // that will not fire — and re-saving a legacy sms rule through this form
+      // repairs it rather than preserving the reason it never worked.
+      const payload = {
+        name, trigger_event: triggerEvent, channel: 'whatsapp',
+        template, delay_minutes: parseInt(delayMinutes),
+      };
       if (editing) { await api.automation.rules.update(editing.id, payload); toast.success('Rule updated'); }
       else { await api.automation.rules.create(payload); toast.success('Rule created'); }
       setName(''); setTemplate(''); setDelayMinutes('0'); setEditing(null); setShowForm(false); rules.refetch();
@@ -72,14 +92,14 @@ function AutoContent() {
   }
 
   function startEdit(rule: any) {
-    setName(rule.name); setTriggerEvent(rule.trigger_event); setChannel(rule.channel);
+    setName(rule.name); setTriggerEvent(rule.trigger_event);
     setTemplate(rule.template || ''); setDelayMinutes(String(rule.delay_minutes || 0));
     setEditing(rule); setShowForm(true);
   }
 
   function cancelForm() {
     setShowForm(false); setEditing(null);
-    setName(''); setTemplate(''); setDelayMinutes('0'); setTriggerEvent('member_created'); setChannel('whatsapp');
+    setName(''); setTemplate(''); setDelayMinutes('0'); setTriggerEvent('member_created');
   }
 
   const inp = { width:'100%', border:'1px solid #cbd5e1', borderRadius:10, padding:'10px 14px', fontSize:13, fontWeight:500, color:'#0F172A', background:'#f8fafc', fontFamily:'inherit' } as const;
@@ -135,18 +155,20 @@ function AutoContent() {
           <form onSubmit={handleCreate} style={{ display:'grid', gap:14 }}>
             <input required placeholder="Rule name (e.g., Welcome Message)" value={name} onChange={e => setName(e.target.value)} style={inp} />
             <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap:14 }}>
-              <select aria-label="Trigger event" value={triggerEvent} onChange={e => {
-                setTriggerEvent(e.target.value);
-                const ev = TRIGGER_EVENTS.find(t => t.value === e.target.value);
-                if (ev) setChannel(ev.channel);
-              }} style={inp}>
-                {TRIGGER_EVENTS.map(ev => <option key={ev.value} value={ev.value}>{ev.label}</option>)}
+              <select aria-label="Trigger event" value={triggerEvent} onChange={e => setTriggerEvent(e.target.value)} style={inp}>
+                {TRIGGER_EVENTS.map(ev => (
+                  <option key={ev.value} value={ev.value}>{ev.label} — {ev.hint}</option>
+                ))}
               </select>
-              <select aria-label="Channel" value={channel} onChange={e => setChannel(e.target.value)} style={inp}>
-                <option value="whatsapp">WhatsApp</option>
-                <option value="sms">SMS</option>
-                <option value="email">Email</option>
-              </select>
+              {/* Only WhatsApp delivers. The rules table accepts sms and email,
+                  and the engine filters both out — a studio that picked one got
+                  a rule that saved, showed as Active and never fired. Offering
+                  a choice with one option is worse than offering none, so this
+                  is a disabled field that says what it is rather than a select
+                  that pretends. */}
+              <input aria-label="Channel" value="WhatsApp" readOnly disabled
+                title="Automated messages go out on your studio's connected WhatsApp number. SMS and email are not yet delivered."
+                style={{ ...inp, background:'#f8fafc', color:'#64748b', cursor:'not-allowed' }} />
             </div>
             <textarea required placeholder="Message template (use {{name}}, {{amount}}, etc.)" rows={3} value={template} onChange={e => setTemplate(e.target.value)}
               style={{ ...inp, resize:'vertical', lineHeight:1.6 }} />
