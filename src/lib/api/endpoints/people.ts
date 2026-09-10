@@ -10,18 +10,50 @@ import type {
   Attendance, Client, LeaveRequest, LeaveRequestPayload, Trainer,
 } from '../types';
 
+/**
+ * Clients.
+ *
+ * ── Every URL here now points at /api/pt-os/clients ─────────────────────────
+ *
+ * /api/clients is gone. It was a second HTTP surface over the same pt_clients
+ * table — the legacy `clients` table it was named after was dropped by
+ * migration 170 and nothing has read it since. Four of its endpoints
+ * duplicated a pt-os handler outright; the other three (search, attendance,
+ * payments) moved to /api/pt-os/clients, where the rest of the client API
+ * already lived.
+ *
+ * The METHOD NAMES are deliberately unchanged, so the sixteen components
+ * calling api.clients.* keep working untouched. This object is not a second
+ * API — it is one helper over the one surviving surface, and `api.pt.*` in
+ * ptOs.ts is the same surface reached by its pt-os names. Collapsing the two
+ * helper objects is a rename with no behavioural content and is not worth
+ * touching sixteen files for.
+ *
+ * ── Response shapes ─────────────────────────────────────────────────────────
+ *
+ * The pt-os endpoints wrap collections as `{ data, total }` where the old ones
+ * returned a bare array. Unwrapped here rather than at the call sites, for the
+ * same reason: the callers' contract does not change.
+ */
 export const clients = {
   list: (params?: Record<string, string | number>) =>
-    http<Client[]>(`/api/clients${buildQs(params)}`),
-  get:    (id: string) => http<Client>(`/api/clients/${id}`),
+    http<{ data: Client[]; total: number }>(`/api/pt-os/clients${buildQs(params)}`)
+      .then((r) => r.data),
+  get: (id: string) =>
+    http<{ data: Client }>(`/api/pt-os/clients/${id}`).then((r) => r.data),
   // create() removed with POST /api/clients. Clients are created through
   // api.pt.create() -> POST /api/pt-os/clients, which stamps the studio's
   // organization_id and enforces the plan's client limit. The old route did
   // neither, and wrote to a table no read path reads.
+  //
+  // PATCH, not PUT: the pt-os handler applies only the fields it is sent,
+  // where the retired PUT rebuilt the whole row from a partial body and
+  // blanked everything the form had not included.
   update: (id: string, data: Partial<Client>) =>
-    http<Client>(`/api/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => http(`/api/clients/${id}`, { method: 'DELETE' }),
-  search: (q: string) => http<Client[]>(`/api/clients/search?q=${encodeURIComponent(q)}`),
+    http<{ data: Client }>(`/api/pt-os/clients/${id}`, { method: 'PATCH', body: JSON.stringify(data) })
+      .then((r) => r.data),
+  delete: (id: string) => http(`/api/pt-os/clients/${id}`, { method: 'DELETE' }),
+  search: (q: string) => http<Client[]>(`/api/pt-os/clients/search?q=${encodeURIComponent(q)}`),
   // uploadPhoto, assignPt, combo, upgrade, downgrade, transfer, trial, freeze
   // and unfreeze are gone with routes/client-actions.js on the backend.
   //
