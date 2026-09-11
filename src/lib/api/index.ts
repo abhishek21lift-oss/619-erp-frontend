@@ -34,12 +34,10 @@ export type { PlatformRiskDomain, PlatformRiskFinding, PlatformRiskReport } from
 export type { WhatsAppState, WhatsAppStatus, WhatsAppQr } from './endpoints/platform';
 
 export type {
-  PrescriptionType, WorkoutSection, CardioType, SetType, LogsAs,
+  PrescriptionType, WorkoutSection, LogsAs,
   PrescriptionTypeMeta, TrainingMeta,
   TrainingProgram, ProgramPhase, ProgramWeek,
-  WorkoutTemplate, TemplateExercise, TrainingAssignment,
-  TrainingSession, ExercisePerformance, SetPerformance, CardioPerformance,
-  SessionSummary, PersonalRecord,
+  WorkoutTemplate, TemplateExercise,
 } from './endpoints/trainingOs';
 
 // qsOf and buildQs remain private to the endpoint modules.
