@@ -98,11 +98,27 @@ export const NAV_GROUPS: NavGroup[] = [
       // First in the group on purpose: it is the only item here a trainer
       // opens every day. The rest are authoring and reference.
       { href: '/pt-os/today',               label: 'Today',                icon: 'CalendarDays' },
-      // Sits above Workout Plans, which reads the old workout_plans tables and
-      // stays until the cutover finishes. Two entries for a while is the cost
-      // of migrating without a flag day; the old one goes when nothing needs it.
-      { href: '/pt-os/training/templates',  label: 'Workouts',             icon: 'Dumbbell',    matchPrefix: '/pt-os/training/templates' },
-      { href: '/pt-os/workout-plans',       label: 'Workout Plans',        icon: 'Dumbbell' },
+      // ONE workout entry, and which one it is was decided by production.
+      //
+      // There were two here, adjacent and both Dumbbell-icon'd: "Workouts"
+      // pointing at /pt-os/training/templates, and "Workout Plans" pointing
+      // here. The note that used to sit on this line called workout_plans "the
+      // old tables" and said the templates stack would replace them once "the
+      // cutover finishes".
+      //
+      // The cutover never started, and the schema says it could not have.
+      // workout_assignments has exactly one parent column — workout_plan_id —
+      // and no column for a template at all, so a workout_template cannot be
+      // assigned to a client, cannot reach Today, cannot be logged and cannot
+      // produce a PR. It is an authoring screen with no exit.
+      //
+      // Production agreed: 60 plans / 409 exercises / 49 assignments, current
+      // to 2026-09-02, against 1 template with 4 exercises from one afternoon
+      // in August whose program_id and week_id are both NULL.
+      //
+      // So this is the canonical workout surface, and the templates routes
+      // redirect here. See workout-single-source.test.ts.
+      { href: '/pt-os/workout-plans',       label: 'Workouts',             icon: 'Dumbbell',    matchPrefix: '/pt-os/workout-plans' },
       { href: '/pt-os/workout-log',         label: 'Workout Log',          icon: 'ClipboardList', matchPrefix: '/pt-os/workout-log' },
       { href: '/pt-os/exercise-library',    label: 'Exercise Library',     icon: 'BookOpen',    feature: 'exercise_library' },
       { href: '/pt-os/diet-plans',          label: 'Diet Plans',           icon: 'Apple' },
