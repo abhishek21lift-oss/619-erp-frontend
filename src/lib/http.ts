@@ -144,6 +144,42 @@ function activeOrgHeader(): Record<string, string> {
   } catch { return {}; }
 }
 
+/**
+ * The tenant/identity headers EVERY authenticated call to the API must carry.
+ *
+ * While impersonating, the Bearer token IS the identity (that studio's admin),
+ * so the operator's org-switcher header is suppressed — the org is implicit.
+ * Otherwise a super_admin's pinned org travels as `x-org-id`.
+ *
+ * ── Why this is exported ───────────────────────────────────────────────────
+ *
+ * Two call sites cannot go through http()/httpSSE() and must not therefore go
+ * without these headers:
+ *
+ *   lib/ai-stream.ts        needs the raw Response body to render tokens as
+ *                           they arrive; httpSSE() buffers the whole stream.
+ *   enroll/page.tsx         needs a Blob for the enrolment PDF.
+ *
+ * Both previously called fetch() directly and sent neither header. For a
+ * tenant user that was harmless — the backend ignores `x-org-id` from anyone
+ * who is not a super_admin — but for a platform operator it was not: with the
+ * org switcher pinned to one studio, the request arrived with no target, so
+ * backend tenantScope() resolved applyFilter=false and the call ran
+ * PLATFORM-WIDE while the UI said otherwise. On /api/ai/chat that means the
+ * model's tools and context read every studio's data into a conversation the
+ * operator believes is one studio's. Impersonation broke the same way: the
+ * Bearer token never travelled, so the call ran as the operator rather than
+ * as the studio admin being impersonated.
+ *
+ * Exported rather than copied so there is one definition of "who am I acting
+ * as" — api-transport.test.ts fails the build if a new direct fetch() to /api
+ * appears without it.
+ */
+export function tenantAuthHeaders(): Record<string, string> {
+  const imp = getImpersonation();
+  return imp ? { Authorization: `Bearer ${imp.token}` } : activeOrgHeader();
+}
+
 // ──────────────────────────────────────────────────────────────────────
 //  Impersonation: a super_admin can enter a studio as its admin. The
 //  platform mints a short-lived READ-ONLY access token; we send it as a
@@ -382,12 +418,10 @@ export async function http<T = unknown>(
 
   const body = serializeBody(options.body);
   const isMultipart = isFormDataBody(options.body);
-  // While impersonating, the Bearer token IS the identity (that studio's admin),
-  // so the operator's org-switcher header is suppressed — the org is implicit.
   const imp = getImpersonation();
   const headers: Record<string, string> = {
     ...(!isMultipart && body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-    ...(imp ? { Authorization: `Bearer ${imp.token}` } : activeOrgHeader()),
+    ...tenantAuthHeaders(),
     ...(options.headers as Record<string, string> | undefined),
   };
 
@@ -494,10 +528,9 @@ export async function httpSSE<T = unknown>(
 
   const body = serializeBody(options.body);
   const isMultipart = isFormDataBody(options.body);
-  const impSSE = getImpersonation();
   const headers: Record<string, string> = {
     ...(!isMultipart && body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-    ...(impSSE ? { Authorization: `Bearer ${impSSE.token}` } : activeOrgHeader()),
+    ...tenantAuthHeaders(),
     ...(options.headers as Record<string, string> | undefined),
   };
 

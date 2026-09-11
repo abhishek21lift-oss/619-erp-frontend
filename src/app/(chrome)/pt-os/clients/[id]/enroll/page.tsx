@@ -14,7 +14,7 @@ import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import { AGREEMENT_TEXT, PAYMENT_METHODS, ageFrom } from '@/lib/enrollment';
 import { SignaturePad } from '@/components/pt-os/shared/SignaturePad';
 import { api } from '@/lib/api';
-import { ApiError, apiBase } from '@/lib/http';
+import { ApiError, apiBase, tenantAuthHeaders } from '@/lib/http';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth-context';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
@@ -509,8 +509,12 @@ function EnrollForm({ clientId }: { clientId: string }) {
   const downloadPdf = async () => {
     setDownloading(true);
     try {
+      // Raw fetch() because this needs the PDF as a Blob, which http() does
+      // not return. The identity headers still have to travel — see
+      // tenantAuthHeaders().
       const res = await fetch(`${apiBase()}/api/pt-os/clients/${clientId}/enrollment-pdf`, {
         credentials: 'include',
+        headers: { ...tenantAuthHeaders() },
       });
       if (!res.ok) throw new Error(`Request failed (${res.status})`);
       const blob = await res.blob();

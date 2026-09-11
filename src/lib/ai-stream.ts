@@ -14,7 +14,7 @@
  * not the storage.
  */
 
-import { apiBase } from '@/lib/http';
+import { apiBase, tenantAuthHeaders } from '@/lib/http';
 
 export interface AiStreamEvent {
   type: 'start' | 'chunk' | 'sources' | 'tools' | 'done' | 'error';
@@ -63,7 +63,12 @@ export async function streamAiChat(
     res = await fetch(`${apiBase()}/api/ai/chat`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      // Raw fetch() rather than http()/httpSSE() because this renders tokens
+      // as they arrive and both of those buffer the whole body first. The
+      // identity headers are NOT optional for that reason — see
+      // tenantAuthHeaders() for what going without them did to an operator
+      // with the org switcher pinned, or impersonating a studio.
+      headers: { 'Content-Type': 'application/json', ...tenantAuthHeaders() },
       signal,
       body: JSON.stringify({
         message,
