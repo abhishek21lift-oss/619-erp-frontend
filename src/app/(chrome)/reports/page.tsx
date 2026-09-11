@@ -74,7 +74,7 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
   const fetchMonthly = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const data = await api.reports.monthly(typeof year === 'number' ? year : parseInt(String(year)));
+      const data = await api.insights.monthly(typeof year === 'number' ? year : parseInt(String(year)));
       setMonthly(Array.isArray(data) ? data : []);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   }, [year]);
@@ -239,7 +239,7 @@ function DuesTab() {
   const fetchDues = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const data = await api.reports.dues();
+      const data = await api.insights.dues({ limit: 100 });
       setDues(Array.isArray(data) ? data : []);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   }, []);
@@ -329,7 +329,7 @@ function TrainerSummaryTab() {
   const fetch_ = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const data = await api.reports.trainerSummary();
+      const data = await api.insights.trainers();
       setTrainers(Array.isArray(data) ? data : []);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   }, []);

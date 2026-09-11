@@ -200,7 +200,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
 
     Promise.allSettled([
       api.leave.list({ status: 'pending' }),
-      api.reports.dues(),
+      api.insights.dues({ limit: 100 }),
       api.ai.trainer.pending({ limit: 1 }).catch(() => null),
     ]).then(([leavesRes, duesRes, aiRes]) => {
       if (cancelled) return;

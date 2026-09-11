@@ -3,12 +3,14 @@
 /**
  * Revenue Analytics — KPIs, bar charts and a revenue-share donut.
  *
- * Data sources (legacy /api/reports/* router — src/routes/reports.js):
- *   GET /api/reports/monthly?year=   → [{ month_num, month_name, payment_count, revenue, incentives }]
- *   GET /api/reports/trainer-summary → [{ id, name, specialization, active_clients, total_clients,
- *                                        month_revenue, total_revenue }]   (admin only)
- *   GET /api/reports/dues            → [{ id, name, balance_amount, ... }]
- *   GET /api/reports/revenue?from&to → { count, total, total_incentives }
+ * Data sources (canonical /api/insights/* — Metric Engine; src/modules/insights/):
+ *   GET /api/insights/revenue/monthly?year= → [{ month_num, month_name, payment_count, revenue, incentives }]
+ *   GET /api/insights/trainers              → [{ id, name, specialization, active_clients, total_clients,
+ *                                               month_revenue, total_revenue }]   (admin only)
+ *   GET /api/insights/dues?limit=           → top-N rows for tables (never a total)
+ *   GET /api/insights/dues/summary          → authoritative totals (no LIMIT)
+ *   GET /api/insights/revenue?from&to       → { count, total, total_incentives }
+ * (/api/reports/* remains as a frozen compat surface over the same engine.)
  *
  * Every numeric column arrives as a STRING (pg returns numeric/bigint as text),
  * so everything goes through num() before arithmetic.
@@ -223,21 +225,29 @@ function RevenueAnalytics() {
   const [from, setFrom] = useState(isoYearStart(currentYear));
   const [to, setTo] = useState(isoToday());
 
+  // Canonical sources (ONE engine behind both URL families). Monthly + range
+  // share the same {year}/{from,to} so KPIs, bars and the donut read one dataset.
   const monthly = useAsync<MonthlyRow[]>(
-    (signal) => http<MonthlyRow[]>(`/api/reports/monthly?year=${year}`, { signal }),
+    (signal) => http<MonthlyRow[]>(`/api/insights/revenue/monthly?year=${year}`, { signal }),
     [year],
   );
   const trainers = useAsync<TrainerRow[]>(
-    (signal) => http<TrainerRow[]>('/api/reports/trainer-summary', { signal }),
+    (signal) => http<TrainerRow[]>('/api/insights/trainers', { signal }),
     [],
   );
   const dues = useAsync<DuesRow[]>(
-    (signal) => http<DuesRow[]>('/api/reports/dues', { signal }),
+    (signal) => http<DuesRow[]>('/api/insights/dues?limit=100', { signal }),
+    [],
+  );
+  // Authoritative dues TOTAL (unbounded). `dues` above is top-100 rows for the
+  // table — summing it understates any studio with >100 debtors.
+  const duesTotals = useAsync<{ total_outstanding: number; debtor_count: number }>(
+    (signal) => http<{ total_outstanding: number; debtor_count: number }>('/api/insights/dues/summary', { signal }),
     [],
   );
   // The only source that honours the date pickers — which is why they exist.
   const range = useAsync<RangeTotals>(
-    (signal) => http<RangeTotals>(`/api/reports/revenue?from=${from}&to=${to}`, { signal }),
+    (signal) => http<RangeTotals>(`/api/insights/revenue?from=${from}&to=${to}`, { signal }),
     [from, to],
   );
 
@@ -247,11 +257,12 @@ function RevenueAnalytics() {
   const { refetch: refetchMonthly } = monthly;
   const { refetch: refetchTrainers } = trainers;
   const { refetch: refetchDues } = dues;
+  const { refetch: refetchDuesTotals } = duesTotals;
   const { refetch: refetchRange } = range;
 
   const refreshAll = useCallback(async () => {
-    await Promise.allSettled([refetchMonthly(), refetchTrainers(), refetchDues(), refetchRange()]);
-  }, [refetchMonthly, refetchTrainers, refetchDues, refetchRange]);
+    await Promise.allSettled([refetchMonthly(), refetchTrainers(), refetchDues(), refetchDuesTotals(), refetchRange()]);
+  }, [refetchMonthly, refetchTrainers, refetchDues, refetchDuesTotals, refetchRange]);
 
   // ── Derived: months padded to a full year so the axis is stable ────────────
   const months = useMemo(() => {
@@ -276,7 +287,7 @@ function RevenueAnalytics() {
   const prevMonth = thisMonthIdx > 0 ? months[thisMonthIdx - 1].revenue : 0;
   const momDelta = prevMonth > 0 ? ((thisMonth - prevMonth) / prevMonth) * 100 : undefined;
 
-  const pendingTotal = (dues.data ?? []).reduce((s, d) => s + num(d.balance_amount), 0);
+  const pendingTotal = duesTotals.data ? num(duesTotals.data.total_outstanding) : (dues.data ?? []).reduce((s, d) => s + num(d.balance_amount), 0);
 
   // ── Derived: trainer share, top N + Other ─────────────────────────────────
   const trainerRanked = useMemo(() => {

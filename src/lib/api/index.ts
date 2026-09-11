@@ -24,7 +24,7 @@ import {
 } from './endpoints/platform';
 import { commandCenter } from './endpoints/commandCenter';
 import { campaigns, feedback, communication, notifications, automation, support } from './endpoints/engagement';
-import { reports, search, activity, ai } from './endpoints/insights';
+import { reports, insights, search, activity, ai } from './endpoints/insights';
 
 export { http } from '../http';
 export { ROLES, normaliseRole, hasRole, isAdminOrManager } from '../roles';
@@ -78,6 +78,7 @@ export const api = {
   automation,
   support,
   reports,
+  insights,
   search,
   activity,
   ai,

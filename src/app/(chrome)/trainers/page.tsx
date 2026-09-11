@@ -292,7 +292,7 @@ export default function TrainersPage() {
   useEffect(() => {
     load();
     const year = new Date().getFullYear();
-    api.reports.monthly(year).then((rows) => {
+    api.insights.monthly(year).then((rows) => {
       if (!Array.isArray(rows) || rows.length === 0) return;
       const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       const mapped = (rows as { month?: string | number; revenue?: number | string }[])

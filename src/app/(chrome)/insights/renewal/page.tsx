@@ -1,41 +1,13 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
-import { m } from 'framer-motion';
+import { useMemo, useState } from 'react';
 import Guard from '@/components/Guard';
 import { RefreshCcw, Users, AlertTriangle, CalendarClock, Percent, Clock, UserCheck } from 'lucide-react';
-import { api, Client } from '@/lib/api';
-import { fmtDate } from '@/lib/format';
-import { PageContainer, PageHero } from '@/components/ui';
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.08 } }
-};
-const itemVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] } }
-};
-
-function KpiCard({ label, value, icon, gradient }: {
-  label: string; value: string | number; icon?: React.ReactNode; gradient: string
-}) {
-  return (
-    <m.div variants={itemVariants}
-      style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '22px 20px', background: gradient, border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', cursor: 'default', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
-      onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.1)'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, position: 'relative', zIndex: 1 }}>
-        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text-muted)' }}>{label}</span>
-        {icon && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.8)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-            {icon}
-          </div>
-        )}
-      </div>
-      <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{value}</div>
-    </m.div>
-  );
-}
+import { api } from '@/lib/api';
+import { fmtDate, fmtMoney } from '@/lib/format';
+import { PageContainer, PageHero, KpiCard } from '@/components/ui';
+import { useAsync } from '@/lib/use-async';
+import { CanonicalDateRange, isoDaysAgo, isoToday } from '@/lib/insights/date-range';
+import { fmtRate, type RenewalMetric } from '@/lib/insights/metrics';
 
 const th = { padding: '12px 16px', textAlign: 'left' as const, fontWeight: 700, fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.08em' };
 const td = { padding: '12px 16px', fontSize: 12 };
@@ -49,72 +21,55 @@ export default function RenewalAnalysisPage() {
 }
 
 function Inner() {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // TRUE renewal conversion window. Same {from,to} feeds the conversion AND
+  // the pipeline counts, so the KPI and the table cannot disagree.
+  const [from, setFrom] = useState(() => isoDaysAgo(90));
+  const [to, setTo] = useState(() => isoToday());
 
-  useEffect(() => {
-    let alive = true;
-    api.clients
-      .list({})
-      .then((r) => alive && setClients(r))
-      .catch((e) => alive && setError(e.message))
-      .finally(() => alive && setLoading(false));
-    return () => { alive = false; };
-  }, []);
+  const renewals = useAsync<RenewalMetric>(
+    () => api.insights.renewals({ from, to }) as Promise<RenewalMetric>,
+    [from, to],
+  );
+  const rows = useAsync<Array<{ id: string; name: string; package_type?: string | null; trainer_name?: string | null; pt_end_date?: string | null; days_left: number }>>(
+    () => api.insights.renewalRows({ days: 30, limit: 100 }) as Promise<Array<{ id: string; name: string; package_type?: string | null; trainer_name?: string | null; pt_end_date?: string | null; days_left: number }>>,
+    [],
+  );
 
-  const stats = useMemo(() => {
-    const now = Date.now();
-    const active = clients.filter((c) => c.status === 'active').length;
-    const expired = clients.filter((c) => c.status === 'expired').length;
-    const expiring7 = clients.filter((c) => {
-      if (!c.pt_end_date || c.status !== 'active') return false;
-      const days = Math.ceil((new Date(c.pt_end_date).getTime() - now) / 86400000);
-      return days >= 0 && days <= 7;
-    }).length;
-    const expiring30 = clients.filter((c) => {
-      if (!c.pt_end_date || c.status !== 'active') return false;
-      const days = Math.ceil((new Date(c.pt_end_date).getTime() - now) / 86400000);
-      return days >= 0 && days <= 30;
-    }).length;
-    const renewalRate = active + expired > 0 ? Math.round((active / (active + expired)) * 100) : 0;
-    return { active, expired, expiring7, expiring30, renewalRate };
-  }, [clients]);
-
-  const upcoming = useMemo(() => {
-    const now = Date.now();
-    return clients
-      .filter((c) => {
-        if (!c.pt_end_date || c.status !== 'active') return false;
-        const days = Math.ceil((new Date(c.pt_end_date).getTime() - now) / 86400000);
-        return days >= 0 && days <= 30;
-      })
-      .sort((a, b) => new Date(a.pt_end_date!).getTime() - new Date(b.pt_end_date!).getTime());
-  }, [clients]);
+  const m = renewals.data;
+  const loading = renewals.loading || rows.loading;
+  const error = renewals.error?.message || rows.error?.message || '';
+  const upcoming = useMemo(() => [...(rows.data ?? [])].sort((a, b) => a.days_left - b.days_left), [rows.data]);
 
   return (
     <PageContainer>
       <PageHero
         icon={<RefreshCcw size={20} />}
         title="Renewal Report"
-        subtitle="Monitor membership renewals and upcoming expirations"
-      />
+        subtitle="TRUE renewal conversion — renewed packages over expired packages in the same window"
+      >
+        <CanonicalDateRange from={from} to={to} onFrom={setFrom} onTo={setTo} dark />
+      </PageHero>
 
       {error && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: '10px 16px', fontSize: 13, color: '#ef4444' }}>{error}</div>}
 
-      {/* Two up on a phone. `minmax(150px, 1fr)` auto-fit gave one full-width
-          tile per row at 390px, so four numbers took four screenfuls of
-          scrolling to read — the whole point of a KPI row is that you take
-          it in at once. */}
-      <m.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label="Active Members" value={stats.active} icon={<Users size={16} />} gradient="linear-gradient(135deg, #ecfdf5, #fff)" />
-        <KpiCard label="Expiring in 7 Days" value={stats.expiring7} icon={<AlertTriangle size={16} />} gradient="linear-gradient(135deg, #fef2f2, #fff)" />
-        <KpiCard label="Expiring in 30 Days" value={stats.expiring30} icon={<CalendarClock size={16} />} gradient="linear-gradient(135deg, #fffbeb, #fff)" />
-        <KpiCard label="Renewal Rate" value={`${stats.renewalRate}%`} icon={<Percent size={16} />} gradient="linear-gradient(135deg, #f1f5f9, #fff)" />
-      </m.div>
+      {/* Canonical KPIs — server-computed. renewal_rate is TRUE conversion
+          (null = no expiries in window, rendered as em dash, never 0%).
+          active_share_pct is a snapshot and is labelled as such. */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KpiCard label="Renewal Rate" value={fmtRate(m?.renewal_rate)} hint={m ? `${m.renewed_of_cohort} of ${m.expired_cohort} renewed` : undefined} icon={<Percent size={16} />} accent="emerald" loading={renewals.loading} />
+        <KpiCard label="Expiring in 7 Days" value={m?.expiring_7d ?? '—'} icon={<AlertTriangle size={16} />} accent="coral" loading={renewals.loading} />
+        <KpiCard label="Expiring in 30 Days" value={m?.expiring_30d ?? '—'} icon={<CalendarClock size={16} />} accent="amber" loading={renewals.loading} />
+        <KpiCard label="Active Share" value={fmtRate(m?.active_share_pct)} hint="Snapshot — not conversion" icon={<Users size={16} />} accent="blue" loading={renewals.loading} />
+      </div>
+      {m && (
+        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          Window {m.from} → {m.to}: {m.expired_cohort} expired, {m.renewed_in_period} renewal transactions
+          {m.renewal_revenue > 0 && <> · {fmtMoney(m.renewal_revenue)} renewal revenue</>} · {m.active} active / {m.expired} expired now.
+        </div>
+      )}
 
-      <m.div variants={containerVariants} initial="hidden" animate="visible">
-        <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', background: 'var(--bg-card)' }}>
+      <div>
+        <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', background: 'var(--bg-card)' }}>
           <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-subtle)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #0067e0, #0059ce)', display: 'inline-block' }} />
@@ -148,7 +103,7 @@ function Inner() {
                   </td></tr>
                 ) : (
                   upcoming.map((c, i) => {
-                    const days = Math.ceil((new Date(c.pt_end_date!).getTime() - Date.now()) / 86400000);
+                    const days = c.days_left;
                     const daysColor = days <= 7 ? '#ef4444' : days <= 14 ? '#f59e0b' : '#10b981';
                     const daysBg = days <= 7 ? 'rgba(239,68,68,0.08)' : days <= 14 ? 'rgba(245,158,11,0.08)' : 'rgba(16,185,129,0.08)';
                     return (
@@ -174,8 +129,8 @@ function Inner() {
               </tbody>
             </table>
           </div>
-        </m.div>
-      </m.div>
+        </div>
+      </div>
     </PageContainer>
   );
 }

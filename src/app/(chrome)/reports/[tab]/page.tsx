@@ -1,31 +1,31 @@
 'use client';
 
-import { use } from 'react';
-import { notFound } from 'next/navigation';
-import dynamic from 'next/dynamic';
-const ModuleWorkspace = dynamic(() => import('@/components/modules/ModuleWorkspace'), { ssr: false });
-import { getModuleConfig } from '@/lib/module-config';
+// Canonical redirect: /reports/[tab] rendered a generic ModuleWorkspace over
+// the same concepts the custom pages own (Revenue, Dues, Trainers, Renewal,
+// Traffic). Two UIs for one URL concept is how metric definitions drifted.
+// Every slug now 301-equivalents (client redirect) to its canonical page;
+// unknown slugs stay 404. The generic workspace no longer serves report URLs.
 
-// Guard against unknown report tab values.
-// /reports/[anything-invalid] returns 404 instead of a blank workspace.
-const VALID_REPORT_TABS = [
-  'overview',
-  'attendance',
-  'trainers',
-  'revenue',
-  'dues',
-  'staff',
-  'monthly',
-  'renewal',
-  'traffic',
-] as const;
-type ReportTab = typeof VALID_REPORT_TABS[number];
+import { use } from 'react';
+import { notFound, redirect } from 'next/navigation';
+
+const CANONICAL: Record<string, string> = {
+  overview: '/reports',
+  monthly: '/insights/revenue',
+  revenue: '/insights/revenue',
+  dues: '/finance/dues',
+  trainers: '/reports',
+  attendance: '/insights/traffic',
+  traffic: '/insights/traffic',
+  renewal: '/insights/renewal',
+  staff: '/operations/leaderboard',
+};
 
 export default function ReportTabPage({ params }: { params: Promise<{ tab: string }> }) {
   const { tab } = use(params);
-  if (!VALID_REPORT_TABS.includes(tab as ReportTab)) {
+  const target = CANONICAL[tab];
+  if (!target) {
     notFound();
   }
-  return <ModuleWorkspace config={getModuleConfig('reports', `reports-${tab}`)} />;
+  redirect(target);
 }
-

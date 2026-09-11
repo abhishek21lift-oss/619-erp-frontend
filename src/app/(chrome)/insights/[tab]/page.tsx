@@ -1,20 +1,25 @@
 'use client';
 
-import { use } from 'react';
-import { notFound } from 'next/navigation';
-import dynamic from 'next/dynamic';
-const ModuleWorkspace = dynamic(() => import('@/components/modules/ModuleWorkspace'), { ssr: false });
-import { getModuleConfig } from '@/lib/module-config';
+// Canonical redirect: /insights/[tab] is a retired duplicate of the custom
+// Insights pages. The static routes (/insights/traffic, /renewal, /sessions)
+// already win over this dynamic segment, so this only fires for edge cases —
+// it exists so ONE architecture renders, not two, and the generic
+// ModuleWorkspace (open guard, mock-shaped data) can never serve insights URLs.
 
-// H-04 fix: guard against unknown insights tab values.
-// /insights/[anything-invalid] now returns 404 instead of a blank workspace.
-const VALID_INSIGHTS_TABS = ['traffic', 'renewal', 'sessions'] as const;
-type InsightsTab = typeof VALID_INSIGHTS_TABS[number];
+import { use } from 'react';
+import { notFound, redirect } from 'next/navigation';
+
+const CANONICAL: Record<string, string> = {
+  traffic: '/insights/traffic',
+  renewal: '/insights/renewal',
+  sessions: '/insights/sessions',
+};
 
 export default function InsightsTabPage({ params }: { params: Promise<{ tab: string }> }) {
   const { tab } = use(params);
-  if (!VALID_INSIGHTS_TABS.includes(tab as InsightsTab)) {
+  const target = CANONICAL[tab];
+  if (!target) {
     notFound();
   }
-  return <ModuleWorkspace config={getModuleConfig('insights', `insights-${tab}`)} />;
+  redirect(target);
 }

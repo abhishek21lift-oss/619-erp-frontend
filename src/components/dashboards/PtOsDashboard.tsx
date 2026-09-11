@@ -218,10 +218,13 @@ function healthScore(d: DashData) {
   const rev = Number(d.total_monthly_pt_revenue), out = Number(d.total_outstanding);
   const active = d.active_pt_clients, expired = d.expired_clients;
   const collection = rev + out > 0 ? rev / (rev + out) : 1;
-  const retention  = active + expired > 0 ? active / (active + expired) : 1;
+  // Active share, NOT renewal conversion: the snapshot active/(active+expired).
+  // TRUE renewal conversion (renewed_of_cohort/expired_cohort) is canonical in
+  // /api/insights/renewals and displayed on /insights/renewal — never derive it here.
+  const activeShare = active + expired > 0 ? active / (active + expired) : 1;
   const growthRaw  = momPct(d.revenueTrend, 'revenue') ?? 0;
   const growth     = clamp((growthRaw + 50) / 100, 0, 1);
-  const score = Math.round(collection * 35 + retention * 35 + growth * 30);
+  const score = Math.round(collection * 35 + activeShare * 35 + growth * 30);
   const color = score >= 80 ? C.success : score >= 60 ? C.warning : C.danger;
   const label = score >= 80 ? 'Excellent' : score >= 60 ? 'Healthy' : score >= 40 ? 'Focus Needed' : 'At Risk';
   return { score, color, label, growthRaw };
@@ -2101,8 +2104,11 @@ export default function PtOsDashboard() {
 
   const commRate = d?.total_monthly_pt_revenue && d.total_monthly_pt_revenue > 0
     ? `${((d.total_monthly_commission / d.total_monthly_pt_revenue) * 100).toFixed(0)}% rate` : undefined;
-  const retentionPct = d && (d.active_pt_clients + d.expired_clients) > 0
+  // Active share snapshot (was misnamed retentionPct). TRUE renewal conversion
+  // lives in /api/insights/renewals — see /insights/renewal.
+  const activeSharePct = d && (d.active_pt_clients + d.expired_clients) > 0
     ? (d.active_pt_clients / (d.active_pt_clients + d.expired_clients)) * 100 : null;
+  const retentionPct = activeSharePct;
 
   return (
     <>
@@ -2212,8 +2218,8 @@ export default function PtOsDashboard() {
                 <StatCard icon={<Percent size={17} />} label="Commission" value={fmtCompact(d.total_monthly_commission)}
                   sub={commRate} color={KPI.commission} accent={palette.blue[400]} delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM} format={fmtINR}
                   className="lg:hidden" />
-                <StatCard icon={<Gauge size={17} />} label="Retention" value={retentionPct !== null ? `${retentionPct.toFixed(0)}%` : '—'}
-                  sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active`} color={KPI.retention} accent={palette.blue[200]} delay={0.15} href="/pt-os/clients" />
+                <StatCard icon={<Gauge size={17} />} label="Active Share" value={retentionPct !== null ? `${retentionPct.toFixed(0)}%` : '—'}
+                  sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active · true renewal on Insights`} color={KPI.retention} accent={palette.blue[200]} delay={0.15} href="/insights/renewal" />
               </div>
             </div>
 

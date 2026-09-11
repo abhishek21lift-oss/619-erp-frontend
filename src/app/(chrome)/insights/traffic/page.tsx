@@ -1,44 +1,16 @@
 'use client';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { Activity, Users, Clock, TrendingUp, Calendar, BarChart3, ArrowUpRight } from 'lucide-react';
 import { api } from '@/lib/api';
 import { isCheckIn } from '@/lib/checkin';
 import { scrollIndexIntoCentre } from '@/lib/chart-scroll';
-import { PageContainer, PageHero } from '@/components/ui';
+import { PageContainer, PageHero, KpiCard } from '@/components/ui';
+import { useAsync } from '@/lib/use-async';
+import { CanonicalDateRange } from '@/lib/insights/date-range';
+import type { AttendanceMetric } from '@/lib/insights/metrics';
 
 const HOURS = ['06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22'];
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.08 } }
-};
-const itemVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] } }
-};
-
-function KpiCard({ label, value, icon, gradient }: {
-  label: string; value: string | number; icon?: React.ReactNode; gradient: string
-}) {
-  return (
-    <m.div variants={itemVariants}
-      style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '22px 20px', background: gradient, border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', cursor: 'default', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
-      onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,103,224,0.12)'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)'; }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, position: 'relative', zIndex: 1 }}>
-        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text-muted)' }}>{label}</span>
-        {icon && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.7)', border: '1px solid var(--border)', color: '#0059ce' }}>
-            {icon}
-          </div>
-        )}
-      </div>
-      <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{value}</div>
-    </m.div>
-  );
-}
 
 export default function FootfallTrafficPage() {
   return (
@@ -61,6 +33,13 @@ function Inner() {
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // Canonical attendance (server-aggregated, unbounded). Headline KPIs read
+  // this; the row list below stays for the hourly drill-down only and must
+  // never feed a total (legacy LIMIT 500).
+  const canonical = useAsync<AttendanceMetric>(
+    () => api.insights.attendance({ from, to, granularity: 'day' }) as Promise<AttendanceMetric>,
+    [from, to],
+  );
 
   useEffect(() => {
     let alive = true;
@@ -107,10 +86,18 @@ function Inner() {
   }, [visits]);
 
   const max = Math.max(...byHour.map((h) => h.count), 1);
-  const totalCheckins = visits.length;
+  // Canonical KPIs: same dataset as insights/sessions (server totals). The
+  // client-side `visits` list feeds ONLY the hourly chart below.
+  const canonTotals = canonical.data?.totals;
+  const canonSeries = canonical.data?.series ?? [];
+  const totalCheckins = canonTotals ? canonTotals.visits : visits.length;
   const peakHour = byHour.reduce((b, h) => (h.count > b.count ? h : b), byHour[0]);
-  const avgDaily = byDay.length > 0 ? Math.round(totalCheckins / byDay.length) : 0;
-  const busiestDay = byDay.reduce((b, d) => (d[1] > b[1] ? d : b), ['—', 0]);
+  const activeDays = canonSeries.filter((s) => s.visits > 0).length || byDay.length;
+  const avgDaily = activeDays > 0 ? Math.round(totalCheckins / activeDays) : 0;
+  const canonBusiest = [...canonSeries].sort((a, b) => b.visits - a.visits)[0];
+  const busiestDay: [string, number] = canonBusiest
+    ? [canonBusiest.date, canonBusiest.visits]
+    : byDay.reduce<[string, number]>((b, d) => (d[1] > b[1] ? d : b), ['—', 0]);
 
   const [hovered, setHovered] = useState<number | null>(null);
 
@@ -166,27 +153,20 @@ function Inner() {
         title="Attendance Report"
         subtitle="Track member check-in patterns and peak traffic hours"
       >
-        {/* Two equal columns that cannot outgrow the hero. The old pair was
-            a flex row of intrinsically-sized pills — icon, label and a date
-            input each sized to their own content — so on a phone the "To"
-            field simply ran off the right edge of the screen. */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <DateField label="From" value={from} max={to} onChange={setFrom} />
-          <DateField label="To" value={to} min={from} onChange={setTo} />
-        </div>
+        <CanonicalDateRange from={from} to={to} onFrom={setFrom} onTo={setTo} dark />
       </PageHero>
 
-      {error && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: '10px 16px', fontSize: 13, color: '#dc2626' }}>{error}</div>}
+      {(error || canonical.error) && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: '10px 16px', fontSize: 13, color: '#dc2626' }}>{error || canonical.error?.message}</div>}
 
-      <m.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label="Total Check-ins" value={totalCheckins} icon={<Users size={16} />} gradient="linear-gradient(135deg, rgba(0,103,224,0.08), rgba(0,103,224,0.02))" />
-        <KpiCard label="Peak Hour" value={peakHour.count > 0 ? `${peakHour.hour}:00` : '—'} icon={<Clock size={16} />} gradient="linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02))" />
-        <KpiCard label="Average Daily" value={avgDaily} icon={<TrendingUp size={16} />} gradient="linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02))" />
-        <KpiCard label="Busiest Day" value={busiestDay[0] !== '—' ? `${busiestDay[0]} (${busiestDay[1]})` : '—'} icon={<Calendar size={16} />} gradient="linear-gradient(135deg, rgba(0,103,224,0.08), rgba(0,103,224,0.02))" />
-      </m.div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KpiCard label="Total Check-ins" value={totalCheckins} icon={<Users size={16} />} accent="blue" loading={canonical.loading && !canonical.data} />
+        <KpiCard label="Peak Hour" value={peakHour.count > 0 ? `${peakHour.hour}:00` : '—'} icon={<Clock size={16} />} accent="amber" />
+        <KpiCard label="Average Daily" value={avgDaily} icon={<TrendingUp size={16} />} accent="emerald" loading={canonical.loading && !canonical.data} />
+        <KpiCard label="Busiest Day" value={busiestDay[0] !== '—' ? `${busiestDay[0]} (${busiestDay[1]})` : '—'} icon={<Calendar size={16} />} accent="cyan" loading={canonical.loading && !canonical.data} />
+      </div>
 
-      <m.div variants={containerVariants} initial="hidden" animate="visible">
-        <m.div variants={itemVariants} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 20px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+      <div>
+        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 20px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 3, height: 18, borderRadius: 2, background: 'linear-gradient(180deg, #0067e0, #0059ce)' }} />
@@ -243,36 +223,8 @@ function Inner() {
               </div>
             </div>
           )}
-        </m.div>
-      </m.div>
+        </div>
+      </div>
     </PageContainer>
-  );
-}
-
-/**
- * A labelled date field that cannot outgrow its column.
- *
- * `<input type="date">` sizes itself to its own content and ignores the width
- * of whatever it is in, which is how the "To" field ended up off the right of
- * the screen. `w-full` plus `min-w-0` on a grid child is the fix.
- */
-function DateField({
-  label, value, min, max, onChange,
-}: { label: string; value: string; min?: string; max?: string; onChange: (v: string) => void }) {
-  return (
-    <label className="block min-w-0">
-      <span className="mb-1 block text-[10.5px] font-[800] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.66)' }}>
-        {label}
-      </span>
-      <input
-        type="date"
-        value={value}
-        min={min}
-        max={max}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-[44px] w-full min-w-0 rounded-[12px] px-3 text-[13px] font-[600] text-white outline-none"
-        style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', colorScheme: 'dark' }}
-      />
-    </label>
   );
 }
