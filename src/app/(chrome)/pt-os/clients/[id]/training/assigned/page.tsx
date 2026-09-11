@@ -158,7 +158,7 @@ export default function AssignedWorkoutsPage({ params }: { params: Promise<{ id:
                   </div>
 
                   <Link
-                    href={`/pt-os/clients/${clientId}/training/builder?plan=${a.workout_plan_id}`}
+                    href={`/pt-os/workout-plans/${a.workout_plan_id}/builder`}
                     className="mt-3 flex h-[44px] items-center justify-between rounded-[12px] px-3 text-[13px] font-[700]"
                     style={{ background: 'var(--bg-subtle)', color: 'var(--brand)' }}
                   >

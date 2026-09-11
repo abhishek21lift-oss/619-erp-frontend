@@ -16,7 +16,7 @@ const replace = vi.fn();
 let params = new URLSearchParams();
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace, back: vi.fn() }),
-  usePathname: () => '/pt-os/clients/c1/training/builder',
+  usePathname: () => '/pt-os/workout-plans/p1/builder',
   useSearchParams: () => params,
 }));
 
@@ -55,7 +55,7 @@ const EMPTY_PLAN = {
 
 const renderBuilder = async () => {
   await act(async () => {
-    render(<WorkoutBuilder planId="p1" clientId="c1" />);
+    render(<WorkoutBuilder planId="p1" />);
   });
 };
 
@@ -76,7 +76,7 @@ describe('adding exercises', () => {
     fireEvent.click(add[0]);
 
     expect(push).toHaveBeenCalledWith(
-      '/pt-os/clients/c1/training/builder/add-exercises?plan=p1&day=3',
+      '/pt-os/workout-plans/p1/builder/add-exercises?day=3',
     );
   });
 

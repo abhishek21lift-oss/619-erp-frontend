@@ -16,10 +16,10 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 
 const push = vi.fn();
-let params = new URLSearchParams('plan=p1&day=4');
+let params = new URLSearchParams('day=4');
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, back: vi.fn(), replace: vi.fn() }),
-  usePathname: () => '/pt-os/clients/c1/training/builder/add-exercises',
+  usePathname: () => '/pt-os/workout-plans/p1/builder/add-exercises',
   useSearchParams: () => params,
 }));
 vi.mock('@/components/Guard', () => ({
@@ -78,7 +78,7 @@ vi.mock('@/lib/api', () => ({
   },
 }));
 
-import AddExercisesPage from '@/app/(chrome)/pt-os/clients/[id]/training/builder/add-exercises/page';
+import AddExercisesPage from '@/app/(chrome)/pt-os/workout-plans/[id]/builder/add-exercises/page';
 
 const PLAN = {
   id: 'p1',
@@ -90,11 +90,11 @@ const PLAN = {
 
 // The page reads its route params with React's `use`, so it suspends on the
 // first render; Next supplies the boundary in production, the test has to.
-const renderPage = async () => {
+const renderPage = async (planId = 'p1') => {
   await act(async () => {
     render(
       <Suspense fallback={null}>
-        <AddExercisesPage params={Promise.resolve({ id: 'c1' })} />
+        <AddExercisesPage params={Promise.resolve({ id: planId })} />
       </Suspense>,
     );
   });
@@ -110,7 +110,7 @@ beforeEach(() => {
   addExercise.mockImplementation(async (_planId: string, body: { exercise_id: string }) => ({
     exercise: { id: `row-${body.exercise_id}` },
   }));
-  params = new URLSearchParams('plan=p1&day=4');
+  params = new URLSearchParams('day=4');
   panelProps = {};
 });
 
@@ -133,14 +133,14 @@ describe('the day comes from the URL', () => {
   it('clamps a day that is not a day', async () => {
     // This value lands in day_of_week. A hand-edited URL returns the trainer
     // to Monday; it does not write a day that does not exist.
-    params = new URLSearchParams('plan=p1&day=99');
+    params = new URLSearchParams('day=99');
     await renderPage();
     await act(async () => { fireEvent.click(screen.getByText('commit-one')); });
     expect(addExercise.mock.calls[0][1]).toEqual({ exercise_id: 'ex-row', day_of_week: 1 });
   });
 
   it('clamps a day that is not a number', async () => {
-    params = new URLSearchParams('plan=p1&day=Thursday');
+    params = new URLSearchParams('day=Thursday');
     await renderPage();
     await act(async () => { fireEvent.click(screen.getByText('commit-one')); });
     expect(addExercise.mock.calls[0][1]).toEqual({ exercise_id: 'ex-row', day_of_week: 1 });
@@ -152,7 +152,7 @@ describe('leaving the screen', () => {
     await renderPage();
     await act(async () => { fireEvent.click(screen.getByText('commit-two')); });
 
-    expect(push).toHaveBeenCalledWith('/pt-os/clients/c1/training/builder?plan=p1&day=4');
+    expect(push).toHaveBeenCalledWith('/pt-os/workout-plans/p1/builder?day=4');
     expect(successToast).toHaveBeenCalledWith('2 exercises added');
   });
 
@@ -194,7 +194,7 @@ describe('leaving the screen', () => {
     // it — and hides one with a breakpoint class jsdom does not apply. Either
     // copy is the same control.
     fireEvent.click(screen.getAllByRole('button', { name: /back to builder/i })[0]);
-    expect(push).toHaveBeenCalledWith('/pt-os/clients/c1/training/builder?plan=p1&day=4');
+    expect(push).toHaveBeenCalledWith('/pt-os/workout-plans/p1/builder?day=4');
   });
 });
 
@@ -216,8 +216,7 @@ describe('what the day already holds', () => {
 
 describe('without a programme', () => {
   it('says so instead of rendering a picker that cannot save', async () => {
-    params = new URLSearchParams('day=4');
-    await renderPage();
+    await renderPage('');
     expect(screen.getByText(/No programme selected/i)).toBeTruthy();
     expect(screen.queryByText('commit-one')).toBeNull();
     expect(detail).not.toHaveBeenCalled();

@@ -70,7 +70,7 @@ describe('NewProgrammeDialog — the replacement for the deleted wizard', () => 
 
     // The id must come from the RESPONSE, not from anything client-side.
     await waitFor(() =>
-      expect(push).toHaveBeenCalledWith('/pt-os/clients/cl-1/training/builder?plan=plan-99'));
+      expect(push).toHaveBeenCalledWith('/pt-os/workout-plans/plan-99/builder'));
   });
 
   it('creates the shell WITHOUT exercises', async () => {
@@ -105,7 +105,7 @@ describe('NewProgrammeDialog — the replacement for the deleted wizard', () => 
     render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
     await fillAndSubmit();
     await waitFor(() => expect(toastError).toHaveBeenCalled());
-    expect(push).toHaveBeenCalledWith('/pt-os/clients/cl-1/training/builder?plan=plan-99');
+    expect(push).toHaveBeenCalledWith('/pt-os/workout-plans/plan-99/builder');
   });
 
   it('names PAR-Q, not a generic failure, when the client is medically blocked', async () => {
@@ -123,7 +123,7 @@ describe('NewProgrammeDialog — the replacement for the deleted wizard', () => 
     // Never auto-dismisses — the whole point is that it must still be
     // visible after navigation.
     expect(toastError.mock.calls[0][1]).toMatchObject({ duration: 0 });
-    expect(push).toHaveBeenCalledWith('/pt-os/clients/cl-1/training/builder?plan=plan-99');
+    expect(push).toHaveBeenCalledWith('/pt-os/workout-plans/plan-99/builder');
   });
 
   it('does not navigate when creation itself fails', async () => {
@@ -180,12 +180,16 @@ describe('Training navigation', () => {
     // platform-split orphan check caught.
     for (const route of [
       'pt-os/workout-plans',
+      'pt-os/workout-plans/[id]/builder',
       'pt-os/clients/[id]/training/assigned',
       'pt-os/clients/[id]/training/analytics',
-      'pt-os/clients/[id]/training/builder',
       'pt-os/clients/[id]/workout-log',
     ]) {
       expect(routeExists(route), `${route} missing`).toBe(true);
     }
+    // And the shape it used to link to is gone rather than left as a second
+    // door onto the same builder. next.config.js redirects it, carrying the
+    // plan id out of ?plan= and into the path.
+    expect(routeExists('pt-os/clients/[id]/training/builder')).toBe(false);
   });
 });

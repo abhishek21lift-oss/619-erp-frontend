@@ -207,16 +207,15 @@ describe('a plan with nobody on it is still editable', () => {
     expect(routeExists('/pt-os/workout-plans/[id]/builder/add-exercises')).toBe(true);
   });
 
-  it('renders the same screen as the client-scoped route, not a copy of it', () => {
-    // Two routes, one component. A second implementation is how the two
-    // versions drift into different search, filters and keyboard behaviour.
-    for (const route of [
-      '/pt-os/workout-plans/[id]/builder/add-exercises',
-      '/pt-os/clients/[id]/training/builder/add-exercises',
-    ]) {
-      const src = readFileSync(appPath(route, 'page.tsx'), 'utf8');
-      expect(src).toContain('AddExercisesScreen');
-    }
+  it('is the only add-exercises route', () => {
+    // There were two, one under the plan and one under the client, mounting
+    // the same AddExercisesScreen. Two routes onto one component is how the
+    // two versions drift into different search, filters and keyboard
+    // behaviour; the client-scoped one is gone and redirects here.
+    const src = readFileSync(appPath('/pt-os/workout-plans/[id]/builder/add-exercises', 'page.tsx'), 'utf8');
+    expect(src).toContain('AddExercisesScreen');
+    expect(routeExists('/pt-os/clients/[id]/training/builder/add-exercises')).toBe(false);
+    expect(routeExists('/pt-os/clients/[id]/training/builder')).toBe(false);
   });
 
   it('sends the builder to the plan-scoped page when there is no client', () => {

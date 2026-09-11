@@ -499,24 +499,14 @@ function Inner() {
                   style={{ display: 'grid', gridTemplateColumns: view === 'grid' ? 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))' : '1fr', gap: 12 }}>
                   {plans.map((plan) => {
                     const assignment = assignmentByPlan.get(plan.id);
-                    const builderHref = presetClientId
-                      ? `/pt-os/clients/${presetClientId}/training/builder?plan=${plan.id}`
-                      : `/pt-os/workout-plans/${plan.id}`;
-                    /**
-                     * Editing a programme opens the Workout Builder.
-                     *
-                     * With a client in scope that is their builder. Without
-                     * one, the plan's own builder route — a plan nobody is
-                     * assigned to has no client route to live under, and it
-                     * still has to be editable. `assignment` is whoever is on
-                     * it, so a plan with a roster opens under that client and
-                     * keeps the workout-log link the client route provides.
-                     */
-                    const editHref = presetClientId
-                      ? builderHref
-                      : assignment
-                        ? `/pt-os/clients/${assignment.client_id}/training/builder?plan=${plan.id}`
-                        : `/pt-os/workout-plans/${plan.id}/builder`;
+                    // Opening a card shows the programme; editing it opens the
+                    // builder. Both address the plan, whether or not a client
+                    // is in scope: the builder used to have a second URL under
+                    // /pt-os/clients/[id]/training/builder, and which one you
+                    // arrived through changed nothing about what you could do
+                    // when you got there.
+                    const builderHref = `/pt-os/workout-plans/${plan.id}`;
+                    const editHref = `/pt-os/workout-plans/${plan.id}/builder`;
                     return (
                       <m.div key={plan.id} variants={itemVariants}>
                         <WorkoutPlanCard
