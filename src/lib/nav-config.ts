@@ -98,11 +98,11 @@ export const NAV_GROUPS: NavGroup[] = [
       // First in the group on purpose: it is the only item here a trainer
       // opens every day. The rest are authoring and reference.
       { href: '/pt-os/today',               label: 'Today',                icon: 'CalendarDays' },
-      // Sits above Workout Plans, which reads the old workout_plans tables and
-      // stays until the cutover finishes. Two entries for a while is the cost
-      // of migrating without a flag day; the old one goes when nothing needs it.
-      { href: '/pt-os/training/templates',  label: 'Workouts',             icon: 'Dumbbell',    matchPrefix: '/pt-os/training/templates' },
-      { href: '/pt-os/workout-plans',       label: 'Workout Plans',        icon: 'Dumbbell' },
+      // One entry, because there is one builder. A second item, "Workouts",
+      // pointed at /pt-os/training/templates — the Training OS builder — and
+      // sat above this one waiting for a cutover that production decided
+      // against: backend migrations 193 and 195 archived the tables behind it.
+      { href: '/pt-os/workout-plans',       label: 'Workouts',             icon: 'Dumbbell',    matchPrefix: '/pt-os/workout-plans' },
       { href: '/pt-os/workout-log',         label: 'Workout Log',          icon: 'ClipboardList', matchPrefix: '/pt-os/workout-log' },
       { href: '/pt-os/exercise-library',    label: 'Exercise Library',     icon: 'BookOpen',    feature: 'exercise_library' },
       { href: '/pt-os/diet-plans',          label: 'Diet Plans',           icon: 'Apple' },

@@ -85,6 +85,49 @@ const nextConfig = {
       // change again as the product settles; a 307 doesn't get cached
       // the way a 308 would.
       { source: '/checkin',            destination: '/checkin/qr-scanner',       permanent: false },
+
+      // ── The workout module consolidation ────────────────────────────────
+      //
+      // There were two ways to author a workout and two URL shapes onto the
+      // one that survived. Backend migrations 193 and 195 archived the tables
+      // behind the Training OS builder, so these four sources have nothing
+      // left to render — but they are in trainers' history and bookmarks, and
+      // one of them is the URL the "Create and add exercises" button pushed
+      // for months. A 404 is not the right answer to any of them.
+      //
+      // permanent, because none of these shapes is coming back: the tables are
+      // archived and the client segment addressed nothing.
+
+      // The Training OS builder. A template id belongs to an archived table
+      // and cannot name a plan, so the deep link lands on the index rather
+      // than on a plan that is not the one asked for.
+      { source: '/pt-os/training/templates',     destination: '/pt-os/workout-plans', permanent: true },
+      { source: '/pt-os/training/templates/:id', destination: '/pt-os/workout-plans', permanent: true },
+
+      // The client-scoped builder. It always carried the plan in ?plan=, so
+      // the deep link survives in full — the named capture moves the plan id
+      // into the path. `day` rides along on its own: Next appends the original
+      // query to the destination, and both pages read it from there.
+      {
+        source: '/pt-os/clients/:clientId/training/builder/add-exercises',
+        has: [{ type: 'query', key: 'plan', value: '(?<plan>.+)' }],
+        destination: '/pt-os/workout-plans/:plan/builder/add-exercises',
+        permanent: true,
+      },
+      {
+        source: '/pt-os/clients/:clientId/training/builder',
+        has: [{ type: 'query', key: 'plan', value: '(?<plan>.+)' }],
+        destination: '/pt-os/workout-plans/:plan/builder',
+        permanent: true,
+      },
+      // Without ?plan= there is no plan to open. This is what the old route
+      // rendered an empty state for; the index is the same answer with
+      // somewhere to go next.
+      {
+        source: '/pt-os/clients/:clientId/training/builder/:rest*',
+        destination: '/pt-os/workout-plans',
+        permanent: true,
+      },
     ];
   },
 

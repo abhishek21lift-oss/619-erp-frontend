@@ -15,7 +15,6 @@ import { auth, webauthn, accounts, profile } from './endpoints/auth';
 import { clients, trainers, leave, attendance } from './endpoints/people';
 import { payments, invoices, expenses, offers, upiPayments } from './endpoints/money';
 import { workouts, exercises, diet, classes, bookings, calendar } from './endpoints/training';
-import { training } from './endpoints/trainingOs';
 import { progress } from './endpoints/progress';
 import { pt } from './endpoints/ptOs';
 import { branches, gymSettings, qr, subscription, membershipPlans } from './endpoints/studio';
@@ -33,12 +32,10 @@ export * from './types';
 export type { PlatformRiskDomain, PlatformRiskFinding, PlatformRiskReport } from './endpoints/commandCenter';
 export type { WhatsAppState, WhatsAppStatus, WhatsAppQr } from './endpoints/platform';
 
-export type {
-  PrescriptionType, WorkoutSection, LogsAs,
-  PrescriptionTypeMeta, TrainingMeta,
-  TrainingProgram, ProgramPhase, ProgramWeek,
-  WorkoutTemplate, TemplateExercise,
-} from './endpoints/trainingOs';
+// The `api.training.*` namespace and its types were re-exported here: the
+// /api/training client for workout templates, programmes, phases and weeks.
+// Backend migration 195 archived the tables behind it, so it is gone along
+// with the builder that called it. `api.workouts.*` is the prescription API.
 
 // qsOf and buildQs remain private to the endpoint modules.
 
@@ -57,7 +54,6 @@ export const api = {
   offers,
   upiPayments,
   workouts,
-  training,
   exercises,
   diet,
   classes,

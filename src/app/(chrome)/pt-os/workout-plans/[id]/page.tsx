@@ -67,12 +67,11 @@ function Inner() {
    * week, the day tabs, reordering and autosave, and its add-exercises step
    * is its own page rather than a modal on top of the thing being edited.
    *
-   * The plan's own route is used when nobody is assigned, since the client
-   * route needs a client.
+   * Addressed by the plan whether or not a client is assigned. The client-
+   * scoped twin this used to branch to is gone: it mounted the same builder
+   * and the client segment fed nothing but its own add-exercises link.
    */
-  const builderHref = clientId
-    ? `/pt-os/clients/${clientId}/training/builder?plan=${encodeURIComponent(String(id))}`
-    : `/pt-os/workout-plans/${encodeURIComponent(String(id))}/builder`;
+  const builderHref = `/pt-os/workout-plans/${encodeURIComponent(String(id))}/builder`;
   const openBuilder = useCallback(() => router.push(builderHref), [router, builderHref]);
 
   if (loading) {

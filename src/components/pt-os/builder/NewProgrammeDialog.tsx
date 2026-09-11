@@ -267,7 +267,7 @@ export default function NewProgrammeDialog({
       );
 
       onCreated?.(plan);
-      router.push(`/pt-os/clients/${clientId}/training/builder?plan=${plan.id}`);
+      router.push(`/pt-os/workout-plans/${plan.id}/builder`);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Could not create the programme');
     } finally {

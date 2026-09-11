@@ -78,18 +78,9 @@ const DAYS = [
 
 export interface WorkoutBuilderProps {
   planId: string;
-  /**
-   * The client whose programme this is, when it is reached through one.
-   *
-   * Adding exercises is its own route, and that route lives under the client
-   * when there is one. A programme nobody is assigned to has no client to
-   * live under and still has to be fillable, so it is optional and the plan's
-   * own route is used instead.
-   */
-  clientId?: string;
 }
 
-export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps) {
+export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
   const { toast } = useToast();
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
   const [rows, setRows] = useState<WorkoutPlanExercise[]>([]);
@@ -121,10 +112,13 @@ export default function WorkoutBuilder({ planId, clientId }: WorkoutBuilderProps
    * The day travels in the URL so the page knows which day it is filling, and
    * so the builder is back on that same day when the trainer returns.
    */
-  const addExercisesHref = clientId
-    ? `/pt-os/clients/${clientId}/training/builder/add-exercises`
-      + `?plan=${encodeURIComponent(planId)}&day=${day}`
-    : `/pt-os/workout-plans/${encodeURIComponent(planId)}/builder/add-exercises?day=${day}`;
+  // One route, addressed by the plan. It used to fork on an optional clientId
+  // and point at a twin under /pt-os/clients/[id]/training/builder — two URL
+  // shapes onto this same component, where the client segment decided nothing
+  // except which of the two to use next. The plan is what is being edited, and
+  // a programme with nobody assigned has to be fillable either way.
+  const addExercisesHref =
+    `/pt-os/workout-plans/${encodeURIComponent(planId)}/builder/add-exercises?day=${day}`;
 
   const { status, enqueue, flushNow } = useAutosave<WorkoutExerciseInput & { week_number?: number }>({
     // The week travels INSIDE the patch, put there by patchRow at the moment
