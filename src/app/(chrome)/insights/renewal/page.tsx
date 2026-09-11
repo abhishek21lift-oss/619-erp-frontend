@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { RefreshCcw, Users, AlertTriangle, CalendarClock, Percent, Clock, UserCheck } from 'lucide-react';
-import { api, Client } from '@/lib/api';
+import { api, Client, InsightsSummary } from '@/lib/api';
 import { fmtDate } from '@/lib/format';
 import { PageContainer, PageHero } from '@/components/ui';
 
@@ -16,8 +16,11 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] } }
 };
 
-function KpiCard({ label, value, icon, gradient }: {
-  label: string; value: string | number; icon?: React.ReactNode; gradient: string
+function KpiCard({ label, value, icon, gradient, hint }: {
+  label: string; value: string | number; icon?: React.ReactNode; gradient: string;
+  /** The figure's own denominator or caveat. A rate without one is a claim
+   *  without evidence — 100% of one term reads identically to 100% of forty. */
+  hint?: string;
 }) {
   return (
     <m.div variants={itemVariants}
@@ -33,6 +36,11 @@ function KpiCard({ label, value, icon, gradient }: {
         )}
       </div>
       <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{value}</div>
+      {hint && (
+        <div style={{ marginTop: 6, fontSize: 11, lineHeight: 1.35, color: 'var(--text-muted)', position: 'relative', zIndex: 1 }}>
+          {hint}
+        </div>
+      )}
     </m.div>
   );
 }
@@ -48,49 +56,70 @@ export default function RenewalAnalysisPage() {
   );
 }
 
+/** Days from today to a date, or null when there is no date. */
+function daysUntil(date?: string | null): number | null {
+  if (!date) return null;
+  return Math.ceil((new Date(date).getTime() - Date.now()) / 86400000);
+}
+
 function Inner() {
   const [clients, setClients] = useState<Client[]>([]);
+  const [summary, setSummary] = useState<InsightsSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // The renewal rate is fetched, not derived.
+  //
+  // It used to be computed here as active / (active + expired) over whatever
+  // api.clients.list returned — a ratio of two current status counts, with no
+  // window, presented as a renewal rate. It measured the wrong thing in three
+  // separate ways: it read `status`, a hand-maintained string that disagrees
+  // with the client's own pt_end_date for roughly a third of live clients; it
+  // had no period, so it could not answer "renewal rate this quarter"; and as
+  // a stock ratio it cannot fall below 50% while a studio keeps enrolling,
+  // because every new client lands in the numerator.
+  //
+  // On production it read 50% for a studio whose true conversion was 0%.
+  //
+  // /api/insights/summary computes the real thing — of the terms that reached
+  // their end date in the window, how many were renewed — in SQL, over the
+  // whole population, scoped to this studio. The client list below is still
+  // fetched, but only to LIST who is up for renewal; no figure is derived
+  // from it.
   useEffect(() => {
     let alive = true;
-    api.clients
-      .list({})
-      .then((r) => alive && setClients(r))
-      .catch((e) => alive && setError(e.message))
+    Promise.all([
+      api.insights.summary().catch((e) => { if (alive) setError(e.message); return null; }),
+      api.clients.list({}).catch((e) => { if (alive) setError(e.message); return []; }),
+    ])
+      .then(([s, cs]) => {
+        if (!alive) return;
+        if (s) setSummary(s.data);
+        setClients(cs);
+      })
       .finally(() => alive && setLoading(false));
     return () => { alive = false; };
   }, []);
 
-  const stats = useMemo(() => {
-    const now = Date.now();
-    const active = clients.filter((c) => c.status === 'active').length;
-    const expired = clients.filter((c) => c.status === 'expired').length;
-    const expiring7 = clients.filter((c) => {
-      if (!c.pt_end_date || c.status !== 'active') return false;
-      const days = Math.ceil((new Date(c.pt_end_date).getTime() - now) / 86400000);
-      return days >= 0 && days <= 7;
+  // Expiry counts come from the same date the table below sorts on, so the
+  // tiles and the rows can never disagree about who is expiring. The server's
+  // active/lapsed counts are shown as they are.
+  const expiring = useMemo(() => {
+    const within = (limit: number) => clients.filter((c) => {
+      const d = daysUntil(c.pt_end_date);
+      return d !== null && d >= 0 && d <= limit;
     }).length;
-    const expiring30 = clients.filter((c) => {
-      if (!c.pt_end_date || c.status !== 'active') return false;
-      const days = Math.ceil((new Date(c.pt_end_date).getTime() - now) / 86400000);
-      return days >= 0 && days <= 30;
-    }).length;
-    const renewalRate = active + expired > 0 ? Math.round((active / (active + expired)) * 100) : 0;
-    return { active, expired, expiring7, expiring30, renewalRate };
+    return { in7: within(7), in30: within(30) };
   }, [clients]);
 
-  const upcoming = useMemo(() => {
-    const now = Date.now();
-    return clients
+  const upcoming = useMemo(() => (
+    clients
       .filter((c) => {
-        if (!c.pt_end_date || c.status !== 'active') return false;
-        const days = Math.ceil((new Date(c.pt_end_date).getTime() - now) / 86400000);
-        return days >= 0 && days <= 30;
+        const d = daysUntil(c.pt_end_date);
+        return d !== null && d >= 0 && d <= 30;
       })
-      .sort((a, b) => new Date(a.pt_end_date!).getTime() - new Date(b.pt_end_date!).getTime());
-  }, [clients]);
+      .sort((a, b) => new Date(a.pt_end_date!).getTime() - new Date(b.pt_end_date!).getTime())
+  ), [clients]);
 
   return (
     <PageContainer>
@@ -107,10 +136,25 @@ function Inner() {
           scrolling to read — the whole point of a KPI row is that you take
           it in at once. */}
       <m.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label="Active Members" value={stats.active} icon={<Users size={16} />} gradient="linear-gradient(135deg, #ecfdf5, #fff)" />
-        <KpiCard label="Expiring in 7 Days" value={stats.expiring7} icon={<AlertTriangle size={16} />} gradient="linear-gradient(135deg, #fef2f2, #fff)" />
-        <KpiCard label="Expiring in 30 Days" value={stats.expiring30} icon={<CalendarClock size={16} />} gradient="linear-gradient(135deg, #fffbeb, #fff)" />
-        <KpiCard label="Renewal Rate" value={`${stats.renewalRate}%`} icon={<Percent size={16} />} gradient="linear-gradient(135deg, #f1f5f9, #fff)" />
+        <KpiCard label="Active Members" value={summary ? summary.active_clients : '—'} icon={<Users size={16} />} gradient="linear-gradient(135deg, #ecfdf5, #fff)" />
+        <KpiCard label="Expiring in 7 Days" value={expiring.in7} icon={<AlertTriangle size={16} />} gradient="linear-gradient(135deg, #fef2f2, #fff)" />
+        <KpiCard label="Expiring in 30 Days" value={expiring.in30} icon={<CalendarClock size={16} />} gradient="linear-gradient(135deg, #fffbeb, #fff)" />
+        {/* Null is rendered as "—", never as 0%. Null means no term came up
+            for renewal in the window, which is not the same fact as every
+            client having left, and the two must not look alike. The
+            denominator is shown beside the rate so a 100% built on one term
+            cannot be mistaken for a 100% built on forty. */}
+        <KpiCard
+          label="Renewal Rate"
+          value={summary?.renewal_rate_pct === null || summary?.renewal_rate_pct === undefined
+            ? '—'
+            : `${summary.renewal_rate_pct}%`}
+          hint={summary && summary.terms_due > 0
+            ? `${summary.terms_renewed} of ${summary.terms_due} terms renewed · last 30 days`
+            : 'No terms came up for renewal in the last 30 days'}
+          icon={<Percent size={16} />}
+          gradient="linear-gradient(135deg, #f1f5f9, #fff)"
+        />
       </m.div>
 
       <m.div variants={containerVariants} initial="hidden" animate="visible">

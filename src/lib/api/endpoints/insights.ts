@@ -14,6 +14,7 @@ import type {
   AiMemoryCandidate, AiProgrammerProposal, PendingWorkQueue, ClientIntelligenceSummary,
   AiIntelligenceAudit,
   DuesItem, DuesSummary, ProfileDevice, ProfileSession, SearchResponse, TrainerSummaryRow,
+  InsightsSummary, MetricDefinition,
 } from '../types';
 
 export const reports = {
@@ -44,6 +45,38 @@ export const reports = {
     )}`),
   trainerSummary: () =>
     http<TrainerSummaryRow[]>('/api/reports/trainer-summary'),
+};
+
+/**
+ * The canonical metric layer — `/api/insights`.
+ *
+ * One request, one window, one scope, every headline figure. It exists
+ * because the same named metric was being computed in several places and the
+ * numbers disagreed: seven definitions of "active client" across the backend,
+ * two of "present", and a renewal rate that only ever existed in the browser
+ * as `active / (active + expired)` — a stock ratio over a hand-maintained
+ * status column, presented as a conversion rate.
+ *
+ * Every figure here is computed in SQL over the whole population. Nothing in
+ * this namespace should be re-derived, re-bucketed or summed client-side; if
+ * a screen needs a number that is not here, the right move is to add it to
+ * the server's definition catalogue rather than to compute it locally.
+ */
+export const insights = {
+  /** Headline metrics for one window. Defaults to the last 30 days. */
+  summary: (params?: { from?: string; to?: string }) =>
+    http<{ data: InsightsSummary; meta: { window: { from: string; to: string } } }>(
+      `/api/insights/summary${buildQs(params as Record<string, string> | undefined)}`,
+    ),
+  /**
+   * What each figure means, from the same constant the SQL is built from.
+   *
+   * Worth preferring over a hand-written tooltip: a definition restated in
+   * the UI drifts from the query the moment either changes, and this whole
+   * module exists because of exactly that class of drift.
+   */
+  definitions: () =>
+    http<{ data: Record<string, MetricDefinition> }>('/api/insights/definitions'),
 };
 
 /**

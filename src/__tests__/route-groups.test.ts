@@ -48,7 +48,9 @@ const code = (s: string) => s
 /** The routes that had no AppShell before the refactor, and must keep none. */
 const BARE = [
   '[...slug]',                   // the catch-all — notFound()
-  'admin/dashboard',             // redirect to /dashboard
+  // 'admin/dashboard' was here. It was a redirect to /dashboard, a route that
+  // has never existed, so /admin 404'd through two hops. Both /admin and
+  // /admin/dashboard are next.config.js redirects to / now.
   'attendance/reports',          // redirect
   'auth/set-password',           // token in the URL, no session
   'client/activate',             // ditto
