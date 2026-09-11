@@ -32,11 +32,6 @@ export * from './types';
 export type { PlatformRiskDomain, PlatformRiskFinding, PlatformRiskReport } from './endpoints/commandCenter';
 export type { WhatsAppState, WhatsAppStatus, WhatsAppQr } from './endpoints/platform';
 
-// The `api.training.*` namespace and its types were re-exported here: the
-// /api/training client for workout templates, programmes, phases and weeks.
-// Backend migration 195 archived the tables behind it, so it is gone along
-// with the builder that called it. `api.workouts.*` is the prescription API.
-
 // qsOf and buildQs remain private to the endpoint modules.
 
 export const api = {
