@@ -45,7 +45,18 @@ interface PtClientDetail {
   trainer_id?: string; trainer_name?: string;
   package_type?: string;
   base_amount: number; discount: number; final_amount: number;
+  /** LIFETIME paid and its derived balance — NOT this term's. See current_term_* below. */
   paid_amount: number; balance_amount: number;
+  /**
+   * The current PT term's money, computed by the backend (GET
+   * /api/pt-os/clients/:id), which owns the definition. This page must not
+   * re-derive these from subscription history: those rows are per-term
+   * snapshots that no payment path updates.
+   *
+   * Optional only so a cached page rendering against an older API response
+   * still type-checks; the fallback is the client's own fields.
+   */
+  current_term_fee?: number; current_term_paid?: number; current_term_balance?: number;
   joining_date?: string; pt_start_date?: string; pt_end_date?: string;
   duration_months?: number; monthly_pt_amount: number;
   trainer_commission: number; weight?: number; notes?: string;
@@ -371,17 +382,38 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const initials = (name: string) =>
     name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
 
-  const currentSub = subscriptionHistory.length > 0 ? subscriptionHistory[subscriptionHistory.length - 1] : null;
-  const currentTermFee     = currentSub ? Number(currentSub.selling_price  ?? 0) : (client?.final_amount   ?? 0);
-  const currentTermPaid    = currentSub ? Number(currentSub.amount_paid    ?? 0) : (client?.paid_amount    ?? 0);
-  const currentTermBalance = currentSub ? Number(currentSub.balance_amount ?? 0) : (client?.balance_amount ?? 0);
+  // The backend owns the current-term definition — see GET /clients/:id in
+  // pt-os.routes.js. This page reads it and does not re-derive it.
+  //
+  // What was here before preferred subscriptionHistory[length - 1] over the
+  // client row, and that is exactly backwards. A pt_client_subscriptions row
+  // is a snapshot written once at enrollment or renewal; no payment path
+  // updates it. So the one source the page trusted first was the one
+  // guaranteed to be stale the moment a client paid anything afterwards — a
+  // fully paid-up client whose snapshot happened to be written with zeros
+  // rendered ₹0 / ₹0 / ₹0 while the client row and the payment ledger agreed
+  // on 80000 / 60000 / 20000.
+  //
+  // It also picked by ARRAY POSITION, which only coincides with "current"
+  // while the API's ORDER BY holds. That ordering is `start_date ASC NULLS
+  // LAST`, so a single row with a NULL start_date sorts last and would have
+  // become "the current term" no matter how old it was.
+  //
+  // The fallbacks below are the client's own fields — never a subscription
+  // row — so that even against an older API response this cannot regress to
+  // reading history.
+  const currentTermFee     = Number(client?.current_term_fee     ?? client?.final_amount   ?? 0);
+  const currentTermPaid    = Number(client?.current_term_paid    ?? client?.paid_amount    ?? 0);
+  const currentTermBalance = Number(client?.current_term_balance ?? client?.balance_amount ?? 0);
 
-  // Lifetime paid — sum of amount_paid across every PT term/renewal, not just
-  // the current one. Falls back to the client's own paid_amount when there's
-  // no renewal history yet (client is still on their first, only term).
-  const lifetimePaid = subscriptionHistory.length > 0
-    ? subscriptionHistory.reduce((s: number, t: any) => s + Number(t.amount_paid ?? 0), 0)
-    : (client?.paid_amount ?? 0);
+  // Lifetime paid across every PT term. pt_clients.paid_amount IS that total:
+  // every payment increments it and /renew adds to it rather than resetting,
+  // which is precisely why it is the wrong number for the CURRENT term above.
+  //
+  // Summing the snapshot rows instead — what this did before — undercounts by
+  // every payment made after a term row was written, and reported 0 for the
+  // client whose only snapshot carried zeros.
+  const lifetimePaid = Number(client?.paid_amount ?? 0);
   const lifetimeTermCount = subscriptionHistory.length > 0 ? subscriptionHistory.length : 1;
 
   const completionPct = currentTermFee > 0
