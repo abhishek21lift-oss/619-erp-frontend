@@ -23,6 +23,8 @@
 // "fix" by handing it the only series available. Hence the test below.
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const requested: string[] = [];
 
@@ -211,5 +213,65 @@ describe('PT-OS dashboard KPIs', () => {
     await screen.findByText('Active Clients');
     await waitFor(() => expect(requested.length).toBeGreaterThan(0));
     expect(requested.some((u) => u.includes('informed-consent'))).toBe(false);
+  });
+});
+
+// ── The active/expired ratio, and the one thing it is allowed to be ───────
+//
+// `active / (active + expired)` is a snapshot of who currently holds a
+// package. It is not retention and it is not a renewal rate: neither it nor
+// anything derived from it knows whether a client whose package ENDED came
+// back, which is the only question either word answers. It also cannot fall
+// below 50% while a studio keeps enrolling, because every new client lands in
+// its numerator — so it trends with growth, not loyalty.
+//
+// Labelled honestly on its own tile, it is a fine number. The failure mode is
+// it leaking somewhere that implies more: this file used to carry a
+// `healthScore()` blending it at 35% weight into a 0-100 "Excellent / Healthy
+// / At Risk" verdict. That function and its HealthRing were dead — never
+// called, from the commit that introduced them — so nobody ever saw the wrong
+// verdict, but the arithmetic sat there waiting to be wired up.
+//
+// True renewal conversion (renewed_of_cohort / expired_cohort, windowed, null
+// when no term came up) is canonical in /api/insights/renewals and rendered on
+// /insights/renewal. The dashboard must read it, never re-derive it.
+
+describe('the active/expired ratio stays a labelled snapshot', () => {
+  const SRC = readFileSync(
+    join(process.cwd(), 'src', 'components', 'dashboards', 'PtOsDashboard.tsx'),
+    'utf8',
+  );
+  /** The file with its comments stripped — assertions below are about the
+   *  code, and prose explaining why a name is wrong must not read as the
+   *  name being used. */
+  const CODE = SRC
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+
+  it('is computed exactly once', () => {
+    // Once, for the Active Share tile. A second occurrence is a second
+    // definition of the same thing, which is how the first one drifted.
+    const uses = CODE.match(/active_pt_clients\s*\/\s*\(\s*d?\.?active_pt_clients/g) || [];
+    expect(uses).toHaveLength(1);
+  });
+
+  it('never feeds a composite score or a health verdict', () => {
+    expect(CODE).not.toMatch(/healthScore/);
+    expect(CODE).not.toMatch(/HealthRing/);
+    // The verdict words that score rendered. Any of them reappearing means
+    // somebody is grading a studio again, and the ratio is the ingredient
+    // nearest to hand.
+    for (const verdict of ['Focus Needed', 'At Risk', 'Excellent']) {
+      expect(CODE).not.toContain(verdict);
+    }
+  });
+
+  it('is never called retention or a renewal rate in this file', () => {
+    // Including identifiers: `retentionPct` was an alias for exactly this
+    // ratio, and the name is what made it look like an answer to a question
+    // it cannot answer. Comments are stripped first — the file explains at
+    // length why this is NOT retention, and saying so is not using the name.
+    expect(CODE).not.toMatch(/retention/i);
+    expect(CODE).not.toMatch(/renewal[ _]?rate/i);
   });
 });
