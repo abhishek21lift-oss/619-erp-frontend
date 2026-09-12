@@ -16,6 +16,8 @@ import {
   isBenignFailure,
   shortTime,
   fullTimestamp,
+  failureTone,
+  failureLine,
 } from '@/lib/communication-state';
 
 describe('which stages a message reached', () => {
@@ -122,5 +124,47 @@ describe('timestamps', () => {
     // A malformed timestamp must not put "Invalid Date" in front of a studio.
     expect(shortTime('not-a-date')).toBe('');
     expect(fullTimestamp('')).toBe('');
+  });
+});
+
+describe('how loudly to say a failure reason', () => {
+  // The worker now leaves a row 'queued' between delivery attempts and records
+  // the reason the last one hit — because marking it 'failed' on the first
+  // attempt is what silently disabled the retry budget in the backend. That
+  // puts a reason on a row that has NOT failed, and the UI has to say which it
+  // is: red beside a grey QUEUED badge tells a studio their message is lost
+  // while it is still on its way.
+
+  it('a queued row is retrying, not failed', () => {
+    const row = { status: 'queued', failure_reason: 'gateway_unreachable' };
+    expect(failureTone(row)).toBe('retrying');
+    expect(failureLine(row)).toMatch(/^Last attempt:/);
+    expect(failureLine(row)).toMatch(/trying again/);
+  });
+
+  it('a failed row is an error', () => {
+    const row = { status: 'failed', failure_reason: 'whatsapp_logged_out' };
+    expect(failureTone(row)).toBe('error');
+    // No hedging prefix: this one IS the outcome.
+    expect(failureLine(row)).toBe(failureText('whatsapp_logged_out'));
+  });
+
+  it('send-once declining a duplicate stays a note whatever the status', () => {
+    // Benign wins over retrying: nothing is being retried, and nothing went
+    // wrong. It is the guarantee working.
+    expect(failureTone({ status: 'queued', failure_reason: 'duplicate_in_flight' })).toBe('note');
+    expect(failureTone({ status: 'failed', failure_reason: 'duplicate_in_flight' })).toBe('note');
+  });
+
+  it('says nothing when the row carries no reason', () => {
+    expect(failureLine({ status: 'sent' })).toBeNull();
+    expect(failureLine({ status: 'queued', failure_reason: null })).toBeNull();
+  });
+
+  it('an unknown code still gets the retrying framing', () => {
+    // The prefix comes from the row's status, not from the map — so a reason
+    // the map has not learned is still correctly described as in flight.
+    expect(failureLine({ status: 'queued', failure_reason: 'some_new_reason' }))
+      .toBe('Last attempt: some_new_reason — trying again');
   });
 });

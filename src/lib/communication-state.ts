@@ -90,6 +90,41 @@ export function isBenignFailure(reason?: string | null): boolean {
   return reason === 'duplicate_in_flight';
 }
 
+/**
+ * How loudly to say a failure reason.
+ *
+ * Three tones rather than two, because the worker now leaves a row 'queued'
+ * between delivery attempts and records the reason the last one hit. That is
+ * the honest state — BullMQ is going to try again — but it puts a reason on a
+ * row that has NOT failed, and rendering it in red beside a grey QUEUED badge
+ * would tell the studio their message is lost while it is still on its way.
+ *
+ *   note       send-once declined a duplicate. Working as intended.
+ *   retrying   an attempt failed and another is coming. Not an outcome yet.
+ *   error      terminal: this message is not going out.
+ *
+ * Driven by `status`, because that is the field the ladder moves and the one
+ * the worker binds its writes to.
+ */
+export type FailureTone = 'error' | 'note' | 'retrying';
+
+export function failureTone(row: CommunicationLogRow): FailureTone {
+  if (isBenignFailure(row.failure_reason)) return 'note';
+  return row.status === 'queued' ? 'retrying' : 'error';
+}
+
+/**
+ * The failure line as a studio should read it.
+ *
+ * A retrying row says so first, so "could not be reached" is understood as
+ * where the last attempt got to rather than as a verdict on the message.
+ */
+export function failureLine(row: CommunicationLogRow): string | null {
+  const text = failureText(row.failure_reason);
+  if (!text) return null;
+  return failureTone(row) === 'retrying' ? `Last attempt: ${text} — trying again` : text;
+}
+
 /** Short local time, e.g. "14:15". Dates are shown separately on the row. */
 export function shortTime(iso: string): string {
   const d = new Date(iso);
