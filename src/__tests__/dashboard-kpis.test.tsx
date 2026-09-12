@@ -75,9 +75,26 @@ describe('PT-OS dashboard KPIs', () => {
 
   it('shows the three metrics that are on every screen size', async () => {
     render(<PtOsDashboard />);
-    for (const label of ['Active Clients', 'PT Revenue', 'Retention']) {
+    for (const label of ['Active Clients', 'PT Revenue', 'Active Share']) {
       expect(await screen.findByText(label)).toBeTruthy();
     }
+  });
+
+  it('does not call the active/expired snapshot Retention', async () => {
+    // The tile shows active / (active + expired) — a snapshot of who is
+    // currently on a package. That is not retention and it is not a renewal
+    // rate: neither figure knows whether anyone whose package ENDED came
+    // back, which is the only question either word answers. Labelled
+    // Retention, a studio with no renewals at all reads a healthy number.
+    //
+    // True renewal conversion is renewed_of_cohort / expired_cohort, served
+    // by the Metric Engine, and the tile's sub-label points at the screen
+    // that shows it.
+    render(<PtOsDashboard />);
+    const tile = await screen.findByText('Active Share');
+    expect(screen.queryByText('Retention')).toBeNull();
+    expect(screen.queryByText('Renewal Rate')).toBeNull();
+    expect(tile.closest('.group')!.textContent).toMatch(/true renewal on Insights/i);
   });
 
   it('no longer offers advice under the revenue split', async () => {
@@ -112,7 +129,7 @@ describe('PT-OS dashboard KPIs', () => {
 
   it('does not hide any of the metrics that should stay on desktop', async () => {
     render(<PtOsDashboard />);
-    for (const label of ['Active Clients', 'PT Revenue', 'Retention']) {
+    for (const label of ['Active Clients', 'PT Revenue', 'Active Share']) {
       const card = (await screen.findByText(label)).closest('.group');
       expect(card!.className).not.toMatch(/lg:hidden/);
     }
@@ -121,7 +138,7 @@ describe('PT-OS dashboard KPIs', () => {
   it('gives a tile a sparkline only when the series is its own', async () => {
     // revenueTrend is the ONLY series this endpoint carries, and it is
     // revenue's. PT Revenue and Commission may draw it; Active Clients and
-    // Retention have no series of their own and must draw nothing.
+    // Active Share have no series of their own and must draw nothing.
     render(<PtOsDashboard />);
     const bars = async (label: string) => {
       const card = (await screen.findByText(label)).closest('.group');
@@ -131,7 +148,7 @@ describe('PT-OS dashboard KPIs', () => {
     expect(await bars('PT Revenue')).not.toBeNull();
     expect(await bars('Commission')).not.toBeNull();
     expect(await bars('Active Clients')).toBeNull();
-    expect(await bars('Retention')).toBeNull();
+    expect(await bars('Active Share')).toBeNull();
   });
 
   it('labels the sparkline it does draw with its own metric', async () => {
@@ -153,7 +170,7 @@ describe('PT-OS dashboard KPIs', () => {
     // before this.
     render(<PtOsDashboard />);
     await screen.findByText('Active Clients');
-    for (const label of ['Active Clients', 'PT Revenue', 'Commission', 'Retention']) {
+    for (const label of ['Active Clients', 'PT Revenue', 'Commission', 'Active Share']) {
       const card = (await screen.findByText(label)).closest('.group');
       expect(card!.querySelectorAll('[data-kpi-foot]'), `${label}'s foot`).toHaveLength(1);
     }
