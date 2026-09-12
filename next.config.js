@@ -72,7 +72,12 @@ const nextConfig = {
 
   async redirects() {
     return [
-      { source: '/admin',              destination: '/admin/dashboard',         permanent: true },
+      // `/admin` used to point at `/admin/dashboard`, which was a four-line
+      // file whose whole body was `redirect('/dashboard')` — and `/dashboard`
+      // has never existed. So `/admin` 404'd through two hops. Both land on
+      // the studio dashboard now, which is what an admin signing in gets.
+      { source: '/admin',              destination: '/',                         permanent: true },
+      { source: '/admin/dashboard',    destination: '/',                         permanent: true },
       { source: '/member',             destination: '/member/dashboard',         permanent: true },
       { source: '/pt-os',              destination: '/',                         permanent: true },
       { source: '/trainer',            destination: '/trainer/dashboard',        permanent: true },
@@ -85,6 +90,22 @@ const nextConfig = {
       // change again as the product settles; a 307 doesn't get cached
       // the way a 308 would.
       { source: '/checkin',            destination: '/checkin/qr-scanner',       permanent: false },
+
+      // ── The bare /insights URL ──────────────────────────────────────────
+      //
+      // `/insights` has no page.tsx and 404s. The sidebar group label is not a
+      // link so nothing in-app reaches it, but the URL is guessable and is what
+      // a bookmark of "insights" would be.
+      //
+      // Only the BARE path. Its children are real pages — the four report
+      // screens plus the `[tab]` redirect map — and redirects are checked
+      // before the filesystem, so a catch-all here would shadow all of them.
+      //
+      // The `/reports/:tab` redirects this branch originally added are gone:
+      // main's own `/reports/[tab]/page.tsx` now redirects every slug to its
+      // canonical page, and a config entry would have silently shadowed that
+      // page while leaving it on disk.
+      { source: '/insights',                   destination: '/insights/revenue', permanent: false },
 
       // ── The second workout builder URL ──────────────────────────────────
       //
