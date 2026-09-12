@@ -603,7 +603,12 @@ function StatCard({
       whileHover={{ y: -3, boxShadow: `0 16px 34px ${tone.glow}66` }}
       whileTap={{ scale: 0.98 }}
       onClick={() => href && router.push(href)}
-      className={cn('group relative flex aspect-square cursor-pointer flex-col overflow-hidden rounded-[18px]', className)}
+      // 6:5 rather than square. A square at two per row is ~195px on a phone
+      // and most of the upper half was empty — the icon sat alone at the top
+      // with the figure pinned to the bottom. Trading that dead band for a
+      // shorter tile and a bigger number spends the same pixels on the thing
+      // the tile is for. Still one ratio for all four, so the grid stays even.
+      className={cn('group relative flex aspect-[6/5] cursor-pointer flex-col overflow-hidden rounded-[18px]', className)}
       style={{
         background: `linear-gradient(150deg, ${tone.from} 0%, ${tone.to} 100%)`,
         // The glow is the card's own hue, not a grey drop shadow. Four of
@@ -648,7 +653,7 @@ function StatCard({
             on a gym floor. */}
         <div className="mt-auto">
           <p className="text-[9px] font-[800] uppercase tracking-[0.13em] text-white sm:text-[9.5px]">{label}</p>
-          <p className="mt-1 text-[23px] font-[900] leading-none tracking-[-0.04em] tabular-nums text-white sm:text-[26px]">{value}</p>
+          <p className="mt-1 text-[28px] font-[900] leading-none tracking-[-0.04em] tabular-nums text-white sm:text-[32px]">{value}</p>
           {sub && <p className="mt-1 line-clamp-2 text-[9.5px] font-[600] leading-tight text-white sm:text-[10px]">{sub}</p>}
         </div>
       </div>
