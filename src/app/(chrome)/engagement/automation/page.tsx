@@ -1,13 +1,14 @@
 'use client';
 import { useState } from 'react';
 import { m } from 'framer-motion';
-import { Bot, Plus, Loader2, Power, PowerOff, Edit2, Trash2, Zap, MessageSquare, Clock } from 'lucide-react';
+import { Bot, Plus, Loader2, Power, PowerOff, Edit2, Trash2, Zap, MessageSquare, Clock, Check, CheckCheck, AlertCircle, Info } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import WhatsAppAutomationPermission from '@/components/modules/WhatsAppAutomationPermission';
+import { deliveryStages, failureText, isBenignFailure, shortTime, fullTimestamp } from '@/lib/communication-state';
 
 // The eleven events that something in the backend actually emits, and a note
 // on when each one fires — because "Missed Attendance" tells a studio owner
@@ -247,6 +248,9 @@ function AutoContent() {
           </h2>
           <div style={{ display:'flex', flexDirection:'column', gap:6, maxHeight:480, overflowY:'auto' }}>
             {((logs.data || []) as any[]).map((l: any) => {
+              const stages = deliveryStages(l);
+              const failure = failureText(l.failure_reason);
+              const benign = isBenignFailure(l.failure_reason);
               const logStatusColor = l.status === 'delivered' || l.status === 'read' ? '#10b981' : l.status === 'failed' ? '#dc2626' : '#64748b';
               const logStatusBg = l.status === 'delivered' || l.status === 'read' ? 'rgba(16,185,129,0.1)' : l.status === 'failed' ? 'rgba(220,38,38,0.08)' : '#f1f5f9';
               return (
@@ -259,6 +263,53 @@ function AutoContent() {
                     <p style={{ margin:'2px 0 0', fontSize:10, color:'#64748b', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                       {l.message?.slice(0, 80)}
                     </p>
+
+                    {/* What actually happened to this message.
+                        Driven by the timestamps rather than by `status`: status
+                        is one forward-only value, so a READ message reports
+                        'read' and says nothing about when it was delivered —
+                        and delivered_at is the figure a studio chasing a silent
+                        client actually wants. Tabular numerals so the times
+                        line up down the list instead of jittering. */}
+                    {stages.length > 0 && (
+                      <div style={{ margin:'4px 0 0', display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+                        {stages.map((st, i) => (
+                          <span key={st.label} style={{ display:'flex', alignItems:'center', gap:3 }}>
+                            {i > 0 && <span aria-hidden="true" style={{ color:'#cbd5e1', fontSize:10, marginRight:3 }}>→</span>}
+                            {st.label === 'Read'
+                              ? <CheckCheck size={10} color="#10b981" aria-hidden="true"/>
+                              : st.label === 'Delivered'
+                                ? <CheckCheck size={10} color="#64748b" aria-hidden="true"/>
+                                : <Check size={10} color="#94a3b8" aria-hidden="true"/>}
+                            <span
+                              title={`${st.label} ${fullTimestamp(st.at)}`}
+                              style={{ fontSize:10, color: st.label === 'Read' ? '#059669' : '#64748b', fontVariantNumeric:'tabular-nums' }}
+                            >
+                              {st.label} {shortTime(st.at)}
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Why it failed, in words, with the fix where there is one.
+                        The reason was already on the row and never shown, so a
+                        studio whose WhatsApp had logged out saw "failed" and no
+                        way to learn that rescanning the QR resolves it.
+                        duplicate_in_flight is send-once working correctly, so
+                        it reads as a note — a red badge for "we declined to
+                        message your client twice" teaches people to ignore red
+                        badges. */}
+                    {failure && (
+                      <div style={{ margin:'4px 0 0', display:'flex', alignItems:'flex-start', gap:4 }}>
+                        {benign
+                          ? <Info size={11} color="#64748b" style={{ flexShrink:0, marginTop:1 }} aria-hidden="true"/>
+                          : <AlertCircle size={11} color="#dc2626" style={{ flexShrink:0, marginTop:1 }} aria-hidden="true"/>}
+                        <span style={{ fontSize:10, color: benign ? '#64748b' : '#b91c1c', lineHeight:1.4 }}>
+                          {failure}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div style={{ display:'flex', alignItems:'center', gap:6, marginLeft:8, flexShrink:0 }}>
                     <span style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', padding:'2px 7px', borderRadius:4, background:logStatusBg, color:logStatusColor }}>{l.status}</span>
