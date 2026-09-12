@@ -853,8 +853,31 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
   // seconds; distance/speed always travel with their unit — the DB refuses a
   // unitless distance, and clearing the number clears the unit with it so a
   // corrected entry never leaves a stray 'mile' behind.
-  const saveCardio = (field: (typeof CARDIO_FIELDS)[number]) => {
-    const raw = (cardio[field.key] ?? '').trim();
+  //
+  // ── Why the value is passed in rather than read from state ───────────────
+  //
+  // Every blur handler in this row used to read its value out of the closure —
+  // `cardio[field.key]` here, `weight`, `reps`, `rpe`, `rir` below — which is
+  // the value as of the render the handler was CREATED in. onChange only
+  // SCHEDULES a state update; if the blur is processed before React has
+  // re-rendered, the handler is the previous render's and it saves the value
+  // the field STARTED with.
+  //
+  // Not a near miss. Reproduced: a trainer types 32.5 minutes, tabs away, and
+  // the only call that reaches the API carries 1800 — the pristine 30 — with
+  // no second call correcting it. The input goes on showing 32.5, so the row
+  // on screen and the row in the database disagree and nothing says so.
+  //
+  // It is timing-dependent, which is why it surfaced as an intermittent test
+  // failure (about one run in six) rather than as a bug report. The same race
+  // is reachable in a browser through autofill, paste-then-Tab, or any frame
+  // where the render is delayed — a long session list on a mid-range phone,
+  // which is exactly what this page runs on.
+  //
+  // The DOM is the authority on what the field holds. Reading the event's own
+  // target removes the dependence on a render having flushed at all.
+  const saveCardio = (field: (typeof CARDIO_FIELDS)[number], rawValue: string) => {
+    const raw = rawValue.trim();
     let value: number | null = raw === '' ? null : Number(raw);
     if (value != null && Number.isNaN(value)) return;
     if (field.minutes && value != null) value = Math.round(value * 60);
@@ -925,7 +948,7 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
               <span className="shrink-0 text-[9.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>{field.label}</span>
               <input type="number" inputMode="decimal" min={0} value={cardio[field.key] ?? ''} placeholder="—"
                 onChange={(e) => setCardio((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                onBlur={() => saveCardio(field)}
+                onBlur={(e) => saveCardio(field, e.target.value)}
                 className="h-[44px] w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: '#0f172a' }} />
               {field.unit === 'distance' && (
                 <select aria-label={`Distance unit for ${field.label}`} value={distUnit}
@@ -948,7 +971,7 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
               <span className="text-[10px] font-[700]" style={{ color: '#94a3b8' }}>RPE</span>
               <input type="number" inputMode="decimal" min={0} max={10} value={rpe} placeholder="—"
                 onChange={(e) => setRpe(e.target.value)}
-                onBlur={() => save({ rpe: numField(rpe) })}
+                onBlur={(e) => save({ rpe: numField(e.target.value) })}
                 className="h-[44px] w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: '#0f172a' }} />
             </label>
           )}
@@ -968,7 +991,7 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
             </button>
             <input type="number" inputMode="decimal" value={weight} placeholder="0"
               onChange={(e) => setWeight(e.target.value)}
-              onBlur={() => save({ weight_kg: numField(weight) })}
+              onBlur={(e) => save({ weight_kg: numField(e.target.value) })}
               className="w-full min-w-0 rounded-[12px] py-2.5 text-center font-[800] outline-none"
               style={{ fontSize: 17, background: '#fff', border: '1.5px solid #e2e8f0', color: '#0f172a' }} />
             <button onClick={() => adjustWeight(2.5)} aria-label="Increase weight"
@@ -988,7 +1011,7 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
             </button>
             <input type="number" inputMode="numeric" value={reps} placeholder="0"
               onChange={(e) => setReps(e.target.value)}
-              onBlur={() => save({ reps: numField(reps) })}
+              onBlur={(e) => save({ reps: numField(e.target.value) })}
               className="w-full min-w-0 rounded-[12px] py-2.5 text-center font-[800] outline-none"
               style={{ fontSize: 17, background: '#fff', border: '1.5px solid #e2e8f0', color: '#0f172a' }} />
             <button onClick={() => adjustReps(1)} aria-label="Increase reps"
@@ -1011,7 +1034,7 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
           <span className="text-[10px] font-[700]" style={{ color: '#94a3b8' }}>RPE</span>
           <input type="number" inputMode="decimal" min={0} max={10} value={rpe} placeholder="—"
             onChange={(e) => setRpe(e.target.value)}
-            onBlur={() => save({ rpe: numField(rpe) })}
+            onBlur={(e) => save({ rpe: numField(e.target.value) })}
             className="h-[44px] w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: "#0f172a" }} />
         </label>
         {/*
@@ -1024,7 +1047,7 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
           <span className="text-[10px] font-[700]" style={{ color: '#94a3b8' }}>RIR</span>
           <input type="number" inputMode="numeric" min={0} max={10} value={rir} placeholder="—"
             onChange={(e) => setRir(e.target.value)}
-            onBlur={() => save({ rir: numField(rir) })}
+            onBlur={(e) => save({ rir: numField(e.target.value) })}
             className="h-[44px] w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: "#0f172a" }} />
         </label>
       </div>

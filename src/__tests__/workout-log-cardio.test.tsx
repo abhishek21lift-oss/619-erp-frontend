@@ -123,13 +123,93 @@ describe('cardio set row', () => {
     fireEvent.change(minutes, { target: { value: '32.5' } });
     fireEvent.blur(minutes);
     await waitFor(() => expect(updateSet).toHaveBeenCalled());
-    expect(updateSet.mock.calls[0][1]).toMatchObject({ duration_seconds: 1950 });
+
+    // ── Why every duration-bearing call, rather than calls[0] ──────────────
+    //
+    // This assertion used to index the first recorded call, and it failed once
+    // on CI — 1800 where 1950 was expected. 1800 is this fixture's own
+    // pristine duration (30 min), so something saved the value the row started
+    // with instead of the one just typed. It has not reproduced in four full
+    // local runs, so the mechanism is not yet known: a stale save landing
+    // first, or the typed save never happening at all, are different bugs and
+    // calls[0] cannot tell them apart — it reports the same message for both.
+    //
+    // Listing every call that carries duration_seconds distinguishes them the
+    // next time it happens. [1800] means the typed value never reached the
+    // API; [1800, 1950] means a spurious save of the pristine value raced
+    // ahead of the real one. Either is a defect worth having named.
+    //
+    // Deliberately STRONGER than what it replaces, not weaker: it requires
+    // exactly one duration save carrying exactly what was typed, so a
+    // spurious extra save now fails here rather than hiding behind an index.
+    const durations = updateSet.mock.calls
+      .map((c) => c[1] as Record<string, unknown>)
+      .filter((patch) => patch && Object.prototype.hasOwnProperty.call(patch, 'duration_seconds'))
+      .map((patch) => patch.duration_seconds);
+    expect(durations).toEqual([1950]);
 
     const dist = screen.getByLabelText('Distance');
     fireEvent.change(dist, { target: { value: '6' } });
     fireEvent.blur(dist);
     await waitFor(() => expect(updateSet.mock.calls[1]).toBeTruthy());
     expect(updateSet.mock.calls[1][1]).toMatchObject({ distance: 6, distance_unit: 'km' });
+  });
+
+  it('saves what the field holds, not what state held at the last render', async () => {
+    // ── The race, made deterministic ───────────────────────────────────────
+    //
+    // The sibling test above catches this about one run in six, which is how
+    // it reached main: green on the PR, red on the merge commit, identical
+    // tree. Its failure signature named the mechanism — `[1800]`, a single
+    // save carrying the row's PRISTINE duration, with no second call
+    // correcting it. The typed value never reached the API at all.
+    //
+    // That is a stale closure. `onChange` only SCHEDULES a state update; the
+    // blur handler belongs to the render it was created in. When blur is
+    // processed before React re-renders, the handler saves the value the field
+    // started with, while the input goes on showing what was typed — so the
+    // screen and the database disagree and nothing reports it.
+    //
+    // Blurring with a target value and no preceding change IS that state:
+    // the DOM holds 32.5, React state still holds 30. No timing, no flake —
+    // if the handler reads state it saves 1800 every single time, and if it
+    // reads the field it saves 1950 every single time.
+    session = makeSession({
+      exercise_type: 'Cardio',
+      prescription_mode_allowed: ['TIME', 'DISTANCE', 'RPE'],
+    });
+    render(
+      <Suspense fallback={<div />}>
+        <WorkoutSessionPage params={settled({ id: 'c1', sessionId: 's1' }) as never} />
+      </Suspense>,
+    );
+    await waitFor(() => expect(screen.getByLabelText('Duration (min)')).toBeTruthy());
+
+    const minutes = screen.getByLabelText('Duration (min)');
+    fireEvent.blur(minutes, { target: { value: '32.5' } });
+
+    await waitFor(() => expect(updateSet).toHaveBeenCalled());
+    expect(updateSet.mock.calls[0][1]).toMatchObject({ duration_seconds: 1950 });
+  });
+
+  it('clears a field the trainer emptied, rather than re-saving the old value', async () => {
+    // The same read, in the case where being wrong is most visible: emptying
+    // a field has to clear it, not write its previous value back.
+    session = makeSession({
+      exercise_type: 'Cardio',
+      prescription_mode_allowed: ['TIME', 'DISTANCE', 'RPE'],
+    });
+    render(
+      <Suspense fallback={<div />}>
+        <WorkoutSessionPage params={settled({ id: 'c1', sessionId: 's1' }) as never} />
+      </Suspense>,
+    );
+    await waitFor(() => expect(screen.getByLabelText('Duration (min)')).toBeTruthy());
+
+    fireEvent.blur(screen.getByLabelText('Duration (min)'), { target: { value: '' } });
+
+    await waitFor(() => expect(updateSet).toHaveBeenCalled());
+    expect(updateSet.mock.calls[0][1]).toMatchObject({ duration_seconds: null });
   });
 
   it('falls back to strength fields when the exercise has no library metadata', async () => {
