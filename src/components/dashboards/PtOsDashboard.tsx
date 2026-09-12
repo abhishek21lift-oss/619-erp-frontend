@@ -183,12 +183,62 @@ const KpiSparkline = dynamic(() => import('@/components/dashboards/KpiSparkline'
   loading: () => <div className="h-8" />,
 });
 
+/**
+ * The four tiles' colour, as a gradient each.
+ *
+ * ── Why these four, and why they are deep ─────────────────────────────────
+ *
+ * Three of the four used to be blue — blue[500], blue[700] and blue[300] —
+ * with a single green among them, each painted as a pale wash of itself
+ * behind dark ink. Four near-identical pale tiles in a two-by-two grid is a
+ * spreadsheet with rounded corners, which is what a studio was looking at.
+ *
+ * They are saturated tiles now, one colour family each, with white on them.
+ * That inverts figure and ground: the card carries the colour and the number
+ * sits on it, rather than the colour hinting at the edges of a white box.
+ *
+ * ── Why every stop is a 500 or darker ────────────────────────────────────
+ *
+ * Because white has to be legible on the LIGHTEST point of each gradient, and
+ * that rules out most of the vivid end of two of these ramps. Measured, white
+ * on the lightest stop of each:
+ *
+ *   clients      blue[500]     5.23:1
+ *   revenue      emerald[700]  5.48:1
+ *   commission   amber[700]    5.02:1
+ *   activeShare  blue[800]    10.19:1
+ *
+ * Each gradient ends one step down rather than at the 900: emerald[900] and
+ * amber[900] are dark enough that the tile reads as brown or bottle-green
+ * mud at the foot instead of as the colour it is named for.
+ *
+ * emerald[500] and amber[500] are the colours these two "should" be — a
+ * brighter green and a proper saffron — and they carry white at 2.54:1 and
+ * 2.15:1. A tile nobody can read is not a more colourful tile.
+ *
+ * Commission moves off blue entirely, to amber: it is the trainer's own
+ * earnings, and amber is this app's warning family only where it labels a
+ * STATUS. Here it is one of four categorical hues, always accompanied by its
+ * text label, which is the condition the palette sets on using a family
+ * outside its semantic meaning.
+ *
+ * Active Share keeps blue but takes the deep end of the ramp, so the two blue
+ * tiles are a royal blue and a near-navy rather than two shades of the same
+ * card. They sit diagonally in the 2×2 grid, never side by side.
+ */
 const KPI = {
-  clients:    palette.blue[500],
-  revenue:    palette.emerald[500],
-  commission: palette.blue[700],
-  activeShare: palette.blue[300],
+  clients:     { from: palette.blue[500],    to: palette.blue[700],    glow: palette.blue[500] },
+  revenue:     { from: palette.emerald[700], to: palette.emerald[800], glow: palette.emerald[700] },
+  commission:  { from: palette.amber[700],   to: palette.amber[800],   glow: palette.amber[700] },
+  activeShare: { from: palette.blue[800],    to: palette.blue[900],    glow: palette.blue[800] },
 } as const;
+
+type KpiTone = (typeof KPI)[keyof typeof KPI];
+
+/** The tones, for the contrast guard in dashboard-kpis.test.tsx. Exported
+ *  rather than duplicated there: a test holding its own copy of these hex
+ *  values would pass forever while the tiles drifted away from it. */
+export const KPI_TONES_FOR_TEST = KPI;
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmtINR(n: number | string | null | undefined) {
   return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
@@ -223,12 +273,24 @@ function greeting() {
 }
 
 // ─── Primitives ────────────────────────────────────────────────────────────────
-function TrendBadge({ pct }: { pct: number | null }) {
+/**
+ * Month-on-month change.
+ *
+ * `onColour` is for the KPI tiles, which are saturated fills now. The default
+ * badge is green-or-red text on a 12% tint of itself, which is legible on a
+ * white card and close to invisible on a deep green one — a green pill on a
+ * green tile. On colour it becomes a white glass pill instead, and the arrow
+ * carries the direction: up or down is a shape, and a shape survives a
+ * background that has already used up the colour budget.
+ */
+function TrendBadge({ pct, onColour = false }: { pct: number | null; onColour?: boolean }) {
   if (pct === null) return null;
   const up = pct >= 0;
   return (
     <span className="inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[9.5px] font-[750] tabular-nums"
-      style={{ background: up ? 'rgba(16,185,129,0.12)' : 'rgba(220,38,38,0.12)', color: up ? C.success : C.danger }}>
+      style={onColour
+        ? { background: 'rgba(255,255,255,0.22)', color: '#FFFFFF', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.35)' }
+        : { background: up ? 'rgba(16,185,129,0.12)' : 'rgba(220,38,38,0.12)', color: up ? C.success : C.danger }}>
       {up ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}{Math.abs(pct).toFixed(0)}%
     </span>
   );
@@ -521,10 +583,10 @@ function MobileQuickActions() {
 // against the surface, which is why every one of them is always accompanied
 // by its visible text label.
 function StatCard({
-  icon, label, value, sub, color, accent, delay = 0, href, trend, pct, format, className,
+  icon, label, value, sub, tone, delay = 0, href, trend, pct, format, className,
 }: {
   icon: React.ReactNode; label: string; value: string; sub?: string;
-  color: string; accent: string; delay?: number; href?: string;
+  tone: KpiTone; delay?: number; href?: string;
   /** Six months of THIS metric. Omit it unless the series is genuinely this card's. */
   trend?: { label: string; value: number }[]; pct?: number | null;
   /** How the sparkline's tooltip renders a value. */
@@ -538,81 +600,103 @@ function StatCard({
     <m.div
       initial={reduce ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: EASE }}
-      whileHover={{ y: -4, boxShadow: `0 18px 38px ${color}33, inset 0 1px 0 rgba(255,255,255,0.9)` }}
+      whileHover={{ y: -3, boxShadow: `0 16px 34px ${tone.glow}66` }}
       whileTap={{ scale: 0.98 }}
       onClick={() => href && router.push(href)}
-      className={cn('group relative flex cursor-pointer flex-col overflow-hidden rounded-[20px] pt-4', className)}
+      className={cn('group relative flex aspect-square cursor-pointer flex-col overflow-hidden rounded-[18px]', className)}
       style={{
-        // A card with a COLOUR, not a white card with a hint of one. The
-        // previous wash topped out at 11% alpha and faded to plain white by
-        // a third of the way down, so four of these in a grid read as a
-        // spreadsheet — which is the opposite of the intent. The number is
-        // still ink and still the loudest thing here; what changed is that
-        // the card behind it is now visibly the metric's own colour.
-        background:
-          `radial-gradient(120% 90% at 100% 0%, ${color}3d 0%, transparent 58%),`
-          + `linear-gradient(160deg, ${color}2b 0%, ${color}12 45%, ${color}08 100%)`,
-        border: `1px solid ${color}3d`,
-        boxShadow: `0 10px 26px ${color}1f, inset 0 1px 0 rgba(255,255,255,0.85)`,
-        backdropFilter: 'blur(16px)',
+        background: `linear-gradient(150deg, ${tone.from} 0%, ${tone.to} 100%)`,
+        // The glow is the card's own hue, not a grey drop shadow. Four of
+        // these in a grid is where the colour actually reads.
+        boxShadow: `0 8px 22px ${tone.glow}45`,
       }}
     >
-      {/* The band of hue along the top edge, which is where the card's
-          identity lives now that the number is ink. Thicker than a hairline
-          — at 3px on a phone it was a detail nobody saw. */}
-      <div className="absolute inset-x-0 top-0 h-[5px]"
-        style={{ background: `linear-gradient(90deg, ${color}, ${accent}, ${color})` }} />
+      {/* Sheen: a single highlight off the top-right corner, which is what
+          stops a flat gradient looking like a printed swatch. Decorative, and
+          the only place opacity is used on this card — see the note on text
+          below. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0"
+        style={{ background: 'radial-gradient(105% 75% at 100% 0%, rgba(255,255,255,0.22) 0%, transparent 60%)' }} />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px"
+        style={{ background: 'rgba(255,255,255,0.35)' }} />
 
-      <div className="relative z-10 flex flex-1 flex-col px-3.5 sm:px-4">
-        <div className="mb-2.5 flex items-start justify-between pt-0.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-[13px] text-white transition-transform duration-200 group-hover:scale-105 sm:h-11 sm:w-11 sm:rounded-[14px]"
+      {/* min-h-0 is load-bearing. A flex item defaults to min-height:auto,
+          so this block refused to shrink below its own content and pushed
+          the foot band out through the bottom of the square — where
+          overflow-hidden sliced the sparkline in half. */}
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col p-3 sm:p-3.5">
+        <div className="flex items-start justify-between">
+          {/* Glass chip rather than a second solid colour: on a saturated card
+              a white-tinted well reads as lit from the same direction as the
+              sheen above it. */}
+          <div className="flex h-8 w-8 items-center justify-center rounded-[11px] text-white transition-transform duration-200 group-hover:scale-105 sm:h-9 sm:w-9"
             style={{
-              background: `linear-gradient(135deg, ${color}, ${accent})`,
-              boxShadow: `0 8px 20px ${color}66, inset 0 1px 0 rgba(255,255,255,0.4)`,
+              background: 'rgba(255,255,255,0.20)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.45)',
             }}>
             {icon}
           </div>
-          {pct !== undefined && <TrendBadge pct={pct ?? null} />}
+          {pct !== undefined && <TrendBadge pct={pct ?? null} onColour />}
         </div>
 
-        {/* mt-auto pins this block to the bottom of whatever height the grid
-            row settles on, so a card with no chart is not a number floating
-            in a pool of white — which is exactly how Active Clients and
-            Active Share were reading beside the two that had one. */}
-        <div className="mt-auto pb-3.5">
-          <p className="mb-1.5 text-[9.5px] font-[800] uppercase tracking-[0.12em] sm:text-[10px]" style={{ color: C.muted }}>{label}</p>
-          <p className="text-[26px] font-[900] leading-none tracking-[-0.04em] tabular-nums sm:text-[30px]" style={{ color: C.ink }}>{value}</p>
-          {sub && <p className="mt-1.5 text-[10px] font-[560]" style={{ color: C.muted }}>{sub}</p>}
+        {/* ── Why every one of these is SOLID white ────────────────────────
+            The obvious way to build hierarchy on a coloured tile is to fade
+            the label and the sub-label to 70% white. Measured against the
+            lightest stop of these gradients that lands at 3.3:1 and 3.5:1 —
+            under AA for text this size. Hierarchy comes from weight and
+            scale here instead, which costs nothing and reads at arm's length
+            on a gym floor. */}
+        <div className="mt-auto">
+          <p className="text-[9px] font-[800] uppercase tracking-[0.13em] text-white sm:text-[9.5px]">{label}</p>
+          <p className="mt-1 text-[23px] font-[900] leading-none tracking-[-0.04em] tabular-nums text-white sm:text-[26px]">{value}</p>
+          {sub && <p className="mt-1 line-clamp-2 text-[9.5px] font-[600] leading-tight text-white sm:text-[10px]">{sub}</p>}
         </div>
       </div>
 
-      {/* Every card ends on the same 30px band, so the four of them line up
+      {/* Every card ends on the same 24px band, so the four of them line up
           whatever they carry. A chart where there is a series worth drawing;
-          a wash of the card's hue where there is not.
+          a soft wash where there is not.
 
           THREE POINTS IS THE FLOOR. Two months render as two half-width
           slabs — one pale, one solid — which is not a sparkline, it is a
           broken-looking pair of blocks, and that is what a new studio with
           two months of history was being shown. A shape needs three readings
-          before it is a shape. */}
+          before it is a shape.
+
+          The bars are WHITE here, not the tile's hue: the hue is now the
+          background, so a chart drawn in it would be a chart drawn in its own
+          colour. */}
       {/* data-kpi-foot marks the band on BOTH branches. It is what makes
           "every card ends the same way" assertable: without it a test can
           only see the chart, and the fallback could be deleted — taking the
           grid's level bottom edge with it — while every assertion still
           passed. */}
+      {/* Both branches sit in the same shaded well. On a saturated tile a
+          white bar needs something to be white AGAINST — over the tile's own
+          mid-tone the earlier months read as smudge — and the well doubles as
+          the shared bottom edge that makes a charted card and a bare one end
+          the same way. */}
       {trend && trend.length >= 3 ? (
-        <div data-kpi-foot className="w-full">
-          <KpiSparkline data={trend} color={color} metric={label} format={format} height={30} />
+        <div data-kpi-foot className="relative z-10 w-full px-2.5" style={{ background: 'rgba(0,0,0,0.16)' }}>
+          {/* Padded clear of the card's own corner radius. Full-bleed, the
+              outermost bar on each side ran into the rounded corner and came
+              out as a half-bar with a diagonal bite taken out of it — which
+              is what made five months read as a row of broken blocks rather
+              than as a chart. */}
+          <KpiSparkline
+            data={trend} color="#FFFFFF" metric={label} format={format} height={30}
+            trackFill="rgba(255,255,255,0.42)"
+          />
         </div>
       ) : (
-        <div data-kpi-foot className="relative h-[30px] w-full overflow-hidden" aria-hidden>
-          {/* A wash rising to a solid edge. The old version faded to 18%
-              alpha and simply was not there on a phone — the card looked
-              like it stopped an inch above its own border. */}
-          <div className="absolute inset-0"
-            style={{ background: `linear-gradient(180deg, transparent, ${color}30)` }} />
-          <div className="absolute inset-x-0 bottom-0 h-[4px]"
-            style={{ background: `linear-gradient(90deg, ${color}, ${accent})`, opacity: 0.55 }} />
+        <div data-kpi-foot className="relative z-10 h-[30px] w-full overflow-hidden" aria-hidden>
+          {/* A fade, not the chart's flat well. Given the same solid shading
+              as a charted card, a card with no series reads as a chart that
+              failed to load — an empty box where the other two have bars.
+              Deepening the tile toward its own foot is the same 30px of
+              height with nothing missing from it. */}
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, transparent, rgba(0,0,0,0.18))' }} />
+          <div className="absolute inset-x-0 bottom-0 h-[3px]" style={{ background: 'rgba(255,255,255,0.45)' }} />
         </div>
       )}
     </m.div>
@@ -1862,9 +1946,9 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
               readable text on the card. */}
           <div className="grid grid-cols-3 gap-2 mb-3.5">
             {[
-              { label: 'Total',    value: stats.this_month_total,     color: KPI.clients },
+              { label: 'Total',    value: stats.this_month_total,     color: KPI.clients.glow },
               { label: 'Done',     value: stats.this_month_completed, color: C.success },
-              { label: 'Last mo.', value: stats.last_month_completed, color: KPI.activeShare },
+              { label: 'Last mo.', value: stats.last_month_completed, color: KPI.activeShare.glow },
             ].map(t => (
               <div key={t.label} className="rounded-[13px] p-2.5" style={{ background: `${t.color}0f` }}>
                 <p className="mb-0.5 flex items-center gap-1 text-[8px] font-[700] uppercase tracking-[0.09em]" style={{ color: C.muted }}>
@@ -2162,16 +2246,20 @@ export default function PtOsDashboard() {
 
             <div>
               <SectionLabel>Key Metrics</SectionLabel>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+              {/* Two up on a phone (all four, as a square block), three on desktop
+                    where Commission is hidden — so the row fills at both. It was
+                    lg:grid-cols-4 with one of the four hidden at lg, which left an
+                    empty fourth column the comment above claimed was filled. */}
+              <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-3">
                 {/* No sparkline and no percentage. The only series this
                     endpoint carries is revenue, and revenue is not a client
                     count — putting it here is what made this card claim
                     revenue's growth as its own. A number with nothing under
                     it is the honest render. */}
                 <StatCard icon={<Users size={17} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
-                  sub={`${d.expired_clients} expired`} color={KPI.clients} accent={palette.blue[300]} delay={0} href="/pt-os/clients" />
+                  sub={`${d.expired_clients} expired`} tone={KPI.clients} delay={0} href="/pt-os/clients" />
                 <StatCard icon={<Wallet size={17} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
-                  sub="this month" color={KPI.revenue} accent={palette.emerald[400]} delay={0.05} href="/pt-os/reports" trend={revTrend} pct={revMoM} format={fmtINR} />
+                  sub="this month" tone={KPI.revenue} delay={0.05} href="/pt-os/reports" trend={revTrend} pct={revMoM} format={fmtINR} />
                 {/* Phone and tablet only. Still rendered there, so the numbers
                     stay one tap away on the devices a trainer carries around
                     the floor; the desktop row is the one being kept lean.
@@ -2179,10 +2267,10 @@ export default function PtOsDashboard() {
                     Incentives, not revenue — this is the one card whose
                     series was already its own. */}
                 <StatCard icon={<Percent size={17} />} label="Commission" value={fmtCompact(d.total_monthly_commission)}
-                  sub={commRate} color={KPI.commission} accent={palette.blue[400]} delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM} format={fmtINR}
+                  sub={commRate} tone={KPI.commission} delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM} format={fmtINR}
                   className="lg:hidden" />
                 <StatCard icon={<Gauge size={17} />} label="Active Share" value={activeSharePct !== null ? `${activeSharePct.toFixed(0)}%` : '—'}
-                  sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active · true renewal on Insights`} color={KPI.activeShare} accent={palette.blue[200]} delay={0.15} href="/insights/renewal" />
+                  sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active · true renewal on Insights`} tone={KPI.activeShare} delay={0.15} href="/insights/renewal" />
               </div>
             </div>
 
