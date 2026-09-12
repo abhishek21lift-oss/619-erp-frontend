@@ -416,10 +416,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const lifetimePaid = Number(client?.paid_amount ?? 0);
   const lifetimeTermCount = subscriptionHistory.length > 0 ? subscriptionHistory.length : 1;
 
-  const completionPct = currentTermFee > 0
-    ? Math.min(Math.round((currentTermPaid / currentTermFee) * 100), 100)
-    : 0;
-
   // ── PT term progress, as a percentage for the bar ──
   // Elapsed over total, clamped: a term whose end date has passed is 100%
   // through it, not 140%.
@@ -659,21 +655,27 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
               <div className="mb-4 grid grid-cols-3 gap-2 sm:gap-3">
                 {[
                   {
-                    label: 'Term Fee', value: fmtNum(currentTermFee), sub: 'Current term',
+                    label: 'Term Fee', value: fmtNum(currentTermFee),
                     icon: <IndianRupee size={13} />, color: '#0067e0',
                   },
                   {
-                    label: 'Paid', value: fmtNum(currentTermPaid), sub: `${completionPct}% complete`,
+                    label: 'Paid', value: fmtNum(currentTermPaid),
                     icon: <CheckCircle size={13} />, color: '#10b981',
                   },
                   {
                     label: 'Balance', value: fmtNum(currentTermBalance),
-                    sub: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'Overdue' : 'Due') : 'Cleared',
+                    // Not rendered. Balance is the one card whose state is
+                    // carried ONLY by its colour now that the sub-labels are
+                    // gone, and red-versus-amber is exactly the distinction a
+                    // colour-blind reader cannot make. Announced to assistive
+                    // tech instead of drawn, so the card stays the shape it is
+                    // meant to be without the state going missing.
+                    state: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'Overdue' : 'Due') : 'Cleared',
                     icon: currentTermBalance > 0 ? <AlertTriangle size={13} /> : <CheckCircle size={13} />,
                     color: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? '#ef4444' : '#f59e0b') : '#10b981',
                   },
                 ].map((k, i) => (
-                  // Square, and smaller.
+                  // A short rectangle, sized by its own content.
                   //
                   // The icon chip was 36px with a 16px glyph, sitting above a
                   // number that then had to compete with it — the mark read
@@ -682,16 +684,22 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   // back where a mark belongs: identifying the card, not
                   // announcing it.
                   //
-                  // aspect-square rather than a fixed height: three of these
-                  // sit in a grid that is a third of the viewport wide, so a
-                  // pixel height is right on one phone and wrong on the next,
-                  // while a square is a square everywhere. The content is
-                  // pushed apart with justify-between so the number sits on
-                  // the card's optical centre line instead of drifting up
-                  // when the sub-label is short.
+                  // These were square (aspect-square + justify-between), which
+                  // made the card as tall as a third of the viewport is wide —
+                  // most of it empty, and on a phone that is a whole band of
+                  // nothing between the hero and the actions below it. The
+                  // sub-labels that filled the bottom said little the figure
+                  // did not already ('Current term' under Term Fee, 'Cleared'
+                  // under a balance of 0) and they are gone, so the height
+                  // they justified goes with them.
+                  //
+                  // No fixed height replaces it: a pixel height is right on
+                  // one handset and wrong on the next. Three cards holding the
+                  // same three rows are the same height as each other on every
+                  // one of them, which is the property that actually mattered.
                   <m.div key={k.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.08 + i * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                    className="flex aspect-square flex-col justify-between rounded-[18px] p-2.5 sm:p-3"
+                    className="flex flex-col gap-1.5 rounded-[18px] p-2.5 sm:p-3"
                     style={{
                       background: `linear-gradient(160deg, ${k.color}14 0%, ${k.color}05 100%)`,
                       border: `1px solid ${k.color}22`,
@@ -704,11 +712,11 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     <div className="min-w-0">
                       <p className="text-[9px] font-[750] uppercase tracking-wider" style={{ color: `${k.color}b3` }}>
                         {k.label}
+                        {k.state && <span className="sr-only"> — {k.state}</span>}
                       </p>
                       <p className="mt-0.5 truncate text-[21px] font-[860] leading-none tracking-[-0.02em] tabular-nums sm:text-[25px]" style={{ color: k.color }}>
                         {k.value}
                       </p>
-                      <p className="mt-1 truncate text-[9.5px] font-[700]" style={{ color: 'var(--text-muted)' }}>{k.sub}</p>
                     </div>
                   </m.div>
                 ))}

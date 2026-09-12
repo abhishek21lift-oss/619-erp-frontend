@@ -17,9 +17,17 @@
 import {describe, expect, it} from 'vitest';
 import {readFileSync} from 'node:fs';
 import {appPath} from '@/__tests__/helpers/app-routes';
+import {stripComments} from '@/__tests__/helpers/strip-comments';
 
 const page = readFileSync(
   appPath('pt-os', 'clients', '[id]', 'page.tsx'), 'utf8');
+
+// Comments blanked, offsets intact. The two assertions about what the card no
+// longer has were both tripped by the comment EXPLAINING that it no longer has
+// it — 'aspect-square' and 'Current term' each appear in the prose describing
+// their own removal. That is the self-defeating pattern helpers/strip-comments
+// exists for, and it caught it here on the first run.
+const code = stripComments(page);
 
 describe('the Term Fee / Paid / Balance cards are not a copy of the hero', () => {
   it('drops the solid navy block the hero itself uses', () => {
@@ -78,9 +86,37 @@ describe('the Term Fee / Paid / Balance cards are not a copy of the hero', () =>
     for (const g of glyphs) expect(g).toBeLessThanOrEqual(14);
   });
 
-  it('makes them square, so three across a phone stay the same shape', () => {
-    // A pixel height is right on one handset and wrong on the next; a square
-    // is a square on every one of them.
-    expect(page).toContain('flex aspect-square flex-col justify-between');
+  it('is a short rectangle sized by its content, not a square', () => {
+    // These were square, which made each card as tall as a third of the
+    // viewport is wide — most of it empty. On a phone that is a whole band of
+    // nothing between the hero and the actions below it.
+    //
+    // No fixed height replaces aspect-square: a pixel height is right on one
+    // handset and wrong on the next. Three cards holding the same three rows
+    // come out the same height as each other on every one of them, which is
+    // the property the square was actually bought for.
+    expect(code).not.toContain('aspect-square');
+    expect(code).toContain('flex flex-col gap-1.5 rounded-[18px]');
+  });
+
+  it('carries no sub-label under the figure', () => {
+    // 'Current term' under Term Fee and 'Cleared' under a balance of zero
+    // restated what the figure already said, and they are what made the card
+    // tall enough to need the empty space above them.
+    const block = code.slice(code.indexOf('grid grid-cols-3'), code.indexOf('CLIENT LOGIN'));
+    expect(block).not.toContain('sub:');
+    expect(block).not.toContain('{k.sub}');
+    expect(block).not.toContain("'Current term'");
+    expect(block).not.toContain('% complete');
+  });
+
+  it('still tells a screen reader whether the balance is overdue, due or cleared', () => {
+    // Balance is the one card whose state is carried ONLY by colour now that
+    // the sub-labels are gone — and red-versus-amber is exactly the
+    // distinction a colour-blind reader cannot make. Dropping the text from
+    // the design must not drop the fact, so it is announced rather than drawn.
+    const block = code.slice(code.indexOf('grid grid-cols-3'), code.indexOf('CLIENT LOGIN'));
+    expect(block).toMatch(/state: currentTermBalance > 0 \? \(client\.due_status === 'OVERDUE' \? 'Overdue' : 'Due'\) : 'Cleared'/);
+    expect(block).toContain('className="sr-only"');
   });
 });
