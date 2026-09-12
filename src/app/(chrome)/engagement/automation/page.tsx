@@ -8,7 +8,7 @@ import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import WhatsAppAutomationPermission from '@/components/modules/WhatsAppAutomationPermission';
-import { deliveryStages, failureText, isBenignFailure, shortTime, fullTimestamp } from '@/lib/communication-state';
+import { deliveryStages, failureLine, failureTone, shortTime, fullTimestamp } from '@/lib/communication-state';
 
 // The eleven events that something in the backend actually emits, and a note
 // on when each one fires — because "Missed Attendance" tells a studio owner
@@ -249,8 +249,8 @@ function AutoContent() {
           <div style={{ display:'flex', flexDirection:'column', gap:6, maxHeight:480, overflowY:'auto' }}>
             {((logs.data || []) as any[]).map((l: any) => {
               const stages = deliveryStages(l);
-              const failure = failureText(l.failure_reason);
-              const benign = isBenignFailure(l.failure_reason);
+              const failure = failureLine(l);
+              const tone = failureTone(l);
               const logStatusColor = l.status === 'delivered' || l.status === 'read' ? '#10b981' : l.status === 'failed' ? '#dc2626' : '#64748b';
               const logStatusBg = l.status === 'delivered' || l.status === 'read' ? 'rgba(16,185,129,0.1)' : l.status === 'failed' ? 'rgba(220,38,38,0.08)' : '#f1f5f9';
               return (
@@ -299,13 +299,19 @@ function AutoContent() {
                         duplicate_in_flight is send-once working correctly, so
                         it reads as a note — a red badge for "we declined to
                         message your client twice" teaches people to ignore red
-                        badges. */}
+                        badges.
+
+                        A still-QUEUED row carries the LAST ATTEMPT's reason,
+                        not a verdict: the worker records it and leaves the row
+                        queued so the next attempt re-sends. Red there would
+                        tell a studio their message is lost while it is still
+                        on its way, so it reads amber and says which it is. */}
                     {failure && (
                       <div style={{ margin:'4px 0 0', display:'flex', alignItems:'flex-start', gap:4 }}>
-                        {benign
-                          ? <Info size={11} color="#64748b" style={{ flexShrink:0, marginTop:1 }} aria-hidden="true"/>
-                          : <AlertCircle size={11} color="#dc2626" style={{ flexShrink:0, marginTop:1 }} aria-hidden="true"/>}
-                        <span style={{ fontSize:10, color: benign ? '#64748b' : '#b91c1c', lineHeight:1.4 }}>
+                        {tone === 'error'
+                          ? <AlertCircle size={11} color="#dc2626" style={{ flexShrink:0, marginTop:1 }} aria-hidden="true"/>
+                          : <Info size={11} color={tone === 'retrying' ? '#b45309' : '#64748b'} style={{ flexShrink:0, marginTop:1 }} aria-hidden="true"/>}
+                        <span style={{ fontSize:10, color: tone === 'error' ? '#b91c1c' : tone === 'retrying' ? '#b45309' : '#64748b', lineHeight:1.4 }}>
                           {failure}
                         </span>
                       </div>
