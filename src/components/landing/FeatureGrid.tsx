@@ -41,7 +41,7 @@ const CATEGORIES = [
   },
   {
     label: 'Engage',
-    color: C.blue,
+    color: C.blueHi,
     wash: 'rgba(0,103,224,0.14)',
     features: [
       { icon: <MessageSquareText size={15} />, t: 'WhatsApp outreach', d: 'Renewal nudges, birthdays and follow-ups where clients reply.' },

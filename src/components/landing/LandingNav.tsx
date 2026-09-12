@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { m, useScroll, useSpring } from 'framer-motion';
 import { Menu, X, ArrowRight } from 'lucide-react';
 import { Wordmark } from './Wordmark';
-import { C, HEADER } from './tokens';
+import { C, HEADER, SHADOW } from './tokens';
 
 const NAV = [
   { label: 'Product', href: '#product' },
@@ -85,7 +85,8 @@ export default function LandingNav() {
               <a
                 key={n.label}
                 href={n.href}
-                className="rounded-lg px-3 py-2 text-[13.5px] font-[560] transition-colors text-slate-400 hover:text-[var(--saffron-500)]"
+                className="rounded-lg px-3 py-2 text-[13.5px] font-[560] transition-colors hover:text-[var(--saffron-500)]"
+                style={{ color: C.muted }}
               >
                 {n.label}
               </a>
@@ -95,7 +96,8 @@ export default function LandingNav() {
           <div className="hidden items-center gap-2 lg:flex">
             <Link
               href="/login"
-              className="rounded-lg px-4 py-2 text-[13.5px] font-[650] transition-colors text-slate-300 hover:bg-white/[0.06] hover:text-[var(--saffron-500)]"
+              className="rounded-lg px-4 py-2 text-[13.5px] font-[650] transition-colors hover:bg-[rgba(163,177,198,0.18)] hover:text-[var(--saffron-500)]"
+              style={{ color: C.body }}
             >
               Log In
             </Link>
@@ -120,7 +122,7 @@ export default function LandingNav() {
             aria-expanded={open}
             aria-controls="landing-mobile-menu"
             aria-label={open ? 'Close menu' : 'Open menu'}
-            className="rounded-lg p-2 transition-colors hover:bg-white/[0.06] lg:hidden"
+            className="rounded-lg p-2 transition-colors hover:bg-[rgba(163,177,198,0.18)] lg:hidden"
             style={{ color: C.ink }}
           >
             {open ? <X size={22} /> : <Menu size={22} />}
@@ -131,14 +133,15 @@ export default function LandingNav() {
         <div id="landing-mobile-menu" data-no-pull-refresh hidden={!open} className="pb-4 lg:hidden">
           <div
             className="rounded-2xl border p-3"
-            style={{ background: 'rgba(23,41,74,0.94)', borderColor: C.line, boxShadow: '0 24px 56px -20px rgba(0,0,0,0.7)' }}
+            style={{ background: C.panel, borderColor: C.lineSoft, boxShadow: SHADOW.float }}
           >
             {NAV.map((n) => (
               <a
                 key={n.label}
                 href={n.href}
                 onClick={() => setOpen(false)}
-                className="block rounded-xl px-3.5 py-3 text-[14px] font-[580] transition-colors text-slate-300 hover:bg-white/[0.05] hover:text-[var(--saffron-500)]"
+                className="block rounded-xl px-3.5 py-3 text-[14px] font-[580] transition-colors hover:bg-[rgba(163,177,198,0.18)] hover:text-[var(--saffron-500)]"
+                style={{ color: C.body }}
               >
                 {n.label}
               </a>

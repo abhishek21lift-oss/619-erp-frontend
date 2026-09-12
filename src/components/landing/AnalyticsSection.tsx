@@ -99,7 +99,7 @@ export default function AnalyticsSection() {
               <ul className="mt-6 space-y-3">
                 {[
                   { icon: <AlertTriangle size={15} />, c: C.red, t: 'Churn risk — 4 clients', d: 'Attendance dropped below 40% in 3 weeks. Renewals due within 30 days.', a: 'Suggested: renewal WhatsApp + one call' },
-                  { icon: <Wallet size={15} />, c: C.gold, t: '₹42K in overdue dues', d: '12 clients overdue, 3 beyond 14 days. All flagged with amounts.', a: 'Suggested: send the 3 due reminders today' },
+                  { icon: <Wallet size={15} />, c: C.goldHi, t: '₹42K in overdue dues', d: '12 clients overdue, 3 beyond 14 days. All flagged with amounts.', a: 'Suggested: send the 3 due reminders today' },
                   { icon: <CalendarClock size={15} />, c: C.blueHi, t: '7 renewals in 10 days', d: 'Long-standing clients — high retention value, low effort.', a: 'Suggested: early-bird offer to lock renewals' },
                   { icon: <BadgeCheck size={15} />, c: C.emerald, t: '3 wins to celebrate', d: 'Milestones hit this week — perfect for public shoutouts.', a: 'Suggested: WhatsApp wishes from the studio' },
                 ].map((r) => (

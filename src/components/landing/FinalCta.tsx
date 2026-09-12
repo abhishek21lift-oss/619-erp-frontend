@@ -29,7 +29,7 @@ export default function FinalCta({ trialDays = 7 }: { trialDays?: number }) {
             <div
               aria-hidden
               className="pointer-events-none absolute inset-x-0 top-0 h-px"
-              style={{ background: 'linear-gradient(90deg, transparent, rgba(28,163,249,0.55), transparent)' }}
+              style={{ background: `linear-gradient(90deg, transparent, ${C.lineBlue}, transparent)` }}
             />
 
             <div className="relative">
