@@ -39,10 +39,18 @@ export interface KpiSparklineProps {
   /** Rendered into the tooltip, e.g. ₹90,000. */
   format?: (n: number) => string;
   height?: number;
+  /**
+   * Fill for the months BEFORE the last one. Defaults to the hue at 22%,
+   * which is right on a white card and close to invisible on a saturated one
+   * — the KPI tiles pass white bars over their own colour, where 22% white
+   * reads as smudge rather than as a bar.
+   */
+  trackFill?: string;
 }
 
 export default function KpiSparkline({
   data, color, metric, format = (n) => String(Math.round(n)), height = 32,
+  trackFill,
 }: KpiSparklineProps) {
   // Unique per mount, not a fixed string: PT Revenue and Commission both
   // render this component at once, and two <linearGradient id="grad">
@@ -101,7 +109,7 @@ export default function KpiSparkline({
           />
           <Bar dataKey="value" radius={[4, 4, 0, 0]} isAnimationActive={false} minPointSize={3}>
             {data.map((d, i) => (
-              <Cell key={d.label} fill={i === data.length - 1 ? `url(#${gradId})` : `${color}38`} />
+              <Cell key={d.label} fill={i === data.length - 1 ? `url(#${gradId})` : (trackFill ?? `${color}38`)} />
             ))}
           </Bar>
         </BarChart>
