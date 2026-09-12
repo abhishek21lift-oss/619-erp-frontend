@@ -109,12 +109,17 @@ const rows = (n: number) =>
   }));
 
 const paymentsMock = { list: vi.fn(), stats: vi.fn(), create: vi.fn() };
-const reportsMock = { dues: vi.fn(), duesSummary: vi.fn() };
+// The dues page reads api.insights, not api.reports. Both routes exist and the
+// backend serves identical numbers from the one Metric Engine — reports.* is
+// the deprecated compatibility surface — but the mock has to name the one the
+// page actually calls, or `api.insights` is undefined and the page throws
+// before a single KPI renders.
+const insightsMock = { dues: vi.fn(), duesSummary: vi.fn() };
 
 vi.mock('@/lib/api', () => ({
   api: {
     get payments() { return paymentsMock; },
-    get reports() { return reportsMock; },
+    get insights() { return insightsMock; },
     clients: { list: vi.fn().mockResolvedValue([]) },
   },
 }));
@@ -173,8 +178,8 @@ describe('Outstanding Dues — "Outstanding"', () => {
     }));
 
   it('under the cap: matches the rows', async () => {
-    reportsMock.dues.mockResolvedValue(debtors(40));          // ₹20,000
-    reportsMock.duesSummary.mockResolvedValue({
+    insightsMock.dues.mockResolvedValue(debtors(40));          // ₹20,000
+    insightsMock.duesSummary.mockResolvedValue({
       total_outstanding: 20000, debtor_count: 40, high_risk_count: 0, medium_risk_count: 0,
     });
 
@@ -184,8 +189,8 @@ describe('Outstanding Dues — "Outstanding"', () => {
   });
 
   it('over the cap: total and debtor count come from the aggregate', async () => {
-    reportsMock.dues.mockResolvedValue(debtors(100));         // the capped page
-    reportsMock.duesSummary.mockResolvedValue({
+    insightsMock.dues.mockResolvedValue(debtors(100));         // the capped page
+    insightsMock.duesSummary.mockResolvedValue({
       total_outstanding: 875000, debtor_count: 350, high_risk_count: 12, medium_risk_count: 60,
     });
 
@@ -202,8 +207,8 @@ describe('Outstanding Dues — "Outstanding"', () => {
   });
 
   it('marks the figure as partial when the aggregate is unavailable', async () => {
-    reportsMock.dues.mockResolvedValue(debtors(100));
-    reportsMock.duesSummary.mockRejectedValue(new Error('boom'));
+    insightsMock.dues.mockResolvedValue(debtors(100));
+    insightsMock.duesSummary.mockRejectedValue(new Error('boom'));
 
     const { default: Page } = await import('@/app/(chrome)/finance/dues/page');
     render(<Page />);
@@ -220,6 +225,20 @@ describe('Outstanding Dues — "Outstanding"', () => {
 // reported 5.
 
 const attendanceMock = { list: vi.fn() };
+const insightsAttendanceMock = { attendance: vi.fn() };
+
+/** The canonical server aggregate, built from a totals figure. */
+const canonicalAttendance = (visits: number) => ({
+  metric: 'attendance',
+  from: '2026-08-10',
+  to: '2026-08-11',
+  granularity: 'day' as const,
+  series: [
+    { date: '2026-08-10', present: 1, absent: 1, late: 1, total: 3, visits: 2 },
+    { date: '2026-08-11', present: 2, absent: 1, late: 1, total: 6, visits: 3 },
+  ],
+  totals: { present: 3, late: 2, absent: 2, total: 9, visits, attendance_rate: null },
+});
 
 describe('Total Check-ins agrees across every page that shows it', () => {
   beforeEach(() => { vi.clearAllMocks(); vi.resetModules(); });
@@ -240,26 +259,75 @@ describe('Total Check-ins agrees across every page that shows it', () => {
   // present + late only: rows 1,2,4,6,8 → five visits out of nine records.
   const EXPECTED_VISITS = 5;
 
+  // The rows these pages fetch for their charts are LIMITed server-side, so the
+  // headline total now comes from an unbounded SQL aggregate instead of being
+  // reduced in the browser. 4,210 is a figure the fetched rows cannot produce
+  // by any arithmetic — which is the point: it can only have come from the
+  // aggregate.
+  const AUTHORITATIVE_VISITS = 4210;
+
+  /**
+   * The number on a KPI card, read through the card rather than through DOM
+   * adjacency. The old walk pinned a layout in which the value came before
+   * its label; KpiCard puts the label first now, so it returned undefined and
+   * the assertion failed against a page rendering the right figure all along.
+   */
+  const kpiValue = (label: string) => {
+    const card = screen.getByText(label).closest('article');
+    return (card?.textContent ?? '').replace(label, '').trim();
+  };
+
+  const mockApi = () => {
+    vi.doMock('@/lib/api', () => ({
+      api: {
+        get attendance() { return attendanceMock; },
+        get insights() { return insightsAttendanceMock; },
+      },
+    }));
+  };
+
   it('the canonical helper and the leaderboard both say 5, not 9', () => {
     expect(countCheckIns(POPULATION)).toBe(EXPECTED_VISITS);
     expect(buildBoard(POPULATION).reduce((n, r) => n + r.checkins, 0)).toBe(EXPECTED_VISITS);
     expect(POPULATION.length).toBe(9); // what traffic used to report
   });
 
-  it('insights/sessions renders the canonical count', async () => {
+  it('insights/sessions reads the headline off the server aggregate', async () => {
     attendanceMock.list.mockResolvedValue(POPULATION);
-    vi.doMock('@/lib/api', () => ({ api: { get attendance() { return attendanceMock; } } }));
+    insightsAttendanceMock.attendance.mockResolvedValue(canonicalAttendance(AUTHORITATIVE_VISITS));
+    mockApi();
     const { default: Page } = await import('@/app/(chrome)/insights/sessions/page');
     render(<Page />);
-    await waitFor(() => {
-      const el = screen.getByText('Total Check-ins').previousElementSibling;
-      expect(el?.textContent).toBe(String(EXPECTED_VISITS));
-    });
+    await waitFor(() => expect(kpiValue('Total Check-ins')).toBe(String(AUTHORITATIVE_VISITS)));
   });
 
-  it('insights/traffic renders the SAME count for the same population', async () => {
+  it('insights/traffic reads the SAME aggregate, not its own row count', async () => {
     attendanceMock.list.mockResolvedValue(POPULATION);
-    vi.doMock('@/lib/api', () => ({ api: { get attendance() { return attendanceMock; } } }));
+    insightsAttendanceMock.attendance.mockResolvedValue(canonicalAttendance(AUTHORITATIVE_VISITS));
+    mockApi();
+    const { default: Page } = await import('@/app/(chrome)/insights/traffic/page');
+    const { container } = render(<Page />);
+    await waitFor(() => expect(container.textContent).toContain(String(AUTHORITATIVE_VISITS)));
+  });
+
+  // The fallback is where the original bug lived, and it is still reachable:
+  // if the aggregate call fails the page counts the rows it has. It must count
+  // them with the canonical predicate — 5 — and never report the raw row
+  // count, which is the 9 traffic used to show while sessions showed 5.
+
+  it('insights/sessions falls back to the canonical count, not the row count', async () => {
+    attendanceMock.list.mockResolvedValue(POPULATION);
+    insightsAttendanceMock.attendance.mockRejectedValue(new Error('aggregate down'));
+    mockApi();
+    const { default: Page } = await import('@/app/(chrome)/insights/sessions/page');
+    render(<Page />);
+    await waitFor(() => expect(kpiValue('Total Check-ins')).toBe(String(EXPECTED_VISITS)));
+  });
+
+  it('insights/traffic falls back to the SAME count for the same population', async () => {
+    attendanceMock.list.mockResolvedValue(POPULATION);
+    insightsAttendanceMock.attendance.mockRejectedValue(new Error('aggregate down'));
+    mockApi();
     const { default: Page } = await import('@/app/(chrome)/insights/traffic/page');
     const { container } = render(<Page />);
     await waitFor(() => {

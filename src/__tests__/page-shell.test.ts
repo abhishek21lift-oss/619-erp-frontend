@@ -630,8 +630,23 @@ describe('what the phone screenshots showed', () => {
   it('the attendance date fields cannot outgrow their column', () => {
     // `<input type="date">` sizes to its own content, which is how the "To"
     // field ended up off the right of the screen.
+    //
+    // The five hand-rolled pickers this page had one of are now a single
+    // CanonicalDateRange, so the guard follows the input into the component.
+    // Both themes, because the hero renders the dark one and the bug is a
+    // property of the element, not the palette.
+    const range = src('lib', 'insights', 'date-range.tsx');
+    expect(range.match(/w-full min-w-0/g) || []).toHaveLength(2);
+    // The label is the grid cell. Without min-w-0 on it the cell refuses to
+    // shrink below the input's intrinsic width and w-full has nothing to
+    // measure against.
+    expect(range).toContain('className="block min-w-0"');
+
+    // And the page has to USE it, or the sixth hand-rolled picker brings the
+    // bug back with the guard still passing.
     const traffic = src('app', 'insights', 'traffic', 'page.tsx');
-    expect(traffic).toContain('w-full min-w-0');
+    expect(traffic).toContain('<CanonicalDateRange');
+    expect(traffic).not.toContain('type="date"');
   });
 
   it('the 17-hour chart scrolls inside its card instead of squeezing', () => {
