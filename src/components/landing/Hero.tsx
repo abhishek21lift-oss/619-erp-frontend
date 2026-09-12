@@ -9,10 +9,14 @@ import {
   Bell, Check, CirclePlay,
 } from 'lucide-react';
 import { Container, Eyebrow } from './primitives';
-import { C, EASE, SHADOW, TABULAR } from './tokens';
+import { C, EASE, SHADOW, TABULAR, inkOn } from './tokens';
 
 const GRAD_AI: React.CSSProperties = {
-  background: `linear-gradient(94deg, ${C.blueHi} 0%, ${C.blue} 52%, ${C.gold} 118%)`,
+  // Ends on goldHi, not gold. Saffron at full brightness was the point of this
+  // gradient on a near-black canvas; on the light base it fades out, so the
+  // second letter of "AI" read as grey — the word dissolving exactly where it
+  // should land.
+  background: `linear-gradient(94deg, ${C.blueHi} 0%, ${C.blue} 52%, ${C.goldHi} 118%)`,
   WebkitBackgroundClip: 'text',
   backgroundClip: 'text',
   WebkitTextFillColor: 'transparent',
@@ -36,8 +40,8 @@ function Delta({ v }: { v: string }) {
 function Avatar({ initials, color }: { initials: string; color: string }) {
   return (
     <span
-      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[9.5px] font-bold text-white"
-      style={{ background: color }}
+      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[9.5px] font-bold"
+      style={{ background: color, color: inkOn(color) }}
       aria-hidden
     >
       {initials}
@@ -254,7 +258,7 @@ function FloatingCard({
       <div
         className="hero-float rounded-2xl border p-3.5"
         style={{
-          background: 'rgba(22,35,61,0.92)',
+          background: C.panel,
           borderColor: C.line,
           boxShadow: SHADOW.float,
           backdropFilter: 'blur(14px)',
@@ -351,7 +355,7 @@ export default function Hero() {
             </Link>
             <a
               href="#product"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border px-8 py-3.5 text-[15px] font-bold transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/[0.05] sm:w-auto"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border px-8 py-3.5 text-[15px] font-bold transition-all duration-200 hover:-translate-y-0.5 hover:bg-[rgba(163,177,198,0.18)] sm:w-auto"
               style={{ color: C.body, borderColor: C.line }}
             >
               <CirclePlay size={17} style={{ color: C.blueHi }} />

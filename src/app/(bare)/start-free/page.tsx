@@ -109,7 +109,7 @@ export default function StartFreePage() {
       className="relative flex min-h-dvh flex-col"
       style={{ background: C.canvas, color: C.body }}
     >
-      <PublicNav action="sign-in" dark />
+      <PublicNav action="sign-in" />
 
       {/* ambient wash — clipped so the glows never create horizontal overflow */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -146,7 +146,7 @@ export default function StartFreePage() {
             noValidate
             className="rounded-[22px] border p-5 sm:p-6"
             style={{
-              background: 'rgba(16,27,48,0.72)',
+              background: C.panel,
               borderColor: C.line,
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
@@ -231,7 +231,7 @@ function PendingApproval({ email, trialDays }: { email: string; trialDays: numbe
       className="relative flex min-h-dvh flex-col"
       style={{ background: C.canvas, color: C.body }}
     >
-      <PublicNav action="sign-in" dark />
+      <PublicNav action="sign-in" />
 
       {/* ambient wash — clipped so the glows never create horizontal overflow */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -246,7 +246,7 @@ function PendingApproval({ email, trialDays }: { email: string; trialDays: numbe
         <div
           className="w-full max-w-[460px] rounded-[22px] border p-6 text-center sm:p-8"
           style={{
-            background: 'rgba(16,27,48,0.72)',
+            background: C.panel,
             borderColor: C.line,
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
@@ -290,7 +290,7 @@ function PendingApproval({ email, trialDays }: { email: string; trialDays: numbe
           </div>
 
           <Link href="/"
-            className="mt-5 inline-flex h-11 items-center justify-center rounded-[12px] border px-5 text-[13px] font-[750] transition-colors hover:bg-white/[0.06]"
+            className="mt-5 inline-flex h-11 items-center justify-center rounded-[12px] border px-5 text-[13px] font-[750] transition-colors hover:bg-[rgba(163,177,198,0.18)]"
             style={{ borderColor: C.line, color: C.ink }}>
             Back to home
           </Link>
@@ -327,7 +327,8 @@ function TextField({
           // so padding alone lands under the 44px a thumb needs.
           className="h-12 w-full rounded-[12px] pl-9 pr-10 text-[13.5px] outline-none transition placeholder:text-[#475569]"
           style={{
-            background: 'rgba(11,18,32,0.55)',
+            background: C.canvas,
+            boxShadow: SHADOW.inset,
             border: `1.5px solid ${error ? 'rgba(248,113,113,0.55)' : 'rgba(148,163,184,0.18)'}`,
             color: C.ink,
           }}

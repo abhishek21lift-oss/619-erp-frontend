@@ -1,9 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Wordmark } from '@/components/landing/Wordmark';
-import { HEADER } from '@/components/landing/tokens';
+import { C, HEADER } from '@/components/landing/tokens';
 
 /**
  * The bar that sits above every signed-out page.
@@ -26,14 +25,17 @@ import { HEADER } from '@/components/landing/tokens';
  * the signup page passes "sign-in" (links to /login), because a bar that
  * links to the page you are already on is furniture rather than navigation.
  *
- * `dark` is the auth-page variant: the same glass bar in the landing page's
- * near-black navy, so the redesigned login and signup surfaces keep the same
- * navigation as the marketing site without a light strip cutting across the
- * dark canvas. Labels and hrefs are identical in both themes.
+ * There used to be a `dark` variant here, and a light one, because the auth
+ * surfaces were a near-black navy and the rest of the site was not — a light
+ * strip cutting across a dark canvas was the thing it existed to avoid. The
+ * public surface is one soft light material now, so the two branches rendered
+ * the same bar in two slightly different ways for no remaining reason. There
+ * is one bar, and it is the landing navbar's: same reserve, same 64px row,
+ * same container, same extruded logo chip.
  */
 export const PUBLIC_NAV_CLEARANCE = 'calc(max(env(safe-area-inset-top), 2.75rem) + 5.5rem)';
 
-export default function PublicNav({ action, dark = false }: { action: 'sign-in' | 'start-free'; dark?: boolean }) {
+export default function PublicNav({ action }: { action: 'sign-in' | 'start-free' }) {
   const href = action === 'sign-in' ? '/login' : '/start-free';
   const label = action === 'sign-in' ? 'Sign in' : 'Start free';
 
@@ -43,54 +45,29 @@ export default function PublicNav({ action, dark = false }: { action: 'sign-in' 
       style={{
         // Same notch reserve as the landing navbar — identical header height.
         paddingTop: HEADER.padTop,
-        background: dark ? HEADER.bg : 'rgba(255,255,255,0.88)',
-        backdropFilter: dark ? HEADER.blur : 'blur(20px)',
-        WebkitBackdropFilter: dark ? HEADER.blur : 'blur(20px)',
-        borderBottom: dark ? `1px solid ${HEADER.accentLine}` : '1px solid rgba(0,103,224,0.07)',
-        boxShadow: dark ? HEADER.accentGlow : undefined,
+        background: HEADER.bg,
+        backdropFilter: HEADER.blur,
+        WebkitBackdropFilter: HEADER.blur,
+        borderBottom: `1px solid ${HEADER.accentLine}`,
+        boxShadow: HEADER.accentGlow,
       }}
     >
       <div className={HEADER.container}>
         <nav className={HEADER.bar}>
-          {dark ? (
-            // Identical logo lockup to the landing navbar: chip + Wordmark tile.
-            <Link
-              href="/"
-              aria-label="MY PT STUDIO home"
-              className={HEADER.chipClass}
-              style={{
-                backdropFilter: HEADER.chipBlur,
-                WebkitBackdropFilter: HEADER.chipBlur,
-                boxShadow: HEADER.chipShadow,
-              }}
-            >
-              <Wordmark tile size={HEADER.logoSize} />
-            </Link>
-          ) : (
-            <Link href="/" aria-label="MY PT STUDIO home" className="inline-flex items-center gap-2.5">
-              <Image
-                src="/mypt-logo.png"
-                alt=""
-                width={HEADER.logoSize}
-                height={HEADER.logoSize}
-                priority
-                className="shrink-0 object-contain"
-                style={{ width: HEADER.logoSize, height: HEADER.logoSize }}
-              />
-              <span className="text-[15px] font-[800] tracking-[-0.02em]">
-                <span style={{ color: '#0067E0' }}>MY PT</span>{' '}
-                <span style={{ color: '#0F172A' }}>STUDIO</span>
-              </span>
-            </Link>
-          )}
+          {/* Identical logo lockup to the landing navbar: chip + Wordmark tile. */}
+          <Link
+            href="/"
+            aria-label="MY PT STUDIO home"
+            className={HEADER.chipClass}
+            style={{ boxShadow: HEADER.chipShadow }}
+          >
+            <Wordmark tile size={HEADER.logoSize} />
+          </Link>
 
           <Link
             href={href}
-            className={`rounded-lg px-4 py-2 text-[13.5px] transition-colors ${
-              dark
-                ? 'font-[650] text-slate-300 hover:bg-white/[0.06] hover:text-[var(--saffron-500)]'
-                : 'font-[650] text-slate-900 hover:bg-black/[0.04]'
-            }`}
+            className="rounded-lg px-4 py-2 text-[13.5px] font-[650] transition-shadow"
+            style={{ color: C.body }}
           >
             {label}
           </Link>

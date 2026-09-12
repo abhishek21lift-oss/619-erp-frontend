@@ -18,16 +18,17 @@ import { m } from 'framer-motion';
 import { ArrowLeft, Lock, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import BrandLogoWide from '@/components/BrandLogoWide';
 import { api } from '@/lib/api';
+import { C, SHADOW } from '@/components/landing/tokens';
 import { checkNewPassword, passwordStrength, MIN_LENGTH } from '@/lib/password-policy';
 
-const MAROON = '#0067E0';
-const GOLD = '#0067E0';
-const INK = '#0F172A';
-const MUTE = '#64748B';
-const LINE = 'rgba(15,23,42,0.10)';
+// Tokens, not local hex: the twin of /forgot-password, and the last screen in
+// the recovery journey. See the note there.
+const INK = C.ink;
+const MUTE = C.muted;
+const LINE = C.line;
 
 const STRENGTH_LABEL = ['', 'Weak', 'Fair', 'Good', 'Strong'];
-const STRENGTH_COLOR = ['transparent', '#EF4444', '#F59E0B', '#0067E0', '#10B981'];
+const STRENGTH_COLOR = ['transparent', C.red, C.gold, C.blue, C.emerald];
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -74,9 +75,9 @@ function ResetPasswordForm() {
   // Say so plainly instead of rendering a form that cannot possibly work.
   if (!token) {
     return (
-      <div className="rounded-[20px] bg-white p-6 text-center" style={{ border: `1px solid ${LINE}`, boxShadow: '0 18px 48px rgba(15,23,42,0.08)' }}>
-        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full" style={{ background: 'rgba(239,68,68,0.10)' }}>
-          <AlertCircle size={24} style={{ color: '#DC2626' }} />
+      <div className="rounded-[20px] p-6 text-center" style={{ background: C.panel, boxShadow: SHADOW.panel }}>
+        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full" style={{ background: C.redSoft }}>
+          <AlertCircle size={24} style={{ color: C.red }} />
         </div>
         <p className="text-[14px] font-[650]" style={{ color: INK }}>This link is missing its reset code</p>
         <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: MUTE }}>
@@ -85,7 +86,7 @@ function ResetPasswordForm() {
         <Link
           href="/forgot-password"
           className="mt-4 inline-flex w-full items-center justify-center rounded-[12px] py-3 text-[14px] font-[700] text-white"
-          style={{ background: MAROON }}
+          style={{ background: `linear-gradient(135deg, ${C.blue450}, ${C.blueLo})`, boxShadow: SHADOW.blueGlow }}
         >
           Request a new link
         </Link>
@@ -95,9 +96,9 @@ function ResetPasswordForm() {
 
   if (done) {
     return (
-      <div className="rounded-[20px] bg-white p-6 text-center" style={{ border: `1px solid ${LINE}`, boxShadow: '0 18px 48px rgba(15,23,42,0.08)' }}>
-        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full" style={{ background: 'rgba(16,185,129,0.12)' }}>
-          <CheckCircle2 size={24} style={{ color: '#10B981' }} />
+      <div className="rounded-[20px] p-6 text-center" style={{ background: C.panel, boxShadow: SHADOW.panel }}>
+        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full" style={{ background: C.emeraldSoft }}>
+          <CheckCircle2 size={24} style={{ color: C.emerald }} />
         </div>
         <p className="text-[14px] font-[650]" style={{ color: INK }}>Password updated</p>
         <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: MUTE }}>
@@ -106,7 +107,7 @@ function ResetPasswordForm() {
         <Link
           href="/login"
           className="mt-4 inline-flex w-full items-center justify-center rounded-[12px] py-3 text-[14px] font-[700] text-white"
-          style={{ background: MAROON }}
+          style={{ background: `linear-gradient(135deg, ${C.blue450}, ${C.blueLo})`, boxShadow: SHADOW.blueGlow }}
         >
           Sign in now
         </Link>
@@ -115,7 +116,7 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="rounded-[20px] bg-white p-6" style={{ border: `1px solid ${LINE}`, boxShadow: '0 18px 48px rgba(15,23,42,0.08)' }}>
+    <div className="rounded-[20px] p-6" style={{ background: C.panel, boxShadow: SHADOW.panel }}>
       <form onSubmit={handleSubmit} noValidate>
         <label htmlFor="rp-password" className="mb-1.5 block text-[12.5px] font-[650]" style={{ color: INK }}>New password</label>
         <div className="relative">
@@ -128,8 +129,8 @@ function ResetPasswordForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder={`At least ${MIN_LENGTH} characters`}
-            className="w-full rounded-[12px] py-3 pl-10 pr-11 text-[14px] outline-none transition-colors focus:border-[#0067E0]"
-            style={{ border: `1.5px solid ${LINE}`, color: INK }}
+            className="w-full rounded-[12px] py-3 pl-10 pr-11 text-[14px] outline-none transition-shadow"
+            style={{ background: C.canvas, boxShadow: SHADOW.inset, border: `1px solid ${LINE}`, color: INK }}
           />
           <button
             type="button"
@@ -169,15 +170,15 @@ function ResetPasswordForm() {
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             placeholder="Type it again"
-            className="w-full rounded-[12px] py-3 pl-10 pr-3 text-[14px] outline-none transition-colors focus:border-[#0067E0]"
-            style={{ border: `1.5px solid ${LINE}`, color: INK }}
+            className="w-full rounded-[12px] py-3 pl-10 pr-3 text-[14px] outline-none transition-shadow"
+            style={{ background: C.canvas, boxShadow: SHADOW.inset, border: `1px solid ${LINE}`, color: INK }}
           />
         </div>
 
         {error && (
-          <div className="mt-3 flex items-start gap-2 rounded-[10px] px-3 py-2.5" style={{ background: 'rgba(239,68,68,0.08)' }}>
-            <AlertCircle size={15} className="mt-[1px] shrink-0" style={{ color: '#DC2626' }} />
-            <span className="text-[12.5px] font-[550]" style={{ color: '#B91C1C' }}>{error}</span>
+          <div className="mt-3 flex items-start gap-2 rounded-[10px] px-3 py-2.5" style={{ background: C.redSoft }}>
+            <AlertCircle size={15} className="mt-[1px] shrink-0" style={{ color: C.red }} />
+            <span className="text-[12.5px] font-[550]" style={{ color: C.red }}>{error}</span>
           </div>
         )}
 
@@ -185,7 +186,7 @@ function ResetPasswordForm() {
           type="submit"
           disabled={busy}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] py-3 text-[14px] font-[700] text-white transition-opacity disabled:opacity-60"
-          style={{ background: MAROON, boxShadow: '0 8px 22px rgba(0,103,224,0.28)' }}
+          style={{ background: `linear-gradient(135deg, ${C.blue450}, ${C.blueLo})`, boxShadow: SHADOW.blueGlow }}
         >
           {busy ? <><Loader2 size={17} className="animate-spin" /> Updating…</> : 'Set new password'}
         </button>
@@ -199,7 +200,7 @@ export default function ResetPasswordPage() {
     <main
       className="relative flex min-h-[100dvh] flex-col items-center justify-center"
       style={{
-        background: 'radial-gradient(120% 78% at 50% -8%, #F8FAFC 0%, #ffffff 48%)',
+        background: C.canvas,
         color: INK,
         fontFamily: "var(--font-sans), 'Inter', system-ui, sans-serif",
         paddingTop: 'calc(max(env(safe-area-inset-top), 2.75rem) + 1.25rem)',
@@ -209,14 +210,14 @@ export default function ResetPasswordPage() {
       }}
     >
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -right-24 -top-24 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${GOLD}18, transparent 68%)` }} />
-        <div className="absolute -bottom-28 -left-20 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${MAROON}10, transparent 68%)` }} />
+        <div className="absolute -right-24 -top-24 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${C.goldSoft}, transparent 68%)` }} />
+        <div className="absolute -bottom-28 -left-20 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${C.blueWash}, transparent 68%)` }} />
       </div>
 
       <Link
         href="/login"
-        className="absolute left-4 inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-[12.5px] font-[600] backdrop-blur transition-colors hover:bg-white"
-        style={{ color: MUTE, border: `1px solid ${LINE}`, top: 'calc(max(env(safe-area-inset-top), 2.75rem) + 0.5rem)' }}
+        className="absolute left-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-[600] transition-shadow"
+        style={{ color: MUTE, background: C.canvas, boxShadow: SHADOW.raised, top: 'calc(max(env(safe-area-inset-top), 2.75rem) + 0.5rem)' }}
       >
         <ArrowLeft size={13} /> Sign in
       </Link>
@@ -236,7 +237,7 @@ export default function ResetPasswordPage() {
         </div>
 
         {/* useSearchParams needs a Suspense boundary in the App Router. */}
-        <Suspense fallback={<div className="h-[260px] rounded-[20px] bg-white" style={{ border: `1px solid ${LINE}` }} />}>
+        <Suspense fallback={<div className="h-[260px] rounded-[20px]" style={{ background: C.panel, boxShadow: SHADOW.panel }} />}>
           <ResetPasswordForm />
         </Suspense>
       </m.div>

@@ -70,12 +70,12 @@ export default function AiSection() {
         <Reveal delay={0.08}>
           <div
             className="relative mt-14 overflow-hidden rounded-[28px] border p-6 sm:p-8"
-            style={{ background: 'linear-gradient(180deg, rgba(0,103,224,0.10) 0%, rgba(14,26,46,0.4) 100%)', borderColor: C.line, boxShadow: SHADOW.panel }}
+            style={{ background: `linear-gradient(180deg, ${C.blueWash} 0%, ${C.canvasAlt} 100%)`, borderColor: C.lineSoft, boxShadow: SHADOW.panel }}
           >
             <div
               aria-hidden
               className="pointer-events-none absolute inset-x-0 top-0 h-px"
-              style={{ background: 'linear-gradient(90deg, transparent, rgba(28,163,249,0.5), transparent)' }}
+              style={{ background: `linear-gradient(90deg, transparent, ${C.lineBlue}, transparent)` }}
             />
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {LAYERS.map((l, i) => (
@@ -111,7 +111,7 @@ export default function AiSection() {
                   className="flex h-full items-start gap-4 rounded-2xl border p-5"
                   style={{ background: C.panelAlt, borderColor: C.lineSoft }}
                 >
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ background: 'rgba(28,163,249,0.14)', color: C.blueHi }} aria-hidden>
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ background: C.blueWash, color: C.blueHi }} aria-hidden>
                     <Sparkles size={18} />
                   </span>
                   <div>

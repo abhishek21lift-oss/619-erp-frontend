@@ -9,7 +9,7 @@ import {
   Target, Flame, Droplets,
 } from 'lucide-react';
 import { Container, Reveal, Section, SectionHeader } from './primitives';
-import { C, EASE, SHADOW, TABULAR } from './tokens';
+import { C, EASE, SHADOW, TABULAR, inkOn } from './tokens';
 
 // ── Atoms ──────────────────────────────────────────────────────────────────
 
@@ -95,7 +95,7 @@ function DashboardPanel() {
           <div className="grid gap-2 sm:grid-cols-3">
             {[
               { t: '6:30 AM', c: 'Priya Sharma', w: 'Push A · AR', s: 'Done', sc: C.emerald },
-              { t: '9:00 AM', c: 'Karan Patel', w: 'Pull B · KP', s: 'PT', sc: C.gold },
+              { t: '9:00 AM', c: 'Karan Patel', w: 'Pull B · KP', s: 'PT', sc: C.goldHi },
               { t: '5:30 PM', c: 'Simran Mehta', w: 'Legs C · SM', s: 'Scheduled', sc: C.blueHi },
             ].map((r) => (
               <div key={r.c} className="rounded-xl border p-3" style={{ background: C.panel, borderColor: C.lineSoft }}>
@@ -117,7 +117,7 @@ function DashboardPanel() {
 function ClientsPanel() {
   const rows = [
     { n: 'Priya Sharma', tag: 'Active', tagC: C.emerald, pct: 92, rt: '92%' },
-    { n: 'Karan Patel', tag: 'Balance due', tagC: C.gold, pct: 61, rt: '61%' },
+    { n: 'Karan Patel', tag: 'Balance due', tagC: C.goldHi, pct: 61, rt: '61%' },
     { n: 'Simran Mehta', tag: 'Renews in 6d', tagC: C.blueHi, pct: 78, rt: '78%' },
     { n: 'Dev Thakur', tag: 'New this week', tagC: C.emerald, pct: 40, rt: '40%' },
   ];
@@ -131,7 +131,7 @@ function ClientsPanel() {
         >
           <span
             className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[10px] font-bold"
-            style={{ background: [C.blue, C.gold, C.blueHi, C.emerald][i], color: '#fff' }}
+            style={{ background: [C.blue, C.gold, C.blueHi, C.emerald][i], color: inkOn([C.blue, C.gold, C.blueHi, C.emerald][i]) }}
             aria-hidden
           >
             {r.n.split(' ').map((w) => w[0]).join('')}
@@ -357,7 +357,7 @@ function RevenuePanel() {
 
 function InsightsPanel() {
   const rows = [
-    { icon: <Wallet size={14} />, c: C.gold, t: '₹1.2L collectable', d: 'renewals due in the next 7 days', a: 'WhatsApp', ac: C.emerald },
+    { icon: <Wallet size={14} />, c: C.goldHi, t: '₹1.2L collectable', d: 'renewals due in the next 7 days', a: 'WhatsApp', ac: C.emerald },
     { icon: <Users size={14} />, c: C.blueHi, t: '₹42K pending', d: 'across 12 clients — 3 overdue', a: 'View dues', ac: C.gold },
     { icon: <CalendarCheck size={14} />, c: C.blue, t: '3 birthdays today', d: 'wish them before today\'s sessions', a: 'Wish', ac: C.blueHi },
     { icon: <Target size={14} />, c: C.emerald, t: 'Month target on pace', d: '₹4.3L of ₹6.3L with 12 days left', a: 'Track', ac: C.emerald },
@@ -485,7 +485,7 @@ export default function ProductShowcase() {
               {/* Stage */}
               <div
                 className="relative overflow-hidden rounded-[24px] border p-4 sm:p-6"
-                style={{ background: 'rgba(22,35,61,0.66)', borderColor: C.line, boxShadow: SHADOW.panel, backdropFilter: 'blur(14px)' }}
+                style={{ background: C.panel, borderColor: C.lineSoft, boxShadow: SHADOW.panel }}
               >
                 {/* stage glow */}
                 <div

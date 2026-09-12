@@ -33,7 +33,7 @@ export function Wordmark({ size = 34, priority = false, tile = false }: { size?:
         width: size,
         height: size,
         background: `linear-gradient(165deg, ${gray[0]} 0%, ${BRAND_TINT_FROM} 100%)`,
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 1px 2px rgba(2,6,23,0.45)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 1px 2px rgba(163,177,198,0.55)',
       }}
     >
       <Image

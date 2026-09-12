@@ -392,7 +392,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
           paddingRight: 'max(1.25rem, env(safe-area-inset-right))',
         }}
       >
-        <PublicNav action="start-free" dark />
+        <PublicNav action="start-free" />
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -left-40 -top-40 h-[520px] w-[520px] rounded-full" style={{ background: `radial-gradient(circle, ${C.blue}12, transparent 68%)` }} />
           <div className="absolute -bottom-32 -right-32 h-[480px] w-[480px] rounded-full" style={{ background: `radial-gradient(circle, ${C.gold}0f, transparent 68%)` }} />
@@ -404,7 +404,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
           </div>
           <div
             className="rounded-3xl border p-7 text-center sm:p-8"
-            style={{ background: 'rgba(16,27,48,0.72)', borderColor: C.line, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', boxShadow: SHADOW.panel }}
+            style={{ background: C.panel, borderColor: C.lineSoft, boxShadow: SHADOW.panel }}
           >
             <span
               className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full text-[16px] font-[800] text-white"
@@ -443,7 +443,8 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
   const showDivider = !!GOOGLE_CLIENT_ID || passkeyReady;
 
   const inputBase = (isErr: boolean) => ({
-    background: 'rgba(11,18,32,0.55)',
+    background: C.canvas,
+    boxShadow: SHADOW.inset,
     color: C.ink,
     border: `1px solid ${isErr ? 'rgba(248,113,113,0.55)' : 'rgba(148,163,184,0.18)'}`,
   });
@@ -457,7 +458,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
         fontFamily: "var(--font-sans), 'Inter', system-ui, sans-serif",
       }}
     >
-      <PublicNav action="start-free" dark />
+      <PublicNav action="start-free" />
 
       {/* ambient wash — clipped so the glows never create horizontal overflow */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -527,8 +528,8 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
               transition={{ duration: 0.42 }}
               className="rounded-3xl border p-7 sm:p-8"
               style={{
-                background: 'rgba(16,27,48,0.72)',
-                borderColor: C.line,
+                background: C.panel,
+                borderColor: C.lineSoft,
                 backdropFilter: 'blur(24px)',
                 WebkitBackdropFilter: 'blur(24px)',
                 boxShadow: SHADOW.panel,
@@ -539,7 +540,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
                 <button
                   type="button"
                   onClick={() => { setEmail(rememberedEmail); pwRef.current?.focus(); }}
-                  className="mt-5 flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-left transition-colors hover:bg-white/[0.04]"
+                  className="mt-5 flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-left transition-colors hover:bg-[rgba(163,177,198,0.18)]"
                   style={{ border: `1px solid ${C.lineSoft}` }}
                 >
                   <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full text-[13px] font-[800] text-white" style={{ background: `linear-gradient(135deg, ${C.blue}, ${C.blueLo})` }}>
@@ -641,7 +642,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
                       type="button"
                       onClick={() => setShowPw((s) => !s)}
                       aria-label={showPw ? 'Hide password' : 'Show password'}
-                      className="absolute right-2.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg transition-colors hover:bg-white/[0.06]"
+                      className="absolute right-2.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg transition-colors hover:bg-[rgba(163,177,198,0.18)]"
                       style={{ color: C.muted }}
                     >
                       <AnimatePresence mode="wait" initial={false}>
@@ -702,7 +703,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
                         placeholder="123456"
                         autoFocus
                         className="w-full rounded-xl text-center text-[20px] font-[700] tracking-[0.4em] outline-none transition-all placeholder:text-[#475569]"
-                        style={{ height: 52, color: C.ink, background: 'rgba(11,18,32,0.55)', border: `1px solid ${C.blue}`, boxShadow: `0 0 0 3px ${C.blue}33` }}
+                        style={{ height: 52, color: C.ink, background: C.canvas, border: `1px solid ${C.blue}`, boxShadow: `${SHADOW.inset}, 0 0 0 3px ${C.blue}33` }}
                       />
                       <p className="mt-1.5 text-[12px]" style={{ color: C.muted }}>
                         Enter the 6-digit code from your authenticator app, or one of your recovery codes.
@@ -717,7 +718,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
                     <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="peer sr-only" />
                     <span
                       className="grid h-[18px] w-[18px] place-items-center rounded-[6px] transition-all"
-                      style={{ border: `1.5px solid ${remember ? C.blue : 'rgba(148,163,184,0.18)'}`, background: remember ? C.blue : 'rgba(11,18,32,0.55)' }}
+                      style={{ border: `1.5px solid ${remember ? C.blue : C.line}`, background: remember ? C.blue : C.canvas, boxShadow: remember ? undefined : SHADOW.inset }}
                     >
                       {remember && <Check size={12} strokeWidth={3} className="text-white" />}
                     </span>
@@ -806,7 +807,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
             <div className="mt-5 text-center">
               <Link
                 href={copy.otherHref}
-                className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-[650] transition-colors hover:bg-white/[0.06]"
+                className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-[650] transition-colors hover:bg-[rgba(163,177,198,0.18)]"
                 style={{ color: C.muted }}
               >
                 {copy.otherLabel}
