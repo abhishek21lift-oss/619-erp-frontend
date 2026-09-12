@@ -400,53 +400,6 @@ export type DuesSummary = {
   medium_risk_count: number;
 };
 
-/**
- * Shape of GET /api/insights/summary — the canonical metric layer.
- *
- * Percentages are `number | null`, and the null is load-bearing: null means
- * the denominator was empty (no term came up for renewal, no attendance was
- * recorded), which is a different fact from 0. Rendering null as 0% turns a
- * quiet month into total churn.
- */
-export type InsightsSummary = {
-  /** Enrolled and inside their term today — from dates, not the status column. */
-  active_clients: number;
-  lapsed_clients: number;
-  enrolled_clients: number;
-  outstanding: number;
-  /** What active clients have agreed to pay monthly. A commitment, not income. */
-  revenue_contracted_monthly: number;
-
-  /** Terms whose end date fell in the window. Denominator of the renewal rate. */
-  terms_due: number;
-  terms_renewed: number;
-  /** True conversion: renewed ÷ due. Null when nothing was due. */
-  renewal_rate_pct: number | null;
-
-  /** Money received in the window, from the payment ledger. */
-  revenue_collected: number;
-  incentives: number;
-  payment_count: number;
-
-  attendance_total: number;
-  attendance_attended: number;
-  attendance_unique_clients: number;
-  /** Present-or-late ÷ all client attendance rows. Null when none recorded. */
-  attendance_rate_pct: number | null;
-
-  /** Workouts actually completed, not diary appointments. */
-  sessions_delivered: number;
-  sessions_booked: number;
-};
-
-/** One entry of GET /api/insights/definitions. */
-export type MetricDefinition = {
-  unit: string;
-  definition: string;
-  /** Present only for metrics that can legitimately be null. */
-  nullWhen?: string;
-};
-
 export type Payment = {
   id: string;
   receipt_no?: string;

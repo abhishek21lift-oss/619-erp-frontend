@@ -14,9 +14,14 @@ import type {
   AiMemoryCandidate, AiProgrammerProposal, PendingWorkQueue, ClientIntelligenceSummary,
   AiIntelligenceAudit,
   DuesItem, DuesSummary, ProfileDevice, ProfileSession, SearchResponse, TrainerSummaryRow,
-  InsightsSummary, MetricDefinition,
 } from '../types';
 
+/**
+ * @deprecated Compatibility surface. Delegates server-side to the canonical
+ * Metric Engine with identical numbers, but new code must use `insights.*`
+ * below (ONE source of truth: /api/insights/*). Kept mounted until migration
+ * is proven safe — see backend src/routes/reports.js.
+ */
 export const reports = {
   revenue: (params?: Record<string, string>) =>
     http(`/api/reports/revenue${buildQs(params)}`),
@@ -48,35 +53,46 @@ export const reports = {
 };
 
 /**
- * The canonical metric layer — `/api/insights`.
- *
- * One request, one window, one scope, every headline figure. It exists
- * because the same named metric was being computed in several places and the
- * numbers disagreed: seven definitions of "active client" across the backend,
- * two of "present", and a renewal rate that only ever existed in the browser
- * as `active / (active + expired)` — a stock ratio over a hand-maintained
- * status column, presented as a conversion rate.
- *
- * Every figure here is computed in SQL over the whole population. Nothing in
- * this namespace should be re-derived, re-bucketed or summed client-side; if
- * a screen needs a number that is not here, the right move is to add it to
- * the server's definition catalogue rather than to compute it locally.
+ * Canonical Insights API — ONE source of truth for metrics.
+ * Canonical Data → Metric Engine → Insights Engine → AI → Action.
+ * Prefer `overview` (one dataset for KPIs + charts + tables) over N calls.
  */
 export const insights = {
-  /** Headline metrics for one window. Defaults to the last 30 days. */
-  summary: (params?: { from?: string; to?: string }) =>
-    http<{ data: InsightsSummary; meta: { window: { from: string; to: string } } }>(
-      `/api/insights/summary${buildQs(params as Record<string, string> | undefined)}`,
-    ),
-  /**
-   * What each figure means, from the same constant the SQL is built from.
-   *
-   * Worth preferring over a hand-written tooltip: a definition restated in
-   * the UI drifts from the query the moment either changes, and this whole
-   * module exists because of exactly that class of drift.
-   */
-  definitions: () =>
-    http<{ data: Record<string, MetricDefinition> }>('/api/insights/definitions'),
+  /** One dataset for the whole page: revenue, dues, attendance, renewals, utilisation, monthly, trainers. */
+  overview: (params?: { from?: string; to?: string; year?: string | number }) =>
+    http(`/api/insights/overview${buildQs(params as Record<string, string | number> | undefined)}`),
+  revenue: (params?: { from?: string; to?: string }) =>
+    http(`/api/insights/revenue${buildQs(params as Record<string, string | number> | undefined)}`),
+  monthly: (year: number | string) =>
+    http<unknown[]>(`/api/insights/revenue/monthly?year=${year}`),
+  /** Authoritative dues totals (no LIMIT). */
+  duesSummary: (params?: { high?: number; medium?: number }) =>
+    http<DuesSummary>(`/api/insights/dues/summary${buildQs(
+      params ? Object.fromEntries(
+        Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]),
+      ) : undefined,
+    )}`),
+  /** Top-N debtor ROWS for tables only — never sum for a total. */
+  dues: (params?: { limit?: number }) =>
+    http<DuesItem[]>(`/api/insights/dues${buildQs(params as Record<string, string | number> | undefined)}`),
+  /** Canonical attendance (present+late = visit), server-aggregated. */
+  attendance: (params?: { from?: string; to?: string; granularity?: string }) =>
+    http(`/api/insights/attendance${buildQs(params as Record<string, string | number> | undefined)}`),
+  attendanceToday: () =>
+    http('/api/insights/attendance/today'),
+  /** TRUE renewal conversion + pipeline counts. Null rate = no expiries, not 0%. */
+  renewals: (params?: { from?: string; to?: string }) =>
+    http(`/api/insights/renewals${buildQs(params as Record<string, string | number> | undefined)}`),
+  /** Renewal pipeline ROWS (top-N by expiry). Conversion comes from `renewals`. */
+  renewalRows: (params?: { days?: number; limit?: number }) =>
+    http(`/api/insights/renewals/rows${buildQs(params as Record<string, string | number> | undefined)}`),
+  trainers: () =>
+    http<TrainerSummaryRow[]>('/api/insights/trainers'),
+  utilisation: () =>
+    http('/api/insights/utilisation'),
+  /** Deterministic business insights (no LLM) + the metrics behind them. */
+  business: (params?: { from?: string; to?: string }) =>
+    http(`/api/insights/business${buildQs(params as Record<string, string | number> | undefined)}`),
 };
 
 /**

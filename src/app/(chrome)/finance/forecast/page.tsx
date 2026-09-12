@@ -36,7 +36,7 @@ function Inner() {
 
   useEffect(() => {
     let alive = true;
-    api.reports
+    api.insights
       .monthly(year)
       .then((r) => alive && setMonthly(Array.isArray(r) ? r : []))
       .catch((e) => alive && setError(e.message))

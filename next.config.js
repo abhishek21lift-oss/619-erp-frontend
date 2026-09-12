@@ -91,39 +91,20 @@ const nextConfig = {
       // the way a 308 would.
       { source: '/checkin',            destination: '/checkin/qr-scanner',       permanent: false },
 
-      // ── The reports and insights tab stubs ──────────────────────────────
+      // ── The bare /insights URL ──────────────────────────────────────────
       //
-      // `/reports/[tab]` and `/insights/[tab]` mounted the generic
-      // ModuleWorkspace — a CRUD table over `/api/modules/{key}` — for nine
-      // and three tab values respectively.
+      // `/insights` has no page.tsx and 404s. The sidebar group label is not a
+      // link so nothing in-app reaches it, but the URL is guessable and is what
+      // a bookmark of "insights" would be.
       //
-      // Two things were wrong with that. The keys they built
-      // (`reports-revenue`, `insights-traffic`, …) match nothing in
-      // module-config, so every one fell through to the generic default:
-      // the title was the slug with its hyphens removed, the body was
-      // "Manage records, approvals, analytics, and exports for this module",
-      // and the numbers were a CRUD table's own row counts rather than any
-      // report. And because `adminRoleFor` only recognises the bare key
-      // `reports`, `config.role` came back undefined — so `ModuleWorkspace`'s
-      // `<Guard role={config.role}>` guarded NOTHING. Nine admin-shaped report
-      // URLs were reachable by any signed-in user.
+      // Only the BARE path. Its children are real pages — the four report
+      // screens plus the `[tab]` redirect map — and redirects are checked
+      // before the filesystem, so a catch-all here would shadow all of them.
       //
-      // The three `/insights/*` values were unreachable anyway: static
-      // siblings shadow them. Every tab now goes to the screen that actually
-      // holds the report, and the two that have a real home elsewhere say so.
-      { source: '/reports/renewal',            destination: '/insights/renewal', permanent: true },
-      { source: '/reports/traffic',            destination: '/insights/traffic', permanent: true },
-      { source: '/reports/attendance',         destination: '/insights/traffic', permanent: true },
-      { source: '/reports/dues',               destination: '/reports?view=dues', permanent: true },
-      { source: '/reports/trainers',           destination: '/reports?view=trainers', permanent: true },
-      { source: '/reports/:tab',               destination: '/reports',          permanent: true },
-      // `/insights` itself had no page and 404'd — the sidebar group label is
-      // not a link, so nothing in-app reached it, but the URL is guessable and
-      // is what a bookmark of "insights" would be.
-      //
-      // Deliberately NOT a catch-all over `/insights/:tab*`: redirects are
-      // checked BEFORE the filesystem, so one would shadow the four real
-      // report pages that live under this prefix.
+      // The `/reports/:tab` redirects this branch originally added are gone:
+      // main's own `/reports/[tab]/page.tsx` now redirects every slug to its
+      // canonical page, and a config entry would have silently shadowed that
+      // page while leaving it on disk.
       { source: '/insights',                   destination: '/insights/revenue', permanent: false },
 
       // ── The second workout builder URL ──────────────────────────────────

@@ -80,7 +80,7 @@ function Inner() {
 
   // ── Rows and totals come from different places, on purpose ──────────────
   //
-  // /api/reports/dues is capped at 100 rows server-side. That is fine for the
+  // /api/insights/dues is capped at 100 rows server-side (compat: /api/reports/dues). That is fine for the
   // table below, and wrong for the figures in the hero: this page used to sum
   // those rows in the browser, so a studio with more than 100 debtors saw
   // "Outstanding" showing the top hundred's balance under a label that claims
@@ -91,8 +91,8 @@ function Inner() {
     setLoading(true);
     setError('');
     return Promise.all([
-      api.reports.dues(),
-      api.reports.duesSummary({ high: RISK_HIGH, medium: RISK_MEDIUM }).catch(() => null),
+      api.insights.dues({ limit: 100 }),
+      api.insights.duesSummary({ high: RISK_HIGH, medium: RISK_MEDIUM }).catch(() => null),
     ])
       .then(([rows, sum]) => {
         setDues(Array.isArray(rows) ? rows : []);
