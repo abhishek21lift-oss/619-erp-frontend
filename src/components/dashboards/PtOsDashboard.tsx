@@ -167,7 +167,7 @@ const TRAINER_COLORS = identity;
  *
  * Validated as a categorical set against the light surface — worst adjacent
  * pair ΔE 28.8 (deutan) and 30.5 (normal vision), well clear of the floors.
- * Retention's step falls under 3:1 against the card, which is why the hue
+ * Active Share's step falls under 3:1 against the card, which is why the hue
  * never carries meaning alone: every tile shows its label in ink beside it.
  */
 /**
@@ -187,7 +187,7 @@ const KPI = {
   clients:    palette.blue[500],
   revenue:    palette.emerald[500],
   commission: palette.blue[700],
-  retention:  palette.blue[300],
+  activeShare: palette.blue[300],
 } as const;
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmtINR(n: number | string | null | undefined) {
@@ -200,7 +200,6 @@ function fmtCompact(n: number | string | null | undefined) {
   if (v >= 1e3) return '₹' + (v / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
   return fmtINR(v);
 }
-function clamp(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)); }
 /** Minutes since midnight, for comparing a slot against the clock. */
 function minutesOf(t: string | null): number | null {
   if (!t) return null;
@@ -213,21 +212,6 @@ function momPct(trend: DashData['revenueTrend'] | undefined, key: 'revenue' | 'i
   const curr = Number(trend[trend.length - 1]?.[key] ?? 0);
   if (prev === 0) return null;
   return ((curr - prev) / prev) * 100;
-}
-function healthScore(d: DashData) {
-  const rev = Number(d.total_monthly_pt_revenue), out = Number(d.total_outstanding);
-  const active = d.active_pt_clients, expired = d.expired_clients;
-  const collection = rev + out > 0 ? rev / (rev + out) : 1;
-  // Active share, NOT renewal conversion: the snapshot active/(active+expired).
-  // TRUE renewal conversion (renewed_of_cohort/expired_cohort) is canonical in
-  // /api/insights/renewals and displayed on /insights/renewal — never derive it here.
-  const activeShare = active + expired > 0 ? active / (active + expired) : 1;
-  const growthRaw  = momPct(d.revenueTrend, 'revenue') ?? 0;
-  const growth     = clamp((growthRaw + 50) / 100, 0, 1);
-  const score = Math.round(collection * 35 + activeShare * 35 + growth * 30);
-  const color = score >= 80 ? C.success : score >= 60 ? C.warning : C.danger;
-  const label = score >= 80 ? 'Excellent' : score >= 60 ? 'Healthy' : score >= 40 ? 'Focus Needed' : 'At Risk';
-  return { score, color, label, growthRaw };
 }
 function greeting() {
   const h = new Date().getHours();
@@ -289,29 +273,6 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function Skel({ w = 'w-full', h = 'h-4', r = 'rounded-xl' }: { w?: string; h?: string; r?: string }) {
   return <div className={`${w} ${h} ${r} animate-pulse`} style={{ background: 'rgba(0,103,224,0.08)' }} />;
-}
-
-// ─── HealthRing ────────────────────────────────────────────────────────────────
-function HealthRing({ score, color, size = 64 }: { score: number; color: string; size?: number }) {
-  const r = (size - 8) / 2;
-  const circ = 2 * Math.PI * r;
-  const dash = (clamp(score, 0, 100) / 100) * circ;
-  return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="5.5" />
-        <m.circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth="5.5"
-          strokeLinecap="round" strokeDasharray={circ}
-          initial={{ strokeDashoffset: circ }} animate={{ strokeDashoffset: circ - dash }}
-          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-          style={{ filter: `drop-shadow(0 0 5px ${color}88)` }} />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[17px] font-[860] tabular-nums leading-none text-white">{score}</span>
-        <span className="text-[7px] font-[700] uppercase tracking-[0.1em] text-white/70">score</span>
-      </div>
-    </div>
-  );
 }
 
 // ─── Section 1 — Hero Welcome Header ───────────────────────────────────────────
@@ -542,7 +503,7 @@ function MobileQuickActions() {
 // rendering could give it away: a plausible chart under a plausible number.
 //
 // So a tile takes a series only when the series is its own, and Active
-// Clients and Retention are now bare numbers. A stat tile with no chart is a
+// Clients and Active Share are now bare numbers. A stat tile with no chart is a
 // legitimate answer; a chart of the wrong thing is not.
 //
 // ── Colour ────────────────────────────────────────────────────────────────
@@ -617,7 +578,7 @@ function StatCard({
         {/* mt-auto pins this block to the bottom of whatever height the grid
             row settles on, so a card with no chart is not a number floating
             in a pool of white — which is exactly how Active Clients and
-            Retention were reading beside the two that had one. */}
+            Active Share were reading beside the two that had one. */}
         <div className="mt-auto pb-3.5">
           <p className="mb-1.5 text-[9.5px] font-[800] uppercase tracking-[0.12em] sm:text-[10px]" style={{ color: C.muted }}>{label}</p>
           <p className="text-[26px] font-[900] leading-none tracking-[-0.04em] tabular-nums sm:text-[30px]" style={{ color: C.ink }}>{value}</p>
@@ -1903,7 +1864,7 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
             {[
               { label: 'Total',    value: stats.this_month_total,     color: KPI.clients },
               { label: 'Done',     value: stats.this_month_completed, color: C.success },
-              { label: 'Last mo.', value: stats.last_month_completed, color: KPI.retention },
+              { label: 'Last mo.', value: stats.last_month_completed, color: KPI.activeShare },
             ].map(t => (
               <div key={t.label} className="rounded-[13px] p-2.5" style={{ background: `${t.color}0f` }}>
                 <p className="mb-0.5 flex items-center gap-1 text-[8px] font-[700] uppercase tracking-[0.09em]" style={{ color: C.muted }}>
@@ -2104,11 +2065,13 @@ export default function PtOsDashboard() {
 
   const commRate = d?.total_monthly_pt_revenue && d.total_monthly_pt_revenue > 0
     ? `${((d.total_monthly_commission / d.total_monthly_pt_revenue) * 100).toFixed(0)}% rate` : undefined;
-  // Active share snapshot (was misnamed retentionPct). TRUE renewal conversion
-  // lives in /api/insights/renewals — see /insights/renewal.
+  // A snapshot of who currently holds a package — NOT retention, and not a
+  // renewal rate: neither this nor any figure derived from it knows whether a
+  // client whose package ENDED came back. TRUE renewal conversion
+  // (renewed_of_cohort / expired_cohort) is canonical in /api/insights/renewals
+  // and rendered on /insights/renewal. Never re-derive it from these two counts.
   const activeSharePct = d && (d.active_pt_clients + d.expired_clients) > 0
     ? (d.active_pt_clients / (d.active_pt_clients + d.expired_clients)) * 100 : null;
-  const retentionPct = activeSharePct;
 
   return (
     <>
@@ -2182,7 +2145,7 @@ export default function PtOsDashboard() {
                 tile spent saying something twice.
 
                 Commission stays phone-and-tablet-only, so the desktop row is
-                Clients / Revenue / Retention and the grid still fills. */}
+                Clients / Revenue / Active Share and the grid still fills. */}
             {/* 3.5 — The month's revenue target.
                 Above Key Metrics because it frames them: "PT Revenue ₹95.5K"
                 is a fact, and whether that is good depends entirely on what
@@ -2218,8 +2181,8 @@ export default function PtOsDashboard() {
                 <StatCard icon={<Percent size={17} />} label="Commission" value={fmtCompact(d.total_monthly_commission)}
                   sub={commRate} color={KPI.commission} accent={palette.blue[400]} delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM} format={fmtINR}
                   className="lg:hidden" />
-                <StatCard icon={<Gauge size={17} />} label="Active Share" value={retentionPct !== null ? `${retentionPct.toFixed(0)}%` : '—'}
-                  sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active · true renewal on Insights`} color={KPI.retention} accent={palette.blue[200]} delay={0.15} href="/insights/renewal" />
+                <StatCard icon={<Gauge size={17} />} label="Active Share" value={activeSharePct !== null ? `${activeSharePct.toFixed(0)}%` : '—'}
+                  sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active · true renewal on Insights`} color={KPI.activeShare} accent={palette.blue[200]} delay={0.15} href="/insights/renewal" />
               </div>
             </div>
 
