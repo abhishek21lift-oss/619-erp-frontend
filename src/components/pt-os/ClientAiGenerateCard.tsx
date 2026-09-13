@@ -16,6 +16,13 @@
  * generation id, never the plan, so what lands is exactly what was screened
  * and audited server-side.
  *
+ * Saving now also says whether the programme is LIVE. That used to be a
+ * question with one answer — no — because accepting a proposal wrote a plan
+ * and assigned it to nobody, so it reached no screen and no logged session
+ * could be attributed to it. The backend assigns it; this reports what that
+ * did, including when the client ends up on more programmes than the session
+ * log can choose between.
+ *
  * A generated DIET is still preview-only: nothing on the backend materialises
  * one, and a Save button that silently did nothing would be worse than none.
  *
@@ -154,12 +161,32 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
     try {
       const out = await api.workouts.plans.saveFromGeneration({ generation_id: result.generationId });
       const missed = out.unresolved.length;
-      toast.success(
-        missed
-          ? `Saved ${out.saved} exercises. ${missed} not in the library — add them in the builder: `
-            + out.unresolved.map((u) => u.name).join(', ')
-          : `Saved ${out.saved} exercises to ${out.name}`,
-      );
+      const message = missed
+        ? `Saved ${out.saved} exercises. ${missed} not in the library — add them in the builder: `
+          + out.unresolved.map((u) => u.name).join(', ')
+        : `Saved ${out.saved} exercises to ${out.name}`;
+
+      // Whether it is LIVE is a separate fact from whether it saved, and until
+      // the backend started assigning the plan it was always "no": the
+      // programme existed in a table, appeared on no screen, and no logged
+      // session could ever point back at it. Saying which of the three states
+      // this save landed in is the difference between a trainer expecting the
+      // client on Today and wondering where they went.
+      const clash = out.other_active_assignments ?? 0;
+      const detail = out.assigned === false
+        ? `Saved, but not assigned — it will not appear on ${client.name}'s Today.`
+        : clash > 0
+          ? `${client.name} is now on ${clash + 1} active programmes, so starting a session `
+            + 'will no longer pick one automatically — choose the programme each time, '
+            + 'or finish the older ones.'
+          : out.assigned
+            ? `Now live for ${client.name}.`
+            : undefined;
+
+      // A warning, not a success, for the one case the trainer has to act on.
+      if (clash > 0) toast.warning(message, { description: detail });
+      else toast.success(message, detail ? { description: detail } : undefined);
+
       router.push(`/pt-os/workout-plans/${out.plan_id}/builder`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not save the programme');
