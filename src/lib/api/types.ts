@@ -1929,6 +1929,18 @@ export interface CommandCenterCard {
   checked_at: string;
   /** Served from the per-collector TTL cache rather than freshly probed. */
   cached?: boolean;
+  /** How old a cached reading is. `cached` alone cannot tell 200ms from 29s,
+   *  and the smtp collector's TTL is 30 seconds. */
+  age_ms?: number;
+  /**
+   * Whose state this card describes.
+   *
+   * `runtime` and `http` measure the ONE API process that answered the
+   * request — its event-loop lag, its heap, its request ring. Everything else
+   * describes the platform. Behind a second replica those are very different
+   * claims wearing the same green dot, so the card carries it.
+   */
+  scope?: 'platform' | 'process';
 }
 
 export interface CommandCenterSnapshot {

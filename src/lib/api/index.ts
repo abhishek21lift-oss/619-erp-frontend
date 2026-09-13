@@ -22,14 +22,12 @@ import {
   superAdmin, settings, features, invitations, integrations, whatsapp,
   clientActivation, clientLogin, me,
 } from './endpoints/platform';
-import { commandCenter } from './endpoints/commandCenter';
 import { campaigns, feedback, communication, notifications, automation, support } from './endpoints/engagement';
 import { reports, insights, search, activity, ai } from './endpoints/insights';
 
 export { http } from '../http';
 export { ROLES, normaliseRole, hasRole, isAdminOrManager } from '../roles';
 export * from './types';
-export type { PlatformRiskDomain, PlatformRiskFinding, PlatformRiskReport } from './endpoints/commandCenter';
 export type { WhatsAppState, WhatsAppStatus, WhatsAppQr } from './endpoints/platform';
 
 // qsOf and buildQs remain private to the endpoint modules.
@@ -62,7 +60,6 @@ export const api = {
   subscription,
   membershipPlans,
   superAdmin,
-  commandCenter,
   settings,
   features,
   invitations,

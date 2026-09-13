@@ -15,6 +15,20 @@ function Metric({ label, value, hint }: { label: string; value: string; hint?: s
 
 function Grid({ children }: { children: React.ReactNode }) { return <div className="grid grid-cols-2 gap-2">{children}</div>; }
 
+/**
+ * How stale a cached reading is, in words.
+ *
+ * A bare "cached" badge cannot distinguish a reading taken 200ms ago from one
+ * taken 29 seconds ago, and the smtp collector's TTL is 30 seconds — so an
+ * operator watching a card during an incident needs the age, not the flag.
+ * Falls back to the flag alone when an older backend sends no age.
+ */
+export function cacheLabel(ageMs: number | undefined): string {
+  if (typeof ageMs !== 'number' || !Number.isFinite(ageMs) || ageMs < 0) return 'cached';
+  if (ageMs < 1000) return 'cached <1s ago';
+  return `cached ${Math.round(ageMs / 1000)}s ago`;
+}
+
 function Ratio({ label, value }: { label: string; value: unknown }) {
   const n = typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : null;
   if (n == null) return <Metric label={label} value="—" />;
@@ -93,6 +107,6 @@ export const Card: React.FC<{ card: CommandCenterCard; index: number; history: C
       <div className="flex min-w-0 items-center gap-2.5"><span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-[10px]" style={{ background: tone.bg }}><Icon size={15} color={tone.color} /></span><div className="min-w-0"><p className="truncate text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>{meta.title}</p><p className="truncate text-[11px]" style={{ color: 'var(--text-tertiary)' }}>{meta.blurb}</p></div></div>
       <div className="flex flex-shrink-0 items-center gap-1.5"><span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-[750]" style={{ background: tone.bg, color: tone.color }}><span className={`h-1.5 w-1.5 rounded-full ${card.status === 'critical' ? 'animate-pulse' : ''}`} style={{ background: tone.color }} />{tone.label}</span><ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: 'var(--text-tertiary)' }} /></div>
     </button>
-    {open && <><CardBody card={card} />{card.reason && <p className="mt-3 rounded-[10px] px-3 py-2 text-[12px] leading-snug" style={{ background: tone.bg, color: 'var(--text-primary)' }}>{card.reason}</p>}<div className="mt-3 flex items-center justify-between gap-3"><div className="flex items-center gap-2 text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}><span>{card.latency_ms == null ? 'not probed' : `probed in ${card.latency_ms} ms`}</span>{card.cached && <span className="rounded px-1.5 py-0.5" style={{ background: 'var(--bg-subtle)' }}>cached</span>}</div>{(() => { const trend = latencyTrend(history, card.name); return trend.length >= 2 ? <div className="h-[20px] w-[72px] flex-shrink-0" title={`Probe latency, last ${trend.length} reads`}><PremiumSparkline data={trend} color={tone.color} metric={`${meta.title} probe latency`} height={20} showArea={false} /></div> : null; })()}</div></>}
+    {open && <><CardBody card={card} />{card.reason && <p className="mt-3 rounded-[10px] px-3 py-2 text-[12px] leading-snug" style={{ background: tone.bg, color: 'var(--text-primary)' }}>{card.reason}</p>}<div className="mt-3 flex items-center justify-between gap-3"><div className="flex items-center gap-2 text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}><span>{card.latency_ms == null ? 'not probed' : `probed in ${card.latency_ms} ms`}</span>{card.cached && <span className="rounded px-1.5 py-0.5" style={{ background: 'var(--bg-subtle)' }} title="Served from the collector's TTL cache rather than freshly probed">{cacheLabel(card.age_ms)}</span>}{card.scope === 'process' && <span className="rounded px-1.5 py-0.5" style={{ background: 'var(--bg-subtle)' }} title="Measures the one API process that answered this request, not the platform">this process</span>}</div>{(() => { const trend = latencyTrend(history, card.name); return trend.length >= 2 ? <div className="h-[20px] w-[72px] flex-shrink-0" title={`Probe latency, last ${trend.length} reads`}><PremiumSparkline data={trend} color={tone.color} metric={`${meta.title} probe latency`} height={20} showArea={false} /></div> : null; })()}</div></>}
   </m.div>;
 };
