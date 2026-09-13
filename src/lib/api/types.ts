@@ -3022,6 +3022,12 @@ export type AiGenerationScreen = {
     source: string; evidence: string; note: string | null;
   }>;
   excluded_exercises: Array<{ name: string; reasons: string[] }>;
+  /**
+   * Findings the rules deliberately refuse to program around, because doing so
+   * would be a medical decision. Carried separately from `constraints` for
+   * that reason and rendered separately too.
+   */
+  referrals: Array<{ source: string; evidence: string; note: string }>;
   not_assessed: string[];
 };
 
@@ -3688,4 +3694,72 @@ export interface PlatformSearchResponse {
   query: string;
   kinds: PlatformSearchKind[];
   total: number;
+}
+
+// ── Roster signals ─────────────────────────────────────────────────────────
+//
+// GET /api/pt-os/signals. The one read in pt-os that is about the whole
+// roster rather than one client: what the studio's data says without anybody
+// opening a profile to ask.
+//
+// The shapes below are the server's, unchanged. In particular `severity` is
+// three values and not a boolean, because the sweep deliberately separates a
+// client who is paying and absent (chase them) from one whose term simply
+// finished (a different conversation). Collapsing those two into one list is
+// the failure this endpoint was built to avoid, and a type that allowed it
+// would invite it back.
+
+export type RosterSignalSeverity = 'critical' | 'warning' | 'info';
+
+/** One finding about one client: what, on what evidence, and what to do. */
+export interface RosterSignal {
+  id: string;
+  severity: RosterSignalSeverity;
+  /** Plain-language finding, already written for a trainer to read aloud. */
+  headline: string;
+  /** The readings behind it. Never rephrased client-side — it is the audit trail. */
+  evidence: string;
+  recommendation: string;
+  /** Present on the silence signals only. */
+  days_quiet?: number;
+}
+
+/** Where this client stands against what they bought. */
+export interface RosterSignalTerm {
+  state: 'current' | 'ended' | 'unknown';
+  end: string | null;
+  days_left: number | null;
+}
+
+export interface RosterSignalClient {
+  client_id: string | null;
+  client_name: string | null;
+  term: RosterSignalTerm;
+  last_session: string | null;
+  days_quiet: number | null;
+  signals: RosterSignal[];
+  /**
+   * Checks that could not be run at all, and why. Carried so "nothing to
+   * report" and "nothing could be computed" never render as the same answer.
+   */
+  unobservable: Array<{ signal: string; reason: string }>;
+  worst: RosterSignalSeverity | null;
+}
+
+/**
+ * The sweep. `clients_detail` holds only the clients with something to say —
+ * already sorted worst-first, longest-silence-first by the server, and not to
+ * be re-sorted here: two independent sorts of the same data is how two screens
+ * end up disagreeing about who to call first.
+ */
+export interface RosterSignalSweep {
+  clients: number;
+  clients_with_signals: number;
+  critical: number;
+  warning: number;
+  info: number;
+  by_signal: Array<{ id: string; severity: RosterSignalSeverity; clients: number }>;
+  /** Clients for whom no check could be computed at all. */
+  not_assessable: number;
+  clients_detail: RosterSignalClient[];
 }

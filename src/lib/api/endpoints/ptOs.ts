@@ -7,7 +7,7 @@
 import { http } from '../../http';
 import { buildQs } from '../qs';
 import type {
-  ActivityLogEntry, CheckinInsight, ClientBirthday, ClientSnapshot, CoachGeneration, DuplicateGroup, MergeResult, PtLead, PtSession, TrainingBrief,
+  ActivityLogEntry, CheckinInsight, ClientBirthday, ClientSnapshot, CoachGeneration, DuplicateGroup, MergeResult, PtLead, PtSession, RosterSignalSweep, TrainingBrief,
 } from '../types';
 
 // ── PT OS ────────────────────────────────────────────────────
@@ -16,6 +16,16 @@ export const pt = {
     http<{ data: unknown }>('/api/pt-os/dashboard'),
   clients: (params?: { trainer_id?: string }) =>
     http<{ data: unknown[]; total: number }>(`/api/pt-os/clients${buildQs(params)}`),
+  /**
+   * The whole roster's signals in one read.
+   *
+   * Every other method here answers a question about ONE client, when somebody
+   * opens them — which meant finding the clients who need a call required
+   * opening every profile. This sweeps instead. Scoped server-side: a trainer
+   * gets their own roster whatever they ask for.
+   */
+  signals: (params?: { trainer_id?: string; weeks?: number }) =>
+    http<{ data: RosterSignalSweep }>(`/api/pt-os/signals${buildQs(params)}`),
   client: (id: string) =>
     http<{ data: unknown }>(`/api/pt-os/clients/${id}`),
   /**

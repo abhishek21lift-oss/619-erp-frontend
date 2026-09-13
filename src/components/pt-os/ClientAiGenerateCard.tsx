@@ -18,6 +18,12 @@
  *
  * A generated DIET is still preview-only: nothing on the backend materialises
  * one, and a Save button that silently did nothing would be worse than none.
+ *
+ * The workout response also carries the safety screen, the rule audit, a
+ * quality score and a second model's critique. Those are rendered by
+ * GenerationEvidence, directly above the Save button, because approval is the
+ * final gate in this design and a gate held by somebody who was shown less
+ * than the server knew is not a gate.
  */
 
 import { useRef, useState } from 'react';
@@ -27,7 +33,8 @@ import {
   AlertTriangle, ArrowRight, Dumbbell, Loader2, RotateCcw, Salad, Sparkles,
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import type { AiDietPlan, AiWorkoutPlan } from '@/lib/api';
+import type { AiDietPlan, AiWorkoutGenerationResult, AiWorkoutPlan } from '@/lib/api';
+import GenerationEvidence from './GenerationEvidence';
 import { useToast } from '@/lib/toast';
 import { palette, rgba } from '@/lib/palette';
 
@@ -75,6 +82,12 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
      * rather than shown and then failing.
      */
      generationId?: string | null;
+    /**
+     * The screen, audit, quality score and critique that came back with the
+     * plan. Workout only — the diet endpoint returns none of it, and an
+     * evidence block under a diet would be claiming checks nobody ran.
+     */
+    evidence?: AiWorkoutGenerationResult;
   } | null>(null);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
@@ -105,7 +118,7 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
     try {
       if (kind === 'workout') {
         const res = await api.ai.generateWorkout({ ...base, experience_level: 'beginner', training_days: 4 });
-        setResult({ kind, plan: res.data, generationId: res.generation_id ?? null });
+        setResult({ kind, plan: res.data, generationId: res.generation_id ?? null, evidence: res });
       } else {
         const res = await api.ai.generateDiet({ ...base, activity_level: 'moderate' });
         setResult({ kind, plan: res.data });
@@ -284,6 +297,8 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
               ) : (
                 <DietPreview plan={result.plan as AiDietPlan} />
               )}
+
+              {result.evidence && <GenerationEvidence result={result.evidence} />}
 
               {canSave ? (
                 <div className="mt-2.5 flex items-center justify-between gap-2 border-t pt-2.5"
