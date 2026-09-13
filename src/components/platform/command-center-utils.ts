@@ -1,31 +1,14 @@
 // Shared utilities for the premium Command Center UI
 
 import type { CommandCenterCard, CommandCenterSnapshot, CommandCenterStatus } from '@/lib/api';
-import { semantic, rgba } from '@/lib/palette';
-import { CheckCircle2, AlertTriangle, XCircle, Timer, HelpCircle, Cpu, Database, Server, Layers, Gauge, Bot, ShieldAlert, Mail } from 'lucide-react';
 
-export const TONE: Record<CommandCenterStatus, { color: string; bg: string; label: string; Icon: typeof CheckCircle2 }> = {
-  healthy: { color: semantic.success, bg: rgba(semantic.success, 0.10), label: 'Healthy', Icon: CheckCircle2 },
-  warning: { color: semantic.warning, bg: rgba(semantic.warning, 0.10), label: 'Warning', Icon: AlertTriangle },
-  critical: { color: semantic.danger, bg: rgba(semantic.danger, 0.10), label: 'Critical', Icon: XCircle },
-  timeout: { color: semantic.warningLo, bg: rgba(semantic.warningLo, 0.10), label: 'Timed out', Icon: Timer },
-  unavailable: { color: semantic.muted, bg: rgba(semantic.muted, 0.08), label: 'Unavailable', Icon: HelpCircle },
-};
-
-export const CARD_META: Record<string, { title: string; Icon: typeof Cpu; blurb: string }> = {
-  runtime: { title: 'Runtime', Icon: Cpu, blurb: 'Process memory, CPU and event-loop lag' },
-  database: { title: 'Database', Icon: Database, blurb: 'PostgreSQL pool, connections and slow queries' },
-  redis: { title: 'Redis', Icon: Server, blurb: 'Latency, memory and clients' },
-  queues: { title: 'Queues', Icon: Layers, blurb: 'BullMQ depth, failures and workers' },
-  http: { title: 'API', Icon: Gauge, blurb: 'Request latency and error rate' },
-  ai: { title: 'AI', Icon: Bot, blurb: 'Routing, latency and fallback rate' },
-  security: { title: 'Security', Icon: ShieldAlert, blurb: 'Auth pressure and configuration posture' },
-  smtp: { title: 'Mail', Icon: Mail, blurb: 'SMTP configuration and delivery' },
-};
-
-export function metaFor(name: string) {
-  return CARD_META[name] ?? { title: name, Icon: Server, blurb: '' };
-}
+// TONE and CARD_META moved to mission-control/tokens.ts, which is the one
+// place the console reads status colour from. Re-exported here so existing
+// imports keep working rather than being rewritten in a UI change — two
+// definitions of what "warning" looks like is exactly the duplication this
+// console is supposed to have stopped having.
+export { TONE, toneFor, bySeverity, CARD_META, metaFor, surface } from './mission-control/tokens';
+export type { StatusTone } from './mission-control/tokens';
 
 export const fmtBytes = (n: unknown): string => {
   if (typeof n !== 'number' || !Number.isFinite(n)) return '—';

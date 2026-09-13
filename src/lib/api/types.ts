@@ -1914,15 +1914,141 @@ export type AuditQuery = {
  *  than one that ran and found trouble. It deliberately ranks BELOW `warning`
  *  so an un-wired dependency does not paint the console amber forever. */
 export type CommandCenterStatus =
-  | 'healthy' | 'warning' | 'critical' | 'unavailable' | 'timeout';
+  | 'healthy'
+  /** Working, in a reduced mode an operator needs to know about. */
+  | 'degraded'
+  | 'warning'
+  /** The probe ran and did not answer in time. */
+  | 'timeout'
+  | 'critical'
+  /** The probe could not run at all. See `expected` on the card. */
+  | 'unavailable';
 
 /** One card. Every collector returns this shape, including on failure, so the
  *  client never has to special-case a missing card. */
+// ── Card payloads, typed per collector ─────────────────────────────────────
+//
+// `data` used to be `unknown`, read through a runtime path walker:
+//
+//     pick(d, 'memory.heap_used_ratio')
+//
+// A path that no longer exists returns undefined, renders as an em-dash, and
+// is indistinguishable from a metric that is legitimately absent — so a rename
+// during a refactor silently blanked a number on an operations console rather
+// than failing anything. The backend declares the same field list in
+// modules/command-center/telemetry-contract.js and asserts its collectors
+// still emit it; these are the reading half of that contract.
+
+export interface RuntimeTelemetry {
+  uptime_seconds: number;
+  node_version: string;
+  pid: number;
+  cpu_percent: number | null;
+  memory: {
+    rss_bytes: number; heap_used_bytes: number;
+    heap_limit_bytes: number | null; heap_used_ratio: number | null;
+  };
+  event_loop_lag_ms: { p50: number | null; p99: number | null };
+  gc?: { collections: number; total_ms: number } | null;
+  active_handles: number;
+  active_requests: number;
+}
+
+export interface HttpTelemetry {
+  window_ms: number;
+  samples: number;
+  latency_ms: { p50: number; p95: number; p99: number; max: number } | null;
+  status: { client_errors: number; server_errors: number } | null;
+  slowest_endpoints: Array<{ endpoint: string; count: number; p95_ms: number; errors: number }>;
+  note?: string;
+}
+
+export interface DatabaseTelemetry {
+  latency_ms: number;
+  pool: { total: number | null; idle: number | null; waiting: number | null };
+  connections: { total: number; max_connections: number; used_ratio: number | null } | null;
+  size_bytes: number | null;
+  migrations: { applied: number | null; latest: string | null; applied_at: string | null };
+  longest_running_query: { duration_ms: number; query: string } | null;
+  slow_queries: Array<{ query: string; mean_ms: number }> | null;
+}
+
+export interface RedisTelemetry {
+  latency_ms: number;
+  ready: boolean;
+  memory: { used_human: string | null; used_ratio: number | null; policy: string | null };
+  clients: { connected: number | null; blocked: number | null };
+  stats: { ops_per_sec: number | null; keyspace_hits: number | null; keyspace_misses: number | null };
+  server: { version: string | null; uptime_seconds: number | null };
+}
+
+/** What one queue does when Redis is unreachable. See redis-degradation.js. */
+export type QueueDegradationMode = 'inline' | 'deferred' | 'stopped';
+
+export interface QueueDegradation {
+  active: boolean;
+  state: 'up' | 'down' | 'not_configured';
+  headline: string | null;
+  queues: Array<{ queue: string; mode: QueueDegradationMode; impact: string; source: string }>;
+}
+
+export interface QueuesTelemetry {
+  summary?: { status: string };
+  queues?: Array<{
+    name: string; reachable: boolean;
+    waiting?: number; active?: number; failed?: number; delayed?: number;
+    completed?: number; paused?: boolean; starved?: boolean;
+  }>;
+  totals?: { waiting: number; active: number; failed: number };
+  problems?: Array<{ severity: CommandCenterStatus; text: string }>;
+  /** Present when Redis is absent or unreachable: what that costs, per queue. */
+  degradation?: QueueDegradation;
+}
+
+export interface AiTelemetry {
+  active_model: string | null;
+  last_request_at: string | null;
+  routing: { primary: string | null; secondary: string | null; fallback: string | null };
+  today: { requests: number; avg_latency_ms: number | null; fallbacks: number; cost_inr: number | null };
+  last_hour: { requests: number; fallback_rate: number | null } | null;
+  note?: string;
+}
+
+export interface SecurityTelemetry {
+  auth: {
+    failed_1h: number; failed_24h: number; failing_ips_1h: number;
+    targeted_accounts_1h: number; success_1h: number; active_sessions: number;
+  };
+  posture: { score: number | null; failed_count: number; checks: Array<{ key: string; ok: boolean }> };
+}
+
+export interface SmtpTelemetry {
+  configured: boolean;
+  host: string | null; port: number | null; from: string | null;
+  missing_vars?: string[];
+  delivery: {
+    invitations_total: number; invitations_sent: number; invitations_errored: number;
+    attempted_never_sent: number; last_sent_at: string | null; last_error: string | null;
+  };
+  live_probe?: { ok: boolean } | null;
+}
+
+/** The payload union, discriminated by the card's `name`. */
+export type CommandCenterTelemetry =
+  | RuntimeTelemetry | HttpTelemetry | DatabaseTelemetry | RedisTelemetry
+  | QueuesTelemetry | AiTelemetry | SecurityTelemetry | SmtpTelemetry;
+
 export interface CommandCenterCard {
   name: string;
   status: CommandCenterStatus;
-  /** Collector-specific payload. Typed per card at the render site. */
-  data: unknown;
+  /**
+   * Collector-specific payload.
+   *
+   * Null whenever the card is not carrying a reading — unavailable, degraded
+   * or timed out. Narrow it with the card name before reading fields; the
+   * per-card interfaces above are what each one resolves to.
+   */
+  data: CommandCenterTelemetry | null;
   latency_ms: number | null;
   /** Why the card is not green, in words an operator can act on. */
   reason: string | null;
@@ -1941,13 +2067,61 @@ export interface CommandCenterCard {
    * claims wearing the same green dot, so the card carries it.
    */
   scope?: 'platform' | 'process';
+  /**
+   * True when this capability is deliberately not wired up on this deployment
+   * (no REDIS_URL, no Docker socket) rather than a probe that should have run
+   * and did not. An expected absence is shown and counted, but does not
+   * degrade the platform rollup — otherwise the status light sits amber
+   * forever and stops meaning anything.
+   */
+  expected?: boolean;
+}
+
+/**
+ * How much of the platform this snapshot actually measured.
+ *
+ * The most important block on the payload. A status line alone cannot
+ * distinguish "I checked eight things and they are fine" from "I checked two
+ * things and they are fine", and those are very different claims to put a
+ * green dot on.
+ */
+export interface CommandCenterObservability {
+  total: number;
+  /** Cards backed by a probe that answered, or by a cached reading. */
+  probed: number;
+  /** Probes that could not run and SHOULD have: blind spots. */
+  unavailable: number;
+  /** Capabilities this deployment has deliberately not wired up. */
+  not_configured: number;
+  timed_out: number;
+  /** Served from the per-collector TTL cache rather than freshly probed. */
+  stale: number;
+  /** probed / (total - not_configured). 1 means everything was measured. */
+  coverage: number;
+}
+
+/** Why the rollup is not green, before anyone opens a card. */
+export interface CommandCenterDegradedReason {
+  card: string;
+  status: CommandCenterStatus;
+  scope: 'platform' | 'process';
+  reason: string | null;
 }
 
 export interface CommandCenterSnapshot {
   status: CommandCenterStatus;
+  observability: CommandCenterObservability;
+  degraded_reasons: CommandCenterDegradedReason[];
   collected_at: string;
   duration_ms: number;
   cards: Record<string, CommandCenterCard>;
+  /**
+   * Present only when a card grades itself healthy while its payload has lost
+   * a field the console renders — the quietest failure in this system, since
+   * the missing number shows as an em-dash and an em-dash also means
+   * "legitimately absent".
+   */
+  contract_violations?: string[];
 }
 
 /** A single-use ticket for the realtime stream (Phase 3).
