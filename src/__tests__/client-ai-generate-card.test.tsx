@@ -14,14 +14,21 @@ import ClientAiGenerateCard from '@/components/pt-os/ClientAiGenerateCard';
 import ClientLoginCard from '@/components/pt-os/ClientLoginCard';
 
 const mockToastError = vi.fn();
+const mockToastSuccess = vi.fn();
 
 vi.mock('@/lib/toast', () => ({
-  useToast: () => ({ toast: { error: mockToastError, success: vi.fn() } }),
+  useToast: () => ({ toast: { error: mockToastError, success: mockToastSuccess } }),
+}));
+
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush, back: vi.fn(), replace: vi.fn() }),
 }));
 
 const mockGenerateWorkout = vi.fn();
 const mockGenerateDiet = vi.fn();
 const mockLoginStatus = vi.fn();
+const mockSaveFromGeneration = vi.fn();
 
 vi.mock('@/lib/api', () => ({
   api: {
@@ -31,6 +38,11 @@ vi.mock('@/lib/api', () => ({
     },
     clientLogin: {
       status: (...args: unknown[]) => mockLoginStatus(...args),
+    },
+    workouts: {
+      plans: {
+        saveFromGeneration: (...args: unknown[]) => mockSaveFromGeneration(...args),
+      },
     },
   },
 }));
@@ -230,7 +242,10 @@ describe('generating a workout', () => {
     await screen.findByText('8-Week Hypertrophy Foundation');
   });
 
-  it('shows the plan for review and says nothing was saved', async () => {
+  it('offers no save when the server recorded no proposal', async () => {
+    // generation_id is null when the ledger write failed — generation is never
+    // blocked on its own bookkeeping. With nothing to save against, the card
+    // says so rather than offering a button that would fail.
     mockGenerateWorkout.mockResolvedValue({ data: WORKOUT_PLAN });
 
     renderCard();
@@ -239,8 +254,88 @@ describe('generating a workout', () => {
     await screen.findByText('8-Week Hypertrophy Foundation');
     expect(screen.getByText(/AI workout\s*—\s*review before saving/)).toBeInTheDocument();
     expect(screen.getByText(/nothing has been saved to Rahul Sharma/i)).toBeInTheDocument();
-    // No save endpoint exists to call — the generator streams back only.
-    expect(mockGenerateDiet).not.toHaveBeenCalled();
+    expect(screen.queryByText('Save as programme')).not.toBeInTheDocument();
+  });
+});
+
+describe('saving a generated programme', () => {
+  // Until this existed the generator could not write a plan anywhere: every
+  // consumer rendered it and stopped, which is why production showed 95
+  // generations and 9 live plans. The nine were typed.
+  beforeEach(() => {
+    mockGenerateWorkout.mockResolvedValue({ data: WORKOUT_PLAN, generation_id: 'gen-1' });
+  });
+
+  const generateThenSave = async () => {
+    renderCard();
+    fireEvent.click(screen.getByText('Generate AI Workout'));
+    await screen.findByText('8-Week Hypertrophy Foundation');
+    fireEvent.click(screen.getByText('Save as programme'));
+  };
+
+  it('sends the generation id, never the plan', async () => {
+    mockSaveFromGeneration.mockResolvedValue({
+      message: 'ok', plan_id: 'plan-9', client_id: 'cl-1', name: 'Block', saved: 6,
+      unresolved: [], unknown_days: [],
+    });
+
+    await generateThenSave();
+
+    await waitFor(() => expect(mockSaveFromGeneration).toHaveBeenCalledTimes(1));
+    // The server reads the proposal back from its own ledger. Posting the plan
+    // would let a caller file anything as an accepted AI proposal.
+    expect(mockSaveFromGeneration).toHaveBeenCalledWith({ generation_id: 'gen-1' });
+    expect(mockPush).toHaveBeenCalledWith('/pt-os/workout-plans/plan-9/builder');
+  });
+
+  it('names the exercises the library could not hold', async () => {
+    mockSaveFromGeneration.mockResolvedValue({
+      message: 'ok', plan_id: 'plan-9', client_id: 'cl-1', name: 'Block', saved: 5,
+      unresolved: [{ day: 'Tuesday', position: 2, name: 'Jefferson Curl', reason: 'not in the exercise library' }],
+      unknown_days: [],
+    });
+
+    await generateThenSave();
+
+    // One generated name in eight will not resolve, so this is the normal
+    // case rather than a fault — and a trainer who is not told ends up with a
+    // short session they only notice mid-workout.
+    await waitFor(() => expect(mockToastSuccess).toHaveBeenCalled());
+    const msg = String(mockToastSuccess.mock.calls[0][0]);
+    expect(msg).toContain('Jefferson Curl');
+    expect(msg).toContain('add them in the builder');
+  });
+
+  it('reports a failure without navigating away from the preview', async () => {
+    mockSaveFromGeneration.mockRejectedValue(new Error('This proposal has already been saved'));
+
+    await generateThenSave();
+
+    await waitFor(() => expect(mockToastError).toHaveBeenCalledWith('This proposal has already been saved'));
+    expect(mockPush).not.toHaveBeenCalled();
+    // The preview stays put so the trainer can try again or start over.
+    expect(screen.getByText('8-Week Hypertrophy Foundation')).toBeInTheDocument();
+  });
+
+  it('never double-saves on a double click', async () => {
+    // Honest limit: fireEvent flushes state between clicks, so this proves the
+    // guard holds but cannot tell a ref apart from the disabled attribute. The
+    // component uses a ref (setSaving is async, so a real double tap can beat
+    // the re-render), and the backend refuses a second accept with a 409
+    // regardless — that is the guarantee, this is the courtesy.
+    let resolve!: (v: unknown) => void;
+    mockSaveFromGeneration.mockReturnValue(new Promise((r) => { resolve = r; }));
+
+    renderCard();
+    fireEvent.click(screen.getByText('Generate AI Workout'));
+    await screen.findByText('8-Week Hypertrophy Foundation');
+
+    const btn = screen.getByText('Save as programme');
+    fireEvent.click(btn);
+    fireEvent.click(btn);
+
+    expect(mockSaveFromGeneration).toHaveBeenCalledTimes(1);
+    resolve({ message: 'ok', plan_id: 'p', client_id: 'c', name: 'n', saved: 1, unresolved: [], unknown_days: [] });
   });
 });
 

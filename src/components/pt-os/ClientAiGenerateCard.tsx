@@ -9,15 +9,22 @@
  * the profile carries and states its defaults in the preview, so a trainer
  * sees what the AI was asked with.
  *
- * The result is a preview for review only. Nothing here is written to the
- * client's record: saving a plan is the workout/diet library's job, and the
- * generate endpoints themselves only stream a plan back.
+ * A generated WORKOUT can now be saved. Until this card grew its Save button
+ * the generator could not write a plan anywhere: every consumer of a generated
+ * programme rendered it and stopped, which is why production showed 95
+ * generations and 9 live plans — the nine were typed by hand. Saving sends the
+ * generation id, never the plan, so what lands is exactly what was screened
+ * and audited server-side.
+ *
+ * A generated DIET is still preview-only: nothing on the backend materialises
+ * one, and a Save button that silently did nothing would be worse than none.
  */
 
 import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  AlertTriangle, Dumbbell, Loader2, RotateCcw, Salad, Sparkles,
+  AlertTriangle, ArrowRight, Dumbbell, Loader2, RotateCcw, Salad, Sparkles,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { AiDietPlan, AiWorkoutPlan } from '@/lib/api';
@@ -56,8 +63,21 @@ function goalFor(goalType?: string | null): string {
 
 export default function ClientAiGenerateCard({ client, goalType }: ClientAiGenerateCardProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const [busy, setBusy] = useState<'workout' | 'diet' | null>(null);
-  const [result, setResult] = useState<{ kind: 'workout' | 'diet'; plan: AiWorkoutPlan | AiDietPlan } | null>(null);
+  const [result, setResult] = useState<{
+    kind: 'workout' | 'diet';
+    plan: AiWorkoutPlan | AiDietPlan;
+    /**
+     * The ledger row this proposal was recorded as. Null when the server could
+     * not record it — generation is never blocked on its own bookkeeping — and
+     * without it there is nothing to save against, so the button is hidden
+     * rather than shown and then failing.
+     */
+     generationId?: string | null;
+  } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   // State updates are async; a ref is the guard that actually stops a double
   // tap from billing the studio for two generations.
@@ -83,10 +103,13 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
     };
 
     try {
-      const res = kind === 'workout'
-        ? await api.ai.generateWorkout({ ...base, experience_level: 'beginner', training_days: 4 })
-        : await api.ai.generateDiet({ ...base, activity_level: 'moderate' });
-      setResult({ kind, plan: res.data });
+      if (kind === 'workout') {
+        const res = await api.ai.generateWorkout({ ...base, experience_level: 'beginner', training_days: 4 });
+        setResult({ kind, plan: res.data, generationId: res.generation_id ?? null });
+      } else {
+        const res = await api.ai.generateDiet({ ...base, activity_level: 'moderate' });
+        setResult({ kind, plan: res.data });
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Generation failed. Please try again.';
       setError(msg);
@@ -97,7 +120,44 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
     }
   };
 
+  /**
+   * Save the proposal as a real programme.
+   *
+   * Sends the generation id and nothing else. The unresolved list comes back
+   * on SUCCESS: an exercise the library does not hold cannot be stored at all,
+   * and roughly one generated name in eight is one, so the trainer is told
+   * which to add in the builder rather than finding a short session later.
+   */
+  const save = async () => {
+    // A ref, not the `saving` state, for the same reason `busyRef` guards
+    // generation: setSaving is async, so two quick taps can both pass a state
+    // check before React re-renders and disables the button. The backend
+    // refuses the second accept with a 409 either way — the stamp is
+    // conditional on accepted_plan_id IS NULL — but the trainer would see an
+    // error toast for a save that worked.
+    if (!result || result.kind !== 'workout' || !result.generationId || savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      const out = await api.workouts.plans.saveFromGeneration({ generation_id: result.generationId });
+      const missed = out.unresolved.length;
+      toast.success(
+        missed
+          ? `Saved ${out.saved} exercises. ${missed} not in the library — add them in the builder: `
+            + out.unresolved.map((u) => u.name).join(', ')
+          : `Saved ${out.saved} exercises to ${out.name}`,
+      );
+      router.push(`/pt-os/workout-plans/${out.plan_id}/builder`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save the programme');
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  };
+
   const label = result?.kind === 'workout' ? 'AI workout' : 'AI diet';
+  const canSave = result?.kind === 'workout' && Boolean(result.generationId);
 
   return (
     <m.div
@@ -225,9 +285,31 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
                 <DietPreview plan={result.plan as AiDietPlan} />
               )}
 
-              <p className="mt-2 border-t pt-1.5 text-[10.5px]" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-                Preview only &mdash; nothing has been saved to {client.name}&rsquo;s record.
-              </p>
+              {canSave ? (
+                <div className="mt-2.5 flex items-center justify-between gap-2 border-t pt-2.5"
+                  style={{ borderColor: 'var(--border)' }}>
+                  <p className="text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
+                    Not saved yet.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={save}
+                    disabled={saving}
+                    className="flex items-center gap-1.5 rounded-[9px] px-2.5 py-1.5 text-[11.5px] font-[720] text-white transition-opacity disabled:opacity-60"
+                    style={{ background: BLUE, boxShadow: `0 4px 12px ${rgba(BLUE, 0.32)}` }}
+                  >
+                    {saving ? <Loader2 size={12} className="animate-spin" /> : <ArrowRight size={12} />}
+                    {saving ? 'Saving' : 'Save as programme'}
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-2 border-t pt-1.5 text-[10.5px]" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+                  {/* A diet has nowhere to be saved to, and a workout whose
+                      ledger row was not written has nothing to save against.
+                      Both say so rather than offering a button that fails. */}
+                  Preview only &mdash; nothing has been saved to {client.name}&rsquo;s record.
+                </p>
+              )}
             </m.div>
           )}
         </AnimatePresence>
