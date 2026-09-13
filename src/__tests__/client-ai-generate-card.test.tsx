@@ -16,8 +16,12 @@ import ClientLoginCard from '@/components/pt-os/ClientLoginCard';
 const mockToastError = vi.fn();
 const mockToastSuccess = vi.fn();
 
+const mockToastWarning = vi.fn();
+
 vi.mock('@/lib/toast', () => ({
-  useToast: () => ({ toast: { error: mockToastError, success: mockToastSuccess } }),
+  useToast: () => ({
+    toast: { error: mockToastError, success: mockToastSuccess, warning: mockToastWarning },
+  }),
 }));
 
 const mockPush = vi.fn();
@@ -483,5 +487,73 @@ describe('the evidence the trainer approves against', () => {
     await screen.findByText('8-Week Hypertrophy Foundation');
 
     expect(screen.getByText(/Review it as unchecked/)).toBeInTheDocument();
+  });
+});
+
+describe('whether the saved programme is actually live', () => {
+  // Accepting a proposal used to write a workout_plans row and assign it to
+  // nobody. The plan existed, appeared on no screen — Today lists clients by
+  // active assignment — and no logged session could ever be attributed back to
+  // the proposal that produced it. The backend assigns it now; this card has
+  // to say what that did, because "saved" and "live" are different facts and
+  // the trainer is about to expect the client on Today.
+
+  const saved = (over: Record<string, unknown> = {}) => ({
+    message: 'ok', plan_id: 'plan-9', client_id: 'cl-1', name: 'Block', saved: 6,
+    unresolved: [], unknown_days: [], assigned: true, assignment_id: 'asg-1',
+    other_active_assignments: 0, ...over,
+  });
+
+  const generateThenSave = async () => {
+    mockGenerateWorkout.mockResolvedValue({ data: WORKOUT_PLAN, generation_id: 'gen-1' });
+    renderCard();
+    fireEvent.click(screen.getByText('Generate AI Workout'));
+    await screen.findByText('8-Week Hypertrophy Foundation');
+    fireEvent.click(screen.getByText('Save as programme'));
+  };
+
+  it('says the programme is live for this client', async () => {
+    mockSaveFromGeneration.mockResolvedValue(saved());
+    await generateThenSave();
+
+    await waitFor(() => expect(mockToastSuccess).toHaveBeenCalled());
+    expect(mockToastSuccess.mock.calls[0][1]).toEqual({ description: 'Now live for Rahul Sharma.' });
+    expect(mockToastWarning).not.toHaveBeenCalled();
+  });
+
+  it('warns, rather than congratulates, when the client is now on several programmes', async () => {
+    // The one case the trainer has to act on: the session log links a new
+    // session to a plan automatically only when there is exactly one active
+    // assignment, so from here attribution is theirs to make by hand.
+    mockSaveFromGeneration.mockResolvedValue(saved({ other_active_assignments: 3 }));
+    await generateThenSave();
+
+    await waitFor(() => expect(mockToastWarning).toHaveBeenCalled());
+    expect(mockToastSuccess).not.toHaveBeenCalled();
+    const [, opts] = mockToastWarning.mock.calls[0];
+    expect(opts.description).toContain('4 active programmes');
+    expect(opts.description).toContain('will no longer pick one automatically');
+  });
+
+  it('says so plainly when the plan was saved but not assigned', async () => {
+    mockSaveFromGeneration.mockResolvedValue(saved({ assigned: false, assignment_id: null }));
+    await generateThenSave();
+
+    await waitFor(() => expect(mockToastSuccess).toHaveBeenCalled());
+    expect(mockToastSuccess.mock.calls[0][1].description)
+      .toContain('not assigned — it will not appear on Rahul Sharma');
+  });
+
+  it('claims nothing about liveness when the server did not say', async () => {
+    // A server that predates the assignment fix sends neither field. An absent
+    // answer must not render as a confident "now live".
+    mockSaveFromGeneration.mockResolvedValue({
+      message: 'ok', plan_id: 'plan-9', client_id: 'cl-1', name: 'Block', saved: 6,
+      unresolved: [], unknown_days: [],
+    });
+    await generateThenSave();
+
+    await waitFor(() => expect(mockToastSuccess).toHaveBeenCalled());
+    expect(mockToastSuccess.mock.calls[0][1]).toBeUndefined();
   });
 });

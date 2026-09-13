@@ -3075,6 +3075,24 @@ export type SavedFromGeneration = {
   saved: number;
   unresolved: Array<{ day: string; position: number; name: string; reason: string }>;
   unknown_days: string[];
+  /**
+   * Whether the plan was actually assigned to the client — i.e. whether it is
+   * LIVE. Accepting a proposal used to write a plan and assign it to nobody,
+   * which meant it never appeared on Today and no logged session could ever be
+   * attributed back to the proposal that produced it.
+   *
+   * Optional because a server that predates that fix sends neither field, and
+   * an absent answer must not render as a confident "yes".
+   */
+  assigned?: boolean;
+  assignment_id?: string | null;
+  /**
+   * How many OTHER programmes this client is already active on. Above zero,
+   * the session log can no longer link a new session to one plan by itself —
+   * it does that only when there is exactly one active assignment — so the
+   * trainer has to pick. Reported so they can, rather than guessed at.
+   */
+  other_active_assignments?: number;
 };
 
 export type AiDietParams = {
