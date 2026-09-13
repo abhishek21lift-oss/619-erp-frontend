@@ -234,6 +234,30 @@ jobs:
         working-directory: backend
         run: npm ci
 
+      # ── Do the two copies of the scoring library still agree? ────────────
+      #
+      # The same ~280-line fitness scoring library exists twice, once per repo,
+      # maintained by hand in parallel: the frontend copy runs live in the
+      # assessment wizard so the trainer watches a score as they type, and the
+      # backend copy recomputes on POST and is what gets stored. They are the
+      # trainer's number and the client's record, and until this step nothing
+      # had ever checked they were the same number.
+      #
+      # It rides THIS job because this is the only place both repos exist at
+      # once — the dual checkout above already had to happen for the
+      # cross-tenant suite. A second mechanism for the same problem would be
+      # the duplication this check exists to catch.
+      #
+      # Before the install so it fails fast: it needs neither a database nor a
+      # running API, and there is no reason to spend three minutes standing
+      # those up to discover the two libraries disagree.
+      - name: Fitness scoring parity (frontend ↔ backend)
+        working-directory: frontend
+        # No SCORING_PARITY_OPTIONAL here, ever. That flag exists for a
+        # contributor who has not cloned the backend; in CI both are present,
+        # so a skip would mean the check is broken rather than satisfied.
+        run: npx tsx scripts/assert-scoring-parity.ts
+
       - name: Build the database and start the API
         working-directory: backend
         # e2e-setup.sh creates the Supabase-compatible roles, applies
