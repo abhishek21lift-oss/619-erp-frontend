@@ -186,3 +186,18 @@ describe('touch', () => {
     expect(page).toContain('active:scale-95');
   });
 });
+
+describe('who is not here', () => {
+  // The roster sweep was computed server-side for the whole of the signals
+  // work and rendered on no screen. It belongs here — this is the screen a
+  // trainer opens every day — but strictly below the roster.
+  it('renders the sweep', () => {
+    expect(page).toContain('<RosterSignalsCard />');
+  });
+
+  it('keeps it below the roster, so nothing sits between the trainer and Start', () => {
+    // The first tap on this screen is Start. A list of clients to phone above
+    // it would push the one action this page exists for off the first screen.
+    expect(page.indexOf('<RosterSignalsCard />')).toBeGreaterThan(page.indexOf('<ClientRow'));
+  });
+});

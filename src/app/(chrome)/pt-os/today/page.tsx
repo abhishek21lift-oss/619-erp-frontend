@@ -43,6 +43,7 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
+import RosterSignalsCard from '@/components/pt-os/RosterSignalsCard';
 import { m, useReducedMotion } from 'framer-motion';
 import {
   AlertTriangle, CalendarCheck, CalendarDays, ChevronRight, Clock, Dumbbell,
@@ -224,6 +225,17 @@ function Today() {
           ))}
         </div>
       )}
+
+      {/* Who is NOT here.
+          Below the roster, deliberately: the first tap on this screen is Start,
+          and the list of clients to phone must not sit between the trainer and
+          it. But it is on this screen rather than a page of its own, because a
+          sweep behind a nav item nobody opens is the state this list was
+          already in — computed server-side since the signals work landed, and
+          rendered nowhere.
+          It loads on its own and fails on its own: a roster that arrived is
+          still worth showing when the sweep did not. */}
+      <RosterSignalsCard />
     </>
   );
 }

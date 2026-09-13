@@ -405,3 +405,83 @@ describe('the review panel', () => {
     await screen.findByText('High-Protein Fat Loss Plan');
   });
 });
+describe('the evidence the trainer approves against', () => {
+  // The generator has always returned the screen, the audit, a quality score
+  // and a critique. The card used to render the plan and drop all four, which
+  // made approval — the final gate in this design — a decision taken with less
+  // information than the server had when it proposed. These hold the wiring;
+  // generation-evidence.test.tsx holds what the block itself says.
+
+  const SCREEN = {
+    gate: { status: 'unknown', cleared: false, risk_level: null, assessed_on: null },
+    screened: false,
+    sources: [],
+    constraints: [],
+    excluded_exercises: [],
+    referrals: [],
+    not_assessed: ['PAR-Q'],
+  };
+
+  it('shows the screen and audit that came back with the plan', async () => {
+    mockGenerateWorkout.mockResolvedValue({
+      data: WORKOUT_PLAN,
+      generation_id: 'gen-1',
+      screen: SCREEN,
+      audit: {
+        violations: [],
+        unverified: [{ day: 'monday', position: 1, name: 'Jefferson Curl' }],
+        counts: { exercises: 9, verified: 8, critical: 0, major: 0, minor: 0 },
+        revised: false,
+      },
+      quality: { score: 77, max: 100, components: {}, basis: 'the rules this studio programs by' },
+    });
+
+    renderCard();
+    fireEvent.click(screen.getByText('Generate AI Workout'));
+    await screen.findByText('8-Week Hypertrophy Foundation');
+
+    expect(screen.getByText('Not screened against this client')).toBeInTheDocument();
+    expect(screen.getByText('Quality 77/100')).toBeInTheDocument();
+    expect(screen.getByText('1 exercise not in the library')).toBeInTheDocument();
+  });
+
+  it('puts the evidence before the Save button, not after it', async () => {
+    mockGenerateWorkout.mockResolvedValue({
+      data: WORKOUT_PLAN, generation_id: 'gen-1', screen: SCREEN,
+    });
+
+    const { container } = renderCard();
+    fireEvent.click(screen.getByText('Generate AI Workout'));
+    await screen.findByText('8-Week Hypertrophy Foundation');
+
+    // Order is the whole point: a warning underneath the button it is a
+    // warning about is a warning nobody reads before tapping.
+    const text = container.textContent ?? '';
+    expect(text.indexOf('Not screened against this client'))
+      .toBeLessThan(text.indexOf('Save as programme'));
+  });
+
+  it('claims no checks for a diet, which the backend never screens', async () => {
+    mockGenerateDiet.mockResolvedValue({ data: DIET_PLAN });
+
+    renderCard();
+    fireEvent.click(screen.getByText('Generate AI Diet'));
+    await screen.findByText('High-Protein Fat Loss Plan');
+
+    // No evidence block at all — not an "unchecked" one. The diet endpoint
+    // returns no screen because nothing screens a diet, and a block saying
+    // "review it as unchecked" would imply a check that was meant to happen.
+    expect(screen.queryByText(/Review it as unchecked/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Not screened against this client/)).not.toBeInTheDocument();
+  });
+
+  it('says a workout came back unchecked when the server sent no screen at all', async () => {
+    mockGenerateWorkout.mockResolvedValue({ data: WORKOUT_PLAN, generation_id: 'gen-1' });
+
+    renderCard();
+    fireEvent.click(screen.getByText('Generate AI Workout'));
+    await screen.findByText('8-Week Hypertrophy Foundation');
+
+    expect(screen.getByText(/Review it as unchecked/)).toBeInTheDocument();
+  });
+});
