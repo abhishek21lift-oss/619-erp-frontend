@@ -11,6 +11,7 @@ import type {
   AiBusinessInsights, AiConversation, AiDietParams, AiDietPlan,
   AiFitnessTestAnalysis, AiHealthResponse, AiKnowledgeDocument, AiMessage, AiModelStat,
   AiProgressAnalysis, AiProviderSettings, AiUsageStats, AiWorkoutParams, AiWorkoutPlan,
+  AiWorkoutGenerationResult,
   AiMemoryCandidate, AiProgrammerProposal, PendingWorkQueue, ClientIntelligenceSummary,
   AiIntelligenceAudit,
   DuesItem, DuesSummary, ProfileDevice, ProfileSession, SearchResponse, TrainerSummaryRow,
@@ -184,7 +185,10 @@ export const ai = {
     }),
 
   generateWorkout: (params: AiWorkoutParams) =>
-    httpSSE<{ data: AiWorkoutPlan; model: string; tier: string; used_fallback: boolean }>('/api/ai/workout/generate', {
+    // The result carries more than the plan: the safety screen that shaped it,
+    // the rule audit of what came back, and the generation_id that lets a save
+    // be linked to the proposal it came from.
+    httpSSE<AiWorkoutGenerationResult>('/api/ai/workout/generate', {
       method: 'POST',
       body: JSON.stringify(params),
     }),

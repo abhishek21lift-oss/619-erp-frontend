@@ -8,7 +8,7 @@ import { http } from '../../http';
 import { buildQs } from '../qs';
 import type {
   DietAssignment, DietTemplate, ExerciseListResult, ExerciseMeta, ExerciseVersion,
-  LibraryExercise, Meal, NutritionLog, ProgressionType,
+  LibraryExercise, Meal, NutritionLog, ProgressionType, SavedFromGeneration,
   WorkoutAssignment, WorkoutAssignmentDetail, WorkoutExerciseInput, WorkoutPlan,
   WorkoutPlanExercise, WorkoutPlanVersion,
 } from '../types';
@@ -57,6 +57,26 @@ export const workouts = {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
+    /**
+     * Save an AI proposal as a real programme.
+     *
+     * Sends the generation id, NOT the plan. The server reads the proposal
+     * back from its own ledger, so what is saved is exactly what was
+     * generated, screened and audited — a body carrying the plan would let a
+     * caller file anything as an accepted AI proposal, including exercises the
+     * safety screen excluded.
+     *
+     * A 201 may still report `unresolved` exercises: those are names the
+     * library does not hold, which cannot be stored at all, and about one
+     * generated name in eight is one. That is information for the trainer, not
+     * a failure.
+     */
+    saveFromGeneration: (data: { generation_id: string; name?: string }) =>
+      http<SavedFromGeneration>('/api/workouts/plans/from-generation', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
     delete: (id: string) =>
       http<{ message: string }>(`/api/workouts/plans/${id}`, { method: 'DELETE' }),
 

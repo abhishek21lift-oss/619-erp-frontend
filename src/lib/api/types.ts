@@ -3006,6 +3006,71 @@ export type AiWorkoutPlan = {
   nutrition_notes: string;
 };
 
+/**
+ * What the rules decided about the client this plan was written for.
+ *
+ * Returned alongside every generated plan so a trainer approving it can see
+ * the provenance — which exercises were excluded and why, and whether the
+ * client had been screened at all — rather than taking the plan on faith.
+ */
+export type AiGenerationScreen = {
+  gate: { status: string; cleared: boolean; risk_level: string | null; assessed_on: string | null };
+  screened: boolean;
+  sources: string[];
+  constraints: Array<{
+    verdict: 'block' | 'caution'; region: string | null; label: string | null;
+    source: string; evidence: string; note: string | null;
+  }>;
+  excluded_exercises: Array<{ name: string; reasons: string[] }>;
+  not_assessed: string[];
+};
+
+/** Rule breaches found in the model's own output. Facts, not opinions. */
+export type AiGenerationAudit = {
+  violations: Array<{ severity: string; rule: string; detail: string; exercise?: string; where?: string | string[] }>;
+  unverified: Array<{ day: string; position: number; name: string }>;
+  counts: { exercises: number; verified: number; critical: number; major: number; minor: number };
+  revised: boolean;
+};
+
+export type AiWorkoutGenerationResult = {
+  data: AiWorkoutPlan;
+  model: string;
+  tier: string;
+  used_fallback: boolean;
+  /**
+   * The ledger row this generation was recorded as. Sent back when the trainer
+   * saves the plan, which is what lets the engine compare what it proposed
+   * against what they kept. Null when the ledger write failed — generation is
+   * never blocked on its own bookkeeping.
+   */
+  generation_id: string | null;
+  audit?: AiGenerationAudit;
+  quality?: { score: number; max: number; components: Record<string, number>; basis: string };
+  critique?: Array<{ severity: string; point: string; because: string }>;
+  critique_verdict?: string | null;
+  screen?: AiGenerationScreen;
+};
+
+/**
+ * The result of saving a proposal as a real programme.
+ *
+ * `unresolved` is part of SUCCESS, not an error. An exercise the library does
+ * not hold cannot be stored at all — workout_exercises.exercise_id is NOT NULL
+ * — and roughly one generated name in eight is in that position, so the
+ * trainer is told which to add in the builder rather than discovering a short
+ * session later.
+ */
+export type SavedFromGeneration = {
+  message: string;
+  plan_id: string;
+  client_id: string;
+  name: string;
+  saved: number;
+  unresolved: Array<{ day: string; position: number; name: string; reason: string }>;
+  unknown_days: string[];
+};
+
 export type AiDietParams = {
   age: number;
   gender: string;
