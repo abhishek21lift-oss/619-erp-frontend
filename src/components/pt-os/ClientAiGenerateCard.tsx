@@ -59,6 +59,7 @@ import type {
 } from '@/lib/api';
 import GenerationEvidence from './GenerationEvidence';
 import GenerationContextPanel from './GenerationContextPanel';
+import TrainerStatedFields, { type StatedValues } from './TrainerStatedFields';
 import { useToast } from '@/lib/toast';
 import { palette, rgba } from '@/lib/palette';
 
@@ -88,6 +89,9 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
   const router = useRouter();
   const [busy, setBusy] = useState<'workout' | 'diet' | null>(null);
   const [context, setContext] = useState<AiWorkoutContext | null>(null);
+  // What the trainer knows that the record does not. Sent as their statement,
+  // never written to the client, and never able to overwrite a recorded value.
+  const [stated, setStated] = useState<StatedValues>({});
   const [result, setResult] = useState<{
     kind: 'workout' | 'diet';
     plan: AiWorkoutPlan | AiDietPlan;
@@ -142,7 +146,18 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
         // The client id, and nothing else. Every fact the prompt states comes
         // from that client's record on the server, which also names the column
         // it read and reports what it could not find.
-        const res = await api.ai.generateWorkout({ client_id: client.id });
+        // The client id, plus anything the trainer explicitly stated for this
+        // one generation. Nothing here is a claim about who the client is: the
+        // server prefers its own record for every field but equipment, and
+        // marks whatever it takes from here as `stated`.
+        const res = await api.ai.generateWorkout({
+          client_id: client.id,
+          ...(stated.goal ? { goal: stated.goal } : {}),
+          ...(stated.experience_level ? { experience_level: stated.experience_level } : {}),
+          ...(stated.training_days ? { training_days: Number(stated.training_days) } : {}),
+          ...(stated.equipment ? { equipment: stated.equipment } : {}),
+          ...(stated.injuries ? { injuries: stated.injuries } : {}),
+        });
         setResult({ kind, plan: res.data, generationId: res.generation_id ?? null, evidence: res });
         // The record may have been edited between page load and generation,
         // and the response carries the resolution that actually happened.
@@ -228,7 +243,11 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
   // What the server says is missing and blocking. Empty when the context could
   // not be loaded: an unavailable summary must not lock the button, because
   // the server is still the thing that decides and it will say so.
-  const blockedFields = context?.data_quality.blocking ?? [];
+  // Blocking fields the trainer has not supplied for this generation. A value
+  // typed above is a real answer to "the record does not have this", so it
+  // opens the button — the server applies the same rule and would accept it.
+  const blockedFields = (context?.data_quality.blocking ?? [])
+    .filter((f) => !(f in stated && String(stated[f as keyof StatedValues] ?? '').trim()));
 
   const canSave = result?.kind === 'workout' && Boolean(result.generationId);
 
@@ -281,6 +300,7 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
             35px here, a third under the touch target this app holds
             everything else to. Anything that has to be exactly 44 says 44. */}
         {context && <GenerationContextPanel context={context} />}
+        <TrainerStatedFields context={context} values={stated} onChange={setStated} />
 
         <div className="flex flex-col gap-2">
           <button

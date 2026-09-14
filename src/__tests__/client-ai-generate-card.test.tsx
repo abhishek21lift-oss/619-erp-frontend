@@ -30,6 +30,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 const mockGenerateWorkout = vi.fn();
+const mockWorkoutContext = vi.fn();
 const mockGenerateDiet = vi.fn();
 const mockLoginStatus = vi.fn();
 const mockSaveFromGeneration = vi.fn();
@@ -39,6 +40,7 @@ vi.mock('@/lib/api', () => ({
     ai: {
       generateWorkout: (...args: unknown[]) => mockGenerateWorkout(...args),
       generateDiet: (...args: unknown[]) => mockGenerateDiet(...args),
+      workoutContext: (...args: unknown[]) => mockWorkoutContext(...args),
     },
     clientLogin: {
       status: (...args: unknown[]) => mockLoginStatus(...args),
@@ -128,12 +130,19 @@ beforeEach(() => {
 afterEach(() => vi.clearAllMocks());
 
 describe('the two buttons', () => {
+  // Found by name rather than by index. This asserted buttons[0] and
+  // buttons[1], which broke the moment a disclosure for trainer-stated context
+  // was added above them — a test failing because the card gained a control is
+  // testing the DOM's shape, not the requirement, which is only that workout
+  // comes before diet.
   it('renders both, workout above diet', () => {
     const { container } = renderCard();
-    const buttons = container.querySelectorAll('button');
-    const labels = Array.from(buttons).map((b) => b.textContent ?? '');
-    expect(labels[0]).toContain('Generate AI Workout');
-    expect(labels[1]).toContain('Generate AI Diet');
+    const generate = Array.from(container.querySelectorAll('button'))
+      .map((b) => b.textContent ?? '')
+      .filter((t) => t.includes('Generate AI'));
+    expect(generate).toHaveLength(2);
+    expect(generate[0]).toContain('Generate AI Workout');
+    expect(generate[1]).toContain('Generate AI Diet');
   });
 
   it('sits above the Client Login card, which is unchanged', async () => {
@@ -236,14 +245,22 @@ describe('generating a workout', () => {
     fireEvent.click(screen.getByText('Generate AI Workout'));
 
     expect(screen.getByText('Generating AI Workout...')).toBeInTheDocument();
-    const buttons = Array.from(container.querySelectorAll('button'));
-    expect(buttons.every((b) => (b as HTMLButtonElement).disabled)).toBe(true);
+    // The two GENERATE buttons. The disclosure that opens the trainer-stated
+    // fields stays usable mid-stream on purpose: it starts nothing, and
+    // freezing the whole card would be disabling a panel rather than guarding
+    // an action.
+    const generateButtons = () => Array.from(container.querySelectorAll('button'))
+      .filter((b) => /Generat(e|ing) AI/.test(b.textContent ?? ''));
+    expect(generateButtons().every((b) => (b as HTMLButtonElement).disabled)).toBe(true);
 
     resolve({ data: WORKOUT_PLAN });
     await screen.findByText('8-Week Hypertrophy Foundation');
     expect(screen.queryByText('Generating AI Workout...')).toBeNull();
-    const reEnabled = Array.from(container.querySelectorAll('button'));
-    expect(reEnabled.every((b) => (b as HTMLButtonElement).disabled)).toBe(false);
+    // `.some` rather than `.every(...) === false`: the old form passed as soon
+    // as ANY button on the card was enabled, which the new disclosure would
+    // have satisfied on its own even with both generate buttons still frozen.
+    expect(generateButtons()).toHaveLength(2);
+    expect(generateButtons().every((b) => !(b as HTMLButtonElement).disabled)).toBe(true);
   });
 
   it('never double-fires on a double click', async () => {
@@ -577,5 +594,118 @@ describe('whether the saved programme is actually live', () => {
 
     await waitFor(() => expect(mockToastSuccess).toHaveBeenCalled());
     expect(mockToastSuccess.mock.calls[0][1]).toBeUndefined();
+  });
+});
+
+// ── What the trainer knows that the record does not ────────────────────────
+//
+// The rest of this card asserts nothing about the client, deliberately: a
+// browser that can supply age, goal or experience is a browser that can invent
+// a person, which is what this component used to do.
+//
+// A trainer genuinely does know things the database has not been told — the
+// rack is booked, the client mentioned a shoulder on the way in — and refusing
+// to hear that would be its own dishonesty. So these are accepted, and what
+// these tests hold is that they stay labelled as the trainer's statement and
+// never become a claim about the person.
+describe('trainer-stated context', () => {
+  const CONTEXT = {
+    client: { id: 'cl-1', name: 'Test Client' },
+    facts: {
+      age: { value: null, source: null, origin: 'missing' },
+      gender: { value: null, source: null, origin: 'missing' },
+      weight_kg: { value: null, source: null, origin: 'missing' },
+      height_cm: { value: null, source: null, origin: 'missing' },
+      goal: { value: null, source: null, origin: 'missing' },
+      experience_level: { value: null, source: null, origin: 'missing' },
+      training_days: { value: null, source: null, origin: 'missing' },
+      equipment: { value: null, source: null, origin: 'missing' },
+    },
+    data_quality: {
+      recorded: [], stated: [],
+      missing: [
+        { field: 'goal', blocking: true },
+        { field: 'experience_level', blocking: true },
+        { field: 'training_days', blocking: true },
+      ],
+      blocking: ['goal', 'experience_level', 'training_days'],
+      completeness_pct: 0,
+    },
+    safety: null, current_program: null, training_history: null,
+  };
+
+  const withContext = async () => {
+    mockWorkoutContext.mockResolvedValue(CONTEXT);
+    const view = renderCard();
+    await screen.findByText('What the AI will use');
+    return view;
+  };
+
+  const type = (label: RegExp, value: string) => {
+    const input = screen.getByText(label).parentElement?.querySelector('input');
+    if (!input) throw new Error(`no input for ${label}`);
+    fireEvent.change(input, { target: { value } });
+  };
+
+  it('keeps the generate button shut until the blocking fields are answered', async () => {
+    await withContext();
+    const workout = screen.getByText('Generate AI Workout').closest('button') as HTMLButtonElement;
+    expect(workout.disabled).toBe(true);
+
+    type(/^Goal$/, 'muscle_gain');
+    type(/^Experience$/, 'intermediate');
+    expect((screen.getByText('Generate AI Workout').closest('button') as HTMLButtonElement).disabled).toBe(true);
+
+    // The last one opens it — and only because the trainer answered it, not
+    // because anything was assumed on their behalf.
+    type(/Days \/ week/, '3');
+    expect((screen.getByText('Generate AI Workout').closest('button') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('sends what the trainer stated, and still nothing else about the client', async () => {
+    mockGenerateWorkout.mockResolvedValue({ data: WORKOUT_PLAN });
+    await withContext();
+    type(/^Goal$/, 'strength');
+    type(/^Experience$/, 'advanced');
+    type(/Days \/ week/, '4');
+    type(/Equipment today/, 'barbell, rack, bench');
+    type(/Constraint today/, 'left shoulder irritated');
+
+    fireEvent.click(screen.getByText('Generate AI Workout'));
+    await waitFor(() => expect(mockGenerateWorkout).toHaveBeenCalled());
+
+    const params = mockGenerateWorkout.mock.calls[0][0];
+    expect(params).toEqual({
+      client_id: 'cl-1',
+      goal: 'strength',
+      experience_level: 'advanced',
+      training_days: 4,
+      equipment: 'barbell, rack, bench',
+      injuries: 'left shoulder irritated',
+    });
+    // The body metrics stay absent. A trainer stating a training constraint is
+    // not an invitation to start guessing heights again.
+    for (const invented of ['age', 'gender', 'weight_kg', 'height_cm']) {
+      expect(params[invented]).toBeUndefined();
+    }
+  });
+
+  it('sends nothing extra when the trainer states nothing', async () => {
+    mockGenerateWorkout.mockResolvedValue({ data: WORKOUT_PLAN });
+    mockWorkoutContext.mockResolvedValue({
+      ...CONTEXT,
+      data_quality: { ...CONTEXT.data_quality, blocking: [], missing: [] },
+    });
+    renderCard();
+    await screen.findByText('What the AI will use');
+    fireEvent.click(screen.getByText('Generate AI Workout'));
+    await waitFor(() => expect(mockGenerateWorkout).toHaveBeenCalled());
+    expect(Object.keys(mockGenerateWorkout.mock.calls[0][0])).toEqual(['client_id']);
+  });
+
+  it('says on screen that a stated value is not saved to the client', async () => {
+    await withContext();
+    expect(screen.getByText(/Trainer-stated for this generation/)).toBeInTheDocument();
+    expect(screen.getByText(/not saved to the client/)).toBeInTheDocument();
   });
 });
