@@ -37,7 +37,7 @@
  * said cannot be done.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { ChevronDown, PencilLine } from 'lucide-react';
 import type { AiClientFactField, AiWorkoutContext } from '@/lib/api';
 import { palette, rgba } from '@/lib/palette';
@@ -72,19 +72,25 @@ export default function TrainerStatedFields({
 
   // ── Opens itself when the trainer is going to need it ────────────────────
   //
-  // `useState(blocking.length > 0)` looks equivalent and is not: the context
-  // is fetched, so the first render always has none, the initialiser runs only
-  // that once, and the panel stayed shut for exactly the client it exists for.
+  // Derived at render, not driven by an effect. Two wrong versions preceded
+  // this one and both are worth remembering:
   //
-  // An effect that opens it when blocking fields appear, and a ref so it opens
-  // ONCE — otherwise closing it would fight the next re-render.
-  const [open, setOpen] = useState(false);
-  const autoOpened = useRef(false);
-  useEffect(() => {
-    if (autoOpened.current || blocking.length === 0) return;
-    autoOpened.current = true;
-    setOpen(true);
-  }, [blocking.length]);
+  //   `useState(blocking.length > 0)` never opened at all. The context is
+  //   fetched, so the first render always has no blocking fields, and a
+  //   useState initialiser runs only that once — the panel stayed shut for
+  //   exactly the client it exists for.
+  //
+  //   An effect that called setOpen(true) when blocking fields arrived opened
+  //   it, but only on a SECOND render pass. That passed locally and failed in
+  //   CI, where a test asserting on the panel could run between the two
+  //   commits. A visual state that is a pure function of the props should not
+  //   need a render to catch up with itself.
+  //
+  // So: null means "the trainer has not said", and the default follows the
+  // data. Toggling records their choice and it wins from then on.
+  const [userToggled, setUserToggled] = useState<boolean | null>(null);
+  const open = userToggled ?? blocking.length > 0;
+  const setOpen = (next: boolean) => setUserToggled(next);
 
   const set = (key: keyof StatedValues, v: string) => {
     const next = { ...values };
@@ -99,7 +105,7 @@ export default function TrainerStatedFields({
     <div className="mt-2">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(!open)}
         aria-expanded={open}
         className="flex w-full items-center gap-1.5 rounded-[10px] px-2 py-1.5 text-[11.5px] font-[700] transition-opacity hover:opacity-80"
         style={{ color: 'var(--text-secondary)' }}

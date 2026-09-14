@@ -89,9 +89,21 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
   const router = useRouter();
   const [busy, setBusy] = useState<'workout' | 'diet' | null>(null);
   const [context, setContext] = useState<AiWorkoutContext | null>(null);
+  const [contextFailed, setContextFailed] = useState(false);
   // What the trainer knows that the record does not. Sent as their statement,
   // never written to the client, and never able to overwrite a recorded value.
   const [stated, setStated] = useState<StatedValues>({});
+  // ── New block, or the next weeks of the one they are on? ─────────────────
+  //
+  // The server refuses to choose: generating over a live programme silently
+  // creates a second one, and silently adapting would stop a trainer ever
+  // starting a new block. So when there is a live programme this becomes a
+  // required choice rather than a default.
+  //
+  // 'adapt' is the initial selection because it is the conservative one — it
+  // continues what the client has already adapted to rather than replacing it
+  // — but the trainer still has to press a button either way.
+  const [mode, setMode] = useState<'new' | 'adapt'>('adapt');
   const [result, setResult] = useState<{
     kind: 'workout' | 'diet';
     plan: AiWorkoutPlan | AiDietPlan;
@@ -127,8 +139,22 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
   const loadContext = useCallback(async () => {
     try {
       setContext(await api.ai.workoutContext(client.id));
+      setContextFailed(false);
     } catch {
+      // ── A failed context is not an absent one ────────────────────────────
+      //
+      // This used to `setContext(null)` and say nothing, so a summary that
+      // failed to load looked exactly like a client the panel had nothing to
+      // say about. The trainer then pressed Generate having been shown
+      // nothing, and read the result as though the checks had run.
+      //
+      // The state is kept apart from `context` because the two mean different
+      // things: null is "not loaded yet", failed is "we asked and could not
+      // find out". Generation is still allowed — the server resolves its own
+      // context and will refuse on its own terms — but the screen stops
+      // implying it knows anything.
       setContext(null);
+      setContextFailed(true);
     }
   }, [client.id]);
 
@@ -152,6 +178,9 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
         // marks whatever it takes from here as `stated`.
         const res = await api.ai.generateWorkout({
           client_id: client.id,
+          // Only when the client is on a live programme. Sending it otherwise
+          // would be answering a question the server never asked.
+          ...(onLiveProgramme ? { mode } : {}),
           ...(stated.goal ? { goal: stated.goal } : {}),
           ...(stated.experience_level ? { experience_level: stated.experience_level } : {}),
           ...(stated.training_days ? { training_days: Number(stated.training_days) } : {}),
@@ -246,6 +275,9 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
   // Blocking fields the trainer has not supplied for this generation. A value
   // typed above is a real answer to "the record does not have this", so it
   // opens the button — the server applies the same rule and would accept it.
+  const program = context?.current_program;
+  const onLiveProgramme = Boolean(program?.active && !program.expired);
+
   const blockedFields = (context?.data_quality.blocking ?? [])
     .filter((f) => !(f in stated && String(stated[f as keyof StatedValues] ?? '').trim()));
 
@@ -300,7 +332,54 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
             35px here, a third under the touch target this app holds
             everything else to. Anything that has to be exactly 44 says 44. */}
         {context && <GenerationContextPanel context={context} />}
+        {contextFailed && (
+          <div
+            role="status"
+            className="mt-3 flex items-start gap-1.5 rounded-[12px] px-3 py-2.5 text-[11.5px] leading-relaxed"
+            style={{ background: rgba(palette.amber[500], 0.1), color: palette.amber[600], border: '1px solid var(--border)' }}
+          >
+            <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+            <span>
+              <strong className="font-[750]">Client context could not be verified.</strong>{' '}
+              What the AI would use could not be read. You can still generate &mdash; the server
+              resolves the client&rsquo;s record itself and will refuse if anything it needs is
+              missing &mdash; but nothing here has been checked.
+            </span>
+          </div>
+        )}
         <TrainerStatedFields context={context} values={stated} onChange={setStated} />
+
+        {onLiveProgramme && program?.active && (
+          <div
+            className="mt-2 rounded-[12px] px-3 py-2.5"
+            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+          >
+            <p className="mb-1.5 text-[11.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              <strong className="font-[750]">{program.plan_name ?? 'A programme'}</strong> is running
+              {program.current_week ? ` — week ${program.current_week}${program.duration_weeks ? ` of ${program.duration_weeks}` : ''}` : ''}.
+            </p>
+            <div className="flex gap-1.5">
+              {([
+                ['adapt', 'Progress it', 'Continue the block, changing only what the evidence supports'],
+                ['new', 'Start a new one', 'Write a fresh programme alongside it'],
+              ] as const).map(([value, label, hint]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setMode(value)}
+                  aria-pressed={mode === value}
+                  title={hint}
+                  className="flex-1 rounded-[10px] px-2 py-1.5 text-[11.5px] font-[700] transition-colors"
+                  style={mode === value
+                    ? { background: rgba(BLUE, 0.12), color: BLUE, border: `1px solid ${rgba(BLUE, 0.35)}` }
+                    : { background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col gap-2">
           <button

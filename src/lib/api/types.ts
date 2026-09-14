@@ -3169,6 +3169,14 @@ export type AiKnowledgeDocument = {
  */
 export type AiWorkoutParams = {
   client_id: string;
+  /**
+   * Which action the trainer asked for when the client is already on a
+   * programme. Not a client fact and not spoofable — the server refuses with
+   * 409 ACTIVE_PROGRAM rather than choosing, because both defaults are wrong:
+   * silently creating duplicates programmes, and silently adapting would stop
+   * a trainer ever starting a new block.
+   */
+  mode?: 'new' | 'adapt';
   age?: number;
   gender?: string;
   weight_kg?: number;
@@ -3260,6 +3268,22 @@ export type AiGenerationAudit = {
  *   missing   nobody holds it; the model was told NOT RECORDED and
  *             instructed not to infer one
  */
+export type AiProgramState =
+  | { active: false }
+  | {
+    active: true;
+    plan_id: string | null;
+    plan_name: string | null;
+    started_on: string | null;
+    duration_weeks: number | null;
+    current_week: number | null;
+    weeks_remaining: number | null;
+    planned_days_per_week: number | null;
+    sessions_completed_in_window: number;
+    progress_pct: number | null;
+    expired: boolean;
+  };
+
 export type AiAssessmentStaleness = {
   section: string;
   /** YYYY-MM-DD the section was last assessed. */
@@ -3291,6 +3315,18 @@ export type AiGenerationDataQuality = {
   recorded: Array<{ field: AiClientFactField; source: string }>;
   stated: Array<{ field: AiClientFactField }>;
   missing: Array<{ field: AiClientFactField; blocking: boolean }>;
+  /**
+   * Facts two of the studio's own records disagree about.
+   *
+   * Precedence still decides — something has to, and a deterministic rule beats
+   * a model guessing — but the choice is no longer invisible. `chosen` is what
+   * the programme was written to; `rejected` is what the other records say.
+   */
+  conflicting: Array<{
+    field: AiClientFactField;
+    chosen: { source: string; value: string | number };
+    rejected: Array<{ source: string; value: string | number }>;
+  }>;
   blocking: AiClientFactField[];
   completeness_pct: number;
 };
@@ -3322,12 +3358,19 @@ export type AiWorkoutContext = {
      */
     stale: AiAssessmentStaleness[];
   } | null;
-  current_program: {
-    name: string | null;
-    status: string | null;
-    start_date: string | null;
-    end_date: string | null;
-  } | null;
+  /**
+   * Where this client currently IS inside their programme.
+   *
+   * The week comes from the same function the session engine uses to decide
+   * which week's prescription a logged session resolves against, so the number
+   * here, the number the generator reads and the number Today's Session shows
+   * are one answer rather than three.
+   *
+   * `expired` is its own state: a block that ran out last month is a client who
+   * needs the NEXT one, which is a different conversation from a client who
+   * never had one.
+   */
+  current_program: AiProgramState;
   training_history: { has_history: boolean; window_weeks: number } | null;
 };
 
@@ -3345,6 +3388,9 @@ export type AiWorkoutGenerationResult = {
   generation_id: string | null;
   /** Which facts were recorded, which the trainer stated, and which nobody holds. */
   data_quality?: AiGenerationDataQuality;
+  /** Whether this was a new block or the next weeks of one already running. */
+  mode?: 'new' | 'adapt';
+  program?: AiProgramState;
   audit?: AiGenerationAudit;
   quality?: { score: number; max: number; components: Record<string, number>; basis: string };
   critique?: Array<{ severity: string; point: string; because: string }>;

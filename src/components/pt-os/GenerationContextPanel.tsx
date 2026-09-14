@@ -26,7 +26,8 @@
  */
 
 import {
-  AlertTriangle, CheckCircle2, Clock, HelpCircle, ShieldAlert, ShieldCheck, ShieldQuestion,
+  AlertTriangle, CheckCircle2, Clock, GitCompareArrows, HelpCircle,
+  ShieldAlert, ShieldCheck, ShieldQuestion,
 } from 'lucide-react';
 import type { AiWorkoutContext, AiClientFactField } from '@/lib/api';
 import { palette, rgba } from '@/lib/palette';
@@ -57,6 +58,12 @@ const FIX: Partial<Record<AiClientFactField, string>> = {
 export default function GenerationContextPanel({ context }: { context: AiWorkoutContext }) {
   const { facts, data_quality: dq, safety, current_program: program, training_history: history } = context;
 
+  // Tolerated as absent, not assumed empty by accident. Backend and frontend
+  // deploy separately — backend first, by a couple of minutes — so a browser
+  // holding the new bundle can ask an API that predates this field. A thrown
+  // TypeError there would blank the whole panel, which is the one outcome this
+  // component exists to prevent: a trainer shown nothing and told nothing.
+  const conflicting = dq.conflicting ?? [];
   const blocking = dq.missing.filter((m) => m.blocking);
   const absent = dq.missing.filter((m) => !m.blocking);
   const known = (Object.keys(facts) as AiClientFactField[])
@@ -161,8 +168,19 @@ export default function GenerationContextPanel({ context }: { context: AiWorkout
             )}
           </span>
         )}
+        {/* Where they are, not just that they are on something. "On Base Phase"
+            and "Base Phase, week 4 of 12" are different facts, and the second
+            is the one that decides whether the next programme should be a new
+            block or the next weeks of this one. */}
         <span style={{ color: 'var(--text-muted)' }}>
-          {program ? `On ${program.name ?? 'a programme'}` : 'No active programme'}
+          {!program?.active
+            ? 'No active programme'
+            : program.expired
+              ? `${program.plan_name ?? 'Programme'} — finished`
+              : `${program.plan_name ?? 'Programme'}`
+                + (program.current_week
+                  ? `, week ${program.current_week}${program.duration_weeks ? ` of ${program.duration_weeks}` : ''}`
+                  : '')}
         </span>
         <span style={{ color: 'var(--text-muted)' }}>
           {history?.has_history ? `${history.window_weeks}w of logged training` : 'No logged training'}
@@ -175,6 +193,27 @@ export default function GenerationContextPanel({ context }: { context: AiWorkout
           missing list, because the action is different — a missing screen
           needs taking, a stale one needs repeating, and an absent finding in
           a stale screen is not evidence that nothing is wrong now. */}
+      {/* ── Two of the studio's own records disagreeing ──────────────────
+          Precedence decided; this is what it decided against. Rendered rather
+          than resolved silently, because which record is right is a clinical
+          question and the answer is the trainer's, not a source file's. */}
+      {conflicting.length > 0 && (
+        <div
+          className="mt-2 flex items-start gap-1.5 rounded-[10px] px-2.5 py-1.5 text-[11px] leading-relaxed"
+          style={{ background: rgba(palette.amber[500], 0.08), color: palette.amber[600] }}
+        >
+          <GitCompareArrows size={11} className="mt-0.5 shrink-0" />
+          <span>
+            <strong className="font-[750]">Records disagree.</strong>{' '}
+            {conflicting.map((c) => (
+              `${LABEL[c.field]} — used ${c.chosen.value} (${c.chosen.source}), `
+              + `not ${c.rejected.map((r) => `${r.value} (${r.source})`).join(' or ')}`
+            )).join('; ')}
+            .
+          </span>
+        </div>
+      )}
+
       {safety && safety.stale.length > 0 && (
         <div
           className="mt-2 flex items-start gap-1.5 rounded-[10px] px-2.5 py-1.5 text-[11px] leading-relaxed"
