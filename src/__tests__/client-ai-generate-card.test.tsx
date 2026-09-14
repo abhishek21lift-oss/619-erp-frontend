@@ -704,10 +704,43 @@ describe('trainer-stated context', () => {
     expect(Object.keys(mockGenerateWorkout.mock.calls[0][0])).toEqual(['client_id']);
   });
 
+  // ── Open in the SAME render the context arrives in ──────────────────────
+  //
+  // This is a synchronous getByText immediately after the context panel
+  // appears, and that is the point: an earlier version opened the disclosure
+  // from a useEffect, so it needed a second render pass. It passed locally and
+  // failed in CI, where the assertion landed between the two commits.
+  //
+  // `open` is a pure function of the props now, so there is no second pass to
+  // lose. Keeping the assertion synchronous is what stops that regressing —
+  // an await here would paper over exactly the bug it caught.
   it('says on screen that a stated value is not saved to the client', async () => {
     await withContext();
     expect(screen.getByText(/Trainer-stated for this generation/)).toBeInTheDocument();
     expect(screen.getByText(/not saved to the client/)).toBeInTheDocument();
+  });
+
+  it('is already open when the record cannot support a generation', async () => {
+    await withContext();
+    // Same render, no await: the fields are reachable the moment the trainer
+    // can see that something is missing.
+    expect(screen.getByText(/Equipment today/)).toBeInTheDocument();
+    expect(screen.getByText('Add what you know for this generation').closest('button'))
+      .toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('stays shut for a complete record, and the trainer can still open it', async () => {
+    mockWorkoutContext.mockResolvedValue({
+      ...CONTEXT,
+      data_quality: { ...CONTEXT.data_quality, blocking: [], missing: [] },
+    });
+    renderCard();
+    await screen.findByText('What the AI will use');
+    const toggle = screen.getByText('Add what you know for this generation').closest('button')!;
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
   });
 });
 
