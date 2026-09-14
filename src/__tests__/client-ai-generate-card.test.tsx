@@ -628,10 +628,11 @@ describe('trainer-stated context', () => {
         { field: 'experience_level', blocking: true },
         { field: 'training_days', blocking: true },
       ],
+      conflicting: [],
       blocking: ['goal', 'experience_level', 'training_days'],
       completeness_pct: 0,
     },
-    safety: null, current_program: null, training_history: null,
+    safety: null, current_program: { active: false }, training_history: null,
   };
 
   const withContext = async () => {
@@ -707,5 +708,125 @@ describe('trainer-stated context', () => {
     await withContext();
     expect(screen.getByText(/Trainer-stated for this generation/)).toBeInTheDocument();
     expect(screen.getByText(/not saved to the client/)).toBeInTheDocument();
+  });
+});
+
+// ── New block, or the next weeks of the one they are on? ───────────────────
+//
+// Generating for a client three weeks into a twelve-week block used to produce
+// a brand new twelve-week block — a SECOND programme, written as though the
+// first did not exist. The server refuses to choose between those, because
+// both defaults are wrong, so the card has to put the choice on screen.
+describe('a client already on a programme', () => {
+  const LIVE = {
+    client: { id: 'cl-1', name: 'Test Client' },
+    facts: {
+      age: { value: 34, source: 'pt_clients.dob', origin: 'recorded' },
+      gender: { value: 'female', source: 'pt_clients.gender', origin: 'recorded' },
+      weight_kg: { value: null, source: null, origin: 'missing' },
+      height_cm: { value: null, source: null, origin: 'missing' },
+      goal: { value: 'muscle_gain', source: 'pt_clients.goal', origin: 'recorded' },
+      experience_level: { value: 'intermediate', source: 'pt_clients.workout_experience_level', origin: 'recorded' },
+      training_days: { value: 3, source: 'pt_clients.sessions_per_week', origin: 'recorded' },
+      equipment: { value: null, source: null, origin: 'missing' },
+    },
+    data_quality: {
+      recorded: [], stated: [], missing: [], conflicting: [], blocking: [], completeness_pct: 63,
+    },
+    safety: null,
+    current_program: {
+      active: true, plan_id: 'p1', plan_name: 'Base Phase', started_on: '2026-08-24',
+      duration_weeks: 12, current_week: 4, weeks_remaining: 8, planned_days_per_week: 3,
+      sessions_completed_in_window: 6, progress_pct: 25, expired: false,
+    },
+    training_history: { has_history: true, window_weeks: 12 },
+  };
+
+  const render1 = async (ctx = LIVE) => {
+    mockWorkoutContext.mockResolvedValue(ctx);
+    const view = renderCard();
+    await screen.findByText('What the AI will use');
+    return view;
+  };
+
+  it('names the programme and the week, and offers both actions', async () => {
+    await render1();
+    // Twice, deliberately: the context panel's footer states where they are,
+    // and the chooser repeats it beside the decision it is asking for.
+    expect(screen.getAllByText(/week 4 of 12/).length).toBeGreaterThan(0);
+    expect(screen.getByText('Progress it')).toBeInTheDocument();
+    expect(screen.getByText('Start a new one')).toBeInTheDocument();
+  });
+
+  // The conservative option is pre-selected — continuing what the client has
+  // adapted to rather than replacing it — but the trainer still presses a
+  // button either way, and the request says which.
+  it('defaults to progressing, and sends that', async () => {
+    mockGenerateWorkout.mockResolvedValue({ data: WORKOUT_PLAN });
+    await render1();
+    expect(screen.getByText('Progress it').closest('button'))
+      .toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(screen.getByText('Generate AI Workout'));
+    await waitFor(() => expect(mockGenerateWorkout).toHaveBeenCalled());
+    expect(mockGenerateWorkout.mock.calls[0][0].mode).toBe('adapt');
+  });
+
+  it('sends a new block when the trainer picks one', async () => {
+    mockGenerateWorkout.mockResolvedValue({ data: WORKOUT_PLAN });
+    await render1();
+    fireEvent.click(screen.getByText('Start a new one'));
+    fireEvent.click(screen.getByText('Generate AI Workout'));
+    await waitFor(() => expect(mockGenerateWorkout).toHaveBeenCalled());
+    expect(mockGenerateWorkout.mock.calls[0][0].mode).toBe('new');
+  });
+
+  // A finished block is a client who needs the NEXT programme. Asking them to
+  // choose would be ceremony, and the server does not gate on it either.
+  it('asks nothing about a block that has finished', async () => {
+    mockGenerateWorkout.mockResolvedValue({ data: WORKOUT_PLAN });
+    await render1({ ...LIVE, current_program: { ...LIVE.current_program, expired: true } });
+    expect(screen.queryByText('Progress it')).toBeNull();
+
+    fireEvent.click(screen.getByText('Generate AI Workout'));
+    await waitFor(() => expect(mockGenerateWorkout).toHaveBeenCalled());
+    expect(mockGenerateWorkout.mock.calls[0][0].mode).toBeUndefined();
+  });
+
+  it('asks nothing of a client on no programme, and sends no mode', async () => {
+    mockGenerateWorkout.mockResolvedValue({ data: WORKOUT_PLAN });
+    await render1({ ...LIVE, current_program: { active: false } });
+    expect(screen.queryByText('Progress it')).toBeNull();
+
+    fireEvent.click(screen.getByText('Generate AI Workout'));
+    await waitFor(() => expect(mockGenerateWorkout).toHaveBeenCalled());
+    expect(Object.keys(mockGenerateWorkout.mock.calls[0][0])).toEqual(['client_id']);
+  });
+});
+
+// ── A failed context is not an absent one ──────────────────────────────────
+//
+// The card used to swallow the error and render nothing, so a summary that
+// failed to load looked exactly like a client it had nothing to say about. The
+// trainer pressed Generate having been shown nothing and read the result as
+// though the checks had run.
+describe('when the context cannot be read', () => {
+  it('says so rather than rendering silence', async () => {
+    mockWorkoutContext.mockRejectedValue(new Error('upstream unavailable'));
+    renderCard();
+    await screen.findByText(/Client context could not be verified/);
+    expect(screen.queryByText('What the AI will use')).toBeNull();
+  });
+
+  it('still allows generation, because the server does its own checking', async () => {
+    mockWorkoutContext.mockRejectedValue(new Error('upstream unavailable'));
+    mockGenerateWorkout.mockResolvedValue({ data: WORKOUT_PLAN });
+    renderCard();
+    await screen.findByText(/Client context could not be verified/);
+
+    const workout = screen.getByText('Generate AI Workout').closest('button') as HTMLButtonElement;
+    expect(workout.disabled).toBe(false);
+    fireEvent.click(workout);
+    await waitFor(() => expect(mockGenerateWorkout).toHaveBeenCalled());
   });
 });

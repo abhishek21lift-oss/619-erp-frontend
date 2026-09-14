@@ -42,11 +42,12 @@ function context(over: Partial<AiWorkoutContext> = {}): AiWorkoutContext {
         { field: 'experience_level', blocking: true },
         { field: 'training_days', blocking: true },
       ],
+      conflicting: [],
       blocking: ['goal', 'experience_level', 'training_days'],
       completeness_pct: 0,
     },
     safety: null,
-    current_program: null,
+    current_program: { active: false },
     training_history: null,
     ...over,
   };
@@ -105,6 +106,7 @@ describe('a record the studio has filled in', () => {
         { field: 'height_cm', blocking: false },
         { field: 'equipment', blocking: false },
       ],
+      conflicting: [],
       blocking: [],
       completeness_pct: 63,
     },
@@ -112,7 +114,11 @@ describe('a record the studio has filled in', () => {
       gate: { status: 'cleared' }, may_program: true, screened: true,
       sources_present: ['parq'], constraints: 2, not_assessed: [], stale: [],
     },
-    current_program: { name: 'Base Phase', status: 'active', start_date: '2026-08-01', end_date: null },
+    current_program: {
+      active: true, plan_id: 'p1', plan_name: 'Base Phase', started_on: '2026-08-01',
+      duration_weeks: 12, current_week: 4, weeks_remaining: 8, planned_days_per_week: 3,
+      sessions_completed_in_window: 6, progress_pct: 25, expired: false,
+    },
     training_history: { has_history: true, window_weeks: 12 },
   });
 
@@ -135,7 +141,10 @@ describe('a record the studio has filled in', () => {
     render(<GenerationContextPanel context={filled} />);
     expect(screen.getByText(/PAR-Q cleared/)).toBeInTheDocument();
     expect(screen.getByText(/2 constraints/)).toBeInTheDocument();
-    expect(screen.getByText('On Base Phase')).toBeInTheDocument();
+    // Where they are, not just that they are on something: the week is what
+    // decides whether the next programme is a new block or the next weeks of
+    // this one.
+    expect(screen.getByText('Base Phase, week 4 of 12')).toBeInTheDocument();
     expect(screen.getByText('12w of logged training')).toBeInTheDocument();
   });
 
@@ -221,5 +230,48 @@ describe('a record the studio has filled in', () => {
     render(<GenerationContextPanel context={gateOf('referred', false)} />);
     expect(screen.getByText(/PAR-Q referred/)).toBeInTheDocument();
     expect(screen.queryByText(/not screened/)).toBeNull();
+  });
+});
+
+// ── Two of the studio's own records disagreeing ────────────────────────────
+//
+// Precedence used to decide silently: a client whose profile said fat loss and
+// whose goal assessment said muscle gain was programmed for fat loss, with
+// nothing anywhere saying a clinical question had been settled by the order of
+// a list in a source file.
+//
+// Precedence still decides. What these hold is that the choice is visible, and
+// that the panel shows BOTH sides — a trainer who can see only the winner
+// cannot tell there was a question.
+describe('records that disagree', () => {
+  const CONFLICT = {
+    field: 'goal' as const,
+    chosen: { source: 'client_fitness_profiles.goal', value: 'fat_loss' },
+    rejected: [{ source: 'pt_goals.goal_type', value: 'muscle_gain' }],
+  };
+  const withConflicts = (conflicting: AiWorkoutContext['data_quality']['conflicting']) =>
+    context({ data_quality: { ...context().data_quality, conflicting } });
+
+  it('names what was used and what was not', () => {
+    render(<GenerationContextPanel context={withConflicts([CONFLICT])} />);
+    const text = screen.getByText(/Records disagree/).parentElement?.textContent ?? '';
+    expect(text).toContain('used fat_loss (client_fitness_profiles.goal)');
+    expect(text).toContain('not muscle_gain (pt_goals.goal_type)');
+  });
+
+  it('says nothing when the records agree', () => {
+    render(<GenerationContextPanel context={withConflicts([])} />);
+    expect(screen.queryByText(/Records disagree/)).toBeNull();
+  });
+
+  // Backend and frontend deploy separately, backend first. A browser holding
+  // the new bundle can ask an API that predates this field, and a thrown
+  // TypeError there would blank the whole panel — the one outcome this
+  // component exists to prevent.
+  it('survives an API that does not send the field at all', () => {
+    const older = withConflicts(undefined as unknown as AiWorkoutContext['data_quality']['conflicting']);
+    render(<GenerationContextPanel context={older} />);
+    expect(screen.getByText('What the AI will use')).toBeInTheDocument();
+    expect(screen.queryByText(/Records disagree/)).toBeNull();
   });
 });
