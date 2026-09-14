@@ -3260,6 +3260,15 @@ export type AiGenerationAudit = {
  *   missing   nobody holds it; the model was told NOT RECORDED and
  *             instructed not to infer one
  */
+export type AiAssessmentStaleness = {
+  section: string;
+  /** YYYY-MM-DD the section was last assessed. */
+  as_of: string;
+  age_days: number;
+  /** How long that section is treated as current. */
+  stale_after_days: number;
+};
+
 export type AiClientFact = {
   value: string | number | null;
   /** The column it came from, e.g. 'pt_clients.sessions_per_week'. Null when missing or stated. */
@@ -3302,7 +3311,16 @@ export type AiWorkoutContext = {
     screened: boolean;
     sources_present: string[];
     constraints: number;
+    /** Sections nobody has ever assessed. */
     not_assessed: string[];
+    /**
+     * Sections on file but older than a trainer should silently trust.
+     *
+     * A third state, not a synonym for either of the others: real evidence
+     * whose age is itself a fact. An absent finding in a stale screen means
+     * "nothing was wrong then", not "nothing is wrong now".
+     */
+    stale: AiAssessmentStaleness[];
   } | null;
   current_program: {
     name: string | null;

@@ -110,7 +110,7 @@ describe('a record the studio has filled in', () => {
     },
     safety: {
       gate: { status: 'cleared' }, may_program: true, screened: true,
-      sources_present: ['parq'], constraints: 2, not_assessed: [],
+      sources_present: ['parq'], constraints: 2, not_assessed: [], stale: [],
     },
     current_program: { name: 'Base Phase', status: 'active', start_date: '2026-08-01', end_date: null },
     training_history: { has_history: true, window_weeks: 12 },
@@ -139,13 +139,87 @@ describe('a record the studio has filled in', () => {
     expect(screen.getByText('12w of logged training')).toBeInTheDocument();
   });
 
+  // ── Three gate states must LOOK like three states ───────────────────────
+  //
+  // The first version of this panel computed `may_program || status ===
+  // 'unknown'` and painted both green. An unscreened client — nobody has asked
+  // this person whether it is safe for them to train — sat behind the same
+  // shield as a cleared one, in the single place a trainer glances before
+  // pressing Generate.
+  //
+  // The earlier test caught the word and missed the colour, which is how the
+  // bug survived a mutation run. It now asserts the rendered colour too.
+  const gateOf = (status: string, mayProgram: boolean) => context({
+    ...filled,
+    safety: {
+      gate: { status }, may_program: mayProgram, screened: mayProgram,
+      sources_present: [], constraints: 0, not_assessed: [], stale: [],
+    },
+  });
+
+  const gateColour = (container: HTMLElement) => {
+    const el = Array.from(container.querySelectorAll('span'))
+      .find((n) => /PAR-Q/.test(n.textContent ?? ''));
+    return el ? getComputedStyle(el).color : null;
+  };
+
   it('an unscreened client is not rendered as a cleared one', () => {
-    const unknown = context({
-      ...filled,
-      safety: { gate: { status: 'unknown' }, may_program: false, screened: false, sources_present: [], constraints: 0, not_assessed: ['limitations'] },
-    });
-    render(<GenerationContextPanel context={unknown} />);
-    expect(screen.getByText(/PAR-Q unknown/)).toBeInTheDocument();
+    const { container } = render(<GenerationContextPanel context={gateOf('unknown', false)} />);
+    expect(screen.getByText(/PAR-Q not screened/)).toBeInTheDocument();
     expect(screen.queryByText(/PAR-Q cleared/)).toBeNull();
+    // "unknown" is the server's word for the gate; "not screened" is what a
+    // trainer needs to read. Neither may be the word "cleared".
+    expect(screen.queryByText(/cleared/)).toBeNull();
+  });
+
+  it('cleared, unscreened and blocked each render a different colour', () => {
+    const cleared = render(<GenerationContextPanel context={gateOf('cleared', true)} />);
+    const clearedColour = gateColour(cleared.container);
+    cleared.unmount();
+
+    const unscreened = render(<GenerationContextPanel context={gateOf('unknown', false)} />);
+    const unscreenedColour = gateColour(unscreened.container);
+    unscreened.unmount();
+
+    const blocked = render(<GenerationContextPanel context={gateOf('referred', false)} />);
+    const blockedColour = gateColour(blocked.container);
+    blocked.unmount();
+
+    for (const c of [clearedColour, unscreenedColour, blockedColour]) expect(c).toBeTruthy();
+    expect(new Set([clearedColour, unscreenedColour, blockedColour]).size).toBe(3);
+  });
+
+  // ── Stale is neither missing nor current ────────────────────────────────
+  //
+  // A mobility screen taken two years ago used to reach the programme with
+  // exactly the authority of one taken last Tuesday. The action differs from a
+  // missing screen — that one needs taking, this one needs repeating — so it
+  // gets its own line rather than being folded into the missing list.
+  it('names a stale assessment, with how old it is', () => {
+    const stale = context({
+      ...filled,
+      safety: {
+        gate: { status: 'cleared' }, may_program: true, screened: true,
+        sources_present: ['parq'], constraints: 0, not_assessed: [],
+        stale: [{ section: 'limitations', as_of: '2024-02-01', age_days: 591, stale_after_days: 180 }],
+      },
+    });
+    render(<GenerationContextPanel context={stale} />);
+    expect(screen.getByText(/Worth repeating/)).toBeInTheDocument();
+    expect(screen.getByText(/limitations last assessed 2024-02-01 \(591d\)/)).toBeInTheDocument();
+    // A stale screen on a CLEARED client must not turn the gate amber; the two
+    // are separate facts and conflating them would make the gate meaningless.
+    expect(screen.getByText(/PAR-Q cleared/)).toBeInTheDocument();
+  });
+
+  it('says nothing about staleness when everything is current', () => {
+    render(<GenerationContextPanel context={filled} />);
+    expect(screen.queryByText(/Worth repeating/)).toBeNull();
+  });
+
+  it('a gate the server refused is rendered as blocked, not as unscreened', () => {
+    render(<GenerationContextPanel context={gateOf('referred', false)} />);
+    expect(screen.getByText(/PAR-Q referred/)).toBeInTheDocument();
+    expect(screen.queryByText(/not screened/)).toBeNull();
   });
 });

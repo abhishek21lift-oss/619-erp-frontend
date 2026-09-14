@@ -25,7 +25,9 @@
  * the state a trainer should be able to skip past without reading.
  */
 
-import { AlertTriangle, CheckCircle2, HelpCircle, ShieldCheck, ShieldAlert } from 'lucide-react';
+import {
+  AlertTriangle, CheckCircle2, Clock, HelpCircle, ShieldAlert, ShieldCheck, ShieldQuestion,
+} from 'lucide-react';
 import type { AiWorkoutContext, AiClientFactField } from '@/lib/api';
 import { palette, rgba } from '@/lib/palette';
 
@@ -60,7 +62,30 @@ export default function GenerationContextPanel({ context }: { context: AiWorkout
   const known = (Object.keys(facts) as AiClientFactField[])
     .filter((f) => facts[f]?.origin === 'recorded');
 
-  const gateOpen = safety ? safety.may_program || safety.gate?.status === 'unknown' : null;
+  // ── Three states, three appearances ──────────────────────────────────────
+  //
+  // This read `may_program || status === 'unknown'`, which put an UNSCREENED
+  // client behind the same green shield as a cleared one. "Nobody has asked
+  // this person whether it is safe for them to train" is not "it is safe for
+  // this person to train", and the one place a trainer glances before pressing
+  // Generate is the last place those two should look alike.
+  //
+  // Generation is still allowed on `unknown` — refusing it would take the
+  // feature away from every client the studio has not screened yet, which is
+  // most of them — and that is precisely why the state has to be visible.
+  // Allowed is a backend decision; SAFE is a claim, and this makes only the
+  // claim the server actually supports.
+  const gate: 'cleared' | 'unscreened' | 'blocked' = !safety
+    ? 'unscreened'
+    : safety.may_program
+      ? 'cleared'
+      : safety.gate?.status === 'unknown' ? 'unscreened' : 'blocked';
+
+  const GATE_TONE = {
+    cleared: { color: palette.emerald[500], Icon: ShieldCheck },
+    unscreened: { color: palette.amber[600], Icon: ShieldQuestion },
+    blocked: { color: palette.red[500], Icon: ShieldAlert },
+  } as const;
 
   return (
     <div
@@ -126,9 +151,11 @@ export default function GenerationContextPanel({ context }: { context: AiWorkout
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-2 text-[11px]" style={{ borderColor: 'var(--border)' }}>
         {safety && (
-          <span className="flex items-center gap-1 font-[650]" style={{ color: gateOpen ? palette.emerald[500] : palette.red[500] }}>
-            {gateOpen ? <ShieldCheck size={11} /> : <ShieldAlert size={11} />}
-            PAR-Q {safety.gate?.status ?? 'unknown'}
+          <span className="flex items-center gap-1 font-[650]" style={{ color: GATE_TONE[gate].color }}>
+            {(() => { const I = GATE_TONE[gate].Icon; return <I size={11} />; })()}
+            {/* The word too, not only the hue — a colour-blind trainer on a bad
+                monitor gets the same three states. */}
+            PAR-Q {gate === 'unscreened' ? 'not screened' : (safety.gate?.status ?? 'unknown')}
             {safety.constraints > 0 && (
               <span style={{ color: 'var(--text-muted)' }}>· {safety.constraints} constraint{safety.constraints === 1 ? '' : 's'}</span>
             )}
@@ -141,6 +168,28 @@ export default function GenerationContextPanel({ context }: { context: AiWorkout
           {history?.has_history ? `${history.window_weeks}w of logged training` : 'No logged training'}
         </span>
       </div>
+
+      {/* ── Stale is a third state ────────────────────────────────────────
+          Not missing and not current: real evidence whose age the trainer
+          should weigh. Rendered in its own line rather than folded into the
+          missing list, because the action is different — a missing screen
+          needs taking, a stale one needs repeating, and an absent finding in
+          a stale screen is not evidence that nothing is wrong now. */}
+      {safety && safety.stale.length > 0 && (
+        <div
+          className="mt-2 flex items-start gap-1.5 rounded-[10px] px-2.5 py-1.5 text-[11px] leading-relaxed"
+          style={{ background: rgba(palette.amber[500], 0.08), color: palette.amber[600] }}
+        >
+          <Clock size={11} className="mt-0.5 shrink-0" />
+          <span>
+            <strong className="font-[750]">Worth repeating.</strong>{' '}
+            {safety.stale
+              .map((st) => `${st.section} last assessed ${st.as_of} (${st.age_days}d)`)
+              .join(', ')}
+            .
+          </span>
+        </div>
+      )}
     </div>
   );
 }
