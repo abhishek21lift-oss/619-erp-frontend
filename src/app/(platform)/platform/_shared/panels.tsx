@@ -13,7 +13,7 @@ export const AuditCentre = dynamic(() => import('@/components/platform/audit-cen
 // ai, security posture and smtp, all from the collector snapshot. Two health
 // screens reading two endpoints is exactly the drift the audit flagged, so the
 // old panel was removed rather than kept alongside.
-export const CommandCenterPanel = dynamic(() => import('@/components/platform/CommandCenterRoot').then(mod => mod.CommandCenterRoot), {
+export const CommandCenterPanel = dynamic(() => import('@/components/platform/mission-control/MissionControl').then(mod => mod.MissionControl), {
   loading: () => <PanelSkeleton label="Collecting system state…" />,
 });
 export const InvoicesPanel = dynamic(() => import('@/components/platform/invoices'), {
