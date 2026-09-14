@@ -26,10 +26,10 @@
  */
 
 import {
-  AlertTriangle, CheckCircle2, Clock, GitCompareArrows, HelpCircle,
-  ShieldAlert, ShieldCheck, ShieldQuestion,
+  AlertTriangle, CalendarClock, CheckCircle2, Clock, GitCompareArrows, HelpCircle,
+  Layers, ShieldAlert, ShieldCheck, ShieldQuestion, TrendingDown, TrendingUp,
 } from 'lucide-react';
-import type { AiWorkoutContext, AiClientFactField } from '@/lib/api';
+import type { AiWorkoutContext, AiClientFactField, AiNextSession } from '@/lib/api';
 import { palette, rgba } from '@/lib/palette';
 
 const LABEL: Record<AiClientFactField, string> = {
@@ -55,8 +55,36 @@ const FIX: Partial<Record<AiClientFactField, string>> = {
   equipment: 'no column records this — state it when generating',
 };
 
+/**
+ * The next workout, in one line.
+ *
+ * Every unresolvable state gets its own words. "No next session" and "we could
+ * not work out the next session" are different facts, and a card that renders
+ * them the same teaches a trainer to ignore both.
+ */
+function nextSessionLine(next: AiNextSession): string {
+  if (!next.resolvable) {
+    switch (next.reason) {
+      case 'no_active_programme': return 'Not on a programme — nothing to continue';
+      case 'programme_expired': return 'Programme finished — needs the next block';
+      case 'plan_prescribes_no_days': return 'The assigned plan prescribes no training days';
+      case 'block_complete': return 'Every prescribed session of this block is done';
+      default: return 'Next session could not be resolved';
+    }
+  }
+  const done = next.completed_days_this_week.length;
+  return `Up next: ${next.plan_name ?? 'programme'}, week ${next.week}`
+    + (next.duration_weeks ? ` of ${next.duration_weeks}` : '')
+    + `, ${next.day}`
+    + (next.starts_next_week ? ' (this week is done)' : done ? ` (${done} done this week)` : '')
+    + (next.source === 'override' ? ' · written by hand' : '');
+}
+
 export default function GenerationContextPanel({ context }: { context: AiWorkoutContext }) {
-  const { facts, data_quality: dq, safety, current_program: program, training_history: history } = context;
+  const {
+    facts, data_quality: dq, safety, current_program: program, training_history: history,
+    next_session: next, adaptation, assignment_ambiguity: ambiguity,
+  } = context;
 
   // Tolerated as absent, not assumed empty by accident. Backend and frontend
   // deploy separately — backend first, by a couple of minutes — so a browser
@@ -66,8 +94,13 @@ export default function GenerationContextPanel({ context }: { context: AiWorkout
   const conflicting = dq.conflicting ?? [];
   const blocking = dq.missing.filter((m) => m.blocking);
   const absent = dq.missing.filter((m) => !m.blocking);
+  // Measured and client-reported render in the same list and do not read the
+  // same. Splitting them into two lists would bury the distinction under a
+  // heading a trainer scrolls past; keeping them adjacent, with the reported
+  // ones carrying their own words, is what makes the difference land at the
+  // moment somebody is about to program from the number.
   const known = (Object.keys(facts) as AiClientFactField[])
-    .filter((f) => facts[f]?.origin === 'recorded');
+    .filter((f) => facts[f]?.origin === 'recorded' || facts[f]?.origin === 'unverified');
 
   // ── Three states, three appearances ──────────────────────────────────────
   //
@@ -131,16 +164,34 @@ export default function GenerationContextPanel({ context }: { context: AiWorkout
       )}
 
       <ul className="space-y-1">
-        {known.map((field) => (
-          <li key={field} className="flex items-baseline gap-1.5 text-[11.5px]">
-            <CheckCircle2 size={11} className="shrink-0 translate-y-[1px]" style={{ color: palette.emerald[500] }} />
-            <span className="font-[650]" style={{ color: 'var(--text-secondary)' }}>{LABEL[field]}</span>
-            <span className="font-[700]" style={{ color: 'var(--text-primary)' }}>{String(facts[field].value)}</span>
-            <span className="ml-auto text-[10px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
-              {facts[field].source}
-            </span>
-          </li>
-        ))}
+        {known.map((field) => {
+          const f = facts[field];
+          const reported = f.origin === 'unverified';
+          return (
+            <li key={field} className="flex items-baseline gap-1.5 text-[11.5px]">
+              {reported
+                ? <HelpCircle size={11} className="shrink-0 translate-y-[1px]" style={{ color: palette.amber[600] }} />
+                : <CheckCircle2 size={11} className="shrink-0 translate-y-[1px]" style={{ color: palette.emerald[500] }} />}
+              <span className="font-[650]" style={{ color: 'var(--text-secondary)' }}>{LABEL[field]}</span>
+              <span className="font-[700]" style={{ color: 'var(--text-primary)' }}>{String(f.value)}</span>
+              {/* The studio holds it and the studio did not measure it. Said in
+                  words beside the value rather than as a colour alone, because
+                  this is the badge somebody has to read to know not to build a
+                  cut on the number. */}
+              {reported && (
+                <span className="font-[650]" style={{ color: palette.amber[600] }}>client-reported</span>
+              )}
+              {f.stale && (
+                <span className="font-[650]" style={{ color: palette.amber[600] }}>
+                  {f.stale.age_days}d old
+                </span>
+              )}
+              <span className="ml-auto text-[10px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                {f.source}
+              </span>
+            </li>
+          );
+        })}
 
         {absent.map((m) => (
           <li key={m.field} className="flex items-baseline gap-1.5 text-[11.5px]">
@@ -186,6 +237,78 @@ export default function GenerationContextPanel({ context }: { context: AiWorkout
           {history?.has_history ? `${history.window_weeks}w of logged training` : 'No logged training'}
         </span>
       </div>
+
+      {/* ── The exact next workout ─────────────────────────────────────────
+          Where they are in the block was already here; this is what they
+          actually DO next, resolved through the same week resolver the session
+          log uses. A trainer choosing between "start a new block" and
+          "progress this one" is choosing between two abstractions until they
+          can see the session the second one would continue. */}
+      {next && (
+        <div className="mt-1.5 flex items-start gap-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+          <CalendarClock size={11} className="mt-0.5 shrink-0" />
+          <span>{nextSessionLine(next)}</span>
+        </div>
+      )}
+
+      {/* ── What the logged sets say to do with each lift ───────────────────
+          Decided by rule before a token is spent, so a trainer can disagree
+          with it. `evidence_free` gets its own sentence because "we checked
+          and there is nothing to go on" is the most common answer here and the
+          easiest one for a confident-looking plan to paper over. */}
+      {adaptation && adaptation.counts.total > 0 && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px]">
+          {adaptation.evidence_free ? (
+            <span className="flex items-center gap-1 font-[650]" style={{ color: palette.amber[600] }}>
+              <AlertTriangle size={11} />
+              No logged evidence for any of the {adaptation.counts.total} prescribed lifts
+            </span>
+          ) : (
+            <>
+              {adaptation.counts.progress > 0 && (
+                <span className="flex items-center gap-1 font-[650]" style={{ color: palette.emerald[500] }}>
+                  <TrendingUp size={11} />{adaptation.counts.progress} to progress
+                </span>
+              )}
+              {adaptation.counts.hold > 0 && (
+                <span className="font-[650]" style={{ color: 'var(--text-secondary)' }}>
+                  {adaptation.counts.hold} to hold
+                </span>
+              )}
+              {adaptation.counts.regress > 0 && (
+                <span className="flex items-center gap-1 font-[650]" style={{ color: palette.red[500] }}>
+                  <TrendingDown size={11} />{adaptation.counts.regress} to reduce
+                </span>
+              )}
+              {adaptation.counts.insufficient_evidence > 0 && (
+                <span style={{ color: 'var(--text-muted)' }}>
+                  {adaptation.counts.insufficient_evidence} with no evidence either way
+                </span>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── More than one programme claims to be active ─────────────────────
+          The engine has to pick one and now picks by a stated rule rather than
+          by whichever row came back first. Which it picked is shown, because a
+          deterministic choice is not the same as the right one, and the fix —
+          closing the assignments that are finished — is the trainer's. */}
+      {ambiguity && (
+        <div
+          className="mt-2 flex items-start gap-1.5 rounded-[10px] px-2.5 py-1.5 text-[11px] leading-relaxed"
+          style={{ background: rgba(palette.amber[500], 0.08), color: palette.amber[600] }}
+        >
+          <Layers size={11} className="mt-0.5 shrink-0" />
+          <span>
+            <strong className="font-[750]">{ambiguity.active_count} active programmes.</strong>{' '}
+            Programming against {ambiguity.chosen?.plan_name ?? 'the most recent'} ({ambiguity.rule}),
+            not {ambiguity.not_chosen.map((o) => o.plan_name ?? 'an unnamed plan').join(' or ')}.
+            Close the ones that are finished.
+          </span>
+        </div>
+      )}
 
       {/* ── Stale is a third state ────────────────────────────────────────
           Not missing and not current: real evidence whose age the trainer

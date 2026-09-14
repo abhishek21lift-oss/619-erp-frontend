@@ -275,3 +275,168 @@ describe('records that disagree', () => {
     expect(screen.queryByText(/Records disagree/)).toBeNull();
   });
 });
+
+// ── Four states that were being collapsed into "we have it" ────────────────
+//
+// A weight the client mentioned at the door and a weight the studio measured
+// rendered identically. So did "on a programme" and "doing Wednesday of week
+// 4". So did one active assignment and four. Each of these tests holds one of
+// those distinctions open.
+
+describe('a value the studio holds but never measured', () => {
+  const reported = (): AiWorkoutContext => context({
+    facts: {
+      ...context().facts,
+      weight_kg: { value: 82, source: 'weekly_checkins.weight', origin: 'unverified' },
+    },
+    data_quality: {
+      ...context().data_quality,
+      unverified: [{ field: 'weight_kg', source: 'weekly_checkins.weight' }],
+      completeness_pct: 13,
+    },
+  });
+
+  it('renders the value, and says in words that nobody measured it', () => {
+    render(<GenerationContextPanel context={reported()} />);
+    expect(screen.getByText('82')).toBeInTheDocument();
+    // Words, not only a hue: the distinction has to survive a colour-blind
+    // trainer on a bad monitor, which is the same argument the PAR-Q gate makes.
+    expect(screen.getByText('client-reported')).toBeInTheDocument();
+    expect(screen.getByText('weekly_checkins.weight')).toBeInTheDocument();
+  });
+
+  it('says nothing of the kind about a measured one', () => {
+    render(<GenerationContextPanel context={context({
+      facts: {
+        ...context().facts,
+        weight_kg: { value: 80, source: 'pt_assessments.weight', origin: 'recorded' },
+      },
+    })} />);
+    expect(screen.queryByText('client-reported')).not.toBeInTheDocument();
+  });
+
+  it('puts the age of a stale measurement beside it', () => {
+    render(<GenerationContextPanel context={context({
+      facts: {
+        ...context().facts,
+        weight_kg: {
+          value: 80, source: 'pt_assessments.weight', origin: 'recorded',
+          stale: { as_of: '2024-01-03', age_days: 620, stale_after_days: 90 },
+        },
+      },
+    })} />);
+    expect(screen.getByText('620d old')).toBeInTheDocument();
+  });
+});
+
+describe('the exact next workout', () => {
+  it('names the plan, the week and the day', () => {
+    render(<GenerationContextPanel context={context({
+      next_session: {
+        resolvable: true, reason: null, assignment_id: 'a1', plan_id: 'p1',
+        plan_name: 'Upper/Lower', week: 4, duration_weeks: 12, day_of_week: 3,
+        day: 'Wednesday', source: 'derived', anchor_week: 1, starts_next_week: false,
+        planned_days: ['Monday', 'Wednesday', 'Friday'],
+        completed_days_this_week: ['Monday'], week_starts_on: '2026-08-24',
+        exercises: [],
+      },
+    })} />);
+    expect(screen.getByText(/Up next: Upper\/Lower, week 4 of 12, Wednesday/)).toBeInTheDocument();
+    expect(screen.getByText(/1 done this week/)).toBeInTheDocument();
+  });
+
+  it('says a hand-written week is hand-written', () => {
+    render(<GenerationContextPanel context={context({
+      next_session: {
+        resolvable: true, reason: null, assignment_id: 'a1', plan_id: 'p1',
+        plan_name: 'Upper/Lower', week: 4, duration_weeks: 12, day_of_week: 1,
+        day: 'Monday', source: 'override', anchor_week: 4, starts_next_week: false,
+        planned_days: ['Monday'], completed_days_this_week: [], week_starts_on: '2026-08-24',
+        exercises: [],
+      },
+    })} />);
+    expect(screen.getByText(/written by hand/)).toBeInTheDocument();
+  });
+
+  // Each unresolvable state gets its own words. Rendering them the same would
+  // teach a trainer to skip the line, which defeats the point of having it.
+  it.each([
+    ['no_active_programme', /Not on a programme/],
+    ['programme_expired', /Programme finished/],
+    ['plan_prescribes_no_days', /prescribes no training days/],
+    ['block_complete', /Every prescribed session of this block is done/],
+  ] as const)('says why it could not name one: %s', (reason, pattern) => {
+    render(<GenerationContextPanel context={context({
+      next_session: { resolvable: false, reason },
+    })} />);
+    expect(screen.getByText(pattern)).toBeInTheDocument();
+  });
+
+  // Backend and browser deploy separately. A bundle that assumed the field
+  // would blank the whole panel, which is the one outcome it exists to prevent.
+  it('renders without the line at all when the server did not send one', () => {
+    render(<GenerationContextPanel context={context()} />);
+    expect(screen.queryByText(/Up next/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Needs trainer input/)).toBeInTheDocument();
+  });
+});
+
+describe('what the logged sets say to do with each lift', () => {
+  type Counts = NonNullable<AiWorkoutContext['adaptation']>['counts'];
+  const withCounts = (counts: Partial<Counts>, evidenceFree = false) =>
+    context({
+      adaptation: {
+        decisions: [],
+        counts: {
+          progress: 0, hold: 0, regress: 0, insufficient_evidence: 0, total: 0, ...counts,
+        },
+        evidence_free: evidenceFree,
+      },
+    });
+
+  it('counts the verdicts', () => {
+    render(<GenerationContextPanel context={withCounts({ progress: 2, hold: 1, regress: 1, total: 4 })} />);
+    expect(screen.getByText(/2 to progress/)).toBeInTheDocument();
+    expect(screen.getByText(/1 to hold/)).toBeInTheDocument();
+    expect(screen.getByText(/1 to reduce/)).toBeInTheDocument();
+  });
+
+  it('says plainly when there is nothing to go on', () => {
+    render(<GenerationContextPanel context={withCounts({ insufficient_evidence: 4, total: 4 }, true)} />);
+    expect(screen.getByText(/No logged evidence for any of the 4 prescribed lifts/)).toBeInTheDocument();
+    // And does not also render a reassuring breakdown beside it.
+    expect(screen.queryByText(/to progress/)).not.toBeInTheDocument();
+  });
+
+  it('stays quiet when there is no next session to decide about', () => {
+    render(<GenerationContextPanel context={withCounts({ total: 0 })} />);
+    expect(screen.queryByText(/to progress/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/No logged evidence/)).not.toBeInTheDocument();
+  });
+});
+
+describe('more than one programme claiming to be active', () => {
+  it('names the count, the one it chose, the rule and the ones it did not', () => {
+    render(<GenerationContextPanel context={context({
+      assignment_ambiguity: {
+        active_count: 3,
+        chosen: { assignment_id: 'a1', plan_id: 'p1', plan_name: 'Upper/Lower', start_date: '2026-08-03' },
+        not_chosen: [
+          { assignment_id: 'a2', plan_id: 'p2', plan_name: 'Full Body', start_date: '2026-07-01' },
+          { assignment_id: 'a3', plan_id: 'p3', plan_name: 'Legacy', start_date: '2026-01-01' },
+        ],
+        rule: 'most recently started, then most recently created',
+      },
+    })} />);
+    const banner = screen.getByText(/3 active programmes/).parentElement?.textContent ?? '';
+    expect(banner).toContain('Upper/Lower');
+    expect(banner).toContain('most recently started');
+    expect(banner).toContain('Full Body');
+    expect(banner).toContain('Legacy');
+  });
+
+  it('says nothing at all when only one programme is active', () => {
+    render(<GenerationContextPanel context={context()} />);
+    expect(screen.queryByText(/active programmes/)).not.toBeInTheDocument();
+  });
+});

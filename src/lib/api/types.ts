@@ -3297,7 +3297,24 @@ export type AiClientFact = {
   value: string | number | null;
   /** The column it came from, e.g. 'pt_clients.sessions_per_week'. Null when missing or stated. */
   source: string | null;
-  origin: 'recorded' | 'stated' | 'missing';
+  /**
+   * Where the value came from, as four mutually exclusive origins.
+   *
+   * `unverified` is the one worth reading twice: the studio holds the number
+   * but never measured it — a weight the client mentioned at a check-in rather
+   * than one taken during an assessment. It is a real value and it is not a
+   * measurement, and a screen that renders it like one invites a trainer to
+   * program a cut from a figure nobody has checked.
+   */
+  origin: 'recorded' | 'unverified' | 'stated' | 'missing';
+  /** The other records that disagree. Absent when nothing does. */
+  conflicts?: Array<{ source: string; value: string | number }>;
+  /**
+   * Set when the assessment this came from is older than the studio treats as
+   * current. Real evidence whose age is itself a fact — program to it, say it
+   * needs repeating, never extrapolate from it.
+   */
+  stale?: { as_of: string; age_days: number; stale_after_days: number };
 };
 
 export type AiClientFactField =
@@ -3313,8 +3330,21 @@ export type AiClientFactField =
  */
 export type AiGenerationDataQuality = {
   recorded: Array<{ field: AiClientFactField; source: string }>;
+  /**
+   * Held, but only on the client's own word.
+   *
+   * Listed apart from `recorded` because "the studio has a weight for them"
+   * and "the studio weighed them" are different claims, and only one of them
+   * should carry a prescription.
+   *
+   * Optional: a server that predates this sends no such field, and an absent
+   * list must render as "we do not know which", never as "none".
+   */
+  unverified?: Array<{ field: AiClientFactField; source: string }>;
   stated: Array<{ field: AiClientFactField }>;
   missing: Array<{ field: AiClientFactField; blocking: boolean }>;
+  /** Facts whose source assessment is older than the studio treats as current. */
+  stale?: Array<{ field: AiClientFactField; source: string } & AiAssessmentStaleness>;
   /**
    * Facts two of the studio's own records disagree about.
    *
@@ -3329,6 +3359,114 @@ export type AiGenerationDataQuality = {
   }>;
   blocking: AiClientFactField[];
   completeness_pct: number;
+};
+
+
+/**
+ * More than one programme claims to be active for this client.
+ *
+ * `workout_assignments` is unique on (plan, client, status), so a client can
+ * hold several active rows at once — four of this studio's clients do. The
+ * engine has to pick one, and it picks by a stated total order rather than by
+ * whichever row the database happened to return first. This is the record of
+ * that choice, shown to the trainer because a deterministic rule is not the
+ * same thing as the right answer.
+ */
+export type AiAssignmentAmbiguity = {
+  active_count: number;
+  chosen: { assignment_id: string | null; plan_id: string | null; plan_name: string | null; start_date: string | null } | null;
+  not_chosen: Array<{ assignment_id: string | null; plan_id: string | null; plan_name: string | null; start_date: string | null }>;
+  /** The rule in words, e.g. "most recently started, then most recently created". */
+  rule: string;
+};
+
+/** Why a next session could not be named. Each state is its own fact. */
+export type AiNextSessionUnresolved =
+  | 'no_active_programme'
+  | 'programme_expired'
+  | 'plan_prescribes_no_days'
+  | 'block_complete';
+
+/**
+ * The exact workout this client does next.
+ *
+ * Resolved from the programme rather than from a session row, and through the
+ * same week resolver the session log uses — so what this says and what the
+ * trainer sees when they open the session cannot disagree.
+ */
+export type AiNextSession =
+  | {
+    resolvable: false;
+    reason: AiNextSessionUnresolved;
+    plan_id?: string | null;
+    plan_name?: string | null;
+    week?: number;
+    duration_weeks?: number | null;
+  }
+  | {
+    resolvable: true;
+    reason: null;
+    assignment_id: string | null;
+    plan_id: string | null;
+    plan_name: string | null;
+    week: number;
+    duration_weeks: number | null;
+    day_of_week: number;
+    day: string;
+    /**
+     * 'override' means a trainer wrote this week by hand and its numbers are
+     * an instruction; 'derived' means they are week 1 plus the progression
+     * rule, which is a suggestion.
+     */
+    source: 'override' | 'derived';
+    anchor_week: number;
+    /** True when this week's prescribed days are all done and this opens the next. */
+    starts_next_week: boolean;
+    planned_days: string[];
+    completed_days_this_week: string[];
+    week_starts_on: string | null;
+    exercises: Array<{
+      exercise_id: string | null;
+      name: string | null;
+      sort_order: number | null;
+      sets: number | null;
+      reps: string | number | null;
+      target_weight: number | null;
+      rpe: number | null;
+      rest_seconds: number | null;
+      tempo: string | null;
+      progression_steps: number;
+    }>;
+  };
+
+/**
+ * What the logged sets say to do with each lift in the next session.
+ *
+ * Decided by rule from sets against the prescription that produced them,
+ * before the model is asked anything — so a trainer can check every verdict
+ * against the arithmetic in `because`.
+ *
+ * `insufficient_evidence` is the default and the most common answer on this
+ * studio's data. It is a verdict, not a gap to be filled with the most
+ * plausible of the other three.
+ */
+export type AiAdaptationDecision = {
+  exercise: string | null;
+  decision: 'progress' | 'hold' | 'regress' | 'insufficient_evidence';
+  because: string;
+  prescribed: { sets: number | null; reps: string | number | null; target_weight: number | null };
+  sessions_logged: number;
+  last_performed_on: string | null;
+};
+
+export type AiAdaptation = {
+  decisions: AiAdaptationDecision[];
+  counts: {
+    progress: number; hold: number; regress: number;
+    insufficient_evidence: number; total: number;
+  };
+  /** True when not one prescribed exercise has logged evidence behind it. */
+  evidence_free: boolean;
 };
 
 /**
@@ -3371,6 +3509,15 @@ export type AiWorkoutContext = {
    * never had one.
    */
   current_program: AiProgramState;
+  /** Null unless more than one assignment claims to be active. */
+  assignment_ambiguity?: AiAssignmentAmbiguity | null;
+  /**
+   * Optional for the same reason `conflicting` is: the backend and the browser
+   * deploy separately, so a new bundle can ask a server that predates these
+   * fields. Absent must render as "we were not told", never as "there is none".
+   */
+  next_session?: AiNextSession;
+  adaptation?: AiAdaptation;
   training_history: { has_history: boolean; window_weeks: number } | null;
 };
 
@@ -3391,6 +3538,14 @@ export type AiWorkoutGenerationResult = {
   /** Whether this was a new block or the next weeks of one already running. */
   mode?: 'new' | 'adapt';
   program?: AiProgramState;
+  /**
+   * What an adaptation was written to continue, and the rule-decided verdicts
+   * it was told to write. Null on a new programme, where there is nothing to
+   * continue from.
+   */
+  next_session?: AiNextSession | null;
+  adaptation?: AiAdaptation | null;
+  assignment_ambiguity?: AiAssignmentAmbiguity | null;
   audit?: AiGenerationAudit;
   quality?: { score: number; max: number; components: Record<string, number>; basis: string };
   critique?: Array<{ severity: string; point: string; because: string }>;

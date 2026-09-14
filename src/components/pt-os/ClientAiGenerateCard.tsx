@@ -378,6 +378,28 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
                 </button>
               ))}
             </div>
+            {/* ── What "Progress it" would actually continue from ──────────
+                The two buttons above are a choice between abstractions until
+                the trainer can see the session one of them picks up. The
+                verdicts beneath are decided by rule from logged sets before a
+                token is spent, so they are something to disagree with rather
+                than something to discover inside a finished plan. */}
+            {mode === 'adapt' && context?.next_session?.resolvable && (
+              <p className="mt-1.5 text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                Continues from week {context.next_session.week}
+                {context.next_session.duration_weeks ? ` of ${context.next_session.duration_weeks}` : ''},
+                {' '}{context.next_session.day}
+                {context.adaptation && context.adaptation.counts.total > 0 && (
+                  context.adaptation.evidence_free
+                    ? ' — no logged evidence for any of its lifts, so nothing in it will be described as progressing'
+                    : ` — ${context.adaptation.counts.progress} lift${context.adaptation.counts.progress === 1 ? '' : 's'} earned an increase, `
+                      + `${context.adaptation.counts.hold} held`
+                      + (context.adaptation.counts.regress ? `, ${context.adaptation.counts.regress} reduced` : '')
+                      + (context.adaptation.counts.insufficient_evidence
+                        ? `, ${context.adaptation.counts.insufficient_evidence} with no evidence either way` : '')
+                )}.
+              </p>
+            )}
           </div>
         )}
 

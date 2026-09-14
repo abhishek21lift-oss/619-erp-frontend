@@ -826,6 +826,80 @@ describe('a client already on a programme', () => {
     expect(mockGenerateWorkout.mock.calls[0][0].mode).toBeUndefined();
   });
 
+  // ── The choice stops being between two abstractions ──────────────────
+  //
+  // "Progress it" and "Start a new one" are equally opaque until the trainer
+  // can see the session the first one picks up and what the logged sets say
+  // to do with it. Both are decided by rule before a token is spent, which is
+  // what makes them something to disagree with rather than something to
+  // discover inside a finished plan.
+  it('says which session an adaptation would continue from', async () => {
+    await render1({
+      ...LIVE,
+      next_session: {
+        resolvable: true, reason: null, assignment_id: 'a1', plan_id: 'p1',
+        plan_name: 'Base Phase', week: 4, duration_weeks: 12, day_of_week: 3,
+        day: 'Wednesday', source: 'derived', anchor_week: 1, starts_next_week: false,
+        planned_days: ['Monday', 'Wednesday'], completed_days_this_week: ['Monday'],
+        week_starts_on: '2026-08-24', exercises: [],
+      },
+      adaptation: {
+        decisions: [],
+        counts: { progress: 2, hold: 1, regress: 0, insufficient_evidence: 1, total: 4 },
+        evidence_free: false,
+      },
+    });
+    const line = screen.getByText(/Continues from week 4 of 12/);
+    expect(line.textContent).toContain('Wednesday');
+    expect(line.textContent).toContain('2 lifts earned an increase');
+    expect(line.textContent).toContain('1 held');
+    expect(line.textContent).toContain('1 with no evidence either way');
+  });
+
+  it('says plainly when an adaptation has nothing to go on', async () => {
+    await render1({
+      ...LIVE,
+      next_session: {
+        resolvable: true, reason: null, assignment_id: 'a1', plan_id: 'p1',
+        plan_name: 'Base Phase', week: 4, duration_weeks: 12, day_of_week: 1,
+        day: 'Monday', source: 'derived', anchor_week: 1, starts_next_week: false,
+        planned_days: ['Monday'], completed_days_this_week: [],
+        week_starts_on: '2026-08-24', exercises: [],
+      },
+      adaptation: {
+        decisions: [],
+        counts: { progress: 0, hold: 0, regress: 0, insufficient_evidence: 3, total: 3 },
+        evidence_free: true,
+      },
+    });
+    expect(screen.getByText(/no logged evidence for any of its lifts/)).toBeInTheDocument();
+    expect(screen.queryByText(/earned an increase/)).toBeNull();
+  });
+
+  it('says nothing of the kind once the trainer picks a new block', async () => {
+    await render1({
+      ...LIVE,
+      next_session: {
+        resolvable: true, reason: null, assignment_id: 'a1', plan_id: 'p1',
+        plan_name: 'Base Phase', week: 4, duration_weeks: 12, day_of_week: 1,
+        day: 'Monday', source: 'derived', anchor_week: 1, starts_next_week: false,
+        planned_days: ['Monday'], completed_days_this_week: [],
+        week_starts_on: '2026-08-24', exercises: [],
+      },
+    });
+    expect(screen.getByText(/Continues from week 4/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Start a new one'));
+    expect(screen.queryByText(/Continues from week 4/)).toBeNull();
+  });
+
+  // Backend and browser deploy separately. A card that assumed the field would
+  // throw mid-render and take the chooser down with it.
+  it('still offers the choice when the server sent no next session', async () => {
+    await render1();
+    expect(screen.getByText('Progress it')).toBeInTheDocument();
+    expect(screen.queryByText(/Continues from week/)).toBeNull();
+  });
+
   it('asks nothing of a client on no programme, and sends no mode', async () => {
     mockGenerateWorkout.mockResolvedValue({ data: WORKOUT_PLAN });
     await render1({ ...LIVE, current_program: { active: false } });
