@@ -184,7 +184,19 @@ describe('the touch targets', () => {
 });
 
 describe('generating a workout', () => {
-  it('sends the client profile fields to the existing endpoint', async () => {
+  // ── The request carries an id, and no claims about the person ───────────
+  //
+  // This test used to assert the opposite, field by field: age 31, gender
+  // male, weight 82, experience "beginner", four training days. Three of
+  // those five were invented by this component — a client with no experience
+  // level on file got "beginner", one with no frequency got four days, one
+  // with no height got 175cm — and the prompt printed them under the heading
+  // CLIENT AUTHORITATIVE DATA.
+  //
+  // The server resolves all of it from the client's own record now, so the
+  // assertion is inverted: these keys must be ABSENT. A regression here is a
+  // component that has started making claims about a person again.
+  it('sends the client id and asserts nothing about the client', async () => {
     const { promise, resolve } = deferred<{ data: unknown }>();
     mockGenerateWorkout.mockReturnValue(promise);
 
@@ -193,25 +205,27 @@ describe('generating a workout', () => {
 
     await waitFor(() => expect(mockGenerateWorkout).toHaveBeenCalledTimes(1));
     const params = mockGenerateWorkout.mock.calls[0][0];
-    expect(params.age).toBe(31); // 1995-04-10, in Aug 2026
-    expect(params.gender).toBe('male');
-    expect(params.weight_kg).toBe(82);
-    expect(params.goal).toBe('muscle_gain');
-    expect(params.experience_level).toBe('beginner');
-    expect(params.training_days).toBe(4);
     expect(params.client_id).toBe('cl-1');
+    expect(Object.keys(params)).toEqual(['client_id']);
+    for (const invented of ['age', 'gender', 'weight_kg', 'height_cm', 'goal', 'experience_level', 'training_days']) {
+      expect(params[invented]).toBeUndefined();
+    }
     expect(mockGenerateDiet).not.toHaveBeenCalled();
 
     resolve({ data: WORKOUT_PLAN });
     await screen.findByText('8-Week Hypertrophy Foundation');
   });
 
-  it('defaults the goal when the client has none, and custom does not leak through', async () => {
+  // The goal a client has no record of is the server's to report as missing,
+  // and it refuses rather than programming for "general_fitness". What this
+  // component must not do is substitute one on the way out — including for
+  // 'custom', which was the case the old default existed to paper over.
+  it('never substitutes a goal, not even for a custom one', async () => {
     mockGenerateWorkout.mockResolvedValue({ data: WORKOUT_PLAN });
     renderCard({ goalType: 'custom' });
     fireEvent.click(screen.getByText('Generate AI Workout'));
     await waitFor(() => expect(mockGenerateWorkout).toHaveBeenCalled());
-    expect(mockGenerateWorkout.mock.calls[0][0].goal).toBe('general_fitness');
+    expect(mockGenerateWorkout.mock.calls[0][0].goal).toBeUndefined();
   });
 
   it('shows "Generating AI Workout..." and disables both buttons while streaming', async () => {
@@ -352,11 +366,19 @@ describe('generating a diet', () => {
 
     await screen.findByText('High-Protein Fat Loss Plan');
     const params = mockGenerateDiet.mock.calls[0][0];
-    expect(params.age).toBe(31);
-    expect(params.gender).toBe('male');
-    expect(params.weight_kg).toBe(82);
-    expect(params.goal).toBe('fat_loss');
-    expect(params.activity_level).toBe('moderate');
+    // Same contract as the workout request: an id, and nothing asserted about
+    // the person. The diet generator does need body metrics — they set the
+    // calorie target — so where the record lacks them it answers with the
+    // field list, which is what the trainer now sees instead of a plan built
+    // on 175cm and 75kg.
+    expect(Object.keys(params)).toEqual(['client_id']);
+    expect(params.age).toBeUndefined();
+    expect(params.gender).toBeUndefined();
+    expect(params.weight_kg).toBeUndefined();
+    expect(params.goal).toBeUndefined();
+    // 'moderate' was this card's guess at how active a client is. It is a
+    // clinical input to a calorie target and nobody had asked.
+    expect(params.activity_level).toBeUndefined();
     expect(params.client_id).toBe('cl-1');
     expect(mockGenerateWorkout).not.toHaveBeenCalled();
   });

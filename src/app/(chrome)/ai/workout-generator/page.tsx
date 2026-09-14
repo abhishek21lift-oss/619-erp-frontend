@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Dumbbell, Loader2, ChevronDown, ChevronUp, Sparkles, RotateCcw, Flame, Clock, Target } from 'lucide-react';
 import { m, type Variants } from 'framer-motion';
 import { api } from '@/lib/api';
@@ -160,6 +161,18 @@ function NoteCard({ title, text, index }: { title: string; text: string; index: 
 
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 export default function WorkoutGeneratorPage() {
+  // ── This page needs a client, and used to pretend otherwise ──────────────
+  //
+  // /api/ai/workout/generate requires a client_id: the server resolves the
+  // client's real facts from their record rather than trusting a form. This
+  // page never sent one, so every generation from it answered 400 "client_id
+  // is required" — while the nav, the landing page, the AI Coach shortcuts and
+  // the client profile all linked to it. The profile link already carries
+  // ?client_id=, which is the one caller that would have worked.
+  //
+  // So: the id comes from the query string, and without it the form says to
+  // pick a client instead of posting a request that cannot succeed.
+  const clientId = useSearchParams().get('client_id');
   const [form, setForm] = useState({
     age: '', gender: 'male', weight_kg: '', height_cm: '',
     goal: 'general_fitness', experience_level: 'beginner',
@@ -180,15 +193,25 @@ export default function WorkoutGeneratorPage() {
   }, [loading]);
 
   const handleGenerate = async () => {
-    if (!form.age || !form.weight_kg || !form.height_cm) { setError('Age, weight and height are required.'); return; }
+    if (!clientId) {
+      setError('Open this generator from a client profile — a programme is written for a specific client.');
+      return;
+    }
     setError(''); setLoading(true); setPlan(null); setMeta(null);
     try {
+      // Everything below client_id is OPTIONAL and means one thing: the
+      // trainer is stating a value for a client whose record does not hold it.
+      // The server prefers its own record every time and marks what it took
+      // from here as stated, never as a fact about the client. Blank fields
+      // are omitted rather than sent as zero.
+      const num = (v: string) => (v.trim() === '' ? undefined : Number(v));
       const res = await api.ai.generateWorkout({
-        age: parseInt(form.age), gender: form.gender,
-        weight_kg: parseFloat(form.weight_kg), height_cm: parseFloat(form.height_cm),
-        goal: form.goal, experience_level: form.experience_level,
-        injuries: form.injuries || undefined, equipment: form.equipment,
-        training_days: parseInt(form.training_days),
+        client_id: clientId,
+        age: num(form.age), gender: form.gender || undefined,
+        weight_kg: num(form.weight_kg), height_cm: num(form.height_cm),
+        goal: form.goal || undefined, experience_level: form.experience_level || undefined,
+        injuries: form.injuries || undefined, equipment: form.equipment || undefined,
+        training_days: num(form.training_days),
       });
       setPlan(res.data);
       setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback });

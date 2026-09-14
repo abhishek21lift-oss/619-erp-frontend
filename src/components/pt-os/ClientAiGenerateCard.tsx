@@ -3,11 +3,25 @@
 /**
  * One-tap AI workout / diet generation for the client already on screen.
  *
- * Sits directly above the Client Login card on the client profile. The
- * generators behind these buttons take manual profile fields — the backend
- * does not read the client's own record — so this card fills them from what
- * the profile carries and states its defaults in the preview, so a trainer
- * sees what the AI was asked with.
+ * Sits directly above the Client Login card on the client profile.
+ *
+ * It sends the CLIENT ID and nothing else. The backend resolves age, gender,
+ * weight, height, goal, experience and training days from that client's own
+ * record, names the column each came from, and reports the ones it cannot
+ * find — see modules/pt-os/client-facts.js.
+ *
+ * That is a correction. This card used to post height 175, weight 75, gender
+ * male, age 30, experience beginner and four training days for every client
+ * whose record did not hold them, with a comment saying it "fills those with
+ * the same defaults the AI coach uses elsewhere". The prompt then printed all
+ * six under the heading CLIENT AUTHORITATIVE DATA, so the model programmed for
+ * a person who did not exist and the trainer could not tell which numbers were
+ * measured and which were invented on the way out of the browser.
+ *
+ * GenerationContextPanel now shows what the server actually holds before the
+ * button is pressed, and a client missing a goal, an experience level or a
+ * training frequency is refused with those fields named rather than generated
+ * around.
  *
  * A generated WORKOUT can now be saved. Until this card grew its Save button
  * the generator could not write a plan anywhere: every consumer of a generated
@@ -33,15 +47,18 @@
  * than the server knew is not a gate.
  */
 
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   AlertTriangle, ArrowRight, Dumbbell, Loader2, RotateCcw, Salad, Sparkles,
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import type { AiDietPlan, AiWorkoutGenerationResult, AiWorkoutPlan } from '@/lib/api';
+import type {
+  AiDietPlan, AiWorkoutContext, AiWorkoutGenerationResult, AiWorkoutPlan,
+} from '@/lib/api';
 import GenerationEvidence from './GenerationEvidence';
+import GenerationContextPanel from './GenerationContextPanel';
 import { useToast } from '@/lib/toast';
 import { palette, rgba } from '@/lib/palette';
 
@@ -61,24 +78,16 @@ export interface ClientAiGenerateCardProps {
   goalType?: string | null;
 }
 
-/** Age from the profile's DOB; the generators need a number, not a date. */
-function computeAge(dob?: string | null): number {
-  if (!dob) return 30;
-  const d = new Date(dob);
-  if (Number.isNaN(d.getTime())) return 30;
-  const age = Math.floor((Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000));
-  return age > 0 && age < 120 ? age : 30;
-}
-
-/** The goal string the generators expect. 'custom' carries no meaning for them. */
-function goalFor(goalType?: string | null): string {
-  return goalType && goalType !== 'custom' ? goalType : 'general_fitness';
-}
+// computeAge() and goalFor() used to live here, returning 30 for a client with
+// no date of birth and 'general_fitness' for one with no goal. Both are now
+// the server's to answer, and its answer for a client it has no record for is
+// "NOT RECORDED" rather than a plausible substitute.
 
 export default function ClientAiGenerateCard({ client, goalType }: ClientAiGenerateCardProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [busy, setBusy] = useState<'workout' | 'diet' | null>(null);
+  const [context, setContext] = useState<AiWorkoutContext | null>(null);
   const [result, setResult] = useState<{
     kind: 'workout' | 'diet';
     plan: AiWorkoutPlan | AiDietPlan;
@@ -103,6 +112,24 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
   // tap from billing the studio for two generations.
   const busyRef = useRef(false);
 
+  /**
+   * What the server holds about this client, read before anything is
+   * generated.
+   *
+   * Best-effort and non-blocking: a summary that failed to load must not stop
+   * a trainer generating, so the panel simply does not render. What it must
+   * never do is render a guess — the state is null, not a filled-in default.
+   */
+  const loadContext = useCallback(async () => {
+    try {
+      setContext(await api.ai.workoutContext(client.id));
+    } catch {
+      setContext(null);
+    }
+  }, [client.id]);
+
+  useEffect(() => { void loadContext(); }, [loadContext]);
+
   const generate = async (kind: 'workout' | 'diet') => {
     if (busyRef.current) return;
     busyRef.current = true;
@@ -110,30 +137,31 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
     setResult(null);
     setError(null);
 
-    // The profile carries no height (or injury / dietary record) for the
-    // generators to read, so the request fills those with the same defaults
-    // the AI coach uses elsewhere. The preview says what was assumed.
-    const base = {
-      age: computeAge(client.dob),
-      gender: client.gender || 'male',
-      weight_kg: client.weight ?? 75,
-      height_cm: 175,
-      goal: goalFor(goalType),
-      client_id: client.id,
-    };
-
     try {
       if (kind === 'workout') {
-        const res = await api.ai.generateWorkout({ ...base, experience_level: 'beginner', training_days: 4 });
+        // The client id, and nothing else. Every fact the prompt states comes
+        // from that client's record on the server, which also names the column
+        // it read and reports what it could not find.
+        const res = await api.ai.generateWorkout({ client_id: client.id });
         setResult({ kind, plan: res.data, generationId: res.generation_id ?? null, evidence: res });
+        // The record may have been edited between page load and generation,
+        // and the response carries the resolution that actually happened.
+        void loadContext();
       } else {
-        const res = await api.ai.generateDiet({ ...base, activity_level: 'moderate' });
+        // The diet generator still needs body metrics it has no column for on
+        // a thin record — they drive the calorie target — so it answers with
+        // the field list rather than being handed invented ones. That message
+        // is now shown instead of being papered over with 175cm and 75kg.
+        const res = await api.ai.generateDiet({ client_id: client.id });
         setResult({ kind, plan: res.data });
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Generation failed. Please try again.';
       setError(msg);
       toast.error(msg);
+      // A refused generation is usually a record problem, and the panel is
+      // where the trainer reads which field to fill in.
+      void loadContext();
     } finally {
       busyRef.current = false;
       setBusy(null);
@@ -197,6 +225,11 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
   };
 
   const label = result?.kind === 'workout' ? 'AI workout' : 'AI diet';
+  // What the server says is missing and blocking. Empty when the context could
+  // not be loaded: an unavailable summary must not lock the button, because
+  // the server is still the thing that decides and it will say so.
+  const blockedFields = context?.data_quality.blocking ?? [];
+
   const canSave = result?.kind === 'workout' && Boolean(result.generationId);
 
   return (
@@ -247,11 +280,18 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
             so Tailwind's rem sizes render at 87.5% of their names — h-10 is
             35px here, a third under the touch target this app holds
             everything else to. Anything that has to be exactly 44 says 44. */}
+        {context && <GenerationContextPanel context={context} />}
+
         <div className="flex flex-col gap-2">
           <button
             type="button"
             onClick={() => void generate('workout')}
-            disabled={busy !== null}
+            // Disabled on the same condition the server refuses on, read from
+            // the server's own answer rather than re-derived here. The panel
+            // above names the fields; a button that looks live and then 422s
+            // teaches a trainer to distrust the screen.
+            disabled={busy !== null || blockedFields.length > 0}
+            title={blockedFields.length > 0 ? `Record ${blockedFields.join(', ')} first` : undefined}
             className="flex h-[44px] w-full items-center justify-center gap-1.5 rounded-[13px] px-3 text-[12.5px] font-[720] text-white transition-transform active:scale-[0.985] disabled:opacity-45"
             style={{
               background: `linear-gradient(135deg, ${BLUE}, ${palette.blue[600]})`,

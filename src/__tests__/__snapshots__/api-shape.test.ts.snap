@@ -115,6 +115,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "ai.trainer.reverseProposal → /api/ai/trainer/proposal/",
   "ai.updateConversation → /api/ai/conversations/",
   "ai.usage → /api/ai/usage",
+  "ai.workoutContext → /api/ai/workout/context/",
   "attendance.create → /api/attendance",
   "attendance.list → /api/attendance",
   "attendance.mark → /api/attendance",
