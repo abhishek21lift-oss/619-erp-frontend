@@ -3148,18 +3148,37 @@ export type AiKnowledgeDocument = {
   created_at: string;
 };
 
+/**
+ * A workout generation request.
+ *
+ * `client_id` is the only required field, and the only one that identifies
+ * anybody: the server resolves age, gender, weight, height, goal, experience
+ * and training days from that client's own record, names the column each came
+ * from, and reports the ones it could not find rather than filling them in.
+ *
+ * Every other field here is OPTIONAL and means one specific thing: the trainer
+ * is stating a value the studio does not hold, for this generation only. The
+ * server consults them solely where its own lookup found nothing, never
+ * overrides a recorded value with them, and marks whatever they supply as
+ * `stated` in the response and in the generation ledger.
+ *
+ * They are not defaults and must never be sent as such. This card used to post
+ * height 175, weight 75, gender male, experience beginner, age 30 and four
+ * training days for every client whose record was thin, and the prompt printed
+ * all six under the heading CLIENT AUTHORITATIVE DATA.
+ */
 export type AiWorkoutParams = {
-  age: number;
-  gender: string;
-  weight_kg: number;
-  height_cm: number;
-  goal: string;
-  experience_level: string;
+  client_id: string;
+  age?: number;
+  gender?: string;
+  weight_kg?: number;
+  height_cm?: number;
+  goal?: string;
+  experience_level?: string;
   injuries?: string;
   equipment?: string;
   training_days?: number;
   duration_weeks?: number;
-  client_id?: string;
 };
 
 export type AiWorkoutExercise = {
@@ -3225,6 +3244,75 @@ export type AiGenerationAudit = {
   revised: boolean;
 };
 
+/**
+ * One client fact, and where it came from.
+ *
+ * `origin` is the whole point of the type. The generator used to be handed
+ * height 175, weight 75, gender male, experience beginner and four training
+ * days by the browser whenever a client's record was thin, and printed them
+ * under a heading that read CLIENT AUTHORITATIVE DATA. Nothing downstream —
+ * the plan, the trainer, the ledger — could tell those apart from a
+ * measurement somebody had actually taken.
+ *
+ *   recorded  the studio's database holds it, and `source` names the column
+ *   stated    the trainer typed it for this one generation, knowing it is
+ *             not on file
+ *   missing   nobody holds it; the model was told NOT RECORDED and
+ *             instructed not to infer one
+ */
+export type AiClientFact = {
+  value: string | number | null;
+  /** The column it came from, e.g. 'pt_clients.sessions_per_week'. Null when missing or stated. */
+  source: string | null;
+  origin: 'recorded' | 'stated' | 'missing';
+};
+
+export type AiClientFactField =
+  | 'age' | 'gender' | 'weight_kg' | 'height_cm'
+  | 'goal' | 'experience_level' | 'training_days' | 'equipment';
+
+/**
+ * How much of this client the studio actually knows.
+ *
+ * `blocking` is the subset of `missing` without which a programme cannot be
+ * written at all — goal, experience level and training days. The generator
+ * answers 422 rather than inventing them.
+ */
+export type AiGenerationDataQuality = {
+  recorded: Array<{ field: AiClientFactField; source: string }>;
+  stated: Array<{ field: AiClientFactField }>;
+  missing: Array<{ field: AiClientFactField; blocking: boolean }>;
+  blocking: AiClientFactField[];
+  completeness_pct: number;
+};
+
+/**
+ * What the generator would be told, without generating anything.
+ *
+ * Read before the trainer presses the button, so the answer to "what is the AI
+ * using?" arrives before the plan rather than after it.
+ */
+export type AiWorkoutContext = {
+  client: { id: string; name: string };
+  facts: Record<AiClientFactField, AiClientFact>;
+  data_quality: AiGenerationDataQuality;
+  safety: {
+    gate: { status: string; [k: string]: unknown };
+    may_program: boolean;
+    screened: boolean;
+    sources_present: string[];
+    constraints: number;
+    not_assessed: string[];
+  } | null;
+  current_program: {
+    name: string | null;
+    status: string | null;
+    start_date: string | null;
+    end_date: string | null;
+  } | null;
+  training_history: { has_history: boolean; window_weeks: number } | null;
+};
+
 export type AiWorkoutGenerationResult = {
   data: AiWorkoutPlan;
   model: string;
@@ -3237,6 +3325,8 @@ export type AiWorkoutGenerationResult = {
    * never blocked on its own bookkeeping.
    */
   generation_id: string | null;
+  /** Which facts were recorded, which the trainer stated, and which nobody holds. */
+  data_quality?: AiGenerationDataQuality;
   audit?: AiGenerationAudit;
   quality?: { score: number; max: number; components: Record<string, number>; basis: string };
   critique?: Array<{ severity: string; point: string; because: string }>;
@@ -3281,18 +3371,31 @@ export type SavedFromGeneration = {
   other_active_assignments?: number;
 };
 
+/**
+ * A diet generation request.
+ *
+ * Same contract as AiWorkoutParams: `client_id` identifies the client and the
+ * server resolves the rest from their record. The optional fields are values a
+ * trainer is stating because the studio does not hold them — never defaults
+ * for the browser to invent.
+ *
+ * Unlike a workout, a diet genuinely cannot be written without body metrics:
+ * they set the calorie target. So where the workout generator programs around
+ * a missing height, this one answers with the field list and the trainer fills
+ * it in.
+ */
 export type AiDietParams = {
-  age: number;
-  gender: string;
-  weight_kg: number;
-  height_cm: number;
-  activity_level: string;
-  goal: string;
+  client_id: string;
+  age?: number;
+  gender?: string;
+  weight_kg?: number;
+  height_cm?: number;
+  activity_level?: string;
+  goal?: string;
   dietary_preferences?: string;
   allergies?: string;
   budget?: string;
   meal_frequency?: number;
-  client_id?: string;
 };
 
 export type AiDietFood = {

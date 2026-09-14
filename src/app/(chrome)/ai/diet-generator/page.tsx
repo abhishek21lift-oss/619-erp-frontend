@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Apple, Loader2, ChevronDown, ChevronUp, Sparkles, RotateCcw, Droplets, ShoppingCart, Pill, Utensils } from 'lucide-react';
 import { m, type Variants } from 'framer-motion';
 import { api } from '@/lib/api';
@@ -145,6 +146,10 @@ function MealCard({ meal, index }: { meal: AiDietMeal; index: number }) {
 
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 export default function DietGeneratorPage() {
+  // Same correction as the workout generator: /api/ai/diet/generate requires
+  // a client_id and this page never sent one, so every generation from it
+  // answered 400. The id comes from the query string.
+  const clientId = useSearchParams().get('client_id');
   const [form, setForm] = useState({
     age: '', gender: 'male', weight_kg: '', height_cm: '',
     activity_level: 'moderately_active', goal: 'maintenance',
@@ -165,13 +170,20 @@ export default function DietGeneratorPage() {
   }, [loading]);
 
   const handleGenerate = async () => {
-    if (!form.age || !form.weight_kg || !form.height_cm) { setError('Age, weight and height are required.'); return; }
+    if (!clientId) {
+      setError('Open this generator from a client profile — a plan is written for a specific client.');
+      return;
+    }
     setError(''); setLoading(true); setPlan(null); setMeta(null);
     try {
+      // Optional, and stated by the trainer rather than asserted about the
+      // client: the server prefers its own record wherever it holds one.
+      const num = (v: string) => (v.trim() === '' ? undefined : Number(v));
       const res = await api.ai.generateDiet({
-        age: parseInt(form.age), gender: form.gender,
-        weight_kg: parseFloat(form.weight_kg), height_cm: parseFloat(form.height_cm),
-        activity_level: form.activity_level, goal: form.goal,
+        client_id: clientId,
+        age: num(form.age), gender: form.gender || undefined,
+        weight_kg: num(form.weight_kg), height_cm: num(form.height_cm),
+        activity_level: form.activity_level || undefined, goal: form.goal || undefined,
         dietary_preferences: form.dietary_preferences || undefined,
         allergies: form.allergies || undefined,
         budget: form.budget, meal_frequency: parseInt(form.meal_frequency),

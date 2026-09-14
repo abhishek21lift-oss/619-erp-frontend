@@ -11,7 +11,7 @@ import type {
   AiBusinessInsights, AiConversation, AiDietParams, AiDietPlan,
   AiFitnessTestAnalysis, AiHealthResponse, AiKnowledgeDocument, AiMessage, AiModelStat,
   AiProgressAnalysis, AiProviderSettings, AiUsageStats, AiWorkoutParams, AiWorkoutPlan,
-  AiWorkoutGenerationResult,
+  AiWorkoutGenerationResult, AiWorkoutContext,
   AiMemoryCandidate, AiProgrammerProposal, PendingWorkQueue, ClientIntelligenceSummary,
   AiIntelligenceAudit,
   DuesItem, DuesSummary, ProfileDevice, ProfileSession, SearchResponse, TrainerSummaryRow,
@@ -183,6 +183,16 @@ export const ai = {
       method: 'POST',
       body: JSON.stringify(body || {}),
     }),
+
+  /**
+   * What the generator would be told about this client, without generating.
+   *
+   * Cheap — no retrieval, no model — so the trainer sees which facts are on
+   * file, which are missing, and whether the safety gate is open BEFORE they
+   * spend a generation finding out.
+   */
+  workoutContext: (clientId: string) =>
+    http<AiWorkoutContext>(`/api/ai/workout/context/${encodeURIComponent(clientId)}`),
 
   generateWorkout: (params: AiWorkoutParams) =>
     // The result carries more than the plan: the safety screen that shaped it,
