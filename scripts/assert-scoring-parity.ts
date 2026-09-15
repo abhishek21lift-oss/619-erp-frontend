@@ -43,9 +43,17 @@ import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import * as FE_FITNESS from '../src/lib/fitness-calculations';
 import * as FE_LIFESTYLE from '../src/lib/lifestyle-calculations';
+import * as FE_GOAL from '../src/lib/goal-calculations';
+import * as FE_MOBILITY from '../src/lib/mobility-calculations';
+import * as FE_NUTRITION from '../src/lib/nutrition-calculations';
+import * as FE_POSTURE from '../src/lib/posture-calculations';
 
 const BACKEND_MODULE = 'src/modules/progress/fitness-scoring.js';
 const LIFESTYLE_BACKEND_MODULE = 'src/modules/progress/lifestyle-scoring.js';
+const GOAL_BACKEND_MODULE = 'src/modules/progress/goal-scoring.js';
+const MOBILITY_BACKEND_MODULE = 'src/modules/progress/mobility-scoring.js';
+const NUTRITION_BACKEND_MODULE = 'src/modules/progress/nutrition-scoring.js';
+const POSTURE_BACKEND_MODULE = 'src/modules/progress/posture-scoring.js';
 
 /** Where the backend checkout might be, in the order worth trying. */
 function findBackend(moduleRelPath: string = BACKEND_MODULE): string | null {
@@ -233,6 +241,236 @@ function buildLifestyleCases(): Array<{ fn: string; args: unknown[] }> {
   return cases;
 }
 
+
+// ── Goal / Mobility / Nutrition / Posture ───────────────────────────────────
+//
+// The remaining four hand-maintained pairs. Added after lifestyle, which was
+// added after fitness — and lifestyle did not start green, so these are not
+// assumed correct either.
+//
+// Each grid walks its thresholds in steps small enough that a moved edge
+// cannot hide between two samples, and includes null, an out-of-range value
+// and a nonsense enum member for every categorical input. An unrecognised
+// enum is exactly what produced the NaN that made the lifestyle wizard show
+// "High Risk" for a healthy client: the type says it cannot happen, and the
+// wizard's unvalidated `row.x as T` cast says otherwise.
+
+const BOOLS3 = [null, true, false];
+const SCALE10 = [null, 0, 1, 3, 5, 7, 8, 10, 11, -1];
+const CRAVING_FREQ = [null, 'rare', 'sometimes', 'daily', 'nonsense'];
+const MEAL_REGULARITY = [null, 'daily', 'sometimes', 'never', 'nonsense'];
+const PROTEIN_ASSESS = [null, 'Very Low', 'Low', 'Adequate', 'High', 'nonsense'];
+const N_ALCOHOL = [null, 'never', 'occasionally', 'weekly', 'frequently', 'nonsense'];
+const N_SMOKING = [null, 'never', 'former', 'occasionally', 'daily', 'nonsense'];
+const STR_LISTS = [null, [], ['nonsense'], ['chips', 'soda'], ['chicken', 'eggs', 'paneer']];
+
+function buildGoalCases(): Array<{ fn: string; args: unknown[] }> {
+  const cases: Array<{ fn: string; args: unknown[] }> = [];
+  const add = (fn: string, args: unknown[]) => cases.push({ fn, args });
+
+  const READINESS_KEYS = [
+    'can_train_4_6_days', 'meal_prep_possible', 'sleep_7_8_hours',
+    'drink_enough_water', 'family_support', 'medical_restrictions',
+  ];
+  add('calcLifestyleReadinessScore', [null]);
+  add('calcLifestyleReadinessScore', [{}]);
+  for (const key of READINESS_KEYS) {
+    for (const v of [true, false, null, 'yes' as unknown]) {
+      add('calcLifestyleReadinessScore', [{ [key]: v }]);
+      // medical_restrictions inverts, so every key is also walked with a
+      // second field set — a sign flip on one key alone would otherwise hide.
+      add('calcLifestyleReadinessScore', [{ [key]: v, sleep_7_8_hours: true }]);
+    }
+  }
+
+  for (let w = 0; w <= 160; w += 0.5) {
+    add('goalDirection', [w, 80]);
+    add('goalDirection', [80, w]);
+    add('calcSafeWeeklyRate', [w, 'loss']);
+    add('calcSafeWeeklyRate', [w, 'gain']);
+    add('calcSafeWeeklyRate', [w, 'maintain']);
+    add('calcSafeWeeklyRate', [w, null]);
+    add('calcSafeWeeklyRate', [w, 'nonsense']);
+  }
+  add('goalDirection', [null, null]);
+
+  for (const d of [null, 0, 1, 7, 30, 90, 365, -5]) {
+    for (const w of [null, 60, 80, 100]) {
+      add('calcRequiredWeeklyRate', [w, 75, d]);
+      add('calcRequiredWeeklyRate', [100, w, d]);
+    }
+  }
+
+  for (let r = 0; r <= 4; r += 0.05) {
+    for (const ls of [null, 0, 39, 40, 79, 80, 100]) {
+      add('classifyGoalDifficulty', [r, 1, ls, 5, 5]);
+    }
+  }
+  for (const mot of SCALE10) for (const com of SCALE10) {
+    add('classifyGoalDifficulty', [1, 1, 50, mot, com]);
+  }
+  add('classifyGoalDifficulty', [1, 0, 50, 5, 5]);
+  add('classifyGoalDifficulty', [null, 1, 50, 5, 5]);
+
+  for (let rate = 0; rate <= 2; rate += 0.05) {
+    add('calcEstimatedDurationWeeks', [100, 80, rate]);
+    add('calcEstimatedDurationWeeks', [80, 100, rate]);
+  }
+  for (let wk = 0; wk <= 120; wk += 1) add('recommendPtDurationMonths', [wk]);
+  add('recommendPtDurationMonths', [null]);
+
+  const riskBase = {
+    requiredRate: 1, safeRate: 1, lifestyleReadinessScore: 50,
+    medicalRestrictions: false, daysRemaining: 90, motivationLevel: 5, commitmentLevel: 5,
+  };
+  for (const f of Object.keys(riskBase)) {
+    for (const v of [null, 0, 1, 3, 8, 100, true, false]) {
+      add('buildRiskFactors', [{ ...riskBase, [f]: v }]);
+    }
+  }
+
+  // Probed deliberately although the backend has no counterpart for any of
+  // them, so the run REPORTS them as one-sided instead of just not asking.
+  // Checked at the time of writing: the backend's only `completion_pct` is
+  // workout-log's sets-completed-vs-planned (a different quantity entirely),
+  // `days_remaining` is SQL date arithmetic in the renewal worker, and
+  // `achievement_status` does not exist server-side at all. So these three are
+  // frontend display helpers with nothing persisted to diverge from — which is
+  // a fact worth having stated in the output rather than inferred from silence.
+  for (const pct of [null, 0, 50, 100, 150, -10]) {
+    for (const left of [null, 0, 5, 30]) {
+      for (const total of [null, 0, 30, 90]) add('calcAchievementStatus', [pct, left, total]);
+    }
+  }
+  for (const start of [null, 80, 100]) for (const target of [null, 75, 80]) {
+    for (const latest of [null, 76, 80, 100]) add('calcCompletionPct', [start, target, latest]);
+  }
+  for (const d of [null, '', 'not-a-date', '2026-01-01', '2030-12-31']) add('daysRemaining', [d]);
+
+  return cases;
+}
+
+function buildMobilityCases(): Array<{ fn: string; args: unknown[] }> {
+  const cases: Array<{ fn: string; args: unknown[] }> = [];
+  const add = (fn: string, args: unknown[]) => cases.push({ fn, args });
+
+  for (let v = 0; v <= 100; v += 0.5) add('classifyMobility', [v]);
+  add('classifyMobility', [null]);
+  add('classifyMobility', [-1]);
+  add('classifyMobility', [101]);
+
+  const region = (score: unknown) => ({ region: 'shoulder', score });
+  const test = (score: unknown) => ({ test: 'overhead_squat', score });
+  for (const v of [null, 0, 1, 2, 3, 4, 5, 6, -1, 'x' as unknown]) {
+    add('calcMobilityScore', [[region(v)], null]);
+    add('calcMobilityScore', [null, [test(v)]]);
+    add('calcMobilityScore', [[region(v)], [test(v)]]);
+    add('calcMobilityScore', [[region(3), region(v)], [test(3)]]);
+  }
+  add('calcMobilityScore', [null, null]);
+  add('calcMobilityScore', [[], []]);
+  return cases;
+}
+
+function buildNutritionCases(): Array<{ fn: string; args: unknown[] }> {
+  const cases: Array<{ fn: string; args: unknown[] }> = [];
+  const add = (fn: string, args: unknown[]) => cases.push({ fn, args });
+
+  for (const avoid of STR_LISTS) for (const fav of STR_LISTS) {
+    for (const cf of CRAVING_FREQ) {
+      add('calcDietQualityScore', [avoid, fav, ['sugar'], cf, ['late_night_snacking'], 'daily', false]);
+    }
+  }
+  for (const beh of STR_LISTS) for (const br of MEAL_REGULARITY) for (const ln of BOOLS3) {
+    add('calcDietQualityScore', [null, null, null, null, beh, br, ln]);
+  }
+
+  for (const fav of STR_LISTS) for (const takes of BOOLS3) {
+    add('assessProtein', [fav, takes, [{ name: 'whey' }]]);
+    add('assessProtein', [fav, takes, null]);
+    add('assessProtein', [fav, takes, []]);
+  }
+
+  for (let w = 0; w <= 6; w += 0.25) {
+    add('calcDailyFluidIntake', [w, 2, 1, 0, 0]);
+    add('calcHydrationScore', [w, 0, 0]);
+    add('calcHydrationScore', [w, 3, 7]);
+  }
+  for (const v of [null, 0, 5, 20]) {
+    add('calcDailyFluidIntake', [2, v, v, v, v]);
+    add('calcHydrationScore', [2, v, v]);
+  }
+
+  const issue = (t: unknown, f: unknown) => ({ type: t, frequency: f });
+  for (const f of [null, 'daily', 'weekly', 'rare', 'nonsense']) {
+    add('calcDigestiveHealthScore', [[issue('bloating', f)]]);
+    add('calcDigestiveHealthScore', [[issue('nonsense', f)]]);
+  }
+  add('calcDigestiveHealthScore', [null]);
+  add('calcDigestiveHealthScore', [[]]);
+
+  for (const takes of BOOLS3) {
+    add('calcSupplementScore', [takes, null]);
+    add('calcSupplementScore', [takes, []]);
+    add('calcSupplementScore', [takes, [{ name: 'whey' }, { name: 'creatine' }]]);
+  }
+
+  const riskBase = {
+    proteinAssessment: 'Adequate', hydrationScore: 70, digestiveHealthScore: 70,
+    cravings: [], cravingFrequency: 'rare', medicalConditions: [], medicalNotes: null,
+    alcoholStatus: 'never', smokingStatus: 'never',
+  };
+  for (const pa of PROTEIN_ASSESS) add('calcNutritionRiskScore', [{ ...riskBase, proteinAssessment: pa }]);
+  for (const al of N_ALCOHOL) add('calcNutritionRiskScore', [{ ...riskBase, alcoholStatus: al }]);
+  for (const sm of N_SMOKING) add('calcNutritionRiskScore', [{ ...riskBase, smokingStatus: sm }]);
+  for (const cf of CRAVING_FREQ) add('calcNutritionRiskScore', [{ ...riskBase, cravingFrequency: cf }]);
+  for (let v = 0; v <= 100; v += 0.5) {
+    add('calcNutritionRiskScore', [{ ...riskBase, hydrationScore: v }]);
+    add('calcNutritionRiskScore', [{ ...riskBase, digestiveHealthScore: v }]);
+    add('buildNutritionRiskFactors', [{ ...riskBase, hydrationScore: v }]);
+    add('buildNutritionRiskFactors', [{ ...riskBase, digestiveHealthScore: v }]);
+  }
+  for (const pa of PROTEIN_ASSESS) add('buildNutritionRiskFactors', [{ ...riskBase, proteinAssessment: pa }]);
+  for (const al of N_ALCOHOL) add('buildNutritionRiskFactors', [{ ...riskBase, alcoholStatus: al }]);
+  for (const sm of N_SMOKING) add('buildNutritionRiskFactors', [{ ...riskBase, smokingStatus: sm }]);
+
+  const five = { diet_quality: 70, protein: 70, hydration: 70, digestive: 70, supplement: 70 };
+  for (const f of Object.keys(five)) {
+    for (const v of [null, 0, 25, 50, 85, 100]) {
+      for (const risk of [null, 0, 20, 50, 100]) {
+        add('calcNutritionScore', [{ ...five, [f]: v }, risk]);
+      }
+    }
+  }
+  add('calcNutritionScore', [{ diet_quality: null, protein: null, hydration: null, digestive: null, supplement: null }, null]);
+  for (let v = 0; v <= 100; v += 0.5) add('classifyNutritionReadiness', [v]);
+  add('classifyNutritionReadiness', [null]);
+  return cases;
+}
+
+function buildPostureCases(): Array<{ fn: string; args: unknown[] }> {
+  const cases: Array<{ fn: string; args: unknown[] }> = [];
+  const add = (fn: string, args: unknown[]) => cases.push({ fn, args });
+
+  for (let v = 0; v <= 100; v += 0.5) add('classifyRisk', [v]);
+  add('classifyRisk', [null]);
+  add('classifyRisk', [-1]);
+  add('classifyRisk', [101]);
+
+  const LISTS = [
+    null, [], ['nonsense'],
+    ['forward_head'], ['rounded_shoulders'], ['anterior_pelvic_tilt'],
+    ['forward_head', 'rounded_shoulders'],
+    ['forward_head', 'rounded_shoulders', 'anterior_pelvic_tilt', 'knee_valgus'],
+  ];
+  for (const f of LISTS) for (const sd of LISTS) {
+    add('calcPostureRiskScore', [f, sd, null]);
+    add('calcPostureRiskScore', [f, null, sd]);
+    add('calcPostureRiskScore', [null, f, sd]);
+  }
+  return cases;
+}
+
 /** Compared as JSON so null and undefined cannot read as equal by accident. */
 const norm = (v: unknown) => JSON.stringify(v === undefined ? null : v);
 
@@ -308,6 +546,34 @@ function main() {
       backendModule: LIFESTYLE_BACKEND_MODULE,
       build: buildLifestyleCases,
       minCalls: 1000,
+    },
+    {
+      name: 'goal',
+      frontend: FE_GOAL as unknown as Record<string, unknown>,
+      backendModule: GOAL_BACKEND_MODULE,
+      build: buildGoalCases,
+      minCalls: 1000,
+    },
+    {
+      name: 'mobility',
+      frontend: FE_MOBILITY as unknown as Record<string, unknown>,
+      backendModule: MOBILITY_BACKEND_MODULE,
+      build: buildMobilityCases,
+      minCalls: 200,
+    },
+    {
+      name: 'nutrition',
+      frontend: FE_NUTRITION as unknown as Record<string, unknown>,
+      backendModule: NUTRITION_BACKEND_MODULE,
+      build: buildNutritionCases,
+      minCalls: 1000,
+    },
+    {
+      name: 'posture',
+      frontend: FE_POSTURE as unknown as Record<string, unknown>,
+      backendModule: POSTURE_BACKEND_MODULE,
+      build: buildPostureCases,
+      minCalls: 200,
     },
   ];
 

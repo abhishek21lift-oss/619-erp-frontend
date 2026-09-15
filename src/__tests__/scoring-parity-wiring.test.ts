@@ -21,9 +21,12 @@
 // where the score became NaN — which survives mean()'s `!= null` filter, so the
 // whole composite went NaN and the readiness band fell through to "High Risk"
 // for a healthy client. The wizard casts `row.daily_steps_bracket` out of the
-// API with no validation, so that was reachable with a legacy value. Four more
-// duplicated scoring libraries (goal, mobility, nutrition, posture) are still
-// unguarded — see the suites list in the script.
+// API with no validation, so that was reachable with a legacy value.
+//
+// goal, mobility, nutrition and posture followed, and all four WERE already in
+// parity — which is worth stating, because "we checked and it was fine" and "we
+// never checked" look identical from the outside and are not the same claim.
+// All six are covered now: 31,243 calls, zero mismatches.
 //
 // ── Why these tests, and not the comparison itself ────────────────────────
 //
@@ -77,7 +80,16 @@ describe('the parity check cannot pass without comparing anything', () => {
     // other's volume.
     expect(script).toMatch(/compared < suite\.minCalls/);
     expect(script).toMatch(/minCalls:\s*10000/);   // fitness
-    expect(script).toMatch(/minCalls:\s*1000/);    // lifestyle
+    expect(script).toMatch(/minCalls:\s*1000/);    // lifestyle, goal, nutrition
+    expect(script).toMatch(/minCalls:\s*200/);     // mobility, posture
+  });
+
+  it('covers all six duplicated scoring libraries', () => {
+    // The pairs are hand-maintained across two repos that cannot import each
+    // other, so a library that is not named here is one nothing compares.
+    for (const suite of ['fitness', 'lifestyle', 'goal', 'mobility', 'nutrition', 'posture']) {
+      expect(script).toContain(`name: '${suite}'`);
+    }
   });
 
   it('compares every suite, not just the first', () => {
@@ -104,18 +116,58 @@ describe('the parity check cannot pass without comparing anything', () => {
 
 describe('both copies still exist where the check expects them', () => {
   it('the frontend copies are where the script imports them from', () => {
-    expect(() => readFileSync(join(ROOT, 'src', 'lib', 'fitness-calculations.ts'), 'utf8')).not.toThrow();
-    expect(() => readFileSync(join(ROOT, 'src', 'lib', 'lifestyle-calculations.ts'), 'utf8')).not.toThrow();
+    for (const lib of ['fitness', 'lifestyle', 'goal', 'mobility', 'nutrition', 'posture']) {
+      expect(() => readFileSync(join(ROOT, 'src', 'lib', `${lib}-calculations.ts`), 'utf8')).not.toThrow();
+    }
   });
 
-  it('names both backend modules, so a moved file is reported precisely', () => {
-    expect(script).toContain('src/modules/progress/fitness-scoring.js');
-    expect(script).toContain('src/modules/progress/lifestyle-scoring.js');
+  it('names every backend module, so a moved file is reported precisely', () => {
+    for (const lib of ['fitness', 'lifestyle', 'goal', 'mobility', 'nutrition', 'posture']) {
+      expect(script).toContain(`src/modules/progress/${lib}-scoring.js`);
+    }
   });
 
   it('the script looks for the backend in the layouts that actually occur', () => {
     expect(script).toContain('../backend');           // the E2E job
     expect(script).toContain('../619-erp-backend');   // a side-by-side clone
     expect(script).toContain('BACKEND_PATH');         // explicit override
+  });
+});
+
+// ── The API contract check is wired the same way, and for the same reason ───
+//
+// It compares the frontend's calls against the backend's real route table, so
+// it needs both repos checked out — which happens only in the e2e job. The
+// failure it guards against is the one that already happened: twenty endpoints
+// shipped against routes that did not exist, behind a nav entry, with a test
+// that asserted `typeof api.ai.memory.list === 'function'` and passed.
+describe('the API contract check is wired into CI', () => {
+  const script = readFileSync(join(ROOT, 'scripts', 'api-contract-check.mjs'), 'utf8');
+
+  it('runs in the job that checks out both repos', () => {
+    const e2e = workflow.slice(workflow.indexOf('repository: abhishek21lift-oss/619-erp-backend'));
+    expect(e2e).toContain('api-contract-check.mjs');
+  });
+
+  it('fails rather than skips when the backend is missing', () => {
+    // The opposite of what it used to do. A check that exits 0 when it cannot
+    // compare anything reports green for exactly the configuration where drift
+    // goes unnoticed.
+    expect(script).toContain('A contract check that cannot compare anything must not report green.');
+    expect(script).toMatch(/process\.exit\(1\)/);
+  });
+
+  it('never sets the opt-out in CI', () => {
+    // CONTRACT_CHECK_OPTIONAL exists for a local clone that has only this
+    // repo. In CI both are present, so a skip would mean the check is broken
+    // rather than satisfied.
+    expect(workflow).not.toMatch(/CONTRACT_CHECK_OPTIONAL:\s*'?1/);
+  });
+
+  it('the run records which pair it proved', () => {
+    // A green tick that does not say which backend it was green against
+    // cannot be traced back to a combination afterwards.
+    expect(workflow).toContain('Record the exact pair under test');
+    expect(workflow).toMatch(/git -C backend\s+rev-parse HEAD/);
   });
 });

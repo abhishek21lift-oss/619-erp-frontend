@@ -54,6 +54,10 @@ function Inner() {
   const [rows, setRows] = React.useState<Payment[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [stats, setStats] = React.useState<PaymentStats | null>(null);
+  // "The fetch failed" and "nobody paid today" are different facts, and this
+  // page renders the answer at 56px. Without this they were the same state:
+  // the catch below set rows to [] and the hero read a confident ₹0.
+  const [loadError, setLoadError] = React.useState<string | null>(null);
 
   const refresh = React.useCallback(async () => {
     setLoading(true);
@@ -69,8 +73,14 @@ function Inner() {
       ]);
       setRows(Array.isArray(list) ? list : []);
       setStats(s);
-    } catch {
+      setLoadError(null);
+    } catch (err) {
+      // Deliberately NOT falling back to an empty day. A studio owner reading
+      // ₹0 acts on it — chases staff, checks the card machine — and the number
+      // was never a reading at all.
       setRows([]);
+      setStats(null);
+      setLoadError(err instanceof Error ? err.message : "Could not load today's payments");
     } finally {
       setLoading(false);
     }
@@ -102,6 +112,27 @@ function Inner() {
   return (
     <PullToRefresh onRefresh={refresh}>
     <div className="relative z-10 mt-1 space-y-6 max-w-[1600px] mx-auto pb-6">
+      {loadError && (
+        <div
+          role="alert"
+          className="rounded-2xl border px-4 py-3 text-[13px] font-semibold"
+          style={{
+            background: 'rgba(239,68,68,0.08)',
+            borderColor: 'rgba(239,68,68,0.25)',
+            color: '#dc2626',
+          }}
+        >
+          Today&rsquo;s payments could not be loaded, so the figures below are not a reading.
+          <span className="ml-2 font-normal opacity-80">{loadError}</span>
+          <button
+            type="button"
+            onClick={refresh}
+            className="ml-3 underline underline-offset-2 font-semibold"
+          >
+            Try again
+          </button>
+        </div>
+      )}
       {/* Hero revenue card */}
       <m.div
         initial={{ opacity: 0, y: 12 }}
