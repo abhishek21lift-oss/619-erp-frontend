@@ -19,6 +19,14 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import { GST_SLABS } from '@/lib/forms/domain';
+import {
+  platformBillingSchema, billingToFormValues, toBillingPayload,
+  BILLING_TEXT_FIELDS, BILLING_FIELD_HINTS,
+  type PlatformBillingState,
+} from '@/lib/forms/schemas/platformBilling';
+import { TextField, NumberField, CheckboxField, FormErrorBanner } from '@/components/ui/form';
 import type {
   SubscriptionInvoice, InvoiceTotals, InvoiceQuery, PlatformBillingSettings,
 } from '@/lib/api';
@@ -153,64 +161,118 @@ function Row({ inv }: { inv: SubscriptionInvoice }) {
 }
 
 /* ── Seller identity ─────────────────────────────────────────────────────── */
-const SETTING_FIELDS: { key: keyof PlatformBillingSettings; label: string; placeholder?: string; wide?: boolean }[] = [
-  { key: 'legal_name', label: 'Registered name', placeholder: 'MY PT STUDIO PRIVATE LIMITED', wide: true },
-  { key: 'gstin', label: 'GSTIN', placeholder: '27AAACM1234A1Z5' },
-  { key: 'pan', label: 'PAN', placeholder: 'AAACM1234A' },
-  { key: 'address_line1', label: 'Address line 1', wide: true },
-  { key: 'address_line2', label: 'Address line 2', wide: true },
-  { key: 'city', label: 'City' },
-  { key: 'state', label: 'State' },
-  { key: 'state_code', label: 'GST state code', placeholder: '27' },
-  { key: 'postal_code', label: 'PIN' },
-  { key: 'email', label: 'Billing email' },
-  { key: 'phone', label: 'Phone' },
-  { key: 'invoice_prefix', label: 'Invoice prefix', placeholder: 'MPT' },
-  { key: 'invoice_notes', label: 'Invoice footer note', wide: true },
-];
 
+/**
+ * The platform's seller identity, on the universal form platform.
+ *
+ * This panel writes the header of every subscription invoice the platform
+ * issues. What the migration fixed is in `schemas/platformBilling.ts`; the one
+ * worth naming here is that `Number(rate)` turned a cleared GST box into a real
+ * 0, and the server's guard (`n < 0 || n > 100`) lets 0 through because 0% is a
+ * legitimate rate. Every invoice issued afterwards carried ₹0 of tax.
+ *
+ * The card, grid, GST strip and action row are the panel's own and are
+ * unchanged. The thirteen text boxes now render through the design system, so
+ * each has a real label, `aria-describedby` and `aria-invalid` — none of which
+ * a bare `<input>` inside a `<label>` provided.
+ */
 function SettingsPanel({ onClose }: { onClose: () => void }) {
-  const [form, setForm] = useState<Partial<PlatformBillingSettings> | null>(null);
-  const [rate, setRate] = useState('18');
-  const [inclusive, setInclusive] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [initial, setInitial] = useState<PlatformBillingState | null>(null);
+  const [storedRate, setStoredRate] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState('');
   const [saved, setSaved] = useState(false);
-  const [error, setError] = useState('');
+  const [updatedBy, setUpdatedBy] = useState<string | null>(null);
 
   useEffect(() => {
+    let live = true;
     api.superAdmin.billingSettings()
       .then((r) => {
-        setForm(r.data);
-        setRate(String(Number(r.data.gst_percent ?? 18)));
-        setInclusive(r.data.prices_include_gst !== false);
+        if (!live) return;
+        setInitial(billingToFormValues(r.data as Record<string, unknown>));
+        // The rate as stored, so an off-slab legacy value stays saveable and
+        // never blocks an edit to one of the other thirteen fields.
+        const n = Number(r.data.gst_percent);
+        setStoredRate(Number.isFinite(n) ? n : null);
+        setUpdatedBy(r.data.updated_by ?? null);
       })
-      .catch((e: unknown) => setError(errorMessage(e, 'Could not load billing settings.')));
+      .catch((e: unknown) => { if (live) setLoadError(errorMessage(e, 'Could not load billing settings.')); });
+    return () => { live = false; };
   }, []);
 
-  const save = async () => {
-    if (!form) return;
-    setSaving(true); setError(''); setSaved(false);
-    try {
-      const patch: Partial<PlatformBillingSettings> = {};
-      for (const f of SETTING_FIELDS) patch[f.key] = form[f.key] as never;
-      patch.gst_percent = Number(rate);
-      patch.prices_include_gst = inclusive;
-      const r = await api.superAdmin.saveBillingSettings(patch);
-      setForm(r.data);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
-    } catch (e: unknown) {
-      setError(errorMessage(e, 'Could not save.'));
-    } finally {
-      setSaving(false);
-    }
-  };
+  if (loadError && !initial) {
+    return (
+      <div className="rounded-[16px] p-4" style={cardStyle}>
+        <p className="py-6 text-center text-[12.5px]" style={{ color: 'var(--danger-text)' }}>{loadError}</p>
+      </div>
+    );
+  }
 
-  const set = (k: keyof PlatformBillingSettings, v: string) =>
-    setForm((f) => (f ? { ...f, [k]: v } : f));
+  if (!initial) {
+    return (
+      <div className="rounded-[16px] p-4" style={cardStyle}>
+        <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" style={{ color: 'var(--brand)' }} /></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="rounded-[16px] p-4" style={cardStyle}>
+    // Mounted only once the settings have actually been read, so the form is
+    // built from the record rather than from an empty shape that is then
+    // patched — and it unmounts with the panel, so reopening rebuilds (§11).
+    <SettingsForm
+      initial={initial}
+      storedRate={storedRate}
+      updatedBy={updatedBy}
+      saved={saved}
+      onSaved={(next, by) => {
+        setUpdatedBy(by);
+        setStoredRate(next);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+      }}
+      onClose={onClose}
+    />
+  );
+}
+
+function SettingsForm({
+  initial, storedRate, updatedBy, saved, onSaved, onClose,
+}: {
+  initial: PlatformBillingState;
+  storedRate: number | null;
+  updatedBy: string | null;
+  saved: boolean;
+  onSaved: (rate: number, updatedBy: string | null) => void;
+  onClose: () => void;
+}) {
+  // Built once per mount: rebuilding it on every render would give TanStack a
+  // new schema object each time and re-run validation for nothing.
+  const schema = useMemo(() => platformBillingSchema(storedRate), [storedRate]);
+
+  const f = useAppForm({
+    schema,
+    defaultValues: initial,
+    fieldHints: BILLING_FIELD_HINTS,
+    // The panel stays open after saving and is usually edited again, so the
+    // saved values remain on screen rather than the form emptying itself.
+    keepValuesOnSuccess: true,
+    onSubmit: async (values) => {
+      const r = await api.superAdmin.saveBillingSettings(
+        toBillingPayload(values) as Partial<PlatformBillingSettings>,
+      );
+      onSaved(Number(r.data.gst_percent), r.data.updated_by ?? null);
+    },
+  });
+
+  const { form } = f;
+
+  return (
+    <form
+      noValidate
+      onSubmit={(e) => { e.preventDefault(); void f.submit(); }}
+      className="rounded-[16px] p-4"
+      style={cardStyle}
+    >
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <p className="text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>Seller identity</p>
@@ -218,84 +280,82 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
             Printed on every invoice issued from now on.
           </p>
         </div>
-        <button onClick={onClose} className="text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}>Close</button>
+        <button type="button" onClick={onClose} className="text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}>Close</button>
       </div>
 
-      {!form && !error && (
-        <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" style={{ color: 'var(--brand)' }} /></div>
-      )}
+      <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} className="mb-3" />
 
-      {form && (
-        <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {SETTING_FIELDS.map((f) => (
-              <label key={String(f.key)} className={`flex flex-col gap-1 ${f.wide ? 'sm:col-span-2 lg:col-span-3' : ''}`}>
-                <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>
-                  {f.label}
-                </span>
-                <input
-                  value={(form[f.key] as string) ?? ''}
-                  onChange={(e) => set(f.key, e.target.value)}
-                  placeholder={f.placeholder}
-                  className="h-10 rounded-[10px] px-2.5 text-[12.5px] outline-none"
-                  style={inputStyle}
-                />
-              </label>
-            ))}
-          </div>
-
-          <div className="mt-4 rounded-[12px] p-3" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-            <div className="flex flex-wrap items-end gap-4">
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>GST rate %</span>
-                <input
-                  type="number" min={0} max={100} step="0.01"
-                  value={rate} onChange={(e) => setRate(e.target.value)}
-                  className="h-10 w-24 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={inputStyle}
-                />
-              </label>
-              <label className="flex min-h-[40px] cursor-pointer items-center gap-2">
-                <input type="checkbox" checked={inclusive} onChange={(e) => setInclusive(e.target.checked)} className="h-4 w-4" />
-                <span className="text-[12.5px] font-[650]" style={{ color: 'var(--text-secondary)' }}>
-                  Plan prices already include GST
-                </span>
-              </label>
-            </div>
-            {/* The single most important thing an operator needs to know before
-                touching the rate, so it sits next to the input, not in a doc. */}
-            <p className="mt-2 flex items-start gap-1.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-              <Info size={12} className="mt-0.5 shrink-0" />
-              Changing these affects invoices issued from now on. Invoices already issued keep the
-              rate and split recorded on them.
-            </p>
-          </div>
-
-          {error && (
-            <p className="mt-3 text-[12px] font-[650]" style={{ color: 'var(--danger-text)' }}>{error}</p>
-          )}
-
-          <div className="mt-4 flex items-center gap-2">
-            <button
-              onClick={save} disabled={saving}
-              className="flex h-10 items-center gap-1.5 rounded-[11px] px-4 text-[12.5px] font-[700] text-white disabled:opacity-60"
-              style={{ background: 'var(--brand)' }}
-            >
-              {saving ? <Loader2 size={13} className="animate-spin" /> : saved ? <Check size={13} /> : null}
-              {saving ? 'Saving…' : saved ? 'Saved' : 'Save'}
-            </button>
-            {form.updated_by && (
-              <span className="text-[11px]" style={{ color: 'var(--text-disabled)' }}>
-                Last changed by {form.updated_by}
-              </span>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {BILLING_TEXT_FIELDS.map((spec) => (
+          <form.Field key={spec.key} name={spec.key}>
+            {(field) => (
+              <TextField
+                field={field}
+                label={spec.label}
+                required={spec.key === 'legal_name'}
+                placeholder={spec.placeholder}
+                description={spec.description}
+                type={spec.key === 'email' ? 'email' : spec.key === 'phone' ? 'tel' : 'text'}
+                autoComplete="off"
+                serverError={f.errors.fieldErrors[spec.key]}
+                className={spec.wide ? 'sm:col-span-2 lg:col-span-3' : undefined}
+              />
             )}
-          </div>
-        </>
-      )}
+          </form.Field>
+        ))}
+      </div>
 
-      {error && !form && (
-        <p className="py-6 text-center text-[12.5px]" style={{ color: 'var(--danger-text)' }}>{error}</p>
-      )}
-    </div>
+      <div className="mt-4 rounded-[12px] p-3" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+        <div className="flex flex-wrap items-start gap-4">
+          <form.Field name="gst_percent">
+            {(field) => (
+              <NumberField
+                field={field}
+                label="GST rate"
+                required
+                mode="percent"
+                suffix="%"
+                description={`One of ${GST_SLABS.join('%, ')}%`}
+                serverError={f.errors.fieldErrors.gst_percent}
+                className="w-32"
+              />
+            )}
+          </form.Field>
+          <form.Field name="prices_include_gst">
+            {(field) => (
+              <CheckboxField
+                field={field}
+                label="Plan prices already include GST"
+                className="pt-6"
+              />
+            )}
+          </form.Field>
+        </div>
+        {/* The single most important thing an operator needs to know before
+            touching the rate, so it sits next to the input, not in a doc. */}
+        <p className="mt-2 flex items-start gap-1.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+          <Info size={12} className="mt-0.5 shrink-0" />
+          Changing these affects invoices issued from now on. Invoices already issued keep the
+          rate and split recorded on them.
+        </p>
+      </div>
+
+      <div className="mt-4 flex items-center gap-2">
+        <button
+          type="submit" disabled={f.isSubmitting}
+          className="flex h-10 items-center gap-1.5 rounded-[11px] px-4 text-[12.5px] font-[700] text-white disabled:opacity-60"
+          style={{ background: 'var(--brand)' }}
+        >
+          {f.isSubmitting ? <Loader2 size={13} className="animate-spin" /> : saved ? <Check size={13} /> : null}
+          {f.isSubmitting ? 'Saving…' : saved ? 'Saved' : 'Save'}
+        </button>
+        {updatedBy && (
+          <span className="text-[11px]" style={{ color: 'var(--text-disabled)' }}>
+            Last changed by {updatedBy}
+          </span>
+        )}
+      </div>
+    </form>
   );
 }
 

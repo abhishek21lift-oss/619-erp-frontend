@@ -108,7 +108,7 @@ const KNOWN = [
   'app/(platform)/platform/_shared/CommandBar.tsx:84',
   'app/(platform)/platform/_shared/CommandBar.tsx:85',
   'app/(platform)/platform/_tabs/ActivityTab.tsx:46',
-  'app/(platform)/platform/_tabs/CouponsTab.tsx:52',
+  'app/(platform)/platform/_tabs/CouponsTab.tsx:64',
   'app/(platform)/platform/_tabs/FinanceTab.tsx:339',
   'app/(platform)/platform/_tabs/FinanceTab.tsx:97',
   'app/(platform)/platform/_tabs/StudiosTab.tsx:373',

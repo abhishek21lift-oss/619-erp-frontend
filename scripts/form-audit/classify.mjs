@@ -49,6 +49,7 @@ export const NATIVE_BY_KIND = new Set(['search', 'file', 'range', 'color', 'hidd
 export const BUSINESS_KINDS = new Set([
   'text', 'number', 'email', 'tel', 'url', 'password', 'date', 'month',
   'time', 'datetime-local', 'select', 'textarea', 'checkbox', 'radio',
+  'dynamic',
 ]);
 
 /**
@@ -65,14 +66,85 @@ export function controlKind(tag, attrs) {
   const explicit = /type="([a-z-]+)"/.exec(attrs);
   if (explicit) return explicit[1];
 
-  // A dynamic type is a show/hide password toggle everywhere it appears here.
-  if (/type=\{/.test(attrs)) return 'password';
+  // A dynamic type — `type={show ? 'text' : 'password'}` on a reveal toggle,
+  // or `type={type}` where a field spec is being mapped over. Reported as
+  // exactly what it is rather than guessed at: it was 'password' at first,
+  // which was right for the toggles and wrong for the Create Invoice modal,
+  // where the same expression produces text, number and date. `dynamic` is a
+  // business kind, so nothing hides behind the honest answer.
+  if (/type=\{/.test(attrs)) return 'dynamic';
 
-  // A box whose placeholder says Search is a search control whatever its type;
-  // 18 of the tree's inputs are exactly this.
+  // A box whose placeholder or accessible name says Search is a search control
+  // whatever its type; 18 of the tree's inputs are exactly this.
+  //
+  // `aria-label` is checked as well as `placeholder`, and the omission was a
+  // real misclassification rather than a missed nicety: the Billing Centre's
+  // filter box reads `aria-label="Search invoices"` with a placeholder of
+  // "Invoice no., studio, reference…", so the placeholder rule alone scored the
+  // one box on that screen that is PROPERLY labelled as an unjustified business
+  // control — punishing the accessible spelling.
   if (/placeholder="\s*Search|placeholder=\{[^}]*[Ss]earch/.test(attrs)) return 'search';
+  if (/aria-label="[^"]*[Ss]earch|aria-label=\{[^}]*[Ss]earch/.test(attrs)) return 'search';
 
   return 'text';
+}
+
+/**
+ * Every native control in a source, as `{ tag, attrs }`.
+ *
+ * Not a regex. The obvious one — `/<(input|textarea|select)\b([^>]*)>/g` — is
+ * wrong in a way that is easy to miss and was wrong here for a while: `[^>]*`
+ * stops at the FIRST `>`, and in JSX that is usually the arrow of an inline
+ * handler:
+ *
+ *     <input
+ *       value={q} onChange={(e) => setQ(e.target.value)}   ← capture ends here
+ *       placeholder="Invoice no., studio, reference…"
+ *       aria-label="Search invoices"
+ *     />
+ *
+ * So `type`, `placeholder` and `aria-label` were invisible to the classifier
+ * whenever a handler came first, and every such control fell through to the
+ * default kind — `text`, a business kind. The Billing Centre's search box was
+ * counted as an unjustified business control for exactly this reason.
+ *
+ * This scans forward instead, tracking brace depth and string/template state,
+ * and takes the `>` that actually closes the tag. Slower than a regex and
+ * bounded by the file, which is not a cost worth optimising for a script that
+ * runs in under a second over 150 files.
+ */
+export function controlTags(source) {
+  const out = [];
+  const open = /<(input|textarea|select)\b/g;
+  let m;
+
+  while ((m = open.exec(source)) !== null) {
+    let i = m.index + m[0].length;
+    let depth = 0;
+    let quote = null;
+
+    while (i < source.length) {
+      const ch = source[i];
+
+      if (quote) {
+        if (ch === '\\') { i += 2; continue; }
+        if (ch === quote) quote = null;
+        i += 1;
+        continue;
+      }
+
+      if (ch === '"' || ch === "'" || ch === '`') { quote = ch; i += 1; continue; }
+      if (ch === '{') { depth += 1; i += 1; continue; }
+      if (ch === '}') { depth -= 1; i += 1; continue; }
+      if (ch === '>' && depth === 0) break;
+      i += 1;
+    }
+
+    out.push({ tag: m[1], attrs: source.slice(m.index + m[0].length, i) });
+    open.lastIndex = i;
+  }
+
+  return out;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────

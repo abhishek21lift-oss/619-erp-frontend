@@ -24,7 +24,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  controlKind, NATIVE_BY_KIND, BUSINESS_KINDS,
+  controlKind, controlTags, NATIVE_BY_KIND, BUSINESS_KINDS,
   contractCoverage, looksLikeForm, riskOf, coercionSites, uploadSites,
 } from './classify.mjs';
 import { JUSTIFIED, justificationFor } from './justifications.mjs';
@@ -68,8 +68,8 @@ for (const file of walk(SRC)) {
   const kinds = {};
   let nativeBusiness = 0;
   if (!inDesignSystem) {
-    for (const m of source.matchAll(/<(input|textarea|select)\b([^>]*)>/g)) {
-      const kind = controlKind(m[1], m[2]);
+    for (const { tag, attrs } of controlTags(source)) {
+      const kind = controlKind(tag, attrs);
       kinds[kind] = (kinds[kind] ?? 0) + 1;
       if (BUSINESS_KINDS.has(kind) && !NATIVE_BY_KIND.has(kind)) nativeBusiness += 1;
     }

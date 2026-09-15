@@ -40,7 +40,17 @@ describe('the accessible-name audit itself', () => {
   it('counts a wrapped control as named, across a component boundary', () => {
     // The property the whole number depends on. Without it the audit reports
     // every <Field>-wrapped input in the app as a failure.
-    expect(audit.wrapped).toBeGreaterThan(150);
+    //
+    // A floor, not a ratchet, and deliberately slack. The count FALLS as forms
+    // move to the design system, because a migrated field is no longer a raw
+    // control inside a <label> wrapper — it is a `FormField` with htmlFor, and
+    // the audit scores it by that route instead. Pinning this near the current
+    // number would make the form migration fail a test it is improving.
+    //
+    // The invariant that actually matters is `audit.nameless` being empty, and
+    // that is asserted below with no threshold at all. This one only proves the
+    // cross-boundary resolver still works at scale.
+    expect(audit.wrapped).toBeGreaterThan(100);
   });
 });
 

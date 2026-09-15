@@ -81,21 +81,21 @@ function audit(): Audit {
 const CEILING = {
   /** §6. Zero, and it stays zero. */
   riskyCoercions: 0,
-  unjustified: 321,
-  p0Unjustified: 49,
-  p1Unjustified: 167,
+  unjustified: 283,
+  p0Unjustified: 33,
+  p1Unjustified: 158,
   uploadUncanonical: 7,
   /** Forms with no submit guard of any kind. */
-  noSubmitContract: 18,
+  noSubmitContract: 17,
 };
 
 /** Raise these as phases land. Never lower them. */
 const FLOOR = {
-  platformControls: 205,
+  platformControls: 216,
   /** Forms whose errors reach the canonical mapper. */
   errorPlatform: 10,
   /** Forms bound to a named canonical schema. */
-  schemaPlatform: 2,
+  schemaPlatform: 4,
 };
 
 describe('the audit measures the tree', () => {
