@@ -8,14 +8,67 @@ import {
 import Guard from '@/components/Guard';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
+import {
+  commissionRowSchema, commissionToDraft, payoutRowSchema, payoutToDraft,
+  PAYOUT_STATUS_OPTIONS,
+  type CommissionDraft, type PayoutDraft, type PayoutStatus,
+} from '@/lib/forms/schemas/commission';
+import { mapApiError } from '@/lib/forms/errors';
 import { Button, PullToRefresh } from '@/components/ui';
 import { useToast } from '@/lib/toast';
 
-function fmtINR(n: number | null | undefined) { return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
+/**
+ * Format a rupee figure.
+ *
+ * Accepts a string as well as a number, because that is what the API actually
+ * sends: Postgres NUMERIC columns arrive as strings over JSON. The body always
+ * handled it — `Number(n ?? 0)` — but the signature said otherwise, and the
+ * `any`-typed rows meant nothing ever checked. Typing the rows surfaced four
+ * call sites passing a possible string into a parameter declared `number`.
+ */
+function fmtINR(n: number | string | null | undefined) {
+  return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+}
 
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 const itemVariants = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0 } };
 const fadeUp = { initial: { opacity: 0, y: 24 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.6, ease: 'easeOut' as const } };
+
+/**
+ * The rows these three endpoints return, narrowed to the fields this screen
+ * reads.
+ *
+ * Previously every one was `any`, on the screen that decides what a trainer is
+ * paid. A renamed column would have arrived as `undefined`, been coerced by
+ * `Number(undefined ?? 0)` to 0, and shown as ₹0 with nothing failing — which
+ * is the exact shape of the bug this pass exists to remove.
+ *
+ * Numbers are typed `number | string | null` because the API returns Postgres
+ * NUMERIC columns as strings; pretending otherwise is how `.toFixed` ends up on
+ * a string at runtime.
+ */
+type Money = number | string | null | undefined;
+
+interface TrainerPerfRow {
+  id: string;
+  name?: string | null;
+  active_clients?: Money;
+  commission_pct?: Money;
+  monthly_commission?: Money;
+  total_incentives?: Money;
+}
+
+interface PayoutRow {
+  trainer_id: string;
+  trainer_name?: string | null;
+  payout_status?: string | null;
+  paid_amount?: Money;
+  total_commission?: Money;
+}
+
+interface CommissionRow {
+  commission_amt?: Money;
+}
 
 const card = { background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' };
 const label = { fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', color: 'var(--text-muted)' };
@@ -23,17 +76,47 @@ const value = { fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' };
 
 export default function CommissionsPage() {
   const { toast } = useToast();
-  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [month, setMonthRaw] = useState(() => new Date().toISOString().slice(0, 7));
+
   const [calculating, setCalculating] = useState(false);
 
-  const commissions = useAsync(() => api.pt.commissions({}).then(r => (r as any).data as any[]), []);
-  const payouts = useAsync(() => api.pt.payouts({ month }).then(r => (r as any).data as any[]), [month]);
-  const perf = useAsync(() => api.pt.trainerPerformance().then(r => (r as any).data as any[]), []);
+  // `{ data: [...] }` is the envelope these three endpoints return. Narrowed
+  // once here rather than cast at each read, so a shape change surfaces in one
+  // place instead of as a silent `undefined` inside a Number().
+  const rowsOf = <T,>(r: unknown): T[] => {
+    const data = (r as { data?: unknown } | null)?.data;
+    return Array.isArray(data) ? (data as T[]) : [];
+  };
+
+  const commissions = useAsync(() => api.pt.commissions({}).then(rowsOf<CommissionRow>), []);
+  const payouts = useAsync(() => api.pt.payouts({ month }).then(rowsOf<PayoutRow>), [month]);
+  const perf = useAsync(() => api.pt.trainerPerformance().then(rowsOf<TrainerPerfRow>), []);
 
   const [editingCommission, setEditingCommission] = useState<string | null>(null);
   const [editingPayout, setEditingPayout] = useState<string | null>(null);
-  const [commissionDraft, setCommissionDraft] = useState<Record<string, { commission_pct?: number; commission_amount?: number; incentives?: number }>>({});
-  const [payoutDraft, setPayoutDraft] = useState<Record<string, { payout_status?: string; paid_amount?: number }>>({});
+  // Drafts hold RAW STRINGS, not numbers. A half-typed value must never be a
+  // number that reads as deliberate, and `Number('')` is 0.
+  const [commissionDraft, setCommissionDraft] = useState<Record<string, CommissionDraft>>({});
+  const [payoutDraft, setPayoutDraft] = useState<Record<string, PayoutDraft>>({});
+  // Per-row validation messages, keyed by trainer then field.
+  const [rowErrors, setRowErrors] = useState<Record<string, Record<string, string>>>({});
+
+  /**
+   * Changing the month abandons every open edit.
+   *
+   * Drafts are keyed by trainer id alone, so without this a figure typed for
+   * March survives the switch to April and is saved against it. The payouts
+   * list refetches; the drafts did not.
+   */
+  const setMonth = useCallback((next: string) => {
+    setMonthRaw(next);
+    setCommissionDraft({});
+    setPayoutDraft({});
+    setRowErrors({});
+    setEditingCommission(null);
+    setEditingPayout(null);
+  }, []);
+
   const [savingCommission, setSavingCommission] = useState<string | null>(null);
   const [savingPayout, setSavingPayout] = useState<string | null>(null);
 
@@ -41,14 +124,14 @@ export default function CommissionsPage() {
     await Promise.all([commissions.refetch(), payouts.refetch(), perf.refetch()]);
   }, [commissions.refetch, payouts.refetch, perf.refetch]);
 
-  const perfData = (perf.data || []) as any[];
-  const payoutsData = (payouts.data || []) as any[];
-  const commissionsData = (commissions.data || []) as any[];
+  const perfData = perf.data ?? [];
+  const payoutsData = payouts.data ?? [];
+  const commissionsData = commissions.data ?? [];
 
-  const totalCommission = commissionsData.reduce((s: number, c: any) => s + Number(c.commission_amt ?? 0), 0);
-  const totalPayout = payoutsData.filter((p: any) => p.payout_status === 'paid').reduce((s: number, p: any) => s + Number(p.paid_amount ?? p.total_commission ?? 0), 0);
-  const pendingPayouts = payoutsData.filter((p: any) => p.payout_status !== 'paid').reduce((s: number, p: any) => s + Number(p.total_commission ?? 0), 0);
-  const activeTrainers = perfData.filter((t: any) => Number(t.active_clients ?? 0) > 0).length;
+  const totalCommission = commissionsData.reduce((s: number, c: CommissionRow) => s + Number(c.commission_amt ?? 0), 0);
+  const totalPayout = payoutsData.filter((p: PayoutRow) => p.payout_status === 'paid').reduce((s: number, p: PayoutRow) => s + Number(p.paid_amount ?? p.total_commission ?? 0), 0);
+  const pendingPayouts = payoutsData.filter((p: PayoutRow) => p.payout_status !== 'paid').reduce((s: number, p: PayoutRow) => s + Number(p.total_commission ?? 0), 0);
+  const activeTrainers = perfData.filter((t: TrainerPerfRow) => Number(t.active_clients ?? 0) > 0).length;
 
   async function handleCalculate() {
     setCalculating(true);
@@ -58,64 +141,98 @@ export default function CommissionsPage() {
       commissions.refetch();
       payouts.refetch();
       perf.refetch();
-    } catch (e: any) {
-      toast.error(e?.message || 'Calculation failed');
+    } catch (e: unknown) {
+      toast.error(mapApiError(e, { fallback: 'Calculation failed' }).formError ?? 'Calculation failed');
     } finally {
       setCalculating(false);
     }
   }
 
-  const handleEditCommission = useCallback((trainerId: string, trainer: any) => {
+  const handleEditCommission = useCallback((trainerId: string, trainer: TrainerPerfRow) => {
     setEditingCommission(trainerId);
-    setCommissionDraft(prev => ({
-      ...prev,
-      [trainerId]: {
-        commission_pct: Number(trainer.commission_pct ?? 0),
-        commission_amount: Number(trainer.monthly_commission ?? 0),
-        incentives: Number(trainer.total_incentives ?? 0),
-      },
-    }));
+    // `?? ''` via commissionToDraft, not `?? 0`: a trainer with no percentage
+    // recorded shows an empty box rather than a 0% nobody chose.
+    setCommissionDraft(prev => ({ ...prev, [trainerId]: commissionToDraft(trainer) }));
+    setRowErrors(prev => ({ ...prev, [trainerId]: {} }));
   }, []);
 
   const handleSaveCommission = useCallback(async (trainerId: string) => {
     const draft = commissionDraft[trainerId];
     if (!draft) return;
+
+    // Parse before writing. The draft holds strings; this is the one place they
+    // become numbers, and a blank box fails here rather than arriving as 0.
+    const parsed = commissionRowSchema.safeParse(draft);
+    if (!parsed.success) {
+      const errs: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0];
+        if (typeof key === 'string' && !errs[key]) errs[key] = issue.message;
+      }
+      setRowErrors(prev => ({ ...prev, [trainerId]: errs }));
+      return;
+    }
+
+    setRowErrors(prev => ({ ...prev, [trainerId]: {} }));
     setSavingCommission(trainerId);
     try {
-      await api.pt.updateCommission(trainerId, draft);
+      await api.pt.updateCommission(trainerId, {
+        commission_pct: parsed.data.commission_pct,
+        commission_amount: parsed.data.commission_amount,
+        incentives: parsed.data.incentives,
+      });
       toast.success('Commission updated');
       setEditingCommission(null);
       perf.refetch();
       commissions.refetch();
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to update commission');
+    } catch (e: unknown) {
+      const mapped = mapApiError(e, { fallback: 'Failed to update commission' });
+      toast.error(mapped.formError ?? 'Failed to update commission');
+      if (Object.keys(mapped.fieldErrors).length) {
+        setRowErrors(prev => ({ ...prev, [trainerId]: mapped.fieldErrors }));
+      }
     } finally {
       setSavingCommission(null);
     }
   }, [commissionDraft, toast, perf, commissions]);
 
-  const handleEditPayout = useCallback((trainerId: string, payout: any) => {
+  const handleEditPayout = useCallback((trainerId: string, payout: PayoutRow) => {
     setEditingPayout(trainerId);
-    setPayoutDraft(prev => ({
-      ...prev,
-      [trainerId]: {
-        payout_status: payout.payout_status || 'pending',
-        paid_amount: Number(payout.paid_amount ?? payout.total_commission ?? 0),
-      },
-    }));
+    setPayoutDraft(prev => ({ ...prev, [trainerId]: payoutToDraft(payout) }));
+    setRowErrors(prev => ({ ...prev, [trainerId]: {} }));
   }, []);
 
   const handleSavePayout = useCallback(async (trainerId: string) => {
     const draft = payoutDraft[trainerId];
     if (!draft) return;
+
+    const parsed = payoutRowSchema.safeParse(draft);
+    if (!parsed.success) {
+      const errs: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0];
+        if (typeof key === 'string' && !errs[key]) errs[key] = issue.message;
+      }
+      setRowErrors(prev => ({ ...prev, [trainerId]: errs }));
+      return;
+    }
+
+    setRowErrors(prev => ({ ...prev, [trainerId]: {} }));
     setSavingPayout(trainerId);
     try {
-      await api.pt.updatePayout(trainerId, draft);
+      await api.pt.updatePayout(trainerId, {
+        payout_status: parsed.data.payout_status,
+        paid_amount: parsed.data.paid_amount,
+      });
       toast.success('Payout updated');
       setEditingPayout(null);
       payouts.refetch();
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to update payout');
+    } catch (e: unknown) {
+      const mapped = mapApiError(e, { fallback: 'Failed to update payout' });
+      toast.error(mapped.formError ?? 'Failed to update payout');
+      if (Object.keys(mapped.fieldErrors).length) {
+        setRowErrors(prev => ({ ...prev, [trainerId]: mapped.fieldErrors }));
+      }
     } finally {
       setSavingPayout(null);
     }
@@ -126,8 +243,8 @@ export default function CommissionsPage() {
       await api.pt.markAllPayoutsPaid(month);
       toast.success('All payouts marked as paid');
       payouts.refetch();
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to mark all paid');
+    } catch (e: unknown) {
+      toast.error(mapApiError(e, { fallback: 'Failed to mark all paid' }).formError ?? 'Failed to mark all paid');
     }
   }, [month, toast, payouts]);
 
@@ -215,7 +332,7 @@ export default function CommissionsPage() {
               <span style={{ fontSize: 12, color: 'var(--text-disabled)', fontWeight: 500 }}>{perfData.length} trainers</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 600, overflowY: 'auto' }}>
-              {perfData.map((t: any, i: number) => {
+              {perfData.map((t: TrainerPerfRow, i: number) => {
                 const isEditing = editingCommission === t.id;
                 const draft = commissionDraft[t.id] || {};
                 const saving = savingCommission === t.id;
@@ -285,24 +402,39 @@ export default function CommissionsPage() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                         <div>
                           <label htmlFor={`comm-pct-${t.id}`} style={{ ...label, textTransform: 'uppercase' }}>Commission %</label>
-                          <input id={`comm-pct-${t.id}`} type="number" value={draft.commission_pct ?? ''}
-                            onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id], commission_pct: Number(e.target.value) } }))}
+                          <input id={`comm-pct-${t.id}`} type="text" inputMode="decimal" value={draft.commission_pct}
+                            onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id]!, commission_pct: e.target.value } }))}
                             style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', fontFamily: 'inherit' }}
                           />
+                          {rowErrors[t.id]?.commission_pct && (
+                            <p role="alert" style={{ marginTop: 4, fontSize: 11, lineHeight: 1.3, color: 'var(--danger-text)' }}>
+                              {rowErrors[t.id]!.commission_pct}
+                            </p>
+                          )}
                         </div>
                         <div>
                           <label htmlFor={`comm-amt-${t.id}`} style={{ ...label, textTransform: 'uppercase' }}>Amount (₹)</label>
-                          <input id={`comm-amt-${t.id}`} type="number" value={draft.commission_amount ?? ''}
-                            onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id], commission_amount: Number(e.target.value) } }))}
+                          <input id={`comm-amt-${t.id}`} type="text" inputMode="decimal" value={draft.commission_amount}
+                            onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id]!, commission_amount: e.target.value } }))}
                             style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: '#059669', background: 'var(--bg-card)', fontFamily: 'inherit' }}
                           />
+                          {rowErrors[t.id]?.commission_amount && (
+                            <p role="alert" style={{ marginTop: 4, fontSize: 11, lineHeight: 1.3, color: 'var(--danger-text)' }}>
+                              {rowErrors[t.id]!.commission_amount}
+                            </p>
+                          )}
                         </div>
                         <div>
                           <label htmlFor={`comm-inc-${t.id}`} style={{ ...label, textTransform: 'uppercase' }}>Incentives (₹)</label>
-                          <input id={`comm-inc-${t.id}`} type="number" value={draft.incentives ?? ''}
-                            onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id], incentives: Number(e.target.value) } }))}
+                          <input id={`comm-inc-${t.id}`} type="text" inputMode="decimal" value={draft.incentives}
+                            onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id]!, incentives: e.target.value } }))}
                             style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', fontFamily: 'inherit' }}
                           />
+                          {rowErrors[t.id]?.incentives && (
+                            <p role="alert" style={{ marginTop: 4, fontSize: 11, lineHeight: 1.3, color: 'var(--danger-text)' }}>
+                              {rowErrors[t.id]!.incentives}
+                            </p>
+                          )}
                         </div>
                       </div>
                     )}
@@ -330,7 +462,7 @@ export default function CommissionsPage() {
               </h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', background: 'var(--bg-subtle)', padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>{month}</span>
-                {payoutsData.some((p: any) => p.payout_status !== 'paid') && (
+                {payoutsData.some((p: PayoutRow) => p.payout_status !== 'paid') && (
                   <button onClick={handleMarkAllPaid}
                     style={{
                       background: 'linear-gradient(135deg, #10b981, #059669)',
@@ -345,7 +477,7 @@ export default function CommissionsPage() {
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 600, overflowY: 'auto' }}>
-              {payoutsData.map((p: any) => {
+              {payoutsData.map((p: PayoutRow) => {
                 const tid = String(p.trainer_id);
                 const isEditing = editingPayout === tid;
                 const draft = payoutDraft[tid] || {};
@@ -397,19 +529,25 @@ export default function CommissionsPage() {
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                         <div>
                           <label htmlFor={`payout-status-${tid}`} style={{ ...label, textTransform: 'uppercase' }}>Status</label>
-                          <select id={`payout-status-${tid}`} value={draft.payout_status || 'pending'}
-                            onChange={e => setPayoutDraft(prev => ({ ...prev, [tid]: { ...prev[tid], payout_status: e.target.value } }))}
+                          <select id={`payout-status-${tid}`} value={draft.payout_status}
+                            onChange={e => setPayoutDraft(prev => ({ ...prev, [tid]: { ...prev[tid]!, payout_status: e.target.value as PayoutStatus } }))}
                             style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', fontFamily: 'inherit', cursor: 'pointer' }}>
-                            <option value="pending">Pending</option>
-                            <option value="paid">Paid</option>
+                            {PAYOUT_STATUS_OPTIONS.map(o => (
+                              <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
                           </select>
                         </div>
                         <div>
                           <label htmlFor={`payout-paid-${tid}`} style={{ ...label, textTransform: 'uppercase' }}>Paid Amount (₹)</label>
-                          <input id={`payout-paid-${tid}`} type="number" value={draft.paid_amount ?? ''}
-                            onChange={e => setPayoutDraft(prev => ({ ...prev, [tid]: { ...prev[tid], paid_amount: Number(e.target.value) } }))}
+                          <input id={`payout-paid-${tid}`} type="text" inputMode="decimal" value={draft.paid_amount}
+                            onChange={e => setPayoutDraft(prev => ({ ...prev, [tid]: { ...prev[tid]!, paid_amount: e.target.value } }))}
                             style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, color: '#059669', background: 'var(--bg-card)', fontFamily: 'inherit' }}
                           />
+                          {rowErrors[tid]?.paid_amount && (
+                            <p role="alert" style={{ marginTop: 4, fontSize: 11, lineHeight: 1.3, color: 'var(--danger-text)' }}>
+                              {rowErrors[tid]!.paid_amount}
+                            </p>
+                          )}
                         </div>
                         <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                           <button onClick={() => setEditingPayout(null)}

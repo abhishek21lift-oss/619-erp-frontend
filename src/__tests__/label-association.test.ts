@@ -164,7 +164,11 @@ describe('labelling across a component boundary', () => {
     // the "61" were this, not a real failure.
     const src = readFileSync(srcPath('app', '(chrome)', 'finance', 'payment-settings', 'page.tsx'), 'utf8');
     expect(src).toMatch(/<label htmlFor=\{id\}/);
-    expect(src).toMatch(/<Field id="gst-percent"/);
+    // Whitespace-tolerant: the property under test is that a Field carries a
+    // matching id, not that the JSX fits on one line. The original regex was
+    // incidentally coupled to formatting and broke when the element gained a
+    // fourth prop and wrapped — which is a change in layout, not in labelling.
+    expect(src).toMatch(/<Field\s[^>]*id="gst-percent"/s);
     expect(audit.nameless.filter((x) => x.includes('payment-settings'))).toEqual([]);
   });
 

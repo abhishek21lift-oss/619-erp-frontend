@@ -415,3 +415,65 @@ export const booleanField = () =>
     if (raw === 'true' || raw === 'on' || raw === 1 || raw === '1') return true;
     return false;
   });
+
+/**
+ * A calendar month as `YYYY-MM`.
+ *
+ * `<input type="month">` produces this, and the commissions screen is the only
+ * place it appears — a payout run is for a month, not a day, and storing the
+ * 1st of the month to represent it invites someone to compare it against a real
+ * date and be wrong by up to 30 days.
+ *
+ * Validated by range rather than by reconstruction: unlike a date, every
+ * `YYYY-MM` in 01–12 exists, so there is no equivalent of 31 February to catch.
+ */
+export interface MonthFieldOptions extends FieldOptions {
+  /** Inclusive `YYYY-MM` bounds. */
+  min?: string;
+  max?: string;
+}
+
+export const monthField = (opts: MonthFieldOptions) => {
+  const { label, required = false, min, max } = opts;
+
+  return z.unknown().transform((raw, ctx): string | null => {
+    const s = toTextOrNull(raw);
+
+    if (s === null) {
+      if (required) {
+        ctx.addIssue({ code: 'custom', message: `${label} is required.` });
+        return z.NEVER;
+      }
+      return null;
+    }
+
+    // Accept a full date too: an API that returns `2026-03-01` for a month is
+    // describing the same month, and rejecting it would make the edit form
+    // unable to load its own saved value.
+    const m = /^(\d{4})-(\d{2})(?:-\d{2})?$/.exec(s);
+    if (!m) {
+      ctx.addIssue({ code: 'custom', message: `${label} must be a month (YYYY-MM).` });
+      return z.NEVER;
+    }
+
+    const month = Number(m[2]);
+    if (month < 1 || month > 12) {
+      ctx.addIssue({ code: 'custom', message: `${label} is not a real month.` });
+      return z.NEVER;
+    }
+
+    const normalised = `${m[1]}-${m[2]}`;
+
+    // ISO months compare correctly as strings, so no parsing and no timezone.
+    if (min && normalised < min) {
+      ctx.addIssue({ code: 'custom', message: `${label} cannot be before ${min}.` });
+      return z.NEVER;
+    }
+    if (max && normalised > max) {
+      ctx.addIssue({ code: 'custom', message: `${label} cannot be after ${max}.` });
+      return z.NEVER;
+    }
+
+    return normalised;
+  });
+};

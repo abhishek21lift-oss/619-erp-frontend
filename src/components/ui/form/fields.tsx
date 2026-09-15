@@ -37,6 +37,7 @@
  * of TanStack's deep generics and stay readable.
  */
 
+import { cn } from '../cn';
 import { FormField } from './FormField';
 import { TextInput, TextArea, SelectInput } from './controls';
 
@@ -520,5 +521,233 @@ export function CheckboxField({
         </p>
       )}
     </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Radio group
+ * ────────────────────────────────────────────────────────────────────────── */
+
+export interface RadioOption<T extends string> {
+  value: T;
+  label: string;
+  /** Secondary line under the option. */
+  description?: string;
+  disabled?: boolean;
+}
+
+export interface RadioFieldProps<T extends string = string> {
+  field: FieldLike<T>;
+  legend: string;
+  options: ReadonlyArray<RadioOption<T>>;
+  description?: string;
+  required?: boolean;
+  disabled?: boolean;
+  serverError?: string;
+  className?: string;
+  /** Lay the options out in a row. Only sensible for two or three short ones. */
+  inline?: boolean;
+}
+
+/**
+ * A radio group.
+ *
+ * Built on `<fieldset>` and `<legend>` rather than on `FormField`, and that is
+ * not a stylistic preference. `FormField` renders `<label htmlFor={id}>`, and a
+ * label points at exactly one control — there is no valid `htmlFor` for a group
+ * of five radios. Wrapping the group in one anyway produces a label that either
+ * names the first radio or names nothing, which is worse than no group name
+ * because it reads as correct.
+ *
+ * `<legend>` is the element that names a group of controls, and screen readers
+ * announce it before each option ("Reject reason, Wrong amount, radio 1 of 5").
+ * That is the behaviour this needs and nothing else provides it.
+ *
+ * Keyboard behaviour comes free from the native input: arrow keys move within
+ * the group and Tab leaves it, because the options share a `name`. That shared
+ * name is load-bearing — without it every radio is its own group and arrow keys
+ * do nothing.
+ */
+export function RadioField<T extends string = string>({
+  field,
+  legend,
+  options,
+  description,
+  required,
+  disabled,
+  serverError,
+  className,
+  inline,
+}: RadioFieldProps<T>) {
+  const error = visibleError(field, serverError);
+
+  // The error REPLACES the description rather than joining it, matching
+  // FormField. Joining both ids would point aria-describedby at the description
+  // element — which is not rendered when there is an error, so the reference
+  // would dangle and an AT would announce nothing for that half. It is also the
+  // wrong reading order: a hint before the thing that went wrong.
+  const describedBy = error
+    ? `${field.name}-error`
+    : description
+      ? `${field.name}-description`
+      : undefined;
+
+  return (
+    <fieldset
+      className={cn('min-w-0 border-0 p-0 m-0', className)}
+      aria-describedby={describedBy}
+      aria-invalid={error ? true : undefined}
+      aria-required={required || undefined}
+      disabled={disabled}
+    >
+      <legend
+        className="flex items-baseline gap-0.5 text-[11.5px] font-[650] leading-none p-0 mb-1.5"
+        style={{ color: disabled ? 'var(--text-disabled)' : 'var(--text-secondary)' }}
+      >
+        {legend}
+        {required && (
+          // aria-hidden, as in FormField: aria-required on the fieldset already
+          // carries this, and announcing "star" as well is noise.
+          <span aria-hidden style={{ color: 'var(--danger-text)' }}>*</span>
+        )}
+      </legend>
+
+      <div className={cn('flex gap-2', inline ? 'flex-row flex-wrap' : 'flex-col')}>
+        {options.map((o) => {
+          const id = `${field.name}-${o.value}`;
+          const selected = field.state.value === o.value;
+          return (
+            <label
+              key={o.value}
+              htmlFor={id}
+              className={cn(
+                'flex items-start gap-2.5 rounded-[var(--radius-sm)] px-3 py-2.5',
+                'transition-colors duration-150 motion-reduce:transition-none',
+                o.disabled || disabled ? 'cursor-not-allowed opacity-55' : 'cursor-pointer',
+              )}
+              style={{
+                // 44px minimum, as every control in the system has: padding
+                // alone lands under it because globals.css sets 14px root font.
+                minHeight: 44,
+                background: selected ? 'var(--brand-soft)' : 'var(--bg-subtle)',
+                border: `1px solid ${
+                  error
+                    ? 'var(--danger-border)'
+                    : selected
+                      ? 'var(--brand)'
+                      : 'var(--border-2)'
+                }`,
+              }}
+            >
+              <input
+                id={id}
+                type="radio"
+                // Shared name: this is what makes the group a group, and what
+                // makes arrow-key navigation work.
+                name={field.name}
+                value={o.value}
+                checked={selected}
+                disabled={o.disabled || disabled}
+                onChange={() => field.handleChange(o.value)}
+                onBlur={field.handleBlur}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--brand)]"
+                style={{ cursor: o.disabled || disabled ? 'not-allowed' : 'pointer' }}
+              />
+              <span className="min-w-0">
+                <span
+                  className="block text-[12.5px] font-[550] leading-[1.35]"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {o.label}
+                </span>
+                {o.description && (
+                  <span
+                    className="mt-0.5 block text-[11.5px] leading-[1.35]"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    {o.description}
+                  </span>
+                )}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+
+      {(error || description) && (
+        <div className="mt-1.5 text-[11.5px] leading-[1.35]">
+          {error ? (
+            <p id={`${field.name}-error`} style={{ color: 'var(--danger-text)' }}>{error}</p>
+          ) : (
+            <p id={`${field.name}-description`} style={{ color: 'var(--text-muted)' }}>
+              {description}
+            </p>
+          )}
+        </div>
+      )}
+    </fieldset>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Month
+ * ────────────────────────────────────────────────────────────────────────── */
+
+export interface MonthFieldProps extends BoundFieldProps {
+  field: FieldLike<string>;
+  /** Inclusive `YYYY-MM` bounds. */
+  min?: string;
+  max?: string;
+}
+
+/**
+ * A calendar month.
+ *
+ * `<input type="month">` rather than two selects: it is what the commissions
+ * screen already uses, it gives mobile a month picker, and a payout run is for
+ * a month rather than a day — storing the 1st to represent one invites a
+ * comparison against a real date that is wrong by up to 30 days.
+ *
+ * Firefox renders it as a plain text box. That degrades to typing `2026-03`,
+ * which the schema accepts and reports on precisely, so the fallback is usable
+ * rather than merely present.
+ */
+export function MonthFieldControl({
+  field,
+  label,
+  description,
+  required,
+  disabled,
+  readOnly,
+  serverError,
+  className,
+  reserveMessageSpace,
+  min,
+  max,
+}: MonthFieldProps) {
+  const error = visibleError(field, serverError);
+
+  return (
+    <FormField
+      label={label}
+      description={description}
+      error={error}
+      required={required}
+      disabled={disabled}
+      readOnly={readOnly}
+      className={className}
+      reserveMessageSpace={reserveMessageSpace}
+    >
+      <TextInput
+        name={field.name}
+        type="month"
+        value={field.state.value ?? ''}
+        min={min}
+        max={max}
+        placeholder="YYYY-MM"
+        onChange={(e) => field.handleChange(e.target.value)}
+        onBlur={field.handleBlur}
+      />
+    </FormField>
   );
 }

@@ -54,14 +54,14 @@ function audit(): Audit {
  * has the platform available to it.
  */
 const CEILING = {
-  rawControls: 366,
+  rawControls: 361,
   p0RawControls: 65,
 };
 
 /** Migration progress may only increase. */
 const FLOOR = {
-  platformControls: 204,
-  formsOnPlatform: 1,
+  platformControls: 205,
+  formsOnPlatform: 2,
 };
 
 describe('the form platform ratchet', () => {
@@ -97,6 +97,13 @@ describe('the form platform ratchet', () => {
     // ratcheting — it would let a regression back in unnoticed. 25 is slack
     // enough for one in-flight phase and tight enough to force an update.
     expect(CEILING.rawControls - a.totals.rawControls).toBeLessThan(25);
+  });
+
+  it('the design system is excluded from the raw count', () => {
+    // Every wrapper bottoms out in a native element, so counting the design
+    // system's own internals made the headline RISE when a field component was
+    // added. The metric is raw controls in application code.
+    expect(a.rows.some((r) => r.file.includes('components/ui/form/') && r.raw > 0)).toBe(false);
   });
 
   it('the offers form is on the platform', () => {

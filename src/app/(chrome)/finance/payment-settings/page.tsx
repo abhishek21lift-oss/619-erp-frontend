@@ -18,6 +18,8 @@ import {
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import { ApiError } from '@/lib/http';
+import { gstRateField, GST_SLABS } from '@/lib/forms/domain';
+import { integerField } from '@/lib/forms/primitives';
 import type { UpiSettings } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -77,8 +79,36 @@ function Inner() {
 
   const vpaValid = VPA_RE.test(upiId.trim());
   const nameValid = merchantName.trim().length > 0;
-  const gstValid = Number(gstPercent) >= 0 && Number(gstPercent) <= 100;
-  const canSave = vpaValid && nameValid && gstValid && !saving;
+  /**
+   * GST validity.
+   *
+   * The previous expression was `Number(gstPercent) >= 0 && <= 100`, and
+   * `Number('') === 0`, so a BLANK field passed — then `Number(gstPercent) || 0`
+   * saved 0%, putting a zero-rated line on every invoice the studio issued
+   * afterwards. Nothing told anyone.
+   *
+   * It also accepted any value in 0..100, so 14% was saveable. GST is
+   * statutory; a 14% invoice is not a slightly wrong tax, it is a document the
+   * studio cannot file and the member cannot claim.
+   */
+  const gstParsed = gstRateField({ label: 'GST rate', required: true }).safeParse(gstPercent);
+  const gstValid = gstParsed.success;
+  const gstError = gstParsed.success ? null : gstParsed.error.issues[0]!.message;
+
+  /**
+   * A rate saved through the old free-text field that is not a slab.
+   *
+   * Offered as an extra option so a studio in that position is not locked out
+   * of saving an unrelated setting — they can see it is non-standard and
+   * correct it deliberately.
+   */
+  const legacyGst =
+    gstPercent !== '' && !(GST_SLABS as readonly number[]).includes(Number(gstPercent))
+      ? gstPercent
+      : null;
+  const ttlParsed = integerField({ label: 'Link validity', min: 5, max: 1440 }).safeParse(ttl);
+  const ttlValid = ttlParsed.success && ttlParsed.data !== null;
+  const canSave = vpaValid && nameValid && gstValid && ttlValid && !saving;
 
   const save = async () => {
     if (!canSave) return;
@@ -88,11 +118,18 @@ function Inner() {
       const res = await api.upiPayments.saveSettings({
         upi_id: upiId.trim(),
         merchant_name: merchantName.trim(),
-        gst_percent: Number(gstPercent) || 0,
+        // The parsed value, not `Number(x) || 0`. `canSave` already refuses a
+        // blank, so this can only be a real rate.
+        // `?? 0` covers the schema's optional-null shape; canSave already
+        // refuses a blank, so this branch is unreachable in practice.
+        gst_percent: gstParsed.success ? (gstParsed.data ?? 0) : 0,
         gst_number: gstNumber.trim() || null,
         is_enabled: enabled,
         instructions: instructions.trim() || null,
-        order_ttl_minutes: Number(ttl) || 60,
+        // `Number(ttl) || 60` turned both a blank AND a deliberate 0 into 60.
+        // The backend bounds this at 5..1440; parsing here means the user is
+        // told before the round trip rather than after it.
+        order_ttl_minutes: ttlParsed.success && ttlParsed.data !== null ? ttlParsed.data : 60,
       });
       setSaved(res.data);
       toast.success(enabled ? 'Saved. Members can now pay by UPI.' : 'Saved. Collection is off.');
@@ -208,18 +245,34 @@ function Inner() {
         </Field>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
-          <Field id="gst-percent" label="GST %" hint="0 hides the line entirely.">
-            <input
+          <Field
+            id="gst-percent"
+            label="GST %"
+            hint={gstError ?? '0% hides the line entirely. These are the statutory slabs.'}
+            invalid={!gstValid}
+          >
+            {/* A select rather than a text box. The rate is one of five
+                statutory values, so offering a free-text field invites a
+                number that cannot appear on a valid invoice — and made a
+                BLANK possible, which is what silently saved 0%. */}
+            <select
               id="gst-percent"
-              inputMode="decimal"
               value={gstPercent}
-              onChange={(e) => setGstPercent(e.target.value.replace(/[^\d.]/g, ''))}
+              onChange={(e) => setGstPercent(e.target.value)}
               className="w-full rounded-xl px-3.5 text-[15px] tabular-nums outline-none"
               style={{
                 height: 48, background: 'var(--bg-base)', color: 'var(--text-primary)',
                 border: `1px solid ${gstValid ? 'var(--border-2)' : 'var(--danger)'}`,
               }}
-            />
+            >
+              <option value="" disabled>Choose a rate</option>
+              {GST_SLABS.map((slab) => (
+                <option key={slab} value={String(slab)}>{slab}%</option>
+              ))}
+              {legacyGst !== null && (
+                <option value={legacyGst}>{legacyGst}% — not a standard slab</option>
+              )}
+            </select>
           </Field>
           <Field id="order-ttl" label="Link valid for" hint="Minutes, 5 to 1440.">
             <input
