@@ -10,11 +10,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { m } from 'framer-motion';
-import { ArrowLeft, Mail, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Mail, Loader2, CheckCircle2 } from 'lucide-react';
 import BrandLogoWide from '@/components/BrandLogoWide';
 import { api } from '@/lib/api';
 import { C, SHADOW } from '@/components/landing/tokens';
-import { errorMessage } from '@/lib/forms/errors';
+import { SoftTextField, SoftFormError } from '@/components/landing/SoftField';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import { forgotPasswordSchema, blankForgotPassword } from '@/lib/forms/schemas/auth';
 
 // The public surface's own tokens rather than five local hex constants. This
 // page was already light, but it was FLAT light — a white card with a drop
@@ -24,38 +26,24 @@ import { errorMessage } from '@/lib/forms/errors';
 // is not what that moment needs.
 const INK = C.ink;
 const MUTE = C.muted;
-const LINE = C.line;
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
-  const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState('');
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
+  // The fourth inline copy of an email regex in this tree is gone: the rule is
+  // `emailField`'s, which is the same one every other email box in the app now
+  // uses. The submit guard is useAppForm's in-flight ref rather than a
+  // `disabled` attribute that two Enter presses in one frame both slip past.
+  const f = useAppForm({
+    schema: forgotPasswordSchema,
+    defaultValues: blankForgotPassword(),
+    onSubmit: async (values) => {
+      await api.auth.forgotPassword(values.email as string);
+    },
+    onSuccess: () => setSent(true),
+  });
 
-    const trimmed = email.trim();
-    if (!EMAIL_RE.test(trimmed)) {
-      setError('Enter a valid email address.');
-      return;
-    }
-
-    setBusy(true);
-    try {
-      await api.auth.forgotPassword(trimmed);
-      setSent(true);
-    } catch (err: unknown) {
-      // Only a transport/rate-limit failure can land here — the endpoint
-      // returns 200 whether or not the address exists.
-      setError(errorMessage(err, 'Could not send the reset link. Please try again.'));
-    } finally {
-      setBusy(false);
-    }
-  }
+  const { form } = f;
 
   return (
     <main
@@ -112,7 +100,7 @@ export default function ForgotPasswordPage() {
                 you used the address your studio registered.
               </p>
               <button
-                onClick={() => { setSent(false); setError(''); }}
+                onClick={() => { setSent(false); f.resetTo(blankForgotPassword()); }}
                 className="mt-4 text-[13px] font-[650]"
                 style={{ color: C.blueHi }}
               >
@@ -120,37 +108,35 @@ export default function ForgotPasswordPage() {
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} noValidate>
-              <label htmlFor="fp-email" className="mb-1.5 block text-[12.5px] font-[650]" style={{ color: INK }}>Email</label>
-              <div className="relative">
-                <Mail size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: MUTE }} />
-                <input
-                  id="fp-email"
-                  type="email"
-                  autoComplete="email"
-                  autoFocus
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@studio.com"
-                  className="w-full rounded-[12px] py-3 pl-10 pr-3 text-[14px] outline-none transition-shadow"
-                  style={{ background: C.canvas, boxShadow: SHADOW.inset, border: `1px solid ${LINE}`, color: INK }}
-                />
-              </div>
+            <form onSubmit={(e) => { e.preventDefault(); void f.submit(); }} noValidate>
+              <form.Field name="email">
+                {(field) => (
+                  <SoftTextField
+                    field={field}
+                    label="Email"
+                    required
+                    type="email"
+                    autoComplete="email"
+                    focusOnMount
+                    placeholder="you@studio.com"
+                    icon={<Mail size={16} />}
+                    serverError={f.errors.fieldErrors.email}
+                  />
+                )}
+              </form.Field>
 
-              {error && (
-                <div className="mt-3 flex items-start gap-2 rounded-[10px] px-3 py-2.5" style={{ background: C.redSoft }}>
-                  <AlertCircle size={15} className="mt-[1px] shrink-0" style={{ color: C.red }} />
-                  <span className="text-[12.5px] font-[550]" style={{ color: C.red }}>{error}</span>
-                </div>
-              )}
+              {/* Only a transport or rate-limit failure can land here — the
+                  endpoint answers 200 whether or not the address exists, which
+                  is what keeps it from being an enumeration oracle. */}
+              <SoftFormError message={f.errors.formError} className="mt-3" />
 
               <button
                 type="submit"
-                disabled={busy}
+                disabled={f.isSubmitting}
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] py-3 text-[14px] font-[700] text-white transition-opacity disabled:opacity-60"
                 style={{ background: `linear-gradient(135deg, ${C.blue450}, ${C.blueLo})`, boxShadow: SHADOW.blueGlow }}
               >
-                {busy ? <><Loader2 size={17} className="animate-spin" /> Sending…</> : 'Send reset link'}
+                {f.isSubmitting ? <><Loader2 size={17} className="animate-spin" /> Sending…</> : 'Send reset link'}
               </button>
             </form>
           )}

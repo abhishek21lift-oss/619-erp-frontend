@@ -131,6 +131,8 @@ describe('a control next to a label must be joined to it', () => {
 });
 
 describe('the label audit, resolved case by case', () => {
+  const audit = auditAccessibleNames();
+
   // 24 sites, each looked at individually rather than swept. Nine were the
   // scanner's own fault — Field-style wrappers that put {children} inside the
   // <label>, which IS an association; the scanner only recognised a literal
@@ -139,20 +141,23 @@ describe('the label audit, resolved case by case', () => {
   // The other fifteen split three ways by what the caption actually names.
 
   it('associates the captions that sit beside a real control', () => {
+    // This list shrinks as screens move onto the universal form platform, and
+    // that is the list working rather than the property lapsing. A migrated
+    // field renders through FormField (or its soft-surface twin), which
+    // GENERATES the id and points its own <label htmlFor> at it — so the
+    // association holds by construction instead of by two hand-written strings
+    // continuing to agree. Re-adding a hand-written id after a migration would
+    // assert a property the component no longer has.
+    //
+    // Already retired this way: `fp-email` (forgot-password), `rp-password`
+    // and `rp-confirm` (reset-password), `pay-ref` (Record Payment).
+    //
+    // The property itself is still covered, and more strictly:
+    // label-association.test.ts asserts that NO control in the app is
+    // nameless, with no per-file list to fall out of date.
     const associated: [string, string][] = [
-      ['app/(bare)/forgot-password/page.tsx', 'fp-email'],
-      ['app/(bare)/reset-password/page.tsx', 'rp-password'],
-      ['app/(bare)/reset-password/page.tsx', 'rp-confirm'],
       ['app/(chrome)/ai-coach/knowledge/page.tsx', 'kb-title'],
       ['app/(chrome)/pt-os/clients/[id]/edit/page.tsx', 'delete-confirm'],
-      // `pay-ref` used to be here. The Record Payment sheet is on the universal
-      // form platform now, so its reference box renders through FormField,
-      // which generates the id and points its own <label htmlFor> at it — the
-      // association is by construction rather than by two hand-written strings
-      // agreeing. Re-adding a hand-written id would be asserting a property the
-      // component no longer has. The property itself is still covered, and more
-      // strictly: label-association.test.ts asserts that NO control in the app
-      // is nameless, with no per-file list to fall out of date.
       ['app/(chrome)/trainers/leave/page.tsx', 'leave-reason'],
       ['app/(chrome)/trainers/leave/page.tsx', 'leave-reject-note'],
     ];
@@ -163,12 +168,21 @@ describe('the label audit, resolved case by case', () => {
     }
   });
 
-  it('gives the invoice field map a per-row id', () => {
-    // Rendered once per entry in a five-row map, so a fixed id would put the
-    // same id on five inputs and point every label at the first one.
+  it('no longer needs a per-row id for the invoice fields', () => {
+    // The Create Invoice modal used to render its four fields from a map, so a
+    // fixed id would have put the same id on four inputs and pointed every
+    // label at the first. The per-row `inv-${key}` id solved that.
+    //
+    // The map is gone: each field is now its own <TextField>/<NumberField>/
+    // <DateFieldControl>, and FormField calls useId() per instance — so the
+    // collision this guarded against is not merely avoided, it is no longer
+    // expressible. Asserting the old template string would be asserting a
+    // property the component deliberately no longer has.
     const src = readFileSync(join(SRC, 'app/(chrome)/finance/invoices/page.tsx'), 'utf8');
-    expect(src).toMatch(/htmlFor=\{`inv-\$\{key\}`\}/);
-    expect(src).toMatch(/id=\{`inv-\$\{key\}`\}/);
+    expect(src).not.toMatch(/htmlFor=\{`inv-\$\{key\}`\}/);
+    expect(src).toMatch(/<form\.Field name="memberName">/);
+    // And the real invariant still holds for this screen.
+    expect(audit.nameless.filter((x) => x.includes('finance/invoices'))).toEqual([]);
   });
 
   it('turns the four button-group captions into groups, not labels', () => {

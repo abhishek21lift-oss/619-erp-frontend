@@ -81,21 +81,21 @@ function audit(): Audit {
 const CEILING = {
   /** §6. Zero, and it stays zero. */
   riskyCoercions: 0,
-  unjustified: 252,
-  p0Unjustified: 15,
+  unjustified: 237,
+  p0Unjustified: 0,
   p1Unjustified: 149,
   uploadUncanonical: 7,
   /** Forms with no submit guard of any kind. */
-  noSubmitContract: 16,
+  noSubmitContract: 15,
 };
 
 /** Raise these as phases land. Never lower them. */
 const FLOOR = {
-  platformControls: 228,
+  platformControls: 242,
   /** Forms whose errors reach the canonical mapper. */
-  errorPlatform: 12,
+  errorPlatform: 15,
   /** Forms bound to a named canonical schema. */
-  schemaPlatform: 7,
+  schemaPlatform: 13,
 };
 
 describe('the audit measures the tree', () => {
@@ -122,6 +122,10 @@ describe('the audit measures the tree', () => {
     // old headline RISE when a field component was added.
     expect(a.rows.some((r) => r.file.includes('components/ui/form/') && r.controls > 0))
       .toBe(false);
+    // The public surface's skin over the same wiring contract, excluded for the
+    // same reason and no other.
+    expect(a.rows.some((r) => r.file.includes('landing/SoftField') && r.controls > 0))
+      .toBe(false);
   });
 });
 
@@ -146,10 +150,16 @@ describe('ceilings — these may only fall', () => {
     expect(a.totals.unjustified).toBeLessThanOrEqual(CEILING.unjustified);
   });
 
-  it('P0 unjustified never increases', () => {
-    // The ones that decide money and access, weighted separately because a
-    // healthy total could hide a new payment form.
-    expect(a.totals.byRisk.P0!.unjustified).toBeLessThanOrEqual(CEILING.p0Unjustified);
+  it('P0 has no unjustified native business control at all', () => {
+    // The ones that decide money and access. This reached ZERO, so it is an
+    // invariant rather than a ceiling: every native control left on a P0 screen
+    // is named in justifications.mjs with a reason a person wrote and a reader
+    // can check against the file. A new one fails here by name.
+    const offenders = a.rows
+      .filter((r) => r.risk === 'P0' && r.unjustified > 0)
+      .map((r) => `${r.file} (${r.unjustified})`);
+    expect(offenders).toEqual([]);
+    expect(a.totals.byRisk.P0!.unjustified).toBe(CEILING.p0Unjustified);
   });
 
   it('P1 unjustified never increases', () => {
@@ -208,7 +218,6 @@ describe('the ratchet stays honest', () => {
     // ratcheting. 20 is slack enough for one in-flight phase and tight enough
     // to force an update when one lands.
     expect(CEILING.unjustified - a.totals.unjustified).toBeLessThan(20);
-    expect(CEILING.p0Unjustified - a.totals.byRisk.P0!.unjustified).toBeLessThan(20);
   });
 
   it('the two migrated forms are still on the platform', () => {

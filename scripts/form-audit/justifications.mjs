@@ -94,6 +94,51 @@ export const JUSTIFIED = {
       'explicitly. Verify by reading the three onChange handlers: every one of ' +
       'them ends in setOffset(0).',
   },
+
+  'src/components/auth/SignInScreen.tsx': {
+    allow: 4,
+    reason:
+      'Already correct, and read line by line rather than assumed. Email and ' +
+      'password each carry htmlFor, aria-invalid and an aria-describedby ' +
+      'pointing at their own error paragraph, with a touched rule so nothing ' +
+      'turns red before it has been left; the MFA box is labelled and now ' +
+      'describes its own hint; the remember checkbox is inside its label. The ' +
+      'canonical email rule comes from signInSchema, and failures go through ' +
+      'mapSignInError, which refuses to let a 401 distinguish "no such account" ' +
+      'from "wrong password". The reason it stays native is that it is not one ' +
+      'form: it is a password submit, an MFA challenge that appears mid-attempt ' +
+      'and re-submits the same credentials, a passkey ceremony and a Google ' +
+      'credential callback, three of which never touch these controls. ' +
+      'useAppForm models one submit of one schema; forcing four entry paths ' +
+      'through it would be a rewrite of the most important screen in the ' +
+      'product to fix nothing. The double-submit window it DID have is fixed ' +
+      'in place, with an in-flight ref.',
+  },
+
+  'src/app/(bare)/subscription/page.tsx': {
+    allow: 1,
+    reason:
+      'A coupon LOOKUP, not a payload field. Typing in it calls GET ' +
+      'validate-coupon and renders a preview; the binding check happens ' +
+      'server-side under a lock when the operator activates, so a code ' +
+      'exhausted in between is still caught. There is no submit to guard, no ' +
+      'reset to perform and no second field to cross-check — useAppForm models ' +
+      'one submit of one schema and this control has none. It is normalised ' +
+      'through the canonical toCodeOrNull (which closes an inner space that ' +
+      'trim leaves, and would otherwise never match upper(trim(code)) ' +
+      'server-side), it carries an aria-label, and its verdict is a role=status ' +
+      'region the input points at with aria-describedby.',
+  },
+
+  'src/app/(chrome)/pt-os/clients/[id]/payments/page.tsx': {
+    allow: 1,
+    reason:
+      'One query filter on a read: the status <select> beside the search box. ' +
+      'It narrows the rendered payment list and resets the page index; it is ' +
+      'not part of any payload. The write on this screen — Record Payment — IS ' +
+      'on the platform, schema and all. §1 names filters explicitly. Verify by ' +
+      'reading its onChange: it ends in setPage(0) and touches nothing else.',
+  },
 };
 
 export function justificationFor(rel) {

@@ -125,6 +125,21 @@ export interface TextFieldProps extends BoundFieldProps {
   maxLength?: number;
   /** Show a live character count in the label row. Pairs with `maxLength`. */
   showCount?: boolean;
+  /**
+   * Rendered inside the control's trailing edge — a password reveal toggle.
+   *
+   * Positioned by this component rather than by the caller, so the control
+   * gets the padding that keeps the text clear of it. A caller that absolutely
+   * positions its own button over the input has to guess that padding, and the
+   * two go out of step the moment the control's height changes.
+   *
+   * It must be interactive and it must carry its own accessible name: it is a
+   * sibling of the input, not part of it, so the field's `<label>` does not
+   * name it.
+   */
+  trailing?: React.ReactNode;
+  /** Rendered at the right end of the label row — an "Optional" marker, a link. */
+  labelAside?: React.ReactNode;
 }
 
 export function TextField({
@@ -142,6 +157,8 @@ export function TextField({
   autoComplete,
   maxLength,
   showCount,
+  trailing,
+  labelAside,
 }: TextFieldProps) {
   const error = visibleError(field, serverError);
   const value = field.state.value ?? '';
@@ -167,21 +184,29 @@ export function TextField({
           >
             {value.length}/{maxLength}
           </span>
-        ) : undefined
+        ) : (
+          labelAside
+        )
       }
     >
-      <TextInput
-        name={field.name}
-        type={type}
-        value={value}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        // No `maxLength` on the element even when one is declared: a hard cap
-        // silently truncates a paste, so the user loses text with no message.
-        // The schema reports the overshoot and the count above shows it.
-        onChange={(e) => field.handleChange(e.target.value)}
-        onBlur={field.handleBlur}
-      />
+      <span className="relative block">
+        <TextInput
+          name={field.name}
+          type={type}
+          value={value}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          className={trailing ? 'pr-11' : undefined}
+          // No `maxLength` on the element even when one is declared: a hard cap
+          // silently truncates a paste, so the user loses text with no message.
+          // The schema reports the overshoot and the count above shows it.
+          onChange={(e) => field.handleChange(e.target.value)}
+          onBlur={field.handleBlur}
+        />
+        {trailing && (
+          <span className="absolute right-1 top-1/2 -translate-y-1/2">{trailing}</span>
+        )}
+      </span>
     </FormField>
   );
 }

@@ -19,29 +19,76 @@ import { ArrowLeft, Lock, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle } from
 import BrandLogoWide from '@/components/BrandLogoWide';
 import { api } from '@/lib/api';
 import { C, SHADOW } from '@/components/landing/tokens';
-import { checkNewPassword, passwordStrength, MIN_LENGTH } from '@/lib/password-policy';
-import { errorMessage } from '@/lib/forms/errors';
+import { SoftTextField, SoftFormError } from '@/components/landing/SoftField';
+import { passwordStrength, MIN_LENGTH } from '@/lib/password-policy';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import {
+  newPasswordSchema, blankNewPassword, NEW_PASSWORD_FIELD_HINTS,
+} from '@/lib/forms/schemas/auth';
 
 // Tokens, not local hex: the twin of /forgot-password, and the last screen in
 // the recovery journey. See the note there.
 const INK = C.ink;
 const MUTE = C.muted;
-const LINE = C.line;
 
 const STRENGTH_LABEL = ['', 'Weak', 'Fair', 'Good', 'Strong'];
 const STRENGTH_COLOR = ['transparent', C.red, C.gold, C.blue, C.emerald];
+
+/**
+ * The four-bar strength meter.
+ *
+ * Extracted so the form body reads as a form. It is `aria-hidden` and paired
+ * with a visually-hidden sentence, because four coloured divs announce as
+ * nothing at all — a screen-reader user got no feedback from it whatsoever.
+ */
+function StrengthMeter({ password }: { password: string }) {
+  const strength = passwordStrength(password);
+
+  return (
+    <div className="mt-2 flex items-center gap-2">
+      <div aria-hidden className="flex h-1 flex-1 gap-1">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="h-full flex-1 rounded-full transition-colors"
+            style={{ background: i <= strength ? STRENGTH_COLOR[strength] : C.line }}
+          />
+        ))}
+      </div>
+      <span className="text-[11.5px] font-[650]" style={{ color: STRENGTH_COLOR[strength] }}>
+        {STRENGTH_LABEL[strength]}
+      </span>
+      <span className="sr-only" aria-live="polite">
+        Password strength: {STRENGTH_LABEL[strength] || 'none'}
+      </span>
+    </div>
+  );
+}
 
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token') ?? '';
 
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
   const [show, setShow] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+
+  // `strict: false` — this posts to /api/auth/reset-password, and auth.js
+  // checks length only. The five-rule invitation policy belongs to
+  // routes/invitations.js and is applied on the screen that posts there.
+  // Choosing by endpoint is the only thing that keeps either rule honest; see
+  // password-policy.ts on why a UI-only rule is worse than none.
+  const f = useAppForm({
+    schema: newPasswordSchema(false),
+    defaultValues: blankNewPassword(),
+    fieldHints: NEW_PASSWORD_FIELD_HINTS,
+    onSubmit: async (values) => {
+      await api.auth.resetPassword(token, values.password);
+    },
+    onSuccess: () => setDone(true),
+  });
+
+  const { form } = f;
 
   // Send them somewhere useful once the password is changed. The backend bumps
   // token_version, so every existing session is already invalid — signing in
@@ -52,25 +99,6 @@ function ResetPasswordForm() {
     return () => clearTimeout(t);
   }, [done, router]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-
-    const check = checkNewPassword(password, confirm);
-    if (!check.ok) { setError(check.error); return; }
-
-    setBusy(true);
-    try {
-      await api.auth.resetPassword(token, password);
-      setDone(true);
-    } catch (err: unknown) {
-      setError(errorMessage(err, 'Could not reset the password. The link may have expired.'));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const strength = passwordStrength(password);
 
   // No token means someone opened this URL directly rather than via the email.
   // Say so plainly instead of rendering a form that cannot possibly work.
@@ -118,78 +146,65 @@ function ResetPasswordForm() {
 
   return (
     <div className="rounded-[20px] p-6" style={{ background: C.panel, boxShadow: SHADOW.panel }}>
-      <form onSubmit={handleSubmit} noValidate>
-        <label htmlFor="rp-password" className="mb-1.5 block text-[12.5px] font-[650]" style={{ color: INK }}>New password</label>
-        <div className="relative">
-          <Lock size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: MUTE }} />
-          <input
-            id="rp-password"
-            type={show ? 'text' : 'password'}
-            autoComplete="new-password"
-            autoFocus
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={`At least ${MIN_LENGTH} characters`}
-            className="w-full rounded-[12px] py-3 pl-10 pr-11 text-[14px] outline-none transition-shadow"
-            style={{ background: C.canvas, boxShadow: SHADOW.inset, border: `1px solid ${LINE}`, color: INK }}
-          />
-          <button
-            type="button"
-            onClick={() => setShow((v) => !v)}
-            aria-label={show ? 'Hide password' : 'Show password'}
-            className="absolute right-3 top-1/2 -translate-y-1/2"
-            style={{ color: MUTE }}
-          >
-            {show ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-        </div>
+      <form onSubmit={(e) => { e.preventDefault(); void f.submit(); }} noValidate>
+        <form.Field name="password">
+          {(field) => (
+            <>
+              <SoftTextField
+                field={field}
+                label="New password"
+                required
+                type={show ? 'text' : 'password'}
+                autoComplete="new-password"
+                focusOnMount
+                placeholder={`At least ${MIN_LENGTH} characters`}
+                icon={<Lock size={16} />}
+                serverError={f.errors.fieldErrors.password}
+                trailing={
+                  <button
+                    type="button"
+                    onClick={() => setShow((v) => !v)}
+                    aria-label={show ? 'Hide password' : 'Show password'}
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                    style={{ color: MUTE }}
+                  >
+                    {show ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                }
+              />
 
-        {password && (
-          <div className="mt-2 flex items-center gap-2">
-            <div className="flex h-1 flex-1 gap-1">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="h-full flex-1 rounded-full transition-colors"
-                  style={{ background: i <= strength ? STRENGTH_COLOR[strength] : LINE }}
-                />
-              ))}
-            </div>
-            <span className="text-[11.5px] font-[650]" style={{ color: STRENGTH_COLOR[strength] }}>
-              {STRENGTH_LABEL[strength]}
-            </span>
-          </div>
-        )}
+              {field.state.value && (
+                <StrengthMeter password={field.state.value} />
+              )}
+            </>
+          )}
+        </form.Field>
 
-        <label htmlFor="rp-confirm" className="mb-1.5 mt-4 block text-[12.5px] font-[650]" style={{ color: INK }}>Confirm password</label>
-        <div className="relative">
-          <Lock size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: MUTE }} />
-          <input
-            id="rp-confirm"
-            type={show ? 'text' : 'password'}
-            autoComplete="new-password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            placeholder="Type it again"
-            className="w-full rounded-[12px] py-3 pl-10 pr-3 text-[14px] outline-none transition-shadow"
-            style={{ background: C.canvas, boxShadow: SHADOW.inset, border: `1px solid ${LINE}`, color: INK }}
-          />
-        </div>
+        <form.Field name="confirm">
+          {(field) => (
+            <SoftTextField
+              field={field}
+              label="Confirm password"
+              required
+              type={show ? 'text' : 'password'}
+              autoComplete="new-password"
+              placeholder="Type it again"
+              icon={<Lock size={16} />}
+              className="mt-4"
+              serverError={f.errors.fieldErrors.confirm}
+            />
+          )}
+        </form.Field>
 
-        {error && (
-          <div className="mt-3 flex items-start gap-2 rounded-[10px] px-3 py-2.5" style={{ background: C.redSoft }}>
-            <AlertCircle size={15} className="mt-[1px] shrink-0" style={{ color: C.red }} />
-            <span className="text-[12.5px] font-[550]" style={{ color: C.red }}>{error}</span>
-          </div>
-        )}
+        <SoftFormError message={f.errors.formError} className="mt-3" />
 
         <button
           type="submit"
-          disabled={busy}
+          disabled={f.isSubmitting}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] py-3 text-[14px] font-[700] text-white transition-opacity disabled:opacity-60"
           style={{ background: `linear-gradient(135deg, ${C.blue450}, ${C.blueLo})`, boxShadow: SHADOW.blueGlow }}
         >
-          {busy ? <><Loader2 size={17} className="animate-spin" /> Updating…</> : 'Set new password'}
+          {f.isSubmitting ? <><Loader2 size={17} className="animate-spin" /> Updating…</> : 'Set new password'}
         </button>
       </form>
     </div>

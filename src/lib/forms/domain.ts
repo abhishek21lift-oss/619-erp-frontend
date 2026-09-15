@@ -39,8 +39,10 @@ import {
   moneyField,
   percentField,
   dateField,
+  textField,
   type FieldOptions,
   type NumericFieldOptions,
+  type TextFieldOptions,
 } from './primitives';
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -176,6 +178,31 @@ export const gstRateField = (opts: Partial<FieldOptions> = {}) => {
     }
   });
 };
+
+/**
+ * A UPI transaction reference (UTR).
+ *
+ * 12 to 16 digits. NPCI issues 12; several PSP apps surface a longer internal
+ * reference, so the window is deliberately wider than the spec's minimum rather
+ * than rejecting references a member can genuinely see on their screen. The
+ * same window is written out in `routes/upi-payments.js` and in a CHECK
+ * constraint, and this is the third place it is stated — kept here rather than
+ * inline at each call site so the three cannot drift apart silently.
+ *
+ * A STRING, never a number: a UTR can begin with a zero, and parsing one as a
+ * number loses it.
+ */
+export const utrField = (opts: Partial<TextFieldOptions> = {}) =>
+  textField({
+    label: 'UPI reference',
+    minLength: 12,
+    maxLength: 16,
+    pattern: {
+      test: /^[0-9]{12,16}$/,
+      message: `${opts.label ?? 'UPI reference'} must be 12 to 16 digits.`,
+    },
+    ...opts,
+  } as TextFieldOptions);
 
 /** A trainer commission percentage. 0–100. */
 export const commissionPctField = (opts: Partial<FieldOptions> = {}) =>

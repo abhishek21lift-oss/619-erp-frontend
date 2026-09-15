@@ -177,11 +177,22 @@ export const CONTRACTS = {
   },
   /** §16 — server errors translated, not rendered raw. */
   error: {
-    // `errorMessage` is the same contract collapsed to one string, for toasts
-    // and banners that have no field to hang an error on. Matching only
-    // `mapApiError` would have reported a screen as UNMAPPED the moment it
-    // moved to the tidier call — a detector that punishes the better code.
-    platform: /mapApiError\s*\(|errorMessage\s*\(/,
+    // Three spellings of the same contract:
+    //
+    //   mapApiError    the mapper itself;
+    //   errorMessage   the same thing collapsed to one string, for toasts and
+    //                  banners with no field to hang an error on;
+    //   mapSignInError the login-screen variant, which delegates to
+    //                  mapApiError and then refuses to let a 401 or 403 say
+    //                  anything specific;
+    //   useAppForm     which calls mapApiError internally on every failed
+    //                  submit and puts the result in `errors`.
+    //
+    // All four, because a detector that matched only the first would report a
+    // screen as UNMAPPED the moment it moved to the tidier call — and one that
+    // missed useAppForm would mark a form as LOSING its error contract at the
+    // exact moment it gained the canonical one. Both happened here.
+    platform: /mapApiError\s*\(|errorMessage\s*\(|mapSignInError\s*\(|useAppForm\s*\(/,
     // Reading `.message` off an ApiError is the pattern mapApiError replaces;
     // it counts as "handled" but not as "canonical".
     manual: /instanceof ApiError|catch\s*\([^)]*\)\s*\{[^}]*setError/,

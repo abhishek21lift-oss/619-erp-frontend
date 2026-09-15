@@ -79,6 +79,61 @@ export interface FormFieldProps {
   id?: string;
 }
 
+/**
+ * The wiring rules, without the chrome presentation.
+ *
+ * Split out so a SECOND surface can share the contract instead of copying it.
+ * The public signed-out pages have their own design language — soft-UI, always
+ * light, its own token file — and rendering the chrome controls there would put
+ * theme-aware inputs on a page that is hard-coded light, so a dark-mode user
+ * would get dark boxes inside a light card. That is a real reason for a second
+ * SURFACE; it is not a reason for a second set of ARIA rules, which is where
+ * the seventeen-components-and-one-aria-describedby problem came from in the
+ * first place.
+ *
+ * So the id, the id derivation, the error-replaces-description rule and the
+ * `fieldControlProps` contract live here and are used by both. See
+ * `components/landing/SoftField.tsx` for the other caller.
+ */
+export function useFieldWiringState(opts: {
+  error?: string;
+  required?: boolean;
+  disabled?: boolean;
+  readOnly?: boolean;
+  id?: string;
+  description?: string;
+}): { wiring: FieldWiring; descriptionId: string; errorId: string } {
+  const generated = useId();
+  const id = opts.id ?? generated;
+  const descriptionId = `${id}-description`;
+  const errorId = `${id}-error`;
+
+  // The error replaces the description rather than joining it. Both at once
+  // means the screen reader reads the hint before the thing that went wrong,
+  // which is the wrong order when something has gone wrong.
+  const describedBy = opts.error ? errorId : opts.description ? descriptionId : undefined;
+
+  return {
+    wiring: {
+      id,
+      describedBy,
+      invalid: !!opts.error,
+      required: !!opts.required,
+      disabled: !!opts.disabled,
+      readOnly: !!opts.readOnly,
+    },
+    descriptionId,
+    errorId,
+  };
+}
+
+/** Provide a wiring object to controls below. For surfaces other than this one. */
+export function FieldWiringProvider({
+  value, children,
+}: { value: FieldWiring; children: React.ReactNode }) {
+  return <FieldContext.Provider value={value}>{children}</FieldContext.Provider>;
+}
+
 export function FormField({
   label,
   children,
@@ -93,19 +148,10 @@ export function FormField({
   className,
   id: idOverride,
 }: FormFieldProps) {
-  const generated = useId();
-  const id = idOverride ?? generated;
-  const descriptionId = `${id}-description`;
-  const errorId = `${id}-error`;
-
-  // The error replaces the description rather than joining it. Both at once
-  // means the screen reader reads the hint before the thing that went wrong,
-  // which is the wrong order when something has gone wrong.
-  const describedBy = error ? errorId : description ? descriptionId : undefined;
-
-  const wiring: FieldWiring = {
-    id, describedBy, invalid: !!error, required, disabled, readOnly,
-  };
+  const { wiring, descriptionId, errorId } = useFieldWiringState({
+    error, required, disabled, readOnly, id: idOverride, description,
+  });
+  const { id } = wiring;
 
   return (
     <FieldContext.Provider value={wiring}>

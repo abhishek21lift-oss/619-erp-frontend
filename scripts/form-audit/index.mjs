@@ -34,13 +34,21 @@ const ROOT = join(HERE, '..', '..');
 const SRC = join(ROOT, 'src');
 
 /**
- * The design system's own directory.
+ * The design system's own files.
  *
  * Excluded from control counting because every wrapper bottoms out in a native
  * element — `RadioField` contains `<input type="radio">` and must. Counting
  * those made the old headline RISE when a field component was added.
+ *
+ * `SoftField.tsx` is here for the same reason and no other: it is the public
+ * surface's skin over the SAME wiring contract (it calls FormField's own
+ * `useFieldWiringState` and `fieldControlProps`), not a second field system.
+ * See its header for why the signed-out pages cannot use the chrome controls.
  */
-const DESIGN_SYSTEM = 'src/components/ui/form';
+const DESIGN_SYSTEM = [
+  'src/components/ui/form',
+  'src/components/landing/SoftField.tsx',
+];
 
 /** Comments are prose; the first audit counted its own documentation. */
 const stripComments = (s) =>
@@ -63,7 +71,7 @@ for (const file of walk(SRC)) {
   const rel = relative(ROOT, file).replace(/\\/g, '/');
   const raw = readFileSync(file, 'utf8');
   const source = stripComments(raw);
-  const inDesignSystem = rel.startsWith(DESIGN_SYSTEM);
+  const inDesignSystem = DESIGN_SYSTEM.some((d) => rel.startsWith(d));
 
   const kinds = {};
   let nativeBusiness = 0;
@@ -77,7 +85,7 @@ for (const file of walk(SRC)) {
 
   const platformControls =
     (source.match(
-      /<(TextField|TextAreaField|NumberField|SelectField|DateFieldControl|MonthFieldControl|CheckboxField|RadioField|SearchField|TextFieldRow|FormField|FloatInput)[\s/>]/g,
+      /<(TextField|TextAreaField|NumberField|SelectField|DateFieldControl|MonthFieldControl|CheckboxField|RadioField|SearchField|TextFieldRow|FormField|FloatInput|SoftTextField|SoftField|SoftInput)[\s/>]/g,
     ) ?? []).length;
 
   const total = Object.values(kinds).reduce((a, b) => a + b, 0);
