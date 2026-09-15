@@ -30,6 +30,7 @@
     "@radix-ui/react-dialog": "^1.1.19",
     "@react-oauth/google": "^0.13.5",
     "@sentry/browser": "^10.65.0",
+    "@tanstack/react-form": "^1.33.5",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "jose": "^6.2.3",
@@ -44,7 +45,8 @@
     "react-markdown": "^9.1.0",
     "recharts": "^2.15.4",
     "remark-gfm": "^4.0.1",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.6.5"
   },
   "overrides": {
     "postcss": "^8.5.18",
