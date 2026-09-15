@@ -50,9 +50,27 @@ const BE_ROOT = path.resolve(
 
 const serverJs = path.join(BE_ROOT, 'src', 'server.js');
 if (!fs.existsSync(serverJs)) {
-  console.log(`[api-contract] backend not found at ${BE_ROOT} — skipping.`);
-  console.log('[api-contract] pass --backend <path> or set BACKEND_PATH to check.');
-  process.exit(0);
+  // FAIL, not skip.
+  //
+  // A contract check that exits 0 when it cannot compare anything reports
+  // green for the exact configuration where drift goes unnoticed — and this
+  // check exists because twenty endpoints shipped behind a nav entry against
+  // routes that did not exist. A missing checkout is the state in which that
+  // happens again, so it is a failure, and the message says how to fix it.
+  //
+  // CONTRACT_CHECK_OPTIONAL=1 downgrades it to a warning for a local clone
+  // that genuinely has only this repo. CI must never set it; the frontend's
+  // e2e job checks out the backend precisely so this can run, and a wiring
+  // test asserts the opt-out is absent from the workflow.
+  const message = `[api-contract] backend not found at ${BE_ROOT}`;
+  if (process.env.CONTRACT_CHECK_OPTIONAL === '1') {
+    console.warn(`⚠ ${message} — skipped because CONTRACT_CHECK_OPTIONAL=1`);
+    process.exit(0);
+  }
+  console.error(`✗ ${message}`);
+  console.error('  A contract check that cannot compare anything must not report green.');
+  console.error('  Pass --backend <path>, set BACKEND_PATH, or clone the backend beside this repo.');
+  process.exit(1);
 }
 
 // ── Backend: the routes Express will actually match ────────────────────────

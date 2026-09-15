@@ -214,11 +214,23 @@ jobs:
         uses: actions/checkout@v4
         with: { path: frontend }
 
+      # `main`, deliberately, and worth stating because "test the matching
+      # commit" sounds like it should pin a SHA.
+      #
+      # The three repos deploy continuously from their own default branches.
+      # The backend this frontend will actually meet in production is the tip
+      # of backend `main` at deploy time — so that is the pairing worth
+      # testing. Pinning an older SHA would prove a combination that never
+      # runs anywhere.
+      #
+      # What was missing is not the pin but the RECORD: a green tick did not
+      # say which backend it was green against. The step below prints both
+      # SHAs, so a run can be traced to the exact pair it proved.
       - name: Checkout backend
         uses: actions/checkout@v4
         with:
           repository: abhishek21lift-oss/619-erp-backend
-          ref: main
+          ref: ${{ env.BACKEND_REF || 'main' }}
           path: backend
           # GITHUB_TOKEN is scoped to THIS repository only — it cannot check
           # out another private repo and fails with a 404. A PAT (or GitHub App
@@ -251,7 +263,30 @@ jobs:
       # Before the install so it fails fast: it needs neither a database nor a
       # running API, and there is no reason to spend three minutes standing
       # those up to discover the two libraries disagree.
-      - name: Fitness scoring parity (frontend ↔ backend)
+      - name: Record the exact pair under test
+        run: |
+          echo "frontend $(git -C frontend rev-parse HEAD)"
+          echo "backend  $(git -C backend  rev-parse HEAD)"
+          echo "backend ref: ${BACKEND_REF:-main}"
+
+      # ── Does every frontend call resolve to a backend route? ─────────────
+      #
+      # tsc proves the frontend's own calls typecheck; it cannot know whether
+      # the URL inside them is served by anything. That gap is how nineteen
+      # methods under /api/ai/trainer, /api/ai/memory and /api/ai/programmer
+      # shipped behind a nav entry against routes that existed in no form, and
+      # how /api/pt-os/clients/:id/checkin-insight became a button that always
+      # failed.
+      #
+      # Rides this job for the same reason the parity check does: it is the
+      # only place both repos exist at once.
+      - name: API contract (frontend ↔ backend)
+        working-directory: frontend
+        # No CONTRACT_CHECK_OPTIONAL here, ever — same reasoning as the parity
+        # flag below. The checkout above exists so this can run.
+        run: node scripts/api-contract-check.mjs --backend ../backend
+
+      - name: Scoring parity — all six libraries (frontend ↔ backend)
         working-directory: frontend
         # No SCORING_PARITY_OPTIONAL here, ever. That flag exists for a
         # contributor who has not cloned the backend; in CI both are present,

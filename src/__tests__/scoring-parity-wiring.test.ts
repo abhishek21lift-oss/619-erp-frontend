@@ -133,3 +133,41 @@ describe('both copies still exist where the check expects them', () => {
     expect(script).toContain('BACKEND_PATH');         // explicit override
   });
 });
+
+// ── The API contract check is wired the same way, and for the same reason ───
+//
+// It compares the frontend's calls against the backend's real route table, so
+// it needs both repos checked out — which happens only in the e2e job. The
+// failure it guards against is the one that already happened: twenty endpoints
+// shipped against routes that did not exist, behind a nav entry, with a test
+// that asserted `typeof api.ai.memory.list === 'function'` and passed.
+describe('the API contract check is wired into CI', () => {
+  const script = readFileSync(join(ROOT, 'scripts', 'api-contract-check.mjs'), 'utf8');
+
+  it('runs in the job that checks out both repos', () => {
+    const e2e = workflow.slice(workflow.indexOf('repository: abhishek21lift-oss/619-erp-backend'));
+    expect(e2e).toContain('api-contract-check.mjs');
+  });
+
+  it('fails rather than skips when the backend is missing', () => {
+    // The opposite of what it used to do. A check that exits 0 when it cannot
+    // compare anything reports green for exactly the configuration where drift
+    // goes unnoticed.
+    expect(script).toContain('A contract check that cannot compare anything must not report green.');
+    expect(script).toMatch(/process\.exit\(1\)/);
+  });
+
+  it('never sets the opt-out in CI', () => {
+    // CONTRACT_CHECK_OPTIONAL exists for a local clone that has only this
+    // repo. In CI both are present, so a skip would mean the check is broken
+    // rather than satisfied.
+    expect(workflow).not.toMatch(/CONTRACT_CHECK_OPTIONAL:\s*'?1/);
+  });
+
+  it('the run records which pair it proved', () => {
+    // A green tick that does not say which backend it was green against
+    // cannot be traced back to a combination afterwards.
+    expect(workflow).toContain('Record the exact pair under test');
+    expect(workflow).toMatch(/git -C backend\s+rev-parse HEAD/);
+  });
+});
