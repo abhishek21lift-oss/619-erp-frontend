@@ -15,6 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "knip": "knip",
+    "api-contract": "node scripts/api-contract-check.mjs",
     "device-check": "node scripts/device-check/run.mjs",
     "e2e": "playwright test",
     "e2e:api": "playwright test --project=api"
