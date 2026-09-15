@@ -42,6 +42,10 @@ function Inner() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [stats, setStats] = useState<PaymentStats | null>(null);
   const [loading, setLoading] = useState(true);
+  // A failed fetch and a studio that has taken nothing are different facts.
+  // Without this they shared a state: the catch below set payments to [] and
+  // the KPI row rendered a confident zero over an unread ledger.
+  const [loadError, setLoadError] = useState<string | null>(null);
   // Two values, not one: `query` is what is in the box right now (so the input
   // stays responsive and can be seeded from ?q= by the global search), `search`
   // is the debounced value the fetch actually uses. The previous version kept
@@ -81,8 +85,11 @@ function Inner() {
       ]);
       setPayments(Array.isArray(data) ? data : []);
       setStats(s);
-    } catch {
+      setLoadError(null);
+    } catch (err) {
       setPayments([]);
+      setStats(null);
+      setLoadError(err instanceof Error ? err.message : 'Could not load collected payments');
     } finally {
       setLoading(false);
     }
@@ -153,6 +160,23 @@ function Inner() {
   return (
     <PullToRefresh onRefresh={fetchPayments}>
     <PageContainer>
+      {loadError && (
+        <div
+          role="alert"
+          className="mb-4 rounded-2xl border px-4 py-3 text-[13px] font-semibold"
+          style={{
+            background: 'rgba(239,68,68,0.08)',
+            borderColor: 'rgba(239,68,68,0.25)',
+            color: '#dc2626',
+          }}
+        >
+          Collected payments could not be loaded, so the figures below are not a reading.
+          <span className="ml-2 font-normal opacity-80">{loadError}</span>
+          <button type="button" onClick={fetchPayments} className="ml-3 underline underline-offset-2 font-semibold">
+            Try again
+          </button>
+        </div>
+      )}
       {/* ── Hero ──
           This was a cyan-to-violet gradient card with its own corner glows,
           on its own max-w-[1280px] container with mt-1 pt-2 — and then the
