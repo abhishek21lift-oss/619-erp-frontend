@@ -81,21 +81,21 @@ function audit(): Audit {
 const CEILING = {
   /** §6. Zero, and it stays zero. */
   riskyCoercions: 0,
-  unjustified: 269,
-  p0Unjustified: 19,
-  p1Unjustified: 158,
+  unjustified: 252,
+  p0Unjustified: 15,
+  p1Unjustified: 149,
   uploadUncanonical: 7,
   /** Forms with no submit guard of any kind. */
-  noSubmitContract: 17,
+  noSubmitContract: 16,
 };
 
 /** Raise these as phases land. Never lower them. */
 const FLOOR = {
-  platformControls: 225,
+  platformControls: 228,
   /** Forms whose errors reach the canonical mapper. */
   errorPlatform: 12,
   /** Forms bound to a named canonical schema. */
-  schemaPlatform: 6,
+  schemaPlatform: 7,
 };
 
 describe('the audit measures the tree', () => {
@@ -184,9 +184,12 @@ describe('floors — these may only rise', () => {
 describe('the ratchet stays honest', () => {
   const a = audit();
 
-  it('no justification is stale', () => {
-    // An exemption for a file that no longer has native business controls is a
-    // slot a regression can occupy unnoticed.
+  it('no justification is stale, in either direction', () => {
+    // Two shapes. An exemption for a file that no longer has native business
+    // controls is an empty slot a regression can occupy unnoticed; an
+    // exemption that allows MORE than the file has is the same thing with the
+    // slack hidden inside a live entry. verify-payments sat at allow: 8 with 6
+    // real controls once two of its boxes were reclassified as search.
     expect(a.totals.staleJustifications).toEqual([]);
   });
 

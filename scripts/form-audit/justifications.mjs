@@ -32,9 +32,14 @@
  *
  * `allow` is a COUNT, not a blanket. A file justified for 6 controls that grows
  * a 7th fails the audit, so a new field cannot arrive under cover of an old
- * exemption. The audit also reports an entry whose file no longer has native
- * business controls, because a stale exemption is a slot a regression can
- * occupy unnoticed.
+ * exemption.
+ *
+ * The audit reports an entry that has gone slack in EITHER direction: one whose
+ * file no longer has native business controls, and — the shape that nearly got
+ * past — one that allows more than the file actually has. This entry was
+ * written at 8 and the file dropped to 6 when two of its boxes were correctly
+ * reclassified as search, leaving two free slots nobody had reasoned about. An
+ * allowance above the real count is a blanket by another name.
  */
 
 export const JUSTIFIED = {
@@ -50,7 +55,7 @@ export const JUSTIFIED = {
   },
 
   'src/app/(chrome)/finance/verify-payments/page.tsx': {
-    allow: 8,
+    allow: 6,
     reason:
       'Already correct, verified line by line rather than assumed. The radio ' +
       'group uses fieldset+legend (what RadioField provides); the textarea has ' +

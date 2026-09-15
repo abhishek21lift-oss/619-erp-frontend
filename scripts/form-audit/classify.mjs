@@ -64,7 +64,14 @@ export function controlKind(tag, attrs) {
   if (tag === 'select') return 'select';
 
   const explicit = /type="([a-z-]+)"/.exec(attrs);
-  if (explicit) return explicit[1];
+  // An explicit type wins, EXCEPT over the search heuristics below, and that
+  // exception is load-bearing: a search box is almost always spelled
+  // `type="text"` plus a placeholder or an accessible name that says Search.
+  // Returning on the explicit type first meant the heuristics never ran for
+  // the boxes that most needed them — the PT payments search declares
+  // `aria-label="Search payments"` AND `placeholder="Search payments…"` and
+  // was still counted as an unjustified business control.
+  if (explicit && explicit[1] !== 'text' && explicit[1] !== 'search') return explicit[1];
 
   // A dynamic type — `type={show ? 'text' : 'password'}` on a reveal toggle,
   // or `type={type}` where a field spec is being mapped over. Reported as
@@ -86,7 +93,7 @@ export function controlKind(tag, attrs) {
   if (/placeholder="\s*Search|placeholder=\{[^}]*[Ss]earch/.test(attrs)) return 'search';
   if (/aria-label="[^"]*[Ss]earch|aria-label=\{[^}]*[Ss]earch/.test(attrs)) return 'search';
 
-  return 'text';
+  return explicit ? explicit[1] : 'text';
 }
 
 /**

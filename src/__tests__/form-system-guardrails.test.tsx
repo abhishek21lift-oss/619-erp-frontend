@@ -138,14 +138,21 @@ describe('the label audit, resolved case by case', () => {
   //
   // The other fifteen split three ways by what the caption actually names.
 
-  it('associates the nine captions that sit beside a real control', () => {
+  it('associates the captions that sit beside a real control', () => {
     const associated: [string, string][] = [
       ['app/(bare)/forgot-password/page.tsx', 'fp-email'],
       ['app/(bare)/reset-password/page.tsx', 'rp-password'],
       ['app/(bare)/reset-password/page.tsx', 'rp-confirm'],
       ['app/(chrome)/ai-coach/knowledge/page.tsx', 'kb-title'],
       ['app/(chrome)/pt-os/clients/[id]/edit/page.tsx', 'delete-confirm'],
-      ['app/(chrome)/pt-os/clients/[id]/payments/page.tsx', 'pay-ref'],
+      // `pay-ref` used to be here. The Record Payment sheet is on the universal
+      // form platform now, so its reference box renders through FormField,
+      // which generates the id and points its own <label htmlFor> at it — the
+      // association is by construction rather than by two hand-written strings
+      // agreeing. Re-adding a hand-written id would be asserting a property the
+      // component no longer has. The property itself is still covered, and more
+      // strictly: label-association.test.ts asserts that NO control in the app
+      // is nameless, with no per-file list to fall out of date.
       ['app/(chrome)/trainers/leave/page.tsx', 'leave-reason'],
       ['app/(chrome)/trainers/leave/page.tsx', 'leave-reject-note'],
     ];

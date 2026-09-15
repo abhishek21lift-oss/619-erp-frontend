@@ -150,10 +150,27 @@ for (const name of ['submit', 'error', 'reset', 'schema']) {
   }
 }
 
-/** Justifications naming a file that no longer has native business controls. */
-totals.staleJustifications = Object.keys(JUSTIFIED).filter((f) => {
+/**
+ * Justifications that have gone slack, either way.
+ *
+ * Two shapes, and the second is the one that nearly slipped through:
+ *
+ *   · the file no longer has native business controls at all, so the entry is
+ *     an empty slot a regression can occupy unnoticed;
+ *   · the entry allows MORE than the file actually has. `allow` is documented
+ *     as a count and not a blanket, and an allowance above the real number is
+ *     a blanket by another name — verify-payments sat at allow: 8 with 6 real
+ *     controls once two of its boxes were correctly reclassified as search,
+ *     leaving two free slots nobody had reasoned about.
+ */
+totals.staleJustifications = Object.keys(JUSTIFIED).flatMap((f) => {
   const row = rows.find((r) => r.file === f);
-  return !row || row.nativeBusiness === 0;
+  if (!row || row.nativeBusiness === 0) return [f];
+  const allow = JUSTIFIED[f].allow;
+  if (allow > row.nativeBusiness) {
+    return [`${f} (allows ${allow}, file has ${row.nativeBusiness})`];
+  }
+  return [];
 });
 
 if (process.argv.includes('--json')) {

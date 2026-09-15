@@ -14,7 +14,16 @@ import { Button, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
-import { errorMessage, mapApiError } from '@/lib/forms/errors';
+import { errorMessage } from '@/lib/forms/errors';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import { todayISO } from '@/lib/forms/domain';
+import {
+  ptPaymentSchema, blankPtPayment, toPtPaymentPayload, applyKeypad, balanceAfter,
+  PT_PAYMENT_FIELD_HINTS, type PtPaymentMethod,
+} from '@/lib/forms/schemas/ptPayment';
+import {
+  TextField, TextAreaField, DateFieldControl, FormErrorBanner, visibleError,
+} from '@/components/ui/form';
 
 interface Payment {
   id: string; client_id: string; trainer_id: string;
@@ -133,32 +142,11 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showPaymentPanel, setShowPaymentPanel] = useState(false);
-  const [showOptional, setShowOptional] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 20;
 
-  // Replaces a `formRef` that was attached to this dialog and never read —
-  // declared, wired up, and load-bearing for nothing.
-  //
-  // Escape, focus trap and focus restore for the Record Payment sheet. It
-  // declared `aria-modal="true"` while Tab left it for the payment history
-  // table behind, and it had no Escape handler, so the only way out was a
-  // click on the backdrop.
-  const dialogRef = useDialogA11y({
-    open: showPaymentPanel,
-    onClose: () => setShowPaymentPanel(false),
-  });
-
-  const [form, setForm] = useState({
-    amount: '',
-    payment_method: 'CASH',
-    payment_ref: '',
-    date: new Date().toISOString().slice(0, 10),
-    notes: '',
-  });
 
   const fetchAll = async () => {
     try {
@@ -168,8 +156,14 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
         api.pt.client(id),
         api.pt.payments({ client_id: id }),
       ]);
-      setClient((clientRes as any)?.data ?? null);
-      setPayments((paymentsRes as any)?.data ?? []);
+      // One assertion each, at the boundary, naming the shape this screen
+      // reads. These two routes still type `data` as `unknown`, and the casts
+      // used to be `as any` — which also switched off checking of every
+      // property access downstream, so `client.final_amount` was unchecked all
+      // the way into the balance arithmetic. §18 draws the line at API
+      // boundaries specifically because of that knock-on.
+      setClient((clientRes.data as PtClientDetail | null) ?? null);
+      setPayments((paymentsRes.data as Payment[] | null) ?? []);
     } catch (err: unknown) {
       // mapApiError rather than err.message: a 5xx body can carry a stack or a
       // SQL error, and this screen shows the message to a studio owner.
@@ -194,38 +188,6 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
 
   const totalPages = Math.ceil(filteredPayments.length / PAGE_SIZE);
   const pagedPayments = filteredPayments.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-
-  const handleCreatePayment = async () => {
-    if (!form.amount || Number(form.amount) <= 0) return;
-    setSubmitting(true);
-    try {
-      const payload = {
-        client_id: id,
-        trainer_id: client?.trainer_id || null,
-        amount: Number(form.amount),
-        incentive_amt: 0,
-        payment_method: form.payment_method,
-        payment_ref: form.payment_ref || null,
-        date: form.date,
-        notes: form.notes || null,
-      };
-      await api.pt.createPayment(payload);
-      setShowPaymentPanel(false);
-      setForm({
-        amount: '',
-        payment_method: 'CASH',
-        payment_ref: '',
-        date: new Date().toISOString().slice(0, 10),
-        notes: '',
-      });
-      await fetchAll();
-    } catch (err: unknown) {
-      const mapped = mapApiError(err, { fallback: 'Failed to record payment' });
-      toast.error(mapped.formError ?? 'Failed to record payment');
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const totalPaid = payments
     .filter(p => p.status === 'completed' || !p.status)
@@ -590,240 +552,389 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
             {/* ── Record Payment — bottom sheet on mobile, centered modal on desktop ── */}
             <AnimatePresence>
               {showPaymentPanel && (
-                <>
-                  <m.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    data-no-pull-refresh className="fixed inset-0 z-[65]"
-                    style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)' }}
-                    onClick={() => setShowPaymentPanel(false)}
-                  />
-                  <m.div
-                    ref={dialogRef}
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 40 }}
-                    transition={{ type: 'spring', damping: 30, stiffness: 320 }}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Record payment"
-                    className="fixed z-[70] flex flex-col overflow-hidden
-                                 inset-x-0 bottom-0 max-h-[94dvh] rounded-t-[26px]
-                                 sm:inset-0 sm:m-auto sm:h-fit sm:max-h-[88vh] sm:max-w-md sm:rounded-[24px]"
-                    style={{
-                      background: 'var(--bg-card)',
-                      border: '1px solid var(--border)',
-                      boxShadow: '0 -12px 48px rgba(0,0,0,0.20)',
-                    }}
-                  >
-                    {/* Grab handle (mobile only) */}
-                    <div className="flex shrink-0 justify-center pt-2.5 sm:hidden">
-                      <span className="h-1.5 w-11 rounded-full" style={{ background: 'var(--border)' }} />
-                    </div>
-
-                    {/* Header (fixed) */}
-                    <div className="flex shrink-0 items-start justify-between gap-3 px-5 pt-3 pb-3">
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-[700] uppercase tracking-[0.12em]" style={{ color: 'var(--text-disabled)' }}>Record Payment</p>
-                        <p className="truncate text-[19px] font-[800] tracking-[-0.025em] mt-0.5" style={{ color: 'var(--text-primary)' }}>{client.name}</p>
-                      </div>
-                      <button
-                        onClick={() => setShowPaymentPanel(false)}
-                        aria-label="Close"
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-zinc-100"
-                        style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-
-                    {/* Scrollable body */}
-                    <div className="flex-1 overflow-y-auto px-5 pb-4">
-                      {/* Balance chip */}
-                      <div className="mb-3">
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-[600]"
-                          style={{
-                            background: client.balance_amount > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)',
-                            color: client.balance_amount > 0 ? '#f59e0b' : '#10b981',
-                          }}>
-                          <Wallet size={12} />
-                          {client.balance_amount > 0 ? `Balance due: ${fmtINR(client.balance_amount)}` : 'Fully paid'}
-                        </div>
-                      </div>
-
-                      {/* Hero amount display */}
-                      <div className="text-center pb-4 mb-4" style={{ borderBottom: '1px solid var(--border)' }}>
-                        <p className="text-[44px] sm:text-[54px] font-[800] tracking-[-0.04em] tabular-nums leading-none" style={{
-                          color: form.amount && Number(form.amount) > 0 ? 'var(--text-primary)' : 'var(--text-disabled)',
-                        }}>
-                          ₹{form.amount || '0'}
-                        </p>
-                      </div>
-
-                      {/* Payment method pills */}
-                      <div className="flex gap-2">
-                        {[
-                          { value: 'CASH', label: 'Cash', icon: Banknote, color: '#10b981' },
-                          { value: 'UPI', label: 'UPI', icon: Smartphone, color: '#0067e0' },
-                          { value: 'CARD', label: 'Card', icon: CreditCard, color: '#0067e0' },
-                          { value: 'BANK_TRANSFER', label: 'Bank', icon: Landmark, color: '#f59e0b' },
-                        ].map(m => {
-                          const Icon = m.icon;
-                          const sel = form.payment_method === m.value;
-                          return (
-                            <button
-                              key={m.value}
-                              onClick={() => setForm(f => ({ ...f, payment_method: m.value }))}
-                              className="flex-1 flex items-center justify-center gap-1 py-2.5 rounded-full text-[11px] font-[700] transition-all"
-                              style={{
-                                background: sel ? m.color : 'var(--bg-subtle)',
-                                color: sel ? '#fff' : 'var(--text-muted)',
-                                boxShadow: sel ? `0 4px 16px ${m.color}40` : 'none',
-                              }}
-                            >
-                              <Icon size={13} />
-                              <span className="ml-0.5">{m.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Number pad */}
-                      <div className="grid grid-cols-3 gap-2 mt-4">
-                        {['7','8','9','4','5','6','1','2','3','.','0','⌫'].map(key => (
-                          <button
-                            key={key}
-                            onClick={() => {
-                              setForm(f => {
-                                if (key === '⌫') return { ...f, amount: f.amount.slice(0, -1) };
-                                if (key === '.') return f.amount.includes('.') ? f : { ...f, amount: (f.amount || '0') + '.' };
-                                const next = f.amount === '' || f.amount === '0' ? key : f.amount + key;
-                                if (next.includes('.') && next.split('.')[1].length > 2) return f;
-                                return { ...f, amount: next };
-                              });
-                            }}
-                            className="h-[54px] sm:h-[58px] rounded-[16px] font-[500] transition-all active:scale-90 select-none"
-                            style={{
-                              background: key === '⌫' ? 'rgba(239,68,68,0.08)' : 'var(--bg-subtle)',
-                              color: key === '⌫' ? '#ef4444' : 'var(--text-primary)',
-                              fontSize: key === '⌫' ? '18px' : '22px',
-                            }}
-                          >
-                            {key}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Optional details toggle */}
-                      <button
-                        onClick={() => setShowOptional(v => !v)}
-                        className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-[12px] text-[11px] font-[600] transition-colors hover:bg-zinc-50 mt-4"
-                        style={{ color: 'var(--text-muted)', background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
-                      >
-                        <span>Reference / Date / Notes</span>
-                        <span style={{ fontSize: '9px', display: 'inline-block', transition: 'transform 0.2s', transform: showOptional ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
-                      </button>
-                      <AnimatePresence>
-                        {showOptional && (
-                          <m.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            style={{ overflow: 'hidden' }}
-                            className="space-y-3 mt-3"
-                          >
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <label htmlFor="pay-ref" className="block text-[10px] font-[600] uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Reference</label>
-                                <input id="pay-ref" type="text" value={form.payment_ref}
-                                  onChange={(e) => setForm(f => ({ ...f, payment_ref: e.target.value }))}
-                                  placeholder="TXN / UTR"
-                                  className="w-full px-3 py-2 rounded-[9px] text-[12px] outline-none"
-                                  style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }}
-                                />
-                              </div>
-                              <div>
-                                <label htmlFor="pay-record-date" className="block text-[10px] font-[600] uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Date</label>
-                                <input id="pay-record-date" type="date" value={form.date}
-                                  onChange={(e) => setForm(f => ({ ...f, date: e.target.value }))}
-                                  className="w-full px-3 py-2 rounded-[9px] text-[12px] outline-none"
-                                  style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)', colorScheme: 'light' }}
-                                />
-                              </div>
-                            </div>
-                            <textarea value={form.notes}
-                              onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))}
-                              placeholder="Notes (optional)"
-                              rows={2}
-                              className="w-full px-3 py-2 rounded-[9px] text-[12px] outline-none resize-none"
-                              style={{ background: 'var(--bg-card)', border: '1px solid #cbd5e1', color: 'var(--text-primary)' }}
-                            />
-                          </m.div>
-                        )}
-                      </AnimatePresence>
-
-                      {/* Summary */}
-                      <div className="rounded-[14px] p-4 space-y-2.5 mt-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                        <div className="flex justify-between text-[12px]">
-                          <span style={{ color: 'var(--text-muted)' }}>Already paid</span>
-                          <span className="font-[600] tabular-nums" style={{ color: '#10b981' }}>{fmtINR(client.paid_amount)}</span>
-                        </div>
-                        <div className="flex justify-between text-[12px]">
-                          <span style={{ color: 'var(--text-muted)' }}>This payment</span>
-                          <span className="font-[700] tabular-nums" style={{ color: form.amount && Number(form.amount) > 0 ? 'var(--text-primary)' : 'var(--text-disabled)' }}>
-                            {form.amount && Number(form.amount) > 0 ? fmtINR(form.amount) : '—'}
-                          </span>
-                        </div>
-                        <div className="h-px" style={{ background: 'var(--border)' }} />
-                        <div className="flex justify-between">
-                          <span className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>New balance</span>
-                          <span className="text-[15px] font-[800] tabular-nums" style={{
-                            color: Math.max(0, client.final_amount - (client.paid_amount + (Number(form.amount) || 0))) > 0 ? '#f59e0b' : '#10b981',
-                          }}>
-                            {fmtINR(Math.max(0, client.final_amount - (client.paid_amount + (Number(form.amount) || 0))))}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Sticky footer — always visible above the tab bar / home indicator */}
-                    <div
-                      className="shrink-0 px-5 pt-3"
-                      style={{
-                        borderTop: '1px solid var(--border)',
-                        background: 'var(--bg-card)',
-                        paddingBottom: 'calc(env(safe-area-inset-bottom) + 14px)',
-                      }}
-                    >
-                      <button
-                        onClick={handleCreatePayment}
-                        disabled={!form.amount || Number(form.amount) <= 0 || submitting}
-                        className="w-full py-4 rounded-[18px] text-[16px] font-[800] tracking-[-0.01em] transition-all select-none"
-                        style={{
-                          background: !form.amount || Number(form.amount) <= 0 || submitting
-                            ? 'var(--bg-subtle)'
-                            : 'linear-gradient(135deg, #10b981, #059669)',
-                          color: !form.amount || Number(form.amount) <= 0 || submitting
-                            ? 'var(--text-disabled)'
-                            : '#ffffff',
-                          boxShadow: !form.amount || Number(form.amount) <= 0 || submitting
-                            ? 'none'
-                            : '0 8px 24px rgba(16,185,129,0.4)',
-                          cursor: !form.amount || Number(form.amount) <= 0 || submitting ? 'not-allowed' : 'pointer',
-                        }}
-                      >
-                        {submitting ? 'Recording…' : 'Record Payment'}
-                      </button>
-                    </div>
-                  </m.div>
-                </>
+                <RecordPaymentSheet
+                  client={client}
+                  onClose={() => setShowPaymentPanel(false)}
+                  onRecorded={async () => {
+                    setShowPaymentPanel(false);
+                    await fetchAll();
+                  }}
+                />
               )}
             </AnimatePresence>
           </PageContainer>
         ) : null}
       </div>
     </Guard>
+  );
+}
+
+/**
+ * The Record Payment sheet.
+ *
+ * Split out of the page and mounted only while open, which is the whole of the
+ * reset contract for it (§11): the form state cannot outlive the sheet, so
+ * "type ₹4,500, cancel, reopen and find ₹4,500 still there — and the keypad
+ * APPENDS to it" is now unrepresentable rather than guarded against. It lived
+ * on the page before and only the SUCCESS path cleared it.
+ *
+ * The submit guard is the in-flight ref inside useAppForm. `disabled` plus a
+ * `submitting` flag was the old one, and neither survives two taps in the same
+ * frame — which on a 54px keypad button, on a phone, is not a hypothetical.
+ * The backend serialises concurrent writes for one client (FOR UPDATE on the
+ * client row), so the two were safe; they were still two payments.
+ *
+ * The keypad, the pills, the hero amount, the sticky footer and every style
+ * here are the sheet's own and are unchanged. What changed is where the value
+ * goes: `field.handleChange` rather than a page-level `setForm`, so a keypad
+ * press is dirty-tracked and validated exactly like a typed character.
+ */
+function RecordPaymentSheet({
+  client, onClose, onRecorded,
+}: {
+  client: PtClientDetail;
+  onClose: () => void;
+  onRecorded: () => Promise<void>;
+}) {
+  const { toast } = useToast();
+  const [showOptional, setShowOptional] = useState(false);
+
+  const f = useAppForm({
+    schema: ptPaymentSchema,
+    defaultValues: blankPtPayment(),
+    fieldHints: PT_PAYMENT_FIELD_HINTS,
+    onSubmit: async (values) => {
+      await api.pt.createPayment(
+        toPtPaymentPayload(values, {
+          clientId: client.id,
+          trainerId: client.trainer_id ?? null,
+        }),
+      );
+      toast.success('Payment recorded.');
+    },
+    onSuccess: () => { void onRecorded(); },
+  });
+
+  const { form, isSubmitting } = f;
+
+  // Escape, focus trap and focus restore. The sheet declared
+  // `aria-modal="true"` while Tab left it for the payment history table
+  // behind, and it had no Escape handler, so the only way out was a click on
+  // the backdrop. Escape is gated on the write being in flight — dismissing
+  // mid-save would hide the outcome.
+  const dialogRef = useDialogA11y({
+    open: true,
+    onClose,
+    escapeCloses: !isSubmitting,
+  });
+
+  return (
+    <>
+      <m.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        data-no-pull-refresh className="fixed inset-0 z-[65]"
+        style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)' }}
+        onClick={() => !isSubmitting && onClose()}
+      />
+      <m.div
+        ref={dialogRef}
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 40 }}
+        transition={{ type: 'spring', damping: 30, stiffness: 320 }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Record payment"
+        className="fixed z-[70] flex flex-col overflow-hidden
+                     inset-x-0 bottom-0 max-h-[94dvh] rounded-t-[26px]
+                     sm:inset-0 sm:m-auto sm:h-fit sm:max-h-[88vh] sm:max-w-md sm:rounded-[24px]"
+        style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          boxShadow: '0 -12px 48px rgba(0,0,0,0.20)',
+        }}
+      >
+        <form
+          noValidate
+          onSubmit={(e) => { e.preventDefault(); void f.submit(); }}
+          className="flex min-h-0 flex-col"
+        >
+          {/* Grab handle (mobile only) */}
+          <div className="flex shrink-0 justify-center pt-2.5 sm:hidden">
+            <span className="h-1.5 w-11 rounded-full" style={{ background: 'var(--border)' }} />
+          </div>
+
+          {/* Header (fixed) */}
+          <div className="flex shrink-0 items-start justify-between gap-3 px-5 pt-3 pb-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-[700] uppercase tracking-[0.12em]" style={{ color: 'var(--text-disabled)' }}>Record Payment</p>
+              <p className="truncate text-[19px] font-[800] tracking-[-0.025em] mt-0.5" style={{ color: 'var(--text-primary)' }}>{client.name}</p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              aria-label="Close"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-zinc-100 disabled:opacity-50"
+              style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Scrollable body */}
+          <div className="flex-1 overflow-y-auto px-5 pb-4">
+            <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} className="mb-3" />
+
+            {/* Balance chip */}
+            <div className="mb-3">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-[600]"
+                style={{
+                  background: client.balance_amount > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)',
+                  color: client.balance_amount > 0 ? '#f59e0b' : '#10b981',
+                }}>
+                <Wallet size={12} />
+                {client.balance_amount > 0 ? `Balance due: ${fmtINR(client.balance_amount)}` : 'Fully paid'}
+              </div>
+            </div>
+
+            <form.Field name="amount">
+              {(field) => {
+                const typed = field.state.value;
+                const asNumber = Number(typed);
+                const positive = typed !== '' && Number.isFinite(asNumber) && asNumber > 0;
+                const amountError = visibleError(field, f.errors.fieldErrors.amount);
+
+                return (
+                  <>
+                    {/* Hero amount display. A live region rather than a plain
+                        <p>: the keypad has no <input>, so a screen reader has
+                        nothing to echo as the value changes and a blind user
+                        would tap twelve identical buttons with no feedback. */}
+                    <div className="text-center pb-4 mb-4" style={{ borderBottom: '1px solid var(--border)' }}>
+                      <p
+                        aria-live="polite"
+                        aria-atomic="true"
+                        className="text-[44px] sm:text-[54px] font-[800] tracking-[-0.04em] tabular-nums leading-none"
+                        style={{ color: positive ? 'var(--text-primary)' : 'var(--text-disabled)' }}
+                      >
+                        ₹{typed || '0'}
+                      </p>
+                      {amountError && (
+                        <p className="mt-2 text-[12px] font-[600]" style={{ color: 'var(--danger-text)' }}>
+                          {amountError}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Payment method pills */}
+                    <form.Field name="payment_method">
+                      {(methodField) => (
+                        <fieldset className="border-0 p-0">
+                          <legend className="sr-only">Payment method</legend>
+                          <div className="flex gap-2">
+                            {[
+                              { value: 'CASH', label: 'Cash', icon: Banknote, color: '#10b981' },
+                              { value: 'UPI', label: 'UPI', icon: Smartphone, color: '#0067e0' },
+                              { value: 'CARD', label: 'Card', icon: CreditCard, color: '#0067e0' },
+                              { value: 'BANK_TRANSFER', label: 'Bank', icon: Landmark, color: '#f59e0b' },
+                            ].map((pill) => {
+                              const Icon = pill.icon;
+                              const sel = methodField.state.value === pill.value;
+                              return (
+                                <button
+                                  key={pill.value}
+                                  type="button"
+                                  aria-pressed={sel}
+                                  onClick={() => methodField.handleChange(pill.value as PtPaymentMethod)}
+                                  className="flex-1 flex items-center justify-center gap-1 py-2.5 rounded-full text-[11px] font-[700] transition-all"
+                                  style={{
+                                    background: sel ? pill.color : 'var(--bg-subtle)',
+                                    color: sel ? '#fff' : 'var(--text-muted)',
+                                    boxShadow: sel ? `0 4px 16px ${pill.color}40` : 'none',
+                                  }}
+                                >
+                                  <Icon size={13} />
+                                  <span className="ml-0.5">{pill.label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </fieldset>
+                      )}
+                    </form.Field>
+
+                    {/* Number pad. The press rules live in applyKeypad, which
+                        is pure and tested — they used to be an inline reducer
+                        nobody could exercise without a browser. */}
+                    <div className="grid grid-cols-3 gap-2 mt-4">
+                      {['7', '8', '9', '4', '5', '6', '1', '2', '3', '.', '0', '⌫'].map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          aria-label={key === '⌫' ? 'Delete last digit' : key === '.' ? 'Decimal point' : key}
+                          onClick={() => field.handleChange(applyKeypad(field.state.value, key))}
+                          onBlur={field.handleBlur}
+                          className="h-[54px] sm:h-[58px] rounded-[16px] font-[500] transition-all active:scale-90 select-none"
+                          style={{
+                            background: key === '⌫' ? 'rgba(239,68,68,0.08)' : 'var(--bg-subtle)',
+                            color: key === '⌫' ? '#ef4444' : 'var(--text-primary)',
+                            fontSize: key === '⌫' ? '18px' : '22px',
+                          }}
+                        >
+                          {key}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                );
+              }}
+            </form.Field>
+
+            {/* Optional details toggle */}
+            <button
+              type="button"
+              onClick={() => setShowOptional((v) => !v)}
+              aria-expanded={showOptional}
+              className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-[12px] text-[11px] font-[600] transition-colors hover:bg-zinc-50 mt-4"
+              style={{ color: 'var(--text-muted)', background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+            >
+              <span>Reference / Date / Notes</span>
+              <span aria-hidden style={{ fontSize: '9px', display: 'inline-block', transition: 'transform 0.2s', transform: showOptional ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+            </button>
+            <AnimatePresence>
+              {showOptional && (
+                <m.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ overflow: 'hidden' }}
+                  className="space-y-3 mt-3"
+                >
+                  <div className="grid grid-cols-2 gap-2">
+                    <form.Field name="payment_ref">
+                      {(field) => (
+                        <TextField
+                          field={field}
+                          label="Reference"
+                          placeholder="TXN / UTR"
+                          maxLength={64}
+                          serverError={f.errors.fieldErrors.payment_ref}
+                        />
+                      )}
+                    </form.Field>
+                    <form.Field name="date">
+                      {(field) => (
+                        <DateFieldControl
+                          field={field}
+                          label="Date"
+                          required
+                          max={todayISO()}
+                          serverError={f.errors.fieldErrors.date}
+                        />
+                      )}
+                    </form.Field>
+                  </div>
+                  <form.Field name="notes">
+                    {(field) => (
+                      <TextAreaField
+                        field={field}
+                        label="Notes (optional)"
+                        rows={2}
+                        maxLength={500}
+                        showCount
+                        serverError={f.errors.fieldErrors.notes}
+                      />
+                    )}
+                  </form.Field>
+                </m.div>
+              )}
+            </AnimatePresence>
+
+            {/* Summary */}
+            <form.Subscribe selector={(s) => s.values.amount}>
+              {(amount) => {
+                const payingNow = Number(amount);
+                const safe = Number.isFinite(payingNow) ? payingNow : 0;
+                const { balanceInr, overpaymentInr } = balanceAfter(
+                  client.final_amount, client.paid_amount, safe,
+                );
+                return (
+                  <div className="rounded-[14px] p-4 space-y-2.5 mt-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                    <div className="flex justify-between text-[12px]">
+                      <span style={{ color: 'var(--text-muted)' }}>Already paid</span>
+                      <span className="font-[600] tabular-nums" style={{ color: '#10b981' }}>{fmtINR(client.paid_amount)}</span>
+                    </div>
+                    <div className="flex justify-between text-[12px]">
+                      <span style={{ color: 'var(--text-muted)' }}>This payment</span>
+                      <span className="font-[700] tabular-nums" style={{ color: safe > 0 ? 'var(--text-primary)' : 'var(--text-disabled)' }}>
+                        {safe > 0 ? fmtINR(safe) : '—'}
+                      </span>
+                    </div>
+                    <div className="h-px" style={{ background: 'var(--border)' }} />
+                    <div className="flex justify-between">
+                      <span className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>New balance</span>
+                      <span className="text-[15px] font-[800] tabular-nums" style={{
+                        color: balanceInr > 0 ? '#f59e0b' : '#10b981',
+                      }}>
+                        {fmtINR(balanceInr)}
+                      </span>
+                    </div>
+                    {/* The old summary clamped the balance at 0 and said
+                        nothing else, so ₹50,000 against a ₹5,000 balance
+                        looked exactly like paying it off exactly. Overpayment
+                        is allowed — an advance is real — but it should never
+                        be invisible. */}
+                    {overpaymentInr > 0 && (
+                      <p className="flex items-start gap-1.5 text-[11.5px] font-[600]" style={{ color: '#f59e0b' }}>
+                        <AlertTriangle size={12} className="mt-px shrink-0" />
+                        {fmtINR(overpaymentInr)} more than the outstanding balance. It will be recorded as paid in advance.
+                      </p>
+                    )}
+                  </div>
+                );
+              }}
+            </form.Subscribe>
+          </div>
+
+          {/* Sticky footer — always visible above the tab bar / home indicator */}
+          <div
+            className="shrink-0 px-5 pt-3"
+            style={{
+              borderTop: '1px solid var(--border)',
+              background: 'var(--bg-card)',
+              paddingBottom: 'calc(env(safe-area-inset-bottom) + 14px)',
+            }}
+          >
+            {/* The real guard is the in-flight ref inside useAppForm; disabled
+                only communicates the state, and is no longer gated on validity
+                — a dead button cannot say WHY it is dead. */}
+            <form.Subscribe selector={(s) => s.values.amount}>
+              {(amount) => {
+                const ready = !isSubmitting && Number(amount) > 0;
+                return (
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-4 rounded-[18px] text-[16px] font-[800] tracking-[-0.01em] transition-all select-none"
+                    style={{
+                      background: ready ? 'linear-gradient(135deg, #10b981, #059669)' : 'var(--bg-subtle)',
+                      color: ready ? '#ffffff' : 'var(--text-disabled)',
+                      boxShadow: ready ? '0 8px 24px rgba(16,185,129,0.4)' : 'none',
+                      cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {isSubmitting ? 'Recording…' : 'Record Payment'}
+                  </button>
+                );
+              }}
+            </form.Subscribe>
+          </div>
+        </form>
+      </m.div>
+    </>
   );
 }
