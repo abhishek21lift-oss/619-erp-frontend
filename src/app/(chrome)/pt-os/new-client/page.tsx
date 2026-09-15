@@ -16,6 +16,7 @@ import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import { CLIENT_SOURCES, RELATIONSHIPS } from '@/lib/client-intake';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useToast } from '@/lib/toast';
+import { readImageAsDataUrl, AVATAR_RULES } from '@/lib/forms/files';
 
 /* ─────────────────────────────────────────────────────── TYPES */
 interface FormData {
@@ -361,15 +362,15 @@ function NewClientForm() {
     }
   };
 
-  const handlePhotoDrop = (e: React.DragEvent) => {
+  const handlePhotoDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setPhotoDragOver(false);
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { toast.error('Please drop an image file.'); return; }
-    const reader = new FileReader();
-    reader.onload = () => { setDroppedImageSrc(String(reader.result)); setCropModalOpen(true); };
-    reader.readAsDataURL(file);
+    const result = await readImageAsDataUrl(file, AVATAR_RULES);
+    if (!result.ok) { toast.error(result.message); return; }
+    setDroppedImageSrc(result.dataUrl);
+    setCropModalOpen(true);
   };
 
   /* ── SUCCESS SCREEN ── */

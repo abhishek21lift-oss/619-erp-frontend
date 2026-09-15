@@ -14,6 +14,7 @@ import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import { api } from '@/lib/api';
 import { CLIENT_SOURCES, RELATIONSHIPS } from '@/lib/client-intake';
 import { useToast } from '@/lib/toast';
+import { readImageAsDataUrl, AVATAR_RULES } from '@/lib/forms/files';
 
 function SectionCard({ title, icon, children, accent = '#F59E0B' }: {
   title: string; icon: React.ReactNode; children: React.ReactNode; accent?: string;
@@ -63,14 +64,14 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
    *  The modal owns the compression (800px, q0.8) — a phone photo posted raw
    *  is several megabytes of base64 in a TEXT column, re-sent on every read of
    *  this client. */
-  const pickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const pickPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('image/')) { toast.error('Please choose an image file.'); return; }
-    const reader = new FileReader();
-    reader.onload = () => { setPickedImage(String(reader.result)); setCropOpen(true); };
-    reader.readAsDataURL(file);
+    const result = await readImageAsDataUrl(file, AVATAR_RULES);
+    if (!result.ok) { toast.error(result.message); return; }
+    setPickedImage(result.dataUrl);
+    setCropOpen(true);
   };
 
   const savePhoto = async (dataUrl: string) => {
