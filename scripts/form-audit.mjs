@@ -50,7 +50,7 @@ function stripComments(source) {
 
 /** Components that carry the platform's wiring. Rendering one is "migrated". */
 const PLATFORM_CONTROL =
-  /<(TextField|TextAreaField|NumberField|SelectField|DateFieldControl|CheckboxField|SearchField|TextFieldRow|FormField|FloatInput)[\s/>]/g;
+  /<(TextField|TextAreaField|NumberField|SelectField|DateFieldControl|MonthFieldControl|CheckboxField|RadioField|SearchField|TextFieldRow|FormField|FloatInput)[\s/>]/g;
 
 /** Anything that submits. Used to count forms rather than fields. */
 const FORM_MARKER = /<form[\s>]|useAppForm\(|handleSubmit|onSubmit=/g;
@@ -89,6 +89,17 @@ function classify(rel, source) {
   return 'P2';
 }
 
+/**
+ * The design system's own directory.
+ *
+ * Excluded from the RAW count, because every wrapper bottoms out in a native
+ * element: `RadioField` contains `<input type="radio">` and must. Counting
+ * those made the headline rise when a field component was ADDED, which
+ * penalises exactly the work this number exists to encourage. The metric is
+ * "raw controls in application code", and this directory is not that.
+ */
+const DESIGN_SYSTEM = 'src/components/ui/form';
+
 function walk(dir, out = []) {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
@@ -110,7 +121,8 @@ for (const file of files) {
   const rel = relative(ROOT, file);
   const source = stripComments(readFileSync(file, 'utf8'));
 
-  const raw = (source.match(RAW_CONTROL) ?? []).length;
+  const inDesignSystem = rel.replace(/\\/g, '/').startsWith(DESIGN_SYSTEM);
+  const raw = inDesignSystem ? 0 : (source.match(RAW_CONTROL) ?? []).length;
   const platform = (source.match(PLATFORM_CONTROL) ?? []).length;
   if (raw === 0 && platform === 0) continue;
 
