@@ -27,12 +27,18 @@ import {
   RefreshCw, Wallet, Settings2, Building2,
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { ApiError } from '@/lib/http';
 import type {
   SubCheckoutQueueRow, SubCheckoutStats, UpiRejectReason,
   PlatformPaymentSettings,
 } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { errorMessage, mapApiError } from '@/lib/forms/errors';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import {
+  platformUpiSchema, platformUpiToFormValues, toPlatformUpiPayload,
+  type PlatformUpiState,
+} from '@/lib/forms/schemas/upiSettings';
+import { TextField, TextAreaField, FormErrorBanner } from '@/components/ui/form';
 import { EmptyState } from '@/components/ui';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 
@@ -83,7 +89,7 @@ export default function SubscriptionRequestsTab() {
       setStats(r.stats);
       setError(null);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not load the payment queue.');
+      setError(errorMessage(err, 'Could not load the payment queue.'));
     } finally { setLoading(false); }
   }, [status, search]);
 
@@ -322,9 +328,12 @@ function ActionDialog({
       await onDone();
     } catch (err) {
       // A 409 means someone else already handled it — information, not failure.
-      setError(err instanceof ApiError
-        ? (err.status === 409 ? `${err.message} Refresh to see the current state.` : err.message)
-        : 'Something went wrong. Please try again.');
+      // A 409 keeps its own sentence: the shared mapper's generic conflict
+      // message would drop the server's explanation of WHO handled it.
+      const mapped = mapApiError(err, { fallback: 'Something went wrong. Please try again.' });
+      setError(mapped.kind === 'conflict'
+        ? `${mapped.formError} Refresh to see the current state.`
+        : errorMessage(err, 'Something went wrong. Please try again.'));
     } finally { setBusy(false); }
   };
 
@@ -423,54 +432,48 @@ function ActionDialog({
 
 // ── Platform UPI settings ───────────────────────────────────────────────────
 
-/** Mirrors the CHECK constraint in migration 113 and the server-side check. */
-const VPA_RE = /^[a-zA-Z0-9._-]{2,64}@[a-zA-Z][a-zA-Z0-9.]{1,63}$/;
-
+/**
+ * The platform's own payee details, on the universal form platform.
+ *
+ * The highest-stakes VPA in the product — every studio's subscription money
+ * arrives here. What the migration changed:
+ *
+ *   · the VPA pattern was a third copy of the same regex, written out in this
+ *     file, in the studio's payment settings and in migration 113. It now
+ *     comes from `schemas/upiSettings.ts`, so there is one place for it to
+ *     disagree with the CHECK constraint instead of three.
+ *   · `maxLength={120}` on the merchant name truncated a paste silently, so
+ *     the name studios see could differ from the one that was set.
+ *   · `canSave` gated the button on `!saving`, which two clicks in one frame
+ *     both pass; the guard is now the in-flight ref in useAppForm.
+ *   · three `err.message` sites put the server's raw sentence in front of an
+ *     operator; they go through the shared mapper now.
+ *
+ * The dialog chrome, the focus trap and the self-checkout switch are the
+ * component's own and are unchanged.
+ */
 function PlatformUpiDialog({
   onClose, toast,
 }: { onClose: () => void; toast: ReturnType<typeof useToast>['toast'] }) {
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [initial, setInitial] = useState<PlatformUpiState | null>(null);
   const [saving, setSaving] = useState(false);
+
   // Same treatment as the approve/reject dialog above: this one had no Escape
   // handler at all, so it could only be dismissed by clicking the backdrop.
+  // `escapeCloses` is gated on the write being in flight, because dismissing
+  // the dialog mid-save would hide its outcome.
   const dialogRef = useDialogA11y({ open: true, onClose, escapeCloses: !saving });
-  const [error, setError] = useState<string | null>(null);
-
-  const [upiId, setUpiId] = useState('');
-  const [merchant, setMerchant] = useState('MY PT STUDIO');
-  const [instructions, setInstructions] = useState('');
-  const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
+    let live = true;
     void api.superAdmin.platformPaymentSettings()
-      .then((r) => {
-        const d: PlatformPaymentSettings | null = r.data;
-        if (d) {
-          setUpiId(d.upi_id); setMerchant(d.merchant_name);
-          setInstructions(d.instructions ?? ''); setEnabled(d.is_enabled);
-        }
-      })
-      .catch((e) => setError(e instanceof ApiError ? e.message : 'Could not load settings.'))
-      .finally(() => setLoading(false));
+      .then((r) => { if (live) setInitial(platformUpiToFormValues(r.data)); })
+      .catch((e: unknown) => { if (live) setLoadError(errorMessage(e, 'Could not load settings.')); })
+      .finally(() => { if (live) setLoading(false); });
+    return () => { live = false; };
   }, []);
-
-  const vpaOk = VPA_RE.test(upiId.trim());
-  const canSave = vpaOk && merchant.trim().length > 0 && !saving;
-
-  const save = async () => {
-    if (!canSave) return;
-    setSaving(true); setError(null);
-    try {
-      await api.superAdmin.savePlatformPaymentSettings({
-        upi_id: upiId.trim(), merchant_name: merchant.trim(),
-        instructions: instructions.trim() || null, is_enabled: enabled,
-      });
-      toast.success(enabled ? 'Saved. Studios can now pay by UPI.' : 'Saved. Self-checkout is off.');
-      onClose();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not save.');
-    } finally { setSaving(false); }
-  };
 
   return (
     <AnimatePresence>
@@ -495,85 +498,144 @@ function PlatformUpiDialog({
 
             {loading ? (
               <div className="mt-4 h-40 animate-pulse rounded-xl" style={{ background: 'var(--bg-subtle)' }} />
+            ) : !initial ? (
+              <p className="mt-4 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
+                <AlertTriangle size={14} className="mt-px shrink-0" /> {loadError ?? 'Could not load settings.'}
+              </p>
             ) : (
-              <>
-                <label htmlFor="p-upi" className="mt-4 block text-[12px] font-[650]"
-                  style={{ color: 'var(--text-primary)' }}>Your UPI ID</label>
-                <input id="p-upi" value={upiId} autoCapitalize="none" spellCheck={false}
-                  onChange={(e) => setUpiId(e.target.value.trim())} placeholder="myptstudio@okhdfcbank"
-                  className="mt-1.5 w-full rounded-xl px-3.5 font-mono text-[15px] outline-none"
-                  style={{
-                    height: 48, background: 'var(--bg-base)', color: 'var(--text-primary)',
-                    border: `1px solid ${upiId && !vpaOk ? 'var(--danger)' : 'var(--border-2)'}`,
-                  }} />
-                {upiId.length > 0 && !vpaOk && (
-                  <p className="mt-1.5 text-[11.5px]" style={{ color: 'var(--danger-text)' }}>
-                    Must look like name@bank.
-                  </p>
-                )}
-
-                <label htmlFor="p-name" className="mt-4 block text-[12px] font-[650]"
-                  style={{ color: 'var(--text-primary)' }}>Name studios will see</label>
-                <input id="p-name" value={merchant} maxLength={120}
-                  onChange={(e) => setMerchant(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl px-3.5 text-[15px] outline-none"
-                  style={{ height: 48, background: 'var(--bg-base)', color: 'var(--text-primary)', border: '1px solid var(--border-2)' }} />
-
-                <label htmlFor="p-note" className="mt-4 block text-[12px] font-[650]"
-                  style={{ color: 'var(--text-primary)' }}>
-                  Note on the checkout page <span style={{ color: 'var(--text-muted)' }}>(optional)</span>
-                </label>
-                <textarea id="p-note" rows={2} maxLength={500} value={instructions}
-                  onChange={(e) => setInstructions(e.target.value)}
-                  placeholder="Payments are verified within 2 hours, 9am–9pm."
-                  className="mt-1.5 w-full resize-none rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
-                  style={{ background: 'var(--bg-base)', color: 'var(--text-primary)', border: '1px solid var(--border-2)' }} />
-
-                <div className="mt-4 flex items-start gap-3 rounded-xl p-3.5"
-                  style={{ background: enabled ? 'var(--success-soft)' : 'var(--bg-subtle)' }}>
-                  <ShieldCheck size={18} className="mt-0.5 shrink-0"
-                    style={{ color: enabled ? 'var(--success-text)' : 'var(--text-muted)' }} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>
-                      {enabled ? 'Self-checkout is on' : 'Self-checkout is off'}
-                    </p>
-                    <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                      {enabled
-                        ? 'Studios see a Pay button on their billing page.'
-                        : 'Studios can only send an activation request.'}
-                    </p>
-                  </div>
-                  <button type="button" role="switch" aria-checked={enabled}
-                    aria-label="Enable self-checkout" onClick={() => setEnabled((v) => !v)}
-                    className="relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors"
-                    style={{ background: enabled ? 'var(--success)' : 'var(--border-3)' }}>
-                    <m.span layout transition={{ type: 'spring', stiffness: 500, damping: 32 }}
-                      className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow"
-                      style={{ left: enabled ? 22 : 2 }} />
-                  </button>
-                </div>
-
-                {error && (
-                  <p className="mt-3 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
-                    <AlertTriangle size={14} className="mt-px shrink-0" /> {error}
-                  </p>
-                )}
-
-                <div className="mt-5 flex gap-2">
-                  <button type="button" onClick={onClose} disabled={saving}
-                    className="flex-1 rounded-xl py-3 text-[14px] font-[650] disabled:opacity-50"
-                    style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)' }}>Cancel</button>
-                  <button type="button" onClick={save} disabled={!canSave}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-[14px] font-[720] text-white disabled:opacity-45"
-                    style={{ background: 'var(--brand)' }}>
-                    {saving && <Loader2 size={15} className="animate-spin" />} Save
-                  </button>
-                </div>
-              </>
+              // Mounted only once the settings have arrived, because useAppForm
+              // needs its default values up front. That is what makes "rebuilt
+              // from the record" true by construction rather than by a reset
+              // call after the fact (§11).
+              <PlatformUpiForm
+                initial={initial}
+                toast={toast}
+                onClose={onClose}
+                onBusyChange={setSaving}
+              />
             )}
           </div>
         </m.div>
       </m.div>
     </AnimatePresence>
+  );
+}
+
+function PlatformUpiForm({
+  initial, toast, onClose, onBusyChange,
+}: {
+  initial: PlatformUpiState;
+  toast: ReturnType<typeof useToast>['toast'];
+  onClose: () => void;
+  onBusyChange: (busy: boolean) => void;
+}) {
+  const f = useAppForm({
+    schema: platformUpiSchema,
+    defaultValues: initial,
+    onSubmit: async (values) => {
+      await api.superAdmin.savePlatformPaymentSettings(toPlatformUpiPayload(values));
+      toast.success(
+        values.is_enabled ? 'Saved. Studios can now pay by UPI.' : 'Saved. Self-checkout is off.',
+      );
+    },
+    onSuccess: onClose,
+  });
+
+  const { form, isSubmitting } = f;
+
+  // The parent owns the focus trap and the backdrop, so it is the one that has
+  // to stop Escape and a stray click from dismissing a write in flight.
+  useEffect(() => { onBusyChange(isSubmitting); }, [isSubmitting, onBusyChange]);
+
+  return (
+    <form noValidate onSubmit={(e) => { e.preventDefault(); void f.submit(); }}>
+      <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} className="mt-4" />
+
+      <form.Field name="upi_id">
+        {(field) => (
+          <TextField
+            field={field}
+            label="Your UPI ID"
+            required
+            placeholder="myptstudio@okhdfcbank"
+            autoComplete="off"
+            className="mt-4"
+            serverError={f.errors.fieldErrors.upi_id}
+          />
+        )}
+      </form.Field>
+
+      <form.Field name="merchant_name">
+        {(field) => (
+          <TextField
+            field={field}
+            label="Name studios will see"
+            required
+            maxLength={120}
+            showCount
+            className="mt-4"
+            serverError={f.errors.fieldErrors.merchant_name}
+          />
+        )}
+      </form.Field>
+
+      <form.Field name="instructions">
+        {(field) => (
+          <TextAreaField
+            field={field}
+            label="Note on the checkout page (optional)"
+            rows={2}
+            maxLength={500}
+            showCount
+            placeholder="Payments are verified within 2 hours, 9am–9pm."
+            className="mt-4"
+            serverError={f.errors.fieldErrors.instructions}
+          />
+        )}
+      </form.Field>
+
+      <form.Field name="is_enabled">
+        {(field) => (
+          <div className="mt-4 flex items-start gap-3 rounded-xl p-3.5"
+            style={{ background: field.state.value ? 'var(--success-soft)' : 'var(--bg-subtle)' }}>
+            <ShieldCheck size={18} className="mt-0.5 shrink-0"
+              style={{ color: field.state.value ? 'var(--success-text)' : 'var(--text-muted)' }} />
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>
+                {field.state.value ? 'Self-checkout is on' : 'Self-checkout is off'}
+              </p>
+              <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                {field.state.value
+                  ? 'Studios see a Pay button on their billing page.'
+                  : 'Studios can only send an activation request.'}
+              </p>
+            </div>
+            {/* A switch, not a checkbox: it turns a live studio-facing
+                capability on and off, so the ARIA role has to say so. */}
+            <button type="button" role="switch" aria-checked={field.state.value}
+              aria-label="Enable self-checkout" onClick={() => field.handleChange(!field.state.value)}
+              className="relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors"
+              style={{ background: field.state.value ? 'var(--success)' : 'var(--border-3)' }}>
+              <m.span layout transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+                className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow"
+                style={{ left: field.state.value ? 22 : 2 }} />
+            </button>
+          </div>
+        )}
+      </form.Field>
+
+      <div className="mt-5 flex gap-2">
+        <button type="button" onClick={onClose} disabled={isSubmitting}
+          className="flex-1 rounded-xl py-3 text-[14px] font-[650] disabled:opacity-50"
+          style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)' }}>Cancel</button>
+        {/* The real guard is the in-flight ref inside useAppForm; `disabled`
+            only communicates the state. */}
+        <button type="submit" disabled={isSubmitting}
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-[14px] font-[720] text-white disabled:opacity-45"
+          style={{ background: 'var(--brand)' }}>
+          {isSubmitting && <Loader2 size={15} className="animate-spin" />} Save
+        </button>
+      </div>
+    </form>
   );
 }

@@ -166,19 +166,30 @@ describe('captions that had to become labels', () => {
 });
 
 describe('labelling across a component boundary', () => {
-  it('counts <Field id="x"><input id="x"/></Field> as named', () => {
-    // payment-settings' Field renders <label htmlFor={id}> and its call sites
-    // pass a matching id. The audit could not see through that, and reported
-    // the two best-labelled inputs in the app as nameless — the same
-    // one-boundary blind spot that made its first version report 242. Two of
-    // the "61" were this, not a real failure.
-    const src = readFileSync(srcPath('app', '(chrome)', 'finance', 'payment-settings', 'page.tsx'), 'utf8');
-    expect(src).toMatch(/<label htmlFor=\{id\}/);
-    // Whitespace-tolerant: the property under test is that a Field carries a
-    // matching id, not that the JSX fits on one line. The original regex was
-    // incidentally coupled to formatting and broke when the element gained a
-    // fourth prop and wrapped — which is a change in layout, not in labelling.
-    expect(src).toMatch(/<Field\s[^>]*id="gst-percent"/s);
+  it('counts a control labelled by its wrapper as named', () => {
+    // A wrapper that renders <label htmlFor={id}> around a control with a
+    // matching id. The audit could not see through that boundary and reported
+    // the two best-labelled inputs in the app as nameless — the same blind
+    // spot that made its first version report 242. Two of the "61" were this,
+    // not a real failure.
+    //
+    // The example used to be payment-settings' own local `Field`. That page is
+    // now on the universal form platform and its local wrapper is gone, so the
+    // property is pinned where it actually lives: FormField, which every
+    // migrated field renders through, and the platform console's Field, which
+    // still covers the org-admin forms.
+    const formField = readFileSync(
+      srcPath('components', 'ui', 'form', 'FormField.tsx'), 'utf8',
+    );
+    expect(formField).toMatch(/<label[\s\S]{0,120}htmlFor=\{id\}/);
+
+    const platformField = readFileSync(
+      srcPath('app', '(platform)', 'platform', '_shared', 'ui.tsx'), 'utf8',
+    );
+    expect(platformField).toMatch(/export function Field/);
+
+    // The invariant the above exists to protect: the screen that first exposed
+    // the blind spot still has no nameless control.
     expect(audit.nameless.filter((x) => x.includes('payment-settings'))).toEqual([]);
   });
 

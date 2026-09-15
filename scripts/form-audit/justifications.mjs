@@ -60,6 +60,35 @@ export const JUSTIFIED = {
       'failure. Migrating it would change working code and fix nothing — the ' +
       'case §1 and the non-negotiable rule both forbid.',
   },
+
+  'src/components/platform/subscription-requests.tsx': {
+    allow: 2,
+    reason:
+      'The reject dialog, already correct and verified line by line. The reason ' +
+      'group is a <fieldset> with a <legend> — which is exactly what RadioField ' +
+      'renders and the only valid way to name a group of radios — and the note ' +
+      'has htmlFor, maxLength and a character budget. The dialog mounts per ' +
+      'action so a note typed against one payment cannot submit against the ' +
+      'next, it has a focus trap via useDialogA11y, Escape is gated on the ' +
+      'write being in flight, and a 409 is reported as information rather than ' +
+      'as failure. The platform UPI dialog in the same file IS migrated, ' +
+      'because it had real defects; this one has none, and rewriting it would ' +
+      'be the churn §1 and the non-negotiable rule both forbid.',
+  },
+
+  'src/components/platform/invoices.tsx': {
+    allow: 3,
+    reason:
+      'Three query filters on a read: the status <select> and the from/to ' +
+      'dates. None of them is part of a payload — each sets a key on the ' +
+      'InvoiceQuery memo and resets the page offset, and the only write in the ' +
+      'file is the seller-identity form, which IS on the platform. A filter ' +
+      'has nothing to validate, nothing to submit and nothing to reset, so ' +
+      'useAppForm would add a schema, a submit guard and an error contract ' +
+      'around a value that never leaves a GET query string. §1 names filters ' +
+      'explicitly. Verify by reading the three onChange handlers: every one of ' +
+      'them ends in setOffset(0).',
+  },
 };
 
 export function justificationFor(rel) {
