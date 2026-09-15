@@ -14,7 +14,7 @@ import { Button, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
-import { mapApiError } from '@/lib/forms/errors';
+import { errorMessage, mapApiError } from '@/lib/forms/errors';
 
 interface Payment {
   id: string; client_id: string; trainer_id: string;
@@ -173,7 +173,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
     } catch (err: unknown) {
       // mapApiError rather than err.message: a 5xx body can carry a stack or a
       // SQL error, and this screen shows the message to a studio owner.
-      setError(mapApiError(err, { fallback: 'Failed to load payment data' }).formError ?? 'Failed to load payment data');
+      setError(errorMessage(err, 'Failed to load payment data'));
     } finally {
       setLoading(false);
     }

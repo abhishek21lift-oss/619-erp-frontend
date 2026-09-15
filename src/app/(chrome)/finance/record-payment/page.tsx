@@ -8,7 +8,7 @@ import { api } from '@/lib/api';
 import type { Client } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { identity } from '@/lib/palette';
-import { mapApiError } from '@/lib/forms/errors';
+import { errorMessage } from '@/lib/forms/errors';
 
 type Method = 'Cash' | 'UPI' | 'Card' | 'Bank';
 const METHODS: Method[] = ['Cash', 'UPI', 'Card', 'Bank'];
@@ -105,7 +105,7 @@ export default function RecordPaymentPage() {
       setSelected(null); setAmount(''); setMethod('Cash');
       setTimeout(() => setDone(null), 3000);
     } catch (err: unknown) {
-      toast.error(mapApiError(err, { fallback: 'Payment failed' }).formError ?? 'Payment failed');
+      toast.error(errorMessage(err, 'Payment failed'));
     } finally {
       setSaving(false);
     }

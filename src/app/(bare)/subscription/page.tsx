@@ -40,6 +40,7 @@ import { api } from '@/lib/api';
 import type { SubscriptionStatus, SubPlan, SubInvoice, PlanChangeQuote, CouponValidation } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
+import { errorMessage } from '@/lib/forms/errors';
 
 const FROZEN_STATES = ['frozen', 'trial_expired', 'expired', 'cancelled', 'suspended'];
 const fmtINR = (n: number) => '₹' + Number(n || 0).toLocaleString('en-IN');
@@ -364,7 +365,7 @@ function SubscriptionScreen() {
       else window.location.href = url;
     } catch (e) {
       win?.close();
-      toast.error(e instanceof Error ? e.message : 'Could not start the payment');
+      toast.error(errorMessage(e, 'Could not start the payment'));
     } finally { setRequesting(''); }
   };
 
@@ -380,7 +381,7 @@ function SubscriptionScreen() {
       setRequested(true);
       toast.success(r.data.message);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not send request');
+      toast.error(errorMessage(e, 'Could not send request'));
     } finally { setRequesting(''); }
   };
 
@@ -394,7 +395,7 @@ function SubscriptionScreen() {
       if (r.data.valid) toast.success(`Coupon applied — ${fmtINR(r.data.discount_inr ?? 0)} off.`);
     } catch (e) {
       setCoupon(null);
-      toast.error(e instanceof Error ? e.message : 'Could not check that coupon');
+      toast.error(errorMessage(e, 'Could not check that coupon'));
     } finally { setCouponChecking(false); }
   };
 
@@ -419,7 +420,7 @@ function SubscriptionScreen() {
       const r = await api.subscription.changeQuote(planCode);
       setQuote(r.data);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not price that change');
+      toast.error(errorMessage(e, 'Could not price that change'));
     } finally { setQuoting(''); }
   };
 
@@ -434,7 +435,7 @@ function SubscriptionScreen() {
       setQuote(null);
       if (r.data.scheduled) await load(); else setRequested(true);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not submit that change');
+      toast.error(errorMessage(e, 'Could not submit that change'));
     } finally { setConfirming(false); }
   };
 
@@ -445,7 +446,7 @@ function SubscriptionScreen() {
       toast.success('Scheduled change cancelled — you stay on your current plan.');
       await load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not cancel that change');
+      toast.error(errorMessage(e, 'Could not cancel that change'));
     } finally { setCancellingPending(false); }
   };
 

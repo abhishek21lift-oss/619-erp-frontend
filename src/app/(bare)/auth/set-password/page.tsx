@@ -21,6 +21,7 @@ import {
 import { api } from '@/lib/api';
 import type { InvitationPreview } from '@/lib/api';
 import { invitationPasswordRules, checkInvitationPassword } from '@/lib/password-policy';
+import { errorMessage } from '@/lib/forms/errors';
 
 /** Brand for this flow: black / white / maroon, matching the invitation email. */
 const MAROON = '#7F1D1D';
@@ -172,7 +173,7 @@ function SetPasswordForm() {
     if (!token) { setDead('The link is missing its invitation code. Use the button in your invitation email.'); setLoading(false); return; }
     api.invitations.preview(token)
       .then((r) => setPreview(r.data))
-      .catch((e: unknown) => setDead(e instanceof Error ? e.message : 'This invitation link is not valid.'))
+      .catch((e: unknown) => setDead(errorMessage(e, 'This invitation link is not valid.')))
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -188,7 +189,7 @@ function SetPasswordForm() {
       const r = await api.invitations.accept(token, password);
       setDone(r.data.email);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Could not set your password.';
+      const msg = errorMessage(err, 'Could not set your password.');
       // A 410 means the link died between loading this page and submitting —
       // someone else used it, or it expired while the form sat open. That is a
       // different situation from a bad password and needs the dead-link screen,

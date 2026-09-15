@@ -9,6 +9,7 @@ import { api } from '@/lib/api';
 import type { Payment } from '@/lib/api';
 import type { PaymentStats } from '@/lib/api/endpoints/money';
 import { Button, KpiCard, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
+import { errorMessage } from '@/lib/forms/errors';
 import {
   Banknote, Search, ArrowUpDown, User, Wallet,
   Smartphone, CreditCard, Receipt, CalendarDays, Inbox,
@@ -89,7 +90,7 @@ function Inner() {
     } catch (err) {
       setPayments([]);
       setStats(null);
-      setLoadError(err instanceof Error ? err.message : 'Could not load collected payments');
+      setLoadError(errorMessage(err, 'Could not load collected payments'));
     } finally {
       setLoading(false);
     }

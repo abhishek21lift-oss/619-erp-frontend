@@ -10,6 +10,7 @@ import Guard from '@/components/Guard';
 import { PremiumModal } from '@/components/premium/PremiumModal';
 import { Button, KpiCard, PageContainer, PageHero } from '@/components/ui';
 import { identity } from '@/lib/palette';
+import { errorMessage } from '@/lib/forms/errors';
 import {
   FileText, Download, Send, CheckCircle2, Search,
   ChevronDown, Eye, Clock,
@@ -216,7 +217,7 @@ export default function InvoicesPage() {
       setInvoices((res.invoices as Record<string, unknown>[]).map(normaliseInvoice));
       setStats(res.stats);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load invoices');
+      setError(errorMessage(err, 'Failed to load invoices'));
     } finally {
       setLoading(false);
     }
@@ -257,7 +258,7 @@ export default function InvoicesPage() {
       // Previously uncaught entirely: the rejection became an unhandled promise
       // rejection, `finally` re-enabled the button, and the modal just sat
       // there looking like the click had not registered.
-      toast.error(err instanceof Error ? err.message : 'Could not create the invoice');
+      toast.error(errorMessage(err, 'Could not create the invoice'));
     } finally {
       setCreating(false);
     }
@@ -276,7 +277,7 @@ export default function InvoicesPage() {
       await api.invoices.remind(invoice.id);
       toast.success('Reminder sent');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not send the reminder');
+      toast.error(errorMessage(err, 'Could not send the reminder'));
     }
   }, [toast]);
 
@@ -289,7 +290,7 @@ export default function InvoicesPage() {
     } catch (err: unknown) {
       // Deliberately leaves the modal open on failure: the invoice is still
       // unpaid, so closing it would imply the opposite.
-      toast.error(err instanceof Error ? err.message : 'Could not mark the invoice as paid');
+      toast.error(errorMessage(err, 'Could not mark the invoice as paid'));
     }
   }, [fetchInvoices, toast]);
 

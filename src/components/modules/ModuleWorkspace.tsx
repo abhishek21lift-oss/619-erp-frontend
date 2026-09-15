@@ -32,8 +32,21 @@ import { useToast } from '@/lib/toast';
 import { moduleService } from '@/lib/module-service';
 import type { ModuleConfig, ModuleRecord } from '@/lib/module-config';
 import { series } from '@/lib/palette';
+import { toNumberOrNull } from '@/lib/forms/normalize';
+import { errorMessage } from '@/lib/forms/errors';
 
-type FormState = Omit<ModuleRecord, 'id' | 'createdAt' | 'updatedAt'>;
+/**
+ * The form's RAW state.
+ *
+ * `amount` is a STRING here and a number on ModuleRecord, deliberately. The
+ * control produces a string, and deriving the form type straight from the
+ * record forced a number back into the input — which is what made
+ * `Number(e.target.value)` necessary, and `Number('')` is 0. The parse happens
+ * once, in `submit`, where a blank can be refused instead of becoming zero.
+ */
+type FormState = Omit<ModuleRecord, 'id' | 'createdAt' | 'updatedAt' | 'amount'> & {
+  amount: string;
+};
 
 const pageSizeOptions = [5, 10, 20];
 const chartColors = series;
@@ -51,7 +64,7 @@ const blankForm = (config: ModuleConfig): FormState => ({
   owner: '',
   status: config.statuses[0] || 'Draft',
   priority: 'Medium',
-  amount: 0,
+  amount: '',
   dueDate: new Date().toISOString().slice(0, 10),
   channel: config.channels[0] || 'Front desk',
   notes: '',
@@ -146,7 +159,13 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
     if (!form.priority) return 'Priority is required';
     if (!form.channel) return 'Channel is required';
     if (!form.dueDate) return 'Due date is required';
-    if (Number.isNaN(Number(form.amount)) || Number(form.amount) < 0) return 'Value must be zero or greater';
+    // toNumberOrNull, not Number(): `Number('')` is 0, so a cleared Value box
+    // passed this check as a deliberate zero and was stored as one. Absent and
+    // zero are different answers and only one of them is a number somebody
+    // chose.
+    const amount = toNumberOrNull(form.amount);
+    if (amount === null) return 'Value is required';
+    if (Number.isNaN(amount) || amount < 0) return 'Value must be zero or greater';
     return '';
   }
 
@@ -160,19 +179,23 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
     }
     setSaving(true);
     try {
+      // The single place the raw string becomes a number. `validate()` has
+      // already refused a blank, so this cannot be null.
+      const payload = { ...form, amount: toNumberOrNull(form.amount) as number };
+
       if (editingId) {
-        const updated = await moduleService.update(config, editingId, form);
+        const updated = await moduleService.update(config, editingId, payload);
         setRecords((prev) => prev.map((record) => (record.id === editingId ? updated : record)));
         toast.success(`${config.entityName} updated`);
       } else {
-        const created = await moduleService.create(config, form);
+        const created = await moduleService.create(config, payload);
         setRecords((prev) => [created, ...prev]);
         toast.success(`${config.entityName} created`);
       }
       setForm(blankForm(config));
       setEditingId(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Save failed');
+      toast.error(errorMessage(err, 'Save failed'));
     } finally {
       setSaving(false);
     }
@@ -192,7 +215,7 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
       owner: record.owner,
       status: record.status,
       priority: record.priority,
-      amount: record.amount,
+      amount: String(record.amount ?? ''),
       dueDate: record.dueDate,
       channel: record.channel,
       notes: record.notes,
@@ -292,7 +315,7 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
                     </select>
                   </Field>
                   <Field label="Value" required>
-                    <input className="input" type="number" min={0} value={form.amount} onChange={(e) => updateForm('amount', Number(e.target.value))} />
+                    <input className="input" type="number" min={0} value={form.amount} onChange={(e) => updateForm('amount', e.target.value)} />
                   </Field>
                   <Field label="Due date" required>
                     <input className="input" type="date" value={form.dueDate} onChange={(e) => updateForm('dueDate', e.target.value)} />

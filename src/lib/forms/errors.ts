@@ -243,3 +243,48 @@ export function noErrors(): FormErrors {
 export function hasErrors(e: FormErrors): boolean {
   return e.formError !== null || Object.keys(e.fieldErrors).length > 0;
 }
+
+/**
+ * The one thing most call sites actually want: a sentence to put in a toast.
+ *
+ * Screens that report failure in a banner or a toast have nowhere to hang a
+ * field error, so they need `FormErrors` collapsed to a single string. Written
+ * out by hand that is
+ *
+ *     mapApiError(err, { fallback: MSG }).formError ?? MSG
+ *
+ * which repeated at two dozen sites, and which is subtly wrong: `formError` is
+ * null exactly when the mapper managed to ATTRIBUTE the failure to a field, so
+ * the hand-written version throws away the server's specific sentence in the
+ * one case where it is most specific, and shows the generic fallback instead.
+ *
+ * This prefers, in order: the form-level message, the first field message, the
+ * caller's fallback. It can never return an empty string, because a failed
+ * submit that renders nothing is indistinguishable from one that worked.
+ */
+export function errorMessage(error: unknown, fallback: string): string {
+  const mapped = mapApiError(error, { fallback });
+  if (mapped.formError) return mapped.formError;
+  const first = Object.values(mapped.fieldErrors)[0];
+  return first ?? fallback;
+}
+
+/**
+ * A sign-in failure.
+ *
+ * Separate from `mapApiError` because the generic mapper's 401 message —
+ * "Your session has expired. Sign in again to continue." — is correct
+ * everywhere EXCEPT the screen you sign in on, where it tells someone whose
+ * password was wrong to do the thing they are already doing.
+ *
+ * On a login attempt a 401 or 403 means the credentials did not check out, and
+ * that is all it may mean: the message never distinguishes "no such account"
+ * from "wrong password", because that difference is an account-enumeration
+ * oracle. Everything else falls through to the shared mapper, so a 5xx still
+ * cannot put a stack in front of anyone.
+ */
+export function mapSignInError(error: unknown, fallback: string): string {
+  const mapped = mapApiError(error, { fallback });
+  if (mapped.kind === 'auth' || mapped.kind === 'permission') return fallback;
+  return mapped.formError ?? fallback;
+}

@@ -14,6 +14,7 @@ import { ArrowLeft, Mail, Loader2, CheckCircle2, AlertCircle } from 'lucide-reac
 import BrandLogoWide from '@/components/BrandLogoWide';
 import { api } from '@/lib/api';
 import { C, SHADOW } from '@/components/landing/tokens';
+import { errorMessage } from '@/lib/forms/errors';
 
 // The public surface's own tokens rather than five local hex constants. This
 // page was already light, but it was FLAT light — a white card with a drop
@@ -50,7 +51,7 @@ export default function ForgotPasswordPage() {
     } catch (err: unknown) {
       // Only a transport/rate-limit failure can land here — the endpoint
       // returns 200 whether or not the address exists.
-      setError(err instanceof Error ? err.message : 'Could not send the reset link. Please try again.');
+      setError(errorMessage(err, 'Could not send the reset link. Please try again.'));
     } finally {
       setBusy(false);
     }

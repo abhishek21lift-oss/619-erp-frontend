@@ -35,6 +35,7 @@ import { useAuth } from '@/lib/auth-context';
 import { rememberKeys, portalForRole, postSignInPath, type Portal } from '@/lib/portals';
 import { roleLabel } from '@/lib/roles';
 import { isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
+import { mapSignInError } from '@/lib/forms/errors';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 const SUPPORT_EMAIL = 'help@myptstudio.app';
@@ -323,7 +324,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
         fail(err instanceof Error ? err.message : 'Wrong sign-in page for this account.');
         return;
       }
-      fail(err instanceof Error ? err.message : 'Login failed. Please check your credentials.');
+      fail(mapSignInError(err, 'Login failed. Please check your credentials.'));
     }
   }
 
@@ -347,7 +348,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
       await loginWithGoogle(res.credential);
       setOk(true);
     } catch (err: unknown) {
-      fail(err instanceof Error ? err.message : 'Google sign-in failed. Try again.');
+      fail(mapSignInError(err, 'Google sign-in failed. Try again.'));
     }
   }
 

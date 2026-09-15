@@ -84,7 +84,7 @@ const KNOWN = [
   // correct under the endpoint's own row cap and is documented at each site.
   // They are the fallback, not the failure — the OUTER catch is what used to
   // render a failure as zero, and that is gone from all three.
-  'app/(chrome)/finance/collected-payments/page.tsx:84',
+  'app/(chrome)/finance/collected-payments/page.tsx:85',
   'app/(chrome)/finance/dues/page.tsx:95',
   'app/(chrome)/sales/today/page.tsx:72',
   'app/(chrome)/pay/[orderId]/page.tsx:195',

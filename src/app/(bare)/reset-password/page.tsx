@@ -20,6 +20,7 @@ import BrandLogoWide from '@/components/BrandLogoWide';
 import { api } from '@/lib/api';
 import { C, SHADOW } from '@/components/landing/tokens';
 import { checkNewPassword, passwordStrength, MIN_LENGTH } from '@/lib/password-policy';
+import { errorMessage } from '@/lib/forms/errors';
 
 // Tokens, not local hex: the twin of /forgot-password, and the last screen in
 // the recovery journey. See the note there.
@@ -63,7 +64,7 @@ function ResetPasswordForm() {
       await api.auth.resetPassword(token, password);
       setDone(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Could not reset the password. The link may have expired.');
+      setError(errorMessage(err, 'Could not reset the password. The link may have expired.'));
     } finally {
       setBusy(false);
     }

@@ -18,6 +18,7 @@ import {
   Receipt, Loader2, AlertTriangle, Settings2, Check, Info,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 import type {
   SubscriptionInvoice, InvoiceTotals, InvoiceQuery, PlatformBillingSettings,
 } from '@/lib/api';
@@ -183,7 +184,7 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
         setRate(String(Number(r.data.gst_percent ?? 18)));
         setInclusive(r.data.prices_include_gst !== false);
       })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load billing settings.'));
+      .catch((e: unknown) => setError(errorMessage(e, 'Could not load billing settings.')));
   }, []);
 
   const save = async () => {
@@ -199,7 +200,7 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Could not save.');
+      setError(errorMessage(e, 'Could not save.'));
     } finally {
       setSaving(false);
     }
@@ -335,7 +336,7 @@ export default function InvoicesPanel() {
     setLoading(true); setError('');
     api.superAdmin.invoices(query)
       .then((r) => { setRows(r.data ?? []); setTotals(r.totals ?? null); })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load invoices.'))
+      .catch((e: unknown) => setError(errorMessage(e, 'Could not load invoices.')))
       .finally(() => setLoading(false));
   }, [query]);
 
