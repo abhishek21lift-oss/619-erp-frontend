@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { Sparkles, Users, UserCheck, Weight, TrendingUp, Search, ArrowUpRight, ArrowDownRight, Minus, Target, Trophy, Activity } from 'lucide-react';
-import { api, Client } from '@/lib/api';
+import { api, type TransformationRow } from '@/lib/api';
 import { fmtDate } from '@/lib/format';
 import { PremiumMetricCardStandard, MetricGroup, metricTone } from '@/components/visualizations';
 
@@ -22,20 +22,32 @@ const th = { padding: '12px 16px', textAlign: 'left' as const, fontWeight: 700, 
 const td = { padding: '12px 16px', fontSize: 13 };
 
 /** A drop in weight is the good direction here, so the tone is inverted
- *  from a plain "up is good" trend — a gain reads as the concerning one. */
-function WeightChange({ start, current }: { start?: number | null; current?: number | null }) {
-  const s = Number(start || 0);
-  const c = Number(current || 0);
-  if (!s || !c) return <span style={{ color: 'var(--text-disabled)' }}>—</span>;
-  const diff = c - s;
-  const isUp = diff > 0;
-  const isDown = diff < 0;
+ *  from a plain "up is good" trend — a gain reads as the concerning one.
+ *
+ *  A null `change` is NOT zero. It means this client has not been measured
+ *  twice yet, which is a different fact from having held their weight, and
+ *  rendering both as "0.0 kg" is what this column used to do. */
+function WeightChange({ current, change }: { current: number | null; change: number | null }) {
+  if (current === null) return <span style={{ color: 'var(--text-disabled)' }}>—</span>;
+  if (change === null) {
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+        <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{current.toFixed(1)} kg</span>
+        <span style={{ fontSize: 11, color: 'var(--text-disabled)' }}>first measurement</span>
+      </span>
+    );
+  }
+  const isUp = change > 0;
+  const isDown = change < 0;
   const tone = isUp ? metricTone.negative : isDown ? metricTone.positive : metricTone.neutral;
   const Icon = isUp ? ArrowUpRight : isDown ? ArrowDownRight : Minus;
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: tone.color, fontWeight: 700, fontSize: 13 }}>
-      {c.toFixed(1)} kg
+      {current.toFixed(1)} kg
       <Icon size={15} />
+      <span style={{ fontSize: 11, fontWeight: 600 }}>
+        {change > 0 ? '+' : ''}{change.toFixed(1)}
+      </span>
     </span>
   );
 }
@@ -45,40 +57,68 @@ export default function TransformationsPage() {
 }
 
 function Inner() {
-  const [clients, setClients] = useState<Client[]>([]);
+  const [rows, setRows] = useState<TransformationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
 
   useEffect(() => {
     let alive = true;
-    api.clients.list({ status: 'active' })
-      .then((r) => alive && setClients(r))
-      .catch((e) => alive && setError(e.message))
+    api.pt.transformations()
+      .then((r) => alive && setRows(r.data))
+      .catch((e) => alive && setError(e instanceof Error ? e.message : 'Could not load transformations'))
       .finally(() => alive && setLoading(false));
     return () => { alive = false; };
   }, []);
 
   const filtered = useMemo(() => {
-    if (!search) return clients;
+    if (!search) return rows;
     const s = search.toLowerCase();
-    return clients.filter(
+    return rows.filter(
       (c) => c.name?.toLowerCase().includes(s) ||
         (c.client_id || '').toLowerCase().includes(s) ||
         (c.trainer_name || '').toLowerCase().includes(s),
     );
-  }, [clients, search]);
+  }, [rows, search]);
 
-  const coaches = useMemo(() => {
-    const set = new Set(clients.map((c) => c.trainer_name).filter(Boolean));
-    return set.size;
-  }, [clients]);
+  const coaches = useMemo(
+    () => new Set(rows.map((c) => c.trainer_name).filter(Boolean)).size,
+    [rows],
+  );
+
+  /** Clients with a real series — two measuring sessions or more. Every
+   *  headline below is computed over THESE, not over the whole roster, so a
+   *  studio that has just started measuring is not reported as 0% progress. */
+  const tracked = useMemo(() => rows.filter((c) => c.weight_change !== null), [rows]);
 
   const avgWeight = useMemo(() => {
-    const withWeight = clients.filter((c) => c.weight && Number(c.weight) > 0);
-    if (withWeight.length === 0) return 0;
-    return withWeight.reduce((s, c) => s + Number(c.weight), 0) / withWeight.length;
-  }, [clients]);
+    const withWeight = rows.filter((c) => c.current_weight !== null);
+    if (!withWeight.length) return 0;
+    return withWeight.reduce((sum, c) => sum + (c.current_weight ?? 0), 0) / withWeight.length;
+  }, [rows]);
+
+  /** Net kilograms lost across everyone with a series. Negative change is a
+   *  loss, so the sign is flipped to read as "kg lost". */
+  const netLost = useMemo(
+    () => tracked.reduce((sum, c) => sum + -(c.weight_change ?? 0), 0),
+    [tracked],
+  );
+
+  /** Of the clients actually being measured, how many have gone down. */
+  const losingPct = tracked.length
+    ? Math.round((tracked.filter((c) => (c.weight_change ?? 0) < 0).length / tracked.length) * 100)
+    : null;
+
+  /** The largest genuine loss. Undefined when nobody has a series yet — which
+   *  is why this is a find over a sorted list rather than a reduce with a
+   *  seed: the old version seeded with clients[0] and, because every change
+   *  was 0, printed an arbitrary member's name under a trophy. */
+  const topPerformer = useMemo(() => {
+    const losers = tracked
+      .filter((c) => (c.weight_change ?? 0) < 0)
+      .sort((a, b) => (a.weight_change ?? 0) - (b.weight_change ?? 0));
+    return losers[0];
+  }, [tracked]);
 
   return (
     <>
@@ -107,10 +147,12 @@ function Inner() {
         {/* ── KPI Grid ── */}
         <div style={{ marginBottom: 28 }}>
           <MetricGroup columns={4}>
-            <PremiumMetricCardStandard label="Total Members" value={clients.length} icon={<Users size={16} />} loading={loading} />
+            <PremiumMetricCardStandard label="Active Members" value={rows.length} icon={<Users size={16} />} loading={loading} />
             <PremiumMetricCardStandard label="Active Coaches" value={coaches} icon={<UserCheck size={16} />} loading={loading} />
             <PremiumMetricCardStandard label="Avg Weight" value={avgWeight > 0 ? `${avgWeight.toFixed(0)} kg` : '—'} icon={<Weight size={16} />} loading={loading} />
-            <PremiumMetricCardStandard label="With Progress" value={clients.filter((c) => c.weight && Number(c.weight) > 0).length} icon={<TrendingUp size={16} />} loading={loading} />
+            {/* "Being tracked" is the honest denominator for everything below:
+                a client measured once has a weight, not a transformation. */}
+            <PremiumMetricCardStandard label="Being Tracked" value={tracked.length} icon={<TrendingUp size={16} />} loading={loading} />
           </MetricGroup>
         </div>
 
@@ -118,34 +160,18 @@ function Inner() {
         <div style={{ marginBottom: 28 }}>
           <MetricGroup columns={3}>
             <PremiumMetricCardStandard
-              label="Avg Progress per Member" icon={<Activity size={14} />} loading={loading}
-              value={clients.length ? `${((clients.filter(c => c.weight && Number(c.weight) > 0).length / clients.length) * 100).toFixed(0)}%` : '—'}
+              label="Net Weight Lost" icon={<Activity size={14} />} loading={loading}
+              value={tracked.length ? `${netLost >= 0 ? '' : '+'}${Math.abs(netLost).toFixed(1)} kg` : '—'}
             />
             <PremiumMetricCardStandard
-              label="Goal Completion Rate" icon={<Target size={14} />} loading={loading}
-              value={clients.length ? (() => {
-                const achieved = clients.filter(c => {
-                  const start = Number((c as Record<string, unknown>).initial_weight ?? (c as Record<string, unknown>).start_weight ?? 0);
-                  const curr = Number(c.weight ?? 0);
-                  return start > 0 && curr > 0 && curr < start;
-                }).length;
-                return `${((achieved / clients.length) * 100).toFixed(0)}%`;
-              })() : '—'}
+              label="Trending Down" icon={<Target size={14} />} loading={loading}
+              value={losingPct === null ? '—' : `${losingPct}%`}
             />
             <PremiumMetricCardStandard
-              label="Top Performer" icon={<Trophy size={14} />} loading={loading}
-              value={clients.length ? (() => {
-                const best = clients.reduce((b, c) => {
-                  const cStart = Number((c as Record<string, unknown>).initial_weight ?? (c as Record<string, unknown>).start_weight ?? 0);
-                  const cCurr = Number(c.weight ?? 0);
-                  const cLoss = cStart > 0 && cCurr > 0 ? cStart - cCurr : 0;
-                  const bStart = Number((b as Record<string, unknown>).initial_weight ?? (b as Record<string, unknown>).start_weight ?? 0);
-                  const bCurr = Number(b.weight ?? 0);
-                  const bLoss = bStart > 0 && bCurr > 0 ? bStart - bCurr : 0;
-                  return cLoss > bLoss ? c : b;
-                }, clients[0]);
-                return best.name ?? '—';
-              })() : '—'}
+              label="Biggest Loss" icon={<Trophy size={14} />} loading={loading}
+              value={topPerformer
+                ? `${topPerformer.name ?? '—'} (${Math.abs(topPerformer.weight_change ?? 0).toFixed(1)} kg)`
+                : '—'}
             />
           </MetricGroup>
         </div>
@@ -207,15 +233,19 @@ function Inner() {
                         </td>
                         <td style={{ ...td, fontWeight: 600, color: 'var(--text-primary)' }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <ClientAvatar name={c.name} photoUrl={c.photo_url}
-                              style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${['#0067e0','#10b981','#f59e0b','#0067e0','#0067e0','#0067e0'][Math.abs(c.name.split('').reduce((a,ch) => ((a<<5)-a)+ch.charCodeAt(0),0)) % 6]}, #7fb4ff)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: '#fff' }} />
-                            {c.name}
+                            <ClientAvatar name={c.name ?? ''} photoUrl={c.photo_url}
+                              style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${['#0067e0','#10b981','#f59e0b','#0067e0','#0067e0','#0067e0'][Math.abs((c.name ?? '').split('').reduce((a,ch) => ((a<<5)-a)+ch.charCodeAt(0),0)) % 6]}, #7fb4ff)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: '#fff' }} />
+                            {c.name ?? '—'}
                           </span>
                         </td>
                         <td style={{ ...td, color: 'var(--text-muted)' }}>{c.trainer_name || '—'}</td>
-                        <td style={{ ...td, color: 'var(--text-muted)' }}>{c.weight ? `${c.weight} kg` : '—'}</td>
-                        <td style={td}><WeightChange start={(c as any).initial_weight ?? (c as any).start_weight} current={c.weight} /></td>
-                        <td style={{ ...td, color: 'var(--text-muted)' }}>{fmtDate(c.joining_date || c.pt_start_date)}</td>
+                        <td style={{ ...td, color: 'var(--text-muted)' }}>
+                          {c.start_weight !== null
+                            ? `${c.start_weight.toFixed(1)} kg`
+                            : <span style={{ color: 'var(--text-disabled)' }}>—</span>}
+                        </td>
+                        <td style={td}><WeightChange current={c.current_weight} change={c.weight_change} /></td>
+                        <td style={{ ...td, color: 'var(--text-muted)' }}>{fmtDate(c.created_at ?? undefined)}</td>
                         <td style={td}>
                           <Link href={`/clients/${c.id}`}
                             style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 10, background: 'rgba(0,103,224,0.08)', color: '#0067e0', fontSize: 11.5, fontWeight: 600, textDecoration: 'none', border: '1px solid rgba(0,103,224,0.2)', transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)' }}

@@ -138,7 +138,7 @@ describe('the label audit, resolved case by case', () => {
   //
   // The other fifteen split three ways by what the caption actually names.
 
-  it('associates the ten captions that sit beside a real control', () => {
+  it('associates the nine captions that sit beside a real control', () => {
     const associated: [string, string][] = [
       ['app/(bare)/forgot-password/page.tsx', 'fp-email'],
       ['app/(bare)/reset-password/page.tsx', 'rp-password'],
@@ -146,7 +146,6 @@ describe('the label audit, resolved case by case', () => {
       ['app/(chrome)/ai-coach/knowledge/page.tsx', 'kb-title'],
       ['app/(chrome)/pt-os/clients/[id]/edit/page.tsx', 'delete-confirm'],
       ['app/(chrome)/pt-os/clients/[id]/payments/page.tsx', 'pay-ref'],
-      ['app/(chrome)/settings/integrations/page.tsx', 'integration-credential'],
       ['app/(chrome)/trainers/leave/page.tsx', 'leave-reason'],
       ['app/(chrome)/trainers/leave/page.tsx', 'leave-reject-note'],
     ];

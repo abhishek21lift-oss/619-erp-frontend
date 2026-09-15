@@ -17,27 +17,33 @@ type Status = 'connected' | 'error' | 'pending' | 'unavailable';
 interface Integration {
   id: string; name: string; description: string; category: string;
   icon: string; color: string; bg: string; status: Status;
-  connectedAt?: string; lastSync?: string; comingSoon?: boolean;
+  connectedAt?: string; lastSync?: string;
+  /** 'server' — the credential lives in the operator's environment and this
+   *  screen can only report it, never set it. */
+  managed?: 'server';
 }
 
-// Static integration metadata — status and dates are loaded from the API at runtime
+// The integrations this product actually has.
+//
+// Everything else that used to be listed here — Paytm, Stripe, Twilio SMS,
+// SendGrid, Zoho Books, a biometric scanner — had no backend of any kind. They
+// rendered a "Connect" button that opened a form for an API key, POSTed it to
+// /api/integrations/:id/connect, and went green. Nothing read the key back:
+// `integrations.api_key` has never been SELECTed anywhere in the backend, and
+// the "Test Connection" that preceded it only checked the string's prefix, so
+// it passed on any plausible-looking typo. A studio owner following that flow
+// got a green badge and a live secret sitting in plaintext, and no integration.
+//
+// Razorpay is the one that works, and it is configured by the operator through
+// RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET — not from this screen. Its card is
+// therefore read-only and reports what the server says, which is why
+// `managed: 'server'` exists.
+//
+// WhatsApp, Google Calendar and OpenRouter are not in this list either: each
+// has a live card below with its own lifecycle (a device pairing, an OAuth
+// grant, a model health check) rather than a stored string.
 const STATIC_INTEGRATIONS: Integration[] = [
-  { id: 'razorpay',  name: 'Razorpay',          description: 'Payment gateway for fees, memberships & PT packages', category: 'payments',      icon: 'CreditCard',    color: '#0067e0', bg: '#f1f5f9', status: 'pending' },
-  { id: 'paytm',     name: 'Paytm',              description: 'UPI & wallet payment processing',                     category: 'payments',      icon: 'Smartphone',    color: '#0067e0', bg: '#f1f5f9', status: 'pending' },
-  { id: 'stripe',    name: 'Stripe',             description: 'International payment processing',                    category: 'payments',      icon: 'CreditCard',    color: '#0067e0', bg: '#f1f5f9', status: 'pending' },
-  // WhatsApp is NOT in this list. It is rendered as a live <WhatsAppCard />
-  // below, like the calendar and AI cards, because it is a device pairing with
-  // a lifecycle rather than a stored API key.
-  //
-  // The entry that was here fed the generic ConnectModal, which wrote an
-  // api_key into the integrations table. Nothing has ever read that key — see
-  // routes/integrations.js in the backend — so the card reported "Connected"
-  // while sending exactly nothing.
-  { id: 'twilio',    name: 'Twilio SMS',         description: 'SMS alerts for dues, check-ins & announcements',     category: 'communication', icon: 'MessageSquare', color: '#ef4444', bg: '#fef2f2', status: 'pending' },
-  { id: 'sendgrid',  name: 'SendGrid',           description: 'Email marketing & transactional emails',             category: 'communication', icon: 'Send',          color: '#0067e0', bg: '#f1f5f9', status: 'unavailable', comingSoon: true },
-  // AI Coach card is rendered as a live AiCoachCard — not in this static list
-  { id: 'biometric', name: 'Biometric Scanner',  description: 'Face & fingerprint check-in hardware',               category: 'devices',       icon: 'Camera',        color: '#0067e0', bg: '#f8fafc', status: 'pending' },
-  { id: 'zoho',      name: 'Zoho Books',         description: 'Accounting & invoicing sync',                        category: 'analytics',     icon: 'BarChart3',     color: '#dc2626', bg: '#fef2f2', status: 'unavailable', comingSoon: true },
+  { id: 'razorpay', name: 'Razorpay', description: 'Payment gateway for fees, memberships & PT packages', category: 'payments', icon: 'CreditCard', color: '#0067e0', bg: '#f1f5f9', status: 'unavailable', managed: 'server' },
 ];
 
 const CATEGORIES = [
@@ -46,8 +52,6 @@ const CATEGORIES = [
   { id: 'communication',label: 'Communication' },
   { id: 'ai',           label: 'AI & Automation' },
   { id: 'scheduling',   label: 'Scheduling' },
-  { id: 'devices',      label: 'Devices & IoT' },
-  { id: 'analytics',    label: 'Analytics' },
 ];
 
 const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
@@ -69,89 +73,6 @@ const catColor: Record<string, string> = {
 
 const sc: Record<Status, string> = { connected: '#10b981', error: '#ef4444', pending: '#f59e0b', unavailable: 'var(--text-disabled)' };
 const sl: Record<Status, string> = { connected: 'Connected', error: 'Error', pending: 'Pending', unavailable: 'Unavailable' };
-
-// ── Static ConnectModal (non-calendar integrations) ───────────────────────────
-function ConnectModal({ integration, isConnected, onClose, onConnect, onDisconnect }: {
-  integration: Integration; isConnected: boolean; onClose: () => void;
-  onConnect: (id: string, apiKey: string) => Promise<void>; onDisconnect: () => void;
-}) {
-  const [apiKey, setApiKey] = useState('');
-  const [testing, setTesting] = useState(false);
-  const [saving,  setSaving]  = useState(false);
-  const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
-  const Icon = iconMap[integration.icon];
-
-  const testConnection = async () => {
-    setTesting(true); setTestResult(null);
-    try {
-      const res = await api.integrations.test(integration.id, { api_key: apiKey });
-      setTestResult(res.success ? 'success' : 'error');
-    } catch { setTestResult('error'); }
-    finally { setTesting(false); }
-  };
-
-  const saveConnection = async () => {
-    setSaving(true);
-    try {
-      await onConnect(integration.id, apiKey);
-      onClose();
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const sBtn = { width: '100%', padding: '10px 0', borderRadius: 12, border: 'none', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#ffffff' } as const;
-  const aBtn = { flex: 1, padding: '10px 0', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer' } as const;
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }} onClick={onClose}>
-      <m.div initial={{ opacity: 0, scale: 0.92, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.3, type: 'spring', damping: 25, stiffness: 300 }}
-        onClick={(e: React.MouseEvent) => e.stopPropagation()}
-        style={{ width: '90%', maxWidth: 440, ...glass, borderRadius: 20, padding: 28 }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: integration.bg, color: integration.color }}>
-            {Icon && <Icon size={20} />}
-          </div>
-          <div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>{integration.name}</div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{integration.description}</div>
-          </div>
-          <button onClick={onClose} style={{ marginLeft: 'auto', width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'var(--bg-subtle)', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={16} /></button>
-        </div>
-        {!isConnected && (
-          <div style={{ marginBottom: 16 }}>
-            <label htmlFor="integration-credential" style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>API Key / Webhook URL</label>
-            <input id="integration-credential" value={apiKey} onChange={(e) => { setApiKey(e.target.value); setTestResult(null); }} placeholder="Paste your API key or webhook URL..."
-              style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: `1px solid ${testResult === 'error' ? 'rgba(239,68,68,0.4)' : 'var(--border)'}`, fontSize: 13, color: 'var(--text-primary)', background: 'var(--bg-canvas)', boxSizing: 'border-box' }}
-            />
-          </div>
-        )}
-        {!isConnected && (
-          <button onClick={testConnection} disabled={testing || !apiKey}
-            style={{ ...sBtn, cursor: (testing || !apiKey) ? 'not-allowed' : 'pointer', background: testResult === 'success' ? 'linear-gradient(135deg,#10b981,#059669)' : testResult === 'error' ? 'linear-gradient(135deg,#ef4444,#dc2626)' : 'linear-gradient(135deg,#f59e0b,#d97706)', opacity: !apiKey ? 0.6 : 1 }}
-          >
-            {testing && <m.span style={{ display: 'inline-flex' }} animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}><Loader2 size={16} /></m.span>}
-            {testing ? 'Testing...' : testResult === 'success' ? 'Connected Successfully' : testResult === 'error' ? 'Connection Failed' : 'Test Connection'}
-          </button>
-        )}
-        <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-          {!isConnected ? (
-            <button onClick={saveConnection} disabled={saving || !apiKey}
-              style={{ ...aBtn, border: 'none', background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#fff', opacity: !apiKey ? 0.6 : 1 }}>
-              {saving ? 'Saving…' : 'Save & Connect'}
-            </button>
-          ) : (
-            <button onClick={onClose} style={{ ...aBtn, border: 'none', background: 'var(--bg-subtle)', color: 'var(--text-primary)' }}>Close</button>
-          )}
-          {isConnected && (
-            <button onClick={() => { onDisconnect(); onClose(); }} style={{ ...aBtn, border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.1)', color: '#fca5a5' }}>Disconnect</button>
-          )}
-        </div>
-      </m.div>
-    </div>
-  );
-}
 
 // ── OpenRouter AI Card (live status) ─────────────────────────────────────────
 type HealthModelInfo = { model: string; status: string; latency_ms?: number; error?: string };
@@ -440,9 +361,8 @@ function GoogleCalendarCard({ flashSuccess }: { flashSuccess: boolean }) {
 }
 
 // ── Static integration card ───────────────────────────────────────────────────
-function StaticCard({ integration, isConnected, connectedAt, onConfigure, onToggle }: {
+function StaticCard({ integration, isConnected, connectedAt }: {
   integration: Integration; isConnected: boolean; connectedAt?: string;
-  onConfigure: () => void; onToggle: () => void;
 }) {
   const status: Status = isConnected ? 'connected' : integration.status;
   const Icon = iconMap[integration.icon];
@@ -458,12 +378,7 @@ function StaticCard({ integration, isConnected, connectedAt, onConfigure, onTogg
           {Icon && <Icon size={20} />}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{integration.name}</span>
-            {integration.comingSoon && (
-              <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '2px 8px', borderRadius: 10, background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.2)' }}>Coming Soon</span>
-            )}
-          </div>
+          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{integration.name}</span>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.4 }}>{integration.description}</p>
         </div>
       </div>
@@ -476,26 +391,20 @@ function StaticCard({ integration, isConnected, connectedAt, onConfigure, onTogg
           <span style={{ fontSize: 10, color: 'var(--text-disabled)' }}>Connected {new Date(connectedAt).toLocaleDateString()}</span>
         )}
       </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        {integration.comingSoon ? (
-          <div style={{ flex: 1, padding: '8px 0', borderRadius: 12, background: 'var(--bg-subtle)', color: 'var(--text-disabled)', fontSize: 12, fontWeight: 600, textAlign: 'center', border: '1px solid var(--border)' }}>
-            <Clock size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} /> Coming Soon
-          </div>
-        ) : isConnected ? (
-          <>
-            <button onClick={onConfigure} style={{ flex: 1, padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'var(--bg-subtle)', color: 'var(--text-primary)' }}>
-              <Settings size={13} /> Configure
-            </button>
-            <button onClick={onToggle} style={{ padding: '8px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-              <Unlink size={13} />
-            </button>
-          </>
-        ) : (
-          <button onClick={onConfigure} style={{ flex: 1, padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#ffffff', boxShadow: '0 4px 12px rgba(245,158,11,0.3)' }}>
-            <Link2 size={13} /> Connect
-          </button>
-        )}
-      </div>
+      {/* Server-managed: say who holds the credential rather than offering a
+          field that writes one nothing reads. The previous button opened that
+          form; a studio admin cannot change this and should not be invited to
+          try. */}
+      {integration.managed === 'server' && (
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, padding: '9px 12px', borderRadius: 12, background: 'var(--bg-subtle)', border: '1px solid var(--border)', fontSize: 11, lineHeight: 1.45, color: 'var(--text-muted)' }}>
+          <Settings size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+          <span>
+            {isConnected
+              ? 'Configured by your operator. Keys are held in the server environment, not in this studio\u2019s settings.'
+              : 'Not configured. Ask your operator to set the Razorpay keys in the server environment to enable online payments.'}
+          </span>
+        </div>
+      )}
     </m.div>
   );
 }
@@ -509,7 +418,6 @@ export default function IntegrationsPage() {
   const [category, setCategory]   = useState('all');
   const [search,   setSearch]     = useState('');
   const [apiData,  setApiData]    = useState<Record<string, ApiIntegration>>({});
-  const [modalId,  setModalId]    = useState<string | null>(null);
 
   // Load integration statuses from backend
   useEffect(() => {
@@ -536,13 +444,6 @@ export default function IntegrationsPage() {
 
   const isConnected = (id: string) => apiData[id]?.status === 'connected';
 
-  const disconnectIntegration = async (id: string) => {
-    try {
-      await api.integrations.disconnect(id);
-      setApiData(prev => ({ ...prev, [id]: { ...prev[id], id, status: 'disconnected' } }));
-    } catch { /* silently ignore */ }
-  };
-
   // Build the filtered list: inject calendar card placeholder for layout purposes
   const ALL_IDS_WITH_CALENDAR = [
     ...STATIC_INTEGRATIONS.map((i) => i.id),
@@ -567,7 +468,6 @@ export default function IntegrationsPage() {
     return { staticFiltered, showCalendar, showOpenRouter, showWhatsApp };
   }, [category, search]);
 
-  const modalIntegration = modalId ? STATIC_INTEGRATIONS.find((i) => i.id === modalId) ?? null : null;
 
   return (
     <Guard role="admin">
@@ -617,8 +517,6 @@ export default function IntegrationsPage() {
                 integration={integration}
                 isConnected={isConnected(integration.id)}
                 connectedAt={apiData[integration.id]?.connected_at}
-                onConfigure={() => setModalId(integration.id)}
-                onToggle={() => disconnectIntegration(integration.id)}
               />
             ))}
             {filtered.showCalendar && (
@@ -644,18 +542,6 @@ export default function IntegrationsPage() {
           </m.div>
         )}
 
-        {modalIntegration && (
-          <ConnectModal
-            integration={modalIntegration}
-            isConnected={isConnected(modalIntegration.id)}
-            onClose={() => setModalId(null)}
-            onConnect={async (id, apiKey) => {
-              await api.integrations.connect(id, { api_key: apiKey });
-              setApiData(prev => ({ ...prev, [id]: { ...prev[id], id, status: 'connected', connected_at: new Date().toISOString() } }));
-            }}
-            onDisconnect={() => disconnectIntegration(modalIntegration.id)}
-          />
-        )}
       </div>
     </Guard>
   );

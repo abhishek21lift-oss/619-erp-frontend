@@ -41,12 +41,14 @@
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
-import * as FE from '../src/lib/fitness-calculations';
+import * as FE_FITNESS from '../src/lib/fitness-calculations';
+import * as FE_LIFESTYLE from '../src/lib/lifestyle-calculations';
 
 const BACKEND_MODULE = 'src/modules/progress/fitness-scoring.js';
+const LIFESTYLE_BACKEND_MODULE = 'src/modules/progress/lifestyle-scoring.js';
 
 /** Where the backend checkout might be, in the order worth trying. */
-function findBackend(): string | null {
+function findBackend(moduleRelPath: string = BACKEND_MODULE): string | null {
   const candidates = [
     process.env.BACKEND_PATH,          // explicit, wins
     '../backend',                      // the E2E job's layout
@@ -54,7 +56,7 @@ function findBackend(): string | null {
   ].filter(Boolean) as string[];
 
   for (const base of candidates) {
-    const p = resolve(process.cwd(), base, BACKEND_MODULE);
+    const p = resolve(process.cwd(), base, moduleRelPath);
     if (existsSync(p)) return p;
   }
   return null;
@@ -87,7 +89,7 @@ for (let v = 0; v <= 220; v += 0.5) FINE.push(v);
 const CATEGORIES = [null, 'poor', 'below_average', 'average', 'good', 'excellent', 'superior', 'nonsense'];
 const BP_CATEGORIES = [null, 'normal', 'elevated', 'stage_1', 'stage_2', 'crisis', 'low'];
 
-function buildCases(): Array<{ fn: string; args: unknown[] }> {
+function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
   const cases: Array<{ fn: string; args: unknown[] }> = [];
   const add = (fn: string, args: unknown[]) => cases.push({ fn, args });
 
@@ -146,33 +148,113 @@ function buildCases(): Array<{ fn: string; args: unknown[] }> {
   return cases;
 }
 
+
+// ── Lifestyle ───────────────────────────────────────────────────────────────
+//
+// The second hand-maintained pair, and the one that had actually drifted. The
+// lifestyle wizard previously substituted 3 L for an absent water reading
+// before classifying hydration; the backend classified the stored value, which
+// is null. classifyHydration(3) scores 85 and lands in the composite mean,
+// classifyHydration(null) is dropped from it — so the Lifestyle Score on the
+// review screen sat several points above the one being written, and could
+// report a different readiness band than the record it created.
+//
+// Nothing could have caught that: this check covered fitness-calculations only.
+
+const SMOKING = [null, 'never', 'former', 'occasionally', 'daily', 'nonsense'];
+const ALCOHOL = [null, 'never', 'occasionally', 'weekly', 'frequently', 'nonsense'];
+const STEPS_BRACKETS = [null, '<3000', '3000_5000', '5000_8000', '8000_10000', '10000_plus', 'nonsense'];
+const OCCUPATIONS = [null, 'desk_job', 'driver', 'student', 'retired', 'physical_labor', 'active_job', 'fitness_professional', 'police', 'nonsense'];
+const BREAKFAST = [null, 'daily', 'sometimes', 'never', 'nonsense'];
+const RECOVERY_QUALITY = [null, 'poor', 'average', 'good', 'excellent', 'nonsense'];
+const SCORES = [null, 0, 25, 39, 40, 41, 50, 54, 55, 56, 70, 85, 100];
+
+function buildLifestyleCases(): Array<{ fn: string; args: unknown[] }> {
+  const cases: Array<{ fn: string; args: unknown[] }> = [];
+  const add = (fn: string, args: unknown[]) => cases.push({ fn, args });
+
+  // Hydration and the 1-10 scales are pure thresholds, so they get the same
+  // half-step treatment the fitness cutoffs get — see the comment on FINE.
+  for (let v = 0; v <= 8; v += 0.1) add('classifyHydration', [Number(v.toFixed(1))]);
+  add('classifyHydration', [null]);
+
+  for (let d = 0; d <= 14; d += 0.5) for (const q of [null, 1, 3, 5, 7, 10]) add('classifySleep', [d, q]);
+  for (let q = 0; q <= 10; q += 0.5) add('classifySleep', [8, q]);
+  add('classifySleep', [null, null]);
+
+  for (let lv = 0; lv <= 10; lv += 0.5) add('calcStressScore', [lv]);
+  add('calcStressScore', [null]);
+
+  for (const b of STEPS_BRACKETS) for (const o of OCCUPATIONS) add('classifyActivity', [b, o]);
+
+  for (const mf of [null, 0, 1, 2, 3, 4, 5, 6, 8]) for (const bh of BREAKFAST) for (const ln of [null, true, false]) {
+    add('calcNutritionScore', [mf, bh, ln]);
+  }
+
+  for (const ss of SCORES) for (const st of SCORES) for (const en of [null, 1, 5, 10]) for (const rq of RECOVERY_QUALITY) {
+    add('calcRecoveryScore', [ss, st, en, rq]);
+  }
+
+  for (let v = 0; v <= 100; v += 0.5) add('classifyRisk', [v]);
+  add('classifyRisk', [null]);
+
+  // The two habit functions take an object, so the sweep walks one field at a
+  // time against a fixed rest — a full cross product would be millions.
+  const baseHabits = {
+    smokingStatus: null, alcoholStatus: null, sleepScore: 70, stressScore: 70,
+    hydrationScore: 70, activityScore: 70, nutritionScore: 70,
+  };
+  for (const sm of SMOKING) for (const al of ALCOHOL) {
+    add('calcHabitRiskScore', [{ ...baseHabits, smokingStatus: sm, alcoholStatus: al }]);
+    add('buildLifestyleRiskFactors', [{ ...baseHabits, smokingStatus: sm, alcoholStatus: al }]);
+  }
+  for (const field of ['sleepScore', 'stressScore', 'hydrationScore', 'activityScore', 'nutritionScore']) {
+    for (let v = 0; v <= 100; v += 0.5) {
+      add('calcHabitRiskScore', [{ ...baseHabits, [field]: v }]);
+      add('buildLifestyleRiskFactors', [{ ...baseHabits, [field]: v }]);
+    }
+    add('calcHabitRiskScore', [{ ...baseHabits, [field]: null }]);
+    add('buildLifestyleRiskFactors', [{ ...baseHabits, [field]: null }]);
+  }
+
+  // The composite. A null component must be DROPPED from the mean, not counted
+  // as zero and not substituted — which is the exact bug above.
+  const baseSix = { sleep: 70, stress: 70, hydration: 70, activity: 70, nutrition: 70, recovery: 70 };
+  for (const field of Object.keys(baseSix)) {
+    for (const v of [null, 0, 25, 50, 85, 100]) {
+      for (const hr of [null, 0, 20, 50, 100]) add('calcLifestyleScore', [{ ...baseSix, [field]: v }, hr]);
+    }
+  }
+  add('calcLifestyleScore', [{ sleep: null, stress: null, hydration: null, activity: null, nutrition: null, recovery: null }, null]);
+
+  for (let v = 0; v <= 100; v += 0.5) add('classifyLifestyleReadiness', [v]);
+  add('classifyLifestyleReadiness', [null]);
+
+  return cases;
+}
+
 /** Compared as JSON so null and undefined cannot read as equal by accident. */
 const norm = (v: unknown) => JSON.stringify(v === undefined ? null : v);
 
-function main() {
-  const backendPath = findBackend();
-  if (!backendPath) {
-    const message = `scoring parity: backend not found (looked for ${BACKEND_MODULE} under `
-      + `$BACKEND_PATH, ../backend, ../619-erp-backend)`;
-    if (process.env.SCORING_PARITY_OPTIONAL === '1') {
-      console.warn(`⚠ ${message} — skipped because SCORING_PARITY_OPTIONAL=1`);
-      return;
-    }
-    console.error(`✗ ${message}`);
-    console.error('  A parity check that cannot compare anything must not report green.');
-    process.exit(1);
-  }
+interface Suite {
+  name: string;
+  frontend: Record<string, unknown>;
+  backendModule: string;
+  cases: Array<{ fn: string; args: unknown[] }>;
+  /** Below this, the grid or the export surface moved and the run proves nothing. */
+  minCalls: number;
+}
 
+/** Compare one suite. Returns the mismatch lines; prints its own summary. */
+function runSuite(suite: Suite, backendPath: string): string[] {
   const BE = createRequire(import.meta.url)(backendPath) as Record<string, unknown>;
-  const frontend = FE as unknown as Record<string, unknown>;
 
-  const cases = buildCases();
   const mismatches: string[] = [];
   const uncomparable = new Set<string>();
   let compared = 0;
 
-  for (const { fn, args } of cases) {
-    const fe = frontend[fn];
+  for (const { fn, args } of suite.cases) {
+    const fe = suite.frontend[fn];
     const be = BE[fn];
     if (typeof fe !== 'function' || typeof be !== 'function') { uncomparable.add(fn); continue; }
 
@@ -184,26 +266,69 @@ function main() {
     try { b = (be as Fn)(...args); } catch (e) { b = `THREW:${(e as Error).message}`; }
     compared += 1;
     if (norm(a) !== norm(b)) {
-      mismatches.push(`  ${fn}(${args.map(norm).join(', ')})\n    frontend → ${norm(a)}\n    backend  → ${norm(b)}`);
+      mismatches.push(`  [${suite.name}] ${fn}(${args.map(norm).join(', ')})\n    frontend → ${norm(a)}\n    backend  → ${norm(b)}`);
     }
   }
 
-  const functions = new Set(cases.map((c) => c.fn)).size;
-  console.info(`scoring parity: ${compared} calls across ${functions - uncomparable.size} shared functions`);
+  const functions = new Set(suite.cases.map((c) => c.fn)).size;
+  console.info(`scoring parity [${suite.name}]: ${compared} calls across ${functions - uncomparable.size} shared functions`);
   console.info(`  backend: ${backendPath}`);
 
   // Cannot pass vacuously: an empty or tiny comparison means the grid or the
   // export surface changed underneath this, which is itself a failure.
-  if (compared < 10000) {
-    console.error(`✗ only ${compared} calls compared — the grid or the exports moved; this cannot be trusted`);
+  if (compared < suite.minCalls) {
+    console.error(`✗ [${suite.name}] only ${compared} calls compared — the grid or the exports moved; this cannot be trusted`);
     process.exit(1);
   }
 
   if (uncomparable.size) {
     // Named, not silently dropped. A function that exists on one side only is
     // how the two copies begin to diverge.
-    console.warn(`⚠ present on one side only, not compared: ${[...uncomparable].sort().join(', ')}`);
+    console.warn(`⚠ [${suite.name}] present on one side only, not compared: ${[...uncomparable].sort().join(', ')}`);
   }
+
+  return mismatches;
+}
+
+function main() {
+  // Both libraries live in the same backend checkout, so one lookup failure is
+  // the same failure for both — but each is resolved by its own path so a
+  // module that moves is named precisely rather than reported as "no backend".
+  const suites: Array<Omit<Suite, 'cases'> & { build: () => Suite['cases'] }> = [
+    {
+      name: 'fitness',
+      frontend: FE_FITNESS as unknown as Record<string, unknown>,
+      backendModule: BACKEND_MODULE,
+      build: buildFitnessCases,
+      minCalls: 10000,
+    },
+    {
+      name: 'lifestyle',
+      frontend: FE_LIFESTYLE as unknown as Record<string, unknown>,
+      backendModule: LIFESTYLE_BACKEND_MODULE,
+      build: buildLifestyleCases,
+      minCalls: 1000,
+    },
+  ];
+
+  const resolved: Array<{ suite: Suite; path: string }> = [];
+  for (const s of suites) {
+    const path = findBackend(s.backendModule);
+    if (!path) {
+      const message = `scoring parity: backend not found (looked for ${s.backendModule} under `
+        + '$BACKEND_PATH, ../backend, ../619-erp-backend)';
+      if (process.env.SCORING_PARITY_OPTIONAL === '1') {
+        console.warn(`⚠ ${message} — skipped because SCORING_PARITY_OPTIONAL=1`);
+        return;
+      }
+      console.error(`✗ ${message}`);
+      console.error('  A parity check that cannot compare anything must not report green.');
+      process.exit(1);
+    }
+    resolved.push({ suite: { ...s, cases: s.build() }, path });
+  }
+
+  const mismatches = resolved.flatMap(({ suite, path }) => runSuite(suite, path));
 
   if (mismatches.length) {
     console.error(`\n✗ ${mismatches.length} mismatch(es) — the number a trainer sees is not the number that gets stored:\n`);

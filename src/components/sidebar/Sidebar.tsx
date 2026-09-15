@@ -194,6 +194,11 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
   // whatever was left, so both badges read zero indefinitely. Rejections are
   // logged now for exactly that reason: a counter that quietly reports
   // "nothing pending" is worse than no counter at all.
+  //
+  // aiPendingCount was a third instance of the same thing and is gone with the
+  // Intelligence Center: /api/ai/trainer/pending never existed on the backend,
+  // and the `.catch(() => null)` beside it meant the badge read zero forever
+  // rather than ever saying so.
   useEffect(() => {
     if (!isAdmin) return;
     let cancelled = false;
@@ -201,18 +206,13 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
     Promise.allSettled([
       api.leave.list({ status: 'pending' }),
       api.insights.dues({ limit: 100 }),
-      api.ai.trainer.pending({ limit: 1 }).catch(() => null),
-    ]).then(([leavesRes, duesRes, aiRes]) => {
+    ]).then(([leavesRes, duesRes]) => {
       if (cancelled) return;
       if (leavesRes.status === 'rejected') console.warn('[sidebar] pending-leave count failed', leavesRes.reason);
       if (duesRes.status === 'rejected') console.warn('[sidebar] dues count failed', duesRes.reason);
-      const aiPending = aiRes.status === 'fulfilled' && aiRes.value && typeof aiRes.value === 'object' && 'data' in aiRes.value
-        ? (aiRes.value as { data: { total_pending?: number } }).data?.total_pending ?? 0
-        : 0;
       setBadgeCounts({
         pendingLeaves: leavesRes.status === 'fulfilled' ? leavesRes.value.length : 0,
         duesCount: duesRes.status === 'fulfilled' ? duesRes.value.length : 0,
-        aiPendingCount: aiPending,
       });
     });
 

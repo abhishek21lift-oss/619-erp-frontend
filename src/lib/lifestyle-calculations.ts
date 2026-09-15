@@ -62,7 +62,17 @@ const ACTIVITY_LEVEL: Record<DailyStepsBracket, ActivityLevel> = { '<3000': 'Sed
 const ACTIVE_OCCUPATIONS: OccupationType[] = ['physical_labor', 'active_job', 'fitness_professional', 'police'];
 const SEDENTARY_OCCUPATIONS: OccupationType[] = ['desk_job', 'driver', 'student', 'retired'];
 export function classifyActivity(stepsBracket: DailyStepsBracket | null, occupationType: OccupationType | null): { level: ActivityLevel | null; score: number | null } {
-  if (!stepsBracket) return { level: null, score: null };
+  // An unrecognised bracket is a null answer, not an arithmetic one. The type
+  // says this cannot happen; the data says otherwise — the wizard casts
+  // `row.daily_steps_bracket` straight out of the API with no validation, so a
+  // legacy or renamed value reaches here as a plain string.
+  //
+  // Without this guard ACTIVITY_BASE[bracket] is undefined, the score becomes
+  // NaN, and NaN survives mean()'s `!= null` filter — so the whole composite
+  // goes NaN and classifyLifestyleReadiness falls through every band to
+  // "High Risk". A trainer was shown High Risk for a healthy client while the
+  // backend, which has always had this guard, stored the correct score.
+  if (!stepsBracket || ACTIVITY_BASE[stepsBracket] == null) return { level: null, score: null };
   let score = ACTIVITY_BASE[stepsBracket];
   if (occupationType && ACTIVE_OCCUPATIONS.includes(occupationType)) score += 10;
   else if (occupationType && SEDENTARY_OCCUPATIONS.includes(occupationType)) score -= 10;

@@ -3722,6 +3722,30 @@ export type CheckinInsight =
     }
   | { available: false; reason: string; checkins_count?: number };
 
+/**
+ * One active client's weight journey, from their own recorded measurements.
+ *
+ * `start_weight`, `start_measured_at` and `weight_change` are null when there
+ * is no series to compare — fewer than two measuring sessions, or two at the
+ * same instant. That is deliberately distinct from a change of 0: "not
+ * measured twice yet" and "held their weight" mean opposite things to a coach,
+ * and the screen must be able to tell them apart.
+ */
+export interface TransformationRow {
+  id: string;
+  client_id: string | null;
+  name: string | null;
+  photo_url: string | null;
+  trainer_name: string | null;
+  created_at: string | null;
+  measurement_count: number;
+  start_weight: number | null;
+  current_weight: number | null;
+  start_measured_at: string | null;
+  current_measured_at: string | null;
+  weight_change: number | null;
+}
+
 /** One readiness component, 0-100, or null when that question was not answered. */
 export interface RecoveryComponents {
   sleep: number | null;
@@ -3790,96 +3814,6 @@ export interface AiActionResult {
   total: number;
   warnings: string[];
   results: Array<{ id: string; name: string; status: string; error: string | null }>;
-}
-
-// ── Trainer Intelligence (Phase 2F/2G) ──────────────────────────────────
-
-export interface AiMemoryCandidate {
-  id: string;
-  organization_id: string;
-  client_id: string;
-  category: string;
-  subcategory?: string | null;
-  fact: string;
-  confidence: number;
-  source_type: string;
-  source_id?: string | null;
-  source_text?: string | null;
-  status: string;
-  verified_at?: string | null;
-  as_of?: string | null;
-  created_by?: string | null;
-  created_at: string;
-  updated_at: string;
-  /** Attached by the pending-queue, not stored in DB. */
-  _conflicts?: Array<{ id: string; fact: string; category: string }>;
-}
-
-export interface AiProgrammerProposal {
-  id: string;
-  organization_id: string;
-  client_id: string;
-  proposal_type: string;
-  summary: string;
-  reason: string;
-  evidence: Array<{ type: string; description: string; source: string; value: string }>;
-  current_state: Record<string, unknown>;
-  deterministic_recommendation: Record<string, unknown>;
-  ai_recommendation: Record<string, unknown> | null;
-  confidence: number;
-  safety_flags: string[];
-  requires_trainer_approval: boolean;
-  status: string;
-  approved_by?: string | null;
-  approved_at?: string | null;
-  rejection_reason?: string | null;
-  fingerprint?: string | null;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  expires_at: string;
-}
-
-export interface PendingWorkItem {
-  type: 'memory' | 'proposal';
-  data: AiMemoryCandidate | AiProgrammerProposal;
-  priority: number;
-}
-
-export interface PendingWorkQueue {
-  memory_candidates: PendingWorkItem[];
-  programmer_proposals: PendingWorkItem[];
-  total_pending: number;
-}
-
-export interface ClientIntelligenceSummary {
-  client_id: string;
-  client_name: string;
-  generated_at: string;
-  what_changed: Array<{ type: string; text: string }>;
-  what_ai_knows: Array<{ category: string; fact: string; confidence: number; source_type: string; as_of: string | null }>;
-  what_ai_suggests: Array<{ id: string; type: string; summary: string; confidence: number; safety_flags: string[]; expires_at: string }>;
-  what_needs_attention: Array<{ type: string; text: string }>;
-  what_is_missing: Array<string>;
-  next_best_action: { type: string; text: string; proposal_id?: string; memory_id?: string } | null;
-}
-
-export interface AiIntelligenceAudit {
-  id: string;
-  organization_id: string;
-  actor_id: string;
-  target_type: string;
-  target_id: string;
-  action: string;
-  previous_state: string | null;
-  new_state: string | null;
-  reason: string | null;
-  request_id: string | null;
-  created_at: string;
-  /** Human-readable description from the target row (memory fact or proposal summary). */
-  target_description?: string | null;
-  /** The client ID this audit event is associated with (via the target). */
-  client_id?: string | null;
 }
 
 // ── Command Centre Phase 5 — platform KPIs, tenancy health, studio 360, search ──

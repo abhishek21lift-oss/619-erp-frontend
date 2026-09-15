@@ -253,10 +253,21 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
   const analysis = useMemo(() => {
     const sleep = classifySleep(n(form.sleepDurationHours), n(form.sleepQuality));
     const stressScore = calcStressScore(n(form.stressLevel));
-    // Water intake now lives in the Nutrition assessment, not here. When it's
-    // absent, treat hydration as neutral (~3 L) so it neither penalises the
-    // lifestyle score nor raises a false "low hydration" risk.
-    const hydration = classifyHydration(n(form.waterIntakeLiters) || 3);
+    // Water intake now lives in the Nutrition assessment, not here, and no step
+    // in this wizard collects it — so this is always absent.
+    //
+    // It used to substitute 3 L, to keep hydration from penalising the score or
+    // raising a false "low hydration" risk. Neither needed substituting: both
+    // calcHabitRiskScore and buildLifestyleRiskFactors already skip a null
+    // hydrationScore, and mean() drops nulls, so an absent reading is excluded
+    // from the composite rather than counted against it. Truly neutral.
+    //
+    // What the 3 did instead was score as 'Optimal' (85) and land in the mean.
+    // The backend recomputes from the stored value — null — on POST, so the
+    // Lifestyle Score on this review screen was several points above the one
+    // being written, and could sit in a different readiness band than the one
+    // the record ends up showing. Pass the absence through.
+    const hydration = classifyHydration(n(form.waterIntakeLiters));
     const activity = classifyActivity(form.dailyStepsBracket || null, form.occupationType || null);
     const nutritionScore = calcNutritionScore(n(form.mealFrequency), form.breakfastHabit || null, form.lateNightEating);
     const recoveryScore = calcRecoveryScore(sleep.score, stressScore, n(form.energyLevel), form.recoveryQuality || null);

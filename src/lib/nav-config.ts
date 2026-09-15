@@ -122,7 +122,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/pt-os/workout-log',         label: 'Workout Log',          icon: 'ClipboardList', matchPrefix: '/pt-os/workout-log' },
       { href: '/pt-os/exercise-library',    label: 'Exercise Library',     icon: 'BookOpen',    feature: 'exercise_library' },
       { href: '/pt-os/diet-plans',          label: 'Diet Plans',           icon: 'Apple' },
-      { href: '/training/transformations',  label: 'Transformations',      icon: 'Sparkles',    roles: ['admin', 'manager'], feature: 'progress_photos', comingSoon: true },
+      { href: '/training/transformations',  label: 'Transformations',      icon: 'Sparkles',    roles: ['admin', 'manager'], feature: 'progress_photos' },
       { href: '/trainers/[id]',             label: 'Trainer Profile',      icon: 'UserCog',     hidden: true, matchPrefix: '/trainers/' },
     ],
   },
@@ -217,7 +217,6 @@ export const NAV_GROUPS: NavGroup[] = [
     feature: 'ai_suite',
     items: [
       { href: '/ai-coach',              label: 'AI Coach',            icon: 'Bot' },
-      { href: '/ai/intelligence',       label: 'Intelligence Center', icon: 'Brain',      badge: 'aiPendingCount', isNew: true },
       { href: '/ai/workout-generator', label: 'Workout Generator',   icon: 'Dumbbell' },
       { href: '/ai/diet-generator',    label: 'Diet Generator',      icon: 'Apple' },
       { href: '/ai/progress-analysis', label: 'Progress Analyzer',   icon: 'TrendingUp' },

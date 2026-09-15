@@ -4,6 +4,8 @@
 //
 //   frontend  src/lib/fitness-calculations.ts
 //   backend   src/modules/progress/fitness-scoring.js
+//   frontend  src/lib/lifestyle-calculations.ts
+//   backend   src/modules/progress/lifestyle-scoring.js
 //
 // Same function names, same line numbers to within two or three, maintained by
 // hand in parallel across two repos that cannot import each other. The frontend
@@ -11,8 +13,17 @@
 // they type — and the backend copy recomputes on POST and is what actually gets
 // stored. They are the trainer's number and the client's record.
 //
-// Measured when this was written: 8,705 calls across 23 shared functions, zero
-// mismatches. They agree TODAY. Nothing was keeping them that way.
+// Measured when this was written: 18,527 fitness calls across 23 shared
+// functions and 7,238 lifestyle calls across 11, zero mismatches.
+//
+// Lifestyle was added after fitness, and it did not start green. classifyActivity
+// guarded an unrecognised steps bracket on the backend and not on the frontend,
+// where the score became NaN — which survives mean()'s `!= null` filter, so the
+// whole composite went NaN and the readiness band fell through to "High Risk"
+// for a healthy client. The wizard casts `row.daily_steps_bracket` out of the
+// API with no validation, so that was reachable with a legacy value. Four more
+// duplicated scoring libraries (goal, mobility, nutrition, posture) are still
+// unguarded — see the suites list in the script.
 //
 // ── Why these tests, and not the comparison itself ────────────────────────
 //
@@ -60,10 +71,19 @@ describe('the parity check cannot pass without comparing anything', () => {
   });
 
   it('refuses a suspiciously small comparison rather than reporting green', () => {
-    // The grid produced 8,705 calls. If exports are renamed on one side or the
-    // input grid collapses, the count drops and the check would otherwise pass
-    // having proven nothing.
-    expect(script).toMatch(/compared < 1000/);
+    // If exports are renamed on one side or an input grid collapses, the count
+    // drops and the check would otherwise pass having proven nothing. Each
+    // suite carries its own floor, so a collapse in one cannot hide behind the
+    // other's volume.
+    expect(script).toMatch(/compared < suite\.minCalls/);
+    expect(script).toMatch(/minCalls:\s*10000/);   // fitness
+    expect(script).toMatch(/minCalls:\s*1000/);    // lifestyle
+  });
+
+  it('compares every suite, not just the first', () => {
+    // flatMap over the resolved suites: a `return` after the first would make
+    // the second silently uncompared while still printing a tick.
+    expect(script).toMatch(/resolved\.flatMap/);
   });
 
   it('names functions that exist on only one side instead of dropping them', () => {
@@ -83,8 +103,14 @@ describe('the parity check cannot pass without comparing anything', () => {
 });
 
 describe('both copies still exist where the check expects them', () => {
-  it('the frontend copy is where the script imports it from', () => {
+  it('the frontend copies are where the script imports them from', () => {
     expect(() => readFileSync(join(ROOT, 'src', 'lib', 'fitness-calculations.ts'), 'utf8')).not.toThrow();
+    expect(() => readFileSync(join(ROOT, 'src', 'lib', 'lifestyle-calculations.ts'), 'utf8')).not.toThrow();
+  });
+
+  it('names both backend modules, so a moved file is reported precisely', () => {
+    expect(script).toContain('src/modules/progress/fitness-scoring.js');
+    expect(script).toContain('src/modules/progress/lifestyle-scoring.js');
   });
 
   it('the script looks for the backend in the layouts that actually occur', () => {

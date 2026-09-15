@@ -770,12 +770,15 @@ export const clientLogin = {
 };
 
 // ── Integrations ───────────────────────────────────────────────
+//
+// `test` and `connect` are gone along with the endpoints behind them. They
+// stored an API key that nothing in the backend ever read, behind a "test"
+// that only checked the string's prefix. A provider is added by wiring it for
+// real and naming it in the backend's PROVIDERS map, not by POSTing a secret
+// here. `disconnect` stays: rows written by the old flow still exist and this
+// is how a studio clears one.
 export const integrations = {
   list: () => http<unknown[]>('/api/integrations'),
-  test: (id: string, data: { api_key: string }) =>
-    http<{ success: boolean; message: string }>(`/api/integrations/${id}/test`, { method: 'POST', body: JSON.stringify(data) }),
-  connect: (id: string, data: { api_key: string }) =>
-    http<{ success: boolean; message: string }>(`/api/integrations/${id}/connect`, { method: 'POST', body: JSON.stringify(data) }),
   disconnect: (id: string) =>
     http<{ success: boolean; message: string }>(`/api/integrations/${id}/disconnect`, { method: 'POST' }),
 };
