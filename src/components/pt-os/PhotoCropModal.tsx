@@ -9,6 +9,7 @@ import { Button } from '@/components/ui';
 import { useCamera } from '@/hooks/useCamera';
 import { cropAndCompressImage } from '@/lib/image';
 import { useToast } from '@/lib/toast';
+import { readImageAsDataUrl, AVATAR_RULES } from '@/lib/forms/files';
 import { activatable } from '@/lib/a11y';
 
 type Mode = 'select' | 'camera' | 'crop';
@@ -78,19 +79,18 @@ export default function PhotoCropModal({
     }
   }, [open, initialImageSrc]);
 
-  const loadFile = useCallback((file: File | undefined) => {
+  const loadFile = useCallback(async (file: File | undefined) => {
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please choose an image file.');
+    // Checks the bytes, not file.type, and enforces a size ceiling before the
+    // read. readAsDataURL base64-encodes the whole file into memory, so an
+    // unbounded read is how a large pick freezes the tab with no error.
+    const result = await readImageAsDataUrl(file, AVATAR_RULES);
+    if (!result.ok) {
+      toast.error(result.message);
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setRawImageSrc(String(reader.result));
-      setMode('crop');
-    };
-    reader.onerror = () => toast.error('Could not read that file.');
-    reader.readAsDataURL(file);
+    setRawImageSrc(result.dataUrl);
+    setMode('crop');
   }, [toast]);
 
   const startCamera = useCallback(async () => {
