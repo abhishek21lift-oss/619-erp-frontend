@@ -3722,6 +3722,30 @@ export type CheckinInsight =
     }
   | { available: false; reason: string; checkins_count?: number };
 
+/**
+ * One active client's weight journey, from their own recorded measurements.
+ *
+ * `start_weight`, `start_measured_at` and `weight_change` are null when there
+ * is no series to compare — fewer than two measuring sessions, or two at the
+ * same instant. That is deliberately distinct from a change of 0: "not
+ * measured twice yet" and "held their weight" mean opposite things to a coach,
+ * and the screen must be able to tell them apart.
+ */
+export interface TransformationRow {
+  id: string;
+  client_id: string | null;
+  name: string | null;
+  photo_url: string | null;
+  trainer_name: string | null;
+  created_at: string | null;
+  measurement_count: number;
+  start_weight: number | null;
+  current_weight: number | null;
+  start_measured_at: string | null;
+  current_measured_at: string | null;
+  weight_change: number | null;
+}
+
 /** One readiness component, 0-100, or null when that question was not answered. */
 export interface RecoveryComponents {
   sleep: number | null;

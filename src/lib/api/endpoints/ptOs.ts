@@ -8,6 +8,7 @@ import { http } from '../../http';
 import { buildQs } from '../qs';
 import type {
   ActivityLogEntry, CheckinInsight, ClientBirthday, ClientSnapshot, CoachGeneration, DuplicateGroup, MergeResult, PtLead, PtSession, RosterSignalSweep, TrainingBrief,
+  TransformationRow,
 } from '../types';
 
 // ── PT OS ────────────────────────────────────────────────────
@@ -16,6 +17,9 @@ export const pt = {
     http<{ data: unknown }>('/api/pt-os/dashboard'),
   clients: (params?: { trainer_id?: string }) =>
     http<{ data: unknown[]; total: number }>(`/api/pt-os/clients${buildQs(params)}`),
+  /** Each active client's first and latest recorded weight. */
+  transformations: () =>
+    http<{ data: TransformationRow[] }>('/api/pt-os/transformations'),
   /**
    * The whole roster's signals in one read.
    *
