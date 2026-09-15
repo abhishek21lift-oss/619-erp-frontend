@@ -139,6 +139,21 @@ export const JUSTIFIED = {
       'on the platform, schema and all. §1 names filters explicitly. Verify by ' +
       'reading its onChange: it ends in setPage(0) and touches nothing else.',
   },
+
+  'src/components/pt-os/exercise-library/ExerciseEditor.tsx': {
+    allow: 2,
+    reason:
+      'Two COMPOSER boxes — the one that adds a coaching cue to a list, and ' +
+      'the one that adds a tag. Neither holds a payload value: what you type ' +
+      'is moved into the array on Enter and the box is cleared, so there is ' +
+      'nothing for a schema to validate and nothing for a reset to restore. ' +
+      'The arrays they build ARE on the platform, through form.Field, and the ' +
+      'other nineteen controls in this file are design-system fields bound to ' +
+      'exerciseSchema. Both boxes carry a real <label htmlFor> with a per-' +
+      'instance useId, which they did not: their only accessible name was a ' +
+      'placeholder, and a placeholder stops naming a control the moment ' +
+      'anything is typed into it.',
+  },
 };
 
 export function justificationFor(rel) {
