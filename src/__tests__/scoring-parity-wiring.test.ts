@@ -21,9 +21,12 @@
 // where the score became NaN — which survives mean()'s `!= null` filter, so the
 // whole composite went NaN and the readiness band fell through to "High Risk"
 // for a healthy client. The wizard casts `row.daily_steps_bracket` out of the
-// API with no validation, so that was reachable with a legacy value. Four more
-// duplicated scoring libraries (goal, mobility, nutrition, posture) are still
-// unguarded — see the suites list in the script.
+// API with no validation, so that was reachable with a legacy value.
+//
+// goal, mobility, nutrition and posture followed, and all four WERE already in
+// parity — which is worth stating, because "we checked and it was fine" and "we
+// never checked" look identical from the outside and are not the same claim.
+// All six are covered now: 31,243 calls, zero mismatches.
 //
 // ── Why these tests, and not the comparison itself ────────────────────────
 //
@@ -77,7 +80,16 @@ describe('the parity check cannot pass without comparing anything', () => {
     // other's volume.
     expect(script).toMatch(/compared < suite\.minCalls/);
     expect(script).toMatch(/minCalls:\s*10000/);   // fitness
-    expect(script).toMatch(/minCalls:\s*1000/);    // lifestyle
+    expect(script).toMatch(/minCalls:\s*1000/);    // lifestyle, goal, nutrition
+    expect(script).toMatch(/minCalls:\s*200/);     // mobility, posture
+  });
+
+  it('covers all six duplicated scoring libraries', () => {
+    // The pairs are hand-maintained across two repos that cannot import each
+    // other, so a library that is not named here is one nothing compares.
+    for (const suite of ['fitness', 'lifestyle', 'goal', 'mobility', 'nutrition', 'posture']) {
+      expect(script).toContain(`name: '${suite}'`);
+    }
   });
 
   it('compares every suite, not just the first', () => {
@@ -104,13 +116,15 @@ describe('the parity check cannot pass without comparing anything', () => {
 
 describe('both copies still exist where the check expects them', () => {
   it('the frontend copies are where the script imports them from', () => {
-    expect(() => readFileSync(join(ROOT, 'src', 'lib', 'fitness-calculations.ts'), 'utf8')).not.toThrow();
-    expect(() => readFileSync(join(ROOT, 'src', 'lib', 'lifestyle-calculations.ts'), 'utf8')).not.toThrow();
+    for (const lib of ['fitness', 'lifestyle', 'goal', 'mobility', 'nutrition', 'posture']) {
+      expect(() => readFileSync(join(ROOT, 'src', 'lib', `${lib}-calculations.ts`), 'utf8')).not.toThrow();
+    }
   });
 
-  it('names both backend modules, so a moved file is reported precisely', () => {
-    expect(script).toContain('src/modules/progress/fitness-scoring.js');
-    expect(script).toContain('src/modules/progress/lifestyle-scoring.js');
+  it('names every backend module, so a moved file is reported precisely', () => {
+    for (const lib of ['fitness', 'lifestyle', 'goal', 'mobility', 'nutrition', 'posture']) {
+      expect(script).toContain(`src/modules/progress/${lib}-scoring.js`);
+    }
   });
 
   it('the script looks for the backend in the layouts that actually occur', () => {
