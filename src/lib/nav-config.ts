@@ -217,7 +217,6 @@ export const NAV_GROUPS: NavGroup[] = [
     feature: 'ai_suite',
     items: [
       { href: '/ai-coach',              label: 'AI Coach',            icon: 'Bot' },
-      { href: '/ai/intelligence',       label: 'Intelligence Center', icon: 'Brain',      badge: 'aiPendingCount', isNew: true },
       { href: '/ai/workout-generator', label: 'Workout Generator',   icon: 'Dumbbell' },
       { href: '/ai/diet-generator',    label: 'Diet Generator',      icon: 'Apple' },
       { href: '/ai/progress-analysis', label: 'Progress Analyzer',   icon: 'TrendingUp' },
