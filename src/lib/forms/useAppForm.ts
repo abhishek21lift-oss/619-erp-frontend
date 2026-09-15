@@ -46,7 +46,7 @@
  */
 
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { useForm, useStore } from '@tanstack/react-form';
+import { useForm, useStore, type StandardSchemaV1 } from '@tanstack/react-form';
 import type { z } from 'zod';
 import { mapApiError, noErrors, type FormErrors } from './errors';
 
@@ -69,15 +69,25 @@ export type SubmitState =
  */
 export type FormSchema = z.ZodType<unknown, Record<string, unknown>>;
 
-export interface UseAppFormOptions<TSchema extends FormSchema> {
+export interface UseAppFormOptions<
+  TSchema extends FormSchema,
+  TValues extends Record<string, unknown>,
+> {
   /** The schema. Its output type is what `onSubmit` receives. */
   schema: TSchema;
   /**
    * Initial raw values. Keys must match the schema's, and values are what a
    * control renders — usually strings, so `''` rather than `null` for an empty
    * text box, and `0` only where zero is genuinely the starting value.
+   *
+   * Captured as a generic rather than widened to `Record<string, unknown>`,
+   * because that widening is not free: it erases every field's value type, so
+   * `field.state.value` arrives as `unknown` and each field component needs a
+   * cast to render at all. Inferring it keeps `<form.Field name="…">` checked
+   * against the real keys AND its value typed — which is the whole of §18's
+   * "the compiler should catch incorrect field names and payload shapes".
    */
-  defaultValues: Record<string, unknown>;
+  defaultValues: TValues;
   /**
    * The write. Receives fully parsed, typed, normalized data.
    *
@@ -111,7 +121,10 @@ export interface AppFormErrorsApi {
  *
  * Returns TanStack's form API plus the pieces this app needs on top of it.
  */
-export function useAppForm<TSchema extends FormSchema>(options: UseAppFormOptions<TSchema>) {
+export function useAppForm<
+  TSchema extends FormSchema,
+  TValues extends Record<string, unknown>,
+>(options: UseAppFormOptions<TSchema, TValues>) {
   const {
     schema,
     defaultValues,
@@ -150,7 +163,19 @@ export function useAppForm<TSchema extends FormSchema>(options: UseAppFormOption
       // is typed `RejectPromiseValidator`, which a `ZodType` cannot satisfy
       // because its parse signature permits a promise. Nothing here awaits, so
       // this costs a microtask and no behaviour.
-      onSubmitAsync: schema,
+      //
+      // The assertion is confined to this one slot and is a variance mismatch,
+      // not a lie. TanStack asks for `StandardSchemaV1<TValues, …>`; Zod
+      // reports these schemas' input as a record of `unknown`, because every
+      // primitive accepts `unknown` and narrows during parse. That input type
+      // is WIDER than TValues — it accepts every TValues and more — so the
+      // runtime contract holds in the direction that matters. TypeScript
+      // requires the two to be identical, which they are not and need not be.
+      //
+      // What it does not do is weaken validation: the submit handler below
+      // runs the same schema through `safeParse` and refuses to write on a
+      // failure, so this slot only provides earlier, field-level feedback.
+      onSubmitAsync: schema as unknown as StandardSchemaV1<TValues, unknown>,
     },
     onSubmit: async ({ value }) => {
       const parsed = schema.safeParse(value);
@@ -230,7 +255,7 @@ export function useAppForm<TSchema extends FormSchema>(options: UseAppFormOption
    * message from the previous entity is the same class of leak as stale values.
    */
   const resetTo = useCallback(
-    (values: Record<string, unknown>) => {
+    (values: TValues) => {
       form.reset(values);
       setErrors(noErrors());
       setSucceeded(false);
@@ -297,4 +322,7 @@ export function useAppForm<TSchema extends FormSchema>(options: UseAppFormOption
   );
 }
 
-export type AppForm<TSchema extends FormSchema> = ReturnType<typeof useAppForm<TSchema>>;
+export type AppForm<
+  TSchema extends FormSchema,
+  TValues extends Record<string, unknown>,
+> = ReturnType<typeof useAppForm<TSchema, TValues>>;

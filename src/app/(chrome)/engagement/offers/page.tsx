@@ -6,6 +6,11 @@ import { PageContainer, PageHero } from '@/components/ui';
 import { Tag, Gift, Plus, Edit2, Trash2, Copy, Clock, CheckCircle2, Users, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { OfferForm } from '@/components/engagement/OfferForm';
+// The same translation the form uses, so a load failure and a save failure
+// speak with one voice rather than two — and so a 5xx body never reaches the
+// screen here either.
+import { mapApiError } from '@/lib/forms/errors';
 
 interface Offer { id:string; name:string; type:'percent'|'flat'|'free'; value:number; code:string; plan:string; validFrom:string; validUntil:string; usageLimit:number; used:number; status:'active'|'expired'|'draft'; }
 
@@ -30,66 +35,52 @@ function OffersContent() {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [tab, setTab] = useState<'all'|'active'|'expired'|'draft'>('all');
-  const [form, setForm] = useState({name:'',type:'percent' as 'percent'|'flat'|'free',value:0,code:'',plan:'',validFrom:'',validUntil:'',usageLimit:50});
-  const [editingId, setEditingId] = useState<string | null>(null);
+  // The record being edited, not a copy of its fields. The form reconstructs
+  // its own state from this, so switching from one offer to another cannot
+  // leave the previous one's values behind (§11).
+  const [editing, setEditing] = useState<Offer | null>(null);
   const [copied, setCopied] = useState('');
 
-  const blankForm = {name:'',type:'percent' as 'percent'|'flat'|'free',value:0,code:'',plan:'',validFrom:'',validUntil:'',usageLimit:50};
-
   function openNewOfferForm() {
-    setForm(blankForm);
-    setEditingId(null);
+    setEditing(null);
     setShowForm(true);
   }
 
   function openEditOfferForm(o: Offer) {
-    setForm({ name: o.name, type: o.type, value: o.value, code: o.code, plan: o.plan, validFrom: o.validFrom, validUntil: o.validUntil, usageLimit: o.usageLimit });
-    setEditingId(o.id);
+    setEditing(o);
     setShowForm(true);
   }
 
   async function load() {
     setLoading(true); setError(null);
     try { const data = await api.offers.list() as Offer[]; setOffers(Array.isArray(data) ? data : []); }
-    catch (err: any) { setError(err?.message || 'Failed to load offers'); }
+    catch (err: unknown) { setError(mapApiError(err, { fallback: 'Failed to load offers' }).formError); }
     finally { setLoading(false); }
   }
 
-  async function addOffer(e: React.FormEvent) {
-    e.preventDefault();
-    try {
-      const payload = {
-        title: form.name,
-        discount_type: form.type,
-        discount_value: form.value,
-        code: form.code,
-        audience: form.plan,
-        max_uses: form.usageLimit,
-        valid_from: form.validFrom || null,
-        valid_until: form.validUntil || null,
-      };
-      if (editingId) {
-        const res = await api.offers.update(editingId, payload as any) as { message?: string; offer: Offer };
-        if (res?.offer) setOffers(p => p.map(o => o.id === editingId ? res.offer : o)); else load();
-        toast.success('Offer updated');
-      } else {
-        const res = await api.offers.create(payload as any) as { message?: string; offer: Offer };
-        if (res?.offer) setOffers(p => [...p, res.offer]); else load();
-        toast.success('Offer created');
-      }
-      setForm(blankForm);
-      setEditingId(null);
-      setShowForm(false);
-    } catch (err: any) { toast.error(err?.message || (editingId ? 'Failed to update offer' : 'Failed to create offer')); }
+  // Throws on failure rather than swallowing into a toast: useAppForm maps the
+  // thrown ApiError onto the field it belongs to, and a toast that has already
+  // faded is not a record of a failed write.
+  async function saveOffer(payload: Record<string, unknown>) {
+    if (editing) {
+      const res = await api.offers.update(editing.id, payload) as { offer?: Offer };
+      if (res?.offer) setOffers(p => p.map(o => o.id === editing.id ? res.offer! : o)); else load();
+      toast.success('Offer updated');
+    } else {
+      const res = await api.offers.create(payload) as { offer?: Offer };
+      if (res?.offer) setOffers(p => [...p, res.offer!]); else load();
+      toast.success('Offer created');
+    }
+    setEditing(null);
+    setShowForm(false);
   }
 
   async function handleDelete(id: string) {
     try { await api.offers.delete(id); setOffers(p => p.filter(x => x.id !== id)); toast.success('Offer deleted'); }
-    catch (err: any) { toast.error(err?.message || 'Failed to delete offer'); }
+    catch (err: unknown) { toast.error(mapApiError(err, { fallback: 'Failed to delete offer' }).formError ?? 'Failed to delete offer'); }
   }
 
   useEffect(() => { load(); }, []);
-  function genCode(){ setForm(f=>({...f,code:Math.random().toString(36).slice(2,8).toUpperCase()})); }
 
   const visible = tab==='all' ? offers : offers.filter(o=>o.status===tab);
   const active=offers.filter(o=>o.status==='active').length;
@@ -104,7 +95,7 @@ function OffersContent() {
         title="Offers & Promotions"
         subtitle="Create discount codes, referral offers & promotional deals for members."
         actions={
-          <button type="button" onClick={()=>{ if (showForm) { setShowForm(false); setEditingId(null); } else { openNewOfferForm(); } }}
+          <button type="button" onClick={()=>{ if (showForm) { setShowForm(false); setEditing(null); } else { openNewOfferForm(); } }}
             className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
             style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
             <Plus size={14}/> {showForm?'Cancel':'New Offer'}
@@ -134,58 +125,16 @@ function OffersContent() {
 
       {/* ── CREATE FORM ── */}
       {showForm&&(
-        <m.div initial={{ opacity: 0, y: -10, scale:0.98 }} animate={{ opacity: 1, y: 0, scale:1 }}
-          style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e2e8f0', boxShadow:'0 4px 20px rgba(0,0,0,0.08)', padding:24 }}>
-          <h3 style={{ margin:'0 0 20px', fontSize:15, fontWeight:700, color:'#0F172A', display:'flex', gap:8, alignItems:'center' }}><Gift size={16} color="#0067e0"/> {editingId ? 'Edit Offer' : 'Create New Offer'}</h3>
-          <form onSubmit={addOffer} style={{ display:'grid', gap:16 }}>
-            <label style={{ display:'grid', gap:5 }}>
-              <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Offer Name *</span>
-              <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="e.g. Summer Splash 30% Off" required style={inp} />
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap:14 }}>
-              <label style={{ display:'grid', gap:5 }}>
-                <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Discount Type</span>
-                <select value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value as any}))} style={inp}>
-                  <option value="percent">Percentage %</option><option value="flat">Flat ₹ Amount</option><option value="free">Free / Complimentary</option>
-                </select>
-              </label>
-              {form.type!=='free'&&<label style={{ display:'grid', gap:5 }}>
-                <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>{form.type==='percent'?'Discount %':'Amount (₹)'}</span>
-                <input type="number" min={1} value={form.value} onChange={e=>setForm(f=>({...f,value:Number(e.target.value)}))} style={inp} />
-              </label>}
-              <label style={{ display:'grid', gap:5 }}>
-                <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Usage Limit</span>
-                <input type="number" min={1} value={form.usageLimit} onChange={e=>setForm(f=>({...f,usageLimit:Number(e.target.value)}))} style={inp} />
-              </label>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap:14 }}>
-              <label style={{ display:'grid', gap:5 }}>
-                <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Coupon Code</span>
-                <div style={{ display:'flex', gap:6 }}>
-                  <input value={form.code} onChange={e=>setForm(f=>({...f,code:e.target.value.toUpperCase()}))} placeholder="e.g. SUMMER30" style={{ ...inp, flex:1 }} />
-                  <button type="button" onClick={genCode} style={{ fontSize:12, fontWeight:700, padding:'8px 14px', borderRadius:10, border:'1px solid #0067e0', background:'rgba(0,103,224,0.08)', color:'#0067e0', cursor:'pointer' }}>Auto</button>
-                </div>
-              </label>
-              <label style={{ display:'grid', gap:5 }}>
-                <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Applicable Plan</span>
-                <input value={form.plan} onChange={e=>setForm(f=>({...f,plan:e.target.value}))} placeholder="All Plans / Quarterly…" style={inp} />
-              </label>
-              <label style={{ display:'grid', gap:5 }}>
-                <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Valid From</span>
-                <input type="date" value={form.validFrom} onChange={e=>setForm(f=>({...f,validFrom:e.target.value}))} style={inp} />
-              </label>
-              <label style={{ display:'grid', gap:5 }}>
-                <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#334155' }}>Valid Until</span>
-                <input type="date" value={form.validUntil} onChange={e=>setForm(f=>({...f,validUntil:e.target.value}))} style={inp} />
-              </label>
-            </div>
-            <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
-              <button type="button" onClick={()=>{ setShowForm(false); setEditingId(null); }} style={{ fontSize:12, fontWeight:700, padding:'8px 18px', borderRadius:10, border:'1px solid #cbd5e1', background:'transparent', color:'#64748b', cursor:'pointer' }}>Cancel</button>
-              <button type="submit" style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'8px 20px', borderRadius:12, background:'linear-gradient(135deg, #0067e0, #0059ce)', color:'#fff', border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(0,103,224,0.35)' }}>
-                <Plus size={13}/> {editingId ? 'Save Changes' : 'Create Offer'}
-              </button>
-            </div>
-          </form>
+        <m.div initial={{ opacity: 0, y: -10, scale:0.98 }} animate={{ opacity: 1, y: 0, scale:1 }}>
+          <OfferForm
+            // Keyed on the record: React remounts when the edited offer
+            // changes, which is the strongest form of the reset contract —
+            // there is no previous state left to leak.
+            key={editing?.id ?? 'new'}
+            editing={editing}
+            onSubmit={saveOffer}
+            onCancel={()=>{ setShowForm(false); setEditing(null); }}
+          />
         </m.div>
       )}
 

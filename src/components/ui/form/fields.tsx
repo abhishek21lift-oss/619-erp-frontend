@@ -345,14 +345,23 @@ export interface SelectOption {
   disabled?: boolean;
 }
 
-export interface SelectFieldProps extends BoundFieldProps {
-  field: FieldLike<string>;
-  options: ReadonlyArray<SelectOption>;
+export interface SelectFieldProps<T extends string = string> extends BoundFieldProps {
+  /**
+   * Generic over the union, not widened to `string`.
+   *
+   * A form whose `type` field is `'percent' | 'flat' | 'free'` gives TanStack a
+   * field of that union. Typing this `FieldLike<string>` would refuse it, and
+   * widening the form state to `string` to compensate would throw away exactly
+   * the narrowing §18 asks for — a mistyped branch in a `switch (values.type)`
+   * would stop being a compile error.
+   */
+  field: FieldLike<T>;
+  options: ReadonlyArray<SelectOption & { value: T }> | ReadonlyArray<SelectOption>;
   /** Shown as a disabled first option when the field has no value yet. */
   placeholderOption?: string;
 }
 
-export function SelectField({
+export function SelectField<T extends string = string>({
   field,
   label,
   description,
@@ -364,7 +373,7 @@ export function SelectField({
   reserveMessageSpace,
   options,
   placeholderOption,
-}: SelectFieldProps) {
+}: SelectFieldProps<T>) {
   const error = visibleError(field, serverError);
 
   return (
@@ -381,11 +390,12 @@ export function SelectField({
       <SelectInput
         name={field.name}
         value={field.state.value ?? ''}
-        // No `as` cast on the value. The schema's `enumField` narrows the
-        // string at parse time, which is the only place the narrowing is
-        // actually justified — a cast here would assert a fact about a DOM
-        // string that nothing checks.
-        onChange={(e) => field.handleChange(e.target.value)}
+        // The DOM hands back `string`; the field's type is the union. The
+        // assertion is confined to this line and is checked at parse time by
+        // the schema's `enumField`, which rejects any value not in the set —
+        // so a tampered `<option>` fails validation rather than flowing on as
+        // a union member it is not.
+        onChange={(e) => field.handleChange(e.target.value as T)}
         onBlur={field.handleBlur}
       >
         {placeholderOption && (
