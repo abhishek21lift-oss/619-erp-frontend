@@ -23,6 +23,7 @@ import StepPerformanceMetrics from '@/components/pt-os/mobility-assessment/StepP
 import MobilityDashboard from '@/components/pt-os/mobility-assessment/MobilityDashboard';
 import MobilityComparison from '@/components/pt-os/mobility-assessment/MobilityComparison';
 import MobilityCard from '@/components/pt-os/mobility-assessment/MobilityCard';
+import { errorMessage } from '@/lib/forms/errors';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -90,7 +91,7 @@ function MobilityHub({ clientId, toast }: MobilityHubProps) {
       setClientName(String(c.name ?? ''));
       setAssessments(Array.isArray(listRes?.data) ? listRes.data : []);
     } catch (err: unknown) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load client.');
+      setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {
       setLoading(false);
     }
@@ -260,7 +261,7 @@ function MobilityWizard({ clientId, clientName, editing, toast, onDone }: Mobili
       clear();
       onDone(true);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save assessment.');
+      toast.error(errorMessage(err, 'Failed to save assessment.'));
     } finally {
       setSaving(false);
     }

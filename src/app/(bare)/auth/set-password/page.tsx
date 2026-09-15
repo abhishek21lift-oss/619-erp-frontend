@@ -21,12 +21,12 @@ import {
 import { api } from '@/lib/api';
 import type { InvitationPreview } from '@/lib/api';
 import { invitationPasswordRules } from '@/lib/password-policy';
-import { errorMessage } from '@/lib/forms/errors';
 import { useAppForm } from '@/lib/forms/useAppForm';
 import {
   newPasswordSchema, blankNewPassword, NEW_PASSWORD_FIELD_HINTS,
 } from '@/lib/forms/schemas/auth';
 import { TextField, FormErrorBanner } from '@/components/ui/form';
+import { errorMessage } from '@/lib/forms/errors';
 
 /** Brand for this flow: black / white / maroon, matching the invitation email. */
 const MAROON = '#7F1D1D';

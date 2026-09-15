@@ -21,12 +21,12 @@ import {
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import { api } from '@/lib/api';
-import { ApiError } from '@/lib/http';
 import type { UpiHistoryRow } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
 import { PageHeader, EmptyState } from '@/components/ui';
 import { UpiStatusBadge, fmtMoneyExact } from '@/components/payments/upi-shared';
+import { errorMessage } from '@/lib/forms/errors';
 
 const PAGE_SIZE = 25;
 
@@ -58,7 +58,7 @@ function Inner() {
       setTotal(res.total);
       setError(null);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not load your payments.');
+      setError(errorMessage(err, 'Could not load your payments.'));
     } finally {
       setLoading(false);
     }
@@ -73,7 +73,7 @@ function Inner() {
       toast.success('Payment request cancelled.');
       await load();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Could not cancel this request.');
+      toast.error(errorMessage(err, 'Could not cancel this request.'));
     } finally {
       setCancelling(null);
     }

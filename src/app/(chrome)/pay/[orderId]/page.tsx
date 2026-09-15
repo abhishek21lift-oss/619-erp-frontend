@@ -32,7 +32,6 @@ import {
 import Guard from '@/components/Guard';
 import StudioMark from '@/components/StudioMark';
 import { api } from '@/lib/api';
-import { ApiError } from '@/lib/http';
 import type { UpiOrderDetail } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -40,6 +39,7 @@ import { Button, cn } from '@/components/ui';
 import {
   AmountBreakdown, STATUS_META, UpiStatusBadge, fmtCountdown, fmtMoneyExact,
 } from '@/components/payments/upi-shared';
+import { errorMessage } from '@/lib/forms/errors';
 
 const MAX_PROOF_BYTES = 5 * 1024 * 1024;
 const POLL_MS = 8000;
@@ -71,7 +71,7 @@ function Inner() {
       // A silent poll must never replace a working screen with an error — the
       // member could be mid-typing. Only a foreground load surfaces failure.
       if (!opts.silent) {
-        setLoadError(err instanceof ApiError ? err.message : 'Could not load this payment.');
+        setLoadError(errorMessage(err, 'Could not load this payment.'));
       }
     } finally {
       if (!opts.silent) setLoading(false);
@@ -464,7 +464,7 @@ function UtrForm({
       setUtr(''); setNotes(''); setFile(null);
       await onSubmitted();
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Could not submit. Please try again.';
+      const message = errorMessage(err, 'Could not submit. Please try again.');
       setError(message);
     } finally {
       setBusy(false);

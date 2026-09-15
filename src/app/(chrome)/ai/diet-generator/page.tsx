@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import type { AiDietPlan, AiDietMeal } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
+import { errorMessage } from '@/lib/forms/errors';
 
 const ACCENT = '#10B981';
 const ACCENT_SOFT = '#34D399';
@@ -191,7 +192,7 @@ export default function DietGeneratorPage() {
       setPlan(res.data);
       setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback });
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to generate diet plan.');
+      setError(errorMessage(e, 'Failed to generate diet plan.'));
     } finally { setLoading(false); }
   };
 

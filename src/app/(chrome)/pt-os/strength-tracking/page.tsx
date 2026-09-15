@@ -14,6 +14,7 @@ import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { calc1RM, classifyStrength } from '@/lib/fitness-calculations';
 import type { Gender, FitnessCategory } from '@/lib/fitness-calculations';
+import { errorMessage } from '@/lib/forms/errors';
 
 interface StrengthLog {
   id: string; client_id: string; exercise_name: string;
@@ -91,7 +92,7 @@ function StrengthHub({ clientId }: StrengthHubProps) {
       setBodyWeightKg(typeof c.weight === 'number' ? c.weight : null);
       setLogs(Array.isArray(logsRes?.data) ? logsRes.data : []);
     } catch (err: unknown) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load client.');
+      setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {
       setLoading(false);
     }
@@ -128,7 +129,7 @@ function StrengthHub({ clientId }: StrengthHubProps) {
       toast.success(`${exercise} logged.`);
       loadData();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to log lift.');
+      toast.error(errorMessage(err, 'Failed to log lift.'));
     }
   };
 

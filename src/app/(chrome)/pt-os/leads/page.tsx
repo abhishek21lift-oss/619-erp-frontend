@@ -17,6 +17,7 @@ import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
 import type { PtLead } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { errorMessage } from '@/lib/forms/errors';
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
   new:             { label: 'New',             color: '#0067e0', bg: 'rgba(0,103,224,0.12)' },
@@ -231,7 +232,7 @@ export default function LeadsPage() {
       setDialogOpen(false);
       leads.refetch();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not save this lead.');
+      toast.error(errorMessage(err, 'Could not save this lead.'));
     } finally {
       setSaving(false);
     }
@@ -244,7 +245,7 @@ export default function LeadsPage() {
       toast.success('Lead deleted.');
       leads.refetch();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not delete this lead.');
+      toast.error(errorMessage(err, 'Could not delete this lead.'));
     }
   };
 
@@ -258,7 +259,7 @@ export default function LeadsPage() {
       leads.refetch();
       if (clientId) router.push(`/pt-os/clients/${clientId}/enroll`);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not convert this lead.');
+      toast.error(errorMessage(err, 'Could not convert this lead.'));
     } finally {
       setConvertingId(null);
     }

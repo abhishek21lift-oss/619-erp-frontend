@@ -7,10 +7,10 @@ import { Tag, Gift, Plus, Edit2, Trash2, Copy, Clock, CheckCircle2, Users, Loade
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { OfferForm } from '@/components/engagement/OfferForm';
+import { errorMessage } from '@/lib/forms/errors';
 // The same translation the form uses, so a load failure and a save failure
 // speak with one voice rather than two — and so a 5xx body never reaches the
 // screen here either.
-import { errorMessage } from '@/lib/forms/errors';
 
 interface Offer { id:string; name:string; type:'percent'|'flat'|'free'; value:number; code:string; plan:string; validFrom:string; validUntil:string; usageLimit:number; used:number; status:'active'|'expired'|'draft'; }
 

@@ -44,6 +44,7 @@ import {
   Wifi,
   Zap,
 } from 'lucide-react';
+import { errorMessage } from '@/lib/forms/errors';
 
 /** Range CSV, carried over from /attendance/reports. */
 function exportRangeCSV(records: Attendance[], days: string) {
@@ -261,7 +262,7 @@ function AttendanceContent() {
       setRecords(updated);
       showSuccess(`Marked ${client.name} as ${status}`);
     } catch (e: unknown) {
-      showError(e instanceof Error ? e.message : 'Failed to mark attendance');
+      showError(errorMessage(e, 'Failed to mark attendance'));
     } finally {
       setSaving(null);
     }
@@ -295,7 +296,7 @@ function AttendanceContent() {
       setRecords(updated);
       showSuccess(`Marked ${toMark.length} member${toMark.length > 1 ? 's' : ''} present`);
     } catch (e: unknown) {
-      showError(e instanceof Error ? e.message : 'Failed to mark all present');
+      showError(errorMessage(e, 'Failed to mark all present'));
     }
   }
 
@@ -1280,7 +1281,7 @@ function ManualEntryModal({ open, onOpenChange, clients, date, onSuccess }: {
       onSuccess();
       onOpenChange(false);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to save attendance');
+      setError(errorMessage(e, 'Failed to save attendance'));
     } finally {
       setSaving(false);
     }

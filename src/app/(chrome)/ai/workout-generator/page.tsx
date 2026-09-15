@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import type { AiWorkoutPlan, AiWorkoutDay, AiWorkoutExercise } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
+import { errorMessage } from '@/lib/forms/errors';
 
 const ACCENT = '#0067E0';
 const ACCENT_SOFT = '#0067E0';
@@ -216,7 +217,7 @@ export default function WorkoutGeneratorPage() {
       setPlan(res.data);
       setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback });
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to generate workout plan.');
+      setError(errorMessage(e, 'Failed to generate workout plan.'));
     } finally { setLoading(false); }
   };
 

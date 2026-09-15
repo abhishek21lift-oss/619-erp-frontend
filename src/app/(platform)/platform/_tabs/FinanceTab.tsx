@@ -28,6 +28,7 @@ import { InvoicesPanel } from '../_shared/panels';
 import type { FinanceSubTab } from '../_shared/types';
 import { Center, ErrorState, Field, IconBtn, Modal, inputCls, inputStyle } from '../_shared/ui';
 import { CouponsTab } from './CouponsTab';
+import { errorMessage } from '@/lib/forms/errors';
 
 export function FinanceTab({ subTab, onSubTabChange }: { subTab: FinanceSubTab; onSubTabChange: (t: FinanceSubTab) => void }) {
   // Phase 8: the dashboard subtab is removed. The run-rate view lived
@@ -90,7 +91,7 @@ export function BillingTab() {
     setLoading(true); setError('');
     api.superAdmin.subscriptions()
       .then((r) => { setStudios(r.data.studios ?? []); })
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load subscriptions'))
+      .catch((e) => setError(errorMessage(e, 'Failed to load subscriptions')))
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
@@ -103,7 +104,7 @@ export function BillingTab() {
       else await api.superAdmin.reactivateSubscription(s.id);
       toast.success(freeze ? 'Studio frozen.' : 'Studio reactivated.');
       load();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Update failed'); }
+    } catch (e) { toast.error(errorMessage(e, 'Update failed')); }
   };
 
   if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#0067e0' }} /></Center>;
@@ -201,7 +202,7 @@ export function RecordPaymentModal({ studio, plans, onClose, onDone }: { studio:
       });
       toast.success('Payment recorded — subscription activated.');
       onDone();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Activation failed'); setSaving(false); }
+    } catch (e) { toast.error(errorMessage(e, 'Activation failed')); setSaving(false); }
   };
 
   return (
@@ -264,7 +265,7 @@ export function ExecuteChangeModal({ studio, planCode, onClose, onDone }: { stud
     let cancelled = false;
     api.superAdmin.changeQuote(studio.id, planCode)
       .then((r) => { if (!cancelled) { setQuote(r.data); setAmount(String(r.data.amount_due_inr || '')); } })
-      .catch((e) => toast.error(e instanceof Error ? e.message : 'Could not price this change'))
+      .catch((e) => toast.error(errorMessage(e, 'Could not price this change')))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -280,7 +281,7 @@ export function ExecuteChangeModal({ studio, planCode, onClose, onDone }: { stud
       });
       toast.success(`Switched ${studio.name} to ${quote?.new_plan.name || planCode}.`);
       onDone();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not execute this change'); setSaving(false); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not execute this change')); setSaving(false); }
   };
 
   return (
@@ -342,7 +343,7 @@ export function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStud
 
   const act = async (fn: () => Promise<unknown>, ok: string) => {
     try { await fn(); toast.success(ok); load(); onChanged(); }
-    catch (e) { toast.error(e instanceof Error ? e.message : 'Action failed'); }
+    catch (e) { toast.error(errorMessage(e, 'Action failed')); }
   };
 
   const o = detail?.organization;

@@ -18,6 +18,7 @@ import { C, SHADOW } from '@/components/landing/tokens';
 import { ArrowRight, Building2, CheckCircle2, Clock, Eye, EyeOff, Loader2, Lock, Mail, Phone, User } from 'lucide-react';
 import { api } from '@/lib/api';
 import PublicPullToRefresh from '@/components/PublicPullToRefresh';
+import { errorMessage } from '@/lib/forms/errors';
 
 type Field = 'full_name' | 'business_name' | 'mobile' | 'email' | 'password';
 
@@ -91,7 +92,7 @@ export default function StartFreePage() {
       });
       setDone(true);
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      setServerError(errorMessage(err, 'Something went wrong. Please try again.'));
     } finally {
       setSubmitting(false);
     }

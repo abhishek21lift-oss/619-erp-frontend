@@ -8,6 +8,7 @@ import { Badge, Button, cn } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import type { ExerciseMeta, LibraryExercise } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 /**
  * Create / edit an exercise.
@@ -272,7 +273,7 @@ export function ExerciseEditor({
         onClose();
       }, 550);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not save exercise');
+      toast.error(errorMessage(err, 'Could not save exercise'));
     } finally {
       setSaving(false);
     }

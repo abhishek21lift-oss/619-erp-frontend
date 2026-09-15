@@ -24,6 +24,7 @@ import type { Invitation, InvitationStatus, InvitationDetail } from '@/lib/api';
 import { Panel, SectionLabel, StatTile, Reveal } from './console';
 import { EmptyState } from '@/components/ui';
 import { useToast } from '@/lib/toast';
+import { errorMessage } from '@/lib/forms/errors';
 
 /**
  * Status presentation. Each carries an ICON as well as a colour — a badge that
@@ -98,7 +99,7 @@ function Row({ inv, onChanged }: { inv: Invitation; onChanged: () => void }) {
   const run = async (key: string, fn: () => Promise<void>) => {
     setBusy(key);
     try { await fn(); } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'That did not work.');
+      toast.error(errorMessage(e, 'That did not work.'));
     } finally { setBusy(null); }
   };
 
@@ -268,7 +269,7 @@ export default function InvitationsPanel() {
     setError('');
     api.superAdmin.listInvitations({ status: status || undefined, q: q || undefined })
       .then((r) => { setRows(r.data); setCounts(r.counts); setSmtpOk(r.smtp_configured); })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load invitations.'))
+      .catch((e: unknown) => setError(errorMessage(e, 'Could not load invitations.')))
       .finally(() => setLoading(false));
   }, [status, q]);
 

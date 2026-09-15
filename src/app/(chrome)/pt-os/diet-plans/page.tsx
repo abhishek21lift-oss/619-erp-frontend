@@ -25,6 +25,7 @@ import { GroceryList } from '@/components/fitness/GroceryList';
 import { SpotlightCard } from '@/components/fitness/SpotlightCard';
 import { AiCoachPanel } from '@/components/fitness/AiCoachPanel';
 import { identity } from '@/lib/palette';
+import { errorMessage } from '@/lib/forms/errors';
 
 type MealType = 'Breakfast' | 'Lunch' | 'Snacks' | 'Dinner' | 'Pre Workout' | 'Post Workout';
 
@@ -208,7 +209,7 @@ function Inner() {
         setHistory([]);
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load diet data.');
+      toast.error(errorMessage(err, 'Failed to load diet data.'));
     } finally { setLoading(false); }
   }, [date, clientId, toast]);
 
@@ -294,7 +295,7 @@ function Inner() {
       await api.diet.tracker.update({ client_id: clientId, log_date: date, water_glasses: clamped });
     } catch (err: unknown) {
       setWater(prev);
-      toast.error(err instanceof Error ? err.message : 'Could not save water intake.');
+      toast.error(errorMessage(err, 'Could not save water intake.'));
     } finally {
       setSavingWater(false);
     }
@@ -307,7 +308,7 @@ function Inner() {
       setAssignTemplate(null);
       if (client.id === clientId) fetchData();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not assign this plan.');
+      toast.error(errorMessage(err, 'Could not assign this plan.'));
     }
   };
 
@@ -798,7 +799,7 @@ function AddMealModal({ open, onClose, onCreated }: { open: boolean; onClose: ()
       onClose();
       onCreated();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not add meal.');
+      toast.error(errorMessage(err, 'Could not add meal.'));
     } finally {
       setSaving(false);
     }

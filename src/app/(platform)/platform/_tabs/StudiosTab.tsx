@@ -28,6 +28,7 @@ import {
 import { fmtDate, fmtINR, fmtWhen } from '../_shared/format';
 import type { StudioFilter, StudioRow, StudioSort } from '../_shared/types';
 import { Center, ErrorState, IconBtn, MiniStat } from '../_shared/ui';
+import { errorMessage } from '@/lib/forms/errors';
 
 export function exportStudiosCsv(rows: StudioRow[]): void {
   const headers = ['Name', 'Slug', 'Status', 'Plan', 'Revenue', 'Active Clients', 'Total Clients', 'Coaches', 'Accounts', 'Last Active', 'Created'];
@@ -80,7 +81,7 @@ export function StudiosTab() {
         setSubStudios(s.data.studios ?? []);
         setOverviewStudios(ov.data.studios ?? []);
       })
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load studios'))
+      .catch((e) => setError(errorMessage(e, 'Failed to load studios')))
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
@@ -129,7 +130,7 @@ export function StudiosTab() {
       await api.superAdmin.updateOrg(o.id, { status: next });
       toast.success(next === 'suspended' ? 'Studio suspended.' : 'Studio reactivated.');
       load();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Update failed'); }
+    } catch (e) { toast.error(errorMessage(e, 'Update failed')); }
   };
 
   const toggleSelect = (id: string) => setSelected((s) => {
@@ -362,7 +363,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
       await api.superAdmin.uploadOrgLogo(org.id, file);
       toast.success('Logo updated.');
       onChanged();
-    } catch (err) { toast.error(err instanceof Error ? err.message : 'Logo upload failed'); }
+    } catch (err) { toast.error(errorMessage(err, 'Logo upload failed')); }
     finally { setUploading(false); }
   };
 
@@ -387,7 +388,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
       await api.superAdmin.setUserActive(u.id, !u.is_active);
       toast.success(u.is_active ? 'Account deactivated.' : 'Account activated.');
       loadDetail(); onChanged();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Update failed'); }
+    } catch (e) { toast.error(errorMessage(e, 'Update failed')); }
   };
 
   const forceLogout = async (u: OrgUser) => {
@@ -398,7 +399,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
     try {
       await api.superAdmin.forceLogout(u.id);
       toast.success('All sessions revoked.');
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not revoke sessions'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not revoke sessions')); }
     finally { setUserBusy(null); }
   };
 
@@ -408,7 +409,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
     try {
       const r = await api.superAdmin.resetMfa(u.id);
       toast.success(r.data.was_enabled ? 'Two-factor reset; sessions revoked.' : 'No two-factor was enrolled.');
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not reset two-factor'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not reset two-factor')); }
     finally { setUserBusy(null); }
   };
 
@@ -418,7 +419,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
       await api.superAdmin.deleteUser(u.id);
       toast.success('Account removed.');
       loadDetail(); onChanged();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Delete failed'); }
+    } catch (e) { toast.error(errorMessage(e, 'Delete failed')); }
   };
 
   const impersonate = async (mode: 'read_only' | 'full', userId?: string) => {
@@ -461,7 +462,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
         window.location.href = '/';
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not start impersonation');
+      toast.error(errorMessage(e, 'Could not start impersonation'));
       setImpLoading('');
     }
   };
@@ -635,7 +636,7 @@ export function StudioOperatorPanel({ org, onChanged }: { org: Organization; onC
       toast.success(`${n > 0 ? 'Granted' : 'Removed'} ${Math.abs(n)} days — ${r.data.field.replace(/_/g, ' ')} updated.`);
       setDays(''); setReason('');
       onChanged();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not apply bonus days'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not apply bonus days')); }
     finally { setGranting(false); }
   };
 
@@ -646,7 +647,7 @@ export function StudioOperatorPanel({ org, onChanged }: { org: Organization; onC
       setNotesMeta({ at: r.data.internal_notes_updated_at, by: r.data.internal_notes_updated_by });
       setDirty(false);
       toast.success('Notes saved.');
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not save notes'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not save notes')); }
     finally { setSavingNotes(false); }
   };
 
@@ -747,7 +748,7 @@ export function StudioFeatureEditor({ orgId, orgName }: { orgId: string; orgName
   const load = useCallback(() => {
     api.superAdmin.orgFeatures(orgId)
       .then((r) => setRows(r.data))
-      .catch((e) => toast.error(e instanceof Error ? e.message : 'Could not load features'));
+      .catch((e) => toast.error(errorMessage(e, 'Could not load features')));
   }, [orgId, toast]);
 
   useEffect(() => { if (open && !rows) load(); }, [open, rows, load]);
@@ -766,7 +767,7 @@ export function StudioFeatureEditor({ orgId, orgName }: { orgId: string; orgName
       await api.superAdmin.setOrgFeature(orgId, f.key, { enabled: next, reason: reason.trim() });
       toast.success(`${f.name} ${next ? 'granted' : 'removed'} for ${orgName}.`);
       setRows(null);
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not set the override'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not set the override')); }
     finally { setBusyKey(''); }
   };
 
@@ -776,7 +777,7 @@ export function StudioFeatureEditor({ orgId, orgName }: { orgId: string; orgName
       await api.superAdmin.clearOrgFeature(orgId, f.key);
       toast.success(`${f.name} follows their plan again.`);
       setRows(null);
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not clear the override'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not clear the override')); }
     finally { setBusyKey(''); }
   };
 
@@ -861,7 +862,7 @@ export function BillingProfileEditor({ orgId }: { orgId: string }) {
     if (!open || form) return;
     api.superAdmin.orgBillingProfile(orgId)
       .then((r) => setForm(r.data))
-      .catch((e) => toast.error(e instanceof Error ? e.message : 'Could not load the billing profile'));
+      .catch((e) => toast.error(errorMessage(e, 'Could not load the billing profile')));
   }, [open, form, orgId, toast]);
 
   const save = async () => {
@@ -879,7 +880,7 @@ export function BillingProfileEditor({ orgId }: { orgId: string }) {
       });
       setForm(r.data); setDirty(false);
       toast.success('Billing profile saved — applies to invoices issued from now on.');
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not save the billing profile'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not save the billing profile')); }
     finally { setSaving(false); }
   };
 

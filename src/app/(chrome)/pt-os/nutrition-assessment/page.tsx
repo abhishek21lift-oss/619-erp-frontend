@@ -34,6 +34,7 @@ import NutritionRiskBadges from '@/components/pt-os/nutrition-assessment/Nutriti
 import CoachNotesPanel from '@/components/pt-os/shared/CoachNotesPanel';
 import NutritionComparison from '@/components/pt-os/nutrition-assessment/NutritionComparison';
 import NutritionCard from '@/components/pt-os/nutrition-assessment/NutritionCard';
+import { errorMessage } from '@/lib/forms/errors';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -145,7 +146,7 @@ function NutritionHub({ clientId, toast }: NutritionHubProps) {
       setClientName(String(c.name ?? ''));
       setAssessments(Array.isArray(listRes?.data) ? listRes.data : []);
     } catch (err: unknown) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load client.');
+      setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {
       setLoading(false);
     }
@@ -381,7 +382,7 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
       clear();
       onDone(true);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save assessment.');
+      toast.error(errorMessage(err, 'Failed to save assessment.'));
     } finally {
       setSaving(false);
     }

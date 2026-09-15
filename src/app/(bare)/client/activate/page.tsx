@@ -26,6 +26,7 @@ import {
 import { api } from '@/lib/api';
 import type { ClientActivationPreview } from '@/lib/api';
 import { invitationPasswordRules, checkInvitationPassword } from '@/lib/password-policy';
+import { errorMessage } from '@/lib/forms/errors';
 
 /** Brand for this flow: black / white / maroon, matching the activation email.
  *  Both constants are the same red on purpose: the darker shade the email
@@ -185,7 +186,7 @@ function ActivateForm() {
     }
     api.clientActivation.preview(token)
       .then((r) => setPreview(r.data))
-      .catch((e: unknown) => setDead(e instanceof Error ? e.message : 'This activation link is not valid.'))
+      .catch((e: unknown) => setDead(errorMessage(e, 'This activation link is not valid.')))
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -201,7 +202,7 @@ function ActivateForm() {
       const r = await api.clientActivation.accept(token, password);
       setDone(r.data.email);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Could not set your password.';
+      const msg = errorMessage(err, 'Could not set your password.');
       // A 410 means the link died between loading this page and submitting —
       // it expired while the form sat open, or the trainer resent it. That is
       // not something retyping fixes, so it needs the dead-link screen rather

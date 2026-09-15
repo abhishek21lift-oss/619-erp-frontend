@@ -15,6 +15,7 @@ import { api } from '@/lib/api';
 import { CLIENT_SOURCES, RELATIONSHIPS } from '@/lib/client-intake';
 import { useToast } from '@/lib/toast';
 import { readImageAsDataUrl, AVATAR_RULES } from '@/lib/forms/files';
+import { errorMessage } from '@/lib/forms/errors';
 
 function SectionCard({ title, icon, children, accent = '#F59E0B' }: {
   title: string; icon: React.ReactNode; children: React.ReactNode; accent?: string;
@@ -82,7 +83,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
       setPhotoBroken(false);
       toast.success('Photo updated');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not save the photo');
+      toast.error(errorMessage(err, 'Could not save the photo'));
     } finally {
       setPhotoBusy(false);
     }

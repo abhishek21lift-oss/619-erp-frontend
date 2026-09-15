@@ -17,6 +17,7 @@ import { AlertCircle, ArrowRight, Loader2, Sparkles, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { CheckinInsight } from '@/lib/api';
 import { palette, rgba } from '@/lib/palette';
+import { errorMessage } from '@/lib/forms/errors';
 
 const BLUE = palette.blue[500];
 const AMBER = palette.amber[500];
@@ -67,7 +68,7 @@ export default function WeeklyCheckinInsightCard({ clientId, checkinsCount }: We
         } catch { /* private mode / storage blocked — never dismissed, harmless */ }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not get an insight. Please try again.');
+      setError(errorMessage(err, 'Could not get an insight. Please try again.'));
     } finally {
       busyRef.current = false;
       setBusy(false);

@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
-import { errorMessage } from '@/lib/forms/errors';
 import { useAppForm } from '@/lib/forms/useAppForm';
 import {
   upiSettingsSchema, upiSettingsToFormValues, toUpiSettingsPayload, gstOptions,
@@ -38,6 +37,7 @@ import type { UpiSettings, UpiSettingsInput } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
 import { PageHeader } from '@/components/ui';
+import { errorMessage } from '@/lib/forms/errors';
 
 export default function PaymentSettingsPage() {
   return <Guard role="admin"><Inner /></Guard>;

@@ -14,7 +14,6 @@ import { Button, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
-import { errorMessage } from '@/lib/forms/errors';
 import { useAppForm } from '@/lib/forms/useAppForm';
 import { todayISO } from '@/lib/forms/domain';
 import {
@@ -24,6 +23,7 @@ import {
 import {
   TextField, TextAreaField, DateFieldControl, FormErrorBanner, visibleError,
 } from '@/components/ui/form';
+import { errorMessage } from '@/lib/forms/errors';
 
 interface Payment {
   id: string; client_id: string; trainer_id: string;

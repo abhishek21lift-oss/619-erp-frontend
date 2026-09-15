@@ -8,6 +8,7 @@ import { Sparkles, Users, UserCheck, Weight, TrendingUp, Search, ArrowUpRight, A
 import { api, type TransformationRow } from '@/lib/api';
 import { fmtDate } from '@/lib/format';
 import { PremiumMetricCardStandard, MetricGroup, metricTone } from '@/components/visualizations';
+import { errorMessage } from '@/lib/forms/errors';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -66,7 +67,7 @@ function Inner() {
     let alive = true;
     api.pt.transformations()
       .then((r) => alive && setRows(r.data))
-      .catch((e) => alive && setError(e instanceof Error ? e.message : 'Could not load transformations'))
+      .catch((e) => alive && setError(errorMessage(e, 'Could not load transformations')))
       .finally(() => alive && setLoading(false));
     return () => { alive = false; };
   }, []);

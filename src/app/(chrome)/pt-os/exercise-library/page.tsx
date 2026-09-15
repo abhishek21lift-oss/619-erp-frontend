@@ -19,6 +19,7 @@ import { ExerciseFilterRail } from '@/components/pt-os/exercise-library/Exercise
 import { ExerciseDetailDrawer } from '@/components/pt-os/exercise-library/ExerciseDetailDrawer';
 import { ExerciseCommandPalette } from '@/components/pt-os/exercise-library/ExerciseCommandPalette';
 import { PAGE_SIZE, useExerciseLibrary } from '@/components/pt-os/exercise-library/useExerciseLibrary';
+import { errorMessage } from '@/lib/forms/errors';
 
 /**
  * The Exercise Library.
@@ -93,7 +94,7 @@ function ExerciseLibrary() {
       await lib.refetch();
       setDetailId(res.exercise.id);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not duplicate exercise');
+      toast.error(errorMessage(err, 'Could not duplicate exercise'));
     }
   }, [lib, toast]);
 
@@ -104,7 +105,7 @@ function ExerciseLibrary() {
       toast.success(archiving ? `"${ex.name}" archived` : `"${ex.name}" restored`);
       await lib.refetch();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not archive exercise');
+      toast.error(errorMessage(err, 'Could not archive exercise'));
     }
   }, [lib, toast]);
 
@@ -126,7 +127,7 @@ function ExerciseLibrary() {
       }
       if (detailId === ex.id) setDetailId(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not delete exercise');
+      toast.error(errorMessage(err, 'Could not delete exercise'));
     }
   }, [lib, toast, detailId]);
 

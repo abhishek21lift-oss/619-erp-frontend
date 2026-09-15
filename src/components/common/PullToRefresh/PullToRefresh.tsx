@@ -23,6 +23,7 @@ import { useNavScroll } from '@/contexts/nav-scroll-context';
 import { usePullRefreshRegistry } from '@/contexts/pull-refresh-context';
 import { useToast } from '@/lib/toast';
 import type { PullToRefreshProps } from './types';
+import { errorMessage } from '@/lib/forms/errors';
 
 export default function PullToRefresh({
   onRefresh,
@@ -45,7 +46,7 @@ export default function PullToRefresh({
 
   const handleError = useCallback((err: unknown) => {
     if (onError) { onError(err); return; }
-    toast.error(err instanceof Error ? err.message : 'Refresh failed.', {
+    toast.error(errorMessage(err, 'Refresh failed.'), {
       description: 'Your existing data is unchanged.',
       action: onRefresh ? { label: 'Retry', onClick: () => { void onRefresh(); } } : undefined,
     });

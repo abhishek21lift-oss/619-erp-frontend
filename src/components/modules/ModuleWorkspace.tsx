@@ -95,7 +95,7 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
       setRecords(result.records);
       setSource(result.source);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load module data');
+      setError(errorMessage(err, 'Failed to load module data'));
     } finally {
       setLoading(false);
     }

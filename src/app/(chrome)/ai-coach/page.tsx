@@ -25,6 +25,7 @@ import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth-context';
 import { normaliseRole } from '@/lib/nav-config';
 import type { AiConversation, Client } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 
@@ -217,7 +218,7 @@ export default function AiCoachPage() {
     } catch (err) {
       // A user-pressed Stop is not a failure — keep whatever streamed.
       if (controller.signal.aborted) { loadConversations(); return; }
-      const msg = err instanceof Error ? err.message : 'Something went wrong.';
+      const msg = errorMessage(err, 'Something went wrong.');
       if (!started) pushReply(`⚠️ ${msg}`, true);
       else updateReply(`${acc}\n\n⚠️ ${msg}`);
     } finally {

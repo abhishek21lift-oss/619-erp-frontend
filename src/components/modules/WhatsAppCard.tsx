@@ -30,6 +30,7 @@ import { api } from '@/lib/api';
 import { ApiError } from '@/lib/http';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import type { WhatsAppStatus, WhatsAppState } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 const glass = {
   background: 'var(--bg-card)',
@@ -205,7 +206,7 @@ export default function WhatsAppCard() {
       await refresh();
     } catch (err) {
       if (alive.current) {
-        setQrError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
+        setQrError(errorMessage(err, 'Something went wrong. Try again.'));
       }
     } finally {
       if (alive.current) setBusy(null);

@@ -24,6 +24,7 @@ import {
 import StepAgreements from '@/components/pt-os/informed-consent/StepAgreements';
 import StepExerciseProgrammeConsent from '@/components/pt-os/informed-consent/StepExerciseProgrammeConsent';
 import StepSignatures from '@/components/pt-os/informed-consent/StepSignatures';
+import { errorMessage } from '@/lib/forms/errors';
 
 interface FormErrors { [key: string]: string | undefined; }
 
@@ -106,7 +107,7 @@ function ConsentHub({ clientId, toast }: ConsentHubProps) {
       setRecord(rows[0] ?? null);
       setHistory(rows);
     } catch (err: unknown) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load client.');
+      setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {
       setLoading(false);
     }
@@ -306,7 +307,7 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
       toast.success('Informed consent completed.');
       setSubmitResult({ pdfUrl: final?.pdf_url ?? undefined });
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to complete the consent.');
+      toast.error(errorMessage(err, 'Failed to complete the consent.'));
     } finally {
       setSaving(false);
     }
@@ -322,7 +323,7 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
     try {
       await persist();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Could not save progress.');
+      toast.error(errorMessage(e, 'Could not save progress.'));
       setCreatingDraft(false);
       return;
     }

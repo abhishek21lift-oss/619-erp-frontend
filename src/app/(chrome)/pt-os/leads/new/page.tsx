@@ -19,6 +19,7 @@ import type { LeadFormState } from '@/components/pt-os/leads/LeadFormFields';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { errorMessage } from '@/lib/forms/errors';
 
 export default function NewLeadPage() {
   return <Guard><NewLeadForm /></Guard>;
@@ -60,7 +61,7 @@ function NewLeadForm() {
       toast.success('Lead added.');
       router.push('/pt-os/leads');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not save this lead.');
+      toast.error(errorMessage(err, 'Could not save this lead.'));
       setSaving(false);
     }
   };

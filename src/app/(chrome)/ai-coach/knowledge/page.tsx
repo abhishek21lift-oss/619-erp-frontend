@@ -11,6 +11,7 @@ import { Button, PullToRefresh, PageContainer, PageHero } from '@/components/ui'
 import { useAsync } from '@/lib/use-async';
 import { useToast } from '@/lib/toast';
 import { api, AiKnowledgeDocument } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 const CATEGORIES: { value: AiKnowledgeDocument['category']; label: string }[] = [
   { value: 'sop', label: 'SOP' },
@@ -91,7 +92,7 @@ export default function AiKnowledgeBasePage() {
       resetForm();
       kb.refetch();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to upload document.');
+      toast.error(errorMessage(err, 'Failed to upload document.'));
     } finally {
       setUploading(false);
     }
@@ -104,7 +105,7 @@ export default function AiKnowledgeBasePage() {
       toast.success('Document deleted.');
       kb.refetch();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete document.');
+      toast.error(errorMessage(err, 'Failed to delete document.'));
     }
   };
 
@@ -118,7 +119,7 @@ export default function AiKnowledgeBasePage() {
       // the loading state once the document leaves `processing`.
       kb.refetch();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to start reindexing.');
+      toast.error(errorMessage(err, 'Failed to start reindexing.'));
       setReindexingId(null);
     }
   };

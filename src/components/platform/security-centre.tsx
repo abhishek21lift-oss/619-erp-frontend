@@ -22,6 +22,7 @@ import { roleLabel } from '@/lib/roles';
 import type {
   SecurityOverview, SecurityThreats, LoginEvent, LoginEventQuery, ActiveSession,
 } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 const PAGE_SIZE = 50;
 const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)' } as const;
@@ -127,7 +128,7 @@ export default function SecurityCentre() {
       api.superAdmin.activeSessions(),
     ])
       .then(([o, t, s]) => { setOverview(o.data); setThreats(t.data); setSessions(s.data); })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load the security overview.'))
+      .catch((e: unknown) => setError(errorMessage(e, 'Could not load the security overview.')))
       .finally(() => setLoading(false));
   }, []);
 

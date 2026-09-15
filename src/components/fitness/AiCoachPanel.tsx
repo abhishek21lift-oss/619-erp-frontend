@@ -9,6 +9,7 @@ import { api } from '@/lib/api';
 import { streamAiChat } from '@/lib/ai-stream';
 import type { Client } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
+import { errorMessage } from '@/lib/forms/errors';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -191,7 +192,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
         setGenerationResult(summary);
       }
     } catch (err) {
-      setGenerationError(err instanceof Error ? err.message : 'Failed to generate plan. Please try again.');
+      setGenerationError(errorMessage(err, 'Failed to generate plan. Please try again.'));
     } finally {
       setIsGenerating(false);
     }
@@ -252,7 +253,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
       if (controller.signal.aborted) return;
       // streamAiChat speaks the shared wording; this panel has always shown its
       // own strings, so translate back to keep the UI text byte-identical.
-      const raw = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      const raw = errorMessage(err, 'Something went wrong. Please try again.');
       const msg = raw === 'Your session has expired — please sign in again.'
         ? 'Your session has expired. Please sign in again.'
         : raw === 'The assistant ran into a problem.'

@@ -23,6 +23,7 @@ import type {
 } from '@/lib/api';
 import { Panel, SectionLabel, StatTile, Reveal } from './console';
 import { useToast } from '@/lib/toast';
+import { errorMessage } from '@/lib/forms/errors';
 
 const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)' } as const;
 
@@ -68,7 +69,7 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
   const load = useCallback(() => {
     api.superAdmin.supportTicket(id)
       .then((r) => setTicket(r.data))
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load the ticket.'));
+      .catch((e: unknown) => setError(errorMessage(e, 'Could not load the ticket.')));
   }, [id]);
   useEffect(() => { load(); }, [load]);
 
@@ -81,7 +82,7 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
       toast.success(internal ? 'Internal note added — the studio cannot see it.' : 'Reply sent to the studio.');
       setBody('');
       load(); onChanged();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not send'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not send')); }
     finally { setBusy(false); }
   };
 
@@ -90,7 +91,7 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
     try {
       await api.superAdmin.updateTicket(id, p);
       load(); onChanged();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not update'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not update')); }
     finally { setBusy(false); }
   };
 
@@ -256,7 +257,7 @@ export default function SupportCentre() {
       }),
     ])
       .then(([o, t]) => { setOverview(o.data); setTickets(t.data); })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load support tickets.'))
+      .catch((e: unknown) => setError(errorMessage(e, 'Could not load support tickets.')))
       .finally(() => setLoading(false));
   }, [status, unassignedOnly]);
 

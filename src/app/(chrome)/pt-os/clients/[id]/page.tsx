@@ -33,6 +33,7 @@ import RecoveryPanel from '@/components/pt-os/client/RecoveryPanel';
 import type { ClientRecovery } from '@/lib/api';
 import { printWindowCloseButtonHtml } from '@/lib/printWindowChrome';
 import { activatable } from '@/lib/a11y';
+import { errorMessage } from '@/lib/forms/errors';
 
 interface PtClientDetail {
   id: string; unique_id?: string; client_id?: string; name: string;
@@ -179,7 +180,7 @@ function QrCheckinCard({ clientId, clientName }: { clientId: string; clientName:
     setError('');
     api.qr.generateFor('client', clientId)
       .then((res) => { if (!cancelled) setDataUrl(res.dataUrl); })
-      .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to generate QR code'); })
+      .catch((e) => { if (!cancelled) setError(errorMessage(e, 'Failed to generate QR code')); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [clientId]);

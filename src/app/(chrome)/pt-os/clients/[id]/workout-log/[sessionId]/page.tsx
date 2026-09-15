@@ -17,6 +17,7 @@ import { api } from '@/lib/api';
 import type { WorkoutSessionDetail, WorkoutSessionExercise, WorkoutSet, WorkoutPreviousExercise, WorkoutDistanceUnit, WorkoutSpeedUnit } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { fmtDate } from '@/lib/format';
+import { errorMessage } from '@/lib/forms/errors';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -125,7 +126,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
         return next;
       });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load session.';
+      const msg = errorMessage(err, 'Failed to load session.');
       // A background refresh that fails must not throw away a session the
       // trainer is part-way through logging — the set itself already saved,
       // this call was only fetching the recomputed totals.
@@ -196,7 +197,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       await handleAddPlannedExercise(planned);
       await loadSession();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not load exercise.');
+      toast.error(errorMessage(err, 'Could not load exercise.'));
     } finally {
       setLoadingPlanned(false);
     }
@@ -212,7 +213,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       await loadSession();
       toast.success('Loaded today\'s plan into the session.');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not load plan.');
+      toast.error(errorMessage(err, 'Could not load plan.'));
     } finally {
       setLoadingPlanned(false);
     }
@@ -227,7 +228,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       if (res?.data) setExpanded((prev) => ({ ...prev, [res.data.id]: true }));
       await loadSession();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not add exercise.');
+      toast.error(errorMessage(err, 'Could not add exercise.'));
     }
   };
 
@@ -237,7 +238,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       await api.progress.workoutLog.exercises.remove(exerciseId);
       await loadSession();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not remove exercise.');
+      toast.error(errorMessage(err, 'Could not remove exercise.'));
     }
   };
 
@@ -248,7 +249,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       const res = await api.progress.workoutLog.sessions.update(session.id, patch);
       if (res?.data) setSession((prev) => (prev ? { ...prev, ...res.data } : prev));
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not save.');
+      toast.error(errorMessage(err, 'Could not save.'));
     } finally {
       setSavingHeader(false);
     }
@@ -595,7 +596,7 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
       });
       await onChanged();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not add set.');
+      toast.error(errorMessage(err, 'Could not add set.'));
     } finally {
       setBusy(false);
     }
@@ -625,7 +626,7 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
       await onChanged();
       toast.success('Filled from previous workout.');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Auto-fill failed.');
+      toast.error(errorMessage(err, 'Auto-fill failed.'));
     } finally {
       setBusy(false);
     }
@@ -651,7 +652,7 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
     } catch (err: unknown) {
       // Partially applied is fine and visible — onChanged in the finally
       // repaints whatever did land, so the trainer sees where it stopped.
-      toast.error(err instanceof Error ? err.message : 'Could not mark those sets done.');
+      toast.error(errorMessage(err, 'Could not mark those sets done.'));
       await onChanged();
     } finally {
       setBusy(false);
@@ -832,7 +833,7 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
       await api.progress.workoutLog.sets.update(set.id, patch);
       await onChanged();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not save set.');
+      toast.error(errorMessage(err, 'Could not save set.'));
     } finally {
       setSaving(false);
     }
@@ -843,7 +844,7 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
       await api.progress.workoutLog.sets.delete(set.id);
       await onChanged();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not delete set.');
+      toast.error(errorMessage(err, 'Could not delete set.'));
     }
   };
 

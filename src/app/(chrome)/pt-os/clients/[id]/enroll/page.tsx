@@ -19,6 +19,7 @@ import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth-context';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
+import { errorMessage } from '@/lib/forms/errors';
 
 /* ─────────────────────────────────────────────────────── TYPES */
 interface EnrollFormData {
@@ -316,7 +317,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
       initFormRef.current = loaded;
       if (draft) toast.info('Restored your unsaved draft.');
     } catch (err: unknown) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load client.');
+      setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {
       setLoading(false);
     }
@@ -529,7 +530,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
       // reading the blob when click() returns.
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not download the form.');
+      toast.error(errorMessage(err, 'Could not download the form.'));
     } finally {
       setDownloading(false);
     }

@@ -11,6 +11,7 @@ import Guard from '@/components/Guard';
 import { PullToRefresh } from '@/components/ui';
 import { api, Payment } from '@/lib/api';
 import type { PaymentStats } from '@/lib/api/endpoints/money';
+import { errorMessage } from '@/lib/forms/errors';
 
 function fmtINR(n: number) {
   return '₹' + n.toLocaleString('en-IN');
@@ -80,7 +81,7 @@ function Inner() {
       // was never a reading at all.
       setRows([]);
       setStats(null);
-      setLoadError(err instanceof Error ? err.message : "Could not load today's payments");
+      setLoadError(errorMessage(err, "Could not load today's payments"));
     } finally {
       setLoading(false);
     }

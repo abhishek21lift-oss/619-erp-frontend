@@ -9,6 +9,7 @@ import { useWebAuthn, isWebAuthnSupported, isBiometricAvailable, webAuthnError }
 import Guard from '@/components/Guard';
 import { PageTitle } from '@/components/ui';
 import { api } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 type Credential = {
   id: string;
@@ -101,7 +102,7 @@ function PasskeysContent() {
       const data = await api.webauthn.listCredentials();
       setCredentials(data.credentials);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load passkeys');
+      setError(errorMessage(err, 'Failed to load passkeys'));
     } finally {
       setLoading(false);
     }
@@ -161,7 +162,7 @@ function PasskeysContent() {
       setCredentials(prev => prev.filter(c => c.id !== id));
       showSuccess('Passkey removed.');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to remove passkey');
+      setError(errorMessage(err, 'Failed to remove passkey'));
     } finally {
       setDeletingId(null);
     }
@@ -175,7 +176,7 @@ function PasskeysContent() {
       setCredentials(prev => prev.map(c => c.id === cred.id ? { ...c, is_active: result.is_active } : c));
       showSuccess(result.is_active ? 'Passkey enabled.' : 'Passkey disabled.');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to update passkey');
+      setError(errorMessage(err, 'Failed to update passkey'));
     } finally {
       setTogglingId(null);
     }
@@ -196,7 +197,7 @@ function PasskeysContent() {
       setRenameId(null);
       showSuccess('Passkey renamed.');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to rename passkey');
+      setError(errorMessage(err, 'Failed to rename passkey'));
     } finally {
       setRenaming(false);
     }

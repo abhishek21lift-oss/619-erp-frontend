@@ -35,7 +35,7 @@ import { useAuth } from '@/lib/auth-context';
 import { rememberKeys, portalForRole, postSignInPath, type Portal } from '@/lib/portals';
 import { roleLabel } from '@/lib/roles';
 import { isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
-import { mapSignInError } from '@/lib/forms/errors';
+import { errorMessage, mapSignInError } from '@/lib/forms/errors';
 import { signInSchema } from '@/lib/forms/schemas/auth';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
@@ -351,7 +351,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
       if ((err as { status?: number })?.status === 403
           && (err as { code?: string })?.code === 'WRONG_PORTAL') {
         setWrongPortal(true);
-        fail(err instanceof Error ? err.message : 'Wrong sign-in page for this account.');
+        fail(errorMessage(err, 'Wrong sign-in page for this account.'));
         return;
       }
       fail(mapSignInError(err, 'Login failed. Please check your credentials.'));

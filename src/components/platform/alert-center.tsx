@@ -38,6 +38,7 @@ import {
 import { api } from '@/lib/api';
 import { semantic, rgba } from '@/lib/palette';
 import type { SystemAlert, SystemAlertList, SystemAlertSeverity } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 const POLL_MS = 15_000;
 
@@ -226,7 +227,7 @@ export default function AlertCenter({ onChanged }: { onChanged?: () => void }) {
       setLive(res.data);
       setError('');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to load alerts');
+      setError(errorMessage(e, 'Failed to load alerts'));
     }
   }, []);
 
@@ -256,7 +257,7 @@ export default function AlertCenter({ onChanged }: { onChanged?: () => void }) {
       if (showHistory) await loadHistory();
       onChanged?.();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Action failed');
+      setError(errorMessage(e, 'Action failed'));
     } finally {
       setBusy(null);
     }

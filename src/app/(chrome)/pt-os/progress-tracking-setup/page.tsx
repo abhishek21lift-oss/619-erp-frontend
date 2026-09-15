@@ -12,6 +12,7 @@ import Guard from '@/components/Guard';
 import { Button, DonutChart } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 interface CompletionItem {
   key: string;
@@ -76,7 +77,7 @@ function BaselineDashboard({ clientId }: BaselineDashboardProps) {
       setMobilityAssessments(Array.isArray(mobilityRes?.data) ? mobilityRes.data : []);
       setPostureAssessments(Array.isArray(postureRes?.data) ? postureRes.data : []);
     } catch (err: unknown) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load client.');
+      setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {
       setLoading(false);
     }

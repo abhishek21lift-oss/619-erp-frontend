@@ -44,6 +44,7 @@ import { api } from '@/lib/api';
 import type { Attendance, Client } from '@/lib/api';
 import { fmtDate, toInputDate } from '@/lib/format';
 import { buildBoard, type BoardRow } from '@/lib/leaderboard';
+import { errorMessage } from '@/lib/forms/errors';
 
 export default function LeaderboardPage() {
   return (
@@ -118,7 +119,7 @@ function Inner() {
         setRecords(Array.isArray(att) ? att : []);
         setPhotos(new Map((clients as Client[]).map((c) => [String(c.id), c.photo_url ?? null])));
       })
-      .catch((e: unknown) => alive && setError(e instanceof Error ? e.message : 'Failed to load attendance'))
+      .catch((e: unknown) => alive && setError(errorMessage(e, 'Failed to load attendance')))
       .finally(() => alive && setLoading(false));
     return () => { alive = false; };
   }, [from, to]);

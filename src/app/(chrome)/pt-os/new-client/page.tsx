@@ -17,6 +17,7 @@ import { CLIENT_SOURCES, RELATIONSHIPS } from '@/lib/client-intake';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useToast } from '@/lib/toast';
 import { readImageAsDataUrl, AVATAR_RULES } from '@/lib/forms/files';
+import { errorMessage } from '@/lib/forms/errors';
 
 /* ─────────────────────────────────────────────────────── TYPES */
 interface FormData {
@@ -355,7 +356,7 @@ function NewClientForm() {
         }
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to create client.';
+      const message = errorMessage(err, 'Failed to create client.');
       toast.error(message);
     } finally {
       setSaving(false);

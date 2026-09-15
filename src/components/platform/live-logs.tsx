@@ -35,6 +35,7 @@ import {
 import { api } from '@/lib/api';
 import { semantic, rgba } from '@/lib/palette';
 import type { LogLine, LogTail, LogHistory, LogHistoryStats, PersistedLogLine } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 const POLL_MS = 3_000;
 
@@ -169,7 +170,7 @@ export default function LiveLogs() {
       setTail(res.data);
       setError('');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to load logs');
+      setError(errorMessage(e, 'Failed to load logs'));
     }
   }, [level, query]);
 
@@ -192,7 +193,7 @@ export default function LiveLogs() {
       setOlderPages([]);
       setError('');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to load log history');
+      setError(errorMessage(e, 'Failed to load log history'));
     }
   }, [query, level]);
 
@@ -208,7 +209,7 @@ export default function LiveLogs() {
       setOlderPages((prev) => [...prev, ...res.data.lines]);
       setHistory((h) => (h ? { ...h, next_before: res.data.next_before } : h));
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to load older lines');
+      setError(errorMessage(e, 'Failed to load older lines'));
     } finally {
       setLoadingOlder(false);
     }

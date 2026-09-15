@@ -33,6 +33,7 @@ import GoalSummaryCard from '@/components/pt-os/goal-assessment/GoalSummaryCard'
 import GoalTimeline from '@/components/pt-os/goal-assessment/GoalTimeline';
 import GoalCard from '@/components/pt-os/goal-assessment/GoalCard';
 import GoalProgressTimeline from '@/components/pt-os/goal-assessment/GoalProgressTimeline';
+import { errorMessage } from '@/lib/forms/errors';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const CHALLENGE_VALUES = new Set(CHALLENGE_OPTIONS.map((c) => c.value));
@@ -137,7 +138,7 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
 
       setGoals(Array.isArray(goalsRes?.data) ? goalsRes.data : []);
     } catch (err: unknown) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load client.');
+      setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {
       setLoading(false);
     }
@@ -335,7 +336,7 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
       clear();
       onDone(true);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save goal.');
+      toast.error(errorMessage(err, 'Failed to save goal.'));
     } finally {
       setSaving(false);
     }

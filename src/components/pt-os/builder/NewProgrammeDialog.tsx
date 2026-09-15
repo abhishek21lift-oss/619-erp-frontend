@@ -28,6 +28,7 @@ import type { WorkoutPlan } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { assignWorkoutPlan } from '@/lib/workoutAssign';
+import { errorMessage } from '@/lib/forms/errors';
 
 export interface ClientOption { id: string; name: string; }
 
@@ -269,7 +270,7 @@ export default function NewProgrammeDialog({
       onCreated?.(plan);
       router.push(`/pt-os/workout-plans/${plan.id}/builder`);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not create the programme');
+      toast.error(errorMessage(err, 'Could not create the programme'));
     } finally {
       setSaving(false);
     }

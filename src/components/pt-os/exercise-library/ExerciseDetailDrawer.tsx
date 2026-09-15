@@ -9,6 +9,7 @@ import { Badge, Skeleton, cn } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { ExerciseVersion, LibraryExercise } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
+import { errorMessage } from '@/lib/forms/errors';
 
 /**
  * Full exercise detail, in a right-hand drawer.
@@ -50,7 +51,7 @@ export function ExerciseDetailDrawer({
     setVersions(null);
     api.exercises.get(exerciseId)
       .then((d) => { if (alive) setEx(d); })
-      .catch((e) => { if (alive) setError(e instanceof Error ? e.message : 'Could not load exercise'); })
+      .catch((e) => { if (alive) setError(errorMessage(e, 'Could not load exercise')); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, [exerciseId]);

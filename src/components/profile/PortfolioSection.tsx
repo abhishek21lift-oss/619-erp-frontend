@@ -41,6 +41,7 @@ import {
 import { api, PORTFOLIO_LIMITS } from '@/lib/api';
 import type { PortfolioItem, PortfolioKind } from '@/lib/api';
 import { ApiError } from '@/lib/http';
+import { errorMessage } from '@/lib/forms/errors';
 
 const KINDS: { value: PortfolioKind; label: string; hint: string; icon: React.ReactNode }[] = [
   { value: 'image', label: 'Photo', hint: 'A single image', icon: <ImageIcon size={14} /> },
@@ -81,9 +82,17 @@ export function embedUrl(raw: string | null): string | null {
   return null;
 }
 
-/** Read an ApiError's message without leaking a stack trace into the UI. */
+/**
+ * The canonical mapper, under this file's own name.
+ *
+ * It used to read an ApiError's `.message` directly, which is correct for a
+ * 400 and wrong for everything else: a `fetch` that never reached a server
+ * rejects with a TypeError whose message is "Failed to fetch", and a 401's is
+ * "Unauthorized". `errorMessage` turns those into sentences a studio owner can
+ * act on and leaves a 400's own message alone.
+ */
 function reason(err: unknown, fallback: string) {
-  return err instanceof ApiError && err.message ? err.message : fallback;
+  return errorMessage(err, fallback);
 }
 
 // ── Skeleton ────────────────────────────────────────────────────────────────

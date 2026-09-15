@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import type { ParqDocument, ParqDocumentType } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import type { ParqFormData, MedicalClearanceForm } from './types';
+import { errorMessage } from '@/lib/forms/errors';
 
 const DOC_TYPES: { value: ParqDocumentType; label: string }[] = [
   { value: 'medical_report', label: 'Medical Report' },
@@ -49,7 +50,7 @@ export function StepMedicalClearance({ form, set, error, formId, documents, onDo
         toast.success('Document uploaded.');
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Upload failed.');
+      toast.error(errorMessage(err, 'Upload failed.'));
     } finally {
       setUploading(false);
     }

@@ -32,12 +32,12 @@ import BrandLogo from '@/components/BrandLogo';
 import { api } from '@/lib/api';
 import type { SubCheckoutRequest, UpiPaymentView } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { errorMessage } from '@/lib/forms/errors';
 import { useAppForm } from '@/lib/forms/useAppForm';
 import {
   submitUtrSchema, blankSubmitUtr, SUBMIT_UTR_FIELD_HINTS,
 } from '@/lib/forms/schemas/subscriptionCheckout';
 import { TextField, TextAreaField, FormErrorBanner } from '@/components/ui/form';
+import { errorMessage } from '@/lib/forms/errors';
 
 const POLL_MS = 6000;
 

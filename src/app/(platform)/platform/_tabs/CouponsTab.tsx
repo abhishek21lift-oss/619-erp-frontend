@@ -17,7 +17,6 @@ import { api } from '@/lib/api';
 import type { SubPlan, Coupon } from '@/lib/api';
 import { StatTile } from '@/components/platform/console';
 import { useToast } from '@/lib/toast';
-import { errorMessage } from '@/lib/forms/errors';
 import { useAppForm } from '@/lib/forms/useAppForm';
 import { todayISO } from '@/lib/forms/domain';
 import {
@@ -27,6 +26,7 @@ import {
 } from '@/lib/forms/schemas/coupon';
 import { fmtDate, fmtINR } from '../_shared/format';
 import { Center, ErrorState, IconBtn } from '../_shared/ui';
+import { errorMessage } from '@/lib/forms/errors';
 
 export type CouponTemplate = {
   key: string; label: string; icon: React.ReactNode;

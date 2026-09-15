@@ -17,6 +17,7 @@ import {
   Sparkles, LogIn, RefreshCw, Trash2, Edit3, Copy, Fingerprint,
 } from 'lucide-react';
 import { FloatInput } from '@/components/ui';
+import { errorMessage } from '@/lib/forms/errors';
 
 /* ────────────────────────────────────────────────────────────────────
    TYPES
@@ -497,7 +498,7 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
         setName(''); setEmail(''); setPassword(''); setRole('admin'); setCoach('');
       }, 1800);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create account');
+      setError(errorMessage(err, 'Failed to create account'));
     } finally {
       setSaving(false);
     }
@@ -661,7 +662,7 @@ function ChangePasswordPanel() {
       setDone(true);
       setTimeout(() => { setDone(false); setCur(''); setNext(''); setConf(''); }, 2200);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to change password');
+      setError(errorMessage(err, 'Failed to change password'));
     } finally {
       setSaving(false);
     }
@@ -825,7 +826,7 @@ function AccountManagementPage() {
       }));
       setAccounts(mapped);
     } catch (err: unknown) {
-      setAccountsError(err instanceof Error ? err.message : 'Failed to load accounts');
+      setAccountsError(errorMessage(err, 'Failed to load accounts'));
       setAccounts([]);
     } finally {
       setAccountsLoading(false);

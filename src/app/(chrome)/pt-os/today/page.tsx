@@ -55,6 +55,7 @@ import type { TodayClient, TodayRoster } from '@/lib/api';
 import { fmtTime12 } from '@/lib/format';
 import { useToast } from '@/lib/toast';
 import { EmptyState, PageContainer, PageHero } from '@/components/ui';
+import { errorMessage } from '@/lib/forms/errors';
 
 export default function TodayPage() {
   return (
@@ -121,7 +122,7 @@ function Today() {
       if (!id) throw new Error('Session was created without an id');
       router.push(`/pt-os/clients/${c.client_id}/workout-log/${id}`);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not start the session');
+      toast.error(errorMessage(err, 'Could not start the session'));
       setStarting(null);
     }
   };

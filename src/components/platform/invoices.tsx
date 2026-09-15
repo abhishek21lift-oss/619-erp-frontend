@@ -18,7 +18,6 @@ import {
   Receipt, Loader2, AlertTriangle, Settings2, Check, Info,
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { errorMessage } from '@/lib/forms/errors';
 import { useAppForm } from '@/lib/forms/useAppForm';
 import { GST_SLABS } from '@/lib/forms/domain';
 import {
@@ -30,6 +29,7 @@ import { TextField, NumberField, CheckboxField, FormErrorBanner } from '@/compon
 import type {
   SubscriptionInvoice, InvoiceTotals, InvoiceQuery, PlatformBillingSettings,
 } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 const PAGE_SIZE = 50;
 

@@ -93,7 +93,7 @@ const CEILING = {
 const FLOOR = {
   platformControls: 242,
   /** Forms whose errors reach the canonical mapper. */
-  errorPlatform: 15,
+  errorPlatform: 50,
   /** Forms bound to a named canonical schema. */
   schemaPlatform: 13,
 };

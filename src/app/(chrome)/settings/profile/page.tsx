@@ -45,6 +45,7 @@ import { apiBase } from '@/lib/http';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
 import { fmtDate } from '@/lib/format';
+import { errorMessage } from '@/lib/forms/errors';
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -814,7 +815,7 @@ export default function ProfilePage() {
       // hydrate() sets `me` as well as the form fields and the dirty baseline,
       // so they can never drift apart.
       .then(hydrate)
-      .catch(err => setPageError(err instanceof Error ? err.message : 'Could not load profile'))
+      .catch(err => setPageError(errorMessage(err, 'Could not load profile')))
       .finally(() => setPageLoading(false));
     api.profile.notifications.get().then(setNotifications).catch(() => {});
     api.profile.preferences.get().then(setPreferences).catch(() => {});
@@ -869,7 +870,7 @@ export default function ProfilePage() {
       setSaveMsg({ type: 'success', text: 'Profile saved successfully' });
       setTimeout(() => setSaveMsg(null), 3000);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to save';
+      const msg = errorMessage(err, 'Failed to save');
       setSaveMsg({ type: 'error', text: msg });
     } finally {
       setSaving(false);
@@ -937,7 +938,7 @@ export default function ProfilePage() {
       toast.success('Profile photo updated');
       refreshDerived();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to upload photo');
+      toast.error(errorMessage(err, 'Failed to upload photo'));
     } finally {
       setAvatarUploading(false);
     }
@@ -954,7 +955,7 @@ export default function ProfilePage() {
       toast.success('Cover banner updated');
       refreshDerived();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to upload banner');
+      toast.error(errorMessage(err, 'Failed to upload banner'));
     } finally {
       setCoverBusy(false);
     }
@@ -968,7 +969,7 @@ export default function ProfilePage() {
       toast.success('Cover banner removed');
       refreshDerived();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to remove banner');
+      toast.error(errorMessage(err, 'Failed to remove banner'));
     } finally {
       setCoverBusy(false);
     }
@@ -983,7 +984,7 @@ export default function ProfilePage() {
       setPwMsg({ type: 'success', text: 'Password updated successfully' });
       setCurrentPw(''); setNewPw(''); setConfirmPw('');
     } catch (err: unknown) {
-      setPwMsg({ type: 'error', text: err instanceof Error ? err.message : 'Failed to change password' });
+      setPwMsg({ type: 'error', text: errorMessage(err, 'Failed to change password') });
     } finally {
       setChangingPw(false);
     }
@@ -997,7 +998,7 @@ export default function ProfilePage() {
       setMfaSetup(res);
       setMfaCode('');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to start two-factor setup');
+      toast.error(errorMessage(err, 'Failed to start two-factor setup'));
     } finally {
       setMfaBusy(false);
     }
@@ -1014,7 +1015,7 @@ export default function ProfilePage() {
       setMe(prev => prev ? { ...prev, mfaEnabled: true } : prev);
       toast.success('Two-factor authentication enabled');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Invalid code — please try again');
+      toast.error(errorMessage(err, 'Invalid code — please try again'));
     } finally {
       setMfaBusy(false);
     }
@@ -1028,7 +1029,7 @@ export default function ProfilePage() {
       setDisableMfaOpen(false);
       toast.success('Two-factor authentication disabled');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to disable two-factor authentication');
+      toast.error(errorMessage(err, 'Failed to disable two-factor authentication'));
     } finally {
       setMfaBusy(false);
     }
@@ -1051,7 +1052,7 @@ export default function ProfilePage() {
       await api.profile.notifications.update(next);
     } catch (err: unknown) {
       setNotifications(notifications);
-      toast.error(err instanceof Error ? err.message : 'Failed to save notification preference');
+      toast.error(errorMessage(err, 'Failed to save notification preference'));
     }
   };
 
@@ -1063,7 +1064,7 @@ export default function ProfilePage() {
       await api.profile.notifications.update(next);
     } catch (err: unknown) {
       setNotifications(notifications);
-      toast.error(err instanceof Error ? err.message : 'Failed to save notification frequency');
+      toast.error(errorMessage(err, 'Failed to save notification frequency'));
     }
   };
 
@@ -1098,7 +1099,7 @@ export default function ProfilePage() {
       await api.profile.preferences.update(next);
     } catch (err: unknown) {
       setPreferences(preferences);
-      toast.error(err instanceof Error ? err.message : 'Failed to save preference');
+      toast.error(errorMessage(err, 'Failed to save preference'));
     }
   };
 
@@ -1110,7 +1111,7 @@ export default function ProfilePage() {
       toast.success('Signed out of all devices');
       logout();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to sign out everywhere');
+      toast.error(errorMessage(err, 'Failed to sign out everywhere'));
       setSigningOutAll(false);
     }
   };

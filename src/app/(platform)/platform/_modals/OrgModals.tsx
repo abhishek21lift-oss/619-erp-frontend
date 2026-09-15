@@ -14,6 +14,7 @@ import { genPassword } from '../_shared/format';
 import { ROLE_OPTIONS } from '../_shared/types';
 import { roleLabel } from '@/lib/roles';
 import { Field, Modal, PasswordField, inputCls, inputStyle } from '../_shared/ui';
+import { errorMessage } from '@/lib/forms/errors';
 
 export function CreateOrgModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const { toast } = useToast();
@@ -48,7 +49,7 @@ export function CreateOrgModal({ onClose, onCreated }: { onClose: () => void; on
         toast.success('Studio created with a manual password.');
       }
       onCreated();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Create failed'); setSaving(false); }
+    } catch (e) { toast.error(errorMessage(e, 'Create failed')); setSaving(false); }
   };
 
   return (
@@ -125,7 +126,7 @@ export function AddUserModal({ org, onClose, onAdded }: { org: Organization; onC
     try {
       await api.superAdmin.addUser(org.id, { name: form.name.trim(), email: form.email.trim(), password: form.password, role: form.role });
       toast.success('Account added.'); onAdded();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Add failed'); setSaving(false); }
+    } catch (e) { toast.error(errorMessage(e, 'Add failed')); setSaving(false); }
   };
 
   return (
@@ -166,7 +167,7 @@ export function EditUserModal({ user, onClose, onSaved }: { user: OrgUser; onClo
     try {
       await api.superAdmin.updateUser(user.id, { name: form.name.trim(), email: form.email.trim(), role: form.role });
       toast.success('Account updated.'); onSaved();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Update failed'); setSaving(false); }
+    } catch (e) { toast.error(errorMessage(e, 'Update failed')); setSaving(false); }
   };
 
   return (
@@ -218,7 +219,7 @@ export function ResetPasswordModal({ user, onClose }: { user: OrgUser; onClose: 
     try {
       await api.superAdmin.resetPassword(user.id, password);
       toast.success('Password reset. Existing sessions revoked.'); onClose();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Reset failed'); setSaving(false); }
+    } catch (e) { toast.error(errorMessage(e, 'Reset failed')); setSaving(false); }
   };
 
   const sendLink = async () => {
@@ -230,7 +231,7 @@ export function ResetPasswordModal({ user, onClose }: { user: OrgUser; onClose: 
       // The backend distinguishes "SMTP is not configured" from "the send
       // failed" and says which; surfacing its message verbatim is the whole
       // point of not reusing the public forgot-password endpoint here.
-      toast.error(e instanceof Error ? e.message : 'Could not send the email');
+      toast.error(errorMessage(e, 'Could not send the email'));
       setSaving(false);
     }
   };

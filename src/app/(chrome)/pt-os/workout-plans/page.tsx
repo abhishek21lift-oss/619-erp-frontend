@@ -19,6 +19,7 @@ import NewProgrammeDialog from '@/components/pt-os/builder/NewProgrammeDialog';
 import { ExerciseCard } from '@/components/fitness/ExerciseCard';
 import { AiCoachPanel } from '@/components/fitness/AiCoachPanel';
 import TrainingBriefPanel from '@/components/pt-os/TrainingBriefPanel';
+import { errorMessage } from '@/lib/forms/errors';
 
 interface ClientOption { id: string; name: string; }
 
@@ -136,7 +137,7 @@ function Inner() {
       const clientArr = Array.isArray(clRes?.data) ? clRes.data : [];
       setClients((clientArr as Record<string, unknown>[]).map((c) => ({ id: String(c.id), name: String(c.name ?? '') })));
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load data');
+      toast.error(errorMessage(err, 'Failed to load data'));
     } finally { setDataLoading(false); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presetClientId]);
@@ -169,7 +170,7 @@ function Inner() {
       toast.success('Plan deleted.');
       fetchData();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not delete plan.');
+      toast.error(errorMessage(err, 'Could not delete plan.'));
     }
   }, [toast, fetchData]);
 

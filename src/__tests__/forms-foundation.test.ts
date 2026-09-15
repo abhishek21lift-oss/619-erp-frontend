@@ -44,7 +44,7 @@ import {
   GST_SLABS,
   TEMPLATE_VARIABLES,
 } from '../lib/forms/domain';
-import { mapApiError, noErrors, hasErrors } from '../lib/forms/errors';
+import { mapApiError, errorMessage, noErrors, hasErrors } from '../lib/forms/errors';
 import { ApiError } from '../lib/http';
 
 /** Convenience: the first message from a failed parse. */
@@ -411,6 +411,81 @@ describe('errors — every failure produces a message (§12)', () => {
 
   it('noErrors is genuinely empty', () => {
     expect(hasErrors(noErrors())).toBe(false);
+  });
+});
+
+describe('errorMessage — what 205 call sites now get instead of err.message', () => {
+  // The whole tree used to write `err instanceof Error ? err.message : FALLBACK`.
+  // These are the cases where that string was the wrong thing to show someone,
+  // and they are why the conversion was worth doing across 89 files.
+
+  it('turns a failed fetch into a sentence about the connection', () => {
+    // fetch() rejects with a TypeError when the request never reached a
+    // server. Its `.message` is "Failed to fetch" in Chrome and "NetworkError
+    // when attempting to fetch resource." in Firefox — browser diagnostics,
+    // rendered to a studio owner as if the app had said them.
+    expect(errorMessage(new TypeError('Failed to fetch'), 'Could not save'))
+      .toBe('Could not reach the server. Check your connection and try again.');
+  });
+
+  it('turns an aborted request into a sentence about cancellation', () => {
+    const abort = new DOMException('The user aborted a request.', 'AbortError');
+    expect(errorMessage(abort, 'Could not save')).toBe('The request was cancelled.');
+  });
+
+  it('turns a 401 into something actionable rather than "Unauthorized"', () => {
+    expect(errorMessage(new ApiError('Unauthorized', 401), 'Could not save'))
+      .toBe('Your session has expired. Sign in again to continue.');
+  });
+
+  it('turns a 429 into a wait rather than a status phrase', () => {
+    expect(errorMessage(new ApiError('Too Many Requests', 429), 'Could not save'))
+      .toBe('Too many attempts. Wait a moment and try again.');
+  });
+
+  it('refuses to show a 5xx body, whatever it contains', () => {
+    // In production the backend already scrubs this to "An internal error
+    // occurred". Outside production it sends `err.message`, which is the SQL
+    // error — and a staging deployment is not a reason to put one on screen.
+    const leak = new ApiError('duplicate key value violates unique constraint "users_email_key"', 500);
+    expect(errorMessage(leak, 'Could not save'))
+      .toBe('The server had a problem saving this. Try again in a moment.');
+  });
+
+  it('KEEPS the server\'s own sentence where it is the useful one', () => {
+    // 400, 403, 404 and 409 say something specific and true. Replacing those
+    // with a generic message would be the opposite mistake.
+    for (const status of [400, 403, 404, 409]) {
+      expect(errorMessage(new ApiError('That code is already in use.', status), 'Could not save'))
+        .toBe('That code is already in use.');
+    }
+  });
+
+  it('falls back to the caller\'s message for a non-Error rejection', () => {
+    expect(errorMessage(undefined, 'Could not save')).toBe('Could not save');
+    expect(errorMessage(null, 'Could not save')).toBe('Could not save');
+  });
+
+  it('never returns an empty string', () => {
+    // A failed submit that renders nothing is indistinguishable from one that
+    // worked, which is the defect this codebase has already shipped twice.
+    const cases: unknown[] = [
+      new ApiError('', 400), new ApiError('HTTP 500', 500), new Error(''),
+      '', 0, [], {}, undefined,
+    ];
+    for (const c of cases) {
+      expect(errorMessage(c, 'Could not save').length).toBeGreaterThan(0);
+    }
+  });
+
+  it('prefers a field message over the fallback when the mapper attributed one', () => {
+    // `mapApiError(...).formError ?? FALLBACK` — the hand-written form — is
+    // null exactly when the mapper managed to attribute the failure, so it
+    // threw away the most specific sentence available.
+    const attributed = new ApiError('bad', 400, undefined, {
+      error: { message: 'Discount must be above zero', field: 'value' },
+    });
+    expect(errorMessage(attributed, 'Could not save')).toBe('Discount must be above zero');
   });
 });
 

@@ -62,6 +62,7 @@ import GenerationContextPanel from './GenerationContextPanel';
 import TrainerStatedFields, { type StatedValues } from './TrainerStatedFields';
 import { useToast } from '@/lib/toast';
 import { palette, rgba } from '@/lib/palette';
+import { errorMessage } from '@/lib/forms/errors';
 
 const BLUE = palette.blue[500];
 const GREEN = palette.emerald[500];
@@ -200,7 +201,7 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
         setResult({ kind, plan: res.data });
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Generation failed. Please try again.';
+      const msg = errorMessage(err, 'Generation failed. Please try again.');
       setError(msg);
       toast.error(msg);
       // A refused generation is usually a record problem, and the panel is
@@ -261,7 +262,7 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
 
       router.push(`/pt-os/workout-plans/${out.plan_id}/builder`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not save the programme');
+      toast.error(errorMessage(err, 'Could not save the programme'));
     } finally {
       savingRef.current = false;
       setSaving(false);

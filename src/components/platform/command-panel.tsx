@@ -33,6 +33,7 @@ import { semantic, rgba } from '@/lib/palette';
 import type { CommandCenterCommand } from '@/lib/api';
 import { Center, ErrorState } from '@/app/(platform)/platform/_shared/ui';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
+import { errorMessage } from '@/lib/forms/errors';
 
 /** What came back from the last press, per command. */
 type Outcome =
@@ -323,7 +324,7 @@ export default function CommandPanel({ onRan }: { onRan?: () => void }) {
         ));
       })
       .catch((e: unknown) => {
-        if (alive) setError(e instanceof Error ? e.message : 'Failed to load commands');
+        if (alive) setError(errorMessage(e, 'Failed to load commands'));
       });
     return () => { alive = false; };
   }, []);
@@ -357,7 +358,7 @@ export default function CommandPanel({ onRan }: { onRan?: () => void }) {
       const kind: Outcome['kind'] = e instanceof ApiError && e.status === 429 ? 'cooldown' : 'error';
       setOutcomes((prev) => ({
         ...prev,
-        [cmd.name]: { kind, text: e instanceof Error ? e.message : 'Command failed' },
+        [cmd.name]: { kind, text: errorMessage(e, 'Command failed') },
       }));
       setPending(null);
     } finally {
