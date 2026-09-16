@@ -92,6 +92,15 @@ export function SearchableSelect({
       <button
         type="button"
         aria-label={label}
+        // Accurate, and deliberately no more than that: this button opens a
+        // popup and its expanded state is now announced. What is NOT declared
+        // is role="combobox" with aria-controls and aria-activedescendant —
+        // that pattern obliges arrow-key navigation of the options and a
+        // managed active descendant, and this list has neither. Declaring the
+        // role without the model tells a screen reader user that keys work
+        // which do not.
+        aria-haspopup="listbox"
+        aria-expanded={open}
         onClick={toggleOpen}
         className="flex w-full items-center gap-3 rounded-[13px] px-4 py-3.5 text-left transition-all"
         style={{

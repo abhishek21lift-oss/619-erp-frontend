@@ -23,6 +23,12 @@ import { dirname } from 'node:path';
  * The session is still a REAL one: a real form submission against the real API
  * producing the real cookies. Nothing is forged.
  */
+// Generous: this is the first browser test of a run, so it pays for the dev
+// server's cold compile of the login page AND of the first app route. A
+// 30-second default made the whole suite fail on a slow machine for a reason
+// that has nothing to do with the product.
+setup.setTimeout(180_000);
+
 setup('authenticate as the Alpha studio owner', async ({ page }) => {
   await page.goto('/login');
   await page.getByLabel('Email address').fill(ALPHA.email);

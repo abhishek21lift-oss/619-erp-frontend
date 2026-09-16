@@ -10,6 +10,8 @@ import { streamAiChat } from '@/lib/ai-stream';
 import type { Client } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { errorMessage } from '@/lib/forms/errors';
+import { z } from 'zod';
+import { aiWorkoutInputSchema, aiDietInputSchema } from '@/lib/forms/schemas/aiGenerator';
 import { clampNumericText } from '@/components/ui/FloatInput';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -150,13 +152,49 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
     const weight_kg = selectedClient.weight ?? 75;
     const height_cm = selectedClient.height ?? 175;
 
+    /*
+     * §8 — validated BEFORE the model is invoked.
+     *
+     * The two dedicated generator pages have always parsed their inputs
+     * through these schemas. This panel is the third door to the same model
+     * call and went straight to the network: `parseInt(trainingDays, 10) || 4`
+     * turned a blank or mistyped box into four days without saying so, and the
+     * client's stored weight and height were forwarded whatever they were — so
+     * a record holding 750kg produced a programme written around 750kg.
+     *
+     * Refusing here is not only correctness. A generation is a billed model
+     * call, and an obviously impossible input is one nobody should pay for.
+     */
+    const facts = {
+      age: String(age),
+      weight_kg: String(weight_kg),
+      height_cm: String(height_cm),
+    };
+    const parsed = type === 'workout'
+      ? aiWorkoutInputSchema.safeParse({ ...facts, training_days: trainingDays, injuries: '' })
+      : aiDietInputSchema.safeParse({
+          ...facts, meal_frequency: '3',
+          dietary_preferences: dietaryPrefs, allergies,
+        });
+
+    if (!parsed.success) {
+      setGenerationError(
+        parsed.error.issues[0]?.message ?? 'Check the client\u2019s details before generating.',
+      );
+      setIsGenerating(false);
+      return;
+    }
+
     try {
       if (type === 'workout') {
+        const v = parsed.data as z.output<typeof aiWorkoutInputSchema>;
         const res = await api.ai.generateWorkout({
           age, gender, weight_kg, height_cm,
           goal: goal.toLowerCase().replace(/ /g, '_'),
           experience_level: experience.toLowerCase() || 'beginner',
-          training_days: parseInt(trainingDays, 10) || 4,
+          // The parsed value, not `parseInt(...) || 4`. A blank box is now a
+          // refusal above rather than a silent four.
+          training_days: v.training_days ?? undefined,
           client_id: selectedClient.id,
         });
         const plan = res.data;

@@ -9,7 +9,8 @@ import Guard from '@/components/Guard';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
 import {
-  commissionRowSchema, commissionToDraft, payoutRowSchema, payoutToDraft,
+  commissionRowSchema, commissionToDraft, toCommissionPayload, ratePercentFromFraction,
+  payoutRowSchema, payoutToDraft,
   PAYOUT_STATUS_OPTIONS,
   type CommissionDraft, type PayoutDraft, type PayoutStatus,
 } from '@/lib/forms/schemas/commission';
@@ -53,7 +54,11 @@ interface TrainerPerfRow {
   id: string;
   name?: string | null;
   active_clients?: Money;
-  commission_pct?: Money;
+  // `incentive_rate`, the field /pt-os/trainer-performance actually sends, as
+  // a FRACTION. This interface declared `commission_pct`, which that endpoint
+  // has never returned — so the percentage printed on every row was
+  // `undefined ?? 0`, i.e. 0% for every trainer, and the edit box opened empty.
+  incentive_rate?: Money;
   monthly_commission?: Money;
   total_incentives?: Money;
 }
@@ -177,9 +182,11 @@ export default function CommissionsPage() {
     setSavingCommission(trainerId);
     try {
       await api.pt.updateCommission(trainerId, {
-        commission_pct: parsed.data.commission_pct,
-        commission_amount: parsed.data.commission_amount,
-        incentives: parsed.data.incentives,
+        // toCommissionPayload converts the percent the person typed into the
+        // fraction the column stores. Sending the percent raw put 12.5 into a
+        // NUMERIC(5,4) CHECK (0..1) column — a 500 — or, for anything under 1,
+        // stored a rate a hundred times what was meant.
+        ...toCommissionPayload(parsed.data),
       });
       toast.success('Commission updated');
       setEditingCommission(null);
@@ -352,8 +359,14 @@ export default function CommissionsPage() {
                             <Users size={10} />
                             {t.active_clients ?? 0} active
                           </span>
+                          {/* Named with the trainer. One row per trainer means a
+                              dozen buttons called "Edit" and a dozen called
+                              "Save", which is what a screen reader reads out —
+                              on the screen that decides what each of them is
+                              paid. */}
                           {!isEditing && (
                             <button onClick={() => handleEditCommission(t.id, t)}
+                              aria-label={`Edit ${t.name}'s commission`}
                               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: 6, color: 'var(--text-disabled)', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                               onMouseOver={e => (e.currentTarget.style.color = '#10b981')}
                               onMouseOut={e => (e.currentTarget.style.color = '#94a3b8')}>
@@ -369,6 +382,7 @@ export default function CommissionsPage() {
                             <X size={13} /> Cancel
                           </button>
                           <button onClick={() => handleSaveCommission(t.id)} disabled={saving}
+                            aria-label={`Save ${t.name}'s commission`}
                             style={{
                               background: saving ? '#047857' : 'linear-gradient(135deg, #10b981, #059669)',
                               border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
@@ -387,7 +401,7 @@ export default function CommissionsPage() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                         <div>
                           <span style={label}>Commission %</span>
-                          <p style={{ margin: '2px 0 0', ...value }}>{t.commission_pct ?? 0}%</p>
+                          <p style={{ margin: '2px 0 0', ...value }}>{ratePercentFromFraction(t.incentive_rate) || '0'}%</p>
                         </div>
                         <div>
                           <span style={label}>Commission</span>
@@ -506,6 +520,7 @@ export default function CommissionsPage() {
                       </div>
                       {!isEditing && (
                         <button onClick={() => handleEditPayout(tid, p)}
+                          aria-label={`Edit ${p.trainer_name ?? 'trainer'}'s payout`}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 6, color: 'var(--text-disabled)', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                           onMouseOver={e => (e.currentTarget.style.color = '#10b981')}
                           onMouseOut={e => (e.currentTarget.style.color = '#94a3b8')}>
@@ -555,6 +570,7 @@ export default function CommissionsPage() {
                             <X size={13} /> Cancel
                           </button>
                           <button onClick={() => handleSavePayout(tid)} disabled={saving}
+                            aria-label={`Save ${p.trainer_name ?? 'trainer'}'s payout`}
                             style={{
                               background: saving ? '#047857' : 'linear-gradient(135deg, #10b981, #059669)',
                               border: 'none', cursor: saving ? 'not-allowed' : 'pointer',

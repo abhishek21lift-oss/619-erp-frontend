@@ -53,19 +53,79 @@ export const commissionRowSchema = z.object({
 export type CommissionValues = z.output<typeof commissionRowSchema>;
 
 /**
+ * ── The percent / fraction boundary ─────────────────────────────────────────
+ *
+ * The screen talks in PERCENT, because that is what a studio owner says: "Ravi
+ * is on twelve and a half percent". The column stores a FRACTION:
+ *
+ *     trainers.incentive_rate NUMERIC(5,4) NOT NULL DEFAULT 0.5
+ *       CHECK (incentive_rate BETWEEN 0 AND 1)
+ *
+ * and every consumer multiplies by it. Nothing converted between the two, and
+ * the route writes what it is given straight in — `UPDATE trainers SET
+ * incentive_rate = $1` with `Number(commission_pct)` — so:
+ *
+ *   · typing 12.5 sent 12.5, the CHECK rejected it, and the studio owner got a
+ *     500 with a constraint violation behind it
+ *   · typing 0.5 stored 0.5, which every downstream calculation reads as FIFTY
+ *     percent, for somebody who meant half of one percent
+ *
+ * There was no route where the number a person typed became the number the
+ * studio pays.
+ *
+ * Converting here rather than in the route, and rather than in the page: this
+ * module is where the draft's strings become values, so it is the one place
+ * both directions of the conversion can sit side by side and be read together.
+ * The wire field keeps its name — `commission_pct` is what the endpoint has
+ * always been called — and now carries what that endpoint has always actually
+ * meant.
+ */
+
+/** Percent, as the screen shows it, from the fraction the column stores. */
+export function ratePercentFromFraction(rate: number | string | null | undefined): string {
+  if (rate === null || rate === undefined || rate === '') return '';
+  const n = Number(rate);
+  if (!Number.isFinite(n)) return '';
+  // Two decimals, trailing zeros trimmed: 0.125 → "12.5", 0.1 → "10".
+  return String(Number((n * 100).toFixed(2)));
+}
+
+/** The body for PUT /pt-os/commissions/:trainerId, in the units the column keeps. */
+export function toCommissionPayload(values: CommissionValues) {
+  return {
+    // Rounded to the column's four decimal places, so 12.34% is 0.1234 and not
+    // 0.12340000000000001 — which NUMERIC(5,4) would round anyway, silently.
+    //
+    // The null branch is unreachable after a successful parse (the field is
+    // required) and is kept rather than asserted away: an assertion here would
+    // be a lie the day somebody relaxes `required`.
+    commission_pct:
+      values.commission_pct === null ? null : Number((values.commission_pct / 100).toFixed(4)),
+    commission_amount: values.commission_amount,
+    incentives: values.incentives,
+  };
+}
+
+/**
  * Seed a draft from a stored row.
  *
  * `?? ''` rather than `?? 0`: a trainer with no percentage recorded should show
  * an empty box, not a 0% that nobody chose and that reads as deliberate.
+ *
+ * Reads `incentive_rate`, which is what /pt-os/trainer-performance returns. It
+ * used to read `commission_pct`, a field that endpoint has never sent — so the
+ * box opened empty for every trainer and the figure printed beside it was
+ * `t.commission_pct ?? 0`, i.e. 0% for everybody, on the screen that decides
+ * what each of them is paid.
  */
 export function commissionToDraft(row: {
-  commission_pct?: number | string | null;
+  incentive_rate?: number | string | null;
   monthly_commission?: number | string | null;
   total_incentives?: number | string | null;
 }): CommissionDraft {
   const s = (v: unknown) => (v === null || v === undefined || v === '' ? '' : String(v));
   return {
-    commission_pct: s(row.commission_pct),
+    commission_pct: ratePercentFromFraction(row.incentive_rate),
     commission_amount: s(row.monthly_commission),
     incentives: s(row.total_incentives),
   };

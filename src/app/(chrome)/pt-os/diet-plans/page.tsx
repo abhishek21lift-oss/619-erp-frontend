@@ -800,7 +800,21 @@ function AddMealModal({ open, onClose, onCreated }: { open: boolean; onClose: ()
   const { form, isSubmitting } = f;
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (o) return;
+        // §7 Create → Cancel → Reopen. onSuccess reset this form; closing it
+        // any OTHER way did not — so abandoning a half-typed meal and opening
+        // the sheet again for the next one showed the previous meal's name and
+        // macros, already filled in, ready to be saved as a second meal.
+        //
+        // On close rather than on open, so the values are gone the moment the
+        // sheet is dismissed rather than lingering behind it.
+        f.resetTo(blankMeal());
+        onClose();
+      }}
+    >
       <DialogContent>
         <DialogHeader><DialogTitle>Add Meal</DialogTitle></DialogHeader>
         <form noValidate onSubmit={(e) => { e.preventDefault(); void f.submit(); }}>

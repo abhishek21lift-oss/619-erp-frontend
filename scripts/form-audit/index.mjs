@@ -20,7 +20,7 @@
  * forms, and every survivor is named with a reason a person wrote.
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -28,6 +28,7 @@ import {
   contractCoverage, looksLikeForm, riskOf, coercionSites, uploadSites, wheelHazards,
 } from './classify.mjs';
 import { JUSTIFIED, justificationFor } from './justifications.mjs';
+import { JOURNEYS, coveredFiles } from './journeys.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const ROOT = join(HERE, '..', '..');
@@ -153,7 +154,51 @@ const totals = {
   forms: rows.filter((r) => r.isForm).length,
   byRisk: {},
   contracts: { submit: {}, error: {}, reset: {}, schema: {} },
+  journeys: {},
 };
+
+/*
+ * ── End-to-end coverage ──────────────────────────────────────────────────
+ *
+ * Every other number above is read out of the source, and every one of them
+ * can be satisfied by code that looks right and does not work: a form can
+ * bind a canonical schema, map its errors and reset cleanly while posting a
+ * field name the endpoint ignores. Only a journey that types into the real
+ * form and reads the row back out of the real database closes that gap, so
+ * it is measured here beside the rest.
+ *
+ * The pairing is declared in journeys.mjs, not inferred — an inferred
+ * version would go green for a spec that merely mentions a URL. Both halves
+ * are verified to exist, so a renamed page or a deleted spec fails the audit
+ * loudly rather than quietly shrinking the denominator.
+ */
+{
+  const covered = coveredFiles();
+  const missingSpecs = Object.keys(JOURNEYS).filter(
+    (spec) => !existsSync(join(ROOT, spec)),
+  );
+  const missingPages = [...covered].filter((f) => !existsSync(join(ROOT, f)));
+
+  for (const r of rows) r.hasJourney = covered.has(r.file);
+
+  // Critical = a P0 or P1 file that is actually a form. A journey for a P2
+  // display page is welcome and is not what this number is about.
+  const critical = rows.filter((r) => r.isForm && (r.risk === 'P0' || r.risk === 'P1'));
+  const uncovered = critical.filter((r) => !r.hasJourney);
+
+  totals.journeys = {
+    specs: Object.keys(JOURNEYS).length,
+    claimedFiles: covered.size,
+    criticalForms: critical.length,
+    criticalCovered: critical.length - uncovered.length,
+    criticalWithoutJourney: uncovered.length,
+    uncovered: uncovered.map((r) => `${r.risk}  ${r.file}`),
+    // A broken pairing is worse than an absent one: it silently removes a
+    // file from the denominator. Surfaced as its own number so the ratchet
+    // can pin it at zero.
+    brokenPairings: [...missingSpecs, ...missingPages],
+  };
+}
 
 for (const r of ['P0', 'P1', 'P2']) {
   const set = byRisk(r);
@@ -247,6 +292,18 @@ for (const name of ['submit', 'error', 'reset', 'schema']) {
     `  ${name.padEnd(9)}  ${pad(c.platform, 8)}  ${pad(c.manual, 8)}  ${pad(c.none, 5)}` +
       `   (${pct(c.platform + c.manual, totals.forms)} covered)`,
   );
+}
+
+const j = totals.journeys;
+console.log('\nEnd-to-end coverage, over the P0/P1 files that are forms:');
+console.log(
+  `  ${pad(j.criticalCovered, 3)} of ${j.criticalForms} covered by a real browser journey` +
+    `   (${pct(j.criticalCovered, j.criticalForms)})`,
+);
+console.log(`  ${pad(j.criticalWithoutJourney, 3)} with no journey   \u2190 \u00a76`);
+if (j.brokenPairings.length) {
+  console.log(`  ${pad(j.brokenPairings.length, 3)} BROKEN pairings in journeys.mjs:`);
+  for (const f of j.brokenPairings) console.log(`        ${f}`);
 }
 
 console.log('\nBy risk:');

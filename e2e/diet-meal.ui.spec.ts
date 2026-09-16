@@ -16,8 +16,11 @@ type Meal = {
 };
 
 async function meals(token: string): Promise<Meal[]> {
-  const body = await apiGet<{ data?: Meal[] }>('/api/diet/meals', token);
-  return body.data ?? [];
+  // A bare array, not `{ data: [] }` — the shape this endpoint actually
+  // returns. Reading the wrong one silently yields [], which a persistence
+  // assertion reports as "the form saved nothing".
+  const body = await apiGet<Meal[] | { data?: Meal[] }>('/api/diet/meals', token);
+  return Array.isArray(body) ? body : (body.data ?? []);
 }
 
 const byName = async (token: string, name: string) =>

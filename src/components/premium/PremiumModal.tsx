@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef } from 'react';
-import { useModalA11y } from '@/lib/useModalA11y';
+import { useId, useRef } from 'react';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { m, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -50,10 +50,16 @@ type PremiumModalProps = {
  */
 export function PremiumModal({ open, onClose, title, subtitle, icon, size = 'md', footer, children }: PremiumModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
-  // The dialog contract — role, name, focus in, focus trapped, focus returned,
-  // Escape — lives in one hook so every modal in the app gets the same one.
-  const { panelProps, titleId } = useModalA11y(open, onClose);
-  const subtitleId = `${titleId}-subtitle`;
+  // Focus in on open, trapped while open, returned to the trigger on close,
+  // Escape to dismiss — the repo's one dialog hook, which sixteen other modal
+  // surfaces already use and dialogs.a11y.convention.test.ts enforces. The
+  // role, the accessible name and aria-modal are the caller's to supply, and
+  // are supplied below; declaring them without this hook would promise a
+  // keyboard model that is not there.
+  const setDialogRef = useDialogA11y({ open, onClose });
+  const baseId = useId();
+  const titleId = `${baseId}-title`;
+  const subtitleId = `${baseId}-subtitle`;
 
   const widths: Record<string, string> = {
     sm: 'max-w-sm',
@@ -74,14 +80,18 @@ export function PremiumModal({ open, onClose, title, subtitle, icon, size = 'md'
             onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
           />
           <m.div
-            {...panelProps}
+            ref={setDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
             aria-describedby={subtitle ? subtitleId : undefined}
+            tabIndex={-1}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className={clsx(
-              'relative w-full rounded-2xl bg-white shadow-2xl border border-slate-100 outline-none',
+              'relative w-full rounded-2xl bg-white shadow-2xl border border-slate-100',
               widths[size],
             )}
           >

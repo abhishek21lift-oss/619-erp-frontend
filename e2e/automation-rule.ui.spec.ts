@@ -230,7 +230,8 @@ test.describe('WhatsApp automation rule', () => {
     await page.getByRole('button', { name: `Edit ${first}` }).click();
     await expect(page.getByLabel(/^Message/)).toHaveValue('Hi {{name}} — FIRST');
 
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    // Scoped to the form: the page toolbar has its own Cancel.
+    await page.locator('form').getByRole('button', { name: 'Cancel' }).click();
     await page.getByRole('button', { name: `Edit ${second}` }).click();
     await expect(page.getByLabel(/^Message/)).toHaveValue('Hi {{name}} — SECOND');
     await expect(page.getByLabel(/^Rule name/)).toHaveValue(second);
