@@ -42,7 +42,6 @@ import {
   templateBodyField,
   refineDateOrder,
   GST_SLABS,
-  TEMPLATE_VARIABLES,
 } from '../lib/forms/domain';
 import { mapApiError, errorMessage, noErrors, hasErrors } from '../lib/forms/errors';
 import { ApiError } from '../lib/http';
@@ -289,49 +288,76 @@ describe('domain — plausibility bounds', () => {
 });
 
 describe('domain — WhatsApp templates (§8)', () => {
-  it('accepts every documented variable', () => {
-    for (const v of TEMPLATE_VARIABLES) {
-      expect(inspectTemplate(`Hello {{${v}}}`)).toEqual([]);
+  // The vocabulary is a PARAMETER, not a constant. There used to be a
+  // TEMPLATE_VARIABLES list here listing client_name, studio_name, due_amount
+  // and six others — a plausible set that nothing in this product substitutes.
+  // Only these tests ever imported it, which is the only reason it never did
+  // damage: wired into the automation editor as it stood it would have
+  // rejected {{name}}, the one placeholder every trigger provides, and waved
+  // through {{client_name}}, which reaches a member's WhatsApp as literal
+  // braces. The real per-trigger map lives in schemas/automationRule.ts.
+  const VARS = ['name', 'amount', 'expiry_date'] as const;
+
+  it('accepts the variables it is given', () => {
+    for (const v of VARS) {
+      expect(inspectTemplate(`Hello {{${v}}}`, VARS)).toEqual([]);
     }
   });
 
-  it('names an unknown variable and lists the real ones', () => {
-    const [problem] = inspectTemplate('Hi {{cleint_name}}');
+  it('names an unknown variable and lists the ones available here', () => {
+    const [problem] = inspectTemplate('Hi {{cleint_name}}', VARS);
     expect(problem!.kind).toBe('unknown');
     expect(problem!.message).toContain('cleint_name');
-    expect(problem!.message).toContain('client_name');
+    expect(problem!.message).toContain('name');
+  });
+
+  it('says so plainly when the trigger provides nothing', () => {
+    const [problem] = inspectTemplate('Hi {{amount}}', []);
+    expect(problem!.message).toContain('no variables');
+  });
+
+  it('rejects a variable that is real on another trigger but not this one', () => {
+    // {{amount}} resolves on a payment and is sent as literal braces on a
+    // birthday. A flat list could not tell those apart.
+    expect(inspectTemplate('Hi {{amount}}', ['name'])).toHaveLength(1);
+    expect(inspectTemplate('Hi {{amount}}', ['name', 'amount'])).toEqual([]);
   });
 
   it('catches an unclosed placeholder', () => {
-    const problems = inspectTemplate('Hi {{client_name, your plan expires');
+    const problems = inspectTemplate('Hi {{name, your plan expires', VARS);
     expect(problems.some((p) => p.kind === 'unclosed')).toBe(true);
   });
 
   it('catches a single-brace near-miss and shows the fix', () => {
-    // "{client_name}" sent verbatim to a member is the §8 failure.
-    const problems = inspectTemplate('Hi {client_name}');
+    // "{name}" sent verbatim to a member is the §8 failure.
+    const problems = inspectTemplate('Hi {name}', VARS);
     expect(problems.some((p) => p.kind === 'malformed')).toBe(true);
-    expect(problems[0]!.message).toContain('{{client_name}}');
+    expect(problems[0]!.message).toContain('{{name}}');
   });
 
   it('catches an empty placeholder and a stray closer', () => {
-    expect(inspectTemplate('Hi {{}}')[0]!.kind).toBe('empty');
-    expect(inspectTemplate('Hi }} there').some((p) => p.kind === 'malformed')).toBe(true);
+    expect(inspectTemplate('Hi {{}}', VARS)[0]!.kind).toBe('empty');
+    expect(inspectTemplate('Hi }} there', VARS).some((p) => p.kind === 'malformed')).toBe(true);
   });
 
   it('does not mistake a valid placeholder for a stray brace', () => {
-    expect(inspectTemplate('{{client_name}} — {{studio_name}}')).toEqual([]);
+    expect(inspectTemplate('{{name}} — {{amount}}', VARS)).toEqual([]);
   });
 
   it('reports every problem at once, not one per save', () => {
-    const problems = inspectTemplate('{{bad_one}} and {{bad_two}} and {{client_name}}');
+    const problems = inspectTemplate('{{bad_one}} and {{bad_two}} and {{name}}', VARS);
     expect(problems).toHaveLength(2);
   });
 
   it('rejects an empty template and one past the WhatsApp ceiling', () => {
-    expect(templateBodyField().safeParse('   ').success).toBe(false);
-    expect(templateBodyField().safeParse('x'.repeat(4097)).success).toBe(false);
-    expect(templateBodyField().safeParse('x'.repeat(4096)).success).toBe(true);
+    const field = templateBodyField({ variables: VARS });
+    expect(field.safeParse('   ').success).toBe(false);
+    expect(field.safeParse('x'.repeat(4097)).success).toBe(false);
+    expect(field.safeParse('x'.repeat(4096)).success).toBe(true);
+  });
+
+  it('rejects a body whose placeholders are not in the given vocabulary', () => {
+    expect(templateBodyField({ variables: VARS }).safeParse('Hi {{nope}}').success).toBe(false);
   });
 });
 
