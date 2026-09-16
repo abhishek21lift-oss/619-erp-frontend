@@ -198,6 +198,20 @@ export const JUSTIFIED = {
       'a search box in the trainer picker.',
   },
 
+  'src/app/(chrome)/attendance/page.tsx': {
+    allow: 3,
+    reason:
+      'The manual-entry modal — the only thing on this page that WRITES a ' +
+      'record — is on the platform: attendanceEntrySchema, useAppForm, and a ' +
+      'refusal to file a correction for a day that has not happened. The ' +
+      'three that remain are the ones §1 names as acceptable and are ' +
+      'checkable as such: the hero date input is a FILTER (it re-reads the ' +
+      "day's rows and posts nothing), the member box is a search over the " +
+      'loaded list, and the header checkbox is a table bulk-select whose ' +
+      'per-row twin is rendered inside the <tbody>. None of the three is ' +
+      'part of a payload.',
+  },
+
   'src/components/revenue/MonthlyTargetHero.tsx': {
     allow: 1,
     allowStateCoercions: 1,
