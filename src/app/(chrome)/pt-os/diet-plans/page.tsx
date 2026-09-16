@@ -26,6 +26,9 @@ import { SpotlightCard } from '@/components/fitness/SpotlightCard';
 import { AiCoachPanel } from '@/components/fitness/AiCoachPanel';
 import { identity } from '@/lib/palette';
 import { errorMessage } from '@/lib/forms/errors';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import { mealSchema, blankMeal, toMealPayload, MEAL_TYPE_OPTIONS } from '@/lib/forms/schemas/meal';
+import { TextField, NumberField, SelectField, FormErrorBanner } from '@/components/ui/form';
 
 type MealType = 'Breakfast' | 'Lunch' | 'Snacks' | 'Dinner' | 'Pre Workout' | 'Post Workout';
 
@@ -779,64 +782,92 @@ function Inner() {
 /* ── Add Meal modal ── */
 function AddMealModal({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
   const { toast } = useToast();
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', meal_type: 'breakfast', calories: '', protein_g: '', carbs_g: '', fats_g: '', serving_size: '' });
 
-  const reset = () => setForm({ name: '', meal_type: 'breakfast', calories: '', protein_g: '', carbs_g: '', fats_g: '', serving_size: '' });
-
-  const handleSave = async () => {
-    if (!form.name.trim()) { toast.error('Enter a meal name.'); return; }
-    setSaving(true);
-    try {
-      await api.diet.meals.create({
-        name: form.name.trim(), meal_type: form.meal_type,
-        calories: Number(form.calories) || 0, protein_g: Number(form.protein_g) || 0,
-        carbs_g: Number(form.carbs_g) || 0, fats_g: Number(form.fats_g) || 0,
-        serving_size: form.serving_size || null,
-      });
+  const f = useAppForm({
+    schema: mealSchema,
+    defaultValues: blankMeal(),
+    onSubmit: async (values) => {
+      await api.diet.meals.create(toMealPayload(values));
       toast.success('Meal added to the library.');
-      reset();
+    },
+    onSuccess: () => {
+      f.resetTo(blankMeal());
       onClose();
       onCreated();
-    } catch (err: unknown) {
-      toast.error(errorMessage(err, 'Could not add meal.'));
-    } finally {
-      setSaving(false);
-    }
-  };
+    },
+  });
+
+  const { form, isSubmitting } = f;
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent>
         <DialogHeader><DialogTitle>Add Meal</DialogTitle></DialogHeader>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <input placeholder="Meal name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13 }} />
-          <select aria-label="Meal type" value={form.meal_type} onChange={(e) => setForm((f) => ({ ...f, meal_type: e.target.value }))}
-            style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13 }}>
-            {Object.entries(MEAL_TYPE_TO_API).map(([label, val]) => <option key={val} value={val}>{label}</option>)}
-          </select>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <input type="number" placeholder="Calories" value={form.calories} onChange={(e) => setForm((f) => ({ ...f, calories: e.target.value }))}
-              style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13 }} />
-            <input placeholder="Serving size" value={form.serving_size} onChange={(e) => setForm((f) => ({ ...f, serving_size: e.target.value }))}
-              style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13 }} />
+        <form noValidate onSubmit={(e) => { e.preventDefault(); void f.submit(); }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} />
+
+            <form.Field name="name">
+              {(field) => (
+                <TextField field={field} label="Meal name" required maxLength={120}
+                  serverError={f.errors.fieldErrors.name} />
+              )}
+            </form.Field>
+
+            <form.Field name="meal_type">
+              {(field) => (
+                <SelectField field={field} label="Meal type" required options={MEAL_TYPE_OPTIONS}
+                  serverError={f.errors.fieldErrors.meal_type} />
+              )}
+            </form.Field>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <form.Field name="calories">
+                {(field) => (
+                  <NumberField field={field} label="Calories" required mode="integer" suffix="kcal"
+                    description="Per serving"
+                    serverError={f.errors.fieldErrors.calories} />
+                )}
+              </form.Field>
+              <form.Field name="serving_size">
+                {(field) => (
+                  <TextField field={field} label="Serving size" placeholder="1 bowl, 100 g…" maxLength={60}
+                    serverError={f.errors.fieldErrors.serving_size} />
+                )}
+              </form.Field>
+            </div>
+
+            {/* Optional, and BLANK means unknown rather than zero — the three
+                columns are nullable, so "we have not measured this yet" is
+                storable and is no longer rounded down into a plan's total. */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+              <form.Field name="protein_g">
+                {(field) => (
+                  <NumberField field={field} label="Protein" mode="decimal" suffix="g"
+                    serverError={f.errors.fieldErrors.protein_g} />
+                )}
+              </form.Field>
+              <form.Field name="carbs_g">
+                {(field) => (
+                  <NumberField field={field} label="Carbs" mode="decimal" suffix="g"
+                    serverError={f.errors.fieldErrors.carbs_g} />
+                )}
+              </form.Field>
+              <form.Field name="fats_g">
+                {(field) => (
+                  <NumberField field={field} label="Fats" mode="decimal" suffix="g"
+                    serverError={f.errors.fieldErrors.fats_g} />
+                )}
+              </form.Field>
+            </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-            <input type="number" placeholder="Protein (g)" value={form.protein_g} onChange={(e) => setForm((f) => ({ ...f, protein_g: e.target.value }))}
-              style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13 }} />
-            <input type="number" placeholder="Carbs (g)" value={form.carbs_g} onChange={(e) => setForm((f) => ({ ...f, carbs_g: e.target.value }))}
-              style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13 }} />
-            <input type="number" placeholder="Fats (g)" value={form.fats_g} onChange={(e) => setForm((f) => ({ ...f, fats_g: e.target.value }))}
-              style={{ padding: '9px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 13 }} />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={handleSave} disabled={saving}>
-            {saving ? <Loader2 size={14} className="animate-spin" /> : 'Add Meal'}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : 'Add Meal'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

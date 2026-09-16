@@ -81,9 +81,9 @@ function audit(): Audit {
 const CEILING = {
   /** §6. Zero, and it stays zero. */
   riskyCoercions: 0,
-  unjustified: 207,
+  unjustified: 197,
   p0Unjustified: 0,
-  p1Unjustified: 119,
+  p1Unjustified: 109,
   /**
    * §9. Zero, and it stays zero.
    *
@@ -99,11 +99,11 @@ const CEILING = {
 
 /** Raise these as phases land. Never lower them. */
 const FLOOR = {
-  platformControls: 261,
+  platformControls: 271,
   /** Forms whose errors reach the canonical mapper. */
   errorPlatform: 50,
   /** Forms bound to a named canonical schema. */
-  schemaPlatform: 14,
+  schemaPlatform: 16,
 };
 
 describe('the audit measures the tree', () => {
@@ -112,9 +112,16 @@ describe('the audit measures the tree', () => {
   it('runs and sees a populated tree', () => {
     // Guards the ratchet itself: a script that silently returned nothing would
     // make every assertion below pass while measuring air.
+    //
+    // Deliberately slack, and it gets slacker as the migration proceeds: the
+    // total CONTROL count falls every time a screen moves to the design system,
+    // because a wrapper's own native element is not counted. Pinning it near
+    // the current number would fail a test the migration is improving. All this
+    // has to prove is that the script read the tree at all.
     expect(a.totals.files).toBeGreaterThan(100);
     expect(a.rows.length).toBe(a.totals.files);
-    expect(a.totals.controls).toBeGreaterThan(300);
+    expect(a.totals.controls).toBeGreaterThan(150);
+    expect(a.totals.platformControls).toBeGreaterThan(150);
   });
 
   it('emits complete JSON', () => {

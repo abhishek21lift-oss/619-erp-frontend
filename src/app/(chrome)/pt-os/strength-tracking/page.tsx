@@ -15,6 +15,11 @@ import { useToast } from '@/lib/toast';
 import { calc1RM, classifyStrength } from '@/lib/fitness-calculations';
 import type { Gender, FitnessCategory } from '@/lib/fitness-calculations';
 import { errorMessage } from '@/lib/forms/errors';
+import { useStore } from '@tanstack/react-form';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import { inlineNumber } from '@/lib/forms/inline';
+import { strengthLogSchema, blankStrengthLog } from '@/lib/forms/schemas/strengthLog';
+import { NumberField, FormErrorBanner } from '@/components/ui/form';
 
 interface StrengthLog {
   id: string; client_id: string; exercise_name: string;
@@ -227,29 +232,39 @@ interface ExerciseCardProps {
 
 function ExerciseCard({ exercise, accent, latest, trend, gender, bodyWeightKg, onLog }: ExerciseCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const [weight, setWeight] = useState('');
-  const [sets, setSets] = useState('3');
-  const [reps, setReps] = useState('10');
-  const [saving, setSaving] = useState(false);
 
-  const previewOneRm = useMemo(() => calc1RM(parseFloat(weight) || null, parseInt(reps, 10) || null, 'epley'), [weight, reps]);
+  const f = useAppForm({
+    schema: strengthLogSchema,
+    defaultValues: blankStrengthLog(),
+    keepValuesOnSuccess: true,
+    onSubmit: async (values) => {
+      await onLog(values.weight_kg as number, values.sets as number, values.reps as number);
+    },
+    onSuccess: () => {
+      // Sets and reps survive: a trainer logging a second lift on the same
+      // exercise almost always repeats them, and clearing them would be the
+      // form deciding for them. The weight is what changes.
+      f.form.setFieldValue('weight_kg', '');
+      setExpanded(false);
+    },
+  });
+
+  const { form, isSubmitting } = f;
+  const values = useStore(form.store, (s) => s.values);
+
+  // The live estimate reads the TYPED strings, not the parsed payload — there
+  // is no payload until submit. `inlineNumber` gives it the same three-way
+  // answer the schema does, so "100kg" previews nothing rather than previewing
+  // 100 and then being refused.
+  const previewOneRm = useMemo(() => {
+    const w = inlineNumber(values.weight_kg);
+    const r = inlineNumber(values.reps);
+    return calc1RM(typeof w === 'number' ? w : null, typeof r === 'number' ? r : null, 'epley');
+  }, [values.weight_kg, values.reps]);
 
   const level = EXERCISES_WITH_NORMS.has(exercise) && latest?.one_rm_estimate != null
     ? classifyStrength(latest.one_rm_estimate, bodyWeightKg, exercise, gender)
     : null;
-
-  const submit = async () => {
-    const w = parseFloat(weight);
-    if (!w) return;
-    setSaving(true);
-    try {
-      await onLog(w, parseInt(sets, 10) || 3, parseInt(reps, 10) || 10);
-      setWeight('');
-      setExpanded(false);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   return (
     <div className="rounded-[16px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
@@ -283,25 +298,50 @@ function ExerciseCard({ exercise, accent, latest, trend, gender, bodyWeightKg, o
 
       {expanded && (
         <div className="px-4 pb-4">
-          <div className="grid grid-cols-3 gap-2 mb-2">
-            <input type="number" step="0.5" placeholder="Weight (kg)" value={weight} onChange={(e) => setWeight(e.target.value)}
-              className="rounded-[10px] px-3 py-2 text-[12.5px] outline-none" style={{ border: '1px solid #cbd5e1' }} />
-            <input type="number" placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)}
-              className="rounded-[10px] px-3 py-2 text-[12.5px] outline-none" style={{ border: '1px solid #cbd5e1' }} />
-            <input type="number" placeholder="Reps" value={reps} onChange={(e) => setReps(e.target.value)}
-              className="rounded-[10px] px-3 py-2 text-[12.5px] outline-none" style={{ border: '1px solid #cbd5e1' }} />
-          </div>
-          {previewOneRm != null && (
-            <p className="mb-2 text-[11.5px] font-[600]" style={{ color: accent }}>Est. 1RM: {previewOneRm} kg</p>
-          )}
-          <Button
-            className="!w-full !py-2 !text-[12.5px]" iconLeft={<Plus size={12} />}
-            disabled={!weight || saving} loading={saving}
-            onClick={submit}
-            style={{ background: `linear-gradient(135deg, ${accent}, ${accent})`, color: '#fff' }}
-          >
-            Log Lift
-          </Button>
+          <form noValidate onSubmit={(e) => { e.preventDefault(); void f.submit(); }}>
+            <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} className="mb-2" />
+
+            {/* Three labelled fields where there were three placeholders. A
+                placeholder stops naming a control the moment anything is typed
+                into it, which on a numeric field is immediately. */}
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              <form.Field name="weight_kg">
+                {(field) => (
+                  <NumberField field={field} label="Weight" mode="decimal" suffix="kg" required
+                    serverError={f.errors.fieldErrors.weight_kg} />
+                )}
+              </form.Field>
+              <form.Field name="sets">
+                {(field) => (
+                  <NumberField field={field} label="Sets" mode="integer" required
+                    serverError={f.errors.fieldErrors.sets} />
+                )}
+              </form.Field>
+              <form.Field name="reps">
+                {(field) => (
+                  <NumberField field={field} label="Reps" mode="integer" required
+                    serverError={f.errors.fieldErrors.reps} />
+                )}
+              </form.Field>
+            </div>
+
+            {previewOneRm != null && (
+              <p className="mb-2 text-[11.5px] font-[600]" style={{ color: accent }}>Est. 1RM: {previewOneRm} kg</p>
+            )}
+
+            {/* No longer gated on the weight box being non-empty. The old
+                button was disabled until something was typed and then did
+                NOTHING when what was typed did not parse — `if (!w) return`,
+                silently. Enabled with a reason beats disabled with none. */}
+            <Button
+              type="submit"
+              className="!w-full !py-2 !text-[12.5px]" iconLeft={<Plus size={12} />}
+              disabled={isSubmitting} loading={isSubmitting}
+              style={{ background: `linear-gradient(135deg, ${accent}, ${accent})`, color: '#fff' }}
+            >
+              Log Lift
+            </Button>
+          </form>
         </div>
       )}
     </div>
