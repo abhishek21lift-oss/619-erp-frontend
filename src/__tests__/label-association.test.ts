@@ -56,16 +56,26 @@ describe('the accessible-name audit itself', () => {
     //
     // The invariant that actually matters is `audit.nameless` being empty, and
     // that is asserted below with no threshold at all. This one only proves the
-    // cross-boundary resolver still works at scale.
-    expect(audit.wrapped).toBeGreaterThan(100);
+    // cross-boundary resolver still works at scale — so it is set well under
+    // the current count, which keeps falling as wrappers are replaced by
+    // `FormField` outright rather than merely fixed.
+    expect(audit.wrapped).toBeGreaterThan(50);
   });
 });
 
 describe('the label wrappers wrap', () => {
+  // The two AI generator pages are no longer here, and their absence is the
+  // outcome rather than an omission: both local `Field` wrappers are gone,
+  // because every control on those pages is now a design-system field with a
+  // real `htmlFor`. A wrapper that correctly wraps a `<label>` is the fix for
+  // a page that still hand-rolls its inputs; not needing one is better.
+  //
+  // Nothing is lost by dropping them. `audit.nameless` below covers every
+  // control in the tree with no threshold at all, and it is the check with
+  // teeth — if either page ever went back to a nameless input it would fail
+  // there, wrapper or no wrapper.
   const wrappers: [string, string[]][] = [
     ['app/(platform)/platform/_shared/ui.tsx', ['export function Field']],
-    ['app/(chrome)/ai/diet-generator/page.tsx', ['function Field']],
-    ['app/(chrome)/ai/workout-generator/page.tsx', ['function Field']],
     ['components/fitness/AiCoachPanel.tsx', ['function Field']],
     ['app/(chrome)/trainers/add/page.tsx', ['function FloatLabel']],
     ['app/(chrome)/trainers/[id]/edit/page.tsx', ['function FloatLabel']],

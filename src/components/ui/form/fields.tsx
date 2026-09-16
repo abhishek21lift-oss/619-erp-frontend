@@ -817,6 +817,179 @@ export function MonthFieldControl({
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
+ * Choice chips
+ * ────────────────────────────────────────────────────────────────────────── */
+
+export interface ChoiceChipOption<T extends string> {
+  value: T;
+  label: string;
+  disabled?: boolean;
+}
+
+export interface ChoiceChipsProps<T extends string = string> {
+  field: FieldLike<T>;
+  legend: string;
+  options: ReadonlyArray<ChoiceChipOption<T>>;
+  description?: string;
+  required?: boolean;
+  disabled?: boolean;
+  serverError?: string;
+  className?: string;
+  density?: FormFieldProps['density'];
+}
+
+/**
+ * A row of pills, one of which is chosen.
+ *
+ * The app renders this shape in a dozen places and every copy was a row of
+ * plain `<button>`s under a `<span>` caption, sometimes inside a `<label>`.
+ * None of that is a group: a `<label>` with no control inside associates with
+ * nothing, so a screen reader announced the caption as loose text and then
+ * three buttons with no indication that they belonged together, that one was
+ * chosen, or how many there were.
+ *
+ * `role="radiogroup"` with `role="radio"` and `aria-checked` on each chip is
+ * the pattern that says all three, and it keeps the pill design exactly —
+ * which is why this exists alongside `RadioField` rather than instead of it.
+ * `RadioField` paints real radio inputs in stacked cards; that is the right
+ * answer for five long options and the wrong one for "2 3 4 5 6".
+ *
+ * The keyboard behaviour is the part a hand-rolled version always misses, and
+ * it is not optional for `radiogroup`:
+ *
+ *   · Roving tabindex — the group is ONE tab stop, not one per chip, so Tab
+ *     does not walk through six options to leave a field.
+ *   · Arrow keys move within the group and wrap, and moving the focus SELECTS,
+ *     which is what a radio group does.
+ *   · Home and End jump to the ends.
+ */
+export function ChoiceChips<T extends string = string>({
+  field,
+  legend,
+  options,
+  description,
+  required,
+  disabled,
+  serverError,
+  className,
+  density,
+}: ChoiceChipsProps<T>) {
+  const error = visibleError(field, serverError);
+  const describedBy = error
+    ? `${field.name}-error`
+    : description
+      ? `${field.name}-description`
+      : undefined;
+
+  const enabled = options.filter((o) => !o.disabled);
+  const selectedIndex = enabled.findIndex((o) => o.value === field.state.value);
+  // With nothing chosen the FIRST chip carries the tab stop, so the group is
+  // still reachable. That is what the radiogroup pattern prescribes.
+  const focusIndex = selectedIndex >= 0 ? selectedIndex : 0;
+
+  const move = (delta: number) => {
+    if (!enabled.length) return;
+    const next = (focusIndex + delta + enabled.length) % enabled.length;
+    field.handleChange(enabled[next].value);
+    // The chip is re-rendered with tabIndex 0; focus has to follow it or the
+    // next arrow press goes to the document.
+    requestAnimationFrame(() => {
+      document.getElementById(`${field.name}-${enabled[next].value}`)?.focus();
+    });
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+    else if (e.key === 'Home') { e.preventDefault(); move(-focusIndex); }
+    else if (e.key === 'End') { e.preventDefault(); move(enabled.length - 1 - focusIndex); }
+  };
+
+  const compact = density === 'compact';
+
+  return (
+    <fieldset
+      className={cn('min-w-0 border-0 p-0 m-0', className)}
+      aria-describedby={describedBy}
+      aria-invalid={error ? true : undefined}
+      aria-required={required || undefined}
+      disabled={disabled}
+    >
+      <legend
+        className={cn(
+          'flex items-baseline gap-0.5 p-0 leading-none',
+          compact
+            ? 'mb-1 text-[10px] font-[700] uppercase tracking-wide'
+            : 'mb-1.5 text-[11.5px] font-[650]',
+        )}
+        style={{
+          color: disabled
+            ? 'var(--text-disabled)'
+            : compact ? 'var(--text-muted)' : 'var(--text-secondary)',
+        }}
+      >
+        {legend}
+        {required && <span aria-hidden style={{ color: 'var(--danger-text)' }}>*</span>}
+      </legend>
+
+      {/* The keydown sits on each CHIP rather than on the group. In a roving
+          tabindex the container is never focused — only the selected chip is —
+          so handling it there would rely on the event bubbling, and would put
+          an interactive role on an element that cannot receive focus. */}
+      <div role="radiogroup" aria-label={legend} className="flex flex-wrap gap-1.5">
+        {options.map((o) => {
+          const selected = field.state.value === o.value;
+          const isTabStop = enabled[focusIndex]?.value === o.value;
+          const off = o.disabled || disabled;
+          return (
+            <button
+              key={o.value}
+              id={`${field.name}-${o.value}`}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              disabled={off}
+              tabIndex={isTabStop && !off ? 0 : -1}
+              onClick={() => field.handleChange(o.value)}
+              onKeyDown={onKeyDown}
+              onBlur={field.handleBlur}
+              className={cn(
+                'rounded-full px-3.5 text-[12.5px] font-[650]',
+                'transition-colors duration-150 motion-reduce:transition-none',
+                off && 'cursor-not-allowed opacity-55',
+              )}
+              style={{
+                // 44px, as every control in the system has — globals.css sets a
+                // 14px root font, so padding alone lands under a thumb.
+                minHeight: 44,
+                background: selected ? 'var(--brand)' : 'var(--bg-subtle)',
+                color: selected ? '#fff' : 'var(--text-secondary)',
+                border: `1px solid ${
+                  error ? 'var(--danger-border)' : selected ? 'var(--brand)' : 'var(--border-2)'
+                }`,
+              }}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {(error || description) && (
+        <div className="mt-1.5 text-[11.5px] leading-[1.35]">
+          {error ? (
+            <p id={`${field.name}-error`} style={{ color: 'var(--danger-text)' }}>{error}</p>
+          ) : (
+            <p id={`${field.name}-description`} style={{ color: 'var(--text-muted)' }}>{description}</p>
+          )}
+        </div>
+      )}
+    </fieldset>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
  * Time
  * ────────────────────────────────────────────────────────────────────────── */
 

@@ -198,19 +198,6 @@ export const JUSTIFIED = {
       'a search box in the trainer picker.',
   },
 
-  'src/app/(chrome)/ai/diet-generator/page.tsx': {
-    allow: 7,
-    allowStateCoercions: 1,
-    reason:
-      '`parseInt(form.meal_frequency)` reads a PillGroup whose options are ' +
-      "['3','4','5','6'] — a closed set of digit strings, so there is nothing " +
-      'for the parse to get wrong. The seven controls are the generator brief ' +
-      'itself: free-text prompts and preference boxes whose values go to the ' +
-      'model rather than into a record, so there is no payload to validate. ' +
-      'The two that DO reach a stored plan, weight and height, already go ' +
-      'through the app-wide `num()` helper.',
-  },
-
   'src/components/revenue/MonthlyTargetHero.tsx': {
     allow: 1,
     allowStateCoercions: 1,

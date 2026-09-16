@@ -43,7 +43,10 @@ export type {
 export { FormErrorBanner, SubmitStatus } from './FormStatus';
 export type { FormErrorBannerProps, SubmitStatusProps } from './FormStatus';
 
-export { RadioField, MonthFieldControl, TimeFieldControl, useStandaloneField } from './fields';
+export {
+  RadioField, MonthFieldControl, TimeFieldControl, ChoiceChips, useStandaloneField,
+} from './fields';
 export type {
-  RadioFieldProps, RadioOption, MonthFieldProps, TimeFieldProps, StandaloneFieldOptions,
+  RadioFieldProps, RadioOption, MonthFieldProps, TimeFieldProps,
+  ChoiceChipsProps, ChoiceChipOption, StandaloneFieldOptions,
 } from './fields';

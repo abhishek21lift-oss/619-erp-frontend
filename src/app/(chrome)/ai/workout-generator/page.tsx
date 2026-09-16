@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Dumbbell, Loader2, ChevronDown, ChevronUp, Sparkles, RotateCcw, Flame, Clock, Target } from 'lucide-react';
 import { m, type Variants } from 'framer-motion';
@@ -9,6 +9,10 @@ import type { AiWorkoutPlan, AiWorkoutDay, AiWorkoutExercise } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
 import { errorMessage } from '@/lib/forms/errors';
+import {
+  NumberField, SelectField, TextField, ChoiceChips, useStandaloneField,
+} from '@/components/ui/form';
+import { aiWorkoutInputSchema, stated } from '@/lib/forms/schemas/aiGenerator';
 
 const ACCENT = '#0067E0';
 const ACCENT_SOFT = '#0067E0';
@@ -42,48 +46,6 @@ const fadeUp: Variants = {
     transition: { delay: i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] },
   }),
 };
-
-/* ─── Form atoms ─────────────────────────────────────────────────────────── */
-function Field({ label, required, children, span }: { label: string; required?: boolean; children: React.ReactNode; span?: boolean }) {
-  return (
-    // The <label> is the wrapper, not a sibling of the control. A label that
-    // sits NEXT to its input associates with nothing: the screen reader
-    // announces the field with no name at all. Wrapping needs no id plumbing
-    // and makes the caption clickable as a bonus.
-    <label className="block" style={span ? { gridColumn: '1 / -1' } : undefined}>
-      <span className="mb-1.5 block text-[11px] font-[700] uppercase tracking-[0.06em]" style={{ color: 'var(--text-muted)' }}>
-        {label}{required && <span style={{ color: ACCENT }}> *</span>}
-      </span>
-      {children}
-    </label>
-  );
-}
-
-const inputCls = 'w-full rounded-[12px] px-3.5 py-2.5 text-[14px] outline-none transition-colors focus:border-blue-400';
-const inputStyle: React.CSSProperties = {
-  background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)',
-};
-
-function PillGroup({ options, value, onChange }: { options: string[]; value: string; onChange: (v: string) => void }) {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {options.map((opt) => {
-        const active = value === opt;
-        return (
-          <button
-            key={opt} type="button" onClick={() => onChange(opt)}
-            className="rounded-full px-3.5 py-2 text-[12.5px] font-[650] transition-all"
-            style={active
-              ? { background: ACCENT_GRADIENT, color: '#fff', border: '1px solid transparent', boxShadow: '0 4px 14px rgba(0,103,224,0.35)' }
-              : { background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
-          >
-            {labelMap[opt] ?? opt}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 /* ─── Result atoms ───────────────────────────────────────────────────────── */
 function ExerciseRow({ ex, index }: { ex: AiWorkoutExercise; index: number }) {
@@ -184,8 +146,27 @@ export default function WorkoutGeneratorPage() {
   const [plan, setPlan] = useState<AiWorkoutPlan | null>(null);
   const [meta, setMeta] = useState<{ model?: string; tier?: string; used_fallback?: boolean } | null>(null);
   const [error, setError] = useState('');
+  /** Per-field messages from the schema. Populated only by a generate ATTEMPT. */
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  /**
+   * A same-frame re-entry guard.
+   *
+   * `loading` is state, so two taps in one frame both read false and both fire
+   * the request — and a generation is a billed model call, not a no-op.
+   */
+  const generatingRef = useRef(false);
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const ageField = useStandaloneField('age', form.age, (v: string) => set('age', v), { error: fieldErrors.age });
+  const weightField = useStandaloneField('weight_kg', form.weight_kg, (v: string) => set('weight_kg', v), { error: fieldErrors.weight_kg });
+  const heightField = useStandaloneField('height_cm', form.height_cm, (v: string) => set('height_cm', v), { error: fieldErrors.height_cm });
+  const goalField = useStandaloneField('goal', form.goal, (v: string) => set('goal', v), { error: fieldErrors.goal });
+  const equipmentField = useStandaloneField('equipment', form.equipment, (v: string) => set('equipment', v), { error: fieldErrors.equipment });
+  const injuriesField = useStandaloneField('injuries', form.injuries, (v: string) => set('injuries', v), { error: fieldErrors.injuries });
+  const genderField = useStandaloneField('gender', form.gender, (v: string) => set('gender', v), { error: fieldErrors.gender });
+  const experienceField = useStandaloneField('experience_level', form.experience_level, (v: string) => set('experience_level', v), { error: fieldErrors.experience_level });
+  const trainingDaysField = useStandaloneField('training_days', form.training_days, (v: string) => set('training_days', v), { error: fieldErrors.training_days });
 
   useEffect(() => {
     if (!loading) { setLoadStep(0); return; }
@@ -194,31 +175,65 @@ export default function WorkoutGeneratorPage() {
   }, [loading]);
 
   const handleGenerate = async () => {
+    if (generatingRef.current) return;
     if (!clientId) {
       setError('Open this generator from a client profile — a programme is written for a specific client.');
       return;
     }
+
+    /*
+     * Everything below `client_id` is OPTIONAL and means one thing: the
+     * trainer is stating a value for a client whose record does not hold it.
+     * The server prefers its own record every time and marks what it took from
+     * here as stated, never as a fact about the client.
+     *
+     * What it will not do is print an impossible one. A weight of 750 or an
+     * age of 9999 used to reach the prompt verbatim and the model wrote a
+     * programme around it; the server refuses both now, silently, by treating
+     * them as absent. Refusing them HERE is what turns that silence into a
+     * correction — and saves a billed generation.
+     */
+    const parsed = aiWorkoutInputSchema.safeParse({
+      age: form.age,
+      weight_kg: form.weight_kg,
+      height_cm: form.height_cm,
+      training_days: form.training_days,
+      injuries: form.injuries,
+    });
+    if (!parsed.success) {
+      const next: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = String(issue.path[0]);
+        if (!(key in next)) next[key] = issue.message;
+      }
+      setFieldErrors(next);
+      setError('Check the highlighted fields before generating.');
+      return;
+    }
+    setFieldErrors({});
+
+    generatingRef.current = true;
     setError(''); setLoading(true); setPlan(null); setMeta(null);
     try {
-      // Everything below client_id is OPTIONAL and means one thing: the
-      // trainer is stating a value for a client whose record does not hold it.
-      // The server prefers its own record every time and marks what it took
-      // from here as stated, never as a fact about the client. Blank fields
-      // are omitted rather than sent as zero.
-      const num = (v: string) => (v.trim() === '' ? undefined : Number(v));
+      const v = parsed.data;
       const res = await api.ai.generateWorkout({
         client_id: clientId,
-        age: num(form.age), gender: form.gender || undefined,
-        weight_kg: num(form.weight_kg), height_cm: num(form.height_cm),
+        // A blank box is omitted, not sent as zero — omission is what tells
+        // the server to keep whatever its own record holds.
+        age: stated(v.age), gender: form.gender || undefined,
+        weight_kg: stated(v.weight_kg), height_cm: stated(v.height_cm),
         goal: form.goal || undefined, experience_level: form.experience_level || undefined,
-        injuries: form.injuries || undefined, equipment: form.equipment || undefined,
-        training_days: num(form.training_days),
+        injuries: v.injuries ?? undefined, equipment: form.equipment || undefined,
+        training_days: stated(v.training_days),
       });
       setPlan(res.data);
       setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback });
     } catch (e: unknown) {
       setError(errorMessage(e, 'Failed to generate workout plan.'));
-    } finally { setLoading(false); }
+    } finally {
+      generatingRef.current = false;
+      setLoading(false);
+    }
   };
 
   const scheduleEntries = plan ? Object.entries(plan.weekly_schedule ?? {}) : [];
@@ -258,46 +273,51 @@ export default function WorkoutGeneratorPage() {
             </div>
           </div>
 
+          {/* No asterisks. These three are OPTIONAL and the server says so: it
+              prefers its own record every time, and a blank box means "the
+              record already knows, or nobody does". Marking them required was
+              not merely unenforced, it was wrong.
+
+              `NumberField` rather than `type="number"`: the numeric keypad
+              still appears on a phone, through inputMode, without the wheel
+              over a focused field silently changing a client's weight. */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <Field label="Age" required>
-              <input type="number" inputMode="numeric" className={inputCls} style={inputStyle} placeholder="28"
-                value={form.age} onChange={(e) => set('age', e.target.value)} />
-            </Field>
-            <Field label="Weight (kg)" required>
-              <input type="number" inputMode="decimal" className={inputCls} style={inputStyle} placeholder="75"
-                value={form.weight_kg} onChange={(e) => set('weight_kg', e.target.value)} />
-            </Field>
-            <Field label="Height (cm)" required>
-              <input type="number" inputMode="decimal" className={inputCls} style={inputStyle} placeholder="175"
-                value={form.height_cm} onChange={(e) => set('height_cm', e.target.value)} />
-            </Field>
+            <NumberField field={ageField} label="Age" density="compact" mode="integer" placeholder="28" suffix="yrs" />
+            <NumberField field={weightField} label="Weight" density="compact" mode="decimal" placeholder="75" suffix="kg" />
+            <NumberField field={heightField} label="Height" density="compact" mode="decimal" placeholder="175" suffix="cm" />
           </div>
 
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <Field label="Gender">
-              <PillGroup options={['male', 'female', 'other']} value={form.gender} onChange={(v) => set('gender', v)} />
-            </Field>
-            <Field label="Experience Level">
-              <PillGroup options={EXPERIENCE} value={form.experience_level} onChange={(v) => set('experience_level', v)} />
-            </Field>
-            <Field label="Fitness Goal">
-              <select className={inputCls} style={inputStyle} value={form.goal} onChange={(e) => set('goal', e.target.value)}>
-                {GOALS.map((g) => <option key={g} value={g}>{labelMap[g]}</option>)}
-              </select>
-            </Field>
-            <Field label="Available Equipment">
-              <select className={inputCls} style={inputStyle} value={form.equipment} onChange={(e) => set('equipment', e.target.value)}>
-                {EQUIPMENT.map((eq) => <option key={eq} value={eq}>{labelMap[eq]}</option>)}
-              </select>
-            </Field>
-            <Field label="Training Days / Week" span>
-              <PillGroup options={['2', '3', '4', '5', '6']} value={form.training_days} onChange={(v) => set('training_days', v)} />
-            </Field>
-            <Field label="Injuries / Limitations" span>
-              <input type="text" className={inputCls} style={inputStyle}
-                placeholder="e.g. lower back pain, bad knees (optional)"
-                value={form.injuries} onChange={(e) => set('injuries', e.target.value)} />
-            </Field>
+            <ChoiceChips
+              field={genderField} legend="Gender" density="compact"
+              options={['male', 'female', 'other'].map((g) => ({ value: g, label: labelMap[g] ?? g }))}
+            />
+            <ChoiceChips
+              field={experienceField} legend="Experience Level" density="compact"
+              options={EXPERIENCE.map((x) => ({ value: x, label: labelMap[x] ?? x }))}
+            />
+            <SelectField
+              field={goalField} label="Fitness Goal" density="compact"
+              options={GOALS.map((g) => ({ value: g, label: labelMap[g] ?? g }))}
+            />
+            <SelectField
+              field={equipmentField} label="Available Equipment" density="compact"
+              options={EQUIPMENT.map((eq) => ({ value: eq, label: labelMap[eq] ?? eq }))}
+            />
+            <ChoiceChips
+              field={trainingDaysField} legend="Training Days / Week" density="compact"
+              className="sm:col-span-2"
+              options={['2', '3', '4', '5', '6'].map((d) => ({ value: d, label: d }))}
+            />
+            {/* Never defaulted to "none" anywhere in this system: the server's
+                own comment explains that the old `|| 'none'` printed a clean
+                bill of health for every client nobody had written a note
+                about. Blank here means blank there. */}
+            <TextField
+              field={injuriesField} label="Injuries / Limitations" density="compact"
+              className="sm:col-span-2" maxLength={500}
+              placeholder="e.g. lower back pain, bad knees (optional)"
+            />
           </div>
 
           {error && (

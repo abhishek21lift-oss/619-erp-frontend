@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Apple, Loader2, ChevronDown, ChevronUp, Sparkles, RotateCcw, Droplets, ShoppingCart, Pill, Utensils } from 'lucide-react';
 import { m, type Variants } from 'framer-motion';
@@ -9,6 +9,10 @@ import type { AiDietPlan, AiDietMeal } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
 import { errorMessage } from '@/lib/forms/errors';
+import {
+  NumberField, SelectField, TextField, ChoiceChips, useStandaloneField,
+} from '@/components/ui/form';
+import { aiDietInputSchema, stated } from '@/lib/forms/schemas/aiGenerator';
 
 const ACCENT = '#10B981';
 const ACCENT_SOFT = '#34D399';
@@ -42,48 +46,6 @@ const fadeUp: Variants = {
     transition: { delay: i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] },
   }),
 };
-
-/* ─── Form atoms ─────────────────────────────────────────────────────────── */
-function Field({ label, required, children, span }: { label: string; required?: boolean; children: React.ReactNode; span?: boolean }) {
-  return (
-    // The <label> is the wrapper, not a sibling of the control. A label that
-    // sits NEXT to its input associates with nothing: the screen reader
-    // announces the field with no name at all. Wrapping needs no id plumbing
-    // and makes the caption clickable as a bonus.
-    <label className="block" style={span ? { gridColumn: '1 / -1' } : undefined}>
-      <span className="mb-1.5 block text-[11px] font-[700] uppercase tracking-[0.06em]" style={{ color: 'var(--text-muted)' }}>
-        {label}{required && <span style={{ color: ACCENT }}> *</span>}
-      </span>
-      {children}
-    </label>
-  );
-}
-
-const inputCls = 'w-full rounded-[12px] px-3.5 py-2.5 text-[14px] outline-none transition-colors focus:border-green-500';
-const inputStyle: React.CSSProperties = {
-  background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)',
-};
-
-function PillGroup({ options, value, onChange }: { options: string[]; value: string; onChange: (v: string) => void }) {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {options.map((opt) => {
-        const active = value === opt;
-        return (
-          <button
-            key={opt} type="button" onClick={() => onChange(opt)}
-            className="rounded-full px-3.5 py-2 text-[12.5px] font-[650] transition-all"
-            style={active
-              ? { background: ACCENT_GRADIENT, color: '#fff', border: '1px solid transparent', boxShadow: '0 4px 14px rgba(16,185,129,0.35)' }
-              : { background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
-          >
-            {labelMap[opt] ?? opt}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 /* ─── Result atoms ───────────────────────────────────────────────────────── */
 function MealCard({ meal, index }: { meal: AiDietMeal; index: number }) {
@@ -161,8 +123,29 @@ export default function DietGeneratorPage() {
   const [plan, setPlan] = useState<AiDietPlan | null>(null);
   const [meta, setMeta] = useState<{ model?: string; tier?: string; used_fallback?: boolean } | null>(null);
   const [error, setError] = useState('');
+  /** Per-field messages from the schema. Populated only by a generate ATTEMPT. */
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  /**
+   * A same-frame re-entry guard. `loading` is state, so two taps in one frame
+   * both read false and both fire a billed model call.
+   */
+  const generatingRef = useRef(false);
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  // Written out rather than produced by a helper: `useStandaloneField` is a
+  // hook, and a hook called from inside another function is the rule React
+  // enforces against — the order has to be visible on the page.
+  const ageField = useStandaloneField('age', form.age, (v: string) => set('age', v), { error: fieldErrors.age });
+  const weightField = useStandaloneField('weight_kg', form.weight_kg, (v: string) => set('weight_kg', v), { error: fieldErrors.weight_kg });
+  const heightField = useStandaloneField('height_cm', form.height_cm, (v: string) => set('height_cm', v), { error: fieldErrors.height_cm });
+  const genderField = useStandaloneField('gender', form.gender, (v: string) => set('gender', v), { error: fieldErrors.gender });
+  const goalField = useStandaloneField('goal', form.goal, (v: string) => set('goal', v), { error: fieldErrors.goal });
+  const activityField = useStandaloneField('activity_level', form.activity_level, (v: string) => set('activity_level', v), { error: fieldErrors.activity_level });
+  const budgetField = useStandaloneField('budget', form.budget, (v: string) => set('budget', v), { error: fieldErrors.budget });
+  const mealsField = useStandaloneField('meal_frequency', form.meal_frequency, (v: string) => set('meal_frequency', v), { error: fieldErrors.meal_frequency });
+  const preferencesField = useStandaloneField('dietary_preferences', form.dietary_preferences, (v: string) => set('dietary_preferences', v), { error: fieldErrors.dietary_preferences });
+  const allergiesField = useStandaloneField('allergies', form.allergies, (v: string) => set('allergies', v), { error: fieldErrors.allergies });
 
   useEffect(() => {
     if (!loading) { setLoadStep(0); return; }
@@ -171,29 +154,66 @@ export default function DietGeneratorPage() {
   }, [loading]);
 
   const handleGenerate = async () => {
+    if (generatingRef.current) return;
     if (!clientId) {
       setError('Open this generator from a client profile — a plan is written for a specific client.');
       return;
     }
+
+    /*
+     * Optional, and stated by the trainer rather than asserted about the
+     * client: the server prefers its own record wherever it holds one.
+     *
+     * What it will not do is turn an impossible figure into a calorie target.
+     * A weight of 750 used to reach the prompt verbatim and the model
+     * calculated a day's food from it. The server refuses that now, silently,
+     * by treating it as absent; refusing it here is what turns the silence
+     * into a correction — before a billed generation is spent on it.
+     *
+     * `parseInt(form.meal_frequency)` went too: on an empty box that is NaN,
+     * which `JSON.stringify` writes as `null`.
+     */
+    const parsed = aiDietInputSchema.safeParse({
+      age: form.age,
+      weight_kg: form.weight_kg,
+      height_cm: form.height_cm,
+      meal_frequency: form.meal_frequency,
+      dietary_preferences: form.dietary_preferences,
+      allergies: form.allergies,
+    });
+    if (!parsed.success) {
+      const next: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = String(issue.path[0]);
+        if (!(key in next)) next[key] = issue.message;
+      }
+      setFieldErrors(next);
+      setError('Check the highlighted fields before generating.');
+      return;
+    }
+    setFieldErrors({});
+
+    generatingRef.current = true;
     setError(''); setLoading(true); setPlan(null); setMeta(null);
     try {
-      // Optional, and stated by the trainer rather than asserted about the
-      // client: the server prefers its own record wherever it holds one.
-      const num = (v: string) => (v.trim() === '' ? undefined : Number(v));
+      const v = parsed.data;
       const res = await api.ai.generateDiet({
         client_id: clientId,
-        age: num(form.age), gender: form.gender || undefined,
-        weight_kg: num(form.weight_kg), height_cm: num(form.height_cm),
+        age: stated(v.age), gender: form.gender || undefined,
+        weight_kg: stated(v.weight_kg), height_cm: stated(v.height_cm),
         activity_level: form.activity_level || undefined, goal: form.goal || undefined,
-        dietary_preferences: form.dietary_preferences || undefined,
-        allergies: form.allergies || undefined,
-        budget: form.budget, meal_frequency: parseInt(form.meal_frequency),
+        dietary_preferences: v.dietary_preferences ?? undefined,
+        allergies: v.allergies ?? undefined,
+        budget: form.budget, meal_frequency: stated(v.meal_frequency),
       });
       setPlan(res.data);
       setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback });
     } catch (e: unknown) {
       setError(errorMessage(e, 'Failed to generate diet plan.'));
-    } finally { setLoading(false); }
+    } finally {
+      generatingRef.current = false;
+      setLoading(false);
+    }
   };
 
   return (
@@ -231,51 +251,50 @@ export default function DietGeneratorPage() {
             </div>
           </div>
 
+          {/* No asterisks. These three are OPTIONAL and the server says so: it
+              prefers its own record every time, and a blank box means "the
+              record already knows, or nobody does". Marking them required was
+              not merely unenforced, it was wrong. */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <Field label="Age" required>
-              <input type="number" inputMode="numeric" className={inputCls} style={inputStyle} placeholder="28"
-                value={form.age} onChange={(e) => set('age', e.target.value)} />
-            </Field>
-            <Field label="Weight (kg)" required>
-              <input type="number" inputMode="decimal" className={inputCls} style={inputStyle} placeholder="75"
-                value={form.weight_kg} onChange={(e) => set('weight_kg', e.target.value)} />
-            </Field>
-            <Field label="Height (cm)" required>
-              <input type="number" inputMode="decimal" className={inputCls} style={inputStyle} placeholder="175"
-                value={form.height_cm} onChange={(e) => set('height_cm', e.target.value)} />
-            </Field>
+            <NumberField field={ageField} label="Age" density="compact" mode="integer" placeholder="28" suffix="yrs" />
+            <NumberField field={weightField} label="Weight" density="compact" mode="decimal" placeholder="75" suffix="kg" />
+            <NumberField field={heightField} label="Height" density="compact" mode="decimal" placeholder="175" suffix="cm" />
           </div>
 
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <Field label="Gender">
-              <PillGroup options={['male', 'female', 'other']} value={form.gender} onChange={(v) => set('gender', v)} />
-            </Field>
-            <Field label="Goal">
-              <select className={inputCls} style={inputStyle} value={form.goal} onChange={(e) => set('goal', e.target.value)}>
-                {GOALS.map((g) => <option key={g} value={g}>{labelMap[g]}</option>)}
-              </select>
-            </Field>
-            <Field label="Activity Level">
-              <select className={inputCls} style={inputStyle} value={form.activity_level} onChange={(e) => set('activity_level', e.target.value)}>
-                {ACTIVITY_LEVELS.map((a) => <option key={a} value={a}>{labelMap[a]}</option>)}
-              </select>
-            </Field>
-            <Field label="Budget">
-              <PillGroup options={BUDGETS} value={form.budget} onChange={(v) => set('budget', v)} />
-            </Field>
-            <Field label="Meals per Day" span>
-              <PillGroup options={['3', '4', '5', '6']} value={form.meal_frequency} onChange={(v) => set('meal_frequency', v)} />
-            </Field>
-            <Field label="Dietary Preferences" span>
-              <input type="text" className={inputCls} style={inputStyle}
-                placeholder="e.g. vegetarian, vegan, keto, Indian (optional)"
-                value={form.dietary_preferences} onChange={(e) => set('dietary_preferences', e.target.value)} />
-            </Field>
-            <Field label="Allergies / Foods to Avoid" span>
-              <input type="text" className={inputCls} style={inputStyle}
-                placeholder="e.g. nuts, dairy, gluten (optional)"
-                value={form.allergies} onChange={(e) => set('allergies', e.target.value)} />
-            </Field>
+            <ChoiceChips
+              field={genderField} legend="Gender" density="compact"
+              options={['male', 'female', 'other'].map((g) => ({ value: g, label: labelMap[g] ?? g }))}
+            />
+            <SelectField
+              field={goalField} label="Goal" density="compact"
+              options={GOALS.map((g) => ({ value: g, label: labelMap[g] ?? g }))}
+            />
+            <SelectField
+              field={activityField} label="Activity Level" density="compact"
+              options={ACTIVITY_LEVELS.map((a) => ({ value: a, label: labelMap[a] ?? a }))}
+            />
+            <ChoiceChips
+              field={budgetField} legend="Budget" density="compact"
+              options={BUDGETS.map((b) => ({ value: b, label: labelMap[b] ?? b }))}
+            />
+            <ChoiceChips
+              field={mealsField} legend="Meals per Day" density="compact" className="sm:col-span-2"
+              options={['3', '4', '5', '6'].map((n) => ({ value: n, label: n }))}
+            />
+            <TextField
+              field={preferencesField} label="Dietary Preferences" density="compact"
+              className="sm:col-span-2" maxLength={300}
+              placeholder="e.g. vegetarian, vegan, keto, Indian (optional)"
+            />
+            {/* Never defaulted to "none": the server's own comment explains
+                that the old `|| 'none'` printed a clean bill of health for
+                every client nobody had written a note about. */}
+            <TextField
+              field={allergiesField} label="Allergies / Foods to Avoid" density="compact"
+              className="sm:col-span-2" maxLength={300}
+              placeholder="e.g. nuts, dairy, gluten (optional)"
+            />
           </div>
 
           {error && (
