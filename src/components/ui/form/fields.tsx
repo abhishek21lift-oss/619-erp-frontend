@@ -80,6 +80,16 @@ export interface BoundFieldProps {
   className?: string;
   /** Reserve the message row so an appearing error does not shift the layout. */
   reserveMessageSpace?: boolean;
+  /**
+   * Hide the label visually, keeping it for assistive tech.
+   *
+   * For the case where a section heading immediately above the field already
+   * names it and a second visible caption would read as a duplicate. `FormField`
+   * has always supported this; the bound fields simply did not pass it through,
+   * so call sites in that position dropped back to a raw control with a
+   * `<span>` caption — which names nothing.
+   */
+  labelHidden?: boolean;
 }
 
 /**
@@ -153,6 +163,7 @@ export function TextField({
   serverError,
   className,
   reserveMessageSpace,
+  labelHidden,
   type = 'text',
   autoComplete,
   maxLength,
@@ -173,6 +184,7 @@ export function TextField({
       readOnly={readOnly}
       className={className}
       reserveMessageSpace={reserveMessageSpace}
+      labelHidden={labelHidden}
       labelAside={
         showCount && maxLength ? (
           <span
@@ -229,6 +241,7 @@ export function TextAreaField({
   serverError,
   className,
   reserveMessageSpace,
+  labelHidden,
   rows = 3,
   maxLength,
   showCount,
@@ -246,6 +259,7 @@ export function TextAreaField({
       readOnly={readOnly}
       className={className}
       reserveMessageSpace={reserveMessageSpace}
+      labelHidden={labelHidden}
       labelAside={
         showCount && maxLength ? (
           <span
@@ -308,6 +322,7 @@ export function NumberField({
   serverError,
   className,
   reserveMessageSpace,
+  labelHidden,
   mode = 'decimal',
   min,
   max,
@@ -332,6 +347,7 @@ export function NumberField({
       readOnly={readOnly}
       className={className}
       reserveMessageSpace={reserveMessageSpace}
+      labelHidden={labelHidden}
     >
       <span className="relative block">
         <TextInput
@@ -397,6 +413,7 @@ export function SelectField<T extends string = string>({
   serverError,
   className,
   reserveMessageSpace,
+  labelHidden,
   options,
   placeholderOption,
 }: SelectFieldProps<T>) {
@@ -412,6 +429,7 @@ export function SelectField<T extends string = string>({
       readOnly={readOnly}
       className={className}
       reserveMessageSpace={reserveMessageSpace}
+      labelHidden={labelHidden}
     >
       <SelectInput
         name={field.name}
@@ -459,6 +477,7 @@ export function DateFieldControl({
   serverError,
   className,
   reserveMessageSpace,
+  labelHidden,
   min,
   max,
 }: DateFieldProps) {
@@ -474,6 +493,7 @@ export function DateFieldControl({
       readOnly={readOnly}
       className={className}
       reserveMessageSpace={reserveMessageSpace}
+      labelHidden={labelHidden}
     >
       <TextInput
         name={field.name}
@@ -747,6 +767,7 @@ export function MonthFieldControl({
   serverError,
   className,
   reserveMessageSpace,
+  labelHidden,
   min,
   max,
 }: MonthFieldProps) {
@@ -762,6 +783,7 @@ export function MonthFieldControl({
       readOnly={readOnly}
       className={className}
       reserveMessageSpace={reserveMessageSpace}
+      labelHidden={labelHidden}
     >
       <TextInput
         name={field.name}

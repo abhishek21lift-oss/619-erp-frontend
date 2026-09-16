@@ -5,9 +5,17 @@ import { useRouter } from 'next/navigation';
 import { Repeat, CheckCircle, IndianRupee, Calendar, User, Dumbbell, FileText } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, PageContainer, PageHero } from '@/components/ui';
-import FloatInput from '@/components/ui/FloatInput';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { useStore } from '@tanstack/react-form';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import { inlineNumber } from '@/lib/forms/inline';
+import {
+  renewPtSchema, blankRenewPt, toRenewPtPayload, ptEndDate, renewalBalance,
+} from '@/lib/forms/schemas/renewPt';
+import {
+  NumberField, DateFieldControl, TextAreaField, FormErrorBanner,
+} from '@/components/ui/form';
 
 const fmtINR = (n: number | string | null | undefined) =>
   '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
@@ -34,69 +42,64 @@ function ReadOnly({ label, value, highlight }: { label: string; value: string; h
   );
 }
 
+/** A typed figure for a preview: a real number, or 0 when it is not one yet. */
+function numberOrZero(raw: string): number {
+  const n = inlineNumber(raw);
+  return typeof n === 'number' ? n : 0;
+}
+
 export default function RenewPtPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const { toast } = useToast();
 
   const [client, setClient] = useState<Client | null>(null);
-  const [saving, setSaving] = useState(false);
 
-  const [form, setForm] = useState({
-    finalAmount: '',
-    paidNow: '',
-    startDate: '',
-    durationMonths: '',
-    notes: '',
+  const f = useAppForm({
+    schema: renewPtSchema,
+    defaultValues: blankRenewPt(),
+    onSubmit: async (values) => {
+      await api.clients.renewPt(id, toRenewPtPayload(values));
+      toast.success('PT renewed successfully');
+    },
+    onSuccess: () => router.push(`/pt-os/clients/${id}`),
   });
 
-  const final = Number(form.finalAmount) || 0;
-  const paidNow = Number(form.paidNow) || 0;
-  const balance = Math.max(final - paidNow, 0);
+  const { form, isSubmitting } = f;
+  const values = useStore(form.store, (s) => s.values);
 
-  const endDate = (() => {
-    if (!form.startDate || !form.durationMonths) return null;
-    const d = new Date(form.startDate);
-    d.setMonth(d.getMonth() + Number(form.durationMonths));
-    return d.toISOString().slice(0, 10);
-  })();
+  // The live summary reads the TYPED strings, not a parsed payload — there is
+  // no payload until submit. `inlineNumber` gives it the same three-way answer
+  // the schema does, so "1,500" previews as ₹1,500 and "15k" previews as
+  // nothing rather than as ₹15.
+  const final = numberOrZero(values.finalAmount);
+  const paidNow = numberOrZero(values.paidNow);
+  const balance = renewalBalance(final, paidNow);
+
+  const months = inlineNumber(values.durationMonths);
+  const endDate = typeof months === 'number' ? ptEndDate(values.startDate, months) : null;
 
   useEffect(() => {
-    Promise.allSettled([api.pt.client(id)]).then(([cRes]) => {
-      if (cRes.status === 'fulfilled') {
-        const c = (cRes.value as any)?.data;
+    let live = true;
+    api.pt.client(id)
+      .then((res) => {
+        if (!live) return;
+        // One assertion at the boundary, naming the shape this page reads.
+        // It was `(cRes.value as any)?.data`, which also switched off checking
+        // of every property access downstream — including the seeded amount.
+        const c = (res.data as Client | null) ?? null;
         setClient(c);
-        setForm(f => ({
-          ...f,
-          finalAmount: String(c?.final_amount || ''),
-        }));
-      }
-    });
+        // Seeded, not forced: the previous term's price is the usual starting
+        // point and the coach can change it. `?? ''` rather than `|| ''` so a
+        // stored 0 seeds as "0" rather than silently as blank.
+        if (c?.final_amount != null) {
+          form.setFieldValue('finalAmount', String(c.final_amount));
+        }
+      })
+      .catch(() => { /* the form still works; the summary card just stays empty */ });
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
-
-  const handleSubmit = async () => {
-    if (!form.startDate || !form.durationMonths) {
-      toast.error('Start date and duration are required');
-      return;
-    }
-    setSaving(true);
-    try {
-      await api.clients.renewPt(id, {
-        final_amount: final,
-        paid_amount: paidNow,
-        monthly_pt_amount: form.durationMonths ? Math.round(final / Number(form.durationMonths)) : 0,
-        pt_start_date: form.startDate,
-        duration_months: Number(form.durationMonths),
-        notes: form.notes || undefined,
-      });
-      toast.success('PT renewed successfully');
-      router.push(`/pt-os/clients/${id}`);
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to renew PT');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   return (
     <Guard>
@@ -132,7 +135,11 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
         )}
 
         {/* Form sections (flat — no wrapper card) */}
-        <div className="space-y-6">
+        <form
+          noValidate
+          onSubmit={(e) => { e.preventDefault(); void f.submit(); }}
+          className="space-y-6"
+        >
 
           {/* Section: Plan */}
           <div>
@@ -144,8 +151,19 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <FloatInput label="Start Date *" type="date" value={form.startDate} onChange={v => setForm(f => ({ ...f, startDate: v }))} />
-                <FloatInput label="Duration (months) *" type="number" value={form.durationMonths} onChange={v => setForm(f => ({ ...f, durationMonths: v }))} />
+                <form.Field name="startDate">
+                  {(field) => (
+                    <DateFieldControl field={field} label="Start date" required
+                      serverError={f.errors.fieldErrors.startDate} />
+                  )}
+                </form.Field>
+                <form.Field name="durationMonths">
+                  {(field) => (
+                    <NumberField field={field} label="Duration" required mode="integer" suffix="months"
+                      description="1 to 60"
+                      serverError={f.errors.fieldErrors.durationMonths} />
+                  )}
+                </form.Field>
               </div>
               {endDate && (
                 <div className="rounded-[10px] px-4 py-2.5 flex items-center gap-2"
@@ -170,12 +188,24 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
               <h2 className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>Financial Details</h2>
             </div>
             <div className="space-y-4">
-              <FloatInput label="Final Amount (₹) *" type="number" value={form.finalAmount}
-                onChange={v => setForm(f => ({ ...f, finalAmount: v }))} />
-              <FloatInput label="Amount Paid Now (₹)" type="number" value={form.paidNow}
-                onChange={v => setForm(f => ({ ...f, paidNow: v }))} />
+              <form.Field name="finalAmount">
+                {(field) => (
+                  <NumberField field={field} label="Final amount" required mode="money" suffix="₹"
+                    description="What this term is worth, before anything is paid"
+                    serverError={f.errors.fieldErrors.finalAmount} />
+                )}
+              </form.Field>
+              <form.Field name="paidNow">
+                {(field) => (
+                  <NumberField field={field} label="Amount paid now" mode="money" suffix="₹"
+                    description="Leave blank if nothing is being collected today"
+                    serverError={f.errors.fieldErrors.paidNow} />
+                )}
+              </form.Field>
 
-              {/* Computed summary */}
+              {/* Computed summary. Reads the TYPED strings through the same
+                  normalizer the schema uses, so "1,500" previews as ₹1,500 and
+                  "15k" previews as nothing rather than as ₹15. */}
               <div className="grid grid-cols-3 gap-3 pt-1">
                 <ReadOnly label="Final Amount" value={fmtINR(final)} highlight="#0F172A" />
                 <ReadOnly label="Paid Now" value={fmtINR(paidNow)} highlight="#10b981" />
@@ -194,23 +224,29 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
               </div>
               <h2 className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>Notes (optional)</h2>
             </div>
-            <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-              rows={3} placeholder="Any notes about this renewal…"
-              className="w-full rounded-[13px] px-4 py-3 text-[13px] outline-none resize-none"
-              style={{ background: 'var(--bg-card)', border: '1.5px solid var(--border)', color: 'var(--text-primary)' }} />
+            <form.Field name="notes">
+              {(field) => (
+                <TextAreaField field={field} label="Notes" labelHidden rows={3} maxLength={1000} showCount
+                  placeholder="Any notes about this renewal…"
+                  serverError={f.errors.fieldErrors.notes} />
+              )}
+            </form.Field>
           </div>
 
-          {/* Actions */}
+          <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} />
+
+          {/* Actions. No longer gated on three boxes being non-empty: the
+              button was disabled until something was typed and then accepted
+              whatever it was, so a blank Final Amount could not be submitted
+              but a "₹0" could. The fields say what is wrong now. */}
           <div className="flex gap-3 pt-2">
-            <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
-            <Button variant="success" loading={saving}
-              disabled={!form.startDate || !form.durationMonths || !form.finalAmount}
-              onClick={handleSubmit}
+            <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>Cancel</Button>
+            <Button type="submit" variant="success" loading={isSubmitting} disabled={isSubmitting}
               iconLeft={<CheckCircle size={14} />}>
               Confirm Renewal
             </Button>
           </div>
-        </div>
+        </form>
       </div>
       </PageContainer>
     </Guard>
