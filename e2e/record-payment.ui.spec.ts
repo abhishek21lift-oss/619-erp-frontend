@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { ALPHA, gotoApp, apiToken, apiGet } from './helpers/session';
+import { ALPHA, gotoApp, apiToken, apiGet, doubleTap } from './helpers/session';
 
 /**
  * Record Payment — the fastest-moving money form in the product.
@@ -96,8 +96,7 @@ test.describe('Record Payment', () => {
     const before = await paymentsFor(token);
 
     await openSheetAndType(page, '500');
-    const submit = page.getByRole('button', { name: /^Record Payment$/ }).last();
-    await Promise.all([submit.click(), submit.click().catch(() => {})]);
+    await doubleTap(page.getByRole('button', { name: /^Record Payment$/ }).last());
 
     await expect(page.getByRole('dialog', { name: 'Record payment' })).toBeHidden({ timeout: 15_000 });
     await page.waitForTimeout(2000);

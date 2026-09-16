@@ -1,5 +1,5 @@
 import { test as setup, expect } from '@playwright/test';
-import { ALPHA, STORAGE_STATE, TOKEN_FILE, apiToken } from './helpers/session';
+import { ALPHA, STORAGE_STATE, TOKEN_FILE, mintApiToken } from './helpers/session';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
@@ -41,6 +41,10 @@ setup('authenticate as the Alpha studio owner', async ({ page }) => {
   await page.context().storageState({ path: STORAGE_STATE });
 
   // The read-back token, minted once and shared the same way.
-  const token = await apiToken();
-  writeFileSync(TOKEN_FILE, JSON.stringify({ token, mintedAt: Date.now() }), 'utf8');
+  //
+  // mintApiToken rather than apiToken: the latter may return one it read from
+  // this very file, and writing that back with a new timestamp resets its
+  // apparent age without renewing the token. See the note on mintApiToken.
+  const minted = await mintApiToken();
+  writeFileSync(TOKEN_FILE, JSON.stringify(minted), 'utf8');
 });

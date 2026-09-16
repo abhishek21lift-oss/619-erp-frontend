@@ -312,9 +312,44 @@ jobs:
 
       - name: Run the isolation suite
         working-directory: frontend
-        # --project=api only: these assert against the API directly, because a
-        # leak has to be impossible at the source rather than merely unrendered.
+        # --project=api: these assert against the API directly, because a leak
+        # has to be impossible at the source rather than merely unrendered.
+        # The browser journeys run in the step below.
         run: npx playwright test --project=api
+
+      # ── The critical form journeys ──────────────────────────────────────
+      #
+      # The browser projects existed in playwright.config.ts and CI never ran
+      # them, so every journey proving that a form's input reaches the database
+      # was advisory: it could break and nothing would say so. The whole point
+      # of standing up a real Postgres, real migrations and a real API in this
+      # job is to have somewhere those journeys can run.
+      #
+      # Chromium comes from the runner image (Playwright's own browsers are not
+      # cached here), so it is installed for the browser projects only — the
+      # api project above needs no browser at all, which is why it runs first
+      # and stays runnable if this ever breaks.
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run the critical form journeys
+        working-directory: frontend
+        # Starts the frontend itself (webServer in playwright.config.ts) and
+        # signs in once via the setup project. JWT_SECRET is inherited from the
+        # job env above and is load-bearing: proxy.ts refuses every
+        # authenticated page without it, so every journey would land on the
+        # sign-in screen and fail for a reason that is not the product's.
+        run: npx playwright test --project=chromium --project=mobile
+
+      - name: Playwright report on failure
+        if: failure()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
 
       # ── Prove the suite above actually exercised app_tenant ──────────────
       #

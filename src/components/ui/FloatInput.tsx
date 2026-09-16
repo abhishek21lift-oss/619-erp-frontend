@@ -6,6 +6,20 @@ import { cn } from './cn';
 interface FloatInputProps {
   label: string;
   /**
+   * The accessible name, for the call sites that pass `label=""`.
+   *
+   * Four of them do, and every one has a visible heading in a SIBLING element
+   * — "Final / Selling Price", "Amount Paid" — which names the field to a
+   * sighted person and names nothing to a screen reader. An empty <label> is
+   * not "no label": it is a label of zero characters, so the control has no
+   * accessible name at all and is announced as "edit text, blank".
+   *
+   * Same contract as Slider's prop of the same name, deliberately: applied
+   * only when `label` is empty, so a field can never carry two competing
+   * names. Enforced by the guardrail in form-system-guardrails.test.tsx.
+   */
+  ariaLabel?: string;
+  /**
    * The control type.
    *
    * `'number'` is accepted and DELIBERATELY NOT PASSED THROUGH — see
@@ -132,6 +146,7 @@ const TONES = {
 
 export function FloatInput({
   label,
+  ariaLabel,
   type = 'text',
   inputMode,
   numeric,
@@ -251,6 +266,7 @@ export function FloatInput({
             onBlur={() => { setFocused(false); onBlur?.(); }}
             disabled={disabled}
             required={required}
+            {...(label ? {} : { 'aria-label': ariaLabel })}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? errorId : undefined}
             rows={autoGrow ? 1 : rows}
@@ -272,6 +288,7 @@ export function FloatInput({
             onBlur={() => { setFocused(false); onBlur?.(); }}
             disabled={disabled}
             required={required}
+            {...(label ? {} : { 'aria-label': ariaLabel })}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? errorId : undefined}
             className={baseInputClass}

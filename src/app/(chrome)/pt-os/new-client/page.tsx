@@ -489,14 +489,31 @@ function NewClientForm() {
                 error={errors.name}
               />
 
-              <div>
-                <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
+              {/*
+                Required, single-select, and until now three bare <button>s.
+                They looked correct and said nothing: no name for the set, no
+                way to report WHICH one is chosen, and an error message sitting
+                beside a group it was not attached to. A screen reader user
+                heard "Male, button" three times and could not tell that one
+                was already selected — on a field the form refuses to submit
+                without.
+
+                role="group" + aria-pressed rather than role="radiogroup":
+                radiogroup obliges a roving tabindex and arrow-key navigation,
+                and declaring the role without implementing the interaction
+                model is worse than not declaring it, because assistive
+                technology then promises behaviour that is not there. Tab
+                through three toggle buttons is honest and works today.
+              */}
+              <div role="group" aria-labelledby="gender-label" aria-describedby={errors.gender ? 'gender-error' : undefined}>
+                <p id="gender-label" className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
                   Gender <span style={{ color: '#F59E0B' }}>*</span>
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {GENDERS.map((g) => (
                     <button
                       key={g} type="button"
+                      aria-pressed={form.gender === g}
                       onClick={() => { set('gender', g); setErrors((e) => ({ ...e, gender: undefined })); }}
                       className="rounded-[11px] px-4 py-2.5 text-[13px] font-[660] transition-all duration-200"
                       style={{
@@ -511,7 +528,7 @@ function NewClientForm() {
                     </button>
                   ))}
                 </div>
-                {errors.gender && <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{errors.gender}</p>}
+                {errors.gender && <p id="gender-error" role="alert" className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{errors.gender}</p>}
               </div>
 
               <FloatInput

@@ -113,12 +113,9 @@ export function initNutritionForm(): NutritionFormData {
   };
 }
 
-export const n = (v: string): number | null => {
-  const t = v.trim();
-  if (!t) return null;
-  const f = parseFloat(t);
-  return Number.isFinite(f) ? f : null;
-};
+// One parser for every measurement in the app. See toMeasurementOrNull for
+// what the five hand-rolled copies of this used to get wrong.
+export { toMeasurementOrNull as n } from '@/lib/forms/normalize';
 
 /** The Coach Notes areas for this assessment, beside the type they key into.
  *  Passed to the shared CoachNotesPanel — see components/pt-os/shared. */

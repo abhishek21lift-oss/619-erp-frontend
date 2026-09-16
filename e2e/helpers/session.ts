@@ -115,6 +115,22 @@ export async function apiToken(): Promise<string> {
     } catch { /* fall through and mint a fresh one */ }
   }
 
+  return (await mintApiToken()).token;
+}
+
+/**
+ * Log in and return a genuinely new token, ignoring anything cached.
+ *
+ * auth.setup.ts must use THIS rather than apiToken(). It used apiToken() and
+ * wrote the result back with `mintedAt: Date.now()` — so a token read from the
+ * file at eleven minutes old was stamped as new, and the next run stamped it
+ * again. The age reset every run while the token itself kept ageing, until the
+ * read-backs started returning {"error":"Session expired"}. apiGet then
+ * returned an error object with no `data`, every persistence assertion read it
+ * as "nothing was saved", and a suite that was working reported that the forms
+ * had stopped writing to the database.
+ */
+export async function mintApiToken(): Promise<{ token: string; mintedAt: number }> {
   const res = await fetch(`${API_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -123,15 +139,27 @@ export async function apiToken(): Promise<string> {
   const body = await res.json();
   if (!body.token) throw new Error(`E2E login failed: ${JSON.stringify(body).slice(0, 200)}`);
   cached = { token: body.token as string, mintedAt: Date.now() };
-  return cached.token;
+  return cached;
 }
 
-/** Read straight from the API, to prove what the form actually persisted. */
+/**
+ * Read straight from the API, to prove what the form actually persisted.
+ *
+ * Throws on a non-2xx rather than returning the error body. A read-back that
+ * quietly hands `{"error":"Session expired"}` to a caller looking for `data`
+ * reports "the row is not there" — which is indistinguishable from the form
+ * having failed to save it, and sends whoever is reading the failure to debug
+ * the wrong half of the system.
+ */
 export async function apiGet<T = unknown>(path: string, token: string): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
   });
-  return (await res.json()) as T;
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`E2E read-back failed: GET ${path} → ${res.status} ${text.slice(0, 200)}`);
+  }
+  return JSON.parse(text) as T;
 }
 
 /** Write through the API — for arranging preconditions only, never the act under test. */
@@ -175,3 +203,21 @@ export const NEVER_ON_SCREEN = [
   'pg_catalog',
   'JWT_SECRET',
 ] as const;
+
+/**
+ * Two clicks in ONE frame — an actual double-tap.
+ *
+ * `Promise.all([btn.click(), btn.click()])` does not reproduce this. Playwright's
+ * click waits for actionability first, so the second one sits waiting for a
+ * button the first click has just disabled, and the test times out measuring
+ * Playwright rather than the product. Worse, it can pass for the wrong reason:
+ * a form with NO guard at all still looks fine, because the second click never
+ * lands.
+ *
+ * Dispatching both synchronously is what a thumb on a phone does. React batches
+ * state updates, so an `isSubmitting` flag held in state is still false when the
+ * second handler runs — which is exactly why the guard has to be a ref.
+ */
+export async function doubleTap(locator: import('@playwright/test').Locator): Promise<void> {
+  await locator.evaluate((el) => { (el as HTMLElement).click(); (el as HTMLElement).click(); });
+}

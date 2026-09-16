@@ -130,9 +130,6 @@ export function initGoalForm(): GoalFormData {
   };
 }
 
-export const n = (v: string): number | null => {
-  const t = v.trim();
-  if (!t) return null;
-  const f = parseFloat(t);
-  return Number.isFinite(f) ? f : null;
-};
+// One parser for every measurement in the app. See toMeasurementOrNull for
+// what the five hand-rolled copies of this used to get wrong.
+export { toMeasurementOrNull as n } from '@/lib/forms/normalize';

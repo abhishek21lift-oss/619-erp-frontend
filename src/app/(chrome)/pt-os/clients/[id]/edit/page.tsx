@@ -182,8 +182,13 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
       });
       toast.success('Client updated successfully');
       router.push(`/pt-os/clients/${id}`);
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to save changes');
+    } catch (err: unknown) {
+      // errorMessage, not err.message. A 5xx body can carry a SQL error, a
+      // stack or an internal path, and this toast is shown to a studio owner.
+      // The photo handler forty lines up already maps its errors; this one
+      // printed whatever the server said, which is the same leak the payment
+      // sheet was fixed for.
+      toast.error(errorMessage(err, 'Failed to save changes'));
     } finally {
       setSaving(false);
     }
