@@ -46,6 +46,13 @@ import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
 import { fmtDate } from '@/lib/format';
 import { errorMessage } from '@/lib/forms/errors';
+import {
+  profileIssues, issueMap, issueSummary,
+  PROFILE_LIMITS, type ProfileIssueMap,
+} from '@/lib/forms/schemas/profile';
+import {
+  FieldSurface, TextField, DateFieldControl, useStandaloneField,
+} from '@/components/ui/form';
 import { checkFile, AVATAR_RULES, GALLERY_RULES } from '@/lib/forms/files';
 
 /* ─────────────────────────────────────────
@@ -216,8 +223,10 @@ function certExpiryLine(status: Certification['status'], daysLeft: number | null
  * because a locally-derived "Valid" is exactly the reassurance nobody should
  * get from an unverified clock.
  */
-function CertificateRow({ cert, saved, onChange, onRemove }: {
+function CertificateRow({ cert, index, issues, saved, onChange, onRemove }: {
   cert: CertDraft;
+  index: number;
+  issues: ProfileIssueMap;
   saved: Certification | undefined;
   onChange: (next: CertDraft) => void;
   onRemove: () => void;
@@ -227,79 +236,101 @@ function CertificateRow({ cert, saved, onChange, onRemove }: {
     || saved.issued_on !== cert.issued_on || saved.expires_on !== cert.expires_on
     || saved.credential_id !== cert.credential_id;
   const meta = saved && !edited ? CERT_STATUS[saved.status] : null;
-  const set = (k: keyof CertDraft, v: string) => onChange({ ...cert, [k]: v || (k.endsWith('_on') ? null : '') } as CertDraft);
+  const at = (key: string) => issues[`certifications.${index}.${key}`];
+
+  const name = useStandaloneField(
+    `cert-${cert.id}-name`, cert.name,
+    (v: string) => onChange({ ...cert, name: v }),
+    { error: at('name') },
+  );
+  const issuer = useStandaloneField(
+    `cert-${cert.id}-issuer`, cert.issuer,
+    (v: string) => onChange({ ...cert, issuer: v }),
+    { error: at('issuer') },
+  );
+  const credentialId = useStandaloneField(
+    `cert-${cert.id}-credential`, cert.credential_id,
+    (v: string) => onChange({ ...cert, credential_id: v }),
+    { error: at('credential_id') },
+  );
+  // '' clears the date. The server distinguishes that from omitting the field,
+  // so the empty string becomes null on the way into the draft rather than
+  // being coerced anywhere later.
+  const issuedOn = useStandaloneField(
+    `cert-${cert.id}-issued`, cert.issued_on || '',
+    (v: string) => onChange({ ...cert, issued_on: v || null }),
+    { error: at('issued_on') },
+  );
+  const expiresOn = useStandaloneField(
+    `cert-${cert.id}-expires`, cert.expires_on || '',
+    (v: string) => onChange({ ...cert, expires_on: v || null }),
+    { error: at('expires_on') },
+  );
 
   return (
-    <div
-      className="rounded-2xl p-4"
-      style={{
-        background: 'var(--bg-subtle)',
-        border: '1px solid var(--border)',
-        // A hairline in the status colour down the leading edge, so a wall of
-        // certificates shows its problems before any of it is read.
-        borderLeft: `3px solid ${meta ? meta.color : 'var(--border)'}`,
-      }}
-    >
-      <div className="mb-3 flex items-start justify-between gap-3">
-        {/* The name gets the full width and the status sits UNDER it, beside
-            the sentence that explains it. Sharing a row with the pill truncated
-            real certification names on a phone — "NASM Certified Personal Tr" —
-            and split the status from its own explanation. */}
-        <div className="min-w-0 flex-1">
-          <input
-            value={cert.name}
-            onChange={(e) => set('name', e.target.value)}
-            placeholder="Certification name"
-            className="w-full bg-transparent text-[14px] font-[780] tracking-[-0.01em] outline-none"
-            style={{ color: 'var(--text-primary)' }}
-          />
-          {meta && (
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-              <span
-                className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-[760] whitespace-nowrap"
-                style={{ background: meta.bg, color: meta.color }}
-              >
-                {meta.icon} {meta.label}
-              </span>
-              <span className="text-[11px] font-[560]" style={{ color: 'var(--text-muted)' }}>
-                {certExpiryLine(saved!.status, saved!.daysLeft, saved!.expires_on)}
-              </span>
-            </div>
-          )}
-        </div>
-        <button
-          onClick={onRemove}
-          aria-label={`Remove ${cert.name || 'certification'}`}
-          className="shrink-0 rounded-lg p-1.5 transition-colors hover:bg-[var(--bg-hover)]"
-          style={{ color: 'var(--text-disabled)' }}
-        >
-          <XCircle size={15} />
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-        {([
-          ['Issuing body', 'issuer', 'text', 'NASM, ACE, K11…'],
-          ['Credential ID', 'credential_id', 'text', 'Optional'],
-          ['Issued', 'issued_on', 'date', ''],
-          ['Expires', 'expires_on', 'date', ''],
-        ] as const).map(([label, key, type, placeholder]) => (
-          <label key={key} className="block">
-            <span className="mb-1 block text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-              {label}
-            </span>
-            <input
-              type={type}
-              value={(cert[key] as string) || ''}
-              placeholder={placeholder}
-              onChange={(e) => set(key, e.target.value)}
-              className="w-full rounded-xl px-3 py-2 text-[12.5px] font-[560] outline-none"
-              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+    <FieldSurface surface="nested">
+      <div
+        className="rounded-2xl p-4"
+        style={{
+          background: 'var(--bg-subtle)',
+          border: '1px solid var(--border)',
+          // A hairline in the status colour down the leading edge, so a wall of
+          // certificates shows its problems before any of it is read.
+          borderLeft: `3px solid ${meta ? meta.color : 'var(--border)'}`,
+        }}
+      >
+        <div className="mb-3 flex items-start justify-between gap-3">
+          {/* The name gets the full width and the status sits UNDER it, beside
+              the sentence that explains it. Sharing a row with the pill truncated
+              real certification names on a phone — "NASM Certified Personal Tr" —
+              and split the status from its own explanation. */}
+          <div className="min-w-0 flex-1">
+            <TextField
+              field={name}
+              label="Certification"
+              density="compact"
+              placeholder="Certification name"
+              maxLength={PROFILE_LIMITS.certificationName}
             />
-          </label>
-        ))}
+            {meta && (
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-[760] whitespace-nowrap"
+                  style={{ background: meta.bg, color: meta.color }}
+                >
+                  {meta.icon} {meta.label}
+                </span>
+                <span className="text-[11px] font-[560]" style={{ color: 'var(--text-muted)' }}>
+                  {certExpiryLine(saved!.status, saved!.daysLeft, saved!.expires_on)}
+                </span>
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label={`Remove ${cert.name || 'certification'}`}
+            className="mt-[18px] flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
+            style={{ color: 'var(--text-disabled)' }}
+          >
+            <XCircle size={15} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          <TextField
+            field={issuer} label="Issuing body" density="compact"
+            placeholder="NASM, ACE, K11…" maxLength={PROFILE_LIMITS.certificationIssuer}
+          />
+          <TextField
+            field={credentialId} label="Credential ID" density="compact"
+            placeholder="Optional" maxLength={PROFILE_LIMITS.credentialId}
+          />
+          <DateFieldControl field={issuedOn} label="Issued" density="compact" />
+          <DateFieldControl field={expiresOn} label="Expires" density="compact" />
+        </div>
       </div>
-    </div>
+    </FieldSurface>
   );
 }
 
@@ -535,8 +566,29 @@ function ProfileSkeleton() {
 /* ─────────────────────────────────────────
    STICKY SAVE BAR
 ───────────────────────────────────────── */
-function StickySaveBar({ dirty, saving, onSave, onDiscard, msg }: {
-  dirty: boolean; saving: boolean;
+/**
+ * The sticky Save bar.
+ *
+ * ── The bug this shape exists to prevent ────────────────────────────────────
+ *
+ * It used to be `{msg ? <message/> : <buttons/>}`. A failed save set `msg` and
+ * nothing ever cleared it: the only two `setSaveMsg(null)` calls lived inside
+ * `handleSave` and `handleDiscard`, which were reached from the very buttons
+ * the message had just replaced. So the first server rejection — an
+ * out-of-range year, a half-filled time range — left the page with a sentence
+ * where its Save button had been, several screens of unsaved edits still in
+ * memory, and no way back except a reload that threw all of them away.
+ *
+ * The message and the buttons now share the bar. A failure is something to
+ * read and act on, not something that takes away the means of acting.
+ */
+function StickySaveBar({ open, dirty, saving, onSave, onDiscard, msg }: {
+  /** Whether the bar is on screen at all. */
+  open: boolean;
+  /** Whether there is anything to save. Separate from `open`, which stays true
+   *  briefly after a save so the confirmation can be read. */
+  dirty: boolean;
+  saving: boolean;
   onSave: () => void; onDiscard: () => void;
   msg: { type: 'success' | 'error'; text: string } | null;
 }) {
@@ -554,7 +606,7 @@ function StickySaveBar({ dirty, saving, onSave, onDiscard, msg }: {
 
   return (
     <AnimatePresence>
-      {dirty && (
+      {open && (
         <m.div
           initial={{ y: 100, opacity: 0, x: centred ? '-50%' : 0 }}
           animate={{ y: 0, opacity: 1, x: centred ? '-50%' : 0 }}
@@ -581,41 +633,54 @@ function StickySaveBar({ dirty, saving, onSave, onDiscard, msg }: {
             boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
           }}
         >
-          {msg ? (
-            <>
-              {msg.type === 'success'
-                ? <CheckCircle2 size={14} style={{ color: '#10b981' }} />
-                : <XCircle size={14} style={{ color: '#ef4444' }} />}
-              <span className="text-[12.5px] font-[600]" style={{ color: msg.type === 'success' ? '#10b981' : '#ef4444' }}>
-                {msg.text}
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="mr-auto text-[12.5px] font-[500]" style={{ color: 'var(--text-secondary)' }}>Unsaved changes</span>
-              <button
-                onClick={onDiscard}
-                className="rounded-xl px-3 py-1.5 text-[12px] font-[620] transition-colors"
-                style={{ color: 'var(--text-muted)', background: 'var(--bg-subtle)' }}
-              >
-                Discard
-              </button>
-              <button
-                onClick={onSave}
-                disabled={saving}
-                className="flex items-center gap-2 rounded-xl px-4 py-1.5 text-[12px] font-[700] transition-all"
-                style={{
-                  background: 'linear-gradient(135deg,#0067e0,#0059ce)',
-                  color: 'white',
-                  boxShadow: '0 2px 12px rgba(0,103,224,0.40)',
-                  opacity: saving ? 0.7 : 1,
-                }}
-              >
-                {saving ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
-                {saving ? 'Saving…' : 'Save changes'}
-              </button>
-            </>
-          )}
+          {/* One live region, whatever it currently says. `alert` for a
+              failure so it interrupts; `status` for a confirmation so it does
+              not. Rendered unconditionally — a region created at the moment it
+              first has content is frequently missed by screen readers. */}
+          <span
+            className="mr-auto flex min-w-0 items-center gap-2"
+            role={msg?.type === 'error' ? 'alert' : 'status'}
+            aria-live={msg?.type === 'error' ? 'assertive' : 'polite'}
+          >
+            {msg?.type === 'success' && <CheckCircle2 size={14} className="shrink-0" style={{ color: '#10b981' }} />}
+            {msg?.type === 'error' && <XCircle size={14} className="shrink-0" style={{ color: '#ef4444' }} />}
+            <span
+              className="text-[12.5px] font-[600]"
+              style={{
+                color: msg?.type === 'success' ? '#10b981'
+                  : msg?.type === 'error' ? '#ef4444'
+                  : 'var(--text-secondary)',
+                fontWeight: msg ? 600 : 500,
+              }}
+            >
+              {msg ? msg.text : 'Unsaved changes'}
+            </span>
+          </span>
+
+          <button
+            type="button"
+            onClick={onDiscard}
+            disabled={!dirty || saving}
+            className="rounded-xl px-3 py-1.5 text-[12px] font-[620] transition-colors disabled:opacity-45"
+            style={{ color: 'var(--text-muted)', background: 'var(--bg-subtle)' }}
+          >
+            Discard
+          </button>
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={saving || !dirty}
+            className="flex items-center gap-2 rounded-xl px-4 py-1.5 text-[12px] font-[700] transition-all"
+            style={{
+              background: 'linear-gradient(135deg,#0067e0,#0059ce)',
+              color: 'white',
+              boxShadow: '0 2px 12px rgba(0,103,224,0.40)',
+              opacity: saving || !dirty ? 0.7 : 1,
+            }}
+          >
+            {saving ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+            {saving ? 'Saving…' : 'Save changes'}
+          </button>
         </m.div>
       )}
     </AnimatePresence>
@@ -771,6 +836,22 @@ export default function ProfilePage() {
 
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  /**
+   * Per-field messages from the profile schema, keyed by path.
+   *
+   * Populated only by a save ATTEMPT. Validating as you type would put "Name
+   * the institution" under a row a second after it was added, which is not a
+   * mistake yet — it is a row someone is about to fill in.
+   */
+  const [fieldIssues, setFieldIssues] = useState<ProfileIssueMap>({});
+  /**
+   * A same-frame re-entry guard.
+   *
+   * `saving` is state, so two taps in one frame both read `false` and both
+   * fire the PUT. A ref is written synchronously and is the only thing that
+   * can stop the second.
+   */
+  const savingRef = useRef(false);
 
   /* Avatar + cover banner */
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -848,6 +929,34 @@ export default function ProfilePage() {
 
   /* ── Save personal info ── */
   const handleSave = async () => {
+    if (savingRef.current) return;
+
+    /*
+     * Validate the whole draft before anything is sent.
+     *
+     * The server validates all of this properly, and on the first problem it
+     * refuses the ENTIRE save with one sentence naming a positional index —
+     * "Education 2 has an invalid year". That sentence arrived in a bar at the
+     * bottom of a page several screens long, with nothing highlighted and no
+     * way to tell which row was meant, while twenty correct fields went
+     * nowhere. Checking here puts the message on the input that caused it, and
+     * on the tab that input is on.
+     */
+    const issues = profileIssues({
+      designation, bio, philosophy, trainingStyle,
+      certifications, previousGyms, education, achievements, workingHours, languages,
+    });
+    if (issues.length > 0) {
+      setFieldIssues(issueMap(issues));
+      // Every field this schema covers lives on the Credentials tab. An error
+      // on a panel the user cannot see is the same as no error at all.
+      setTab('credentials');
+      setSaveMsg({ type: 'error', text: issueSummary(issues) });
+      return;
+    }
+    setFieldIssues({});
+
+    savingRef.current = true;
     setSaving(true);
     setSaveMsg(null);
     try {
@@ -874,6 +983,7 @@ export default function ProfilePage() {
       const msg = errorMessage(err, 'Failed to save');
       setSaveMsg({ type: 'error', text: msg });
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
@@ -892,6 +1002,7 @@ export default function ProfilePage() {
     setSpecialisations(JSON.parse(o.specialisations));
     setCertifications(JSON.parse(o.certifications));
     setSaveMsg(null);
+    setFieldIssues({});
   };
 
   /**
@@ -1455,6 +1566,7 @@ export default function ProfilePage() {
                     subtitle="Your designation, how you coach, and where you've coached"
                   />
                   <ProfessionalSection
+                    issues={fieldIssues}
                     designation={designation} coachingModes={coachingModes} previousGyms={previousGyms}
                     set={(patch) => {
                       if (patch.designation !== undefined) setDesignation(patch.designation);
@@ -1471,6 +1583,7 @@ export default function ProfilePage() {
                     subtitle="When you take sessions. Split shifts are supported."
                   />
                   <WorkingHoursEditor
+                    issues={fieldIssues}
                     value={workingHours} onChange={setWorkingHours}
                     weeklyMinutes={me?.weeklyMinutes ?? 0}
                   />
@@ -1491,7 +1604,7 @@ export default function ProfilePage() {
                     title="Education"
                     subtitle="Degrees, diplomas and academy courses"
                   />
-                  <EducationSection value={education} onChange={setEducation} />
+                  <EducationSection value={education} onChange={setEducation} issues={fieldIssues} />
                 </GlassCard>
 
                 <GlassCard className="p-6">
@@ -1500,7 +1613,7 @@ export default function ProfilePage() {
                     title="Achievements"
                     subtitle="Competitions, records, awards and media — newest first"
                   />
-                  <AchievementsSection value={achievements} onChange={setAchievements} />
+                  <AchievementsSection value={achievements} onChange={setAchievements} issues={fieldIssues} />
                 </GlassCard>
 
                 <GlassCard className="p-6">
@@ -1541,6 +1654,8 @@ export default function ProfilePage() {
                         <CertificateRow
                           key={cert.id}
                           cert={cert}
+                          index={i}
+                          issues={fieldIssues}
                           saved={me?.certifications.find((x) => x.id === cert.id)}
                           onChange={(next) => setCertifications((prev) => prev.map((x, j) => (j === i ? next : x)))}
                           onRemove={() => setCertifications((prev) => prev.filter((_, j) => j !== i))}
@@ -1863,7 +1978,10 @@ export default function ProfilePage() {
         </div>
 
         {/* ── STICKY SAVE BAR ── */}
-        <StickySaveBar dirty={isDirty || !!saveMsg} saving={saving} onSave={handleSave} onDiscard={handleDiscard} msg={saveMsg} />
+        <StickySaveBar
+          open={isDirty || !!saveMsg} dirty={isDirty} saving={saving}
+          onSave={handleSave} onDiscard={handleDiscard} msg={saveMsg}
+        />
 
         {/* ── RECOVERY CODES MODAL ── */}
         <Dialog open={!!recoveryCodes} onOpenChange={(open) => { if (!open) setRecoveryCodes(null); }}>

@@ -38,7 +38,7 @@
  */
 
 import { cn } from '../cn';
-import { FormField } from './FormField';
+import { FormField, type FormFieldProps } from './FormField';
 import { TextInput, TextArea, SelectInput } from './controls';
 
 /**
@@ -90,6 +90,11 @@ export interface BoundFieldProps {
    * `<span>` caption — which names nothing.
    */
   labelHidden?: boolean;
+  /**
+   * `compact` renders the tiny uppercase caption used inside dense list rows.
+   * See `FormFieldProps.density` — it is a label style, not a kind of field.
+   */
+  density?: FormFieldProps['density'];
 }
 
 /**
@@ -164,6 +169,7 @@ export function TextField({
   className,
   reserveMessageSpace,
   labelHidden,
+  density,
   type = 'text',
   autoComplete,
   maxLength,
@@ -185,6 +191,7 @@ export function TextField({
       className={className}
       reserveMessageSpace={reserveMessageSpace}
       labelHidden={labelHidden}
+      density={density}
       labelAside={
         showCount && maxLength ? (
           <span
@@ -242,6 +249,7 @@ export function TextAreaField({
   className,
   reserveMessageSpace,
   labelHidden,
+  density,
   rows = 3,
   maxLength,
   showCount,
@@ -260,6 +268,7 @@ export function TextAreaField({
       className={className}
       reserveMessageSpace={reserveMessageSpace}
       labelHidden={labelHidden}
+      density={density}
       labelAside={
         showCount && maxLength ? (
           <span
@@ -323,6 +332,7 @@ export function NumberField({
   className,
   reserveMessageSpace,
   labelHidden,
+  density,
   mode = 'decimal',
   min,
   max,
@@ -348,6 +358,7 @@ export function NumberField({
       className={className}
       reserveMessageSpace={reserveMessageSpace}
       labelHidden={labelHidden}
+      density={density}
     >
       <span className="relative block">
         <TextInput
@@ -414,6 +425,7 @@ export function SelectField<T extends string = string>({
   className,
   reserveMessageSpace,
   labelHidden,
+  density,
   options,
   placeholderOption,
 }: SelectFieldProps<T>) {
@@ -430,6 +442,7 @@ export function SelectField<T extends string = string>({
       className={className}
       reserveMessageSpace={reserveMessageSpace}
       labelHidden={labelHidden}
+      density={density}
     >
       <SelectInput
         name={field.name}
@@ -478,6 +491,7 @@ export function DateFieldControl({
   className,
   reserveMessageSpace,
   labelHidden,
+  density,
   min,
   max,
 }: DateFieldProps) {
@@ -494,6 +508,7 @@ export function DateFieldControl({
       className={className}
       reserveMessageSpace={reserveMessageSpace}
       labelHidden={labelHidden}
+      density={density}
     >
       <TextInput
         name={field.name}
@@ -768,6 +783,7 @@ export function MonthFieldControl({
   className,
   reserveMessageSpace,
   labelHidden,
+  density,
   min,
   max,
 }: MonthFieldProps) {
@@ -784,6 +800,7 @@ export function MonthFieldControl({
       className={className}
       reserveMessageSpace={reserveMessageSpace}
       labelHidden={labelHidden}
+      density={density}
     >
       <TextInput
         name={field.name}
@@ -792,6 +809,74 @@ export function MonthFieldControl({
         min={min}
         max={max}
         placeholder="YYYY-MM"
+        onChange={(e) => field.handleChange(e.target.value)}
+        onBlur={field.handleBlur}
+      />
+    </FormField>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Time
+ * ────────────────────────────────────────────────────────────────────────── */
+
+export interface TimeFieldProps extends BoundFieldProps {
+  field: FieldLike<string>;
+  /** Inclusive `HH:MM` bounds. */
+  min?: string;
+  max?: string;
+}
+
+/**
+ * A time of day, as `HH:MM`.
+ *
+ * Native `<input type="time">` rather than a custom picker: it is already
+ * localised — a 12-hour locale renders AM/PM over the same 24-hour value — it
+ * is already keyboard-accessible, and on a phone it opens the OS wheel, which
+ * beats anything hand-rolled inside a scrolling form.
+ *
+ * Pairs of these are how availability is expressed, and a pair wants to sit on
+ * one line. `labelHidden` is the intended way to do that: the label is real
+ * and `htmlFor`-bound, it is simply not painted, so "Tuesday start" reaches a
+ * screen reader without a caption stack tripling the height of a seven-day
+ * grid.
+ */
+export function TimeFieldControl({
+  field,
+  label,
+  description,
+  required,
+  disabled,
+  readOnly,
+  serverError,
+  className,
+  reserveMessageSpace,
+  labelHidden,
+  density,
+  min,
+  max,
+}: TimeFieldProps) {
+  const error = visibleError(field, serverError);
+
+  return (
+    <FormField
+      label={label}
+      description={description}
+      error={error}
+      required={required}
+      disabled={disabled}
+      readOnly={readOnly}
+      className={className}
+      reserveMessageSpace={reserveMessageSpace}
+      labelHidden={labelHidden}
+      density={density}
+    >
+      <TextInput
+        name={field.name}
+        type="time"
+        value={field.state.value ?? ''}
+        min={min}
+        max={max}
         onChange={(e) => field.handleChange(e.target.value)}
         onBlur={field.handleBlur}
       />
@@ -811,28 +896,38 @@ export interface StandaloneFieldOptions {
 }
 
 /**
- * A `FieldLike` for a control that is NOT part of a submitted form.
+ * A `FieldLike` for a control whose value and error the CALLER owns.
  *
- * The app has a whole class of these: per-set inputs in the workout logger,
- * per-row editors in a table, a stepper beside a number. They save on blur,
- * one field at a time, and there is no payload to validate, no submit to guard
- * and no reset to perform — so `useAppForm` models none of what they do.
+ * Two shapes of screen need this, and neither is served by `useAppForm`:
  *
- * What they still want is everything `FieldLike` carries into the field
- * components: a real label with `htmlFor`, `aria-describedby`, `aria-invalid`,
- * a 44px target, and — the one that matters most on a numeric field —
- * `inputMode` instead of `type="number"`, so a scroll wheel over a focused
- * input cannot silently change a logged weight.
+ *   1. Controls with no submit at all — per-set inputs in the workout logger,
+ *      per-row editors in a table, a stepper beside a number. They save on
+ *      blur, one field at a time; there is no payload, no submit to guard and
+ *      no reset to perform.
  *
- * ── What this deliberately does NOT do ──────────────────────────────────────
+ *   2. One submit spread across a tree the form instance cannot reach — the
+ *      profile page holds twenty pieces of state behind a single sticky Save,
+ *      hands slices of it to five section components, and validates the whole
+ *      draft with a schema at submit. The sections receive VALUES and ERRORS,
+ *      not a form instance.
  *
- * It does not make a screen "on the platform". There is no schema behind it and
- * the audit will keep reporting the file's schema coverage as none, which is
- * true: a control rendered this way is validated by whatever the caller does
- * with the value, exactly as it was before.
+ * Both want what `FieldLike` carries into the field components: a real label
+ * with `htmlFor`, `aria-describedby`, `aria-invalid`, a 44px target, and — the
+ * one that matters most on a numeric field — `inputMode` instead of
+ * `type="number"`, so a scroll wheel over a focused input cannot silently
+ * change a logged weight.
  *
- * Using it to make a real form's numbers look better would be the metric-gaming
- * §23 forbids. It is for controls that genuinely have no submit.
+ * ── The line this must not cross ────────────────────────────────────────────
+ *
+ * The hook renders an error; it never produces one. So it is legitimate
+ * exactly when something real computes that error — a schema at submit, a
+ * bounds check on blur — and it is metric-gaming under §23 when it is used to
+ * dress a value that NOTHING validates, purely so a file stops being counted
+ * as raw.
+ *
+ * It does not by itself make a screen "on the platform". The audit measures
+ * schema coverage per file from the schema a file actually imports and calls,
+ * which is the check that tells the two cases apart.
  */
 export function useStandaloneField<T>(
   name: string,

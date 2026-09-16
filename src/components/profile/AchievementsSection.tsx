@@ -9,14 +9,27 @@
 //
 // The server sorts newest-first and puts undated entries last, so the order
 // here is not a client concern — it will not rearrange on save.
+//
+// Every control is a field: a real label with `htmlFor`, `aria-describedby`,
+// `aria-invalid`, and the message from the shared profile schema on the input
+// that caused it. Before, the title had only a placeholder — which names
+// nothing and disappears the moment you type — the year took any four digits
+// including `0001`, and the detail box let a coach type past the 600-character
+// column, which the server then cut mid-sentence without saying so.
 
 import React from 'react';
 import {
   Plus, XCircle, Trophy, Medal, Award, Mic, Newspaper, BookOpen, BadgeCheck, Star,
 } from 'lucide-react';
 import type { AchievementKind, ProfileAchievement } from '@/lib/api';
+import {
+  FieldSurface, TextField, TextAreaField, NumberField, SelectField, useStandaloneField,
+} from '@/components/ui/form';
+import {
+  PROFILE_LIMITS, PROFILE_MAX, maxProfileYear, type ProfileIssueMap,
+} from '@/lib/forms/schemas/profile';
 
-const MAX_ENTRIES = 40;
+const MAX_ENTRIES = PROFILE_MAX.achievements;
 
 /**
  * The kinds the server accepts. Each carries an icon and a word — an unknown
@@ -34,25 +47,48 @@ const KINDS: { value: AchievementKind; label: string; icon: React.ReactNode; tin
 ];
 const KIND_MAP = Object.fromEntries(KINDS.map((k) => [k.value, k])) as Record<AchievementKind, typeof KINDS[number]>;
 
-function fieldStyle() {
-  return { background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' };
-}
-
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="mb-1 block text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-      {children}
-    </span>
-  );
-}
-
-function AchievementRow({ entry, onChange, onRemove, last }: {
+function AchievementRow({ entry, index, issues, onChange, onRemove, last }: {
   entry: ProfileAchievement;
+  index: number;
+  issues: ProfileIssueMap;
   onChange: (a: ProfileAchievement) => void;
   onRemove: () => void;
   last: boolean;
 }) {
   const kind = KIND_MAP[entry.kind] || KIND_MAP.other;
+  const at = (key: string) => issues[`achievements.${index}.${key}`];
+
+  const title = useStandaloneField(
+    `achievement-${entry.id}-title`, entry.title,
+    (v: string) => onChange({ ...entry, title: v }),
+    { error: at('title') },
+  );
+  const kindField = useStandaloneField<AchievementKind>(
+    `achievement-${entry.id}-kind`, entry.kind,
+    (v: AchievementKind) => onChange({ ...entry, kind: v }),
+    { error: at('kind') },
+  );
+  const issuer = useStandaloneField(
+    `achievement-${entry.id}-issuer`, entry.issuer,
+    (v: string) => onChange({ ...entry, issuer: v }),
+    { error: at('issuer') },
+  );
+  // Held as a string in the control and converted once, so a half-typed "20"
+  // never becomes a stored year.
+  const year = useStandaloneField(
+    `achievement-${entry.id}-year`,
+    entry.year == null ? '' : String(entry.year),
+    (v: string) => {
+      const digits = v.replace(/\D/g, '').slice(0, 4);
+      onChange({ ...entry, year: digits ? Number(digits) : null });
+    },
+    { error: at('year') },
+  );
+  const detail = useStandaloneField(
+    `achievement-${entry.id}-detail`, entry.detail,
+    (v: string) => onChange({ ...entry, detail: v }),
+    { error: at('detail') },
+  );
 
   return (
     <div className="relative flex gap-3">
@@ -69,97 +105,75 @@ function AchievementRow({ entry, onChange, onRemove, last }: {
         {!last && <span aria-hidden className="mt-1 w-px flex-1" style={{ background: 'var(--border)' }} />}
       </div>
 
-      <div className="mb-3 min-w-0 flex-1 rounded-2xl p-4"
-        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-        <div className="mb-3 flex items-start gap-2">
-          <input
-            value={entry.title}
-            onChange={(e) => onChange({ ...entry, title: e.target.value })}
-            placeholder="What you achieved"
-            /* A long title is cut at 360px by the timeline rail beside it.
-               The input scrolls when focused; the tooltip makes it readable
-               without one. */
-            title={entry.title || undefined}
-            className="min-w-0 flex-1 bg-transparent text-[14px] font-[780] tracking-[-0.01em] outline-none"
-            style={{ color: 'var(--text-primary)' }}
-          />
-          <button
-            onClick={onRemove}
-            aria-label={`Remove ${entry.title || 'achievement'}`}
-            className="shrink-0 rounded-lg p-1.5 transition-colors hover:bg-[var(--bg-hover)]"
-            style={{ color: 'var(--text-disabled)' }}
-          >
-            <XCircle size={15} />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-          <label className="block">
-            <Label>Kind</Label>
-            <select
-              value={entry.kind}
-              onChange={(e) => onChange({ ...entry, kind: e.target.value as AchievementKind })}
-              className="w-full rounded-xl px-3 py-2 text-[12.5px] font-[560] outline-none"
-              style={fieldStyle()}
+      <FieldSurface surface="nested">
+        <div className="mb-3 min-w-0 flex-1 rounded-2xl p-4"
+          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+          <div className="mb-3 flex items-end gap-2">
+            <TextField
+              field={title}
+              label="Achievement"
+              density="compact"
+              className="min-w-0 flex-1"
+              placeholder="What you achieved"
+              maxLength={PROFILE_LIMITS.title}
+              showCount={entry.title.length > PROFILE_LIMITS.title - 20}
+            />
+            <button
+              type="button"
+              onClick={onRemove}
+              aria-label={`Remove ${entry.title || 'achievement'}`}
+              className="mb-[3px] flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
+              style={{ color: 'var(--text-disabled)' }}
             >
-              {KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
-            </select>
-          </label>
-          <label className="block">
-            <Label>Awarded by</Label>
-            <input
-              value={entry.issuer}
-              onChange={(e) => onChange({ ...entry, issuer: e.target.value })}
-              placeholder="Federation, publication…"
-              className="w-full rounded-xl px-3 py-2 text-[12.5px] font-[560] outline-none"
-              style={fieldStyle()}
+              <XCircle size={15} />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+            <SelectField
+              field={kindField} label="Kind" density="compact"
+              options={KINDS.map((k) => ({ value: k.value, label: k.label }))}
             />
-          </label>
-          <label className="block">
-            <Label>Year</Label>
-            <input
-              type="text" inputMode="numeric" maxLength={4}
-              value={entry.year == null ? '' : String(entry.year)}
-              onChange={(e) => {
-                const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
-                onChange({ ...entry, year: digits ? Number(digits) : null });
-              }}
-              placeholder="2023"
-              className="w-full rounded-xl px-3 py-2 text-[12.5px] font-[560] tabular-nums outline-none"
-              style={fieldStyle()}
+            <TextField
+              field={issuer} label="Awarded by" density="compact"
+              placeholder="Federation, publication…" maxLength={PROFILE_LIMITS.issuer}
             />
-          </label>
-          <label className="block sm:col-span-3">
-            <Label>Detail</Label>
-            <textarea
-              value={entry.detail} rows={2} maxLength={600}
-              onChange={(e) => onChange({ ...entry, detail: e.target.value })}
+            <NumberField
+              field={year} label="Year" density="compact" mode="integer"
+              placeholder="2023" min={1900} max={maxProfileYear()}
+            />
+            <TextAreaField
+              field={detail} label="Detail" density="compact" className="sm:col-span-3"
+              rows={2} maxLength={PROFILE_LIMITS.detail}
+              showCount={entry.detail.length > PROFILE_LIMITS.detail - 60}
               placeholder="Optional — the lift, the placing, the title."
-              className="w-full resize-y rounded-xl px-3 py-2 text-[12.5px] font-[560] leading-relaxed outline-none"
-              style={fieldStyle()}
             />
-          </label>
+          </div>
+          {entry.year == null && entry.title.trim() !== '' && (
+            // Undated entries sort to the bottom, which looks like a bug unless
+            // the reason is stated where the decision is made.
+            <p className="mt-2 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
+              No year set — this will sit at the end of the timeline.
+            </p>
+          )}
         </div>
-        {entry.year == null && entry.title.trim() !== '' && (
-          // Undated entries sort to the bottom, which looks like a bug unless
-          // the reason is stated where the decision is made.
-          <p className="mt-2 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
-            No year set — this will sit at the end of the timeline.
-          </p>
-        )}
-      </div>
+      </FieldSurface>
     </div>
   );
 }
 
-export function AchievementsSection({ value, onChange }: {
-  value: ProfileAchievement[]; onChange: (v: ProfileAchievement[]) => void;
+export function AchievementsSection({ value, onChange, issues = {} }: {
+  value: ProfileAchievement[];
+  onChange: (v: ProfileAchievement[]) => void;
+  /** Messages from the profile schema, keyed `achievements.<i>.<field>`. */
+  issues?: ProfileIssueMap;
 }) {
   const full = value.length >= MAX_ENTRIES;
   return (
     <div>
       <div className="mb-4 flex items-center justify-end">
         <button
+          type="button"
           disabled={full}
           onClick={() => onChange([...value, {
             id: `ach_${Date.now().toString(36)}`, title: '', kind: 'competition',
@@ -186,7 +200,7 @@ export function AchievementsSection({ value, onChange }: {
         <div className="flex flex-col">
           {value.map((a, i) => (
             <AchievementRow
-              key={a.id} entry={a} last={i === value.length - 1}
+              key={a.id} entry={a} index={i} issues={issues} last={i === value.length - 1}
               onChange={(next) => onChange(value.map((x, j) => (j === i ? next : x)))}
               onRemove={() => onChange(value.filter((_, j) => j !== i))}
             />

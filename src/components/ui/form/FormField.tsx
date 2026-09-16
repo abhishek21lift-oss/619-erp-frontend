@@ -74,6 +74,18 @@ export interface FormFieldProps {
   labelHidden?: boolean;
   /** Rendered at the right end of the label row — a character count, an optional marker. */
   labelAside?: React.ReactNode;
+  /**
+   * The label's typographic weight.
+   *
+   * `compact` is the tiny uppercase caption used inside dense list rows —
+   * a certification card, an education entry, a builder step. It was
+   * hand-written in nineteen files as `text-[10px] font-[700] uppercase
+   * tracking-wide`, each copy carrying its own `<span>` and therefore no
+   * `htmlFor`, no `aria-describedby` and nowhere to put an error. It is a
+   * label style, not a different kind of field, so it belongs here rather
+   * than in a fourth local component.
+   */
+  density?: 'default' | 'compact';
   className?: string;
   /** Escape hatch for a caller that must control the id (a deep-link anchor). */
   id?: string;
@@ -145,6 +157,7 @@ export function FormField({
   reserveMessageSpace = false,
   labelHidden = false,
   labelAside,
+  density = 'default',
   className,
   id: idOverride,
 }: FormFieldProps) {
@@ -152,6 +165,7 @@ export function FormField({
     error, required, disabled, readOnly, id: idOverride, description,
   });
   const { id } = wiring;
+  const compact = density === 'compact';
 
   return (
     <FieldContext.Provider value={wiring}>
@@ -171,22 +185,29 @@ export function FormField({
           <span className="flex items-baseline gap-0.5">
             <label
               htmlFor={id}
-              className="text-[11.5px] font-[650] leading-none"
-              style={{ color: disabled ? 'var(--text-disabled)' : 'var(--text-secondary)' }}
+              className={compact
+                ? 'text-[10px] font-[700] uppercase tracking-wide leading-none'
+                : 'text-[11.5px] font-[650] leading-none'}
+              style={{
+                color: disabled
+                  ? 'var(--text-disabled)'
+                  : compact ? 'var(--text-muted)' : 'var(--text-secondary)',
+              }}
             >
               {label}
             </label>
             {required && (
               // aria-hidden because `required` on the control already carries
               // this to assistive tech; announcing "star" as well is noise.
-              <span aria-hidden className="text-[11.5px] font-[650] leading-none"
+              <span aria-hidden
+                className={compact ? 'text-[10px] font-[700] leading-none' : 'text-[11.5px] font-[650] leading-none'}
                 style={{ color: 'var(--danger-text)' }}>*</span>
             )}
           </span>
           {labelAside}
         </div>
 
-        <div className={labelHidden ? undefined : 'mt-1.5'}>{children}</div>
+        <div className={labelHidden ? undefined : compact ? 'mt-1' : 'mt-1.5'}>{children}</div>
 
         {/* One row, one purpose. The error takes it when there is an error. */}
         {(error || description || reserveMessageSpace) && (

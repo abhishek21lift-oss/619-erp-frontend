@@ -34,7 +34,14 @@ const audit = auditAccessibleNames();
 describe('the accessible-name audit itself', () => {
   it('scanned the app', () => {
     expect(audit.filesScanned).toBeGreaterThan(200);
-    expect(audit.total).toBeGreaterThan(300);
+    // Both floors are deliberately slack, for the reason spelled out below:
+    // `total` counts RAW controls, and it falls every time a form moves to the
+    // design system — migrating the profile's list-row editors took twenty-two
+    // out at once. Pinning it near the current number would make the form
+    // migration fail a test it is improving. This only proves the scan ran
+    // over the app rather than over an empty tree; `audit.nameless` is the
+    // assertion with teeth, and it has no threshold at all.
+    expect(audit.total).toBeGreaterThan(150);
   });
 
   it('counts a wrapped control as named, across a component boundary', () => {
