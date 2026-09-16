@@ -46,6 +46,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
 import { fmtDate } from '@/lib/format';
 import { errorMessage } from '@/lib/forms/errors';
+import { checkFile, AVATAR_RULES, GALLERY_RULES } from '@/lib/forms/files';
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -918,19 +919,16 @@ export default function ProfilePage() {
     }
   }, []);
 
-  /** Shared guard for the two image uploads. */
-  const rejectImage = (file: File, maxBytes: number): string | null => {
-    if (!/^image\/(png|jpe?g|webp|gif)$/i.test(file.type)) {
-      return 'Only PNG, JPG, WEBP, or GIF images are allowed';
-    }
-    if (file.size > maxBytes) return `Image must be under ${Math.round(maxBytes / (1024 * 1024))}MB`;
-    return null;
-  };
-
   /* ── Avatar upload ── */
   const handleAvatarFile = async (file: File) => {
-    const bad = rejectImage(file, 2 * 1024 * 1024);
-    if (bad) { toast.error(bad); return; }
+    // The guard this replaces tested `file.type` against a regex, and
+    // `File.type` is derived by the browser from the EXTENSION — so renaming
+    // anything to `me.png` passed it. Two of them, with two different size
+    // limits and two different wordings for the same refusal. Both now read
+    // the leading bytes against the shared avatar rules, which also catch a
+    // file that carries a correct signature and still does not decode.
+    const check = await checkFile(file, AVATAR_RULES);
+    if (!check.ok) { toast.error(check.message); return; }
     setAvatarUploading(true);
     try {
       const { avatarUrl } = await api.profile.uploadAvatar(file);
@@ -946,8 +944,11 @@ export default function ProfilePage() {
 
   /* ── Cover banner ── */
   const handleCoverFile = async (file: File) => {
-    const bad = rejectImage(file, 5 * 1024 * 1024);
-    if (bad) { toast.error(bad); return; }
+    // GALLERY rather than AVATAR: a banner is wide, an animated GIF is a
+    // legitimate choice for one, and the minimum dimension that keeps an
+    // avatar from rendering blurred is not the one a banner needs.
+    const check = await checkFile(file, GALLERY_RULES);
+    if (!check.ok) { toast.error(check.message); return; }
     setCoverBusy(true);
     try {
       const { coverUrl } = await api.profile.uploadCover(file);

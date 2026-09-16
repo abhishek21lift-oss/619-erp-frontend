@@ -12,6 +12,7 @@ import { useAsync } from '@/lib/use-async';
 import { useToast } from '@/lib/toast';
 import { api, AiKnowledgeDocument } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
+import { checkFile, acceptAttribute, formatBytes, KNOWLEDGE_RULES } from '@/lib/forms/files';
 
 const CATEGORIES: { value: AiKnowledgeDocument['category']; label: string }[] = [
   { value: 'sop', label: 'SOP' },
@@ -46,6 +47,7 @@ export default function AiKnowledgeBasePage() {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<AiKnowledgeDocument['category']>('sop');
   const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [reindexingId, setReindexingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -79,8 +81,31 @@ export default function AiKnowledgeBasePage() {
     setTitle('');
     setCategory('sop');
     setFile(null);
+    setFileError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
+
+  /**
+   * Validate a picked knowledge document before it is held for upload.
+   *
+   * This input had NO check at all. The label said "up to 15 MB" and nothing
+   * enforced it, `accept` was a picker filter that a drop or a paste walks
+   * past, and the file went to an endpoint that then runs a PDF text extractor
+   * over whatever arrived.
+   */
+  const pickFile = async (picked: File | null) => {
+    setFileError(null);
+    if (!picked) { setFile(null); return; }
+
+    const check = await checkFile(picked, KNOWLEDGE_RULES);
+    if (!check.ok) {
+      setFile(null);
+      setFileError(check.message);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+    setFile(picked);
+  };
 
   const handleUpload = async () => {
     if (!file) { toast.error('Choose a PDF or text file to upload.'); return; }
@@ -249,10 +274,23 @@ export default function AiKnowledgeBasePage() {
               </div>
 
               <div>
-                <label htmlFor="kb-file" style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>File (PDF or .txt, up to 15 MB)</label>
-                <input id="kb-file" ref={fileInputRef} type="file" accept=".pdf,.txt,application/pdf,text/plain"
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                <label htmlFor="kb-file" style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>
+                  File (PDF or .txt, up to {formatBytes(KNOWLEDGE_RULES.maxBytes)})
+                </label>
+                {/* `accept` is generated from the same rules the check uses, so
+                    the picker's filter and the validation cannot disagree — and
+                    it remains a convenience, not a control: a drop, a paste or
+                    a scripted submit bypasses it entirely. */}
+                <input id="kb-file" ref={fileInputRef} type="file" accept={acceptAttribute(KNOWLEDGE_RULES)}
+                  aria-describedby={fileError ? 'kb-file-error' : undefined}
+                  aria-invalid={fileError ? true : undefined}
+                  onChange={(e) => void pickFile(e.target.files?.[0] ?? null)}
                   style={{ width: '100%', fontSize: 12.5, color: 'var(--text-primary)' }} />
+                {fileError && (
+                  <p id="kb-file-error" role="alert" style={{ marginTop: 6, fontSize: 11.5, fontWeight: 600, color: 'var(--danger-text)' }}>
+                    {fileError}
+                  </p>
+                )}
               </div>
             </div>
 

@@ -84,7 +84,15 @@ const CEILING = {
   unjustified: 207,
   p0Unjustified: 0,
   p1Unjustified: 119,
-  uploadUncanonical: 7,
+  /**
+   * §9. Zero, and it stays zero.
+   *
+   * Every upload site in the app reads the file's leading BYTES against the
+   * canonical rule sets. `accept` and `File.type` are both derived from the
+   * extension and prove nothing; this is the one check a renamed file cannot
+   * talk its way out of — client-side, so the server repeats it.
+   */
+  uploadUncanonical: 0,
   /** Forms with no submit guard of any kind. */
   noSubmitContract: 15,
 };
@@ -166,8 +174,17 @@ describe('ceilings — these may only fall', () => {
     expect(a.totals.byRisk.P1!.unjustified).toBeLessThanOrEqual(CEILING.p1Unjustified);
   });
 
-  it('upload sites outside the canonical rules never increase', () => {
-    expect(a.totals.uploadUncanonical).toBeLessThanOrEqual(CEILING.uploadUncanonical);
+  it('every upload site reaches the canonical validator', () => {
+    // An invariant rather than a ceiling: this reached zero, so a new upload
+    // that skips the byte check fails here by name.
+    const raw = a.rows
+      .filter((r) => r.uploadInputs > 0 && !r.uploadCanonical)
+      .map((r) => r.file);
+    expect(raw).toEqual([]);
+    expect(a.totals.uploadUncanonical).toBe(CEILING.uploadUncanonical);
+    // And the sites still exist — a check that passes because the feature was
+    // deleted is not the same as one that passes because it was fixed.
+    expect(a.totals.uploadInputs).toBeGreaterThan(5);
   });
 
   it('forms with no submit guard never increase', () => {

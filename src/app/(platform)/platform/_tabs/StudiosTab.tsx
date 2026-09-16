@@ -29,6 +29,7 @@ import { fmtDate, fmtINR, fmtWhen } from '../_shared/format';
 import type { StudioFilter, StudioRow, StudioSort } from '../_shared/types';
 import { Center, ErrorState, IconBtn, MiniStat } from '../_shared/ui';
 import { errorMessage } from '@/lib/forms/errors';
+import { checkFile, acceptAttribute, LOGO_RULES } from '@/lib/forms/files';
 
 export function exportStudiosCsv(rows: StudioRow[]): void {
   const headers = ['Name', 'Slug', 'Status', 'Plan', 'Revenue', 'Active Clients', 'Total Clients', 'Coaches', 'Accounts', 'Last Active', 'Created'];
@@ -358,6 +359,13 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
     const file = e.target.files?.[0];
     if (fileRef.current) fileRef.current.value = '';
     if (!file) return;
+
+    // No check at all before this. `accept` filters the picker and nothing
+    // else, and the logo that arrives is served from the app's own origin on
+    // every screen that shows the studio.
+    const check = await checkFile(file, LOGO_RULES);
+    if (!check.ok) { toast.error(check.message); return; }
+
     setUploading(true);
     try {
       await api.superAdmin.uploadOrgLogo(org.id, file);
@@ -498,7 +506,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
           </button>
           <div className="relative flex-shrink-0">
             <StudioMark name={org.name} logoUrl={org.logo_url} size={44} />
-            <input aria-label="Upload a studio logo" ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onLogoPick} />
+            <input aria-label="Upload a studio logo" ref={fileRef} type="file" accept={acceptAttribute(LOGO_RULES)} hidden onChange={onLogoPick} />
             <button onClick={() => fileRef.current?.click()} disabled={uploading} title="Upload / change logo"
               className="absolute -bottom-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full transition hover:opacity-80"
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>

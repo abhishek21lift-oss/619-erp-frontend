@@ -8,6 +8,7 @@ import type { ParqDocument, ParqDocumentType } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import type { ParqFormData, MedicalClearanceForm } from './types';
 import { errorMessage } from '@/lib/forms/errors';
+import { checkFile, acceptAttribute, DOCUMENT_RULES } from '@/lib/forms/files';
 
 const DOC_TYPES: { value: ParqDocumentType; label: string }[] = [
   { value: 'medical_report', label: 'Medical Report' },
@@ -41,6 +42,16 @@ export function StepMedicalClearance({ form, set, error, formId, documents, onDo
     e.target.value = '';
     if (!file) return;
     if (!formId) { toast.error('Save the form as a draft first (advance past Client Details).'); return; }
+
+    // `accept={acceptAttribute(DOCUMENT_RULES)}` filtered the picker and nothing else:
+    // it does not apply to a drop, a paste or a scripted submit, and `image/*`
+    // would have admitted an SVG — a valid image that is also a script host, if
+    // the file is ever served inline from this app's own origin. The bytes
+    // decide now, against the same document rule set every other attachment
+    // uses.
+    const check = await checkFile(file, DOCUMENT_RULES);
+    if (!check.ok) { toast.error(check.message); return; }
+
     setUploading(true);
     try {
       const res = await api.progress.parqDocuments.upload(formId, docType, file);
@@ -106,7 +117,7 @@ export function StepMedicalClearance({ form, set, error, formId, documents, onDo
               {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
               {uploading ? 'Uploading…' : 'Upload File'}
             </button>
-            <input aria-label="Upload a medical clearance document" ref={fileInputRef} type="file" className="hidden" accept="application/pdf,image/*" onChange={handleFileChange} />
+            <input aria-label="Upload a medical clearance document" ref={fileInputRef} type="file" className="hidden" accept={acceptAttribute(DOCUMENT_RULES)} onChange={handleFileChange} />
           </div>
 
           {documents.length > 0 && (

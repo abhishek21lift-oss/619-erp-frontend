@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import type { ProfileMe } from '@/lib/api';
 import { CompletionRing } from './CompletionPanel';
+import { acceptAttribute, GALLERY_RULES } from '@/lib/forms/files';
 
 /** Two letters, or one. Used whenever there is no avatar. */
 function initials(name: string) {
@@ -110,7 +111,15 @@ export interface ProfileHeroProps {
   onRemoveCover: () => void;
 }
 
-const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
+/**
+ * The picker's filter, generated from the gallery rules.
+ *
+ * It is a convenience and not a control — a drop, a paste or a scripted submit
+ * walks past it — but generating it from the same source as the check means the
+ * two can never disagree about what this app accepts. The real validation runs
+ * in the parent's pick handlers, on the bytes.
+ */
+const ACCEPT = acceptAttribute(GALLERY_RULES);
 
 export function ProfileHero({
   me, organizationName, founderNumber, resolveUrl, roleLabel, memberSince,
