@@ -88,9 +88,9 @@ function audit(): Audit {
 const CEILING = {
   /** §6. Zero, and it stays zero. */
   riskyCoercions: 0,
-  unjustified: 142,
+  unjustified: 138,
   p0Unjustified: 0,
-  p1Unjustified: 55,
+  p1Unjustified: 51,
   /**
    * §9. Zero, and it stays zero.
    *
@@ -127,11 +127,11 @@ const CEILING = {
 
 /** Raise these as phases land. Never lower them. */
 const FLOOR = {
-  platformControls: 322,
+  platformControls: 326,
   /** Forms whose errors reach the canonical mapper. */
-  errorPlatform: 54,
+  errorPlatform: 57,
   /** Forms bound to a named canonical schema. */
-  schemaPlatform: 25,
+  schemaPlatform: 27,
 };
 
 describe('the audit measures the tree', () => {

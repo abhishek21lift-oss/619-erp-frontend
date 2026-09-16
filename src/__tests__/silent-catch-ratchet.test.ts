@@ -85,7 +85,7 @@ const KNOWN = [
   'app/(chrome)/ai/progress-analysis/page.tsx:61',
   'app/(chrome)/checkin/qr-scanner/page.tsx:384',
   'app/(chrome)/checkin/qr-scanner/page.tsx:398',
-  'app/(chrome)/engagement/notifications/page.tsx:41',
+  'app/(chrome)/engagement/notifications/page.tsx:46',
   // The three /stats catches are the reasoned ones: when the SQL aggregate is
   // unavailable the page falls back to summing the rows it has, which is
   // correct under the endpoint's own row cap and is documented at each site.
