@@ -81,9 +81,9 @@ function audit(): Audit {
 const CEILING = {
   /** §6. Zero, and it stays zero. */
   riskyCoercions: 0,
-  unjustified: 216,
+  unjustified: 207,
   p0Unjustified: 0,
-  p1Unjustified: 128,
+  p1Unjustified: 119,
   uploadUncanonical: 7,
   /** Forms with no submit guard of any kind. */
   noSubmitContract: 15,

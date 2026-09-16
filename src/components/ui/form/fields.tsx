@@ -776,3 +776,61 @@ export function MonthFieldControl({
     </FormField>
   );
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Standalone fields
+ * ────────────────────────────────────────────────────────────────────────── */
+
+export interface StandaloneFieldOptions {
+  /** The error to show, if the caller is computing one. */
+  error?: string;
+  /** Called on blur, after the value has settled. */
+  onBlur?: () => void;
+}
+
+/**
+ * A `FieldLike` for a control that is NOT part of a submitted form.
+ *
+ * The app has a whole class of these: per-set inputs in the workout logger,
+ * per-row editors in a table, a stepper beside a number. They save on blur,
+ * one field at a time, and there is no payload to validate, no submit to guard
+ * and no reset to perform — so `useAppForm` models none of what they do.
+ *
+ * What they still want is everything `FieldLike` carries into the field
+ * components: a real label with `htmlFor`, `aria-describedby`, `aria-invalid`,
+ * a 44px target, and — the one that matters most on a numeric field —
+ * `inputMode` instead of `type="number"`, so a scroll wheel over a focused
+ * input cannot silently change a logged weight.
+ *
+ * ── What this deliberately does NOT do ──────────────────────────────────────
+ *
+ * It does not make a screen "on the platform". There is no schema behind it and
+ * the audit will keep reporting the file's schema coverage as none, which is
+ * true: a control rendered this way is validated by whatever the caller does
+ * with the value, exactly as it was before.
+ *
+ * Using it to make a real form's numbers look better would be the metric-gaming
+ * §23 forbids. It is for controls that genuinely have no submit.
+ */
+export function useStandaloneField<T>(
+  name: string,
+  value: T,
+  onChange: (next: T) => void,
+  opts: StandaloneFieldOptions = {},
+): FieldLike<T> {
+  const { error, onBlur } = opts;
+  return {
+    name,
+    state: {
+      value,
+      meta: {
+        errors: error ? [error] : [],
+        // Always touched: there is no submit to wait for, so an error the
+        // caller has computed is one it wants shown now.
+        isTouched: true,
+      },
+    },
+    handleChange: onChange,
+    handleBlur: onBlur ?? (() => {}),
+  };
+}

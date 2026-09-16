@@ -154,6 +154,25 @@ export const JUSTIFIED = {
       'placeholder, and a placeholder stops naming a control the moment ' +
       'anything is typed into it.',
   },
+
+  'src/app/(chrome)/pt-os/clients/[id]/workout-log/[sessionId]/page.tsx': {
+    allow: 9,
+    reason:
+      'Per-set inline editors that save on BLUR, one field at a time. There is ' +
+      'no submit on this screen at all — each field is its own write — so ' +
+      'useAppForm models none of what it does: no payload to validate, no ' +
+      'submit to guard, no reset to perform. The controls are also layout-bound ' +
+      'in a way a wrapper cannot reproduce: 17px centred numerals wedged ' +
+      'between two 44px steppers in a two-column grid, with the height ' +
+      'deliberately on the input rather than the label (there is a comment ' +
+      'saying why — the border came out of the content box and left the real ' +
+      'target at 42px). What they DID need is fixed in place: every one is ' +
+      'type="text" with inputMode now, so a scroll wheel over a focused field ' +
+      'cannot silently change a logged weight, and the blur handlers go through ' +
+      'the canonical normalizer with a third outcome — save nothing when the ' +
+      'box holds something unparseable, because NaN serialises to null and ' +
+      'would have CLEARED a logged set for the sake of a typed unit.',
+  },
 };
 
 export function justificationFor(rel) {

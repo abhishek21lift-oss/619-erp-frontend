@@ -41,5 +41,5 @@ export type {
 export { FormErrorBanner, SubmitStatus } from './FormStatus';
 export type { FormErrorBannerProps, SubmitStatusProps } from './FormStatus';
 
-export { RadioField, MonthFieldControl } from './fields';
-export type { RadioFieldProps, RadioOption, MonthFieldProps } from './fields';
+export { RadioField, MonthFieldControl, useStandaloneField } from './fields';
+export type { RadioFieldProps, RadioOption, MonthFieldProps, StandaloneFieldOptions } from './fields';
