@@ -60,3 +60,6 @@ __pycache__/
 /test-results/
 /playwright-report/
 /blob-report/
+
+# Playwright signs in once and replays the session; never commit it.
+e2e/.auth/

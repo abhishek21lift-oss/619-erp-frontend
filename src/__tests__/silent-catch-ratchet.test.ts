@@ -129,8 +129,8 @@ const KNOWN = [
   'components/pt-os/builder/NewProgrammeDialog.tsx:208',
   'components/pt-os/workout-log/ExercisePicker.tsx:274',
   'components/pt-os/workout-log/ExercisePicker.tsx:288',
-  'lib/auth-context.tsx:166',
-  'lib/auth-context.tsx:168',
+  'lib/auth-context.tsx:187',
+  'lib/auth-context.tsx:189',
 ].sort();
 
 describe('silent catches are listed, and the list only shrinks', () => {

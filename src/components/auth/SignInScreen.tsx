@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '@/lib/auth-context';
-import { rememberKeys, portalForRole, postSignInPath, type Portal } from '@/lib/portals';
+import { rememberKeys, portalForRole, safeReturnTo, type Portal } from '@/lib/portals';
 import { roleLabel } from '@/lib/roles';
 import { isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
 import { errorMessage, mapSignInError } from '@/lib/forms/errors';
@@ -263,11 +263,23 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
   // amount of care on the server can fix it from here.
   useEffect(() => {
     if (loading || !user || foreignSession) return;
-    // postSignInPath rather than a role ladder here. The ladder had no case for
-    // a platform operator, so they fell through its `else` and landed in the
-    // studio app after signing in at the Command Center's own door. See
-    // lib/portals.ts for why this moved out of the component.
-    router.replace(postSignInPath(user.role));
+    // safeReturnTo wraps postSignInPath rather than replacing it: it honours
+    // the `?redirect=` that proxy.ts has always written onto this URL when it
+    // bounces an expired session, and falls back to postSignInPath for
+    // anything it will not follow. postSignInPath is still the answer for a
+    // fresh sign-in with no destination — and it is still a function rather
+    // than a role ladder, because the ladder had no case for a platform
+    // operator and dropped them into the studio app. See lib/portals.ts.
+    //
+    // Read from window rather than useSearchParams: this page is a client
+    // component that Next still prerenders, and useSearchParams would opt the
+    // whole sign-in screen out of that. The effect is client-only by
+    // definition, so `window` is always there by the time it runs.
+    const returnTo =
+      typeof window === 'undefined'
+        ? null
+        : new URLSearchParams(window.location.search).get('redirect');
+    router.replace(safeReturnTo(returnTo, user.role));
   }, [user, loading, foreignSession, router]);
 
   const emailValid = isValidSignInEmail(email);
