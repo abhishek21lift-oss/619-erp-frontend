@@ -799,22 +799,25 @@ function AddMealModal({ open, onClose, onCreated }: { open: boolean; onClose: ()
 
   const { form, isSubmitting } = f;
 
+  /**
+   * The one way out of this sheet.
+   *
+   * §7 Create → Cancel → Reopen. `onSuccess` reset the form; no other exit
+   * did, so abandoning a half-typed meal and opening the sheet again for the
+   * next one showed the previous meal's name and macros already filled in,
+   * ready to be saved as a second meal.
+   *
+   * It has to be ONE function because there are three ways out — the Cancel
+   * button, the X, and Escape — and the first of those called `onClose`
+   * directly, so a reset hung only on the Dialog's `onOpenChange` missed it.
+   */
+  const close = useCallback(() => {
+    f.resetTo(blankMeal());
+    onClose();
+  }, [f, onClose]);
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        if (o) return;
-        // §7 Create → Cancel → Reopen. onSuccess reset this form; closing it
-        // any OTHER way did not — so abandoning a half-typed meal and opening
-        // the sheet again for the next one showed the previous meal's name and
-        // macros, already filled in, ready to be saved as a second meal.
-        //
-        // On close rather than on open, so the values are gone the moment the
-        // sheet is dismissed rather than lingering behind it.
-        f.resetTo(blankMeal());
-        onClose();
-      }}
-    >
+    <Dialog open={open} onOpenChange={(o) => { if (!o) close(); }}>
       <DialogContent>
         <DialogHeader><DialogTitle>Add Meal</DialogTitle></DialogHeader>
         <form noValidate onSubmit={(e) => { e.preventDefault(); void f.submit(); }}>
@@ -876,7 +879,7 @@ function AddMealModal({ open, onClose, onCreated }: { open: boolean; onClose: ()
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
+            <Button type="button" variant="ghost" onClick={close} disabled={isSubmitting}>Cancel</Button>
             <Button type="submit" variant="primary" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : 'Add Meal'}
             </Button>
