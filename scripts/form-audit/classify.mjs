@@ -408,6 +408,42 @@ export function coercionSites(source) {
   return { risky, bounded, state, riskyLines, stateLines };
 }
 
+/**
+ * `type="number"` controls — the scroll-wheel hazard, counted separately.
+ *
+ * ── Why this needs its own number ───────────────────────────────────────────
+ *
+ * Every other figure in this audit asks "is the control on the design system"
+ * and "is there a schema behind it". Both answers can be YES while the control
+ * still carries `type="number"`, because `FloatInput` — a design-system
+ * component, and correctly counted as one — passes `type` straight through.
+ *
+ * That blind spot was hiding the largest remaining cluster in the tree: the
+ * assessment steps, sixty-odd numeric inputs recording a person's body
+ * measurements, every one of them a labelled design-system control and every
+ * one of them `type="number"`. The audit reported nothing about them because
+ * it had no question they failed.
+ *
+ * `type="number"` costs three things `inputMode` does not:
+ *
+ *   · a scroll wheel over a FOCUSED field silently changes the value, which on
+ *     an assessment is a logged measurement nobody typed;
+ *   · `valueAsNumber` is NaN for partial input;
+ *   · Safari accepts 'e' and '+' in the box.
+ *
+ * Comment lines are excluded, or the several places that explain why it is
+ * avoided would count as uses of it.
+ */
+export function wheelHazards(source) {
+  let count = 0;
+  for (const line of source.split('\n')) {
+    const code = line.trim();
+    if (code.startsWith('//') || code.startsWith('*')) continue;
+    count += (line.match(/type="number"/g) ?? []).length;
+  }
+  return count;
+}
+
 /** A file input whose handler does not reach the canonical validator. */
 export function uploadSites(source) {
   const inputs = (source.match(/<input[^>]*type="file"/g) ?? []).length;

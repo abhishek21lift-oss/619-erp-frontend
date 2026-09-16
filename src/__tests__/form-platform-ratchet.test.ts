@@ -38,6 +38,7 @@ interface AuditRow {
   unjustifiedStateCoercions: number;
   riskyLines: number[];
   stateLines: number[];
+  wheelHazards: number;
   uploadInputs: number;
   uploadCanonical: boolean;
   justification: string | null;
@@ -54,6 +55,7 @@ interface Audit {
     boundedCoercions: number;
     stateCoercions: number;
     unjustifiedStateCoercions: number;
+    wheelHazards: number;
     uploadInputs: number;
     uploadUncanonical: number;
     forms: number;
@@ -98,6 +100,23 @@ const CEILING = {
    * talk its way out of — client-side, so the server repeats it.
    */
   uploadUncanonical: 0,
+  /**
+   * §19. `type="number"` controls, which `inputMode` replaces.
+   *
+   * Not zero, and this is the figure the audit was BLIND to until it was added:
+   * every other measure asks "is the control on the design system" and "is
+   * there a schema behind it", and both answers are YES for the biggest
+   * remaining cluster. `FloatInput` is a design-system component and passes
+   * `type` straight through, so sixty-odd numeric inputs in the assessment
+   * steps — a person's body measurements, feeding a 1RM and a
+   * Novice/Intermediate/Advanced label — were correctly counted as platform
+   * controls and never questioned.
+   *
+   * A wheel over a focused field silently changes a logged measurement. That
+   * is the same class of defect as `Number('')` becoming 0: a value nobody
+   * typed, indistinguishable afterwards from one they did.
+   */
+  wheelHazards: 93,
   /** Forms with no submit guard of any kind. */
   noSubmitContract: 15,
 };
@@ -212,6 +231,13 @@ describe('ceilings — these may only fall', () => {
     // And the sites still exist — a check that passes because the feature was
     // deleted is not the same as one that passes because it was fixed.
     expect(a.totals.uploadInputs).toBeGreaterThan(5);
+  });
+
+  it('type="number" controls never increase', () => {
+    // A ceiling, not an invariant: 93 remain, 60 of them in the assessment
+    // steps. The point of pinning it is that the next numeric field written
+    // cannot be one more.
+    expect(a.totals.wheelHazards).toBeLessThanOrEqual(CEILING.wheelHazards);
   });
 
   it('forms with no submit guard never increase', () => {

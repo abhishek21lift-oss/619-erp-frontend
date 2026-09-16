@@ -25,7 +25,7 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   controlKind, controlTags, NATIVE_BY_KIND, BUSINESS_KINDS,
-  contractCoverage, looksLikeForm, riskOf, coercionSites, uploadSites,
+  contractCoverage, looksLikeForm, riskOf, coercionSites, uploadSites, wheelHazards,
 } from './classify.mjs';
 import { JUSTIFIED, justificationFor } from './justifications.mjs';
 
@@ -93,6 +93,7 @@ for (const file of walk(SRC)) {
 
   const coercion = coercionSites(source);
   const uploads = uploadSites(source);
+  const wheels = wheelHazards(source);
   const isForm = looksLikeForm(source, nativeBusiness > 0 || platformControls > 0);
   const contracts = isForm ? contractCoverage(source) : null;
   const justification = justificationFor(rel);
@@ -111,6 +112,7 @@ for (const file of walk(SRC)) {
     stateCoercions: coercion.state,
     riskyLines: coercion.riskyLines,
     stateLines: coercion.stateLines,
+    wheelHazards: wheels,
     uploadInputs: uploads.inputs,
     uploadCanonical: uploads.canonical,
     justified: justification ? justification.allow : 0,
@@ -145,6 +147,7 @@ const totals = {
   boundedCoercions: sum(rows, 'boundedCoercions'),
   stateCoercions: sum(rows, 'stateCoercions'),
   unjustifiedStateCoercions: sum(rows, 'unjustifiedStateCoercions'),
+  wheelHazards: sum(rows, 'wheelHazards'),
   uploadInputs: sum(rows, 'uploadInputs'),
   uploadUncanonical: rows.filter((r) => r.uploadInputs > 0 && !r.uploadCanonical).length,
   forms: rows.filter((r) => r.isForm).length,
@@ -162,6 +165,7 @@ for (const r of ['P0', 'P1', 'P2']) {
     coercions: sum(set, 'coercions'),
     stateCoercions: sum(set, 'stateCoercions'),
     unjustifiedStateCoercions: sum(set, 'unjustifiedStateCoercions'),
+    wheelHazards: sum(set, 'wheelHazards'),
     forms: set.filter((x) => x.isForm).length,
   };
 }
@@ -231,6 +235,7 @@ console.log(`Risky value coercions            ${pad(totals.coercions, 5)}   ← 
 console.log(`  bounded (range/select)         ${pad(totals.boundedCoercions, 5)}   browser guarantees a value`);
 console.log(`Submit-time state coercions      ${pad(totals.stateCoercions, 5)}   ← Number(form.x), '' becomes 0`);
 console.log(`  of which UNJUSTIFIED           ${pad(totals.unjustifiedStateCoercions, 5)}   no validator proven in front`);
+console.log(`type="number" controls           ${pad(totals.wheelHazards, 5)}   ← a wheel over a focused field`);
 console.log(`Upload sites                     ${pad(totals.uploadInputs, 5)}`);
 console.log(`  files not using canonical rules${pad(totals.uploadUncanonical, 5)}   ← §12\n`);
 
