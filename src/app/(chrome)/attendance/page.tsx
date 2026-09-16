@@ -44,6 +44,14 @@ import {
   Wifi,
   Zap,
 } from 'lucide-react';
+import { errorMessage } from '@/lib/forms/errors';
+import { useStore } from '@tanstack/react-form';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import { DateFieldControl, TimeFieldControl, TextAreaField, FormErrorBanner } from '@/components/ui/form';
+import {
+  attendanceEntrySchema, blankAttendanceEntry, attendanceDateIssue,
+  ATTENDANCE_STATUSES, type AttendanceEntryValues,
+} from '@/lib/forms/schemas/attendance';
 
 /** Range CSV, carried over from /attendance/reports. */
 function exportRangeCSV(records: Attendance[], days: string) {
@@ -261,7 +269,7 @@ function AttendanceContent() {
       setRecords(updated);
       showSuccess(`Marked ${client.name} as ${status}`);
     } catch (e: unknown) {
-      showError(e instanceof Error ? e.message : 'Failed to mark attendance');
+      showError(errorMessage(e, 'Failed to mark attendance'));
     } finally {
       setSaving(null);
     }
@@ -295,7 +303,7 @@ function AttendanceContent() {
       setRecords(updated);
       showSuccess(`Marked ${toMark.length} member${toMark.length > 1 ? 's' : ''} present`);
     } catch (e: unknown) {
-      showError(e instanceof Error ? e.message : 'Failed to mark all present');
+      showError(errorMessage(e, 'Failed to mark all present'));
     }
   }
 
@@ -1242,18 +1250,51 @@ function ManualEntryModal({ open, onOpenChange, clients, date, onSuccess }: {
 }) {
   const [query, setQuery] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [entryDate, setEntryDate] = useState(date);
-  const [checkIn, setCheckIn] = useState('');
-  const [status, setStatus] = useState('present');
-  const [notes, setNotes] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [memberError, setMemberError] = useState('');
+
+  const f = useAppForm({
+    schema: attendanceEntrySchema,
+    defaultValues: blankAttendanceEntry(date),
+    onSubmit: async (values: AttendanceEntryValues) => {
+      // `selectedClient` is checked before submit, so this is a type narrowing
+      // rather than a guard — the button is disabled without one.
+      const client = selectedClient!;
+      await api.attendance.mark({
+        type:         'client',
+        ref_id:       client.id,
+        ref_name:     client.name,
+        trainer_id:   client.trainer_id,
+        trainer_name: client.trainer_name,
+        date:         values.entryDate as string,
+        // Omitted rather than sent empty: the server concatenates it into a
+        // timestamp and `new Date('…T')` is an Invalid Date.
+        check_in:     values.checkIn ?? undefined,
+        status:       values.status as string,
+        notes:        values.notes ?? undefined,
+      });
+    },
+    onSuccess: () => {
+      onSuccess();
+      onOpenChange(false);
+    },
+  });
+
+  const entryDate = useStore(f.form.store, (st) => String(st.values.entryDate ?? ''));
+  const futureDate = attendanceDateIssue(entryDate, date);
 
   useEffect(() => {
     if (open) {
-      setQuery(''); setSelectedClient(null); setEntryDate(date);
-      setCheckIn(''); setStatus('present'); setNotes(''); setError('');
+      // One reset, from the record, rather than seven setters — and `resetTo`
+      // also clears the errors and the success flag, so a red message from the
+      // previous correction cannot survive onto this one (§11).
+      setQuery('');
+      setSelectedClient(null);
+      setMemberError('');
+      f.resetTo(blankAttendanceEntry(date));
     }
+    // `f` is stable across renders; depending on it would reset the form on
+    // every keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, date]);
 
   const filteredClients = useMemo(() => {
@@ -1261,29 +1302,10 @@ function ManualEntryModal({ open, onOpenChange, clients, date, onSuccess }: {
     return clients.filter(c => c.name.toLowerCase().includes(query.toLowerCase())).slice(0, 8);
   }, [clients, query]);
 
-  async function handleSubmit() {
-    if (!selectedClient) { setError('Select a member'); return; }
-    setSaving(true);
-    setError('');
-    try {
-      await api.attendance.mark({
-        type:         'client',
-        ref_id:       selectedClient.id,
-        ref_name:     selectedClient.name,
-        trainer_id:   selectedClient.trainer_id,
-        trainer_name: selectedClient.trainer_name,
-        date:         entryDate,
-        check_in:     checkIn || undefined,
-        status,
-        notes:        notes || undefined,
-      });
-      onSuccess();
-      onOpenChange(false);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to save attendance');
-    } finally {
-      setSaving(false);
-    }
+  function handleSubmit() {
+    if (!selectedClient) { setMemberError('Select a member'); return; }
+    setMemberError('');
+    f.submit();
   }
 
   return (
@@ -1332,45 +1354,76 @@ function ManualEntryModal({ open, onOpenChange, clients, date, onSuccess }: {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="atd-entry-date" className="text-xs font-medium text-zinc-600 dark:text-white/50">Date</label>
-              <input id="atd-entry-date" type="date" value={entryDate} max={date} onChange={e => setEntryDate(e.target.value)}
-                className="mt-1.5 w-full rounded-[12px] border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 dark:border-white/10 dark:bg-white/5 dark:text-white" />
-            </div>
-            <div>
-              <label htmlFor="atd-checkin-time" className="text-xs font-medium text-zinc-600 dark:text-white/50">Check-in time</label>
-              <input id="atd-checkin-time" type="time" value={checkIn} onChange={e => setCheckIn(e.target.value)}
-                className="mt-1.5 w-full rounded-[12px] border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 dark:border-white/10 dark:bg-white/5 dark:text-white" />
-            </div>
+            <f.form.Field name="entryDate">
+              {(field) => (
+                <DateFieldControl
+                  field={field} label="Date" required density="compact"
+                  // A browser hint, not the rule — `attendanceDateIssue` below
+                  // is what actually refuses a future date, because a date
+                  // input's `max` can be bypassed and a correction filed for a
+                  // day that has not happened is not a correction.
+                  max={date}
+                  serverError={futureDate ?? f.errors.fieldErrors.entryDate}
+                />
+              )}
+            </f.form.Field>
+            <f.form.Field name="checkIn">
+              {(field) => (
+                <TimeFieldControl
+                  field={field} label="Check-in time" density="compact"
+                  serverError={f.errors.fieldErrors.checkIn}
+                />
+              )}
+            </f.form.Field>
           </div>
 
+          {/* A three-way choice rendered as buttons.
+              It stays a `role="group"` of toggle buttons rather than becoming
+              a ChoiceChips, for two reasons. The status colours are the point
+              here — amber for late, and the row it writes is read back in
+              those same colours — and a generic chip row would flatten them to
+              one accent. And `role="radiogroup"` is not a free upgrade: it
+              obliges a roving tabindex and arrow-key navigation, and declaring
+              one without implementing them is worse than an honest group.
+              `aria-pressed` is the correct, complete semantics for a toggle
+              button, and it says which one is chosen. */}
           <div>
             <span id="atd-status-label" className="text-xs font-medium text-zinc-600 dark:text-white/50">Status</span>
-            <div role="group" aria-labelledby="atd-status-label" className="mt-1.5 flex gap-2">
-              {(['present', 'late', 'absent'] as const).map(s => (
-                <button key={s} type="button" onClick={() => setStatus(s)}
-                  className={`flex-1 rounded-[10px] border px-3 py-2 text-xs font-medium capitalize transition ${
-                    status === s
-                      ? 'border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300'
-                      : 'border-zinc-200 text-zinc-600 dark:border-white/10 dark:text-white/50'
-                  }`}>
-                  {s}
-                </button>
-              ))}
-            </div>
+            <f.form.Field name="status">
+              {(field) => (
+                <div role="group" aria-labelledby="atd-status-label" className="mt-1.5 flex gap-2">
+                  {ATTENDANCE_STATUSES.map(s => (
+                    <button key={s} type="button" aria-pressed={field.state.value === s}
+                      onClick={() => field.handleChange(s)}
+                      className={`flex-1 rounded-[10px] border px-3 py-2 text-xs font-medium capitalize transition ${
+                        field.state.value === s
+                          ? 'border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300'
+                          : 'border-zinc-200 text-zinc-600 dark:border-white/10 dark:text-white/50'
+                      }`}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </f.form.Field>
           </div>
 
-          <div>
-            <label htmlFor="atd-notes" className="text-xs font-medium text-zinc-600 dark:text-white/50">Notes (optional)</label>
-            <textarea id="atd-notes" value={notes} onChange={e => setNotes(e.target.value)} rows={2}
-              className="mt-1.5 w-full rounded-[12px] border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 dark:border-white/10 dark:bg-white/5 dark:text-white" />
-          </div>
+          <f.form.Field name="notes">
+            {(field) => (
+              <TextAreaField
+                field={field} label="Notes (optional)" density="compact" rows={2}
+                maxLength={500}
+                serverError={f.errors.fieldErrors.notes}
+              />
+            )}
+          </f.form.Field>
 
-          {error && <p className="text-xs text-rose-600">{error}</p>}
+          {memberError && <p className="text-xs text-rose-600">{memberError}</p>}
+          <FormErrorBanner errors={f.errors} />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} loading={saving} disabled={!selectedClient}>Save Entry</Button>
+          <Button onClick={handleSubmit} loading={f.isSubmitting} disabled={!selectedClient || !!futureDate || f.isSubmitting}>Save Entry</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

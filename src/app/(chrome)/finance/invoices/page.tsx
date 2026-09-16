@@ -10,6 +10,14 @@ import Guard from '@/components/Guard';
 import { PremiumModal } from '@/components/premium/PremiumModal';
 import { Button, KpiCard, PageContainer, PageHero } from '@/components/ui';
 import { identity } from '@/lib/palette';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import {
+  createInvoiceSchema, blankInvoice, toCreateInvoicePayload,
+  INVOICE_PAYMENT_METHOD_OPTIONS, DUE_DATE_BOUNDS,
+} from '@/lib/forms/schemas/invoice';
+import {
+  TextField, NumberField, SelectField, DateFieldControl, FormErrorBanner,
+} from '@/components/ui/form';
 import {
   FileText, Download, Send, CheckCircle2, Search,
   ChevronDown, Eye, Clock,
@@ -17,6 +25,7 @@ import {
   Receipt, Plus,
   MoreHorizontal, RefreshCw,
 } from 'lucide-react';
+import { errorMessage } from '@/lib/forms/errors';
 
 type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'draft' | 'cancelled';
 type PaymentMethod = 'upi' | 'credit-card' | 'cash' | 'razorpay' | 'stripe' | 'bank-transfer';
@@ -160,10 +169,6 @@ function SkeletonCard() {
 }
 
 
-interface CreateForm {
-  memberName: string; amount: string; dueDate: string; description: string; paymentMethod: PaymentMethod;
-}
-
 function generateInvoiceHTML(invoice: Invoice): string {
   return `<!DOCTYPE html><html><head><title>Invoice ${invoice.id}</title>
 <style>body{font-family:sans-serif;padding:40px;color:#0f172a}h1{font-size:24px;margin-bottom:4px}
@@ -198,10 +203,6 @@ export default function InvoicesPage() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = React.useState(false);
-  const [creating, setCreating] = React.useState(false);
-  const [createForm, setCreateForm] = React.useState<CreateForm>({
-    memberName: '', amount: '', dueDate: '', description: '', paymentMethod: 'upi',
-  });
 
   const isSm = useBreakpoint('(min-width: 640px)');
 
@@ -216,7 +217,7 @@ export default function InvoicesPage() {
       setInvoices((res.invoices as Record<string, unknown>[]).map(normaliseInvoice));
       setStats(res.stats);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load invoices');
+      setError(errorMessage(err, 'Failed to load invoices'));
     } finally {
       setLoading(false);
     }
@@ -236,33 +237,12 @@ export default function InvoicesPage() {
   // nothing change, and had no way to tell a delivered reminder from a failed
   // one. Mark Paid was worse: the modal stayed open with the invoice still
   // unpaid and no explanation, so the natural response was to press it again.
-  // The rest of this app already uses useToast() on failure; these four were
+  // The rest of this app already uses useToast() on failure; these three were
   // the gap, not a different convention.
-  const handleCreateInvoice = React.useCallback(async () => {
-    if (!createForm.memberName || !createForm.amount || !createForm.dueDate) return;
-    setCreating(true);
-    try {
-      await api.invoices.create({
-        member_name: createForm.memberName,
-        amount: parseFloat(createForm.amount),
-        due_date: createForm.dueDate,
-        description: createForm.description,
-        payment_method: createForm.paymentMethod,
-      });
-      setShowCreateModal(false);
-      setCreateForm({ memberName: '', amount: '', dueDate: '', description: '', paymentMethod: 'upi' });
-      toast.success('Invoice created');
-      fetchInvoices();
-    } catch (err: unknown) {
-      // Previously uncaught entirely: the rejection became an unhandled promise
-      // rejection, `finally` re-enabled the button, and the modal just sat
-      // there looking like the click had not registered.
-      toast.error(err instanceof Error ? err.message : 'Could not create the invoice');
-    } finally {
-      setCreating(false);
-    }
-  }, [createForm, fetchInvoices, toast]);
-
+  //
+  // Create was the fourth. It is no longer here: it lives in
+  // CreateInvoiceModal below, on the form platform, where the failure surfaces
+  // in the form's own banner rather than in a toast that fades.
   const handleDownloadPDF = React.useCallback((invoice: Invoice) => {
     const w = window.open('', '_blank');
     if (w) { w.document.write(generateInvoiceHTML(invoice)); w.document.close(); w.focus(); w.print(); }
@@ -276,7 +256,7 @@ export default function InvoicesPage() {
       await api.invoices.remind(invoice.id);
       toast.success('Reminder sent');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not send the reminder');
+      toast.error(errorMessage(err, 'Could not send the reminder'));
     }
   }, [toast]);
 
@@ -289,7 +269,7 @@ export default function InvoicesPage() {
     } catch (err: unknown) {
       // Deliberately leaves the modal open on failure: the invoice is still
       // unpaid, so closing it would imply the opposite.
-      toast.error(err instanceof Error ? err.message : 'Could not mark the invoice as paid');
+      toast.error(errorMessage(err, 'Could not mark the invoice as paid'));
     }
   }, [fetchInvoices, toast]);
 
@@ -573,56 +553,155 @@ export default function InvoicesPage() {
           {selectedInvoice && <InvoiceDetail invoice={selectedInvoice} onDownload={handleDownloadPDF} onRemind={handleSendReminder} onMarkPaid={handleMarkPaid} />}
         </PremiumModal>
 
-        <PremiumModal
-          open={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          title="Create Invoice"
-          subtitle="New billing entry"
-          icon={<Plus size={16} />}
-          footer={
-            <>
-              <Button variant="ghost" onClick={() => setShowCreateModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={handleCreateInvoice} disabled={creating || !createForm.memberName || !createForm.amount || !createForm.dueDate}>
-                {creating ? 'Creating…' : 'Create Invoice'}
-              </Button>
-            </>
-          }
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {([
-              ['Member Name', 'memberName', 'text', 'e.g. Rahul Sharma'],
-              ['Amount (₹)', 'amount', 'number', 'e.g. 5000'],
-              ['Due Date', 'dueDate', 'date', ''],
-              ['Description', 'description', 'text', 'e.g. Monthly membership fee'],
-            ] as [string, keyof Omit<CreateForm, 'paymentMethod'>, string, string][]).map(([label, key, type, placeholder]) => (
-              <div key={key}>
-                <label htmlFor={`inv-${key}`} style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>{label}</label>
-                <input
-                  id={`inv-${key}`}
-                  type={type}
-                  value={createForm[key]}
-                  onChange={e => setCreateForm(f => ({ ...f, [key]: e.target.value }))}
-                  placeholder={placeholder}
-                  style={{ display: 'block', width: '100%', marginTop: 6, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, background: 'var(--bg-subtle)', boxSizing: 'border-box' }}
-                />
-              </div>
-            ))}
-            <div>
-              <label htmlFor="inv-payment-method" style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>Payment Method</label>
-              <select id="inv-payment-method"
-                value={createForm.paymentMethod}
-                onChange={e => setCreateForm(f => ({ ...f, paymentMethod: e.target.value as PaymentMethod }))}
-                style={{ display: 'block', width: '100%', marginTop: 6, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, background: 'var(--bg-subtle)' }}
-              >
-                {Object.entries(PAYMENT_ICONS).map(([k, v]) => (
-                  <option key={k} value={k}>{v.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </PremiumModal>
+        {/* Mounted only while open, which is the whole of the reset contract
+            for it (§11): the previous attempt's values cannot survive a cancel,
+            because there is nothing left to survive in. The modal state used to
+            live on the page and clear only on SUCCESS. */}
+        {showCreateModal && (
+          <CreateInvoiceModal
+            onClose={() => setShowCreateModal(false)}
+            onCreated={() => { setShowCreateModal(false); fetchInvoices(); }}
+          />
+        )}
       </PageContainer>
     </Guard>
+  );
+}
+
+/**
+ * Create Invoice, on the universal form platform.
+ *
+ * What the migration fixed is written up in `schemas/invoice.ts`; the one worth
+ * naming here is `parseFloat(createForm.amount)`. parseFloat parses a PREFIX,
+ * so "1,500" — typed with the separator a studio owner naturally uses — became
+ * a ₹1 invoice, and "abc" became NaN, which JSON turns into null, which
+ * `routes/invoices.js` turns into `parseFloat(null) || 0` and stores as ₹0.
+ * The invoice was created either way and nothing said anything.
+ *
+ * The modal chrome, the field order and the footer are the page's own.
+ */
+function CreateInvoiceModal({
+  onClose, onCreated,
+}: {
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const { toast } = useToast();
+
+  const f = useAppForm({
+    schema: createInvoiceSchema,
+    defaultValues: blankInvoice(),
+    onSubmit: async (values) => {
+      await api.invoices.create(toCreateInvoicePayload(values));
+      toast.success('Invoice created');
+    },
+    onSuccess: onCreated,
+  });
+
+  const { form, isSubmitting } = f;
+
+  return (
+    <PremiumModal
+      open
+      onClose={onClose}
+      title="Create Invoice"
+      subtitle="New billing entry"
+      icon={<Plus size={16} />}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
+          {/* No longer gated on the three fields being non-empty. A dead button
+              cannot say WHY it is dead; the fields say it themselves now, each
+              under its own control. The real double-submit guard is the
+              in-flight ref inside useAppForm either way — `disabled` is applied
+              after the current event, so two clicks in one frame both pass it. */}
+          <Button variant="primary" onClick={() => void f.submit()} disabled={isSubmitting}>
+            {isSubmitting ? 'Creating…' : 'Create Invoice'}
+          </Button>
+        </>
+      }
+    >
+      <form
+        noValidate
+        onSubmit={(e) => { e.preventDefault(); void f.submit(); }}
+        style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+      >
+        <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} />
+
+        <form.Field name="memberName">
+          {(field) => (
+            <TextField
+              field={field}
+              label="Member Name"
+              required
+              placeholder="e.g. Rahul Sharma"
+              maxLength={160}
+              serverError={f.errors.fieldErrors.memberName}
+            />
+          )}
+        </form.Field>
+
+        <form.Field name="amount">
+          {(field) => (
+            <NumberField
+              field={field}
+              label="Amount"
+              required
+              mode="money"
+              suffix="₹"
+              placeholder="e.g. 5000"
+              serverError={f.errors.fieldErrors.amount}
+            />
+          )}
+        </form.Field>
+
+        <form.Field name="dueDate">
+          {(field) => (
+            <DateFieldControl
+              field={field}
+              label="Due Date"
+              required
+              min={DUE_DATE_BOUNDS.min}
+              max={DUE_DATE_BOUNDS.max}
+              serverError={f.errors.fieldErrors.dueDate}
+            />
+          )}
+        </form.Field>
+
+        <form.Field name="description">
+          {(field) => (
+            <TextField
+              field={field}
+              label="Description"
+              placeholder="e.g. Monthly membership fee"
+              description="Becomes the invoice's line item"
+              maxLength={500}
+              showCount
+              serverError={f.errors.fieldErrors.description}
+            />
+          )}
+        </form.Field>
+
+        <form.Field name="paymentMethod">
+          {(field) => (
+            <SelectField
+              field={field}
+              label="Payment Method"
+              required
+              options={INVOICE_PAYMENT_METHOD_OPTIONS}
+              serverError={f.errors.fieldErrors.paymentMethod}
+            />
+          )}
+        </form.Field>
+
+        {/* A submit button inside the form as well as in the modal's footer,
+            so pressing Enter in a field submits. Visually hidden rather than
+            absent: a form whose only submit control lives outside it does not
+            respond to Enter at all, which on a four-field modal is the fastest
+            way through it. */}
+        <button type="submit" className="sr-only" tabIndex={-1} aria-hidden>Create Invoice</button>
+      </form>
+    </PremiumModal>
   );
 }
 

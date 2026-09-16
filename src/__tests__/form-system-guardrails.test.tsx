@@ -131,6 +131,8 @@ describe('a control next to a label must be joined to it', () => {
 });
 
 describe('the label audit, resolved case by case', () => {
+  const audit = auditAccessibleNames();
+
   // 24 sites, each looked at individually rather than swept. Nine were the
   // scanner's own fault — Field-style wrappers that put {children} inside the
   // <label>, which IS an association; the scanner only recognised a literal
@@ -138,15 +140,26 @@ describe('the label audit, resolved case by case', () => {
   //
   // The other fifteen split three ways by what the caption actually names.
 
-  it('associates the nine captions that sit beside a real control', () => {
+  it('associates the captions that sit beside a real control', () => {
+    // This list shrinks as screens move onto the universal form platform, and
+    // that is the list working rather than the property lapsing. A migrated
+    // field renders through FormField (or its soft-surface twin), which
+    // GENERATES the id and points its own <label htmlFor> at it — so the
+    // association holds by construction instead of by two hand-written strings
+    // continuing to agree. Re-adding a hand-written id after a migration would
+    // assert a property the component no longer has.
+    //
+    // Already retired this way: `fp-email` (forgot-password), `rp-password`
+    // and `rp-confirm` (reset-password), `pay-ref` (Record Payment),
+    // `leave-reason` (the leave request form, now a TextAreaField — the
+    // reject-note textarea beside it is still raw, so it stays below).
+    //
+    // The property itself is still covered, and more strictly:
+    // label-association.test.ts asserts that NO control in the app is
+    // nameless, with no per-file list to fall out of date.
     const associated: [string, string][] = [
-      ['app/(bare)/forgot-password/page.tsx', 'fp-email'],
-      ['app/(bare)/reset-password/page.tsx', 'rp-password'],
-      ['app/(bare)/reset-password/page.tsx', 'rp-confirm'],
       ['app/(chrome)/ai-coach/knowledge/page.tsx', 'kb-title'],
       ['app/(chrome)/pt-os/clients/[id]/edit/page.tsx', 'delete-confirm'],
-      ['app/(chrome)/pt-os/clients/[id]/payments/page.tsx', 'pay-ref'],
-      ['app/(chrome)/trainers/leave/page.tsx', 'leave-reason'],
       ['app/(chrome)/trainers/leave/page.tsx', 'leave-reject-note'],
     ];
     for (const [file, id] of associated) {
@@ -156,12 +169,21 @@ describe('the label audit, resolved case by case', () => {
     }
   });
 
-  it('gives the invoice field map a per-row id', () => {
-    // Rendered once per entry in a five-row map, so a fixed id would put the
-    // same id on five inputs and point every label at the first one.
+  it('no longer needs a per-row id for the invoice fields', () => {
+    // The Create Invoice modal used to render its four fields from a map, so a
+    // fixed id would have put the same id on four inputs and pointed every
+    // label at the first. The per-row `inv-${key}` id solved that.
+    //
+    // The map is gone: each field is now its own <TextField>/<NumberField>/
+    // <DateFieldControl>, and FormField calls useId() per instance — so the
+    // collision this guarded against is not merely avoided, it is no longer
+    // expressible. Asserting the old template string would be asserting a
+    // property the component deliberately no longer has.
     const src = readFileSync(join(SRC, 'app/(chrome)/finance/invoices/page.tsx'), 'utf8');
-    expect(src).toMatch(/htmlFor=\{`inv-\$\{key\}`\}/);
-    expect(src).toMatch(/id=\{`inv-\$\{key\}`\}/);
+    expect(src).not.toMatch(/htmlFor=\{`inv-\$\{key\}`\}/);
+    expect(src).toMatch(/<form\.Field name="memberName">/);
+    // And the real invariant still holds for this screen.
+    expect(audit.nameless.filter((x) => x.includes('finance/invoices'))).toEqual([]);
   });
 
   it('turns the four button-group captions into groups, not labels', () => {
@@ -268,8 +290,14 @@ describe('the five representative migrations', () => {
 
   it.each(migrated)('%s uses the system', (file) => {
     const src = readFileSync(join(SRC, ...file.split('/')), 'utf8');
-    expect(src).toMatch(/from '@\/components\/ui'/);
-    expect(src).toMatch(/<(FormField|SearchField)\b/);
+    // Either layer of the same system. `@/components/ui` + FormField is the
+    // first migration — markup only, state untouched. `@/components/ui/form` +
+    // a bound field is the second — the same FormField underneath, with the
+    // value coming from a schema-typed field instead of a useState string.
+    // A form that has taken the second step must not fail a test written for
+    // the first.
+    expect(src).toMatch(/from '@\/components\/ui(\/form)?'/);
+    expect(src).toMatch(/<(FormField|SearchField|TextField|NumberField|SelectField|TextAreaField)\b/);
   });
 
   it.each(migrated)('%s gives every migrated field a persistent label', (file, labels) => {
@@ -287,8 +315,15 @@ describe('the five representative migrations', () => {
         /onSubmit=\{handleSubmit\}/, /value=\{weight\}/, /setWeight\(e\.target\.value\)/,
         /value=\{adherencePct\}/, /value=\{trainerNotes\}/, /step="0\.5"/,
       ]],
+      // Now on the second layer: the value comes from the field render prop
+      // rather than from `form.session_count`, and the option list and the
+      // `min` are the schema's. The property is the same one — the bindings
+      // and the business rules survived the move — so the patterns describe
+      // where they live now rather than where they used to.
       ['app/(chrome)/subscription/packages/page.tsx', [
-        /value=\{form\.session_count\}/, /value=\{form\.price\}/, /min=\{0\}/, /GOAL_TYPES\.map/,
+        /<form\.Field name="session_count">/, /<form\.Field name="price">/,
+        /<form\.Field name="duration_days">/, /ptPackageSchema/,
+        /PACKAGE_GOAL_OPTIONS/, /toPtPackagePayload/,
       ]],
       ['app/(chrome)/pt-os/session-balance/page.tsx', [
         /onSubmit=\{handleCreate\}/, /value=\{totalSessions\}/, /value=\{endDate\}/,

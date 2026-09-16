@@ -40,6 +40,8 @@ import { api } from '@/lib/api';
 import type { SubscriptionStatus, SubPlan, SubInvoice, PlanChangeQuote, CouponValidation } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
+import { toCodeOrNull } from '@/lib/forms/normalize';
+import { errorMessage } from '@/lib/forms/errors';
 
 const FROZEN_STATES = ['frozen', 'trial_expired', 'expired', 'cancelled', 'suspended'];
 const fmtINR = (n: number) => '₹' + Number(n || 0).toLocaleString('en-IN');
@@ -355,7 +357,7 @@ function SubscriptionScreen() {
     try {
       const r = await api.subscription.checkout.open(
         planCode,
-        coupon?.valid ? couponCode.trim().toUpperCase() : undefined,
+        coupon?.valid ? (toCodeOrNull(couponCode) ?? undefined) : undefined,
       );
       const url = `/subscription/checkout/${r.data.request.id}`;
       // Popup blocked (common on iOS Safari) — fall back to the same tab so the
@@ -364,7 +366,7 @@ function SubscriptionScreen() {
       else window.location.href = url;
     } catch (e) {
       win?.close();
-      toast.error(e instanceof Error ? e.message : 'Could not start the payment');
+      toast.error(errorMessage(e, 'Could not start the payment'));
     } finally { setRequesting(''); }
   };
 
@@ -375,17 +377,21 @@ function SubscriptionScreen() {
       // just fail later at redemption.
       const r = await api.subscription.requestActivation(
         planCode,
-        coupon?.valid ? couponCode.trim().toUpperCase() : undefined,
+        coupon?.valid ? (toCodeOrNull(couponCode) ?? undefined) : undefined,
       );
       setRequested(true);
       toast.success(r.data.message);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not send request');
+      toast.error(errorMessage(e, 'Could not send request'));
     } finally { setRequesting(''); }
   };
 
   const applyCoupon = async (planCode?: string) => {
-    const code = couponCode.trim();
+    // `toCodeOrNull` rather than `.trim().toUpperCase()`: it also closes an
+    // inner space, which `trim` leaves in place. The server compares against
+    // `upper(trim(code))`, so 'LAUNCH 20' pasted out of an email would never
+    // have matched and the studio would have been told their coupon is invalid.
+    const code = toCodeOrNull(couponCode) ?? '';
     if (!code) return;
     setCouponChecking(true);
     try {
@@ -394,7 +400,7 @@ function SubscriptionScreen() {
       if (r.data.valid) toast.success(`Coupon applied — ${fmtINR(r.data.discount_inr ?? 0)} off.`);
     } catch (e) {
       setCoupon(null);
-      toast.error(e instanceof Error ? e.message : 'Could not check that coupon');
+      toast.error(errorMessage(e, 'Could not check that coupon'));
     } finally { setCouponChecking(false); }
   };
 
@@ -419,7 +425,7 @@ function SubscriptionScreen() {
       const r = await api.subscription.changeQuote(planCode);
       setQuote(r.data);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not price that change');
+      toast.error(errorMessage(e, 'Could not price that change'));
     } finally { setQuoting(''); }
   };
 
@@ -434,7 +440,7 @@ function SubscriptionScreen() {
       setQuote(null);
       if (r.data.scheduled) await load(); else setRequested(true);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not submit that change');
+      toast.error(errorMessage(e, 'Could not submit that change'));
     } finally { setConfirming(false); }
   };
 
@@ -445,7 +451,7 @@ function SubscriptionScreen() {
       toast.success('Scheduled change cancelled — you stay on your current plan.');
       await load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not cancel that change');
+      toast.error(errorMessage(e, 'Could not cancel that change'));
     } finally { setCancellingPending(false); }
   };
 
@@ -709,11 +715,18 @@ function SubscriptionScreen() {
             <div className="w-full max-w-[420px]">
               <div className="flex gap-2">
                 <input
+                  id="coupon-code"
                   value={couponCode}
                   onChange={(e) => { setCouponCode(e.target.value); setCoupon(null); }}
                   onKeyDown={(e) => { if (e.key === 'Enter') applyCoupon(); }}
                   placeholder="Coupon code"
                   aria-label="Coupon code"
+                  // The verdict below was on screen and silent: no association,
+                  // no live region. Someone pressed Apply, a sentence appeared,
+                  // and a screen reader said nothing — on the control that
+                  // decides what they are about to be charged.
+                  aria-describedby={coupon ? 'coupon-result' : undefined}
+                  aria-invalid={coupon ? !coupon.valid : undefined}
                   className="h-9 min-w-0 flex-1 rounded-[10px] px-3 text-[12.5px] font-[650] uppercase tracking-wide outline-none"
                   style={{
                     background: 'var(--bg-subtle)',
@@ -727,7 +740,7 @@ function SubscriptionScreen() {
                 </Button>
               </div>
               {coupon && (
-                <p className="mt-2 text-[11.5px]" style={{ color: coupon.valid ? 'var(--success-text)' : 'var(--danger-text)' }}>
+                <p id="coupon-result" role="status" className="mt-2 text-[11.5px]" style={{ color: coupon.valid ? 'var(--success-text)' : 'var(--danger-text)' }}>
                   {coupon.valid
                     ? `${fmtINR(coupon.discount_inr ?? 0)} off${coupon.net_amount_inr != null && coupon.gross_amount_inr > 0 ? ` — ${fmtINR(coupon.net_amount_inr)} due instead of ${fmtINR(coupon.gross_amount_inr)}` : ''}. It will be applied when your subscription is activated.`
                     : coupon.reason}

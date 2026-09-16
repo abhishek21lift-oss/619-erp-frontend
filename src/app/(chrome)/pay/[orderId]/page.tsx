@@ -32,7 +32,6 @@ import {
 import Guard from '@/components/Guard';
 import StudioMark from '@/components/StudioMark';
 import { api } from '@/lib/api';
-import { ApiError } from '@/lib/http';
 import type { UpiOrderDetail } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -40,8 +39,9 @@ import { Button, cn } from '@/components/ui';
 import {
   AmountBreakdown, STATUS_META, UpiStatusBadge, fmtCountdown, fmtMoneyExact,
 } from '@/components/payments/upi-shared';
+import { errorMessage } from '@/lib/forms/errors';
+import { checkFile, acceptAttribute, formatBytes, PAYMENT_PROOF_RULES } from '@/lib/forms/files';
 
-const MAX_PROOF_BYTES = 5 * 1024 * 1024;
 const POLL_MS = 8000;
 
 /** Terminal states — nothing more will happen without the member acting. */
@@ -71,7 +71,7 @@ function Inner() {
       // A silent poll must never replace a working screen with an error — the
       // member could be mid-typing. Only a foreground load surfaces failure.
       if (!opts.silent) {
-        setLoadError(err instanceof ApiError ? err.message : 'Could not load this payment.');
+        setLoadError(errorMessage(err, 'Could not load this payment.'));
       }
     } finally {
       if (!opts.silent) setLoading(false);
@@ -420,15 +420,25 @@ function UtrForm({
   const utrValid = /^[0-9]{12,16}$/.test(utr);
   const showUtrError = utr.length > 0 && !utrValid;
 
-  const pickFile = (f: File | null) => {
+  /**
+   * Validate the payment proof a member attaches.
+   *
+   * The test it replaces was `/^image\/(png|jpe?g)$|^application\/pdf$/.test(f.type)`,
+   * and `File.type` is derived by the browser from the file's EXTENSION, not
+   * from its bytes. Renaming anything to `proof.png` passed it. This reads the
+   * leading bytes and compares them against the format's signature, which is
+   * the one check a file cannot talk its way out of — and it is still only a
+   * client-side gate: the server repeats it, which is where it counts.
+   */
+  const pickFile = async (f: File | null) => {
     setError(null);
     if (!f) { setFile(null); return; }
-    if (f.size > MAX_PROOF_BYTES) {
-      setError('Screenshot must be 5 MB or smaller.');
-      return;
-    }
-    if (!/^image\/(png|jpe?g)$|^application\/pdf$/i.test(f.type)) {
-      setError('Upload a JPG, PNG or PDF.');
+
+    const check = await checkFile(f, PAYMENT_PROOF_RULES);
+    if (!check.ok) {
+      setFile(null);
+      setError(check.message);
+      if (fileInput.current) fileInput.current.value = '';
       return;
     }
     setFile(f);
@@ -464,7 +474,7 @@ function UtrForm({
       setUtr(''); setNotes(''); setFile(null);
       await onSubmitted();
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Could not submit. Please try again.';
+      const message = errorMessage(err, 'Could not submit. Please try again.');
       setError(message);
     } finally {
       setBusy(false);
@@ -536,9 +546,9 @@ function UtrForm({
       <input id="pay-proof"
         ref={fileInput}
         type="file"
-        accept="image/png,image/jpeg,application/pdf"
+        accept={acceptAttribute(PAYMENT_PROOF_RULES)}
         className="sr-only"
-        onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+        onChange={(e) => void pickFile(e.target.files?.[0] ?? null)}
       />
       <AnimatePresence mode="wait">
         {file ? (
@@ -571,7 +581,7 @@ function UtrForm({
               background: 'transparent',
             }}
           >
-            <Upload size={15} /> Add a screenshot — JPG, PNG or PDF, up to 5 MB
+            <Upload size={15} /> Add a screenshot — JPG, PNG or PDF, up to {formatBytes(PAYMENT_PROOF_RULES.maxBytes)}
           </m.button>
         )}
       </AnimatePresence>

@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
 import { PremiumAreaChart } from '@/components/visualizations';
+import { errorMessage } from '@/lib/forms/errors';
 
 type Earnings = { base: number; incentive: number; total: number; month: string };
 type ScheduleItem = {
@@ -70,7 +71,7 @@ function TrainerInner() {
         if (!mounted) return;
         console.error('[trainer] dashboard load failed', err);
         toast.error('Could not load dashboard data');
-        setError(err instanceof Error ? err.message : 'Failed to load');
+        setError(errorMessage(err, 'Failed to load'));
       })
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };

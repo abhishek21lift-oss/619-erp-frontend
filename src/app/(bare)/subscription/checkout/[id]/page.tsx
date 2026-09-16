@@ -30,9 +30,14 @@ import {
 import Guard from '@/components/Guard';
 import BrandLogo from '@/components/BrandLogo';
 import { api } from '@/lib/api';
-import { ApiError } from '@/lib/http';
 import type { SubCheckoutRequest, UpiPaymentView } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import {
+  submitUtrSchema, blankSubmitUtr, SUBMIT_UTR_FIELD_HINTS,
+} from '@/lib/forms/schemas/subscriptionCheckout';
+import { TextField, TextAreaField, FormErrorBanner } from '@/components/ui/form';
+import { errorMessage } from '@/lib/forms/errors';
 
 const POLL_MS = 6000;
 
@@ -72,7 +77,7 @@ function Inner() {
       // A silent poll must never wipe a working screen — the admin may be
       // mid-typing. Only a foreground load surfaces failure.
       if (!opts.silent) {
-        setLoadError(err instanceof ApiError ? err.message : 'Could not load this payment.');
+        setLoadError(errorMessage(err, 'Could not load this payment.'));
       }
     } finally {
       if (!opts.silent) setLoading(false);
@@ -308,36 +313,28 @@ function UtrBlock({
   toast: ReturnType<typeof useToast>['toast'];
   router: ReturnType<typeof useRouter>;
 }) {
-  const [utr, setUtr] = useState('');
-  const [note, setNote] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Same rule the server enforces. Validating here is a courtesy; the DTO and a
-  // CHECK constraint enforce it independently.
-  const valid = /^[0-9]{12,16}$/.test(utr);
-  const showErr = utr.length > 0 && !valid;
-
-  const submit = async () => {
-    if (!valid || busy) return;
-    setBusy(true); setError(null);
-    try {
-      await api.subscription.checkout.submitUtr(request.id, utr, note.trim() || null);
+  // The 12–16 digit rule lives in `utrField` now: routes/upi-payments.js and a
+  // CHECK constraint already state the same window, and three copies is two too
+  // many for the rule that decides whether a payment can be matched at all.
+  const f = useAppForm({
+    schema: submitUtrSchema,
+    defaultValues: blankSubmitUtr(),
+    fieldHints: SUBMIT_UTR_FIELD_HINTS,
+    onSubmit: async (values) => {
+      await api.subscription.checkout.submitUtr(request.id, values.utr as string, values.note);
       toast.success('Submitted. MY PT STUDIO will verify and activate your plan.');
-      await onDone();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not submit. Please try again.');
-    } finally {
-      setBusy(false);
-    }
-  };
+    },
+    onSuccess: () => { void onDone(); },
+  });
+
+  const { form, isSubmitting } = f;
 
   const cancel = async () => {
     try {
       await api.subscription.checkout.cancel(request.id);
       router.push('/subscription');
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Could not cancel.');
+      toast.error(errorMessage(err, 'Could not cancel.'));
     }
   };
 
@@ -364,56 +361,51 @@ function UtrBlock({
         Open your UPI app, find this transaction and copy the UPI reference / UTR number.
       </p>
 
-      <label htmlFor="utr" className="mt-4 block text-[12px] font-[650]"
-        style={{ color: 'var(--text-primary)' }}>UPI reference number (UTR)</label>
-      <input
-        id="utr"
-        // inputMode, not type="number": a UTR is a digit STRING — a number input
-        // strips leading zeros and adds a spinner nobody wants.
-        inputMode="numeric"
-        autoComplete="off"
-        value={utr}
-        onChange={(e) => setUtr(e.target.value.replace(/\D/g, '').slice(0, 16))}
-        placeholder="12 to 16 digits"
-        aria-invalid={showErr}
-        className="mt-1.5 w-full rounded-xl px-3.5 font-mono text-[16px] outline-none"
-        style={{
-          height: 52, background: 'var(--bg-base)', color: 'var(--text-primary)',
-          border: `1px solid ${showErr ? 'var(--danger)' : 'var(--border-2)'}`,
-        }}
-      />
-      <div className="mt-1.5 flex items-center justify-between text-[11.5px]">
-        <span style={{ color: showErr ? 'var(--danger-text)' : 'var(--text-muted)' }}>
-          {showErr ? 'Must be 12 to 16 digits.' : 'Numbers only.'}
-        </span>
-        <span className="tabular-nums" style={{ color: 'var(--text-muted)' }}>{utr.length}/16</span>
-      </div>
+      <form noValidate onSubmit={(e) => { e.preventDefault(); void f.submit(); }}>
+        <form.Field name="utr">
+          {(field) => (
+            <TextField
+              field={field}
+              label="UPI reference number (UTR)"
+              required
+              placeholder="12 to 16 digits"
+              description="Numbers only."
+              maxLength={16}
+              showCount
+              autoComplete="off"
+              className="mt-4"
+              serverError={f.errors.fieldErrors.utr}
+            />
+          )}
+        </form.Field>
 
-      <label htmlFor="note" className="mt-4 block text-[12px] font-[650]"
-        style={{ color: 'var(--text-primary)' }}>
-        Note <span style={{ color: 'var(--text-muted)' }}>(optional)</span>
-      </label>
-      <textarea id="note" rows={2} maxLength={500} value={note}
-        onChange={(e) => setNote(e.target.value)}
-        placeholder="Anything we should know"
-        className="mt-1.5 w-full resize-none rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
-        style={{
-          background: 'var(--bg-base)', color: 'var(--text-primary)',
-          border: '1px solid var(--border-2)',
-        }} />
+        <form.Field name="note">
+          {(field) => (
+            <TextAreaField
+              field={field}
+              label="Note (optional)"
+              rows={2}
+              maxLength={500}
+              showCount
+              placeholder="Anything we should know"
+              className="mt-4"
+              serverError={f.errors.fieldErrors.note}
+            />
+          )}
+        </form.Field>
 
-      {error && (
-        <p className="mt-3 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
-          <AlertTriangle size={14} className="mt-px shrink-0" /> {error}
-        </p>
-      )}
+        <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} className="mt-3" />
 
-      <button type="button" onClick={submit} disabled={!valid || busy}
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl text-[15px] font-[720] text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-45"
-        style={{ height: 52, background: 'var(--brand)' }}>
-        {busy ? <><Loader2 size={17} className="animate-spin" /> Submitting…</>
-              : <>Submit for verification <ArrowRight size={16} /></>}
-      </button>
+        {/* The real guard is the in-flight ref inside useAppForm. The old one
+            was `if (!valid || busy) return`, and `busy` is state read from the
+            render closure — two taps in one frame both see false. */}
+        <button type="submit" disabled={isSubmitting}
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl text-[15px] font-[720] text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-45"
+          style={{ height: 52, background: 'var(--brand)' }}>
+          {isSubmitting ? <><Loader2 size={17} className="animate-spin" /> Submitting…</>
+                        : <>Submit for verification <ArrowRight size={16} /></>}
+        </button>
+      </form>
 
       <div className="mt-3 flex items-center justify-between">
         <p className="flex items-start gap-1.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>

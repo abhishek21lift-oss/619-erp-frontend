@@ -26,6 +26,7 @@ import type {
 } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { ASSIGNABLE_ROLES, roleLabel } from '@/lib/roles';
+import { errorMessage } from '@/lib/forms/errors';
 
 const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)' } as const;
 const inputStyle = { ...cardStyle, color: 'var(--text-primary)' } as const;
@@ -120,7 +121,7 @@ function Composer({ initial, plans, onClose, onSaved }: {
       toast.success(initial ? 'Draft updated.' : 'Draft saved — preview it before sending.');
       onSaved();
       onClose();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not save the draft'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not save the draft')); }
     finally { setSaving(false); }
   };
 
@@ -271,14 +272,14 @@ function Row({ a, onChanged, onEdit }: { a: Announcement; onChanged: () => void;
   const act = async (label: string, fn: () => Promise<unknown>, ok: string) => {
     setBusy(label);
     try { await fn(); toast.success(ok); onChanged(); }
-    catch (e) { toast.error(e instanceof Error ? e.message : 'That did not work'); }
+    catch (e) { toast.error(errorMessage(e, 'That did not work')); }
     finally { setBusy(''); }
   };
 
   const doPreview = async () => {
     setBusy('preview');
     try { setPreview((await api.superAdmin.previewAnnouncement(a.id)).data); }
-    catch (e) { toast.error(e instanceof Error ? e.message : 'Could not work out the audience'); }
+    catch (e) { toast.error(errorMessage(e, 'Could not work out the audience')); }
     finally { setBusy(''); }
   };
 
@@ -448,7 +449,7 @@ export default function NotificationCentre() {
     setError('');
     api.superAdmin.announcements(filter || undefined)
       .then((r) => setRows(r.data))
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load announcements.'));
+      .catch((e: unknown) => setError(errorMessage(e, 'Could not load announcements.')));
   }, [filter]);
 
   useEffect(() => { load(); }, [load]);

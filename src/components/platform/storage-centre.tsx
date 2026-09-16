@@ -33,6 +33,7 @@ import type {
   StorageOverview, StorageStudio, StorageTrendPoint, StorageObject,
 } from '@/lib/api';
 import { Panel, SectionLabel, StatTile, Reveal } from './console';
+import { errorMessage } from '@/lib/forms/errors';
 
 const RANGES = [7, 30, 90];
 
@@ -367,7 +368,7 @@ export default function StorageCentre() {
       .then(([o, s, t, l]) => {
         setOverview(o.data); setStudios(s.data); setTrend(t.data); setLargest(l.data);
       })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load storage usage.'))
+      .catch((e: unknown) => setError(errorMessage(e, 'Could not load storage usage.')))
       .finally(() => setLoading(false));
   }, [days]);
 

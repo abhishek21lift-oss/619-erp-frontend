@@ -7,6 +7,13 @@
  * goes. So the form previews the payee exactly as a UPI app will show it, and
  * collection stays OFF until an admin explicitly turns it on — a half-filled
  * configuration must never be able to put a live QR in front of a member.
+ *
+ * On the universal form platform. The rules this screen already carried — the
+ * VPA pattern, the statutory GST slabs, the 5–1440 link validity — moved into
+ * `schemas/upiSettings.ts` unchanged; what the migration added is a real submit
+ * guard (two clicks in one frame both saw `saving === false`), a GSTIN format
+ * check on a value that is printed on every receipt, and server failures
+ * through the shared mapper instead of `err.message` straight from the wire.
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -17,16 +24,20 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
-import { ApiError } from '@/lib/http';
-import { gstRateField, GST_SLABS } from '@/lib/forms/domain';
-import { integerField } from '@/lib/forms/primitives';
-import type { UpiSettings } from '@/lib/api';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import {
+  upiSettingsSchema, upiSettingsToFormValues, toUpiSettingsPayload, gstOptions,
+  UPI_FIELD_HINTS, VPA_RE,
+  type UpiSettingsState, type UpiSettingsValues,
+} from '@/lib/forms/schemas/upiSettings';
+import {
+  TextField, TextAreaField, NumberField, SelectField, FormErrorBanner,
+} from '@/components/ui/form';
+import type { UpiSettings, UpiSettingsInput } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
 import { PageHeader } from '@/components/ui';
-
-/** Mirrors the CHECK constraint in migration 112 and the DTO in the route. */
-const VPA_RE = /^[a-zA-Z0-9._-]{2,64}@[a-zA-Z][a-zA-Z0-9.]{1,63}$/;
+import { errorMessage } from '@/lib/forms/errors';
 
 export default function PaymentSettingsPage() {
   return <Guard role="admin"><Inner /></Guard>;
@@ -34,42 +45,21 @@ export default function PaymentSettingsPage() {
 
 function Inner() {
   const { user } = useAuth();
-  const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saved, setSaved] = useState<UpiSettings | null>(null);
-
-  const [upiId, setUpiId] = useState('');
-  const [merchantName, setMerchantName] = useState('');
-  const [gstPercent, setGstPercent] = useState('0');
-  const [gstNumber, setGstNumber] = useState('');
-  const [instructions, setInstructions] = useState('');
-  const [ttl, setTtl] = useState('60');
-  const [enabled, setEnabled] = useState(false);
+  const [initial, setInitial] = useState<UpiSettingsState | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.upiPayments.getSettings();
-      if (res.data) {
-        setSaved(res.data);
-        setUpiId(res.data.upi_id);
-        setMerchantName(res.data.merchant_name);
-        setGstPercent(String(Number(res.data.gst_percent)));
-        setGstNumber(res.data.gst_number ?? '');
-        setInstructions(res.data.instructions ?? '');
-        setTtl(String(res.data.order_ttl_minutes));
-        setEnabled(res.data.is_enabled);
-      } else {
-        // Sensible default for a first-time setup: the studio's own name is
-        // almost always what should appear in the member's UPI app.
-        setMerchantName(user?.organization_name ?? '');
-      }
-      setError(null);
+      setSaved(res.data ?? null);
+      setInitial(upiSettingsToFormValues(res.data ?? null, user?.organization_name ?? ''));
+      setLoadError(null);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not load payment settings.');
+      setLoadError(errorMessage(err, 'Could not load payment settings.'));
     } finally {
       setLoading(false);
     }
@@ -77,70 +67,7 @@ function Inner() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const vpaValid = VPA_RE.test(upiId.trim());
-  const nameValid = merchantName.trim().length > 0;
-  /**
-   * GST validity.
-   *
-   * The previous expression was `Number(gstPercent) >= 0 && <= 100`, and
-   * `Number('') === 0`, so a BLANK field passed — then `Number(gstPercent) || 0`
-   * saved 0%, putting a zero-rated line on every invoice the studio issued
-   * afterwards. Nothing told anyone.
-   *
-   * It also accepted any value in 0..100, so 14% was saveable. GST is
-   * statutory; a 14% invoice is not a slightly wrong tax, it is a document the
-   * studio cannot file and the member cannot claim.
-   */
-  const gstParsed = gstRateField({ label: 'GST rate', required: true }).safeParse(gstPercent);
-  const gstValid = gstParsed.success;
-  const gstError = gstParsed.success ? null : gstParsed.error.issues[0]!.message;
-
-  /**
-   * A rate saved through the old free-text field that is not a slab.
-   *
-   * Offered as an extra option so a studio in that position is not locked out
-   * of saving an unrelated setting — they can see it is non-standard and
-   * correct it deliberately.
-   */
-  const legacyGst =
-    gstPercent !== '' && !(GST_SLABS as readonly number[]).includes(Number(gstPercent))
-      ? gstPercent
-      : null;
-  const ttlParsed = integerField({ label: 'Link validity', min: 5, max: 1440 }).safeParse(ttl);
-  const ttlValid = ttlParsed.success && ttlParsed.data !== null;
-  const canSave = vpaValid && nameValid && gstValid && ttlValid && !saving;
-
-  const save = async () => {
-    if (!canSave) return;
-    setSaving(true);
-    setError(null);
-    try {
-      const res = await api.upiPayments.saveSettings({
-        upi_id: upiId.trim(),
-        merchant_name: merchantName.trim(),
-        // The parsed value, not `Number(x) || 0`. `canSave` already refuses a
-        // blank, so this can only be a real rate.
-        // `?? 0` covers the schema's optional-null shape; canSave already
-        // refuses a blank, so this branch is unreachable in practice.
-        gst_percent: gstParsed.success ? (gstParsed.data ?? 0) : 0,
-        gst_number: gstNumber.trim() || null,
-        is_enabled: enabled,
-        instructions: instructions.trim() || null,
-        // `Number(ttl) || 60` turned both a blank AND a deliberate 0 into 60.
-        // The backend bounds this at 5..1440; parsing here means the user is
-        // told before the round trip rather than after it.
-        order_ttl_minutes: ttlParsed.success && ttlParsed.data !== null ? ttlParsed.data : 60,
-      });
-      setSaved(res.data);
-      toast.success(enabled ? 'Saved. Members can now pay by UPI.' : 'Saved. Collection is off.');
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not save. Please try again.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) {
+  if (loading || (!initial && !loadError)) {
     return (
       <div className="mx-auto max-w-[560px] animate-pulse space-y-4 px-1 pt-4">
         <div className="h-8 w-56 rounded" style={{ background: 'var(--bg-subtle)' }} />
@@ -157,205 +84,23 @@ function Inner() {
         icon={<Wallet size={19} />}
       />
 
-      {/* ── Live/off state ── */}
-      <m.div
-        layout
-        className="mt-4 flex items-start gap-3 rounded-2xl p-4"
-        style={{
-          background: enabled ? 'var(--success-soft)' : 'var(--bg-subtle)',
-          border: `1px solid ${enabled ? 'var(--success-border)' : 'var(--border)'}`,
-        }}
-      >
-        <ShieldCheck size={18} className="mt-0.5 shrink-0"
-          style={{ color: enabled ? 'var(--success-text)' : 'var(--text-muted)' }} />
-        <div className="min-w-0 flex-1">
-          <p className="text-[13.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>
-            {enabled ? 'Collection is on' : 'Collection is off'}
-          </p>
-          <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-            {enabled
-              ? 'Members can open a payment page, pay by UPI and submit a reference for you to verify.'
-              : 'Members cannot start a UPI payment. Turn this on once the UPI ID below is correct.'}
-          </p>
-        </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
-          aria-label="Enable UPI collection"
-          onClick={() => setEnabled((v) => !v)}
-          className="relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors"
-          style={{ background: enabled ? 'var(--success)' : 'var(--border-3)' }}
-        >
-          <m.span
-            layout
-            transition={{ type: 'spring', stiffness: 500, damping: 32 }}
-            className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow"
-            style={{ left: enabled ? 22 : 2 }}
-          />
-        </button>
-      </m.div>
+      {loadError && !initial ? (
+        <p className="mt-4 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
+          <AlertTriangle size={14} className="mt-px shrink-0" /> {loadError}
+        </p>
+      ) : (
+        <SettingsForm
+          initial={initial!}
+          saved={saved}
+          onSaved={(next) => {
+            setSaved(next);
+            // Rebuilt from what the server returned rather than from what was
+            // typed, so the form shows what is actually stored (§11).
+            setInitial(upiSettingsToFormValues(next, user?.organization_name ?? ''));
+          }}
+        />
+      )}
 
-      {/* ── Form ── */}
-      <section className="mt-4 rounded-2xl p-5"
-        style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
-
-        <Field
-          id="upi-id"
-          label="Your UPI ID (VPA)"
-          hint={upiId.length > 0 && !vpaValid
-            ? 'Must look like name@bank — for example studio@okhdfcbank.'
-            : 'Exactly as it appears in your UPI app. This is where money arrives.'}
-          invalid={upiId.length > 0 && !vpaValid}
-        >
-          <input
-            id="upi-id"
-            value={upiId}
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            onChange={(e) => setUpiId(e.target.value.trim())}
-            placeholder="studio@okhdfcbank"
-            className="w-full rounded-xl px-3.5 font-mono text-[15px] outline-none"
-            style={{
-              height: 48, background: 'var(--bg-base)', color: 'var(--text-primary)',
-              border: `1px solid ${upiId.length > 0 && !vpaValid ? 'var(--danger)' : 'var(--border-2)'}`,
-            }}
-          />
-        </Field>
-
-        <Field
-          id="merchant-name"
-          label="Name shown to the member"
-          hint="Members abandon payments to a name they do not recognise."
-          className="mt-4"
-        >
-          <input
-            id="merchant-name"
-            value={merchantName}
-            maxLength={120}
-            onChange={(e) => setMerchantName(e.target.value)}
-            placeholder="Abhishek PT Studio"
-            className="w-full rounded-xl px-3.5 text-[15px] outline-none"
-            style={{
-              height: 48, background: 'var(--bg-base)', color: 'var(--text-primary)',
-              border: '1px solid var(--border-2)',
-            }}
-          />
-        </Field>
-
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <Field
-            id="gst-percent"
-            label="GST %"
-            hint={gstError ?? '0% hides the line entirely. These are the statutory slabs.'}
-            invalid={!gstValid}
-          >
-            {/* A select rather than a text box. The rate is one of five
-                statutory values, so offering a free-text field invites a
-                number that cannot appear on a valid invoice — and made a
-                BLANK possible, which is what silently saved 0%. */}
-            <select
-              id="gst-percent"
-              value={gstPercent}
-              onChange={(e) => setGstPercent(e.target.value)}
-              className="w-full rounded-xl px-3.5 text-[15px] tabular-nums outline-none"
-              style={{
-                height: 48, background: 'var(--bg-base)', color: 'var(--text-primary)',
-                border: `1px solid ${gstValid ? 'var(--border-2)' : 'var(--danger)'}`,
-              }}
-            >
-              <option value="" disabled>Choose a rate</option>
-              {GST_SLABS.map((slab) => (
-                <option key={slab} value={String(slab)}>{slab}%</option>
-              ))}
-              {legacyGst !== null && (
-                <option value={legacyGst}>{legacyGst}% — not a standard slab</option>
-              )}
-            </select>
-          </Field>
-          <Field id="order-ttl" label="Link valid for" hint="Minutes, 5 to 1440.">
-            <input
-              id="order-ttl"
-              inputMode="numeric"
-              value={ttl}
-              onChange={(e) => setTtl(e.target.value.replace(/\D/g, ''))}
-              className="w-full rounded-xl px-3.5 text-[15px] tabular-nums outline-none"
-              style={{
-                height: 48, background: 'var(--bg-base)', color: 'var(--text-primary)',
-                border: '1px solid var(--border-2)',
-              }}
-            />
-          </Field>
-        </div>
-
-        <Field id="gst-number" label="GSTIN (optional)" className="mt-4"
-          hint="Printed on receipts when set.">
-          <input
-            id="gst-number"
-            value={gstNumber}
-            maxLength={32}
-            onChange={(e) => setGstNumber(e.target.value.toUpperCase())}
-            placeholder="22AAAAA0000A1Z5"
-            className="w-full rounded-xl px-3.5 font-mono text-[14px] outline-none"
-            style={{
-              height: 48, background: 'var(--bg-base)', color: 'var(--text-primary)',
-              border: '1px solid var(--border-2)',
-            }}
-          />
-        </Field>
-
-        <Field id="instructions" label="Note on the payment page (optional)" className="mt-4"
-          hint="Sets expectations — members chase a studio that goes quiet.">
-          <textarea
-            id="instructions"
-            rows={2}
-            maxLength={500}
-            value={instructions}
-            onChange={(e) => setInstructions(e.target.value)}
-            placeholder="Payments are verified within 2 hours, 7am–9pm."
-            className="w-full resize-none rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
-            style={{
-              background: 'var(--bg-base)', color: 'var(--text-primary)',
-              border: '1px solid var(--border-2)',
-            }}
-          />
-        </Field>
-
-        {/* ── Preview ── */}
-        <div className="mt-5 rounded-xl p-3.5" style={{ background: 'var(--bg-subtle)' }}>
-          <p className="text-[11px] font-[700] uppercase tracking-[0.1em]"
-            style={{ color: 'var(--text-muted)' }}>
-            How members will see it
-          </p>
-          <p className="mt-1.5 text-[14px] font-[700]" style={{ color: 'var(--text-primary)' }}>
-            {merchantName.trim() || 'Your studio name'}
-          </p>
-          <p className="font-mono text-[13px]"
-            style={{ color: vpaValid ? 'var(--brand)' : 'var(--text-muted)' }}>
-            {upiId.trim() || 'yourname@bank'}
-          </p>
-        </div>
-
-        {error && (
-          <p className="mt-4 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
-            <AlertTriangle size={14} className="mt-px shrink-0" /> {error}
-          </p>
-        )}
-
-        <button
-          type="button"
-          onClick={save}
-          disabled={!canSave}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl text-[15px] font-[720] text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-45"
-          style={{ height: 50, background: 'var(--brand)' }}
-        >
-          {saving ? <><Loader2 size={16} className="animate-spin" /> Saving…</>
-                  : <><Check size={16} /> Save settings</>}
-        </button>
-      </section>
-
-      {/* ── Where to go next ── */}
       {saved && (
         <Link href="/finance/verify-payments"
           className="mt-4 flex items-center justify-between rounded-2xl p-4"
@@ -381,21 +126,228 @@ function Inner() {
   );
 }
 
-function Field({
-  id, label, hint, children, className, invalid,
+function SettingsForm({
+  initial, saved, onSaved,
 }: {
-  id: string; label: string; hint?: string;
-  children: React.ReactNode; className?: string; invalid?: boolean;
+  initial: UpiSettingsState;
+  saved: UpiSettings | null;
+  onSaved: (next: UpiSettings) => void;
 }) {
+  const { toast } = useToast();
+
+  // The stored values, which the schema always accepts however non-standard —
+  // see the schema's note on why a legacy rate or GSTIN must not lock an admin
+  // out of editing the UPI ID.
+  const storedGstPercent = saved?.gst_percent == null ? null : Number(saved.gst_percent);
+  const storedGstNumber = saved?.gst_number ?? null;
+
+  const f = useAppForm({
+    schema: upiSettingsSchema({ storedGstPercent, storedGstNumber }),
+    defaultValues: initial,
+    fieldHints: UPI_FIELD_HINTS,
+    // The panel stays on screen and is edited again; emptying it after a save
+    // would be a worse answer than leaving the saved values visible.
+    keepValuesOnSuccess: true,
+    onSubmit: async (values: UpiSettingsValues) => {
+      const res = await api.upiPayments.saveSettings(
+        toUpiSettingsPayload(values) as UpiSettingsInput,
+      );
+      onSaved(res.data);
+      toast.success(
+        values.is_enabled ? 'Saved. Members can now pay by UPI.' : 'Saved. Collection is off.',
+      );
+    },
+  });
+
+  const { form } = f;
+
   return (
-    <div className={className}>
-      <label htmlFor={id} className="block text-[12px] font-[650]"
-        style={{ color: 'var(--text-primary)' }}>{label}</label>
-      <div className="mt-1.5">{children}</div>
-      {hint && (
-        <p className="mt-1.5 text-[11.5px]"
-          style={{ color: invalid ? 'var(--danger-text)' : 'var(--text-muted)' }}>{hint}</p>
-      )}
-    </div>
+    <form noValidate onSubmit={(e) => { e.preventDefault(); void f.submit(); }}>
+      {/* ── Live/off state ── */}
+      <form.Subscribe selector={(s) => s.values.is_enabled}>
+        {(enabled) => (
+          <m.div
+            layout
+            className="mt-4 flex items-start gap-3 rounded-2xl p-4"
+            style={{
+              background: enabled ? 'var(--success-soft)' : 'var(--bg-subtle)',
+              border: `1px solid ${enabled ? 'var(--success-border)' : 'var(--border)'}`,
+            }}
+          >
+            <ShieldCheck size={18} className="mt-0.5 shrink-0"
+              style={{ color: enabled ? 'var(--success-text)' : 'var(--text-muted)' }} />
+            <div className="min-w-0 flex-1">
+              <p className="text-[13.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>
+                {enabled ? 'Collection is on' : 'Collection is off'}
+              </p>
+              <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+                {enabled
+                  ? 'Members can open a payment page, pay by UPI and submit a reference for you to verify.'
+                  : 'Members cannot start a UPI payment. Turn this on once the UPI ID below is correct.'}
+              </p>
+            </div>
+            {/* A switch, not a checkbox: it toggles a live member-facing
+                capability rather than setting a value that Save then commits,
+                so the ARIA role has to say switch. CheckboxField would render
+                the wrong control for this meaning. */}
+            <form.Field name="is_enabled">
+              {(field) => (
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={field.state.value}
+                  aria-label="Enable UPI collection"
+                  onClick={() => field.handleChange(!field.state.value)}
+                  className="relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors"
+                  style={{ background: field.state.value ? 'var(--success)' : 'var(--border-3)' }}
+                >
+                  <m.span
+                    layout
+                    transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+                    className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow"
+                    style={{ left: field.state.value ? 22 : 2 }}
+                  />
+                </button>
+              )}
+            </form.Field>
+          </m.div>
+        )}
+      </form.Subscribe>
+
+      {/* ── Form ── */}
+      <section className="mt-4 rounded-2xl p-5"
+        style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+
+        <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} className="mb-4" />
+
+        <form.Field name="upi_id">
+          {(field) => (
+            <TextField
+              field={field}
+              label="Your UPI ID (VPA)"
+              required
+              placeholder="studio@okhdfcbank"
+              description="Exactly as it appears in your UPI app. This is where money arrives."
+              autoComplete="off"
+              serverError={f.errors.fieldErrors.upi_id}
+            />
+          )}
+        </form.Field>
+
+        <form.Field name="merchant_name">
+          {(field) => (
+            <TextField
+              field={field}
+              label="Name shown to the member"
+              required
+              placeholder="Abhishek PT Studio"
+              description="Members abandon payments to a name they do not recognise."
+              maxLength={120}
+              showCount
+              className="mt-4"
+              serverError={f.errors.fieldErrors.merchant_name}
+            />
+          )}
+        </form.Field>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <form.Field name="gst_percent">
+            {(field) => (
+              <SelectField
+                field={field}
+                label="GST %"
+                required
+                // A select rather than a text box. The rate is one of five
+                // statutory values, so a free-text field invites a number that
+                // cannot appear on a valid invoice — and made a BLANK possible,
+                // which is what silently saved 0%.
+                options={gstOptions(storedGstPercent)}
+                description="0% hides the line entirely. These are the statutory slabs."
+                serverError={f.errors.fieldErrors.gst_percent}
+              />
+            )}
+          </form.Field>
+
+          <form.Field name="order_ttl_minutes">
+            {(field) => (
+              <NumberField
+                field={field}
+                label="Link valid for"
+                required
+                mode="integer"
+                suffix="min"
+                description="Minutes, 5 to 1440."
+                serverError={f.errors.fieldErrors.order_ttl_minutes}
+              />
+            )}
+          </form.Field>
+        </div>
+
+        <form.Field name="gst_number">
+          {(field) => (
+            <TextField
+              field={field}
+              label="GSTIN (optional)"
+              placeholder="22AAAAA0000A1Z5"
+              description="Printed on receipts when set."
+              className="mt-4"
+              autoComplete="off"
+              serverError={f.errors.fieldErrors.gst_number}
+            />
+          )}
+        </form.Field>
+
+        <form.Field name="instructions">
+          {(field) => (
+            <TextAreaField
+              field={field}
+              label="Note on the payment page (optional)"
+              rows={2}
+              maxLength={500}
+              showCount
+              placeholder="Payments are verified within 2 hours, 7am–9pm."
+              description="Sets expectations — members chase a studio that goes quiet."
+              className="mt-4"
+              serverError={f.errors.fieldErrors.instructions}
+            />
+          )}
+        </form.Field>
+
+        {/* ── Preview ── */}
+        <form.Subscribe selector={(s) => [s.values.merchant_name, s.values.upi_id] as const}>
+          {([merchantName, upiId]) => (
+            <div className="mt-5 rounded-xl p-3.5" style={{ background: 'var(--bg-subtle)' }}>
+              <p className="text-[11px] font-[700] uppercase tracking-[0.1em]"
+                style={{ color: 'var(--text-muted)' }}>
+                How members will see it
+              </p>
+              <p className="mt-1.5 text-[14px] font-[700]" style={{ color: 'var(--text-primary)' }}>
+                {merchantName.trim() || 'Your studio name'}
+              </p>
+              {/* Brand colour once the VPA is well-formed — the preview is
+                  the one place an admin checks the payee before turning
+                  collection on, so it should say when it is usable. */}
+              <p className="font-mono text-[13px]"
+                style={{ color: VPA_RE.test(upiId.trim()) ? 'var(--brand)' : 'var(--text-muted)' }}>
+                {upiId.trim() || 'yourname@bank'}
+              </p>
+            </div>
+          )}
+        </form.Subscribe>
+
+        <button
+          type="submit"
+          // The real guard is the in-flight ref inside useAppForm; `disabled`
+          // only communicates the state. Gating on validity here as well would
+          // hide WHY the form cannot be saved behind a dead button.
+          disabled={f.isSubmitting}
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl text-[15px] font-[720] text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-45"
+          style={{ height: 50, background: 'var(--brand)' }}
+        >
+          {f.isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Saving…</>
+                          : <><Check size={16} /> Save settings</>}
+        </button>
+      </section>
+    </form>
   );
 }

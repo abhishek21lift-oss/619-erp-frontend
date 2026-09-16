@@ -11,6 +11,7 @@ import {
 import Guard from '@/components/Guard';
 import WhatsAppCard from '@/components/modules/WhatsAppCard';
 import { api } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 type Status = 'connected' | 'error' | 'pending' | 'unavailable';
 
@@ -102,7 +103,7 @@ function OpenRouterCard() {
       setHealth(res.models as HealthResult);
       setCheckedAt(new Date().toLocaleTimeString());
     } catch (e: unknown) {
-      setHealthError(e instanceof Error ? e.message : 'Health check failed — check your API key and model IDs');
+      setHealthError(errorMessage(e, 'Health check failed — check your API key and model IDs'));
       setCheckedAt(new Date().toLocaleTimeString());
     } finally {
       setChecking(false);

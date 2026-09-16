@@ -28,6 +28,7 @@ import type { PlatformUser, PlatformUserQuery, PlatformUserSummary } from '@/lib
 import { roleLabel } from '@/lib/roles';
 import { fmtWhen } from '../_shared/format';
 import { Center, ErrorState, inputCls, inputStyle } from '../_shared/ui';
+import { errorMessage } from '@/lib/forms/errors';
 
 const PAGE = 50;
 
@@ -130,7 +131,7 @@ export function UsersTab() {
       setRows(res.data ?? []);
       setTotal(res.total ?? 0);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load the directory');
+      setError(errorMessage(e, 'Could not load the directory'));
     } finally {
       setLoading(false);
     }

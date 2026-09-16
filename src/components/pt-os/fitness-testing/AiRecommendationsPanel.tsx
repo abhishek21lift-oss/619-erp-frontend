@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { AiFitnessTestAnalysis } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 const SEVERITY_STYLE: Record<string, { bg: string; border: string; color: string }> = {
   low: { bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.25)', color: '#059669' },
@@ -33,7 +34,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
       setAnalysis(res.data);
       setMeta({ model: res.model, used_fallback: res.used_fallback });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to generate AI recommendations.');
+      setError(errorMessage(err, 'Failed to generate AI recommendations.'));
     } finally {
       setLoading(false);
     }

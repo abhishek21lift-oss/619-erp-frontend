@@ -17,6 +17,7 @@ import type { WorkoutSession, WorkoutProgressPoint, WorkoutVolumePoint, WorkoutA
 import { ApiError } from '@/lib/http';
 import { useToast } from '@/lib/toast';
 import { fmtDate } from '@/lib/format';
+import { errorMessage } from '@/lib/forms/errors';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -92,7 +93,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
         setPlanDays([]);
       }
     } catch (err: unknown) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load client.');
+      setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {
       setLoading(false);
     }
@@ -150,7 +151,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
           duration: 0, action: { label: 'Review PAR-Q', onClick: () => router.push(`/pt-os/parq?client_id=${clientId}`) },
         });
       } else {
-        toast.error(err instanceof Error ? err.message : 'Could not start a new session.');
+        toast.error(errorMessage(err, 'Could not start a new session.'));
       }
       setCreating(false);
     }

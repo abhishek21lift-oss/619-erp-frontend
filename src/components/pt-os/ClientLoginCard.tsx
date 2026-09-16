@@ -28,6 +28,7 @@ import {
 import { api } from '@/lib/api';
 import type { ClientLoginStatus } from '@/lib/api';
 import { palette, rgba } from '@/lib/palette';
+import { errorMessage } from '@/lib/forms/errors';
 
 const C = {
   primary: palette.blue[500],
@@ -121,7 +122,7 @@ export default function ClientLoginCard({ clientId }: { clientId: string }) {
         setNote({ tone: C.success, text: 'Activation email sent. The link works once and expires.' });
       }
     } catch (err: unknown) {
-      setNote({ tone: C.danger, text: err instanceof Error ? err.message : 'That did not work.' });
+      setNote({ tone: C.danger, text: errorMessage(err, 'That did not work.') });
       // Re-read rather than trust local state: a 409 usually means the server
       // knows something this card does not.
       void load();

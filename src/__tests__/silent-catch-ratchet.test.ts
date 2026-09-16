@@ -71,55 +71,62 @@ function sites(): string[] {
  * Line numbers move when a file is edited above the site, so a churned entry
  * is expected and is fixed by updating the line — the point is that adding a
  * NEW file/line pair takes a deliberate edit here.
+ *
+ * When a wide change shifts many of them at once — adding one import line to
+ * eighty-nine files did exactly that — regenerate the numbers, but check the
+ * FILE SET and the per-file COUNT first. Those are what the list is actually
+ * pinning; if both are unchanged, every difference is a line number and the
+ * regeneration is safe. If either moved, a catch was added or removed and it
+ * wants reading, not renumbering.
  */
 const KNOWN = [
-  'app/(bare)/start-free/page.tsx:65',
-  'app/(chrome)/ai-coach/knowledge/page.tsx:72',
-  'app/(chrome)/ai/progress-analysis/page.tsx:60',
-  'app/(chrome)/checkin/qr-scanner/page.tsx:383',
-  'app/(chrome)/checkin/qr-scanner/page.tsx:397',
+  'app/(bare)/start-free/page.tsx:66',
+  'app/(chrome)/ai-coach/knowledge/page.tsx:75',
+  'app/(chrome)/ai/progress-analysis/page.tsx:61',
+  'app/(chrome)/checkin/qr-scanner/page.tsx:384',
+  'app/(chrome)/checkin/qr-scanner/page.tsx:398',
   'app/(chrome)/engagement/notifications/page.tsx:41',
   // The three /stats catches are the reasoned ones: when the SQL aggregate is
   // unavailable the page falls back to summing the rows it has, which is
   // correct under the endpoint's own row cap and is documented at each site.
   // They are the fallback, not the failure — the OUTER catch is what used to
   // render a failure as zero, and that is gone from all three.
-  'app/(chrome)/finance/collected-payments/page.tsx:84',
+  'app/(chrome)/finance/collected-payments/page.tsx:85',
   'app/(chrome)/finance/dues/page.tsx:95',
-  'app/(chrome)/sales/today/page.tsx:72',
   'app/(chrome)/pay/[orderId]/page.tsx:195',
-  'app/(chrome)/pt-os/clients/[id]/page.tsx:366',
-  'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:79',
-  'app/(chrome)/pt-os/diet-plans/page.tsx:193',
-  'app/(chrome)/pt-os/diet-plans/page.tsx:194',
-  'app/(chrome)/pt-os/diet-plans/page.tsx:195',
+  'app/(chrome)/pt-os/clients/[id]/page.tsx:367',
+  'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:80',
+  'app/(chrome)/pt-os/diet-plans/page.tsx:197',
+  'app/(chrome)/pt-os/diet-plans/page.tsx:198',
+  'app/(chrome)/pt-os/diet-plans/page.tsx:199',
   'app/(chrome)/pt-os/exercise-library/[id]/edit/page.tsx:27',
   'app/(chrome)/pt-os/exercise-library/new/page.tsx:28',
   'app/(chrome)/pt-os/workout-plans/[id]/page.tsx:48',
-  'app/(chrome)/settings/integrations/page.tsx:428',
-  'app/(chrome)/settings/page.tsx:236',
-  'app/(chrome)/settings/page.tsx:436',
-  'app/(chrome)/settings/page.tsx:632',
-  'app/(chrome)/settings/page.tsx:875',
-  'app/(chrome)/settings/profile/page.tsx:819',
-  'app/(chrome)/settings/profile/page.tsx:820',
-  'app/(chrome)/settings/profile/page.tsx:1609',
-  'app/(chrome)/settings/profile/page.tsx:1882',
+  'app/(chrome)/sales/today/page.tsx:73',
+  'app/(chrome)/settings/integrations/page.tsx:429',
+  'app/(chrome)/settings/page.tsx:237',
+  'app/(chrome)/settings/page.tsx:437',
+  'app/(chrome)/settings/page.tsx:633',
+  'app/(chrome)/settings/page.tsx:876',
+  'app/(chrome)/settings/profile/page.tsx:1726',
+  'app/(chrome)/settings/profile/page.tsx:2002',
+  'app/(chrome)/settings/profile/page.tsx:902',
+  'app/(chrome)/settings/profile/page.tsx:903',
   'app/(platform)/platform/_shared/CommandBar.tsx:84',
   'app/(platform)/platform/_shared/CommandBar.tsx:85',
-  'app/(platform)/platform/_tabs/ActivityTab.tsx:46',
-  'app/(platform)/platform/_tabs/CouponsTab.tsx:52',
-  'app/(platform)/platform/_tabs/FinanceTab.tsx:339',
-  'app/(platform)/platform/_tabs/FinanceTab.tsx:97',
-  'app/(platform)/platform/_tabs/StudiosTab.tsx:373',
+  'app/(platform)/platform/_tabs/ActivityTab.tsx:47',
+  'app/(platform)/platform/_tabs/CouponsTab.tsx:64',
+  'app/(platform)/platform/_tabs/FinanceTab.tsx:340',
+  'app/(platform)/platform/_tabs/FinanceTab.tsx:98',
+  'app/(platform)/platform/_tabs/StudiosTab.tsx:382',
   'components/LandingPage.tsx:58',
   'components/LandingPage.tsx:65',
   'components/TrialBanner.tsx:19',
-  'components/fitness/AiCoachPanel.tsx:125',
-  'components/fitness/AiCoachPanel.tsx:131',
+  'components/fitness/AiCoachPanel.tsx:126',
+  'components/fitness/AiCoachPanel.tsx:132',
   'components/pt-os/analytics/LandmarkEditor.tsx:82',
-  'components/pt-os/builder/NewProgrammeDialog.tsx:204',
-  'components/pt-os/builder/NewProgrammeDialog.tsx:207',
+  'components/pt-os/builder/NewProgrammeDialog.tsx:205',
+  'components/pt-os/builder/NewProgrammeDialog.tsx:208',
   'components/pt-os/workout-log/ExercisePicker.tsx:274',
   'components/pt-os/workout-log/ExercisePicker.tsx:288',
   'lib/auth-context.tsx:166',

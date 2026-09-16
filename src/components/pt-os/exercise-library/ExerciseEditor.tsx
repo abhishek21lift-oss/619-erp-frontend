@@ -8,6 +8,17 @@ import { Badge, Button, cn } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import type { ExerciseMeta, LibraryExercise } from '@/lib/api';
+import { useStore } from '@tanstack/react-form';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import {
+  exerciseSchema, blankExercise, exerciseToFormValues, toExercisePayload,
+  isExerciseDraft, EXERCISE_FIELD_HINTS, DIFFICULTY_OPTIONS,
+  MOVEMENT_PATTERNS, PLANES,
+  type ExerciseFormState,
+} from '@/lib/forms/schemas/exercise';
+import {
+  TextField, TextAreaField, SelectField, NumberField, FormErrorBanner,
+} from '@/components/ui/form';
 
 /**
  * Create / edit an exercise.
@@ -34,85 +45,10 @@ export interface ExerciseEditorProps {
   onSaved: (ex: LibraryExercise, created: boolean) => void;
 }
 
-interface FormState {
-  name: string;
-  description: string;
-  primary_muscle_id: string;
-  secondary_muscle_ids: string[];
-  equipment_id: string;
-  category_id: string;
-  difficulty: string;
-  mechanic: string;
-  force: string;
-  movement_pattern: string;
-  plane_of_motion: string;
-  instructions: string;
-  coaching_cues: string[];
-  common_mistakes: string[];
-  safety_tips: string[];
-  contraindications: string[];
-  breathing_tips: string;
-  tempo_recommendation: string;
-  recommended_sets: string;
-  recommended_reps: string;
-  rest_seconds: string;
-  beginner_notes: string;
-  advanced_notes: string;
-  trainer_notes: string;
-  tags: string[];
-}
-
-const BLANK: FormState = {
-  name: '', description: '', primary_muscle_id: '', secondary_muscle_ids: [],
-  equipment_id: '', category_id: '', difficulty: 'beginner', mechanic: '', force: '',
-  movement_pattern: '', plane_of_motion: '', instructions: '',
-  coaching_cues: [], common_mistakes: [], safety_tips: [], contraindications: [],
-  breathing_tips: '', tempo_recommendation: '', recommended_sets: '', recommended_reps: '',
-  rest_seconds: '', beginner_notes: '', advanced_notes: '', trainer_notes: '',
-  tags: [],
-};
-
 const DRAFT_KEY = '619:exercise-draft:v1';
-
-const MOVEMENT_PATTERNS = [
-  'Squat', 'Hinge', 'Lunge', 'Horizontal Push', 'Vertical Push',
-  'Horizontal Pull', 'Vertical Pull', 'Carry', 'Rotation',
-  'Anti-Extension', 'Trunk Flexion', 'Isolation', 'Mobility', 'Locomotion', 'General',
-];
-const PLANES = ['Sagittal', 'Frontal', 'Transverse'];
 
 function slugify(s: string) {
   return s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-}
-
-function fromExercise(ex: LibraryExercise): FormState {
-  return {
-    name: ex.name || '',
-    description: ex.description || '',
-    primary_muscle_id: ex.primary_muscle_id || '',
-    secondary_muscle_ids: [],
-    equipment_id: ex.equipment_id || '',
-    category_id: ex.category_id || '',
-    difficulty: ex.difficulty || 'beginner',
-    mechanic: ex.mechanic || '',
-    force: ex.force || '',
-    movement_pattern: ex.movement_pattern || '',
-    plane_of_motion: ex.plane_of_motion || '',
-    instructions: ex.instructions || '',
-    coaching_cues: ex.coaching_cues || [],
-    common_mistakes: ex.common_mistakes || [],
-    safety_tips: ex.safety_tips || [],
-    contraindications: ex.contraindications || [],
-    breathing_tips: ex.breathing_tips || '',
-    tempo_recommendation: ex.tempo_recommendation || '',
-    recommended_sets: ex.recommended_sets || '',
-    recommended_reps: ex.recommended_reps || '',
-    rest_seconds: ex.rest_seconds != null ? String(ex.rest_seconds) : '',
-    beginner_notes: ex.beginner_notes || '',
-    advanced_notes: ex.advanced_notes || '',
-    trainer_notes: ex.trainer_notes || '',
-    tags: ex.tags || [],
-  };
 }
 
 export function ExerciseEditor({
@@ -121,9 +57,6 @@ export function ExerciseEditor({
   const { toast } = useToast();
   const isEdit = Boolean(exercise);
 
-  const [form, setForm] = React.useState<FormState>(BLANK);
-  const [initial, setInitial] = React.useState<FormState>(BLANK);
-  const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
   const [preview, setPreview] = React.useState(false);
   const [nameCheck, setNameCheck] = React.useState<{
@@ -136,53 +69,91 @@ export function ExerciseEditor({
     [exercise]
   );
 
-  // Seed the form. On create, restore an autosaved draft if one survived.
-  React.useEffect(() => {
-    setSaved(false);
-    setPreview(false);
-    setNameCheck({ state: 'idle' });
-
+  /**
+   * The values this editor opens with.
+   *
+   * Computed once per exercise rather than written into state by an effect.
+   * The effect version had to re-seed `form` AND `initial` in step, and the
+   * dirty check compared the two — so a mis-ordered update made a freshly
+   * opened form report itself as edited.
+   */
+  const initialValues = React.useMemo<ExerciseFormState>(() => {
     if (exercise) {
       const secondaryIds = (meta?.all_muscles || [])
         .filter((m) => secondaryFromServer.includes(m.slug))
         .map((m) => m.id!)
         .filter(Boolean);
-      const seeded = { ...fromExercise(exercise), secondary_muscle_ids: secondaryIds };
-      setForm(seeded);
-      setInitial(seeded);
-      return;
+      return exerciseToFormValues(exercise, secondaryIds);
     }
 
-    let draft: FormState | null = null;
+    // Create mode: restore an autosaved draft if one survived a refresh.
     try {
       const raw = localStorage.getItem(DRAFT_KEY);
-      if (raw) draft = JSON.parse(raw) as FormState;
+      if (raw) {
+        const parsed: unknown = JSON.parse(raw);
+        // Shape-checked rather than cast. The draft comes out of localStorage,
+        // and one written by an older version of this form — before a field
+        // existed, or under its old name — produced `undefined` where a string
+        // belongs, and then `undefined.trim()` on save.
+        if (isExerciseDraft(parsed)) return parsed;
+      }
     } catch { /* a corrupt draft is not worth failing the dialog over */ }
 
-    setForm(draft || BLANK);
-    setInitial(BLANK);
-    if (draft?.name) toast.info('Restored your unsaved draft');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exercise, meta]);
+    return blankExercise();
+  }, [exercise, meta, secondaryFromServer]);
 
-  const dirty = React.useMemo(
-    () => JSON.stringify(form) !== JSON.stringify(initial),
-    [form, initial]
-  );
+  const f = useAppForm({
+    schema: exerciseSchema,
+    defaultValues: initialValues,
+    fieldHints: EXERCISE_FIELD_HINTS,
+    keepValuesOnSuccess: true,
+    onSubmit: async (values) => {
+      const payload = toExercisePayload(values);
+      const res = isEdit
+        ? await api.exercises.update(exercise!.id, payload)
+        : await api.exercises.create(payload);
+
+      setSaved(true);
+      if (!isEdit) {
+        try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+      }
+      toast.success(isEdit ? 'Exercise updated' : `"${res.exercise.name}" added to the library`);
+
+      // Let the success state land before the page changes — a form that
+      // vanishes the instant you click save leaves you unsure it worked.
+      setTimeout(() => {
+        onSaved(res.exercise, !isEdit);
+        onClose();
+      }, 550);
+    },
+  });
+
+  const { form, isSubmitting, isDirty } = f;
+  const values = useStore(form.store, (s) => s.values);
+
+  // A restored draft is worth saying out loud — otherwise a half-written
+  // exercise appearing in a "new" form reads as a bug.
+  const announcedDraft = React.useRef(false);
+  React.useEffect(() => {
+    if (isEdit || announcedDraft.current || !initialValues.name) return;
+    announcedDraft.current = true;
+    toast.info('Restored your unsaved draft');
+  }, [isEdit, initialValues.name, toast]);
 
   // Autosave the draft — create mode only. Editing writes through the API, so
   // a local draft there would be a second, staler source of truth.
   React.useEffect(() => {
-    if (isEdit || !dirty) return;
+    if (isEdit || !isDirty) return;
     const t = setTimeout(() => {
-      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(form)); } catch { /* quota */ }
+      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(values)); } catch { /* quota */ }
     }, 800);
     return () => clearTimeout(t);
-  }, [form, isEdit, dirty]);
+  }, [values, isEdit, isDirty]);
 
-  // Live duplicate detection.
+  // Live duplicate detection. Checking after save, when everything is already
+  // written, is a worse experience than an inline warning at the top.
   React.useEffect(() => {
-    const name = form.name.trim();
+    const name = values.name.trim();
     if (name.length < 3) { setNameCheck({ state: 'idle' }); return; }
     if (isEdit && name === exercise?.name) { setNameCheck({ state: 'idle' }); return; }
 
@@ -194,96 +165,43 @@ export function ExerciseEditor({
           ? { state: 'ok' }
           : { state: 'taken', conflict: res.conflict?.name });
       } catch {
+        // A failed check is not a verdict. Leaving it idle means the server's
+        // own uniqueness constraint decides at save, which it does regardless.
         setNameCheck({ state: 'idle' });
       }
     }, 400);
     return () => clearTimeout(t);
-  }, [form.name, isEdit, exercise?.id, exercise?.name]);
-
-  const set = React.useCallback(<K extends keyof FormState>(k: K, v: FormState[K]) => {
-    setForm((p) => ({ ...p, [k]: v }));
-  }, []);
-
-  const errors = React.useMemo(() => {
-    const e: Partial<Record<keyof FormState, string>> = {};
-    if (!form.name.trim()) e.name = 'Name is required';
-    else if (form.name.trim().length > 120) e.name = 'Name must be 120 characters or fewer';
-    if (!form.primary_muscle_id) e.primary_muscle_id = 'Pick the primary muscle';
-    if (form.rest_seconds && Number.isNaN(Number(form.rest_seconds))) e.rest_seconds = 'Must be a number';
-    return e;
-  }, [form]);
-
-  const valid = Object.keys(errors).length === 0 && nameCheck.state !== 'taken';
+  }, [values.name, isEdit, exercise?.id, exercise?.name]);
 
   const handleClose = React.useCallback(() => {
-    if (dirty && !saved) {
+    if (isDirty && !saved) {
       const ok = window.confirm('Discard your unsaved changes to this exercise?');
       if (!ok) return;
     }
     onClose();
-  }, [dirty, saved, onClose]);
+  }, [isDirty, saved, onClose]);
 
-  const handleSave = React.useCallback(async () => {
-    if (!valid || saving) return;
-    setSaving(true);
-    try {
-      const payload: Record<string, unknown> = {
-        name: form.name.trim(),
-        description: form.description.trim() || null,
-        primary_muscle_id: form.primary_muscle_id || null,
-        secondary_muscle_ids: form.secondary_muscle_ids,
-        equipment_id: form.equipment_id || null,
-        category_id: form.category_id || null,
-        difficulty: form.difficulty,
-        mechanic: form.mechanic || null,
-        force: form.force || null,
-        movement_pattern: form.movement_pattern || null,
-        plane_of_motion: form.plane_of_motion || null,
-        instructions: form.instructions.trim() || null,
-        coaching_cues: form.coaching_cues,
-        common_mistakes: form.common_mistakes,
-        safety_tips: form.safety_tips,
-        contraindications: form.contraindications,
-        breathing_tips: form.breathing_tips.trim() || null,
-        tempo_recommendation: form.tempo_recommendation.trim() || null,
-        recommended_sets: form.recommended_sets.trim() || null,
-        recommended_reps: form.recommended_reps.trim() || null,
-        rest_seconds: form.rest_seconds ? Number(form.rest_seconds) : null,
-        beginner_notes: form.beginner_notes.trim() || null,
-        advanced_notes: form.advanced_notes.trim() || null,
-        trainer_notes: form.trainer_notes.trim() || null,
-        tags: form.tags,
-      };
-
-      const res = isEdit
-        ? await api.exercises.update(exercise!.id, payload)
-        : await api.exercises.create(payload);
-
-      setSaved(true);
-      if (!isEdit) {
-        try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
-      }
-      toast.success(isEdit ? 'Exercise updated' : `"${res.exercise.name}" added to the library`);
-
-      // Let the success state land before the dialog closes — a form that
-      // vanishes the instant you click save leaves you unsure it worked.
-      setTimeout(() => {
-        onSaved(res.exercise, !isEdit);
-        onClose();
-      }, 550);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not save exercise');
-    } finally {
-      setSaving(false);
+  const handleSave = React.useCallback(() => {
+    // The duplicate check is advisory and lives outside the schema: it is a
+    // server round trip, not a rule about the value, and a failed check must
+    // not become a verdict. Blocking on a KNOWN conflict is still right —
+    // the server would reject it anyway, after the user waited.
+    if (nameCheck.state === 'taken') {
+      toast.error('That name is already taken. Pick a different one.');
+      return;
     }
-  }, [valid, saving, form, isEdit, exercise, toast, onSaved, onClose]);
+    void f.submit();
+  }, [f, nameCheck.state, toast]);
 
-  // ⌘S / Ctrl+S saves, Esc closes.
+  // ⌘S / Ctrl+S saves, Esc closes. Both go through the same guarded submit as
+  // the button — the previous version called a handler whose only protection
+  // was a `saving` flag read from the render closure, so holding ⌘S posted
+  // twice and created the exercise twice.
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
-        void handleSave();
+        handleSave();
       } else if (e.key === 'Escape' && !preview) {
         e.preventDefault();
         handleClose();
@@ -293,11 +211,23 @@ export function ExerciseEditor({
     return () => document.removeEventListener('keydown', onKey);
   }, [handleSave, handleClose, preview]);
 
+  const muscles = React.useMemo(() => meta?.all_muscles ?? [], [meta]);
+  const slug = slugify(values.name);
 
-  const muscles    = meta?.all_muscles || [];
-  const equipment  = meta?.all_equipment || [];
-  const categories = meta?.all_categories || [];
-  const slug = slugify(form.name);
+  // Memoised on `meta` rather than on the `?? []` expressions, which produce a
+  // fresh array every render and would defeat the memo entirely.
+  const muscleOptions = React.useMemo(
+    () => (meta?.all_muscles ?? []).map((m) => ({ value: m.id!, label: `${m.body_region} · ${m.name}` })),
+    [meta],
+  );
+  const equipmentOptions = React.useMemo(
+    () => (meta?.all_equipment ?? []).map((q) => ({ value: q.id!, label: q.name })),
+    [meta],
+  );
+  const categoryOptions = React.useMemo(
+    () => (meta?.all_categories ?? []).map((c) => ({ value: c.id!, label: c.name })),
+    [meta],
+  );
 
   return (
     // A page, not a floating window. This form is long enough to scroll on a
@@ -310,7 +240,11 @@ export function ExerciseEditor({
       aria-label={isEdit ? `Edit ${exercise?.name}` : 'Create exercise'}
       className="mx-auto w-full max-w-3xl px-4 pb-24 pt-4 sm:px-6"
     >
-      <div className="flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#0f172a]">
+      <form
+        noValidate
+        onSubmit={(e) => { e.preventDefault(); handleSave(); }}
+        className="flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#0f172a]"
+      >
         <header className="flex items-center justify-between gap-3 border-b border-slate-200/80 px-5 py-4 dark:border-white/[0.07]">
           <div className="flex min-w-0 items-center gap-3">
             {preview && (
@@ -337,6 +271,7 @@ export function ExerciseEditor({
             <button
               type="button"
               onClick={() => setPreview((p) => !p)}
+              aria-pressed={preview}
               className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-[var(--text-muted)] transition-colors hover:bg-slate-100 hover:text-[var(--text-primary)] dark:hover:bg-white/10"
             >
               <Eye size={13} /> {preview ? 'Edit' : 'Preview'}
@@ -354,198 +289,331 @@ export function ExerciseEditor({
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
           {preview ? (
-            <PreviewPane form={form} meta={meta} />
+            <PreviewPane form={values} meta={meta} />
           ) : (
             <div className="space-y-6">
-              <Fieldset title="Identity">
-                <Field label="Exercise name" required error={errors.name}>
-                  <div className="relative">
-                    <input
-                      autoFocus
-                      value={form.name}
-                      onChange={(e) => set('name', e.target.value)}
-                      placeholder="e.g. Landmine Squat"
-                      maxLength={140}
-                      className={inputCls(Boolean(errors.name) || nameCheck.state === 'taken')}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2">
-                      {nameCheck.state === 'checking' && <Loader2 size={14} className="animate-spin text-[var(--text-muted)]" />}
-                      {nameCheck.state === 'ok' && <Check size={14} className="text-[var(--success-text)]" />}
-                      {nameCheck.state === 'taken' && <AlertCircle size={14} className="text-[var(--danger-text)]" />}
-                    </span>
-                  </div>
-                  {nameCheck.state === 'taken' && (
-                    <p className="mt-1.5 text-[11.5px] text-[var(--danger-text)]">
-                      &ldquo;{nameCheck.conflict}&rdquo; already exists. Pick a different name.
-                    </p>
-                  )}
-                </Field>
+              <FormErrorBanner errors={f.errors} onRetry={handleSave} />
 
-                <Field label="Description">
-                  <textarea
-                    value={form.description}
-                    onChange={(e) => set('description', e.target.value)}
-                    rows={2}
-                    placeholder="What is this movement for?"
-                    className={inputCls(false)}
-                  />
-                </Field>
+              <Fieldset title="Identity">
+                <form.Field name="name">
+                  {(field) => (
+                    <div>
+                      <TextField
+                        field={field}
+                        label="Exercise name"
+                        required
+                        placeholder="e.g. Landmine Squat"
+                        maxLength={120}
+                        showCount
+                        serverError={
+                          nameCheck.state === 'taken'
+                            ? `"${nameCheck.conflict}" already exists. Pick a different name.`
+                            : f.errors.fieldErrors.name
+                        }
+                        trailing={
+                          <span className="pointer-events-none flex h-10 w-10 items-center justify-center">
+                            {/* aria-hidden: the verdict is announced through the
+                                live region below, where it is a sentence rather
+                                than an icon. */}
+                            <span aria-hidden>
+                              {nameCheck.state === 'checking' && <Loader2 size={14} className="animate-spin text-[var(--text-muted)]" />}
+                              {nameCheck.state === 'ok' && <Check size={14} className="text-[var(--success-text)]" />}
+                              {nameCheck.state === 'taken' && <AlertCircle size={14} className="text-[var(--danger-text)]" />}
+                            </span>
+                          </span>
+                        }
+                      />
+                      {/* The duplicate verdict arrives asynchronously while the
+                          user is typing elsewhere, so it needs a live region:
+                          nothing else on screen changes to announce it. */}
+                      <p role="status" className="sr-only">
+                        {nameCheck.state === 'ok' ? 'That name is available.'
+                          : nameCheck.state === 'taken' ? `That name is already used by ${nameCheck.conflict}.`
+                          : ''}
+                      </p>
+                    </div>
+                  )}
+                </form.Field>
+
+                <form.Field name="description">
+                  {(field) => (
+                    <TextAreaField
+                      field={field}
+                      label="Description"
+                      rows={2}
+                      placeholder="What is this movement for?"
+                      maxLength={1000}
+                      serverError={f.errors.fieldErrors.description}
+                    />
+                  )}
+                </form.Field>
               </Fieldset>
 
               <Fieldset title="Classification" columns>
-                <Field label="Primary muscle" required error={errors.primary_muscle_id}>
-                  <select
-                    value={form.primary_muscle_id}
-                    onChange={(e) => set('primary_muscle_id', e.target.value)}
-                    className={inputCls(Boolean(errors.primary_muscle_id))}
-                  >
-                    <option value="">Select…</option>
-                    {muscles.map((m) => (
-                      <option key={m.id} value={m.id}>{m.body_region} · {m.name}</option>
-                    ))}
-                  </select>
-                </Field>
+                <form.Field name="primary_muscle_id">
+                  {(field) => (
+                    <SelectField
+                      field={field}
+                      label="Primary muscle"
+                      required
+                      options={muscleOptions}
+                      placeholderOption="Select…"
+                      serverError={f.errors.fieldErrors.primary_muscle_id}
+                    />
+                  )}
+                </form.Field>
 
-                <Field label="Equipment">
-                  <select
-                    value={form.equipment_id}
-                    onChange={(e) => set('equipment_id', e.target.value)}
-                    className={inputCls(false)}
-                  >
-                    <option value="">Select…</option>
-                    {equipment.map((q) => <option key={q.id} value={q.id}>{q.name}</option>)}
-                  </select>
-                </Field>
+                <form.Field name="equipment_id">
+                  {(field) => (
+                    <SelectField
+                      field={field}
+                      label="Equipment"
+                      options={[{ value: '', label: 'Select…' }, ...equipmentOptions]}
+                      serverError={f.errors.fieldErrors.equipment_id}
+                    />
+                  )}
+                </form.Field>
 
-                <Field label="Category">
-                  <select
-                    value={form.category_id}
-                    onChange={(e) => set('category_id', e.target.value)}
-                    className={inputCls(false)}
-                  >
-                    <option value="">Select…</option>
-                    {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </Field>
+                <form.Field name="category_id">
+                  {(field) => (
+                    <SelectField
+                      field={field}
+                      label="Category"
+                      options={[{ value: '', label: 'Select…' }, ...categoryOptions]}
+                      serverError={f.errors.fieldErrors.category_id}
+                    />
+                  )}
+                </form.Field>
 
-                <Field label="Difficulty">
-                  <select
-                    value={form.difficulty}
-                    onChange={(e) => set('difficulty', e.target.value)}
-                    className={inputCls(false)}
-                  >
-                    <option value="beginner">Beginner</option>
-                    <option value="intermediate">Intermediate</option>
-                    <option value="advanced">Advanced</option>
-                  </select>
-                </Field>
+                <form.Field name="difficulty">
+                  {(field) => (
+                    <SelectField
+                      field={field}
+                      label="Difficulty"
+                      options={DIFFICULTY_OPTIONS}
+                      serverError={f.errors.fieldErrors.difficulty}
+                    />
+                  )}
+                </form.Field>
 
-                <Field label="Mechanics">
-                  <select value={form.mechanic} onChange={(e) => set('mechanic', e.target.value)} className={inputCls(false)}>
-                    <option value="">Unspecified</option>
-                    <option value="compound">Compound</option>
-                    <option value="isolation">Isolation</option>
-                  </select>
-                </Field>
+                <form.Field name="mechanic">
+                  {(field) => (
+                    <SelectField
+                      field={field}
+                      label="Mechanics"
+                      options={[
+                        { value: '', label: 'Unspecified' },
+                        { value: 'compound', label: 'Compound' },
+                        { value: 'isolation', label: 'Isolation' },
+                      ]}
+                    />
+                  )}
+                </form.Field>
 
-                <Field label="Force">
-                  <select value={form.force} onChange={(e) => set('force', e.target.value)} className={inputCls(false)}>
-                    <option value="">Unspecified</option>
-                    <option value="push">Push</option>
-                    <option value="pull">Pull</option>
-                    <option value="static">Static</option>
-                  </select>
-                </Field>
+                <form.Field name="force">
+                  {(field) => (
+                    <SelectField
+                      field={field}
+                      label="Force"
+                      options={[
+                        { value: '', label: 'Unspecified' },
+                        { value: 'push', label: 'Push' },
+                        { value: 'pull', label: 'Pull' },
+                        { value: 'static', label: 'Static' },
+                      ]}
+                    />
+                  )}
+                </form.Field>
 
-                <Field label="Movement pattern">
-                  <select value={form.movement_pattern} onChange={(e) => set('movement_pattern', e.target.value)} className={inputCls(false)}>
-                    <option value="">Unspecified</option>
-                    {MOVEMENT_PATTERNS.map((p) => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </Field>
+                <form.Field name="movement_pattern">
+                  {(field) => (
+                    <SelectField
+                      field={field}
+                      label="Movement pattern"
+                      options={[
+                        { value: '', label: 'Unspecified' },
+                        ...MOVEMENT_PATTERNS.map((p) => ({ value: p, label: p })),
+                      ]}
+                    />
+                  )}
+                </form.Field>
 
-                <Field label="Plane of motion">
-                  <select value={form.plane_of_motion} onChange={(e) => set('plane_of_motion', e.target.value)} className={inputCls(false)}>
-                    <option value="">Unspecified</option>
-                    {PLANES.map((p) => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </Field>
+                <form.Field name="plane_of_motion">
+                  {(field) => (
+                    <SelectField
+                      field={field}
+                      label="Plane of motion"
+                      options={[
+                        { value: '', label: 'Unspecified' },
+                        ...PLANES.map((p) => ({ value: p, label: p })),
+                      ]}
+                    />
+                  )}
+                </form.Field>
               </Fieldset>
 
               <Fieldset title="Secondary muscles">
-                <div className="flex flex-wrap gap-1.5">
-                  {muscles.map((m) => {
-                    const on = form.secondary_muscle_ids.includes(m.id!);
-                    const isPrimary = form.primary_muscle_id === m.id;
-                    return (
-                      <button
-                        key={m.id}
-                        type="button"
-                        disabled={isPrimary}
-                        onClick={() => set('secondary_muscle_ids', on
-                          ? form.secondary_muscle_ids.filter((x) => x !== m.id)
-                          : [...form.secondary_muscle_ids, m.id!])}
-                        className={cn(
-                          'rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all',
-                          on
-                            ? 'border-[var(--brand)]/40 bg-[var(--brand)]/10 text-[var(--brand)]'
-                            : 'border-slate-200 text-[var(--text-muted)] hover:border-slate-300 dark:border-white/10',
-                          isPrimary && 'cursor-not-allowed opacity-30',
-                        )}
-                      >
-                        {m.name}
-                      </button>
-                    );
-                  })}
-                </div>
+                <form.Field name="secondary_muscle_ids">
+                  {(field) => (
+                    <div className="flex flex-wrap gap-1.5">
+                      {muscles.map((m) => {
+                        const on = field.state.value.includes(m.id!);
+                        const isPrimary = values.primary_muscle_id === m.id;
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            disabled={isPrimary}
+                            aria-pressed={on}
+                            onClick={() => field.handleChange(on
+                              ? field.state.value.filter((x) => x !== m.id)
+                              : [...field.state.value, m.id!])}
+                            className={cn(
+                              'rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all',
+                              on
+                                ? 'border-[var(--brand)]/40 bg-[var(--brand)]/10 text-[var(--brand)]'
+                                : 'border-slate-200 text-[var(--text-muted)] hover:border-slate-300 dark:border-white/10',
+                              isPrimary && 'cursor-not-allowed opacity-30',
+                            )}
+                          >
+                            {m.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </form.Field>
               </Fieldset>
 
               <Fieldset title="Execution">
-                <Field label="Step-by-step instructions" hint="One step per line">
-                  <textarea
-                    value={form.instructions}
-                    onChange={(e) => set('instructions', e.target.value)}
-                    rows={5}
-                    placeholder={'Set up with the bar in a landmine attachment.\nBrace, then descend under control.'}
-                    className={inputCls(false)}
-                  />
-                </Field>
+                <form.Field name="instructions">
+                  {(field) => (
+                    <TextAreaField
+                      field={field}
+                      label="Step-by-step instructions"
+                      description="One step per line"
+                      rows={5}
+                      maxLength={4000}
+                      showCount
+                      placeholder={'Set up with the bar in a landmine attachment.\nBrace, then descend under control.'}
+                      serverError={f.errors.fieldErrors.instructions}
+                    />
+                  )}
+                </form.Field>
               </Fieldset>
 
               <Fieldset title="Coaching">
-                <ListField label="Coaching cues" placeholder="Chest tall, knees track over toes" value={form.coaching_cues} onChange={(v) => set('coaching_cues', v)} />
-                <ListField label="Common mistakes" placeholder="Heels lifting off the floor" value={form.common_mistakes} onChange={(v) => set('common_mistakes', v)} />
-                <ListField label="Safety tips" placeholder="Do not round the lower back" value={form.safety_tips} onChange={(v) => set('safety_tips', v)} />
-                <ListField label="Contraindications" placeholder="Acute lower-back pain" value={form.contraindications} onChange={(v) => set('contraindications', v)} />
+                {([
+                  ['coaching_cues', 'Coaching cues', 'Chest tall, knees track over toes'],
+                  ['common_mistakes', 'Common mistakes', 'Heels lifting off the floor'],
+                  ['safety_tips', 'Safety tips', 'Do not round the lower back'],
+                  ['contraindications', 'Contraindications', 'Acute lower-back pain'],
+                ] as const).map(([name, label, placeholder]) => (
+                  <form.Field key={name} name={name}>
+                    {(field) => (
+                      <ListField
+                        label={label}
+                        placeholder={placeholder}
+                        value={field.state.value}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.Field>
+                ))}
 
-                <Field label="Breathing">
-                  <input value={form.breathing_tips} onChange={(e) => set('breathing_tips', e.target.value)} placeholder="Inhale down, exhale on the drive up" className={inputCls(false)} />
-                </Field>
+                <form.Field name="breathing_tips">
+                  {(field) => (
+                    <TextField
+                      field={field}
+                      label="Breathing"
+                      placeholder="Inhale down, exhale on the drive up"
+                      maxLength={500}
+                      serverError={f.errors.fieldErrors.breathing_tips}
+                    />
+                  )}
+                </form.Field>
               </Fieldset>
 
               <Fieldset title="Prescription" columns>
-                <Field label="Sets"><input value={form.recommended_sets} onChange={(e) => set('recommended_sets', e.target.value)} placeholder="3-4" className={inputCls(false)} /></Field>
-                <Field label="Reps"><input value={form.recommended_reps} onChange={(e) => set('recommended_reps', e.target.value)} placeholder="8-12" className={inputCls(false)} /></Field>
-                <Field label="Rest (seconds)" error={errors.rest_seconds}>
-                  <input value={form.rest_seconds} onChange={(e) => set('rest_seconds', e.target.value)} placeholder="90" inputMode="numeric" className={inputCls(Boolean(errors.rest_seconds))} />
-                </Field>
-                <Field label="Tempo"><input value={form.tempo_recommendation} onChange={(e) => set('tempo_recommendation', e.target.value)} placeholder="3-1-1-0" className={inputCls(false)} /></Field>
+                <form.Field name="recommended_sets">
+                  {(field) => (
+                    <TextField
+                      field={field}
+                      label="Sets"
+                      placeholder="3-4"
+                      description="Written the way you say it"
+                      serverError={f.errors.fieldErrors.recommended_sets}
+                    />
+                  )}
+                </form.Field>
+
+                <form.Field name="recommended_reps">
+                  {(field) => (
+                    <TextField
+                      field={field}
+                      label="Reps"
+                      placeholder="8-12"
+                      serverError={f.errors.fieldErrors.recommended_reps}
+                    />
+                  )}
+                </form.Field>
+
+                <form.Field name="rest_seconds">
+                  {(field) => (
+                    <NumberField
+                      field={field}
+                      label="Rest"
+                      mode="integer"
+                      suffix="sec"
+                      placeholder="90"
+                      description="5 to 1800"
+                      serverError={f.errors.fieldErrors.rest_seconds}
+                    />
+                  )}
+                </form.Field>
+
+                <form.Field name="tempo_recommendation">
+                  {(field) => (
+                    <TextField
+                      field={field}
+                      label="Tempo"
+                      placeholder="3-1-1-0"
+                      serverError={f.errors.fieldErrors.tempo_recommendation}
+                    />
+                  )}
+                </form.Field>
               </Fieldset>
 
               <Fieldset title="Notes">
-                <Field label="Beginner notes">
-                  <textarea value={form.beginner_notes} onChange={(e) => set('beginner_notes', e.target.value)} rows={2} className={inputCls(false)} />
-                </Field>
-                <Field label="Advanced notes">
-                  <textarea value={form.advanced_notes} onChange={(e) => set('advanced_notes', e.target.value)} rows={2} className={inputCls(false)} />
-                </Field>
-                <Field label="Trainer notes" hint="Internal — never shown to clients">
-                  <textarea value={form.trainer_notes} onChange={(e) => set('trainer_notes', e.target.value)} rows={2} className={inputCls(false)} />
-                </Field>
+                <form.Field name="beginner_notes">
+                  {(field) => (
+                    <TextAreaField field={field} label="Beginner notes" rows={2} maxLength={2000} />
+                  )}
+                </form.Field>
+                <form.Field name="advanced_notes">
+                  {(field) => (
+                    <TextAreaField field={field} label="Advanced notes" rows={2} maxLength={2000} />
+                  )}
+                </form.Field>
+                <form.Field name="trainer_notes">
+                  {(field) => (
+                    <TextAreaField
+                      field={field}
+                      label="Trainer notes"
+                      description="Internal — never shown to clients"
+                      rows={2}
+                      maxLength={2000}
+                    />
+                  )}
+                </form.Field>
               </Fieldset>
 
               <Fieldset title="Discovery">
-                <TagField value={form.tags} onChange={(v) => set('tags', v)} />
+                <form.Field name="tags">
+                  {(field) => (
+                    <TagField value={field.state.value} onChange={field.handleChange} />
+                  )}
+                </form.Field>
               </Fieldset>
             </div>
           )}
@@ -553,17 +621,21 @@ export function ExerciseEditor({
 
         <footer className="flex items-center justify-between gap-3 border-t border-slate-200/80 px-5 py-3.5 dark:border-white/[0.07]">
           <p className="hidden text-[11px] text-[var(--text-muted)] sm:block">
-            {saved ? '' : dirty && !isEdit ? 'Draft saved automatically' : ''}
-            {!dirty && !saved && 'No changes yet'}
+            {saved ? '' : isDirty && !isEdit ? 'Draft saved automatically' : ''}
+            {!isDirty && !saved && 'No changes yet'}
           </p>
           <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-            <Button variant="ghost" onClick={handleClose} disabled={saving}>Cancel</Button>
-            <Button onClick={handleSave} disabled={!valid || saving || saved}>
+            <Button type="button" variant="ghost" onClick={handleClose} disabled={isSubmitting}>Cancel</Button>
+            {/* The real guard is the in-flight ref inside useAppForm; `disabled`
+                only communicates the state, and is no longer gated on validity
+                — a dead button cannot say WHY it is dead, and this form has
+                twenty-four fields to look through. */}
+            <Button type="submit" disabled={isSubmitting || saved}>
               {saved ? (
                 <span className="flex items-center gap-1.5 animate-in zoom-in duration-200">
                   <Check size={14} /> Saved
                 </span>
-              ) : saving ? (
+              ) : isSubmitting ? (
                 <span className="flex items-center gap-1.5"><Loader2 size={14} className="animate-spin" /> Saving…</span>
               ) : (
                 <span className="flex items-center gap-1.5">
@@ -573,14 +645,14 @@ export function ExerciseEditor({
             </Button>
           </div>
         </footer>
-      </div>
+      </form>
     </main>
   );
 }
 
 /* ── preview ─────────────────────────────────────────────────── */
 
-function PreviewPane({ form, meta }: { form: FormState; meta: ExerciseMeta | null }) {
+function PreviewPane({ form, meta }: { form: ExerciseFormState; meta: ExerciseMeta | null }) {
   const muscle = meta?.all_muscles.find((m) => m.id === form.primary_muscle_id);
   const equip  = meta?.all_equipment.find((q) => q.id === form.equipment_id);
   const cat    = meta?.all_categories.find((c) => c.id === form.category_id);
@@ -685,28 +757,6 @@ function Fieldset({
   );
 }
 
-function Field({
-  label, children, required, error, hint,
-}: {
-  label: string;
-  children: React.ReactNode;
-  required?: boolean;
-  error?: string;
-  hint?: string;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-[12px] font-medium text-[var(--text-primary)]">
-        {label}
-        {required && <span className="ml-0.5 text-[var(--danger-text)]">*</span>}
-      </span>
-      {children}
-      {hint && !error && <span className="mt-1 block text-[11px] text-[var(--text-muted)]">{hint}</span>}
-      {error && <span className="mt-1 block text-[11px] text-[var(--danger-text)]">{error}</span>}
-    </label>
-  );
-}
-
 /** Repeatable single-line list — Enter adds, and empties are never stored. */
 function ListField({
   label, value, onChange, placeholder,
@@ -717,6 +767,8 @@ function ListField({
   placeholder?: string;
 }) {
   const [draft, setDraft] = React.useState('');
+  // Per instance, so four of these on one page do not share an id.
+  const inputId = React.useId();
 
   const add = () => {
     const v = draft.trim();
@@ -727,7 +779,10 @@ function ListField({
 
   return (
     <div>
-      <span className="mb-1 block text-[12px] font-medium text-[var(--text-primary)]">{label}</span>
+      {/* A <label>, not a <span>. This caption names the composer box below it,
+          and a span names nothing — the box's only accessible name was its
+          placeholder, which disappears the moment anything is typed. */}
+      <label htmlFor={inputId} className="mb-1 block text-[12px] font-medium text-[var(--text-primary)]">{label}</label>
       {value.length > 0 && (
         <ul className="mb-2 space-y-1">
           {value.map((item, i) => (
@@ -747,6 +802,7 @@ function ListField({
       )}
       <div className="flex gap-2">
         <input
+          id={inputId}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
@@ -769,6 +825,7 @@ function ListField({
 
 function TagField({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
   const [draft, setDraft] = React.useState('');
+  const inputId = React.useId();
   const add = () => {
     const v = draft.trim().toLowerCase();
     if (!v || value.includes(v)) { setDraft(''); return; }
@@ -777,7 +834,7 @@ function TagField({ value, onChange }: { value: string[]; onChange: (v: string[]
   };
   return (
     <div>
-      <span className="mb-1 block text-[12px] font-medium text-[var(--text-primary)]">Tags</span>
+      <label htmlFor={inputId} className="mb-1 block text-[12px] font-medium text-[var(--text-primary)]">Tags</label>
       <div className="flex flex-wrap gap-1.5">
         {value.map((t) => (
           <span key={t} className="inline-flex items-center gap-1 rounded-full bg-[var(--brand)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--brand)]">
@@ -789,6 +846,7 @@ function TagField({ value, onChange }: { value: string[]; onChange: (v: string[]
         ))}
       </div>
       <input
+        id={inputId}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {

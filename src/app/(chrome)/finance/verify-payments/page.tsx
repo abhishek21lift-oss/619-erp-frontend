@@ -37,6 +37,7 @@ import { PageHeader, EmptyState, cn } from '@/components/ui';
 import {
   REJECT_REASONS, REJECT_REASON_LABELS, UpiStatusBadge, fmtMoney, fmtMoneyExact,
 } from '@/components/payments/upi-shared';
+import { errorMessage } from '@/lib/forms/errors';
 
 const PAGE_SIZE = 25;
 
@@ -84,7 +85,7 @@ function Inner() {
       setTotal(res.total);
       setError(null);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not load the verification queue.');
+      setError(errorMessage(err, 'Could not load the verification queue.'));
     } finally {
       setLoading(false);
     }
@@ -727,7 +728,7 @@ function NewRequestDialog({
       if (res.data.reused) toast.info('This member already had an open request for that plan.');
       onCreated(res.data.order.id);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not create the request.');
+      setError(errorMessage(err, 'Could not create the request.'));
     } finally {
       setBusy(false);
     }

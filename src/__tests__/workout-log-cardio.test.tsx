@@ -54,7 +54,11 @@ vi.mock('@/lib/api', () => ({
     progress: {
       workoutLog: {
         sessions: {
-          get: async () => ({ data: session }),
+          // A DEEP COPY per call, which is what a real refetch produces: the
+          // same values wrapped in new objects. The row's re-seed effect used
+          // to depend on that object's identity, so every refetch overwrote
+          // whatever the trainer was part-way through typing.
+          get: async () => ({ data: JSON.parse(JSON.stringify(session)) }),
           plannedDayOptions: async () => ({ data: [] }),
           update: async () => ({ data: {} }),
         },
@@ -126,22 +130,26 @@ describe('cardio set row', () => {
 
     // ── Why every duration-bearing call, rather than calls[0] ──────────────
     //
-    // This assertion used to index the first recorded call, and it failed once
-    // on CI — 1800 where 1950 was expected. 1800 is this fixture's own
+    // This assertion used to index the first recorded call, and it failed
+    // intermittently — 1800 where 1950 was expected. 1800 is this fixture's own
     // pristine duration (30 min), so something saved the value the row started
-    // with instead of the one just typed. It has not reproduced in four full
-    // local runs, so the mechanism is not yet known: a stale save landing
-    // first, or the typed save never happening at all, are different bugs and
-    // calls[0] cannot tell them apart — it reports the same message for both.
+    // with instead of the one just typed. Listing every call that carries
+    // duration_seconds was written to distinguish the two possible causes:
+    // [1800] means the typed value never reached the API, [1800, 1950] means a
+    // spurious save raced ahead of the real one.
     //
-    // Listing every call that carries duration_seconds distinguishes them the
-    // next time it happens. [1800] means the typed value never reached the
-    // API; [1800, 1950] means a spurious save of the pristine value raced
-    // ahead of the real one. Either is a defect worth having named.
+    // It reported [1800], and that named the mechanism. The row re-seeded every
+    // local field from the `set` prop whenever that OBJECT changed — and `set`
+    // is `session.exercises[].sets[]`, a fresh object on every refetch whether
+    // or not anything in it changed. A refetch landing between the change and
+    // the blur reset the controlled input to the stored 30, so the blur read 30
+    // out of the DOM. Fixed in the page: the effect now depends on the VALUES.
+    // 'does not overwrite what is being typed when a refetch lands' below
+    // reproduces it without the timing.
     //
-    // Deliberately STRONGER than what it replaces, not weaker: it requires
-    // exactly one duration save carrying exactly what was typed, so a
-    // spurious extra save now fails here rather than hiding behind an index.
+    // This assertion stays as it is: it is stronger than the index it replaced
+    // — exactly one duration save, carrying exactly what was typed — so a
+    // spurious extra save fails here rather than hiding behind an index.
     const durations = updateSet.mock.calls
       .map((c) => c[1] as Record<string, unknown>)
       .filter((patch) => patch && Object.prototype.hasOwnProperty.call(patch, 'duration_seconds'))
@@ -210,6 +218,59 @@ describe('cardio set row', () => {
 
     await waitFor(() => expect(updateSet).toHaveBeenCalled());
     expect(updateSet.mock.calls[0][1]).toMatchObject({ duration_seconds: null });
+  });
+
+  it('does not overwrite what is being typed when a refetch lands', async () => {
+    // ── The other half of the same failure, made deterministic ─────────────
+    //
+    // The row re-seeded every local field from the `set` prop whenever that
+    // OBJECT changed — and `set` is `session.exercises[].sets[]`, a fresh
+    // object on every refetch whether or not anything in it changed. So a
+    // refetch triggered by one field's save reset the field beside it, mid-
+    // edit, back to the stored value.
+    //
+    // That is the mechanism behind the sibling test's one-run-in-six `[1800]`:
+    // the typed 32.5 was replaced by the stored 30 before blur read the DOM,
+    // so the save carried the pristine value and nothing corrected it.
+    //
+    // Here the refetch is forced rather than raced. Saving Distance triggers
+    // onChanged(), which refetches and hands back a new object holding the
+    // same numbers. If the re-seed keys on identity, Duration snaps back to 30
+    // and the blur saves 1800. If it keys on the values, 32.5 survives.
+    session = makeSession({
+      exercise_type: 'Cardio',
+      prescription_mode_allowed: ['TIME', 'DISTANCE', 'RPE'],
+    });
+    render(
+      <Suspense fallback={<div />}>
+        <WorkoutSessionPage params={settled({ id: 'c1', sessionId: 's1' }) as never} />
+      </Suspense>,
+    );
+    await waitFor(() => expect(screen.getByLabelText('Duration (min)')).toBeTruthy());
+
+    // Type into Duration, but do not leave it.
+    const minutes = screen.getByLabelText('Duration (min)');
+    fireEvent.change(minutes, { target: { value: '32.5' } });
+
+    // Save the field NEXT DOOR, which refetches the whole session.
+    const dist = screen.getByLabelText('Distance');
+    fireEvent.blur(dist, { target: { value: '6' } });
+    await waitFor(() => expect(updateSet).toHaveBeenCalled());
+
+    // The in-progress edit is still there.
+    await waitFor(() => {
+      expect((screen.getByLabelText('Duration (min)') as HTMLInputElement).value).toBe('32.5');
+    });
+
+    // And leaving it saves what was typed, not what the server held.
+    fireEvent.blur(minutes);
+    await waitFor(() => {
+      const durations = updateSet.mock.calls
+        .map((c) => c[1] as Record<string, unknown>)
+        .filter((patch) => patch && Object.prototype.hasOwnProperty.call(patch, 'duration_seconds'))
+        .map((patch) => patch.duration_seconds);
+      expect(durations).toEqual([1950]);
+    });
   });
 
   it('falls back to strength fields when the exercise has no library metadata', async () => {

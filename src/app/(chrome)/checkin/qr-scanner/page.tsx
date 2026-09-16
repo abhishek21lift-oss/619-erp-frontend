@@ -47,6 +47,7 @@ import {
   type CheckinOutcome, type FeedEntry, type ScanResult,
 } from '@/lib/checkin';
 import { api } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 // Lazy-load jsQR so it doesn't bloat the server bundle
 let jsQR: ((data: Uint8ClampedArray, width: number, height: number) => { data: string } | null) | null = null;
@@ -327,7 +328,7 @@ export default function QrScannerPage() {
       }
       void loadStats();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Network error';
+      const msg = errorMessage(err, 'Network error');
       setResult({ success: false, message: msg });
       setScanState('rejected');
       triggerHaptic(OUTCOME_CFG.rejected.haptic);

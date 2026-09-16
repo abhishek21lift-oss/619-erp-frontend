@@ -353,10 +353,18 @@ export const GALLERY_RULES: FileRules = {
   minDimension: 200,
 };
 
-/** Payment proof: a screenshot or a bank PDF. */
+/**
+ * Payment proof: a screenshot or a bank PDF.
+ *
+ * 5 MB, matching `MAX_UPLOAD_BYTES` in `routes/upi-payments.js`. This was 10
+ * when the rule sets were first written, which is the wrong direction to be
+ * wrong in: a client limit ABOVE the server's lets a 7 MB screenshot through
+ * the friendly, specific check and into a multer rejection whose message the
+ * member cannot act on. The tighter of the two belongs here.
+ */
 export const PAYMENT_PROOF_RULES: FileRules = {
   formats: DOCUMENT_FORMATS,
-  maxBytes: 10 * MB,
+  maxBytes: 5 * MB,
   maxDimension: 12000,
 };
 

@@ -34,21 +34,48 @@ const audit = auditAccessibleNames();
 describe('the accessible-name audit itself', () => {
   it('scanned the app', () => {
     expect(audit.filesScanned).toBeGreaterThan(200);
-    expect(audit.total).toBeGreaterThan(300);
+    // Both floors are deliberately slack, for the reason spelled out below:
+    // `total` counts RAW controls, and it falls every time a form moves to the
+    // design system — migrating the profile's list-row editors took twenty-two
+    // out at once. Pinning it near the current number would make the form
+    // migration fail a test it is improving. This only proves the scan ran
+    // over the app rather than over an empty tree; `audit.nameless` is the
+    // assertion with teeth, and it has no threshold at all.
+    expect(audit.total).toBeGreaterThan(150);
   });
 
   it('counts a wrapped control as named, across a component boundary', () => {
     // The property the whole number depends on. Without it the audit reports
     // every <Field>-wrapped input in the app as a failure.
-    expect(audit.wrapped).toBeGreaterThan(150);
+    //
+    // A floor, not a ratchet, and deliberately slack. The count FALLS as forms
+    // move to the design system, because a migrated field is no longer a raw
+    // control inside a <label> wrapper — it is a `FormField` with htmlFor, and
+    // the audit scores it by that route instead. Pinning this near the current
+    // number would make the form migration fail a test it is improving.
+    //
+    // The invariant that actually matters is `audit.nameless` being empty, and
+    // that is asserted below with no threshold at all. This one only proves the
+    // cross-boundary resolver still works at scale — so it is set well under
+    // the current count, which keeps falling as wrappers are replaced by
+    // `FormField` outright rather than merely fixed.
+    expect(audit.wrapped).toBeGreaterThan(50);
   });
 });
 
 describe('the label wrappers wrap', () => {
+  // The two AI generator pages are no longer here, and their absence is the
+  // outcome rather than an omission: both local `Field` wrappers are gone,
+  // because every control on those pages is now a design-system field with a
+  // real `htmlFor`. A wrapper that correctly wraps a `<label>` is the fix for
+  // a page that still hand-rolls its inputs; not needing one is better.
+  //
+  // Nothing is lost by dropping them. `audit.nameless` below covers every
+  // control in the tree with no threshold at all, and it is the check with
+  // teeth — if either page ever went back to a nameless input it would fail
+  // there, wrapper or no wrapper.
   const wrappers: [string, string[]][] = [
     ['app/(platform)/platform/_shared/ui.tsx', ['export function Field']],
-    ['app/(chrome)/ai/diet-generator/page.tsx', ['function Field']],
-    ['app/(chrome)/ai/workout-generator/page.tsx', ['function Field']],
     ['components/fitness/AiCoachPanel.tsx', ['function Field']],
     ['app/(chrome)/trainers/add/page.tsx', ['function FloatLabel']],
     ['app/(chrome)/trainers/[id]/edit/page.tsx', ['function FloatLabel']],
@@ -156,19 +183,30 @@ describe('captions that had to become labels', () => {
 });
 
 describe('labelling across a component boundary', () => {
-  it('counts <Field id="x"><input id="x"/></Field> as named', () => {
-    // payment-settings' Field renders <label htmlFor={id}> and its call sites
-    // pass a matching id. The audit could not see through that, and reported
-    // the two best-labelled inputs in the app as nameless — the same
-    // one-boundary blind spot that made its first version report 242. Two of
-    // the "61" were this, not a real failure.
-    const src = readFileSync(srcPath('app', '(chrome)', 'finance', 'payment-settings', 'page.tsx'), 'utf8');
-    expect(src).toMatch(/<label htmlFor=\{id\}/);
-    // Whitespace-tolerant: the property under test is that a Field carries a
-    // matching id, not that the JSX fits on one line. The original regex was
-    // incidentally coupled to formatting and broke when the element gained a
-    // fourth prop and wrapped — which is a change in layout, not in labelling.
-    expect(src).toMatch(/<Field\s[^>]*id="gst-percent"/s);
+  it('counts a control labelled by its wrapper as named', () => {
+    // A wrapper that renders <label htmlFor={id}> around a control with a
+    // matching id. The audit could not see through that boundary and reported
+    // the two best-labelled inputs in the app as nameless — the same blind
+    // spot that made its first version report 242. Two of the "61" were this,
+    // not a real failure.
+    //
+    // The example used to be payment-settings' own local `Field`. That page is
+    // now on the universal form platform and its local wrapper is gone, so the
+    // property is pinned where it actually lives: FormField, which every
+    // migrated field renders through, and the platform console's Field, which
+    // still covers the org-admin forms.
+    const formField = readFileSync(
+      srcPath('components', 'ui', 'form', 'FormField.tsx'), 'utf8',
+    );
+    expect(formField).toMatch(/<label[\s\S]{0,120}htmlFor=\{id\}/);
+
+    const platformField = readFileSync(
+      srcPath('app', '(platform)', 'platform', '_shared', 'ui.tsx'), 'utf8',
+    );
+    expect(platformField).toMatch(/export function Field/);
+
+    // The invariant the above exists to protect: the screen that first exposed
+    // the blind spot still has no nameless control.
     expect(audit.nameless.filter((x) => x.includes('payment-settings'))).toEqual([]);
   });
 

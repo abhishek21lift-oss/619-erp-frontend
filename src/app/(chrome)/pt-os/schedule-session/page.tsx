@@ -22,6 +22,7 @@ import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { identity } from '@/lib/palette';
 import { activatable } from '@/lib/a11y';
+import { errorMessage } from '@/lib/forms/errors';
 
 /* ────────────────────────────────────────────────────────────────────
    TYPES
@@ -214,7 +215,7 @@ function SchedulePageContent() {
       const allSessionsData = (Array.isArray(sessionsRes?.data) ? sessionsRes.data : []) as Record<string, unknown>[];
       setSessions(allSessionsData.map((s) => mapApiSession(s, trainerArr)));
     } catch (err) {
-      setSessionsError(err instanceof Error ? err.message : 'Failed to load sessions');
+      setSessionsError(errorMessage(err, 'Failed to load sessions'));
     } finally {
       setSessionsLoading(false);
     }
@@ -326,7 +327,7 @@ function SchedulePageContent() {
       setSessions((prev) => [...newSessions, ...prev]);
       setShowCreateModal(false);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not book the session.');
+      toast.error(errorMessage(err, 'Could not book the session.'));
     }
   };
 
@@ -337,7 +338,7 @@ function SchedulePageContent() {
       await api.pt.updateSession(id, { status });
     } catch (err: unknown) {
       setSessions(prevSessions);
-      toast.error(err instanceof Error ? err.message : 'Could not update the session.');
+      toast.error(errorMessage(err, 'Could not update the session.'));
     }
   };
 

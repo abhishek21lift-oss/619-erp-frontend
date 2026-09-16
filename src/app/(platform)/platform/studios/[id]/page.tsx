@@ -40,6 +40,7 @@ import type {
 import { Panel, Reveal, SectionLabel, StatTile } from '@/components/platform/console';
 import { fmtDate, fmtINR } from '../../_shared/format';
 import { Center, ErrorState } from '../../_shared/ui';
+import { errorMessage } from '@/lib/forms/errors';
 
 type Section = 'health' | 'memberships' | 'revenue';
 
@@ -122,7 +123,7 @@ function HealthSection({ id }: { id: string }) {
     setLoading(true); setError('');
     api.superAdmin.studioHealth(id)
       .then((r) => setData(r.data))
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load studio health'))
+      .catch((e) => setError(errorMessage(e, 'Failed to load studio health')))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -230,7 +231,7 @@ function MembershipsSection({ id }: { id: string }) {
         };
         setData(response);
       })
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load memberships'))
+      .catch((e) => setError(errorMessage(e, 'Failed to load memberships')))
       .finally(() => setLoading(false));
   }, [id, page]);
 
@@ -289,7 +290,7 @@ function RevenueSection({ id }: { id: string }) {
     setLoading(true); setError('');
     api.superAdmin.studioPtRevenue(id)
       .then((r) => setData(r.data))
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load revenue'))
+      .catch((e) => setError(errorMessage(e, 'Failed to load revenue')))
       .finally(() => setLoading(false));
   }, [id]);
 

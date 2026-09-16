@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import ActionConfirmView from '@/components/ai/ActionConfirmView';
 import { api } from '@/lib/api';
 import type { AiActionPlan, AiActionResult } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 const ACTION_ID = 'lead_followup';
 
@@ -37,7 +38,7 @@ export default function LeadFollowupAction() {
       const r = await api.ai.actionPlan(ACTION_ID);
       setPlan(r.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not prepare the follow-up drafts.');
+      setError(errorMessage(err, 'Could not prepare the follow-up drafts.'));
     } finally {
       setPlanning(false);
     }
@@ -52,7 +53,7 @@ export default function LeadFollowupAction() {
       setResult(r.data);
       setPlan(null);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'That could not be sent.';
+      const msg = errorMessage(err, 'That could not be sent.');
       setError(msg);
       // Same recovery as AiCommandCenter: the list moved underneath them —
       // re-propose so they approve what is true now, not what was true a

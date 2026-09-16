@@ -28,6 +28,7 @@ import StepParqQuestionnaire from '@/components/pt-os/parq/StepParqQuestionnaire
 import StepMedicalClearance from '@/components/pt-os/parq/StepMedicalClearance';
 import StepConsent from '@/components/pt-os/parq/StepConsent';
 import ParqCard from '@/components/pt-os/parq/ParqCard';
+import { errorMessage } from '@/lib/forms/errors';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -99,7 +100,7 @@ function ParqHub({ clientId, toast }: ParqHubProps) {
       const sorted = [...(listRes?.data ?? [])].sort((a, b) => String(b.assessment_date ?? '').localeCompare(String(a.assessment_date ?? '')));
       setForms(sorted);
     } catch (err: unknown) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load client.');
+      setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {
       setLoading(false);
     }
@@ -214,7 +215,7 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
             }
           }
         } catch (err: unknown) {
-          if (!cancelled) toast.error(err instanceof Error ? err.message : 'Failed to load this screening.');
+          if (!cancelled) toast.error(errorMessage(err, 'Failed to load this screening.'));
         } finally {
           if (!cancelled) setDetailLoading(false);
         }
@@ -311,7 +312,7 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
       toast.success('PAR-Q form submitted.');
       setSubmitResult({ pdfUrl });
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to submit PAR-Q form.');
+      toast.error(errorMessage(err, 'Failed to submit PAR-Q form.'));
     } finally {
       setSaving(false);
     }
@@ -336,7 +337,7 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
         if (!newId) throw new Error('Server did not return a form id.');
         setCurrentFormId(newId);
       } catch (e: unknown) {
-        toast.error(e instanceof Error ? e.message : 'Could not start the form.');
+        toast.error(errorMessage(e, 'Could not start the form.'));
         setCreatingDraft(false);
         return;
       }

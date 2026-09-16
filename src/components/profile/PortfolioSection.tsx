@@ -28,7 +28,7 @@
 // started. Reordering is therefore confined to a group, which is exactly what
 // the server's ordering can express.
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import {
   Plus, Pin, PinOff, Trash2, ArrowUp, ArrowDown, ArrowUpDown, Check, X,
@@ -41,6 +41,8 @@ import {
 import { api, PORTFOLIO_LIMITS } from '@/lib/api';
 import type { PortfolioItem, PortfolioKind } from '@/lib/api';
 import { ApiError } from '@/lib/http';
+import { errorMessage } from '@/lib/forms/errors';
+import { checkFile, acceptAttribute, GALLERY_RULES } from '@/lib/forms/files';
 
 const KINDS: { value: PortfolioKind; label: string; hint: string; icon: React.ReactNode }[] = [
   { value: 'image', label: 'Photo', hint: 'A single image', icon: <ImageIcon size={14} /> },
@@ -81,9 +83,17 @@ export function embedUrl(raw: string | null): string | null {
   return null;
 }
 
-/** Read an ApiError's message without leaking a stack trace into the UI. */
+/**
+ * The canonical mapper, under this file's own name.
+ *
+ * It used to read an ApiError's `.message` directly, which is correct for a
+ * 400 and wrong for everything else: a `fetch` that never reached a server
+ * rejects with a TypeError whose message is "Failed to fetch", and a 401's is
+ * "Unauthorized". `errorMessage` turns those into sentences a studio owner can
+ * act on and leaves a 400's own message alone.
+ */
 function reason(err: unknown, fallback: string) {
-  return err instanceof ApiError && err.message ? err.message : fallback;
+  return errorMessage(err, fallback);
 }
 
 // ── Skeleton ────────────────────────────────────────────────────────────────
@@ -333,6 +343,39 @@ function FilePick({ label, file, onPick, max }: {
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [rejected, setRejected] = useState<string | null>(null);
+  const errorId = useId();
+
+  /**
+   * The gallery rules, with this slot's own byte ceiling.
+   *
+   * A poster is shown small behind a play button and gets the smaller limit the
+   * server enforces, so the ceiling comes from the caller; everything else —
+   * the formats, the dimension bounds, and the signature check that is the
+   * whole point — comes from the shared rule set.
+   */
+  const rules = useMemo(() => ({ ...GALLERY_RULES, maxBytes: max }), [max]);
+
+  /**
+   * Validate the pick.
+   *
+   * There was no check here at all: `accept` filtered the picker, the size was
+   * tested LATER (in the dialog's `problem` string, after the file was already
+   * held and previewed), and nothing ever looked at the bytes. An object URL
+   * was created for whatever arrived and rendered into an <img>.
+   */
+  const take = async (picked: File | null) => {
+    setRejected(null);
+    if (!picked) { onPick(null); return; }
+
+    const check = await checkFile(picked, rules);
+    if (!check.ok) {
+      onPick(null);
+      setRejected(check.message);
+      return;
+    }
+    onPick(picked);
+  };
 
   // Object URLs are not garbage collected; leaking one per pick would hold the
   // whole image in memory for the life of the tab.
@@ -351,9 +394,11 @@ function FilePick({ label, file, onPick, max }: {
       <input aria-label={label}
         ref={input}
         type="file"
-        accept="image/png,image/jpeg,image/webp,image/gif"
+        accept={acceptAttribute(rules)}
         className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0] || null; e.target.value = ''; onPick(f); }}
+        aria-describedby={rejected ? errorId : undefined}
+        aria-invalid={rejected ? true : undefined}
+        onChange={(e) => { const f = e.target.files?.[0] || null; e.target.value = ''; void take(f); }}
       />
       <button
         type="button"
@@ -371,8 +416,13 @@ function FilePick({ label, file, onPick, max }: {
           </span>
         )}
       </button>
+      {rejected && (
+        <p id={errorId} role="alert" className="mt-1 text-[10.5px] font-[650]" style={{ color: 'var(--danger-text)' }}>
+          {rejected}
+        </p>
+      )}
       {file && (
-        <button type="button" onClick={() => onPick(null)}
+        <button type="button" onClick={() => void take(null)}
           className="mt-1 text-[10.5px] font-[650]" style={{ color: 'var(--text-muted)' }}>
           Remove {file.name.length > 24 ? `${file.name.slice(0, 24)}…` : file.name}
         </button>

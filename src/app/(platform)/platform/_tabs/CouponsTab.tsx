@@ -9,12 +9,24 @@ import {
   Plus, Loader2, X, Trash2, Gift, Receipt, Ticket, Percent, Ban, CheckCircle2, Sparkles,
 } from 'lucide-react';
 import { Button, Badge, EmptyState } from '@/components/ui';
+import {
+  TextField, NumberField, SelectField, DateFieldControl,
+  FormErrorBanner, SubmitStatus,
+} from '@/components/ui/form';
 import { api } from '@/lib/api';
 import type { SubPlan, Coupon } from '@/lib/api';
 import { StatTile } from '@/components/platform/console';
 import { useToast } from '@/lib/toast';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import { todayISO } from '@/lib/forms/domain';
+import {
+  couponFormSchema, blankCoupon, toCouponPayload,
+  COUPON_TYPE_OPTIONS, COUPON_FIELD_HINTS,
+  type CouponFormState, type CouponFormValues,
+} from '@/lib/forms/schemas/coupon';
 import { fmtDate, fmtINR } from '../_shared/format';
 import { Center, ErrorState, IconBtn } from '../_shared/ui';
+import { errorMessage } from '@/lib/forms/errors';
 
 export type CouponTemplate = {
   key: string; label: string; icon: React.ReactNode;
@@ -45,7 +57,7 @@ export function CouponsTab() {
     setLoading(true); setError('');
     api.superAdmin.listCoupons()
       .then((r) => setCoupons(r.data ?? []))
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load coupons'))
+      .catch((e: unknown) => setError(errorMessage(e, 'Failed to load coupons')))
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
@@ -57,7 +69,7 @@ export function CouponsTab() {
       await api.superAdmin.updateCoupon(c.id, { is_active: !c.is_active });
       toast.success(c.is_active ? `${c.code} deactivated.` : `${c.code} reactivated.`);
       load();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Update failed'); }
+    } catch (e) { toast.error(errorMessage(e, 'Update failed')); }
     finally { setBusy(''); }
   };
 
@@ -68,7 +80,7 @@ export function CouponsTab() {
       await api.superAdmin.deleteCoupon(c.id);
       toast.success(`${c.code} deleted.`);
       load();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Delete failed'); }
+    } catch (e) { toast.error(errorMessage(e, 'Delete failed')); }
     finally { setBusy(''); }
   };
 
@@ -235,6 +247,28 @@ export function CouponsTab() {
   );
 }
 
+/**
+ * Create a platform coupon.
+ *
+ * On the universal form platform (§4/§10/§11/§12). What that fixed, beyond the
+ * label and ARIA wiring every field now gets:
+ *
+ *   · `Number(maxRedemptions)` behind a truthiness guard let a single space
+ *     through as 0, creating a coupon the list badges "Fully redeemed" the
+ *     moment it exists. Same for uses-per-studio, and for the ₹ cap on a
+ *     percentage coupon — a cap of ₹0 makes "20% off" worth nothing.
+ *   · a letter in a numeric box became NaN, which JSON serialises as null, so
+ *     "2o uses" silently became *unlimited*.
+ *   · the code box accepted spaces and any length; the server stores
+ *     `upper(trim(code))`, so an inner space survived and the coupon then
+ *     never matched at redemption.
+ *   · `valid_until` accepted a past date, creating an expired coupon.
+ *   · failures put the server's raw message in a toast; they now go through
+ *     the shared mapper and render in the form's own banner, where they stay
+ *     until fixed rather than fading.
+ *
+ * The card, grid and action row are the page's own and are unchanged.
+ */
 export function CouponForm({ plans, initial, onCreated }: {
   plans: SubPlan[];
   /** Seeds the form once, from one of the quick-start templates above — the
@@ -243,132 +277,189 @@ export function CouponForm({ plans, initial, onCreated }: {
   onCreated: () => void;
 }) {
   const { toast } = useToast();
-  const [code, setCode] = useState('');
-  const [description, setDescription] = useState(initial?.description ?? '');
-  const [discountType, setDiscountType] = useState<'percent' | 'fixed'>(initial?.discountType ?? 'percent');
-  const [discountValue, setDiscountValue] = useState(initial?.discountValue ?? '');
-  const [maxDiscount, setMaxDiscount] = useState('');
-  const [maxRedemptions, setMaxRedemptions] = useState('');
-  const [maxPerOrg, setMaxPerOrg] = useState(initial?.maxPerOrg ?? '1');
-  const [validUntil, setValidUntil] = useState(initial?.validUntil ?? '');
-  const [appliesTo, setAppliesTo] = useState<string[]>([]);
-  const [saving, setSaving] = useState(false);
 
-  const value = Number(discountValue);
-  const percentOutOfRange = discountType === 'percent' && (value > 100 || value <= 0);
-
-  const submit = async () => {
-    if (!code.trim() || !Number.isFinite(value) || value <= 0) {
-      toast.error('A code and a discount above zero are required.');
-      return;
-    }
-    if (percentOutOfRange) { toast.error('A percentage discount must be between 1 and 100.'); return; }
-    setSaving(true);
-    try {
-      await api.superAdmin.createCoupon({
-        code: code.trim().toUpperCase(),
-        description: description.trim() || undefined,
-        discount_type: discountType,
-        discount_value: value,
-        max_discount_inr: discountType === 'percent' && maxDiscount ? Number(maxDiscount) : null,
-        max_redemptions: maxRedemptions ? Number(maxRedemptions) : null,
-        max_per_org: maxPerOrg ? Number(maxPerOrg) : 1,
-        valid_until: validUntil || null,
-        applies_to_plans: appliesTo.length ? appliesTo : null,
-      });
+  const f = useAppForm({
+    schema: couponFormSchema,
+    // Rebuilt from the template rather than patched onto whatever the last one
+    // left behind. The parent also keys this component on the template, so
+    // switching templates remounts (§11).
+    defaultValues: blankCoupon(initial as Partial<CouponFormState> | undefined),
+    fieldHints: COUPON_FIELD_HINTS,
+    onSubmit: async (values: CouponFormValues) => {
+      await api.superAdmin.createCoupon(toCouponPayload(values));
+    },
+    onSuccess: () => {
       toast.success('Coupon created.');
       onCreated();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not create coupon');
-    } finally { setSaving(false); }
-  };
+    },
+  });
 
-  const field = {
-    background: 'var(--bg-subtle)', border: '1px solid var(--border)',
-    color: 'var(--text-primary)',
-  } as const;
+  const { form } = f;
 
   return (
-    <div className="rounded-[16px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+    <form
+      noValidate
+      onSubmit={(e) => { e.preventDefault(); void f.submit(); }}
+      className="rounded-[16px] p-4"
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+    >
+      <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} className="mb-3" />
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <label className="flex flex-col gap-1">
-          <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Code</span>
-          <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="LAUNCH20"
-            className="h-9 rounded-[10px] px-2.5 text-[12.5px] font-[700] uppercase outline-none" style={field} />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Description</span>
-          <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Launch promotion"
-            className="h-9 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={field} />
-        </label>
+        <form.Field name="code">
+          {(field) => (
+            <TextField
+              field={field}
+              label="Code"
+              required
+              placeholder="LAUNCH20"
+              description="Letters, numbers, hyphens and underscores"
+              serverError={f.errors.fieldErrors.code}
+            />
+          )}
+        </form.Field>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Type</span>
-          <select value={discountType} onChange={(e) => setDiscountType(e.target.value as 'percent' | 'fixed')}
-            className="h-9 rounded-[10px] px-2 text-[12.5px] font-[650] outline-none" style={field}>
-            <option value="percent">Percentage off</option>
-            <option value="fixed">Fixed rupees off</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-            {discountType === 'percent' ? 'Percent (1–100)' : 'Rupees off'}
-          </span>
-          <input value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} inputMode="numeric"
-            placeholder={discountType === 'percent' ? '20' : '500'}
-            className="h-9 rounded-[10px] px-2.5 text-[12.5px] font-[650] tabular-nums outline-none"
-            style={{ ...field, borderColor: percentOutOfRange && discountValue ? '#ef4444' : 'var(--border)' }} />
-        </label>
+        <form.Field name="description">
+          {(field) => (
+            <TextField
+              field={field}
+              label="Description"
+              placeholder="Launch promotion"
+              serverError={f.errors.fieldErrors.description}
+            />
+          )}
+        </form.Field>
 
-        {discountType === 'percent' && (
-          <label className="flex flex-col gap-1">
-            <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Max discount (₹, optional)</span>
-            <input value={maxDiscount} onChange={(e) => setMaxDiscount(e.target.value)} inputMode="numeric" placeholder="2000"
-              className="h-9 rounded-[10px] px-2.5 text-[12.5px] tabular-nums outline-none" style={field} />
-          </label>
+        <form.Field name="discountType">
+          {(field) => (
+            <SelectField
+              field={field}
+              label="Type"
+              required
+              options={COUPON_TYPE_OPTIONS}
+              serverError={f.errors.fieldErrors.discountType}
+            />
+          )}
+        </form.Field>
+
+        <form.Subscribe selector={(st) => st.values.discountType}>
+          {(type) => (
+            <form.Field name="discountValue">
+              {(field) => (
+                <NumberField
+                  field={field}
+                  label={type === 'percent' ? 'Percent (1–100)' : 'Rupees off'}
+                  required
+                  mode={type === 'percent' ? 'percent' : 'money'}
+                  suffix={type === 'percent' ? '%' : '₹'}
+                  placeholder={type === 'percent' ? '20' : '500'}
+                  serverError={f.errors.fieldErrors.discountValue}
+                />
+              )}
+            </form.Field>
+          )}
+        </form.Subscribe>
+
+        {/* The cap only means something for a percentage. It stays hidden for a
+            fixed-rupee coupon, and the schema DERIVES the submitted cap from
+            the type, so a value left behind by a type switch cannot be sent. */}
+        <form.Subscribe selector={(st) => st.values.discountType}>
+          {(type) =>
+            type !== 'percent' ? null : (
+              <form.Field name="maxDiscount">
+                {(field) => (
+                  <NumberField
+                    field={field}
+                    label="Max discount"
+                    mode="money"
+                    suffix="₹"
+                    placeholder="2000"
+                    description="Optional ceiling on the percentage"
+                    serverError={f.errors.fieldErrors.maxDiscount}
+                  />
+                )}
+              </form.Field>
+            )
+          }
+        </form.Subscribe>
+
+        <form.Field name="maxRedemptions">
+          {(field) => (
+            <NumberField
+              field={field}
+              label="Total uses"
+              mode="integer"
+              placeholder="20"
+              description="Leave blank for unlimited"
+              serverError={f.errors.fieldErrors.maxRedemptions}
+            />
+          )}
+        </form.Field>
+
+        <form.Field name="maxPerOrg">
+          {(field) => (
+            <NumberField
+              field={field}
+              label="Uses per studio"
+              required
+              mode="integer"
+              serverError={f.errors.fieldErrors.maxPerOrg}
+            />
+          )}
+        </form.Field>
+
+        <form.Field name="validUntil">
+          {(field) => (
+            <DateFieldControl
+              field={field}
+              label="Valid until"
+              min={todayISO()}
+              description="Optional. Leave blank to never expire."
+              serverError={f.errors.fieldErrors.validUntil}
+            />
+          )}
+        </form.Field>
+      </div>
+
+      {/* Plan chips. Deliberately not a <select multiple>: §1 is explicit that
+          a control is only worth migrating when migrating fixes something, and
+          these already carry their own pressed state and are keyboard
+          reachable as buttons. They write through the field so the selection
+          is dirty-tracked and validated like any other value. */}
+      <form.Field name="appliesTo">
+        {(field) => (
+          <fieldset className="mt-3 border-0 p-0">
+            <legend className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+              Limit to plans (none selected = all plans)
+            </legend>
+            <div className="mt-1.5 flex flex-wrap gap-2">
+              {plans.map((p) => {
+                const on = field.state.value.includes(p.code);
+                return (
+                  <button key={p.code} type="button" aria-pressed={on}
+                    onClick={() => field.handleChange(
+                      on ? field.state.value.filter((x) => x !== p.code) : [...field.state.value, p.code],
+                    )}
+                    className="rounded-full px-3 py-1.5 text-[11.5px] font-[650] transition"
+                    style={on
+                      ? { background: 'rgba(0,103,224,0.15)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.4)' }
+                      : { background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                    {p.name}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
         )}
-        <label className="flex flex-col gap-1">
-          <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Total uses (blank = unlimited)</span>
-          <input value={maxRedemptions} onChange={(e) => setMaxRedemptions(e.target.value)} inputMode="numeric" placeholder="20"
-            className="h-9 rounded-[10px] px-2.5 text-[12.5px] tabular-nums outline-none" style={field} />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Uses per studio</span>
-          <input value={maxPerOrg} onChange={(e) => setMaxPerOrg(e.target.value)} inputMode="numeric"
-            className="h-9 rounded-[10px] px-2.5 text-[12.5px] tabular-nums outline-none" style={field} />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Valid until (optional)</span>
-          <input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)}
-            className="h-9 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={field} />
-        </label>
-      </div>
+      </form.Field>
 
-      <div className="mt-3">
-        <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-          Limit to plans (none selected = all plans)
-        </span>
-        <div className="mt-1.5 flex flex-wrap gap-2">
-          {plans.map((p) => {
-            const on = appliesTo.includes(p.code);
-            return (
-              <button key={p.code} type="button"
-                onClick={() => setAppliesTo((prev) => on ? prev.filter((x) => x !== p.code) : [...prev, p.code])}
-                className="rounded-full px-3 py-1.5 text-[11.5px] font-[650] transition"
-                style={on
-                  ? { background: 'rgba(0,103,224,0.15)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.4)' }
-                  : { background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                {p.name}
-              </button>
-            );
-          })}
-        </div>
+      <div className="mt-4 flex items-center justify-end gap-2">
+        <SubmitStatus isSubmitting={f.isSubmitting} />
+        {/* The real guard is the in-flight ref inside useAppForm; `disabled`
+            only communicates the state. */}
+        <Button type="submit" loading={f.isSubmitting} disabled={f.isSubmitting}>Create coupon</Button>
       </div>
-
-      <div className="mt-4 flex justify-end">
-        <Button onClick={submit} loading={saving} disabled={saving}>Create coupon</Button>
-      </div>
-    </div>
+    </form>
   );
 }
 

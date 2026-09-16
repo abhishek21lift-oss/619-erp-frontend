@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import type { AiProgressAnalysis } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
+import { errorMessage } from '@/lib/forms/errors';
 
 const ACCENT = '#FBBF24';
 const ACCENT_DIM = 'rgba(251,191,36,0.12)';
@@ -68,7 +69,7 @@ export default function ProgressAnalysisPage() {
       setAnalysis(res.data);
       setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback });
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to analyse progress.');
+      setError(errorMessage(e, 'Failed to analyse progress.'));
     } finally { setLoading(false); }
   };
 

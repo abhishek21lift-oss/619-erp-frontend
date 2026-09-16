@@ -15,6 +15,7 @@ import { useAuth } from '@/lib/auth-context';
 import { api } from '@/lib/api';
 import type { PtSession, PtSessionStatus, TodayClient } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { errorMessage } from '@/lib/forms/errors';
 
 /* ── Date helpers ──────────────────────────────────────────────────────────
    All date maths is done on LOCAL calendar days formatted as YYYY-MM-DD.
@@ -405,7 +406,7 @@ export default function MySchedulePage() {
       // the two halves of a row cannot disagree.
       roster.refetch();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not update this session.');
+      toast.error(errorMessage(err, 'Could not update this session.'));
     } finally {
       setBusyId(null);
     }
@@ -438,7 +439,7 @@ export default function MySchedulePage() {
       if (!id) throw new Error('Session was created without an id');
       router.push(`/pt-os/clients/${c.client_id}/workout-log/${id}`);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not start the session');
+      toast.error(errorMessage(err, 'Could not start the session'));
       setStartingId(null);
     }
   }, [startingId, router, roster.data, selectedDay, toast]);

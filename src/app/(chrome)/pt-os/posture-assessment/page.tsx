@@ -22,6 +22,7 @@ import CoachNotesPanel from '@/components/pt-os/shared/CoachNotesPanel';
 import PostureRiskBadges from '@/components/pt-os/posture-assessment/PostureRiskBadges';
 import PostureComparison from '@/components/pt-os/posture-assessment/PostureComparison';
 import PostureCard from '@/components/pt-os/posture-assessment/PostureCard';
+import { errorMessage } from '@/lib/forms/errors';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -87,7 +88,7 @@ function PostureHub({ clientId, toast }: PostureHubProps) {
       setClientName(String(c.name ?? ''));
       setAssessments(Array.isArray(listRes?.data) ? listRes.data : []);
     } catch (err: unknown) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load client.');
+      setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {
       setLoading(false);
     }
@@ -254,7 +255,7 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
       clear();
       onDone(true);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save assessment.');
+      toast.error(errorMessage(err, 'Failed to save assessment.'));
     } finally {
       setSaving(false);
     }

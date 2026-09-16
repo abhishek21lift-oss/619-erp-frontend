@@ -28,6 +28,7 @@ import type {
 } from '@/lib/api';
 import { Panel, SectionLabel, StatTile, Reveal } from './console';
 import { useToast } from '@/lib/toast';
+import { errorMessage } from '@/lib/forms/errors';
 
 const RANGES = [7, 30, 90];
 
@@ -137,7 +138,7 @@ function StudioTable({ rows, onChanged }: { rows: AiStudioUsage[]; onChanged: ()
       await api.superAdmin.setOrgAiLimit(r.organization_id, { monthly_tokens: monthly, reason: reason.trim() });
       toast.success(monthly === null ? `${r.organization_name} is now exempt.` : `Cap set for ${r.organization_name}.`);
       onChanged();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not set the allowance'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not set the allowance')); }
     finally { setBusy(''); }
   };
 
@@ -147,7 +148,7 @@ function StudioTable({ rows, onChanged }: { rows: AiStudioUsage[]; onChanged: ()
       await api.superAdmin.clearOrgAiLimit(r.organization_id);
       toast.success(`${r.organization_name} follows the platform default again.`);
       onChanged();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not clear the allowance'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not clear the allowance')); }
     finally { setBusy(''); }
   };
 
@@ -291,7 +292,7 @@ function SettingsPanel({ settings, onChanged }: { settings: AiSettings; onChange
           : 'Saved.',
       );
       onChanged();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not save'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not save')); }
     finally { setSaving(false); }
   };
 
@@ -407,7 +408,7 @@ function RoutingPanel({ routing, onChanged }: { routing: AiRouting; onChanged: (
       toast.success('Model routing updated');
       onChanged();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Could not update model routing.');
+      toast.error(errorMessage(e, 'Could not update model routing.'));
     } finally { setBusy(false); }
   };
 
@@ -509,7 +510,7 @@ export default function AiControlCentre() {
         setOverview(o.data); setStudios(s.data); setModels(m.data);
         setTrend(t.data); setSettings(cfg.data); setRouting(route.data);
       })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load AI usage.'))
+      .catch((e: unknown) => setError(errorMessage(e, 'Could not load AI usage.')))
       .finally(() => setLoading(false));
   }, [days]);
 
@@ -531,7 +532,7 @@ export default function AiControlCentre() {
       });
       toast.success(`Rate saved for ${m.model}.`);
       load();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not save the rate'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not save the rate')); }
   };
 
   const overCount = useMemo(() => studios.filter((s) => s.over).length, [studios]);

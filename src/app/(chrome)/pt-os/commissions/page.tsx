@@ -13,7 +13,7 @@ import {
   PAYOUT_STATUS_OPTIONS,
   type CommissionDraft, type PayoutDraft, type PayoutStatus,
 } from '@/lib/forms/schemas/commission';
-import { mapApiError } from '@/lib/forms/errors';
+import { errorMessage, mapApiError } from '@/lib/forms/errors';
 import { Button, PullToRefresh } from '@/components/ui';
 import { useToast } from '@/lib/toast';
 
@@ -142,7 +142,7 @@ export default function CommissionsPage() {
       payouts.refetch();
       perf.refetch();
     } catch (e: unknown) {
-      toast.error(mapApiError(e, { fallback: 'Calculation failed' }).formError ?? 'Calculation failed');
+      toast.error(errorMessage(e, 'Calculation failed'));
     } finally {
       setCalculating(false);
     }
@@ -244,7 +244,7 @@ export default function CommissionsPage() {
       toast.success('All payouts marked as paid');
       payouts.refetch();
     } catch (e: unknown) {
-      toast.error(mapApiError(e, { fallback: 'Failed to mark all paid' }).formError ?? 'Failed to mark all paid');
+      toast.error(errorMessage(e, 'Failed to mark all paid'));
     }
   }, [month, toast, payouts]);
 

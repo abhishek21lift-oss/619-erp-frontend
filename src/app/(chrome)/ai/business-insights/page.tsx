@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import type { AiBusinessInsights } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
+import { errorMessage } from '@/lib/forms/errors';
 
 const PERIODS = [
   { label: 'Last 7 days', value: '7d' },
@@ -48,7 +49,7 @@ export default function BusinessInsightsPage() {
       setInsights(res.data);
       setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback });
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Failed to generate insights.';
+      const msg = errorMessage(e, 'Failed to generate insights.');
       if (msg.includes('403') || msg.toLowerCase().includes('forbidden') || msg.toLowerCase().includes('admin')) {
         setError('Business Insights is restricted to the studio owner.');
       } else {

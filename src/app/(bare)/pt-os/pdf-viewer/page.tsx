@@ -22,6 +22,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Download, Share2, Loader2, AlertTriangle, FileText } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { useToast } from '@/lib/toast';
+import { errorMessage } from '@/lib/forms/errors';
 
 function safeFilename(title: string): string {
   const cleaned = title.trim().replace(/[^a-z0-9\-_ ]+/gi, '').replace(/\s+/g, '-');
@@ -76,7 +77,7 @@ function PdfViewerScreen() {
         setBlob(b);
         setBlobUrl(objectUrl);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Could not load the document.');
+        if (!cancelled) setError(errorMessage(e, 'Could not load the document.'));
       } finally {
         if (!cancelled) setLoading(false);
       }

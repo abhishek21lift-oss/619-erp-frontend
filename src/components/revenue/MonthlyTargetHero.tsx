@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/lib/toast';
 import http from '@/lib/http';
+import { errorMessage } from '@/lib/forms/errors';
 
 const EASE_EXPO = [0.16, 1, 0.3, 1] as const;
 
@@ -213,7 +214,7 @@ export default function MonthlyTargetHero({ onTargetSet }: { onTargetSet?: () =>
       const status = (err as { status?: number })?.status;
       setError(status === 404
         ? 'Revenue targets are not available yet — the backend needs deploying.'
-        : err instanceof Error ? err.message : 'Could not load the monthly target');
+        : errorMessage(err, 'Could not load the monthly target'));
     } finally {
       setLoading(false);
     }
@@ -245,7 +246,7 @@ export default function MonthlyTargetHero({ onTargetSet }: { onTargetSet?: () =>
         toast.error('This month’s target was already set.');
         await load();
       } else {
-        toast.error(err instanceof Error ? err.message : 'Could not set the target');
+        toast.error(errorMessage(err, 'Could not set the target'));
       }
       setConfirming(false);
     } finally {

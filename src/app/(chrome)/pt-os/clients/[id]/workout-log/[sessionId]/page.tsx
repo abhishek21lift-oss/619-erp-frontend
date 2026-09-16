@@ -17,6 +17,8 @@ import { api } from '@/lib/api';
 import type { WorkoutSessionDetail, WorkoutSessionExercise, WorkoutSet, WorkoutPreviousExercise, WorkoutDistanceUnit, WorkoutSpeedUnit } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { fmtDate } from '@/lib/format';
+import { errorMessage } from '@/lib/forms/errors';
+import { inlineNumber, stepFrom } from '@/lib/forms/inline';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -125,7 +127,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
         return next;
       });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load session.';
+      const msg = errorMessage(err, 'Failed to load session.');
       // A background refresh that fails must not throw away a session the
       // trainer is part-way through logging — the set itself already saved,
       // this call was only fetching the recomputed totals.
@@ -196,7 +198,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       await handleAddPlannedExercise(planned);
       await loadSession();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not load exercise.');
+      toast.error(errorMessage(err, 'Could not load exercise.'));
     } finally {
       setLoadingPlanned(false);
     }
@@ -212,7 +214,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       await loadSession();
       toast.success('Loaded today\'s plan into the session.');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not load plan.');
+      toast.error(errorMessage(err, 'Could not load plan.'));
     } finally {
       setLoadingPlanned(false);
     }
@@ -227,7 +229,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       if (res?.data) setExpanded((prev) => ({ ...prev, [res.data.id]: true }));
       await loadSession();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not add exercise.');
+      toast.error(errorMessage(err, 'Could not add exercise.'));
     }
   };
 
@@ -237,7 +239,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       await api.progress.workoutLog.exercises.remove(exerciseId);
       await loadSession();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not remove exercise.');
+      toast.error(errorMessage(err, 'Could not remove exercise.'));
     }
   };
 
@@ -248,7 +250,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       const res = await api.progress.workoutLog.sessions.update(session.id, patch);
       if (res?.data) setSession((prev) => (prev ? { ...prev, ...res.data } : prev));
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not save.');
+      toast.error(errorMessage(err, 'Could not save.'));
     } finally {
       setSavingHeader(false);
     }
@@ -595,7 +597,7 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
       });
       await onChanged();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not add set.');
+      toast.error(errorMessage(err, 'Could not add set.'));
     } finally {
       setBusy(false);
     }
@@ -625,7 +627,7 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
       await onChanged();
       toast.success('Filled from previous workout.');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Auto-fill failed.');
+      toast.error(errorMessage(err, 'Auto-fill failed.'));
     } finally {
       setBusy(false);
     }
@@ -651,7 +653,7 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
     } catch (err: unknown) {
       // Partially applied is fine and visible — onChanged in the finally
       // repaints whatever did land, so the trainer sees where it stopped.
-      toast.error(err instanceof Error ? err.message : 'Could not mark those sets done.');
+      toast.error(errorMessage(err, 'Could not mark those sets done.'));
       await onChanged();
     } finally {
       setBusy(false);
@@ -801,6 +803,33 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
   const [distUnit, setDistUnit] = useState<WorkoutDistanceUnit>(set.distance_unit ?? 'km');
   const [speedUnit, setSpeedUnit] = useState<WorkoutSpeedUnit>(set.speed_unit ?? 'kmh');
 
+  /**
+   * Re-seed the row from the server.
+   *
+   * ── Why the dependency list is every VALUE and not `set` ──────────────────
+   *
+   * It used to be `[set]`, and `set` is `session.exercises[].sets[]` — a fresh
+   * object on every refetch, whether or not anything in it changed. Each
+   * refetch therefore overwrote every local field from the server, including
+   * one the trainer was part-way through typing.
+   *
+   * The window is small and entirely real. Type 32.5 into Duration; a refetch
+   * triggered by the PREVIOUS field's save lands; this effect resets the
+   * controlled input to the stored 30; the blur then reads 30 out of the DOM
+   * and saves 1800. The typed value never reaches the API and nothing on
+   * screen says so — the box shows 30 again, which looks like it was never
+   * typed rather than like it was discarded.
+   *
+   * It is what the sibling test in workout-log-cardio.test.tsx has been
+   * catching about one run in six, with the signature that test was written to
+   * distinguish: a single duration save carrying the PRISTINE value, and no
+   * second call correcting it. That test named the mechanism; this is it.
+   *
+   * Depending on the values means a refetch that returns what we already have
+   * is a no-op, and one that returns something different — because our own
+   * save landed, or another device wrote — still re-seeds, which is correct:
+   * at that point the server is the authority.
+   */
   useEffect(() => {
     setWeight(set.weight_kg != null ? String(set.weight_kg) : '');
     setReps(set.reps != null ? String(set.reps) : '');
@@ -819,7 +848,14 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
     });
     setDistUnit(set.distance_unit ?? 'km');
     setSpeedUnit(set.speed_unit ?? 'kmh');
-  }, [set]);
+  }, [
+    set.id,
+    set.weight_kg, set.reps, set.rpe, set.rir,
+    set.duration_seconds, set.distance, set.distance_unit,
+    set.average_speed, set.speed_unit,
+    set.calories_burned, set.average_heart_rate, set.cadence,
+    set.steps_completed, set.floors_completed, set.rounds_completed,
+  ]);
 
   const visibleCardioFields = isCardio
     ? CARDIO_FIELDS.filter((f) => f.modes.some((m) => modes.includes(m)))
@@ -832,7 +868,7 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
       await api.progress.workoutLog.sets.update(set.id, patch);
       await onChanged();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not save set.');
+      toast.error(errorMessage(err, 'Could not save set.'));
     } finally {
       setSaving(false);
     }
@@ -843,11 +879,16 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
       await api.progress.workoutLog.sets.delete(set.id);
       await onChanged();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not delete set.');
+      toast.error(errorMessage(err, 'Could not delete set.'));
     }
   };
 
-  const numField = (val: string) => (val.trim() === '' ? null : Number(val));
+  /** Save one inline field unless it holds something unparseable. */
+  const saveNum = (key: string, val: string) => {
+    const v = inlineNumber(val);
+    if (v === undefined) return;
+    save({ [key]: v });
+  };
 
   // One cardio actual per blur. Duration arrives in minutes and is stored as
   // seconds; distance/speed always travel with their unit — the DB refuses a
@@ -877,9 +918,10 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
   // The DOM is the authority on what the field holds. Reading the event's own
   // target removes the dependence on a render having flushed at all.
   const saveCardio = (field: (typeof CARDIO_FIELDS)[number], rawValue: string) => {
-    const raw = rawValue.trim();
-    let value: number | null = raw === '' ? null : Number(raw);
-    if (value != null && Number.isNaN(value)) return;
+    const parsed = inlineNumber(rawValue);
+    // Unparseable: leave the stored value and the typed text alone.
+    if (parsed === undefined) return;
+    let value: number | null = parsed;
     if (field.minutes && value != null) value = Math.round(value * 60);
     const patch: Record<string, unknown> = { [field.key]: value };
     if (field.unit === 'distance') patch.distance_unit = value == null ? null : distUnit;
@@ -897,13 +939,15 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
   };
 
   const adjustWeight = (delta: number) => {
-    const cur = weight.trim() === '' ? 0 : Number(weight);
+    const cur = stepFrom(weight);
+    if (cur === null) return;
     const next = Math.max(0, Math.round((cur + delta) * 2) / 2);
     setWeight(String(next));
     save({ weight_kg: next });
   };
   const adjustReps = (delta: number) => {
-    const cur = reps.trim() === '' ? 0 : Number(reps);
+    const cur = stepFrom(reps);
+    if (cur === null) return;
     const next = Math.max(0, cur + delta);
     setReps(String(next));
     save({ reps: next });
@@ -946,7 +990,7 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
           {visibleCardioFields.map((field) => (
             <label key={field.key} className="flex items-center gap-1 rounded-[10px] px-1 pl-2.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
               <span className="shrink-0 text-[9.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>{field.label}</span>
-              <input type="number" inputMode="decimal" min={0} value={cardio[field.key] ?? ''} placeholder="—"
+              <input type="text" inputMode="decimal" min={0} value={cardio[field.key] ?? ''} placeholder="—"
                 onChange={(e) => setCardio((prev) => ({ ...prev, [field.key]: e.target.value }))}
                 onBlur={(e) => saveCardio(field, e.target.value)}
                 className="h-[44px] w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: '#0f172a' }} />
@@ -969,9 +1013,9 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
           {showCardioRpe && (
             <label className="flex items-center gap-1.5 rounded-[10px] px-2.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
               <span className="text-[10px] font-[700]" style={{ color: '#94a3b8' }}>RPE</span>
-              <input type="number" inputMode="decimal" min={0} max={10} value={rpe} placeholder="—"
+              <input type="text" inputMode="decimal" min={0} max={10} value={rpe} placeholder="—"
                 onChange={(e) => setRpe(e.target.value)}
-                onBlur={(e) => save({ rpe: numField(e.target.value) })}
+                onBlur={(e) => saveNum('rpe', e.target.value)}
                 className="h-[44px] w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: '#0f172a' }} />
             </label>
           )}
@@ -989,9 +1033,9 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
               style={{ background: '#fff', border: '1.5px solid #e2e8f0', color: '#475569' }}>
               <Minus size={16} />
             </button>
-            <input type="number" inputMode="decimal" value={weight} placeholder="0"
+            <input type="text" inputMode="decimal" value={weight} placeholder="0"
               onChange={(e) => setWeight(e.target.value)}
-              onBlur={(e) => save({ weight_kg: numField(e.target.value) })}
+              onBlur={(e) => saveNum('weight_kg', e.target.value)}
               className="w-full min-w-0 rounded-[12px] py-2.5 text-center font-[800] outline-none"
               style={{ fontSize: 17, background: '#fff', border: '1.5px solid #e2e8f0', color: '#0f172a' }} />
             <button onClick={() => adjustWeight(2.5)} aria-label="Increase weight"
@@ -1009,9 +1053,9 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
               style={{ background: '#fff', border: '1.5px solid #e2e8f0', color: '#475569' }}>
               <Minus size={16} />
             </button>
-            <input type="number" inputMode="numeric" value={reps} placeholder="0"
+            <input type="text" inputMode="numeric" value={reps} placeholder="0"
               onChange={(e) => setReps(e.target.value)}
-              onBlur={(e) => save({ reps: numField(e.target.value) })}
+              onBlur={(e) => saveNum('reps', e.target.value)}
               className="w-full min-w-0 rounded-[12px] py-2.5 text-center font-[800] outline-none"
               style={{ fontSize: 17, background: '#fff', border: '1.5px solid #e2e8f0', color: '#0f172a' }} />
             <button onClick={() => adjustReps(1)} aria-label="Increase reps"
@@ -1032,9 +1076,9 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
         */}
         <label className="flex flex-1 items-center gap-1.5 rounded-[10px] px-2.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
           <span className="text-[10px] font-[700]" style={{ color: '#94a3b8' }}>RPE</span>
-          <input type="number" inputMode="decimal" min={0} max={10} value={rpe} placeholder="—"
+          <input type="text" inputMode="decimal" min={0} max={10} value={rpe} placeholder="—"
             onChange={(e) => setRpe(e.target.value)}
-            onBlur={(e) => save({ rpe: numField(e.target.value) })}
+            onBlur={(e) => saveNum('rpe', e.target.value)}
             className="h-[44px] w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: "#0f172a" }} />
         </label>
         {/*
@@ -1045,9 +1089,9 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
         */}
         <label className="flex flex-1 items-center gap-1.5 rounded-[10px] px-2.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
           <span className="text-[10px] font-[700]" style={{ color: '#94a3b8' }}>RIR</span>
-          <input type="number" inputMode="numeric" min={0} max={10} value={rir} placeholder="—"
+          <input type="text" inputMode="numeric" min={0} max={10} value={rir} placeholder="—"
             onChange={(e) => setRir(e.target.value)}
-            onBlur={(e) => save({ rir: numField(e.target.value) })}
+            onBlur={(e) => saveNum('rir', e.target.value)}
             className="h-[44px] w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: "#0f172a" }} />
         </label>
       </div>

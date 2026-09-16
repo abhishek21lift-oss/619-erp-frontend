@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { AuditEntry, AuditQuery } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 const PAGE_SIZE = 50;
 
@@ -213,7 +214,7 @@ export default function AuditCentre() {
     setError('');
     api.superAdmin.audit(query)
       .then((r) => { setRows(r.data ?? []); setTotal(r.paging?.total ?? 0); setTotalCapped(r.paging?.total_capped ?? false); })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load the audit log.'))
+      .catch((e: unknown) => setError(errorMessage(e, 'Could not load the audit log.')))
       .finally(() => setLoading(false));
   }, [query]);
 

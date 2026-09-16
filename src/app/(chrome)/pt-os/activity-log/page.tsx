@@ -20,6 +20,7 @@ import Guard from '@/components/Guard';
 import { PageHeader } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { ActivityLogEntry } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 const PAGE_SIZE = 50;
 
@@ -152,7 +153,7 @@ function Inner() {
     setError('');
     api.pt.activityLog(query)
       .then((r) => { setRows(r.data ?? []); setTotal(r.paging?.total ?? 0); })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load the activity log.'))
+      .catch((e: unknown) => setError(errorMessage(e, 'Could not load the activity log.')))
       .finally(() => setLoading(false));
   }, [query]);
 

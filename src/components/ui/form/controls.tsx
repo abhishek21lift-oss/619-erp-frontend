@@ -20,13 +20,46 @@
  *     alone lands under what a thumb needs — the height is explicit.
  */
 
-import { forwardRef } from 'react';
+import { createContext, forwardRef, useContext } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
 import { cn } from '../cn';
 import {
   FormField, fieldControlProps, useFieldWiring,
   type FormFieldProps, type FieldWiring,
 } from './FormField';
+
+/**
+ * Which surface the controls below are sitting ON.
+ *
+ * `default` assumes the field is on a card: the control fills with
+ * `--bg-subtle`, a light grey well against white glass. That is the right
+ * answer everywhere the app puts a form directly on a panel.
+ *
+ * It is the wrong answer inside a LIST ROW, and the app is full of them — a
+ * certification card, an education entry, an achievement, a previous gym, a
+ * builder step. Those rows are themselves `--bg-subtle`, so a subtle control
+ * on a subtle row is invisible. Every one of those places had independently
+ * hand-rolled an input with `background: var(--bg-card)` and no label wiring,
+ * which is how nineteen files ended up outside the field contract for what is,
+ * in the end, one background colour.
+ *
+ * So the surface is a property of the REGION, declared once by the row, rather
+ * than a prop repeated on every field inside it.
+ */
+export type ControlSurface = 'default' | 'nested';
+
+const SurfaceContext = createContext<ControlSurface>('default');
+
+export function useControlSurface(): ControlSurface {
+  return useContext(SurfaceContext);
+}
+
+/** Declares the surface for every control rendered below. */
+export function FieldSurface({
+  surface, children,
+}: { surface: ControlSurface; children: React.ReactNode }) {
+  return <SurfaceContext.Provider value={surface}>{children}</SurfaceContext.Provider>;
+}
 
 /** The one surface every control in the system shares. */
 export function controlClassName(w: FieldWiring | null, extra?: string) {
@@ -40,11 +73,19 @@ export function controlClassName(w: FieldWiring | null, extra?: string) {
   );
 }
 
-export function controlStyle(w: FieldWiring | null): React.CSSProperties {
+export function controlStyle(
+  w: FieldWiring | null,
+  surface: ControlSurface = 'default',
+): React.CSSProperties {
+  const nested = surface === 'nested';
   return {
     minHeight: 44,
-    background: w?.disabled || w?.readOnly ? 'var(--bg-base)' : 'var(--bg-subtle)',
-    border: `1px solid ${w?.invalid ? 'var(--danger-border)' : 'var(--border-2)'}`,
+    background: w?.disabled || w?.readOnly
+      ? 'var(--bg-base)'
+      : nested ? 'var(--bg-card)' : 'var(--bg-subtle)',
+    border: `1px solid ${
+      w?.invalid ? 'var(--danger-border)' : nested ? 'var(--border)' : 'var(--border-2)'
+    }`,
     color: 'var(--text-primary)',
   };
 }
@@ -56,13 +97,14 @@ type NativeSelect = Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'id' | '
 export const TextInput = forwardRef<HTMLInputElement, NativeInput>(
   function TextInput({ className, style, ...rest }, ref) {
     const w = useFieldWiring();
+    const surface = useControlSurface();
     return (
       <input
         ref={ref}
         {...fieldControlProps(w)}
         {...rest}
         className={controlClassName(w, className)}
-        style={{ ...controlStyle(w), ...style }}
+        style={{ ...controlStyle(w, surface), ...style }}
       />
     );
   },
@@ -71,6 +113,7 @@ export const TextInput = forwardRef<HTMLInputElement, NativeInput>(
 export const TextArea = forwardRef<HTMLTextAreaElement, NativeArea>(
   function TextArea({ className, style, rows = 3, ...rest }, ref) {
     const w = useFieldWiring();
+    const surface = useControlSurface();
     return (
       <textarea
         ref={ref}
@@ -78,7 +121,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, NativeArea>(
         {...fieldControlProps(w)}
         {...rest}
         className={controlClassName(w, cn('resize-y py-2.5 leading-[1.5]', className))}
-        style={{ ...controlStyle(w), ...style }}
+        style={{ ...controlStyle(w, surface), ...style }}
       />
     );
   },
@@ -87,6 +130,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, NativeArea>(
 export const SelectInput = forwardRef<HTMLSelectElement, NativeSelect>(
   function SelectInput({ className, style, children, ...rest }, ref) {
     const w = useFieldWiring();
+    const surface = useControlSurface();
     return (
       // The chevron is a sibling, not a background-image, so it takes its
       // colour from the same token as the text and follows the theme.
@@ -96,7 +140,7 @@ export const SelectInput = forwardRef<HTMLSelectElement, NativeSelect>(
           {...fieldControlProps(w)}
           {...rest}
           className={controlClassName(w, cn('appearance-none pr-9', className))}
-          style={{ ...controlStyle(w), ...style }}
+          style={{ ...controlStyle(w, surface), ...style }}
         >
           {children}
         </select>
@@ -151,6 +195,7 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(
 const SearchControl = forwardRef<HTMLInputElement, NativeInput>(
   function SearchControl({ className, style, ...rest }, ref) {
     const w = useFieldWiring();
+    const surface = useControlSurface();
     return (
       <span className="relative block">
         <Search
@@ -164,7 +209,7 @@ const SearchControl = forwardRef<HTMLInputElement, NativeInput>(
           {...fieldControlProps(w)}
           {...rest}
           className={controlClassName(w, cn('pl-9', className))}
-          style={{ ...controlStyle(w), ...style }}
+          style={{ ...controlStyle(w, surface), ...style }}
         />
       </span>
     );

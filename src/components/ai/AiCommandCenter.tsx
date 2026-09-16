@@ -37,6 +37,7 @@ import { api } from '@/lib/api';
 import type { AiActionPlan, AiActionResult, AiConversation } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import ActionConfirmView from './ActionConfirmView';
+import { errorMessage } from '@/lib/forms/errors';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -158,7 +159,7 @@ export default function AiCommandCenter({
       const r = await api.ai.actionPlan(action.actionId);
       setPlan(r.data);
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Could not prepare that action.');
+      setActionError(errorMessage(err, 'Could not prepare that action.'));
     } finally {
       setPlanning(null);
     }
@@ -176,7 +177,7 @@ export default function AiCommandCenter({
       setResult(r.data);
       setPlan(null);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'That action could not be run.';
+      const msg = errorMessage(err, 'That action could not be run.');
       setActionError(msg);
       // The list moved underneath them. Re-propose so they approve what is
       // true now rather than retrying against what was true a minute ago.

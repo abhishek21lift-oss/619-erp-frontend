@@ -35,6 +35,7 @@ import {
 import { api } from '@/lib/api';
 import { semantic, rgba } from '@/lib/palette';
 import type { GuardianFinding, GuardianReport, GuardianNarration } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 const POLL_MS = 20_000;
 
@@ -87,7 +88,7 @@ function FindingCard({ finding }: { finding: GuardianFinding }) {
       setNarration({
         finding_id: finding.id,
         narration: null,
-        unavailable_reason: e instanceof Error ? e.message : 'Narration failed',
+        unavailable_reason: errorMessage(e, 'Narration failed'),
       });
     } finally {
       setAsking(false);
@@ -253,7 +254,7 @@ export default function Guardian() {
       setReport(res.data);
       setError('');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to load the Guardian');
+      setError(errorMessage(e, 'Failed to load the Guardian'));
     }
   }, []);
 

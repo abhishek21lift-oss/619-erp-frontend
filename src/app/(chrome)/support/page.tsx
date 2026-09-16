@@ -18,6 +18,7 @@ import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import type { SupportTicket, TicketStatus, TicketPriority, TicketCategory } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { errorMessage } from '@/lib/forms/errors';
 
 const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)' } as const;
 
@@ -74,7 +75,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     try {
       await api.support.reply(id, text);
       setBody(''); load();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not send your reply'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not send your reply')); }
     finally { setBusy(false); }
   };
 
@@ -165,7 +166,7 @@ function NewTicket({ onClose, onCreated }: { onClose: () => void; onCreated: () 
       await api.support.create({ subject: subject.trim(), body: body.trim(), category, priority });
       toast.success('Request sent — we will get back to you.');
       onCreated(); onClose();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not send your request'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not send your request')); }
     finally { setBusy(false); }
   };
 
@@ -248,7 +249,7 @@ function SupportPage() {
     setError('');
     api.support.tickets()
       .then((r) => setTickets(r.data))
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load your requests.'));
+      .catch((e: unknown) => setError(errorMessage(e, 'Could not load your requests.')));
   }, []);
   useEffect(() => { load(); }, [load]);
 

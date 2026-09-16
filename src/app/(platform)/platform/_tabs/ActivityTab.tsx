@@ -11,6 +11,7 @@ import { api } from '@/lib/api';
 import type { Organization, ActivityEntry } from '@/lib/api';
 import { fmtWhen } from '../_shared/format';
 import { Center, ErrorState } from '../_shared/ui';
+import { errorMessage } from '@/lib/forms/errors';
 
 export function prettifyAction(action: string): string {
   const s = action.replace(/[._]/g, ' ').trim();
@@ -49,7 +50,7 @@ export function ActivityTab() {
     setLoading(true); setError('');
     api.superAdmin.listActivity({ org_id: orgFilter || undefined, limit: 80 })
       .then((r) => setRows(r.data ?? []))
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load activity'))
+      .catch((e) => setError(errorMessage(e, 'Failed to load activity')))
       .finally(() => setLoading(false));
   }, [orgFilter]);
   useEffect(() => { load(); }, [load]);

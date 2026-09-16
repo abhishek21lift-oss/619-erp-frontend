@@ -6,7 +6,14 @@ import { Package, Plus, Pencil, Trash2, X, Check, Search } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { FormField, TextInput, TextArea, SelectInput } from '@/components/ui';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import {
+  ptPackageSchema, blankPtPackage, ptPackageToFormValues, toPtPackagePayload,
+  PACKAGE_GOAL_OPTIONS,
+} from '@/lib/forms/schemas/ptPackage';
+import {
+  TextField, NumberField, SelectField, TextAreaField, FormErrorBanner,
+} from '@/components/ui/form';
 
 /* ── shared theme ─────────────────────────────── */
 const a = '#F59E0B', b = '#D97706';
@@ -24,16 +31,15 @@ interface PtPackage {
   price: number; goal_type: string | null; description: string | null; is_active: boolean;
 }
 
-const GOAL_TYPES = [
-  { value: 'fat_loss',        label: 'Fat Loss' },
-  { value: 'muscle_gain',     label: 'Muscle Gain' },
-  { value: 'strength',        label: 'Strength' },
-  { value: 'powerlifting',    label: 'Powerlifting' },
-  { value: 'endurance',       label: 'Endurance' },
-  { value: 'general_fitness', label: 'General Fitness' },
-  { value: 'recovery',        label: 'Recovery' },
-];
-const goalLabel = (g: string | null) => GOAL_TYPES.find(t => t.value === g)?.label ?? g ?? '—';
+/**
+ * The goal labels, from the schema's own option list.
+ *
+ * There were two copies of this list — one here for the card, one in the form's
+ * <select> — and a value in one that the other did not know about renders as
+ * the raw enum member. One list now.
+ */
+const goalLabel = (g: string | null) =>
+  PACKAGE_GOAL_OPTIONS.find(t => t.value === g)?.label ?? g ?? '—';
 
 /* ── Spinner ──────────────────────────────────── */
 function Spin() {
@@ -87,10 +93,8 @@ function PackagesTab() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<PtPackage | null>(null);
-  const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', session_count: '', duration_days: '', price: '', goal_type: '', description: '' });
 
   const fetchPackages = async () => {
     try {
@@ -107,13 +111,11 @@ function PackagesTab() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', session_count: '', duration_days: '', price: '', goal_type: '', description: '' });
     setShowForm(true);
   };
 
   const openEdit = (pkg: PtPackage) => {
     setEditing(pkg);
-    setForm({ name: pkg.name, session_count: String(pkg.session_count), duration_days: String(pkg.duration_days), price: String(pkg.price), goal_type: pkg.goal_type ?? '', description: pkg.description ?? '' });
     setShowForm(true);
   };
 
@@ -125,19 +127,6 @@ function PackagesTab() {
     } catch { toast.error('Failed to toggle status'); }
   };
 
-  const handleSave = async () => {
-    if (!form.name || !form.session_count || !form.duration_days || !form.price) return;
-    setSaving(true);
-    try {
-      const payload = { name: form.name, session_count: parseInt(form.session_count), duration_days: parseInt(form.duration_days), price: parseFloat(form.price), goal_type: form.goal_type || null, description: form.description || null };
-      if (editing) { await api.automation.ptPackages.update(editing.id, payload); }
-      else { await api.automation.ptPackages.create(payload); }
-      setShowForm(false); setEditing(null);
-      await fetchPackages();
-      toast.success(editing ? 'Package updated' : 'Package created');
-    } catch { toast.error('Failed to save package'); }
-    finally { setSaving(false); }
-  };
 
   const handleDelete = async (id: string) => {
     try {
@@ -211,64 +200,15 @@ function PackagesTab() {
       {/* Package Form Modal */}
       <AnimatePresence>
         {showForm && (
-          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(6px)', padding: 16 }}
-            onClick={() => setShowForm(false)}>
-            <m.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
-              style={{ width: '100%', maxWidth: 520, borderRadius: 22, background: 'var(--bg-card)', border: `1px solid rgba(0,0,0,0.07)`, padding: 28, boxShadow: '0 24px 80px rgba(0,0,0,0.12)' }}
-              onClick={e => e.stopPropagation()}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{editing ? 'Edit Package' : 'Create Package'}</h3>
-                <button onClick={() => setShowForm(false)} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'var(--bg-subtle)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-                  <X size={15} />
-                </button>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {/* Four of these captions were <label>s with no htmlFor, so
-                    they named nothing, and the trailing " *" was doing the job
-                    `required` should. The examples stay as placeholders — a
-                    price field called "e.g. 8000" is the failure; a price field
-                    called "Price" showing "e.g. 8000" is the point. */}
-                <FormField label="Package name" required>
-                  <TextInput value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                    placeholder="e.g. Fat Loss Starter" />
-                </FormField>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-                  <FormField label="Sessions" required>
-                    <TextInput type="number" min={1} inputMode="numeric" value={form.session_count}
-                      onChange={e => setForm(p => ({ ...p, session_count: e.target.value }))} placeholder="e.g. 12" />
-                  </FormField>
-                  <FormField label="Duration" description="days" required>
-                    <TextInput type="number" min={1} inputMode="numeric" value={form.duration_days}
-                      onChange={e => setForm(p => ({ ...p, duration_days: e.target.value }))} placeholder="e.g. 30" />
-                  </FormField>
-                  <FormField label="Price" description="₹" required>
-                    <TextInput type="number" min={0} inputMode="numeric" value={form.price}
-                      onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="e.g. 8000" />
-                  </FormField>
-                </div>
-                <FormField label="Goal type">
-                  <SelectInput value={form.goal_type} onChange={e => setForm(p => ({ ...p, goal_type: e.target.value }))}>
-                    <option value="">— Select goal type —</option>
-                    {GOAL_TYPES.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
-                  </SelectInput>
-                </FormField>
-                <FormField label="Description" description="Shown to members on the package card.">
-                  <TextArea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                    rows={3} />
-                </FormField>
-              </div>
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 24 }}>
-                <button onClick={() => setShowForm(false)} style={{ padding: '10px 18px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-                <m.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSave}
-                  disabled={saving || !form.name || !form.session_count || !form.duration_days || !form.price}
-                  style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: grad, color: '#fff', fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, opacity: saving ? 0.6 : 1, boxShadow: `0 4px 16px ${a}44` }}>
-                  {saving ? <Spin /> : <Check size={15} />}
-                  {editing ? 'Update' : 'Create'}
-                </m.button>
-              </div>
-            </m.div>
-          </m.div>
+          <PackageFormModal
+            editing={editing}
+            onClose={() => { setShowForm(false); setEditing(null); }}
+            onSaved={async () => {
+              setShowForm(false);
+              setEditing(null);
+              await fetchPackages();
+            }}
+          />
         )}
       </AnimatePresence>
 
@@ -314,5 +254,127 @@ function PageContent() {
         </m.div>
       </div>
     </div>
+  );
+}
+
+/* ── Package form ─────────────────────────────── */
+
+/**
+ * Create or edit a PT package.
+ *
+ * Its price is what every enrolment against it charges, and `parseFloat` parses
+ * a PREFIX — so "8,000", which is how a studio owner writes a price, created an
+ * ₹8 package. See `schemas/ptPackage.ts` for the rest.
+ *
+ * Mounted only while open and keyed on the package being edited, so the values
+ * are rebuilt from the record rather than patched onto whatever the last one
+ * left behind (§11) — which is what the two `setForm({...})` calls in
+ * openCreate/openEdit were doing by hand, in two places that had to agree.
+ */
+function PackageFormModal({ editing, onClose, onSaved }: {
+  editing: PtPackage | null;
+  onClose: () => void;
+  onSaved: () => Promise<void>;
+}) {
+  const { toast } = useToast();
+  const f = useAppForm({
+    schema: ptPackageSchema,
+    defaultValues: editing ? ptPackageToFormValues(editing) : blankPtPackage(),
+    onSubmit: async (values) => {
+      const payload = toPtPackagePayload(values);
+      if (editing) await api.automation.ptPackages.update(editing.id, payload);
+      else await api.automation.ptPackages.create(payload);
+      toast.success(editing ? 'Package updated' : 'Package created');
+    },
+    onSuccess: () => { void onSaved(); },
+  });
+
+  const { form, isSubmitting } = f;
+
+  return (
+    <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(6px)', padding: 16 }}
+      onClick={() => !isSubmitting && onClose()}>
+      <m.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
+        style={{ width: '100%', maxWidth: 520, borderRadius: 22, background: 'var(--bg-card)', border: '1px solid rgba(0,0,0,0.07)', padding: 28, boxShadow: '0 24px 80px rgba(0,0,0,0.12)' }}
+        onClick={e => e.stopPropagation()}>
+        <form noValidate onSubmit={(e) => { e.preventDefault(); void f.submit(); }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{editing ? 'Edit Package' : 'Create Package'}</h3>
+            <button type="button" onClick={onClose} aria-label="Close"
+              style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'var(--bg-subtle)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+              <X size={15} />
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} />
+
+            {/* The examples stay as placeholders — a price field called
+                "e.g. 8000" is the failure; a price field called "Price"
+                showing "e.g. 8000" is the point. */}
+            <form.Field name="name">
+              {(field) => (
+                <TextField field={field} label="Package name" required maxLength={120}
+                  placeholder="e.g. Fat Loss Starter"
+                  serverError={f.errors.fieldErrors.name} />
+              )}
+            </form.Field>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <form.Field name="session_count">
+                {(field) => (
+                  <NumberField field={field} label="Sessions" required mode="integer"
+                    placeholder="e.g. 12" serverError={f.errors.fieldErrors.session_count} />
+                )}
+              </form.Field>
+              <form.Field name="duration_days">
+                {(field) => (
+                  <NumberField field={field} label="Duration" required mode="integer" suffix="d"
+                    placeholder="e.g. 30" serverError={f.errors.fieldErrors.duration_days} />
+                )}
+              </form.Field>
+              <form.Field name="price">
+                {(field) => (
+                  <NumberField field={field} label="Price" required mode="money" suffix="₹"
+                    placeholder="e.g. 8000" serverError={f.errors.fieldErrors.price} />
+                )}
+              </form.Field>
+            </div>
+
+            <form.Field name="goal_type">
+              {(field) => (
+                <SelectField field={field} label="Goal type" options={PACKAGE_GOAL_OPTIONS}
+                  serverError={f.errors.fieldErrors.goal_type} />
+              )}
+            </form.Field>
+
+            <form.Field name="description">
+              {(field) => (
+                <TextAreaField field={field} label="Description"
+                  description="Shown to members on the package card."
+                  rows={3} maxLength={1000} showCount
+                  serverError={f.errors.fieldErrors.description} />
+              )}
+            </form.Field>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 24 }}>
+            <button type="button" onClick={onClose} disabled={isSubmitting}
+              style={{ padding: '10px 18px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+            {/* No longer gated on four boxes being non-empty. The old button
+                was disabled until something was typed and then accepted
+                whatever it was — so a blank price could not be submitted but
+                "8,000" could, as ₹8. */}
+            <m.button type="submit" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+              disabled={isSubmitting}
+              style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: grad, color: '#fff', fontSize: 13, fontWeight: 700, cursor: isSubmitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, opacity: isSubmitting ? 0.6 : 1, boxShadow: `0 4px 16px ${a}44` }}>
+              {isSubmitting ? <Spin /> : <Check size={15} />}
+              {editing ? 'Update' : 'Create'}
+            </m.button>
+          </div>
+        </form>
+      </m.div>
+    </m.div>
   );
 }

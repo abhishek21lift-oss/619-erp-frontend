@@ -35,11 +35,23 @@ import { useAuth } from '@/lib/auth-context';
 import { rememberKeys, portalForRole, postSignInPath, type Portal } from '@/lib/portals';
 import { roleLabel } from '@/lib/roles';
 import { isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
+import { errorMessage, mapSignInError } from '@/lib/forms/errors';
+import { signInSchema } from '@/lib/forms/schemas/auth';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 const SUPPORT_EMAIL = 'help@myptstudio.app';
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/**
+ * The sign-in identifier's rule, from the schema layer.
+ *
+ * This was the fifth inline copy of `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` in the
+ * tree. `signInSchema` mirrors what `lib/validation.js` enforces on the login
+ * body, so the box and the endpoint now agree by construction rather than by
+ * two regexes happening to match.
+ */
+function isValidSignInEmail(value: string): boolean {
+  return signInSchema.shape.email.safeParse(value).success;
+}
 
 // ══════════════════════════════════════════════════════════════════════════
 //  MAIN
@@ -180,6 +192,14 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
   const [passkeyReady, setPasskeyReady] = useState(false);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
 
+  /**
+   * Whether a sign-in attempt is already running.
+   *
+   * A ref rather than the `busy` state because it is read synchronously at the
+   * top of `submit`: a state update is not visible to a second submit in the
+   * same tick, which is exactly the case this exists to stop.
+   */
+  const inFlight = useRef(false);
   const pwRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
 
@@ -250,7 +270,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
     router.replace(postSignInPath(user.role));
   }, [user, loading, foreignSession, router]);
 
-  const emailValid = EMAIL_RE.test(email.trim());
+  const emailValid = isValidSignInEmail(email);
   const emailError = touched.email && !email.trim() ? 'Email is required.' : touched.email && !emailValid ? 'Enter a valid email address.' : '';
   const passwordError = touched.password && !password ? 'Password is required.' : '';
 
@@ -273,6 +293,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
     setShakeKey((k) => k + 1);
     setBusy(false);
     setPasskeyBusy(false);
+    inFlight.current = false;
   }
 
   async function submit(e: FormEvent) {
@@ -297,11 +318,21 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
         return fail('Enter the 6-digit code from your authenticator app, or a recovery code.');
       }
     }
-    if (busy) return;
+    // A ref, not the `busy` state. Two submits dispatched in the same frame —
+    // a double-tap, a held Enter, a screen reader firing the default action
+    // twice — read the SAME render closure, so both see `busy === false` and
+    // both post. Sign-in is rate-limited server-side and a second attempt is
+    // counted against that limit, so the duplicate is not free.
+    if (inFlight.current) return;
+    inFlight.current = true;
     setBusy(true);
     try {
       await login(email.trim(), password, mfaRequired ? mfaCode.trim() : undefined, portal);
       persistRemember({ email: email.trim(), organization_name: lastOrg });
+      // Deliberately NOT releasing the in-flight ref here: the redirect is
+      // already on its way, and re-opening the door for a second login between
+      // the flash and the navigation would post again against a session that
+      // now exists.
       setOk(true); // brief success flash before redirect fires
     } catch (err: unknown) {
       // The server challenges 2FA-enabled accounts with { mfaRequired: true }.
@@ -320,10 +351,10 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
       if ((err as { status?: number })?.status === 403
           && (err as { code?: string })?.code === 'WRONG_PORTAL') {
         setWrongPortal(true);
-        fail(err instanceof Error ? err.message : 'Wrong sign-in page for this account.');
+        fail(errorMessage(err, 'Wrong sign-in page for this account.'));
         return;
       }
-      fail(err instanceof Error ? err.message : 'Login failed. Please check your credentials.');
+      fail(mapSignInError(err, 'Login failed. Please check your credentials.'));
     }
   }
 
@@ -347,7 +378,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
       await loginWithGoogle(res.credential);
       setOk(true);
     } catch (err: unknown) {
-      fail(err instanceof Error ? err.message : 'Google sign-in failed. Try again.');
+      fail(mapSignInError(err, 'Google sign-in failed. Try again.'));
     }
   }
 
@@ -701,11 +732,18 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
                         value={mfaCode}
                         onChange={(e) => setMfaCode(e.target.value.replace(/[^0-9A-Za-z\s-]/g, '').slice(0, 14))}
                         placeholder="123456"
+                        // The sentence below says what is acceptable here, and
+                        // it was on screen and silent: no aria-describedby, so
+                        // a screen-reader user met a box labelled only
+                        // "Authentication code" with no hint that a recovery
+                        // code is allowed — on the screen they reach precisely
+                        // because they have lost the authenticator.
+                        aria-describedby="mfa-hint"
                         autoFocus
                         className="w-full rounded-xl text-center text-[20px] font-[700] tracking-[0.4em] outline-none transition-all placeholder:text-[#475569]"
                         style={{ height: 52, color: C.ink, background: C.canvas, border: `1px solid ${C.blue}`, boxShadow: `${SHADOW.inset}, 0 0 0 3px ${C.blue}33` }}
                       />
-                      <p className="mt-1.5 text-[12px]" style={{ color: C.muted }}>
+                      <p id="mfa-hint" className="mt-1.5 text-[12px]" style={{ color: C.muted }}>
                         Enter the 6-digit code from your authenticator app, or one of your recovery codes.
                       </p>
                     </m.div>

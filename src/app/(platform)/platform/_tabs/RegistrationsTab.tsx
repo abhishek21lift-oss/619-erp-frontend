@@ -14,6 +14,7 @@ import {
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import type { StudioRegistration } from '@/lib/api/endpoints/platform';
+import { errorMessage } from '@/lib/forms/errors';
 
 type Filter = 'pending' | 'approved' | 'rejected' | 'all';
 
@@ -51,7 +52,7 @@ export default function RegistrationsTab() {
       setRows(res.data ?? []);
       setCounts(res.counts ?? {});
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not load registrations.');
+      toast.error(errorMessage(err, 'Could not load registrations.'));
       setRows([]);
     } finally {
       setLoading(false);
@@ -68,7 +69,7 @@ export default function RegistrationsTab() {
       toast.success(`${r.business_name} is live. ${r.full_name} can sign in now.`);
       await load(filter);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not approve this application.');
+      toast.error(errorMessage(err, 'Could not approve this application.'));
     } finally { setBusyId(null); }
   }, [filter, load, toast]);
 
@@ -83,7 +84,7 @@ export default function RegistrationsTab() {
       toast.success('Application rejected.');
       await load(filter);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not reject this application.');
+      toast.error(errorMessage(err, 'Could not reject this application.'));
     } finally { setBusyId(null); }
   }, [filter, load, toast]);
 

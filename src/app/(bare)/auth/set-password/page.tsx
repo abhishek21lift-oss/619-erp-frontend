@@ -11,7 +11,7 @@
 // tells the reader what to do next, because they cannot fix it themselves and
 // the alternative is emailing support to say "the link doesn't work".
 
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import Link from 'next/link';
@@ -20,7 +20,13 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { InvitationPreview } from '@/lib/api';
-import { invitationPasswordRules, checkInvitationPassword } from '@/lib/password-policy';
+import { invitationPasswordRules } from '@/lib/password-policy';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import {
+  newPasswordSchema, blankNewPassword, NEW_PASSWORD_FIELD_HINTS,
+} from '@/lib/forms/schemas/auth';
+import { TextField, FormErrorBanner } from '@/components/ui/form';
+import { errorMessage } from '@/lib/forms/errors';
 
 /** Brand for this flow: black / white / maroon, matching the invitation email. */
 const MAROON = '#7F1D1D';
@@ -161,43 +167,49 @@ function SetPasswordForm() {
   const [loading, setLoading] = useState(true);
   const [dead, setDead] = useState<string | null>(null);
 
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
   const [show, setShow] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
   const [done, setDone] = useState<string | null>(null);
+
+  // `strict: true` — this posts to /api/invitations/accept, and
+  // routes/invitations.js enforces all five rules. The reset screen next door
+  // uses the three-rule policy because auth.js checks length only. Choosing by
+  // endpoint is the only thing that keeps either rule honest; see
+  // password-policy.ts on why a UI-only rule is worse than none.
+  const f = useAppForm({
+    schema: newPasswordSchema(true),
+    defaultValues: blankNewPassword(),
+    fieldHints: NEW_PASSWORD_FIELD_HINTS,
+    onSubmit: async (values) => {
+      try {
+        const r = await api.invitations.accept(token, values.password);
+        setDone(r.data.email);
+      } catch (err) {
+        // A 410 means the link died between loading this page and submitting —
+        // someone else used it, or it expired while the form sat open. That is
+        // a different situation from a bad password and needs the dead-link
+        // screen, not an inline error the user will try to fix by retyping.
+        //
+        // Rethrown either way, so the form's own state machine still records
+        // the attempt as failed. The dead-link screen replaces the form, so
+        // its banner is never seen in the 410 case.
+        if ((err as { status?: number })?.status === 410) {
+          setDead(errorMessage(err, 'This invitation link is no longer valid.'));
+        }
+        throw err;
+      }
+    },
+  });
+
+  const { form } = f;
 
   useEffect(() => {
     if (!token) { setDead('The link is missing its invitation code. Use the button in your invitation email.'); setLoading(false); return; }
     api.invitations.preview(token)
       .then((r) => setPreview(r.data))
-      .catch((e: unknown) => setDead(e instanceof Error ? e.message : 'This invitation link is not valid.'))
+      .catch((e: unknown) => setDead(errorMessage(e, 'This invitation link is not valid.')))
       .finally(() => setLoading(false));
   }, [token]);
 
-  const rules = invitationPasswordRules(password);
-  const allOk = rules.every((r) => r.ok) && password === confirm && confirm.length > 0;
-
-  const submit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    const problem = checkInvitationPassword(password, confirm);
-    if (problem) { setError(problem); return; }
-    setBusy(true); setError('');
-    try {
-      const r = await api.invitations.accept(token, password);
-      setDone(r.data.email);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Could not set your password.';
-      // A 410 means the link died between loading this page and submitting —
-      // someone else used it, or it expired while the form sat open. That is a
-      // different situation from a bad password and needs the dead-link screen,
-      // not an inline error the user will try to fix by retyping.
-      const status = (err as { status?: number })?.status;
-      if (status === 410) { setDead(msg); return; }
-      setError(msg);
-    } finally { setBusy(false); }
-  }, [token, password, confirm]);
 
   if (loading) {
     return (
@@ -212,12 +224,6 @@ function SetPasswordForm() {
   if (dead) return <DeadLink message={dead} />;
   if (done) return <Activated email={done} />;
   if (!preview) return null;
-
-  const inputStyle = {
-    background: 'var(--bg-subtle)',
-    border: '1px solid var(--border)',
-    color: 'var(--text-primary)',
-  } as const;
 
   return (
     <Shell>
@@ -249,88 +255,99 @@ function SetPasswordForm() {
         </p>
       </div>
 
-      <form onSubmit={submit} className="flex flex-col gap-3.5">
-        <div>
-          <label htmlFor="pw" className="mb-1.5 block text-[11.5px] font-[700]" style={{ color: 'var(--text-muted)' }}>
-            New password
-          </label>
-          <div className="relative">
-            <input
-              id="pw"
+      <form
+        noValidate
+        onSubmit={(e) => { e.preventDefault(); void f.submit(); }}
+        className="flex flex-col gap-3.5"
+      >
+        <form.Field name="password">
+          {(field) => (
+            <TextField
+              field={field}
+              label="New password"
+              required
               type={show ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
-              autoFocus
-              className="h-12 w-full rounded-[11px] pl-3.5 pr-11 text-[15px] outline-none"
-              style={inputStyle}
+              serverError={f.errors.fieldErrors.password}
+              trailing={
+                <button
+                  type="button"
+                  onClick={() => setShow((v) => !v)}
+                  aria-label={show ? 'Hide password' : 'Show password'}
+                  className="flex h-10 w-10 items-center justify-center rounded-[9px]"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  {show ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              }
             />
-            <button
-              type="button"
-              onClick={() => setShow((v) => !v)}
-              aria-label={show ? 'Hide password' : 'Show password'}
-              className="absolute right-1 top-1 flex h-10 w-10 items-center justify-center rounded-[9px]"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              {show ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-          </div>
-        </div>
+          )}
+        </form.Field>
 
-        <div>
-          <label htmlFor="pw2" className="mb-1.5 block text-[11.5px] font-[700]" style={{ color: 'var(--text-muted)' }}>
-            Confirm password
-          </label>
-          <input
-            id="pw2"
-            type={show ? 'text' : 'password'}
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            autoComplete="new-password"
-            className="h-12 w-full rounded-[11px] px-3.5 text-[15px] outline-none"
-            style={inputStyle}
-          />
-        </div>
+        <form.Field name="confirm">
+          {(field) => (
+            <TextField
+              field={field}
+              label="Confirm password"
+              required
+              type={show ? 'text' : 'password'}
+              autoComplete="new-password"
+              serverError={f.errors.fieldErrors.confirm}
+            />
+          )}
+        </form.Field>
 
         {/* A live checklist rather than a strength bar alone. "Strength: fair"
             does not tell anyone what to type next; a rule that flips to a tick
             does. Every item here is enforced by the server too. */}
-        <ul className="flex flex-col gap-1.5 rounded-[11px] p-3" style={{ background: 'var(--bg-subtle)' }}>
-          {rules.map((r) => (
-            <li key={r.label} className="flex items-center gap-2 text-[12px]"
-              style={{ color: r.ok ? 'var(--success-text)' : 'var(--text-muted)' }}>
-              {r.ok ? <Check size={13} /> : <X size={13} style={{ opacity: 0.45 }} />}
-              {r.label}
-            </li>
-          ))}
-          {confirm.length > 0 && (
-            <li className="flex items-center gap-2 text-[12px]"
-              style={{ color: password === confirm ? 'var(--success-text)' : 'var(--text-muted)' }}>
-              {password === confirm ? <Check size={13} /> : <X size={13} style={{ opacity: 0.45 }} />}
-              Both passwords match
-            </li>
+        <form.Subscribe selector={(st) => [st.values.password, st.values.confirm] as const}>
+          {([password, confirm]) => (
+            <ul className="flex flex-col gap-1.5 rounded-[11px] p-3" style={{ background: 'var(--bg-subtle)' }}>
+              {invitationPasswordRules(password).map((r) => (
+                <li key={r.label} className="flex items-center gap-2 text-[12px]"
+                  style={{ color: r.ok ? 'var(--success-text)' : 'var(--text-muted)' }}>
+                  {r.ok ? <Check size={13} /> : <X size={13} style={{ opacity: 0.45 }} />}
+                  {r.label}
+                </li>
+              ))}
+              {confirm.length > 0 && (
+                <li className="flex items-center gap-2 text-[12px]"
+                  style={{ color: password === confirm ? 'var(--success-text)' : 'var(--text-muted)' }}>
+                  {password === confirm ? <Check size={13} /> : <X size={13} style={{ opacity: 0.45 }} />}
+                  Both passwords match
+                </li>
+              )}
+            </ul>
           )}
-        </ul>
+        </form.Subscribe>
 
-        {error && (
-          <p
-            role="alert"
-            className="rounded-[10px] px-3 py-2.5 text-[12.5px]"
-            style={{ background: 'var(--danger-bg)', color: 'var(--danger-text)', border: '1px solid var(--danger-border)' }}
-          >
-            {error}
-          </p>
-        )}
+        <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} />
 
-        <button
-          type="submit"
-          disabled={!allOk || busy}
-          className="flex h-12 items-center justify-center gap-2 rounded-[11px] text-[14px] font-[700] transition-opacity disabled:opacity-40"
-          style={{ background: MAROON, backgroundImage: `linear-gradient(135deg, ${MAROON} 0%, ${MAROON_DARK} 100%)`, color: '#fff' }}
-        >
-          {busy ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
-          {busy ? 'Activating…' : 'Activate my studio'}
-        </button>
+        {/* The button stays gated on the rules here, unlike elsewhere in this
+            migration. A dead button is normally the wrong answer because it
+            cannot say WHY — but this form's checklist above says exactly why,
+            item by item, and updates as you type. The real double-submit guard
+            is useAppForm's in-flight ref either way; `disabled` on its own is
+            applied after the current event and two taps in one frame both pass
+            it. */}
+        <form.Subscribe selector={(st) => [st.values.password, st.values.confirm] as const}>
+          {([password, confirm]) => {
+            const allOk =
+              invitationPasswordRules(password).every((r) => r.ok) &&
+              password === confirm && confirm.length > 0;
+            return (
+              <button
+                type="submit"
+                disabled={!allOk || f.isSubmitting}
+                className="flex h-12 items-center justify-center gap-2 rounded-[11px] text-[14px] font-[700] transition-opacity disabled:opacity-40"
+                style={{ background: MAROON, backgroundImage: `linear-gradient(135deg, ${MAROON} 0%, ${MAROON_DARK} 100%)`, color: '#fff' }}
+              >
+                {f.isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
+                {f.isSubmitting ? 'Activating…' : 'Activate my studio'}
+              </button>
+            );
+          }}
+        </form.Subscribe>
 
         <p className="text-center text-[11.5px]" style={{ color: 'var(--text-disabled)' }}>
           This link can be used once and expires{' '}

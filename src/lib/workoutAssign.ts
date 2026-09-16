@@ -17,6 +17,7 @@ import { api } from '@/lib/api';
 import type { WorkoutPlan } from '@/lib/api';
 import { ApiError } from '@/lib/http';
 import type { useToast } from '@/lib/toast';
+import { errorMessage } from '@/lib/forms/errors';
 
 type Toast = ReturnType<typeof useToast>['toast'];
 
@@ -46,7 +47,7 @@ export async function assignWorkoutPlan(
         action: { label: 'Review PAR-Q', onClick: () => goToParq(client.id) },
       });
     } else {
-      toast.error(err instanceof Error ? err.message : 'Failed to assign workout plan.');
+      toast.error(errorMessage(err, 'Failed to assign workout plan.'));
     }
     return false;
   }

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import type { ExerciseMeta, LibraryExercise } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 /**
  * The Exercise Library's data layer.
@@ -124,7 +125,7 @@ export function useExerciseLibrary() {
       setTotal(res.total || 0);
     } catch (err) {
       if (id !== reqId.current) return;
-      setError(err instanceof Error ? err.message : 'Could not load exercises');
+      setError(errorMessage(err, 'Could not load exercises'));
       setItems([]);
       setTotal(0);
     } finally {

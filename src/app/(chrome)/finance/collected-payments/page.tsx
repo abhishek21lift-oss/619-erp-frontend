@@ -14,6 +14,7 @@ import {
   Smartphone, CreditCard, Receipt, CalendarDays, Inbox,
   Layers, IndianRupee, List, TrendingUp,
 } from 'lucide-react';
+import { errorMessage } from '@/lib/forms/errors';
 
 const fmtINR = (n: number) => '₹' + n.toLocaleString('en-IN');
 
@@ -89,7 +90,7 @@ function Inner() {
     } catch (err) {
       setPayments([]);
       setStats(null);
-      setLoadError(err instanceof Error ? err.message : 'Could not load collected payments');
+      setLoadError(errorMessage(err, 'Could not load collected payments'));
     } finally {
       setLoading(false);
     }

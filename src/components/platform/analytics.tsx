@@ -29,6 +29,7 @@ import type {
 } from '@/lib/api';
 import { Panel, SectionLabel, StatTile, Reveal } from './console';
 import { EmptyState } from '@/components/ui';
+import { errorMessage } from '@/lib/forms/errors';
 
 /* ── Formatting ──────────────────────────────────────────────────────────── */
 
@@ -287,7 +288,7 @@ export default function AnalyticsPanel() {
     setError(null);
     api.superAdmin.analytics(m)
       .then((r) => setData(r.data))
-      .catch((e) => setError(e instanceof Error ? e.message : 'Could not load analytics'))
+      .catch((e) => setError(errorMessage(e, 'Could not load analytics')))
       .finally(() => setLoading(false));
   }, []);
 

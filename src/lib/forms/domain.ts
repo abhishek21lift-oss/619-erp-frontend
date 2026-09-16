@@ -39,8 +39,10 @@ import {
   moneyField,
   percentField,
   dateField,
+  textField,
   type FieldOptions,
   type NumericFieldOptions,
+  type TextFieldOptions,
 } from './primitives';
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -177,6 +179,31 @@ export const gstRateField = (opts: Partial<FieldOptions> = {}) => {
   });
 };
 
+/**
+ * A UPI transaction reference (UTR).
+ *
+ * 12 to 16 digits. NPCI issues 12; several PSP apps surface a longer internal
+ * reference, so the window is deliberately wider than the spec's minimum rather
+ * than rejecting references a member can genuinely see on their screen. The
+ * same window is written out in `routes/upi-payments.js` and in a CHECK
+ * constraint, and this is the third place it is stated — kept here rather than
+ * inline at each call site so the three cannot drift apart silently.
+ *
+ * A STRING, never a number: a UTR can begin with a zero, and parsing one as a
+ * number loses it.
+ */
+export const utrField = (opts: Partial<TextFieldOptions> = {}) =>
+  textField({
+    label: 'UPI reference',
+    minLength: 12,
+    maxLength: 16,
+    pattern: {
+      test: /^[0-9]{12,16}$/,
+      message: `${opts.label ?? 'UPI reference'} must be 12 to 16 digits.`,
+    },
+    ...opts,
+  } as TextFieldOptions);
+
 /** A trainer commission percentage. 0–100. */
 export const commissionPctField = (opts: Partial<FieldOptions> = {}) =>
   percentField({ label: 'Commission', min: 0, max: 100, ...opts } as NumericFieldOptions);
@@ -256,26 +283,26 @@ export function refineDateOrder<T extends Record<string, unknown>>(
  * ────────────────────────────────────────────────────────────────────────── */
 
 /**
- * The placeholders a studio may use in an automated message.
+ * ── Why there is no TEMPLATE_VARIABLES constant here ────────────────────────
  *
- * Kept here rather than beside the template editor because the same list has to
- * bound the editor, the preview and the validator, and three copies of it drift
- * in exactly the way that ships `{{client_name}}` to a member as literal text.
+ * There was one, and it was fiction. It listed `client_name`, `studio_name`,
+ * `trainer_name`, `plan_name`, `due_amount`, `session_date`, `session_time`
+ * and `invoice_number` — a plausible set that NOTHING in this product
+ * substitutes. The only renderer is `automation.engine.js`, whose `render()`
+ * fills from the trigger's own context and leaves anything it does not
+ * recognise standing, braces and all, in the message a member receives.
+ *
+ * Nothing but its own tests ever imported the list, which is the only reason
+ * it never did damage. Wired into the automation editor as it stood it would
+ * have rejected `{{name}}` — the one placeholder every trigger provides — and
+ * waved through `{{client_name}}`, which reaches a real person's WhatsApp as
+ * six literal characters and two braces.
+ *
+ * The real vocabulary is PER TRIGGER EVENT: `{{amount}}` exists on a payment
+ * and not on a birthday. A single flat list is wrong in both directions, so
+ * the map lives in `schemas/automationRule.ts` beside the events it belongs
+ * to, mirroring `automation.triggers.js`, and is passed in here.
  */
-export const TEMPLATE_VARIABLES = [
-  'client_name',
-  'first_name',
-  'studio_name',
-  'trainer_name',
-  'plan_name',
-  'expiry_date',
-  'due_amount',
-  'session_date',
-  'session_time',
-  'invoice_number',
-] as const;
-
-export type TemplateVariable = (typeof TEMPLATE_VARIABLES)[number];
 
 export interface TemplateProblem {
   kind: 'unclosed' | 'unknown' | 'empty' | 'malformed';
@@ -293,8 +320,15 @@ export interface TemplateProblem {
  *
  * The unclosed-brace check runs on the text with well-formed placeholders
  * removed, so a valid `{{name}}` cannot be mistaken for a stray `{{`.
+ *
+ * `allowed` is the vocabulary to check names against, and it is a parameter
+ * rather than a constant because the vocabulary depends on the trigger — see
+ * the note at the top of this section.
  */
-export function inspectTemplate(raw: string): TemplateProblem[] {
+export function inspectTemplate(
+  raw: string,
+  allowed: readonly string[],
+): TemplateProblem[] {
   const problems: TemplateProblem[] = [];
   const seen = new Set<string>();
 
@@ -317,13 +351,15 @@ export function inspectTemplate(raw: string): TemplateProblem[] {
       continue;
     }
 
-    if (!(TEMPLATE_VARIABLES as readonly string[]).includes(name)) {
+    if (!allowed.includes(name)) {
       if (!seen.has(token)) {
         seen.add(token);
         problems.push({
           kind: 'unknown',
           token,
-          message: `Unknown variable “${name}”. Available: ${TEMPLATE_VARIABLES.join(', ')}.`,
+          message: allowed.length
+            ? `Unknown variable “${name}”. Available here: ${allowed.join(', ')}.`
+            : `Unknown variable “${name}”. This trigger provides no variables.`,
         });
       }
     }
@@ -353,7 +389,7 @@ export function inspectTemplate(raw: string): TemplateProblem[] {
   // silently sending "{client_name}" to a member is the failure §8 names.
   for (const stray of residue.match(/\{[^{}]+\}/g) ?? []) {
     const inner = stray.slice(1, -1).trim();
-    if ((TEMPLATE_VARIABLES as readonly string[]).includes(inner)) {
+    if (allowed.includes(inner)) {
       problems.push({
         kind: 'malformed',
         token: stray,
@@ -377,9 +413,27 @@ export const TEMPLATE_MAX_LENGTH = 4096;
  * near the limit can still render long. Stated plainly rather than papered over
  * with a tighter arbitrary bound.
  */
-export const templateBodyField = (opts: Partial<FieldOptions> = {}) => {
+export const templateBodyField = (
+  opts: Partial<FieldOptions> & {
+    /**
+     * The placeholders that will resolve for this template.
+     *
+     * OMIT it when the vocabulary depends on another field in the same form —
+     * an automation rule's variables come from its selected trigger, which is
+     * not known until the object is parsed. The field then checks only that
+     * the body is present and within the WhatsApp ceiling, and the caller
+     * owns the placeholder check in a `superRefine`.
+     *
+     * Passing `[]` is NOT the same thing: an empty vocabulary means "this
+     * template may use no placeholders at all", and every `{{…}}` in it is
+     * reported.
+     */
+    variables?: readonly string[];
+  } = {},
+) => {
   const label = opts.label ?? 'Message';
   const required = opts.required ?? true;
+  const variables = opts.variables;
 
   return z.unknown().transform((raw, ctx): string | null => {
     const s = typeof raw === 'string' ? raw.trim() : raw == null ? '' : String(raw).trim();
@@ -400,12 +454,14 @@ export const templateBodyField = (opts: Partial<FieldOptions> = {}) => {
       return z.NEVER;
     }
 
-    const problems = inspectTemplate(s);
-    if (problems.length > 0) {
-      for (const p of problems) {
-        ctx.addIssue({ code: 'custom', message: p.message });
+    if (variables !== undefined) {
+      const problems = inspectTemplate(s, variables);
+      if (problems.length > 0) {
+        for (const p of problems) {
+          ctx.addIssue({ code: 'custom', message: p.message });
+        }
+        return z.NEVER;
       }
-      return z.NEVER;
     }
 
     return s;

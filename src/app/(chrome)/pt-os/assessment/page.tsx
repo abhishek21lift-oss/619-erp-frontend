@@ -35,6 +35,7 @@ import StepFlexibility from '@/components/pt-os/fitness-testing/StepFlexibility'
 import FitnessDashboard, { type FitnessScores } from '@/components/pt-os/fitness-testing/FitnessDashboard';
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
 import AiRecommendationsPanel from '@/components/pt-os/fitness-testing/AiRecommendationsPanel';
+import { errorMessage } from '@/lib/forms/errors';
 
 interface TrainerOption { id: string; name: string; }
 
@@ -190,7 +191,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       initFormRef.current = loaded;
       if (draft) toast.info('Restored your unsaved draft.');
     } catch (err: unknown) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load client.');
+      setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {
       setLoading(false);
     }
@@ -390,7 +391,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       if (created) setLastSaved(created);
       setReviewMode(false);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save assessment.');
+      toast.error(errorMessage(err, 'Failed to save assessment.'));
     } finally {
       setSaving(false);
     }

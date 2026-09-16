@@ -1,19 +1,18 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   User, Phone, Mail, MapPin, Award, DollarSign,
-  Clock, Users, Target, FileText, Shield,
-  ChevronRight, ChevronLeft, Check, Upload, Plus, X,
-  Dumbbell, Star, Zap, Calendar, Camera, AlertCircle,
+  Clock, Users, Target, Shield,
+  ChevronRight, ChevronLeft, Check,
+  Dumbbell, Star, Zap, Calendar, AlertCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageTitle } from '@/components/ui';
-import { activatable } from '@/lib/a11y';
 
 // ── Types ────────────────────────────────────────────────────────────
 type Step = {
@@ -164,55 +163,6 @@ function ToggleSwitch({ label, sublabel, checked, onChange, accentColor = '#0067
   );
 }
 
-// ── DragDropUpload ───────────────────────────────────────────────────
-function DragDropUpload({ label, accept, accentColor = '#0067e0', accentGradient }: {
-  label: string; accept: string; accentColor?: string; accentGradient?: string;
-}) {
-  const [dragging, setDragging] = useState(false);
-  const [files, setFiles]       = useState<string[]>([]);
-  const ref = useRef<HTMLInputElement>(null);
-  return (
-    <div>
-      <p className="mb-2.5 text-[10.5px] font-[700] uppercase tracking-[0.10em]" style={{ color: 'rgb(148,163,184)' }}>{label}</p>
-      <div
-        {...activatable(() => ref.current?.click(), { label: `Upload ${label}` })}
-        onDragOver={e => { e.preventDefault(); setDragging(true); }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={e => { e.preventDefault(); setDragging(false); setFiles(p => [...p, ...Array.from(e.dataTransfer.files).map(f => f.name)]); }}
-        className="flex cursor-pointer flex-col items-center gap-3 rounded-[20px] px-6 py-8 text-center transition-all duration-200"
-        style={{
-          border: `2px dashed ${dragging ? accentColor : 'rgba(15,23,42,0.11)'}`,
-          background: dragging ? accentColor + '08' : 'rgba(248,250,252,0.7)',
-        }}>
-        <div className="flex h-12 w-12 items-center justify-center rounded-[14px]"
-          style={{ background: accentGradient || accentColor, boxShadow: `0 6px 18px ${accentColor}45` }}>
-          <Upload size={20} className="text-white" />
-        </div>
-        <div>
-          <p className="text-[13px] font-[600]" style={{ color: 'rgb(71,85,105)' }}>
-            Drop files here or <span style={{ color: accentColor }}>browse</span>
-          </p>
-          <p className="mt-0.5 text-[11px]" style={{ color: 'rgb(148,163,184)' }}>{accept}</p>
-        </div>
-        <input aria-label={`Upload ${label}`} ref={ref} type="file" accept={accept} multiple className="hidden"
-          onChange={e => setFiles(p => [...p, ...Array.from(e.target.files || []).map(f => f.name)])} />
-      </div>
-      {files.length > 0 && (
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {files.map((f, i) => (
-            <span key={i} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-[600]"
-              style={{ background: accentColor + '12', color: accentColor, border: `1px solid ${accentColor}28` }}>
-              <FileText size={10} />{f}
-              <button onClick={() => setFiles(p => p.filter((_, j) => j !== i))} className="ml-0.5 opacity-60 hover:opacity-100">
-                <X size={9} />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── SectionLabel ─────────────────────────────────────────────────────
 function SectionLabel({ children, color }: { children: React.ReactNode; color: string }) {
@@ -232,8 +182,6 @@ export default function AddCoachPage() {
   const [specs, setSpecs]         = useState<string[]>([]);
   const [certs, setCerts]         = useState<string[]>([]);
   const [workDays, setWorkDays]   = useState<string[]>(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const photoRef = useRef<HTMLInputElement>(null);
 
   // Step 1
   const [firstName, setFirstName]           = useState('');
@@ -371,27 +319,6 @@ export default function AddCoachPage() {
   const stepContent: Record<number, React.ReactNode> = {
     1: (
       <div className="space-y-4">
-        <div className="flex justify-center pb-2">
-          <button type="button" onClick={() => photoRef.current?.click()}
-            className="group relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-[28px] transition-all duration-300"
-            style={{ background: photoPreview ? 'transparent' : ag, boxShadow: `0 10px 36px ${ac}45` }}>
-            {photoPreview
-              // A local object-URL preview of a file the user just picked.
-              // next/image cannot optimise a blob: URL, and this never leaves
-              // the client. The directive has to be the line IMMEDIATELY
-              // above the element — it was previously three lines up, where it
-              // suppressed nothing and reported itself as unused.
-              // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={photoPreview} alt="" className="h-full w-full rounded-[28px] object-cover" />
-              : <Camera size={30} className="text-white" />
-            }
-            <span className="absolute inset-0 flex items-center justify-center rounded-[28px] bg-black/25 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-              <Camera size={22} className="text-white" />
-            </span>
-          </button>
-          <input aria-label="Upload a trainer photo" ref={photoRef} type="file" accept="image/*" className="hidden"
-            onChange={e => { const f = e.target.files?.[0]; if (f) setPhotoPreview(URL.createObjectURL(f)); }} />
-        </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label="First Name" required value={firstName} onChange={setFirstName} accentColor={ac} />
           <Input label="Last Name" value={lastName} onChange={setLastName} accentColor={ac} />
@@ -438,7 +365,6 @@ export default function AddCoachPage() {
           <Select label="Primary Language" options={['Hindi', 'English', 'Both']} value={language} onChange={setLanguage} accentColor={ac} />
         </div>
         <Input label="Bio / About Coach" value={bio} onChange={setBio} accentColor={ac} />
-        <DragDropUpload label="Certification Documents" accept=".pdf,.jpg,.png" accentColor={ac} accentGradient={ag} />
       </div>
     ),
     4: (
@@ -520,7 +446,6 @@ export default function AddCoachPage() {
             <ToggleSwitch label="Leave Self-Approval"   sublabel="Approve own leave requests"    checked={permLeaveApproval}  onChange={setPermLeaveApproval}  accentColor={ac} />
           </div>
         </div>
-        <DragDropUpload label="Identity Documents (Aadhaar / PAN)" accept=".pdf,.jpg,.png" accentColor={ac} accentGradient={ag} />
       </div>
     ),
   };

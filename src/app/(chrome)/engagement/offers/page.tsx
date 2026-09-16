@@ -7,10 +7,10 @@ import { Tag, Gift, Plus, Edit2, Trash2, Copy, Clock, CheckCircle2, Users, Loade
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { OfferForm } from '@/components/engagement/OfferForm';
+import { errorMessage } from '@/lib/forms/errors';
 // The same translation the form uses, so a load failure and a save failure
 // speak with one voice rather than two — and so a 5xx body never reaches the
 // screen here either.
-import { mapApiError } from '@/lib/forms/errors';
 
 interface Offer { id:string; name:string; type:'percent'|'flat'|'free'; value:number; code:string; plan:string; validFrom:string; validUntil:string; usageLimit:number; used:number; status:'active'|'expired'|'draft'; }
 
@@ -54,7 +54,7 @@ function OffersContent() {
   async function load() {
     setLoading(true); setError(null);
     try { const data = await api.offers.list() as Offer[]; setOffers(Array.isArray(data) ? data : []); }
-    catch (err: unknown) { setError(mapApiError(err, { fallback: 'Failed to load offers' }).formError); }
+    catch (err: unknown) { setError(errorMessage(err, 'Failed to load offers')); }
     finally { setLoading(false); }
   }
 
@@ -77,7 +77,7 @@ function OffersContent() {
 
   async function handleDelete(id: string) {
     try { await api.offers.delete(id); setOffers(p => p.filter(x => x.id !== id)); toast.success('Offer deleted'); }
-    catch (err: unknown) { toast.error(mapApiError(err, { fallback: 'Failed to delete offer' }).formError ?? 'Failed to delete offer'); }
+    catch (err: unknown) { toast.error(errorMessage(err, 'Failed to delete offer')); }
   }
 
   useEffect(() => { load(); }, []);

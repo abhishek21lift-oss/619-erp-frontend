@@ -21,6 +21,7 @@ import {
 import { api } from '@/lib/api';
 import type { FeatureCatalogue, PlatformFeature, FeatureOverrideRow } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { errorMessage } from '@/lib/forms/errors';
 
 const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)' } as const;
 
@@ -77,7 +78,7 @@ function FeatureRow({ feature, plans, planRow, onChanged }: {
     try {
       await api.superAdmin.updateFeature(feature.key, body);
       onChanged();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not update the feature'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not update the feature')); }
     finally { setBusy(false); }
   };
 
@@ -87,7 +88,7 @@ function FeatureRow({ feature, plans, planRow, onChanged }: {
     try {
       await api.superAdmin.setFeaturePlans(feature.key, next);
       onChanged();
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not update the plan matrix'); }
+    } catch (e) { toast.error(errorMessage(e, 'Could not update the plan matrix')); }
     finally { setBusy(false); }
   };
 
@@ -271,7 +272,7 @@ export default function FeatureManager() {
     setError('');
     api.superAdmin.features()
       .then((r) => setCat(r.data))
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load the feature catalogue.'))
+      .catch((e: unknown) => setError(errorMessage(e, 'Could not load the feature catalogue.')))
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);

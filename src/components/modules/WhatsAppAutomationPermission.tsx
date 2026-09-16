@@ -24,6 +24,7 @@ import { useToast } from '@/lib/toast';
 import type {
   AutomationTrainerGrant, WhatsappAutomationSettings,
 } from '@/lib/api/endpoints/engagement';
+import { errorMessage } from '@/lib/forms/errors';
 
 const card = {
   borderRadius: 20, background: '#ffffff', border: '1px solid #e2e8f0',
@@ -53,7 +54,7 @@ export default function WhatsAppAutomationPermission() {
       // here would type-check and would also lose the fallback the moment the
       // thrown value is not an Error — a rejected fetch, a string — leaving
       // the studio with an empty toast.
-      toast.error(err instanceof Error ? err.message : 'Could not save');
+      toast.error(errorMessage(err, 'Could not save'));
     } finally {
       setBusy(null);
     }
@@ -66,7 +67,7 @@ export default function WhatsAppAutomationPermission() {
       else await api.automation.whatsappSettings.grantTrainer(t.id);
       settings.refetch();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not save');
+      toast.error(errorMessage(err, 'Could not save'));
     } finally {
       setBusy(null);
     }

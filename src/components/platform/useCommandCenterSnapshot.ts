@@ -34,6 +34,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { wsBase } from '@/lib/http';
 import type { CommandCenterSnapshot } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 
 export type Transport = 'stream' | 'polling';
 
@@ -109,7 +110,7 @@ export function useCommandCenterSnapshot(pollMs: number): CommandCenterFeed {
         // Only a total failure lands here — a single sick collector comes back
         // inside the payload as a red card, which is the whole design.
         if (!alive) return;
-        setError(err instanceof Error ? err.message : 'Failed to load the Command Center');
+        setError(errorMessage(err, 'Failed to load the Command Center'));
         setLoading(false);
         setRefreshing(false);
       }

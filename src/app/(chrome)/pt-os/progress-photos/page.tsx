@@ -14,6 +14,7 @@ import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import PhotoCropModal from '@/components/pt-os/PhotoCropModal';
 import { activatable } from '@/lib/a11y';
+import { errorMessage } from '@/lib/forms/errors';
 
 interface ProgressPhoto {
   id: string; client_id: string; photo_url: string;
@@ -83,7 +84,7 @@ function PhotoStudio({ clientId }: PhotoStudioProps) {
       setClientName(String(c.name ?? ''));
       setPhotos(Array.isArray(photosRes?.data) ? photosRes.data : []);
     } catch (err: unknown) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load client.');
+      setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {
       setLoading(false);
     }
@@ -109,7 +110,7 @@ function PhotoStudio({ clientId }: PhotoStudioProps) {
       toast.success(`${type[0].toUpperCase()}${type.slice(1)} photo saved.`);
       loadData();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save photo.');
+      toast.error(errorMessage(err, 'Failed to save photo.'));
     } finally {
       setUploading(false);
     }
@@ -122,7 +123,7 @@ function PhotoStudio({ clientId }: PhotoStudioProps) {
       toast.success('Photo deleted.');
       loadData();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete photo.');
+      toast.error(errorMessage(err, 'Failed to delete photo.'));
     }
   };
 

@@ -42,9 +42,8 @@ import {
   templateBodyField,
   refineDateOrder,
   GST_SLABS,
-  TEMPLATE_VARIABLES,
 } from '../lib/forms/domain';
-import { mapApiError, noErrors, hasErrors } from '../lib/forms/errors';
+import { mapApiError, errorMessage, noErrors, hasErrors } from '../lib/forms/errors';
 import { ApiError } from '../lib/http';
 
 /** Convenience: the first message from a failed parse. */
@@ -289,49 +288,76 @@ describe('domain — plausibility bounds', () => {
 });
 
 describe('domain — WhatsApp templates (§8)', () => {
-  it('accepts every documented variable', () => {
-    for (const v of TEMPLATE_VARIABLES) {
-      expect(inspectTemplate(`Hello {{${v}}}`)).toEqual([]);
+  // The vocabulary is a PARAMETER, not a constant. There used to be a
+  // TEMPLATE_VARIABLES list here listing client_name, studio_name, due_amount
+  // and six others — a plausible set that nothing in this product substitutes.
+  // Only these tests ever imported it, which is the only reason it never did
+  // damage: wired into the automation editor as it stood it would have
+  // rejected {{name}}, the one placeholder every trigger provides, and waved
+  // through {{client_name}}, which reaches a member's WhatsApp as literal
+  // braces. The real per-trigger map lives in schemas/automationRule.ts.
+  const VARS = ['name', 'amount', 'expiry_date'] as const;
+
+  it('accepts the variables it is given', () => {
+    for (const v of VARS) {
+      expect(inspectTemplate(`Hello {{${v}}}`, VARS)).toEqual([]);
     }
   });
 
-  it('names an unknown variable and lists the real ones', () => {
-    const [problem] = inspectTemplate('Hi {{cleint_name}}');
+  it('names an unknown variable and lists the ones available here', () => {
+    const [problem] = inspectTemplate('Hi {{cleint_name}}', VARS);
     expect(problem!.kind).toBe('unknown');
     expect(problem!.message).toContain('cleint_name');
-    expect(problem!.message).toContain('client_name');
+    expect(problem!.message).toContain('name');
+  });
+
+  it('says so plainly when the trigger provides nothing', () => {
+    const [problem] = inspectTemplate('Hi {{amount}}', []);
+    expect(problem!.message).toContain('no variables');
+  });
+
+  it('rejects a variable that is real on another trigger but not this one', () => {
+    // {{amount}} resolves on a payment and is sent as literal braces on a
+    // birthday. A flat list could not tell those apart.
+    expect(inspectTemplate('Hi {{amount}}', ['name'])).toHaveLength(1);
+    expect(inspectTemplate('Hi {{amount}}', ['name', 'amount'])).toEqual([]);
   });
 
   it('catches an unclosed placeholder', () => {
-    const problems = inspectTemplate('Hi {{client_name, your plan expires');
+    const problems = inspectTemplate('Hi {{name, your plan expires', VARS);
     expect(problems.some((p) => p.kind === 'unclosed')).toBe(true);
   });
 
   it('catches a single-brace near-miss and shows the fix', () => {
-    // "{client_name}" sent verbatim to a member is the §8 failure.
-    const problems = inspectTemplate('Hi {client_name}');
+    // "{name}" sent verbatim to a member is the §8 failure.
+    const problems = inspectTemplate('Hi {name}', VARS);
     expect(problems.some((p) => p.kind === 'malformed')).toBe(true);
-    expect(problems[0]!.message).toContain('{{client_name}}');
+    expect(problems[0]!.message).toContain('{{name}}');
   });
 
   it('catches an empty placeholder and a stray closer', () => {
-    expect(inspectTemplate('Hi {{}}')[0]!.kind).toBe('empty');
-    expect(inspectTemplate('Hi }} there').some((p) => p.kind === 'malformed')).toBe(true);
+    expect(inspectTemplate('Hi {{}}', VARS)[0]!.kind).toBe('empty');
+    expect(inspectTemplate('Hi }} there', VARS).some((p) => p.kind === 'malformed')).toBe(true);
   });
 
   it('does not mistake a valid placeholder for a stray brace', () => {
-    expect(inspectTemplate('{{client_name}} — {{studio_name}}')).toEqual([]);
+    expect(inspectTemplate('{{name}} — {{amount}}', VARS)).toEqual([]);
   });
 
   it('reports every problem at once, not one per save', () => {
-    const problems = inspectTemplate('{{bad_one}} and {{bad_two}} and {{client_name}}');
+    const problems = inspectTemplate('{{bad_one}} and {{bad_two}} and {{name}}', VARS);
     expect(problems).toHaveLength(2);
   });
 
   it('rejects an empty template and one past the WhatsApp ceiling', () => {
-    expect(templateBodyField().safeParse('   ').success).toBe(false);
-    expect(templateBodyField().safeParse('x'.repeat(4097)).success).toBe(false);
-    expect(templateBodyField().safeParse('x'.repeat(4096)).success).toBe(true);
+    const field = templateBodyField({ variables: VARS });
+    expect(field.safeParse('   ').success).toBe(false);
+    expect(field.safeParse('x'.repeat(4097)).success).toBe(false);
+    expect(field.safeParse('x'.repeat(4096)).success).toBe(true);
+  });
+
+  it('rejects a body whose placeholders are not in the given vocabulary', () => {
+    expect(templateBodyField({ variables: VARS }).safeParse('Hi {{nope}}').success).toBe(false);
   });
 });
 
@@ -411,6 +437,81 @@ describe('errors — every failure produces a message (§12)', () => {
 
   it('noErrors is genuinely empty', () => {
     expect(hasErrors(noErrors())).toBe(false);
+  });
+});
+
+describe('errorMessage — what 205 call sites now get instead of err.message', () => {
+  // The whole tree used to write `err instanceof Error ? err.message : FALLBACK`.
+  // These are the cases where that string was the wrong thing to show someone,
+  // and they are why the conversion was worth doing across 89 files.
+
+  it('turns a failed fetch into a sentence about the connection', () => {
+    // fetch() rejects with a TypeError when the request never reached a
+    // server. Its `.message` is "Failed to fetch" in Chrome and "NetworkError
+    // when attempting to fetch resource." in Firefox — browser diagnostics,
+    // rendered to a studio owner as if the app had said them.
+    expect(errorMessage(new TypeError('Failed to fetch'), 'Could not save'))
+      .toBe('Could not reach the server. Check your connection and try again.');
+  });
+
+  it('turns an aborted request into a sentence about cancellation', () => {
+    const abort = new DOMException('The user aborted a request.', 'AbortError');
+    expect(errorMessage(abort, 'Could not save')).toBe('The request was cancelled.');
+  });
+
+  it('turns a 401 into something actionable rather than "Unauthorized"', () => {
+    expect(errorMessage(new ApiError('Unauthorized', 401), 'Could not save'))
+      .toBe('Your session has expired. Sign in again to continue.');
+  });
+
+  it('turns a 429 into a wait rather than a status phrase', () => {
+    expect(errorMessage(new ApiError('Too Many Requests', 429), 'Could not save'))
+      .toBe('Too many attempts. Wait a moment and try again.');
+  });
+
+  it('refuses to show a 5xx body, whatever it contains', () => {
+    // In production the backend already scrubs this to "An internal error
+    // occurred". Outside production it sends `err.message`, which is the SQL
+    // error — and a staging deployment is not a reason to put one on screen.
+    const leak = new ApiError('duplicate key value violates unique constraint "users_email_key"', 500);
+    expect(errorMessage(leak, 'Could not save'))
+      .toBe('The server had a problem saving this. Try again in a moment.');
+  });
+
+  it('KEEPS the server\'s own sentence where it is the useful one', () => {
+    // 400, 403, 404 and 409 say something specific and true. Replacing those
+    // with a generic message would be the opposite mistake.
+    for (const status of [400, 403, 404, 409]) {
+      expect(errorMessage(new ApiError('That code is already in use.', status), 'Could not save'))
+        .toBe('That code is already in use.');
+    }
+  });
+
+  it('falls back to the caller\'s message for a non-Error rejection', () => {
+    expect(errorMessage(undefined, 'Could not save')).toBe('Could not save');
+    expect(errorMessage(null, 'Could not save')).toBe('Could not save');
+  });
+
+  it('never returns an empty string', () => {
+    // A failed submit that renders nothing is indistinguishable from one that
+    // worked, which is the defect this codebase has already shipped twice.
+    const cases: unknown[] = [
+      new ApiError('', 400), new ApiError('HTTP 500', 500), new Error(''),
+      '', 0, [], {}, undefined,
+    ];
+    for (const c of cases) {
+      expect(errorMessage(c, 'Could not save').length).toBeGreaterThan(0);
+    }
+  });
+
+  it('prefers a field message over the fallback when the mapper attributed one', () => {
+    // `mapApiError(...).formError ?? FALLBACK` — the hand-written form — is
+    // null exactly when the mapper managed to attribute the failure, so it
+    // threw away the most specific sentence available.
+    const attributed = new ApiError('bad', 400, undefined, {
+      error: { message: 'Discount must be above zero', field: 'value' },
+    });
+    expect(errorMessage(attributed, 'Could not save')).toBe('Discount must be above zero');
   });
 });
 
