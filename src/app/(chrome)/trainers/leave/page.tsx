@@ -1,16 +1,26 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
+import { useStore } from '@tanstack/react-form';
 import { m, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { api, LeaveRequest, Trainer } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { CalendarCheck, CalendarX, Clock, Activity, Search, Plus, X, ChevronRight, AlertTriangle, CheckCircle, Ban, User, CalendarDays } from 'lucide-react';
 
+/**
+ * Whole days covered, inclusive of both ends.
+ *
+ * Delegates to the schema's `leaveDays` rather than keeping a second
+ * subtraction: this one parsed a bare 'YYYY-MM-DD' with `new Date()`, which
+ * reads it as UTC midnight, so a range crossing a DST boundary came out an
+ * hour short and rounded to a day fewer. The schema parses the date PARTS at
+ * UTC noon, far enough from either edge that no offset in use can cross it.
+ *
+ * The `?? 1` keeps this function's old contract for the table, which calls it
+ * with whatever the server sent and must render something.
+ */
 function daysBetween(from: string, to: string) {
-  const a = new Date(from);
-  const b = new Date(to);
-  const diff = Math.round((b.getTime() - a.getTime()) / 86_400_000);
-  return Math.max(diff + 1, 1);
+  return leaveDays(from, to) ?? 1;
 }
 
 function fmt(d: string) {
@@ -18,6 +28,13 @@ function fmt(d: string) {
 }
 
 import { avatarGradient, initialsAvatar } from '@/lib/avatar';
+import { SelectField, DateFieldControl, TextAreaField, FormErrorBanner } from '@/components/ui/form';
+import { errorMessage } from '@/lib/forms/errors';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import {
+  leaveRequestSchema, blankLeaveRequest, toLeaveRequestPayload, leaveDays,
+  LEAVE_TYPE_OPTIONS, type LeaveRequestValues,
+} from '@/lib/forms/schemas/leave';
 
 const initials = initialsAvatar;
 
@@ -31,7 +48,6 @@ const TYPE_STYLES: Record<string, { bg: string; color: string; icon: string }> =
   other:     { bg: '#f8fafc', color: '#64748b', icon: '📝' },
 };
 
-const LEAVE_TYPES = ['sick', 'casual', 'personal', 'earned', 'emergency', 'unpaid', 'other'];
 
 const STATUS_STYLES: Record<string, { label: string; bg: string; color: string; icon: React.ReactNode }> = {
   pending:  { label: 'Pending',  bg: '#fef3c7', color: '#b45309', icon: <Clock size={11} /> },
@@ -65,9 +81,6 @@ function Inner() {
   const [tab, setTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ trainer_id: '', leave_type: 'sick', from_date: '', to_date: '', reason: '' });
-  const [submitting, setSubmitting] = useState(false);
-  const [formErr, setFormErr] = useState('');
   const [rejectTarget, setRejectTarget] = useState<LeaveRequest | null>(null);
   const [rejectNote, setRejectNote] = useState('');
 
@@ -93,7 +106,7 @@ function Inner() {
       const res = await api.leave.approve(lv.id);
       setLeaves((prev) => prev.map((r) => (r.id === lv.id ? res.leave : r)));
       flash(`Approved leave for ${lv.trainer_name || 'trainer'}`);
-    } catch (e: any) { setError(e.message || 'Could not approve'); }
+    } catch (e: unknown) { setError(errorMessage(e, 'Could not approve')); }
     finally { setActing(null); }
   }
 
@@ -105,25 +118,38 @@ function Inner() {
       setLeaves((prev) => prev.map((r) => (r.id === rejectTarget.id ? res.leave : r)));
       flash(`Rejected leave for ${rejectTarget.trainer_name || 'trainer'}`);
       setRejectTarget(null); setRejectNote('');
-    } catch (e: any) { setError(e.message || 'Could not reject'); }
+    } catch (e: unknown) { setError(errorMessage(e, 'Could not reject')); }
     finally { setActing(null); }
   }
 
-  async function submitRequest(e: React.FormEvent) {
-    e.preventDefault(); setFormErr('');
-    if (!form.trainer_id) { setFormErr('Select a trainer'); return; }
-    if (!form.from_date || !form.to_date) { setFormErr('Select date range'); return; }
-    if (form.to_date < form.from_date) { setFormErr('To date must be ≥ From date'); return; }
-    setSubmitting(true);
-    try {
-      const res = await api.leave.create(form);
+  const f = useAppForm({
+    schema: leaveRequestSchema,
+    defaultValues: blankLeaveRequest(),
+    // The server answers 409 for an overlapping request and 403 for a trainer
+    // filing somebody else's leave. Both are about the trainer field, so they
+    // are shown there rather than as a banner over a form that looks fine.
+    fieldHints: {
+      'Overlapping leave request already exists': 'trainerId',
+      'You can only submit leave for yourself': 'trainerId',
+      'Trainer not found': 'trainerId',
+    },
+    onSubmit: async (values: LeaveRequestValues) => {
+      const res = await api.leave.create(toLeaveRequestPayload(values));
       setLeaves((prev) => [res.leave, ...prev]);
+    },
+    onSuccess: () => {
       flash('Leave request submitted');
       setShowModal(false);
-      setForm({ trainer_id: '', leave_type: 'sick', from_date: '', to_date: '', reason: '' });
-    } catch (e: any) { setFormErr(e.message || 'Could not submit'); }
-    finally { setSubmitting(false); }
-  }
+      f.resetTo(blankLeaveRequest());
+    },
+  });
+
+  /** The live range, for the day count under the date pair. */
+  const range = useStore(f.form.store, (st) => ({
+    from: String(st.values.fromDate ?? ''),
+    to: String(st.values.toDate ?? ''),
+  }));
+  const rangeDays = leaveDays(range.from, range.to);
 
   const filtered = useMemo(() => {
     let rows = tab === 'all' ? leaves : leaves.filter((l) => l.status === tab);
@@ -376,56 +402,79 @@ function Inner() {
                 </button>
               </div>
 
-              {formErr && (
-                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#b91c1c', marginBottom: 16 }}>{formErr}</div>
-              )}
+              <form
+                noValidate
+                onSubmit={(e) => { e.preventDefault(); f.submit(); }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+              >
+                <FormErrorBanner errors={f.errors} />
 
-              <form onSubmit={submitRequest} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div>
-                  <label htmlFor="leave-trainer" style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>Trainer *</label>
-                  <select id="leave-trainer" value={form.trainer_id} onChange={(e) => setForm((f) => ({ ...f, trainer_id: e.target.value }))} required
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit' }}>
-                    <option value="">— Select trainer —</option>
-                    {trainers.map((t) => (<option key={t.id} value={t.id}>{t.name}</option>))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="leave-type" style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>Leave Type *</label>
-                  <select id="leave-type" value={form.leave_type} onChange={(e) => setForm((f) => ({ ...f, leave_type: e.target.value }))}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit' }}>
-                    {LEAVE_TYPES.map((t) => (<option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>))}
-                  </select>
-                </div>
+                <f.form.Field name="trainerId">
+                  {(field) => (
+                    <SelectField
+                      field={field} label="Trainer" required density="compact"
+                      placeholderOption="— Select trainer —"
+                      options={trainers.map((t) => ({ value: t.id, label: t.name }))}
+                      serverError={f.errors.fieldErrors.trainerId}
+                    />
+                  )}
+                </f.form.Field>
+
+                <f.form.Field name="leaveType">
+                  {(field) => (
+                    <SelectField
+                      field={field} label="Leave Type" required density="compact"
+                      options={LEAVE_TYPE_OPTIONS}
+                      serverError={f.errors.fieldErrors.leaveType}
+                    />
+                  )}
+                </f.form.Field>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div>
-                    <label htmlFor="leave-from" style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>From *</label>
-                    <input id="leave-from" type="date" value={form.from_date} onChange={(e) => setForm((f) => ({ ...f, from_date: e.target.value }))} required
-                      style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit' }} />
-                  </div>
-                  <div>
-                    <label htmlFor="leave-to" style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>To *</label>
-                    <input id="leave-to" type="date" value={form.to_date} min={form.from_date} onChange={(e) => setForm((f) => ({ ...f, to_date: e.target.value }))} required
-                      style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit' }} />
-                  </div>
+                  <f.form.Field name="fromDate">
+                    {(field) => (
+                      <DateFieldControl
+                        field={field} label="From" required density="compact"
+                        serverError={f.errors.fieldErrors.fromDate}
+                      />
+                    )}
+                  </f.form.Field>
+                  <f.form.Field name="toDate">
+                    {(field) => (
+                      <DateFieldControl
+                        field={field} label="To" required density="compact"
+                        min={range.from || undefined}
+                        serverError={f.errors.fieldErrors.toDate}
+                      />
+                    )}
+                  </f.form.Field>
                 </div>
-                {form.from_date && form.to_date && form.to_date >= form.from_date && (
-                  <div style={{ fontSize: 12, color: '#0067e0', marginTop: -8, padding: '6px 12px', borderRadius: 8, background: '#f8fafc', border: '1px solid #e1efff', display: 'inline-block', alignSelf: 'flex-start' }}>
-                    {daysBetween(form.from_date, form.to_date)} day(s)
+
+                {rangeDays !== null && (
+                  <div style={{ fontSize: 12, color: '#0067e0', marginTop: -8, padding: '6px 12px', borderRadius: 8, background: 'var(--bg-subtle)', border: '1px solid var(--border)', display: 'inline-block', alignSelf: 'flex-start' }}>
+                    {rangeDays} day{rangeDays === 1 ? '' : 's'}
                   </div>
                 )}
-                <div>
-                  <label htmlFor="leave-reason" style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>Reason</label>
-                  <textarea id="leave-reason" rows={3} placeholder="Optional — e.g. personal emergency, medical appointment…" value={form.reason} onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', resize: 'vertical' }} />
-                </div>
+
+                <f.form.Field name="reason">
+                  {(field) => (
+                    <TextAreaField
+                      field={field} label="Reason" density="compact" rows={3}
+                      maxLength={1000}
+                      placeholder="Optional — e.g. personal emergency, medical appointment…"
+                      serverError={f.errors.fieldErrors.reason}
+                    />
+                  )}
+                </f.form.Field>
+
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
                   <button type="button" onClick={() => setShowModal(false)}
-                    style={{ padding: '9px 20px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'transparent', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.2s' }}>
+                    style={{ padding: '9px 20px', borderRadius: 10, border: '1px solid var(--border-2)', background: 'transparent', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.2s' }}>
                     Cancel
                   </button>
-                  <button type="submit" disabled={submitting}
-                    style={{ padding: '9px 24px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: submitting ? 'default' : 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(245,158,11,0.25)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
-                    {submitting ? 'Submitting…' : 'Submit Request'}
+                  <button type="submit" disabled={!f.canSubmit}
+                    style={{ padding: '9px 24px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: f.isSubmitting ? 'default' : 'pointer', opacity: f.isSubmitting ? 0.7 : 1, fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(245,158,11,0.25)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
+                    {f.isSubmitting ? 'Submitting…' : 'Submit Request'}
                   </button>
                 </div>
               </form>

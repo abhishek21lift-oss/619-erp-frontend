@@ -150,7 +150,9 @@ describe('the label audit, resolved case by case', () => {
     // assert a property the component no longer has.
     //
     // Already retired this way: `fp-email` (forgot-password), `rp-password`
-    // and `rp-confirm` (reset-password), `pay-ref` (Record Payment).
+    // and `rp-confirm` (reset-password), `pay-ref` (Record Payment),
+    // `leave-reason` (the leave request form, now a TextAreaField — the
+    // reject-note textarea beside it is still raw, so it stays below).
     //
     // The property itself is still covered, and more strictly:
     // label-association.test.ts asserts that NO control in the app is
@@ -158,7 +160,6 @@ describe('the label audit, resolved case by case', () => {
     const associated: [string, string][] = [
       ['app/(chrome)/ai-coach/knowledge/page.tsx', 'kb-title'],
       ['app/(chrome)/pt-os/clients/[id]/edit/page.tsx', 'delete-confirm'],
-      ['app/(chrome)/trainers/leave/page.tsx', 'leave-reason'],
       ['app/(chrome)/trainers/leave/page.tsx', 'leave-reject-note'],
     ];
     for (const [file, id] of associated) {
