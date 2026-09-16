@@ -108,13 +108,25 @@ for (const file of walk(SRC)) {
     contracts,
     coercions: coercion.risky,
     boundedCoercions: coercion.bounded,
+    stateCoercions: coercion.state,
     riskyLines: coercion.riskyLines,
+    stateLines: coercion.stateLines,
     uploadInputs: uploads.inputs,
     uploadCanonical: uploads.canonical,
     justified: justification ? justification.allow : 0,
     justification: justification?.reason ?? null,
     /** Native business controls with no justification covering them. */
     unjustified: Math.max(0, nativeBusiness - (justification?.allow ?? 0)),
+    /**
+     * Submit-time coercions with no justification covering them.
+     *
+     * Separate allowance from `allow`, because they are different claims: one
+     * says "this control is fine as a native element", the other says "this
+     * `Number(form.x)` runs on a value something else has already checked".
+     */
+    unjustifiedStateCoercions: Math.max(
+      0, coercion.state - (justification?.allowStateCoercions ?? 0),
+    ),
   });
 }
 
@@ -131,6 +143,8 @@ const totals = {
   platformControls: sum(rows, 'platformControls'),
   coercions: sum(rows, 'coercions'),
   boundedCoercions: sum(rows, 'boundedCoercions'),
+  stateCoercions: sum(rows, 'stateCoercions'),
+  unjustifiedStateCoercions: sum(rows, 'unjustifiedStateCoercions'),
   uploadInputs: sum(rows, 'uploadInputs'),
   uploadUncanonical: rows.filter((r) => r.uploadInputs > 0 && !r.uploadCanonical).length,
   forms: rows.filter((r) => r.isForm).length,
@@ -146,6 +160,8 @@ for (const r of ['P0', 'P1', 'P2']) {
     nativeBusiness: sum(set, 'nativeBusiness'),
     unjustified: sum(set, 'unjustified'),
     coercions: sum(set, 'coercions'),
+    stateCoercions: sum(set, 'stateCoercions'),
+    unjustifiedStateCoercions: sum(set, 'unjustifiedStateCoercions'),
     forms: set.filter((x) => x.isForm).length,
   };
 }
@@ -173,12 +189,20 @@ for (const name of ['submit', 'error', 'reset', 'schema']) {
  */
 totals.staleJustifications = Object.keys(JUSTIFIED).flatMap((f) => {
   const row = rows.find((r) => r.file === f);
-  if (!row || row.nativeBusiness === 0) return [f];
+  const entry = JUSTIFIED[f];
+  // An entry may exist for coercions alone, with no native controls to allow.
+  if (!row) return [f];
+  if (row.nativeBusiness === 0 && !entry.allowStateCoercions) return [f];
+  const stale = [];
   const allow = JUSTIFIED[f].allow;
   if (allow > row.nativeBusiness) {
-    return [`${f} (allows ${allow}, file has ${row.nativeBusiness})`];
+    stale.push(`${f} (allows ${allow} controls, file has ${row.nativeBusiness})`);
   }
-  return [];
+  const allowCo = JUSTIFIED[f].allowStateCoercions ?? 0;
+  if (allowCo > row.stateCoercions) {
+    stale.push(`${f} (allows ${allowCo} state coercions, file has ${row.stateCoercions})`);
+  }
+  return stale;
 });
 
 if (process.argv.includes('--json')) {
@@ -205,6 +229,8 @@ console.log(`Design-system controls           ${pad(totals.platformControls, 5)}
 console.log(`Forms (a <form> or a submit)     ${pad(totals.forms, 5)}`);
 console.log(`Risky value coercions            ${pad(totals.coercions, 5)}   ← §6, a clearable input`);
 console.log(`  bounded (range/select)         ${pad(totals.boundedCoercions, 5)}   browser guarantees a value`);
+console.log(`Submit-time state coercions      ${pad(totals.stateCoercions, 5)}   ← Number(form.x), '' becomes 0`);
+console.log(`  of which UNJUSTIFIED           ${pad(totals.unjustifiedStateCoercions, 5)}   no validator proven in front`);
 console.log(`Upload sites                     ${pad(totals.uploadInputs, 5)}`);
 console.log(`  files not using canonical rules${pad(totals.uploadUncanonical, 5)}   ← §12\n`);
 

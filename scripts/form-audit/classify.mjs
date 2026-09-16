@@ -328,15 +328,51 @@ export function riskOf(rel) {
 const COERCION_EXPR =
   /\b(?:Number|parseFloat|parseInt)\s*\(\s*(?:e|ev|event)\.(?:target|currentTarget)\.value|\.valueAsNumber/;
 
+/**
+ * The SECOND place the same defect lives, and the one this audit was blind to.
+ *
+ * `Number(e.target.value)` in a handler is the obvious shape. The other is
+ * `Number(form.finalAmount)` at submit time, reading a string the form has been
+ * holding all along:
+ *
+ *     final_amount: Number(form.finalAmount),     // '' → 0
+ *     paid_amount:  Number(form.amountPaid),      // '' → 0
+ *     duration_months: Number(form.duration),     // '' → 0
+ *
+ * Those three are from one file. The audit reported ZERO coercions for it,
+ * because none of them touch an event — and a measuring tool that reports zero
+ * while the worst instance of the defect sits in the payload builder is the
+ * failure mode this whole audit was rewritten to avoid.
+ *
+ * Matched conservatively, by the conventional names this codebase gives form
+ * state — `form`, `draft`, `values`, `fields`. `Number(row.amount)` on a value
+ * that came BACK from the API is correct and common (pg sends NUMERIC as a
+ * string), so a broader pattern would report correct code as defective, which
+ * is the worse error for a tool that sends people to change things.
+ *
+ * Reported separately from the event-handler count, because they are found by
+ * a different rule with a different confidence.
+ */
+const STATE_COERCION_EXPR =
+  /\b(?:Number|parseFloat|parseInt)\s*\(\s*(?:form|draft|values|fields)\.[A-Za-z_]/;
+
 /** Count coercions in a source, split risky vs bounded, by looking at the line. */
 export function coercionSites(source) {
   const lines = source.split('\n');
   let risky = 0;
   let bounded = 0;
+  let state = 0;
   const riskyLines = [];
+  const stateLines = [];
 
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
+
+    if (STATE_COERCION_EXPR.test(line)) {
+      state += 1;
+      stateLines.push(i + 1);
+    }
+
     if (!COERCION_EXPR.test(line)) continue;
 
     // Which element does this handler belong to?
@@ -369,7 +405,7 @@ export function coercionSites(source) {
     }
   }
 
-  return { risky, bounded, riskyLines };
+  return { risky, bounded, state, riskyLines, stateLines };
 }
 
 /** A file input whose handler does not reach the canonical validator. */

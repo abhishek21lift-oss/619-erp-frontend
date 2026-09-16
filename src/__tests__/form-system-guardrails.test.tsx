@@ -289,8 +289,14 @@ describe('the five representative migrations', () => {
 
   it.each(migrated)('%s uses the system', (file) => {
     const src = readFileSync(join(SRC, ...file.split('/')), 'utf8');
-    expect(src).toMatch(/from '@\/components\/ui'/);
-    expect(src).toMatch(/<(FormField|SearchField)\b/);
+    // Either layer of the same system. `@/components/ui` + FormField is the
+    // first migration — markup only, state untouched. `@/components/ui/form` +
+    // a bound field is the second — the same FormField underneath, with the
+    // value coming from a schema-typed field instead of a useState string.
+    // A form that has taken the second step must not fail a test written for
+    // the first.
+    expect(src).toMatch(/from '@\/components\/ui(\/form)?'/);
+    expect(src).toMatch(/<(FormField|SearchField|TextField|NumberField|SelectField|TextAreaField)\b/);
   });
 
   it.each(migrated)('%s gives every migrated field a persistent label', (file, labels) => {
@@ -308,8 +314,15 @@ describe('the five representative migrations', () => {
         /onSubmit=\{handleSubmit\}/, /value=\{weight\}/, /setWeight\(e\.target\.value\)/,
         /value=\{adherencePct\}/, /value=\{trainerNotes\}/, /step="0\.5"/,
       ]],
+      // Now on the second layer: the value comes from the field render prop
+      // rather than from `form.session_count`, and the option list and the
+      // `min` are the schema's. The property is the same one — the bindings
+      // and the business rules survived the move — so the patterns describe
+      // where they live now rather than where they used to.
       ['app/(chrome)/subscription/packages/page.tsx', [
-        /value=\{form\.session_count\}/, /value=\{form\.price\}/, /min=\{0\}/, /GOAL_TYPES\.map/,
+        /<form\.Field name="session_count">/, /<form\.Field name="price">/,
+        /<form\.Field name="duration_days">/, /ptPackageSchema/,
+        /PACKAGE_GOAL_OPTIONS/, /toPtPackagePayload/,
       ]],
       ['app/(chrome)/pt-os/session-balance/page.tsx', [
         /onSubmit=\{handleCreate\}/, /value=\{totalSessions\}/, /value=\{endDate\}/,

@@ -30,6 +30,12 @@
  *   · "we will get to it"
  *   · anything that would be equally true of a file nobody has read
  *
+ * `allowStateCoercions` is the same device for the OTHER thing the audit counts:
+ * a `Number(form.x)` at submit time. Its valid reason is narrow and specific —
+ * the value cannot be a blank or a typo by the time it is read, because
+ * something in the file has already established that, and a reader can find
+ * what. "It is probably fine" is not that.
+ *
  * `allow` is a COUNT, not a blanket. A file justified for 6 controls that grows
  * a 7th fails the audit, so a new field cannot arrive under cover of an old
  * exemption.
@@ -172,6 +178,50 @@ export const JUSTIFIED = {
       'the canonical normalizer with a third outcome — save nothing when the ' +
       'box holds something unparseable, because NaN serialises to null and ' +
       'would have CLEARED a logged set for the sake of a typed unit.',
+  },
+
+  'src/app/(chrome)/pt-os/clients/[id]/enroll/page.tsx': {
+    allow: 1,
+    allowStateCoercions: 6,
+    reason:
+      'Six `Number(form.x)` reads, every one of them on a value that cannot be ' +
+      'blank or unparseable by the time it is read. `duration` is a <select> ' +
+      'typed `\'1\'..\'12\'`, `sessionsPerWeek` a <select> the validator also ' +
+      'bounds to 1–7, and `validateAll` runs on every submit and blocks it — ' +
+      'the save path is handleSubmit → validateAll → agreement sheet → ' +
+      'confirmAndSave, and nothing else calls attemptSave. The two MONEY reads ' +
+      'are not in that six: they were `Number(form.finalAmount)`, they are ' +
+      'toMoneyOrNull now, and that is a fix rather than an exemption — ' +
+      '`Number(\'8,000\')` is NaN, so a price written the way a studio owner ' +
+      'writes one was refused as invalid while parseFloat in the balance ' +
+      'preview beside it quietly showed ₹8. The one remaining native control is ' +
+      'a search box in the trainer picker.',
+  },
+
+  'src/app/(chrome)/ai/diet-generator/page.tsx': {
+    allow: 7,
+    allowStateCoercions: 1,
+    reason:
+      '`parseInt(form.meal_frequency)` reads a PillGroup whose options are ' +
+      "['3','4','5','6'] — a closed set of digit strings, so there is nothing " +
+      'for the parse to get wrong. The seven controls are the generator brief ' +
+      'itself: free-text prompts and preference boxes whose values go to the ' +
+      'model rather than into a record, so there is no payload to validate. ' +
+      'The two that DO reach a stored plan, weight and height, already go ' +
+      'through the app-wide `num()` helper.',
+  },
+
+  'src/components/revenue/MonthlyTargetHero.tsx': {
+    allow: 1,
+    allowStateCoercions: 1,
+    reason:
+      '`Number(draft.replace(/[^0-9.]/g, \'\'))` strips everything that is not ' +
+      'a digit or a point BEFORE parsing, so the separator case that breaks ' +
+      'parseFloat elsewhere is handled — and the result is gated by ' +
+      '`Number.isFinite(amount) && amount > 0`, which the submit checks before ' +
+      'it posts. A value like "1.2.3" survives the strip and fails the gate, ' +
+      'which is the right order. One control, one number, one guard in front ' +
+      'of it.',
   },
 };
 

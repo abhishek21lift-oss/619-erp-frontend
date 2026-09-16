@@ -15,6 +15,7 @@ import { AGREEMENT_TEXT, PAYMENT_METHODS, ageFrom } from '@/lib/enrollment';
 import { SignaturePad } from '@/components/pt-os/shared/SignaturePad';
 import { api } from '@/lib/api';
 import { ApiError, apiBase, tenantAuthHeaders } from '@/lib/http';
+import { toMoneyOrNull } from '@/lib/forms/normalize';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth-context';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
@@ -135,10 +136,28 @@ function to24Hour(v: string): string {
  *  a live UX preview only, the backend independently recomputes and owns
  *  the source of truth on every save. */
 function calcBalanceDue(finalAmount: string, amountPaid: string): number {
-  const final = parseFloat(finalAmount);
-  const paid = parseFloat(amountPaid);
-  if (!Number.isFinite(final)) return 0;
-  return Math.max(final - (Number.isFinite(paid) ? paid : 0), 0);
+  const final = money(finalAmount);
+  const paid = money(amountPaid);
+  if (final === null) return 0;
+  return Math.max(final - (paid ?? 0), 0);
+}
+
+/**
+ * One money field's value, read the way the rest of the app reads money.
+ *
+ * `Number('8,000')` is NaN and `parseFloat('8,000')` is 8, and this form used
+ * one of each: the validator refused the separator and the balance preview
+ * quietly showed ₹8. Writing eight thousand with a comma is how a studio owner
+ * writes eight thousand, so neither answer was acceptable.
+ *
+ * `toMoneyOrNull` strips the separator and the rupee sign, rounds at the paise
+ * through a scaled integer, and still distinguishes absent (null) from
+ * unparseable (NaN) — which the validators below need, because "Amount Paid is
+ * required" and "Enter a valid amount" are different messages.
+ */
+function money(raw: string): number | null {
+  const n = toMoneyOrNull(raw);
+  return n === null || Number.isNaN(n) ? null : n;
 }
 
 /* ─────────────────────────────────────────────────────── VALIDATION */
@@ -165,18 +184,18 @@ function validateSessionsPerWeek(v: string): string | undefined {
 }
 function validateFinalAmount(v: string): string | undefined {
   if (!v.trim()) return 'Final Selling Price is required.';
-  const n = Number(v);
-  if (!Number.isFinite(n)) return 'Enter a valid amount.';
+  const n = money(v);
+  if (n === null) return 'Enter a valid amount.';
   if (n <= 0) return 'Final Selling Price must be greater than zero.';
   return undefined;
 }
 function validateAmountPaid(form: EnrollFormData): string | undefined {
   if (!form.amountPaid.trim()) return 'Amount Paid is required.';
-  const paid = Number(form.amountPaid);
-  if (!Number.isFinite(paid)) return 'Enter a valid amount.';
+  const paid = money(form.amountPaid);
+  if (paid === null) return 'Enter a valid amount.';
   if (paid < 0) return 'Amount Paid cannot be negative.';
-  const final = Number(form.finalAmount);
-  if (Number.isFinite(final) && paid > final) return 'Amount Paid cannot exceed Final Selling Price.';
+  const final = money(form.finalAmount);
+  if (final !== null && paid > final) return 'Amount Paid cannot exceed Final Selling Price.';
   return undefined;
 }
 // Payment fields are admin/manager-only, same boundary the backend already
@@ -421,8 +440,13 @@ function EnrollForm({ clientId }: { clientId: string }) {
     // the trainer role) - only send them when they were actually
     // editable, so a read-only display value never overwrites data.
     ...(isAdmin ? {
-      final_amount: Number(form.finalAmount),
-      paid_amount: Number(form.amountPaid),
+      // The SAME reading the validator did. `Number(form.finalAmount)` here
+      // and `money()` there would be two parsers on one value, and the one
+      // that reaches the server would be the looser of the two. `?? 0` is
+      // unreachable — validateAll blocks the submit on a null — and is kept
+      // because "unreachable" and "cannot happen" are different.
+      final_amount: money(form.finalAmount) ?? 0,
+      paid_amount: money(form.amountPaid) ?? 0,
       // Empty means "not recorded". Sending '' would fail the server's enum
       // check and take the whole enrolment down with it.
       ...(form.paymentMethod ? { payment_method: form.paymentMethod } : {}),
@@ -925,8 +949,8 @@ function EnrollForm({ clientId }: { clientId: string }) {
                   { label: 'End Date', val: fmtDateLong(endDate) },
                   { label: 'Duration', val: form.duration ? `${form.duration} mo` : '—' },
                   { label: 'Total Weeks', val: totalWeeks || '—' },
-                  { label: 'Selling Price', val: form.finalAmount ? fmtINR(Number(form.finalAmount)) : '—' },
-                  { label: 'Amount Paid', val: form.finalAmount ? fmtINR(Number(form.amountPaid) || 0) : '—' },
+                  { label: 'Selling Price', val: form.finalAmount ? fmtINR(money(form.finalAmount) ?? 0) : '—' },
+                  { label: 'Amount Paid', val: form.finalAmount ? fmtINR(money(form.amountPaid) ?? 0) : '—' },
                   { label: 'Balance Due', val: form.finalAmount ? fmtINR(balanceDue) : '—', success: Boolean(form.finalAmount) && isPaidInFull },
                   { label: 'Sessions / Week', val: form.sessionsPerWeek || '—' },
                   { label: 'Estimated Sessions', val: estimatedSessions || '—' },

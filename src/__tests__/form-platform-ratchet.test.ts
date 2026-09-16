@@ -34,7 +34,10 @@ interface AuditRow {
   contracts: Record<string, 'platform' | 'manual' | 'none'> | null;
   coercions: number;
   boundedCoercions: number;
+  stateCoercions: number;
+  unjustifiedStateCoercions: number;
   riskyLines: number[];
+  stateLines: number[];
   uploadInputs: number;
   uploadCanonical: boolean;
   justification: string | null;
@@ -49,6 +52,8 @@ interface Audit {
     platformControls: number;
     coercions: number;
     boundedCoercions: number;
+    stateCoercions: number;
+    unjustifiedStateCoercions: number;
     uploadInputs: number;
     uploadUncanonical: number;
     forms: number;
@@ -81,9 +86,9 @@ function audit(): Audit {
 const CEILING = {
   /** §6. Zero, and it stays zero. */
   riskyCoercions: 0,
-  unjustified: 196,
+  unjustified: 187,
   p0Unjustified: 0,
-  p1Unjustified: 108,
+  p1Unjustified: 100,
   /**
    * §9. Zero, and it stays zero.
    *
@@ -101,9 +106,9 @@ const CEILING = {
 const FLOOR = {
   platformControls: 272,
   /** Forms whose errors reach the canonical mapper. */
-  errorPlatform: 51,
+  errorPlatform: 52,
   /** Forms bound to a named canonical schema. */
-  schemaPlatform: 17,
+  schemaPlatform: 18,
 };
 
 describe('the audit measures the tree', () => {
@@ -146,6 +151,21 @@ describe('the audit measures the tree', () => {
 
 describe('ceilings — these may only fall', () => {
   const a = audit();
+
+  it('every submit-time state coercion is accounted for', () => {
+    // The OTHER place the blank-becomes-zero defect lives, and the one this
+    // audit was blind to until it was pointed at a payload builder:
+    //
+    //     final_amount: Number(form.finalAmount),   // '' → 0
+    //
+    // Not a defect on sight — `Number(form.duration)` on a <select> of
+    // '1'..'12' cannot go wrong — so each survivor is named in
+    // justifications.mjs with what establishes that, and a reader can check it.
+    const offenders = a.rows
+      .filter((r) => r.unjustifiedStateCoercions > 0)
+      .map((r) => `${r.file}:${r.stateLines.join(',')}`);
+    expect(offenders, 'every Number(form.x) needs a guard or a justification').toEqual([]);
+  });
 
   it('no risky numeric coercion anywhere in the tree', () => {
     // `Number(e.target.value)` on a control the user can CLEAR. The defect

@@ -13,6 +13,7 @@ import Guard from '@/components/Guard';
 import { PageTitle } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { toMoneyOrNull } from '@/lib/forms/normalize';
 
 const MOBILE_RE = /^[6-9]\d{9}$/;
 const EMAIL_RE  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -122,6 +123,18 @@ function SectionCard({ sectionId, children }: { sectionId: string; children: Rea
 }
 
 // ── Page ─────────────────────────────────────────────────────────────
+/**
+ * A money-ish field's value for the payload: a number, or null for blank.
+ *
+ * Returns `undefined` for something that is neither — the caller refuses the
+ * save rather than sending a null that would clear the stored figure.
+ */
+function moneyOrNull(raw: string): number | null | undefined {
+  const n = toMoneyOrNull(raw);
+  if (n === null) return null;
+  return Number.isNaN(n) ? undefined : n;
+}
+
 export default function EditTrainerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   return <Guard role="admin"><EditContent id={id} /></Guard>;
@@ -281,6 +294,20 @@ function EditContent({ id }: { id: string }) {
     if (form.email && !EMAIL_RE.test(form.email.trim())) { setError('Please enter a valid email address'); return; }
     if (form.mobile && !MOBILE_RE.test(form.mobile.trim())) { setError('Phone must be a valid 10-digit Indian mobile starting with 6–9'); return; }
 
+    // Refused rather than sent. `moneyOrNull` answers `undefined` for a box
+    // holding something that is not a number, and sending its null would
+    // CLEAR a stored salary because someone typed "50k".
+    const salary = moneyOrNull(form.salary);
+    if (salary === undefined) { setError('Enter the salary as a number, or leave it blank.'); return; }
+    if (salary !== null && salary < 0) { setError('Salary cannot be negative.'); return; }
+
+    const incentiveRate = moneyOrNull(form.incentive_rate);
+    if (incentiveRate === undefined) { setError('Enter the incentive rate as a number, or leave it blank.'); return; }
+    if (incentiveRate !== null && (incentiveRate < 0 || incentiveRate > 100)) {
+      setError('Incentive rate is a percentage between 0 and 100.');
+      return;
+    }
+
     setSaving(true);
     try {
       await api.trainers.update(id, {
@@ -293,9 +320,18 @@ function EditContent({ id }: { id: string }) {
         address:        form.address || null,
         specialization: form.specialization || null,
         certifications: form.certifications || null,
-        salary:         form.salary ? parseFloat(form.salary) : null,
+        // `parseFloat` parses a PREFIX and stops, so a salary typed the way a
+        // studio owner writes one — "50,000" — was sent as **50**. The
+        // truthiness guard in front of it caught '' and nothing else, so a
+        // whitespace box went through as NaN, which JSON writes as null and
+        // which silently CLEARS a stored salary.
+        //
+        // `toMoneyOrNull` strips the separator and the rupee sign, rounds at
+        // the paise, and answers null for absent and NaN for unparseable — so
+        // the two can be told apart here rather than collapsing into one.
+        salary,
         // send as percentage (0–100); backend divides by 100 before DB storage
-        incentive_rate: form.incentive_rate ? parseFloat(form.incentive_rate) : null,
+        incentive_rate: incentiveRate,
         status:         form.status as 'active' | 'inactive',
         notes:          form.notes || null,
         role:           form.role || null,
