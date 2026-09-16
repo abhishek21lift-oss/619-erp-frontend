@@ -37,8 +37,13 @@ function inDays(days: number): string {
 /** Pick an option from the app's searchable select. */
 async function choose(page: Page, label: string, option: string) {
   // The trigger is a button named for the field; the options appear under it.
+  //
+  // The option is matched by a regex rather than exactly: several carry a
+  // decorative emoji beside the label, so the accessible name is "🏢 Offline"
+  // rather than "Offline". The emoji is aria-hidden now, and the regex keeps
+  // this working either way.
   await page.getByRole('button', { name: label, exact: true }).first().click();
-  await page.getByRole('button', { name: option, exact: true }).first().click();
+  await page.getByRole('button', { name: new RegExp(`\\b${option}\\b`) }).last().click();
 }
 
 /** Draw on the signature canvas the way a finger would. */
