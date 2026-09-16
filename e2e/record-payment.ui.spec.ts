@@ -43,7 +43,7 @@ test.describe('Record Payment', () => {
     // No sign-in here: the session comes from auth.setup.ts via storageState.
     // gotoApp re-authenticates only if the access cookie expired mid-run.
     await gotoApp(page, `/pt-os/clients/${ALPHA.clientId}/payments`);
-    await expect(page.getByRole('button', { name: 'Record Payment' }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Record Payment' }).first()).toBeVisible({ timeout: 25_000 });
   });
 
   /** Open the sheet and type an amount on the keypad, as a person would. */

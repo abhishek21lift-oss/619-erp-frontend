@@ -10,7 +10,6 @@ import { streamAiChat } from '@/lib/ai-stream';
 import type { Client } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { errorMessage } from '@/lib/forms/errors';
-import { z } from 'zod';
 import { aiWorkoutInputSchema, aiDietInputSchema } from '@/lib/forms/schemas/aiGenerator';
 import { clampNumericText } from '@/components/ui/FloatInput';
 
@@ -170,24 +169,32 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
       weight_kg: String(weight_kg),
       height_cm: String(height_cm),
     };
-    const parsed = type === 'workout'
-      ? aiWorkoutInputSchema.safeParse({ ...facts, training_days: trainingDays, injuries: '' })
-      : aiDietInputSchema.safeParse({
-          ...facts, meal_frequency: '3',
-          dietary_preferences: dietaryPrefs, allergies,
-        });
 
-    if (!parsed.success) {
+    /**
+     * Says WHERE the impossible number came from.
+     *
+     * Age, weight and height are read off the client's record here rather than
+     * typed into this panel, so a bare "Weight must be at most 400 kg" sends
+     * the trainer hunting for a box that is not on the screen.
+     */
+    const refuse = (issues: { message: string; path: PropertyKey[] }[]) => {
+      const first = issues[0];
+      const fromRecord = ['age', 'weight_kg', 'height_cm'].includes(String(first?.path[0]));
       setGenerationError(
-        parsed.error.issues[0]?.message ?? 'Check the client\u2019s details before generating.',
+        fromRecord
+          ? `${first.message} Check the client\u2019s profile — this is read from their record.`
+          : (first?.message ?? 'Check the details before generating.'),
       );
       setIsGenerating(false);
-      return;
-    }
+    };
 
     try {
       if (type === 'workout') {
-        const v = parsed.data as z.output<typeof aiWorkoutInputSchema>;
+        const parsed = aiWorkoutInputSchema.safeParse({
+          ...facts, training_days: trainingDays, injuries: '',
+        });
+        if (!parsed.success) return refuse(parsed.error.issues);
+        const v = parsed.data;
         const res = await api.ai.generateWorkout({
           age, gender, weight_kg, height_cm,
           goal: goal.toLowerCase().replace(/ /g, '_'),
@@ -211,6 +218,11 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
         ].filter(Boolean).join('\n');
         setGenerationResult(summary);
       } else {
+        const parsed = aiDietInputSchema.safeParse({
+          ...facts, meal_frequency: '3',
+          dietary_preferences: dietaryPrefs, allergies,
+        });
+        if (!parsed.success) return refuse(parsed.error.issues);
         const res = await api.ai.generateDiet({
           age, gender, weight_kg, height_cm,
           activity_level: 'moderate',

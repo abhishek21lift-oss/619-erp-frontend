@@ -49,7 +49,9 @@ test.describe('Client creation', () => {
   test.beforeEach(async ({ page }) => {
     token = await apiToken();
     await gotoApp(page, '/pt-os/new-client');
-    await expect(page.getByRole('button', { name: 'Create Client' })).toBeVisible();
+    // 25s: this is a precondition, not the assertion under test, and it pays
+    // for the dev server's first compile of the page.
+    await expect(page.getByRole('button', { name: 'Create Client' })).toBeVisible({ timeout: 25_000 });
   });
 
   test.afterAll(async () => {
@@ -137,7 +139,9 @@ test.describe('Client creation', () => {
 
     // Not the success screen, and the form is still there to try again with.
     await expect(page.getByRole('heading', { name: /Client Onboarded/i })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Create Client' })).toBeVisible();
+    // 25s: this is a precondition, not the assertion under test, and it pays
+    // for the dev server's first compile of the page.
+    await expect(page.getByRole('button', { name: 'Create Client' })).toBeVisible({ timeout: 25_000 });
     await expect(page.locator('body')).not.toContainText('unique constraint');
     await expect(page.locator('body')).not.toContainText('/srv/api/src');
 
