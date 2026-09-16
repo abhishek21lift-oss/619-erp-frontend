@@ -29,6 +29,7 @@ import type { FinanceSubTab } from '../_shared/types';
 import { Center, ErrorState, Field, IconBtn, Modal, inputCls, inputStyle } from '../_shared/ui';
 import { CouponsTab } from './CouponsTab';
 import { errorMessage } from '@/lib/forms/errors';
+import { clampNumericText } from '@/components/ui/FloatInput';
 
 export function FinanceTab({ subTab, onSubTabChange }: { subTab: FinanceSubTab; onSubTabChange: (t: FinanceSubTab) => void }) {
   // Phase 8: the dashboard subtab is removed. The run-rate view lived
@@ -219,7 +220,8 @@ export function RecordPaymentModal({ studio, plans, onClose, onDone }: { studio:
           </select>
         </Field>
         <Field label="Amount received (₹)">
-          <input className={inputCls} style={inputStyle} type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <input className={inputCls} style={inputStyle} type="text" inputMode="decimal"
+            value={amount} onChange={(e) => setAmount(clampNumericText(e.target.value, 'decimal'))} />
           {studio.is_founder && <p className="mt-1 text-[11px]" style={{ color: '#b45309' }}>Founder — lifetime-locked price ₹{studio.locked_price_inr?.toLocaleString('en-IN')}.</p>}
         </Field>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -302,7 +304,8 @@ export function ExecuteChangeModal({ studio, planCode, onClose, onDone }: { stud
             <p className="rounded-[10px] p-2.5 text-[11.5px]" style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.28)', color: '#b45309' }}>{quote.warning}</p>
           )}
           <Field label="Amount received (₹)">
-            <input className={inputCls} style={inputStyle} type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <input className={inputCls} style={inputStyle} type="text" inputMode="decimal"
+            value={amount} onChange={(e) => setAmount(clampNumericText(e.target.value, 'decimal'))} />
           </Field>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Method">

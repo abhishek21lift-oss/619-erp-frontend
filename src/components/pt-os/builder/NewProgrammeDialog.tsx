@@ -445,7 +445,7 @@ export default function NewProgrammeDialog({
           <div className="grid grid-cols-2 gap-3">
             <Field label="Weeks">
               <input
-                type="number" min={WEEKS_MIN} max={WEEKS_MAX} value={weeks} inputMode="numeric"
+                min={WEEKS_MIN} max={WEEKS_MAX} value={weeks} inputMode="numeric"
                 onChange={(e) => { setWeeks(e.target.value); touch('weeks'); }}
                 onBlur={() => setWeeks(String(clamp(weeks, WEEKS_MIN, WEEKS_MAX)))}
                 className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
@@ -454,7 +454,7 @@ export default function NewProgrammeDialog({
             </Field>
             <Field label="Sessions / week">
               <input
-                type="number" min={PER_WEEK_MIN} max={PER_WEEK_MAX} value={perWeek} inputMode="numeric"
+                min={PER_WEEK_MIN} max={PER_WEEK_MAX} value={perWeek} inputMode="numeric"
                 onChange={(e) => { setPerWeek(e.target.value); touch('perWeek'); }}
                 onBlur={() => setPerWeek(String(clamp(perWeek, PER_WEEK_MIN, PER_WEEK_MAX)))}
                 className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"

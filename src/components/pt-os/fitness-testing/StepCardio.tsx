@@ -73,27 +73,27 @@ export function StepCardio({ form, set, age, gender, error }: StepCardioProps) {
 
       {form.cardioTestType === 'Rockport 1-Mile Walk' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FloatInput label="Completion Time (min)" type="number" value={form.cardioTimeMin} onChange={(v) => set('cardioTimeMin', v)} />
-          <FloatInput label="Heart Rate at Finish (bpm)" type="number" value={form.cardioHeartRate} onChange={(v) => set('cardioHeartRate', v)} />
+          <FloatInput label="Completion Time (min)" numeric="decimal" value={form.cardioTimeMin} onChange={(v) => set('cardioTimeMin', v)} />
+          <FloatInput label="Heart Rate at Finish (bpm)" numeric="integer" value={form.cardioHeartRate} onChange={(v) => set('cardioHeartRate', v)} />
         </div>
       )}
       {form.cardioTestType === 'Cooper 12-Minute Run' && (
-        <FloatInput label="Distance Covered (meters)" type="number" value={form.cardioDistanceMeters} onChange={(v) => set('cardioDistanceMeters', v)} />
+        <FloatInput label="Distance Covered (meters)" numeric="integer" value={form.cardioDistanceMeters} onChange={(v) => set('cardioDistanceMeters', v)} />
       )}
       {form.cardioTestType === 'Bruce Protocol' && (
-        <FloatInput label="Total Treadmill Time (min)" type="number" value={form.cardioTreadmillMinutes} onChange={(v) => set('cardioTreadmillMinutes', v)} />
+        <FloatInput label="Total Treadmill Time (min)" numeric="decimal" value={form.cardioTreadmillMinutes} onChange={(v) => set('cardioTreadmillMinutes', v)} />
       )}
       {form.cardioTestType === 'Harvard Step Test' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FloatInput label="Duration (sec)" type="number" value={form.cardioDurationSec} onChange={(v) => set('cardioDurationSec', v)} />
-          <FloatInput label="Pulse 1 (1-1.5min post)" type="number" value={form.cardioPulse1} onChange={(v) => set('cardioPulse1', v)} />
-          <FloatInput label="Pulse 2 (2-2.5min post)" type="number" value={form.cardioPulse2} onChange={(v) => set('cardioPulse2', v)} />
-          <FloatInput label="Pulse 3 (3-3.5min post)" type="number" value={form.cardioPulse3} onChange={(v) => set('cardioPulse3', v)} />
+          <FloatInput label="Duration (sec)" numeric="integer" value={form.cardioDurationSec} onChange={(v) => set('cardioDurationSec', v)} />
+          <FloatInput label="Pulse 1 (1-1.5min post)" numeric="integer" value={form.cardioPulse1} onChange={(v) => set('cardioPulse1', v)} />
+          <FloatInput label="Pulse 2 (2-2.5min post)" numeric="integer" value={form.cardioPulse2} onChange={(v) => set('cardioPulse2', v)} />
+          <FloatInput label="Pulse 3 (3-3.5min post)" numeric="integer" value={form.cardioPulse3} onChange={(v) => set('cardioPulse3', v)} />
         </div>
       )}
       {form.cardioTestType === 'YMCA 3-Minute Step Test' && (
         <div>
-          <FloatInput label="Recovery Heart Rate (bpm)" type="number" value={form.cardioRecoveryHr} onChange={(v) => set('cardioRecoveryHr', v)} />
+          <FloatInput label="Recovery Heart Rate (bpm)" numeric="integer" value={form.cardioRecoveryHr} onChange={(v) => set('cardioRecoveryHr', v)} />
           <p className="mt-1.5 text-[11px] text-slate-400">No standard VO₂max formula for this test — classified by heart-rate recovery only.</p>
         </div>
       )}

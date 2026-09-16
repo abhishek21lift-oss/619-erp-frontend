@@ -103,7 +103,8 @@ const CEILING = {
   /**
    * §19. `type="number"` controls, which `inputMode` replaces.
    *
-   * Not zero, and this is the figure the audit was BLIND to until it was added:
+   * Zero, and it stays zero. This is the figure the audit was BLIND to until
+   * it was added:
    * every other measure asks "is the control on the design system" and "is
    * there a schema behind it", and both answers are YES for the biggest
    * remaining cluster. `FloatInput` is a design-system component and passes
@@ -115,8 +116,11 @@ const CEILING = {
    * A wheel over a focused field silently changes a logged measurement. That
    * is the same class of defect as `Number('')` becoming 0: a value nobody
    * typed, indistinguishable afterwards from one they did.
+   *
+   * Three shared components now refuse to render it, and a source scan closes
+   * the door on a raw `<input>` doing it directly.
    */
-  wheelHazards: 93,
+  wheelHazards: 0,
   /** Forms with no submit guard of any kind. */
   noSubmitContract: 15,
 };
@@ -233,11 +237,15 @@ describe('ceilings — these may only fall', () => {
     expect(a.totals.uploadInputs).toBeGreaterThan(5);
   });
 
-  it('type="number" controls never increase', () => {
-    // A ceiling, not an invariant: 93 remain, 60 of them in the assessment
-    // steps. The point of pinning it is that the next numeric field written
-    // cannot be one more.
-    expect(a.totals.wheelHazards).toBeLessThanOrEqual(CEILING.wheelHazards);
+  it('renders no type="number" anywhere', () => {
+    // An invariant now, not a ceiling. It was 93 — sixty of them in the
+    // assessment steps, hidden behind `FloatInput`, which passed `type`
+    // straight through and so counted as a design-system control while
+    // carrying the defect.
+    //
+    // `no-number-wheel-hazard.test.ts` names the offending files when this
+    // fails; this line is what makes it a gate.
+    expect(a.totals.wheelHazards).toBe(0);
   });
 
   it('forms with no submit guard never increase', () => {

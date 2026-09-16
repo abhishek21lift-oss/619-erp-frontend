@@ -10,6 +10,7 @@ import { streamAiChat } from '@/lib/ai-stream';
 import type { Client } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { errorMessage } from '@/lib/forms/errors';
+import { clampNumericText } from '@/components/ui/FloatInput';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -439,8 +440,8 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
 
                     <Field label="Training Days per Week">
                       <input
-                        type="number" min={1} max={7} value={trainingDays}
-                        onChange={e => setTrainingDays(e.target.value)}
+                        type="text" inputMode="numeric" min={1} max={7} value={trainingDays}
+                        onChange={e => setTrainingDays(clampNumericText(e.target.value, 'integer'))}
                         style={inputStyle} placeholder="e.g. 4"
                       />
                     </Field>

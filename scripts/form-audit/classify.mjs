@@ -435,13 +435,26 @@ export function coercionSites(source) {
  * avoided would count as uses of it.
  */
 export function wheelHazards(source) {
-  let count = 0;
-  for (const line of source.split('\n')) {
-    const code = line.trim();
-    if (code.startsWith('//') || code.startsWith('*')) continue;
-    count += (line.match(/type="number"/g) ?? []).length;
+  // Comments are stripped properly rather than line-by-line. A `{/* … */}`
+  // JSX comment explaining why type="number" is avoided does not start with
+  // `//` or `*`, so the line-based version counted the explanation as an
+  // instance of the thing it explains — an inflated metric, which is as wrong
+  // as a gamed one and pushes someone to delete the reasoning to get green.
+  return (stripComments(source).match(/type="number"|type=\{'number'\}/g) ?? []).length;
+}
+
+/** Source with `//` and `/* *\/` comments removed. */
+function stripComments(src) {
+  let out = '';
+  for (let i = 0; i < src.length;) {
+    if (src[i] === '/' && src[i + 1] === '/') { while (i < src.length && src[i] !== '\n') i++; }
+    else if (src[i] === '/' && src[i + 1] === '*') {
+      i += 2;
+      while (i < src.length && !(src[i] === '*' && src[i + 1] === '/')) i++;
+      i += 2;
+    } else { out += src[i]; i++; }
   }
-  return count;
+  return out;
 }
 
 /** A file input whose handler does not reach the canonical validator. */

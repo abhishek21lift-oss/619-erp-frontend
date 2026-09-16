@@ -82,15 +82,15 @@ export function StepHydrationCravings({ form, set, error }: StepHydrationCraving
             })}
           </div>
           <div className="max-w-[200px]">
-            <FloatInput label="Or enter exactly (L)" type="number" value={form.waterIntakeLiters} onChange={(v) => set('waterIntakeLiters', v)} />
+            <FloatInput label="Or enter exactly (L)" numeric="decimal" value={form.waterIntakeLiters} onChange={(v) => set('waterIntakeLiters', v)} />
           </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <FloatInput label="Tea (cups/day)" type="number" value={form.teaCupsPerDay} onChange={(v) => set('teaCupsPerDay', v)} />
-          <FloatInput label="Coffee (cups/day)" type="number" value={form.coffeeCupsPerDay} onChange={(v) => set('coffeeCupsPerDay', v)} />
-          <FloatInput label="Soft Drinks/day" type="number" value={form.softDrinksPerDay} onChange={(v) => set('softDrinksPerDay', v)} />
-          <FloatInput label="Juices/day" type="number" value={form.juicesPerDay} onChange={(v) => set('juicesPerDay', v)} />
+          <FloatInput label="Tea (cups/day)" numeric="decimal" value={form.teaCupsPerDay} onChange={(v) => set('teaCupsPerDay', v)} />
+          <FloatInput label="Coffee (cups/day)" numeric="decimal" value={form.coffeeCupsPerDay} onChange={(v) => set('coffeeCupsPerDay', v)} />
+          <FloatInput label="Soft Drinks/day" numeric="decimal" value={form.softDrinksPerDay} onChange={(v) => set('softDrinksPerDay', v)} />
+          <FloatInput label="Juices/day" numeric="decimal" value={form.juicesPerDay} onChange={(v) => set('juicesPerDay', v)} />
         </div>
 
         {(dailyFluidIntake != null || label) && (

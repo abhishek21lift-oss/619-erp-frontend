@@ -423,7 +423,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
                   <FloatInput label="Notes" multiline autoGrow value={session.notes || ''}
                     onChange={(v) => setSession((p) => (p ? { ...p, notes: v } : p))}
                     onBlur={() => handleHeaderSave({ notes: session.notes || null })} />
-                  <FloatInput label="Duration (minutes)" type="number" value={session.duration_minutes != null ? String(session.duration_minutes) : ''}
+                  <FloatInput label="Duration (minutes)" numeric="decimal" value={session.duration_minutes != null ? String(session.duration_minutes) : ''}
                     onChange={(v) => setSession((p) => (p ? { ...p, duration_minutes: v ? Number(v) : null } : p))}
                     onBlur={() => handleHeaderSave({ duration_minutes: session.duration_minutes })} />
                   {savingHeader && <p className="text-[10.5px] font-[600]" style={{ color: '#94a3b8' }}>Saving…</p>}

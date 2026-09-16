@@ -48,9 +48,25 @@ vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast: { error: vi.fn(), succ
 
 import NewProgrammeDialog, { clamp } from '@/components/pt-os/builder/NewProgrammeDialog';
 
+  /*
+   * Queried by inputMode rather than by role.
+   *
+   * These used to be `getAllByRole('spinbutton')`, which is the implicit role
+   * of `<input type="number">` — so the query was coupled to the very thing
+   * that made the field unsafe. A scroll wheel over a focused number input
+   * silently changes its value, and the design system no longer renders one.
+   *
+   * Every assertion below is unchanged; only the way the fields are found is.
+   */
+function numericFields() {
+  return Array.from(
+    document.querySelectorAll('input[inputmode="numeric"]'),
+  ) as HTMLInputElement[];
+}
+
 function open() {
   render(<NewProgrammeDialog open onClose={() => {}} presetClientId="c1" />);
-  const [weeks, perWeek] = screen.getAllByRole('spinbutton') as HTMLInputElement[];
+  const [weeks, perWeek] = numericFields();
   return { weeks, perWeek };
 }
 

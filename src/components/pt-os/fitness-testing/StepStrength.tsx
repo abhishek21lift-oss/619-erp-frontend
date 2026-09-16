@@ -181,8 +181,8 @@ function StrengthTestBlock({
       {mode === 'estimated' ? (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FloatInput label="Weight Lifted (kg)" type="number" value={weightKg} onChange={onWeightKg} />
-            <FloatInput label="Repetitions" type="number" value={reps} onChange={onReps} />
+            <FloatInput label="Weight Lifted (kg)" numeric="decimal" value={weightKg} onChange={onWeightKg} />
+            <FloatInput label="Repetitions" numeric="integer" value={reps} onChange={onReps} />
           </div>
           <div className="mt-4">
             <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Formula</p>
@@ -205,7 +205,7 @@ function StrengthTestBlock({
           </div>
         </>
       ) : (
-        <FloatInput label="Direct 1RM (kg)" type="number" value={direct1RM} onChange={onDirect1RM} />
+        <FloatInput label="Direct 1RM (kg)" numeric="decimal" value={direct1RM} onChange={onDirect1RM} />
       )}
 
       {result.oneRM != null && (

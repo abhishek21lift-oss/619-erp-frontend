@@ -23,10 +23,10 @@ export function StepPerformanceMetrics({ form, set }: StepPerformanceMetricsProp
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <FloatInput label="Grip Strength (kg)" type="number" value={form.gripStrengthKg} onChange={(v) => set('gripStrengthKg', v)} />
-        <FloatInput label="Vertical Jump (cm)" type="number" value={form.verticalJumpCm} onChange={(v) => set('verticalJumpCm', v)} />
-        <FloatInput label="Balance Test (seconds)" type="number" value={form.balanceTestSeconds} onChange={(v) => set('balanceTestSeconds', v)} />
-        <FloatInput label="Reaction Time (ms)" type="number" value={form.reactionTimeMs} onChange={(v) => set('reactionTimeMs', v)} />
+        <FloatInput label="Grip Strength (kg)" numeric="decimal" value={form.gripStrengthKg} onChange={(v) => set('gripStrengthKg', v)} />
+        <FloatInput label="Vertical Jump (cm)" numeric="decimal" value={form.verticalJumpCm} onChange={(v) => set('verticalJumpCm', v)} />
+        <FloatInput label="Balance Test (seconds)" numeric="integer" value={form.balanceTestSeconds} onChange={(v) => set('balanceTestSeconds', v)} />
+        <FloatInput label="Reaction Time (ms)" numeric="decimal" value={form.reactionTimeMs} onChange={(v) => set('reactionTimeMs', v)} />
       </div>
 
       <FloatInput label="Performance Notes" multiline autoGrow value={form.performanceNotes} onChange={(v) => set('performanceNotes', v)} />

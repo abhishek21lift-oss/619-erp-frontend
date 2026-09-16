@@ -728,7 +728,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                     </p>
                     <FloatInput
                       label=""
-                      type="number" placeholder="Enter Final Selling Price"
+                      numeric="decimal" placeholder="Enter Final Selling Price"
                       prefix={<span className="text-[13px] font-[700]">₹</span>}
                       value={form.finalAmount}
                       onChange={(v) => set('finalAmount', v)}
@@ -743,7 +743,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                     </p>
                     <FloatInput
                       label=""
-                      type="number" placeholder="Enter Amount Paid"
+                      numeric="decimal" placeholder="Enter Amount Paid"
                       prefix={<span className="text-[13px] font-[700]">₹</span>}
                       value={form.amountPaid}
                       onChange={(v) => set('amountPaid', v)}

@@ -41,10 +41,10 @@ export function StepBloodPressure({ form, set, error }: StepBloodPressureProps) 
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <FloatInput label="Systolic (mmHg)" type="number" value={form.bpSystolic} onChange={(v) => set('bpSystolic', v)} />
-        <FloatInput label="Diastolic (mmHg)" type="number" value={form.bpDiastolic} onChange={(v) => set('bpDiastolic', v)} />
-        <FloatInput label="Resting Heart Rate (bpm)" type="number" value={form.restingHeartRate} onChange={(v) => set('restingHeartRate', v)} />
-        <FloatInput label="Resting SpO₂ (%)" type="number" value={form.restingSpo2} onChange={(v) => set('restingSpo2', v)} />
+        <FloatInput label="Systolic (mmHg)" numeric="integer" value={form.bpSystolic} onChange={(v) => set('bpSystolic', v)} />
+        <FloatInput label="Diastolic (mmHg)" numeric="integer" value={form.bpDiastolic} onChange={(v) => set('bpDiastolic', v)} />
+        <FloatInput label="Resting Heart Rate (bpm)" numeric="integer" value={form.restingHeartRate} onChange={(v) => set('restingHeartRate', v)} />
+        <FloatInput label="Resting SpO₂ (%)" numeric="integer" value={form.restingSpo2} onChange={(v) => set('restingSpo2', v)} />
       </div>
 
       {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}

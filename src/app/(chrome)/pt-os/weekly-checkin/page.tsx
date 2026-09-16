@@ -172,30 +172,33 @@ export default function WeeklyCheckinPage() {
               </FormField>
 
               <div className="grid grid-cols-2 gap-3">
-                {/* inputMode alongside type="number": the type gives a numeric
-                    keypad, and decimal vs numeric decides whether it has a
-                    decimal point. Weight and sleep take halves; glasses and
-                    workouts do not. */}
+                {/* `inputMode` alone, and deliberately.
+                    It is what opens the keypad — decimal vs numeric decides
+                    whether it has a point, so weight and sleep take halves
+                    while glasses and workouts do not. `type="number"` was
+                    here too and contributed only its hazard: a scroll wheel
+                    over a focused field silently changing a client's logged
+                    weight. `TextInput` now refuses to render it at all. */}
                 <FormField label="Weight" description="kg">
-                  <TextInput type="number" step="0.1" inputMode="decimal" placeholder="e.g. 72.5"
+                  <TextInput step="0.1" inputMode="decimal" placeholder="e.g. 72.5"
                     value={weight} onChange={e => setWeight(e.target.value)} />
                 </FormField>
                 <FormField label="Sleep" description="hours per night">
-                  <TextInput type="number" step="0.5" inputMode="decimal" placeholder="e.g. 7.5"
+                  <TextInput step="0.5" inputMode="decimal" placeholder="e.g. 7.5"
                     value={sleepHours} onChange={e => setSleepHours(e.target.value)} />
                 </FormField>
                 <FormField label="Water" description="glasses per day">
-                  <TextInput type="number" inputMode="numeric"
+                  <TextInput inputMode="numeric"
                     value={waterGlasses} onChange={e => setWaterGlasses(e.target.value)} />
                 </FormField>
                 <FormField label="Workouts" description="this week">
-                  <TextInput type="number" inputMode="numeric"
+                  <TextInput inputMode="numeric"
                     value={workoutCount} onChange={e => setWorkoutCount(e.target.value)} />
                 </FormField>
               </div>
 
               <FormField label="Adherence" description="Percentage, 0 to 100.">
-                <TextInput type="number" min={0} max={100} inputMode="numeric"
+                <TextInput min={0} max={100} inputMode="numeric"
                   value={adherencePct} onChange={e => setAdherencePct(e.target.value)} />
               </FormField>
               {/* ── Readiness inputs ──
@@ -218,7 +221,7 @@ export default function WeeklyCheckinPage() {
                     // control instead of being read as stray text after it.
                     <FormField key={f.label} label={f.label} description={f.hint}>
                       <TextInput
-                        type="number" min={1} max={10} inputMode="numeric"
+                        min={1} max={10} inputMode="numeric"
                         value={f.value} onChange={(e) => f.set(e.target.value)}
                       />
                     </FormField>

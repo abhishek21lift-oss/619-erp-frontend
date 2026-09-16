@@ -67,7 +67,7 @@ export default function SessionBalancePage() {
                 </SelectInput>
               </FormField>
               <FormField label="Total sessions" required>
-                <TextInput type="number" min={1} inputMode="numeric"
+                <TextInput min={1} inputMode="numeric"
                   value={totalSessions} onChange={e => setTotalSessions(e.target.value)} />
               </FormField>
               {/* The example survives as a placeholder because that is what it

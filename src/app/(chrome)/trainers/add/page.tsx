@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   User, Phone, Mail, MapPin, Award, DollarSign,
@@ -13,6 +13,11 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageTitle } from '@/components/ui';
+import { clampNumericText } from '@/components/ui/FloatInput';
+import { errorMessage } from '@/lib/forms/errors';
+import {
+  trainerIdentitySchema, trainerNumbersSchema, TRAINER_FIELD_STEP, sent,
+} from '@/lib/forms/schemas/trainer';
 
 // ── Types ────────────────────────────────────────────────────────────
 type Step = {
@@ -33,8 +38,6 @@ const SPECIALIZATIONS = ['Strength Training', 'HIIT', 'Yoga', 'Pilates', 'Cardio
 const CERTIFICATIONS  = ['K11 Fitness', 'ACE Certified', 'NASM CPT', 'ISSA', 'ACSM', 'CrossFit L1', 'Yoga RYT 200', 'Sports Nutrition', 'First Aid CPR'];
 const DAYS            = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-const MOBILE_RE = /^[6-9]\d{9}$/;
-const EMAIL_RE  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // ── FloatLabel ───────────────────────────────────────────────────────
 function FloatLabel({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
@@ -53,16 +56,29 @@ function FloatLabel({ label, children, required }: { label: string; children: Re
 }
 
 // ── Input ────────────────────────────────────────────────────────────
-function Input({ label, type = 'text', placeholder, required, value, onChange, accentColor = '#0067e0' }: {
-  label: string; type?: string; placeholder?: string; required?: boolean;
+/**
+ * Numeric handling delegates to `clampNumericText`, the same function
+ * `FloatInput` uses — one implementation, not a second one that drifts.
+ *
+ * `type="number"` is never rendered: a scroll wheel over a focused number
+ * input silently changes its value, and on this screen that value is a
+ * salary or a capacity figure. What type=number gave for free — blocking
+ * letters — is replicated; what it gave for nothing is not.
+ */
+function Input({ label, type = 'text', numeric, placeholder, required, value, onChange, accentColor = '#0067e0' }: {
+  label: string; type?: string; numeric?: 'integer' | 'decimal';
+  placeholder?: string; required?: boolean;
   value?: string; onChange?: (v: string) => void; accentColor?: string;
 }) {
+  const mode = numeric ?? (type === 'number' ? 'decimal' : null);
   return (
     <FloatLabel label={label} required={required}>
       <input
-        type={type} placeholder={placeholder}
+        type={mode ? 'text' : type}
+        inputMode={mode === 'integer' ? 'numeric' : mode === 'decimal' ? 'decimal' : undefined}
+        placeholder={placeholder}
         value={value ?? ''}
-        onChange={e => onChange?.(e.target.value)}
+        onChange={e => onChange?.(mode ? clampNumericText(e.target.value, mode) : e.target.value)}
         className="w-full rounded-[16px] px-4 pb-3 pt-[30px] text-[14px] font-[500] outline-none transition-all duration-200"
         style={{ background: '#ffffff', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)', boxShadow: '0 1px 4px rgba(15,23,42,0.05)' }}
         onFocus={e => {
@@ -178,6 +194,8 @@ export default function AddCoachPage() {
   const router = useRouter();
   const [step, setStep]           = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  /** Synchronous re-entry guard — see the note in handleSubmit. */
+  const submittingRef = useRef(false);
   const [error, setError]         = useState('');
   const [specs, setSpecs]         = useState<string[]>([]);
   const [certs, setCerts]         = useState<string[]>([]);
@@ -243,27 +261,68 @@ export default function AddCoachPage() {
   const as_      = current.soft;
 
   const handleSubmit = useCallback(async () => {
-    if (!firstName.trim()) { setError('First name is required'); setStep(1); return; }
-    if (!email.trim()) { setError('Email address is required'); setStep(2); return; }
-    if (!EMAIL_RE.test(email.trim())) { setError('Please enter a valid email address'); setStep(2); return; }
-    if (!mobile.trim()) { setError('Phone number is required'); setStep(2); return; }
-    if (!MOBILE_RE.test(mobile.trim())) { setError('Phone must be a valid 10-digit Indian mobile number starting with 6–9'); setStep(2); return; }
+    // A same-frame re-entry guard. `submitting` is state, so two taps in one
+    // frame both read false and both create a coach.
+    if (submittingRef.current) return;
+
+    /*
+     * One schema for the identity fields and one for every figure, replacing
+     * five hand-written checks and six raw parses.
+     *
+     * `parseFloat` parses a PREFIX and stops, so a salary typed the way a
+     * studio owner writes one — "50,000" — was sent as 50. The truthiness
+     * guard in front of it caught '' and nothing else, so a whitespace box
+     * went through as NaN, which JSON writes as null and which CLEARS a
+     * stored salary. The same shape was on the session rate, the revenue
+     * share, the experience years and all four capacity figures.
+     */
+    const identity = trainerIdentitySchema.safeParse({
+      firstName, lastName, email, mobile,
+    });
+    const numbers = trainerNumbersSchema.safeParse({
+      salary, sessionRate, incentiveRate,
+      experienceYears: experience,
+      maxSessionsPerDay: maxSessions,
+      maxClients,
+      monthlyClientTarget,
+      monthlyRevenueTarget,
+    });
+
+    if (!identity.success || !numbers.success) {
+      const issues = [
+        ...(identity.success ? [] : identity.error.issues),
+        ...(numbers.success ? [] : numbers.error.issues),
+      ];
+      const first = issues[0];
+      const field = String(first?.path[0] ?? '');
+      setError(first?.message ?? 'Check the highlighted fields');
+      // Open the step that owns the field, so the message is not about
+      // something the user cannot see.
+      const owning = TRAINER_FIELD_STEP[field];
+      if (owning) setStep(owning);
+      return;
+    }
+
+    const id = identity.data;
+    const num = numbers.data;
+
+    submittingRef.current = true;
     setSubmitting(true);
     setError('');
     try {
       const fullAddress = [address, city, stateField, pinCode].filter(Boolean).join(', ');
       await api.trainers.create({
-        name:           (firstName.trim() + ' ' + lastName.trim()).trim(),
-        mobile:         mobile.trim(),
-        email:          email.trim(),
+        name:           [id.firstName, id.lastName].filter(Boolean).join(' '),
+        mobile:         id.mobile as string,
+        email:          id.email as string,
         dob:            dob || null,
         gender:         gender || null,
         joining_date:   joinDate || null,
         address:        fullAddress || null,
         specialization: specs.length > 0 ? specs.join(', ') : null,
         certifications: certs.length > 0 ? certs.join(', ') : null,
-        salary:         salary ? parseFloat(salary) : null,
-        incentive_rate: incentiveRate ? parseFloat(incentiveRate) : null,
+        salary:         sent(num.salary) ?? null,
+        incentive_rate: sent(num.incentiveRate) ?? null,
         bio:            bio || null,
         notes:          notes || null,
         schedule:       workDays.length > 0 ? workDays.join(', ') : null,
@@ -272,9 +331,9 @@ export default function AddCoachPage() {
           emergency_contact_name:   emergencyName || null,
           emergency_contact_phone:  emergencyPhone || null,
           primary_language:         language || null,
-          experience_years:         experience ? parseInt(experience, 10) : null,
+          experience_years:         sent(num.experienceYears) ?? null,
           salary_type:              salaryType || null,
-          session_rate:             sessionRate ? parseFloat(sessionRate) : null,
+          session_rate:             sent(num.sessionRate) ?? null,
           payment_frequency:        paymentFrequency || null,
           bank:                     bank || null,
           account_number:           accountNumber || null,
@@ -284,12 +343,12 @@ export default function AddCoachPage() {
           bonus_eligible:           bonusEligible,
           shift_start:              shiftStart || null,
           shift_end:                shiftEnd || null,
-          max_sessions_per_day:     maxSessions ? parseInt(maxSessions, 10) : null,
-          max_clients:              maxClients ? parseInt(maxClients, 10) : null,
+          max_sessions_per_day:     sent(num.maxSessionsPerDay) ?? null,
+          max_clients:              sent(num.maxClients) ?? null,
           weekend_available:        weekendAvail,
           early_morning_available:  earlyMorningAvail,
-          monthly_client_target:    monthlyClientTarget ? parseInt(monthlyClientTarget, 10) : null,
-          monthly_revenue_target:   monthlyRevenueTarget ? parseFloat(monthlyRevenueTarget) : null,
+          monthly_client_target:    sent(num.monthlyClientTarget) ?? null,
+          monthly_revenue_target:   sent(num.monthlyRevenueTarget) ?? null,
           studio_access_level:      studioAccess || null,
           perm_manage_clients:      permManageClients,
           perm_view_financials:     permViewFinancials,
@@ -300,8 +359,9 @@ export default function AddCoachPage() {
       });
       router.push('/trainers');
     } catch (err: unknown) {
-      setError((err as Error)?.message || 'Failed to create coach');
+      setError(errorMessage(err, 'Failed to create coach'));
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }, [
@@ -361,7 +421,7 @@ export default function AddCoachPage() {
           <ChipGroup options={CERTIFICATIONS} selected={certs} onChange={setCerts} gradient={ag} color={ac} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Years of Experience" type="number" value={experience} onChange={setExperience} accentColor={ac} />
+          <Input label="Years of Experience" numeric="integer" value={experience} onChange={setExperience} accentColor={ac} />
           <Select label="Primary Language" options={['Hindi', 'English', 'Both']} value={language} onChange={setLanguage} accentColor={ac} />
         </div>
         <Input label="Bio / About Coach" value={bio} onChange={setBio} accentColor={ac} />
@@ -371,11 +431,11 @@ export default function AddCoachPage() {
       <div className="space-y-3">
         <Select label="Salary Type" options={['Fixed Monthly', 'Per Session', 'Revenue Share', 'Hybrid']} value={salaryType} onChange={setSalaryType} accentColor={ac} />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Base Salary (₹)" type="number" value={salary} onChange={setSalary} accentColor={ac} />
-          <Input label="Session Rate (₹)" type="number" value={sessionRate} onChange={setSessionRate} accentColor={ac} />
+          <Input label="Base Salary (₹)" numeric="decimal" value={salary} onChange={setSalary} accentColor={ac} />
+          <Input label="Session Rate (₹)" numeric="decimal" value={sessionRate} onChange={setSessionRate} accentColor={ac} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Revenue Share %" type="number" value={incentiveRate} onChange={setIncentiveRate} accentColor={ac} />
+          <Input label="Revenue Share %" numeric="decimal" value={incentiveRate} onChange={setIncentiveRate} accentColor={ac} />
           <Select label="Payment Frequency" options={['Monthly', 'Bi-Weekly', 'Weekly']} value={paymentFrequency} onChange={setPaymentFrequency} accentColor={ac} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -420,8 +480,8 @@ export default function AddCoachPage() {
           </div>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Max Sessions / Day" type="number" value={maxSessions} onChange={setMaxSessions} accentColor={ac} />
-          <Input label="Max Clients" type="number" value={maxClients} onChange={setMaxClients} accentColor={ac} />
+          <Input label="Max Sessions / Day" numeric="integer" value={maxSessions} onChange={setMaxSessions} accentColor={ac} />
+          <Input label="Max Clients" numeric="integer" value={maxClients} onChange={setMaxClients} accentColor={ac} />
         </div>
         <div className="space-y-2.5">
           <ToggleSwitch label="Available for Weekends" sublabel="Saturday & Sunday availability" checked={weekendAvail} onChange={setWeekendAvail} accentColor={ac} />
@@ -432,8 +492,8 @@ export default function AddCoachPage() {
     6: (
       <div className="space-y-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Monthly Client Target" type="number" value={monthlyClientTarget} onChange={setMonthlyClientTarget} accentColor={ac} />
-          <Input label="Monthly Revenue Target (₹)" type="number" value={monthlyRevenueTarget} onChange={setMonthlyRevenueTarget} accentColor={ac} />
+          <Input label="Monthly Client Target" numeric="integer" value={monthlyClientTarget} onChange={setMonthlyClientTarget} accentColor={ac} />
+          <Input label="Monthly Revenue Target (₹)" numeric="decimal" value={monthlyRevenueTarget} onChange={setMonthlyRevenueTarget} accentColor={ac} />
         </div>
         <Select label="Studio Access Level" options={['Full Access', 'Floor Only', 'Limited Hours', 'Custom']} value={studioAccess} onChange={setStudioAccess} accentColor={ac} />
         <div>
