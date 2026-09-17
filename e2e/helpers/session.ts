@@ -59,10 +59,35 @@ export async function signIn(page: Page): Promise<void> {
 export async function submitSignInForm(page: Page): Promise<void> {
   await page.getByLabel('Email address').fill(ALPHA.email);
   await page.getByLabel('Password', { exact: true }).fill(ALPHA.password);
-  await Promise.all([
-    page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 30_000 }),
-    page.getByRole('button', { name: /log in|sign in/i }).first().click(),
-  ]);
+  await page.getByRole('button', { name: /log in|sign in/i }).first().click();
+
+  /*
+   * Race the navigation against the one failure that is NOT the product's.
+   *
+   * The backend allows thirty logins per fifteen minutes per IP, and
+   * /api/auth/refresh shares that budget. Running the suite two or three times
+   * inside that window exhausts it, and what a bare waitForURL then reports is
+   * a thirty-second navigation timeout — which reads exactly like a broken
+   * sign-in form and sends the next person to debug one.
+   *
+   * Naming it costs one locator and saves that trip.
+   */
+  const navigated = page
+    .waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 30_000 })
+    .then(() => 'ok' as const);
+  const rateLimited = page
+    .getByText(/too many login attempts/i)
+    .waitFor({ state: 'visible', timeout: 30_000 })
+    .then(() => 'limited' as const);
+
+  const outcome = await Promise.race([navigated, rateLimited.catch(() => navigated)]);
+  if (outcome === 'limited') {
+    throw new Error(
+      'Sign-in was rate limited, not broken: the backend allows 30 logins per 15 minutes ' +
+      'per IP and /api/auth/refresh shares that budget. Wait for the window to clear, or ' +
+      'run fewer suites back to back.',
+    );
+  }
 }
 
 /**
