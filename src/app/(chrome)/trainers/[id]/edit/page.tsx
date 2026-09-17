@@ -15,6 +15,8 @@ import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { toMoneyOrNull } from '@/lib/forms/normalize';
 
+import { clampNumericText } from '@/components/ui/FloatInput';
+
 const MOBILE_RE = /^[6-9]\d{9}$/;
 const EMAIL_RE  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -46,15 +48,28 @@ function FloatLabel({ label, children, required }: { label: string; children: Re
 }
 
 // ── Input ────────────────────────────────────────────────────────────
-function FInput({ label, type = 'text', required, value, onChange, placeholder, accent = '#F59E0B' }: {
-  label: string; type?: string; required?: boolean; placeholder?: string;
+/**
+ * Numeric handling delegates to `clampNumericText`, the same function
+ * `FloatInput` uses — one implementation, not a second one that drifts.
+ *
+ * `type="number"` is never rendered: a scroll wheel over a focused number
+ * input silently changes its value, and on this screen that value is a
+ * salary or a capacity figure. What type=number gave for free — blocking
+ * letters — is replicated; what it gave for nothing is not.
+ */
+function FInput({ label, type = 'text', numeric, required, value, onChange, placeholder, accent = '#F59E0B' }: {
+  label: string; type?: string; numeric?: 'integer' | 'decimal';
+  required?: boolean; placeholder?: string;
   value: string; onChange: (v: string) => void; accent?: string;
 }) {
+  const mode = numeric ?? (type === 'number' ? 'decimal' : null);
   return (
     <FloatLabel label={label} required={required}>
       <input
-        type={type} placeholder={placeholder} value={value}
-        onChange={e => onChange(e.target.value)} required={required}
+        type={mode ? 'text' : type}
+        inputMode={mode === 'integer' ? 'numeric' : mode === 'decimal' ? 'decimal' : undefined}
+        placeholder={placeholder} value={value}
+        onChange={e => onChange(mode ? clampNumericText(e.target.value, mode) : e.target.value)} required={required}
         className="w-full rounded-[16px] px-4 pb-3 pt-[30px] text-[14px] font-[500] outline-none transition-all duration-200"
         style={{ background: '#ffffff', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)', boxShadow: '0 1px 4px rgba(15,23,42,0.05)' }}
         onFocus={e => { e.currentTarget.style.border = `1.5px solid ${accent}`; e.currentTarget.style.boxShadow = `0 0 0 3.5px ${accent}22`; }}
@@ -515,7 +530,7 @@ function EditContent({ id }: { id: string }) {
                 <FInput label="Certifications" value={form.certifications} onChange={set('certifications')}
                   placeholder="K11 Fitness, ACE Certified, NASM CPT…" accent="#10B981" />
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <FInput label="Experience (years)" type="number" value={experience} onChange={setExperience} accent="#10B981" />
+                  <FInput label="Experience (years)" numeric="integer" value={experience} onChange={setExperience} accent="#10B981" />
                   <FSelect label="Primary Language" value={language} onChange={setLanguage} accent="#10B981"
                     options={[
                       { value: 'Hindi',   label: 'Hindi'   },
@@ -564,8 +579,8 @@ function EditContent({ id }: { id: string }) {
                   <FInput label="Shift End"   type="time" value={shiftEnd}   onChange={setShiftEnd}   accent="#FCD34D" />
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <FInput label="Max Sessions / Day" type="number" value={maxSessions} onChange={setMaxSessions} accent="#FCD34D" />
-                  <FInput label="Max Clients"        type="number" value={maxClients}  onChange={setMaxClients}  accent="#FCD34D" />
+                  <FInput label="Max Sessions / Day" numeric="integer" value={maxSessions} onChange={setMaxSessions} accent="#FCD34D" />
+                  <FInput label="Max Clients"        numeric="integer" value={maxClients}  onChange={setMaxClients}  accent="#FCD34D" />
                 </div>
                 <div className="space-y-2">
                   <Toggle label="Weekend Available"  sub="Available to work on Sat / Sun" value={weekendAvail}     onChange={setWeekendAvail}  accent="#FCD34D" />
@@ -585,11 +600,11 @@ function EditContent({ id }: { id: string }) {
                       { value: 'Commission', label: 'Commission'    },
                       { value: 'Hybrid',     label: 'Hybrid'        },
                     ]} />
-                  <FInput label="Base Salary (₹)" type="number" value={form.salary} onChange={set('salary')} accent="#0067E0" />
+                  <FInput label="Base Salary (₹)" numeric="decimal" value={form.salary} onChange={set('salary')} accent="#0067E0" />
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <FInput label="Session Rate (₹)" type="number" value={sessionRate} onChange={setSessionRate} accent="#0067E0" />
-                  <FInput label="Incentive Rate (%)" type="number" value={form.incentive_rate} onChange={set('incentive_rate')} accent="#0067E0" />
+                  <FInput label="Session Rate (₹)" numeric="decimal" value={sessionRate} onChange={setSessionRate} accent="#0067E0" />
+                  <FInput label="Incentive Rate (%)" numeric="decimal" value={form.incentive_rate} onChange={set('incentive_rate')} accent="#0067E0" />
                 </div>
                 <FSelect label="Payment Frequency" value={paymentFrequency} onChange={setPaymentFrequency} accent="#0067E0"
                   options={[
@@ -621,8 +636,8 @@ function EditContent({ id }: { id: string }) {
             <SectionCard sectionId="targets">
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <FInput label="Monthly Client Target"      type="number" value={monthlyClientTarget}  onChange={setMonthlyClientTarget}  accent="#7fb4ff" />
-                  <FInput label="Monthly Revenue Target (₹)" type="number" value={monthlyRevenueTarget} onChange={setMonthlyRevenueTarget} accent="#7fb4ff" />
+                  <FInput label="Monthly Client Target"      numeric="integer" value={monthlyClientTarget}  onChange={setMonthlyClientTarget}  accent="#7fb4ff" />
+                  <FInput label="Monthly Revenue Target (₹)" numeric="decimal" value={monthlyRevenueTarget} onChange={setMonthlyRevenueTarget} accent="#7fb4ff" />
                 </div>
                 <FSelect label="Studio Access Level" value={studioAccess} onChange={setStudioAccess} accent="#7fb4ff"
                   options={[

@@ -101,7 +101,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     //   - If login() already completed before me() returns, ignore me() result
     //     entirely — the fresh login data is the source of truth.
     const ac = new AbortController();
-    const meTimeout = setTimeout(() => ac.abort(), 10_000);
+    // Two different things abort this request and they must not be confused.
+    //
+    // A TIMEOUT abort means nothing more is coming, so the splash has to end
+    // and the cached session (if any) stands. A CLEANUP abort means this
+    // provider is being torn down and — because the cleanup also resets
+    // initDone — re-initialised a moment later, with a fresh request. Letting
+    // the cancelled one resolve `loading` publishes "no session" from an
+    // answer nobody received.
+    //
+    // That is not theoretical. React's StrictMode mounts, cleans up and
+    // remounts every effect in development; a signed-in person opening a deep
+    // link in a fresh tab has no cached user in sessionStorage to fall back
+    // on, so the aborted me() set loading=false with user=null, Guard read
+    // that as "not signed in", and the browser was sent to /login while a
+    // perfectly valid session cookie sat in the jar. It reproduces anywhere
+    // the provider remounts — Fast Refresh does it too — and it fails in the
+    // worst possible direction: it signs a person out of a session they have.
+    let timedOut = false;
+    const meTimeout = setTimeout(() => { timedOut = true; ac.abort(); }, 10_000);
 
     http<{ user: User }>('/api/auth/me', { signal: ac.signal })
       .then((res) => {
@@ -127,6 +145,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // All other errors (network, timeout, 5xx): keep cached session silently
       })
       .finally(() => {
+        // See the comment on `timedOut` above: a cleanup-abort has a successor
+        // request on the way and must not answer for it.
+        if (ac.signal.aborted && !timedOut) return;
         if (!loggedInRef.current) setLoading(false);
       });
 

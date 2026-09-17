@@ -117,9 +117,8 @@ export function initAssessmentForm(): AssessmentFormData {
   };
 }
 
-export const n = (v: string): number | null => {
-  const t = v.trim();
-  if (!t) return null;
-  const f = parseFloat(t);
-  return Number.isFinite(f) ? f : null;
-};
+// One parser for every measurement in the app. It used to be a hand-rolled
+// parseFloat here — and in four sibling files — which read a PREFIX and turned
+// '12abc' into 12 with nothing downstream able to tell. See
+// toMeasurementOrNull for the whole story.
+export { toMeasurementOrNull as n } from '@/lib/forms/normalize';

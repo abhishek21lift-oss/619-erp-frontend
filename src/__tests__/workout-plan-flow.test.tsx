@@ -53,7 +53,12 @@ afterEach(cleanup);
 
 const openDialog = () => render(<NewProgrammeDialog open onClose={() => {}} />);
 const nameField = () => screen.getByPlaceholderText(/Upper \/ Lower Split/i) as HTMLInputElement;
-const numbers = () => screen.getAllByRole('spinbutton') as HTMLInputElement[];
+// By inputMode, not by role: 'spinbutton' is the implicit role of
+// `<input type="number">`, and the design system no longer renders one — a
+// wheel over a focused number input silently changes its value. The
+// assertions are unchanged.
+const numbers = () =>
+  Array.from(document.querySelectorAll('input[inputmode="numeric"]')) as HTMLInputElement[];
 // The client list is fetched on open, so the row is not there on first paint.
 const pickClient = async () =>
   fireEvent.click(await screen.findByRole('button', { name: 'Rahul Sharma' }));

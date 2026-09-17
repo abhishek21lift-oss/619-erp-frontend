@@ -1,4 +1,12 @@
 import { test, expect } from '@playwright/test';
+import { PLATFORM_STORAGE_STATE } from './helpers/session';
+
+// The Command Center is its own PORTAL, not merely a role: mayEnterPortal
+// refuses a studio account at /platform. These journeys therefore run as the
+// seeded operator rather than borrowing the studio session every other
+// journey uses — without that they were redirected home and spent thirty
+// seconds waiting for a selector that could never appear.
+test.use({ storageState: PLATFORM_STORAGE_STATE });
 
 // Viewport list (width × height) as required by the prompt
 const viewports = [

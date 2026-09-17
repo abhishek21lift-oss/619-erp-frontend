@@ -50,6 +50,27 @@ import { useForm, useStore, type StandardSchemaV1 } from '@tanstack/react-form';
 import type { z } from 'zod';
 import { mapApiError, noErrors, type FormErrors } from './errors';
 
+/**
+ * Value equality for the flat records these forms hold.
+ *
+ * Every `defaultValues` on this platform is a flat map of strings — that is
+ * the shape the draft types declare, so a key-by-key comparison is exact
+ * rather than a heuristic. Anything that is not such a map falls back to
+ * reference equality, which is the conservative answer: it re-seeds.
+ */
+function sameValues(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) return false;
+  const ka = Object.keys(a as Record<string, unknown>);
+  const kb = Object.keys(b as Record<string, unknown>);
+  if (ka.length !== kb.length) return false;
+  return ka.every((k) => {
+    const va = (a as Record<string, unknown>)[k];
+    const vb = (b as Record<string, unknown>)[k];
+    return Object.is(va, vb) || (typeof va !== 'object' && typeof vb !== 'object' && va === vb);
+  });
+}
+
 /** §10's states, as one value a UI can switch on. */
 export type SubmitState =
   | 'idle'
@@ -150,8 +171,52 @@ export function useAppForm<
   const latest = useRef({ onSubmit, onSuccess, fieldHints });
   latest.current = { onSubmit, onSuccess, fieldHints };
 
+  /*
+   * ── Why `defaultValues` is not passed straight through ────────────────────
+   *
+   * TanStack's `useForm` calls `form.update(options)` on EVERY render, and
+   * `update` re-seeds the values whenever the new `defaultValues` is not deeply
+   * equal to the previous one and the form is untouched
+   * (form-core/FormApi.js: `shouldUpdateValues`).
+   *
+   * `form.reset(values)` also SETS `options.defaultValues` to the values it was
+   * given. Put those two together with the ordinary call shape —
+   *
+   *     useAppForm({ defaultValues: blankAutomationRule(), … })
+   *
+   * — and `resetTo` is undone by the very next render: reset stores the record
+   * as the new defaults, the component re-renders and passes a fresh blank
+   * object, `update` finds them unequal and the form untouched, and the values
+   * go back to blank.
+   *
+   * That is the "Edit A" bug, and it affected every form on the platform that
+   * seeds itself from a record: clicking Edit on an automation rule opened a
+   * form with the rule's name, template and delay for a single frame and then
+   * cleared it, so the studio owner edited a blank form over their own rule.
+   * `resetTo` is the documented way to rebuild a form from the authoritative
+   * record — §11's reset contract is written in terms of it — so it has to
+   * survive a render.
+   *
+   * The fix keeps BOTH behaviours. `resetTo`'s values become the defaults the
+   * hook hands to `useForm`, so nothing clobbers them; and if the CALLER's own
+   * defaultValues changes — the `editing ? toFormValues(editing) : blank()`
+   * shape a few components use — the caller wins and the seed is dropped,
+   * because that is the caller saying the record changed underneath.
+   *
+   * Compared by value, not by reference: every one of these default objects is
+   * a flat map of strings built fresh per render, so reference equality is
+   * always false and is exactly what made this misfire.
+   */
+  const callerDefaults = useRef(defaultValues);
+  const seeded = useRef<TValues | null>(null);
+  if (!sameValues(callerDefaults.current, defaultValues)) {
+    callerDefaults.current = defaultValues;
+    seeded.current = null;
+  }
+  const effectiveDefaults = seeded.current ?? defaultValues;
+
   const form = useForm({
-    defaultValues,
+    defaultValues: effectiveDefaults,
     validators: {
       // Validation on submit rather than on change. Validating a money field
       // while it is being typed reports "must be a number" at the moment the
@@ -256,6 +321,10 @@ export function useAppForm<
    */
   const resetTo = useCallback(
     (values: TValues) => {
+      // Recorded before the reset, so the next render hands `useForm` these
+      // same values rather than the caller's blank — see the note above
+      // `callerDefaults`. Without this line the reset lasts one frame.
+      seeded.current = values;
       form.reset(values);
       setErrors(noErrors());
       setSucceeded(false);

@@ -30,28 +30,28 @@ export function StepAnthropometric({ form, set, error }: StepAnthropometricProps
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <FloatInput label="Height (cm)" type="number" value={form.heightCm} onChange={(v) => set('heightCm', v)} />
-        <FloatInput label="Weight (kg)" type="number" value={form.weight} onChange={(v) => set('weight', v)} />
+        <FloatInput label="Height (cm)" numeric="decimal" value={form.heightCm} onChange={(v) => set('heightCm', v)} />
+        <FloatInput label="Weight (kg)" numeric="decimal" value={form.weight} onChange={(v) => set('weight', v)} />
         <FloatInput label="BMI" value={bmi != null ? String(bmi) : ''} onChange={() => {}} disabled />
-        <FloatInput label="Neck (cm)" type="number" value={form.neckCm} onChange={(v) => set('neckCm', v)} />
-        <FloatInput label="Waist Narrowest (cm)" type="number" value={form.waistCm} onChange={(v) => set('waistCm', v)} />
-        <FloatInput label="Waist Iliac (cm)" type="number" value={form.waistIliacCm} onChange={(v) => set('waistIliacCm', v)} />
-        <FloatInput label="Hip (cm)" type="number" value={form.hipsCm} onChange={(v) => set('hipsCm', v)} />
+        <FloatInput label="Neck (cm)" numeric="decimal" value={form.neckCm} onChange={(v) => set('neckCm', v)} />
+        <FloatInput label="Waist Narrowest (cm)" numeric="decimal" value={form.waistCm} onChange={(v) => set('waistCm', v)} />
+        <FloatInput label="Waist Iliac (cm)" numeric="decimal" value={form.waistIliacCm} onChange={(v) => set('waistIliacCm', v)} />
+        <FloatInput label="Hip (cm)" numeric="decimal" value={form.hipsCm} onChange={(v) => set('hipsCm', v)} />
         <FloatInput label="Waist-Hip Ratio" value={whr != null ? String(whr) : ''} onChange={() => {}} disabled />
-        <FloatInput label="Chest (cm)" type="number" value={form.chestCm} onChange={(v) => set('chestCm', v)} />
+        <FloatInput label="Chest (cm)" numeric="decimal" value={form.chestCm} onChange={(v) => set('chestCm', v)} />
       </div>
 
       <div className="mt-6">
         <p className="mb-3 text-[12px] font-[700] uppercase tracking-widest text-slate-400">Limbs (Right / Left)</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <FloatInput label="Right Arm (cm)" type="number" value={form.armRightCm} onChange={(v) => set('armRightCm', v)} />
-          <FloatInput label="Left Arm (cm)" type="number" value={form.armLeftCm} onChange={(v) => set('armLeftCm', v)} />
+          <FloatInput label="Right Arm (cm)" numeric="decimal" value={form.armRightCm} onChange={(v) => set('armRightCm', v)} />
+          <FloatInput label="Left Arm (cm)" numeric="decimal" value={form.armLeftCm} onChange={(v) => set('armLeftCm', v)} />
           <div className="hidden sm:block" />
-          <FloatInput label="Right Thigh (cm)" type="number" value={form.thighRightCm} onChange={(v) => set('thighRightCm', v)} />
-          <FloatInput label="Left Thigh (cm)" type="number" value={form.thighLeftCm} onChange={(v) => set('thighLeftCm', v)} />
+          <FloatInput label="Right Thigh (cm)" numeric="decimal" value={form.thighRightCm} onChange={(v) => set('thighRightCm', v)} />
+          <FloatInput label="Left Thigh (cm)" numeric="decimal" value={form.thighLeftCm} onChange={(v) => set('thighLeftCm', v)} />
           <div className="hidden sm:block" />
-          <FloatInput label="Right Calf (cm)" type="number" value={form.calfRightCm} onChange={(v) => set('calfRightCm', v)} />
-          <FloatInput label="Left Calf (cm)" type="number" value={form.calfLeftCm} onChange={(v) => set('calfLeftCm', v)} />
+          <FloatInput label="Right Calf (cm)" numeric="decimal" value={form.calfRightCm} onChange={(v) => set('calfRightCm', v)} />
+          <FloatInput label="Left Calf (cm)" numeric="decimal" value={form.calfLeftCm} onChange={(v) => set('calfLeftCm', v)} />
         </div>
       </div>
 

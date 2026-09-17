@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import { Package, Plus, Pencil, Trash2, X, Check, Search } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAppForm } from '@/lib/forms/useAppForm';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 import {
   ptPackageSchema, blankPtPackage, ptPackageToFormValues, toPtPackagePayload,
   PACKAGE_GOAL_OPTIONS,
@@ -291,17 +292,26 @@ function PackageFormModal({ editing, onClose, onSaved }: {
 
   const { form, isSubmitting } = f;
 
+  // The repo's dialog hook, the same one sixteen other modal surfaces use:
+  // focus in on open, trapped while open, returned to the trigger on close,
+  // Escape to dismiss. This overlay had none of it — Tab walked straight out
+  // into the package list behind it, where every card is still clickable.
+  const setDialogRef = useDialogA11y({ open: true, onClose });
+  const titleId = useId();
+  const heading = editing ? 'Edit Package' : 'Create Package';
+
   return (
     <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(6px)', padding: 16 }}
       onClick={() => !isSubmitting && onClose()}>
-      <m.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
+      <m.div ref={setDialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}
+        initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
         style={{ width: '100%', maxWidth: 520, borderRadius: 22, background: 'var(--bg-card)', border: '1px solid rgba(0,0,0,0.07)', padding: 28, boxShadow: '0 24px 80px rgba(0,0,0,0.12)' }}
         onClick={e => e.stopPropagation()}>
         <form noValidate onSubmit={(e) => { e.preventDefault(); void f.submit(); }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{editing ? 'Edit Package' : 'Create Package'}</h3>
-            <button type="button" onClick={onClose} aria-label="Close"
+            <h3 id={titleId} style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{heading}</h3>
+            <button type="button" onClick={onClose} aria-label={`Close ${heading}`}
               style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'var(--bg-subtle)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
               <X size={15} />
             </button>

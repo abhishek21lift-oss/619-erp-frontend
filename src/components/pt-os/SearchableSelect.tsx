@@ -92,6 +92,15 @@ export function SearchableSelect({
       <button
         type="button"
         aria-label={label}
+        // Accurate, and deliberately no more than that: this button opens a
+        // popup and its expanded state is now announced. What is NOT declared
+        // is role="combobox" with aria-controls and aria-activedescendant —
+        // that pattern obliges arrow-key navigation of the options and a
+        // managed active descendant, and this list has neither. Declaring the
+        // role without the model tells a screen reader user that keys work
+        // which do not.
+        aria-haspopup="listbox"
+        aria-expanded={open}
         onClick={toggleOpen}
         className="flex w-full items-center gap-3 rounded-[13px] px-4 py-3.5 text-left transition-all"
         style={{
@@ -101,7 +110,7 @@ export function SearchableSelect({
         }}
       >
         <span className={cn('flex-1 text-[13px] font-[500]', value ? 'text-[rgb(15,23,42)]' : 'text-[rgb(148,163,184)]')}>
-          {selected ? <>{selected.icon && <span className="mr-1.5">{selected.icon}</span>}{selected.label}</> : (value || placeholder || `Select ${label}`)}
+          {selected ? <>{selected.icon && <span className="mr-1.5" aria-hidden>{selected.icon}</span>}{selected.label}</> : (value || placeholder || `Select ${label}`)}
         </span>
         <ChevronDown size={14} style={{ color: 'rgb(148,163,184)', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 200ms', flexShrink: 0 }} />
       </button>
@@ -150,7 +159,12 @@ export function SearchableSelect({
                   className="flex w-full items-center justify-between rounded-[10px] px-3.5 py-2.5 text-[12.5px] font-[580] transition hover:bg-slate-50"
                   style={{ color: 'rgb(15,23,42)' }}
                 >
-                  <span>{opt.icon && <span className="mr-2">{opt.icon}</span>}{opt.label}</span>
+                  {/* The icon is decoration beside the label, not part of the
+                      option's name. Without aria-hidden a screen reader reads
+                      "office building Offline", and an emoji's spoken name
+                      varies by platform — so the same option is announced
+                      differently on two devices. */}
+                  <span>{opt.icon && <span className="mr-2" aria-hidden>{opt.icon}</span>}{opt.label}</span>
                   {value === opt.value && <Check size={12} style={{ color: '#0067E0' }} />}
                 </button>
               ))}

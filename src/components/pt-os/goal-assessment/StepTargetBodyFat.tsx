@@ -38,7 +38,7 @@ export function StepTargetBodyFat({ form, set, currentBodyFat }: StepTargetBodyF
           scaleLabels={['5%', '45%']}
         />
         <div className="mt-4 max-w-[220px]">
-          <FloatInput label="Or enter exactly (%)" type="number" value={form.targetBodyFat} onChange={(v) => set('targetBodyFat', v)} />
+          <FloatInput label="Or enter exactly (%)" numeric="decimal" value={form.targetBodyFat} onChange={(v) => set('targetBodyFat', v)} />
         </div>
 
         {gap != null && (

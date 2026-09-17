@@ -136,11 +136,11 @@ function FlexibilityTestBlock({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <FloatInput label="Left Side (cm)" type="number" value={left} onChange={onLeft} />
-        <FloatInput label="Right Side (cm)" type="number" value={right} onChange={onRight} />
-        <FloatInput label="Range of Motion (deg)" type="number" value={rom} onChange={onRom} />
+        <FloatInput label="Left Side (cm)" numeric="decimal" value={left} onChange={onLeft} />
+        <FloatInput label="Right Side (cm)" numeric="decimal" value={right} onChange={onRight} />
+        <FloatInput label="Range of Motion (deg)" numeric="integer" value={rom} onChange={onRom} />
         <div>
-          <FloatInput label="Composite Score (0-10)" type="number" value={score} onChange={onScore} />
+          <FloatInput label="Composite Score (0-10)" numeric="decimal" value={score} onChange={onScore} />
           <p className="mt-1.5 text-[11px] text-slate-400">Trainer-assessed, 0 = very limited, 10 = excellent.</p>
         </div>
       </div>

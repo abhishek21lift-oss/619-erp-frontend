@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Eraser, PenLine } from 'lucide-react';
 
 interface SignaturePadProps {
@@ -19,6 +19,12 @@ interface SignaturePadProps {
  *  surface, so a new npm dependency isn't warranted. Uses Pointer Events,
  *  which unify mouse/touch/pen input in one listener set. */
 export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabled, error, required }: SignaturePadProps) {
+  const baseId = useId();
+  const labelId = `${baseId}-label`;
+  const hintId = `${baseId}-hint`;
+  const errorId = `${baseId}-error`;
+  const describedBy = [hintId, error ? errorId : null].filter(Boolean).join(' ');
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const drawingRef = useRef(false);
@@ -125,7 +131,7 @@ export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabl
   return (
     <div>
       {label && (
-        <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
+        <p id={labelId} className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
           {label}
           {required && <span className="ml-0.5 text-[var(--gold,#0067E0)]" aria-hidden>*</span>}
         </p>
@@ -139,8 +145,28 @@ export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabl
           touchAction: 'none',
         }}
       >
+        {/*
+          A bare <canvas> is anonymous to assistive technology: no name, no
+          role, no state — on a control the enrolment form refuses to submit
+          without. It is named here, told whether it is required, whether it
+          currently holds a signature and whether it is in error, and given an
+          instruction that says what to do with it.
+
+          What this does NOT claim is keyboard operability. Drawing a signature
+          is a pointer gesture and there is no honest ARIA role for it, so no
+          role is declared — declaring one would promise an interaction model
+          that is not implemented. The real accessible alternative is a typed
+          name accepted as a signature, which is a product decision rather than
+          a markup one; recorded as a known gap rather than papered over.
+        */}
         <canvas
           ref={canvasRef}
+          aria-label={label || 'Signature'}
+          aria-labelledby={label ? labelId : undefined}
+          aria-describedby={describedBy}
+          aria-required={required || undefined}
+          aria-invalid={error ? true : undefined}
+          data-signed={hasStroke ? 'true' : 'false'}
           className="block w-full"
           style={{ cursor: disabled ? 'not-allowed' : 'crosshair' }}
           onPointerDown={handlePointerDown}
@@ -151,23 +177,28 @@ export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabl
         />
         {!hasStroke && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2" style={{ color: '#cbd5e1' }}>
-            <PenLine size={14} />
+            <PenLine size={14} aria-hidden />
             <span className="text-[12px] font-[600]">Sign here</span>
           </div>
         )}
+        <p id={hintId} className="sr-only">
+          Draw the signature with a mouse, pen or finger inside this box. Use the Clear
+          button beside it to start again.
+        </p>
       </div>
       <div className="mt-2 flex items-center justify-between">
         {error ? (
-          <p className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>
+          <p id={errorId} role="alert" className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>
         ) : <span />}
         <button
           type="button"
           onClick={handleClear}
           disabled={disabled}
+          aria-label={`Clear ${label || 'signature'}`}
           className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-[11.5px] font-[650] transition-all disabled:opacity-40"
           style={{ color: '#64748b', background: '#f8fafc', border: '1px solid #e2e8f0' }}
         >
-          <Eraser size={12} /> Clear
+          <Eraser size={12} aria-hidden /> Clear
         </button>
       </div>
     </div>

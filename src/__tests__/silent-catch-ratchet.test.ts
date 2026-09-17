@@ -85,7 +85,7 @@ const KNOWN = [
   'app/(chrome)/ai/progress-analysis/page.tsx:61',
   'app/(chrome)/checkin/qr-scanner/page.tsx:384',
   'app/(chrome)/checkin/qr-scanner/page.tsx:398',
-  'app/(chrome)/engagement/notifications/page.tsx:41',
+  'app/(chrome)/engagement/notifications/page.tsx:46',
   // The three /stats catches are the reasoned ones: when the SQL aggregate is
   // unavailable the page falls back to summing the rows it has, which is
   // correct under the endpoint's own row cap and is documented at each site.
@@ -116,21 +116,21 @@ const KNOWN = [
   'app/(platform)/platform/_shared/CommandBar.tsx:85',
   'app/(platform)/platform/_tabs/ActivityTab.tsx:47',
   'app/(platform)/platform/_tabs/CouponsTab.tsx:64',
-  'app/(platform)/platform/_tabs/FinanceTab.tsx:340',
-  'app/(platform)/platform/_tabs/FinanceTab.tsx:98',
-  'app/(platform)/platform/_tabs/StudiosTab.tsx:382',
+  'app/(platform)/platform/_tabs/FinanceTab.tsx:343',
+  'app/(platform)/platform/_tabs/FinanceTab.tsx:99',
+  'app/(platform)/platform/_tabs/StudiosTab.tsx:383',
   'components/LandingPage.tsx:58',
   'components/LandingPage.tsx:65',
   'components/TrialBanner.tsx:19',
-  'components/fitness/AiCoachPanel.tsx:126',
-  'components/fitness/AiCoachPanel.tsx:132',
+  'components/fitness/AiCoachPanel.tsx:128',
+  'components/fitness/AiCoachPanel.tsx:134',
   'components/pt-os/analytics/LandmarkEditor.tsx:82',
   'components/pt-os/builder/NewProgrammeDialog.tsx:205',
   'components/pt-os/builder/NewProgrammeDialog.tsx:208',
   'components/pt-os/workout-log/ExercisePicker.tsx:274',
   'components/pt-os/workout-log/ExercisePicker.tsx:288',
-  'lib/auth-context.tsx:166',
-  'lib/auth-context.tsx:168',
+  'lib/auth-context.tsx:187',
+  'lib/auth-context.tsx:189',
 ].sort();
 
 describe('silent catches are listed, and the list only shrinks', () => {

@@ -62,6 +62,15 @@ interface Audit {
     byRisk: Record<string, { unjustified: number; coercions: number; forms: number }>;
     contracts: Record<string, { platform: number; manual: number; none: number }>;
     staleJustifications: string[];
+    journeys: {
+      specs: number;
+      claimedFiles: number;
+      criticalForms: number;
+      criticalCovered: number;
+      criticalWithoutJourney: number;
+      uncovered: string[];
+      brokenPairings: string[];
+    };
   };
   rows: AuditRow[];
 }
@@ -88,9 +97,9 @@ function audit(): Audit {
 const CEILING = {
   /** §6. Zero, and it stays zero. */
   riskyCoercions: 0,
-  unjustified: 142,
+  unjustified: 138,
   p0Unjustified: 0,
-  p1Unjustified: 55,
+  p1Unjustified: 51,
   /**
    * §9. Zero, and it stays zero.
    *
@@ -101,9 +110,23 @@ const CEILING = {
    */
   uploadUncanonical: 0,
   /**
+   * §6 — critical forms with no end-to-end journey.
+   *
+   * The one dimension of this audit that is not read out of the source, and
+   * the reason it exists: every other measure here can be satisfied by code
+   * that looks right and does not work. A form can bind a canonical schema,
+   * map every error and reset cleanly while posting a field name the endpoint
+   * ignores, and score perfectly.
+   *
+   * A ceiling rather than an invariant because thirty-five critical forms is
+   * an honest starting number, not a passing one. It may only fall.
+   */
+  criticalWithoutJourney: 35,
+  /**
    * §19. `type="number"` controls, which `inputMode` replaces.
    *
-   * Not zero, and this is the figure the audit was BLIND to until it was added:
+   * Zero, and it stays zero. This is the figure the audit was BLIND to until
+   * it was added:
    * every other measure asks "is the control on the design system" and "is
    * there a schema behind it", and both answers are YES for the biggest
    * remaining cluster. `FloatInput` is a design-system component and passes
@@ -115,19 +138,22 @@ const CEILING = {
    * A wheel over a focused field silently changes a logged measurement. That
    * is the same class of defect as `Number('')` becoming 0: a value nobody
    * typed, indistinguishable afterwards from one they did.
+   *
+   * Three shared components now refuse to render it, and a source scan closes
+   * the door on a raw `<input>` doing it directly.
    */
-  wheelHazards: 93,
+  wheelHazards: 0,
   /** Forms with no submit guard of any kind. */
   noSubmitContract: 15,
 };
 
 /** Raise these as phases land. Never lower them. */
 const FLOOR = {
-  platformControls: 322,
+  platformControls: 326,
   /** Forms whose errors reach the canonical mapper. */
-  errorPlatform: 54,
+  errorPlatform: 57,
   /** Forms bound to a named canonical schema. */
-  schemaPlatform: 25,
+  schemaPlatform: 27,
 };
 
 describe('the audit measures the tree', () => {
@@ -233,11 +259,38 @@ describe('ceilings — these may only fall', () => {
     expect(a.totals.uploadInputs).toBeGreaterThan(5);
   });
 
-  it('type="number" controls never increase', () => {
-    // A ceiling, not an invariant: 93 remain, 60 of them in the assessment
-    // steps. The point of pinning it is that the next numeric field written
-    // cannot be one more.
-    expect(a.totals.wheelHazards).toBeLessThanOrEqual(CEILING.wheelHazards);
+  it('renders no type="number" anywhere', () => {
+    // An invariant now, not a ceiling. It was 93 — sixty of them in the
+    // assessment steps, hidden behind `FloatInput`, which passed `type`
+    // straight through and so counted as a design-system control while
+    // carrying the defect.
+    //
+    // `no-number-wheel-hazard.test.ts` names the offending files when this
+    // fails; this line is what makes it a gate.
+    expect(a.totals.wheelHazards).toBe(0);
+  });
+
+  it('every critical form the audit claims is covered has a journey that exists', () => {
+    const a = audit();
+    // A broken pairing is worse than a missing journey: it removes a file from
+    // the denominator silently, so coverage IMPROVES when a page is renamed.
+    expect(
+      a.totals.journeys.brokenPairings,
+      `journeys.mjs names files that do not exist:\n${a.totals.journeys.brokenPairings.join('\n')}`,
+    ).toEqual([]);
+  });
+
+  it('end-to-end coverage of critical forms only improves', () => {
+    const a = audit();
+    const { criticalWithoutJourney, criticalForms, criticalCovered, uncovered } = a.totals.journeys;
+
+    expect(criticalCovered + criticalWithoutJourney, 'the parts add up').toBe(criticalForms);
+    expect(
+      criticalWithoutJourney,
+      `${criticalWithoutJourney} critical forms have no end-to-end journey ` +
+      `(ceiling ${CEILING.criticalWithoutJourney}). Lower the ceiling when you add one; ` +
+      `never raise it.\n${uncovered.slice(0, 15).join('\n')}`,
+    ).toBeLessThanOrEqual(CEILING.criticalWithoutJourney);
   });
 
   it('forms with no submit guard never increase', () => {

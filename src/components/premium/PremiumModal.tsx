@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useId, useRef } from 'react';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { m, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -16,19 +17,49 @@ type PremiumModalProps = {
   children?: React.ReactNode;
 };
 
+/**
+ * The studio's modal — Create Invoice, Schedule Session.
+ *
+ * ── What was missing ────────────────────────────────────────────────────────
+ *
+ * It looked like a dialog and behaved like one for a mouse, and to anything
+ * that is not a mouse it was a `<div>` that happened to be on top:
+ *
+ *   · no `role="dialog"` and no `aria-modal`, so a screen reader kept reading
+ *     the page UNDERNEATH — the invoice list, the nav, the whole shell — with
+ *     no indication that a form had opened over it
+ *   · no accessible name; the heading was right there in the markup and
+ *     nothing pointed at it
+ *   · focus never moved in. Opening Create Invoice from the toolbar left the
+ *     caret on the toolbar, so the first Tab went to the next thing in the
+ *     PAGE, not the first field of the form
+ *   · and nothing kept it in: Tab walked straight out of the dialog and into
+ *     the list behind it, where every control is still clickable
+ *   · on close, focus was wherever it had wandered to — commonly `<body>`,
+ *     which drops a keyboard user back at the top of the document
+ *
+ * Escape already closed it, which was the one piece that was there.
+ *
+ * ── Why the whole interaction model, and not just the role ──────────────────
+ *
+ * Declaring `role="dialog"` without focus management is worse than declaring
+ * nothing: assistive technology announces a dialog and then the user finds
+ * themselves outside it with no way to tell. The role is added here together
+ * with the behaviour it promises — focus in on open, trapped while open,
+ * returned to the trigger on close.
+ */
 export function PremiumModal({ open, onClose, title, subtitle, icon, size = 'md', footer, children }: PremiumModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handler);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', handler);
-      document.body.style.overflow = '';
-    };
-  }, [open, onClose]);
+  // Focus in on open, trapped while open, returned to the trigger on close,
+  // Escape to dismiss — the repo's one dialog hook, which sixteen other modal
+  // surfaces already use and dialogs.a11y.convention.test.ts enforces. The
+  // role, the accessible name and aria-modal are the caller's to supply, and
+  // are supplied below; declaring them without this hook would promise a
+  // keyboard model that is not there.
+  const setDialogRef = useDialogA11y({ open, onClose });
+  const baseId = useId();
+  const titleId = `${baseId}-title`;
+  const subtitleId = `${baseId}-subtitle`;
 
   const widths: Record<string, string> = {
     sm: 'max-w-sm',
@@ -49,6 +80,12 @@ export function PremiumModal({ open, onClose, title, subtitle, icon, size = 'md'
             onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
           />
           <m.div
+            ref={setDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            aria-describedby={subtitle ? subtitleId : undefined}
+            tabIndex={-1}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -61,17 +98,24 @@ export function PremiumModal({ open, onClose, title, subtitle, icon, size = 'md'
             <div className="flex items-start justify-between gap-4 px-6 pt-6 pb-4 border-b border-slate-100">
               <div className="flex items-center gap-3 min-w-0">
                 {icon && (
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                  <div aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                     {icon}
                   </div>
                 )}
                 <div className="min-w-0">
-                  <h2 className="text-[17px] font-[760] tracking-[-0.01em] text-slate-900 truncate">{title}</h2>
-                  {subtitle && <p className="text-[12px] text-slate-500 mt-0.5">{subtitle}</p>}
+                  <h2 id={titleId} className="text-[17px] font-[760] tracking-[-0.01em] text-slate-900 truncate">{title}</h2>
+                  {subtitle && <p id={subtitleId} className="text-[12px] text-slate-500 mt-0.5">{subtitle}</p>}
                 </div>
               </div>
-              <button onClick={onClose} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
-                <X size={16} />
+              {/* An icon is not a name: this button announced itself as
+                  "button" and nothing else. */}
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label={`Close ${title}`}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+              >
+                <X size={16} aria-hidden />
               </button>
             </div>
             <div className="px-6 py-4 max-h-[60vh] overflow-y-auto overscroll-contain">{children}</div>

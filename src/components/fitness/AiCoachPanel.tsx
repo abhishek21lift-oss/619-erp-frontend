@@ -10,6 +10,8 @@ import { streamAiChat } from '@/lib/ai-stream';
 import type { Client } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { errorMessage } from '@/lib/forms/errors';
+import { aiWorkoutInputSchema, aiDietInputSchema } from '@/lib/forms/schemas/aiGenerator';
+import { clampNumericText } from '@/components/ui/FloatInput';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -149,13 +151,57 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
     const weight_kg = selectedClient.weight ?? 75;
     const height_cm = selectedClient.height ?? 175;
 
+    /*
+     * §8 — validated BEFORE the model is invoked.
+     *
+     * The two dedicated generator pages have always parsed their inputs
+     * through these schemas. This panel is the third door to the same model
+     * call and went straight to the network: `parseInt(trainingDays, 10) || 4`
+     * turned a blank or mistyped box into four days without saying so, and the
+     * client's stored weight and height were forwarded whatever they were — so
+     * a record holding 750kg produced a programme written around 750kg.
+     *
+     * Refusing here is not only correctness. A generation is a billed model
+     * call, and an obviously impossible input is one nobody should pay for.
+     */
+    const facts = {
+      age: String(age),
+      weight_kg: String(weight_kg),
+      height_cm: String(height_cm),
+    };
+
+    /**
+     * Says WHERE the impossible number came from.
+     *
+     * Age, weight and height are read off the client's record here rather than
+     * typed into this panel, so a bare "Weight must be at most 400 kg" sends
+     * the trainer hunting for a box that is not on the screen.
+     */
+    const refuse = (issues: { message: string; path: PropertyKey[] }[]) => {
+      const first = issues[0];
+      const fromRecord = ['age', 'weight_kg', 'height_cm'].includes(String(first?.path[0]));
+      setGenerationError(
+        fromRecord
+          ? `${first.message} Check the client\u2019s profile — this is read from their record.`
+          : (first?.message ?? 'Check the details before generating.'),
+      );
+      setIsGenerating(false);
+    };
+
     try {
       if (type === 'workout') {
+        const parsed = aiWorkoutInputSchema.safeParse({
+          ...facts, training_days: trainingDays, injuries: '',
+        });
+        if (!parsed.success) return refuse(parsed.error.issues);
+        const v = parsed.data;
         const res = await api.ai.generateWorkout({
           age, gender, weight_kg, height_cm,
           goal: goal.toLowerCase().replace(/ /g, '_'),
           experience_level: experience.toLowerCase() || 'beginner',
-          training_days: parseInt(trainingDays, 10) || 4,
+          // The parsed value, not `parseInt(...) || 4`. A blank box is now a
+          // refusal above rather than a silent four.
+          training_days: v.training_days ?? undefined,
           client_id: selectedClient.id,
         });
         const plan = res.data;
@@ -172,6 +218,11 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
         ].filter(Boolean).join('\n');
         setGenerationResult(summary);
       } else {
+        const parsed = aiDietInputSchema.safeParse({
+          ...facts, meal_frequency: '3',
+          dietary_preferences: dietaryPrefs, allergies,
+        });
+        if (!parsed.success) return refuse(parsed.error.issues);
         const res = await api.ai.generateDiet({
           age, gender, weight_kg, height_cm,
           activity_level: 'moderate',
@@ -439,8 +490,8 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
 
                     <Field label="Training Days per Week">
                       <input
-                        type="number" min={1} max={7} value={trainingDays}
-                        onChange={e => setTrainingDays(e.target.value)}
+                        type="text" inputMode="numeric" min={1} max={7} value={trainingDays}
+                        onChange={e => setTrainingDays(clampNumericText(e.target.value, 'integer'))}
                         style={inputStyle} placeholder="e.g. 4"
                       />
                     </Field>

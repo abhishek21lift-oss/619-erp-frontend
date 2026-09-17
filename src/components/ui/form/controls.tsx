@@ -94,15 +94,36 @@ type NativeInput = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'id' | 'ari
 type NativeArea = Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'id' | 'aria-describedby'>;
 type NativeSelect = Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'id' | 'aria-describedby'>;
 
+/**
+ * `type="number"` is neutralised here rather than trusted to call sites.
+ *
+ * A scroll wheel over a FOCUSED number input silently changes its value. The
+ * weekly check-in used `type="number"` for a client's weight, with a comment
+ * explaining that the type gave numeric behaviour and `inputMode` gave the
+ * keypad — but `inputMode` alone gives the keypad, and the type was
+ * contributing only the hazard.
+ *
+ * Neutralising it in the control means no future caller can reintroduce it:
+ * the design system cannot emit the defect even when asked to. `min`, `max`
+ * and `step` still pass through untouched — they remain meaningful to a
+ * schema and to assistive tech, and `NumberField` sets them for exactly that
+ * reason.
+ */
 export const TextInput = forwardRef<HTMLInputElement, NativeInput>(
-  function TextInput({ className, style, ...rest }, ref) {
+  function TextInput({ className, style, type, inputMode, ...rest }, ref) {
     const w = useFieldWiring();
     const surface = useControlSurface();
+    const numeric = type === 'number';
     return (
       <input
         ref={ref}
         {...fieldControlProps(w)}
         {...rest}
+        type={numeric ? 'text' : type}
+        // A caller's explicit inputMode wins; a bare type="number" infers
+        // `decimal`, because a weight that cannot take 72.5 is worse than a
+        // rep count showing a pointless decimal point.
+        inputMode={inputMode ?? (numeric ? 'decimal' : undefined)}
         className={controlClassName(w, className)}
         style={{ ...controlStyle(w, surface), ...style }}
       />

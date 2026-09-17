@@ -20,6 +20,16 @@ import { defineConfig, devices } from '@playwright/test';
 const API_URL = process.env.E2E_API_URL ?? 'http://127.0.0.1:5100';
 const APP_URL = process.env.E2E_APP_URL ?? 'http://127.0.0.1:3101';
 
+// The image ships Chromium at PLAYWRIGHT_BROWSERS_PATH and the headless shell
+// is not always the build Playwright expects, so the path is honoured when
+// given rather than triggering a download that this environment forbids.
+const CHROMIUM_LAUNCH = process.env.PLAYWRIGHT_CHROMIUM_PATH
+  ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }
+  : {};
+
+// Written by e2e/auth.setup.ts, replayed by every browser project.
+const STORAGE_STATE = 'e2e/.auth/alpha.json';
+
 export default defineConfig({
   testDir: './e2e',
   // Isolation tests assert on shared seeded rows, so they must not race each
@@ -48,15 +58,48 @@ export default defineConfig({
       testMatch: /.*\.api\.spec\.ts/,
       use: { baseURL: API_URL },
     },
+    // Sign in once for the whole browser suite.
+    //
+    // The backend's loginLimiter allows thirty logins per fifteen minutes per
+    // IP, and /api/auth/refresh shares that budget. A per-test login exhausted
+    // it two thirds of the way through the run and the suite then failed with
+    // "Too many login attempts" — which reads exactly like a product defect and
+    // is not one. One real sign-in, saved and replayed, costs two.
+    {
+      name: 'setup',
+      testMatch: /.*\.setup\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: CHROMIUM_LAUNCH,
+      },
+    },
     {
       name: 'chromium',
       testMatch: /.*\.ui\.spec\.ts/,
+      dependencies: ['setup'],
       use: {
         ...devices['Desktop Chrome'],
         // The image ships Chromium at PLAYWRIGHT_BROWSERS_PATH; never download.
-        launchOptions: process.env.PLAYWRIGHT_CHROMIUM_PATH
-          ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }
-          : {},
+        launchOptions: CHROMIUM_LAUNCH,
+        storageState: STORAGE_STATE,
+      },
+    },
+    // The same journeys on a phone-sized viewport with touch input.
+    //
+    // Not a duplicate suite: `mobile` is what the tagged journeys run as, and
+    // only those tagged @mobile run here. A studio owner recording a payment
+    // does it on a phone at the desk far more often than on a laptop, and a
+    // sheet that fits at 1280px can put its submit button under the keyboard
+    // at 390px.
+    {
+      name: 'mobile',
+      testMatch: /.*\.ui\.spec\.ts/,
+      grep: /@mobile/,
+      dependencies: ['setup'],
+      use: {
+        ...devices['Pixel 7'],
+        launchOptions: CHROMIUM_LAUNCH,
+        storageState: STORAGE_STATE,
       },
     },
   ],

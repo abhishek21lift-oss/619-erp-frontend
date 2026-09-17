@@ -34,7 +34,7 @@ export function StepTargetWeight({ form, set, currentWeight, error }: StepTarget
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FloatInput label="Current Weight (from assessment)" value={currentWeight != null ? String(currentWeight) : ''} onChange={() => {}} disabled
             placeholder={currentWeight == null ? 'Add in Fitness Testing' : undefined} />
-          <FloatInput label="Target Weight (kg)" type="number" value={form.targetWeight} onChange={(v) => set('targetWeight', v)} />
+          <FloatInput label="Target Weight (kg)" numeric="decimal" value={form.targetWeight} onChange={(v) => set('targetWeight', v)} />
         </div>
 
         {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}

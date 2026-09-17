@@ -230,3 +230,36 @@ export function toCodeOrNull(raw: unknown): string | null {
   const compact = s.replace(/\s+/g, '').toUpperCase();
   return compact === '' ? null : compact;
 }
+
+/**
+ * A measurement's value, normalized to a number or nothing.
+ *
+ * The assessment family — fitness testing, goal, mobility, lifestyle and
+ * nutrition — each carried its own copy of this:
+ *
+ *     const n = (v: string) => {
+ *       const t = v.trim();
+ *       if (!t) return null;
+ *       const f = parseFloat(t);
+ *       return Number.isFinite(f) ? f : null;
+ *     };
+ *
+ * Five identical copies, and the same defect in all five. `parseFloat` reads a
+ * PREFIX and stops, which is the wrong shape for a measurement: '12abc' is 12,
+ * '7 0' is 7, and nothing downstream can tell that anything was dropped. These
+ * values do not merely get stored — BMI, the Rockport VO2 max estimate and the
+ * 1RM formulas all compute from them and store a SCORE, so a plausible wrong
+ * number is worse than a refusal.
+ *
+ * Built on toNumberOrNull so the assessments speak the platform's numeric
+ * contract rather than a fifth dialect of it: currency and separator noise are
+ * stripped the same way, non-numeric shapes are rejected the same way. The one
+ * difference is the return type — callers here send `undefined` for a field
+ * nobody filled in, and have no way to express "filled in wrongly", so NaN
+ * collapses to null rather than travelling on to become a JSON `null` that
+ * looks exactly like an empty field.
+ */
+export function toMeasurementOrNull(raw: string): number | null {
+  const parsed = toNumberOrNull(raw);
+  return typeof parsed === 'number' && Number.isFinite(parsed) ? parsed : null;
+}

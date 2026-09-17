@@ -444,7 +444,28 @@ export async function http<T = unknown>(
     body,
   };
 
-  if (method === 'GET' && cacheKey) {
+  // ── In-flight GET de-duplication, and the one case it must not cover ─────
+  //
+  // Sharing one promise between concurrent callers of the same GET is right
+  // for the common case: three components mounting at once should cost one
+  // request. It is WRONG the moment a caller brings its own AbortSignal,
+  // because the shared promise then carries that caller's cancellation to
+  // everybody else. The second caller does not get a slow request — it gets a
+  // rejected one, for a reason that has nothing to do with it.
+  //
+  // That is not hypothetical. AuthProvider passes a signal and aborts it in
+  // its effect cleanup. Under StrictMode (and on any Fast Refresh) the
+  // provider mounts, cleans up and remounts: the remount asked for
+  // /api/auth/me, was handed the promise the FIRST mount had just cancelled,
+  // saw it reject, concluded there was no session and sent a signed-in person
+  // to /login with a valid cookie in the jar. Nothing retried, because from
+  // http()'s point of view the request had already been made.
+  //
+  // So: a request carrying a signal neither joins the map nor writes to it.
+  // It is its own request, cancellable by its own owner and nobody else.
+  const shareable = method === 'GET' && cacheKey !== '' && !options.signal;
+
+  if (shareable) {
     const existing = inflight.get(cacheKey);
     if (existing) return existing as Promise<T>;
   }
@@ -461,6 +482,10 @@ export async function http<T = unknown>(
       return result;
     } catch (err) {
       if (err instanceof ApiError) throw err;
+      // A cancelled request is not a flaky one. Retrying it re-enters fetch
+      // with the same aborted signal, so it fails again immediately — three
+      // attempts and ~900ms of backoff to arrive at the answer we already had.
+      if ((init.signal as AbortSignal | undefined)?.aborted) throw err;
       if (attempt < maxRetries) {
         attempt++;
         await new Promise(r => setTimeout(r, 300 * 2 ** (attempt - 1)));
@@ -468,7 +493,10 @@ export async function http<T = unknown>(
       }
       throw err;
     } finally {
-      if (cacheKey) inflight.delete(cacheKey);
+      // Only a request that PUT itself in the map may take itself out. Keyed
+      // on cacheKey alone, a signal-bearing request evicted the shared entry
+      // some other caller was still waiting on.
+      if (shareable) inflight.delete(cacheKey);
     }
   };
 
@@ -505,7 +533,7 @@ export async function http<T = unknown>(
   };
 
   const promise = doFetchWithRefresh();
-  if (method === 'GET' && cacheKey) inflight.set(cacheKey, promise as Promise<unknown>);
+  if (shareable) inflight.set(cacheKey, promise as Promise<unknown>);
   return promise;
 }
 

@@ -425,3 +425,47 @@ describe('Slider', () => {
     expect(bad, `Slider with label="" and no ariaLabel:\n${bad.join('\n')}`).toEqual([]);
   });
 });
+
+describe('FloatInput — the same contract, on the component 43 files use', () => {
+  it('names the control from `label` when there is one', () => {
+    render(<FloatInput label="Amount Paid" value="" onChange={() => {}} />);
+    expect(screen.getByLabelText('Amount Paid')).toBeInTheDocument();
+  });
+
+  it('takes an explicit name when the caption is drawn by the caller', () => {
+    // The enrolment screen draws its own caption row above four fields — the
+    // money ones — so it can put the required asterisk in its own colour, and
+    // passed label="". The <label> element still rendered, empty, so the field
+    // had no accessible name: "Final / Selling Price" was on screen and the
+    // control announced itself as blank. On the two inputs that decide what a
+    // member is charged and what they have paid.
+    render(<FloatInput label="" ariaLabel="Final / Selling Price" value="" onChange={() => {}} />);
+    expect(screen.getByLabelText('Final / Selling Price')).toBeInTheDocument();
+  });
+
+  it('never carries two competing names', () => {
+    // A visible label wins; ariaLabel is ignored rather than overriding what
+    // the person can see. A control whose spoken name differs from its printed
+    // one is worse than one with no name.
+    render(<FloatInput label="Amount Paid" ariaLabel="Something else" value="" onChange={() => {}} />);
+    expect(screen.getByLabelText('Amount Paid')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Something else')).toBeNull();
+  });
+
+  it('gives every call site a name one way or the other', () => {
+    const bad: string[] = [];
+    for (const f of sources()) {
+      const src = readFileSync(f, 'utf8');
+      // The prop can sit on its own line, so match the whole element rather
+      // than a single line: `<FloatInput\n  label=""\n  numeric="decimal"`.
+      for (const m of src.matchAll(/<FloatInput\b[\s\S]*?\/?>/g)) {
+        const el = m[0];
+        if (/label=""/.test(el) && !/ariaLabel=/.test(el)) {
+          const line = src.slice(0, m.index).split('\n').length;
+          bad.push(`${rel(f)}:${line}`);
+        }
+      }
+    }
+    expect(bad, `FloatInput with label="" and no ariaLabel:\n${bad.join('\n')}`).toEqual([]);
+  });
+});

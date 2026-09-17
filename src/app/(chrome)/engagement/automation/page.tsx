@@ -126,6 +126,12 @@ function AutoContent() {
       toast.success(editing ? 'Rule updated' : 'Rule created');
       setEditing(null);
       setShowForm(false);
+      // §7 Success → New entity. cancelForm has always reset; this path did
+      // not, so a studio owner who saved a rule and then clicked New Rule was
+      // handed the rule they had just created — name, trigger, template and
+      // delay — and the obvious next action was to edit a word and save,
+      // producing a near-duplicate rule that fires alongside the first.
+      f.resetTo(blankAutomationRule());
       rules.refetch();
     },
   });
@@ -346,15 +352,20 @@ function AutoContent() {
                     )}
                   </div>
                   <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
-                    <button onClick={() => startEdit(r)} title="Edit rule"
+                    {/* Named with the rule, not just "Edit rule". Twelve rows
+                        produced twelve identically-named buttons, so a screen
+                        reader listing the page's controls read "Edit rule,
+                        button" twelve times with no way to tell which. */}
+                    <button onClick={() => startEdit(r)} title="Edit rule" aria-label={`Edit ${r.name}`}
                       style={{ display:'flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:7, border:'1px solid var(--border)', background:'var(--bg-subtle)', color:'var(--text-muted)', cursor:'pointer' }}>
                       <Edit2 size={12}/>
                     </button>
-                    <button onClick={() => deleteRule(r.id)} title="Delete rule"
+                    <button onClick={() => deleteRule(r.id)} title="Delete rule" aria-label={`Delete ${r.name}`}
                       style={{ display:'flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:7, border:'none', background:'rgba(239,68,68,0.08)', color:'#dc2626', cursor:'pointer' }}>
                       <Trash2 size={12}/>
                     </button>
                     <button onClick={() => toggleRule(r)} title={r.is_active?'Disable':'Enable'}
+                      aria-label={`${r.is_active ? 'Disable' : 'Enable'} ${r.name}`} aria-pressed={r.is_active}
                       style={{ display:'flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:7, border:'none',
                         background:r.is_active?'rgba(16,185,129,0.1)':'#f1f5f9', cursor:'pointer' }}>
                       {r.is_active ? <Power size={13} color="#10b981"/> : <PowerOff size={13} color="#94a3b8"/>}

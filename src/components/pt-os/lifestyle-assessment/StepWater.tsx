@@ -59,7 +59,7 @@ export function StepWater({ form, set }: StepWaterProps) {
       </div>
 
       <div className="max-w-[200px]">
-        <FloatInput label="Or enter exactly (L)" type="number" value={form.waterIntakeLiters} onChange={(v) => set('waterIntakeLiters', v)} />
+        <FloatInput label="Or enter exactly (L)" numeric="decimal" value={form.waterIntakeLiters} onChange={(v) => set('waterIntakeLiters', v)} />
       </div>
 
       {category && badge && (

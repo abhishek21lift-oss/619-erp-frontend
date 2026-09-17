@@ -49,23 +49,23 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <FloatInput label="Body Fat %" type="number" value={form.bodyFatPct} onChange={(v) => set('bodyFatPct', v)} />
-        <FloatInput label="Muscle Mass %" type="number" value={form.muscleMassPct} onChange={(v) => set('muscleMassPct', v)} />
+        <FloatInput label="Body Fat %" numeric="decimal" value={form.bodyFatPct} onChange={(v) => set('bodyFatPct', v)} />
+        <FloatInput label="Muscle Mass %" numeric="decimal" value={form.muscleMassPct} onChange={(v) => set('muscleMassPct', v)} />
         <FloatInput label="Lean Body Mass (kg)" value={leanBodyMass != null ? String(leanBodyMass) : ''} onChange={() => {}} disabled />
         <FloatInput label="Fat Mass (kg)" value={fatMass != null ? String(fatMass) : ''} onChange={() => {}} disabled />
-        <FloatInput label="Visceral Fat" type="number" value={form.visceralFat} onChange={(v) => set('visceralFat', v)} />
-        <FloatInput label="Subcutaneous Fat %" type="number" value={form.subcutaneousFatPct} onChange={(v) => set('subcutaneousFatPct', v)} />
-        <FloatInput label="Body Water %" type="number" value={form.bodyWaterPct} onChange={(v) => set('bodyWaterPct', v)} />
-        <FloatInput label="Bone Mass (kg)" type="number" value={form.boneMassKg} onChange={(v) => set('boneMassKg', v)} />
+        <FloatInput label="Visceral Fat" numeric="integer" value={form.visceralFat} onChange={(v) => set('visceralFat', v)} />
+        <FloatInput label="Subcutaneous Fat %" numeric="decimal" value={form.subcutaneousFatPct} onChange={(v) => set('subcutaneousFatPct', v)} />
+        <FloatInput label="Body Water %" numeric="decimal" value={form.bodyWaterPct} onChange={(v) => set('bodyWaterPct', v)} />
+        <FloatInput label="Bone Mass (kg)" numeric="decimal" value={form.boneMassKg} onChange={(v) => set('boneMassKg', v)} />
         <div>
-          <FloatInput label="BMR (kcal)" type="number" value={form.bmr} onChange={(v) => set('bmr', v)} />
+          <FloatInput label="BMR (kcal)" numeric="integer" value={form.bmr} onChange={(v) => set('bmr', v)} />
           <p className="mt-1.5 text-[11px] text-slate-400">
             {suggestedBmr != null
               ? `Leave blank to auto-suggest ${suggestedBmr} kcal (Mifflin-St Jeor).`
               : 'Leave blank to auto-suggest via Mifflin-St Jeor.'}
           </p>
         </div>
-        <FloatInput label="Metabolic Age" type="number" value={form.metabolicAge} onChange={(v) => set('metabolicAge', v)} />
+        <FloatInput label="Metabolic Age" numeric="integer" value={form.metabolicAge} onChange={(v) => set('metabolicAge', v)} />
       </div>
 
       {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}

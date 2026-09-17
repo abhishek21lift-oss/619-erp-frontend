@@ -34,6 +34,7 @@ import type { ModuleConfig, ModuleRecord } from '@/lib/module-config';
 import { series } from '@/lib/palette';
 import { toNumberOrNull } from '@/lib/forms/normalize';
 import { errorMessage } from '@/lib/forms/errors';
+import { clampNumericText } from '@/components/ui/FloatInput';
 
 /**
  * The form's RAW state.
@@ -315,7 +316,7 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
                     </select>
                   </Field>
                   <Field label="Value" required>
-                    <input className="input" type="number" min={0} value={form.amount} onChange={(e) => updateForm('amount', e.target.value)} />
+                    <input className="input" type="text" inputMode="decimal" min={0} value={form.amount} onChange={(e) => updateForm('amount', clampNumericText(e.target.value, 'decimal'))} />
                   </Field>
                   <Field label="Due date" required>
                     <input className="input" type="date" value={form.dueDate} onChange={(e) => updateForm('dueDate', e.target.value)} />

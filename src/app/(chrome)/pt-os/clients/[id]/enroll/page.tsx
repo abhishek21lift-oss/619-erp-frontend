@@ -478,11 +478,16 @@ function EnrollForm({ clientId }: { clientId: string }) {
       // real validation/logic error from the server — never retried.
       const isTransient = !(err instanceof ApiError) || err.isServer;
       console.error('[enroll] save failed', err);
-      const detail = err instanceof ApiError
-        ? `HTTP ${err.status}${err.code ? ` · ${err.code}` : ''} — ${err.message}`
-        : err instanceof Error
-        ? `${err.name}: ${err.message}`
-        : String(err);
+      // errorMessage, not the server's own text.
+      //
+      // This used to render `HTTP 500 · undefined — <whatever the body said>`
+      // straight onto the screen. Two things wrong with that, and the second
+      // is the serious one: it is developer output in front of a studio owner,
+      // and a 5xx body can carry a SQL error, a stack frame or an internal
+      // path — so the screen that says the enrolment failed was also the
+      // screen that said which table it failed on. The console.error above
+      // keeps the full detail where it belongs, for whoever is debugging.
+      const detail = errorMessage(err, 'Could not save the enrollment. Try again.');
 
       if (isTransient && !isRetry) {
         toast.info('Save failed — retrying once…', { duration: 6000 });
@@ -698,7 +703,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                     </button>
                   </div>
                   <FloatInput
-                    label="" type="date" value={form.startDate}
+                    label="" ariaLabel="PT Start Date" type="date" value={form.startDate}
                     onChange={(v) => set('startDate', v)}
                     onBlur={() => setErrors((e) => ({ ...e, startDate: validateStartDate(form.startDate) }))}
                     error={errors.startDate}
@@ -727,8 +732,8 @@ function EnrollForm({ clientId }: { clientId: string }) {
                       Final / Selling Price {isAdmin && <span style={{ color: '#F59E0B' }}>*</span>}
                     </p>
                     <FloatInput
-                      label=""
-                      type="number" placeholder="Enter Final Selling Price"
+                      label="" ariaLabel="Final / Selling Price"
+                      numeric="decimal" placeholder="Enter Final Selling Price"
                       prefix={<span className="text-[13px] font-[700]">₹</span>}
                       value={form.finalAmount}
                       onChange={(v) => set('finalAmount', v)}
@@ -742,8 +747,8 @@ function EnrollForm({ clientId }: { clientId: string }) {
                       Amount Paid {isAdmin && <span style={{ color: '#F59E0B' }}>*</span>}
                     </p>
                     <FloatInput
-                      label=""
-                      type="number" placeholder="Enter Amount Paid"
+                      label="" ariaLabel="Amount Paid"
+                      numeric="decimal" placeholder="Enter Amount Paid"
                       prefix={<span className="text-[13px] font-[700]">₹</span>}
                       value={form.amountPaid}
                       onChange={(v) => set('amountPaid', v)}
@@ -758,7 +763,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                     Balance / Due
                   </p>
                   <FloatInput
-                    label=""
+                    label="" ariaLabel="Balance / Due"
                     value={fmtINR(balanceDue)}
                     onChange={() => {}}
                     disabled

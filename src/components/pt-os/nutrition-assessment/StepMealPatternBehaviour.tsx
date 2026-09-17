@@ -84,8 +84,8 @@ export function StepMealPatternBehaviour({ form, set, error }: StepMealPatternBe
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FloatInput label="Meals Per Day" type="number" value={form.mealsPerDay} onChange={(v) => set('mealsPerDay', v)} />
-          <FloatInput label="Snacks Per Day" type="number" value={form.snacksPerDay} onChange={(v) => set('snacksPerDay', v)} />
+          <FloatInput label="Meals Per Day" numeric="integer" value={form.mealsPerDay} onChange={(v) => set('mealsPerDay', v)} />
+          <FloatInput label="Snacks Per Day" numeric="integer" value={form.snacksPerDay} onChange={(v) => set('snacksPerDay', v)} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">

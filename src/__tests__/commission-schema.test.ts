@@ -8,7 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   commissionRowSchema,
-  commissionToDraft,
+  commissionToDraft, toCommissionPayload, ratePercentFromFraction,
   payoutRowSchema,
   payoutToDraft,
   PAYOUT_STATUSES,
@@ -71,8 +71,61 @@ describe('commission — a cleared box is not zero', () => {
     expect(commissionToDraft({})).toEqual({
       commission_pct: '', commission_amount: '', incentives: '',
     });
-    expect(commissionToDraft({ commission_pct: 12.5, monthly_commission: '5000' }))
+    // `incentive_rate`, which is the field /pt-os/trainer-performance actually
+    // sends. This case used to pass `commission_pct` — a field that endpoint
+    // has never returned — so it proved the mapper worked on a shape that does
+    // not exist, while the real box opened empty for every trainer.
+    expect(commissionToDraft({ incentive_rate: 0.125, monthly_commission: '5000' }))
       .toEqual({ commission_pct: '12.5', commission_amount: '5000', incentives: '' });
+  });
+});
+
+describe('commission — percent on the screen, fraction in the column', () => {
+  // trainers.incentive_rate is NUMERIC(5,4) CHECK (BETWEEN 0 AND 1). The screen
+  // talks in percent because that is what a studio owner says. Nothing
+  // converted between the two: the route wrote `Number(commission_pct)`
+  // straight in, so 12.5 was rejected by the CHECK as a 500, and 0.5 stored
+  // fifty percent for somebody who meant half of one.
+  it('reads the column as a percentage', () => {
+    expect(ratePercentFromFraction(0.125)).toBe('12.5');
+    expect(ratePercentFromFraction(0.1)).toBe('10');
+    expect(ratePercentFromFraction(1)).toBe('100');
+    expect(ratePercentFromFraction(0)).toBe('0');
+    expect(ratePercentFromFraction('0.0825')).toBe('8.25');
+  });
+
+  it('is empty for a rate nobody recorded — never 0%', () => {
+    expect(ratePercentFromFraction(null)).toBe('');
+    expect(ratePercentFromFraction(undefined)).toBe('');
+    expect(ratePercentFromFraction('')).toBe('');
+    expect(ratePercentFromFraction('abc')).toBe('');
+  });
+
+  it('writes the percentage back as the fraction the column keeps', () => {
+    const parsed = commissionRowSchema.parse({
+      commission_pct: '12.5', commission_amount: '7000', incentives: '0',
+    });
+    expect(toCommissionPayload(parsed).commission_pct).toBe(0.125);
+  });
+
+  it('never sends a value the column would refuse', () => {
+    // Every percentage the schema accepts must land inside CHECK (0..1).
+    for (const pct of ['0', '0.5', '1', '12.5', '33.33', '99.99', '100']) {
+      const parsed = commissionRowSchema.parse({
+        commission_pct: pct, commission_amount: '1', incentives: '0',
+      });
+      const sent = toCommissionPayload(parsed).commission_pct!;
+      expect(sent, `${pct}% → ${sent}`).toBeGreaterThanOrEqual(0);
+      expect(sent, `${pct}% → ${sent}`).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('round-trips what the screen shows', () => {
+    for (const rate of [0, 0.05, 0.125, 0.3333, 0.5, 1]) {
+      const draft = commissionToDraft({ incentive_rate: rate, monthly_commission: '1', total_incentives: '0' });
+      const parsed = commissionRowSchema.parse(draft);
+      expect(toCommissionPayload(parsed).commission_pct, `${rate}`).toBe(rate);
+    }
   });
 });
 

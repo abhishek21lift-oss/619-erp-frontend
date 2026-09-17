@@ -30,6 +30,7 @@ import type { StudioFilter, StudioRow, StudioSort } from '../_shared/types';
 import { Center, ErrorState, IconBtn, MiniStat } from '../_shared/ui';
 import { errorMessage } from '@/lib/forms/errors';
 import { checkFile, acceptAttribute, LOGO_RULES } from '@/lib/forms/files';
+import { clampNumericText } from '@/components/ui/FloatInput';
 
 export function exportStudiosCsv(rows: StudioRow[]): void {
   const headers = ['Name', 'Slug', 'Status', 'Plan', 'Revenue', 'Active Clients', 'Total Clients', 'Coaches', 'Accounts', 'Last Active', 'Created'];
@@ -670,7 +671,8 @@ export function StudioOperatorPanel({ org, onChanged }: { org: Organization; onC
         </p>
         <div className="flex flex-wrap items-center gap-2">
           <input
-            type="number" value={days} onChange={(e) => setDays(e.target.value)}
+            type="text" inputMode="numeric"
+            value={days} onChange={(e) => setDays(clampNumericText(e.target.value, 'integer'))}
             placeholder="14" aria-label="Bonus days"
             className="h-9 w-20 rounded-[9px] px-2.5 text-[12.5px] outline-none" style={field}
           />

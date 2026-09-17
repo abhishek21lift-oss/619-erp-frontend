@@ -170,3 +170,82 @@ export function postSignInPath(role: string | null | undefined): string {
   if (role === 'trainer') return '/trainer/dashboard';
   return '/pt-os';
 }
+
+/**
+ * Where to send somebody after they sign in, honouring where they were going.
+ *
+ * ── The bug this exists to fix ──────────────────────────────────────────────
+ *
+ * `proxy.ts` has always written the destination onto the sign-in URL when it
+ * bounces a missing or expired session:
+ *
+ *     loginUrl.searchParams.set('redirect', pathname)
+ *
+ * Nothing read it. Not the staff door, not the member door, not the Command
+ * Center's. A trainer whose 15-minute access token lapsed while they were
+ * three levels deep — /pt-os/clients/:id/payments, mid-entry — signed back in
+ * and arrived at the client list, with no way back but navigation and no hint
+ * they had been anywhere. The parameter has promised a return trip for as long
+ * as it has existed and never once made one, which is worse than not writing
+ * it: to the next person reading proxy.ts, the feature looks done.
+ *
+ * ── Why this is not just `router.replace(raw)` ──────────────────────────────
+ *
+ * That line is the textbook open redirect. The value arrives from the URL bar,
+ * so it is attacker-controlled: `?redirect=https://evil.example/login` renders
+ * a real sign-in form on the real domain and then hands the freshly
+ * authenticated person to a copy of it. Every check below is load-bearing:
+ *
+ *   · must start with a single `/` — no absolute URLs, and no scheme-relative
+ *     `//evil.example`, which `new URL()` resolves to a different ORIGIN
+ *   · no backslashes — browsers normalise `\` to `/`, so `/\evil.example` is
+ *     scheme-relative by the time it reaches the network stack while sailing
+ *     past a naive startsWith('/')
+ *   · no control characters or spaces, which smuggle newlines into headers and
+ *     truncate comparisons
+ *   · not a sign-in page itself, or signing in returns you to signing in
+ *   · the portal check — the same mayEnterPortal that Guard uses, so a member
+ *     handed `?redirect=/pt-os/clients` lands on their own dashboard rather
+ *     than an empty frame of the trainer's app. Client-side half only; the API
+ *     refuses them either way.
+ *
+ * Anything that fails falls back to postSignInPath — the behaviour that
+ * existed before this function did, so the worst case is exactly today's.
+ */
+export function safeReturnTo(raw: string | null | undefined, role: string | null | undefined): string {
+  const fallback = postSignInPath(role);
+  if (!raw) return fallback;
+
+  // Structural checks first. `new URL()` is deliberately not reached until the
+  // value has been shown to be incapable of changing origin.
+  if (!raw.startsWith('/')) return fallback;
+  if (raw.startsWith('//')) return fallback;
+  if (raw.includes('\\')) return fallback;
+  for (let i = 0; i < raw.length; i += 1) {
+    const code = raw.charCodeAt(i);
+    if (code <= 0x20 || code === 0x7f) return fallback;
+  }
+
+  let pathname: string;
+  let search: string;
+  try {
+    // The base host is unreachable on purpose: if anything in `raw` still
+    // managed to make this absolute, the origin comparison catches it here
+    // rather than the person being delivered to a real one.
+    const url = new URL(raw, 'http://localhost');
+    if (url.origin !== 'http://localhost') return fallback;
+    pathname = url.pathname;
+    search = url.search;
+  } catch {
+    return fallback;
+  }
+
+  // A door is never a destination.
+  if (pathname === '/login' || pathname === '/member-login' || pathname === '/platform-login') {
+    return fallback;
+  }
+
+  if (!mayEnterPortal(portalForRole(role), portalForPage(pathname))) return fallback;
+
+  return `${pathname}${search}`;
+}

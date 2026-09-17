@@ -127,9 +127,9 @@ function EnduranceTestBlock({ label, options, testType, onTestType, valueType, r
         <SearchableSelect label="Test" required allowCustom={false} value={testType} onChange={onTestType} options={options} />
       </div>
       {testType === 'Push Up Test' || testType === 'Curl Up Test' ? (
-        <FloatInput label="Repetitions Completed" type="number" value={reps} onChange={onReps} />
+        <FloatInput label="Repetitions Completed" numeric="integer" value={reps} onChange={onReps} />
       ) : testType ? (
-        <FloatInput label="Duration Held (sec)" type="number" value={durationSec} onChange={onDurationSec} />
+        <FloatInput label="Duration Held (sec)" numeric="integer" value={durationSec} onChange={onDurationSec} />
       ) : null}
       {result.category && (
         <div className="mt-3 flex items-center gap-2">

@@ -64,8 +64,8 @@ export function StepSmokingAlcohol({ form, set, error }: StepSmokingAlcoholProps
           </div>
           {smokes && (
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FloatInput label="Cigarettes Per Day" type="number" value={form.cigarettesPerDay} onChange={(v) => set('cigarettesPerDay', v)} />
-              <FloatInput label="Years of Smoking" type="number" value={form.yearsSmoking} onChange={(v) => set('yearsSmoking', v)} />
+              <FloatInput label="Cigarettes Per Day" numeric="integer" value={form.cigarettesPerDay} onChange={(v) => set('cigarettesPerDay', v)} />
+              <FloatInput label="Years of Smoking" numeric="integer" value={form.yearsSmoking} onChange={(v) => set('yearsSmoking', v)} />
             </div>
           )}
         </div>
@@ -97,7 +97,7 @@ export function StepSmokingAlcohol({ form, set, error }: StepSmokingAlcoholProps
           </div>
           {drinks && (
             <div className="mt-4 max-w-[220px]">
-              <FloatInput label="Drinks Per Week" type="number" value={form.drinksPerWeek} onChange={(v) => set('drinksPerWeek', v)} />
+              <FloatInput label="Drinks Per Week" numeric="integer" value={form.drinksPerWeek} onChange={(v) => set('drinksPerWeek', v)} />
             </div>
           )}
         </div>
