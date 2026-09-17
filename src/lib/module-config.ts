@@ -536,26 +536,3 @@ function adminRoleFor(key: string): Role | undefined {
     ? 'admin'
     : undefined;
 }
-
-export function seedRecords(config: ModuleConfig): ModuleRecord[] {
-  const owners = ['Aarav Sharma', 'Priya Nair', 'Rohan Mehta', 'Sneha Iyer', 'Karan Patel', 'Nisha Rao'];
-  return Array.from({ length: 14 }).map((_, index) => {
-    const status = config.statuses[index % config.statuses.length];
-    const priority = config.priorities[(index + 1) % config.priorities.length];
-    const channel = config.channels[(index + 2) % config.channels.length];
-    const day = new Date();
-    day.setDate(day.getDate() + index - 4);
-    return {
-      id: `${config.key}-${index + 1}`,
-      title: `${config.entityName} ${index + 1}`,
-      owner: owners[index % owners.length],
-      status,
-      priority,
-      amount: 1500 + index * 725,
-      dueDate: day.toISOString().slice(0, 10),
-      channel,
-      notes: `${config.workflows[index % config.workflows.length]} is ready for review.`,
-      createdAt: new Date(Date.now() - index * 86400000).toISOString(),
-    };
-  });
-}

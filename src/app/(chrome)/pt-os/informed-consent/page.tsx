@@ -334,6 +334,21 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
     setStep(next);
   };
 
+  // Deep-audit finding: the stepper's own click handler used to call
+  // setStep(id) directly, so clicking the next node in the timeline (which
+  // StepperTimeline already limits to at most one step ahead) skipped the
+  // validation handleNext() runs — a user could reach the Signatures step
+  // having never ticked the confidentiality/voluntary-participation/final-
+  // declaration acknowledgements. The one forward jump the stepper can ever
+  // offer is exactly nextStepId(step), so routing it through handleNext()
+  // reuses its validation and persist-progress logic instead of duplicating
+  // it. Any other click is backward (or the current step) and stays a
+  // plain, unguarded setStep — nothing is lost by re-viewing a completed step.
+  const handleStepClick = (id: StepId) => {
+    if (id === nextStepId(step)) { void handleNext(); return; }
+    setStep(id);
+  };
+
   const handleBack = () => {
     const prev = prevStepId(step);
     if (prev != null) { setStep(prev); return; }
@@ -363,7 +378,7 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
         title={currentId ? 'Continue Consent' : 'New Informed Consent'}
         subtitle={clientName}
       >
-        <StepperTimeline steps={stepperSteps} current={step} onStep={(id) => setStep(id as StepId)} />
+        <StepperTimeline steps={stepperSteps} current={step} onStep={(id) => handleStepClick(id as StepId)} />
       </PageHero>
 
       <div className="mx-auto max-w-3xl space-y-5">
