@@ -224,6 +224,21 @@ export const JUSTIFIED = {
       'which is the right order. One control, one number, one guard in front ' +
       'of it.',
   },
+
+  'src/components/pt-os/shared/SignaturePad.tsx': {
+    allow: 1,
+    reason:
+      'The typed-name accessible alternative to the canvas gesture (a deep-' +
+      'audit fix — drawing a signature is a pointer gesture with no keyboard ' +
+      'path, which used to be recorded in this file as a known gap). The ' +
+      'input carries its own <label htmlFor>, is wired to the same disabled ' +
+      'prop as the canvas, and its value is never itself the submitted data: ' +
+      'pressing Sign renders the typed name onto the canvas and calls the ' +
+      'component\'s existing onChange with a real PNG data URL — the exact ' +
+      'same contract every consumer (enrolment, PAR-Q, informed consent) ' +
+      'already handles for a drawn stroke. There is no form state to bind a ' +
+      'schema to; the control produces an image, not a field value.',
+  },
 };
 
 export function justificationFor(rel) {

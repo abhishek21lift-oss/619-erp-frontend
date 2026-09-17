@@ -24,7 +24,8 @@ import LifestyleProgressTimeline from '@/components/pt-os/lifestyle-assessment/L
 import StepSleep from '@/components/pt-os/lifestyle-assessment/StepSleep';
 import StepStress from '@/components/pt-os/lifestyle-assessment/StepStress';
 import StepOccupationActivity from '@/components/pt-os/lifestyle-assessment/StepOccupationActivity';
-import { FOOD_PREFERENCE_OPTIONS } from '@/components/pt-os/lifestyle-assessment/StepFoodPreference';
+import StepWater from '@/components/pt-os/lifestyle-assessment/StepWater';
+import StepFoodPreference, { FOOD_PREFERENCE_OPTIONS } from '@/components/pt-os/lifestyle-assessment/StepFoodPreference';
 import StepSmokingAlcohol from '@/components/pt-os/lifestyle-assessment/StepSmokingAlcohol';
 import StepAdditionalFactors from '@/components/pt-os/lifestyle-assessment/StepAdditionalFactors';
 import LifestyleDashboard from '@/components/pt-os/lifestyle-assessment/LifestyleDashboard';
@@ -38,9 +39,9 @@ import { errorMessage } from '@/lib/forms/errors';
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 function validateStep(id: StepId, form: LifestyleFormData): string | undefined {
-  if (id === 3 && !form.occupationType) return 'Please select an occupation type.';
-  if (id === 4 && !form.smokingStatus) return 'Please select a smoking status.';
-  if (id === 4 && !form.alcoholStatus) return 'Please select an alcohol status.';
+  if (id === 4 && !form.occupationType) return 'Please select an occupation type.';
+  if (id === 6 && !form.smokingStatus) return 'Please select a smoking status.';
+  if (id === 6 && !form.alcoholStatus) return 'Please select an alcohol status.';
   return undefined;
 }
 
@@ -296,8 +297,22 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
     const err = validateStep(step, form);
     setErrors((e) => ({ ...e, [stepDef.key]: err }));
     if (err) { toast.error(err); return; }
-    if (step === 5) { setReviewMode(true); return; }
+    if (step === STEPS.length) { setReviewMode(true); return; }
     setStep((s) => (s + 1) as StepId);
+  };
+
+  // Deep-audit finding (shared with the PAR-Q/Informed Consent wizards):
+  // LifestyleProgressTimeline's own click handler lets a click jump one step
+  // ahead of `current`, and this used to be wired straight to `setStep`,
+  // bypassing handleNext()'s validateStep() call — a user could click past
+  // Occupation & Activity without selecting an occupation type. The one
+  // forward jump the timeline can ever offer is exactly `step + 1` (ids here
+  // have no gaps), so route it through handleNext() instead of duplicating
+  // its validation. Any other click is backward (or the current step) and
+  // stays a plain, unguarded setStep.
+  const handleStepClick = (id: StepId) => {
+    if (id === step + 1) { handleNext(); return; }
+    setStep(id);
   };
 
   const handleBack = () => {
@@ -384,7 +399,7 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
         </div>
         {!reviewMode && (
           <div className="mx-auto max-w-3xl pb-3">
-            <LifestyleProgressTimeline current={step} onStep={setStep} />
+            <LifestyleProgressTimeline current={step} onStep={handleStepClick} />
           </div>
         )}
       </div>
@@ -394,9 +409,11 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
             {step === 1 && <StepSleep form={form} set={set} error={errors.sleep} />}
             {step === 2 && <StepStress form={form} set={set} />}
-            {step === 3 && <StepOccupationActivity form={form} set={set} error={errors.occupationActivity} />}
-            {step === 4 && <StepSmokingAlcohol form={form} set={set} error={errors.smokingAlcohol} />}
-            {step === 5 && <StepAdditionalFactors form={form} set={set} />}
+            {step === 3 && <StepWater form={form} set={set} />}
+            {step === 4 && <StepOccupationActivity form={form} set={set} error={errors.occupationActivity} />}
+            {step === 5 && <StepFoodPreference form={form} set={set} error={errors.foodPreference} />}
+            {step === 6 && <StepSmokingAlcohol form={form} set={set} error={errors.smokingAlcohol} />}
+            {step === 7 && <StepAdditionalFactors form={form} set={set} />}
           </m.div>
         ) : (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-5">
@@ -404,7 +421,7 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
             <HabitRiskBadges riskFactors={analysis.riskFactors} />
             <WeeklyHabitGoals
               sleepDurationHours={n(form.sleepDurationHours)}
-              waterIntakeLiters={null}
+              waterIntakeLiters={n(form.waterIntakeLiters)}
               dailyStepsBracket={form.dailyStepsBracket || null}
               stressLevel={n(form.stressLevel)}
               mealFrequency={n(form.mealFrequency)}
@@ -429,7 +446,7 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
                 onClick={handleNext}
                 style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
               >
-                {step === 5 ? 'Review' : 'Next'}
+                {step === STEPS.length ? 'Review' : 'Next'}
               </Button>
             ) : (
               <Button

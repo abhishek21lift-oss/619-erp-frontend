@@ -77,12 +77,20 @@ export interface FormErrors {
   additionalFactors?: string;
 }
 
+// Deep-audit finding: StepWater and StepFoodPreference were fully built
+// (and their fields, and the hydration score / "drink 3L water" habit
+// suggestion that read them, were never removed) but were missing from
+// this list — there was no way for a new assessment to ever record water
+// intake or food preference. Restored at the positions the field comments
+// above (Step 3 — Water, Step 6 — Food Preference) already documented.
 export const STEPS = [
   { id: 1, key: 'sleep', label: 'Sleep' },
   { id: 2, key: 'stress', label: 'Stress' },
-  { id: 3, key: 'occupationActivity', label: 'Occupation & Activity' },
-  { id: 4, key: 'smokingAlcohol', label: 'Smoking & Alcohol' },
-  { id: 5, key: 'additionalFactors', label: 'Additional Factors' },
+  { id: 3, key: 'water', label: 'Water Intake' },
+  { id: 4, key: 'occupationActivity', label: 'Occupation & Activity' },
+  { id: 5, key: 'foodPreference', label: 'Food Preference' },
+  { id: 6, key: 'smokingAlcohol', label: 'Smoking & Alcohol' },
+  { id: 7, key: 'additionalFactors', label: 'Additional Factors' },
 ] as const;
 
 export type StepId = typeof STEPS[number]['id'];

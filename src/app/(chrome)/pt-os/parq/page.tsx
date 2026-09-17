@@ -349,6 +349,21 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
     setStep(next);
   };
 
+  // Deep-audit finding: the stepper's own click handler used to call
+  // setStep(id) directly, so clicking the next node in the timeline (which
+  // StepperTimeline already limits to at most one step ahead) skipped the
+  // validation handleNext() runs — a user could reach Digital Consent
+  // having answered none of the PAR-Q questions. The one forward jump the
+  // stepper can ever offer is exactly nextStepId(step, riskLevel), so
+  // routing it through handleNext() reuses its validation and draft-
+  // creation logic instead of duplicating it. Any other click is backward
+  // (or the current step) and stays a plain, unguarded setStep — nothing
+  // is lost by re-viewing an already-completed step.
+  const handleStepClick = (id: StepId) => {
+    if (id === nextStepId(step, riskLevel)) { void handleNext(); return; }
+    setStep(id);
+  };
+
   const handleBack = () => {
     const prev = prevStepId(step, riskLevel);
     if (prev != null) { setStep(prev); return; }
@@ -384,7 +399,7 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
         title={currentFormId ? 'Edit Screening' : 'New Screening'}
         subtitle={clientName}
       >
-        <StepperTimeline steps={stepperSteps} current={step} onStep={(id) => setStep(id as StepId)} />
+        <StepperTimeline steps={stepperSteps} current={step} onStep={(id) => handleStepClick(id as StepId)} />
       </PageHero>
 
       <div className="mx-auto max-w-3xl space-y-5">

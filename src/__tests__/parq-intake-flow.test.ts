@@ -139,3 +139,38 @@ describe('the Start Consent screen has a hero like its siblings', () => {
     expect((noRecordBlock.match(/Start Consent/g) ?? []).length).toBe(1);
   });
 });
+
+describe('the stepper cannot be used to skip a step\'s validation', () => {
+  // Deep-audit finding: StepperTimeline lets a click jump one step ahead of
+  // `current` (see its own `reachable` check), and the wizard used to wire
+  // that straight to `setStep(id)` — bypassing handleNext()'s validateStep()
+  // call entirely. A user could click through the timeline to Digital
+  // Consent having answered none of the PAR-Q questions.
+  it('the stepper is wired through a click handler, not a bare setStep', () => {
+    expect(parqPage).toMatch(/onStep=\{\(id\) => handleStepClick\(id as StepId\)\}/);
+  });
+
+  it('the click handler only lets the one reachable forward step through handleNext', () => {
+    const fn = parqPage.slice(
+      parqPage.indexOf('const handleStepClick = '),
+      parqPage.indexOf('const handleBack = '),
+    );
+    expect(fn).toMatch(/if \(id === nextStepId\(step, riskLevel\)\) \{ void handleNext\(\); return; \}/);
+    // Anything else (backward, or the current step) is still a plain jump —
+    // re-viewing an already-completed step must not be blocked.
+    expect(fn).toMatch(/setStep\(id\);/);
+  });
+
+  const consentPage = stripComments(fs.readFileSync(
+    path.join(SRC, 'app/(chrome)/pt-os/informed-consent/page.tsx'), 'utf8',
+  ));
+
+  it('the same guard exists on the Informed Consent wizard', () => {
+    expect(consentPage).toMatch(/onStep=\{\(id\) => handleStepClick\(id as StepId\)\}/);
+    const fn = consentPage.slice(
+      consentPage.indexOf('const handleStepClick = '),
+      consentPage.indexOf('const handleBack = '),
+    );
+    expect(fn).toMatch(/if \(id === nextStepId\(step\)\) \{ void handleNext\(\); return; \}/);
+  });
+});
