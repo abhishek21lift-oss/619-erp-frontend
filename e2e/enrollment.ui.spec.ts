@@ -66,6 +66,11 @@ async function fillEnrolment(page: Page, opts: { final: string; paid: string }) 
   await page.getByLabel('Amount Paid').fill(opts.paid);
   await choose(page, 'Training Mode', 'Offline');
   await page.getByLabel('Preferred Workout Time').fill('07:00');
+  // Training days are required too, and are toggle chips rather than a field.
+  // Three of them, to match the three sessions a week chosen below.
+  for (const day of ['Monday', 'Wednesday', 'Friday']) {
+    await page.getByRole('button', { name: day, exact: true }).click();
+  }
   await choose(page, 'Sessions Per Week', '3 Sessions');
 }
 
