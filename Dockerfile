@@ -116,6 +116,18 @@ COPY --from=builder /app/package.json ./package.json
 USER nextjs
 
 EXPOSE 3000
+# ── Release identity, baked at build time ──────────────────────────────────
+#
+# Both are needed for the same reason and neither can be read at runtime: the
+# standalone output runs `node server.js`, so npm_package_version is unset, and
+# the image carries no .git directory, so the commit is unavailable too.
+ARG GIT_SHA=unknown
+ARG BUILD_TIME=""
+ARG APP_VERSION=unknown
+ENV GIT_SHA=$GIT_SHA
+ENV BUILD_TIME=$BUILD_TIME
+ENV APP_VERSION=$APP_VERSION
+
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
