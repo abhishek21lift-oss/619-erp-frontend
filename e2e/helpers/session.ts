@@ -221,3 +221,30 @@ export const NEVER_ON_SCREEN = [
 export async function doubleTap(locator: import('@playwright/test').Locator): Promise<void> {
   await locator.evaluate((el) => { (el as HTMLElement).click(); (el as HTMLElement).click(); });
 }
+
+/**
+ * The platform operator seeded alongside the two studios.
+ *
+ * A different PORTAL, not merely a different role: /platform has its own door,
+ * its own session audience and its own route group, and `mayEnterPortal`
+ * refuses a studio account there. So the Command Center journeys cannot reuse
+ * Alpha's session — they need this one, saved separately.
+ */
+export const PLATFORM = {
+  email: 'platform@e2e.test',
+  password: 'E2ePassw0rd!seed',
+} as const;
+
+/** Where auth.setup.ts leaves the operator's session. */
+export const PLATFORM_STORAGE_STATE = resolve(process.cwd(), 'e2e/.auth/platform.json');
+
+/** Sign in at the Command Center's own door. */
+export async function signInPlatform(page: Page): Promise<void> {
+  await page.goto('/platform-login');
+  await page.getByLabel('Email address').fill(PLATFORM.email);
+  await page.getByLabel('Password', { exact: true }).fill(PLATFORM.password);
+  await Promise.all([
+    page.waitForURL((url) => !url.pathname.startsWith('/platform-login'), { timeout: 30_000 }),
+    page.getByRole('button', { name: /log in|sign in/i }).first().click(),
+  ]);
+}

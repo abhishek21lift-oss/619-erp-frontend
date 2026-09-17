@@ -1,5 +1,8 @@
 import { test as setup, expect } from '@playwright/test';
-import { ALPHA, STORAGE_STATE, TOKEN_FILE, mintApiToken } from './helpers/session';
+import {
+  ALPHA, STORAGE_STATE, TOKEN_FILE, mintApiToken,
+  PLATFORM_STORAGE_STATE, signInPlatform,
+} from './helpers/session';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
@@ -53,4 +56,20 @@ setup('authenticate as the Alpha studio owner', async ({ page }) => {
   // apparent age without renewing the token. See the note on mintApiToken.
   const minted = await mintApiToken();
   writeFileSync(TOKEN_FILE, JSON.stringify(minted), 'utf8');
+});
+
+/**
+ * And the operator, for the Command Center.
+ *
+ * A separate session because /platform is a separate PORTAL: mayEnterPortal
+ * refuses a studio account there, so the journeys that screenshot the Command
+ * Center cannot borrow Alpha's. Without this they ran with whatever session
+ * happened to be around, were redirected home, and waited thirty seconds for a
+ * selector that could never appear.
+ */
+setup('authenticate as the platform operator', async ({ page }) => {
+  await signInPlatform(page);
+  await expect(page).toHaveURL(/\/platform/, { timeout: 30_000 });
+  mkdirSync(dirname(PLATFORM_STORAGE_STATE), { recursive: true });
+  await page.context().storageState({ path: PLATFORM_STORAGE_STATE });
 });
