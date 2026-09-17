@@ -30,6 +30,7 @@ export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabl
   const drawingRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const [hasStroke, setHasStroke] = useState(false);
+  const [typedName, setTypedName] = useState('');
 
   // Size the canvas' backing store to the container's CSS box * devicePixelRatio,
   // so strokes stay crisp on high-DPI screens without blurring.
@@ -124,8 +125,41 @@ export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabl
       ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
     }
     setHasStroke(false);
+    setTypedName('');
     onChange('');
     onClear?.();
+  };
+
+  /**
+   * The keyboard-operable alternative the component's own comment used to
+   * flag as a "known gap" rather than papering over: drawing a signature is a
+   * pointer gesture with no honest ARIA role, so someone who cannot use a
+   * pointer needs a different path to the SAME result, not a fake one.
+   *
+   * Renders the typed name onto the actual canvas and calls onChange with the
+   * resulting PNG data URL — identical to what a drawn stroke produces — so
+   * every consumer of this component (enrolment, PAR-Q, informed consent)
+   * needs no change at all to accept it as a signature.
+   */
+  const applyTypedSignature = () => {
+    const name = typedName.trim();
+    if (!name || disabled) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    const dpr = window.devicePixelRatio || 1;
+    const cssWidth = canvas.width / dpr;
+    const cssHeight = canvas.height / dpr;
+
+    ctx.clearRect(0, 0, cssWidth, cssHeight);
+    ctx.font = `italic 600 ${Math.round(cssHeight * 0.45)}px Georgia, "Times New Roman", serif`;
+    ctx.fillStyle = '#0f172a';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(name, cssWidth / 2, cssHeight / 2, cssWidth - 24);
+
+    setHasStroke(true);
+    onChange(canvas.toDataURL('image/png'));
   };
 
   return (
@@ -152,12 +186,12 @@ export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabl
           currently holds a signature and whether it is in error, and given an
           instruction that says what to do with it.
 
-          What this does NOT claim is keyboard operability. Drawing a signature
-          is a pointer gesture and there is no honest ARIA role for it, so no
-          role is declared — declaring one would promise an interaction model
-          that is not implemented. The real accessible alternative is a typed
-          name accepted as a signature, which is a product decision rather than
-          a markup one; recorded as a known gap rather than papered over.
+          This still does NOT claim the canvas itself is keyboard-operable —
+          drawing a signature is a pointer gesture with no honest ARIA role for
+          it, so none is declared on the canvas. What used to be recorded here
+          as a known gap is the typed-name field below instead: a keyboard- and
+          screen-reader-operable path to the identical result (a signature
+          image passed to the same onChange), not a fake drawing interaction.
         */}
         <canvas
           ref={canvasRef}
@@ -182,9 +216,40 @@ export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabl
           </div>
         )}
         <p id={hintId} className="sr-only">
-          Draw the signature with a mouse, pen or finger inside this box. Use the Clear
-          button beside it to start again.
+          Draw the signature with a mouse, pen or finger inside this box, or use the
+          &quot;type your full name to sign&quot; field below if you cannot use a
+          pointing device. Use the Clear button to start again.
         </p>
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <label htmlFor={`${baseId}-typed`} className="sr-only">
+          Type your full name to sign {label || ''}
+        </label>
+        <input
+          id={`${baseId}-typed`}
+          type="text"
+          value={typedName}
+          disabled={disabled}
+          placeholder="Or type your full name to sign"
+          onChange={(e) => setTypedName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              applyTypedSignature();
+            }
+          }}
+          className="min-w-0 flex-1 rounded-[8px] px-2.5 py-1.5 text-[12px] disabled:opacity-40"
+          style={{ color: '#0f172a', background: '#fff', border: '1px solid #e2e8f0' }}
+        />
+        <button
+          type="button"
+          onClick={applyTypedSignature}
+          disabled={disabled || !typedName.trim()}
+          className="flex-shrink-0 rounded-[8px] px-2.5 py-1.5 text-[11.5px] font-[650] transition-all disabled:opacity-40"
+          style={{ color: '#fff', background: '#0F172A' }}
+        >
+          Sign
+        </button>
       </div>
       <div className="mt-2 flex items-center justify-between">
         {error ? (
