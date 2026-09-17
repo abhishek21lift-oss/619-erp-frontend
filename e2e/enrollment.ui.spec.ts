@@ -66,10 +66,13 @@ async function fillEnrolment(page: Page, opts: { final: string; paid: string }) 
   await page.getByLabel('Amount Paid').fill(opts.paid);
   await choose(page, 'Training Mode', 'Offline');
   await page.getByLabel('Preferred Workout Time').fill('07:00');
-  // Training days are required too, and are toggle chips rather than a field.
-  // Three of them, to match the three sessions a week chosen below.
+  // Training days are required too, and are toggle CHIPS rather than a field —
+  // so clicking one that is already on turns it off. The page seeds the form
+  // from the client's existing enrolment, so after any earlier journey has
+  // enrolled them these are already set, and a blind click would clear them.
   for (const day of ['Monday', 'Wednesday', 'Friday']) {
-    await page.getByRole('button', { name: day, exact: true }).click();
+    const chip = page.getByRole('button', { name: day, exact: true });
+    if ((await chip.getAttribute('aria-pressed')) !== 'true') await chip.click();
   }
   await choose(page, 'Sessions Per Week', '3 Sessions');
 }
@@ -136,7 +139,13 @@ test.describe('Enrolment', () => {
   test('an incomplete form does not reach the agreement', async ({ page }) => {
     // The agreement is the last gate, not the first: a client should sign the
     // finished terms, never a draft of them.
+    //
+    // A required field is CLEARED rather than merely left alone. The page
+    // seeds the form from the client's existing enrolment, so "untouched" is
+    // not "empty" — and this test passed for a while against a form that was
+    // already complete, which proves nothing at all.
     await page.getByLabel('PT Start Date').fill(inDays(1));
+    await page.getByLabel('Final / Selling Price').fill('');
     await page.getByRole('button', { name: 'Finish' }).click();
 
     await expect(page.getByRole('dialog', { name: 'Digital agreement' })).toHaveCount(0);

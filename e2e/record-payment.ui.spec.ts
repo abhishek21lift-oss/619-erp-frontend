@@ -35,6 +35,17 @@ async function paymentsFor(token: string): Promise<Payment[]> {
 
 const amount = (p: Payment) => Number(p.amount);
 
+/**
+ * The big figure at the top of the sheet — the amount being entered.
+ *
+ * Addressed by its aria-live attribute, which is the one thing that
+ * distinguishes it from the other money figures in the sheet (the member's
+ * outstanding balance, and the balance this payment would leave). It is live
+ * precisely because it is the value that changes as the keypad is pressed.
+ */
+const heroAmount = (page: import('@playwright/test').Page) =>
+  page.getByRole('dialog', { name: 'Record payment' }).locator('p[aria-live="polite"]');
+
 test.describe('Record Payment', () => {
   let token: string;
 
@@ -188,8 +199,16 @@ test.describe('Record Payment', () => {
 
     await page.getByRole('button', { name: 'Record Payment' }).first().click();
     await expect(sheet).toBeVisible();
-    await expect(sheet.getByText('900')).toHaveCount(0);
-    await expect(sheet.getByText('9,00')).toHaveCount(0);
+
+    // The hero amount, exactly.
+    //
+    // This asserted `getByText('900')` had count 0, which is a SUBSTRING match
+    // — and the sheet legitimately shows the member's outstanding balance,
+    // ₹14,900. So the test failed while the form was resetting perfectly, and
+    // it would have gone on failing until somebody "fixed" a form that was not
+    // broken. A test that fails for the wrong reason costs the same as one
+    // that passes for the wrong reason.
+    await expect(heroAmount(page)).toHaveText('₹0');
   });
 
   test('switching to another client does not carry the first one\'s amount', async ({ page }) => {
@@ -203,7 +222,8 @@ test.describe('Record Payment', () => {
     await page.goto(`/pt-os/clients/${ALPHA.secondClientId}/payments`);
     await page.getByRole('button', { name: 'Record Payment' }).first().click();
     await expect(sheet).toBeVisible();
-    await expect(sheet.getByText('4,321')).toHaveCount(0);
-    await expect(sheet.getByText('4321')).toHaveCount(0);
+    // The hero again, for the same reason: the sheet shows this member's own
+    // balance, and a substring match would catch any figure containing 4321.
+    await expect(heroAmount(page)).toHaveText('₹0');
   });
 });
