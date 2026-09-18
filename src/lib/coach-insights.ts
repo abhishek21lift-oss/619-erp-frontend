@@ -1,3 +1,4 @@
+import { toWhatsAppNumber } from './phone';
 // What the AI Coach card is actually looking at.
 //
 // The old Copilot read six aggregate numbers off the dashboard summary and
@@ -236,13 +237,11 @@ export function buildCoachInsights(input: CoachInput): CoachInsight[] {
  * as-is — without that the link silently opens a chat with nobody.
  */
 export function normaliseMobile(raw?: string | null): string | null {
-  if (!raw) return null;
-  let d = String(raw).replace(/\D/g, '');
-  if (d.length === 10) d = `91${d}`;
-  else if (d.length === 11 && d.startsWith('0')) d = `91${d.slice(1)}`;
-  else if (d.length === 12 && d.startsWith('91')) { /* already right */ }
-  else if (d.length < 10) return null;
-  return d;
+  // Delegates to lib/phone.ts, which is this same length-based rule. This
+  // implementation was correct and five other screens each had their own
+  // prefix-based copy that was not; consolidating on one leaves a single place
+  // for the rule to live.
+  return toWhatsAppNumber(raw);
 }
 
 /** wa.me deep link with the body prefilled, or null when unreachable. */

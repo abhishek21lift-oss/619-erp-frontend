@@ -125,6 +125,26 @@ describe('cardio set row', () => {
 
     const minutes = screen.getByLabelText('Duration (min)');
     fireEvent.change(minutes, { target: { value: '32.5' } });
+
+    // ── Why the typed value is awaited before blurring ─────────────────────
+    //
+    // This blur carries no target value on purpose: the point of the test is
+    // that the handler reads the FIELD. But that only tests anything once the
+    // field actually holds 32.5, and `change` merely schedules the state
+    // update that puts it there. Blurring on the next line assumed the commit
+    // had landed — true on an idle machine, not guaranteed on a loaded CI box
+    // running 182 files across four workers. When it had not landed, blur read
+    // the pristine 30 out of the DOM and the test reported `[1800]`: the exact
+    // signature of the two page bugs below, from a test artefact rather than
+    // from either bug. That is the worst kind of failure — it accuses code
+    // that is working.
+    //
+    // Waiting on the field is also a stronger assertion than the one it adds
+    // to: the controlled input has to have ACCEPTED what was typed, which this
+    // test previously took on faith. If it never commits, this fails here
+    // saying so, instead of downstream with a number.
+    await waitFor(() => expect((minutes as HTMLInputElement).value).toBe('32.5'));
+
     fireEvent.blur(minutes);
     await waitFor(() => expect(updateSet).toHaveBeenCalled());
 

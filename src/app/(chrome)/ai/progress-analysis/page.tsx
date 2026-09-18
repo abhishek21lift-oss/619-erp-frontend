@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { TrendingUp, Loader2, Sparkles, AlertTriangle, CheckCircle2, User, TrendingDown, Minus, Target, Brain, ChevronRight } from 'lucide-react';
 import { m, type Variants } from 'framer-motion';
 import { api } from '@/lib/api';
@@ -46,7 +47,21 @@ function TrendBadge({ direction }: { direction: string }) {
   );
 }
 
-export default function ProgressAnalysisPage() {
+/**
+ * AI progress analysis, optionally pre-selected from the link that opened it.
+ *
+ * ── Why the search param is read at all ────────────────────────────────────
+ *
+ * The member profile's AI tab links here as `?client_id=<id>`. This page had
+ * no useSearchParams at all — `selectedClient` started null and was only ever
+ * set by the search dropdown — so a trainer who tapped "AI progress analysis"
+ * on a client's profile landed on a page that asked them which client they
+ * meant. The link navigated; it just dropped the context that made it useful.
+ */
+function ProgressAnalysisInner() {
+  const sp = useSearchParams();
+  const linkedClientId = sp.get('client_id');
+
   const [clients, setClients] = useState<Client[]>([]);
   const [clientSearch, setClientSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -60,6 +75,32 @@ export default function ProgressAnalysisPage() {
     const load = clientSearch ? api.clients.search(clientSearch) : api.clients.list({ limit: 20 });
     load.then((data) => setClients(data as unknown as Client[])).catch(() => {});
   }, [clientSearch]);
+
+  // Resolve the linked client by id.
+  //
+  // Fetched directly rather than searched for in the list above: that list is
+  // the first 20 clients, so a studio with more than twenty would silently
+  // fail to find anyone past the twentieth — the bug would look like "the link
+  // works for some clients and not others", which is the worst kind to report.
+  //
+  // Runs once per id. Guarded on selectedClient so it cannot fight a trainer
+  // who has since picked somebody else from the dropdown.
+  useEffect(() => {
+    if (!linkedClientId) return;
+    let cancelled = false;
+    api.pt.client(linkedClientId)
+      .then((res) => {
+        const c = (res as { data?: Client | null })?.data;
+        if (!cancelled && c) {
+          setSelectedClient((current) => current ?? c);
+        }
+      })
+      .catch(() => {
+        // A bad or inaccessible id leaves the picker as it was, which is the
+        // page working normally rather than an error about a link.
+      });
+    return () => { cancelled = true; };
+  }, [linkedClientId]);
 
   const handleAnalyze = async () => {
     if (!selectedClient) { setError('Please select a client first.'); return; }
@@ -396,5 +437,14 @@ export default function ProgressAnalysisPage() {
       </div>
       </PageContainer>
     </Guard>
+  );
+}
+
+/** useSearchParams suspends, so the page export wraps the real component. */
+export default function ProgressAnalysisPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProgressAnalysisInner />
+    </Suspense>
   );
 }

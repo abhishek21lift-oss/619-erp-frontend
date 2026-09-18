@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { releaseInfo } from '@/lib/release';
 
 /**
  * GET /api/health
@@ -72,17 +73,20 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Use the env var injected by npm at build/start time — no filesystem path needed.
-  // Falls back to 'unknown' gracefully if running outside npm (e.g. direct node invocation).
-  const version = process.env.npm_package_version ?? 'unknown';
+  // npm_package_version is set only when npm launches the process, and the
+  // production container runs `node server.js` from the standalone output —
+  // so this reported "unknown" on every deployed build and the real version
+  // everywhere else. lib/release.ts reads a value baked at build time instead.
+  const release = releaseInfo();
 
   return NextResponse.json(
     {
       status: 'ok',
       service: '619-erp-frontend',
       timestamp: new Date().toISOString(),
-      version,
+      version: release.version,
       env: process.env.NODE_ENV,
+      release,
     },
     {
       status: 200,

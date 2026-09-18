@@ -1,18 +1,40 @@
 'use client';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import { Gauge, Plus, Loader2, AlertTriangle } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { useAsync } from '@/lib/use-async';
 import { api, Client } from '@/lib/api';
+import { errorMessage } from '@/lib/forms/errors';
 import { Button, PageContainer, PageHero, FormField, TextInput, SelectInput } from '@/components/ui';
 
-export default function SessionBalancePage() {
-  const [clientId, setClientId] = useState('');
+/**
+ * Session balances, optionally pre-scoped to one client.
+ *
+ * ── Why the search param is read at all ────────────────────────────────────
+ *
+ * The member profile's "Session Balance" action and its Payments panel both
+ * link here as `?client_id=<id>`. This page ignored it completely — `clientId`
+ * started as '' and was only ever set by the dropdown — so a trainer who
+ * tapped it from a client's profile arrived at a blank form and had to find,
+ * in a list of every client in the studio, the one whose profile they had been
+ * looking at a second earlier.
+ *
+ * The link was not broken; it navigated. It simply dropped the one piece of
+ * context that made it worth tapping.
+ */
+function SessionBalanceInner() {
+  const sp = useSearchParams();
+  // Seeded from the URL, then owned by the dropdown. Not derived on every
+  // render: the operator must be able to change the selection on a page they
+  // arrived at with one already made.
+  const [clientId, setClientId] = useState(() => sp.get('client_id') || '');
   const [totalSessions, setTotalSessions] = useState('');
   const [packageName, setPackageName] = useState('');
   const [endDate, setEndDate] = useState('');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const clients = useAsync<any[]>(() => api.pt.clients().then(r => r.data), []);
   const balances = useAsync(() => api.automation.sessionBalance.list({ low_balance: 'true' }).then(r => r.data), []);
@@ -22,6 +44,7 @@ export default function SessionBalancePage() {
     e.preventDefault();
     if (!clientId || !totalSessions) return;
     setSaving(true);
+    setError('');
     try {
       await api.automation.sessionBalance.create({
         client_id: clientId, total_sessions: parseInt(totalSessions),
@@ -29,6 +52,11 @@ export default function SessionBalancePage() {
       });
       setTotalSessions(''); setPackageName(''); setEndDate('');
       allBalances.refetch(); balances.refetch();
+    } catch (err: unknown) {
+      // There was no catch at all — just try/finally. A failed save reset the
+      // button and said nothing, so the form looked like it had simply
+      // ignored the click, and the trainer pressed it again.
+      setError(errorMessage(err, 'Could not create the session package.'));
     } finally { setSaving(false); }
   }
 
@@ -79,6 +107,12 @@ export default function SessionBalancePage() {
               <FormField label="Valid until" description="Optional. Leave blank for no expiry.">
                 <TextInput type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
               </FormField>
+              {error && (
+                <p role="alert" className="rounded-[10px] px-3 py-2 text-[12px] font-[600]"
+                  style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>
+                  {error}
+                </p>
+              )}
               <Button type="submit" disabled={!clientId || !totalSessions || saving}
                 className="!w-full !rounded-[14px] !py-3 !font-[700]"
                 style={{ background: !clientId || !totalSessions || saving ? '#e2e8f0' : 'linear-gradient(135deg, #1E293B, #475569)', color: '#fff' }}>
@@ -124,5 +158,17 @@ export default function SessionBalancePage() {
         </div>
       </PageContainer>
     </Guard>
+  );
+}
+
+/**
+ * useSearchParams suspends, so the page export wraps the real component.
+ * Without this the route opts into dynamic rendering and Next warns at build.
+ */
+export default function SessionBalancePage() {
+  return (
+    <Suspense fallback={null}>
+      <SessionBalanceInner />
+    </Suspense>
   );
 }

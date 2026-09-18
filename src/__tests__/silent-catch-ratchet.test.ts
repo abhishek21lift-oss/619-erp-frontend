@@ -82,7 +82,7 @@ function sites(): string[] {
 const KNOWN = [
   'app/(bare)/start-free/page.tsx:66',
   'app/(chrome)/ai-coach/knowledge/page.tsx:75',
-  'app/(chrome)/ai/progress-analysis/page.tsx:61',
+  'app/(chrome)/ai/progress-analysis/page.tsx:76',
   'app/(chrome)/checkin/qr-scanner/page.tsx:384',
   'app/(chrome)/checkin/qr-scanner/page.tsx:398',
   'app/(chrome)/engagement/notifications/page.tsx:46',
@@ -92,9 +92,9 @@ const KNOWN = [
   // They are the fallback, not the failure — the OUTER catch is what used to
   // render a failure as zero, and that is gone from all three.
   'app/(chrome)/finance/collected-payments/page.tsx:85',
-  'app/(chrome)/finance/dues/page.tsx:95',
+  'app/(chrome)/finance/dues/page.tsx:99',
   'app/(chrome)/pay/[orderId]/page.tsx:195',
-  'app/(chrome)/pt-os/clients/[id]/page.tsx:367',
+  'app/(chrome)/pt-os/clients/[id]/page.tsx:399',
   'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:80',
   'app/(chrome)/pt-os/diet-plans/page.tsx:197',
   'app/(chrome)/pt-os/diet-plans/page.tsx:198',

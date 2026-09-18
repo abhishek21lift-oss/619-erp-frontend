@@ -14,7 +14,7 @@ import {
   ShieldCheck, FileSignature, ClipboardList,
   QrCode, Printer, ScrollText, ChevronDown, Mail, ClipboardCheck,
   StickyNote, FileBarChart, Sparkles,
-  Gauge, PersonStanding, Accessibility,
+  Gauge, PersonStanding, Accessibility, Ruler,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 
@@ -30,10 +30,12 @@ import {
   ClientTabs, TabPanel, EmptyPanel, LinkPanel, TAB_COLOR, type TabKey,
 } from '@/components/pt-os/client/ClientTabs';
 import RecoveryPanel from '@/components/pt-os/client/RecoveryPanel';
+import PhotosPanel from '@/components/pt-os/client/PhotosPanel';
 import type { ClientRecovery } from '@/lib/api';
 import { printWindowCloseButtonHtml } from '@/lib/printWindowChrome';
 import { activatable } from '@/lib/a11y';
 import { errorMessage } from '@/lib/forms/errors';
+import { whatsAppHref } from '@/lib/phone';
 
 interface PtClientDetail {
   id: string; unique_id?: string; client_id?: string; name: string;
@@ -102,6 +104,10 @@ function InfoRow({ label, value, valueColor }: { label: string; value: string; v
 
 // ── Documents card: PAR-Q + Informed Consent status at a glance ──
 const DOC_STATUS_STYLE: Record<string, { label: string; bg: string; color: string }> = {
+  // Distinct from `none`, and the distinction is the point: "we could not
+  // check" and "there is nothing on file" need different words, because only
+  // one of them means the client still has to be screened.
+  unknown: { label: 'Not Checked', bg: 'rgba(148,163,184,0.10)', color: '#94a3b8' },
   none: { label: 'Not Started', bg: 'rgba(148,163,184,0.15)', color: '#64748b' },
   draft: { label: 'Draft', bg: 'rgba(148,163,184,0.15)', color: '#64748b' },
   submitted: { label: 'Submitted', bg: 'rgba(16,185,129,0.15)', color: '#059669' },
@@ -113,7 +119,10 @@ const DOC_STATUS_STYLE: Record<string, { label: string; bg: string; color: strin
 };
 
 function DocumentRow({ icon, label, status, onClick }: { icon: React.ReactNode; label: string; status: string; onClick: () => void }) {
-  const style = DOC_STATUS_STYLE[status] || DOC_STATUS_STYLE.none;
+  // Falls back to `unknown`, not to `none`: a status this table has not
+  // heard of is one we cannot interpret, which is not the same as a form
+  // that was never started.
+  const style = DOC_STATUS_STYLE[status] || DOC_STATUS_STYLE.unknown;
   return (
     <button onClick={onClick} className="flex w-full items-center justify-between gap-3 rounded-[12px] p-3 text-left transition hover:opacity-80"
       style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
@@ -133,20 +142,40 @@ function DocumentRow({ icon, label, status, onClick }: { icon: React.ReactNode; 
 
 function DocumentsCard({ clientId }: { clientId: string }) {
   const router = useRouter();
-  const [parqStatus, setParqStatus] = useState('none');
-  const [consentStatus, setConsentStatus] = useState('none');
+  // 'unknown' until the request answers, and it stays 'unknown' if the request
+  // fails.
+  //
+  // Both statuses used to start at 'none' behind
+  // `.catch(() => ({ data: [] }))`, which made a failed request indistinguishable
+  // from a client with no form on file — the card then said "Not Started" for a
+  // PAR-Q that may well be signed. That is the wrong claim to make confidently
+  // about the document that decides whether somebody is cleared to train: a
+  // trainer reading it either re-screens a client for nothing, or believes a
+  // consent is missing and chases it.
+  const [parqStatus, setParqStatus] = useState('unknown');
+  const [consentStatus, setConsentStatus] = useState('unknown');
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([
-      api.progress.parqForms.list({ client_id: clientId }).catch(() => ({ data: [] })),
-      api.progress.informedConsent.list({ client_id: clientId }).catch(() => ({ data: [] })),
+    setParqStatus('unknown');
+    setConsentStatus('unknown');
+
+    // Settled per document rather than one combined catch, so one failing
+    // endpoint does not blank the other.
+    Promise.allSettled([
+      api.progress.parqForms.list({ client_id: clientId }),
+      api.progress.informedConsent.list({ client_id: clientId }),
     ]).then(([parqRes, consentRes]) => {
       if (cancelled) return;
-      const latestParq = parqRes?.data?.[0];
-      if (latestParq) setParqStatus(String(latestParq.status || 'draft'));
-      const latestConsent = consentRes?.data?.[0];
-      if (latestConsent) setConsentStatus(String(latestConsent.status || 'draft'));
+
+      if (parqRes.status === 'fulfilled') {
+        const latest = parqRes.value?.data?.[0] as { status?: string } | undefined;
+        setParqStatus(latest ? String(latest.status || 'draft') : 'none');
+      }
+      if (consentRes.status === 'fulfilled') {
+        const latest = consentRes.value?.data?.[0] as { status?: string } | undefined;
+        setConsentStatus(latest ? String(latest.status || 'draft') : 'none');
+      }
     });
     return () => { cancelled = true; };
   }, [clientId]);
@@ -290,7 +319,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   /** From the snapshot: hides the one-time Baseline Setup tile once onboarded. */
-  const [baselineDone, setBaselineDone] = useState(true);
   /** Readiness, lifted off the snapshot so the Check-ins tab can render it. */
   const [recovery, setRecovery] = useState<ClientRecovery | undefined>(undefined);
   /** Which section of the workspace is open. Overview is where you land. */
@@ -303,7 +331,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [editNotes, setEditNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
   const [subscriptionHistory, setSubscriptionHistory] = useState<any[]>([]);
-  const [activityCounts, setActivityCounts] = useState({ payments: 0, checkins: 0, measurements: 0, goals: 0 });
 
   const loadData = async () => {
     try {
@@ -313,34 +340,39 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
       if (!c) { setError('Client not found'); setLoading(false); return; }
       setClient(c); setNotesDraft(c?.notes || '');
 
-      const [checkinsRes, assessmentsRes, goalsRes, paymentsRes, renewalsRes] = await Promise.allSettled([
-        api.progress.weeklyCheckins.list({ client_id: id, limit: 5 }),
+      // ── Three requests, not five ─────────────────────────────────────────
+      //
+      // `weeklyCheckins.list` and `pt.payments` used to be fetched here too.
+      // Their ONLY consumer was an `activityCounts` state feeding the Activity
+      // Mix donut — and that donut was removed (see the note above
+      // ClientSnapshot below), leaving the state written on every load and read
+      // nowhere. Two API round trips per profile open, for a chart that no
+      // longer exists.
+      //
+      // Its comment claimed the counts were "unfiltered on purpose: these are
+      // totals", while the code fetched check-ins with limit 5 and assessments
+      // with limit 10 and used those lengths AS the totals. The donut had been
+      // capping at 5 and 10 for every established client.
+      //
+      // The tab strip does render a badge per tab when `counts` is supplied
+      // (ClientTabs.tsx), and it is deliberately NOT supplied: none of these
+      // endpoints returns a total, only a limited page, so any badge built
+      // from them would be a wrong number on screen rather than a missing one.
+      // Wiring it up needs a count endpoint first.
+      const [assessmentsRes, goalsRes, renewalsRes] = await Promise.allSettled([
         api.progress.assessments.list({ client_id: id, limit: 10 }),
         api.progress.goals.list({ client_id: id }),
-        api.pt.payments({ client_id: id }),
         api.pt.subscriptions(id),
       ]);
 
-      const checkins = checkinsRes.status === 'fulfilled' && Array.isArray((checkinsRes.value as any)?.data) ? (checkinsRes.value as any).data : [];
       const assessments = assessmentsRes.status === 'fulfilled' && Array.isArray((assessmentsRes.value as any)?.data) ? (assessmentsRes.value as any).data : [];
       setRecentWeights(assessments.filter((a: any) => a.weight).slice(0, 6));
 
       const goals = goalsRes.status === 'fulfilled' && Array.isArray((goalsRes.value as any)?.data) ? (goalsRes.value as any).data : [];
       setActiveGoals(goals.filter((g: any) => g.status === 'active'));
 
-      const rawPayments = paymentsRes.status === 'fulfilled' && Array.isArray((paymentsRes.value as any)?.data) ? (paymentsRes.value as any).data : [];
-
       const renewals = renewalsRes.status === 'fulfilled' && Array.isArray((renewalsRes.value as any)?.data) ? (renewalsRes.value as any).data : [];
       setSubscriptionHistory(renewals);
-
-      // Counts for the Activity Mix donut. Unfiltered on purpose: these are
-      // totals, so any truncation would undercount them.
-      setActivityCounts({
-        payments: rawPayments.length,
-        checkins: checkins.length,
-        measurements: assessments.length,
-        goals: goals.length,
-      });
 
     } catch (err: any) {
       setError(err?.message || 'Failed to load client');
@@ -368,12 +400,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     return () => { cancelled = true; };
   }, [id]);
 
-  const whatsappHref = (phone?: string, name?: string) => {
-    const p = (phone ?? '').replace(/\D/g, '');
-    if (!p) return '#';
-    const num = p.startsWith('91') ? p : `91${p}`;
-    return `https://wa.me/${num}?text=${encodeURIComponent(`Hi ${name ?? 'there'}, this is your trainer from ${user?.organization_name || 'MY PT STUDIO'}.`)}`;
-  };
+  // Shared, length-based normalisation — see lib/phone.ts. This was
+  // `p.startsWith('91') ? p : '91' + p`, which reads the ordinary ten-digit
+  // mobile 9198765432 as already carrying a country code and opens a chat with
+  // a different number.
+  const whatsappHref = (phone?: string, name?: string) =>
+    whatsAppHref(phone, `Hi ${name ?? 'there'}, this is your trainer from ${user?.organization_name || 'MY PT STUDIO'}.`);
 
   // Set only when the browser fails to load photo_url, so one bad path does
   // not leave a broken-image icon where the client's face should be.
@@ -751,7 +783,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   there is nowhere to put the numbers that make it mean
                   something. Activity Mix went entirely — the ratio of
                   payments to check-ins is not a question anybody asks. */}
-              <ClientSnapshot clientId={client.id} onLoaded={(s) => { setBaselineDone(s.baseline_done); setRecovery(s.recovery); }} />
+              {/* Only `recovery` is kept: it feeds the Check-ins panel below.
+                  `baseline_done` was also captured into state that nothing
+                  ever read. */}
+              <ClientSnapshot clientId={client.id} onLoaded={(s) => setRecovery(s.recovery)} />
 
               {/* PT term, as a bar. The one donut worth keeping as a figure,
                   because "days left" is what gets asked, but a bar shows how
@@ -1045,13 +1080,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
               </TabPanel>
 
               <TabPanel id="photos" active={tab}>
-                <EmptyPanel
-                  icon={<Camera size={20} />}
-                  title="No progress photos yet"
-                  body="Front, side and back photos over time are the comparison clients respond to most. They stay private to the studio."
-                  color={TAB_COLOR.success}
-                  actions={[{ label: 'Add progress photos', href: `/pt-os/progress-photos?client_id=${client.id}` }]}
-                />
+                {/* Fetches. This was a hardcoded EmptyPanel that queried
+                    nothing, so the tab told every client on the platform they
+                    had no photos — including the ones with twenty on file. */}
+                <PhotosPanel clientId={client.id} />
               </TabPanel>
 
               <TabPanel id="notes" active={tab}>
@@ -1060,7 +1092,20 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   title="Notes"
                   body="Coach notes live on the Overview tab, beside the client's details — they are read alongside everything else rather than filed away."
                   color={TAB_COLOR.primary}
-                  links={[{ label: 'Go to Overview', href: `/pt-os/clients/${client.id}`, hint: 'Notes card is there', icon: <StickyNote size={15} />, color: TAB_COLOR.primary }]}
+                  /* A button that switches the tab, not a link to this page's
+                     own URL. It linked to /pt-os/clients/{id} — the page you
+                     are already on — so tapping it navigated nowhere and left
+                     the Notes panel exactly where it was. */
+                  action={(
+                    <Button
+                      iconLeft={<StickyNote size={15} />}
+                      onClick={() => setTab('overview')}
+                      style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff' }}
+                    >
+                      Go to Overview
+                    </Button>
+                  )}
+                  links={[]}
                 />
               </TabPanel>
 
@@ -1092,12 +1137,24 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
               </TabPanel>
 
               <TabPanel id="reports" active={tab}>
+                {/* The links here are the ones that are actually ABOUT this
+                    client. This panel used to promise "a shareable summary of
+                    this client's month" and send you to /pt-os/reports, which
+                    is the studio's finance report — revenue, commissions,
+                    trainer counts — with no per-client concept and no reading
+                    of the client_id it was handed. The promise and the
+                    destination had nothing to do with each other. */}
                 <LinkPanel
                   icon={<FileBarChart size={16} />}
                   title="Reports"
-                  body="A shareable summary of this client's month — sessions, progress and what changed."
+                  body="What this client's month looks like. The studio-wide report is a different question and lives on its own screen."
                   color={TAB_COLOR.success}
-                  links={[{ label: 'Reports', href: `/pt-os/reports?client_id=${client.id}`, hint: 'Generate and share', icon: <FileBarChart size={15} />, color: TAB_COLOR.success }]}
+                  links={[
+                    { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume, intensity, trend', icon: <TrendingUp size={15} />, color: TAB_COLOR.success },
+                    { label: 'Payment history', href: `/pt-os/clients/${client.id}/payments`, hint: 'Every transaction', icon: <Wallet size={15} />, color: TAB_COLOR.primary },
+                    { label: 'Measurements', href: `/pt-os/measurements?client_id=${client.id}`, hint: 'Readings over time', icon: <Ruler size={15} />, color: TAB_COLOR.danger },
+                    { label: 'Studio reports', href: '/pt-os/reports', hint: 'Revenue and commissions across the studio', icon: <FileBarChart size={15} />, color: TAB_COLOR.warning },
+                  ]}
                 />
               </TabPanel>
 
