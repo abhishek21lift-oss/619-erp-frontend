@@ -8,6 +8,7 @@ import Guard from '@/components/Guard';
 import { PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api, ClientBirthday } from '@/lib/api';
+import { whatsAppHref } from '@/lib/phone';
 
 type FilterKey = 'upcoming' | 'today' | 'week' | 'month';
 
@@ -33,13 +34,11 @@ const daysLabel = (days: number) => {
 const initials = (name: string) =>
   name.split(' ').filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
-const whatsappHref = (phone?: string | null, name?: string, age?: number) => {
-  const p = (phone ?? '').replace(/\D/g, '');
-  if (!p) return null;
-  const num = p.startsWith('91') ? p : `91${p}`;
-  const msg = `Happy Birthday ${name ?? 'there'}! 🎉 Wishing you a fantastic ${age ? `${age}th ` : ''}year ahead — from all of us at the studio!`;
-  return `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
-};
+const whatsappHref = (phone?: string | null, name?: string, age?: number) =>
+  whatsAppHref(
+    phone,
+    `Happy Birthday ${name ?? 'there'}! 🎉 Wishing you a fantastic ${age ? `${age}th ` : ''}year ahead — from all of us at the studio!`,
+  );
 
 export default function ClientBirthdaysPage() {
   const router = useRouter();

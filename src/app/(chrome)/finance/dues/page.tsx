@@ -8,6 +8,7 @@ import { KpiCard, PageContainer, PageHero, PullToRefresh } from '@/components/ui
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import type { DuesItem, DuesSummary } from '@/lib/api';
+import { whatsAppHref } from '@/lib/phone';
 import {
   Search, AlertTriangle, CheckCircle2, TrendingDown,
   MessageCircle, Users, Banknote,
@@ -40,10 +41,13 @@ function nameGradient(name: string): string {
   return palettes[Math.abs(h) % palettes.length];
 }
 function whatsappHref(phone?: string, name?: string, studio?: string) {
-  const p = (phone ?? '').replace(/\D/g, '');
-  if (!p) return '#';
-  const num = p.startsWith('91') ? p : `91${p}`;
-  return `https://wa.me/${num}?text=${encodeURIComponent(`Hi ${name ?? 'there'}, kindly clear your outstanding dues at ${studio || 'MY PT STUDIO'}. Thank you.`)}`;
+  // '#' preserved as the unreachable value because this file's callers render
+  // the link unconditionally; lib/phone.ts returns null and the coercion
+  // happens here rather than changing every call site's rendering.
+  return whatsAppHref(
+    phone,
+    `Hi ${name ?? 'there'}, kindly clear your outstanding dues at ${studio || 'MY PT STUDIO'}. Thank you.`,
+  ) ?? '#';
 }
 
 // The risk bands, named once. They are sent to /dues/summary so the server

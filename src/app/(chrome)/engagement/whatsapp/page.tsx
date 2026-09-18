@@ -8,6 +8,7 @@ import { MessageCircle, Send, Users, CheckCircle2, Phone, Clock, Search, X, Exte
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth-context';
+import { whatsAppHref } from '@/lib/phone';
 
 function buildTemplates(studio: string) {
   return [
@@ -67,13 +68,12 @@ function WAContent() {
   }
   function openWhatsApp(member:any){
     try {
-      const phone = (member.mobile||'').replace(/\D/g,'');
-      if (!phone) {
-        toast.error(`${member.name || 'Member'} has no phone number on file`);
+      const href = whatsAppHref(member.mobile, buildMsg(member));
+      if (!href) {
+        toast.error(`${member.name || 'Member'} has no usable phone number on file`);
         return;
       }
-      const num = phone.startsWith('91')?phone:`91${phone}`;
-      window.open(`https://wa.me/${num}?text=${encodeURIComponent(buildMsg(member))}`,'_blank');
+      window.open(href, '_blank');
       setSent(s=>s+1);
     } catch {
       toast.error('Could not open WhatsApp — please check your browser settings');
