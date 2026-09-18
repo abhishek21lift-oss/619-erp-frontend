@@ -1,6 +1,15 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useStore } from '@tanstack/react-form';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import {
+  ptSessionSchema, blankPtSession, toPtSessionPayload,
+  SESSION_DURATION_OPTIONS, MAX_SESSION_NOTES,
+} from '@/lib/forms/schemas/ptSession';
+import {
+  DateFieldControl, TimeFieldControl, SelectField, TextAreaField,
+} from '@/components/ui/form';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   Calendar, Clock, List, LayoutGrid, ChevronLeft, ChevronRight,
@@ -775,13 +784,33 @@ function CreateSessionModal({
   trainerOptions: string[]; clientOptions: ClientRow[]; clientOptionsLoading: boolean;
   onOpened: () => void;
 }) {
-  const [form, setForm] = useState<NewSessionData>({
-    client: '', client_id: '', trainer: '', date: todayStr(), time: '06:00',
-    duration: 60, type: '1-on-1', notes: '', recurring: false,
-  });
   const [step, setStep] = useState(1);
   const [clientSearch, setClientSearch] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+
+  // ── On the form platform ─────────────────────────────────────────────────
+  //
+  // This was `useState<NewSessionData>` with four native controls and no
+  // schema between them and api.pt.createSession. The only gate was
+  // `disabled={!form.client || !form.time}` — two non-empty strings.
+  //
+  // `type="date"` and `type="time"` are RENDERING hints, not guarantees: where
+  // the native picker is unavailable they degrade to plain text boxes, and
+  // "6pm", "25:00" and an empty date all arrive as ordinary strings. `duration`
+  // looked safest and was not: `parseInt(e.target.value)` answers NaN for
+  // anything unexpected, and NaN serialises to null — a session with no length.
+  //
+  // See lib/forms/schemas/ptSession.ts, including what is deliberately NOT
+  // validated: a date in the past stays legal, because trainers book the
+  // session that renews a lapsed client and log sessions that already happened.
+  const f = useAppForm({
+    schema: ptSessionSchema,
+    defaultValues: blankPtSession(),
+    onSubmit: async (values) => { await onConfirm(toPtSessionPayload(values)); },
+    // The dialog stays mounted and is reopened; its own close effect resets it.
+    keepValuesOnSuccess: true,
+  });
+  const { form, isSubmitting } = f;
+  const values = useStore(form.store, (st) => st.values);
 
   // A studio has one trainer: its owner. The dialog used to ask which, from a
   // list of one, and made it required — so booking took an extra tap that had
@@ -791,7 +820,7 @@ function CreateSessionModal({
   useEffect(() => {
     if (!open) return;
     onOpened();
-    setForm((f) => (f.trainer === defaultTrainer ? f : { ...f, trainer: defaultTrainer }));
+    if (values.trainer !== defaultTrainer) form.setFieldValue('trainer', defaultTrainer);
     // onOpened is a useCallback with no deps; re-running on identity would refetch forever.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultTrainer]);
@@ -802,28 +831,35 @@ function CreateSessionModal({
   // was clicked, before the booking request had even finished. It looked
   // exactly like the click had been undone. The 200ms delay lets the modal's
   // own fade-out finish before the fields underneath it change.
+  // A ref to the current form api, so the reset effect below can call it
+  // without listing `f` as a dependency. `f` is a fresh object every render;
+  // depending on it would re-arm this timer on every keystroke, and the reset
+  // would fire 200ms after the dialog was last typed in rather than 200ms
+  // after it closed — clearing the form under the person using it.
+  const formApi = useRef(f);
+  formApi.current = f;
+
   useEffect(() => {
     if (open) return;
     const t = setTimeout(() => {
       setStep(1);
       setClientSearch('');
-      setForm({ client: '', client_id: '', trainer: defaultTrainer, date: todayStr(), time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false });
+      // resetTo, not a fresh useState object — see useAppForm's own note on why
+      // re-seeding through defaultValues is undone by the next render.
+      formApi.current.resetTo(blankPtSession(defaultTrainer));
     }, 200);
     return () => clearTimeout(t);
   }, [open, defaultTrainer]);
 
   const handleConfirm = async () => {
     if (step === 1) {
-      if (!form.client || !form.time) return;
+      // Step 1 → 2 is a review gate, not the submit. Validation runs on the
+      // real submit below, where the schema can mark the offending field.
+      if (!values.client_id || !values.time) return;
       setStep(2);
       return;
     }
-    setSubmitting(true);
-    try {
-      await onConfirm(form);
-    } finally {
-      setSubmitting(false);
-    }
+    await f.submit();
   };
 
   const handleClose = () => {
@@ -847,14 +883,14 @@ function CreateSessionModal({
       size="lg"
       footer={
         <div className="flex gap-3 w-full justify-end">
-          <Button variant="outline" size="sm" onClick={handleClose} disabled={submitting}>Cancel</Button>
+          <Button variant="outline" size="sm" onClick={handleClose} disabled={isSubmitting}>Cancel</Button>
           {(step === 1 || conflict) ? (
-            <Button variant="primary" size="sm" onClick={handleConfirm} disabled={!form.client || !form.time || submitting}>
-              {step === 1 ? 'Continue' : submitting ? 'Booking…' : 'Book Anyway'}
+            <Button variant="primary" size="sm" onClick={handleConfirm} disabled={!values.client_id || !values.time || isSubmitting}>
+              {step === 1 ? 'Continue' : isSubmitting ? 'Booking…' : 'Book Anyway'}
             </Button>
           ) : (
-            <Button variant="success" size="sm" iconLeft={<CheckCircle2 size={13} />} onClick={handleConfirm} disabled={submitting}>
-              {submitting ? 'Booking…' : 'Confirm Booking'}
+            <Button variant="success" size="sm" iconLeft={<CheckCircle2 size={13} />} onClick={handleConfirm} disabled={isSubmitting}>
+              {isSubmitting ? 'Booking…' : 'Confirm Booking'}
             </Button>
           )}
         </div>
@@ -905,7 +941,7 @@ function CreateSessionModal({
             ) : (
               <div className="grid max-h-[220px] grid-cols-2 gap-2 overflow-y-auto">
                 {resolvedClients.map((c) => {
-                  const selected = form.client_id === c.id;
+                  const selected = values.client_id === c.id;
                   // Booking a session for someone whose package expired, or who
                   // was never enrolled, is allowed — a trainer may be booking
                   // the session that renews them. It just must not be a
@@ -913,7 +949,7 @@ function CreateSessionModal({
                   // afterwards.
                   const meta = ENROLMENT_META[enrolmentState(c)];
                   return (
-                    <button key={c.id} type="button" onClick={() => setForm((f) => ({ ...f, client: c.name, client_id: c.id }))}
+                    <button key={c.id} type="button" onClick={() => { form.setFieldValue('client', c.name); form.setFieldValue('client_id', c.id); }}
                       className="flex flex-col items-start gap-1 rounded-[10px] px-3 py-2.5 text-left text-[12px] font-[600] transition-all"
                       style={{
                         background: selected ? 'rgba(2,113,235,0.08)' : '#f8fafc',
@@ -946,26 +982,25 @@ function CreateSessionModal({
 
           {/* Date/Time */}
           <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label htmlFor="sess-date" className="mb-2 block text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Date</label>
-              <input id="sess-date" type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                className="w-full rounded-[10px] px-3 py-2.5 text-[12.5px] font-[500] outline-none"
-                style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'var(--text-primary)' }} />
-            </div>
-            <div>
-              <label htmlFor="sess-time" className="mb-2 block text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Time</label>
-              <input id="sess-time" type="time" value={form.time} onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
-                className="w-full rounded-[10px] px-3 py-2.5 text-[12.5px] font-[500] outline-none"
-                style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'var(--text-primary)' }} />
-            </div>
-            <div>
-              <label htmlFor="sess-duration" className="mb-2 block text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Duration</label>
-              <select id="sess-duration" value={form.duration} onChange={(e) => setForm((f) => ({ ...f, duration: parseInt(e.target.value) }))}
-                className="w-full rounded-[10px] px-3 py-2.5 text-[12.5px] font-[500] outline-none"
-                style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'var(--text-primary)' }}>
-                {[30, 45, 60, 75, 90, 120].map((d) => <option key={d} value={d}>{d} min</option>)}
-              </select>
-            </div>
+            <form.Field name="date">
+              {(field) => (
+                <DateFieldControl field={field} label="Date" required
+                  serverError={f.errors.fieldErrors.date} />
+              )}
+            </form.Field>
+            <form.Field name="time">
+              {(field) => (
+                <TimeFieldControl field={field} label="Time" required
+                  serverError={f.errors.fieldErrors.time} />
+              )}
+            </form.Field>
+            <form.Field name="duration">
+              {(field) => (
+                <SelectField field={field} label="Duration" required
+                  options={SESSION_DURATION_OPTIONS}
+                  serverError={f.errors.fieldErrors.duration} />
+              )}
+            </form.Field>
           </div>
 
           {/* Session Type */}
@@ -973,12 +1008,12 @@ function CreateSessionModal({
             <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Session Type</p>
             <div className="grid grid-cols-3 gap-2">
               {(['1-on-1', 'Group', 'Assessment'] as const).map((t) => (
-                <button key={t} type="button" onClick={() => setForm((f) => ({ ...f, type: t }))}
+                <button key={t} type="button" onClick={() => form.setFieldValue('type', t)}
                   className="rounded-[10px] px-3 py-2.5 text-[12px] font-[600] transition-all"
                   style={{
-                    background: form.type === t ? 'rgba(220,38,38,0.10)' : '#f8fafc',
-                    border: form.type === t ? '1.5px solid rgba(220,38,38,0.30)' : '1.5px solid rgba(15,23,42,0.09)',
-                    color: form.type === t ? '#F59E0B' : 'var(--text-muted)',
+                    background: values.type === t ? 'rgba(220,38,38,0.10)' : '#f8fafc',
+                    border: values.type === t ? '1.5px solid rgba(220,38,38,0.30)' : '1.5px solid rgba(15,23,42,0.09)',
+                    color: values.type === t ? '#F59E0B' : 'var(--text-muted)',
                   }}
                 >
                   {t}
@@ -988,38 +1023,40 @@ function CreateSessionModal({
           </div>
 
           {/* Notes */}
-          <div>
-            <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Notes</p>
-            <textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-              placeholder="Session focus, client notes, or instructions…"
-              className="w-full rounded-[10px] px-3 py-2.5 text-[12.5px] font-[500] outline-none resize-none"
-              style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'var(--text-primary)', minHeight: 60 }}
-            />
-          </div>
+          {/* The design system renders the label, so the hand-rolled heading
+              that used to sit above this textarea would now be a duplicate. */}
+          <form.Field name="notes">
+            {(field) => (
+              <TextAreaField field={field} label="Notes"
+                placeholder="Session focus, client notes, or instructions…"
+                maxLength={MAX_SESSION_NOTES}
+                serverError={f.errors.fieldErrors.notes} />
+            )}
+          </form.Field>
 
           {/* Recurring */}
-          <button type="button" onClick={() => setForm((f) => ({ ...f, recurring: !f.recurring }))}
+          <button type="button" onClick={() => form.setFieldValue('recurring', !values.recurring)}
             className="flex items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 text-[12px] font-[600] transition-all"
             style={{
-              background: form.recurring ? 'rgba(220,38,38,0.08)' : '#f8fafc',
-              border: form.recurring ? '1.5px solid rgba(220,38,38,0.25)' : '1.5px solid rgba(15,23,42,0.09)',
-              color: form.recurring ? '#F59E0B' : 'var(--text-muted)',
+              background: values.recurring ? 'rgba(220,38,38,0.08)' : '#f8fafc',
+              border: values.recurring ? '1.5px solid rgba(220,38,38,0.25)' : '1.5px solid rgba(15,23,42,0.09)',
+              color: values.recurring ? '#F59E0B' : 'var(--text-muted)',
             }}>
             <Repeat size={13} />
-            {form.recurring ? 'Recurring weekly' : 'Make this a recurring session'}
+            {values.recurring ? 'Recurring weekly' : 'Make this a recurring session'}
           </button>
         </div>
       ) : (
         <div className="space-y-3">
           {[
-            { k: 'Client', v: form.client },
-            { k: 'Trainer', v: form.trainer },
-            { k: 'Date', v: form.date },
-            { k: 'Time', v: form.time },
-            { k: 'Duration', v: `${form.duration} min` },
-            { k: 'Type', v: form.type },
-            { k: 'Recurring', v: form.recurring ? 'Yes (weekly)' : 'No' },
-            { k: 'Notes', v: form.notes || '—' },
+            { k: 'Client', v: values.client },
+            { k: 'Trainer', v: values.trainer },
+            { k: 'Date', v: values.date },
+            { k: 'Time', v: values.time },
+            { k: 'Duration', v: `${values.duration} min` },
+            { k: 'Type', v: values.type },
+            { k: 'Recurring', v: values.recurring ? 'Yes (weekly)' : 'No' },
+            { k: 'Notes', v: values.notes || '—' },
           ].map((item) => (
             <div key={item.k} className="flex justify-between py-1.5 border-b" style={{ borderColor: 'rgba(0,0,0,0.07)' }}>
               <span className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>{item.k}</span>

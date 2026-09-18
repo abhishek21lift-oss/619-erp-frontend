@@ -477,3 +477,65 @@ export const monthField = (opts: MonthFieldOptions) => {
     return normalised;
   });
 };
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Time of day
+ * ────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * A wall-clock time, `HH:MM`.
+ *
+ * ── Why this needed a primitive of its own ──────────────────────────────────
+ *
+ * `TimeFieldControl` has existed in components/ui/form for as long as the
+ * design system has, and nothing in the schema layer matched it — so every
+ * screen taking a time did it with `useState` and an `<input type="time">`,
+ * and the value reached the API unchecked. A browser that does not implement
+ * the native time picker (and several mobile ones do not) falls back to a
+ * plain text box, where "6pm", "0600" and "25:00" are all things a person will
+ * type and all things the control will happily hand over.
+ *
+ * `type="time"` is a rendering hint, not a guarantee. This is the guarantee.
+ *
+ * ── The bounds, and why seconds are dropped ─────────────────────────────────
+ *
+ * Hours 0-23 and minutes 0-59, checked as numbers rather than trusted to the
+ * pattern: `29:99` matches `\d{2}:\d{2}` perfectly well.
+ *
+ * Firefox and Safari append `:SS` when the control has a step; the seconds are
+ * always zero and no caller stores them, so they are accepted and discarded.
+ * Rejecting them would make the same form work in one browser and fail in
+ * another, which is the worst kind of validation bug to be told about.
+ */
+export const timeField = (opts: FieldOptions) => {
+  const { label, required = false } = opts;
+
+  return z.unknown().transform((raw, ctx): string | null => {
+    const s = toTextOrNull(raw);
+
+    if (s === null) {
+      if (required) {
+        ctx.addIssue({ code: 'custom', message: `${label} is required.` });
+        return z.NEVER;
+      }
+      return null;
+    }
+
+    const m = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(s);
+    if (!m) {
+      ctx.addIssue({ code: 'custom', message: `${label} must be a time, like 18:30.` });
+      return z.NEVER;
+    }
+
+    const hours = Number(m[1]);
+    const minutes = Number(m[2]);
+    if (hours > 23 || minutes > 59) {
+      ctx.addIssue({ code: 'custom', message: `${label} is not a real time.` });
+      return z.NEVER;
+    }
+
+    // Zero-padded, so "6:05" and "06:05" are one value. The API compares these
+    // as strings and would otherwise treat them as different times.
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  });
+};

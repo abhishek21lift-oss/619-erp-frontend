@@ -144,7 +144,14 @@ describe('controls with no accessible name', () => {
     // page and becomes a <TextInput>, counted once inside controls.tsx instead
     // of once per call site. Migration therefore shrinks `total`, and a tight
     // floor here would fail on every successful migration.
-    expect(audit.total).toBeGreaterThan(250);
+    //
+    // Which is exactly what happened: the floor was 250 against a count of
+    // 251, so migrating three controls in the schedule-session dialog failed
+    // this test. One control of headroom is not "well below" — it is a tight
+    // floor with a comment saying it is not. 200 leaves room for the
+    // migrations still to come while still failing an audit that has stopped
+    // finding controls at all, which is the only thing this assertion is for.
+    expect(audit.total).toBeGreaterThan(200);
     expect(audit.aria + audit.wrapped + audit.htmlFor + audit.wired
       + audit.placeholderOnly.length + audit.nameless.length).toBe(audit.total);
   });
@@ -166,10 +173,15 @@ describe('captions that had to become labels', () => {
   // a visual change, which this work was explicitly not allowed to make.
   // globals.css resets every margin to 0, so `block` is the only thing that
   // has to be put back.
+  //
+  // The three schedule-session entries (sess-date, sess-time, sess-duration)
+  // are GONE from this list, and their absence is the improvement rather than
+  // a gap: that dialog's date, time and duration are design-system fields now,
+  // so FormField owns the label, the id and the aria-describedby, and
+  // form-field.test.tsx proves that association renders. A hand-written
+  // <label htmlFor> to check no longer exists there — keeping the entries
+  // would fail on code whose labelling got strictly better.
   const converted: [string, string][] = [
-    ['app/(chrome)/pt-os/schedule-session/page.tsx', 'sess-date'],
-    ['app/(chrome)/pt-os/schedule-session/page.tsx', 'sess-time'],
-    ['app/(chrome)/pt-os/schedule-session/page.tsx', 'sess-duration'],
     ['app/(chrome)/pt-os/clients/[id]/workout-log/[sessionId]/page.tsx', 'wl-day'],
     ['app/(chrome)/settings/profile/page.tsx', 'coaching-since'],
   ];
@@ -217,7 +229,8 @@ describe('labelling across a component boundary', () => {
     // would start counting as a label and the audit would go quietly blind.
     const src = readFileSync(srcPath('app', '(chrome)', 'pt-os', 'commissions', 'page.tsx'), 'utf8');
     expect(src).toMatch(/htmlFor=\{`comm-pct-\$\{t\.id\}`\}/);
-    expect(audit.total).toBeGreaterThan(250);
+    // Same floor, same reason — see the note in "is empty for the right reason".
+    expect(audit.total).toBeGreaterThan(200);
   });
 });
 
