@@ -89,7 +89,8 @@ type OpsData = {
    */
   today_unscheduled: Array<{
     assignment_id: string; client_id: string;
-    client_name: string | null; client_photo: string | null;
+    client_name: string | null; client_mobile: string | null;
+    client_photo: string | null;
     plan_id: string; plan_name: string;
     planned_exercises: number;
   }>;
@@ -1300,7 +1301,8 @@ export function AICoach({ d, ops, birthdays, studioName }: {
       balance_amount: t.balance_amount, due_status: t.due_status,
     })),
     unscheduled: ops?.today_unscheduled?.map((u) => ({
-      client_id: u.client_id, client_name: u.client_name, plan_name: u.plan_name,
+      client_id: u.client_id, client_name: u.client_name,
+      client_mobile: u.client_mobile, plan_name: u.plan_name,
     })),
     birthdays,
     studioName,
@@ -1458,8 +1460,21 @@ export function AICoach({ d, ops, birthdays, studioName }: {
 
               {targets.length === 0 ? (
                 <>
+                  {/* ── Two different silences, and they are not the same ──
+                      An insight with NO contacts has not looked at anybody:
+                      `inactive` is arithmetic on a COUNT(*), so there is no
+                      list here to hold a number. Saying "no mobile number on
+                      file" for that case states, as fact, something nothing
+                      has checked — and sends a trainer hunting for numbers
+                      that are already on the record.
+
+                      An insight WITH contacts, none of them reachable, has
+                      genuinely looked and found nothing. Only that one has
+                      earned the original sentence. */}
                   <p className="mb-2.5 text-[11.5px] leading-snug" style={{ color: C.muted }}>
-                    No mobile number on file for these clients, so there is nobody to message from here.
+                    {selected.contacts.length === 0
+                      ? 'This list is not loaded here, so there is nobody to message from this card. Open it to see who they are.'
+                      : 'No mobile number on file for these clients, so there is nobody to message from here.'}
                   </p>
                   <button type="button" onClick={() => router.push(selected.href)}
                     className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[12.5px] font-[750] transition active:scale-[0.98]"
