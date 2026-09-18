@@ -62,6 +62,7 @@ export interface CoachDue {
 
 export interface CoachUnscheduled {
   client_id: string; client_name: string | null; plan_name: string;
+  client_mobile?: string | null;
 }
 
 export interface CoachBirthday {
@@ -176,8 +177,16 @@ export function buildCoachInsights(input: CoachInput): CoachInsight[] {
       title: `${unscheduled.length} ${plural(unscheduled.length, 'client')} due to train, unbooked`,
       detail: 'Their programme says today, but there is no slot on the calendar.',
       href: '/pt-os/schedule-session',
-      // today_unscheduled carries no mobile, so this one links rather than messages.
-      contacts: [],
+      // This used to be `contacts: []` with a note that today_unscheduled
+      // carried no mobile. It carried none because nobody had selected the
+      // column — and the card reported that omission to the trainer as "No
+      // mobile number on file for these clients", which is a claim about the
+      // client record that nothing had checked. The roster carries it now.
+      contacts: unscheduled.map((u) => ({
+        id: u.client_id,
+        name: u.client_name ?? 'this client',
+        mobile: u.client_mobile ?? null,
+      })),
       message: (name) => `Hi ${name}, are you coming in today? I can hold a slot for you.`,
     });
   }

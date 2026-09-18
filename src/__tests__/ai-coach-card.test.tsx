@@ -130,6 +130,44 @@ describe('<AICoach />', () => {
     expect(screen.getByRole('button', { name: /Open the list/i })).toBeTruthy();
   });
 
+  it('messages an unbooked client once the roster carries their number', () => {
+    // The bug this fixes. today_unscheduled never selected c.mobile, so this
+    // cohort could only ever link to a list — and the card explained that
+    // omission to the trainer as "No mobile number on file", a claim about
+    // the client record that nothing had checked.
+    renderCard({
+      ops: {
+        ...(empty as object),
+        today_unscheduled: [{
+          assignment_id: 'a1', client_id: 'c1', client_name: 'Ajeet',
+          client_mobile: '98765 43210', client_photo: null,
+          plan_id: 'p1', plan_name: 'PPL', planned_exercises: 4,
+        }],
+      } as never,
+      d: clean,
+    });
+    expect(screen.getByRole('button', { name: /Send WhatsApp to Ajeet/i })).toBeTruthy();
+    expect(screen.queryByText(/No mobile number on file/i)).toBeNull();
+    expect(screen.queryByText(/not loaded here/i)).toBeNull();
+  });
+
+  it('does not claim a number is missing for a cohort it never loaded', () => {
+    // `inactive` is expired_clients MINUS the renewals list — arithmetic on a
+    // COUNT(*), with no rows behind it. There is no list here to hold a
+    // number, so the honest sentence is that the list is not loaded, not that
+    // the clients have no number. The difference matters: the old wording
+    // sends a trainer looking for numbers that are already on the record.
+    renderCard({
+      ops: empty,
+      d: { ...(clean as object), expired_clients: 4 } as never,
+      birthdays: [],
+    });
+    expect(screen.getByText(/4 inactive clients/i)).toBeTruthy();
+    expect(screen.getByText(/not loaded here/i)).toBeTruthy();
+    expect(screen.queryByText(/No mobile number on file/i)).toBeNull();
+    expect(screen.getByRole('button', { name: /Open the list/i })).toBeTruthy();
+  });
+
   it('shows an all-clear rather than inventing something to worry about', () => {
     renderCard({ d: clean, ops: empty, birthdays: [] });
     expect(screen.getByText(/Nothing needs you right now/i)).toBeTruthy();

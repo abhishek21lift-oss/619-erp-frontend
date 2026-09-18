@@ -184,9 +184,38 @@ describe('reaching people', () => {
     expect(msg).toContain('Navneet');
   });
 
-  it('leaves the unbooked insight without contacts, since that feed has no mobile', () => {
-    const out = build({ unscheduled: [{ client_id: 'c1', client_name: 'Ajeet', plan_name: 'PPL' }] });
+  it('carries the unbooked client through, number and all', () => {
+    // This test used to assert the opposite — that the cohort had no contacts
+    // "since that feed has no mobile". The feed had no mobile because the
+    // roster query never selected the column, not because the clients had no
+    // number, and the card turned that omission into "No mobile number on
+    // file for these clients" on the trainer's home screen. The column is
+    // selected now, so the expectation inverts with it.
+    const out = build({
+      unscheduled: [{ client_id: 'c1', client_name: 'Ajeet', plan_name: 'PPL', client_mobile: '98765 43210' }],
+    });
     expect(out[0].id).toBe('unbooked');
-    expect(out[0].contacts).toEqual([]);
+    expect(out[0].contacts).toEqual([{ id: 'c1', name: 'Ajeet', mobile: '98765 43210' }]);
+    expect(reachable(out[0].contacts).map((c) => c.name)).toEqual(['Ajeet']);
+  });
+
+  it('still lists an unbooked client with no number, but cannot reach them', () => {
+    // A cohort that HAS been looked at and genuinely has no number is a
+    // different state from one that was never loaded, and the card says
+    // different things about the two. Here the client is present and
+    // unreachable — which is what lets the card say, truthfully, that there
+    // is no number on file.
+    const out = build({
+      unscheduled: [{ client_id: 'c1', client_name: 'Ajeet', plan_name: 'PPL', client_mobile: null }],
+    });
+    expect(out[0].contacts).toHaveLength(1);
+    expect(reachable(out[0].contacts)).toEqual([]);
+  });
+
+  it('names an unbooked client the roster could not name', () => {
+    const out = build({
+      unscheduled: [{ client_id: 'c1', client_name: null, plan_name: 'PPL', client_mobile: '98765 43210' }],
+    });
+    expect(out[0].contacts[0].name).toBe('this client');
   });
 });
