@@ -50,72 +50,34 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  # ── One command per line, deliberately ─────────────────────────────────
+  #
+  # The backend's copy of the verification block was multi-line, and it never
+  # ran: its deploy log showed the container start and the script exit 1 41ms
+  # later, with none of the loop's output. The identical block run as an
+  # ordinary script polls correctly, so what could not carry it is the way
+  # these lines are assembled and shipped over SSH. Every line that preceded
+  # it, across hundreds of deploys, had been exactly one command.
+  #
+  # Multi-line logic therefore lives in scripts/deploy/, which is one line to
+  # call and has tests. The echoed markers are so the log says where it got to.
   DEPLOY_SCRIPT: |
     set -e
     cd /opt/myptstudio/619-erp-frontend
-
-    # `checkout main` before pulling, because rollback.yml leaves the checkout
-    # DETACHED at the rolled-back commit. A bare `git pull origin main` against
-    # a detached HEAD does not move it, so the next deploy after a rollback
-    # would report success and ship nothing. --ff-only fails loudly rather than
-    # creating a merge commit or quietly discarding anything edited on the box.
     git fetch origin main
     git checkout main
     git pull --ff-only origin main
-
-    # Record what is about to serve, so rollback.yml has a target that does not
-    # require reading the deploy log.
     git rev-parse HEAD > /opt/myptstudio/.frontend-deployed-sha.new
-
-    # Exported so the compose build args pick them up. Neither can be read at
-    # runtime: the standalone output runs `node server.js` (so npm sets no
-    # version) and the image has no .git directory (so no commit). Without
-    # this, /api/health reports "unknown" on every deployed build — which it
-    # did, on every deployed build, while reporting the real version in dev.
     export GIT_SHA="$(git rev-parse HEAD)"
     export BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     export APP_VERSION="$(node -p "require('./package.json').version")"
-
+    echo "deploy: building $GIT_SHA"
     cd /opt/myptstudio
-
-    # --build-arg explicitly: the compose file at /opt/myptstudio is not in any
-    # repository, so nothing here can declare `args` on its frontend service.
-    # The command line reaches the build whichever compose file is really there.
-    docker compose build \
-      --build-arg GIT_SHA="$GIT_SHA" \
-      --build-arg BUILD_TIME="$BUILD_TIME" \
-      --build-arg APP_VERSION="$APP_VERSION" \
-      frontend
+    docker compose build --build-arg GIT_SHA="$GIT_SHA" --build-arg BUILD_TIME="$BUILD_TIME" --build-arg APP_VERSION="$APP_VERSION" frontend
+    echo "deploy: built; replacing container"
     docker compose up -d frontend
-
-    # ── Deployment verification ────────────────────────────────────────────
-    #
-    # `up -d` returning 0 means a container STARTED. It does not mean it is
-    # serving, and it does not mean it is serving the commit just built — a
-    # cached layer or a build that quietly reused the previous image leaves a
-    # healthy container answering with yesterday's code and the deploy
-    # reporting success.
-    SERVING=""
-    for _ in $(seq 1 30); do
-      SERVING="$(curl -sf --max-time 5 http://127.0.0.1:3000/api/health 2>/dev/null \
-        | grep -o '"sha":"[0-9a-f]*"' | head -1 | cut -d'"' -f4 || true)"
-      [ "$SERVING" = "$GIT_SHA" ] && break
-      sleep 5
-    done
-
-    if [ "$SERVING" != "$GIT_SHA" ]; then
-      echo "::error::deploy verification failed — expected $GIT_SHA, frontend reports '${SERVING:-no answer}'"
-      docker compose logs --tail 60 frontend || true
-      # NOT advanced: the marker keeps naming the last commit known to have
-      # actually served traffic, which is what rollback.yml targets.
-      rm -f /opt/myptstudio/.frontend-deployed-sha.new
-      exit 1
-    fi
-    echo "deploy verified: frontend is serving $SERVING"
-
-    mv /opt/myptstudio/.frontend-deployed-sha.new /opt/myptstudio/.frontend-deployed-sha
-
-    docker image prune -f
+    echo "deploy: container started; verifying it serves $GIT_SHA"
+    bash /opt/myptstudio/619-erp-frontend/scripts/deploy/verify-serving.sh "$GIT_SHA" /opt/myptstudio frontend http://127.0.0.1:3000/api/health /opt/myptstudio/.frontend-deployed-sha
 
 jobs:
   deploy:
