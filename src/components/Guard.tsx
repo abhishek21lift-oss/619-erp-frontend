@@ -68,7 +68,8 @@ export default function Guard({ children, role, roles, ownerOnly }: Props) {
     loading ? 'pending'
       : (!user || userPortal === null) ? 'redirect'
         : !mayEnterPortal(userPortal, pagePortal) ? 'redirect'
-          : (roleRequired && !hasRole(user.role, roles ?? role)) ? 'redirect'
+          : (ownerOnly && !isOwner) ? 'redirect'
+            : (roleRequired && !hasRole(user.role, roles ?? role)) ? 'redirect'
             : 'pass';
 
   // The effect now carries only the side-effect — the navigation itself. It no
