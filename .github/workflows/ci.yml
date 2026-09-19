@@ -286,6 +286,16 @@ jobs:
         # flag below. The checkout above exists so this can run.
         run: node scripts/api-contract-check.mjs --backend ../backend
 
+      - name: AI stream contract (frontend ↔ backend)
+        working-directory: frontend
+        # The API contract above checks that every call resolves to a route.
+        # It says nothing about the SSE events that route then streams, and a
+        # frontend that drops an event renders nothing — indistinguishable
+        # from a healthy stream. The `grounding` event, whose whole job is to
+        # say an answer was produced without the studio's documents, is
+        # exactly the kind that must not be lost silently.
+        run: node scripts/ai-contract-check.mjs --backend ../backend
+
       - name: Scoring parity — all six libraries (frontend ↔ backend)
         working-directory: frontend
         # No SCORING_PARITY_OPTIONAL here, ever. That flag exists for a
