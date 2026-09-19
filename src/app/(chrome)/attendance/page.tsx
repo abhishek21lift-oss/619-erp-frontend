@@ -177,7 +177,7 @@ export default function AttendancePage() {
 ──────────────────────────────────────────────────────────────── */
 function AttendanceContent() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'trainer';
+  const isAdmin = user?.is_owner === true;
   const router  = useRouter();
   const today   = new Date().toISOString().split('T')[0];
 
