@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ROLES, normaliseRole, hasRole, isAdminOrManager, ROLE_LABELS, roleLabel, ASSIGNABLE_ROLES } from '@/lib/roles';
+import { ROLES, normaliseRole, hasRole, isAdminOrManager, isStudioOwner, ROLE_LABELS, roleLabel, ASSIGNABLE_ROLES } from '@/lib/roles';
 
 describe('canonical role model', () => {
   it('exposes only platform admin, studio trainer-owner and member', () => {
@@ -10,7 +10,7 @@ describe('canonical role model', () => {
   it('normalises legacy role identifiers to trainer', () => {
     expect(normaliseRole('admin')).toBe('trainer');
     for (const retired of ['manager', 'staff', 'reception', 'receptionist']) {
-      expect(normaliseRole(retired)).toBe('member');
+      expect(normaliseRole(retired)).toBe('trainer');
     }
     expect(normaliseRole('trainer')).toBe('trainer');
     expect(normaliseRole('member')).toBe('member');
@@ -26,8 +26,10 @@ describe('canonical role model', () => {
   it('treats trainer as the studio owner role', () => {
     expect(hasRole('trainer', 'trainer')).toBe(true);
     expect(hasRole('admin', 'trainer')).toBe(true); // legacy boundary compatibility
-    expect(hasRole('manager', 'trainer')).toBe(false); // retired role boundary
+    expect(hasRole('manager', 'trainer')).toBe(true); // legacy staff boundary
     expect(isAdminOrManager('trainer')).toBe(true);
+    expect(isStudioOwner({ role: 'trainer', is_owner: true })).toBe(true);
+    expect(isStudioOwner({ role: 'trainer', is_owner: false })).toBe(false);
     expect(isAdminOrManager('admin')).toBe(true);
   });
 
@@ -40,7 +42,7 @@ describe('canonical role model', () => {
     expect(roleLabel('super_admin')).toBe('Admin');
     expect(roleLabel('trainer')).toBe('Trainer');
     expect(roleLabel('admin')).toBe('Trainer');
-    expect(roleLabel('manager')).toBe('Member');
+    expect(roleLabel('manager')).toBe('Trainer');
     expect(ROLE_LABELS.trainer).toBe('Trainer');
   });
 });
