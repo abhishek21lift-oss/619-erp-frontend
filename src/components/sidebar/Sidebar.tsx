@@ -179,7 +179,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
   const { features } = useFeatures();
   const pathname = usePathname();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
+  const isAdmin = user?.role === 'trainer';
   const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
 
   // Nav badge counts, via the api client rather than hand-written fetch so they
