@@ -436,7 +436,7 @@ export default function QrScannerPage() {
     // `admin` (and `super_admin`) could — every other staff role (manager,
     // trainer, staff, reception) was refused. This list matches the backend
     // route it calls, `POST /api/qr/scan`, which is gated by `requireStaff`.
-    <Guard roles={['admin', 'manager', 'trainer', 'staff', 'reception']}>
+    <Guard roles={['trainer', 'staff', 'reception']}>
       {/* pt-1 to match the dashboard, so the first card sits the same
           distance below the top bar as it does everywhere else. */}
       <div className="pt-1">
