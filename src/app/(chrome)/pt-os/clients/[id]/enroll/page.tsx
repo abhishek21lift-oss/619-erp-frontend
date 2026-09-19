@@ -240,7 +240,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
+  const isAdmin = user?.role === 'trainer';
 
   const [clientName, setClientName] = useState('');
   const [clientMeta, setClientMeta] = useState<ClientMeta | null>(null);
