@@ -69,7 +69,7 @@ describe('<Guard />', () => {
         <div>never</div>
       </Guard>,
     );
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/'));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/member/dashboard'));
     expect(mockReplace).not.toHaveBeenCalledWith('/login');
   });
 
