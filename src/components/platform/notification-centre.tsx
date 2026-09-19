@@ -99,7 +99,7 @@ function Composer({ initial, plans, onClose, onSaved }: {
     audience_plans: initial?.audience_plans ?? [],
     audience_statuses: initial?.audience_statuses ?? [],
     audience_org_ids: initial?.audience_org_ids ?? [],
-    audience_roles: initial?.audience_roles ?? ['admin'],
+    audience_roles: initial?.audience_roles ?? ['trainer'],
   });
   const [saving, setSaving] = useState(false);
 
