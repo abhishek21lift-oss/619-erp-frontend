@@ -65,12 +65,12 @@ const itemVariants = {
 };
 
 export default function TrainerLeaveRequestsPage() {
-  return <Guard roles={['admin', 'manager']}><Inner /></Guard>;
+  return <Guard roles={['trainer']}><Inner /></Guard>;
 }
 
 function Inner() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
+  const isAdmin = user?.role === 'trainer' || user?.role === 'manager';
 
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
