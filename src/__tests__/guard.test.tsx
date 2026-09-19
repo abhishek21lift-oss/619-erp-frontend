@@ -27,9 +27,9 @@ beforeEach(() => {
 
 describe('<Guard />', () => {
   it('renders children when user is allowed', async () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u1', role: 'admin' as Role }, loading: false });
+    mockUseAuth.mockReturnValue({ user: { id: 'u1', role: 'trainer' as Role }, loading: false });
     render(
-      <Guard role="admin">
+      <Guard role="trainer">
         <div>secret content</div>
       </Guard>,
     );
@@ -38,9 +38,9 @@ describe('<Guard />', () => {
   });
 
   it('renders children for any of the allowed roles', async () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u2', role: 'manager' as Role }, loading: false });
+    mockUseAuth.mockReturnValue({ user: { id: 'u2', role: 'trainer' as Role }, loading: false });
     render(
-      <Guard roles={['admin', 'manager']}>
+      <Guard roles={['trainer']}>
         <div>manager area</div>
       </Guard>,
     );
@@ -50,7 +50,7 @@ describe('<Guard />', () => {
   it('redirects to /login when there is no user', async () => {
     mockUseAuth.mockReturnValue({ user: null, loading: false });
     render(
-      <Guard role="admin">
+      <Guard role="trainer">
         <div>never</div>
       </Guard>,
     );
@@ -65,7 +65,7 @@ describe('<Guard />', () => {
     // page would detect it and bounce them straight back here.
     mockUseAuth.mockReturnValue({ user: { id: 'u3', role: 'trainer' as Role }, loading: false });
     render(
-      <Guard role="admin">
+      <Guard role="trainer">
         <div>never</div>
       </Guard>,
     );
@@ -74,9 +74,9 @@ describe('<Guard />', () => {
   });
 
   it('normalises receptionist to reception', async () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u4', role: 'receptionist' as Role }, loading: false });
+    mockUseAuth.mockReturnValue({ user: { id: 'u4', role: 'trainer' as Role }, loading: false });
     render(
-      <Guard role="reception">
+      <Guard role="trainer">
         <div>reception desk</div>
       </Guard>,
     );
@@ -87,7 +87,7 @@ describe('<Guard />', () => {
   it('shows loading state while auth is resolving', () => {
     mockUseAuth.mockReturnValue({ user: null, loading: true });
     render(
-      <Guard role="admin">
+      <Guard role="trainer">
         <div>never</div>
       </Guard>,
     );
@@ -142,7 +142,7 @@ describe('<Guard /> keeps the two apps apart', () => {
     // earlier version of this test rendered fresh and proved nothing: `ready`
     // is false on the first pass regardless, so the spinner covered for it.
     pathname = '/pt-os/clients';
-    mockUseAuth.mockReturnValue({ user: { id: 'a9', role: 'admin' as Role }, loading: false });
+    mockUseAuth.mockReturnValue({ user: { id: 'a9', role: 'trainer' as Role }, loading: false });
     const { rerender } = render(<Guard><div>trainer shell</div></Guard>);
     await waitFor(() => expect(screen.getByText('trainer shell')).toBeInTheDocument());
 
@@ -161,7 +161,7 @@ describe('<Guard /> keeps the two apps apart', () => {
   });
 
   it('still lets staff into the staff app', async () => {
-    for (const role of ['super_admin', 'admin', 'manager', 'trainer', 'reception'] as Role[]) {
+    for (const role of ['super_admin', 'trainer'] as Role[]) {
       mockReplace.mockReset();
       pathname = '/pt-os/clients';
       mockUseAuth.mockReturnValue({ user: { id: 'u', role }, loading: false });
@@ -176,7 +176,7 @@ describe('<Guard /> keeps the two apps apart', () => {
     // '/membership-plans'.startsWith('/member') is true. A prefix match here
     // would lock every trainer out of their own pricing page.
     pathname = '/membership-plans';
-    mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'admin' as Role }, loading: false });
+    mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'trainer' as Role }, loading: false });
     render(<Guard><div>plans</div></Guard>);
     await waitFor(() => expect(screen.getByText('plans')).toBeInTheDocument());
     expect(mockReplace).not.toHaveBeenCalled();
@@ -267,12 +267,12 @@ describe('<Guard /> paints no loading frame when auth is already resolved', () =
     // component, so a session that changed underneath a mounted page kept
     // passing the gate. Deriving the verdict removes that by construction.
     pathname = '/pt-os/clients';
-    mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'admin' as Role }, loading: false });
-    const { rerender } = render(<Guard role="admin"><p>admin tools</p></Guard>);
+    mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'trainer' as Role }, loading: false });
+    const { rerender } = render(<Guard role="trainer"><p>admin tools</p></Guard>);
     await waitFor(() => expect(screen.getByText('admin tools')).toBeInTheDocument());
 
     mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'trainer' as Role }, loading: false });
-    rerender(<Guard role="admin"><p>admin tools</p></Guard>);
+    rerender(<Guard role="trainer"><p>admin tools</p></Guard>);
 
     expect(screen.queryByText('admin tools')).not.toBeInTheDocument();
   });
