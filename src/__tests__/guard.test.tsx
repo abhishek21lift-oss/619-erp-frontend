@@ -73,7 +73,7 @@ describe('<Guard />', () => {
     expect(mockReplace).not.toHaveBeenCalledWith('/login');
   });
 
-  it('normalises receptionist to reception', async () => {
+  it('keeps legacy staff identities on the trainer portal', async () => {
     mockUseAuth.mockReturnValue({ user: { id: 'u4', role: 'trainer' as Role }, loading: false });
     render(
       <Guard role="trainer">
@@ -82,6 +82,18 @@ describe('<Guard />', () => {
     );
     await waitFor(() => expect(screen.getByText('reception desk')).toBeInTheDocument());
     expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('enforces owner-only guards separately from trainer access', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'owner', role: 'trainer' as Role, is_owner: true }, loading: false });
+    render(<Guard ownerOnly><div>owner area</div></Guard>);
+    await waitFor(() => expect(screen.getByText('owner area')).toBeInTheDocument());
+
+    mockUseAuth.mockReturnValue({ user: { id: 'staff', role: 'trainer' as Role, is_owner: false }, loading: false });
+    const { rerender } = render(<Guard ownerOnly><div>owner area</div></Guard>);
+    rerender(<Guard ownerOnly><div>owner area</div></Guard>);
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/'));
+
   });
 
   it('shows loading state while auth is resolving', () => {
