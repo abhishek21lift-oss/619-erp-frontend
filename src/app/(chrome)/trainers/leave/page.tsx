@@ -70,7 +70,7 @@ export default function TrainerLeaveRequestsPage() {
 
 function Inner() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'trainer' || user?.role === 'manager';
+  const isAdmin = user?.role === 'trainer' && user?.is_owner === true;
 
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
