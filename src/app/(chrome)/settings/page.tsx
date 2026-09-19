@@ -48,7 +48,7 @@ interface Account {
    ROLE CONFIG
 ──────────────────────────────────────────────────────────────────── */
 const ROLES: Record<Role, { label: string; icon: React.ReactNode; color: string; bg: string; desc: string; perms: string }> = {
-  admin: {
+  trainer: {
     label: ROLE_LABELS.trainer,
     icon: <Crown size={14} />,
     color: '#0067e0',
