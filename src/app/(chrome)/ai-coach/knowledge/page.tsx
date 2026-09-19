@@ -150,7 +150,7 @@ export default function AiKnowledgeBasePage() {
   };
 
   return (
-    <Guard roles={['trainer']}>
+    <Guard ownerOnly>
       <PullToRefresh onRefresh={kb.refetch}>
         <PageContainer>
 
