@@ -42,7 +42,7 @@ import { errorMessage } from '@/lib/forms/errors';
 const PAGE_SIZE = 25;
 
 export default function VerifyPaymentsPage() {
-  return <Guard roles={['admin', 'manager']}><Inner /></Guard>;
+  return <Guard roles={['trainer']}><Inner /></Guard>;
 }
 
 function Inner() {
