@@ -8,10 +8,10 @@ export const ROLES: readonly Role[] = ['super_admin', 'trainer', 'member'] as co
 
 const LEGACY_ROLE_MAP: Record<string, Role> = {
   admin: 'trainer',
-  manager: 'trainer',
-  staff: 'trainer',
-  reception: 'trainer',
-  receptionist: 'trainer',
+  manager: 'member',
+  staff: 'member',
+  reception: 'member',
+  receptionist: 'member',
 };
 
 export function normaliseRole(role: string | undefined | null): Role | undefined {
@@ -38,10 +38,10 @@ export const ROLE_LABELS: Record<string, string> = {
   trainer: 'Trainer',
   member: 'Member',
   admin: 'Trainer',
-  manager: 'Trainer',
-  staff: 'Trainer',
-  reception: 'Trainer',
-  receptionist: 'Trainer',
+  manager: 'Member',
+  staff: 'Member',
+  reception: 'Member',
+  receptionist: 'Member',
 };
 
 export function roleLabel(role: string | undefined | null): string {
