@@ -1,52 +1,45 @@
-// Canonical studio role model.
-// super_admin = platform operator; trainer = the single studio owner; member = client.
-// Legacy role identifiers are accepted only at the boundary so old sessions/data can
-// be normalised safely during rollout. They are never assignable or persisted after migration.
-export type Role = 'super_admin' | 'trainer' | 'member' | (string & {});
+export type Role = 'super_admin' | 'trainer' | 'member';
 
 export const ROLES: readonly Role[] = ['super_admin', 'trainer', 'member'] as const;
 
-const LEGACY_ROLE_MAP: Record<string, Role> = {
-  admin: 'trainer',
-  manager: 'member',
-  staff: 'member',
-  reception: 'member',
-  receptionist: 'member',
-};
-
 export function normaliseRole(role: string | undefined | null): Role | undefined {
   if (!role) return undefined;
-  return LEGACY_ROLE_MAP[role] ?? (role as Role);
+  if (role === 'admin' || role === 'manager' || role === 'staff' || role === 'reception' || role === 'receptionist') {
+    return 'trainer';
+  }
+  if (role === 'super_admin' || role === 'trainer' || role === 'member') return role;
+  return undefined;
 }
 
-export function hasRole(userRole: string | undefined | null, required: string | string[] | undefined): boolean {
+export function hasRole(
+  userRole: string | undefined | null,
+  required: Role | Role[] | undefined
+): boolean {
   const role = normaliseRole(userRole);
-  if (!required) return false;
+  if (!required || !role) return false;
   const list = Array.isArray(required) ? required : [required];
   if (role === 'super_admin') return true;
-  const canonicalRequired = list.map((r) => LEGACY_ROLE_MAP[r] ?? r);
-  return !!role && canonicalRequired.includes(role);
+  return list.includes(role);
 }
 
-/** Backward-compatible helper name; semantics are now studio-owner/trainer. */
+export function isStudioOwner(user: { role?: string | null; is_owner?: boolean | null } | null | undefined): boolean {
+  return normaliseRole(user?.role) === 'trainer' && user?.is_owner === true;
+}
+
 export function isAdminOrManager(userRole: string | undefined | null): boolean {
   return normaliseRole(userRole) === 'trainer';
 }
 
-export const ROLE_LABELS: Record<string, string> = {
+export const ROLE_LABELS: Record<Role, string> = {
   super_admin: 'Admin',
   trainer: 'Trainer',
   member: 'Member',
-  admin: 'Trainer',
-  manager: 'Member',
-  staff: 'Member',
-  reception: 'Member',
-  receptionist: 'Member',
 };
 
 export function roleLabel(role: string | undefined | null): string {
   if (!role) return '';
-  return ROLE_LABELS[role] ?? ROLE_LABELS[normaliseRole(role) as string] ?? role;
+  const normalised = normaliseRole(role);
+  return (normalised && ROLE_LABELS[normalised]) || role;
 }
 
 export const ASSIGNABLE_ROLES: readonly Role[] = ['trainer'] as const;
