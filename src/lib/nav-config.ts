@@ -75,7 +75,7 @@ export const NAV_GROUPS: NavGroup[] = [
       // as nothing but a redirect back into /attendance — so the sidebar was
       // offering two buttons that landed in the same place. The redirect
       // itself stays, so existing bookmarks and links still resolve.
-      { href: '/attendance',         label: 'Attendance Records',  icon: 'ClipboardList',  roles: ['admin', 'manager', 'trainer'] },
+      { href: '/attendance',         label: 'Attendance Records',  icon: 'ClipboardList',  roles: ['trainer', 'trainer', 'trainer'] },
     ],
   },
   {
@@ -122,7 +122,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/pt-os/workout-log',         label: 'Workout Log',          icon: 'ClipboardList', matchPrefix: '/pt-os/workout-log' },
       { href: '/pt-os/exercise-library',    label: 'Exercise Library',     icon: 'BookOpen',    feature: 'exercise_library' },
       { href: '/pt-os/diet-plans',          label: 'Diet Plans',           icon: 'Apple' },
-      { href: '/training/transformations',  label: 'Transformations',      icon: 'Sparkles',    roles: ['admin', 'manager'], feature: 'progress_photos' },
+      { href: '/training/transformations',  label: 'Transformations',      icon: 'Sparkles',    roles: ['trainer', 'trainer'], feature: 'progress_photos' },
       { href: '/trainers/[id]',             label: 'Trainer Profile',      icon: 'UserCog',     hidden: true, matchPrefix: '/trainers/' },
     ],
   },
@@ -164,13 +164,13 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'IndianRupee',
     feature: 'finance',
     items: [
-      { href: '/sales/today',               label: "Today's Sales",        icon: 'IndianRupee',  roles: ['admin', 'manager'] },
-      { href: '/finance/record-payment',    label: 'Record Payment',       icon: 'Wallet',       roles: ['admin'] },
-      { href: '/finance/collected-payments', label: 'Collected Payments',  icon: 'Banknote',     roles: ['admin'] },
-      { href: '/finance/invoices',          label: 'Invoices',             icon: 'FileText',     roles: ['admin'] },
-      { href: '/finance/dues',              label: 'Outstanding Dues',     icon: 'AlertCircle',  badge: 'duesCount', roles: ['admin'] },
+      { href: '/sales/today',               label: "Today's Sales",        icon: 'IndianRupee',  roles: ['trainer', 'trainer'] },
+      { href: '/finance/record-payment',    label: 'Record Payment',       icon: 'Wallet',       roles: ['trainer'] },
+      { href: '/finance/collected-payments', label: 'Collected Payments',  icon: 'Banknote',     roles: ['trainer'] },
+      { href: '/finance/invoices',          label: 'Invoices',             icon: 'FileText',     roles: ['trainer'] },
+      { href: '/finance/dues',              label: 'Outstanding Dues',     icon: 'AlertCircle',  badge: 'duesCount', roles: ['trainer'] },
       { href: '/pt-os/balance-sheet',       label: 'Balance Sheet',        icon: 'Wallet' },
-      { href: '/finance/forecast',          label: 'Revenue Forecast',     icon: 'TrendingUp',   roles: ['admin'] },
+      { href: '/finance/forecast',          label: 'Revenue Forecast',     icon: 'TrendingUp',   roles: ['trainer'] },
     ],
   },
   // Members get their own group. It is the only one they see, so it carries
@@ -193,12 +193,12 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'MessageCircle',
     feature: 'communication',
     items: [
-      { href: '/engagement/whatsapp',      label: 'WhatsApp / SMS',       icon: 'MessageCircle', roles: ['admin'] },
-      { href: '/engagement/notifications', label: 'Notifications',        icon: 'Bell',          roles: ['admin'] },
-      { href: '/engagement/campaigns',     label: 'Campaigns',            icon: 'Send',          roles: ['admin'] },
-      { href: '/engagement/offers',        label: 'Promotional Offers',   icon: 'Tag',           roles: ['admin'] },
-      { href: '/engagement/feedback',      label: 'Feedback',             icon: 'Star',          roles: ['admin'] },
-      { href: '/engagement/automation',    label: 'Automation Rules',     icon: 'Bot',           roles: ['admin'] },
+      { href: '/engagement/whatsapp',      label: 'WhatsApp / SMS',       icon: 'MessageCircle', roles: ['trainer'] },
+      { href: '/engagement/notifications', label: 'Notifications',        icon: 'Bell',          roles: ['trainer'] },
+      { href: '/engagement/campaigns',     label: 'Campaigns',            icon: 'Send',          roles: ['trainer'] },
+      { href: '/engagement/offers',        label: 'Promotional Offers',   icon: 'Tag',           roles: ['trainer'] },
+      { href: '/engagement/feedback',      label: 'Feedback',             icon: 'Star',          roles: ['trainer'] },
+      { href: '/engagement/automation',    label: 'Automation Rules',     icon: 'Bot',           roles: ['trainer'] },
     ],
   },
   {
@@ -207,7 +207,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'Package',
     feature: 'packages',
     items: [
-      { href: '/subscription/packages', label: 'Session Packages', icon: 'Package', roles: ['admin'] },
+      { href: '/subscription/packages', label: 'Session Packages', icon: 'Package', roles: ['trainer'] },
     ],
   },
   {
@@ -220,25 +220,25 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/ai/workout-generator', label: 'Workout Generator',   icon: 'Dumbbell' },
       { href: '/ai/diet-generator',    label: 'Diet Generator',      icon: 'Apple' },
       { href: '/ai/progress-analysis', label: 'Progress Analyzer',   icon: 'TrendingUp' },
-      { href: '/ai/business-insights', label: 'Business Insights',   icon: 'BarChart3',  roles: ['admin'] },
-      { href: '/ai-coach/knowledge',   label: 'Knowledge Base',      icon: 'BookOpen',   roles: ['admin', 'manager'], feature: 'ai_knowledge_base' },
+      { href: '/ai/business-insights', label: 'Business Insights',   icon: 'BarChart3',  roles: ['trainer'] },
+      { href: '/ai-coach/knowledge',   label: 'Knowledge Base',      icon: 'BookOpen',   roles: ['trainer', 'trainer'], feature: 'ai_knowledge_base' },
     ],
   },
   {
     id: 'insights',
     label: 'Insights',
     icon: 'FileBarChart',
-    roles: ['admin', 'manager'],
+    roles: ['trainer', 'trainer'],
     feature: 'insights',
     items: [
-      { href: '/reports',                  label: 'All Reports',         icon: 'FileBarChart',  roles: ['admin'] },
-      { href: '/insights/sessions',        label: 'Session Utilisation', icon: 'Clock',         roles: ['admin'] },
-      { href: '/insights/revenue',         label: 'Revenue Report',      icon: 'TrendingUp',    roles: ['admin'] },
-      { href: '/pt-os/reports',            label: 'PT Revenue Report',   icon: 'TrendingUp',    roles: ['admin', 'manager'] },
-      { href: '/insights/renewal',         label: 'Renewal Report',      icon: 'RefreshCcw',    roles: ['admin'] },
-      { href: '/insights/traffic',         label: 'Attendance Report',   icon: 'Activity',      roles: ['admin'] },
-      { href: '/operations/leaderboard',   label: 'Member Leaderboard',  icon: 'Trophy',        roles: ['admin', 'manager'] },
-      { href: '/pt-os/activity-log',       label: 'Activity Log',        icon: 'ScrollText',    roles: ['admin', 'manager'] },
+      { href: '/reports',                  label: 'All Reports',         icon: 'FileBarChart',  roles: ['trainer'] },
+      { href: '/insights/sessions',        label: 'Session Utilisation', icon: 'Clock',         roles: ['trainer'] },
+      { href: '/insights/revenue',         label: 'Revenue Report',      icon: 'TrendingUp',    roles: ['trainer'] },
+      { href: '/pt-os/reports',            label: 'PT Revenue Report',   icon: 'TrendingUp',    roles: ['trainer', 'trainer'] },
+      { href: '/insights/renewal',         label: 'Renewal Report',      icon: 'RefreshCcw',    roles: ['trainer'] },
+      { href: '/insights/traffic',         label: 'Attendance Report',   icon: 'Activity',      roles: ['trainer'] },
+      { href: '/operations/leaderboard',   label: 'Member Leaderboard',  icon: 'Trophy',        roles: ['trainer', 'trainer'] },
+      { href: '/pt-os/activity-log',       label: 'Activity Log',        icon: 'ScrollText',    roles: ['trainer', 'trainer'] },
     ],
   },
 ];
@@ -250,16 +250,16 @@ export const SETTINGS_GROUP: NavGroup = {
   items: [
     { href: '/settings/profile',          label: 'My Profile',           icon: 'User' },
     { href: '/support',                   label: 'Support',              icon: 'LifeBuoy' },
-    { href: '/subscription',              label: 'Subscription & Billing', icon: 'CreditCard',  roles: ['admin'] },
-    { href: '/settings/branches',         label: 'Branches',             icon: 'Building2',      roles: ['admin'], feature: 'branches' },
-    { href: '/settings/passkeys',         label: 'Passkeys & Security',  icon: 'Shield',         roles: ['admin'], feature: 'passkeys' },
-    { href: '/settings/integrations',     label: 'Integrations',         icon: 'Zap',            roles: ['admin'], feature: 'integrations' },
-    { href: '/settings/merge-duplicates', label: 'Merge Duplicates',     icon: 'Merge',          roles: ['admin'] },
+    { href: '/subscription',              label: 'Subscription & Billing', icon: 'CreditCard',  roles: ['trainer'] },
+    { href: '/settings/branches',         label: 'Branches',             icon: 'Building2',      roles: ['trainer'], feature: 'branches' },
+    { href: '/settings/passkeys',         label: 'Passkeys & Security',  icon: 'Shield',         roles: ['trainer'], feature: 'passkeys' },
+    { href: '/settings/integrations',     label: 'Integrations',         icon: 'Zap',            roles: ['trainer'], feature: 'integrations' },
+    { href: '/settings/merge-duplicates', label: 'Merge Duplicates',     icon: 'Merge',          roles: ['trainer'] },
   ],
 };
 
 export const QUICK_ACTIONS = [
-  { id: 'qa-record-pay',   label: 'Record payment',  icon: 'Wallet',       href: '/finance/record-payment',    roles: ['admin'] as Role[], feature: 'finance' },
+  { id: 'qa-record-pay',   label: 'Record payment',  icon: 'Wallet',       href: '/finance/record-payment',    roles: ['trainer'] as Role[], feature: 'finance' },
   { id: 'qa-book-session', label: 'Book PT session', icon: 'CalendarPlus', href: '/pt-os/schedule-session' },
   { id: 'qa-checkin',      label: 'Check In',         icon: 'ScanFace',     href: '/checkin/qr-scanner', feature: 'attendance' },
 ];
@@ -366,14 +366,14 @@ export function isGroupVisibleForRole(group: NavGroup, userRole?: string): boole
   // group — the exact leak the `member` line above exists to prevent.
   //
   // Not a literal `includes(role)` either, which is what this was: 'insights'
-  // is tagged ['admin'], so an operator supporting that studio would find one
+  // is tagged ['trainer'], so an operator supporting that studio would find one
   // group missing from an otherwise complete sidebar, which reads as a
   // rendering bug rather than as a rule.
   //
   // Substituting the role says the intended thing directly, and says it once:
   // the operator sees what the studio's own owner sees, no more — a group
   // tagged ['member'] stays hidden from them exactly as it does from an admin.
-  const effective = role === 'super_admin' ? 'admin' : role;
+  const effective = role === 'super_admin' ? 'trainer' : role;
   if (group.roles?.length) return !!effective && (group.roles as string[]).includes(effective);
   return true;
 }
