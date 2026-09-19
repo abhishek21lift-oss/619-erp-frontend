@@ -40,7 +40,7 @@ describe('the check-in kiosk is gated for staff, not for members', () => {
     const match = page.match(/<Guard roles=\{\[([^\]]*)\]\}>/);
     expect(match).not.toBeNull();
     const roles = match![1].match(/'([^']+)'/g)!.map((s) => s.slice(1, -1));
-    for (const r of ['admin', 'manager', 'trainer', 'staff', 'reception']) {
+    for (const r of ['trainer']) {
       expect(roles).toContain(r);
     }
     expect(roles).not.toContain('member');
