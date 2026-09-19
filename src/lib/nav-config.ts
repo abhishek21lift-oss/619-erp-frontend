@@ -75,7 +75,7 @@ export const NAV_GROUPS: NavGroup[] = [
       // as nothing but a redirect back into /attendance — so the sidebar was
       // offering two buttons that landed in the same place. The redirect
       // itself stays, so existing bookmarks and links still resolve.
-      { href: '/attendance',         label: 'Attendance Records',  icon: 'ClipboardList',  roles: ['trainer', 'trainer', 'trainer'] },
+      { href: '/attendance',         label: 'Attendance Records',  icon: 'ClipboardList',  roles: ['trainer', 'trainer'] },
     ],
   },
   {
@@ -122,7 +122,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/pt-os/workout-log',         label: 'Workout Log',          icon: 'ClipboardList', matchPrefix: '/pt-os/workout-log' },
       { href: '/pt-os/exercise-library',    label: 'Exercise Library',     icon: 'BookOpen',    feature: 'exercise_library' },
       { href: '/pt-os/diet-plans',          label: 'Diet Plans',           icon: 'Apple' },
-      { href: '/training/transformations',  label: 'Transformations',      icon: 'Sparkles',    roles: ['trainer', 'trainer'], feature: 'progress_photos' },
+      { href: '/training/transformations',  label: 'Transformations',      icon: 'Sparkles',    roles: ['trainer'], feature: 'progress_photos' },
       { href: '/trainers/[id]',             label: 'Trainer Profile',      icon: 'UserCog',     hidden: true, matchPrefix: '/trainers/' },
     ],
   },
@@ -164,7 +164,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'IndianRupee',
     feature: 'finance',
     items: [
-      { href: '/sales/today',               label: "Today's Sales",        icon: 'IndianRupee',  roles: ['trainer', 'trainer'] },
+      { href: '/sales/today',               label: "Today's Sales",        icon: 'IndianRupee',  roles: ['trainer'] },
       { href: '/finance/record-payment',    label: 'Record Payment',       icon: 'Wallet',       roles: ['trainer'] },
       { href: '/finance/collected-payments', label: 'Collected Payments',  icon: 'Banknote',     roles: ['trainer'] },
       { href: '/finance/invoices',          label: 'Invoices',             icon: 'FileText',     roles: ['trainer'] },
@@ -221,24 +221,24 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/ai/diet-generator',    label: 'Diet Generator',      icon: 'Apple' },
       { href: '/ai/progress-analysis', label: 'Progress Analyzer',   icon: 'TrendingUp' },
       { href: '/ai/business-insights', label: 'Business Insights',   icon: 'BarChart3',  roles: ['trainer'] },
-      { href: '/ai-coach/knowledge',   label: 'Knowledge Base',      icon: 'BookOpen',   roles: ['trainer', 'trainer'], feature: 'ai_knowledge_base' },
+      { href: '/ai-coach/knowledge',   label: 'Knowledge Base',      icon: 'BookOpen',   roles: ['trainer'], feature: 'ai_knowledge_base' },
     ],
   },
   {
     id: 'insights',
     label: 'Insights',
     icon: 'FileBarChart',
-    roles: ['trainer', 'trainer'],
+    roles: ['trainer'],
     feature: 'insights',
     items: [
       { href: '/reports',                  label: 'All Reports',         icon: 'FileBarChart',  roles: ['trainer'] },
       { href: '/insights/sessions',        label: 'Session Utilisation', icon: 'Clock',         roles: ['trainer'] },
       { href: '/insights/revenue',         label: 'Revenue Report',      icon: 'TrendingUp',    roles: ['trainer'] },
-      { href: '/pt-os/reports',            label: 'PT Revenue Report',   icon: 'TrendingUp',    roles: ['trainer', 'trainer'] },
+      { href: '/pt-os/reports',            label: 'PT Revenue Report',   icon: 'TrendingUp',    roles: ['trainer'] },
       { href: '/insights/renewal',         label: 'Renewal Report',      icon: 'RefreshCcw',    roles: ['trainer'] },
       { href: '/insights/traffic',         label: 'Attendance Report',   icon: 'Activity',      roles: ['trainer'] },
-      { href: '/operations/leaderboard',   label: 'Member Leaderboard',  icon: 'Trophy',        roles: ['trainer', 'trainer'] },
-      { href: '/pt-os/activity-log',       label: 'Activity Log',        icon: 'ScrollText',    roles: ['trainer', 'trainer'] },
+      { href: '/operations/leaderboard',   label: 'Member Leaderboard',  icon: 'Trophy',        roles: ['trainer'] },
+      { href: '/pt-os/activity-log',       label: 'Activity Log',        icon: 'ScrollText',    roles: ['trainer'] },
     ],
   },
 ];
