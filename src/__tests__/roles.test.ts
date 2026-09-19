@@ -8,8 +8,9 @@ describe('canonical role model', () => {
   });
 
   it('normalises legacy role identifiers to trainer', () => {
-    for (const legacy of ['admin', 'manager', 'staff', 'reception', 'receptionist']) {
-      expect(normaliseRole(legacy)).toBe('trainer');
+    expect(normaliseRole('admin')).toBe('trainer');
+    for (const retired of ['manager', 'staff', 'reception', 'receptionist']) {
+      expect(normaliseRole(retired)).toBe('member');
     }
     expect(normaliseRole('trainer')).toBe('trainer');
     expect(normaliseRole('member')).toBe('member');
@@ -25,7 +26,7 @@ describe('canonical role model', () => {
   it('treats trainer as the studio owner role', () => {
     expect(hasRole('trainer', 'trainer')).toBe(true);
     expect(hasRole('admin', 'trainer')).toBe(true); // legacy boundary compatibility
-    expect(hasRole('manager', 'trainer')).toBe(true); // legacy boundary compatibility
+    expect(hasRole('manager', 'trainer')).toBe(false); // retired role boundary
     expect(isAdminOrManager('trainer')).toBe(true);
     expect(isAdminOrManager('admin')).toBe(true);
   });
@@ -39,7 +40,7 @@ describe('canonical role model', () => {
     expect(roleLabel('super_admin')).toBe('Admin');
     expect(roleLabel('trainer')).toBe('Trainer');
     expect(roleLabel('admin')).toBe('Trainer');
-    expect(roleLabel('manager')).toBe('Trainer');
+    expect(roleLabel('manager')).toBe('Member');
     expect(ROLE_LABELS.trainer).toBe('Trainer');
   });
 });
