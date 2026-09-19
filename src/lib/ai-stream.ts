@@ -17,12 +17,21 @@
 import { apiBase, tenantAuthHeaders } from '@/lib/http';
 
 export interface AiStreamEvent {
-  type: 'start' | 'chunk' | 'sources' | 'tools' | 'done' | 'error';
+  type: 'start' | 'chunk' | 'sources' | 'tools' | 'grounding' | 'done' | 'error';
   content?: string;
   message?: string;
   conversation_id?: string;
   sources?: string[];
   tools?: string[];
+  /**
+   * Sent only when the studio's document store could NOT be searched.
+   *
+   * Without it, an answer given during a retrieval outage renders exactly
+   * like a well-grounded one: no sources chip, which on screen is the same
+   * thing as "this studio has nothing on file". The backend now says which
+   * of the two happened, and the reader is entitled to know.
+   */
+  grounding?: 'unavailable';
 }
 
 export interface AiStreamHandlers {
@@ -33,6 +42,8 @@ export interface AiStreamHandlers {
   onConversationId?: (id: string) => void;
   onSources?: (sources: string[]) => void;
   onTools?: (tools: string[]) => void;
+  /** Fires when the answer was produced WITHOUT the studio's documents. */
+  onGrounding?: (grounding: 'unavailable') => void;
 }
 
 export interface AiStreamRequest {
@@ -123,6 +134,9 @@ export async function streamAiChat(
             break;
           case 'tools':
             if (evt.tools) handlers.onTools?.(evt.tools);
+            break;
+          case 'grounding':
+            if (evt.grounding) handlers.onGrounding?.(evt.grounding);
             break;
           case 'chunk':
             text += evt.content ?? '';

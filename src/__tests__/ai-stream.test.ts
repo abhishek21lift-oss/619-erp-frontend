@@ -92,6 +92,34 @@ describe('streamAiChat', () => {
     expect(res.text).toBe('answer');
   });
 
+  it('surfaces a grounding warning when the documents could not be searched', async () => {
+    // An answer produced during a retrieval outage renders identically to a
+    // well-grounded one: no sources chip, which on screen is also what "this
+    // studio has nothing on file" looks like. The event exists to separate
+    // the two, so dropping it silently would defeat its only purpose.
+    vi.stubGlobal('fetch', mockFetchStreaming([
+      sse({ type: 'grounding', grounding: 'unavailable' }),
+      sse({ type: 'chunk', content: 'answer' }),
+    ]));
+    const grounding: string[] = [];
+    const res = await streamAiChat({ message: 'what is our refund policy?' }, {
+      onGrounding: (g) => grounding.push(g),
+    });
+    expect(grounding).toEqual(['unavailable']);
+    // And the answer itself still streams — this warns, it does not block.
+    expect(res.text).toBe('answer');
+  });
+
+  it('stays quiet about grounding when retrieval worked', async () => {
+    vi.stubGlobal('fetch', mockFetchStreaming([
+      sse({ type: 'sources', sources: ['Handbook'] }),
+      sse({ type: 'chunk', content: 'answer' }),
+    ]));
+    const grounding: string[] = [];
+    await streamAiChat({ message: 'hi' }, { onGrounding: (g) => grounding.push(g) });
+    expect(grounding).toEqual([]);
+  });
+
   it('surfaces sources and tools to the caller', async () => {
     vi.stubGlobal('fetch', mockFetchStreaming([
       sse({ type: 'sources', sources: ['Handbook'] }),
