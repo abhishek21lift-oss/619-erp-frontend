@@ -115,7 +115,7 @@ export function CreateOrgModal({ onClose, onCreated }: { onClose: () => void; on
 // ── Add User modal ──────────────────────────────────────────────────────────────
 export function AddUserModal({ org, onClose, onAdded }: { org: Organization; onClose: () => void; onAdded: () => void }) {
   const { toast } = useToast();
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'admin' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'trainer' });
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
