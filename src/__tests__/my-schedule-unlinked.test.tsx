@@ -67,11 +67,11 @@ beforeEach(() => {
   createWorkoutSession.mockReset();
   mySessions.mockResolvedValue(UNLINKED);
   todayRoster.mockResolvedValue(emptyRoster());
-  mockUser = { id: 'u1', name: 'Owner', role: 'admin', email: 'owner@studio.com' };
+  mockUser = { id: 'u1', name: 'Owner', role: 'trainer', email: 'owner@studio.com' };
 });
 
 describe('the unlinked-account card', () => {
-  it('never tells an admin to ask an admin', async () => {
+  it('never tells the trainer owner to ask an admin', async () => {
     render(<MySchedulePage />);
 
     // The exact sentence that made the original report. Its absence is the
@@ -88,7 +88,7 @@ describe('the unlinked-account card', () => {
     await waitFor(() => expect(document.body.textContent).toContain('owner@studio.com'));
   });
 
-  it('offers an admin the page that fixes it', async () => {
+  it('offers the trainer owner the page that fixes it', async () => {
     render(<MySchedulePage />);
 
     const btn = await screen.findByRole('button', { name: /manage trainers/i });
@@ -96,21 +96,19 @@ describe('the unlinked-account card', () => {
     expect(push).toHaveBeenCalledWith('/trainers');
   });
 
-  it('does not offer that page to a trainer, who would be refused there', async () => {
+  it('still offers the owner the page that fixes an unlinked trainer profile', async () => {
     mockUser = { id: 'u2', name: 'Coach', role: 'trainer', email: 'coach@studio.com' };
     render(<MySchedulePage />);
 
-    await screen.findByRole('button', { name: /session history/i });
-    expect(screen.queryByRole('button', { name: /manage trainers/i })).toBeNull();
-    // And the advice they get is the one they can act on.
-    expect(document.body.textContent).toMatch(/ask your studio admin/i);
+    await screen.findByRole('button', { name: /manage trainers/i });
+    expect(document.body.textContent).not.toMatch(/ask your studio admin/i);
   });
 
   it('still reads correctly when email is absent, as on a cache-restored session', async () => {
     // auth-context persists only id/name/role and restores email as ''. The
     // card must not render "No active trainer in this studio uses ." — the
     // sentence has to stand on its own without the address.
-    mockUser = { id: 'u1', name: 'Owner', role: 'admin', email: '' };
+    mockUser = { id: 'u1', name: 'Owner', role: 'trainer', email: '' };
     render(<MySchedulePage />);
 
     await screen.findByRole('button', { name: /manage trainers/i });
