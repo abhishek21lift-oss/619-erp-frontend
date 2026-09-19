@@ -158,7 +158,7 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
   }, [progress]);
 
   return (
-    <Guard roles={['admin', 'manager', 'trainer']}>
+    <Guard roles={['trainer']}>
       <PageContainer>
         <PageHero
           icon={<TrendingUp size={20} />}
