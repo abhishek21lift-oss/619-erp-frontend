@@ -12,11 +12,13 @@ interface Props {
   children: React.ReactNode;
   role?: Role;
   roles?: Role[];
+  ownerOnly?: boolean;
 }
 
-export default function Guard({ children, role, roles }: Props) {
+export default function Guard({ children, role, roles, ownerOnly }: Props) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const isOwner = user?.role === 'trainer' && user?.is_owner === true;
   const pathname = usePathname() ?? '';
 
   // Which app this page belongs to, and which app this account belongs in.
