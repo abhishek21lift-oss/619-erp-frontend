@@ -23,7 +23,7 @@ export function hasRole(
 }
 
 export function isStudioOwner(user: { role?: string | null; is_owner?: boolean | null } | null | undefined): boolean {
-  return normaliseRole(user?.role) === 'trainer' && user?.is_owner === true;
+  return user?.role === 'admin' || (normaliseRole(user?.role) === 'trainer' && user?.is_owner === true);
 }
 
 export function isAdminOrManager(userRole: string | undefined | null): boolean {
