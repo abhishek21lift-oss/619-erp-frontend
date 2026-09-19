@@ -63,7 +63,7 @@ describe('<Guard />', () => {
     // redirects, and the old assertion was left behind. Sending them to /login
     // would be worse than useless: they have a valid session, so the login
     // page would detect it and bounce them straight back here.
-    mockUseAuth.mockReturnValue({ user: { id: 'u3', role: 'trainer' as Role }, loading: false });
+    mockUseAuth.mockReturnValue({ user: { id: 'u3', role: 'member' as Role }, loading: false });
     render(
       <Guard role="trainer">
         <div>never</div>
@@ -271,7 +271,7 @@ describe('<Guard /> paints no loading frame when auth is already resolved', () =
     const { rerender } = render(<Guard role="trainer"><p>admin tools</p></Guard>);
     await waitFor(() => expect(screen.getByText('admin tools')).toBeInTheDocument());
 
-    mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'trainer' as Role }, loading: false });
+    mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'member' as Role }, loading: false });
     rerender(<Guard role="trainer"><p>admin tools</p></Guard>);
 
     expect(screen.queryByText('admin tools')).not.toBeInTheDocument();
