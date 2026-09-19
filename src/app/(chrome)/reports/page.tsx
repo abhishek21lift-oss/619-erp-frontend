@@ -410,7 +410,7 @@ function TrainerSummaryTab() {
 
 function ReportsContent() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
+  const isAdmin = user?.role === 'trainer';
   const sp = useSearchParams();
   const [year, setYear] = useState(new Date().getFullYear());
 
