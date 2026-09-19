@@ -14,7 +14,7 @@ const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satur
 
 export default function WorkoutPlanDetailPage() {
   return (
-    <Guard roles={['admin', 'manager', 'trainer']}>
+    <Guard roles={['trainer']}>
       <Suspense fallback={
         <div className="flex items-center justify-center py-24">
           <Loader2 size={22} className="animate-spin" style={{ color: 'var(--text-disabled)' }} />
