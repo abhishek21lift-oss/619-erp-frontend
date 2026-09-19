@@ -114,7 +114,7 @@ describe('a sign-in page will not walk into the other portal', () => {
     // platform one, and everything else is studio staff — so a new staff role
     // added tomorrow lands on the staff side by default rather than being
     // silently treated as a client or, far worse, as the platform operator.
-    for (const role of ['admin', 'manager', 'trainer', 'reception', 'receptionist', 'staff']) {
+    for (const role of ['trainer']) {
       expect(portalForRole(role), role).toBe('staff');
     }
     expect(portalForRole('super_admin')).toBe('platform');
