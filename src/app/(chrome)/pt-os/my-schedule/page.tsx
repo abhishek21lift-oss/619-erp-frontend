@@ -277,7 +277,7 @@ export default function MySchedulePage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
-  const canManageTrainers = user?.role === 'admin' || user?.role === 'manager';
+  const canManageTrainers = user?.role === 'trainer';
 
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
   const [selectedDay, setSelectedDay] = useState<string>(() => toYmd(new Date()));
