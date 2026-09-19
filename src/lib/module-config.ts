@@ -531,8 +531,8 @@ export function getModuleConfig(area: string, tab?: string): ModuleConfig {
 
 function adminRoleFor(key: string): Role | undefined {
   if (['referrals', 'appointments'].includes(key)) return undefined;
-  if (key.startsWith('engagement-') && !['engagement-notifications', 'engagement-whatsapp', 'engagement-sms', 'engagement-community', 'engagement-challenges'].includes(key)) return 'admin';
+  if (key.startsWith('engagement-') && !['engagement-notifications', 'engagement-whatsapp', 'engagement-sms', 'engagement-community', 'engagement-challenges'].includes(key)) return 'trainer';
   return ['payroll', 'expenses', 'reports', 'trainer-targets', 'attendance-reports', 'branches', 'biometric', 'equipment', 'notices', 'billing', 'measurements', 'workouts', 'member-analytics', 'billing-analytics', 'leave'].includes(key)
-    ? 'admin'
+    ? 'trainer'
     : undefined;
 }
