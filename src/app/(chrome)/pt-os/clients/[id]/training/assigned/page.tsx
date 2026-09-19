@@ -68,7 +68,7 @@ export default function AssignedWorkoutsPage({ params }: { params: Promise<{ id:
   });
 
   return (
-    <Guard roles={['admin', 'manager', 'trainer']}>
+    <Guard roles={['trainer']}>
       <PageContainer>
         <PageHero
           icon={<ClipboardList size={20} />}
