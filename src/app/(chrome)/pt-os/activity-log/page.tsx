@@ -124,7 +124,7 @@ function Row({ entry }: { entry: ActivityLogEntry }) {
 
 export default function ActivityLogPage() {
   return (
-    <Guard roles={['trainer']}>
+    <Guard ownerOnly>
       <Inner />
     </Guard>
   );
