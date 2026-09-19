@@ -104,7 +104,7 @@ function StatCard({ label, value, icon: Icon, color }: { label: string; value: n
 
 export default function BiometricAdminPage() {
   return (
-    <Guard roles={['trainer']}>
+    <Guard ownerOnly>
       <BiometricInner />
     </Guard>
   );
