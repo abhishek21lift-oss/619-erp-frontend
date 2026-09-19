@@ -135,11 +135,11 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
       `Hi ${trainer?.name ?? 'there'}, this is a message from ${user?.organization_name || 'MY PT STUDIO'}.`,
     ) ?? '#';
 
-  const isAdmin = user?.role === 'trainer' || user?.role === 'manager';
+  const isAdmin = user?.is_owner === true;
 
   if (loading) {
     return (
-      <Guard roles={['trainer']}>
+      <Guard ownerOnly>
         <div style={{ padding: '32px', maxWidth: 1000, margin: '0 auto' }}>
           <m.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
             style={{ height: 200, borderRadius: 20, background: 'var(--bg-subtle)', marginBottom: 16, border: '1px solid var(--border)' }} />
@@ -152,7 +152,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
 
   if (error || !trainer) {
     return (
-      <Guard roles={['trainer']}>
+      <Guard ownerOnly>
         <div style={{ padding: '60px 32px', textAlign: 'center' }}>
           <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(220,38,38,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: '1px solid rgba(239,68,68,0.2)' }}>
             <User size={28} color="#dc2626" />
@@ -170,7 +170,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
   const mg = avatarGradient(trainer.name);
 
   return (
-    <Guard roles={['trainer']}>
+    <Guard ownerOnly>
       {/* No page-level background: .shell-main already paints the canvas.
           The hero below keeps its own --bg-card background — that is a
           deliberate banded header, not a page wrapper. */}
@@ -221,7 +221,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                   <Edit2 size={13} /> Edit
                 </Link>
               )}
-              {user?.role === 'trainer' && (
+              {user?.is_owner === true && (
                 <button onClick={() => setDeleteConfirm(true)}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' }}>
                   <Trash2 size={13} /> Remove
