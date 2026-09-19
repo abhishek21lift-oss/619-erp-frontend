@@ -43,6 +43,7 @@ export type User = {
   name?: string;
   email: string;
   role?: Role;
+  is_owner?: boolean;
   trainer_id?: string;
   pt_client_id?: string;
   is_active?: boolean;
