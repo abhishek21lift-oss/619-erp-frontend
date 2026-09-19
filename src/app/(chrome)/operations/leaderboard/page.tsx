@@ -48,7 +48,7 @@ import { errorMessage } from '@/lib/forms/errors';
 
 export default function LeaderboardPage() {
   return (
-    <Guard roles={['trainer']}>
+    <Guard ownerOnly>
       <Inner />
     </Guard>
   );
