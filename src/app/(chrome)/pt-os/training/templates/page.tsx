@@ -33,7 +33,7 @@ export default function TemplatesRetiredRedirect() {
   }, [router]);
 
   return (
-    <Guard roles={['admin', 'manager', 'trainer']}>
+    <Guard roles={['trainer']}>
       <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 className="animate-spin" size={20} style={{ color: 'var(--text-muted)' }} />
       </div>
