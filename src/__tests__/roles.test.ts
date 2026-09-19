@@ -91,9 +91,9 @@ describe('roles', () => {
   });
 
   describe('isAdminOrManager', () => {
-    it('is true for admin and manager', () => {
-      expect(isAdminOrManager('admin')).toBe(true);
-      expect(isAdminOrManager('manager')).toBe(true);
+    it('is true for trainer', () => {
+      expect(isAdminOrManager('trainer')).toBe(true);
+      expect(isAdminOrManager('trainer')).toBe(true);
     });
     it('is false for other roles', () => {
       expect(isAdminOrManager('trainer')).toBe(false);
@@ -159,7 +159,7 @@ describe('roles', () => {
     });
 
     it('offers exactly one assignable role', () => {
-      expect([...ASSIGNABLE_ROLES]).toEqual(['admin']);
+      expect([...ASSIGNABLE_ROLES]).toEqual(['trainer']);
       // Never offer the platform operator's own role from a studio screen.
       expect(ASSIGNABLE_ROLES).not.toContain('super_admin');
     });
