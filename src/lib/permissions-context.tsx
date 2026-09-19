@@ -47,11 +47,11 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
       .catch(() => setLoaded(true));
   }, [user]);
 
-  const role = user?.role === 'receptionist' ? 'reception' : user?.role;
+  const role = user?.role;
 
   const can = (feature: string): boolean => {
     if (!user) return false;
-    if (user.role === 'admin' || user.role === 'manager') return true;
+    if (user.role === 'trainer') return true;
     const key = `perm_${role}_${feature}`;
     return perms[key] ?? DEFAULTS[key] ?? false;
   };
