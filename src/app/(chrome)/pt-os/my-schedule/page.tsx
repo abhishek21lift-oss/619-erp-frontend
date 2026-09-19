@@ -500,7 +500,7 @@ export default function MySchedulePage() {
                         ? `No active trainer in this studio uses ${user.email}.`
                         : "No active trainer in this studio uses this login's email address."
                       } Add one, or correct an existing trainer's email, and this schedule fills in straight away.`
-                    : 'My Schedule shows the sessions booked against you as a trainer. Ask your studio admin to add you as a trainer using this same email address, or view the studio-wide list in Session History.'}
+                    : 'My Schedule shows the sessions booked against you as a trainer. ask your studio owner to add you as a trainer using this same email address, or view the studio-wide list in Session History.'}
                 />
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   {canManageTrainers && (
