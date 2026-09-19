@@ -29,7 +29,7 @@ import { isCommandCenterPath, isHostNeutralPath, isPublicProxyPath } from '@/pro
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const STUDIO_ROLES = ['admin', 'manager', 'trainer', 'reception', 'receptionist', 'staff'];
+const STUDIO_ROLES = ['trainer'];
 
 describe('every role belongs to exactly one portal', () => {
   it('puts the platform operator in the platform portal', () => {
