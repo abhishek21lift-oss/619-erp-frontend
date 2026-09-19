@@ -83,12 +83,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let cachedUser: User | null = null;
     if (cachedRaw) {
       try {
-        const partial = JSON.parse(cachedRaw) as { id: string; name: string; role: string; organization_name?: string | null; organization_logo_url?: string | null; is_founder?: boolean; founder_number?: number | null };
+        const partial = JSON.parse(cachedRaw) as { id: string; name: string; role: string; organization_name?: string | null; organization_logo_url?: string | null; is_owner?: boolean; is_founder?: boolean; founder_number?: number | null };
         // founder_number is cached alongside the name for the same reason the
         // name is: without it the badge pops in a beat after every hard
         // refresh, which for a permanent mark of status reads as a glitch.
         // Not PII — it is displayed publicly on the studio page.
-        cachedUser = { id: partial.id, name: partial.name, role: partial.role as any, email: '', organization_name: partial.organization_name ?? null, organization_logo_url: partial.organization_logo_url ?? null, is_founder: partial.is_founder ?? false, founder_number: partial.founder_number ?? null };
+        cachedUser = { id: partial.id, name: partial.name, role: partial.role as any, email: '', organization_name: partial.organization_name ?? null, organization_logo_url: partial.organization_logo_url ?? null, is_owner: partial.is_owner ?? false, is_founder: partial.is_founder ?? false, founder_number: partial.founder_number ?? null };
       } catch { clearCachedUser(); }
     }
     if (cachedUser) setUser(cachedUser);
@@ -128,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (res?.user) {
           const u = res.user as User;
           setUser(u);
-          writeCachedUser(JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url, is_founder: u.is_founder, founder_number: u.founder_number }));
+          writeCachedUser(JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url, is_owner: u.is_owner, is_founder: u.is_founder, founder_number: u.founder_number }));
         } else {
           setUser(null);
           clearCachedUser();
