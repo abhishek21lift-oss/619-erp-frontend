@@ -32,7 +32,7 @@ import { errorMessage } from '@/lib/forms/errors';
 
 const PAGE = 50;
 
-type RoleFilter = '' | 'admin' | 'trainer' | 'member' | 'platform';
+type RoleFilter = '' | 'trainer' | 'trainer' | 'member' | 'platform';
 type StatusFilter = '' | 'active' | 'inactive' | 'deleted';
 
 /** The summary strip. Counts come from the server in one pass, unpaged. */
