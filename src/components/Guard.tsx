@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { hasRole, normaliseRole } from '@/lib/roles';
+import { hasRole, normaliseRole, isStudioOwner } from '@/lib/roles';
 import { portalForRole, portalForPage, homeFor, mayEnterPortal } from '@/lib/portals';
 import { signInPathFor } from '@/lib/public-paths';
 import type { Role } from '@/lib/roles';
@@ -18,7 +18,7 @@ interface Props {
 export default function Guard({ children, role, roles, ownerOnly }: Props) {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const isOwner = user?.role === 'trainer' && user?.is_owner === true;
+  const isOwner = isStudioOwner(user);
   const pathname = usePathname() ?? '';
 
   // Which app this page belongs to, and which app this account belongs in.
