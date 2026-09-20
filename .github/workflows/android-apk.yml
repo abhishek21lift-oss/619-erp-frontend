@@ -29,6 +29,9 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Upgrade npm for Arborist compatibility
+        run: npm install --global npm@11.6.0
+
       - name: Install project and Capacitor dependencies
         run: npm install --no-package-lock --no-audit --no-fund
 
