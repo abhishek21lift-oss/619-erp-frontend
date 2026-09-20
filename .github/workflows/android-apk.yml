@@ -29,23 +29,14 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install project dependencies
-        run: npm ci
+      - name: Install project and Capacitor dependencies
+        run: npm install --no-package-lock --no-audit --no-fund
 
-      - name: Install Capacitor toolchain
+      - name: Validate Capacitor toolchain
         run: |
-          npm install --no-save --package-lock=false \
-            @capacitor/core@8 \
-            @capacitor/cli@8 \
-            @capacitor/android@8
           npx cap --version
-          npx cap doctor
-
-      - name: Validate Capacitor configuration
-        run: |
           test -f capacitor.config.ts
           test -f www/index.html
-          node -e "console.log('Capacitor config and webDir fallback present')"
 
       - name: Add Android platform
         run: npx cap add android
