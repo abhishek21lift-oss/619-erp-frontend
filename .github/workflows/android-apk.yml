@@ -32,20 +32,33 @@ jobs:
       - name: Upgrade npm for Arborist compatibility
         run: npm install --global npm@11.6.0
 
-      - name: Install project and Capacitor dependencies
-        run: npm install --no-package-lock --no-audit --no-fund
+      - name: Install project dependencies
+        run: npm ci
+
+      - name: Install Capacitor toolchain in isolated environment
+        run: |
+          mkdir -p "${RUNNER_TEMP}/capacitor-toolchain"
+          cd "${RUNNER_TEMP}/capacitor-toolchain"
+          npm init -y >/dev/null 2>&1
+          npm install --no-audit --no-fund @capacitor/core@8 @capacitor/android@8
+          cp -R node_modules/@capacitor "${GITHUB_WORKSPACE}/node_modules/"
+
+      - name: Install Capacitor CLI
+        run: npm install --global --no-audit --no-fund @capacitor/cli@8
 
       - name: Validate Capacitor toolchain
         run: |
-          npx cap --version
+          cap --version
           test -f capacitor.config.ts
           test -f www/index.html
+          test -d node_modules/@capacitor/core
+          test -d node_modules/@capacitor/android
 
       - name: Add Android platform
-        run: npx cap add android
+        run: cap add android
 
       - name: Sync Capacitor
-        run: npx cap sync android
+        run: cap sync android
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -56,11 +69,11 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK packages
-        run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+        with:
+          packages: |
+            platform-tools
+            platforms;android-35
+            build-tools;35.0.0
 
       - name: Build debug APK
         working-directory: android
