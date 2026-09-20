@@ -3,19 +3,21 @@ name: Android APK
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: android-apk-main
+  group: android-apk-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
 
     steps:
       - name: Checkout
@@ -24,14 +26,26 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install project dependencies
         run: npm ci
 
-      - name: Install Capacitor
-        run: npm install --no-save @capacitor/core@8 @capacitor/cli@8 @capacitor/android@8
+      - name: Install Capacitor toolchain
+        run: |
+          npm install --no-save --package-lock=false \
+            @capacitor/core@8 \
+            @capacitor/cli@8 \
+            @capacitor/android@8
+          npx cap --version
+          npx cap doctor
+
+      - name: Validate Capacitor configuration
+        run: |
+          test -f capacitor.config.ts
+          test -f www/index.html
+          node -e "console.log('Capacitor config and webDir fallback present')"
 
       - name: Add Android platform
         run: npx cap add android
@@ -44,12 +58,15 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+          cache: gradle
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
       - name: Install Android SDK packages
-        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Build debug APK
         working-directory: android
@@ -57,7 +74,8 @@ jobs:
 
       - name: Verify APK
         run: |
-          test -f android/app/build/outputs/apk/debug/app-debug.apk
+          test -s android/app/build/outputs/apk/debug/app-debug.apk
+          file android/app/build/outputs/apk/debug/app-debug.apk
           ls -lh android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK
