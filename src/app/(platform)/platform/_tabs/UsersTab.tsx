@@ -32,7 +32,7 @@ import { errorMessage } from '@/lib/forms/errors';
 
 const PAGE = 50;
 
-type RoleFilter = '' | 'admin' | 'trainer' | 'member' | 'platform';
+type RoleFilter = '' | 'trainer' | 'member' | 'platform';
 type StatusFilter = '' | 'active' | 'inactive' | 'deleted';
 
 /** The summary strip. Counts come from the server in one pass, unpaged. */
@@ -183,8 +183,7 @@ export function UsersTab() {
           aria-label="Filter by role"
         >
           <option value="">All roles</option>
-          <option value="admin">Studio owners</option>
-          <option value="trainer">Trainers</option>
+          <option value="trainer">Trainers (Owners)</option>
           <option value="member">Members</option>
           <option value="platform">Platform operators</option>
         </select>

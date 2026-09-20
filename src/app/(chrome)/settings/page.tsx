@@ -27,7 +27,7 @@ import { errorMessage } from '@/lib/forms/errors';
 // `coach` and `receptionist` are not values users_role_check accepts, so they
 // were translated on the way out and back on the way in, and no account has
 // ever held any role but admin and super_admin.
-type Role = 'admin';
+type Role = 'trainer';
 type Status = 'active' | 'pending' | 'suspended';
 
 interface Account {
@@ -48,8 +48,8 @@ interface Account {
    ROLE CONFIG
 ──────────────────────────────────────────────────────────────────── */
 const ROLES: Record<Role, { label: string; icon: React.ReactNode; color: string; bg: string; desc: string; perms: string }> = {
-  admin: {
-    label: ROLE_LABELS.admin,
+  trainer: {
+    label: ROLE_LABELS.trainer,
     icon: <Crown size={14} />,
     color: '#0067e0',
     bg: 'rgba(0,103,224,0.08)',
@@ -470,7 +470,7 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [showPw,   setShowPw]   = useState(false);
-  const [role,     setRole]     = useState<Role>('admin');
+  const [role,     setRole]     = useState<Role>('trainer');
   const [coach,    setCoach]    = useState('');
   const [saving,   setSaving]   = useState(false);
   const [done,     setDone]     = useState(false);
@@ -495,7 +495,7 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
       setDone(true);
       setTimeout(() => {
         setDone(false);
-        setName(''); setEmail(''); setPassword(''); setRole('admin'); setCoach('');
+        setName(''); setEmail(''); setPassword(''); setRole('trainer'); setCoach('');
       }, 1800);
     } catch (err: unknown) {
       setError(errorMessage(err, 'Failed to create account'));
@@ -851,7 +851,7 @@ function AccountManagementPage() {
   const stats = useMemo(() => ({
     total:   accounts.length,
     active:  accounts.filter((a) => a.status === 'active').length,
-    admins:  accounts.filter((a) => a.role === 'admin').length,
+    admins:  accounts.filter((a) => a.role === 'trainer' || a.role === 'admin').length,
     pending: accounts.filter((a) => a.status === 'pending').length,
   }), [accounts]);
 

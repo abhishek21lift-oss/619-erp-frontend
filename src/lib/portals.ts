@@ -164,10 +164,6 @@ export function postSignInPath(role: string | null | undefined): string {
   const portal = portalForRole(role);
   if (portal === 'platform') return '/platform';
   if (portal === 'member') return '/member/dashboard';
-  // Studio staff. A trainer gets their own schedule; everyone else gets the
-  // client list. Both preserved exactly as they were — this function changed
-  // where the OPERATOR lands, and nothing else.
-  if (role === 'trainer') return '/trainer/dashboard';
   return '/pt-os';
 }
 

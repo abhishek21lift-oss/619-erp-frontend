@@ -51,7 +51,7 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
 
   const can = (feature: string): boolean => {
     if (!user) return false;
-    if (user.role === 'admin' || user.role === 'manager') return true;
+    if (user.role === 'trainer' || user.role === 'super_admin' || user.role === 'admin' || user.role === 'manager') return true;
     const key = `perm_${role}_${feature}`;
     return perms[key] ?? DEFAULTS[key] ?? false;
   };
