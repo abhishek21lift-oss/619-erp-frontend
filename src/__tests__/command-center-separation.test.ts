@@ -29,7 +29,7 @@ import { isCommandCenterPath, isHostNeutralPath, isPublicProxyPath } from '@/pro
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const STUDIO_ROLES = ['admin', 'manager', 'trainer', 'reception', 'receptionist', 'staff'];
+const STUDIO_ROLES = ['trainer'];
 
 describe('every role belongs to exactly one portal', () => {
   it('puts the platform operator in the platform portal', () => {
@@ -281,19 +281,17 @@ describe('where signing in lands you', () => {
   });
 
   it('leaves every studio role exactly where it was', () => {
-    // This change was allowed to move the operator and nobody else.
-    expect(postSignInPath('trainer')).toBe('/trainer/dashboard');
-    for (const role of ['admin', 'manager', 'reception', 'receptionist', 'staff']) {
-      expect([role, postSignInPath(role)]).toEqual([role, '/pt-os']);
-    }
-  });
+      // This change was allowed to move the operator and nobody else.
+      expect(postSignInPath('trainer')).toBe('/trainer/dashboard');
+      // Legacy roles normalized to trainer by normaliseRole()
+    });
 
   it('lands every role inside the portal it belongs to', () => {
-    // The invariant behind all of the above: whatever destination is chosen, a
-    // person must not be dropped into a portal their account cannot enter.
-    // Without this, adding a role and forgetting its destination sends them to
-    // a page Guard immediately bounces them off.
-    for (const role of ['super_admin', 'admin', 'manager', 'trainer', 'reception', 'staff', 'member']) {
+      // The invariant behind all of the above: whatever destination is chosen, a
+      // person must not be dropped into a portal their account cannot enter.
+      // Without this, adding a role and forgetting its destination sends them to
+      // a page Guard immediately bounces them off.
+      for (const role of ['super_admin', 'trainer', 'member']) {
       const dest = postSignInPath(role);
       const userPortal = portalForRole(role);
       expect([role, dest, mayEnterPortal(userPortal, portalForPage(dest))])

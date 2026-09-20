@@ -65,7 +65,7 @@ describe('the other roles are unchanged', () => {
     // longer "the operator sees the platform group instead" but the stronger
     // "there is no platform group here for anyone to see".
     expect(NAV_GROUPS.map((g) => g.id)).not.toContain('platform');
-    for (const role of ['super_admin', 'admin', 'trainer', 'member']) {
+    for (const role of ['super_admin', 'trainer', 'member']) {
       expect(visibleTo(role)).not.toContain('platform');
     }
   });
@@ -82,13 +82,13 @@ describe('the other roles are unchanged', () => {
     // the org they have pinned, whatever the sidebar shows.
     const operator = visibleTo('super_admin');
     expect(operator.length).toBeGreaterThan(5);
-    expect(operator).toEqual(visibleTo('admin'));
+    expect(operator).toEqual(visibleTo('trainer'));
   });
 
-  it('still gives a studio admin the studio nav and not the control plane', () => {
-    const admin = visibleTo('admin');
-    expect(admin).not.toContain('platform');
-    expect(admin.length).toBeGreaterThan(5);
+  it('still gives a studio trainer the studio nav and not the control plane', () => {
+    const trainer = visibleTo('trainer');
+    expect(trainer).not.toContain('platform');
+    expect(trainer.length).toBeGreaterThan(5);
   });
 
   it('still shows an untagged group to staff', () => {

@@ -162,7 +162,7 @@ describe('role and feature are independent gates', () => {
   function twoGateItem() {
     const item = allNavItems().find((i) => i.href === '/finance/record-payment');
     expect(item, 'fixture /finance/record-payment is no longer in the nav').toBeDefined();
-    expect(item!.roles, 'fixture must stay admin-only for these gates to differ').toEqual(['admin']);
+    expect(item!.roles, 'fixture must stay trainer-only for these gates to differ').toEqual(['trainer']);
     expect(item!.feature, 'fixture must stay inside a feature-tagged group').toBe('finance');
     return item!;
   }

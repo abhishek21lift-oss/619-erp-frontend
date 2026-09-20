@@ -48,7 +48,7 @@ import ChromeGate from '@/components/ChromeGate';
 
 const PAGE = <div data-testid="page">page content</div>;
 
-const STAFF = { id: 'u1', name: 'Abhishek', role: 'admin' };
+const STAFF = { id: 'u1', name: 'Abhishek', role: 'trainer' };
 
 beforeEach(() => {
   replace.mockClear();

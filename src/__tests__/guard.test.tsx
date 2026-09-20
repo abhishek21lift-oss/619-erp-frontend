@@ -27,23 +27,23 @@ beforeEach(() => {
 
 describe('<Guard />', () => {
   it('renders children when user is allowed', async () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u1', role: 'admin' as Role }, loading: false });
-    render(
-      <Guard role="admin">
-        <div>secret content</div>
-      </Guard>,
-    );
+      mockUseAuth.mockReturnValue({ user: { id: 'u1', role: 'trainer' as Role }, loading: false });
+      render(
+        <Guard role="trainer">
+          <div>secret content</div>
+        </Guard>,
+      );
     await waitFor(() => expect(screen.getByText('secret content')).toBeInTheDocument());
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it('renders children for any of the allowed roles', async () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u2', role: 'manager' as Role }, loading: false });
-    render(
-      <Guard roles={['admin', 'manager']}>
-        <div>manager area</div>
-      </Guard>,
-    );
+      mockUseAuth.mockReturnValue({ user: { id: 'u2', role: 'trainer' as Role }, loading: false });
+      render(
+        <Guard roles={['trainer']}>
+          <div>manager area</div>
+        </Guard>,
+      );
     await waitFor(() => expect(screen.getByText('manager area')).toBeInTheDocument());
   });
 
@@ -59,27 +59,27 @@ describe('<Guard />', () => {
   });
 
   it('sends a signed-in user with the wrong role home, not to /login', async () => {
-    // Home is '/', not '/pt-os' — that route now 308s to '/' via next.config
-    // redirects, and the old assertion was left behind. Sending them to /login
-    // would be worse than useless: they have a valid session, so the login
-    // page would detect it and bounce them straight back here.
-    mockUseAuth.mockReturnValue({ user: { id: 'u3', role: 'trainer' as Role }, loading: false });
-    render(
-      <Guard role="admin">
-        <div>never</div>
-      </Guard>,
-    );
+      // Home is '/', not '/pt-os' — that route now 308s to '/' via next.config
+      // redirects, and the old assertion was left behind. Sending them to /login
+      // would be worse than useless: they have a valid session, so the login
+      // page would detect it and bounce them straight back here.
+      mockUseAuth.mockReturnValue({ user: { id: 'u3', role: 'member' as Role }, loading: false });
+      render(
+        <Guard role="trainer">
+          <div>never</div>
+        </Guard>,
+      );
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/'));
     expect(mockReplace).not.toHaveBeenCalledWith('/login');
   });
 
   it('normalises receptionist to reception', async () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u4', role: 'receptionist' as Role }, loading: false });
-    render(
-      <Guard role="reception">
-        <div>reception desk</div>
-      </Guard>,
-    );
+      mockUseAuth.mockReturnValue({ user: { id: 'u4', role: 'receptionist' as Role }, loading: false });
+      render(
+        <Guard role="trainer">
+          <div>reception desk</div>
+        </Guard>,
+      );
     await waitFor(() => expect(screen.getByText('reception desk')).toBeInTheDocument());
     expect(mockReplace).not.toHaveBeenCalled();
   });
@@ -132,17 +132,17 @@ describe('<Guard /> keeps the two apps apart', () => {
   });
 
   it('stops painting the moment the identity underneath it changes', async () => {
-    // The case the render-path check exists for, and the only one that reaches
-    // it: the page is already up and `ready`, and then the person changes.
-    // That happens for real — AuthProvider paints the cached user immediately
-    // on mount and replaces it when /api/auth/me answers, so a tab that was
-    // showing an admin can resolve to a member a moment later. React renders
-    // before the effect flushes its navigation, so without the same check in
-    // the render path the children paint once more, as the wrong person. An
-    // earlier version of this test rendered fresh and proved nothing: `ready`
-    // is false on the first pass regardless, so the spinner covered for it.
-    pathname = '/pt-os/clients';
-    mockUseAuth.mockReturnValue({ user: { id: 'a9', role: 'admin' as Role }, loading: false });
+      // The case the render-path check exists for, and the only one that reaches
+      // it: the page is already up and `ready`, and then the person changes.
+      // That happens for real — AuthProvider paints the cached user immediately
+      // on mount and replaces it when /api/auth/me answers, so a tab that was
+      // showing an admin can resolve to a member a moment later. React renders
+      // before the effect flushes its navigation, so without the same check in
+      // the render path the children paint once more, as the wrong person. An
+      // earlier version of this test rendered fresh and proved nothing: `ready`
+      // is false on the first pass regardless, so the spinner covered for it.
+      pathname = '/pt-os/clients';
+      mockUseAuth.mockReturnValue({ user: { id: 'a9', role: 'trainer' as Role }, loading: false });
     const { rerender } = render(<Guard><div>trainer shell</div></Guard>);
     await waitFor(() => expect(screen.getByText('trainer shell')).toBeInTheDocument());
 
@@ -161,7 +161,7 @@ describe('<Guard /> keeps the two apps apart', () => {
   });
 
   it('still lets staff into the staff app', async () => {
-    for (const role of ['super_admin', 'admin', 'manager', 'trainer', 'reception'] as Role[]) {
+      for (const role of ['super_admin', 'trainer'] as Role[]) {
       mockReplace.mockReset();
       pathname = '/pt-os/clients';
       mockUseAuth.mockReturnValue({ user: { id: 'u', role }, loading: false });
@@ -173,10 +173,10 @@ describe('<Guard /> keeps the two apps apart', () => {
   });
 
   it('does not mistake a staff page whose name starts with "member" for the member app', async () => {
-    // '/membership-plans'.startsWith('/member') is true. A prefix match here
-    // would lock every trainer out of their own pricing page.
-    pathname = '/membership-plans';
-    mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'admin' as Role }, loading: false });
+      // '/membership-plans'.startsWith('/member') is true. A prefix match here
+      // would lock every trainer out of their own pricing page.
+      pathname = '/membership-plans';
+      mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'trainer' as Role }, loading: false });
     render(<Guard><div>plans</div></Guard>);
     await waitFor(() => expect(screen.getByText('plans')).toBeInTheDocument());
     expect(mockReplace).not.toHaveBeenCalled();
@@ -263,16 +263,16 @@ describe('<Guard /> paints no loading frame when auth is already resolved', () =
   });
 
   it('re-checks on every render instead of latching open', async () => {
-    // `ready` was sticky: once true it stayed true for the life of the
-    // component, so a session that changed underneath a mounted page kept
-    // passing the gate. Deriving the verdict removes that by construction.
-    pathname = '/pt-os/clients';
-    mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'admin' as Role }, loading: false });
-    const { rerender } = render(<Guard role="admin"><p>admin tools</p></Guard>);
-    await waitFor(() => expect(screen.getByText('admin tools')).toBeInTheDocument());
+      // `ready` was sticky: once true it stayed true for the life of the
+      // component, so a session that changed underneath a mounted page kept
+      // passing the gate. Deriving the verdict removes that by construction.
+      pathname = '/pt-os/clients';
+      mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'trainer' as Role }, loading: false });
+      const { rerender } = render(<Guard role="trainer"><p>admin tools</p></Guard>);
+      await waitFor(() => expect(screen.getByText('admin tools')).toBeInTheDocument());
 
-    mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'trainer' as Role }, loading: false });
-    rerender(<Guard role="admin"><p>admin tools</p></Guard>);
+      mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'member' as Role }, loading: false });
+      rerender(<Guard role="trainer"><p>admin tools</p></Guard>);
 
     expect(screen.queryByText('admin tools')).not.toBeInTheDocument();
   });

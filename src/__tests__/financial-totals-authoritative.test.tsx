@@ -73,8 +73,8 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/',
 }));
 vi.mock('@/lib/auth-context', () => ({
-  useAuth: () => ({ user: { id: 'u1', name: 'Admin', role: 'admin', organization_name: 'S' }, loading: false }),
-}));
+  useAuth: () => ({ user: { id: 'u1', name: 'Admin', role: 'trainer', organization_name: 'S' }, loading: false }),
+}))
 vi.mock('@/components/Guard', () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));

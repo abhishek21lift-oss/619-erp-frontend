@@ -47,8 +47,8 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mocks.mockRouterReplace }),
 }));
 
-const CACHED = { id: 'u1', name: 'Cached Coach', role: 'admin', organization_name: 'Studio' };
-const FRESH = { id: 'u2', name: 'Fresh Coach', email: 'fresh@x.com', role: 'admin' };
+const CACHED = { id: 'u1', name: 'Cached Coach', role: 'trainer', organization_name: 'Studio' };
+const FRESH = { id: 'u2', name: 'Fresh Coach', email: 'fresh@x.com', role: 'trainer' };
 
 beforeEach(() => {
   Object.values(mocks).forEach((m) => m.mockReset());

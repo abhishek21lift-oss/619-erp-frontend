@@ -67,7 +67,7 @@ beforeEach(() => {
   createWorkoutSession.mockReset();
   mySessions.mockResolvedValue(UNLINKED);
   todayRoster.mockResolvedValue(emptyRoster());
-  mockUser = { id: 'u1', name: 'Owner', role: 'admin', email: 'owner@studio.com' };
+  mockUser = { id: 'u1', name: 'Owner', role: 'trainer', email: 'owner@studio.com' };
 });
 
 describe('the unlinked-account card', () => {

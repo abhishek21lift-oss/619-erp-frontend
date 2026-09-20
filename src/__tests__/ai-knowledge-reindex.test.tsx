@@ -27,8 +27,8 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/ai-coach/knowledge',
 }));
 vi.mock('@/lib/auth-context', () => ({
-  useAuth: () => ({ user: { id: 'u1', role: 'admin' }, loading: false }),
-}));
+  useAuth: () => ({ user: { id: 'u1', role: 'trainer' }, loading: false }),
+}))
 vi.mock('framer-motion', () => ({
   m: { div: ({ children, ...rest }: Record<string, unknown>) => <div {...rest}>{children as React.ReactNode}</div> },
 }));
