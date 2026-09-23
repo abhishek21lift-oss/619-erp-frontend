@@ -39,8 +39,7 @@ type StatusFilter = '' | 'active' | 'inactive' | 'deleted';
 function SummaryStrip({ s }: { s: PlatformUserSummary | null }) {
   const items: { label: string; value: number | undefined; icon: React.ReactNode }[] = [
     { label: 'Accounts', value: s?.total, icon: <Users2 size={13} /> },
-    { label: 'Studio owners', value: s?.owners, icon: <ShieldCheck size={13} /> },
-    { label: 'Trainers', value: s?.trainers, icon: <Users2 size={13} /> },
+    { label: 'Trainers', value: s?.owners, icon: <ShieldCheck size={13} /> },
     { label: 'Members', value: s?.members, icon: <Users2 size={13} /> },
     { label: 'Platform', value: s?.platform, icon: <KeyRound size={13} /> },
     { label: 'Never signed in', value: s?.never_signed_in, icon: <UserX size={13} /> },

@@ -27,7 +27,7 @@ const itemVariants = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 
 const statusColor:{[k:string]:string} = { active:'#10b981', expired:'#dc2626', draft:'#64748b' };
 const statusBg:{[k:string]:string} = { active:'rgba(16,185,129,0.1)', expired:'rgba(220,38,38,0.08)', draft:'#f1f5f9' };
 
-export default function OffersPage() { return <Guard role="admin"><OffersContent/></Guard>; }
+export default function OffersPage() { return <Guard role="trainer"><OffersContent/></Guard>; }
 function OffersContent() {
   const { toast } = useToast();
   const [offers, setOffers] = useState<Offer[]>([]);

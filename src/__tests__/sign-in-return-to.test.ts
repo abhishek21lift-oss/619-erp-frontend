@@ -18,12 +18,11 @@ import { SESSIONLESS_PAGES, signInPathFor } from '@/lib/public-paths';
 
 describe('safeReturnTo — the return trip', () => {
   it('sends a trainer back to the page their session expired on', () => {
-    expect(safeReturnTo('/pt-os/clients/abc/payments', 'admin')).toBe('/pt-os/clients/abc/payments');
     expect(safeReturnTo('/pt-os/clients/abc/payments', 'trainer')).toBe('/pt-os/clients/abc/payments');
   });
 
   it('preserves the query string, because the destination may be a filtered view', () => {
-    expect(safeReturnTo('/pt-os/clients?status=active&q=raj', 'admin'))
+    expect(safeReturnTo('/pt-os/clients?status=active&q=raj', 'trainer'))
       .toBe('/pt-os/clients?status=active&q=raj');
   });
 
@@ -32,7 +31,7 @@ describe('safeReturnTo — the return trip', () => {
   });
 
   it('falls back to postSignInPath when there is no destination', () => {
-    for (const role of ['admin', 'trainer', 'member', 'super_admin', null, undefined]) {
+    for (const role of ['trainer', 'member', 'super_admin', 'admin', null, undefined]) {
       expect(safeReturnTo(null, role)).toBe(postSignInPath(role));
       expect(safeReturnTo(undefined, role)).toBe(postSignInPath(role));
       expect(safeReturnTo('', role)).toBe(postSignInPath(role));
@@ -57,41 +56,49 @@ describe('safeReturnTo — what it refuses', () => {
   ];
 
   it.each(offSite)('refuses %j and falls back', (raw) => {
-    expect(safeReturnTo(raw, 'admin')).toBe(postSignInPath('admin'));
+    expect(safeReturnTo(raw, 'trainer')).toBe(postSignInPath('trainer'));
   });
 
   it('refuses control characters and whitespace smuggling', () => {
     const controls = ['/pt-os\n/clients', '/pt-os\r\nSet-Cookie: x=1', '/pt-os clients', ' /pt-os', '\t/pt-os'];
     for (const raw of controls) {
-      expect(safeReturnTo(raw, 'admin')).toBe(postSignInPath('admin'));
+      expect(safeReturnTo(raw, 'trainer')).toBe(postSignInPath('trainer'));
     }
   });
 
   it('never returns somebody to a door, which would loop', () => {
     for (const door of ['/login', '/member-login', '/platform-login'] as const) {
-      expect(safeReturnTo(door, 'admin')).not.toBe(door);
+      expect(safeReturnTo(door, 'trainer')).not.toBe(door);
       expect(safeReturnTo(door, 'member')).not.toBe(door);
-      expect(safeReturnTo(`${door}?redirect=%2Fpt-os`, 'admin')).not.toContain('login');
+      expect(safeReturnTo(`${door}?redirect=%2Fpt-os`, 'trainer')).not.toContain('login');
     }
   });
 
   it('refuses a destination in a portal this account may not enter', () => {
-    // A member handed a staff link lands on their own dashboard.
+    // A member handed a studio link lands on their own dashboard.
     expect(safeReturnTo('/pt-os/clients', 'member')).toBe('/member/dashboard');
     expect(safeReturnTo('/platform/tenants', 'member')).toBe('/member/dashboard');
-    // Studio staff may not walk into the Command Center.
-    expect(safeReturnTo('/platform/tenants', 'admin')).toBe(postSignInPath('admin'));
+    // The trainer may not walk into the Command Center.
+    expect(safeReturnTo('/platform/tenants', 'trainer')).toBe(postSignInPath('trainer'));
     expect(safeReturnTo('/platform', 'trainer')).toBe(postSignInPath('trainer'));
     // A trainer may not be sent into the client app.
-    expect(safeReturnTo('/member/payments', 'admin')).toBe(postSignInPath('admin'));
-    // The operator supporting a studio is the sanctioned exception.
-    expect(safeReturnTo('/pt-os/clients', 'super_admin')).toBe('/pt-os/clients');
+    expect(safeReturnTo('/member/payments', 'trainer')).toBe(postSignInPath('trainer'));
+    // Nor may the platform operator walk into a studio on their own session:
+    // the only way in is impersonation, which is a trainer session.
+    expect(safeReturnTo('/pt-os/clients', 'super_admin')).toBe('/platform');
+  });
+
+  it('sends a retired or unknown role to a door, never into an app', () => {
+    for (const role of ['admin', 'manager', 'reception', 'staff']) {
+      expect(postSignInPath(role), role).toBe('/login');
+      expect(safeReturnTo('/pt-os/clients', role), role).toBe('/login');
+    }
   });
 
   it('only ever returns a same-origin path', () => {
     const probes = [...offSite, '/pt-os/clients', '/member/payments', '/platform', null, ''];
     for (const raw of probes) {
-      for (const role of ['admin', 'trainer', 'member', 'super_admin']) {
+      for (const role of ['trainer', 'member', 'super_admin', 'admin']) {
         const out = safeReturnTo(raw, role);
         expect(out.startsWith('/')).toBe(true);
         expect(out.startsWith('//')).toBe(false);
@@ -108,9 +115,9 @@ describe('the parameter proxy.ts actually writes', () => {
   // write an absolute URL, or makes safeReturnTo stricter about a shape the
   // proxy emits, this fails rather than silently re-breaking the return trip.
   const bounced: Array<[string, string]> = [
-    ['/pt-os/clients', 'admin'],
+    ['/pt-os/clients', 'trainer'],
     ['/pt-os/clients/abc/payments', 'trainer'],
-    ['/finance/invoices', 'admin'],
+    ['/finance/invoices', 'trainer'],
     ['/member/payments', 'member'],
     ['/platform/tenants', 'super_admin'],
   ];
@@ -128,7 +135,7 @@ describe('the parameter proxy.ts actually writes', () => {
   it('never writes a redirect for a page that needs no session', () => {
     // A sessionless page is never bounced, so it never becomes a destination.
     for (const page of SESSIONLESS_PAGES) {
-      expect(safeReturnTo(page, 'admin')).not.toBe('/login');
+      expect(safeReturnTo(page, 'trainer')).not.toBe('/login');
     }
   });
 });

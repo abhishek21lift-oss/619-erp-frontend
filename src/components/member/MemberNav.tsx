@@ -28,9 +28,9 @@ import { palette } from '@/lib/palette';
  * every page in the portal renders the same one. Only the dashboard had it:
  * /member/classes rendered no bar at all — a member there could reach nothing
  * but the browser's back button, while .member-main still reserved the space
- * for a bar that was never drawn — and /member/payments borrowed the STAFF
+ * for a bar that was never drawn — and /member/payments borrowed the STUDIO
  * shell, so it showed members Clients / Sessions / Check-in, tabs that bounce
- * them straight back out because Guard refuses a member the staff portal.
+ * them straight back out because Guard refuses a member the trainer's portal.
  */
 const TABS = [
   { href: '/member/dashboard', label: 'Home', icon: Home },

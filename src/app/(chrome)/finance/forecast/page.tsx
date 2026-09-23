@@ -19,11 +19,10 @@ const FINANCE_TABS = [
   { label: 'Dues',        href: '/finance/dues' },
   { label: 'Invoices',    href: '/finance/invoices' },
   { label: 'Forecast',    href: '/finance/forecast' },
-  { label: 'Payroll',     href: '/finance/trainer-revenue' },
 ];
 
 export default function RevenueForecastPage() {
-  return <Guard role="admin"><Inner /></Guard>;
+  return <Guard role="trainer"><Inner /></Guard>;
 }
 
 function Inner() {

@@ -64,12 +64,15 @@ describe('one form system, not eighteen', () => {
 
   it('keeps each Settings screen on the tone it already had', () => {
     // Deduplication, not a redesign. Both screens focus to brand blue, and
-    // profile small-caps its lifted caption while the account screen does not
+    // profile small-caps its lifted caption while the security screen does not
     // — preserved rather than reconciled, because reconciling them is a design
     // decision and this was not one.
+    //
+    // Three fields, not six: the create-account form went with the staff
+    // roles, leaving the change-password form.
     const account = readFileSync(join(SRC, 'app/(chrome)/settings/page.tsx'), 'utf8');
     const profile = readFileSync(join(SRC, 'app/(chrome)/settings/profile/page.tsx'), 'utf8');
-    expect(account.match(/<FloatInput tone="brand"/g) ?? []).toHaveLength(6);
+    expect(account.match(/<FloatInput tone="brand"/g) ?? []).toHaveLength(3);
     expect(account).not.toMatch(/upperLifted/);
     expect(profile.match(/<FloatInput tone="brand" upperLifted/g) ?? []).toHaveLength(10);
   });
@@ -97,6 +100,8 @@ describe('a control next to a label must be joined to it', () => {
   // SIBLING of the control it names, which associates with nothing. This
   // catches the shape at its source — a component that renders both a <label>
   // with no htmlFor and a native control.
+  // Parses every .tsx in src/ with the TypeScript compiler API — seconds of
+  // pure CPU. The budget is explicit so a busy machine does not fail it.
   it('has no field wrapper rendering an unassociated label', () => {
     const offenders: string[] = [];
     for (const f of sources()) {
@@ -127,7 +132,7 @@ describe('a control next to a label must be joined to it', () => {
     // htmlFor, turned into a group caption with role="group", or turned into a
     // plain caption where it never named a control at all.
     expect(offenders, `unassociated <label>s:\n${offenders.join('\n')}`).toEqual([]);
-  });
+  }, 30000);
 });
 
 describe('the label audit, resolved case by case', () => {
@@ -160,7 +165,6 @@ describe('the label audit, resolved case by case', () => {
     const associated: [string, string][] = [
       ['app/(chrome)/ai-coach/knowledge/page.tsx', 'kb-title'],
       ['app/(chrome)/pt-os/clients/[id]/edit/page.tsx', 'delete-confirm'],
-      ['app/(chrome)/trainers/leave/page.tsx', 'leave-reject-note'],
     ];
     for (const [file, id] of associated) {
       const src = readFileSync(join(SRC, ...file.split('/')), 'utf8');

@@ -29,26 +29,30 @@ import { isCommandCenterPath, isHostNeutralPath, isPublicProxyPath } from '@/pro
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const STUDIO_ROLES = ['admin', 'manager', 'trainer', 'reception', 'receptionist', 'staff'];
+/** Roles the server retired with the Trainer → Members model. */
+const RETIRED_ROLES = ['admin', 'manager', 'reception', 'receptionist', 'staff'];
 
 describe('every role belongs to exactly one portal', () => {
   it('puts the platform operator in the platform portal', () => {
     expect(portalForRole('super_admin')).toBe('platform');
   });
 
-  it('leaves every studio role on the staff side', () => {
-    for (const role of STUDIO_ROLES) {
-      expect([role, portalForRole(role)]).toEqual([role, 'staff']);
-    }
+  it('puts the studio trainer in the studio portal, and the member in theirs', () => {
+    expect(portalForRole('trainer')).toBe('trainer');
+    expect(portalForRole('member')).toBe('member');
   });
 
-  it('defaults an unknown or absent role to staff, never to platform', () => {
-    // The direction a mistake must fall. A role added tomorrow lands in the
-    // studio app; nothing but the literal string 'super_admin' reaches the
-    // control plane.
-    expect(portalForRole('some_future_role')).toBe('staff');
-    expect(portalForRole(null)).toBe('staff');
-    expect(portalForRole(undefined)).toBe('staff');
+  it('gives an unknown, absent or retired role no portal at all', () => {
+    // The direction a mistake must fall. It used to default to the studio
+    // app — so a role the server had retired, or one added tomorrow, was
+    // handed the trainer's application by a fallthrough. Nothing but the
+    // three literal role strings resolves to a portal now.
+    expect(portalForRole('some_future_role')).toBeNull();
+    expect(portalForRole(null)).toBeNull();
+    expect(portalForRole(undefined)).toBeNull();
+    for (const role of RETIRED_ROLES) {
+      expect([role, portalForRole(role)]).toEqual([role, null]);
+    }
   });
 });
 
@@ -62,7 +66,7 @@ describe('every page belongs to exactly one portal', () => {
     // '/platform-login'.startsWith('/platform') is true. Folding the door into
     // the app behind it would make signing in require being signed in.
     expect(isPlatformAppPage('/platform-login')).toBe(false);
-    expect(portalForPage('/platform-login')).toBe('staff');
+    expect(portalForPage('/platform-login')).toBe('trainer');
   });
 
   it('does not swallow an unrelated page that shares the prefix', () => {
@@ -71,38 +75,34 @@ describe('every page belongs to exactly one portal', () => {
 
   it('leaves the member app and the studio app where they were', () => {
     expect(portalForPage('/member/dashboard')).toBe('member');
-    expect(portalForPage('/pt-os/clients')).toBe('staff');
-    expect(portalForPage('/')).toBe('staff');
+    expect(portalForPage('/pt-os/clients')).toBe('trainer');
+    expect(portalForPage('/')).toBe('trainer');
     expect(isMemberAppPage('/member-login')).toBe(false);
   });
 });
 
-describe('the gate between portals is one-directional', () => {
-  it('lets the operator walk into a studio', () => {
-    // The support job. They arrive by impersonation (which mints a studio
-    // session and writes an audit row) or with the org-switcher pinned to one
-    // tenant, and the server scopes them either way.
-    expect(mayEnterPortal('platform', 'staff')).toBe(true);
-  });
-
-  it('refuses every studio account at the Command Center', () => {
-    expect(mayEnterPortal('staff', 'platform')).toBe(false);
-    expect(mayEnterPortal('member', 'platform')).toBe(false);
-  });
-
-  it('keeps clients and staff out of each other', () => {
-    expect(mayEnterPortal('member', 'staff')).toBe(false);
-    expect(mayEnterPortal('staff', 'member')).toBe(false);
-  });
-
-  it('does not let the operator into the member app either', () => {
-    // The exception is the studio app specifically, not "the operator may go
-    // anywhere". A client's own portal is not a support surface.
+describe('the gate between portals lets nobody cross', () => {
+  it('keeps the operator out of a studio on their own session', () => {
+    // There used to be a standing exception: platform → studio, for support.
+    // Support goes through impersonation instead, which mints a session AS
+    // the studio's trainer — so the browser arrives holding a trainer
+    // account, and this rule never has to make an exception for anyone.
+    expect(mayEnterPortal('platform', 'trainer')).toBe(false);
     expect(mayEnterPortal('platform', 'member')).toBe(false);
   });
 
+  it('refuses every studio account at the Command Center', () => {
+    expect(mayEnterPortal('trainer', 'platform')).toBe(false);
+    expect(mayEnterPortal('member', 'platform')).toBe(false);
+  });
+
+  it('keeps clients and the trainer out of each other', () => {
+    expect(mayEnterPortal('member', 'trainer')).toBe(false);
+    expect(mayEnterPortal('trainer', 'member')).toBe(false);
+  });
+
   it('is reflexive, so nobody is locked out of their own portal', () => {
-    for (const p of ['staff', 'member', 'platform'] as Portal[]) {
+    for (const p of ['trainer', 'member', 'platform'] as Portal[]) {
       expect([p, mayEnterPortal(p, p)]).toEqual([p, true]);
     }
   });
@@ -126,7 +126,7 @@ describe('a lapsed session comes back to the right door', () => {
   it('sends each portal home to its own home', () => {
     expect(homeFor('platform')).toBe('/platform');
     expect(homeFor('member')).toBe('/member/dashboard');
-    expect(homeFor('staff')).toBe('/');
+    expect(homeFor('trainer')).toBe('/');
   });
 });
 
@@ -178,7 +178,7 @@ describe('the impersonation hand-off across origins', () => {
 
   const IMP = {
     token: 'imp-token-abc', readonly: true,
-    adminId: 'usr-1', adminName: 'Studio Owner',
+    accountId: 'usr-1', accountName: 'Studio Owner',
     orgId: 'org-1', orgName: 'A Studio',
     returnTo: 'https://admin.example.com/platform',
   };
@@ -280,12 +280,18 @@ describe('where signing in lands you', () => {
     expect(postSignInPath('member')).toBe('/member/dashboard');
   });
 
-  it('leaves every studio role exactly where it was', () => {
-    // This change was allowed to move the operator and nobody else.
-    expect(postSignInPath('trainer')).toBe('/trainer/dashboard');
-    for (const role of ['admin', 'manager', 'reception', 'receptionist', 'staff']) {
-      expect([role, postSignInPath(role)]).toEqual([role, '/pt-os']);
+  it('sends the trainer to their client list', () => {
+    expect(postSignInPath('trainer')).toBe('/pt-os');
+  });
+
+  it('sends a retired role to a door rather than into somebody\'s app', () => {
+    // These used to land on /pt-os, because anything that was not a member or
+    // the operator was treated as studio staff.
+    for (const role of RETIRED_ROLES) {
+      expect([role, postSignInPath(role)]).toEqual([role, '/login']);
     }
+    expect(postSignInPath(null)).toBe('/login');
+    expect(postSignInPath('some_future_role')).toBe('/login');
   });
 
   it('lands every role inside the portal it belongs to', () => {
@@ -293,9 +299,9 @@ describe('where signing in lands you', () => {
     // person must not be dropped into a portal their account cannot enter.
     // Without this, adding a role and forgetting its destination sends them to
     // a page Guard immediately bounces them off.
-    for (const role of ['super_admin', 'admin', 'manager', 'trainer', 'reception', 'staff', 'member']) {
+    for (const role of ['super_admin', 'trainer', 'member']) {
       const dest = postSignInPath(role);
-      const userPortal = portalForRole(role);
+      const userPortal = portalForRole(role)!;
       expect([role, dest, mayEnterPortal(userPortal, portalForPage(dest))])
         .toEqual([role, dest, true]);
     }
@@ -322,7 +328,7 @@ describe('the two installable apps', () => {
 
   it('leaves the studio app opening where it did', () => {
     expect(studio.start_url).toBe('/');
-    expect(portalForPage(studio.start_url)).toBe('staff');
+    expect(portalForPage(studio.start_url)).toBe('trainer');
   });
 
   it('keeps the two installs distinct', () => {

@@ -4,8 +4,8 @@
 //
 // This replaced a 590-line marketing page (hero headline, "PROCESS 01/02/03",
 // stat tiles advertising "4 tools / <10s response"). That copy sells a feature
-// to someone who hasn't bought it; this screen is opened by staff who already
-// own it and want to ask something. The chat is now the page, with the four
+// to someone who hasn't bought it; this screen is opened by a trainer who already
+// owns it and wants to ask something. The chat is now the page, with the four
 // generators demoted to a launcher row and everything else cut.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -22,8 +22,6 @@ import ChatMarkdown from '@/components/fitness/ChatMarkdown';
 import { api } from '@/lib/api';
 import { streamAiChat } from '@/lib/ai-stream';
 import { useToast } from '@/lib/toast';
-import { useAuth } from '@/lib/auth-context';
-import { normaliseRole } from '@/lib/nav-config';
 import type { AiConversation, Client } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
 
@@ -80,7 +78,7 @@ const GENERATORS = [
   { href: '/ai/workout-generator', icon: Dumbbell,   label: 'Workout Plan', color: '#0067e0' },
   { href: '/ai/diet-generator',    icon: Apple,      label: 'Diet Plan',    color: '#34d399' },
   { href: '/ai/progress-analysis', icon: TrendingUp, label: 'Progress',     color: '#fbbf24' },
-  { href: '/ai/business-insights', icon: BarChart3,  label: 'Business',     color: '#7fb4ff', adminOnly: true },
+  { href: '/ai/business-insights', icon: BarChart3,  label: 'Business',     color: '#7fb4ff' },
 ];
 
 const ACCENT = 'linear-gradient(135deg, #0067e0 0%, #0059ce 100%)';
@@ -104,9 +102,6 @@ function fmtRelative(iso: string) {
 export default function AiCoachPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuth();
-  const role = normaliseRole(user?.role);
-  const isAdminOrManager = role === 'admin' || role === 'manager';
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -342,7 +337,7 @@ export default function AiCoachPage() {
     return list.slice(0, 8);
   }, [clients, clientQuery]);
 
-  const visibleGenerators = GENERATORS.filter((g) => !g.adminOnly || isAdminOrManager);
+  const visibleGenerators = GENERATORS;
   const isEmpty = messages.length === 0;
 
   /* ── Render ────────────────────────────────────────────────────────── */
@@ -484,7 +479,7 @@ export default function AiCoachPage() {
                   onPrompt={(p) => send(p)}
                   generators={visibleGenerators}
                   onGenerator={(href) => router.push(href)}
-                  onKnowledgeBase={isAdminOrManager ? () => router.push('/ai-coach/knowledge') : undefined}
+                  onKnowledgeBase={() => router.push('/ai-coach/knowledge')}
                 />
               ) : (
                 <div className="flex flex-col gap-4">
@@ -861,8 +856,8 @@ function ClientAttach({ selected, open, query, options, onToggle, onQuery, onSel
             data-no-pull-refresh
             className="absolute right-0 top-full z-[71] mt-1.5 w-[240px] overflow-hidden rounded-[13px] p-1.5"
             // --bg-elevated, not --bg-card: this floats over the chat, and
-            // --bg-card is translucent glass. Matches OrgSwitcher, the AppShell
-            // menus and SearchableSelect, which all use elevated for popovers.
+            // --bg-card is translucent glass. Matches the AppShell menus and
+            // SearchableSelect, which both use elevated for popovers.
             style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', boxShadow: '0 14px 36px rgba(0,0,0,0.2)' }}
           >
             <input aria-label="Search clients"

@@ -59,7 +59,7 @@ import { errorMessage } from '@/lib/forms/errors';
 
 export default function TodayPage() {
   return (
-    <Guard roles={['admin', 'manager', 'trainer']}>
+    <Guard role="trainer">
       {/* max-w-screen-md with its own px-4 sat inside .shell-main's gutter,
           so this page was both narrower and further from the edge than the
           dashboard. PageContainer carries the dashboard's measurements. */}

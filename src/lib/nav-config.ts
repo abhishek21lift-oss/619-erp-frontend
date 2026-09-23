@@ -2,18 +2,19 @@
 // Single source of truth for all navigation.
 // Sidebar, CommandPalette, and Breadcrumbs all consume this file.
 
-import { normaliseRole } from './roles';
+import { isRole } from './roles';
 import type { Role } from './roles';
 
-export { ROLES, normaliseRole, hasRole, isAdminOrManager } from './roles';
 export type { Role } from './roles';
 
 export type NavItem = {
   href: string;
   label: string;
   icon: string;
-  /** @deprecated use `roles` array instead */
-  role?: Role;
+  /**
+   * Who sees the item. Untagged means the studio trainer — the studio app's
+   * one role. Tag with ['member'] for the client app's own entries.
+   */
   roles?: Role[];
   /**
    * Platform feature key from the Control Centre's registry. When the studio
@@ -76,7 +77,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/pt-os/exercise-library',    label: 'Exercise Library',     icon: 'BookOpen',    feature: 'exercise_library' },
       { href: '/pt-os/diet-plans',          label: 'Diet Plans',           icon: 'Apple' },
       { href: '/training/transformations',  label: 'Transformations',      icon: 'Sparkles',    roles: ['trainer'], feature: 'progress_photos' },
-      { href: '/trainers/[id]',             label: 'Trainer Profile',      icon: 'UserCog',     hidden: true, matchPrefix: '/trainers/' },
     ],
   },
   {
@@ -244,12 +244,15 @@ export function findItemByPath(pathname: string): (NavItem & { groupId: string; 
   return all.find((i) => !i.matchPrefix && path.startsWith(i.href.split('?')[0] + '/')) ?? null;
 }
 
+// Visibility is exact. An untagged item or group belongs to the studio app,
+// which is the trainer's; a member sees only what is tagged for members; the
+// platform operator has no studio navigation at all (their console is its own
+// portal); and an unknown role sees nothing. There are no role aliases and no
+// role that stands in for another.
 export function isVisibleForRole(item: NavItem, userRole?: string): boolean {
-  if (item.hidden) return false;
-  const role = normaliseRole(userRole);
-  if (item.roles?.length) return !!role && (item.roles as string[]).includes(role);
-  if (item.role)           return role === item.role;
-  return true;
+  if (item.hidden || !isRole(userRole)) return false;
+  if (item.roles?.length) return item.roles.includes(userRole);
+  return userRole === 'trainer';
 }
 
 export function isVisibleForFeature(
@@ -265,9 +268,7 @@ export function isGroupVisibleForFeature(group: NavGroup, features?: Record<stri
 }
 
 export function isGroupVisibleForRole(group: NavGroup, userRole?: string): boolean {
-  const role = normaliseRole(userRole);
-  if (role === 'member') return !!group.roles?.includes('member');
-  const effective = role === 'super_admin' ? 'trainer' : role;
-  if (group.roles?.length) return !!effective && (group.roles as string[]).includes(effective);
-  return true;
+  if (!isRole(userRole)) return false;
+  if (group.roles?.length) return group.roles.includes(userRole);
+  return userRole === 'trainer';
 }

@@ -13,7 +13,6 @@ const VALID_FINANCE_TABS = [
   'record-payment',
   'dues',
   'forecast',
-  'trainer-revenue',
 ] as const;
 type FinanceTab = typeof VALID_FINANCE_TABS[number];
 

@@ -2,26 +2,22 @@
 //
 // ── The defect this prevents ───────────────────────────────────────────────
 //
-// lib/http.ts attaches one of two identity headers to every request:
+// lib/http.ts attaches the caller's identity to every request:
 //
-//   Authorization: Bearer <token>   while impersonating a studio admin
-//   x-org-id: <uuid>                while a super_admin has an org pinned
+//   Authorization: Bearer <token>   while impersonating a studio's trainer
+//   (the session cookie otherwise)
 //
 // Two call sites bypassed it with a raw fetch() and sent neither:
 // lib/ai-stream.ts (needs the raw body to stream tokens as they arrive) and
-// the enrolment-PDF download (needs a Blob).
+// the enrolment-PDF download (needs a Blob). While impersonating, the Bearer
+// token never travelled, so the call ran as the operator rather than as the
+// studio being impersonated — on /api/ai/chat, a conversation the operator
+// believes is one studio's, answered as somebody else.
 //
-// For a tenant user that was harmless — the backend's tenantScope() ignores
-// `x-org-id` from anyone who is not a super_admin, so their org is still their
-// own. For a platform operator it was not. With the org switcher pinned to one
-// studio, the request arrived with no target, tenantScope() resolved
-// applyFilter=false, and the call ran PLATFORM-WIDE. On /api/ai/chat the
-// backend's orgParam() then returns null and every query behind it reads
-// `$n IS NULL OR organization_id = $n` — which matches every row in every
-// studio. The operator sees a conversation they believe is scoped to one
-// studio, answered from all of them. Impersonation failed the same way: the
-// Bearer token never travelled, so the call ran as the operator rather than as
-// the studio admin being impersonated.
+// There was a second header, `x-org-id`, which a platform operator used to
+// point requests at any studio. It is gone on both sides: the backend reads it
+// nowhere on the tenant plane and refuses a platform session there outright,
+// and the test below holds the client to sending no tenant header at all.
 //
 // ── Why a source scan ──────────────────────────────────────────────────────
 //
@@ -69,8 +65,11 @@ const API_FETCH = /fetch\(\s*[`'"][^`'"]*\/api\//;
 function directApiFetches(): { file: string; line: number; block: string }[] {
   const hits: { file: string; line: number; block: string }[] = [];
   for (const f of files) {
-    const rel = path.relative(SRC, f);
-    if (rel === path.join('lib', 'http.ts')) continue; // the transport itself
+    // Posix separators: the expectations below name files as `lib/ai-stream.ts`,
+    // and path.relative yields backslashes on Windows, so a developer machine
+    // reported "no longer fetches the API" for a file that plainly does.
+    const rel = path.relative(SRC, f).split(path.sep).join('/');
+    if (rel === 'lib/http.ts') continue; // the transport itself
     const lines = fs.readFileSync(f, 'utf8').split('\n');
     lines.forEach((text, i) => {
       if (!API_FETCH.test(text)) return;
@@ -145,12 +144,25 @@ describe('api transport', () => {
     expect(openCoded).toEqual([]);
   });
 
-  it('impersonation suppresses the org-switcher header', () => {
-    // The two headers are mutually exclusive by design: while impersonating,
-    // the Bearer token IS the identity and the operator's pinned org must not
-    // also travel, or the backend would see a target that contradicts it.
+  it('adds no tenant header for anyone — impersonation is the only identity it carries', () => {
+    // There used to be an org-switcher header (`x-org-id`) so a platform
+    // operator could point requests at any studio. Nothing on the backend's
+    // tenant plane reads it now, and a platform session is refused there
+    // outright, so the client must not send one at all: while impersonating
+    // the Bearer token IS the identity, and otherwise the cookie is.
     const http = fs.readFileSync(path.join(SRC, 'lib', 'http.ts'), 'utf8');
     const fn = http.slice(http.indexOf('export function tenantAuthHeaders'));
-    expect(fn.slice(0, 400)).toMatch(/imp\s*\?\s*\{\s*Authorization[\s\S]*?:\s*activeOrgHeader\(\)/);
+    expect(fn.slice(0, 400)).toMatch(/imp\s*\?\s*\{\s*Authorization[\s\S]*?\}\s*:\s*\{\}/);
+
+    // …and no file anywhere reconstructs one by hand. Comments are stripped
+    // first: several of them explain why the header is gone, and a test that
+    // cannot tell an explanation from a header is a test nobody can satisfy.
+    const offenders = files.filter((file) => {
+      const code = fs.readFileSync(file, 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/^\s*\/\/.*$/gm, '');
+      return /x-org-id/i.test(code);
+    });
+    expect(offenders).toEqual([]);
   });
 });

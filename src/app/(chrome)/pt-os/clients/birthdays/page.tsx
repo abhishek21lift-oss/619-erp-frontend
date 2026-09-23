@@ -67,7 +67,7 @@ export default function ClientBirthdaysPage() {
   }, [clients, search, filter]);
 
   return (
-    <Guard roles={['admin', 'manager', 'trainer']}>
+    <Guard role="trainer">
       <PullToRefresh onRefresh={bd.refetch}>
         {/* maxWidth 1100 with its own 20px of side padding — inside
             .shell-main's 16px — put this page both narrower and further from

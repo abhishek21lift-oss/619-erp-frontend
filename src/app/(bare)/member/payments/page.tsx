@@ -6,7 +6,7 @@
  * Serves two audiences from one screen, deliberately:
  *   • a member, who sees only their own rows (the API enforces that, not this
  *     page — a member cannot widen the query by editing the URL);
- *   • staff, who see the studio's rows and can jump into any of them.
+ *   • the trainer, who sees the studio's rows and can jump into any of them.
  *
  * Each row answers the only three questions anyone has here: how much, what
  * state is it in, and what can I do about it now.
@@ -83,8 +83,8 @@ function Inner() {
 
   return (
     // MemberShell, not AppShell. This route lives under /member, and Guard
-    // redirects anyone whose portal is not 'member' — so staff cannot reach
-    // it, yet it was rendering the staff shell: the staff sidebar, and a
+    // redirects anyone whose portal is not 'member' — so the trainer cannot
+    // reach it, yet it was rendering the studio shell: the studio sidebar, and a
     // bottom nav offering Clients / Sessions / Check-in, every one of which
     // bounces a member straight back out again. It now carries the same
     // chrome as the rest of the portal.

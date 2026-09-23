@@ -17,7 +17,6 @@ import { api } from '@/lib/api';
 import { ApiError, apiBase, tenantAuthHeaders } from '@/lib/http';
 import { toMoneyOrNull } from '@/lib/forms/normalize';
 import { useToast } from '@/lib/toast';
-import { useAuth } from '@/lib/auth-context';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { errorMessage } from '@/lib/forms/errors';
@@ -198,11 +197,11 @@ function validateAmountPaid(form: EnrollFormData): string | undefined {
   if (final !== null && paid > final) return 'Amount Paid cannot exceed Final Selling Price.';
   return undefined;
 }
-// Payment fields are admin/manager-only, same boundary the backend already
-// enforces (PATCH /clients/:id silently ignores final_amount/paid_amount
-// for the trainer role) — a trainer completing enrollment on a client whose
-// price isn't finalized yet shouldn't be blocked by fields they can't edit.
-function validateAll(form: EnrollFormData, canEditPayment: boolean): FormErrors {
+// Payment fields are the trainer's, like every other field on this form: they
+// own the studio. They used to be admin/manager-only, which — once the trainer
+// became the owner — left the one person running the studio unable to record
+// what a client paid at enrolment.
+function validateAll(form: EnrollFormData): FormErrors {
   return {
     startDate: validateStartDate(form.startDate),
     duration: validateDuration(form.duration),
@@ -210,8 +209,8 @@ function validateAll(form: EnrollFormData, canEditPayment: boolean): FormErrors 
     workoutTime: validateWorkoutTime(form),
     trainingDays: validateTrainingDays(form.trainingDays),
     sessionsPerWeek: validateSessionsPerWeek(form.sessionsPerWeek),
-    finalAmount: canEditPayment ? validateFinalAmount(form.finalAmount) : undefined,
-    amountPaid: canEditPayment ? validateAmountPaid(form) : undefined,
+    finalAmount: validateFinalAmount(form.finalAmount),
+    amountPaid: validateAmountPaid(form),
   };
 }
 function hasErrors(errors: FormErrors): boolean {
@@ -239,8 +238,6 @@ export default function PTEnrollmentPage({ params }: { params: Promise<{ id: str
 function EnrollForm({ clientId }: { clientId: string }) {
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
 
   const [clientName, setClientName] = useState('');
   const [clientMeta, setClientMeta] = useState<ClientMeta | null>(null);
@@ -435,11 +432,11 @@ function EnrollForm({ clientId }: { clientId: string }) {
     preferred_workout_time: form.workoutTime,
     preferred_training_days: form.trainingDays.join(', '),
     sessions_per_week: Number(form.sessionsPerWeek),
-    // Payment fields are admin/manager-only (matches the backend's RBAC
-    // boundary on PATCH /clients/:id, which silently ignores these for
-    // the trainer role) - only send them when they were actually
-    // editable, so a read-only display value never overwrites data.
-    ...(isAdmin ? {
+    // Payment fields. They used to be admin/manager-only and were left off
+    // for anyone else — which, once the trainer became the studio's owner,
+    // meant the one person running the studio could not record what a client
+    // paid at enrolment. The trainer owns the studio; the fields are theirs.
+    ...{
       // The SAME reading the validator did. `Number(form.finalAmount)` here
       // and `money()` there would be two parsers on one value, and the one
       // that reaches the server would be the looser of the two. `?? 0` is
@@ -450,7 +447,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
       // Empty means "not recorded". Sending '' would fail the server's enum
       // check and take the whole enrolment down with it.
       ...(form.paymentMethod ? { payment_method: form.paymentMethod } : {}),
-    } : {}),
+    },
     // The agreement travels with the enrolment rather than in a second
     // request: a signature saved separately can succeed while the enrolment
     // it belongs to fails, and then the client has agreed to nothing.
@@ -500,7 +497,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
   };
 
   const handleSubmit = () => {
-    const allErrors = validateAll(form, isAdmin);
+    const allErrors = validateAll(form);
     setErrors(allErrors);
     if (hasErrors(allErrors)) {
       // Order matches on-screen top-to-bottom position so the first hit is
@@ -729,7 +726,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div ref={bindFieldRef('finalAmount')}>
                     <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
-                      Final / Selling Price {isAdmin && <span style={{ color: '#F59E0B' }}>*</span>}
+                      Final / Selling Price <span style={{ color: '#F59E0B' }}>*</span>
                     </p>
                     <FloatInput
                       label="" ariaLabel="Final / Selling Price"
@@ -737,14 +734,13 @@ function EnrollForm({ clientId }: { clientId: string }) {
                       prefix={<span className="text-[13px] font-[700]">₹</span>}
                       value={form.finalAmount}
                       onChange={(v) => set('finalAmount', v)}
-                      onBlur={() => setErrors((e) => ({ ...e, finalAmount: isAdmin ? validateFinalAmount(form.finalAmount) : undefined }))}
+                      onBlur={() => setErrors((e) => ({ ...e, finalAmount: validateFinalAmount(form.finalAmount) }))}
                       error={errors.finalAmount}
-                      disabled={!isAdmin}
                     />
                   </div>
                   <div ref={bindFieldRef('amountPaid')}>
                     <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
-                      Amount Paid {isAdmin && <span style={{ color: '#F59E0B' }}>*</span>}
+                      Amount Paid <span style={{ color: '#F59E0B' }}>*</span>
                     </p>
                     <FloatInput
                       label="" ariaLabel="Amount Paid"
@@ -752,9 +748,8 @@ function EnrollForm({ clientId }: { clientId: string }) {
                       prefix={<span className="text-[13px] font-[700]">₹</span>}
                       value={form.amountPaid}
                       onChange={(v) => set('amountPaid', v)}
-                      onBlur={() => setErrors((e) => ({ ...e, amountPaid: isAdmin ? validateAmountPaid(form) : undefined }))}
+                      onBlur={() => setErrors((e) => ({ ...e, amountPaid: validateAmountPaid(form) }))}
                       error={errors.amountPaid}
-                      disabled={!isAdmin}
                     />
                   </div>
                 </div>
@@ -780,9 +775,6 @@ function EnrollForm({ clientId }: { clientId: string }) {
                       </m.div>
                     )}
                   </AnimatePresence>
-                  {!isAdmin && (
-                    <p className="mt-1.5 text-[11px] text-slate-400">Only admins and managers can edit payment details.</p>
-                  )}
                 </div>
 
                 {/* ── Payment method ──
@@ -806,7 +798,6 @@ function EnrollForm({ clientId }: { clientId: string }) {
                         <button
                           key={pm.value}
                           type="button"
-                          disabled={!isAdmin}
                           // Tapping the active one clears it: nothing forces a
                           // method, and a chip you cannot un-pick is a trap.
                           onClick={() => set('paymentMethod', active ? '' : pm.value)}

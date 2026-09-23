@@ -126,30 +126,18 @@ export interface FetchOptions extends Omit<RequestInit, 'body'> {
   skipAuth?:    boolean;
 }
 
-// ──────────────────────────────────────────────────────────────────────
-//  Platform org-switcher: a super_admin can pin requests to one tenant org
-//  by selecting it in the OrgSwitcher (persisted under ACTIVE_ORG_KEY). We
-//  forward it as the `x-org-id` header the backend's tenantScope() reads.
-//  The backend IGNORES this header for every non-super_admin, so a tenant
-//  user setting it cannot escape their own org — it is purely an operator
-//  convenience. Read lazily per request so a switch takes effect immediately.
-// ──────────────────────────────────────────────────────────────────────
-export const ACTIVE_ORG_KEY = '619_active_org';
-
-function activeOrgHeader(): Record<string, string> {
-  if (typeof window === 'undefined') return {};
-  try {
-    const id = localStorage.getItem(ACTIVE_ORG_KEY);
-    return id ? { 'x-org-id': id } : {};
-  } catch { return {}; }
-}
-
 /**
- * The tenant/identity headers EVERY authenticated call to the API must carry.
+ * The identity header EVERY authenticated call to the API must carry.
  *
- * While impersonating, the Bearer token IS the identity (that studio's admin),
- * so the operator's org-switcher header is suppressed — the org is implicit.
- * Otherwise a super_admin's pinned org travels as `x-org-id`.
+ * While impersonating, the Bearer token IS the identity (that studio's
+ * trainer). Otherwise the session cookie is the identity and nothing is added.
+ *
+ * There is deliberately no tenant header. The platform org-switcher used to
+ * send `x-org-id` so a super_admin could point requests at any studio; the
+ * backend no longer reads that header anywhere on the tenant plane, and the
+ * platform operator is refused there outright — the one sanctioned way into a
+ * studio is impersonation, which is audited. The organization always comes
+ * off the authenticated account, server-side.
  *
  * ── Why this is exported ───────────────────────────────────────────────────
  *
@@ -160,16 +148,9 @@ function activeOrgHeader(): Record<string, string> {
  *                           they arrive; httpSSE() buffers the whole stream.
  *   enroll/page.tsx         needs a Blob for the enrolment PDF.
  *
- * Both previously called fetch() directly and sent neither header. For a
- * tenant user that was harmless — the backend ignores `x-org-id` from anyone
- * who is not a super_admin — but for a platform operator it was not: with the
- * org switcher pinned to one studio, the request arrived with no target, so
- * backend tenantScope() resolved applyFilter=false and the call ran
- * PLATFORM-WIDE while the UI said otherwise. On /api/ai/chat that means the
- * model's tools and context read every studio's data into a conversation the
- * operator believes is one studio's. Impersonation broke the same way: the
- * Bearer token never travelled, so the call ran as the operator rather than
- * as the studio admin being impersonated.
+ * Both previously called fetch() directly and sent no Bearer token, so while
+ * impersonating the call ran as the operator rather than as the studio being
+ * impersonated.
  *
  * Exported rather than copied so there is one definition of "who am I acting
  * as" — api-transport.test.ts fails the build if a new direct fetch() to /api
@@ -177,11 +158,11 @@ function activeOrgHeader(): Record<string, string> {
  */
 export function tenantAuthHeaders(): Record<string, string> {
   const imp = getImpersonation();
-  return imp ? { Authorization: `Bearer ${imp.token}` } : activeOrgHeader();
+  return imp ? { Authorization: `Bearer ${imp.token}` } : {};
 }
 
 // ──────────────────────────────────────────────────────────────────────
-//  Impersonation: a super_admin can enter a studio as its admin. The
+//  Impersonation: a super_admin can enter a studio as its trainer. The
 //  platform mints a short-lived READ-ONLY access token; we send it as a
 //  Bearer header (which the backend reads BEFORE the cookie), so the
 //  operator's own super-admin cookie session stays intact underneath.
@@ -193,8 +174,9 @@ export const IMPERSONATION_KEY = '619_impersonation';
 export type StoredImpersonation = {
   token: string;
   readonly: boolean;
-  adminId: string;
-  adminName: string;
+  /** The account being acted as. */
+  accountId: string;
+  accountName: string;
   orgId: string;
   orgName: string;
   orgLogo?: string | null;
@@ -425,10 +407,10 @@ export async function http<T = unknown>(
     ...(options.headers as Record<string, string> | undefined),
   };
 
-  // The active-org selection (or impersonated identity) scopes results, so it
-  // must be part of the GET cache key — otherwise switching orgs, or exiting
-  // impersonation, would serve the previous identity's cached data.
-  const cacheKey = method === 'GET' ? `${imp ? `imp:${imp.adminId}` : headers['x-org-id'] ?? ''}|${url}` : '';
+  // The impersonated identity scopes results, so it must be part of the GET
+  // cache key — otherwise entering or exiting impersonation would serve the
+  // previous identity's cached data.
+  const cacheKey = method === 'GET' ? `${imp ? `imp:${imp.accountId}` : ''}|${url}` : '';
 
   if (cacheKey && ttl) {
     const hit = cache.get(cacheKey);
@@ -508,7 +490,7 @@ export async function http<T = unknown>(
       if (!(err instanceof ApiError) || err.status !== 401) throw err;
 
       // An impersonation token can't be refreshed via the operator's cookie
-      // (that would refresh the super-admin, not the studio admin). A 401 here
+      // (that would refresh the super-admin, not the studio trainer). A 401 here
       // means the read-only session expired — exit impersonation cleanly and
       // let the UI drop back to the platform.
       if (getImpersonation()) {

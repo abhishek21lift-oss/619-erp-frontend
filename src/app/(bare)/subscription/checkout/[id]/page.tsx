@@ -55,7 +55,7 @@ function inr(n: number): string {
 }
 
 export default function CheckoutPage() {
-  return <Guard role="admin"><Inner /></Guard>;
+  return <Guard role="trainer"><Inner /></Guard>;
 }
 
 function Inner() {

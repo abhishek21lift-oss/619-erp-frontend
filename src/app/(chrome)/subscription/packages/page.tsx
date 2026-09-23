@@ -224,7 +224,7 @@ function PackagesTab() {
 ══════════════════════════════════════════════ */
 export default function PackagesPage() {
   return (
-    <Guard role="admin">
+    <Guard role="trainer">
       <PageContent />
     </Guard>
   );

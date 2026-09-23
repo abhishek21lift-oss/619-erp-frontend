@@ -44,7 +44,7 @@ const METHOD_COLORS: Record<string, string> = {
 
 export default function TodaysSalePage() {
   return (
-    <Guard roles={['admin', 'manager']}>
+    <Guard role="trainer">
       <Inner />
     </Guard>
   );

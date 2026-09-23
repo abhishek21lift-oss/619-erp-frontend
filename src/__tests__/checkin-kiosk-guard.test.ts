@@ -4,14 +4,13 @@
 // `<Guard role="member">`, which is backwards for a staff surface in two
 // independent ways:
 //
-//   1. The route already lives in the staff portal, so a member-role account
+//   1. The route already lives in the studio portal, so a member-role account
 //      is refused by Guard's portal check before role is ever consulted —
 //      the role prop never protected against a member opening this page.
-//   2. What it actually gated was which STAFF role could open it. hasRole()
-//      lets `admin` (and `super_admin`) through any non-super_admin-only
-//      gate, but every OTHER staff role — manager, trainer, staff, reception
-//      — was refused, because none of them equals the literal 'member'.
-//      Reception is exactly who this kiosk is for.
+//   2. What it actually gated was which STUDIO role could open it. Back when
+//      there were several, `hasRole` let `admin` through any
+//      non-super_admin-only gate and refused every other one — so the studio
+//      roles this kiosk exists for could not open it.
 //
 // Deep-audit finding. Pinned as a source-text check because mounting the
 // full kiosk page (camera access, jsQR, polling) is out of proportion to
@@ -31,18 +30,17 @@ const page = stripComments(fs.readFileSync(
   'utf8',
 ));
 
-describe('the check-in kiosk is gated for staff, not for members', () => {
+describe('the check-in kiosk belongs to the trainer, not the member', () => {
   it('no longer requires the member role', () => {
     expect(page).not.toMatch(/<Guard role="member">/);
   });
 
-  it('accepts every staff role the backend\'s requireStaff does, reception included', () => {
-    const match = page.match(/<Guard roles=\{\[([^\]]*)\]\}>/);
-    expect(match).not.toBeNull();
-    const roles = match![1].match(/'([^']+)'/g)!.map((s) => s.slice(1, -1));
-    for (const r of ['admin', 'manager', 'trainer', 'staff', 'reception']) {
-      expect(roles).toContain(r);
-    }
-    expect(roles).not.toContain('member');
+  it('is gated to the trainer, matching the backend route it calls', () => {
+    // POST /api/qr/scan is requireTrainer: a signed QR marks whoever it names
+    // present, so the scanner is the person doing the scanning — never the
+    // member being scanned. The guard used to list five staff roles, of which
+    // only 'trainer' still exists.
+    expect(page).toMatch(/<Guard role="trainer">/);
+    expect(page).not.toMatch(/<Guard roles=/);
   });
 });

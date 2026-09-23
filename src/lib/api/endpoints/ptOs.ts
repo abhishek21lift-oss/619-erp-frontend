@@ -15,7 +15,7 @@ import type {
 export const pt = {
   dashboard: () =>
     http<{ data: unknown }>('/api/pt-os/dashboard'),
-  clients: (params?: { trainer_id?: string }) =>
+  clients: (params?: { search?: string; status?: string; dues?: string; limit?: number; offset?: number }) =>
     http<{ data: unknown[]; total: number }>(`/api/pt-os/clients${buildQs(params)}`),
   /** Each active client's first and latest recorded weight. */
   transformations: () =>
@@ -25,10 +25,10 @@ export const pt = {
    *
    * Every other method here answers a question about ONE client, when somebody
    * opens them — which meant finding the clients who need a call required
-   * opening every profile. This sweeps instead. Scoped server-side: a trainer
-   * gets their own roster whatever they ask for.
+   * opening every profile. This sweeps instead. Scoped server-side to the
+   * caller's studio.
    */
-  signals: (params?: { trainer_id?: string; weeks?: number }) =>
+  signals: (params?: { weeks?: number }) =>
     http<{ data: RosterSignalSweep }>(`/api/pt-os/signals${buildQs(params)}`),
   client: (id: string) =>
     http<{ data: unknown }>(`/api/pt-os/clients/${id}`),
@@ -90,38 +90,14 @@ export const pt = {
     http<{ data: unknown[] }>(`/api/pt-os/payments${buildQs(params)}`),
   createPayment: (data: Record<string, unknown>) =>
     http<{ data: unknown }>('/api/pt-os/payments', { method: 'POST', body: JSON.stringify(data) }),
-  balanceSheet: (params?: { trainer_id?: string }) =>
-    http<{ data: unknown[]; total: number; total_outstanding: number }>(
-      `/api/pt-os/balance-sheet${buildQs(params)}`,
-    ),
-  clientBirthdays: (params?: { trainer_id?: string }) =>
-    http<{ data: ClientBirthday[]; total: number; today_count: number }>(
-      `/api/pt-os/clients/birthdays${buildQs(params)}`,
-    ),
-  commissions: (params?: { trainer_id?: string }) =>
-    http<{ data: unknown[] }>(`/api/pt-os/commissions${buildQs(params)}`),
-  calculateCommissions: (month?: string) =>
-    http<{ data: { count: number; total: number } }>('/api/pt-os/commissions/calculate', {
-      method: 'POST', body: JSON.stringify({ month }),
-    }),
-  payouts: (params?: { month?: string }) =>
-    http<{ data: unknown[]; month: string }>(`/api/pt-os/payouts${buildQs(params)}`),
+  balanceSheet: () =>
+    http<{ data: unknown[]; total: number; total_outstanding: number }>('/api/pt-os/balance-sheet'),
+  clientBirthdays: () =>
+    http<{ data: ClientBirthday[]; total: number; today_count: number }>('/api/pt-os/clients/birthdays'),
+  // commissions / payouts / trainer-performance went with the multi-coach
+  // model: there is no staff roster to pay out.
   revenue: () =>
     http<{ data: unknown[] }>('/api/pt-os/revenue'),
-  trainerPerformance: () =>
-    http<{ data: unknown[] }>('/api/pt-os/trainer-performance'),
-  updateCommission: (trainerId: string, data: Record<string, unknown>) =>
-    http<{ data: unknown }>(`/api/pt-os/commissions/${trainerId}`, {
-      method: 'PUT', body: JSON.stringify(data),
-    }),
-  updatePayout: (trainerId: string, data: Record<string, unknown>) =>
-    http<{ data: unknown }>(`/api/pt-os/payouts/${trainerId}`, {
-      method: 'PUT', body: JSON.stringify(data),
-    }),
-  markAllPayoutsPaid: (month: string) =>
-    http<{ data: unknown }>('/api/pt-os/payouts/mark-all-paid', {
-      method: 'POST', body: JSON.stringify({ month }),
-    }),
   updateClient: (id: string, data: Record<string, unknown>) =>
     http<{ data: unknown }>(`/api/pt-os/clients/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   deleteClient: (id: string) =>

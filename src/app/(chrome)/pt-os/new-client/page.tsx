@@ -75,7 +75,7 @@ function hasEmergencyContact(form: FormData): boolean {
 
 /* ─────────────────────────────────────────────────────── VALIDATION */
 const MOBILE_RE = /^[6-9]\d{9}$/; // mirrors the backend's ptClientCreateSchema exactly
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // reused verbatim from src/app/trainers/add/page.tsx
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function computeAge(dob: string): number | null {
   if (!dob) return null;

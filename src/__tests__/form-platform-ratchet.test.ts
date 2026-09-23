@@ -148,12 +148,16 @@ const CEILING = {
 };
 
 /** Raise these as phases land. Never lower them. */
+// Lowered once, when the multi-coach surfaces were removed (trainers,
+// trainer leave, commissions, payouts, the staff-account manager). A floor
+// counts forms that exist; deleting a form legitimately lowers it, and the
+// ratchet still catches a form that quietly stops using the design system.
 const FLOOR = {
-  platformControls: 326,
+  platformControls: 321,
   /** Forms whose errors reach the canonical mapper. */
-  errorPlatform: 57,
+  errorPlatform: 55,
   /** Forms bound to a named canonical schema. */
-  schemaPlatform: 27,
+  schemaPlatform: 26,
 };
 
 describe('the audit measures the tree', () => {
@@ -343,12 +347,13 @@ describe('the ratchet stays honest', () => {
     expect(CEILING.unjustified - a.totals.unjustified).toBeLessThan(20);
   });
 
-  it('the two migrated forms are still on the platform', () => {
+  it('the migrated offer form is still on the platform', () => {
+    // The commission table was the other migrated form; it went with the
+    // multi-coach model, and its justification entry with it.
     const offers = a.rows.find((r) => r.file.includes('OfferForm'));
     expect(offers?.contracts?.schema).toBe('platform');
     expect(offers?.nativeBusiness).toBe(0);
 
-    const commissions = a.rows.find((r) => r.file.includes('commissions/page'));
-    expect(commissions?.contracts?.schema).toBe('platform');
+    expect(a.rows.find((r) => r.file.includes('commissions/page'))).toBeUndefined();
   });
 });

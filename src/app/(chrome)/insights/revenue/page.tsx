@@ -1,12 +1,10 @@
 'use client';
 
 /**
- * Revenue Analytics — KPIs, bar charts and a revenue-share donut.
+ * Revenue Analytics — KPIs, the monthly bar chart and its table.
  *
  * Data sources (canonical /api/insights/* — Metric Engine; src/modules/insights/):
  *   GET /api/insights/revenue/monthly?year= → [{ month_num, month_name, payment_count, revenue, incentives }]
- *   GET /api/insights/trainers              → [{ id, name, specialization, active_clients, total_clients,
- *                                               month_revenue, total_revenue }]   (admin only)
  *   GET /api/insights/dues?limit=           → top-N rows for tables (never a total)
  *   GET /api/insights/dues/summary          → authoritative totals (no LIMIT)
  *   GET /api/insights/revenue?from&to       → { count, total, total_incentives }
@@ -20,33 +18,22 @@
  * palette validator for BOTH themes (light surface #F8FAFC, dark #0F172A).
  *
  *   Bars  #0067E0 / #D97706 — PASS on every check in light and dark.
- *   Donut #0067E0, #D97706, #059669, #0067E0, #0059CE — PASS in both, with one
- *         WARN (emerald↔amber ΔE 7.9 under protanopia) that is only legal
- *         alongside secondary encoding. That relief is present: the donut keeps
- *         its legend, 2px segment gaps and value+percent tooltips, and the
- *         ranked bars carry direct value labels.
  *
- * Ordering matters — an earlier arrangement put blue next to violet, which the
- * validator rejected outright (ΔE 12 for normal vision, under the hard floor of
- * 15). Colours follow the entity's rank position and are never cycled.
- *
- * "Other" is deliberately a neutral grey, outside the categorical scale: it is
- * an aggregate bucket, not an identity.
+ * (The per-trainer revenue donut and ranking went with the multi-coach model.)
  */
 
 import { useCallback, useMemo, useState } from 'react';
 import { m } from 'framer-motion';
 import {
-  TrendingUp, Wallet, Receipt, Percent, Trophy,
+  TrendingUp, Wallet, Receipt, Percent,
   AlertCircle, RefreshCw, CalendarRange, BarChart3,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { KpiCard, DonutChart, PremiumBarChart, PullToRefresh, EmptyState, PageContainer, PageHero } from '@/components/ui';
+import { KpiCard, PremiumBarChart, PullToRefresh, EmptyState, PageContainer, PageHero } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import MonthlyTargetHero from '@/components/revenue/MonthlyTargetHero';
 import { fmtMoney } from '@/lib/format';
 import http from '@/lib/http';
-import { series } from '@/lib/palette';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Numeric = string | number | null | undefined;
@@ -55,22 +42,14 @@ type MonthlyRow = {
   month_num: Numeric; month_name: string;
   payment_count: Numeric; revenue: Numeric; incentives: Numeric;
 };
-type TrainerRow = {
-  id: string; name: string; specialization: string | null;
-  active_clients: Numeric; total_clients: Numeric;
-  month_revenue: Numeric; total_revenue: Numeric;
-};
 type DuesRow = { id: string; name: string; balance_amount: Numeric };
 type RangeTotals = { count: Numeric; total: Numeric; total_incentives: Numeric };
 
 // ─── Validated series colours (see file header) ───────────────────────────────
 const REVENUE_COLOR = '#0067E0';
 const INCENTIVE_COLOR = '#D97706';
-const DONUT_SCALE = series;
-const OTHER_COLOR = '#94A3B8'; // neutral aggregate, intentionally non-categorical
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const TOP_TRAINERS = 5;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const num = (v: Numeric): number => {
@@ -173,47 +152,10 @@ function LoadError({ what, onRetry }: { what: string; onRetry: () => void }) {
   );
 }
 
-/** Ranked horizontal bars. Chosen over a vertical chart because trainer names
- *  are long, and because a direct value on every row doubles as the secondary
- *  encoding the palette's CVD warning requires. */
-function RankedBars({
-  rows, max,
-}: {
-  rows: { id: string; name: string; value: number; color: string }[];
-  max: number;
-}) {
-  return (
-    <ol className="space-y-3 m-0 p-0 list-none">
-      {rows.map((r, i) => (
-        <li key={r.id}>
-          <div className="flex items-baseline justify-between gap-3 mb-1.5">
-            <span className="text-[12px] font-semibold truncate min-w-0" style={{ color: 'var(--text-primary)' }}>
-              <span className="tabular-nums mr-1.5" style={{ color: 'var(--text-disabled)' }}>{i + 1}.</span>
-              {r.name}
-            </span>
-            <span className="text-[12px] font-bold tabular-nums shrink-0" style={{ color: 'var(--text-primary)' }}>
-              {fmtMoney(r.value)}
-            </span>
-          </div>
-          <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
-            <m.div
-              className="h-full rounded-full"
-              style={{ background: r.color }}
-              initial={{ width: 0 }}
-              animate={{ width: `${max > 0 ? Math.max((r.value / max) * 100, 1.5) : 0}%` }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: i * 0.05 }}
-            />
-          </div>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function InsightsRevenuePage() {
   return (
-    <Guard role="admin">
+    <Guard role="trainer">
       <RevenueAnalytics />
     </Guard>
   );
@@ -230,10 +172,6 @@ function RevenueAnalytics() {
   const monthly = useAsync<MonthlyRow[]>(
     (signal) => http<MonthlyRow[]>(`/api/insights/revenue/monthly?year=${year}`, { signal }),
     [year],
-  );
-  const trainers = useAsync<TrainerRow[]>(
-    (signal) => http<TrainerRow[]>('/api/insights/trainers', { signal }),
-    [],
   );
   const dues = useAsync<DuesRow[]>(
     (signal) => http<DuesRow[]>('/api/insights/dues?limit=100', { signal }),
@@ -255,14 +193,13 @@ function RevenueAnalytics() {
   // refetch callbacks (useAsync memoises them with an empty dep array) rather
   // than fresh properties off a changing object.
   const { refetch: refetchMonthly } = monthly;
-  const { refetch: refetchTrainers } = trainers;
   const { refetch: refetchDues } = dues;
   const { refetch: refetchDuesTotals } = duesTotals;
   const { refetch: refetchRange } = range;
 
   const refreshAll = useCallback(async () => {
-    await Promise.allSettled([refetchMonthly(), refetchTrainers(), refetchDues(), refetchDuesTotals(), refetchRange()]);
-  }, [refetchMonthly, refetchTrainers, refetchDues, refetchDuesTotals, refetchRange]);
+    await Promise.allSettled([refetchMonthly(), refetchDues(), refetchDuesTotals(), refetchRange()]);
+  }, [refetchMonthly, refetchDues, refetchDuesTotals, refetchRange]);
 
   // ── Derived: months padded to a full year so the axis is stable ────────────
   const months = useMemo(() => {
@@ -288,33 +225,6 @@ function RevenueAnalytics() {
   const momDelta = prevMonth > 0 ? ((thisMonth - prevMonth) / prevMonth) * 100 : undefined;
 
   const pendingTotal = duesTotals.data ? num(duesTotals.data.total_outstanding) : (dues.data ?? []).reduce((s, d) => s + num(d.balance_amount), 0);
-
-  // ── Derived: trainer share, top N + Other ─────────────────────────────────
-  const trainerRanked = useMemo(() => {
-    return [...(trainers.data ?? [])]
-      .map((t) => ({ id: t.id, name: t.name, value: num(t.total_revenue) }))
-      .filter((t) => t.value > 0)
-      .sort((a, b) => b.value - a.value);
-  }, [trainers.data]);
-
-  const donutData = useMemo(() => {
-    const top = trainerRanked.slice(0, TOP_TRAINERS).map((t, i) => ({
-      name: t.name, value: t.value, color: DONUT_SCALE[i],
-    }));
-    const rest = trainerRanked.slice(TOP_TRAINERS).reduce((s, t) => s + t.value, 0);
-    // A 6th+ entity never gets an invented hue — it folds into one neutral bucket.
-    return rest > 0
-      ? [...top, { name: `Other (${trainerRanked.length - TOP_TRAINERS})`, value: rest, color: OTHER_COLOR }]
-      : top;
-  }, [trainerRanked]);
-
-  const barRows = useMemo(
-    () => trainerRanked.slice(0, 8).map((t, i) => ({
-      ...t, color: i < TOP_TRAINERS ? DONUT_SCALE[i] : OTHER_COLOR,
-    })),
-    [trainerRanked],
-  );
-  const barMax = barRows[0]?.value ?? 0;
 
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
@@ -485,54 +395,8 @@ function RevenueAnalytics() {
           )}
         </Panel>
 
-        {/* ── Donut + ranked bars ─────────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Panel
-            title="Revenue Share"
-            subtitle={trainerRanked.length > 0 ? `${trainerRanked.length} contributing trainers` : undefined}
-            icon={<Trophy size={15} />}
-          >
-            {trainers.loading && !trainers.data ? (
-              <ChartSkeleton height={240} />
-            ) : trainers.error ? (
-              <LoadError what="trainer revenue" onRetry={trainers.refetch} />
-            ) : donutData.length === 0 ? (
-              <EmptyState
-                icon={<Trophy size={22} />}
-                title="No trainer revenue yet"
-                description="Revenue attributed to trainers will break down here."
-              />
-            ) : (
-              <DonutChart
-                data={donutData}
-                centerLabel="Total"
-                centerValue={fmtCompact(donutData.reduce((s, d) => s + d.value, 0))}
-                valueFormatter={fmtMoney}
-                height={260}
-              />
-            )}
-          </Panel>
-
-          <Panel
-            title="Revenue by Trainer"
-            subtitle="All-time collected, highest first"
-            icon={<BarChart3 size={15} />}
-          >
-            {trainers.loading && !trainers.data ? (
-              <ChartSkeleton height={240} />
-            ) : trainers.error ? (
-              <LoadError what="trainer revenue" onRetry={trainers.refetch} />
-            ) : barRows.length === 0 ? (
-              <EmptyState
-                icon={<BarChart3 size={22} />}
-                title="No trainer revenue yet"
-                description="Once payments are attributed to trainers they rank here."
-              />
-            ) : (
-              <RankedBars rows={barRows} max={barMax} />
-            )}
-          </Panel>
-        </div>
+        {/* The per-trainer revenue share and ranking went with the multi-coach
+            model — a studio is one trainer, so every rupee is theirs. */}
 
         {/* ── Table view — the accessible equivalent of the charts above ─ */}
         <Panel

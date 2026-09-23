@@ -11,8 +11,8 @@ const HIGHLIGHT_PLAN = 'professional';
 const PLAN_FEATURES: Record<string, string[]> = {
   starter: ['Client CRM & profiles', 'Workout & nutrition builder', 'Payments & invoices', 'Mobile app access'],
   growth: ['Everything in Starter', 'Progress & body composition', 'Automation & reminders', 'Reports & analytics'],
-  professional: ['Everything in Growth', 'Attendance & check-in', 'Commission tracking', 'Priority support'],
-  elite: ['Everything in Professional', 'Multi-trainer & permissions', 'AI assistant', 'Dedicated onboarding'],
+  professional: ['Everything in Growth', 'Attendance & check-in', 'Revenue & dues reporting', 'Priority support'],
+  elite: ['Everything in Professional', 'WhatsApp automation', 'AI assistant', 'Dedicated onboarding'],
 };
 
 function planTerm(months: number): string {

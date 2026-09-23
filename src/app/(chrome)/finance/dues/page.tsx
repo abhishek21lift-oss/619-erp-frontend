@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 export default function OutstandingDuesPage() {
-  return <Guard role="admin"><Inner /></Guard>;
+  return <Guard role="trainer"><Inner /></Guard>;
 }
 
 const fmt = (n: number | string) => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });

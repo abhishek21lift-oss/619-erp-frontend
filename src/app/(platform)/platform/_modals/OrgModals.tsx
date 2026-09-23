@@ -11,7 +11,6 @@ import { api } from '@/lib/api';
 import type { Organization, OrgUser } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { genPassword } from '../_shared/format';
-import { ROLE_OPTIONS } from '../_shared/types';
 import { roleLabel } from '@/lib/roles';
 import { Field, Modal, PasswordField, inputCls, inputStyle } from '../_shared/ui';
 import { errorMessage } from '@/lib/forms/errors';
@@ -112,60 +111,23 @@ export function CreateOrgModal({ onClose, onCreated }: { onClose: () => void; on
   );
 }
 
-// ── Add User modal ──────────────────────────────────────────────────────────────
-export function AddUserModal({ org, onClose, onAdded }: { org: Organization; onClose: () => void; onAdded: () => void }) {
-  const { toast } = useToast();
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'trainer' });
-  const [saving, setSaving] = useState(false);
-
-  const submit = async () => {
-    if (!form.name.trim() || !form.email.trim() || form.password.length < 8) {
-      toast.error('Name, a valid email, and an 8+ character password are required.'); return;
-    }
-    setSaving(true);
-    try {
-      await api.superAdmin.addUser(org.id, { name: form.name.trim(), email: form.email.trim(), password: form.password, role: form.role });
-      toast.success('Account added.'); onAdded();
-    } catch (e) { toast.error(errorMessage(e, 'Add failed')); setSaving(false); }
-  };
-
-  return (
-    <Modal title={`Add account · ${org.name}`} onClose={onClose}>
-      <div className="space-y-4">
-        <Field label="Name">
-          <input className={inputCls} style={inputStyle} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-        </Field>
-        <Field label="Login email">
-          <input className={inputCls} style={inputStyle} type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
-        </Field>
-        <Field label="Role">
-          <select className={inputCls} style={inputStyle} value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}>
-            {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
-          </select>
-        </Field>
-        <Field label="Temporary password">
-          <PasswordField value={form.password} onChange={(v) => setForm((f) => ({ ...f, password: v }))} onGenerate={() => setForm((f) => ({ ...f, password: genPassword() }))} />
-        </Field>
-        <div className="flex justify-end gap-2 pt-1">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button loading={saving} disabled={saving} onClick={submit} style={{ background: 'linear-gradient(135deg,#0f172a,#334155)', color: '#fff' }}>Add</Button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
+// There is no "Add account" modal. A studio's trainer is created with the
+// studio (CreateOrgModal above, or an approved registration), and its members
+// get their logins from the client record inside the studio. Adding a second
+// login to a studio from here would either be a second owner or a member with
+// no client behind it — neither of which the model allows.
 
 // ── Edit User modal ─────────────────────────────────────────────────────────────
 export function EditUserModal({ user, onClose, onSaved }: { user: OrgUser; onClose: () => void; onSaved: () => void }) {
   const { toast } = useToast();
-  const [form, setForm] = useState({ name: user.name, email: user.email, role: user.role });
+  const [form, setForm] = useState({ name: user.name, email: user.email });
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
     if (!form.name.trim() || !form.email.trim()) { toast.error('Name and email are required.'); return; }
     setSaving(true);
     try {
-      await api.superAdmin.updateUser(user.id, { name: form.name.trim(), email: form.email.trim(), role: form.role });
+      await api.superAdmin.updateUser(user.id, { name: form.name.trim(), email: form.email.trim() });
       toast.success('Account updated.'); onSaved();
     } catch (e) { toast.error(errorMessage(e, 'Update failed')); setSaving(false); }
   };
@@ -179,11 +141,11 @@ export function EditUserModal({ user, onClose, onSaved }: { user: OrgUser; onClo
         <Field label="Email">
           <input className={inputCls} style={inputStyle} type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
         </Field>
+        {/* The role is shown, never edited: the server refuses a role change,
+            because turning a studio's trainer into a member (or back) would
+            orphan the studio or give it a second owner. */}
         <Field label="Role">
-          <select className={inputCls} style={inputStyle} value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}>
-            {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
-          </select>
-          <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>Changing the role signs the account out so it re-authenticates with its new powers.</p>
+          <p className="text-[13px] font-[600]" style={{ color: 'var(--text-primary)' }}>{roleLabel(user.role) || '—'}</p>
         </Field>
         <div className="flex justify-end gap-2 pt-1">
           <Button variant="outline" onClick={onClose}>Cancel</Button>

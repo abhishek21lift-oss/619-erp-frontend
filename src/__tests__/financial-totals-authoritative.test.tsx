@@ -125,6 +125,9 @@ vi.mock('@/lib/api', () => ({
 }));
 
 describe('Collected Payments — "Total Collected"', () => {
+  // A page render over 50-200 fixture rows plus the aggregate call. Fine on a
+  // quiet machine, over the 5s default on a saturated one — so each test says
+  // how long it may take rather than inheriting a number nobody chose.
   beforeEach(() => { vi.clearAllMocks(); });
 
   it('under the cap: matches the rows, as it always did', async () => {
@@ -136,7 +139,7 @@ describe('Collected Payments — "Total Collected"', () => {
     const { default: Page } = await import('@/app/(chrome)/finance/collected-payments/page');
     render(<Page />);
     await waitFor(() => expect(screen.getByText('₹5,000')).toBeTruthy());
-  });
+  }, 30000);
 
   it('over the cap: shows the authoritative sum, NOT the 200 fetched rows', async () => {
     // The exact production shape: the server hands back its 200-row page while
@@ -155,7 +158,7 @@ describe('Collected Payments — "Total Collected"', () => {
     expect(screen.queryByText('₹20,000')).toBeNull();
     // And the count is the ledger's, not the page's.
     expect(screen.getByText('1000')).toBeTruthy();
-  });
+  }, 30000);
 
   it('falls back to the visible rows if the aggregate call fails', async () => {
     paymentsMock.list.mockResolvedValue(rows(30));
@@ -165,7 +168,7 @@ describe('Collected Payments — "Total Collected"', () => {
     render(<Page />);
     // Still renders a number rather than breaking the page.
     await waitFor(() => expect(screen.getByText('₹3,000')).toBeTruthy());
-  });
+  }, 30000);
 });
 
 describe('Outstanding Dues — "Outstanding"', () => {

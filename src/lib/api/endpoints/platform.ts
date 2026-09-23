@@ -154,13 +154,10 @@ export const superAdmin = {
   },
   overview: () =>
     http<{ data: PlatformOverview }>('/api/platform/overview'),
-  updateUser: (id: string, data: { name?: string; email?: string; role?: string; is_active?: boolean }) =>
+  /** Name, email and active state only — the server refuses a role change. */
+  updateUser: (id: string, data: { name?: string; email?: string; is_active?: boolean }) =>
     http<{ data: OrgUser }>(`/api/platform/users/${id}`, {
       method: 'PATCH', body: JSON.stringify(data),
-    }),
-  addUser: (orgId: string, data: { name: string; email: string; password: string; role?: string }) =>
-    http<{ data: OrgUser }>(`/api/platform/organizations/${orgId}/users`, {
-      method: 'POST', body: JSON.stringify(data),
     }),
   deleteUser: (id: string) =>
     http<{ data: { id: string; message: string } }>(`/api/platform/users/${id}`, {
@@ -671,17 +668,6 @@ export const settings = {
       body: JSON.stringify(data),
     }),
 
-  /** Get feature flags */
-  getFeatureFlags: () =>
-    http<{ flags: Record<string, unknown>; raw: unknown[] }>('/api/settings/feature-flags'),
-
-  /** Update feature flags */
-  updateFeatureFlags: (data: Record<string, unknown>) =>
-    http<{ message: string }>('/api/settings/feature-flags', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
-
   /** Update generic settings (key-value) */
   update: (data: Record<string, string>) =>
     http<{ message: string; count: number }>('/api/settings', {
@@ -689,16 +675,6 @@ export const settings = {
       body: JSON.stringify(data),
     }),
 
-  /** Get role permissions matrix */
-  getPermissions: () =>
-    http<{ permissions: Record<string, boolean>; role: string }>('/api/settings/permissions'),
-
-  /** Update role permissions (admin only) */
-  updatePermissions: (data: Record<string, boolean>) =>
-    http<{ message: string }>('/api/settings/permissions', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
 };
 
 // ── Feature flags ─────────────────────────────────────────

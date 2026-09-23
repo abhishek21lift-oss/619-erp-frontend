@@ -51,7 +51,10 @@ function dialogFiles(): string[] {
         walk(p);
       } else if (e.name.endsWith('.tsx')) {
         const src = fs.readFileSync(p, 'utf8');
-        if (/role="dialog"|aria-modal/.test(src)) out.push(p.replace(`${SRC}/`, ''));
+        // Relative, with posix separators: EXEMPT is keyed that way, and on
+        // Windows a bare replace() left the absolute path — which then
+        // path.join()ed onto SRC and read a file that cannot exist.
+        if (/role="dialog"|aria-modal/.test(src)) out.push(path.relative(SRC, p).split(path.sep).join('/'));
       }
     }
   };

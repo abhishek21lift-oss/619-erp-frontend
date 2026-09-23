@@ -1850,7 +1850,8 @@ export type PlatformUser = OrgUser & {
 /** Header counts for the directory (GET /api/platform/users/summary). */
 export type PlatformUserSummary = {
   total: number; active: number; inactive: number; deleted: number;
-  owners: number; trainers: number; members: number; platform: number;
+  /** Studio trainers — each studio's one owner account. */
+  owners: number; members: number; platform: number;
   never_signed_in: number; dormant_90d: number;
 };
 
@@ -2777,7 +2778,8 @@ export type SupportOverview = {
 
 export type ImpersonationSession = {
   token: string; readonly: boolean;
-  admin: { id: string; name: string; email: string; role: string };
+  /** The account being acted as — the studio's trainer unless another was named. */
+  account: { id: string; name: string; email: string; role: string };
   organization: { id: string; name: string; slug: string; logo_url?: string | null };
 };
 

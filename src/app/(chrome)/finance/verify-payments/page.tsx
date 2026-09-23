@@ -42,7 +42,7 @@ import { errorMessage } from '@/lib/forms/errors';
 const PAGE_SIZE = 25;
 
 export default function VerifyPaymentsPage() {
-  return <Guard roles={['admin', 'manager']}><Inner /></Guard>;
+  return <Guard role="trainer"><Inner /></Guard>;
 }
 
 function Inner() {
@@ -640,7 +640,7 @@ function ProofDialog({ row, onClose }: { row: UpiQueueRow | null; onClose: () =>
 // ── New payment request ─────────────────────────────────────────────────────
 
 /**
- * Staff-side entry point: raise a payment request for a member.
+ * The trainer's entry point: raise a payment request for a member.
  *
  * This is what makes the flow reachable at all — without it a member has no
  * order to pay against. On success it navigates straight to the payment page,

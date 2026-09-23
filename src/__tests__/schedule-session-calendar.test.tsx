@@ -18,7 +18,14 @@ vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast: { error: vi.fn(), succ
 
 // The page opens on today, so the fixture has to be today for the session to
 // fall in the selected day's panel.
-const today = new Date().toISOString().split('T')[0];
+//
+// LOCAL today, the way the page computes it (localDateStr). This used to be
+// `toISOString().split('T')[0]` — the UTC date — so for the hours each day
+// when the local date and the UTC date differ (every evening in the Americas,
+// every early morning east of UTC), the fixture's session sat on "tomorrow"
+// and all three tests failed on a clock rather than on the code.
+const d0 = new Date();
+const today = `${d0.getFullYear()}-${String(d0.getMonth() + 1).padStart(2, '0')}-${String(d0.getDate()).padStart(2, '0')}`;
 
 vi.mock('@/lib/api', () => ({
   api: {
@@ -32,7 +39,7 @@ vi.mock('@/lib/api', () => ({
           client_id: 'c1',
           client_name: 'Rashi Bhatia',
           trainer_id: 't1',
-          session_date: `${new Date().toISOString().split('T')[0]}T00:00:00.000Z`,
+          session_date: `${today}T00:00:00.000Z`,
           start_time: '06:00:00',
           duration_minutes: 60,
           session_type: '1-on-1',

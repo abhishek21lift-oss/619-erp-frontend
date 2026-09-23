@@ -12,19 +12,27 @@
 // one because it was faster than importing.
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import { appPath, routeExists } from '@/__tests__/helpers/app-routes';
 
 const PT_OS = appPath('pt-os');
 const SHARED = 'src/components/pt-os/shared/ClientPicker.tsx';
 
-/** Every pt-os page.tsx that imports the shared picker. */
+/**
+ * Every pt-os page.tsx that imports the shared picker.
+ *
+ * Paths come back with posix separators. The assertions below read the route
+ * out of the path with `split('/')`, and on Windows join() produces
+ * backslashes — so every caller looked like one unsplittable segment and the
+ * suite failed with paths where route names should be.
+ */
 function callers(): string[] {
   return readdirSync(PT_OS, { withFileTypes: true })
     .filter((d) => d.isDirectory())
     .map((d) => join(PT_OS, d.name, 'page.tsx'))
     .filter((p) => existsSync(p))
-    .filter((p) => readFileSync(p, 'utf8').includes("from '@/components/pt-os/shared/ClientPicker'"));
+    .filter((p) => readFileSync(p, 'utf8').includes("from '@/components/pt-os/shared/ClientPicker'"))
+    .map((p) => p.split(sep).join('/'));
 }
 
 describe('the shared PT-OS client picker', () => {
@@ -43,7 +51,7 @@ describe('the shared PT-OS client picker', () => {
     const offenders = callers().filter((p) =>
       /function\s+ClientPicker\b/.test(readFileSync(p, 'utf8')),
     );
-    expect(offenders.map((p) => p.replace(process.cwd() + '/', ''))).toEqual([]);
+    expect(offenders.map((p) => p.replace(process.cwd().split(sep).join('/') + '/', ''))).toEqual([]);
   });
 
   it('no pt-os page anywhere still carries a copy of its own', () => {

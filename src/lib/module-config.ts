@@ -293,24 +293,6 @@ const simpleModules: Record<string, Partial<ModuleConfig>> = {
     workflows: ['Invite member', 'Track referred lead', 'Approve referral', 'Issue coupon'],
     insights: ['Top referrers', 'Pending rewards', 'Referral revenue', 'Coupon usage'],
   },
-  leave: {
-    title: 'Leave Requests',
-    description: 'Apply leave, approval workflow, balance, calendar planning, manager notifications, and status tracking.',
-    entityName: 'Leave request',
-    primaryAction: 'Apply leave',
-    statuses: statusSets.approval,
-    workflows: ['Apply leave', 'Manager review', 'Notify staff', 'Update balance'],
-    insights: ['Pending approvals', 'Leave balance', 'Coverage risk', 'Monthly leaves'],
-  },
-  'trainer-targets': {
-    title: 'Trainer Targets',
-    description: 'Monthly goals for clients, revenue, attendance, incentives, and achievement tracking.',
-    entityName: 'Trainer target',
-    primaryAction: 'Create target',
-    statuses: ['Not Started', 'On Track', 'At Risk', 'Achieved', 'Incentive Paid'],
-    workflows: ['Set target', 'Track progress', 'Calculate incentive', 'Approve payout'],
-    insights: ['Revenue target', 'Client target', 'Attendance target', 'Achievement rate'],
-  },
   reports: {
     title: 'Advanced Reports',
     description: 'Revenue, attendance, trainer, membership, expense, GST, branch, and analytics exports.',
@@ -328,15 +310,6 @@ const simpleModules: Record<string, Partial<ModuleConfig>> = {
     statuses: ['Requested', 'Confirmed', 'Rescheduled', 'Cancelled', 'Completed'],
     workflows: ['Pick trainer', 'Check slot', 'Send reminder', 'Complete appointment'],
     insights: ['Booked today', 'No-shows', 'Available slots', 'Trainer load'],
-  },
-  payroll: {
-    title: 'Payroll',
-    description: 'Salary, payslips, attendance integration, incentives, deductions, tax calculations, history, and exports.',
-    entityName: 'Payroll run',
-    primaryAction: 'Create payroll run',
-    statuses: statusSets.finance,
-    workflows: ['Import attendance', 'Calculate salary', 'Apply deductions', 'Export payslips'],
-    insights: ['Net payable', 'Incentives', 'Deductions', 'Tax liability'],
   },
   expenses: {
     title: 'Expenses',
@@ -511,9 +484,7 @@ export function getModuleConfig(area: string, tab?: string): ModuleConfig {
         ? 'sales-follow'
         : area === 'attendance' && raw === 'reports'
           ? 'attendance-reports'
-      : area === 'training' && raw === 'targets'
-        ? 'trainer-targets'
-        : area === 'members' && raw === 'referrals'
+      : area === 'members' && raw === 'referrals'
           ? 'referrals'
           : area === 'finance'
             ? raw
@@ -526,13 +497,8 @@ export function getModuleConfig(area: string, tab?: string): ModuleConfig {
                   : raw;
 
   const copy = moduleCopy[key] || simpleModules[key] || {};
-  return buildConfig(key, { tab: raw, ...copy, role: copy.role || adminRoleFor(key) });
-}
-
-function adminRoleFor(key: string): Role | undefined {
-  if (['referrals', 'appointments'].includes(key)) return undefined;
-  if (key.startsWith('engagement-') && !['engagement-notifications', 'engagement-whatsapp', 'engagement-sms', 'engagement-community', 'engagement-challenges'].includes(key)) return 'admin';
-  return ['payroll', 'expenses', 'reports', 'trainer-targets', 'attendance-reports', 'branches', 'biometric', 'equipment', 'notices', 'billing', 'measurements', 'workouts', 'member-analytics', 'billing-analytics', 'leave'].includes(key)
-    ? 'admin'
-    : undefined;
+  // Every workspace is a studio page, and the studio is the trainer's. There
+  // used to be a per-module split between "admin" workspaces and ones any
+  // staff role could open; with no staff roles there is nothing to split.
+  return buildConfig(key, { tab: raw, ...copy, role: copy.role || 'trainer' });
 }

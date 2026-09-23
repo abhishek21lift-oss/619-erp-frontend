@@ -12,7 +12,7 @@ import type {
   AiFitnessTestAnalysis, AiHealthResponse, AiKnowledgeDocument, AiMessage, AiModelStat,
   AiProgressAnalysis, AiProviderSettings, AiUsageStats, AiWorkoutParams, AiWorkoutPlan,
   AiWorkoutGenerationResult, AiWorkoutContext,
-  DuesItem, DuesSummary, ProfileDevice, ProfileSession, SearchResponse, TrainerSummaryRow,
+  DuesItem, DuesSummary, ProfileDevice, ProfileSession, SearchResponse,
 } from '../types';
 
 /**
@@ -47,8 +47,6 @@ export const reports = {
         Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]),
       ) : undefined,
     )}`),
-  trainerSummary: () =>
-    http<TrainerSummaryRow[]>('/api/reports/trainer-summary'),
 };
 
 /**
@@ -85,8 +83,6 @@ export const insights = {
   /** Renewal pipeline ROWS (top-N by expiry). Conversion comes from `renewals`. */
   renewalRows: (params?: { days?: number; limit?: number }) =>
     http(`/api/insights/renewals/rows${buildQs(params as Record<string, string | number> | undefined)}`),
-  trainers: () =>
-    http<TrainerSummaryRow[]>('/api/insights/trainers'),
   utilisation: () =>
     http('/api/insights/utilisation'),
   /** Deterministic business insights (no LLM) + the metrics behind them. */

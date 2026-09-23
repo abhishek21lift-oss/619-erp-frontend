@@ -32,7 +32,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { signInPathFor, SESSIONLESS_PAGES } from '@/lib/public-paths';
-import { rememberKeys, portalForRole } from '@/lib/portals';
+import { rememberKeys, portalForRole, mayEnterPortal, type Portal } from '@/lib/portals';
 import { SESSION_USER_KEY } from '@/lib/session-cache';
 import { srcPath } from '@/__tests__/helpers/app-routes';
 
@@ -108,19 +108,28 @@ describe('a sign-in page will not walk into the other portal', () => {
     expect(signInSrc).toMatch(/if \(loading \|\| !user \|\| foreignSession\) return;/);
   });
 
-  it('classifies every role into exactly one portal', () => {
-    // The server's users_role_check permits exactly these. There are three
-    // portals now: `member` is the only client role, `super_admin` is the only
-    // platform one, and everything else is studio staff — so a new staff role
-    // added tomorrow lands on the staff side by default rather than being
-    // silently treated as a client or, far worse, as the platform operator.
-    for (const role of ['admin', 'manager', 'trainer', 'reception', 'receptionist', 'staff']) {
-      expect(portalForRole(role), role).toBe('staff');
-    }
-    expect(portalForRole('super_admin')).toBe('platform');
+  it('classifies each of the three roles into exactly one portal', () => {
+    // The server's users_role_check permits exactly these three.
+    expect(portalForRole('trainer')).toBe('trainer');
     expect(portalForRole('member')).toBe('member');
-    expect(portalForRole(null)).toBe('staff');
-    expect(portalForRole(undefined)).toBe('staff');
+    expect(portalForRole('super_admin')).toBe('platform');
+  });
+
+  it('gives a retired or unknown role no portal — not the studio app by default', () => {
+    // It used to be "everything else is studio staff", which handed the
+    // trainer's app to any role string the server had not refused yet.
+    for (const role of ['admin', 'manager', 'reception', 'receptionist', 'staff', 'owner', '', null, undefined]) {
+      expect(portalForRole(role as string | null | undefined), String(role)).toBeNull();
+    }
+  });
+
+  it('lets no account cross into another portal — the platform operator included', () => {
+    const portals: Portal[] = ['trainer', 'member', 'platform'];
+    for (const from of portals) {
+      for (const to of portals) {
+        expect(mayEnterPortal(from, to), `${from} → ${to}`).toBe(from === to);
+      }
+    }
   });
 
   it('reads the session portal from the role, not from the page', () => {
@@ -137,24 +146,24 @@ describe('a sign-in page will not walk into the other portal', () => {
 });
 
 describe('the remembered account is scoped to its portal', () => {
-  it('member and staff share no key at all', () => {
+  it('member and trainer share no key at all', () => {
     // Called, not read. An earlier version of this test matched the source for
     // `portal === 'member'` and passed against `portal === 'member' ? '' : ''`
     // — the exact bug, with the shape of the fix.
-    const staff = rememberKeys('staff');
+    const trainer = rememberKeys('trainer');
     const member = rememberKeys('member');
-    const staffKeys = Object.values(staff);
+    const trainerKeys = Object.values(trainer);
     const memberKeys = Object.values(member);
-    expect(new Set([...staffKeys, ...memberKeys]).size).toBe(staffKeys.length + memberKeys.length);
-    for (const k of Object.keys(staff) as Array<keyof typeof staff>) {
-      expect(member[k], k).not.toBe(staff[k]);
+    expect(new Set([...trainerKeys, ...memberKeys]).size).toBe(trainerKeys.length + memberKeys.length);
+    for (const k of Object.keys(trainer) as Array<keyof typeof trainer>) {
+      expect(member[k], k).not.toBe(trainer[k]);
     }
   });
 
-  it('leaves the existing staff keys alone', () => {
+  it('leaves the existing trainer-door keys alone', () => {
     // Changing these would sign every trainer out of their remembered account
     // for no reason — the bug was only ever on the member side.
-    expect(rememberKeys('staff')).toEqual({
+    expect(rememberKeys('trainer')).toEqual({
       email: 'myptstudio.lastEmail',
       org: 'myptstudio.lastOrg',
       remember: 'myptstudio.remember',

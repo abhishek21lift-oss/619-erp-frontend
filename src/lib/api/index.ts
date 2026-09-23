@@ -11,8 +11,8 @@
 // re-exported helpers. No consumer file was touched, which is the property
 // __tests__/api-shape.test.ts pins with a snapshot of all 462 endpoints.
 
-import { auth, webauthn, accounts, profile } from './endpoints/auth';
-import { clients, trainers, leave, attendance } from './endpoints/people';
+import { auth, webauthn, profile } from './endpoints/auth';
+import { clients, attendance } from './endpoints/people';
 import { payments, invoices, expenses, offers, upiPayments } from './endpoints/money';
 import { workouts, exercises, diet, classes, bookings, calendar } from './endpoints/training';
 import { progress } from './endpoints/progress';
@@ -26,7 +26,7 @@ import { campaigns, feedback, communication, notifications, automation, support 
 import { reports, insights, search, activity, ai } from './endpoints/insights';
 
 export { http } from '../http';
-export { ROLES, normaliseRole, hasRole, isAdminOrManager } from '../roles';
+export { ROLES, TENANT_ROLES, hasRole, isRole } from '../roles';
 export * from './types';
 export type { WhatsAppState, WhatsAppStatus, WhatsAppQr } from './endpoints/platform';
 
@@ -35,11 +35,8 @@ export type { WhatsAppState, WhatsAppStatus, WhatsAppQr } from './endpoints/plat
 export const api = {
   auth,
   webauthn,
-  accounts,
   profile,
   clients,
-  trainers,
-  leave,
   attendance,
   payments,
   invoices,

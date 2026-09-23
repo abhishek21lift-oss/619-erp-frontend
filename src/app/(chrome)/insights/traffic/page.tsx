@@ -14,7 +14,7 @@ const HOURS = ['06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16',
 
 export default function FootfallTrafficPage() {
   return (
-    <Guard role="admin">
+    <Guard role="trainer">
       <Inner />
     </Guard>
   );

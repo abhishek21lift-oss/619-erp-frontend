@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { hasRole, normaliseRole } from '@/lib/roles';
+import { hasRole } from '@/lib/roles';
 import { portalForRole, portalForPage, homeFor, mayEnterPortal } from '@/lib/portals';
 import { signInPathFor } from '@/lib/public-paths';
 import type { Role } from '@/lib/roles';
@@ -22,10 +22,10 @@ export default function Guard({ children, role, roles }: Props) {
   // Which app this page belongs to, and which app this account belongs in.
   //
   // Checked before role/roles and independently of them, because the default —
-  // a bare <Guard> — means "any authenticated user", and about a hundred staff
+  // a bare <Guard> — means "any authenticated user", and about a hundred studio
   // pages use it. A member with a valid session could therefore open
-  // /pt-os/clients and be handed the entire staff shell: sidebar, nav, the
-  // trainer's application. The API refuses them (requireStaff sits on the
+  // /pt-os/clients and be handed the entire studio shell: sidebar, nav, the
+  // trainer's application. The API refuses them (requireTrainer sits on the
   // mount, so the lists come back 403 rather than populated), but an empty
   // copy of somebody else's app is still the thing the client reported seeing
   // — and adding role props to a hundred pages is the kind of fix that is
@@ -55,12 +55,11 @@ export default function Guard({ children, role, roles }: Props) {
   // Deriving the verdict instead of storing it also makes the gate strictly
   // safer: `ready` was sticky, so a user whose role changed mid-session kept
   // passing until the component unmounted. This recomputes on every render.
-  // mayEnterPortal rather than `userPortal !== pagePortal`, because the rule
-  // stopped being symmetric when the Command Center became its own portal: the
-  // operator may walk into a studio (that is the support job), and no studio
-  // account may walk into the Command Center. Encoding that here rather than
-  // as an `if (role === 'super_admin')` escape hatch keeps the exception in one
-  // named function instead of scattered through the gates.
+  // mayEnterPortal is the one place the portal rule lives: every account uses
+  // its own portal and no other. The operator reaches a studio only through
+  // impersonation, which hands this browser the studio trainer's own session —
+  // so there is no `if (role === 'super_admin')` escape hatch anywhere in the
+  // gates. An unknown role has no portal at all and is treated as signed out.
   const roleRequired = role !== undefined || roles !== undefined;
   const verdict: 'pending' | 'redirect' | 'pass' =
     loading ? 'pending'

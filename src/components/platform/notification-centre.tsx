@@ -25,7 +25,7 @@ import type {
   AnnouncementSeverity, AnnouncementAudience, SubPlan,
 } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { ASSIGNABLE_ROLES, roleLabel } from '@/lib/roles';
+import { TENANT_ROLES, roleLabel } from '@/lib/roles';
 import { errorMessage } from '@/lib/forms/errors';
 
 const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)' } as const;
@@ -48,11 +48,10 @@ const STATUS: Record<Announcement['status'], { label: string; bg: string; fg: st
 /* The subscription states an announcement can target. Mirrors the lifecycle in
    migration 099 — these are billing states, not the super-admin on/off flag. */
 const SUB_STATUSES = ['trial', 'active', 'expired', 'frozen', 'cancelled'];
-/* Who inside a studio an announcement can target. One role, because one role
-   exists: the trainer who owns the studio. The list used to include manager,
-   trainer and member, none of which has ever had an account, and the chips
-   printed the raw identifier. */
-const ROLES = ASSIGNABLE_ROLES;
+/* Who inside a studio an announcement can target: the trainer who owns it,
+   its members, or both — the backend validates against the same two roles.
+   The list used to offer admin and manager, which no longer exist. */
+const ROLES = TENANT_ROLES;
 
 function fmtWhen(iso: string | null) {
   if (!iso) return '—';
@@ -99,7 +98,7 @@ function Composer({ initial, plans, onClose, onSaved }: {
     audience_plans: initial?.audience_plans ?? [],
     audience_statuses: initial?.audience_statuses ?? [],
     audience_org_ids: initial?.audience_org_ids ?? [],
-    audience_roles: initial?.audience_roles ?? ['admin'],
+    audience_roles: initial?.audience_roles ?? ['trainer'],
   });
   const [saving, setSaving] = useState(false);
 

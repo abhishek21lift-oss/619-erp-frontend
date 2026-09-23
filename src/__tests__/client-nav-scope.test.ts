@@ -1,11 +1,11 @@
 // What a logged-in client is offered in the navigation.
 //
 // `isGroupVisibleForRole` defaulted to "an untagged group is for everyone",
-// which was true for as long as every account in the system belonged to studio
-// staff. Client logins end that. Without a rule for `member`, a client's
-// sidebar lists Finance, Trainer Management and Insights.
+// which was true for as long as every account in the system belonged to the
+// studio. Client logins end that. Without a rule for `member`, a client's
+// sidebar lists Finance and Insights.
 //
-// The API refuses all of those (requireStaff, backend), so nothing leaks — but
+// The API refuses all of those (requireTrainer, backend), so nothing leaks — but
 // a nav full of doors that answer 403 is its own kind of broken, and it hands
 // a client a map of exactly what to go probing at. These tests pin the rule
 // from the other side.
@@ -37,66 +37,56 @@ describe('a client sees only their own surfaces', () => {
     }
   });
 
-  it('shares nothing with a studio admin unless a group is tagged for both', () => {
+  it('shares nothing with the trainer unless a group is tagged for both', () => {
     // Written as an overlap rule rather than "the client set is a subset of
-    // the admin set", which was the first attempt here and is false: the
-    // client's own group is tagged `['member']`, so an admin does not see it
-    // either. The two navs are near-disjoint by design, and the property
-    // worth pinning is that anything in BOTH was deliberately tagged for
-    // both — not that one contains the other.
+    // the trainer set", which is false: the client's own group is tagged
+    // `['member']`, so the trainer does not see it either. The two navs are
+    // near-disjoint by design, and the property worth pinning is that anything
+    // in BOTH was deliberately tagged for both.
     const client = visibleTo('member');
-    const admin = new Set(visibleTo('admin'));
-    for (const id of client.filter((g) => admin.has(g))) {
+    const trainer = new Set(visibleTo('trainer'));
+    for (const id of client.filter((g) => trainer.has(g))) {
       const roles = NAV_GROUPS.find((g) => g.id === id)!.roles ?? [];
-      expect([id, roles.includes('member') && roles.includes('admin')]).toEqual([id, true]);
+      expect([id, roles.includes('member') && roles.includes('trainer')]).toEqual([id, true]);
     }
-    expect(client.length).toBeLessThan(admin.size);
+    expect(client.length).toBeLessThan(trainer.size);
   });
 });
 
-describe('the other roles are unchanged', () => {
+describe('the studio nav is the trainer\'s', () => {
   it('has no control-plane group left in the studio nav at all', () => {
-    // This used to assert `visibleTo('super_admin') === ['platform']` — one
-    // sidebar rendering either the studio's navigation or the platform's,
-    // chosen from a role string at render time.
-    //
-    // The Command Center is its own portal now: its own route group, its own
-    // shell, its own sign-in door, its own hostname. So the assertion is no
-    // longer "the operator sees the platform group instead" but the stronger
-    // "there is no platform group here for anyone to see".
+    // The Command Center is its own portal: its own route group, shell,
+    // sign-in door and hostname. There is no platform group here for anyone.
     expect(NAV_GROUPS.map((g) => g.id)).not.toContain('platform');
-    for (const role of ['super_admin', 'admin', 'trainer', 'member']) {
+    for (const role of ['super_admin', 'trainer', 'member']) {
       expect(visibleTo(role)).not.toContain('platform');
     }
   });
 
-  it('gives an operator inside the studio app the studio nav', () => {
-    // The operator reaches these pages by impersonating a studio or pinning
-    // the org-switcher to one, and a studio is what they are looking at — so
-    // the studio's own navigation is the correct thing to render. The rule
-    // that used to send them to the control plane would now match nothing and
-    // leave them with an empty sidebar on exactly the screens they open when a
-    // customer reports a problem.
-    //
-    // Nothing here decides what they may DO: the API scopes every request to
-    // the org they have pinned, whatever the sidebar shows.
-    const operator = visibleTo('super_admin');
-    expect(operator.length).toBeGreaterThan(5);
-    expect(operator).toEqual(visibleTo('admin'));
+  it('gives the trainer the studio nav', () => {
+    expect(visibleTo('trainer').length).toBeGreaterThan(5);
   });
 
-  it('still gives a studio admin the studio nav and not the control plane', () => {
-    const admin = visibleTo('admin');
-    expect(admin).not.toContain('platform');
-    expect(admin.length).toBeGreaterThan(5);
+  it('gives the platform operator no studio nav — they are never in the studio app as themselves', () => {
+    // It used to mirror the studio owner's nav, because the operator walked
+    // into studios with an org-switcher. Impersonation now makes them the
+    // studio's trainer for the session, so their own role sees nothing here.
+    expect(visibleTo('super_admin')).toEqual([]);
   });
 
-  it('still shows an untagged group to staff', () => {
-    // The default this change did NOT touch. A group with no `roles` is for
-    // every staff role; `member` is the one role that opts out.
+  it('gives a retired staff role nothing at all', () => {
+    // No alias table: admin / manager / reception are not roles any more, so
+    // they do not "become" the trainer and inherit the whole studio nav.
+    for (const role of ['admin', 'manager', 'reception', 'receptionist', 'staff', '']) {
+      expect(visibleTo(role), role).toEqual([]);
+    }
+  });
+
+  it('shows an untagged group to the trainer and to nobody else', () => {
     const untagged = NAV_GROUPS.find((g) => !g.roles?.length);
     expect(untagged).toBeTruthy();
     expect(isGroupVisibleForRole(untagged!, 'trainer')).toBe(true);
     expect(isGroupVisibleForRole(untagged!, 'member')).toBe(false);
+    expect(isGroupVisibleForRole(untagged!, 'super_admin')).toBe(false);
   });
 });

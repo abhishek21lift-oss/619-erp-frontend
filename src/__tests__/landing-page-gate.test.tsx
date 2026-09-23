@@ -48,7 +48,7 @@ import ChromeGate from '@/components/ChromeGate';
 
 const PAGE = <div data-testid="page">page content</div>;
 
-const STAFF = { id: 'u1', name: 'Abhishek', role: 'admin' };
+const TRAINER = { id: 'u1', name: 'Abhishek', role: 'trainer' };
 
 beforeEach(() => {
   replace.mockClear();
@@ -97,7 +97,7 @@ describe('every other route still gates exactly as before', () => {
 
 describe('a signed-in user', () => {
   it('gets the dashboard inside the shell at the same URL', () => {
-    session = { user: STAFF, loading: false };
+    session = { user: TRAINER, loading: false };
     render(<ChromeGate>{PAGE}</ChromeGate>);
     expect(screen.getByTestId('app-shell')).toBeTruthy();
     expect(screen.getByTestId('page')).toBeTruthy();
@@ -105,7 +105,7 @@ describe('a signed-in user', () => {
   });
 
   it('gets the shell on every other route too', () => {
-    session = { user: STAFF, loading: false };
+    session = { user: TRAINER, loading: false };
     pathname = '/pt-os/clients';
     render(<ChromeGate>{PAGE}</ChromeGate>);
     expect(screen.getByTestId('app-shell')).toBeTruthy();
@@ -138,7 +138,7 @@ describe('while the session is still being resolved', () => {
     session = { user: null, loading: true };
     const { rerender } = render(<ChromeGate>{PAGE}</ChromeGate>);
 
-    session = { user: STAFF, loading: false };
+    session = { user: TRAINER, loading: false };
     rerender(<ChromeGate>{PAGE}</ChromeGate>);
     expect(screen.getByTestId('app-shell')).toBeTruthy();
   });

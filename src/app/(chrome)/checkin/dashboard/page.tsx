@@ -95,7 +95,7 @@ export default function DashboardPage() {
     : null;
 
   return (
-    <Guard role="admin">
+    <Guard role="trainer">
       {/* Hero */}
       <div style={{ background: 'var(--bg-subtle)', borderRadius: 16, padding: '20px 24px', marginBottom: 20, border: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
