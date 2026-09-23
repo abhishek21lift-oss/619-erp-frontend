@@ -150,7 +150,7 @@ describe('the tags match the platform registry', () => {
 
 describe('role and feature are independent gates', () => {
   /**
-   * An item carrying BOTH gates: admin-only, and inside a feature-tagged
+   * An item carrying BOTH gates: trainer-only, and inside a feature-tagged
    * group (allNavItems inherits the group's tag onto each item).
    *
    * The fixture's own properties are asserted rather than assumed. These two
@@ -162,7 +162,7 @@ describe('role and feature are independent gates', () => {
   function twoGateItem() {
     const item = allNavItems().find((i) => i.href === '/finance/record-payment');
     expect(item, 'fixture /finance/record-payment is no longer in the nav').toBeDefined();
-    expect(item!.roles, 'fixture must stay admin-only for these gates to differ').toEqual(['admin']);
+    expect(item!.roles, 'fixture must stay trainer-only for these gates to differ').toEqual(['trainer']);
     expect(item!.feature, 'fixture must stay inside a feature-tagged group').toBe('finance');
     return item!;
   }
@@ -170,12 +170,14 @@ describe('role and feature are independent gates', () => {
   it('a feature flag cannot grant an item the role check denies', () => {
     const item = twoGateItem();
     expect(isVisibleForFeature(item, { finance: true })).toBe(true);
-    expect(isVisibleForRole(item, 'trainer')).toBe(false);
+    expect(isVisibleForRole(item, 'member')).toBe(false);
+    // Nor does a role the server retired: there is no alias back to trainer.
+    expect(isVisibleForRole(item, 'admin')).toBe(false);
   });
 
   it('a role cannot grant an item the feature check denies', () => {
     const item = twoGateItem();
-    expect(isVisibleForRole(item, 'admin')).toBe(true);
+    expect(isVisibleForRole(item, 'trainer')).toBe(true);
     expect(isVisibleForFeature(item, { finance: false })).toBe(false);
   });
 });

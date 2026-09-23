@@ -22,7 +22,7 @@ const fmtDate = (d?: string | null) => {
 
 export default function MergeDuplicatesPage() {
   return (
-    <Guard role="admin">
+    <Guard role="trainer">
       <MergeContent />
     </Guard>
   );

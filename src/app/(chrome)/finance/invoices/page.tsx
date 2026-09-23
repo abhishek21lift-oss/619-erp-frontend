@@ -286,7 +286,7 @@ export default function InvoicesPage() {
   }, [invoices]);
 
   return (
-    <Guard role="admin">
+    <Guard role="trainer">
       <PageContainer>
 
         {/* ── Hero ──

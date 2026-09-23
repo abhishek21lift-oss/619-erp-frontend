@@ -35,7 +35,7 @@ const METHOD_COLORS: Record<string, string> = {
 const PAGE_SIZE = 25;
 
 export default function CollectedPaymentsPage() {
-  return <Guard role="admin"><Inner /></Guard>;
+  return <Guard role="trainer"><Inner /></Guard>;
 }
 
 function Inner() {

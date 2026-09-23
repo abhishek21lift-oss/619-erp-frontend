@@ -2,41 +2,18 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Fingerprint, ShieldCheck, ShieldAlert, Users, Activity, Trash2, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { api } from '@/lib/api';
-import { roleLabel } from '@/lib/roles';
 import Guard from '@/components/Guard';
+import type { StudioPasskeyStats, StudioPasskeyCredential, StudioPasskeyAuditLog } from '@/lib/api/endpoints/auth';
+
+// The studio's passkeys — the trainer's own and their members' — with revoke
+// and the sign-in audit trail. Moved here from /admin/biometrics: the studio
+// has no admin, the trainer owns it.
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type Stats = {
-  totalCredentials: number;
-  enrolledUsers: number;
-  loginsLast24h: number;
-  failedAttemptsLast24h: number;
-};
-
-type AdminCred = {
-  id: string;
-  device_name: string;
-  device_type: string;
-  backed_up: boolean;
-  created_at: string;
-  last_used_at: string | null;
-  user_id: string;
-  user_name: string;
-  user_email: string;
-  role: string;
-};
-
-type AuditLog = {
-  id: string;
-  event: string;
-  detail: Record<string, unknown>;
-  ip: string | null;
-  created_at: string;
-  user_name: string | null;
-  user_email: string | null;
-  role: string | null;
-};
+type Stats = StudioPasskeyStats;
+type StudioCred = StudioPasskeyCredential;
+type AuditLog = StudioPasskeyAuditLog;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -60,7 +37,7 @@ const EVENT_COLORS: Record<string, string> = {
   webauthn_login_failed:  '#F87171',
   action_verify_failed:   '#F87171',
   webauthn_register_failed: '#FBBF24',
-  admin_passkey_revoked:  '#F87171',
+  webauthn_admin_revoke:  '#F87171',
   passkey_removed:        '#FBBF24',
 };
 
@@ -102,9 +79,9 @@ function StatCard({ label, value, icon: Icon, color }: { label: string; value: n
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-export default function BiometricAdminPage() {
+export default function StudioPasskeysPage() {
   return (
-    <Guard roles={['admin', 'manager']}>
+    <Guard role="trainer">
       <BiometricInner />
     </Guard>
   );
@@ -112,7 +89,7 @@ export default function BiometricAdminPage() {
 
 function BiometricInner() {
   const [stats,     setStats]     = useState<Stats | null>(null);
-  const [creds,     setCreds]     = useState<AdminCred[]>([]);
+  const [creds,     setCreds]     = useState<StudioCred[]>([]);
   const [logs,      setLogs]      = useState<AuditLog[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState('');
@@ -124,9 +101,9 @@ function BiometricInner() {
     setError('');
     try {
       const [s, c, l] = await Promise.all([
-        api.webauthn.adminStats(),
-        api.webauthn.adminCredentials(),
-        api.webauthn.adminAuditLogs(200),
+        api.webauthn.studioStats(),
+        api.webauthn.studioCredentials(),
+        api.webauthn.studioAuditLogs(200),
       ]);
       setStats(s);
       setCreds(c.credentials);
@@ -143,9 +120,9 @@ function BiometricInner() {
   async function handleRevoke(credId: string) {
     setRevoking(credId);
     try {
-      await api.webauthn.adminRevokeCredential(credId);
+      await api.webauthn.studioRevokeCredential(credId);
       setCreds((prev) => prev.filter((c) => c.id !== credId));
-      setStats((prev) => prev ? { ...prev, totalCredentials: prev.totalCredentials - 1 } : prev);
+      setStats((prev) => prev ? { ...prev, total_credentials: Math.max(prev.total_credentials - 1, 0) } : prev);
     } catch (e: unknown) {
       setError((e as Error).message || 'Revoke failed');
     } finally {
@@ -211,10 +188,10 @@ function BiometricInner() {
         </div>
       ) : stats && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
-          <StatCard label="Total Passkeys"     value={stats.totalCredentials}    icon={Fingerprint}  color="#7FB4FF" />
-          <StatCard label="Enrolled Users"     value={stats.enrolledUsers}       icon={Users}        color="#0067E0" />
-          <StatCard label="Logins (24h)"       value={stats.loginsLast24h}       icon={ShieldCheck}  color="#34D399" />
-          <StatCard label="Failed (24h)"       value={stats.failedAttemptsLast24h} icon={ShieldAlert} color="#F87171" />
+          <StatCard label="Total Passkeys"     value={stats.total_credentials}   icon={Fingerprint}  color="#7FB4FF" />
+          <StatCard label="Enrolled Users"     value={stats.users_with_passkeys} icon={Users}        color="#0067E0" />
+          <StatCard label="Active"             value={stats.active_credentials}  icon={ShieldCheck}  color="#34D399" />
+          <StatCard label="Used (7 days)"      value={stats.used_last_7_days}    icon={ShieldAlert}  color="#F87171" />
         </div>
       )}
 
@@ -343,26 +320,26 @@ function BiometricInner() {
                     <td style={{ padding: '10px 16px' }}>
                       {log.user_name
                         ? <><div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{log.user_name}</div>
-                           <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{roleLabel(log.role)}</div></>
+                           </>
                         : <span style={{ color: 'var(--text-muted)' }}>Unknown</span>
                       }
                     </td>
                     <td style={{ padding: '10px 16px' }}>
                       <span style={{
                         fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
-                        background: `${eventColor(log.event)}15`,
-                        color: eventColor(log.event),
-                        border: `1px solid ${eventColor(log.event)}30`,
+                        background: `${eventColor(log.action)}15`,
+                        color: eventColor(log.action),
+                        border: `1px solid ${eventColor(log.action)}30`,
                       }}>
-                        {eventLabel(log.event)}
+                        {eventLabel(log.action)}
                       </span>
                     </td>
                     <td style={{ padding: '10px 16px', color: 'var(--text-muted)', fontFamily: 'monospace', fontSize: 12 }}>
-                      {log.ip ?? '—'}
+                      {log.ip_address ?? '—'}
                     </td>
                     <td style={{ padding: '10px 16px', color: 'var(--text-muted)', fontSize: 12, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {log.detail && Object.keys(log.detail).length > 0
-                        ? Object.entries(log.detail).map(([k, v]) => `${k}: ${v}`).join(', ')
+                      {log.new_data && Object.keys(log.new_data).length > 0
+                        ? Object.entries(log.new_data).map(([k, v]) => `${k}: ${v}`).join(', ')
                         : '—'
                       }
                     </td>

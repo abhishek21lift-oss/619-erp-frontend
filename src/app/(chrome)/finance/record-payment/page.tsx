@@ -135,7 +135,7 @@ export default function RecordPaymentPage() {
   const selectedBalance = selected ? Number(selected.balance_amount ?? selected.balance_due ?? 0) : null;
 
   return (
-    <Guard role="admin">
+    <Guard role="trainer">
       <div className="relative z-10 mt-1 max-w-[560px] mx-auto pb-8">
 
         {/* No back-arrow row. Every sibling page — Today's Sale, Collected

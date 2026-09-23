@@ -3,7 +3,6 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import { LazyMotion, MotionConfig, domAnimation } from 'framer-motion';
 import { AuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/lib/toast';
-import { PermissionsProvider } from '@/lib/permissions-context';
 import { FeaturesProvider } from '@/lib/features-context';
 import CommandPalette from '@/components/CommandPalette';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -244,68 +243,66 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ErrorBoundary>
             <ThemeProvider>
               <AuthProvider>
-                <PermissionsProvider>
-                  <FeaturesProvider>
-                    <ToastProvider>
+                <FeaturesProvider>
+                  <ToastProvider>
+                    {/*
+                     * NavScrollProvider belongs HERE, not inside AppShell.
+                     *
+                     * Originally because AppShell was rendered by each of ~97
+                     * pages rather than from a layout, so it — and everything
+                     * it wrapped — remounted on every client-side navigation.
+                     * That reset topBar to 'expanded' each time, which
+                     * snapped --topbar-h from 32px back to 46px and animated
+                     * the header spacer, shifting every page's content down
+                     * and then back up on arrival.
+                     *
+                     * AppShell is a layout now — (chrome)/layout.tsx — so
+                     * that particular reason is gone. This one is not: the
+                     * member portal never renders AppShell at all, and its
+                     * pages would fall back to the context default if the
+                     * provider sat inside the staff shell.
+                     */}
+                    <NavScrollProvider>
                       {/*
-                       * NavScrollProvider belongs HERE, not inside AppShell.
+                       * reducedMotion="user" is the only thing that reaches
+                       * framer-motion for a visitor who asks for less motion.
                        *
-                       * Originally because AppShell was rendered by each of ~97
-                       * pages rather than from a layout, so it — and everything
-                       * it wrapped — remounted on every client-side navigation.
-                       * That reset topBar to 'expanded' each time, which
-                       * snapped --topbar-h from 32px back to 46px and animated
-                       * the header spacer, shifting every page's content down
-                       * and then back up on arrival.
+                       * globals.css has the standard
+                       * `@media (prefers-reduced-motion: reduce)` reset, and
+                       * it covers nothing here: it caps animation- and
+                       * transition-duration, and framer-motion uses neither.
+                       * It animates by writing inline styles from its own
+                       * rAF loop, which no CSS rule can cap and no media
+                       * query can see. So ~190 `initial={{ opacity: 0, y }}`
+                       * mount animations across the app played their full
+                       * translate for a user with a vestibular disorder, on
+                       * every page, on every navigation.
                        *
-                       * AppShell is a layout now — (chrome)/layout.tsx — so
-                       * that particular reason is gone. This one is not: the
-                       * member portal never renders AppShell at all, and its
-                       * pages would fall back to the context default if the
-                       * provider sat inside the staff shell.
+                       * This is framer's own mechanism rather than a
+                       * workaround: transform and layout animations are
+                       * dropped when the OS setting is on, opacity ones are
+                       * kept, and anything explicitly opted out with
+                       * `reducedMotion: false` at the component level still
+                       * runs. Nothing changes for anyone who has not asked
+                       * for it.
                        */}
-                      <NavScrollProvider>
-                        {/*
-                         * reducedMotion="user" is the only thing that reaches
-                         * framer-motion for a visitor who asks for less motion.
-                         *
-                         * globals.css has the standard
-                         * `@media (prefers-reduced-motion: reduce)` reset, and
-                         * it covers nothing here: it caps animation- and
-                         * transition-duration, and framer-motion uses neither.
-                         * It animates by writing inline styles from its own
-                         * rAF loop, which no CSS rule can cap and no media
-                         * query can see. So ~190 `initial={{ opacity: 0, y }}`
-                         * mount animations across the app played their full
-                         * translate for a user with a vestibular disorder, on
-                         * every page, on every navigation.
-                         *
-                         * This is framer's own mechanism rather than a
-                         * workaround: transform and layout animations are
-                         * dropped when the OS setting is on, opacity ones are
-                         * kept, and anything explicitly opted out with
-                         * `reducedMotion: false` at the component level still
-                         * runs. Nothing changes for anyone who has not asked
-                         * for it.
-                         */}
-                        <MotionConfig reducedMotion="user">
-                          <LazyMotion features={domAnimation}>
-                            <SentryInit />
-                            <ScrollRestoration />
-                            {children}
-                            <CommandPalette />
-                            {/* Renders nothing unless NODE_ENV is not
-                                production AND ?vvprobe=1 is in the URL. It is
-                                mounted here rather than in AppShell so the
-                                member portal, which has no AppShell, can be
-                                diagnosed too. */}
-                            <ViewportProbe />
-                          </LazyMotion>
-                        </MotionConfig>
-                      </NavScrollProvider>
-                    </ToastProvider>
-                  </FeaturesProvider>
-                </PermissionsProvider>
+                      <MotionConfig reducedMotion="user">
+                        <LazyMotion features={domAnimation}>
+                          <SentryInit />
+                          <ScrollRestoration />
+                          {children}
+                          <CommandPalette />
+                          {/* Renders nothing unless NODE_ENV is not
+                              production AND ?vvprobe=1 is in the URL. It is
+                              mounted here rather than in AppShell so the
+                              member portal, which has no AppShell, can be
+                              diagnosed too. */}
+                          <ViewportProbe />
+                        </LazyMotion>
+                      </MotionConfig>
+                    </NavScrollProvider>
+                  </ToastProvider>
+                </FeaturesProvider>
               </AuthProvider>
             </ThemeProvider>
           </ErrorBoundary>

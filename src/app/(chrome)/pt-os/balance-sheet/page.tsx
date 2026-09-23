@@ -107,7 +107,7 @@ export default function BalanceSheetPage() {
   ];
 
   return (
-    <Guard role="admin">
+    <Guard role="trainer">
       <PullToRefresh onRefresh={bs.refetch}>
       <PageContainer>
 

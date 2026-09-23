@@ -73,7 +73,7 @@ const CARD = {
   border: '1px solid var(--border)',
 } as const;
 
-export default function CampaignsPage() { return <Guard role="admin"><CampaignContent /></Guard>; }
+export default function CampaignsPage() { return <Guard role="trainer"><CampaignContent /></Guard>; }
 
 function CampaignContent() {
   const { toast } = useToast();

@@ -26,10 +26,10 @@ beforeEach(() => {
 });
 
 describe('<Guard />', () => {
-  it('renders children when user is allowed', async () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u1', role: 'admin' as Role }, loading: false });
+  it('renders children for the studio trainer', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1', role: 'trainer' as Role }, loading: false });
     render(
-      <Guard role="admin">
+      <Guard role="trainer">
         <div>secret content</div>
       </Guard>,
     );
@@ -38,19 +38,19 @@ describe('<Guard />', () => {
   });
 
   it('renders children for any of the allowed roles', async () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u2', role: 'manager' as Role }, loading: false });
+    mockUseAuth.mockReturnValue({ user: { id: 'u2', role: 'trainer' as Role }, loading: false });
     render(
-      <Guard roles={['admin', 'manager']}>
-        <div>manager area</div>
+      <Guard roles={['trainer', 'member']}>
+        <div>shared area</div>
       </Guard>,
     );
-    await waitFor(() => expect(screen.getByText('manager area')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('shared area')).toBeInTheDocument());
   });
 
   it('redirects to /login when there is no user', async () => {
     mockUseAuth.mockReturnValue({ user: null, loading: false });
     render(
-      <Guard role="admin">
+      <Guard role="trainer">
         <div>never</div>
       </Guard>,
     );
@@ -60,12 +60,12 @@ describe('<Guard />', () => {
 
   it('sends a signed-in user with the wrong role home, not to /login', async () => {
     // Home is '/', not '/pt-os' — that route now 308s to '/' via next.config
-    // redirects, and the old assertion was left behind. Sending them to /login
-    // would be worse than useless: they have a valid session, so the login
-    // page would detect it and bounce them straight back here.
+    // redirects. Sending them to /login would be worse than useless: they have
+    // a valid session, so the login page would detect it and bounce them
+    // straight back here.
     mockUseAuth.mockReturnValue({ user: { id: 'u3', role: 'trainer' as Role }, loading: false });
     render(
-      <Guard role="admin">
+      <Guard role="member">
         <div>never</div>
       </Guard>,
     );
@@ -73,21 +73,28 @@ describe('<Guard />', () => {
     expect(mockReplace).not.toHaveBeenCalledWith('/login');
   });
 
-  it('normalises receptionist to reception', async () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u4', role: 'receptionist' as Role }, loading: false });
-    render(
-      <Guard role="reception">
-        <div>reception desk</div>
-      </Guard>,
-    );
-    await waitFor(() => expect(screen.getByText('reception desk')).toBeInTheDocument());
-    expect(mockReplace).not.toHaveBeenCalled();
+  it('treats a retired staff role as no account at all — never as the trainer', async () => {
+    // There used to be an alias table: admin / manager / staff / reception all
+    // "normalised" onto trainer and walked straight in. A role outside the
+    // three has no portal, so it is sent to sign in and sees nothing.
+    for (const role of ['admin', 'manager', 'staff', 'reception', 'receptionist']) {
+      mockReplace.mockReset();
+      mockUseAuth.mockReturnValue({ user: { id: 'u4', role: role as Role }, loading: false });
+      const { unmount } = render(
+        <Guard role="trainer">
+          <div>studio desk</div>
+        </Guard>,
+      );
+      await waitFor(() => expect(mockReplace, role).toHaveBeenCalledWith('/login'));
+      expect(screen.queryByText('studio desk'), role).not.toBeInTheDocument();
+      unmount();
+    }
   });
 
   it('shows loading state while auth is resolving', () => {
     mockUseAuth.mockReturnValue({ user: null, loading: true });
     render(
-      <Guard role="admin">
+      <Guard role="trainer">
         <div>never</div>
       </Guard>,
     );
@@ -107,13 +114,13 @@ describe('<Guard />', () => {
 // ── The portal boundary ────────────────────────────────────────────────────
 //
 // A bare <Guard> means "any authenticated user", and that is what about a
-// hundred staff pages use. So before this, a member with a valid session could
+// hundred studio pages use. So before this, a member with a valid session could
 // open /pt-os/clients and be handed the trainer's shell — sidebar, nav and all
 // — with the lists empty because the API refuses them. The client's report was
 // "the trainer's profile opens inside the client's", and this is the half of it
 // that no amount of care on the server could have prevented.
 describe('<Guard /> keeps the two apps apart', () => {
-  it('will not render a staff page for a member, even with no role prop', async () => {
+  it('will not render a studio page for a member, even with no role prop', async () => {
     pathname = '/pt-os/clients';
     mockUseAuth.mockReturnValue({ user: { id: 'm1', role: 'member' as Role }, loading: false });
     render(<Guard><div>trainer shell</div></Guard>);
@@ -136,13 +143,13 @@ describe('<Guard /> keeps the two apps apart', () => {
     // it: the page is already up and `ready`, and then the person changes.
     // That happens for real — AuthProvider paints the cached user immediately
     // on mount and replaces it when /api/auth/me answers, so a tab that was
-    // showing an admin can resolve to a member a moment later. React renders
+    // showing the trainer can resolve to a member a moment later. React renders
     // before the effect flushes its navigation, so without the same check in
     // the render path the children paint once more, as the wrong person. An
     // earlier version of this test rendered fresh and proved nothing: `ready`
     // is false on the first pass regardless, so the spinner covered for it.
     pathname = '/pt-os/clients';
-    mockUseAuth.mockReturnValue({ user: { id: 'a9', role: 'admin' as Role }, loading: false });
+    mockUseAuth.mockReturnValue({ user: { id: 'a9', role: 'trainer' as Role }, loading: false });
     const { rerender } = render(<Guard><div>trainer shell</div></Guard>);
     await waitFor(() => expect(screen.getByText('trainer shell')).toBeInTheDocument());
 
@@ -160,23 +167,30 @@ describe('<Guard /> keeps the two apps apart', () => {
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
-  it('still lets staff into the staff app', async () => {
-    for (const role of ['super_admin', 'admin', 'manager', 'trainer', 'reception'] as Role[]) {
-      mockReplace.mockReset();
-      pathname = '/pt-os/clients';
-      mockUseAuth.mockReturnValue({ user: { id: 'u', role }, loading: false });
-      const { unmount } = render(<Guard><div>staff area</div></Guard>);
-      await waitFor(() => expect(screen.getByText('staff area')).toBeInTheDocument());
-      expect(mockReplace, role).not.toHaveBeenCalled();
-      unmount();
-    }
+  it('lets the trainer into the studio app', async () => {
+    pathname = '/pt-os/clients';
+    mockUseAuth.mockReturnValue({ user: { id: 'u', role: 'trainer' as Role }, loading: false });
+    render(<Guard><div>studio area</div></Guard>);
+    await waitFor(() => expect(screen.getByText('studio area')).toBeInTheDocument());
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 
-  it('does not mistake a staff page whose name starts with "member" for the member app', async () => {
+  it('keeps the platform operator out of the studio app on their own session', async () => {
+    // Platform-only. The operator used to be let into every studio page with
+    // an org-switcher; now the sanctioned way in is impersonation, which hands
+    // this browser the studio trainer's own session.
+    pathname = '/pt-os/clients';
+    mockUseAuth.mockReturnValue({ user: { id: 'sa', role: 'super_admin' as Role }, loading: false });
+    render(<Guard><div>studio area</div></Guard>);
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/platform'));
+    expect(screen.queryByText('studio area')).not.toBeInTheDocument();
+  });
+
+  it('does not mistake a studio page whose name starts with "member" for the member app', async () => {
     // '/membership-plans'.startsWith('/member') is true. A prefix match here
     // would lock every trainer out of their own pricing page.
     pathname = '/membership-plans';
-    mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'admin' as Role }, loading: false });
+    mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'trainer' as Role }, loading: false });
     render(<Guard><div>plans</div></Guard>);
     await waitFor(() => expect(screen.getByText('plans')).toBeInTheDocument());
     expect(mockReplace).not.toHaveBeenCalled();
@@ -267,13 +281,14 @@ describe('<Guard /> paints no loading frame when auth is already resolved', () =
     // component, so a session that changed underneath a mounted page kept
     // passing the gate. Deriving the verdict removes that by construction.
     pathname = '/pt-os/clients';
-    mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'admin' as Role }, loading: false });
-    const { rerender } = render(<Guard role="admin"><p>admin tools</p></Guard>);
-    await waitFor(() => expect(screen.getByText('admin tools')).toBeInTheDocument());
+    pathname = '/member/dashboard';
+    mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'member' as Role }, loading: false });
+    const { rerender } = render(<Guard role="member"><p>member tools</p></Guard>);
+    await waitFor(() => expect(screen.getByText('member tools')).toBeInTheDocument());
 
     mockUseAuth.mockReturnValue({ user: { id: 'a1', role: 'trainer' as Role }, loading: false });
-    rerender(<Guard role="admin"><p>admin tools</p></Guard>);
+    rerender(<Guard role="member"><p>member tools</p></Guard>);
 
-    expect(screen.queryByText('admin tools')).not.toBeInTheDocument();
+    expect(screen.queryByText('member tools')).not.toBeInTheDocument();
   });
 });

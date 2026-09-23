@@ -1,4 +1,4 @@
-// The staff application's chrome — sidebar, top bar, bottom nav — mounted once.
+// The studio application's chrome — sidebar, top bar, bottom nav — mounted once.
 //
 // Every page under this route group used to render `<Guard><AppShell>` itself.
 // There are 97 of them, and React cannot reconcile two different page

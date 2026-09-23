@@ -17,7 +17,7 @@ export default function PlanBuilderPage({
   const { id: planId } = use(params);
 
   return (
-    <Guard roles={['admin', 'manager', 'trainer']}>
+    <Guard role="trainer">
       <WorkoutBuilder planId={planId} />
     </Guard>
   );

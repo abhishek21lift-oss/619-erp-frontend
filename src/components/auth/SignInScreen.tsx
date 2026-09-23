@@ -32,8 +32,7 @@ import {
 } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '@/lib/auth-context';
-import { rememberKeys, portalForRole, safeReturnTo, type Portal } from '@/lib/portals';
-import { roleLabel } from '@/lib/roles';
+import { rememberKeys, portalForRole, postSignInPath, safeReturnTo, type Portal } from '@/lib/portals';
 import { isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
 import { errorMessage, mapSignInError } from '@/lib/forms/errors';
 import { signInSchema } from '@/lib/forms/schemas/auth';
@@ -70,9 +69,9 @@ const COPY: Record<
     panel: { eyebrow: string; headline: string; sub: string; points: string[] };
   }
 > = {
-  staff: {
-    title: 'Admin Login',
-    blurb: 'For trainers and studio owners.',
+  trainer: {
+    title: 'Trainer Login',
+    blurb: 'For the trainer who runs the studio.',
     otherHref: '/member-login',
     otherLabel: 'Are you a member? Member Login',
     otherCta: 'Member Login',
@@ -91,8 +90,8 @@ const COPY: Record<
     title: 'Member Login',
     blurb: 'For clients training with a studio.',
     otherHref: '/login',
-    otherLabel: 'Studio owner or trainer? Admin Login',
-    otherCta: 'Admin Login',
+    otherLabel: 'Running a studio? Trainer Login',
+    otherCta: 'Trainer Login',
     panel: {
       eyebrow: 'MY PT STUDIO · Member Portal',
       headline: 'Your training, all in one place.',
@@ -112,8 +111,8 @@ const COPY: Record<
     title: 'Command Center',
     blurb: 'Platform operations. Authorized operators only.',
     otherHref: '/login',
-    otherLabel: 'Studio owner or trainer? Admin Login',
-    otherCta: 'Admin Login',
+    otherLabel: 'Running a studio? Trainer Login',
+    otherCta: 'Trainer Login',
     panel: {
       eyebrow: 'Command Center',
       headline: 'Platform operations, one pane of glass.',
@@ -160,7 +159,7 @@ function MiniProduct() {
   );
 }
 
-export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) {
+export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }) {
   const copy = COPY[portal];
   const LS = rememberKeys(portal);
   // Set when the server says the credentials were right but this is the wrong
@@ -417,11 +416,11 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
   // leaving it a deliberate tap. The name here is the browser's own session,
   // not a lookup, so there is nothing to leak by showing it.
   if (foreignSession && user) {
-    // Phrased so it needs no indefinite article — "a trainer" and "an admin"
-    // take different ones, and roleLabel is not going to tell us which.
     const otherLabel = sessionPortal === 'member'
       ? 'a member account'
-      : `a studio account (${roleLabel(user.role).toLowerCase()})`;
+      : sessionPortal === 'platform'
+        ? 'a Command Center account'
+        : 'a trainer account';
     return (
       <div
         className="relative flex min-h-[100dvh] flex-col items-center justify-center"
@@ -471,7 +470,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
               Sign out and continue <ArrowRight size={16} />
             </button>
             <Link
-              href={sessionPortal === 'member' ? '/member/dashboard' : '/pt-os'}
+              href={postSignInPath(user.role)}
               className="mt-3 inline-block text-[13px] font-[650]"
               style={{ color: C.muted }}
             >
@@ -851,7 +850,7 @@ export default function SignInScreen({ portal = 'staff' }: { portal?: Portal }) 
 
             {/* The other door.
                 Two separate sign-ins only work if each one says where the other
-                is. Without this, a client who lands on Admin Login has nowhere
+                is. Without this, a client who lands on Trainer Login has nowhere
                 to go but a guessed URL — and "wrong page" on its own is not an
                 answer, it is a dead end. */}
             <div className="mt-5 text-center">

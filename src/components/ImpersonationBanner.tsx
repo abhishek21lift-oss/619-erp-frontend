@@ -64,7 +64,7 @@ export default function ImpersonationBanner() {
       {full ? <LogIn size={15} color={theme.icon} className="flex-shrink-0" /> : <Eye size={15} color={theme.icon} className="flex-shrink-0" />}
       <div className="min-w-0 leading-tight">
         <p className="truncate text-[12.5px] font-[750] text-white">
-          {full ? 'Acting as' : 'Viewing'} {imp.orgName} · {imp.adminName}
+          {full ? 'Acting as' : 'Viewing'} {imp.orgName} · {imp.accountName}
         </p>
         <p className="text-[10.5px] font-[600]" style={{ color: theme.sub }}>
           {theme.subText}

@@ -10,7 +10,7 @@ import { FormField, TextInput } from '@/components/ui';
 interface Branch { id: string; name: string; location: string; status: string; member_count: number; }
 
 export default function BranchesPage() {
-  return <Guard role="admin"><BranchesContent /></Guard>;
+  return <Guard role="trainer"><BranchesContent /></Guard>;
 }
 
 function BranchesContent() {

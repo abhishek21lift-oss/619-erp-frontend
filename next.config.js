@@ -75,9 +75,12 @@ const nextConfig = {
       // `/admin` used to point at `/admin/dashboard`, which was a four-line
       // file whose whole body was `redirect('/dashboard')` — and `/dashboard`
       // has never existed. So `/admin` 404'd through two hops. Both land on
-      // the studio dashboard now, which is what an admin signing in gets.
+      // the studio dashboard now, which is what a trainer signing in gets.
       { source: '/admin',              destination: '/',                         permanent: true },
       { source: '/admin/dashboard',    destination: '/',                         permanent: true },
+      // The studio's passkey page moved under Settings when the admin role
+      // was removed (Trainer → Members). Same page, new home.
+      { source: '/admin/biometrics',   destination: '/settings/biometrics',      permanent: true },
       { source: '/member',             destination: '/member/dashboard',         permanent: true },
       { source: '/pt-os',              destination: '/',                         permanent: true },
       { source: '/trainer',            destination: '/trainer/dashboard',        permanent: true },

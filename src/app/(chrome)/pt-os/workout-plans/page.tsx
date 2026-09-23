@@ -57,7 +57,7 @@ const itemVariants = {
 
 export default function WorkoutPlansPage() {
   return (
-    <Guard roles={['admin', 'manager', 'trainer']}>
+    <Guard role="trainer">
       <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><Loader2 size={22} className="animate-spin" /></div>}>
         <Inner />
       </Suspense>

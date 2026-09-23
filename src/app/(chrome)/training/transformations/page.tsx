@@ -54,7 +54,7 @@ function WeightChange({ current, change }: { current: number | null; change: num
 }
 
 export default function TransformationsPage() {
-  return <Guard role="admin"><Inner /></Guard>;
+  return <Guard role="trainer"><Inner /></Guard>;
 }
 
 function Inner() {

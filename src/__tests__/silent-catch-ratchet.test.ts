@@ -104,10 +104,10 @@ const KNOWN = [
   'app/(chrome)/pt-os/workout-plans/[id]/page.tsx:48',
   'app/(chrome)/sales/today/page.tsx:73',
   'app/(chrome)/settings/integrations/page.tsx:429',
-  'app/(chrome)/settings/page.tsx:237',
-  'app/(chrome)/settings/page.tsx:437',
-  'app/(chrome)/settings/page.tsx:633',
-  'app/(chrome)/settings/page.tsx:876',
+  // Two remain on the Security page (the session count on each panel); the
+  // other two went with the account-management UI.
+  'app/(chrome)/settings/page.tsx:47',
+  'app/(chrome)/settings/page.tsx:83',
   'app/(chrome)/settings/profile/page.tsx:1726',
   'app/(chrome)/settings/profile/page.tsx:2002',
   'app/(chrome)/settings/profile/page.tsx:902',
@@ -118,7 +118,7 @@ const KNOWN = [
   'app/(platform)/platform/_tabs/CouponsTab.tsx:64',
   'app/(platform)/platform/_tabs/FinanceTab.tsx:343',
   'app/(platform)/platform/_tabs/FinanceTab.tsx:99',
-  'app/(platform)/platform/_tabs/StudiosTab.tsx:383',
+  'app/(platform)/platform/_tabs/StudiosTab.tsx:379',
   'components/LandingPage.tsx:58',
   'components/LandingPage.tsx:65',
   'components/TrialBanner.tsx:19',

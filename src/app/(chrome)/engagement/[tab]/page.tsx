@@ -24,5 +24,5 @@ export default function EngagementTabPage({ params }: { params: Promise<{ tab: s
   if (!VALID_ENGAGEMENT_TABS.includes(tab as EngagementTab)) {
     notFound();
   }
-  return <Guard role="admin"><ModuleWorkspace config={getModuleConfig('engagement', `engagement-${tab}`)} /></Guard>;
+  return <Guard role="trainer"><ModuleWorkspace config={getModuleConfig('engagement', `engagement-${tab}`)} /></Guard>;
 }

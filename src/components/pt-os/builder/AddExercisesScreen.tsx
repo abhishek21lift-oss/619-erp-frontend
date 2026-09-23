@@ -114,7 +114,7 @@ export default function AddExercisesScreen({ planId, day, backHref }: AddExercis
 
   if (!planId) {
     return (
-      <Guard roles={['admin', 'manager', 'trainer']}>
+      <Guard role="trainer">
         <PageContainer>
           <EmptyState
             icon={<Dumbbell size={22} />}
@@ -127,7 +127,7 @@ export default function AddExercisesScreen({ planId, day, backHref }: AddExercis
   }
 
   return (
-    <Guard roles={['admin', 'manager', 'trainer']}>
+    <Guard role="trainer">
       <PageContainer>
         <PageHero
           icon={<Dumbbell size={20} />}

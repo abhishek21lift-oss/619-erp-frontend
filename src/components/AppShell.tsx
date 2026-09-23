@@ -22,7 +22,6 @@ import { useFeatures } from '@/lib/features-context';
 import { useNavScroll } from '@/contexts/nav-scroll-context';
 import { PullRefreshRegistryProvider } from '@/contexts/pull-refresh-context';
 import PullToRefresh from '@/components/common/PullToRefresh';
-import OrgSwitcher from '@/components/OrgSwitcher';
 import ImpersonationBanner from '@/components/ImpersonationBanner';
 import TrialBanner from '@/components/TrialBanner';
 import GlobalSearch, { type PageEntry } from '@/components/search/GlobalSearch';
@@ -67,11 +66,9 @@ const NAV_KEYWORDS: Record<string, string> = {
   '/pt-os/measurements':         'measurements body stats metrics weight',
   '/pt-os/strength-tracking':    'strength tracking lifts weights lifting',
   '/pt-os/progress-photos':      'progress photos pictures transformation',
-  '/pt-os/commissions':          'commissions incentives bonuses trainer earnings',
   '/engagement/automation':      'automation workflows triggers rules',
   '/finance/collected-payments': 'payments transactions collected',
   '/engagement/notifications':   'communication messaging notifications alerts',
-  '/trainers':                   'trainers coaches instructors profiles staff',
   '/settings':                   'settings configuration preferences',
   '/reports':                    'reports analytics insights',
   '/attendance':                 'attendance check-in sign-in records',
@@ -345,9 +342,6 @@ function AppShellContent({ children }: AppShellProps) {
                   in the row grows to fill the space. */}
               <div className="flex-1" />
 
-              {/* ── Platform org-switcher (super_admin only; renders null otherwise) ── */}
-              <OrgSwitcher />
-
               {/* ── Dark / Light toggle ── */}
               <m.button
                 type="button"
@@ -557,13 +551,11 @@ function AppShellContent({ children }: AppShellProps) {
                       className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_12px_40px_rgba(212,175,55,0.10)]"
                     >
                       <div className="px-3 py-2.5 border-b border-[var(--border)]">
-                        <p className="text-[12px] font-semibold text-[var(--text-primary)]">{user?.name || 'Admin'}</p>
+                        <p className="text-[12px] font-semibold text-[var(--text-primary)]">{user?.name || 'Trainer'}</p>
                         <p className="text-[10px] text-[var(--text-muted)]">{user?.email || '—'}</p>
                         <span className="mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
                           style={{ background: 'rgba(245,158,11,0.1)', color: '#F59E0B' }}>
-                          {/* Was `{user?.role}` — the raw identifier, so this badge
-                              read "super_admin" on every page for the operator and
-                              "admin" for a studio owner. */}
+                          {/* roleLabel, never the raw identifier. */}
                           {roleLabel(user?.role) || 'Trainer'}
                         </span>
                       </div>
@@ -572,13 +564,14 @@ function AppShellContent({ children }: AppShellProps) {
                           className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                           <User size={14} strokeWidth={1.5} /> My Profile
                         </Link>
-                        {user?.role === 'super_admin' && (
-                          <Link href="/settings" onClick={() => setProfileOpen(false)}
-                            className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
-                            <Settings size={14} strokeWidth={1.5} /> Account Settings
-                          </Link>
-                        )}
-                        {user?.role !== 'super_admin' && user?.organization_name && (
+                        {/* The studio app is the trainer's alone — the platform
+                            operator never reaches it on their own session — so
+                            there is no operator branch here. */}
+                        <Link href="/settings" onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
+                          <Settings size={14} strokeWidth={1.5} /> Security
+                        </Link>
+                        {user?.organization_name && (
                           <Link href="/subscription" onClick={() => setProfileOpen(false)}
                             className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                             <CreditCard size={14} strokeWidth={1.5} /> Subscription &amp; Billing

@@ -5,7 +5,6 @@ import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
 import { PullToRefresh, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button, PageContainer, PageHero, SearchField } from '@/components/ui';
-import { useAuth } from '@/lib/auth-context';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api, Client, Attendance } from '@/lib/api';
 import {
@@ -176,8 +175,6 @@ export default function AttendancePage() {
    MAIN CONTENT  —  all original logic preserved
 ──────────────────────────────────────────────────────────────── */
 function AttendanceContent() {
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
   const router  = useRouter();
   const today   = new Date().toISOString().split('T')[0];
 

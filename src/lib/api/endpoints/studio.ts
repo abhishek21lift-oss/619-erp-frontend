@@ -55,7 +55,14 @@ export const qr = {
     http<{ history: { date: string; status: string; check_in_time: string | null; check_out_time: string | null; method: string; duration_minutes: number | null }[]; stats: { total_present: number; total_days: number; current_streak: number; longest_streak: number; this_month: number; attendance_rate: number; avg_duration_minutes: number | null } }>(
       `/api/qr/my-history${limit ? `?limit=${limit}` : ''}`
     ),
-  staffReport: (params?: { from?: string; to?: string; type?: string }) =>
+  /**
+   * The studio's attendance report, by person.
+   *
+   * Named for its path, which the server keeps for API compatibility —
+   * /api/qr/staff-report predates the Trainer → Members model. There is no
+   * staff: the rows are this studio's clients and its trainer.
+   */
+  attendanceReport: (params?: { from?: string; to?: string; type?: string }) =>
     http<{ data: unknown[]; from: string; to: string; type: string }>(
       `/api/qr/staff-report${params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''}`
     ),

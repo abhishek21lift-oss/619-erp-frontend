@@ -53,9 +53,6 @@ export const JOURNEYS = {
   'e2e/pt-package.ui.spec.ts': [
     'src/app/(chrome)/subscription/packages/page.tsx',
   ],
-  'e2e/commission-payout.ui.spec.ts': [
-    'src/app/(chrome)/pt-os/commissions/page.tsx',
-  ],
   'e2e/diet-meal.ui.spec.ts': [
     'src/app/(chrome)/pt-os/diet-plans/page.tsx',
   ],

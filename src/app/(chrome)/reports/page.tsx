@@ -5,7 +5,6 @@ import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import { KpiCard, PageContainer, PageHero, PageTitle } from '@/components/ui';
-import { useAuth } from '@/lib/auth-context';
 import {
   BarChart2, AlertCircle, Users,
   ChevronLeft, ChevronRight, Download, TrendingUp,
@@ -14,7 +13,7 @@ import {
 import { PremiumBarChart, PremiumAreaChart } from '@/components/ui';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-type Tab = 'monthly' | 'dues' | 'trainers';
+type Tab = 'monthly' | 'dues';
 
 function fmtDate(d?: string) {
   if (!d) return '—';
@@ -321,115 +320,26 @@ function DuesTab() {
   );
 }
 
-function TrainerSummaryTab() {
-  const [trainers, setTrainers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const fetch_ = useCallback(async () => {
-    setLoading(true); setError('');
-    try {
-      const data = await api.insights.trainers();
-      setTrainers(Array.isArray(data) ? data : []);
-    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { fetch_(); }, [fetch_]);
-
-  const totals = trainers.reduce((s, t) => ({
-    active: s.active + Number(t.active_clients || 0),
-    total: s.total + Number(t.total_clients || 0),
-    monthRev: s.monthRev + Number(t.month_revenue || 0),
-    totalRev: s.totalRev + Number(t.total_revenue || 0),
-  }), { active: 0, total: 0, monthRev: 0, totalRev: 0 });
-
-  return (
-    <m.div variants={containerVariants} initial="hidden" animate="visible">
-      {error && (
-        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#dc2626', marginBottom: 12 }}>
-          {error}
-          <button onClick={fetch_} style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', marginLeft: 8, fontWeight: 600 }}>Retry</button>
-        </div>
-      )}
-      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)', background: 'var(--bg-card)' }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: 'var(--bg-subtle)' }}>
-                {['Trainer', 'Active Members', 'Total Members', 'This Month', 'All-time Revenue'].map((h) => (
-                  <th key={h} style={{ ...tableHeadStyle }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={i}><td colSpan={5} style={{ padding: '12px 16px' }}><div style={{ height: 14, background: 'var(--bg-subtle)', borderRadius: 6 }} /></td></tr>
-                ))
-              ) : trainers.length === 0 ? (
-                <tr><td colSpan={5} style={{ padding: 40, textAlign: 'center' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(0,103,224,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,103,224,0.15)' }}>
-                      <Users size={24} color="#0067e0" />
-                    </div>
-                    <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--text-primary)' }}>No trainer data yet</div>
-                    <div style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 300 }}>Trainer summaries will appear here once members are assigned.</div>
-                  </div>
-                </td></tr>
-              ) : (
-                (trainers ?? []).map((t, i) => (
-                  <tr key={t.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,103,224,0.05)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}>
-                    <td style={{ ...tableCellStyle, fontWeight: 600, color: 'var(--text-primary)' }}>{t.name}</td>
-                    <td style={{ ...tableCellStyle, color: '#059669', fontWeight: 600 }}>{t.active_clients}</td>
-                    <td style={{ ...tableCellStyle, color: 'var(--text-muted)' }}>{t.total_clients}</td>
-                    <td style={{ ...tableCellStyle, fontWeight: 700, color: '#0067e0' }}>{fmtAmt(t.month_revenue)}</td>
-                    <td style={{ ...tableCellStyle, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtAmt(t.total_revenue)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-            {!loading && trainers.length > 0 && (
-              <tfoot>
-                <tr style={{ fontWeight: 700, background: 'var(--bg-subtle)', borderTop: '1px solid var(--border)' }}>
-                  <td style={tableCellStyle}>Total</td>
-                  <td style={{ ...tableCellStyle, color: '#059669' }}>{totals.active}</td>
-                  <td style={tableCellStyle}>{totals.total}</td>
-                  <td style={{ ...tableCellStyle, color: '#0067e0' }}>{fmtAmt(totals.monthRev)}</td>
-                  <td style={tableCellStyle}>{fmtAmt(totals.totalRev)}</td>
-                </tr>
-              </tfoot>
-            )}
-          </table>
-        </div>
-      </m.div>
-    </m.div>
-  );
-}
+// The "Coach Summary" tab (revenue and members per coach) went with the
+// multi-coach model: a studio is one trainer, so the summary is the studio.
 
 function ReportsContent() {
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
   const sp = useSearchParams();
   const [year, setYear] = useState(new Date().getFullYear());
 
   const initialTab = useMemo<Tab>(() => {
     const v = (sp.get('view') ?? '').toLowerCase();
     if (v === 'dues') return 'dues';
-    if (v === 'trainers' || v === 'coaches') return 'trainers';
     return 'monthly';
   }, [sp]);
 
   const [tab, setTab] = useState<Tab>(initialTab);
   useEffect(() => setTab(initialTab), [initialTab]);
 
-  const TABS: { key: Tab; label: string; short: string; adminOnly?: boolean }[] = [
+  const visibleTabs: { key: Tab; label: string; short: string }[] = [
     { key: 'monthly', label: 'Monthly Revenue', short: 'Revenue' },
     { key: 'dues', label: 'Pending Dues', short: 'Dues' },
-    { key: 'trainers', label: 'Coach Summary', short: 'Coaches', adminOnly: true },
   ];
-  const visibleTabs = TABS.filter((t) => !t.adminOnly || isAdmin);
 
   return (
     <>
@@ -443,11 +353,9 @@ function ReportsContent() {
           {/* The tabs live in the hero, which is where they belong: they select
               what the whole page is, not what one card is.
 
-              A segmented control of equal thirds, with the short labels. The
-              long ones — "Monthly Revenue", "Pending Dues", "Coach Summary" —
-              measure 400px laid out in a row, in a strip that is 318px wide on
-              a 390px phone. They cannot fit, which is why the old version wrapped
-              every one of them onto two lines. The full label is still read out
+              A segmented control of equal halves, with the short labels. The
+              long ones do not fit a 318px strip on a 390px phone, which is why
+              an older version wrapped every one of them onto two lines. The full label is still read out
               to screen readers; sighted users have the page title above and,
               for revenue, the year stepper immediately below. */}
           <div
@@ -481,7 +389,6 @@ function ReportsContent() {
 
         {tab === 'monthly' && <MonthlyTab year={year} setYear={setYear} />}
         {tab === 'dues' && <DuesTab />}
-        {tab === 'trainers' && isAdmin && <TrainerSummaryTab />}
       </PageContainer>
     </>
   );
@@ -489,7 +396,7 @@ function ReportsContent() {
 
 export default function ReportsPage() {
   return (
-    <Guard role="admin">
+    <Guard role="trainer">
       <Suspense fallback={null}>
         <ReportsContent />
       </Suspense>

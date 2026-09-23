@@ -1,6 +1,6 @@
 'use client';
 /**
- * Check-In — the reception surface.
+ * Check-In — the studio's front-desk surface, operated by the trainer.
  *
  * This is a kiosk screen. Somebody is standing in front of it holding a phone,
  * and the person operating it needs three things in this order: point the
@@ -24,7 +24,7 @@
  * matters most.
  *
  * "How to use" was a permanent four-step card between the camera and the
- * feed. Reception reads it once. It is a disclosure now, closed by default.
+ * feed. The trainer reads it once. It is a disclosure now, closed by default.
  *
  * The hero was hardcoded #f8fafc with #0F172A text, so it stayed a white card
  * with near-black text in dark mode. Everything here is on theme tokens.
@@ -426,17 +426,10 @@ export default function QrScannerPage() {
   const live = scanState === 'scanning';
 
   return (
-    // Deep-audit finding: this was `<Guard role="member">`, which is
-    // backwards for a staff-operated front-desk kiosk (see the file header —
-    // "the person operating it" is reception, not the member on the phone).
-    // Because this route already lives in the staff portal, a member-role
-    // account is refused by the portal check before role is ever consulted;
-    // what the role prop actually gated was which STAFF role could open it,
-    // and `hasRole()`'s admin-passes-any-non-super_admin-gate rule meant only
-    // `admin` (and `super_admin`) could — every other staff role (manager,
-    // trainer, staff, reception) was refused. This list matches the backend
-    // route it calls, `POST /api/qr/scan`, which is gated by `requireStaff`.
-    <Guard roles={['admin', 'manager', 'trainer', 'staff', 'reception']}>
+    // The scanner is operated by the trainer, never by the member being
+    // scanned — it matches the backend route it calls, `POST /api/qr/scan`,
+    // which is requireTrainer.
+    <Guard role="trainer">
       {/* pt-1 to match the dashboard, so the first card sits the same
           distance below the top bar as it does everywhere else. */}
       <div className="pt-1">

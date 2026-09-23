@@ -15,7 +15,6 @@ import { m, AnimatePresence } from 'framer-motion';
 import { cn } from '@/components/ui/cn';
 import StudioMark from '@/components/StudioMark';
 import { NAV_GROUPS, isVisibleForRole, isGroupVisibleForRole, isVisibleForFeature, isGroupVisibleForFeature } from '@/lib/nav-config';
-import { usePermissions } from '@/lib/permissions-context';
 import { useFeatures } from '@/lib/features-context';
 import { roleLabel } from '@/lib/roles';
 import {
@@ -161,88 +160,61 @@ const SECTION_LABELS: Record<string, string> = {
 // Snappy spring-like easing
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-// Permission helper (unchanged)
-function canSeeByPermission(href: string, groupId: string, can: (f: string) => boolean): boolean {
-  if (href === '/pt-os/commissions') return can('commissions');
-  if (href === '/finance/record-payment') return can('record_payment');
-  if (groupId === 'finance' || href.startsWith('/finance')) return can('finance');
-  if (groupId === 'insights' || groupId === 'reports' || href.startsWith('/reports') || href.startsWith('/insights')) return can('reports');
-  if (href.startsWith('/pt-os') || groupId === 'personal-training' || groupId === 'session-management' || groupId === 'progress-tracking') return can('pt_module');
-  if (href.startsWith('/settings')) return can('settings');
-  return true;
-}
-
 // ── Nav ───────────────────────────────────────────────────────────────────────
 function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkClick?: () => void }) {
   const { user } = useAuth();
-  const { can } = usePermissions();
   const { features } = useFeatures();
   const pathname = usePathname();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const isAdmin = user?.role === 'trainer' || user?.role === 'super_admin' || user?.role === 'admin' || user?.role === 'manager';
+  // The studio app is the trainer's; the badge counts are studio business.
+  const isTrainer = user?.role === 'trainer';
   const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
 
   // Nav badge counts, via the api client rather than hand-written fetch so they
-  // inherit the 401 refresh and the x-org-id header every other call gets.
+  // inherit the 401 refresh every other call gets.
   //
-  // Both URLs used to be wrong. /api/finance/dues does not exist — there is no
-  // /api/finance mount at all, the route is /api/reports/dues. And
-  // /api/trainers/leave is not a route either: it matched /api/trainers/:id
-  // with id='leave' and answered 404 "Trainer not found"; the leave list lives
-  // at /api/leave. Neither failure surfaced — allSettled never rejects, the
-  // shape-sniffing fell through to `?? 0`, and the trailing .catch swallowed
-  // whatever was left, so both badges read zero indefinitely. Rejections are
-  // logged now for exactly that reason: a counter that quietly reports
-  // "nothing pending" is worse than no counter at all.
-  //
-  // aiPendingCount was a third instance of the same thing and is gone with the
-  // Intelligence Center: /api/ai/trainer/pending never existed on the backend,
-  // and the `.catch(() => null)` beside it meant the badge read zero forever
-  // rather than ever saying so.
+  // The dues URL used to be wrong: /api/finance/dues does not exist — the
+  // route is /api/reports/dues — and the failure never surfaced, because
+  // allSettled never rejects and the shape-sniffing fell through to `?? 0`.
+  // Rejections are logged now for exactly that reason: a counter that quietly
+  // reports "nothing pending" is worse than no counter at all. (The pending
+  // staff-leave badge went with the staff roles.)
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isTrainer) return;
     let cancelled = false;
 
-    Promise.allSettled([
-      api.leave.list({ status: 'pending' }),
-      api.insights.dues({ limit: 100 }),
-    ]).then(([leavesRes, duesRes]) => {
-      if (cancelled) return;
-      if (leavesRes.status === 'rejected') console.warn('[sidebar] pending-leave count failed', leavesRes.reason);
-      if (duesRes.status === 'rejected') console.warn('[sidebar] dues count failed', duesRes.reason);
-      setBadgeCounts({
-        pendingLeaves: leavesRes.status === 'fulfilled' ? leavesRes.value.length : 0,
-        duesCount: duesRes.status === 'fulfilled' ? duesRes.value.length : 0,
-      });
-    });
+    api.insights.dues({ limit: 100 }).then(
+      (dues) => { if (!cancelled) setBadgeCounts({ duesCount: dues.length }); },
+      (err) => {
+        console.warn('[sidebar] dues count failed', err);
+        if (!cancelled) setBadgeCounts({ duesCount: 0 });
+      },
+    );
 
     return () => { cancelled = true; };
-  }, [isAdmin]);
+  }, [isTrainer]);
 
   // The whole nav tree, rebuilt only when something it actually reads changes.
   //
   // This ran on EVERY render, and this component re-renders on every
   // navigation because it reads usePathname() to mark the active item. So a
   // route change walked all of NAV_GROUPS and, for every item and every
-  // child, re-ran three predicates — role, feature flag, and
-  // canSeeByPermission, the last doing its own lookup per item. None of that
-  // can change as a result of the pathname changing: it depends on the user's
-  // role, their permissions, and the feature flags.
+  // child, re-ran the role and feature-flag predicates. Neither can change as
+  // a result of the pathname changing.
   //
-  // The dependency list is exactly what the computation reads. `can` and
-  // `features` come from their own contexts, so this recomputes when
-  // permissions or flags finish loading, and not on navigation.
+  // The dependency list is exactly what the computation reads. `features`
+  // comes from its own context, so this recomputes when flags finish loading,
+  // and not on navigation. (There is no per-role permission matrix any more:
+  // the trainer owns the studio and holds every studio capability.)
   const navItems = useMemo(() => {
     const filterItem = (
-      i: { href: string; role?: string; roles?: string[]; feature?: string },
-      groupId: string,
+      i: Parameters<typeof isVisibleForRole>[0],
     ): boolean => {
-      if (!isVisibleForRole(i as Parameters<typeof isVisibleForRole>[0], user?.role)) return false;
-      // Feature flags sit alongside role and permission checks, never replacing
-      // them: an item has to clear all three. Fails open, so a studio never
-      // loses nav to a slow or failed /api/features.
-      if (!isVisibleForFeature(i, features)) return false;
-      return canSeeByPermission(i.href, groupId, isAdmin ? () => true : can);
+      if (!isVisibleForRole(i, user?.role)) return false;
+      // Feature flags sit alongside the role check, never replacing it: an
+      // item has to clear both. Fails open, so a studio never loses nav to a
+      // slow or failed /api/features.
+      return isVisibleForFeature(i, features);
     };
 
     return NAV_GROUPS
@@ -250,14 +222,14 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
       .filter(g => isGroupVisibleForFeature(g, features))
       .map(g => ({
         ...g,
-        items: g.items.filter(i => filterItem(i, g.id)).flatMap(i =>
-          i.children ? i.children.filter(c => filterItem(c, g.id)) : [i]
+        items: g.items.filter(i => filterItem(i)).flatMap(i =>
+          i.children ? i.children.filter(c => filterItem(c)) : [i]
         ),
         single: false,
         href: '',
       }))
       .filter(g => g.items.length > 0);
-  }, [user?.role, features, isAdmin, can]);
+  }, [user?.role, features]);
 
   const toggleGroup = (id: string) => setExpanded(p => ({ ...p, [id]: !p[id] }));
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');

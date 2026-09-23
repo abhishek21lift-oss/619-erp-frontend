@@ -14,7 +14,7 @@ const td = { padding: '12px 16px', fontSize: 12 };
 
 export default function RenewalAnalysisPage() {
   return (
-    <Guard role="admin">
+    <Guard role="trainer">
       <Inner />
     </Guard>
   );

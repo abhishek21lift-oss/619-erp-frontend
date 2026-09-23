@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   Building2, Plus, Loader2, Users, Dumbbell, UserCircle, KeyRound, Power, ChevronDown, ImagePlus,
-  LogIn, Pencil, Trash2, UserPlus, IndianRupee, Eye, Gift, Receipt, Search, MoreVertical,
+  LogIn, Pencil, Trash2, IndianRupee, Eye, Gift, Receipt, Search, MoreVertical,
   Download, ArrowUpDown, CheckSquare, Square, LogOut, ShieldOff, CalendarPlus, StickyNote, Save,
   ToggleLeft, ToggleRight, Lock,
 } from 'lucide-react';
@@ -23,7 +23,7 @@ import { clearCachedAuthUser } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
 import { roleLabel } from '@/lib/roles';
 import {
-  AddUserModal, CreateOrgModal, EditUserModal, ResetPasswordModal,
+  CreateOrgModal, EditUserModal, ResetPasswordModal,
 } from '../_modals/OrgModals';
 import { fmtDate, fmtINR, fmtWhen } from '../_shared/format';
 import type { StudioFilter, StudioRow, StudioSort } from '../_shared/types';
@@ -67,7 +67,6 @@ export function StudiosTab() {
   const [createOpen, setCreateOpen] = useState(false);
   const [resetTarget, setResetTarget] = useState<OrgUser | null>(null);
   const [editTarget, setEditTarget] = useState<OrgUser | null>(null);
-  const [addTarget, setAddTarget] = useState<Organization | null>(null);
 
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<StudioFilter>('all');
@@ -262,7 +261,6 @@ export function StudiosTab() {
                 onToggleStatus={() => toggleStatus(row.org)}
                 onResetPassword={setResetTarget}
                 onEditUser={setEditTarget}
-                onAddUser={() => setAddTarget(row.org)}
                 onChanged={load} />
             ))}
           </div>
@@ -272,7 +270,6 @@ export function StudiosTab() {
       {createOpen && <CreateOrgModal onClose={() => setCreateOpen(false)} onCreated={() => { setCreateOpen(false); load(); }} />}
       {resetTarget && <ResetPasswordModal user={resetTarget} onClose={() => setResetTarget(null)} />}
       {editTarget && <EditUserModal user={editTarget} onClose={() => setEditTarget(null)} onSaved={() => { setEditTarget(null); load(); }} />}
-      {addTarget && <AddUserModal org={addTarget} onClose={() => setAddTarget(null)} onAdded={() => { setAddTarget(null); load(); }} />}
     </div>
   );
 }
@@ -337,14 +334,13 @@ export const NO_PLAN_ACCENT = 'linear-gradient(90deg,var(--border),var(--border)
 // stacked beside it. Four of these replace the old plain icon+text list,
 // which had no visual weight and (combined with not having its own row)
 // was wrapping one item per line on a phone.
-export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onResetPassword, onEditUser, onAddUser, onChanged }: {
+export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onResetPassword, onEditUser, onChanged }: {
   row: StudioRow;
   selected: boolean;
   onToggleSelect: () => void;
   onToggleStatus: () => void;
   onResetPassword: (u: OrgUser) => void;
   onEditUser: (u: OrgUser) => void;
-  onAddUser: () => void;
   onChanged: () => void;
 }) {
   const { toast } = useToast();
@@ -433,7 +429,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
 
   const impersonate = async (mode: 'read_only' | 'full', userId?: string) => {
     if (mode === 'full' && !window.confirm(
-      `Enter ${org.name} with FULL ACCESS?\n\nYou will be able to make changes to this studio's live data as its admin. Every change is recorded against you in the activity log.`
+      `Enter ${org.name} with FULL ACCESS?\n\nYou will be able to make changes to this studio's live data as its trainer. Every change is recorded against you in the activity log.`
     )) return;
     const key = `${mode}:${userId || 'primary'}`;
     setImpLoading(key);
@@ -442,7 +438,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
       const d = r.data;
       const imp: StoredImpersonation = {
         token: d.token, readonly: d.readonly,
-        adminId: d.admin.id, adminName: d.admin.name,
+        accountId: d.account.id, accountName: d.account.name,
         orgId: d.organization.id, orgName: d.organization.name, orgLogo: d.organization.logo_url,
         // Where the banner's Exit button goes. The console knows its own
         // address; the studio app must not have to.
@@ -450,7 +446,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
       };
 
       // Drop the cached super-admin identity so the studio app resolves as the
-      // studio admin (studio nav + studio home), not the platform UI.
+      // studio's trainer (studio nav + studio home), not the platform UI.
       clearCachedAuthUser();
 
       // ── Which origin serves the studio app ────────────────────────────────
@@ -597,13 +593,8 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
               <IconBtn title="Remove account" onClick={() => deleteUser(u)} tone="danger"><Trash2 size={12} /></IconBtn>
             </div>
           ))}
-          {detail && (
-            <button onClick={onAddUser}
-              className="mt-2 flex items-center gap-1.5 rounded-[9px] px-2.5 py-1.5 text-[11.5px] font-[700] transition hover:bg-black/5"
-              style={{ border: '1px dashed var(--border)', color: 'var(--text-secondary)' }}>
-              <UserPlus size={12} /> Add account
-            </button>
-          )}
+          {/* No "Add account": the trainer comes with the studio and members get
+              their logins from the client record inside it. */}
           {detail && <StudioOperatorPanel org={org} onChanged={onChanged} />}
         </div>
       )}

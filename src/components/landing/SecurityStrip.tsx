@@ -23,12 +23,12 @@ const ITEMS = [
   {
     icon: <BrainCircuit size={17} />,
     title: 'Authorised AI knowledge',
-    body: 'The AI reads only what your role allows — a trainer’s questions never cross into other clients’ private records.',
+    body: 'The AI reads only your own studio — its answers never cross into another studio’s clients or records.',
   },
   {
     icon: <ShieldCheck size={17} />,
-    title: 'Role-based access',
-    body: 'Owner, admin, manager, trainer — distinct permissions for every surface, from billing to client lists.',
+    title: 'One studio, one trainer',
+    body: 'You run your studio; your members see only their own training, payments and progress — never each other’s.',
   },
   {
     icon: <ServerCog size={17} />,

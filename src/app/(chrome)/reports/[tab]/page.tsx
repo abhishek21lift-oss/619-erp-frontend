@@ -18,7 +18,6 @@ const CANONICAL: Record<string, string> = {
   attendance: '/insights/traffic',
   traffic: '/insights/traffic',
   renewal: '/insights/renewal',
-  staff: '/operations/leaderboard',
 };
 
 export default function ReportTabPage({ params }: { params: Promise<{ tab: string }> }) {

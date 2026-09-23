@@ -5,13 +5,12 @@ import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
   CalendarCheck, ChevronLeft, ChevronRight, User, Dumbbell, Phone, Clock,
-  CheckCircle2, XCircle, AlertTriangle, Loader2, CalendarPlus, CalendarDays, UserCog, Play,
+  CheckCircle2, XCircle, AlertTriangle, Loader2, CalendarPlus, CalendarDays, Play,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import ClientAvatar, { initialsOf } from '@/components/pt-os/ClientAvatar';
 import { Button, EmptyState, PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
-import { useAuth } from '@/lib/auth-context';
 import { api } from '@/lib/api';
 import type { PtSession, PtSessionStatus, TodayClient } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -276,8 +275,6 @@ function DayRow({
 export default function MySchedulePage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuth();
-  const canManageTrainers = user?.role === 'admin' || user?.role === 'manager';
 
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
   const [selectedDay, setSelectedDay] = useState<string>(() => toYmd(new Date()));
@@ -293,7 +290,6 @@ export default function MySchedulePage() {
 
   const schedule = useAsync(() => api.pt.mySessions({ from, to }), [from, to]);
   const sessions = useMemo(() => schedule.data?.data ?? [], [schedule.data]);
-  const trainerLinked = schedule.data?.trainer_linked ?? true;
 
   // The day's roster, from the same endpoint the Today page uses.
   //
@@ -308,10 +304,8 @@ export default function MySchedulePage() {
   // It is a separate fetch rather than a merge of the week query because the
   // roster is expensive to compute per day and only the SELECTED day is shown.
   const roster = useAsync(
-    () => (trainerLinked
-      ? api.progress.workoutLog.today({ date: selectedDay })
-      : Promise.resolve(null)),
-    [selectedDay, trainerLinked],
+    () => api.progress.workoutLog.today({ date: selectedDay }),
+    [selectedDay],
   );
   const rosterClients = useMemo(() => roster.data?.data?.clients ?? [], [roster.data]);
 
@@ -482,44 +476,10 @@ export default function MySchedulePage() {
               </Button>
             </m.div>
 
-            {/* No trainer profile resolved — explain rather than show a bare
-                empty agenda that reads as a bug.
-
-                Role-aware, because the old copy told the studio owner to "ask
-                an admin" while they were the admin, on their own studio, with a
-                diary full of sessions. An admin can fix this themselves; a
-                trainer or receptionist genuinely cannot, and sending them to
-                Trainers would only dead-end on a permission check. */}
-            {!trainerLinked && schedule.data && (
-              <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-                <EmptyState
-                  icon={<UserCog size={22} />}
-                  title="No trainer profile matches this login"
-                  description={canManageTrainers
-                    ? `My Schedule shows the sessions booked against you as a trainer. ${user?.email
-                        ? `No active trainer in this studio uses ${user.email}.`
-                        : "No active trainer in this studio uses this login's email address."
-                      } Add one, or correct an existing trainer's email, and this schedule fills in straight away.`
-                    : 'My Schedule shows the sessions booked against you as a trainer. Ask your studio admin to add you as a trainer using this same email address, or view the studio-wide list in Session History.'}
-                />
-                <div className="mt-4 flex flex-wrap justify-center gap-2">
-                  {canManageTrainers && (
-                    <Button iconLeft={<UserCog size={14} />}
-                      onClick={() => router.push('/trainers')}
-                      style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff' }}>
-                      Manage Trainers
-                    </Button>
-                  )}
-                  <Button variant="outline" iconLeft={<CalendarDays size={14} />}
-                    onClick={() => router.push('/pt-os/sessions')}>
-                    Open Session History
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {trainerLinked && (
-              <>
+            {/* The trainer owns the studio, so their schedule is the studio's
+                sessions — there is no "login not linked to a trainer profile"
+                state to explain any more (the server always resolves it). */}
+            <>
                 {/* Week navigator */}
                 <div className="mb-4 rounded-[18px] p-4"
                   style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
@@ -660,8 +620,7 @@ export default function MySchedulePage() {
                     })}
                   </div>
                 )}
-              </>
-            )}
+            </>
         </div>
       </PullToRefresh>
     </Guard>

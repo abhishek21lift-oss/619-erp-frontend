@@ -13,7 +13,7 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function SessionUtilisationPage() {
   return (
-    <Guard role="admin">
+    <Guard role="trainer">
       <Inner />
     </Guard>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-// Admin Login — the studio side.
+// Trainer Login — the studio side.
 //
 // Both sign-in routes render the same screen (src/components/auth/SignInScreen)
 // with a different `portal`. One component, because the two share Google
@@ -18,7 +18,7 @@ export default function LoginPage() {
   return (
     <>
       <PublicPullToRefresh />
-      <SignInScreen portal="staff" />
+      <SignInScreen portal="trainer" />
     </>
   );
 }

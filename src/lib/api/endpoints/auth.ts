@@ -1,11 +1,10 @@
-// API endpoints: auth, webauthn, accounts, profile.
+// API endpoints: auth, webauthn, profile.
 //
 // Lifted verbatim from the single `api` object in the 4,185-line api.ts.
 // Method names, URLs and request shapes are unchanged; index.ts composes these
 // back into the same `api` object every consumer already imports.
 
 import { http } from '../../http';
-import type { Role } from '../../roles';
 import type {
   NotificationPreferences, PortfolioItem, PortfolioKind, ProfileMe, ProfileUpdate, User,
   UserPreferences,
@@ -21,20 +20,21 @@ export const auth = {
       body: JSON.stringify(body),
     }),
   /**
-   * `portal` says which sign-in screen the person used: 'staff' for Admin
-   * Login, 'member' for Member Login, 'platform' for the Command Center. The
-   * server refuses the mismatch — a client cannot sign in through Admin Login
-   * and vice versa — so this is not a UI hint, it is part of the request.
+   * `portal` says which sign-in screen the person used: 'trainer' for
+   * Trainer Login, 'member' for Member Login, 'platform' for the Command
+   * Center. The server refuses the mismatch — a client cannot sign in through
+   * Trainer Login and vice versa — so this is not a UI hint, it is part of the
+   * request.
    *
    * For 'platform' it is more than a refusal: the door decides the SESSION's
    * audience. A token minted at the studio door cannot drive the platform
    * control plane whatever role the account holds, and one minted here cannot
    * act inside a studio. See the backend's middleware/platformAuth.js.
    *
-   * Omitted rather than defaulted here, so the server's own default ('staff')
-   * is the single place that decision lives.
+   * Omitted rather than defaulted here, so the server's own default
+   * ('trainer') is the single place that decision lives.
    */
-  login: (email: string, password: string, mfaCode?: string, portal?: 'staff' | 'member' | 'platform') =>
+  login: (email: string, password: string, mfaCode?: string, portal?: 'trainer' | 'member' | 'platform') =>
     http<{ user: User }>('/api/auth/login', {
       method: 'POST',
       body: {
@@ -69,23 +69,9 @@ export const auth = {
       method: 'POST',
       body: { token, password },
     }),
-  listUsers: () => http<User[]>('/api/auth/users'),
-  createUser: (data: {
-    name: string;
-    email: string;
-    password: string;
-    role: Role;
-    trainer_id?: string;
-  }) => http<{ message?: string; user: User }>('/api/auth/create-user', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  }),
-  toggleUser: (id: string) =>
-    http<{ message?: string; is_active: boolean }>(`/api/auth/users/${id}/toggle`, {
-      method: 'PUT',
-    }),
-  deleteUser: (id: string) =>
-    http<{ message?: string }>(`/api/auth/users/${id}`, { method: 'DELETE' }),
+  // listUsers / createUser / toggleUser / deleteUser went with the staff
+  // roles: a studio has one trainer, created with the studio, and members get
+  // their logins from the client record.
 };
 
 // ── WebAuthn / Passkey — user-level biometric auth ─────────────────────────
@@ -135,33 +121,36 @@ export const webauthn = {
       { method: 'PUT' }
     ),
 
-  // Admin
-  adminStats: () =>
-    http<{ totalCredentials: number; enrolledUsers: number; loginsLast24h: number; failedAttemptsLast24h: number }>(
-      '/api/auth/webauthn/admin/stats'
-    ),
-  adminCredentials: () =>
-    http<{ credentials: Array<{ id: string; device_name: string; device_type: string; backed_up: boolean; created_at: string; last_used_at: string | null; user_id: string; user_name: string; user_email: string; role: string }> }>(
-      '/api/auth/webauthn/admin/credentials'
-    ),
-  adminRevokeCredential: (id: string) =>
+  // Studio passkey management — the trainer, over their own studio's
+  // accounts. The server keeps the historical "/admin" path segment for
+  // compatibility; every route behind it is requireTrainer and org-scoped.
+  // Shapes are what the server actually returns (they used to be typed as a
+  // camelCase shape it never sent, so the page rendered blanks).
+  studioStats: () =>
+    http<StudioPasskeyStats>('/api/auth/webauthn/admin/stats'),
+  studioCredentials: () =>
+    http<{ credentials: StudioPasskeyCredential[] }>('/api/auth/webauthn/admin/credentials'),
+  studioRevokeCredential: (id: string) =>
     http<{ success: boolean }>(`/api/auth/webauthn/admin/credentials/${id}`, { method: 'DELETE' }),
-  adminAuditLogs: (limit = 100) =>
-    http<{ logs: Array<{ id: string; event: string; detail: Record<string, unknown>; ip: string | null; created_at: string; user_name: string | null; user_email: string | null; role: string | null }> }>(
-      `/api/auth/webauthn/admin/audit-logs?limit=${limit}`
-    ),
+  studioAuditLogs: (limit = 100) =>
+    http<{ logs: StudioPasskeyAuditLog[] }>(`/api/auth/webauthn/admin/audit-logs?limit=${limit}`),
 };
 
-// ── User/Account Management (Settings) ──────────────────────────
-export const accounts = {
-  list: () => http<unknown[]>('/api/auth/users'),
-  create: (data: { name: string; email: string; password: string; role: string }) =>
-    http<{ message: string; user: unknown }>('/api/auth/create-user', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: { name?: string; email?: string; role?: string; status?: string }) =>
-    http<{ message: string }>(`/api/auth/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => http<{ message: string }>(`/api/auth/users/${id}`, { method: 'DELETE' }),
-  toggleStatus: (id: string) =>
-    http<{ message: string; is_active: boolean }>(`/api/auth/users/${id}/toggle`, { method: 'PUT' }),
+export type StudioPasskeyStats = {
+  total_credentials: number;
+  active_credentials: number;
+  users_with_passkeys: number;
+  used_last_7_days: number;
+};
+export type StudioPasskeyCredential = {
+  id: string; user_id: string; user_name: string; user_email: string;
+  device_name: string; device_type: string; backed_up: boolean; backup_eligible: boolean;
+  is_active: boolean; created_at: string; last_used_at: string | null;
+};
+export type StudioPasskeyAuditLog = {
+  id: string; user_id: string | null; user_name: string | null;
+  action: string; entity_id: string | null; new_data: Record<string, unknown> | null;
+  ip_address: string | null; user_agent: string | null; created_at: string;
 };
 
 // ── Profile (My Profile page) ────────────────────────────────────

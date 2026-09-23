@@ -2,7 +2,6 @@ import type { MetadataRoute } from 'next';
 
 /** Authenticated URL segments that crawlers should not fetch. */
 const PRIVATE_SEGMENTS = [
-  '/admin',
   '/ai',
   '/ai-coach',
   '/appointments',
@@ -31,7 +30,6 @@ const PRIVATE_SEGMENTS = [
   '/subscription',
   '/support',
   '/trainer',
-  '/trainers',
   '/training',
 ];
 

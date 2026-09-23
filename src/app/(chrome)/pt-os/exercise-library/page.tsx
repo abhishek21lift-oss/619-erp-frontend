@@ -35,7 +35,6 @@ import { errorMessage } from '@/lib/forms/errors';
  *    filter and programme exactly like the built-in 890.
  */
 
-const ROLES_THAT_CAN_AUTHOR = new Set(['super_admin', 'admin', 'manager', 'trainer']);
 
 export default function ExerciseLibraryPage() {
   return (
@@ -58,7 +57,9 @@ function ExerciseLibrary() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [railOpen, setRailOpen] = useState(false);
 
-  const canAuthor = ROLES_THAT_CAN_AUTHOR.has(user?.role || '');
+  // The studio's own library is the trainer's to write; the built-in library
+  // is read-only for everyone (the server refuses edits to it).
+  const canAuthor = user?.role === 'trainer';
 
   // The global top-nav search hands off via ?q= — carry it into the library's
   // own query so landing here from a global search shows filtered results.

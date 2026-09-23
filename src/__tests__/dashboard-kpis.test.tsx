@@ -2,7 +2,9 @@
 //
 // ── What has been removed, and why it stays removed ───────────────────────
 //
-// Net Revenue was PT Revenue minus Commission — two cards already sitting
+// Commission (what a studio owed its coaches) went with the multi-coach
+// model: one studio is one trainer, so there is nobody to pay a commission
+// to. Net Revenue was PT Revenue minus Commission — two cards already sitting
 // either side of it. Consent Signed was the only thing on the dashboard
 // reading /api/pt-os/informed-consent, so that request went with it.
 // Outstanding was the same figure Today's Revenue shows as Pending one
@@ -117,16 +119,10 @@ describe('PT-OS dashboard KPIs', () => {
     expect(screen.queryByText('Outstanding')).toBeNull();
   });
 
-  it('keeps Commission on small screens but hides it on desktop', async () => {
-    // Hidden with a breakpoint utility rather than dropped, so the card is
-    // still in the DOM here — jsdom has no viewport to apply `lg:hidden`
-    // against. Asserting the class is the only honest check at this level;
-    // what it must NOT be is absent, which would mean it went from mobile too.
+  it('shows no Commission card, on any screen', async () => {
     render(<PtOsDashboard />);
-    const commission = await screen.findByText('Commission');
-    const card = commission.closest('.group');
-    expect(card).toBeTruthy();
-    expect(card!.className).toMatch(/lg:hidden/);
+    await screen.findByText('Active Clients');
+    expect(screen.queryByText('Commission')).toBeNull();
   });
 
   it('does not hide any of the metrics that should stay on desktop', async () => {
@@ -139,8 +135,8 @@ describe('PT-OS dashboard KPIs', () => {
 
   it('gives a tile a sparkline only when the series is its own', async () => {
     // revenueTrend is the ONLY series this endpoint carries, and it is
-    // revenue's. PT Revenue and Commission may draw it; Active Clients and
-    // Active Share have no series of their own and must draw nothing.
+    // revenue's. PT Revenue may draw it; Active Clients and Active Share have
+    // no series of their own and must draw nothing.
     render(<PtOsDashboard />);
     const bars = async (label: string) => {
       const card = (await screen.findByText(label)).closest('.group');
@@ -148,7 +144,6 @@ describe('PT-OS dashboard KPIs', () => {
     };
 
     expect(await bars('PT Revenue')).not.toBeNull();
-    expect(await bars('Commission')).not.toBeNull();
     expect(await bars('Active Clients')).toBeNull();
     expect(await bars('Active Share')).toBeNull();
   });
@@ -165,14 +160,14 @@ describe('PT-OS dashboard KPIs', () => {
   });
 
   it('ends every card on the same band, charted or not', async () => {
-    // The grid stretches all four cards to one height. Two of them have a
-    // series and two never will, so without a matching band on the others
-    // the row's bottom edge is level only by accident — and the two without
-    // read as a number floating in a pool of white, which is how they looked
+    // The grid stretches the cards to one height. One of them has a series
+    // and the others never will, so without a matching band on the others the
+    // row's bottom edge is level only by accident — and the ones without read
+    // as a number floating in a pool of white, which is how they looked
     // before this.
     render(<PtOsDashboard />);
     await screen.findByText('Active Clients');
-    for (const label of ['Active Clients', 'PT Revenue', 'Commission', 'Active Share']) {
+    for (const label of ['Active Clients', 'PT Revenue', 'Active Share']) {
       const card = (await screen.findByText(label)).closest('.group');
       expect(card!.querySelectorAll('[data-kpi-foot]'), `${label}'s foot`).toHaveLength(1);
     }
@@ -304,9 +299,9 @@ const onWhite = (hex: string) => 1.05 / (luminance(hex) + 0.05);
 describe('the KPI tiles can carry the white text printed on them', () => {
   const tones = Object.entries(KPI_TONES_FOR_TEST);
 
-  it('has a tone for each of the four metrics', () => {
+  it('has a tone for each metric on the row', () => {
     expect(tones.map(([k]) => k).sort()).toEqual(
-      ['activeShare', 'clients', 'commission', 'revenue'],
+      ['activeShare', 'clients', 'revenue'],
     );
   });
 

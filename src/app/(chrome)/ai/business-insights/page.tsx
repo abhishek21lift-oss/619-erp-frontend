@@ -50,8 +50,8 @@ export default function BusinessInsightsPage() {
       setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback });
     } catch (e: unknown) {
       const msg = errorMessage(e, 'Failed to generate insights.');
-      if (msg.includes('403') || msg.toLowerCase().includes('forbidden') || msg.toLowerCase().includes('admin')) {
-        setError('Business Insights is restricted to the studio owner.');
+      if (msg.includes('403') || msg.toLowerCase().includes('forbidden')) {
+        setError('Business Insights is available to the studio trainer only.');
       } else {
         setError(msg);
       }
@@ -61,7 +61,7 @@ export default function BusinessInsightsPage() {
   };
 
   return (
-    <Guard role="admin">
+    <Guard role="trainer">
       <PageContainer>
 
         <PageHero

@@ -29,7 +29,7 @@
  */
 
 /** Which sign-in screen this is. Passed to the server, which enforces it. */
-export type Portal = 'staff' | 'member' | 'platform';
+export type Portal = 'trainer' | 'member' | 'platform';
 
 /**
  * localStorage keys for the "continue as …" chip, namespaced per portal.
@@ -42,8 +42,8 @@ export type Portal = 'staff' | 'member' | 'platform';
  * read it — but the client's login page was wearing somebody else's identity,
  * which is not a thing a client should ever be shown.
  *
- * Staff keep the bare keys so no trainer loses their remembered account to
- * this change; the member portal gets its own namespace.
+ * The trainer door keeps the bare keys so no trainer loses their remembered
+ * account to this change; the member portal gets its own namespace.
  */
 export function rememberKeys(portal: Portal): { email: string; org: string; remember: string } {
   const suffix = portal === 'member' ? '.member' : portal === 'platform' ? '.platform' : '';
@@ -55,19 +55,20 @@ export function rememberKeys(portal: Portal): { email: string; org: string; reme
 }
 
 /**
- * Which portal an account belongs to.
+ * Which portal an account belongs to — the only one it may use.
  *
- * Members are clients, the platform operator runs the Command Center, and
- * everyone else is studio staff.
- *
- * Note this is the account's HOME portal, not the only place it may go — see
- * mayEnterPortal, which is the asymmetry that lets an operator walk into a
- * studio while no studio account can ever walk into the Command Center.
+ * The trainer runs the studio app, members are clients, and the platform
+ * operator runs the Command Center. Anything else — a retired staff role, a
+ * typo, nothing at all — belongs nowhere and gets null, which every caller
+ * treats as "not signed in". There is deliberately no "everyone else is
+ * staff" fallthrough: that default is how an unknown role used to be handed
+ * the studio app.
  */
-export function portalForRole(role: string | null | undefined): Portal {
+export function portalForRole(role: string | null | undefined): Portal | null {
+  if (role === 'trainer') return 'trainer';
   if (role === 'member') return 'member';
   if (role === 'super_admin') return 'platform';
-  return 'staff';
+  return null;
 }
 
 /**
@@ -75,7 +76,7 @@ export function portalForRole(role: string | null | undefined): Portal {
  *
  * Matched exactly and with a trailing slash, never as a bare prefix:
  * '/member-login'.startsWith('/member') is true, and so is
- * '/membership-plans' — a staff page about pricing.
+ * '/membership-plans' — a trainer page about pricing.
  */
 export function isMemberAppPage(pathname: string): boolean {
   return pathname === '/member' || pathname.startsWith('/member/');
@@ -96,32 +97,34 @@ export function isPlatformAppPage(pathname: string): boolean {
 /** Which portal a page belongs to. */
 export function portalForPage(pathname: string): Portal {
   if (isPlatformAppPage(pathname)) return 'platform';
-  return isMemberAppPage(pathname) ? 'member' : 'staff';
+  return isMemberAppPage(pathname) ? 'member' : 'trainer';
 }
 
 /**
  * May an account whose home is `userPortal` open a page in `pagePortal`?
  *
- * Deliberately NOT symmetric, and the asymmetry is the security property:
+ * Only its own. Every crossing is refused:
  *
- *   platform → staff   ALLOWED. The operator supporting a studio is the whole
- *                      job. They arrive either through impersonation (which
- *                      mints a studio session and writes an audit row) or with
- *                      the org-switcher pinned to one tenant. Both are
- *                      sanctioned, both are visible, and the server scopes
- *                      them regardless of what this function says.
+ *   platform → trainer  REFUSED. The operator is platform-only. Supporting a
+ *                       studio goes through impersonation, which mints a
+ *                       session AS the studio's trainer and writes an audit
+ *                       row — so the browser then holds a trainer account and
+ *                       lands here as one. There used to be a standing
+ *                       exception for the operator's own session, plus an
+ *                       org-switcher that pointed it at any tenant; both are
+ *                       gone with the x-org-id header they relied on.
  *
- *   staff  → platform  REFUSED. So is member → platform, and member ↔ staff.
- *                      No studio account has any business rendering the
- *                      control plane, not even an empty frame of it.
+ *   trainer → platform  REFUSED. So is member → platform, and member ↔ trainer.
+ *                       No studio account has any business rendering the
+ *                       control plane, not even an empty frame of it.
  *
  * This is the client-side half only. The server enforces the same boundary and
- * does not trust this one: requirePlatformOwner refuses a studio session at
- * the API, so the worst a bypass here achieves is a blank console.
+ * does not trust this one: the auth middleware refuses a platform session on
+ * every tenant path and requirePlatformOwner refuses a studio session on the
+ * control plane, so the worst a bypass here achieves is a blank screen.
  */
 export function mayEnterPortal(userPortal: Portal, pagePortal: Portal): boolean {
-  if (userPortal === pagePortal) return true;
-  return userPortal === 'platform' && pagePortal === 'staff';
+  return userPortal === pagePortal;
 }
 
 /** Where a signed-in account of this portal belongs when it wanders out of it. */
@@ -137,8 +140,8 @@ export function homeFor(portal: Portal): string {
  * NOT the same as homeFor(), and the difference is why this exists as its own
  * function. homeFor answers "where does this account belong when it wanders
  * somewhere it may not be" — a fallback. This answers "what screen does this
- * person want first", which for studio staff is the client list rather than the
- * dashboard, and for a trainer is their own schedule.
+ * person want first", which for the trainer is the client list rather than the
+ * dashboard.
  *
  * ── Why it is a function at all ─────────────────────────────────────────────
  *
@@ -164,7 +167,9 @@ export function postSignInPath(role: string | null | undefined): string {
   const portal = portalForRole(role);
   if (portal === 'platform') return '/platform';
   if (portal === 'member') return '/member/dashboard';
-  return '/pt-os';
+  if (portal === 'trainer') return '/pt-os';
+  // An account with no portal has nowhere to go but a door.
+  return '/login';
 }
 
 /**
@@ -177,7 +182,7 @@ export function postSignInPath(role: string | null | undefined): string {
  *
  *     loginUrl.searchParams.set('redirect', pathname)
  *
- * Nothing read it. Not the staff door, not the member door, not the Command
+ * Nothing read it. Not the trainer door, not the member door, not the Command
  * Center's. A trainer whose 15-minute access token lapsed while they were
  * three levels deep — /pt-os/clients/:id/payments, mid-entry — signed back in
  * and arrived at the client list, with no way back but navigation and no hint
@@ -241,7 +246,8 @@ export function safeReturnTo(raw: string | null | undefined, role: string | null
     return fallback;
   }
 
-  if (!mayEnterPortal(portalForRole(role), portalForPage(pathname))) return fallback;
+  const userPortal = portalForRole(role);
+  if (!userPortal || !mayEnterPortal(userPortal, portalForPage(pathname))) return fallback;
 
   return `${pathname}${search}`;
 }

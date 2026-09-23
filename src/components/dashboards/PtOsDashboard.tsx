@@ -26,7 +26,7 @@ import {
   type CoachBirthday, type Urgency,
 } from '@/lib/coach-insights';
 import {
-  Users, Wallet, Percent,
+  Users, Wallet,
   ChevronRight, Sparkles, ArrowUpRight, ArrowDownRight, Activity,
   UserPlus, CalendarPlus,
   ShieldCheck, Target, Gauge, Crown,
@@ -55,15 +55,10 @@ type DashData = {
   /** Owed AND past the end of the package it was owed for. */
   overdue_clients: number;
   total_monthly_pt_revenue: number;
-  total_monthly_commission: number;
   total_outstanding: number;
   /** Money actually banked today, from pt_payments — not contracted amounts. */
   today_collected: number;
   today_payments: number;
-  trainers: Array<{
-    id: string; name: string; active_clients: number;
-    monthly_revenue: number; monthly_commission: number;
-  }>;
   revenueTrend: Array<{
     label: string; month: string; revenue: number; incentives: number;
   }>;
@@ -230,7 +225,6 @@ const KpiSparkline = dynamic(() => import('@/components/dashboards/KpiSparkline'
 const KPI = {
   clients:     { from: palette.blue[500],    to: palette.blue[700],    glow: palette.blue[500] },
   revenue:     { from: palette.emerald[700], to: palette.emerald[800], glow: palette.emerald[700] },
-  commission:  { from: palette.amber[700],   to: palette.amber[800],   glow: palette.amber[700] },
   activeShare: { from: palette.blue[800],    to: palette.blue[900],    glow: palette.blue[800] },
 } as const;
 
@@ -2163,12 +2157,8 @@ export default function PtOsDashboard() {
   // The month label travels with the number now, so a hovered bar can say
   // which month it is rather than just how tall it is.
   const revTrend = d?.revenueTrend?.map(x => ({ label: x.label, value: Number(x.revenue) })) ?? [];
-  const incTrend = d?.revenueTrend?.map(x => ({ label: x.label, value: Number(x.incentives) })) ?? [];
   const revMoM   = momPct(d?.revenueTrend, 'revenue');
-  const incMoM   = momPct(d?.revenueTrend, 'incentives');
 
-  const commRate = d?.total_monthly_pt_revenue && d.total_monthly_pt_revenue > 0
-    ? `${((d.total_monthly_commission / d.total_monthly_pt_revenue) * 100).toFixed(0)}% rate` : undefined;
   // A snapshot of who currently holds a package — NOT retention, and not a
   // renewal rate: neither this nor any figure derived from it knows whether a
   // client whose package ENDED came back. TRUE renewal conversion
@@ -2280,15 +2270,8 @@ export default function PtOsDashboard() {
                   sub={`${d.expired_clients} expired`} tone={KPI.clients} delay={0} href="/pt-os/clients" />
                 <StatCard icon={<Wallet size={17} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
                   sub="this month" tone={KPI.revenue} delay={0.05} href="/pt-os/reports" trend={revTrend} pct={revMoM} format={fmtINR} />
-                {/* Phone and tablet only. Still rendered there, so the numbers
-                    stay one tap away on the devices a trainer carries around
-                    the floor; the desktop row is the one being kept lean.
-
-                    Incentives, not revenue — this is the one card whose
-                    series was already its own. */}
-                <StatCard icon={<Percent size={17} />} label="Commission" value={fmtCompact(d.total_monthly_commission)}
-                  sub={commRate} tone={KPI.commission} delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM} format={fmtINR}
-                  className="lg:hidden" />
+                {/* The Commission card (coach payouts) went with the multi-coach
+                    model; a studio is one trainer, so there is no one to pay. */}
                 <StatCard icon={<Gauge size={17} />} label="Active Share" value={activeSharePct !== null ? `${activeSharePct.toFixed(0)}%` : '—'}
                   sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active · true renewal on Insights`} tone={KPI.activeShare} delay={0.15} href="/insights/renewal" />
               </div>

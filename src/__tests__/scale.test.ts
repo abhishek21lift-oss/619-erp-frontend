@@ -64,7 +64,10 @@ describe('the audit found the app it is auditing', () => {
   // Every threshold below is meaningless if the scan silently stops matching.
   it('scanned a plausible number of declarations', () => {
     expect(sizes.length).toBeGreaterThan(4000);
-    expect(radii.length).toBeGreaterThan(1800);
+    // Lowered from 1800 when the multi-coach pages (trainers, commissions,
+    // payroll) were removed — the ratchet guards against the scan breaking,
+    // not against the app shrinking on purpose.
+    expect(radii.length).toBeGreaterThan(1700);
   });
 });
 

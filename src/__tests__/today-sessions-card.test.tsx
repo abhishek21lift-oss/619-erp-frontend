@@ -60,7 +60,10 @@ import PtOsDashboard from '@/components/dashboards/PtOsDashboard';
 
 /** The row containing a client's name, as an element to read labels off. */
 const rowFor = async (name: string) => {
-  const label = await screen.findByText(name);
+  // 10s rather than the 1s default: the FIRST dashboard render in this file
+  // pays for loading every chart and motion module, and on a busy machine
+  // that alone passes a second. What is asserted is the label, not the speed.
+  const label = await screen.findByText(name, {}, { timeout: 10000 });
   return label.closest('button')!;
 };
 

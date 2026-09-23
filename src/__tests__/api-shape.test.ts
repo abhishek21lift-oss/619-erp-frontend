@@ -73,7 +73,7 @@ describe('api surface', () => {
     // `http` and the role helpers are re-exported from '@/lib/api' and imported
     // that way across the app; moving api.ts must not drop them.
     return import('@/lib/api').then((mod) => {
-      for (const name of ['http', 'ROLES', 'normaliseRole', 'hasRole', 'isAdminOrManager']) {
+      for (const name of ['http', 'ROLES', 'TENANT_ROLES', 'hasRole', 'isRole']) {
         expect(mod, `@/lib/api must still export ${name}`).toHaveProperty(name);
       }
     });

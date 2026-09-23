@@ -40,7 +40,7 @@ import { PageHeader } from '@/components/ui';
 import { errorMessage } from '@/lib/forms/errors';
 
 export default function PaymentSettingsPage() {
-  return <Guard role="admin"><Inner /></Guard>;
+  return <Guard role="trainer"><Inner /></Guard>;
 }
 
 function Inner() {

@@ -471,7 +471,7 @@ export default function IntegrationsPage() {
 
 
   return (
-    <Guard role="admin">
+    <Guard role="trainer">
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
         {/* ── Hero ── */}

@@ -49,16 +49,6 @@
  */
 
 export const JUSTIFIED = {
-  'src/app/(chrome)/pt-os/commissions/page.tsx': {
-    allow: 6,
-    reason:
-      'Table inline editor — §1 names these explicitly. Each row edits in place; ' +
-      'putting them on useAppForm means one form instance per trainer and a ' +
-      'rewrite of a working table. The DATA layer is already on the platform: ' +
-      'drafts hold raw strings, commissionRowSchema and payoutRowSchema parse ' +
-      'them at save, errors render per row, and month changes abandon drafts. ' +
-      'The controls are the only native part and they carry no unvalidated value.',
-  },
 
   'src/app/(chrome)/finance/verify-payments/page.tsx': {
     allow: 6,

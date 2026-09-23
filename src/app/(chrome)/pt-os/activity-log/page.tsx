@@ -124,7 +124,7 @@ function Row({ entry }: { entry: ActivityLogEntry }) {
 
 export default function ActivityLogPage() {
   return (
-    <Guard roles={['admin', 'manager']}>
+    <Guard role="trainer">
       <Inner />
     </Guard>
   );

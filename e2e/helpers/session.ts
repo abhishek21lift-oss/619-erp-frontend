@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 /**
  * The studio owner seeded by `scripts/seed-e2e.js` in the backend repo.
  *
- * Alpha Studio, an admin. Bravo exists too and is what the isolation suite
+ * Alpha Studio's trainer. Bravo exists too and is what the isolation suite
  * uses; the form journeys only ever act as Alpha.
  */
 export const ALPHA = {

@@ -15,8 +15,6 @@
 //   ai/diet-generator          Field
 //   ai/workout-generator       Field
 //   fitness/AiCoachPanel       Field
-//   trainers/add               FloatLabel  — a floating caption painted over
-//   trainers/[id]/edit         FloatLabel    the input
 //
 // The measurement matters as much as the fix, and it took three attempts to
 // get honest: a scan that cannot follow a component boundary calls
@@ -77,8 +75,6 @@ describe('the label wrappers wrap', () => {
   const wrappers: [string, string[]][] = [
     ['app/(platform)/platform/_shared/ui.tsx', ['export function Field']],
     ['components/fitness/AiCoachPanel.tsx', ['function Field']],
-    ['app/(chrome)/trainers/add/page.tsx', ['function FloatLabel']],
-    ['app/(chrome)/trainers/[id]/edit/page.tsx', ['function FloatLabel']],
   ];
 
   it.each(wrappers)('%s renders a <label> around its children', (file, [marker]) => {
@@ -222,13 +218,15 @@ describe('labelling across a component boundary', () => {
     expect(audit.nameless.filter((x) => x.includes('payment-settings'))).toEqual([]);
   });
 
-  it('does not treat a page that labels a mapped row as such a wrapper', () => {
-    // commissions labels its per-trainer inputs with htmlFor={`comm-pct-
-    // ${t.id}`}. That is a local, not a prop, so the page must not register as
-    // a label-by-id component — otherwise an `id` prop on anything anywhere
-    // would start counting as a label and the audit would go quietly blind.
-    const src = readFileSync(srcPath('app', '(chrome)', 'pt-os', 'commissions', 'page.tsx'), 'utf8');
-    expect(src).toMatch(/htmlFor=\{`comm-pct-\$\{t\.id\}`\}/);
+  it('does not treat a component that labels an interpolated id as such a wrapper', () => {
+    // SignaturePad labels its typed-name field with htmlFor={`${baseId}-typed`}.
+    // The id is built locally rather than taken from a prop, so the file must
+    // not register as a label-by-id component — otherwise an `id` prop on
+    // anything anywhere would start counting as a label and the audit would go
+    // quietly blind. (The example used to be the commissions table, which went
+    // with the multi-coach model.)
+    const src = readFileSync(srcPath('components', 'pt-os', 'shared', 'SignaturePad.tsx'), 'utf8');
+    expect(src).toMatch(/htmlFor=\{`\$\{baseId\}-typed`\}/);
     // Same floor, same reason — see the note in "is empty for the right reason".
     expect(audit.total).toBeGreaterThan(200);
   });

@@ -7,7 +7,7 @@
 // component serves all three.
 //
 // What makes this one different from the other two is what the `portal` value
-// buys. For staff and member it is a refusal: the server checks the account
+// buys. For a trainer or a member it is a refusal: the server checks the account
 // against the door and rejects the mismatch. Here it additionally decides the
 // session's AUDIENCE — the token minted through this page is the only kind
 // that may drive the platform control plane, and it is refused by the studio

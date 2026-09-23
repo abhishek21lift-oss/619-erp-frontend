@@ -1,4 +1,4 @@
-// API endpoints: clients, trainers, leave, attendance.
+// API endpoints: clients, attendance.
 //
 // Lifted verbatim from the single `api` object in the 4,185-line api.ts.
 // Method names, URLs and request shapes are unchanged; index.ts composes these
@@ -6,9 +6,7 @@
 
 import { http } from '../../http';
 import { buildQs } from '../qs';
-import type {
-  Attendance, Client, LeaveRequest, LeaveRequestPayload, Trainer,
-} from '../types';
+import type { Attendance, Client } from '../types';
 
 /**
  * Clients.
@@ -75,43 +73,9 @@ export const clients = {
     http<{ data: unknown[] }>(`/api/pt-os/clients/${id}/renewals`),
 };
 
-export const trainers = {
-  list:   () => http<Trainer[]>('/api/trainers'),
-  get:    (id: string) => http<Trainer>(`/api/trainers/${id}`),
-  create: (data: Record<string, unknown>) =>
-    http('/api/trainers', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: Record<string, unknown>) =>
-    http(`/api/trainers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => http(`/api/trainers/${id}`, { method: 'DELETE' }),
-  sessions: (id: string) => http(`/api/trainers/${id}/sessions`),
-  createSession: (data: {
-    trainer_id: string; client_id: string; date: string; time: string;
-    duration: number; type?: string; notes?: string; recurring?: boolean;
-  }) => http<{ data: unknown }>('/api/trainers/sessions', {
-    method: 'POST', body: JSON.stringify(data),
-  }),
-};
-
-export const leave = {
-  list: (params?: Record<string, string | number>) =>
-    http<LeaveRequest[]>(`/api/leave${buildQs(params)}`),
-  get: (id: string) => http<LeaveRequest>(`/api/leave/${id}`),
-  create: (data: LeaveRequestPayload) =>
-    http<{ message?: string; leave: LeaveRequest }>('/api/leave', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  approve: (id: string, admin_note?: string) =>
-    http<{ message?: string; leave: LeaveRequest }>(`/api/leave/${id}/approve`, {
-      method: 'POST',
-      body: JSON.stringify({ admin_note }),
-    }),
-  reject: (id: string, admin_note?: string) =>
-    http<{ message?: string; leave: LeaveRequest }>(`/api/leave/${id}/reject`, {
-      method: 'POST',
-      body: JSON.stringify({ admin_note }),
-    }),
-};
+// `trainers` (the /api/trainers staff directory) and `leave` (staff leave
+// requests) went with the multi-coach model: a studio is one trainer, whose
+// profile is read through /api/pt-os/trainers.
 
 export const attendance = {
   list: (params?: Record<string, string>) =>

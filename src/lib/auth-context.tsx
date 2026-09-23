@@ -16,7 +16,7 @@ export type { Role } from './roles';
 interface Ctx {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string, mfaCode?: string, portal?: 'staff' | 'member' | 'platform') => Promise<void>;
+  login: (email: string, password: string, mfaCode?: string, portal?: 'trainer' | 'member' | 'platform') => Promise<void>;
   loginWithGoogle: (credential: string) => Promise<void>;
   loginWithPasskey: (email?: string) => Promise<void>;
   logout: () => void;
@@ -242,7 +242,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async function (
-    email: string, password: string, mfaCode?: string, portal?: 'staff' | 'member' | 'platform',
+    email: string, password: string, mfaCode?: string, portal?: 'trainer' | 'member' | 'platform',
   ): Promise<void> {
     const data = await api.auth.login(email, password, mfaCode, portal);
     _adoptSession(data.user);
