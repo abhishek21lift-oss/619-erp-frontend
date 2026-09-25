@@ -74,12 +74,6 @@ const COPY: Record<
       eyebrow: 'Trainer login · MY PT STUDIO',
       headline: 'Your studio, exactly where you left it.',
       sub: 'Clients, programmes, sessions, payments and renewals — the whole personal-training business in one place, with AI drafting the admin for you to approve.',
-      labels: [
-        { text: 'Clients', side: 'left', at: 0.3 },
-        { text: 'Programmes', side: 'left', at: 0.62 },
-        { text: 'Payments', side: 'right', at: 0.38 },
-        { text: 'Renewals', side: 'right', at: 0.7 },
-      ],
       notes: [
         'Every client’s history in one profile',
         'Programmes you build, or AI drafts — you approve',
@@ -97,12 +91,6 @@ const COPY: Record<
       eyebrow: 'Member login · MY PT STUDIO',
       headline: 'Your training, from your studio.',
       sub: 'Your membership, payments, attendance and measurements — kept by your studio, on any device you sign in from.',
-      labels: [
-        { text: 'Membership', side: 'left', at: 0.3 },
-        { text: 'Payments', side: 'left', at: 0.62 },
-        { text: 'Attendance', side: 'right', at: 0.38 },
-        { text: 'Progress', side: 'right', at: 0.7 },
-      ],
       notes: [
         'Only your own records — never another member’s',
         'Payments and receipts from your studio',

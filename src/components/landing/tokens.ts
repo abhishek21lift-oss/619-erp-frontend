@@ -202,46 +202,19 @@ export function inkOn(fill: string): string {
     : C.onGold;
 }
 
-// ── The studio object ──────────────────────────────────────────────────────
+// ── The studio mark ────────────────────────────────────────────────────────
 //
-// The brand mark is an isometric cube — a black anodised frame with a cobalt
-// "M" running through it. The signed-out surface renders that object for real
-// (components/landing/StudioCube.tsx) instead of illustrating the product with
-// a mocked dashboard, so its materials live here with the rest of the
-// marketing palette.
-//
-// Each material is lit from one fixed key light, up and to the left — the
-// same direction SHADOW already assumes for the soft surface, so the object
-// and the page it sits on agree about where the light is. `top` catches the
-// most, `front` is the key side, `side` is the shadowed flank, `back` is what
-// the open frame lets you glimpse through it.
-export const MATERIAL = {
-  anodised: {
-    top: 'linear-gradient(135deg, #5B6576 0%, #3A4250 55%, #262C37 100%)',
-    front: 'linear-gradient(160deg, #353C49 0%, #1F242E 70%, #171B23 100%)',
-    side: 'linear-gradient(160deg, #20252F 0%, #12161D 100%)',
-    back: '#0E1117',
-    edge: 'inset 0 0 0 1px rgba(255,255,255,0.07)',
-  },
-  cobalt: {
-    top: 'linear-gradient(135deg, #7FB4FF 0%, #3B8DF5 45%, #0271EB 100%)',
-    front: 'linear-gradient(160deg, #3B8DF5 0%, #0067E0 55%, #0050AD 100%)',
-    side: 'linear-gradient(160deg, #0059CE 0%, #003F87 100%)',
-    back: '#002D61',
-    edge: 'inset 0 0 0 1px rgba(255,255,255,0.18)',
-  },
-  // Contact shadow under the object: tight and dark where it touches the
-  // floor, wide and faint further out. Two layers, because one Gaussian
-  // either looks like a hover glow or a hole.
-  floorCore: 'radial-gradient(closest-side, rgba(15,23,42,0.42), rgba(15,23,42,0.18) 55%, transparent)',
-  floorWide: 'radial-gradient(closest-side, rgba(15,23,42,0.16), transparent)',
-} as const;
-
-// Hairline annotation — the drafting-sheet callouts around the object.
-export const ANNOTATION = {
-  line: 'rgba(31,42,61,0.28)',
-  dot: '#0067E0',
-  text: '#3A4759',
+// The signed-out pages show the brand mark itself — the real artwork, not a
+// re-drawing of it — standing on the surface under the same key light the
+// soft UI assumes (up and to the left). See components/landing/StudioMark.tsx.
+export const MARK = {
+  /** The mark's own shadow, cast down and slightly right of the key light. */
+  shadow: 'drop-shadow(0 22px 26px rgba(15,23,42,0.20)) drop-shadow(0 3px 4px rgba(15,23,42,0.16))',
+  /** A faint cobalt bloom behind the mark — the M's colour lifting off the page. */
+  bloom: 'radial-gradient(closest-side, rgba(0,103,224,0.13), rgba(0,103,224,0.04) 60%, transparent)',
+  /** Contact shadow where it meets the floor: tight and dark, then wide and faint. */
+  contact: 'radial-gradient(closest-side, rgba(15,23,42,0.30), rgba(15,23,42,0.10) 60%, transparent)',
+  contactWide: 'radial-gradient(closest-side, rgba(15,23,42,0.10), transparent)',
 } as const;
 
 // ── Signed-out controls ────────────────────────────────────────────────────

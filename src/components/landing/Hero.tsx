@@ -4,26 +4,18 @@ import Link from 'next/link';
 import { m, useReducedMotion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Container } from './primitives';
-import StudioCube, { type CubeLabel } from './StudioCube';
+import StudioMark from './StudioMark';
 import { C, EASE, PRIMARY_BUTTON, SECONDARY_BUTTON, STAGE } from './tokens';
 
 /**
  * The first screen.
  *
- * The visual is the product's own mark — the studio cube, built in real 3D —
- * annotated with the parts of the business it holds. It replaces a mocked
+ * The visual is the product's own mark — the MY PT STUDIO artwork, lit as an
+ * object on the page and kept still. It replaces a mocked
  * dashboard full of invented clients and rupee figures: a visitor could not
  * tell those numbers were made up, and the page should not show anything the
  * product would not show them.
  */
-const PARTS: CubeLabel[] = [
-  { text: 'Clients', side: 'left', at: 0.26 },
-  { text: 'Programmes', side: 'left', at: 0.46 },
-  { text: 'Sessions', side: 'left', at: 0.66 },
-  { text: 'Payments', side: 'right', at: 0.32 },
-  { text: 'Renewals', side: 'right', at: 0.52 },
-  { text: 'AI drafts', side: 'right', at: 0.72 },
-];
 
 /** `trialDays` is null until the live plan config has loaded — never a guess. */
 export default function Hero({ trialDays }: { trialDays: number | null }) {
@@ -98,13 +90,7 @@ export default function Hero({ trialDays }: { trialDays: number | null }) {
             </m.p>
           </div>
 
-          <m.div
-            initial={reduce ? false : { opacity: 0, scale: 0.94 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 0.15, ease: EASE }}
-          >
-            <StudioCube maxSize={240} minSize={150} fill={0.46} labels={PARTS} />
-          </m.div>
+          <StudioMark size={300} priority />
         </div>
       </Container>
     </section>
