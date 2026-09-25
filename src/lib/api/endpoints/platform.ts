@@ -13,6 +13,7 @@ import type {
   FeatureOverrideRow, ImpersonationSession, Invitation, InvitationDetail,
   ClientActivationPreview, ClientLoginStatus,
   MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement,
+  MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput,
   InvitationPreview, InvoiceQuery, InvoiceTotals, LoginEvent, LoginEventQuery,
   OrgBillingProfile, OrgInternalNotes, OrgUser, Organization, OrganizationDetail,
   PlatformUser, PlatformUserQuery, PlatformUserSummary,
@@ -709,6 +710,12 @@ export const me = {
   payments: () => http<{ data: MePayment[] }>('/api/me/payments'),
   attendance: () => http<{ data: MeAttendance[] }>('/api/me/attendance'),
   measurements: () => http<{ data: MeMeasurement[] }>('/api/me/measurements'),
+  workout: () => http<{ data: MeWorkoutPlan[] }>('/api/me/workout'),
+  diet: () => http<{ data: MeDietPlan[] }>('/api/me/diet'),
+  checkins: () => http<{ data: { this_week: string; checkins: MeCheckin[] } }>('/api/me/checkins'),
+  /** This week's check-in. The server picks the week; nothing here names a client. */
+  submitCheckin: (body: MeCheckinInput) =>
+    http<{ data: MeCheckin }>('/api/me/checkins', { method: 'POST', body: JSON.stringify(body) }),
 };
 
 // ── Client activation (public) ────────────────────────────
