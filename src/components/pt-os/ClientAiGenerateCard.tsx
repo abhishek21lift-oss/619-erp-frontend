@@ -37,8 +37,10 @@
  * did, including when the client ends up on more programmes than the session
  * log can choose between.
  *
- * A generated DIET is still preview-only: nothing on the backend materialises
- * one, and a Save button that silently did nothing would be worse than none.
+ * A generated DIET can be saved too: POST /api/diet/plans/from-ai writes it as
+ * the studio's own template, its meals and an active assignment to this
+ * client, in one transaction. Diet generations are not ledgered, so the
+ * reviewed plan itself is sent, and the server validates it as trainer input.
  *
  * The workout response also carries the safety screen, the rule audit, a
  * quality score and a second model's critique. Those are rendered by
@@ -142,6 +144,9 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
     evidence?: AiWorkoutGenerationResult;
   } | null>(null);
   const [saving, setSaving] = useState(false);
+  // A saved diet stays on screen (there is no builder to jump to), so the
+  // button has to say it worked rather than invite a second save.
+  const [savedDiet, setSavedDiet] = useState(false);
   const savingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   // State updates are async; a ref is the guard that actually stops a double
@@ -185,6 +190,7 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
     busyRef.current = true;
     setBusy(kind);
     setResult(null);
+    setSavedDiet(false);
     setError(null);
 
     try {
@@ -247,7 +253,24 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
     // refuses the second accept with a 409 either way — the stamp is
     // conditional on accepted_plan_id IS NULL — but the trainer would see an
     // error toast for a save that worked.
-    if (!result || result.kind !== 'workout' || !result.generationId || savingRef.current) return;
+    if (!result || savingRef.current) return;
+    if (result.kind === 'diet') {
+      if (savedDiet) return;
+      savingRef.current = true;
+      setSaving(true);
+      try {
+        const out = await api.diet.saveFromAi({ client_id: client.id, plan: result.plan as AiDietPlan });
+        setSavedDiet(true);
+        toast.success(`Saved ${out.name}`, { description: `Now the active diet for ${client.name}.` });
+      } catch (err) {
+        toast.error(errorMessage(err, 'Could not save the diet'));
+      } finally {
+        savingRef.current = false;
+        setSaving(false);
+      }
+      return;
+    }
+    if (result.kind !== 'workout' || !result.generationId) return;
     savingRef.current = true;
     setSaving(true);
     try {
@@ -301,7 +324,7 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
   const blockedFields = (context?.data_quality.blocking ?? [])
     .filter((f) => !(f in stated && String(stated[f as keyof StatedValues] ?? '').trim()));
 
-  const canSave = result?.kind === 'workout' && Boolean(result.generationId);
+  const canSave = result?.kind === 'diet' || (result?.kind === 'workout' && Boolean(result.generationId));
 
   return (
     <m.div
@@ -499,24 +522,24 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
                 <div className="mt-2.5 flex items-center justify-between gap-2 border-t pt-2.5"
                   style={{ borderColor: 'var(--border)' }}>
                   <p className="text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
-                    Not saved yet.
+                    {savedDiet ? `Saved to ${client.name}'s diet.` : 'Not saved yet.'}
                   </p>
                   <button
                     type="button"
                     onClick={save}
-                    disabled={saving}
+                    disabled={saving || savedDiet}
                     className="flex items-center gap-1.5 rounded-[9px] px-2.5 py-1.5 text-[11.5px] font-[720] text-white transition-opacity disabled:opacity-60"
-                    style={{ background: BLUE, boxShadow: `0 4px 12px ${rgba(BLUE, 0.32)}` }}
+                    style={{ background: result.kind === 'diet' ? GREEN : BLUE, boxShadow: `0 4px 12px ${rgba(result.kind === 'diet' ? GREEN : BLUE, 0.32)}` }}
                   >
                     {saving ? <Loader2 size={12} className="animate-spin" /> : <ArrowRight size={12} />}
-                    {saving ? 'Saving' : 'Save as programme'}
+                    {saving ? 'Saving' : savedDiet ? 'Saved' : result.kind === 'diet' ? 'Save diet' : 'Save as programme'}
                   </button>
                 </div>
               ) : (
                 <p className="mt-2 border-t pt-1.5 text-[10.5px]" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-                  {/* A diet has nowhere to be saved to, and a workout whose
-                      ledger row was not written has nothing to save against.
-                      Both say so rather than offering a button that fails. */}
+                  {/* A workout whose ledger row was not written has nothing
+                      to save against, so it says so rather than offering a
+                      button that fails. */}
                   Preview only &mdash; nothing has been saved to {client.name}&rsquo;s record.
                 </p>
               )}

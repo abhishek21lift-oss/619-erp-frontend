@@ -4,7 +4,6 @@ import type { MetadataRoute } from 'next';
 const PRIVATE_SEGMENTS = [
   '/ai',
   '/ai-coach',
-  '/appointments',
   '/attendance',
   '/auth',
   '/checkin',

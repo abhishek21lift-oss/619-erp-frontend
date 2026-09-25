@@ -86,7 +86,7 @@ describe('the route groups', () => {
     // came from ModuleWorkspace. They belong here, and used to be the easiest
     // thing in this refactor to get wrong.
     expect(routesIn('(chrome)')).toContain('finance/[tab]');
-    expect(routesIn('(chrome)')).toContain('appointments');
+    expect(routesIn('(chrome)')).toContain('engagement/[tab]');
   });
 
   it('puts the Command Center under (platform), and nothing else', () => {

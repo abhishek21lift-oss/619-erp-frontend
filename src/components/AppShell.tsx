@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   LogOut, Bell, Settings,
   Zap, User, HelpCircle, ChevronDown, CreditCard,
-  Menu, CheckCheck, ExternalLink, ChevronRight, KeyRound, Sun, Moon,
+  Menu, CheckCheck, ExternalLink, ChevronRight, KeyRound, Sun, Moon, QrCode, Fingerprint,
 } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
@@ -191,8 +191,15 @@ function AppShellContent({ children }: AppShellProps) {
 
   // My Profile intentionally lives only in the profile dropdown (avatar menu),
   // not here in the settings (gear) menu.
+  //
+  // UPI payment settings and the studio's passkey list were built and then
+  // left with no way in: nothing linked to either page, so a trainer could
+  // not set up where members' UPI payments go, or revoke a member's Face ID
+  // login, without typing the URL.
   const settingsLinks = [
     { href: '/settings/passkeys',        label: 'Passkeys / Face ID Login', icon: KeyRound },
+    { href: '/settings/biometrics',      label: 'Member Passkeys',       icon: Fingerprint },
+    { href: '/finance/payment-settings', label: 'UPI Payment Settings',  icon: QrCode },
     { href: '/settings/integrations',    label: 'Integrations',          icon: Zap },
   ];
 

@@ -34,6 +34,7 @@ const mockWorkoutContext = vi.fn();
 const mockGenerateDiet = vi.fn();
 const mockLoginStatus = vi.fn();
 const mockSaveFromGeneration = vi.fn();
+const mockSaveDiet = vi.fn();
 
 vi.mock('@/lib/api', () => ({
   api: {
@@ -49,6 +50,9 @@ vi.mock('@/lib/api', () => ({
       plans: {
         saveFromGeneration: (...args: unknown[]) => mockSaveFromGeneration(...args),
       },
+    },
+    diet: {
+      saveFromAi: (...args: unknown[]) => mockSaveDiet(...args),
     },
   },
 }));
@@ -122,6 +126,7 @@ function deferred<T>() {
 beforeEach(() => {
   mockGenerateWorkout.mockReset();
   mockGenerateDiet.mockReset();
+  mockSaveDiet.mockReset();
   mockLoginStatus.mockReset();
   mockToastError.mockReset();
   mockLoginStatus.mockResolvedValue({ data: LOGIN_STATUS });
@@ -411,6 +416,50 @@ describe('generating a diet', () => {
     expect(screen.getByText(/160g/)).toBeInTheDocument();
     expect(screen.getByText(/Breakfast/)).toBeInTheDocument();
     expect(screen.getByText(/AI diet\s*—\s*review before saving/)).toBeInTheDocument();
+  });
+});
+
+describe('saving a generated diet', () => {
+  it('sends the reviewed plan for this client and says it is saved', async () => {
+    mockGenerateDiet.mockResolvedValue({ data: DIET_PLAN });
+    mockSaveDiet.mockResolvedValue({ message: 'ok', template_id: 't1', name: DIET_PLAN.name, meals: 3, assignment: {} });
+
+    renderCard();
+    fireEvent.click(screen.getByText('Generate AI Diet'));
+    await screen.findByText('High-Protein Fat Loss Plan');
+
+    fireEvent.click(screen.getByText('Save diet'));
+    await waitFor(() => expect(mockSaveDiet).toHaveBeenCalledTimes(1));
+    expect(mockSaveDiet.mock.calls[0][0]).toEqual({ client_id: 'cl-1', plan: DIET_PLAN });
+    await screen.findByText('Saved');
+    expect(mockToastSuccess).toHaveBeenCalled();
+    // No longer claims nothing was saved.
+    expect(screen.queryByText(/Preview only/)).toBeNull();
+  });
+
+  it('cannot be saved twice', async () => {
+    mockGenerateDiet.mockResolvedValue({ data: DIET_PLAN });
+    mockSaveDiet.mockResolvedValue({ message: 'ok', template_id: 't1', name: DIET_PLAN.name, meals: 3, assignment: {} });
+
+    renderCard();
+    fireEvent.click(screen.getByText('Generate AI Diet'));
+    await screen.findByText('High-Protein Fat Loss Plan');
+    fireEvent.click(screen.getByText('Save diet'));
+    await screen.findByText('Saved');
+    fireEvent.click(screen.getByText('Saved'));
+    expect(mockSaveDiet).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the plan on screen and says why when the save fails', async () => {
+    mockGenerateDiet.mockResolvedValue({ data: DIET_PLAN });
+    mockSaveDiet.mockRejectedValue(new Error('plan.total_calories must be a number between 500 and 10000'));
+
+    renderCard();
+    fireEvent.click(screen.getByText('Generate AI Diet'));
+    await screen.findByText('High-Protein Fat Loss Plan');
+    fireEvent.click(screen.getByText('Save diet'));
+    await waitFor(() => expect(mockToastError).toHaveBeenCalled());
+    expect(screen.getByText('Save diet')).toBeInTheDocument();
   });
 });
 
