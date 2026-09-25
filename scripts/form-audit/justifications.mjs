@@ -62,6 +62,21 @@ export const JUSTIFIED = {
       'case §1 and the non-negotiable rule both forbid.',
   },
 
+  'src/components/payments/UpiPayScreen.tsx': {
+    allow: 2,
+    reason:
+      'The member payment screen, moved here from app/(chrome)/pay/[orderId] so ' +
+      'the member app can mount it too; the controls did not change, but the ' +
+      'new path ranks it P0, so they were re-verified line by line. The UTR box ' +
+      'is labelled (htmlFor="utr"), holds the reference as a digit STRING via ' +
+      'inputMode rather than type="number", validates it against the server\'s ' +
+      '12-16 digit rule with aria-invalid and aria-describedby on the inline ' +
+      'error, and submit is refused while busy or invalid. The note textarea is ' +
+      'labelled and capped at the server\'s 500 characters. The proof upload is ' +
+      'already the canonical checked uploader. Migrating a working money form ' +
+      'as a side effect of moving it would change behaviour and fix nothing.',
+  },
+
   'src/components/platform/subscription-requests.tsx': {
     allow: 2,
     reason:

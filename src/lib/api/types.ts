@@ -1698,8 +1698,16 @@ export type UpiSubmitUtrInput = {
  * hold every 2-decimal rupee value exactly. Format them, do not arithmetic
  * them.
  */
+/**
+ * What an order pays for. `membership` buys a plan and extends the membership
+ * window; `balance` pays down what the member already owes and buys no time,
+ * so it carries duration_months 0 and its activation has no window.
+ */
+export type UpiOrderKind = 'membership' | 'balance';
+
 export type UpiOrder = {
   id: string;
+  kind: UpiOrderKind;
   organization_id: string;
   order_no: string;
   client_id: string;
@@ -1744,8 +1752,9 @@ export type UpiActivation = {
   receipt_no: string;
   amount: string;
   utr: string;
-  activated_from: string;
-  activated_to: string;
+  /** null for a balance payment, which activates no window. */
+  activated_from: string | null;
+  activated_to: string | null;
   approved_at: string;
 };
 

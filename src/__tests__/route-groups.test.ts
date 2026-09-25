@@ -60,6 +60,7 @@ const BARE = [
   'member/classes',              // the member portal has its own shell
   'member/dashboard',
   'member/payments',
+  'member/pay/[orderId]',
   'member/workout',
   'member/diet',
   'member/checkin',

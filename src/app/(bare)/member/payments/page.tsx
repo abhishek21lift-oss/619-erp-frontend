@@ -16,10 +16,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  Receipt, ArrowRight, Inbox, AlertTriangle, RefreshCw, Ban, ExternalLink,
+  Receipt, ArrowRight, Inbox, AlertTriangle, RefreshCw, Ban, ExternalLink, CreditCard,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
+import PayBalanceButton from '@/components/member/PayBalanceButton';
 import { api } from '@/lib/api';
 import type { UpiHistoryRow } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -49,6 +50,18 @@ function Inner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<string | null>(null);
+  // What the member owes, for the pay-balance card. Display only — the server
+  // prices the order itself. A failed read just hides the card.
+  const [balance, setBalance] = useState(0);
+
+  useEffect(() => {
+    if (!isMember) return;
+    let alive = true;
+    api.me.membership()
+      .then((r) => { if (alive) setBalance(Number(r.data?.balance_amount) || 0); })
+      .catch(() => { if (alive) setBalance(0); });
+    return () => { alive = false; };
+  }, [isMember]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -92,7 +105,7 @@ function Inner() {
       <PageHeader
         title={isMember ? 'My payments' : 'Member payments'}
         subtitle={isMember
-          ? 'Every membership payment you have made, and where each one stands.'
+          ? 'Every payment you have made, and where each one stands.'
           : 'UPI payments members have submitted, across the studio.'}
         icon={<Receipt size={19} />}
         actions={
@@ -103,6 +116,25 @@ function Inner() {
           </button>
         }
       />
+
+      {isMember && balance > 0 && (
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4"
+          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+          <div>
+            <p className="text-[12px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-muted)' }}>
+              Balance due
+            </p>
+            <p className="mt-0.5 text-[20px] font-[800] tabular-nums" style={{ color: 'var(--text-primary)' }}>
+              {fmtMoneyExact(balance)}
+            </p>
+          </div>
+          <PayBalanceButton
+            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-[13.5px] font-[700] text-white"
+            style={{ background: 'var(--brand)' }}>
+            <CreditCard size={15} /> Pay by UPI
+          </PayBalanceButton>
+        </div>
+      )}
 
       <div className="mt-5">
         {error ? (
@@ -123,7 +155,7 @@ function Inner() {
             icon={<Inbox size={22} />}
             title="No payments yet"
             description={isMember
-              ? 'Membership payments you make will appear here with their receipts.'
+              ? 'Payments you make will appear here with their receipts.'
               : 'Nothing has been submitted through UPI yet.'}
           />
         ) : (
@@ -176,7 +208,7 @@ function Inner() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   {RESUMABLE.has(row.status) && (
                     <>
-                      <button type="button" onClick={() => router.push(`/pay/${row.id}`)}
+                      <button type="button" onClick={() => router.push(`/member/pay/${row.id}`)}
                         className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-[700] text-white"
                         style={{ background: 'var(--brand)' }}>
                         {row.status === 'CREATED' ? 'Pay now' : 'Submit reference'}
@@ -191,7 +223,7 @@ function Inner() {
                     </>
                   )}
                   {row.status === 'VERIFICATION_PENDING' && (
-                    <button type="button" onClick={() => router.push(`/pay/${row.id}`)}
+                    <button type="button" onClick={() => router.push(`/member/pay/${row.id}`)}
                       className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-[650]"
                       style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)' }}>
                       Track status <ArrowRight size={14} />

@@ -125,6 +125,15 @@ export const upiPayments = {
     http<{ data: { order: UpiOrder; payment: UpiPaymentView; reused: boolean } }>(
       '/api/payments/upi/create', { method: 'POST', body: JSON.stringify(body) }),
 
+  /**
+   * A member pays their own outstanding balance. Takes no body: the server
+   * prices the order from the balance it holds for the signed-in member.
+   * 409 NO_BALANCE when nothing is owed.
+   */
+  payBalance: () =>
+    http<{ data: { order: UpiOrder; payment: UpiPaymentView; reused: boolean } }>(
+      '/api/payments/upi/balance', { method: 'POST' }),
+
   /** Full state of one order: QR, intents, every submission, the activation. */
   status: (orderId: string) =>
     http<{ data: UpiOrderDetail }>(`/api/payments/upi/${orderId}/status`),
