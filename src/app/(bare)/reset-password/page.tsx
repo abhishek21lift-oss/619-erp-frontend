@@ -14,11 +14,12 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { m } from 'framer-motion';
-import { ArrowLeft, Lock, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import BrandLogoWide from '@/components/BrandLogoWide';
+import { Lock, Loader2, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
+import PublicNav, { PUBLIC_NAV_CLEARANCE } from '@/components/PublicNav';
+import AuthShell, { AuthCard } from '@/components/landing/AuthShell';
+import { RevealButton } from '@/components/landing/AuthField';
 import { api } from '@/lib/api';
-import { C, SHADOW } from '@/components/landing/tokens';
+import { C, PRIMARY_BUTTON } from '@/components/landing/tokens';
 import { SoftTextField, SoftFormError } from '@/components/landing/SoftField';
 import { passwordStrength, MIN_LENGTH } from '@/lib/password-policy';
 import { useAppForm } from '@/lib/forms/useAppForm';
@@ -26,10 +27,28 @@ import {
   newPasswordSchema, blankNewPassword, NEW_PASSWORD_FIELD_HINTS,
 } from '@/lib/forms/schemas/auth';
 
-// Tokens, not local hex: the twin of /forgot-password, and the last screen in
-// the recovery journey. See the note there.
-const INK = C.ink;
-const MUTE = C.muted;
+/** A notice in place of the form — a missing link, or the finished reset. */
+function Notice({ tone, title, body, href, cta }: {
+  tone: 'error' | 'ok'; title: string; body: string; href: string; cta: string;
+}) {
+  const Icon = tone === 'error' ? AlertCircle : CheckCircle2;
+  return (
+    <AuthCard title={title}>
+      <div
+        className="mt-5 flex items-start gap-3 rounded-[16px] border px-4 py-3.5"
+        style={tone === 'error'
+          ? { background: C.redSoft, borderColor: 'rgba(183,28,28,0.18)' }
+          : { background: C.emeraldSoft, borderColor: 'rgba(2,92,67,0.18)' }}
+      >
+        <Icon size={20} className="mt-px shrink-0" style={{ color: tone === 'error' ? C.red : C.emerald }} />
+        <p className="text-[13.5px] leading-relaxed" style={{ color: C.body }}>{body}</p>
+      </div>
+      <Link href={href} className={`${PRIMARY_BUTTON} mt-5 h-[54px] w-full text-[15px]`}>
+        {cta} <ArrowRight size={17} strokeWidth={2.5} />
+      </Link>
+    </AuthCard>
+  );
+}
 
 const STRENGTH_LABEL = ['', 'Weak', 'Fair', 'Good', 'Strong'];
 const STRENGTH_COLOR = ['transparent', C.red, C.gold, C.blue, C.emerald];
@@ -104,49 +123,31 @@ function ResetPasswordForm() {
   // Say so plainly instead of rendering a form that cannot possibly work.
   if (!token) {
     return (
-      <div className="rounded-[20px] p-6 text-center" style={{ background: C.panel, boxShadow: SHADOW.panel }}>
-        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full" style={{ background: C.redSoft }}>
-          <AlertCircle size={24} style={{ color: C.red }} />
-        </div>
-        <p className="text-[14px] font-[650]" style={{ color: INK }}>This link is missing its reset code</p>
-        <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: MUTE }}>
-          Open the link straight from your email, or request a new one.
-        </p>
-        <Link
-          href="/forgot-password"
-          className="mt-4 inline-flex w-full items-center justify-center rounded-[12px] py-3 text-[14px] font-[700] text-white"
-          style={{ background: `linear-gradient(135deg, ${C.blue450}, ${C.blueLo})`, boxShadow: SHADOW.blueGlow }}
-        >
-          Request a new link
-        </Link>
-      </div>
+      <Notice
+        tone="error"
+        title="This link is missing its reset code"
+        body="Open the link straight from your email, or request a new one."
+        href="/forgot-password"
+        cta="Request a new link"
+      />
     );
   }
 
   if (done) {
     return (
-      <div className="rounded-[20px] p-6 text-center" style={{ background: C.panel, boxShadow: SHADOW.panel }}>
-        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full" style={{ background: C.emeraldSoft }}>
-          <CheckCircle2 size={24} style={{ color: C.emerald }} />
-        </div>
-        <p className="text-[14px] font-[650]" style={{ color: INK }}>Password updated</p>
-        <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: MUTE }}>
-          For safety, every device that was signed in has been signed out. Taking you to sign in…
-        </p>
-        <Link
-          href="/login"
-          className="mt-4 inline-flex w-full items-center justify-center rounded-[12px] py-3 text-[14px] font-[700] text-white"
-          style={{ background: `linear-gradient(135deg, ${C.blue450}, ${C.blueLo})`, boxShadow: SHADOW.blueGlow }}
-        >
-          Sign in now
-        </Link>
-      </div>
+      <Notice
+        tone="ok"
+        title="Password updated"
+        body="For safety, every device that was signed in has been signed out. Taking you to sign in…"
+        href="/login"
+        cta="Sign in now"
+      />
     );
   }
 
   return (
-    <div className="rounded-[20px] p-6" style={{ background: C.panel, boxShadow: SHADOW.panel }}>
-      <form onSubmit={(e) => { e.preventDefault(); void f.submit(); }} noValidate>
+    <AuthCard title="Set a new password" subtitle="Choose something you have not used here before.">
+      <form onSubmit={(e) => { e.preventDefault(); void f.submit(); }} noValidate className="mt-6">
         <form.Field name="password">
           {(field) => (
             <>
@@ -158,18 +159,12 @@ function ResetPasswordForm() {
                 autoComplete="new-password"
                 focusOnMount
                 placeholder={`At least ${MIN_LENGTH} characters`}
-                icon={<Lock size={16} />}
+                icon={<Lock size={18} />}
                 serverError={f.errors.fieldErrors.password}
                 trailing={
-                  <button
-                    type="button"
-                    onClick={() => setShow((v) => !v)}
-                    aria-label={show ? 'Hide password' : 'Show password'}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
-                    style={{ color: MUTE }}
-                  >
-                    {show ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2">
+                    <RevealButton shown={show} onToggle={() => setShow((v) => !v)} />
+                  </span>
                 }
               />
 
@@ -189,7 +184,7 @@ function ResetPasswordForm() {
               type={show ? 'text' : 'password'}
               autoComplete="new-password"
               placeholder="Type it again"
-              icon={<Lock size={16} />}
+              icon={<Lock size={18} />}
               className="mt-4"
               serverError={f.errors.fieldErrors.confirm}
             />
@@ -198,65 +193,39 @@ function ResetPasswordForm() {
 
         <SoftFormError message={f.errors.formError} className="mt-3" />
 
-        <button
-          type="submit"
-          disabled={f.isSubmitting}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] py-3 text-[14px] font-[700] text-white transition-opacity disabled:opacity-60"
-          style={{ background: `linear-gradient(135deg, ${C.blue450}, ${C.blueLo})`, boxShadow: SHADOW.blueGlow }}
-        >
+        <button type="submit" disabled={f.isSubmitting} className={`${PRIMARY_BUTTON} mt-5 h-[54px] w-full text-[15px]`}>
           {f.isSubmitting ? <><Loader2 size={17} className="animate-spin" /> Updating…</> : 'Set new password'}
         </button>
       </form>
-    </div>
+    </AuthCard>
   );
 }
 
 export default function ResetPasswordPage() {
   return (
-    <main
-      className="relative flex min-h-[100dvh] flex-col items-center justify-center"
-      style={{
-        background: C.canvas,
-        color: INK,
-        fontFamily: "var(--font-sans), 'Inter', system-ui, sans-serif",
-        paddingTop: 'calc(max(env(safe-area-inset-top), 2.75rem) + 1.25rem)',
-        paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)',
+    <AuthShell
+      nav={<PublicNav action="sign-in" />}
+      mainStyle={{
+        paddingTop: PUBLIC_NAV_CLEARANCE,
+        paddingBottom: 'calc(env(safe-area-inset-bottom) + 2.5rem)',
         paddingLeft: 'max(1.25rem, env(safe-area-inset-left))',
         paddingRight: 'max(1.25rem, env(safe-area-inset-right))',
       }}
+      aside={{
+        eyebrow: 'Account recovery',
+        headline: 'A new password, and a clean slate.',
+        sub: 'Setting it signs out every device that was using the old one — including any you have forgotten about — so the only way back in is with what you choose here.',
+        notes: [
+          `At least ${MIN_LENGTH} characters`,
+          'Every other session is signed out',
+          'Then sign in with the new password',
+        ],
+      }}
     >
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -right-24 -top-24 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${C.goldSoft}, transparent 68%)` }} />
-        <div className="absolute -bottom-28 -left-20 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${C.blueWash}, transparent 68%)` }} />
-      </div>
-
-      <Link
-        href="/login"
-        className="absolute left-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-[600] transition-shadow"
-        style={{ color: MUTE, background: C.canvas, boxShadow: SHADOW.raised, top: 'calc(max(env(safe-area-inset-top), 2.75rem) + 0.5rem)' }}
-      >
-        <ArrowLeft size={13} /> Sign in
-      </Link>
-
-      <m.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 w-full max-w-[400px]"
-      >
-        <div className="mb-6 flex flex-col items-center text-center">
-          <BrandLogoWide width={224} priority />
-          <h1 className="mt-4 text-[27px] font-[840] tracking-[-0.025em]" style={{ color: INK }}>Set a new password</h1>
-          <p className="mt-1.5 max-w-[330px] text-[14px]" style={{ color: MUTE }}>
-            Choose something you have not used here before.
-          </p>
-        </div>
-
-        {/* useSearchParams needs a Suspense boundary in the App Router. */}
-        <Suspense fallback={<div className="h-[260px] rounded-[20px]" style={{ background: C.panel, boxShadow: SHADOW.panel }} />}>
-          <ResetPasswordForm />
-        </Suspense>
-      </m.div>
-    </main>
+      {/* useSearchParams needs a Suspense boundary in the App Router. */}
+      <Suspense fallback={<div className="h-[340px] rounded-[28px]" style={{ background: 'rgba(255,255,255,0.6)' }} />}>
+        <ResetPasswordForm />
+      </Suspense>
+    </AuthShell>
   );
 }

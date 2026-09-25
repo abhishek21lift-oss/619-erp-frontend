@@ -92,23 +92,19 @@ export const JUSTIFIED = {
   },
 
   'src/components/auth/SignInScreen.tsx': {
-    allow: 4,
+    allow: 1,
     reason:
-      'Already correct, and read line by line rather than assumed. Email and ' +
-      'password each carry htmlFor, aria-invalid and an aria-describedby ' +
-      'pointing at their own error paragraph, with a touched rule so nothing ' +
-      'turns red before it has been left; the MFA box is labelled and now ' +
-      'describes its own hint; the remember checkbox is inside its label. The ' +
-      'canonical email rule comes from signInSchema, and failures go through ' +
-      'mapSignInError, which refuses to let a 401 distinguish "no such account" ' +
-      'from "wrong password". The reason it stays native is that it is not one ' +
-      'form: it is a password submit, an MFA challenge that appears mid-attempt ' +
-      'and re-submits the same credentials, a passkey ceremony and a Google ' +
-      'credential callback, three of which never touch these controls. ' +
-      'useAppForm models one submit of one schema; forcing four entry paths ' +
-      'through it would be a rewrite of the most important screen in the ' +
-      'product to fix nothing. The double-submit window it DID have is fixed ' +
-      'in place, with an in-flight ref.',
+      'The "keep me signed in" checkbox, and only that: email, password and ' +
+      'the MFA code are AuthInput (SoftField + SoftInput), so they carry the ' +
+      'design-system wiring. The checkbox is a device preference persisted to ' +
+      'localStorage, sits inside its own label, is never posted and has ' +
+      'nothing to validate. The screen stays off useAppForm because it is not ' +
+      'one form: a password submit, an MFA challenge that appears mid-attempt ' +
+      'and re-submits the same credentials, and a passkey ceremony that never ' +
+      'touches these controls. The canonical email rule comes from ' +
+      'signInSchema, failures go through mapSignInError (which refuses to let ' +
+      'a 401 distinguish "no such account" from "wrong password"), and the ' +
+      'double-submit window is closed with an in-flight ref.',
   },
 
   'src/app/(bare)/subscription/page.tsx': {

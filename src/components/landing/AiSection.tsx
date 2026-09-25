@@ -36,20 +36,20 @@ const LAYERS = [
   {
     icon: <FileQuestion size={17} />,
     title: 'Client-aware answers',
-    body: 'Ask “what should Simran do about her shoulder?” and get an answer that considers her history, programme and constraints.',
+    body: 'Ask about a specific client — an injury, a plateau, a missed week — and the answer takes their history, programme and constraints into account.',
     link: { href: '/ai-coach', label: 'Meet the AI Coach' },
   },
   {
     icon: <Dumbbell size={17} />,
     title: 'Exercise library',
-    body: 'Hundreds of movements with cues, tempo and equipment tags — the source of every generated set, reviewable at any time.',
+    body: 'Movements with cues, tempo and equipment tags — the source of every generated set, and yours to extend.',
     link: { href: '/pt-os/exercise-library', label: 'Open the library' },
   },
 ];
 
 const PRINCIPLES = [
   { icon: <ShieldCheck size={15} />, t: 'Bounded by what trainers teach', d: 'The knowledge base is seeded and reviewed by professionals.' },
-  { icon: <UserRound size={15} />, t: 'Never a black box', d: 'Every AI output arrives with a “why” and a full edit trail.' },
+  { icon: <UserRound size={15} />, t: 'Yours to edit', d: 'Every AI draft opens as an editable plan, not a finished one.' },
   { icon: <Sparkles size={15} />, t: 'Drafts, not decisions', d: 'AI drafts the work. The trainer decides, edits and owns it.' },
 ];
 

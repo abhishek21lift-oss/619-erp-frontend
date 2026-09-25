@@ -57,7 +57,7 @@ describe('<PublicNav />', () => {
 describe('signed-out pages', () => {
   // The sign-in screen moved to a shared component when /login and
   // /member-login became two doors onto it — one file, because they share
-  // Google sign-in, passkeys, the 2FA challenge and remembered accounts, and
+  // passkeys, the 2FA challenge and remembered accounts, and
   // two copies of that would drift. The assertions below follow the content,
   // so they now cover BOTH routes at once rather than only the staff one.
   const SIGN_IN = 'components/auth/SignInScreen.tsx';

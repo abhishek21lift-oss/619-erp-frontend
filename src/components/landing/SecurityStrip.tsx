@@ -7,23 +7,23 @@ import { C } from './tokens';
 const ITEMS = [
   {
     icon: <Database size={17} />,
-    title: 'Tenant isolation',
-    body: 'Every studio’s data is separated at the storage layer — your records are never mixed with another business’s.',
+    title: 'Scoped to your studio',
+    body: 'Every query the app runs is scoped to your studio, and automated tests check that one studio can never read another’s records.',
   },
   {
     icon: <LockKeyhole size={17} />,
-    title: 'Row-level security',
-    body: 'Database rows are access-controlled, so a trainer can only ever reach their own clients and programmes.',
+    title: 'Sessions you can end',
+    body: 'Sign-in tokens rotate and can be revoked, and resetting a password signs out every device that was using the old one.',
   },
   {
     icon: <Fingerprint size={17} />,
     title: 'Passkey sign-in',
-    body: 'Passwordless, phishing-resistant authentication for owners and staff — no shared passwords at the studio.',
+    body: 'Face ID or fingerprint sign-in on supported devices — phishing-resistant, with nothing to share or write down.',
   },
   {
     icon: <BrainCircuit size={17} />,
     title: 'Authorised AI knowledge',
-    body: 'The AI reads only your own studio — its answers never cross into another studio’s clients or records.',
+    body: 'The AI is given only your own studio’s records — its answers never draw on another studio’s clients.',
   },
   {
     icon: <ShieldCheck size={17} />,

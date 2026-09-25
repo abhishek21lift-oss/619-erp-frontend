@@ -40,7 +40,7 @@ import {
   fieldControlProps, useFieldWiring, useFieldWiringState, FieldWiringProvider,
 } from '../ui/form/FormField';
 import { visibleError, type FieldLike } from '../ui/form/fields';
-import { C, SHADOW } from './tokens';
+import { C, FIELD } from './tokens';
 
 export interface SoftFieldProps {
   label: string;
@@ -114,6 +114,8 @@ export interface SoftInputProps extends NativeInput {
   icon?: React.ReactNode;
   /** Rendered inside the trailing edge — a password reveal button. */
   trailing?: React.ReactNode;
+  /** React 19 passes `ref` as a prop; it lands on the input with the rest. */
+  ref?: React.Ref<HTMLInputElement>;
 }
 
 /**
@@ -128,12 +130,11 @@ export function SoftInput({ icon, trailing, className, style, ...rest }: SoftInp
   const w = useFieldWiring();
 
   return (
-    <span className="relative block">
+    <span className="group relative block">
       {icon && (
         <span
           aria-hidden
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
-          style={{ color: C.muted }}
+          className={`pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 ${FIELD.icon}`}
         >
           {icon}
         </span>
@@ -142,20 +143,14 @@ export function SoftInput({ icon, trailing, className, style, ...rest }: SoftInp
         {...fieldControlProps(w)}
         {...rest}
         className={[
-          'w-full rounded-[12px] py-3 text-[14px] transition-shadow',
-          icon ? 'pl-10' : 'pl-3.5',
-          trailing ? 'pr-11' : 'pr-3.5',
+          FIELD.base,
+          w?.invalid ? FIELD.invalid : FIELD.ok,
+          'h-[54px]',
+          icon ? 'pl-12' : 'pl-4',
+          trailing ? 'pr-12' : 'pr-4',
           className ?? '',
         ].join(' ')}
-        style={{
-          minHeight: 44,
-          background: C.canvas,
-          boxShadow: SHADOW.inset,
-          border: `1px solid ${w?.invalid ? C.red : C.line}`,
-          color: C.ink,
-          opacity: w?.disabled ? 0.6 : 1,
-          ...style,
-        }}
+        style={{ opacity: w?.disabled ? 0.6 : 1, ...style }}
       />
       {trailing}
     </span>

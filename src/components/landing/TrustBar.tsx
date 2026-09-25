@@ -49,8 +49,8 @@ export default function TrustBar({ stats }: { stats: PublicStats | null }) {
               </h3>
               <p className="mt-2 text-[13px] leading-[1.65]" style={{ color: C.muted }}>
                 Independent personal trainers, boutique PT studios, strength
-                coaches and online coaches — single trainers or multi-location
-                businesses.
+                coaches and online coaches — built around the trainer who
+                also runs the business.
               </p>
             </div>
           </Reveal>
