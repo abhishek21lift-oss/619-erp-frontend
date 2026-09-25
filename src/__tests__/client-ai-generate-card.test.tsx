@@ -414,6 +414,19 @@ describe('generating a diet', () => {
   });
 });
 
+describe('a diet the record cannot support', () => {
+  it('turns the server\'s field list into what to record', async () => {
+    mockGenerateDiet.mockRejectedValue(new Error('Missing required fields: height_cm, activity_level'));
+
+    renderCard();
+    fireEvent.click(screen.getByText('Generate AI Diet'));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('Record height, activity level on the client first');
+    expect(alert.textContent).not.toContain('height_cm');
+  });
+});
+
 describe('errors', () => {
   it('shows the failure inline and in a toast, and re-enables the buttons', async () => {
     const { promise, reject } = deferred<{ data: unknown }>();

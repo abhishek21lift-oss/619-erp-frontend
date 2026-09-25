@@ -85,6 +85,25 @@ export interface ClientAiGenerateCardProps {
 // the server's to answer, and its answer for a client it has no record for is
 // "NOT RECORDED" rather than a plausible substitute.
 
+/** Server field keys, in the words the rest of this card uses. */
+const FIELD_WORDS: Record<string, string> = {
+  age: 'date of birth', gender: 'gender', weight_kg: 'weight', height_cm: 'height',
+  activity_level: 'activity level', goal: 'goal', experience_level: 'experience level',
+  training_days: 'sessions per week',
+};
+
+/**
+ * "Missing required fields: height_cm, activity_level" is the diet endpoint's
+ * refusal, and it reached the trainer verbatim — column names in a toast.
+ * Rewritten into what to record; any other message passes through unchanged.
+ */
+function readableError(msg: string): string {
+  const m = /^Missing required fields:\s*(.+)$/i.exec(msg.trim());
+  if (!m) return msg;
+  const names = m[1].split(',').map((k) => FIELD_WORDS[k.trim()] ?? k.trim().replace(/_/g, ' '));
+  return `Record ${names.join(', ')} on the client first — the plan can't be worked out without ${names.length === 1 ? 'it' : 'them'}.`;
+}
+
 export default function ClientAiGenerateCard({ client, goalType }: ClientAiGenerateCardProps) {
   const { toast } = useToast();
   const router = useRouter();
@@ -201,7 +220,7 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
         setResult({ kind, plan: res.data });
       }
     } catch (err) {
-      const msg = errorMessage(err, 'Generation failed. Please try again.');
+      const msg = readableError(errorMessage(err, 'Generation failed. Please try again.'));
       setError(msg);
       toast.error(msg);
       // A refused generation is usually a record problem, and the panel is
@@ -316,9 +335,6 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
             </p>
           </div>
         </div>
-        {/* The same blue→green the two buttons carry, as one gesture. */}
-        <div className="mt-3 h-[2px] w-full rounded-full"
-          style={{ background: `linear-gradient(90deg, ${BLUE}, ${GREEN}, transparent)` }} />
       </div>
 
       <div className="px-4 pb-4 pt-3">
@@ -382,7 +398,7 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
           </div>
         )}
 
-        <div className="flex flex-col gap-2">
+        <div className="mt-3 flex flex-col gap-2">
           <button
             type="button"
             onClick={() => void generate('workout')}
@@ -407,16 +423,28 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
             type="button"
             onClick={() => void generate('diet')}
             disabled={busy !== null}
-            className="flex h-[44px] w-full items-center justify-center gap-1.5 rounded-[13px] px-3 text-[12.5px] font-[720] text-white transition-transform active:scale-[0.985] disabled:opacity-45"
+            // Secondary, not a second saturated slab. Two full-colour buttons
+            // stacked read as two equally loud alarms; the workout is the one
+            // that saves as a programme, so it carries the weight.
+            className="flex h-[44px] w-full items-center justify-center gap-1.5 rounded-[13px] px-3 text-[12.5px] font-[720] transition-colors active:scale-[0.985] disabled:opacity-45"
             style={{
-              background: `linear-gradient(135deg, ${GREEN}, ${palette.emerald[600]})`,
-              boxShadow: `0 5px 14px ${rgba(GREEN, 0.32)}`,
+              background: 'var(--bg-elevated)',
+              color: palette.emerald[600],
+              border: `1px solid ${rgba(GREEN, 0.4)}`,
             }}
           >
             {busy === 'diet'
               ? <><Loader2 size={14} className="animate-spin" /> Generating AI Diet...</>
               : <><Salad size={14} /> Generate AI Diet</>}
           </button>
+          {/* The diet also needs height and activity level, which the panel
+              above (built for the workout) does not list. Said before the
+              press, not after a refusal. */}
+          {context?.facts.height_cm?.origin === 'missing' && (
+            <p className="text-center text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+              The diet also needs height and activity level on file.
+            </p>
+          )}
         </div>
 
         <AnimatePresence>
