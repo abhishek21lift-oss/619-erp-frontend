@@ -15,8 +15,6 @@ const PUBLIC_ASSET_PREFIXES: string[] = [
   '/platform-manifest.json',
   '/theme-init.js',
   '/no-zoom.js',
-  '/logo.png',
-  '/619-logo.png',
   '/sitemap.xml',
   '/robots.txt',
   '/icons',
@@ -71,7 +69,7 @@ function redirectToLogin(req: NextRequest, deleteTokenCookie = false): NextRespo
 const HOST_NEUTRAL_PREFIXES = [
   '/_next', '/api', '/models', '/icons', '/images', '/favicon.ico',
   '/manifest.json', '/platform-manifest.json', '/theme-init.js', '/no-zoom.js',
-  '/logo.png', '/619-logo.png', '/sitemap.xml', '/robots.txt',
+  '/sitemap.xml', '/robots.txt',
 ];
 
 export function commandCenterHost(): string | null {
