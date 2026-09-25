@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
@@ -211,7 +211,7 @@ function OpenRouterCard() {
 }
 
 // ── Google Calendar Card (live OAuth) ─────────────────────────────────────────
-function GoogleCalendarCard({ flashSuccess }: { flashSuccess: boolean }) {
+function GoogleCalendarCard({ flashSuccess, errorText }: { flashSuccess: boolean; errorText?: string | null }) {
   const [status, setStatus]         = useState<{ connected: boolean; connectedAt?: string; lastSyncAt?: string } | null>(null);
   const [loading, setLoading]       = useState(true);
   const [connecting, setConnecting] = useState(false);
@@ -296,6 +296,18 @@ function GoogleCalendarCard({ flashSuccess }: { flashSuccess: boolean }) {
           </p>
         </div>
       </div>
+
+      {errorText && (
+        <p
+          role="alert"
+          style={{
+            fontSize: 12, lineHeight: 1.4, margin: '0 0 12px', padding: '8px 10px', borderRadius: 10,
+            color: 'var(--danger-text)', background: 'var(--danger-bg)', border: '1px solid var(--danger-border)',
+          }}
+        >
+          {errorText}
+        </p>
+      )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
         {loading ? (
@@ -431,13 +443,36 @@ export default function IntegrationsPage() {
 
   // Detect OAuth callback result
   const calendarParam = searchParams.get('calendar');
-  const flashSuccess  = calendarParam === 'connected';
+  const [calendarResult, setCalendarResult] = useState<'connected' | 'error' | null>(null);
+  const [calendarError, setCalendarError]   = useState<string | null>(null);
+  const flashSuccess  = calendarParam === 'connected' || calendarResult === 'connected';
 
-  // Clear the ?calendar= query param from the URL so it doesn't persist on refresh
+  // ?calendar=confirm&code=…&state=… — the backend callback hands the Google
+  // code here instead of storing it, and this session completes it. The
+  // backend accepts it only if `state` was minted for the signed-in user.
+  // Guarded by a ref: the code is single-use, and a second POST (StrictMode's
+  // double effect, a re-render) would fail and overwrite the success.
+  const completingRef = useRef(false);
+  useEffect(() => {
+    if (calendarParam !== 'confirm' || completingRef.current) return;
+    const code  = searchParams.get('code');
+    const state = searchParams.get('state');
+    if (!code || !state) return;
+    completingRef.current = true;
+    api.calendar.complete({ code, state })
+      .then(() => setCalendarResult('connected'))
+      .catch((err: unknown) => {
+        setCalendarResult('error');
+        setCalendarError(errorMessage(err, 'Could not connect Google Calendar. Please try again.'));
+      });
+  }, [calendarParam, searchParams]);
+
+  // Clear the ?calendar= query params from the URL so they don't persist on
+  // refresh — including the one-time code, which must not sit in history.
   useEffect(() => {
     if (calendarParam) {
       const params = new URLSearchParams(searchParams.toString());
-      params.delete('calendar');
+      for (const key of ['calendar', 'code', 'state', 'scope', 'reason']) params.delete(key);
       const newUrl = params.toString() ? `?${params.toString()}` : '/settings/integrations';
       router.replace(newUrl, { scroll: false });
     }
@@ -521,7 +556,11 @@ export default function IntegrationsPage() {
               />
             ))}
             {filtered.showCalendar && (
-              <GoogleCalendarCard key="calendar" flashSuccess={flashSuccess} />
+              <GoogleCalendarCard
+                key={`calendar-${calendarResult ?? 'initial'}`}
+                flashSuccess={flashSuccess}
+                errorText={calendarError}
+              />
             )}
             {filtered.showOpenRouter && (
               <OpenRouterCard key="openrouter" />
