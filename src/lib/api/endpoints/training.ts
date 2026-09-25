@@ -323,6 +323,14 @@ export const calendar = {
     http<{ connected: boolean; connectedAt?: string; lastSyncAt?: string; calendarId?: string }>('/api/calendar/status'),
   authUrl: () =>
     http<{ url: string }>('/api/calendar/auth-url'),
+  /**
+   * Finish a Google consent round-trip. The backend exchanges the code only
+   * when `state` was minted for the signed-in caller, so a consent link
+   * started from someone else's account cannot attach this Google account
+   * to theirs.
+   */
+  complete: (body: { code: string; state: string }) =>
+    http<{ connected: boolean }>('/api/calendar/complete', { method: 'POST', body: JSON.stringify(body) }),
   disconnect: () =>
     http<{ message: string }>('/api/calendar/disconnect', { method: 'DELETE' }),
 };

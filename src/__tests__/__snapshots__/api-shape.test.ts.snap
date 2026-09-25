@@ -123,6 +123,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "branches.list → /api/settings/branches",
   "branches.update → /api/settings/branches/",
   "calendar.authUrl → /api/calendar/auth-url",
+  "calendar.complete → /api/calendar/complete",
   "calendar.disconnect → /api/calendar/disconnect",
   "calendar.status → /api/calendar/status",
   "campaigns.create → /api/campaigns",
