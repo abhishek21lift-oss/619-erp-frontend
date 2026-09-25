@@ -35,7 +35,7 @@ import { useToast } from '@/lib/toast';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { PageHeader, EmptyState, cn } from '@/components/ui';
 import {
-  REJECT_REASONS, REJECT_REASON_LABELS, UpiStatusBadge, fmtMoney, fmtMoneyExact,
+  REJECT_REASONS, REJECT_REASON_LABELS, UpiStatusBadge, fmtMoney, fmtMoneyExact, orderTermLabel,
 } from '@/components/payments/upi-shared';
 import { errorMessage } from '@/lib/forms/errors';
 
@@ -309,7 +309,7 @@ function PaymentRow({
             <UpiStatusBadge status={row.status} size="sm" />
           </div>
           <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-            {row.plan_name} · {row.duration_months} month{row.duration_months === 1 ? '' : 's'} · {row.order_no}
+            {row.plan_name} · {orderTermLabel(row)} · {row.order_no}
           </p>
           {row.client_mobile && (
             <a href={`tel:${row.client_mobile}`}
@@ -431,8 +431,11 @@ function ActionDialog({
     try {
       if (kind === 'approve') {
         const res = await api.upiPayments.approve(row.id);
-        toast.success(`Approved. Membership active until ${
-          new Date(res.data.activation.activated_to).toLocaleDateString('en-IN', { dateStyle: 'medium' })}.`);
+        const until = res.data.activation.activated_to;
+        toast.success(until
+          ? `Approved. Membership active until ${
+            new Date(until).toLocaleDateString('en-IN', { dateStyle: 'medium' })}.`
+          : 'Approved. The payment has been taken off their balance.');
       } else if (kind === 'reject') {
         await api.upiPayments.reject(row.id, reason, note.trim() || undefined);
         toast.success('Rejected. The member can submit a corrected reference.');
@@ -495,9 +498,14 @@ function ActionDialog({
 
             {isApprove ? (
               <p className="mt-3 text-[13px]" style={{ color: 'var(--text-muted)' }}>
-                This activates <strong style={{ color: 'var(--text-primary)' }}>{row.plan_name}</strong> for{' '}
-                {row.duration_months} month{row.duration_months === 1 ? '' : 's'}, records the payment in
-                your ledger and issues a receipt. It cannot be undone — confirm the UTR appears in your
+                {row.kind === 'balance' ? (
+                  <>This takes <strong style={{ color: 'var(--text-primary)' }}>{fmtMoneyExact(row.total_amount)}</strong>{' '}
+                  off their outstanding balance, records the payment in your ledger and issues a receipt.
+                  Their membership dates do not change.</>
+                ) : (
+                  <>This activates <strong style={{ color: 'var(--text-primary)' }}>{row.plan_name}</strong> for{' '}
+                  {orderTermLabel(row)}, records the payment in your ledger and issues a receipt.</>
+                )} It cannot be undone — confirm the UTR appears in your
                 bank account first.
               </p>
             ) : (

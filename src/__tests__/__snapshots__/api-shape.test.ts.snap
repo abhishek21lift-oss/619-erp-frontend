@@ -509,6 +509,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "upiPayments.getSettings → /api/payments/upi/settings",
   "upiPayments.history → /api/payments/upi/history",
   "upiPayments.markOpened → /api/payments/upi/",
+  "upiPayments.payBalance → /api/payments/upi/balance",
   "upiPayments.pending → /api/payments/upi/pending",
   "upiPayments.receiptUrl → (no literal url)",
   "upiPayments.reject → /api/payments/upi/",

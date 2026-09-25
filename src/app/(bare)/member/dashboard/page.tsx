@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
+import PayBalanceButton from '@/components/member/PayBalanceButton';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { api } from '@/lib/api';
 import type { MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement } from '@/lib/api';
@@ -245,11 +246,11 @@ function MemberDashboard() {
         </div>
 
         {balance > 0 && (
-          <Link href="/member/payments"
-            className="mt-3 flex h-11 items-center justify-center gap-1.5 rounded-[13px] text-[13px] font-[750]"
+          <PayBalanceButton
+            className="mt-3 flex h-11 w-full items-center justify-center gap-1.5 rounded-[13px] text-[13px] font-[750]"
             style={{ background: '#fff', color: C.primaryDeep }}>
             <CreditCard size={15} /> Pay {inr(balance)}
-          </Link>
+          </PayBalanceButton>
         )}
       </m.section>
 

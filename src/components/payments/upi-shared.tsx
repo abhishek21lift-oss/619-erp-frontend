@@ -17,7 +17,7 @@ import { m } from 'framer-motion';
 import {
   Clock, ShieldCheck, CircleCheck, CircleX, Ban, TimerOff, Hourglass,
 } from 'lucide-react';
-import type { UpiOrderStatus, UpiRejectReason } from '@/lib/api';
+import type { UpiOrder, UpiOrderStatus, UpiRejectReason } from '@/lib/api';
 import { cn } from '@/components/ui';
 
 // ── Money ───────────────────────────────────────────────────────────────────
@@ -34,6 +34,16 @@ export function fmtMoney(value: string | number | null | undefined): string {
 }
 
 /** Always two decimals — for the receipt-style breakdown where columns align. */
+/**
+ * What an order is for, in the words a receipt line would use: "3 months" for
+ * a membership, "Balance payment" for one that pays down what is owed. A
+ * balance order carries duration 0, and "0 months" is not something to show.
+ */
+export function orderTermLabel(order: Pick<UpiOrder, 'kind' | 'duration_months'>): string {
+  if (order.kind === 'balance') return 'Balance payment';
+  return `${order.duration_months} month${order.duration_months === 1 ? '' : 's'}`;
+}
+
 export function fmtMoneyExact(value: string | number | null | undefined): string {
   const n = Number(value ?? 0);
   if (!Number.isFinite(n)) return '₹0.00';
@@ -193,15 +203,17 @@ export const REJECT_REASONS: UpiRejectReason[] = [
  * it makes members ask whether they are being charged something they are not.
  */
 export function AmountBreakdown({
-  baseAmount, gstPercent, gstAmount, totalAmount, className,
+  baseAmount, gstPercent, gstAmount, totalAmount, label = 'Membership', className,
 }: {
   baseAmount: string; gstPercent: string; gstAmount: string; totalAmount: string;
+  /** What the base amount is for — "Membership", or "Balance due". */
+  label?: string;
   className?: string;
 }) {
   const hasGst = Number(gstAmount) > 0;
   return (
     <div className={cn('space-y-2', className)}>
-      <Row label="Membership" value={fmtMoneyExact(baseAmount)} />
+      <Row label={label} value={fmtMoneyExact(baseAmount)} />
       {hasGst && <Row label={`GST (${Number(gstPercent)}%)`} value={fmtMoneyExact(gstAmount)} />}
       <div
         className="flex items-baseline justify-between border-t pt-2.5"

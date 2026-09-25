@@ -79,7 +79,7 @@ describe('no shadow is a token in disguise', () => {
   it('fixed the two payment cards rather than leaving them light-only', () => {
     for (const file of [
       ['app', '(bare)', 'subscription', 'checkout', '[id]', 'page.tsx'],
-      ['app', '(chrome)', 'pay', '[orderId]', 'page.tsx'],
+      ['components', 'payments', 'UpiPayScreen.tsx'],
     ]) {
       const src = readFileSync(srcPath(...file), 'utf8');
       expect(src).toMatch(/boxShadow: 'var\(--shadow-xs\)'/);
