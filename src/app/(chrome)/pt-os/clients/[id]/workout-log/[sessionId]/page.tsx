@@ -779,83 +779,100 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
 // prescription vocabulary publishes — duration/distance/speed/calories/
 // heart-rate/cadence/steps/floors/rounds — driven by the allowed modes the
 // server sends with each exercise. Nothing here is hard-coded per exercise.
+/** The cardio actuals a set row edits, keyed like CARDIO_FIELDS. */
+const CARDIO_KEYS = [
+  'duration_seconds', 'distance', 'average_speed', 'calories_burned',
+  'average_heart_rate', 'cadence', 'steps_completed', 'floors_completed', 'rounds_completed',
+] as const;
+
+/**
+ * A set as its row's inputs show it: every editable value as the string the
+ * field holds, units included. Duration is shown in minutes.
+ */
+function setFields(set: WorkoutSet): Record<string, string> {
+  const str = (v: number | null | undefined) => (v != null ? String(v) : '');
+  const fields: Record<string, string> = {
+    weight_kg: str(set.weight_kg),
+    reps: str(set.reps),
+    rpe: str(set.rpe),
+    rir: str(set.rir),
+    distance_unit: set.distance_unit ?? 'km',
+    speed_unit: set.speed_unit ?? 'kmh',
+  };
+  for (const k of CARDIO_KEYS) {
+    const v = set[k] as number | null | undefined;
+    fields[k] = k === 'duration_seconds'
+      ? (v != null ? String(Math.round((v / 60) * 10) / 10) : '')
+      : str(v);
+  }
+  return fields;
+}
+
 function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio: boolean; modes: string[]; onChanged: () => Promise<void> }) {
   const { toast } = useToast();
-  const [weight, setWeight] = useState(set.weight_kg != null ? String(set.weight_kg) : '');
-  const [reps, setReps] = useState(set.reps != null ? String(set.reps) : '');
-  const [rpe, setRpe] = useState(set.rpe != null ? String(set.rpe) : '');
-  const [rir, setRir] = useState(set.rir != null ? String(set.rir) : '');
+  const initial = setFields(set);
+  const [weight, setWeight] = useState(initial.weight_kg);
+  const [reps, setReps] = useState(initial.reps);
+  const [rpe, setRpe] = useState(initial.rpe);
+  const [rir, setRir] = useState(initial.rir);
   const [saving, setSaving] = useState(false);
 
   // Cardio actuals, keyed like CARDIO_FIELDS. Duration is edited in minutes
   // and stored as seconds; distance/speed carry a unit select beside them.
-  const [cardio, setCardio] = useState<Record<string, string>>(() => ({
-    duration_seconds: set.duration_seconds != null ? String(Math.round((set.duration_seconds / 60) * 10) / 10) : '',
-    distance: set.distance != null ? String(set.distance) : '',
-    average_speed: set.average_speed != null ? String(set.average_speed) : '',
-    calories_burned: set.calories_burned != null ? String(set.calories_burned) : '',
-    average_heart_rate: set.average_heart_rate != null ? String(set.average_heart_rate) : '',
-    cadence: set.cadence != null ? String(set.cadence) : '',
-    steps_completed: set.steps_completed != null ? String(set.steps_completed) : '',
-    floors_completed: set.floors_completed != null ? String(set.floors_completed) : '',
-    rounds_completed: set.rounds_completed != null ? String(set.rounds_completed) : '',
-  }));
-  const [distUnit, setDistUnit] = useState<WorkoutDistanceUnit>(set.distance_unit ?? 'km');
-  const [speedUnit, setSpeedUnit] = useState<WorkoutSpeedUnit>(set.speed_unit ?? 'kmh');
+  const [cardio, setCardio] = useState<Record<string, string>>(() =>
+    Object.fromEntries(CARDIO_KEYS.map((k) => [k, initial[k]])),
+  );
+  const [distUnit, setDistUnit] = useState<WorkoutDistanceUnit>(initial.distance_unit as WorkoutDistanceUnit);
+  const [speedUnit, setSpeedUnit] = useState<WorkoutSpeedUnit>(initial.speed_unit as WorkoutSpeedUnit);
 
   /**
-   * Re-seed the row from the server.
+   * What the server last said this set holds, as the fields would show it.
    *
-   * ── Why the dependency list is every VALUE and not `set` ──────────────────
+   * The re-seed below compares against this and writes ONLY the fields whose
+   * server value changed. It used to rewrite every field whenever anything
+   * changed, and that lost typing in two ways:
    *
-   * It used to be `[set]`, and `set` is `session.exercises[].sets[]` — a fresh
-   * object on every refetch, whether or not anything in it changed. Each
-   * refetch therefore overwrote every local field from the server, including
-   * one the trainer was part-way through typing.
+   *  1. A refetch carrying a new value for one field (the distance just
+   *     saved) reset the field beside it — the duration the trainer was part-
+   *     way through typing — back to the stored value.
    *
-   * The window is small and entirely real. Type 32.5 into Duration; a refetch
-   * triggered by the PREVIOUS field's save lands; this effect resets the
-   * controlled input to the stored 30; the blur then reads 30 out of the DOM
-   * and saves 1800. The typed value never reaches the API and nothing on
-   * screen says so — the box shows 30 again, which looks like it was never
-   * typed rather than like it was discarded.
+   *  2. The effect also ran on mount. A passive effect runs after paint, so a
+   *     keystroke landing between a row's first paint and that flush queued
+   *     its update BEFORE the effect's, and the effect's stale value won. The
+   *     box showed 30 again, the blur saved 1800, and nothing said a typed
+   *     32.5 had been discarded. This is what workout-log-cardio.test.tsx
+   *     caught intermittently ('expected 30 to be 32.5').
    *
-   * It is what the sibling test in workout-log-cardio.test.tsx has been
-   * catching about one run in six, with the signature that test was written to
-   * distinguish: a single duration save carrying the PRISTINE value, and no
-   * second call correcting it. That test named the mechanism; this is it.
-   *
-   * Depending on the values means a refetch that returns what we already have
-   * is a no-op, and one that returns something different — because our own
-   * save landed, or another device wrote — still re-seeds, which is correct:
-   * at that point the server is the authority.
+   * Seeding the ref from the same values as the initial state makes the mount
+   * run a no-op, and diffing per field means a server change touches only the
+   * field it changed. A field the server DID change is still overwritten —
+   * at that point the server is the authority (our own save landed, or
+   * another device wrote).
    */
+  const lastServer = useRef(initial);
+  const server = setFields(set);
+  const serverKey = JSON.stringify(server);
+
   useEffect(() => {
-    setWeight(set.weight_kg != null ? String(set.weight_kg) : '');
-    setReps(set.reps != null ? String(set.reps) : '');
-    setRpe(set.rpe != null ? String(set.rpe) : '');
-    setRir(set.rir != null ? String(set.rir) : '');
-    setCardio({
-      duration_seconds: set.duration_seconds != null ? String(Math.round((set.duration_seconds / 60) * 10) / 10) : '',
-      distance: set.distance != null ? String(set.distance) : '',
-      average_speed: set.average_speed != null ? String(set.average_speed) : '',
-      calories_burned: set.calories_burned != null ? String(set.calories_burned) : '',
-      average_heart_rate: set.average_heart_rate != null ? String(set.average_heart_rate) : '',
-      cadence: set.cadence != null ? String(set.cadence) : '',
-      steps_completed: set.steps_completed != null ? String(set.steps_completed) : '',
-      floors_completed: set.floors_completed != null ? String(set.floors_completed) : '',
-      rounds_completed: set.rounds_completed != null ? String(set.rounds_completed) : '',
-    });
-    setDistUnit(set.distance_unit ?? 'km');
-    setSpeedUnit(set.speed_unit ?? 'kmh');
-  }, [
-    set.id,
-    set.weight_kg, set.reps, set.rpe, set.rir,
-    set.duration_seconds, set.distance, set.distance_unit,
-    set.average_speed, set.speed_unit,
-    set.calories_burned, set.average_heart_rate, set.cadence,
-    set.steps_completed, set.floors_completed, set.rounds_completed,
-  ]);
+    const next: Record<string, string> = JSON.parse(serverKey);
+    const prev = lastServer.current;
+    lastServer.current = next;
+    const changed = Object.keys(next).filter((k) => next[k] !== prev[k]);
+    if (changed.length === 0) return;
+
+    const cardioChanged = changed.filter((k) => (CARDIO_KEYS as readonly string[]).includes(k));
+    if (cardioChanged.length > 0) {
+      setCardio((cur) => ({ ...cur, ...Object.fromEntries(cardioChanged.map((k) => [k, next[k]])) }));
+    }
+    for (const k of changed) {
+      if (k === 'weight_kg') setWeight(next[k]);
+      else if (k === 'reps') setReps(next[k]);
+      else if (k === 'rpe') setRpe(next[k]);
+      else if (k === 'rir') setRir(next[k]);
+      else if (k === 'distance_unit') setDistUnit(next[k] as WorkoutDistanceUnit);
+      else if (k === 'speed_unit') setSpeedUnit(next[k] as WorkoutSpeedUnit);
+    }
+  }, [serverKey]);
 
   const visibleCardioFields = isCardio
     ? CARDIO_FIELDS.filter((f) => f.modes.some((m) => modes.includes(m)))

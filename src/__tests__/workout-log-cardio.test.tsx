@@ -81,7 +81,8 @@ function settled<T>(value: T) {
 }
 
 beforeEach(() => {
-  updateSet.mockClear();
+  updateSet.mockReset();
+  updateSet.mockImplementation(async () => ({ data: {} }));
 });
 
 describe('cardio set row', () => {
@@ -287,6 +288,51 @@ describe('cardio set row', () => {
     await waitFor(() => {
       const durations = updateSet.mock.calls
         .map((c) => c[1] as Record<string, unknown>)
+        .filter((patch) => patch && Object.prototype.hasOwnProperty.call(patch, 'duration_seconds'))
+        .map((patch) => patch.duration_seconds);
+      expect(durations).toEqual([1950]);
+    });
+  });
+
+  it('keeps a field being typed when the refetch changes the field beside it', async () => {
+    // The sibling test above forces a refetch that returns the SAME numbers.
+    // This one returns a DIFFERENT distance — the save landed — which used to
+    // re-seed every field in the row, the half-typed duration included. The
+    // re-seed now writes only the fields whose server value changed.
+    session = makeSession({
+      exercise_type: 'Cardio',
+      prescription_mode_allowed: ['TIME', 'DISTANCE', 'RPE'],
+    });
+    updateSet.mockImplementation((async (_id: string, patch: Record<string, unknown>) => {
+      const ex = (session.exercises as Array<{ sets: Array<Record<string, unknown>> }>)[0];
+      Object.assign(ex.sets[0], patch);
+      return { data: {} };
+    }) as never);
+    render(
+      <Suspense fallback={<div />}>
+        <WorkoutSessionPage params={settled({ id: 'c1', sessionId: 's1' }) as never} />
+      </Suspense>,
+    );
+    await waitFor(() => expect(screen.getByLabelText('Duration (min)')).toBeTruthy());
+
+    const minutes = screen.getByLabelText('Duration (min)');
+    fireEvent.change(minutes, { target: { value: '32.5' } });
+
+    const dist = screen.getByLabelText('Distance');
+    fireEvent.blur(dist, { target: { value: '6' } });
+    await waitFor(() => expect(updateSet).toHaveBeenCalled());
+
+    // The server's new distance arrives…
+    await waitFor(() => {
+      expect((screen.getByLabelText('Distance') as HTMLInputElement).value).toBe('6');
+    });
+    // …and the duration being typed survives it.
+    expect((screen.getByLabelText('Duration (min)') as HTMLInputElement).value).toBe('32.5');
+
+    fireEvent.blur(minutes);
+    await waitFor(() => {
+      const durations = updateSet.mock.calls
+        .map((c) => (c as unknown[])[1] as Record<string, unknown>)
         .filter((patch) => patch && Object.prototype.hasOwnProperty.call(patch, 'duration_seconds'))
         .map((patch) => patch.duration_seconds);
       expect(durations).toEqual([1950]);
