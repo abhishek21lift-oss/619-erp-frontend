@@ -47,6 +47,12 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The action's default is 'tools platform-tools'. 'tools' (the old
+          # SDK Tools package) is no longer published in Google's SDK
+          # repository, so sdkmanager exits 1 on it and the job fails here.
+          # cmdline-tools, which the action installs itself, replaces it.
+          packages: platform-tools
 
       - name: Install Android SDK packages
         run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
