@@ -7,7 +7,7 @@
 import { http } from '../../http';
 import { buildQs } from '../qs';
 import type {
-  DietAssignment, DietTemplate, ExerciseListResult, ExerciseMeta, ExerciseVersion,
+  AiDietPlan, DietAssignment, DietTemplate, ExerciseListResult, ExerciseMeta, ExerciseVersion,
   LibraryExercise, Meal, NutritionLog, ProgressionType, SavedFromGeneration,
   WorkoutAssignment, WorkoutAssignmentDetail, WorkoutExerciseInput, WorkoutPlan,
   WorkoutPlanExercise, WorkoutPlanVersion,
@@ -279,6 +279,15 @@ export const diet = {
     list: (params: { client_id: string; status?: string }) =>
       http<DietAssignment[]>(`/api/diet/assignments${buildQs(params)}`),
   },
+  /**
+   * Save a reviewed AI diet as the studio's own template, its meals and an
+   * active assignment to the client — one transaction on the server.
+   */
+  saveFromAi: (data: { client_id: string; plan: AiDietPlan }) =>
+    http<{ message: string; template_id: string; name: string; meals: number; assignment: DietAssignment }>(
+      '/api/diet/plans/from-ai',
+      { method: 'POST', body: JSON.stringify(data) },
+    ),
   tracker: {
     get: (params: { client_id: string; date?: string }) =>
       http<{ today: NutritionLog; history: NutritionLog[] }>(`/api/diet/tracker${buildQs(params)}`),

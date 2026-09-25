@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarDays, Home, LogOut, Wallet } from 'lucide-react';
+import { Home, LogOut, Wallet } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { palette } from '@/lib/palette';
 
@@ -19,8 +19,14 @@ import { palette } from '@/lib/palette';
  * one that worked, and left no way to sign out, which is worse than a bar
  * with dead buttons.
  *
- * So: real links to the routes that exist, and nothing else. Three working
+ * So: real links to the routes that exist, and nothing else. Two working
  * tabs beat five that mostly do not.
+ *
+ * Classes was the third, and it was a dead end: nothing in the product can
+ * create a class session, and booking was written against the retired
+ * members / member_memberships tables, so every member saw an empty list
+ * and every booking attempt failed. The studios this serves run 1-on-1 PT,
+ * so the tab is gone and /member/classes redirects home.
  *
  * ── Why it is shared ───────────────────────────────────────────────────────
  *
@@ -34,7 +40,6 @@ import { palette } from '@/lib/palette';
  */
 const TABS = [
   { href: '/member/dashboard', label: 'Home', icon: Home },
-  { href: '/member/classes', label: 'Classes', icon: CalendarDays },
   { href: '/member/payments', label: 'Payments', icon: Wallet },
 ] as const;
 

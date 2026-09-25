@@ -32,8 +32,8 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
     title: 'Business',
     links: [
       { label: 'Attendance', href: '/attendance' },
-      { label: 'Finance & forecast', href: '/finance' },
-      { label: 'Engagement', href: '/engagement' },
+      { label: 'Finance & forecast', href: '/finance/forecast' },
+      { label: 'Engagement', href: '/engagement/whatsapp' },
       { label: 'Reports', href: '/reports' },
       { label: 'Settings', href: '/settings' },
     ],

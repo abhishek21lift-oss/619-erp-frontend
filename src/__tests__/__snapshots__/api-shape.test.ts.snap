@@ -154,6 +154,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "diet.fitnessProfile.update → /api/diet/fitness-profile/",
   "diet.meals.create → /api/diet/meals",
   "diet.meals.list → /api/diet/meals",
+  "diet.saveFromAi → /api/diet/plans/from-ai",
   "diet.supplements.list → /api/diet/supplements",
   "diet.templates.create → /api/diet/templates",
   "diet.templates.list → /api/diet/templates",
