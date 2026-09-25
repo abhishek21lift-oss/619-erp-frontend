@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, UserRoundCheck, CalendarCheck2, Wallet, Radar, BadgePercent, MessageSquareText, Users } from 'lucide-react';
+import { Building2, UserRoundCheck, CalendarCheck2, Wallet, Radar, BadgePercent, MessageSquareText } from 'lucide-react';
 import Link from 'next/link';
 import { Container, Reveal, Section, SectionHeader } from './primitives';
 import { C } from './tokens';
@@ -8,23 +8,23 @@ import { C } from './tokens';
 const BENEFITS = [
   {
     icon: <Building2 size={17} />,
-    title: 'Multi-location, one view',
-    body: 'Run one studio or several training locations — collections, sessions and retention roll up into a single dashboard.',
+    title: 'One dashboard for the studio',
+    body: 'Collections, sessions and renewals for the whole studio on one screen — what came in, what is due and who is next.',
   },
   {
     icon: <UserRoundCheck size={17} />,
     title: 'Client check-in',
-    body: 'Mobile-first session check-in your staff can run on a phone — no desktop terminal required.',
+    body: 'QR check-in that runs on a phone at the door — no desktop terminal required.',
   },
   {
     icon: <CalendarCheck2 size={17} />,
     title: 'Packages & renewals',
-    body: 'Plans, trials, renewals and lapses tracked automatically. See who is about to churn before they do.',
+    body: 'Packages, renewals and lapses tracked for you — see whose sessions are running out before they do.',
   },
   {
     icon: <Wallet size={17} />,
     title: 'Collections that reconcile',
-    body: 'Payments, pending dues and invoices in one place — MTD collected vs. pending, always visible.',
+    body: 'Payments, pending dues and invoices in one place — collected and pending, always visible.',
   },
   {
     icon: <BadgePercent size={17} />,
@@ -39,12 +39,7 @@ const BENEFITS = [
   {
     icon: <Radar size={17} />,
     title: 'Early warning signals',
-    body: 'Attendance drops and pending dues are flagged as risk signals — the AI tells you who needs a call.',
-  },
-  {
-    icon: <Users size={17} />,
-    title: 'Team roles & access',
-    body: 'Owner, admin, manager, trainer — everyone sees exactly what their role needs, nothing more.',
+    body: 'Attendance drops and pending dues are flagged, so you know who needs a call before they drift away.',
   },
 ];
 

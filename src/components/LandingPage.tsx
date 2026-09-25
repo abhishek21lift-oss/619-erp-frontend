@@ -9,14 +9,13 @@ import LandingNav from './landing/LandingNav';
 import PublicPullToRefresh from './PublicPullToRefresh';
 import Hero from './landing/Hero';
 import TrustBar from './landing/TrustBar';
-import ProductShowcase from './landing/ProductShowcase';
+import StudioAnatomy from './landing/StudioAnatomy';
 import ValueProposition from './landing/ValueProposition';
 import AiSection from './landing/AiSection';
 import PtOsSection from './landing/PtOsSection';
 import GymSection from './landing/GymSection';
 import FeatureGrid from './landing/FeatureGrid';
 import WorkflowSection from './landing/WorkflowSection';
-import AnalyticsSection from './landing/AnalyticsSection';
 import SecurityStrip from './landing/SecurityStrip';
 import PricingSection from './landing/PricingSection';
 import FaqSection from './landing/FaqSection';
@@ -26,9 +25,10 @@ import Footer from './landing/Footer';
 /**
  * The public marketing page.
  *
- * Story order: hero → capability trust → product tour → the gap → AI training
- * layer → for trainers → for PT businesses → feature catalogue → workflow → analytics →
- * security → pricing → FAQ → closing CTA → footer.
+ * Story order: hero (the studio cube) → capability trust → the six parts of
+ * the studio → the gap → AI training layer → for trainers → for PT businesses
+ * → feature catalogue → workflow → security → pricing → FAQ → closing CTA →
+ * footer.
  *
  * Live data comes from the public, unauthenticated endpoints. Failures are
  * swallowed on purpose: the page must still render if the API is cold or
@@ -38,6 +38,8 @@ export default function LandingPage() {
   const [plans, setPlans] = useState<PublicPlan[]>([]);
   const [founderSlots, setFounderSlots] = useState<number | null>(null);
   const [trialDays, setTrialDays] = useState(7);
+  // The hero states the trial length only once it is the live figure.
+  const [trialLoaded, setTrialLoaded] = useState(false);
   const [stats, setStats] = useState<PublicStats | null>(null);
 
   useEffect(() => {
@@ -53,7 +55,7 @@ export default function LandingPage() {
         if (!j?.data) return;
         setPlans(j.data.plans ?? []);
         setFounderSlots(j.data.founder_slots_remaining ?? null);
-        if (j.data.trial_days) setTrialDays(j.data.trial_days);
+        if (j.data.trial_days) { setTrialDays(j.data.trial_days); setTrialLoaded(true); }
       })
       .catch(() => {});
 
@@ -91,16 +93,15 @@ export default function LandingPage() {
       <PublicPullToRefresh />
 
       <main id="main-content">
-        <Hero />
+        <Hero trialDays={trialLoaded ? trialDays : null} />
         <TrustBar stats={stats} />
-        <ProductShowcase />
+        <StudioAnatomy />
         <ValueProposition />
         <AiSection />
         <PtOsSection />
         <GymSection />
         <FeatureGrid />
         <WorkflowSection />
-        <AnalyticsSection />
         <SecurityStrip />
         <PricingSection plans={plans} founderSlots={founderSlots} trialDays={trialDays} />
         <FaqSection />

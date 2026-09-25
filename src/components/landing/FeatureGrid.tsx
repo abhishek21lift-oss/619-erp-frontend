@@ -35,7 +35,7 @@ const CATEGORIES = [
     wash: C.emeraldSoft,
     features: [
       { icon: <Sparkles size={15} />, t: 'AI Coach', d: 'Workout and diet generation grounded in client data.' },
-      { icon: <BarChart3 size={15} />, t: 'AI insights', d: 'Churn risk, renewals due and what to do next.' },
+      { icon: <BarChart3 size={15} />, t: 'AI insights', d: 'Progress trends from each client’s own records.' },
       { icon: <FileText size={15} />, t: 'Knowledge base', d: 'A searchable library every AI output is grounded in.' },
     ],
   },

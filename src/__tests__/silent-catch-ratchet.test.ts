@@ -80,7 +80,7 @@ function sites(): string[] {
  * wants reading, not renumbering.
  */
 const KNOWN = [
-  'app/(bare)/start-free/page.tsx:66',
+  'app/(bare)/start-free/page.tsx:67',
   'app/(chrome)/ai-coach/knowledge/page.tsx:75',
   'app/(chrome)/ai/progress-analysis/page.tsx:76',
   'app/(chrome)/checkin/qr-scanner/page.tsx:384',
@@ -119,8 +119,8 @@ const KNOWN = [
   'app/(platform)/platform/_tabs/FinanceTab.tsx:343',
   'app/(platform)/platform/_tabs/FinanceTab.tsx:99',
   'app/(platform)/platform/_tabs/StudiosTab.tsx:379',
-  'components/LandingPage.tsx:58',
-  'components/LandingPage.tsx:65',
+  'components/LandingPage.tsx:60',
+  'components/LandingPage.tsx:67',
   'components/TrialBanner.tsx:19',
   'components/fitness/AiCoachPanel.tsx:128',
   'components/fitness/AiCoachPanel.tsx:134',

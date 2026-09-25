@@ -8,11 +8,11 @@ import { C, EASE } from './tokens';
 
 const FAQ = [
   { q: 'What is MY PT STUDIO?', a: 'The business management platform for personal trainers — client management, workout and nutrition builders, progress tracking, payments and analytics in one platform, so you can run your entire training business from a single place.' },
-  { q: 'Who is it for?', a: 'Independent personal trainers, online coaches, PT studios and fitness businesses of any size — from solo trainers to multi-location training businesses.' },
+  { q: 'Who is it for?', a: 'Independent personal trainers and PT studios — the person who trains the clients and also has to run the business around them.' },
   { q: 'Do my clients need to install anything?', a: 'No. The platform is fully web-based and mobile-friendly. You manage everything from any device, and clients can be onboarded in minutes.' },
-  { q: 'Can I run more than one studio or training location?', a: 'Yes. Our multi-tenant architecture lets you run multiple training locations from one account, each with fully isolated data, its own team, branding and permissions.' },
-  { q: 'Is my data secure?', a: 'Every studio is isolated at the database level with row-level security, encrypted connections and role-based access control. Your data is yours, and it is never shared across studios.' },
-  { q: 'How do I get started?', a: 'Start free — create your PT business in a couple of minutes. Our team reviews it, then helps you import your clients so you are live in a day, not a month.' },
+  { q: 'Can my clients sign in too?', a: 'Yes. Every client gets their own Member Login, where they see their membership, payments, attendance and progress — only their own, never another member’s.' },
+  { q: 'Is my data secure?', a: 'Every request the app makes is scoped to your studio, connections are encrypted, and sign-in supports two-factor codes and passkeys. Your client data is yours, and it is never shared across studios.' },
+  { q: 'How do I get started?', a: 'Start free — creating your studio takes a couple of minutes. Our team reviews every new studio, and your free trial starts the day it is approved.' },
 ];
 
 /**

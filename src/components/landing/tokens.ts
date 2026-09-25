@@ -166,9 +166,6 @@ export const SHADOW = {
   blueGlow: '0 10px 26px -12px rgba(0,103,224,0.55)',
 } as const;
 
-/** Fixed-width numbers everywhere figures appear. */
-export const TABULAR = { fontVariantNumeric: 'tabular-nums' } as const;
-
 /**
  * Readable ink for an arbitrary fill.
  *
@@ -204,3 +201,103 @@ export function inkOn(fill: string): string {
     ? '#fff'
     : C.onGold;
 }
+
+// ── The studio object ──────────────────────────────────────────────────────
+//
+// The brand mark is an isometric cube — a black anodised frame with a cobalt
+// "M" running through it. The signed-out surface renders that object for real
+// (components/landing/StudioCube.tsx) instead of illustrating the product with
+// a mocked dashboard, so its materials live here with the rest of the
+// marketing palette.
+//
+// Each material is lit from one fixed key light, up and to the left — the
+// same direction SHADOW already assumes for the soft surface, so the object
+// and the page it sits on agree about where the light is. `top` catches the
+// most, `front` is the key side, `side` is the shadowed flank, `back` is what
+// the open frame lets you glimpse through it.
+export const MATERIAL = {
+  anodised: {
+    top: 'linear-gradient(135deg, #5B6576 0%, #3A4250 55%, #262C37 100%)',
+    front: 'linear-gradient(160deg, #353C49 0%, #1F242E 70%, #171B23 100%)',
+    side: 'linear-gradient(160deg, #20252F 0%, #12161D 100%)',
+    back: '#0E1117',
+    edge: 'inset 0 0 0 1px rgba(255,255,255,0.07)',
+  },
+  cobalt: {
+    top: 'linear-gradient(135deg, #7FB4FF 0%, #3B8DF5 45%, #0271EB 100%)',
+    front: 'linear-gradient(160deg, #3B8DF5 0%, #0067E0 55%, #0050AD 100%)',
+    side: 'linear-gradient(160deg, #0059CE 0%, #003F87 100%)',
+    back: '#002D61',
+    edge: 'inset 0 0 0 1px rgba(255,255,255,0.18)',
+  },
+  // Contact shadow under the object: tight and dark where it touches the
+  // floor, wide and faint further out. Two layers, because one Gaussian
+  // either looks like a hover glow or a hole.
+  floorCore: 'radial-gradient(closest-side, rgba(15,23,42,0.42), rgba(15,23,42,0.18) 55%, transparent)',
+  floorWide: 'radial-gradient(closest-side, rgba(15,23,42,0.16), transparent)',
+} as const;
+
+// Hairline annotation — the drafting-sheet callouts around the object.
+export const ANNOTATION = {
+  line: 'rgba(31,42,61,0.28)',
+  dot: '#0067E0',
+  text: '#3A4759',
+} as const;
+
+// ── Signed-out controls ────────────────────────────────────────────────────
+//
+// One field, one primary button and one card for every signed-out page, so
+// the five of them cannot drift into five slightly different forms. Class
+// strings rather than style objects so :hover and :focus-visible work without
+// JavaScript — and they live here because they carry colour.
+
+/** A text input: a clean white well, a cobalt focus ring. 16px text, so iOS never zooms. */
+export const FIELD = {
+  base:
+    'w-full rounded-[14px] border bg-[rgba(255,255,255,0.74)] text-[16px] leading-none text-[#1F2A3D] ' +
+    'shadow-[inset_0_1px_2px_rgba(15,23,42,0.06)] outline-none transition-[border-color,box-shadow,background-color] duration-200 ' +
+    'placeholder:text-[#7B8799] hover:bg-white focus:bg-white',
+  ok: 'border-[rgba(31,42,61,0.14)] hover:border-[rgba(31,42,61,0.26)] focus:border-[#0067E0] focus:shadow-[0_0_0_4px_rgba(0,103,224,0.14)]',
+  invalid: 'border-[rgba(183,28,28,0.55)] focus:border-[#B71C1C] focus:shadow-[0_0_0_4px_rgba(183,28,28,0.12)]',
+  /** Leading icon: muted at rest, cobalt while its field has focus. */
+  icon: 'text-[#59677C] transition-colors group-focus-within:text-[#0052B8]',
+} as const;
+
+/**
+ * The primary action: a cobalt key with a lit top edge and a darker lip
+ * underneath, so it reads as a physical button on the same light the cube
+ * is lit by. Presses down 1px.
+ */
+export const PRIMARY_BUTTON =
+  'relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-[14px] font-[720] text-white ' +
+  'bg-[linear-gradient(180deg,#0271EB_0%,#0059CE_100%)] ' +
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_1px_0_#003F87,0_14px_28px_-12px_rgba(0,103,224,0.65)] ' +
+  'transition-[transform,box-shadow,filter] duration-150 hover:brightness-[1.06] active:translate-y-px ' +
+  'active:shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_0_#003F87,0_8px_18px_-10px_rgba(0,103,224,0.6)] ' +
+  'disabled:cursor-default disabled:opacity-70 disabled:hover:brightness-100 ' +
+  'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(0,103,224,0.28)]';
+
+/** A quiet secondary action on the same surface. */
+export const SECONDARY_BUTTON =
+  'inline-flex items-center justify-center gap-2 rounded-[14px] border border-[rgba(31,42,61,0.14)] ' +
+  'bg-[rgba(255,255,255,0.6)] font-[680] text-[#1F2A3D] transition-colors duration-150 hover:bg-white ' +
+  'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(0,103,224,0.22)]';
+
+/** The form card: frosted white over the canvas, lifted by a real drop shadow. */
+export const CARD = {
+  background: 'linear-gradient(180deg, rgba(255,255,255,0.86) 0%, rgba(255,255,255,0.66) 100%)',
+  border: '1px solid rgba(255,255,255,0.9)',
+  boxShadow:
+    'inset 0 1px 0 rgba(255,255,255,0.95), 0 1px 2px rgba(15,23,42,0.06), 0 24px 48px -24px rgba(15,23,42,0.28), 0 48px 96px -48px rgba(15,23,42,0.22)',
+  backdropFilter: 'blur(16px) saturate(140%)',
+} as const;
+
+/** The page behind everything: the canvas, a key light from the upper left, a faint drafting grid. */
+export const STAGE = {
+  light: 'radial-gradient(90% 70% at 18% 0%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 60%)',
+  grid:
+    'linear-gradient(rgba(31,42,61,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(31,42,61,0.045) 1px, transparent 1px)',
+  gridSize: '56px 56px',
+  gridMask: 'radial-gradient(ellipse 75% 65% at 50% 38%, #000 30%, transparent 78%)',
+  horizon: 'linear-gradient(90deg, transparent, rgba(31,42,61,0.14) 20%, rgba(31,42,61,0.14) 80%, transparent)',
+} as const;

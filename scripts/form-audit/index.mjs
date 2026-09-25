@@ -49,6 +49,9 @@ const SRC = join(ROOT, 'src');
 const DESIGN_SYSTEM = [
   'src/components/ui/form',
   'src/components/landing/SoftField.tsx',
+  // SoftField + SoftInput composed for the screens that own their state
+  // (sign-in, Start Free). No native control of its own; see its header.
+  'src/components/landing/AuthField.tsx',
 ];
 
 /** Comments are prose; the first audit counted its own documentation. */
@@ -86,7 +89,7 @@ for (const file of walk(SRC)) {
 
   const platformControls =
     (source.match(
-      /<(TextField|TextAreaField|NumberField|SelectField|DateFieldControl|MonthFieldControl|CheckboxField|RadioField|SearchField|TextFieldRow|FormField|FloatInput|SoftTextField|SoftField|SoftInput)[\s/>]/g,
+      /<(TextField|TextAreaField|NumberField|SelectField|DateFieldControl|MonthFieldControl|CheckboxField|RadioField|SearchField|TextFieldRow|FormField|FloatInput|SoftTextField|SoftField|SoftInput|AuthInput)[\s/>]/g,
     ) ?? []).length;
 
   const total = Object.values(kinds).reduce((a, b) => a + b, 0);
