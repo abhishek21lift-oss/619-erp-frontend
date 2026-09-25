@@ -3,13 +3,21 @@ name: Android APK
 on:
   push:
     branches: [main]
+  # Also on a PR that changes the APK pipeline itself, so a broken build is
+  # caught before it lands rather than on main — this job had been red on
+  # main for two merges before anyone saw it.
+  pull_request:
+    paths:
+      - '.github/workflows/android-apk.yml'
+      - 'capacitor.config.ts'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: android-apk-main
+  # Per ref: a PR run must never cancel a main build, or the reverse.
+  group: android-apk-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -47,6 +55,12 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The action's default is 'tools platform-tools'. 'tools' (the old
+          # SDK Tools package) is no longer published in Google's SDK
+          # repository, so sdkmanager exits 1 on it and the job fails here.
+          # cmdline-tools, which the action installs itself, replaces it.
+          packages: platform-tools
 
       - name: Install Android SDK packages
         run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
