@@ -110,10 +110,6 @@ export default function StartFreePage() {
     eyebrow: trialDays ? `Start free · ${trialDays}-day trial` : 'Start free',
     headline: 'Open your studio. Run it from one place.',
     sub: 'Create the account your clients, programmes, sessions and payments will live in. Every new studio is reviewed by our team, and your trial starts on the day it is approved — not before.',
-    labels: [
-      { text: 'Your studio', side: 'left', at: 0.34 },
-      { text: 'Your clients', side: 'right', at: 0.5 },
-    ],
     notes: [
       'No card needed to apply',
       'A person reviews every new studio',

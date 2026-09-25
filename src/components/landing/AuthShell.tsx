@@ -3,29 +3,27 @@
 /**
  * The signed-out frame: both sign-in doors, Start Free, and password recovery.
  *
- * Left, on desktop: what this door is for, and the studio object — the brand
- * cube in real 3D, annotated with the parts of the product it stands for.
- * Right: the form. On a phone the object shrinks to a header above the form,
+ * Left, on desktop: what this door is for, and the MY PT STUDIO mark standing
+ * on the surface. Right: the form. On a phone the mark shrinks to a header above the form,
  * because the form is the reason somebody is on the page.
  *
  * Every page keeps its own <PublicNav> and its own top padding (tests pin both
  * in each page's source), so both are passed in rather than owned here.
  *
  * Nothing on this surface is illustrative data. The copy states what the
- * product does; the object is the brand mark; there are no sample clients,
+ * product does; the image is the brand mark; there are no sample clients,
  * figures or "live" chips.
  */
 
 import type { CSSProperties, ReactNode } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
-import StudioCube, { type CubeLabel } from './StudioCube';
+import StudioMark from './StudioMark';
 import { C, CARD, EASE, STAGE } from './tokens';
 
 export type AuthAside = {
   eyebrow: string;
   headline: ReactNode;
   sub: string;
-  labels?: CubeLabel[];
   /** Short plain statements shown under the object — facts, not features. */
   notes?: string[];
 };
@@ -92,7 +90,7 @@ export default function AuthShell({
               {aside.sub}
             </p>
 
-            <StudioCube maxSize={176} minSize={140} fill={0.34} labels={aside.labels} className="mt-2" />
+            <StudioMark size={200} className="mt-6 max-w-[300px] !mx-0" />
 
             {aside.notes && aside.notes.length > 0 && (
               <ol className="-mt-4 grid max-w-[560px] grid-cols-3 gap-5 border-t pt-5" style={{ borderColor: 'rgba(31,42,61,0.12)' }}>
@@ -116,7 +114,7 @@ export default function AuthShell({
             className="mx-auto w-full max-w-[440px]"
           >
             <div className="-mb-3 lg:hidden">
-              <StudioCube maxSize={92} minSize={78} fill={0.24} />
+              <StudioMark size={84} priority />
             </div>
             {children}
           </m.div>
