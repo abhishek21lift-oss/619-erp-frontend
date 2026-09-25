@@ -3,7 +3,7 @@
 # That network is the least reliable thing in the pipeline, and the build has
 # three separate dependencies on it:
 #
-#   1. Docker Hub          the `node:20-alpine` base image
+#   1. Docker Hub          the `node:22-alpine` base image
 #   2. registry.npmjs.org  `npm ci` below
 #   3. Google Fonts        `next/font/google` in src/app/layout.tsx, fetched
 #                          during `npm run build`
@@ -25,7 +25,7 @@
 # fourth network dependency.
 
 # ─── Stage 1: Install ALL dependencies (including devDeps for build) ─
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 
@@ -60,7 +60,7 @@ RUN --mount=type=cache,target=/root/.npm,sharing=locked \
       --fetch-timeout=600000
 
 # ─── Stage 2: Build ────────────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -89,7 +89,7 @@ RUN --mount=type=cache,target=/app/.next/cache,sharing=locked \
     npm run build
 
 # ─── Stage 3: Production runner (minimal image) ────────────────────
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
