@@ -2954,6 +2954,87 @@ export type MeAttendance = {
 
 export type MeMeasurement = { weight_kg: number | string; measured_at: string };
 
+/** One exercise in the member's programme, for the week they have reached. */
+export type MeWorkoutExercise = {
+  name: string;
+  sets: number | null;
+  reps: number | null;
+  rest_seconds: number | null;
+  target_weight: number | null;
+  tempo: string | null;
+  rpe: number | null;
+  notes: string | null;
+  equipment: string | null;
+  media_url: string | null;
+  video_url: string | null;
+};
+
+/** An active programme: 1 = Monday … 7 = Sunday, 0 = unscheduled. */
+export type MeWorkoutPlan = {
+  assignment_id: string;
+  name: string;
+  description: string | null;
+  goal: string | null;
+  difficulty: string | null;
+  duration_weeks: number | null;
+  sessions_per_week: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  current_week: number | null;
+  days: { day_of_week: number; exercises: MeWorkoutExercise[] }[];
+};
+
+export type MeDietMeal = {
+  name: string;
+  description: string | null;
+  meal_type: string;
+  day_of_week: number | null;
+  calories: number;
+  protein_g: number | null;
+  carbs_g: number | null;
+  fats_g: number | null;
+  serving_size: string | null;
+};
+
+export type MeDietPlan = {
+  assignment_id: string;
+  name: string;
+  description: string | null;
+  goal: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  daily: { calories: number | null; protein_g: number | null; carbs_g: number | null; fats_g: number | null };
+  meals: MeDietMeal[];
+};
+
+export type MeCheckinMood = 'great' | 'good' | 'okay' | 'tired' | 'stressed';
+
+export type MeCheckin = {
+  id: string;
+  week_start_date: string;
+  weight: number | string | null;
+  mood: MeCheckinMood | null;
+  sleep_hours: number | string | null;
+  water_glasses: number | null;
+  stress_level: number | null;
+  energy_level: number | null;
+  soreness_level: number | null;
+  client_notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MeCheckinInput = Partial<{
+  weight: number;
+  mood: MeCheckinMood;
+  sleep_hours: number;
+  water_glasses: number;
+  stress_level: number;
+  energy_level: number;
+  soreness_level: number;
+  client_notes: string;
+}>;
+
 export type SubscriptionMetrics = {
   mrr_inr: number;
   arr_inr: number;

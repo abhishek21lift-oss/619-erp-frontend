@@ -60,6 +60,9 @@ const BARE = [
   'member/classes',              // the member portal has its own shell
   'member/dashboard',
   'member/payments',
+  'member/workout',
+  'member/diet',
+  'member/checkin',
   'platform-login',              // the Command Center's door — no session yet
   'pt-os',                       // redirect to /pt-os/clients
   'pt-os/pdf-viewer',            // full-screen viewer

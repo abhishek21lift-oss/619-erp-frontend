@@ -137,6 +137,9 @@ export const NAV_GROUPS: NavGroup[] = [
     feature: 'member_portal',
     items: [
       { href: '/member/dashboard', label: 'Dashboard',   icon: 'LayoutDashboard', roles: ['member'] },
+      { href: '/member/workout',   label: 'My Programme', icon: 'Dumbbell',       roles: ['member'] },
+      { href: '/member/diet',      label: 'My Diet',      icon: 'Apple',          roles: ['member'] },
+      { href: '/member/checkin',   label: 'Weekly Check-in', icon: 'ClipboardCheck', roles: ['member'] },
       { href: '/member/payments',  label: 'My Payments', icon: 'Receipt',         roles: ['member'] },
     ],
   },

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, LogOut, Wallet } from 'lucide-react';
+import { Apple, ClipboardCheck, Dumbbell, Home, LogOut, Wallet } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { palette } from '@/lib/palette';
 
@@ -28,6 +28,10 @@ import { palette } from '@/lib/palette';
  * and every booking attempt failed. The studios this serves run 1-on-1 PT,
  * so the tab is gone and /member/classes redirects home.
  *
+ * Workout, Diet and Check-in came next, once /api/me could answer them:
+ * the plan the trainer wrote, the diet they were given, and a way to tell the
+ * trainer how the week went. Each is a real page with a real empty state.
+ *
  * ── Why it is shared ───────────────────────────────────────────────────────
  *
  * Lifted out of member/dashboard/page.tsx, where it was a local component, so
@@ -40,6 +44,9 @@ import { palette } from '@/lib/palette';
  */
 const TABS = [
   { href: '/member/dashboard', label: 'Home', icon: Home },
+  { href: '/member/workout', label: 'Workout', icon: Dumbbell },
+  { href: '/member/diet', label: 'Diet', icon: Apple },
+  { href: '/member/checkin', label: 'Check-in', icon: ClipboardCheck },
   { href: '/member/payments', label: 'Payments', icon: Wallet },
 ] as const;
 

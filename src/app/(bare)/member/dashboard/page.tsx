@@ -38,7 +38,7 @@ import { m } from 'framer-motion';
 import {
   CalendarDays, Wallet, Dumbbell, TrendingDown, TrendingUp, Minus,
   User, Phone, Mail, Target, Ruler, CheckCircle2, Clock, CreditCard,
-  ChevronRight, ShieldCheck,
+  ChevronRight, ShieldCheck, Apple, ClipboardCheck,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
@@ -253,6 +253,13 @@ function MemberDashboard() {
         )}
       </m.section>
 
+      {/* ── What the trainer set, and the weekly check-in ───────────────── */}
+      <nav aria-label="Your plan" className="mb-4 grid grid-cols-3 gap-2.5">
+        <Shortcut href="/member/workout" icon={<Dumbbell size={16} />} label="Workout" />
+        <Shortcut href="/member/diet" icon={<Apple size={16} />} label="Diet" />
+        <Shortcut href="/member/checkin" icon={<ClipboardCheck size={16} />} label="Check-in" />
+      </nav>
+
       {/* ── Progress. Only what was actually measured. ───────────────────── */}
       <Section title="Your progress">
         <div className="grid grid-cols-3 gap-2.5">
@@ -369,6 +376,18 @@ function MemberDashboard() {
  *  shell itself is shared with the rest of the portal now. */
 function Shell({ children }: { children: React.ReactNode }) {
   return <MemberShell>{children}</MemberShell>;
+}
+
+function Shortcut({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+  return (
+    <Link href={href}
+      className="flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[16px] text-[12px] font-[720] transition-transform active:scale-[0.97]"
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: C.ink }}>
+      <span className="grid h-8 w-8 place-items-center rounded-full"
+        style={{ background: rgba(C.primary, 0.1), color: C.primary }}>{icon}</span>
+      {label}
+    </Link>
+  );
 }
 
 function Section({ title, action, children }: {
