@@ -127,8 +127,21 @@ describe('a record the studio has filled in', () => {
     // The one that matters most: the enrolment column the old resolver ignored
     // in favour of the browser's four.
     expect(screen.getByText('pt_clients.sessions_per_week')).toBeInTheDocument();
-    expect(screen.getByText('3')).toBeInTheDocument();
+    // Shown with its unit — in the summary chip and again beside its source.
+    expect(screen.getAllByText('3 days/wk').length).toBeGreaterThan(0);
     expect(screen.getByText('pt_clients.dob')).toBeInTheDocument();
+  });
+
+  it('keeps the sources out of sight until Details is opened', () => {
+    const { container } = render(<GenerationContextPanel context={filled} />);
+    const details = container.querySelector('details');
+    expect(details).not.toBeNull();
+    expect(details!.open).toBe(false);
+    // Column names live only inside the collapsed section.
+    expect(details!.textContent).toContain('pt_clients.dob');
+    const summaryText = (container.firstElementChild!.textContent ?? '')
+      .replace(details!.textContent ?? '', '');
+    expect(summaryText).not.toContain('pt_clients');
   });
 
   it('drops the blocking warning but still admits what is absent', () => {
@@ -255,8 +268,8 @@ describe('records that disagree', () => {
   it('names what was used and what was not', () => {
     render(<GenerationContextPanel context={withConflicts([CONFLICT])} />);
     const text = screen.getByText(/Records disagree/).parentElement?.textContent ?? '';
-    expect(text).toContain('used fat_loss (client_fitness_profiles.goal)');
-    expect(text).toContain('not muscle_gain (pt_goals.goal_type)');
+    expect(text).toContain('using Fat loss from Fitness profile goal');
+    expect(text).toContain('not Muscle gain from Active goal');
   });
 
   it('says nothing when the records agree', () => {
