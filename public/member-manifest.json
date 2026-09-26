@@ -1,0 +1,26 @@
+{
+  "id": "/member",
+  "name": "MY PT STUDIO — Member",
+  "short_name": "My PT",
+  "description": "Your workouts, diet, check-ins, progress and messages with your trainer.",
+  "start_url": "/member/dashboard",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F8FAFC",
+  "theme_color": "#F8FAFC",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["fitness", "health", "lifestyle"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Today's workout", "short_name": "Workout", "url": "/member/workout", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Weekly check-in", "short_name": "Check-in", "url": "/member/checkin", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Message my trainer", "short_name": "Messages", "url": "/member/messages", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Membership card", "short_name": "Card", "url": "/member/card", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

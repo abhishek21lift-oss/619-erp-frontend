@@ -13,7 +13,7 @@ import type {
   FeatureOverrideRow, ImpersonationSession, Invitation, InvitationDetail,
   ClientActivationPreview, ClientLoginStatus,
   MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement, MeSession,
-  MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage,
+  MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage, MePhoto, MePhotoType,
   InvitationPreview, InvoiceQuery, InvoiceTotals, LoginEvent, LoginEventQuery,
   OrgBillingProfile, OrgInternalNotes, OrgUser, Organization, OrganizationDetail,
   PlatformUser, PlatformUserQuery, PlatformUserSummary,
@@ -727,6 +727,19 @@ export const me = {
   messagesUnread: () => http<{ data: { unread: number } }>('/api/me/messages/unread-count'),
   sendMessage: (body: string) =>
     http<{ data: ChatMessage }>('/api/me/messages', { method: 'POST', body: JSON.stringify({ body }) }),
+  /** Progress photos, the trainer's and the member's own. */
+  photos: () => http<{ data: MePhoto[] }>('/api/me/progress-photos'),
+  /** Multipart upload. The server decides the type from the bytes; send a compressed JPEG. */
+  uploadPhoto: (file: Blob, photoType: MePhotoType, takenAt?: string) => {
+    const form = new FormData();
+    form.append('photo_type', photoType);
+    if (takenAt) form.append('taken_at', takenAt);
+    form.append('photo', file, 'progress.jpg');
+    return http<{ data: MePhoto }>('/api/me/progress-photos', { method: 'POST', body: form });
+  },
+  /** Only the member's own uploads; a trainer's photo is a 404. */
+  deletePhoto: (id: string) =>
+    http<void>(`/api/me/progress-photos/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   /** Records and streaks. */
   achievements: () => http<{ data: MeAchievements }>('/api/me/achievements'),
   /** Latest PAR-Q and informed consent. */

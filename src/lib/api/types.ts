@@ -3002,6 +3002,21 @@ export type MeAchievements = {
   recent_prs: (MeLift & { kind: 'weight' | 'reps' | 'volume' })[];
 };
 
+export type MePhotoType = 'front' | 'side' | 'back' | 'flexed' | 'full_body' | 'other';
+
+/** One progress photo — taken by the trainer at the studio, or uploaded by the member. */
+export type MePhoto = {
+  id: string;
+  photo_type: MePhotoType;
+  taken_at: string;
+  notes: string | null;
+  /** A /uploads/... path (member uploads) or a data: URL (trainer uploads). Either works as an img src. */
+  photo_url: string;
+  created_at: string;
+  /** True for photos the member uploaded — the only ones they may delete. */
+  by_me: boolean;
+};
+
 /** One message in a member ↔ studio conversation. */
 export type ChatMessage = {
   id: string;

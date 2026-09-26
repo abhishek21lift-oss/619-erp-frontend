@@ -59,7 +59,7 @@ const TABS = [
 ] as const;
 
 /** Pages reached from More: the More tab lights up on each of them. */
-const MORE_ROUTES = ['/member/more', '/member/messages', '/member/card', '/member/records', '/member/progress', '/member/notifications', '/member/forms', '/member/account'];
+const MORE_ROUTES = ['/member/more', '/member/messages', '/member/card', '/member/records', '/member/progress', '/member/photos', '/member/notifications', '/member/forms', '/member/account'];
 
 /** Reserve this much above the bar so the last card clears it. */
 export const MEMBER_NAV_CLEARANCE = 'calc(84px + env(safe-area-inset-bottom, 0px))';
