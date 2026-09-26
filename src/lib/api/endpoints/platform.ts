@@ -14,7 +14,7 @@ import type {
   ClientActivationPreview, ClientLoginStatus,
   MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement, MeSession,
   MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage, MePhoto, MePhotoType,
-  MeLastPerformance, MeWorkoutLogInput, MeWorkoutSummary, MeGoals, MeGoal, MeGoalInput, MeRecap,
+  MeLastPerformance, MeWorkoutLogInput, MeWorkoutSummary, MeGoals, MeGoal, MeGoalInput, MeRecap, MeRenewal,
   InvitationPreview, InvoiceQuery, InvoiceTotals, LoginEvent, LoginEventQuery,
   OrgBillingProfile, OrgInternalNotes, OrgUser, Organization, OrganizationDetail,
   PlatformUser, PlatformUserQuery, PlatformUserSummary,
@@ -758,6 +758,13 @@ export const me = {
   createGoal: (body: MeGoalInput) =>
     http<{ data: MeGoal }>('/api/me/goals', { method: 'POST', body: JSON.stringify(body) }),
   deleteGoal: (id: string) => http<void>(`/api/me/goals/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  /** Where the plan stands, and the trainer's renewal offer if there is one. */
+  renewal: () => http<{ data: MeRenewal }>('/api/me/renewal'),
+  /** Ask the trainer for a renewal. `sent: false` when a request is already waiting. */
+  requestRenewal: (note?: string) =>
+    http<{ data: { sent: boolean } }>('/api/me/renewal/request', { method: 'POST', body: JSON.stringify({ note }) }),
+  /** A PDF receipt for one of the member's payments; opened in a new tab, the session cookie authorises it. */
+  paymentReceiptUrl: (paymentId: string) => `${apiBase()}/api/me/payments/${encodeURIComponent(paymentId)}/receipt`,
   /** One month in numbers; the latest month with activity when `month` is omitted. */
   recap: (month?: string) =>
     http<{ data: MeRecap }>(`/api/me/recap${month ? `?month=${encodeURIComponent(month)}` : ''}`),

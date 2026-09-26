@@ -170,7 +170,7 @@ function PayView({
           gstPercent={order.gst_percent}
           gstAmount={order.gst_amount}
           totalAmount={order.total_amount}
-          label={order.kind === 'balance' ? 'Balance due' : 'Membership'}
+          label={order.kind === 'balance' ? 'Balance due' : order.kind === 'renewal' ? 'Renewal' : 'Membership'}
         />
       </Panel>
 

@@ -11,7 +11,7 @@ import type {
   Payment, UpiActivation, UpiAuditEntry, UpiCreateOrderInput, UpiHistoryRow, UpiOrder,
   UpiOrderDetail, UpiOrderStatus, UpiPaymentView, UpiQueueParams, UpiQueueRow,
   UpiQueueStats, UpiRejectReason, UpiSettings, UpiSettingsInput, UpiSubmission,
-  UpiSubmitUtrInput,
+  UpiSubmitUtrInput, RenewalOfferInput,
 } from '../types';
 
 /** Shape of GET /api/payments/stats. All money values are rupees. */
@@ -133,6 +133,19 @@ export const upiPayments = {
   payBalance: () =>
     http<{ data: { order: UpiOrder; payment: UpiPaymentView; reused: boolean } }>(
       '/api/payments/upi/balance', { method: 'POST' }),
+
+  /**
+   * Send (or replace) a client's renewal offer. Trainer only. 409 when the
+   * current offer has already been paid and is waiting to be verified.
+   */
+  sendRenewalOffer: (body: RenewalOfferInput) =>
+    http<{ data: { order: UpiOrder; preview: { activated_from: string; activated_to: string }; member_can_see: boolean } }>(
+      '/api/payments/upi/renewal-offers', { method: 'POST', body: JSON.stringify(body) }),
+
+  /** The client's live renewal offer, or null. Trainer only. */
+  renewalOffer: (clientId: string) =>
+    http<{ data: { order: UpiOrder | null } }>(
+      `/api/payments/upi/renewal-offers?client_id=${encodeURIComponent(clientId)}`),
 
   /** Full state of one order: QR, intents, every submission, the activation. */
   status: (orderId: string) =>

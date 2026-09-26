@@ -94,7 +94,7 @@ const KNOWN = [
   'app/(chrome)/finance/collected-payments/page.tsx:85',
   'app/(chrome)/finance/dues/page.tsx:99',
   'components/payments/UpiPayScreen.tsx:202',
-  'app/(chrome)/pt-os/clients/[id]/page.tsx:399',
+  'app/(chrome)/pt-os/clients/[id]/page.tsx:401',
   'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:80',
   'app/(chrome)/pt-os/diet-plans/page.tsx:197',
   'app/(chrome)/pt-os/diet-plans/page.tsx:198',

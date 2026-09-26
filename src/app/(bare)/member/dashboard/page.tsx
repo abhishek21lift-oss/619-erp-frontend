@@ -46,6 +46,7 @@ import PayBalanceButton from '@/components/member/PayBalanceButton';
 import TodayCard from '@/components/member/TodayCard';
 import InstallAppCard from '@/components/member/InstallAppCard';
 import HomeHighlights from '@/components/member/HomeHighlights';
+import RenewalBanner from '@/components/member/RenewalBanner';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { api } from '@/lib/api';
 import type { MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement } from '@/lib/api';
@@ -199,6 +200,9 @@ function MemberDashboard() {
           <IdCard size={18} aria-hidden />
         </Link>
       </m.div>
+
+      {/* ── A renewal offer to pay, or a plan about to run out ──────────────── */}
+      <RenewalBanner />
 
       {/* ── What to do today ─────────────────────────────────────────────── */}
       <TodayCard />
