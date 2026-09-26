@@ -10,7 +10,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  Bell, ChevronRight, FileSignature, IdCard, LineChart, LogOut, Medal, MessageCircle, MoreHorizontal, UserRound,
+  Bell, Camera, ChevronRight, FileSignature, IdCard, LineChart, LogOut, Medal, MessageCircle, MoreHorizontal, UserRound,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -36,6 +36,7 @@ const LINKS: { href: string; label: string; sub: string; icon: LucideIcon; badge
   { href: '/member/card', label: 'Membership card', sub: 'Check-in code and days left', icon: IdCard },
   { href: '/member/records', label: 'Records', sub: 'Streaks, milestones and personal bests', icon: Medal },
   { href: '/member/progress', label: 'Progress', sub: 'Weight trend and body measurements', icon: LineChart },
+  { href: '/member/photos', label: 'Progress photos', sub: 'Your photo timeline and before/after', icon: Camera },
   { href: '/member/notifications', label: 'Notifications', sub: 'Updates from your studio', icon: Bell, badge: 'notifications' },
   { href: '/member/forms', label: 'My forms', sub: 'Health screening and signed consent', icon: FileSignature },
   { href: '/member/account', label: 'Account', sub: 'Contact details and password', icon: UserRound },

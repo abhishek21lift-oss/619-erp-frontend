@@ -14,7 +14,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { LineChart, Ruler, TrendingDown, TrendingUp } from 'lucide-react';
+import { Camera, ChevronRight, LineChart, Ruler, TrendingDown, TrendingUp } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import {
@@ -153,7 +153,26 @@ function ProgressBody() {
       )}
 
       <BodyMeasurements rows={body} />
+      <PhotosLink />
     </>
+  );
+}
+
+/** Photos tell the part of the story a tape measure cannot. */
+function PhotosLink() {
+  return (
+    <Link href="/member/photos" className="mb-2 flex items-center gap-3 rounded-[16px] p-4 transition-colors hover:bg-[var(--bg-subtle)]"
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]"
+        style={{ background: 'var(--bg-subtle)', color: MC.primary }}>
+        <Camera size={18} aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[14px] font-[750]" style={{ color: MC.ink }}>Progress photos</span>
+        <span className="block text-[12px]" style={{ color: MC.muted }}>Before and after, side by side</span>
+      </span>
+      <ChevronRight size={16} aria-hidden style={{ color: MC.muted }} />
+    </Link>
   );
 }
 
