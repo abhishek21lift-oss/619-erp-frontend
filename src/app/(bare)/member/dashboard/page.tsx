@@ -77,6 +77,16 @@ function longDate(v: string | null | undefined): string | null {
  * `days_remaining` from an endpoint that never returned it, which is exactly
  * how the card came to print the word "days" with nothing in front of it.
  */
+/**
+ * "fat_loss" → "Fat loss". Goals arrive as the trainer's goal codes; free-text
+ * goals (already words) pass through with only the first letter raised.
+ */
+function goalLabel(v: string | null | undefined): string | null {
+  if (!v) return null;
+  const t = v.replace(/_/g, ' ').trim();
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : null;
+}
+
 function daysLeft(end: string | null | undefined): number | null {
   if (!end) return null;
   const d = new Date(end);
@@ -354,7 +364,7 @@ function MemberDashboard() {
       <Section title="Your details">
         <div className="overflow-hidden rounded-[16px]"
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-          <Detail icon={<Target size={13} />} label="Goal" value={profile.goal} />
+          <Detail icon={<Target size={13} />} label="Goal" value={goalLabel(profile.goal)} />
           <Detail icon={<CalendarDays size={13} />} label="Member since" value={longDate(profile.joining_date)} />
           <Detail icon={<Clock size={13} />} label="Started" value={longDate(profile.pt_start_date)} />
           <Detail icon={<Ruler size={13} />} label="Height" value={profile.height ? `${profile.height} cm` : null} />

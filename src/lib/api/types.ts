@@ -2950,6 +2950,8 @@ export type MePayment = {
   payment_method: string | null;
   notes: string | null;
   created_at: string;
+  /** Set when the payment came from an approved online (UPI) order. */
+  upi_order_id?: string | null;
 };
 
 export type MeAttendance = {
@@ -2961,7 +2963,36 @@ export type MeAttendance = {
   status: string | null;
 };
 
-export type MeMeasurement = { weight_kg: number | string; measured_at: string };
+export type MeMeasurement = {
+  weight_kg: number | string;
+  measured_at: string;
+  /** 'trainer' for a studio measurement, 'checkin' for the member's own weekly check-in. */
+  source?: 'trainer' | 'checkin';
+};
+
+/** One logged set. Weight/reps for lifts; duration/distance for cardio. */
+export type MeSessionSet = {
+  set_number: number | null;
+  weight_kg: number | null;
+  reps: number | null;
+  rpe: number | null;
+  completed: boolean | null;
+  is_pr: boolean;
+  duration_seconds: number | null;
+  distance: number | null;
+  distance_unit: string | null;
+};
+
+/** A session the trainer logged for the member. Trainer notes are never included. */
+export type MeSession = {
+  id: string;
+  session_date: string;
+  program_name: string | null;
+  workout_day: string | null;
+  duration_minutes: number | null;
+  status: 'completed' | 'in_progress' | string;
+  exercises: { name: string; sets: MeSessionSet[] }[];
+};
 
 /** One exercise in the member's programme, for the week they have reached. */
 export type MeWorkoutExercise = {

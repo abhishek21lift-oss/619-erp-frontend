@@ -22,7 +22,7 @@ import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import PayBalanceButton from '@/components/member/PayBalanceButton';
 import { api } from '@/lib/api';
-import type { UpiHistoryRow } from '@/lib/api';
+import type { MePayment, UpiHistoryRow } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
 import { PageHeader, EmptyState } from '@/components/ui';
@@ -30,6 +30,13 @@ import { UpiStatusBadge, fmtMoneyExact } from '@/components/payments/upi-shared'
 import { errorMessage } from '@/lib/forms/errors';
 
 const PAGE_SIZE = 25;
+
+/** "CASH" → "Cash", "BANK_TRANSFER" → "Bank transfer"; nothing recorded → "Payment". */
+function paymentMethodLabel(method: string | null): string {
+  if (!method) return 'Payment';
+  const t = method.replace(/_/g, ' ').trim().toLowerCase();
+  return t === 'upi' ? 'UPI' : t.charAt(0).toUpperCase() + t.slice(1);
+}
 
 /** States where the member still has something to do. */
 const RESUMABLE = new Set(['CREATED', 'PAYMENT_PENDING']);
@@ -53,6 +60,13 @@ function Inner() {
   // What the member owes, for the pay-balance card. Display only — the server
   // prices the order itself. A failed read just hides the card.
   const [balance, setBalance] = useState(0);
+  // Payments the studio recorded (cash, card, bank transfer). The UPI list
+  // below only ever held ONLINE orders, so a member who paid at the desk saw
+  // "No payments yet" here while the dashboard showed the same payment.
+  // Approved UPI payments are on the ledger too; they are left out of this
+  // list (upi_order_id) because the online list already shows them, receipt
+  // and all.
+  const [studioPaid, setStudioPaid] = useState<MePayment[]>([]);
 
   useEffect(() => {
     if (!isMember) return;
@@ -60,6 +74,9 @@ function Inner() {
     api.me.membership()
       .then((r) => { if (alive) setBalance(Number(r.data?.balance_amount) || 0); })
       .catch(() => { if (alive) setBalance(0); });
+    api.me.payments()
+      .then((r) => { if (alive) setStudioPaid((r.data ?? []).filter((p) => !p.upi_order_id)); })
+      .catch(() => { if (alive) setStudioPaid([]); });
     return () => { alive = false; };
   }, [isMember]);
 
@@ -150,7 +167,7 @@ function Inner() {
                 style={{ background: 'var(--bg-subtle)' }} />
             ))}
           </div>
-        ) : rows.length === 0 ? (
+        ) : rows.length === 0 ? (studioPaid.length > 0 ? null : (
           <EmptyState
             icon={<Inbox size={22} />}
             title="No payments yet"
@@ -158,7 +175,7 @@ function Inner() {
               ? 'Payments you make will appear here with their receipts.'
               : 'Nothing has been submitted through UPI yet.'}
           />
-        ) : (
+        )) : (
           <div className="space-y-3">
             {rows.map((row, i) => (
               <m.article
@@ -242,6 +259,34 @@ function Inner() {
           </div>
         )}
       </div>
+
+      {isMember && studioPaid.length > 0 && (
+        <section className="mt-6" aria-labelledby="studio-paid">
+          <h2 id="studio-paid" className="mb-2 text-[12px] font-[650] uppercase tracking-[0.08em]"
+            style={{ color: 'var(--text-muted)' }}>
+            Recorded by your studio
+          </h2>
+          <div className="overflow-hidden rounded-2xl"
+            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+            {studioPaid.map((p, i) => (
+              <div key={p.id} className="flex items-center justify-between gap-3 px-4 py-3"
+                style={i === studioPaid.length - 1 ? undefined : { borderBottom: '1px solid var(--border)' }}>
+                <div className="min-w-0">
+                  <p className="text-[14px] font-[700]" style={{ color: 'var(--text-primary)' }}>
+                    {paymentMethodLabel(p.payment_method)}
+                  </p>
+                  <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+                    {new Date(p.date).toLocaleDateString('en-IN', { dateStyle: 'medium' })}
+                  </p>
+                </div>
+                <p className="text-[16px] font-[800] tabular-nums" style={{ color: 'var(--text-primary)' }}>
+                  {fmtMoneyExact(p.amount)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {pageCount > 1 && (
         <div className="mt-5 flex items-center justify-between">

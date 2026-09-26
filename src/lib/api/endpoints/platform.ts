@@ -12,7 +12,7 @@ import type {
   AnnouncementPreview, AuditEntry, AuditFilters, AuditPaging, AuditQuery, Coupon, FeatureCatalogue,
   FeatureOverrideRow, ImpersonationSession, Invitation, InvitationDetail,
   ClientActivationPreview, ClientLoginStatus,
-  MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement,
+  MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement, MeSession,
   MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput,
   InvitationPreview, InvoiceQuery, InvoiceTotals, LoginEvent, LoginEventQuery,
   OrgBillingProfile, OrgInternalNotes, OrgUser, Organization, OrganizationDetail,
@@ -710,6 +710,8 @@ export const me = {
   payments: () => http<{ data: MePayment[] }>('/api/me/payments'),
   attendance: () => http<{ data: MeAttendance[] }>('/api/me/attendance'),
   measurements: () => http<{ data: MeMeasurement[] }>('/api/me/measurements'),
+  /** Sessions the trainer logged, newest first, with the sets done. */
+  sessions: () => http<{ data: MeSession[] }>('/api/me/sessions'),
   workout: () => http<{ data: MeWorkoutPlan[] }>('/api/me/workout'),
   diet: () => http<{ data: MeDietPlan[] }>('/api/me/diet'),
   checkins: () => http<{ data: { this_week: string; checkins: MeCheckin[] } }>('/api/me/checkins'),
