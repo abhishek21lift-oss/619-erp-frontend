@@ -13,7 +13,7 @@ import type {
   FeatureOverrideRow, ImpersonationSession, Invitation, InvitationDetail,
   ClientActivationPreview, ClientLoginStatus,
   MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement, MeSession,
-  MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput,
+  MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements,
   InvitationPreview, InvoiceQuery, InvoiceTotals, LoginEvent, LoginEventQuery,
   OrgBillingProfile, OrgInternalNotes, OrgUser, Organization, OrganizationDetail,
   PlatformUser, PlatformUserQuery, PlatformUserSummary,
@@ -718,6 +718,15 @@ export const me = {
   /** This week's check-in. The server picks the week; nothing here names a client. */
   submitCheckin: (body: MeCheckinInput) =>
     http<{ data: MeCheckin }>('/api/me/checkins', { method: 'POST', body: JSON.stringify(body) }),
+  /** Mobile and/or address. Anything else about the record is the trainer's to change. */
+  updateContact: (body: MeContactInput) =>
+    http<{ data: MeContact }>('/api/me/profile', { method: 'PATCH', body: JSON.stringify(body) }),
+  /** Records and streaks. */
+  achievements: () => http<{ data: MeAchievements }>('/api/me/achievements'),
+  /** Latest PAR-Q and informed consent. */
+  forms: () => http<{ data: MeForms }>('/api/me/forms'),
+  /** Built rather than fetched: opened in a new tab, the session cookie authorises it. */
+  consentPdfUrl: (consentId: string) => `${apiBase()}/api/me/forms/consent/${encodeURIComponent(consentId)}/pdf`,
 };
 
 // ── Client activation (public) ────────────────────────────

@@ -1,9 +1,10 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Apple, ClipboardCheck, Dumbbell, Home, LogOut, Wallet } from 'lucide-react';
-import { useAuth } from '@/lib/auth-context';
+import { Apple, ClipboardCheck, Dumbbell, Home, MoreHorizontal, Wallet } from 'lucide-react';
+import { loadMemberNotifications } from './memberNotifications';
 import { palette } from '@/lib/palette';
 
 /**
@@ -41,6 +42,13 @@ import { palette } from '@/lib/palette';
  * for a bar that was never drawn — and /member/payments borrowed the STUDIO
  * shell, so it showed members Clients / Sessions / Check-in, tabs that bounce
  * them straight back out because Guard refuses a member the trainer's portal.
+ *
+ * ── More ───────────────────────────────────────────────────────────────────
+ *
+ * The sixth slot was Sign out. It is now More: Progress, Notifications,
+ * My forms, Account, Records and the membership card live there, and so does
+ * Sign out. The tab carries a
+ * dot when there are unread notifications, so they are not hidden behind it.
  */
 const TABS = [
   { href: '/member/dashboard', label: 'Home', icon: Home },
@@ -50,12 +58,27 @@ const TABS = [
   { href: '/member/payments', label: 'Payments', icon: Wallet },
 ] as const;
 
+/** Pages reached from More: the More tab lights up on each of them. */
+const MORE_ROUTES = ['/member/more', '/member/card', '/member/records', '/member/progress', '/member/notifications', '/member/forms', '/member/account'];
+
 /** Reserve this much above the bar so the last card clears it. */
 export const MEMBER_NAV_CLEARANCE = 'calc(84px + env(safe-area-inset-bottom, 0px))';
 
 export default function MemberNav() {
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const [unread, setUnread] = useState(0);
+
+  // Re-checked on each navigation, so reading them on /member/notifications
+  // clears the dot by the next page.
+  useEffect(() => {
+    let live = true;
+    loadMemberNotifications(true)
+      .then((n) => { if (live) setUnread(n.length); })
+      .catch(() => { /* a badge is not worth an error: leave it as it was */ });
+    return () => { live = false; };
+  }, [pathname]);
+
+  const moreActive = MORE_ROUTES.some((r) => pathname === r || pathname?.startsWith(`${r}/`));
 
   return (
     <nav
@@ -89,15 +112,22 @@ export default function MemberNav() {
             </Link>
           );
         })}
-        <button
-          type="button"
-          onClick={() => logout()}
+        <Link
+          href="/member/more"
+          aria-current={moreActive ? 'page' : undefined}
+          aria-label={unread > 0 ? `More, ${unread} unread notification${unread === 1 ? '' : 's'}` : undefined}
           className="flex flex-1 flex-col items-center gap-1 py-2.5"
-          style={{ color: palette.gray[500] }}
+          style={{ color: moreActive ? palette.blue[500] : palette.gray[500] }}
         >
-          <LogOut size={18} strokeWidth={1.9} />
-          <span className="text-[10px] font-[700]">Sign out</span>
-        </button>
+          <span className="relative">
+            <MoreHorizontal size={18} strokeWidth={moreActive ? 2.4 : 1.9} />
+            {unread > 0 && (
+              <span aria-hidden className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full"
+                style={{ background: palette.red[500], boxShadow: '0 0 0 2px var(--bg-card)' }} />
+            )}
+          </span>
+          <span className="text-[10px] font-[700]">More</span>
+        </Link>
       </div>
     </nav>
   );

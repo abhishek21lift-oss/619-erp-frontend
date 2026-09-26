@@ -10,6 +10,7 @@
 
 import type { ReactNode } from 'react';
 import { m } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 import { palette, rgba } from '@/lib/palette';
 
 export const MC = {
@@ -18,8 +19,9 @@ export const MC = {
   success: palette.emerald[500],
   warning: palette.amber[500],
   danger: palette.red[500],
-  ink: palette.gray[900],
-  muted: palette.gray[500],
+  // Theme tokens, not fixed greys: gray-900 ink was invisible on the dark canvas.
+  ink: 'var(--text-primary)',
+  muted: 'var(--text-muted)',
 };
 
 export const EASE = [0.16, 1, 0.3, 1] as const;
@@ -127,5 +129,16 @@ export function Stat({ label, value, tone }: { label: string; value: string; ton
         {value}
       </p>
     </div>
+  );
+}
+
+/** The one full-width primary action at the foot of a member form. */
+export function SubmitButton({ busy, busyLabel, children }: { busy: boolean; busyLabel: string; children: ReactNode }) {
+  return (
+    <button type="submit" disabled={busy}
+      className="flex h-12 w-full items-center justify-center gap-2 rounded-[13px] text-[14px] font-[750] text-white transition-opacity disabled:opacity-60"
+      style={{ background: MC.primary }}>
+      {busy ? <><Loader2 size={16} className="animate-spin" aria-hidden /> {busyLabel}</> : children}
+    </button>
   );
 }

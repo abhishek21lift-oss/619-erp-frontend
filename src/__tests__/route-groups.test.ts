@@ -64,6 +64,13 @@ const BARE = [
   'member/workout',
   'member/diet',
   'member/checkin',
+  'member/more',
+  'member/progress',
+  'member/notifications',
+  'member/forms',
+  'member/account',
+  'member/records',
+  'member/card',
   'platform-login',              // the Command Center's door — no session yet
   'pt-os',                       // redirect to /pt-os/clients
   'pt-os/pdf-viewer',            // full-screen viewer
