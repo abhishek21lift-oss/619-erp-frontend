@@ -12,14 +12,14 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { m } from 'framer-motion';
-import { ChevronDown, Dumbbell, Timer } from 'lucide-react';
+import { ChevronDown, Dumbbell, History, Timer, Trophy } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import {
   Card, EmptyState, LoadError, MC, PageSkeleton, PageTitle, Section, EASE, longDate,
 } from '@/components/member/MemberUI';
 import { api } from '@/lib/api';
-import type { MeWorkoutExercise, MeWorkoutPlan } from '@/lib/api';
+import type { MeSession, MeSessionSet, MeWorkoutExercise, MeWorkoutPlan } from '@/lib/api';
 import { rgba } from '@/lib/palette';
 
 const DAY_NAMES = ['Anytime', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -49,12 +49,18 @@ export default function MemberWorkoutPage() {
 function WorkoutBody() {
   const [plans, setPlans] = useState<MeWorkoutPlan[] | null>(null);
   const [failed, setFailed] = useState(false);
+  // Sessions load on their own: a failure there must not blank the programme,
+  // so it only hides the history section.
+  const [sessions, setSessions] = useState<MeSession[]>([]);
 
   useEffect(() => {
     let alive = true;
     api.me.workout()
       .then((r) => { if (alive) setPlans(r.data ?? []); })
       .catch(() => { if (alive) setFailed(true); });
+    api.me.sessions()
+      .then((r) => { if (alive) setSessions(r.data ?? []); })
+      .catch(() => { if (alive) setSessions([]); });
     return () => { alive = false; };
   }, []);
 
@@ -65,11 +71,14 @@ function WorkoutBody() {
     return (
       <>
         <PageTitle icon={<Dumbbell size={20} />} title="My programme" />
-        <EmptyState
-          icon={<Dumbbell size={20} />}
-          title="No programme yet"
-          body="When your trainer assigns your programme, your exercises for each training day will appear here."
-        />
+        <div className="mb-5">
+          <EmptyState
+            icon={<Dumbbell size={20} />}
+            title="No programme yet"
+            body="When your trainer assigns your programme, your exercises for each training day will appear here."
+          />
+        </div>
+        <SessionHistory sessions={sessions} />
       </>
     );
   }
@@ -79,6 +88,7 @@ function WorkoutBody() {
       <PageTitle icon={<Dumbbell size={20} />} title="My programme"
         sub={plans.length === 1 ? plans[0].name : `${plans.length} active programmes`} />
       {plans.map((p) => <PlanBlock key={p.assignment_id} plan={p} titled={plans.length > 1} />)}
+      <SessionHistory sessions={sessions} />
     </>
   );
 }
@@ -199,5 +209,106 @@ function ExerciseRow({ x, n }: { x: MeWorkoutExercise; n: number }) {
         )}
       </div>
     </li>
+  );
+}
+
+// ── Session history ──────────────────────────────────────────────────────────
+//
+// The sessions the trainer logged — what was actually done, not what was
+// planned. Newest first, each one opening to its exercises and sets.
+
+function setLabel(x: MeSessionSet): string {
+  if (x.weight_kg != null && x.reps != null) return `${x.weight_kg} kg × ${x.reps}`;
+  if (x.reps != null) return `${x.reps} reps`;
+  if (x.duration_seconds != null) {
+    const min = Math.round(x.duration_seconds / 60);
+    const dist = x.distance != null ? ` · ${x.distance} ${x.distance_unit ?? ''}`.trimEnd() : '';
+    return `${min} min${dist}`;
+  }
+  if (x.distance != null) return `${x.distance} ${x.distance_unit ?? ''}`.trim();
+  return x.weight_kg != null ? `${x.weight_kg} kg` : '—';
+}
+
+function SessionHistory({ sessions }: { sessions: MeSession[] }) {
+  const [open, setOpen] = useState<string | null>(null);
+  if (sessions.length === 0) return null;
+
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  const doneThisMonth = sessions.filter((s) => s.status === 'completed'
+    && String(s.session_date).slice(0, 7) === thisMonth).length;
+
+  return (
+    <Section title="Recent sessions"
+      aside={<span className="text-[10.5px] font-[600]" style={{ color: MC.muted }}>{doneThisMonth} this month</span>}>
+      <div className="space-y-2">
+        {sessions.map((s) => {
+          const isOpen = open === s.id;
+          const prs = s.exercises.reduce((n, e) => n + e.sets.filter((x) => x.is_pr).length, 0);
+          const meta = [
+            s.workout_day,
+            s.duration_minutes ? `${s.duration_minutes} min` : null,
+            s.exercises.length ? `${s.exercises.length} exercise${s.exercises.length === 1 ? '' : 's'}` : null,
+          ].filter(Boolean).join(' · ');
+          return (
+            <Card key={s.id}>
+              <button type="button" onClick={() => setOpen(isOpen ? null : s.id)} aria-expanded={isOpen}
+                disabled={s.exercises.length === 0}
+                className="flex min-h-[56px] w-full items-center gap-3 px-4 py-3 text-left">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full"
+                  style={{ background: rgba(MC.primary, 0.1), color: MC.primary }}>
+                  <History size={15} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13.5px] font-[720]" style={{ color: MC.ink }}>
+                    {longDate(s.session_date) ?? s.session_date}
+                    {s.status !== 'completed' && (
+                      <span className="ml-2 text-[10.5px] font-[650]" style={{ color: MC.warning }}>In progress</span>
+                    )}
+                  </p>
+                  <p className="mt-0.5 truncate text-[11.5px]" style={{ color: MC.muted }}>
+                    {[s.program_name, meta].filter(Boolean).join(' · ') || 'Session'}
+                  </p>
+                </div>
+                {prs > 0 && (
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-[750]"
+                    style={{ background: rgba(MC.warning, 0.14), color: MC.warning }}>
+                    <Trophy size={11} /> {prs} PR{prs === 1 ? '' : 's'}
+                  </span>
+                )}
+                {s.exercises.length > 0 && (
+                  <ChevronDown size={16} className="shrink-0 transition-transform"
+                    style={{ color: MC.muted, transform: isOpen ? 'rotate(180deg)' : undefined }} />
+                )}
+              </button>
+              {isOpen && (
+                <ul className="border-t px-4 py-2" style={{ borderColor: 'var(--border)' }}>
+                  {s.exercises.map((e, i) => (
+                    <li key={`${e.name}-${i}`} className="py-2">
+                      <p className="text-[13px] font-[700]" style={{ color: MC.ink }}>{e.name}</p>
+                      {e.sets.length > 0 ? (
+                        <div className="mt-1 flex flex-wrap gap-1.5">
+                          {e.sets.map((x, j) => (
+                            <span key={j} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11.5px] font-[650] tabular-nums"
+                              style={{
+                                background: x.is_pr ? rgba(MC.warning, 0.14) : 'var(--bg-subtle)',
+                                color: x.is_pr ? MC.warning : MC.ink,
+                              }}>
+                              {x.is_pr && <Trophy size={10} aria-label="Personal best" />}
+                              {setLabel(x)}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-0.5 text-[11.5px]" style={{ color: MC.muted }}>No sets recorded</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+          );
+        })}
+      </div>
+    </Section>
   );
 }

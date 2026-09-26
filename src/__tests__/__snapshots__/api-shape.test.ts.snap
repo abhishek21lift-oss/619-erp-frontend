@@ -218,6 +218,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "me.membership → /api/me/membership",
   "me.payments → /api/me/payments",
   "me.profile → /api/me/profile",
+  "me.sessions → /api/me/sessions",
   "me.submitCheckin → /api/me/checkins",
   "me.workout → /api/me/workout",
   "membershipPlans.list → /api/plans?kind=Membership&active=true",
