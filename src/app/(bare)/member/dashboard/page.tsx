@@ -44,6 +44,7 @@ import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import PayBalanceButton from '@/components/member/PayBalanceButton';
 import TodayCard from '@/components/member/TodayCard';
+import InstallAppCard from '@/components/member/InstallAppCard';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { api } from '@/lib/api';
 import type { MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement } from '@/lib/api';
@@ -200,6 +201,9 @@ function MemberDashboard() {
 
       {/* ── What to do today ─────────────────────────────────────────────── */}
       <TodayCard />
+
+      {/* ── Offer the installable app, when the browser can install it ─────── */}
+      <InstallAppCard />
 
       {/* ── The plan. The one saturated surface on the page. ─────────────── */}
       <m.section

@@ -13,6 +13,11 @@ const PUBLIC_ASSET_PREFIXES: string[] = [
   '/favicon.ico',
   '/manifest.json',
   '/platform-manifest.json',
+  '/member-manifest.json',
+  // The service worker and the page it shows offline. Both must load with no
+  // session: the worker installs on the sign-in page, and offline there is none.
+  '/sw.js',
+  '/offline.html',
   '/theme-init.js',
   '/no-zoom.js',
   '/sitemap.xml',

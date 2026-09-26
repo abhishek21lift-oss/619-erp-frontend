@@ -7,6 +7,7 @@ import { FeaturesProvider } from '@/lib/features-context';
 import CommandPalette from '@/components/CommandPalette';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import SentryInit from '@/components/SentryInit';
+import PwaInit from '@/components/PwaInit';
 import ScrollRestoration from '@/components/ScrollRestoration';
 import ViewportProbe from '@/components/dev/ViewportProbe';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -289,6 +290,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       <MotionConfig reducedMotion="user">
                         <LazyMotion features={domAnimation}>
                           <SentryInit />
+                          <PwaInit />
                           <ScrollRestoration />
                           {children}
                           <CommandPalette />
