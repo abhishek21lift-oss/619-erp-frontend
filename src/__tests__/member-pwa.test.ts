@@ -30,7 +30,7 @@ describe('the member app is installable on its own', () => {
 
 describe('the offline fallback', () => {
   it('serves the worker, the offline page and the manifest with no session', () => {
-    for (const p of ['/sw.js', '/offline.html', '/member-manifest.json']) expect(isPublicProxyPath(p)).toBe(true);
+    for (const p of ['/sw.js', '/offline.html', '/member-manifest.json', '/pwa-early.js']) expect(isPublicProxyPath(p)).toBe(true);
   });
 
   it('the worker caches the offline page and never an API response or a page', () => {
@@ -41,5 +41,15 @@ describe('the offline fallback', () => {
     expect(sw).toMatch(/PRECACHE\.includes\(url\.pathname\)/);
     expect(sw).not.toMatch(/cache\.put\(/);
     expect(sw).not.toMatch(/['"`]\/api/);
+  });
+});
+
+describe('the install prompt is caught before the app hydrates', () => {
+  it('is captured by a blocking <head> script, not by a component', () => {
+    const early = read('pwa-early.js');
+    expect(early).toContain("addEventListener('beforeinstallprompt'");
+    expect(early).toContain('__myptInstallPrompt');
+    const layout = readFileSync(join(process.cwd(), 'src/app/layout.tsx'), 'utf8');
+    expect(layout).toMatch(/<script src="\/pwa-early\.js" \/>/);
   });
 });

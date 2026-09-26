@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import Guard from '@/components/Guard';
 import PtOsDashboard from '@/components/dashboards/PtOsDashboard';
+import InstallAppCard from '@/components/member/InstallAppCard';
 import LandingPage from '@/components/LandingPage';
 import BrandLogo from '@/components/BrandLogo';
 
@@ -145,6 +146,10 @@ export default function StudioHome() {
   // home, scoped by the API to whichever tenant they have pinned.
   return (
     <Guard>
+      {/* Offers the installable app on phones; renders nothing where it cannot. */}
+      <div className="relative z-[1] mx-auto w-full max-w-7xl pt-3">
+        <InstallAppCard title="Get the MY PT STUDIO app" />
+      </div>
       <PtOsDashboard />
     </Guard>
   );

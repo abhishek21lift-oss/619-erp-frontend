@@ -17,6 +17,7 @@ const PUBLIC_ASSET_PREFIXES: string[] = [
   // The service worker and the page it shows offline. Both must load with no
   // session: the worker installs on the sign-in page, and offline there is none.
   '/sw.js',
+  '/pwa-early.js',
   '/offline.html',
   '/theme-init.js',
   '/no-zoom.js',
