@@ -2964,10 +2964,62 @@ export type MeAttendance = {
 };
 
 export type MeMeasurement = {
-  weight_kg: number | string;
+  /** Null on a studio measurement that recorded body sizes but no weight. */
+  weight_kg: number | string | null;
   measured_at: string;
   /** 'trainer' for a studio measurement, 'checkin' for the member's own weekly check-in. */
   source?: 'trainer' | 'checkin';
+  /** Body measurements — only ever set on a 'trainer' row. */
+  body_fat_pct?: number | string | null;
+  chest_cm?: number | string | null;
+  waist_cm?: number | string | null;
+  hip_cm?: number | string | null;
+  arms_cm?: number | string | null;
+  thighs_cm?: number | string | null;
+  shoulders_cm?: number | string | null;
+};
+
+/** What a member may change about themselves (PATCH /api/me/profile). */
+export type MeContactInput = { mobile?: string; address?: string | null };
+export type MeContact = { mobile: string | null; address: string | null };
+
+/** The member's latest PAR-Q. The trainer's private notes are never included. */
+export type MeParq = {
+  id: string;
+  assessment_date: string | null;
+  status: 'draft' | 'submitted' | 'reviewed' | string;
+  risk_level: string | null;
+  risk_message: string | null;
+  parq_yes_count: number | null;
+  parq_answers: { question_id: number; answer: 'yes' | 'no' | '' | null; explanation?: string | null }[] | null;
+  current_health: Record<string, unknown> | null;
+  past_history: Record<string, unknown> | null;
+  created_at: string;
+};
+
+/** The member's latest informed consent. */
+export type MeConsent = {
+  id: string;
+  version: number | null;
+  status: string;
+  client_signed_at: string | null;
+  trainer_signed_at: string | null;
+  completed_at: string | null;
+  has_pdf: boolean;
+  created_at: string;
+};
+
+export type MeForms = { parq: MeParq | null; consent: MeConsent | null };
+
+/** One in-app notification, as /api/v1/notifications returns it. */
+export type MeNotification = {
+  id: string;
+  type: string | null;
+  title: string;
+  body: string | null;
+  link: string | null;
+  read_at: string | null;
+  created_at: string;
 };
 
 /** One logged set. Weight/reps for lifts; duration/distance for cardio. */

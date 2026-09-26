@@ -54,8 +54,9 @@ const C = {
   success: palette.emerald[500],
   warning: palette.amber[500],
   danger: palette.red[500],
-  ink: palette.gray[900],
-  muted: palette.gray[500],
+  // Theme tokens, not fixed greys: gray-900 ink was invisible on the dark canvas.
+  ink: 'var(--text-primary)',
+  muted: 'var(--text-muted)',
 };
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -127,7 +128,11 @@ function MemberDashboard() {
       if (mem.status === 'fulfilled') setPlan(mem.value.data);
       if (pay.status === 'fulfilled') setPayments(pay.value.data ?? []);
       if (att.status === 'fulfilled') setVisits(att.value.data ?? []);
-      if (meas.status === 'fulfilled') setWeights(meas.value.data ?? []);
+      // A studio measurement can record body sizes with no weight; only rows
+      // that carry one belong in the weight figures.
+      if (meas.status === 'fulfilled') {
+        setWeights((meas.value.data ?? []).filter((r) => r.weight_kg !== null && r.weight_kg !== ''));
+      }
       setLoading(false);
     })();
     return () => { alive = false; };
@@ -272,7 +277,7 @@ function MemberDashboard() {
       </nav>
 
       {/* ── Progress. Only what was actually measured. ───────────────────── */}
-      <Section title="Your progress">
+      <Section title="Your progress" action={{ href: '/member/progress', label: 'See trend' }}>
         <div className="grid grid-cols-3 gap-2.5">
           <Metric icon={<Dumbbell size={13} />} label="Visits" value={String(visitsThisMonth)} sub="this month" />
           <Metric icon={<Ruler size={13} />} label="Weight"
