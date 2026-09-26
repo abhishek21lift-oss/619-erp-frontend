@@ -69,13 +69,14 @@ describe('the Today page', () => {
   });
 
   it('sends the plan through as-is when starting, rather than inventing one', () => {
-    // program_name is nullable on the create schema, and workout_assignment_id
-    // is deliberately omitted so the server can auto-link the client's single
-    // active assignment — which for this client is none, giving a freestyle
-    // session.
+    // program_name is nullable on the create schema. The roster's assignment
+    // is sent only when there is one: a plan-less client omits the field so
+    // the server can link whatever is live that day — sending null would mean
+    // "freestyle, deliberately unlinked", which nobody chose.
     const start = page.slice(page.indexOf('const open = async'));
     expect(start).toContain('program_name: c.plan_name');
-    expect(start.slice(0, 900)).not.toContain('workout_assignment_id');
+    expect(start.slice(0, 1200)).toContain('...(c.assignment_id ? { workout_assignment_id: c.assignment_id } : {})');
+    expect(start.slice(0, 1200)).not.toContain('workout_assignment_id: null');
   });
 });
 
