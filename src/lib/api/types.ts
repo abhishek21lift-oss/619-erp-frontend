@@ -3002,6 +3002,121 @@ export type MeAchievements = {
   recent_prs: (MeLift & { kind: 'weight' | 'reps' | 'volume' })[];
 };
 
+// ── Guided workout ─────────────────────────────────────────
+
+/** What the member did last time for one exercise (GET /api/me/workout/last), keyed by lower-cased name. */
+export type MeLastPerformance = Record<string, {
+  date: string;
+  sets: { weight_kg: number | null; reps: number | null; duration_seconds: number | null }[];
+  /** Heaviest completed set ever, kg. */
+  best_kg: number | null;
+}>;
+
+/** A finished workout the member did on their own (POST /api/me/workouts). */
+export type MeWorkoutLogInput = {
+  /** Idempotency key: a retry with the same id returns the same session. */
+  request_id: string;
+  assignment_id?: string | null;
+  program_name?: string | null;
+  workout_day?: string | null;
+  duration_minutes?: number | null;
+  exercises: {
+    name: string;
+    sets: { weight_kg?: number | null; reps?: number | null; duration_seconds?: number | null }[];
+  }[];
+};
+
+/** What the finish screen shows. PR flags are computed by the server, never sent. */
+export type MeWorkoutSummary = {
+  session_id: string;
+  exercises: number;
+  sets: number;
+  volume_kg: number;
+  prs: { exercise: string; weight_kg: number | null; reps: number | null; kind: 'weight' | 'reps' | 'volume' }[];
+};
+
+// ── Goals ──────────────────────────────────────────────────
+
+export type MeGoalKind = 'weight' | 'lift' | 'sessions';
+
+/** Why a goal has no projected date yet. */
+export type MeGoalProjection = {
+  eta: string | null;
+  reason: 'more_data' | 'more_time' | 'off_trend' | 'far' | null;
+  /** Readings still needed, for reason 'more_data'. */
+  needed?: number;
+  /** Current pace: kg (weight/lift) or sessions per week. */
+  per_week?: number;
+};
+
+export type MeGoal = {
+  id: string;
+  kind: MeGoalKind;
+  exercise_name: string | null;
+  start_value: number | null;
+  target_value: number;
+  current_value: number | null;
+  target_date: string | null;
+  created_at: string;
+  achieved_at: string | null;
+  reached: boolean;
+  progress_pct: number | null;
+  projection: MeGoalProjection | null;
+  /** Only when both a target date and a projection exist. */
+  status: 'on_track' | 'behind' | null;
+  /** True on the read that first found the goal reached — celebrate once. */
+  just_achieved?: boolean;
+};
+
+export type MeGoals = {
+  /** The trainer's weight target, read-only; null when they have not set one. */
+  studio: (MeGoal & { label: string | null }) | null;
+  goals: MeGoal[];
+};
+
+export type MeGoalInput = {
+  kind: MeGoalKind;
+  target_value: number;
+  exercise_name?: string;
+  target_date?: string | null;
+};
+
+// ── Monthly recap ──────────────────────────────────────────
+
+export type MeRecapTotals = {
+  sessions: number;
+  training_days: number;
+  active_weeks: number;
+  self_logged: number;
+  visits: number;
+  checkins: number;
+  sets: number;
+  reps: number;
+  volume_kg: number;
+  cardio_minutes: number;
+};
+
+export type MeRecap = {
+  /** 'YYYY-MM' */
+  month: string;
+  /** Months with activity, newest first. */
+  months: string[];
+  /** The month is still running. */
+  in_progress: boolean;
+  first_name: string | null;
+  studio_name: string | null;
+  studio_logo: string | null;
+  totals: MeRecapTotals;
+  previous: { sessions: number; volume_kg: number; training_days: number };
+  top_lift: { exercise: string; weight_kg: number; reps: number | null; date: string } | null;
+  favourite: { exercise: string; sets: number } | null;
+  /** Records broken this month — an earlier day's best was beaten. Heaviest first. */
+  records: { exercise: string; weight_kg: number | null; reps: number | null; date: string; kind: 'weight' | 'reps' | 'volume' }[];
+  /** Training days per weekday, Monday first. */
+  weekdays: number[];
+  weight: { readings: number; start_kg: number; end_kg: number; change_kg: number | null } | null;
+};
+
 export type MePhotoType = 'front' | 'side' | 'back' | 'flexed' | 'full_body' | 'other';
 
 /** One progress photo — taken by the trainer at the studio, or uploaded by the member. */
@@ -3119,6 +3234,8 @@ export type MeSession = {
   workout_day: string | null;
   duration_minutes: number | null;
   status: 'completed' | 'in_progress' | string;
+  /** Who logged it: the trainer at the studio, or the member in the guided workout. */
+  source?: 'studio' | 'member';
   exercises: { name: string; sets: MeSessionSet[] }[];
 };
 

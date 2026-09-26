@@ -3,9 +3,10 @@
  * Member — My programme.
  *
  * The programme the trainer assigned, for the week the client has reached,
- * one card per training day with today's day opened first. Read-only: the
- * trainer writes the plan and logs the sessions at the studio; this is so the
- * client knows what they are doing before they walk in.
+ * one card per training day with today's day opened first. The trainer writes
+ * the plan; the member can train through a day of it (or repeat a past
+ * session) in the guided workout, which logs the sets as they go — see
+ * WorkoutLauncher / GuidedWorkout.
  *
  * From /api/me/workout, scoped server-side to the signed-in client.
  */
@@ -21,6 +22,7 @@ import {
 import { api } from '@/lib/api';
 import type { MeSession, MeSessionSet, MeWorkoutExercise, MeWorkoutPlan } from '@/lib/api';
 import { rgba } from '@/lib/palette';
+import WorkoutLauncher from '@/components/member/WorkoutLauncher';
 
 const DAY_NAMES = ['Anytime', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -53,6 +55,10 @@ function WorkoutBody() {
   // so it only hides the history section.
   const [sessions, setSessions] = useState<MeSession[]>([]);
 
+  const loadSessions = () => api.me.sessions()
+    .then((r) => setSessions(r.data ?? []))
+    .catch(() => setSessions([]));
+
   useEffect(() => {
     let alive = true;
     api.me.workout()
@@ -71,6 +77,7 @@ function WorkoutBody() {
     return (
       <>
         <PageTitle icon={<Dumbbell size={20} />} title="My programme" />
+        <WorkoutLauncher plans={[]} sessions={sessions} onSaved={() => void loadSessions()} />
         <div className="mb-5">
           <EmptyState
             icon={<Dumbbell size={20} />}
@@ -87,6 +94,7 @@ function WorkoutBody() {
     <>
       <PageTitle icon={<Dumbbell size={20} />} title="My programme"
         sub={plans.length === 1 ? plans[0].name : `${plans.length} active programmes`} />
+      <WorkoutLauncher plans={plans} sessions={sessions} onSaved={() => void loadSessions()} />
       {plans.map((p) => <PlanBlock key={p.assignment_id} plan={p} titled={plans.length > 1} />)}
       <SessionHistory sessions={sessions} />
     </>
@@ -262,16 +270,16 @@ function SessionHistory({ sessions }: { sessions: MeSession[] }) {
                   <p className="text-[13.5px] font-[720]" style={{ color: MC.ink }}>
                     {longDate(s.session_date) ?? s.session_date}
                     {s.status !== 'completed' && (
-                      <span className="ml-2 text-[10.5px] font-[650]" style={{ color: MC.warning }}>In progress</span>
+                      <span className="ml-2 text-[10.5px] font-[650]" style={{ color: MC.muted }}>In progress</span>
                     )}
                   </p>
                   <p className="mt-0.5 truncate text-[11.5px]" style={{ color: MC.muted }}>
-                    {[s.program_name, meta].filter(Boolean).join(' · ') || 'Session'}
+                    {[s.source === 'member' ? 'Logged by you' : null, s.program_name, meta].filter(Boolean).join(' · ') || 'Session'}
                   </p>
                 </div>
                 {prs > 0 && (
                   <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-[750]"
-                    style={{ background: rgba(MC.warning, 0.14), color: MC.warning }}>
+                    style={{ background: rgba(MC.success, 0.14), color: MC.success }}>
                     <Trophy size={11} /> {prs} PR{prs === 1 ? '' : 's'}
                   </span>
                 )}
@@ -290,8 +298,8 @@ function SessionHistory({ sessions }: { sessions: MeSession[] }) {
                           {e.sets.map((x, j) => (
                             <span key={j} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11.5px] font-[650] tabular-nums"
                               style={{
-                                background: x.is_pr ? rgba(MC.warning, 0.14) : 'var(--bg-subtle)',
-                                color: x.is_pr ? MC.warning : MC.ink,
+                                background: x.is_pr ? rgba(MC.success, 0.14) : 'var(--bg-subtle)',
+                                color: x.is_pr ? MC.success : MC.ink,
                               }}>
                               {x.is_pr && <Trophy size={10} aria-label="Personal best" />}
                               {setLabel(x)}
