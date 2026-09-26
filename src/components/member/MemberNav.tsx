@@ -46,7 +46,8 @@ import { palette } from '@/lib/palette';
  * ── More ───────────────────────────────────────────────────────────────────
  *
  * The sixth slot was Sign out. It is now More: Progress, Notifications,
- * My forms and Account live there, and so does Sign out. The tab carries a
+ * My forms, Account, Records and the membership card live there, and so does
+ * Sign out. The tab carries a
  * dot when there are unread notifications, so they are not hidden behind it.
  */
 const TABS = [
@@ -58,7 +59,7 @@ const TABS = [
 ] as const;
 
 /** Pages reached from More: the More tab lights up on each of them. */
-const MORE_ROUTES = ['/member/more', '/member/progress', '/member/notifications', '/member/forms', '/member/account'];
+const MORE_ROUTES = ['/member/more', '/member/card', '/member/records', '/member/progress', '/member/notifications', '/member/forms', '/member/account'];
 
 /** Reserve this much above the bar so the last card clears it. */
 export const MEMBER_NAV_CLEARANCE = 'calc(84px + env(safe-area-inset-bottom, 0px))';

@@ -9,7 +9,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Bell, ChevronRight, FileSignature, LineChart, LogOut, MoreHorizontal, UserRound } from 'lucide-react';
+import {
+  Bell, ChevronRight, FileSignature, IdCard, LineChart, LogOut, Medal, MoreHorizontal, UserRound,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
@@ -29,6 +31,8 @@ export default function MemberMorePage() {
 }
 
 const LINKS: { href: string; label: string; sub: string; icon: LucideIcon; badge?: boolean }[] = [
+  { href: '/member/card', label: 'Membership card', sub: 'Check-in code and days left', icon: IdCard },
+  { href: '/member/records', label: 'Records', sub: 'Streaks, milestones and personal bests', icon: Medal },
   { href: '/member/progress', label: 'Progress', sub: 'Weight trend and body measurements', icon: LineChart },
   { href: '/member/notifications', label: 'Notifications', sub: 'Updates from your studio', icon: Bell, badge: true },
   { href: '/member/forms', label: 'My forms', sub: 'Health screening and signed consent', icon: FileSignature },

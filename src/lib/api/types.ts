@@ -2979,6 +2979,29 @@ export type MeMeasurement = {
   shoulders_cm?: number | string | null;
 };
 
+/** Consecutive active weeks. `current` survives a week still in progress. */
+export type MeStreak = { current: number; longest: number; this_week: boolean };
+
+/** A lift: the heaviest completed set for an exercise, or a flagged personal best. */
+export type MeLift = { exercise: string; weight_kg: number | null; reps: number | null; date: string };
+
+/** Records and streaks, counted from what was logged (GET /api/me/achievements). */
+export type MeAchievements = {
+  /** A week counts when the member trained or visited the studio. */
+  training: MeStreak;
+  checkins: MeStreak;
+  totals: {
+    sessions: number;
+    sets: number;
+    volume_kg: number;
+    prs: number;
+    visits: number;
+    first_session: string | null;
+  };
+  records: MeLift[];
+  recent_prs: (MeLift & { kind: 'weight' | 'reps' | 'volume' })[];
+};
+
 /** What a member may change about themselves (PATCH /api/me/profile). */
 export type MeContactInput = { mobile?: string; address?: string | null };
 export type MeContact = { mobile: string | null; address: string | null };

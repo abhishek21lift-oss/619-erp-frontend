@@ -38,15 +38,17 @@ import { m } from 'framer-motion';
 import {
   CalendarDays, Wallet, Dumbbell, TrendingDown, TrendingUp, Minus,
   User, Phone, Mail, Target, Ruler, CheckCircle2, Clock, CreditCard,
-  ChevronRight, ShieldCheck, Apple, ClipboardCheck,
+  ChevronRight, ShieldCheck, Apple, ClipboardCheck, IdCard,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import PayBalanceButton from '@/components/member/PayBalanceButton';
+import TodayCard from '@/components/member/TodayCard';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { api } from '@/lib/api';
 import type { MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement } from '@/lib/api';
 import { palette, rgba } from '@/lib/palette';
+import { daysLeft, elapsedPct } from '@/components/member/planDates';
 
 const C = {
   primary: palette.blue[500],
@@ -86,14 +88,6 @@ function goalLabel(v: string | null | undefined): string | null {
   if (!v) return null;
   const t = v.replace(/_/g, ' ').trim();
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : null;
-}
-
-function daysLeft(end: string | null | undefined): number | null {
-  if (!end) return null;
-  const d = new Date(end);
-  if (Number.isNaN(d.getTime())) return null;
-  const ms = d.setHours(23, 59, 59, 999) - Date.now();
-  return Math.max(0, Math.ceil(ms / 86_400_000));
 }
 
 export default function MemberDashboardPage() {
@@ -154,19 +148,16 @@ function MemberDashboard() {
     );
   }
 
-  const left = daysLeft(profile.pt_end_date);
+  // The package record is the source of truth; the client row's copy is the fallback.
+  const endDate = plan?.pt_end_date ?? profile.pt_end_date;
+  const startDate = plan?.pt_start_date ?? profile.pt_start_date;
+  const left = daysLeft(endDate);
   const balance = num(plan?.balance_amount);
   const total = num(plan?.final_amount);
   const paid = num(plan?.paid_amount);
-  const endsOn = longDate(profile.pt_end_date);
+  const endsOn = longDate(endDate);
 
-  // Share of the package elapsed. Drawn only when both ends are known — a bar
-  // with one endpoint guessed is a bar that lies about how much time is left.
-  const startMs = profile.pt_start_date ? new Date(profile.pt_start_date).getTime() : NaN;
-  const endMs = profile.pt_end_date ? new Date(profile.pt_end_date).getTime() : NaN;
-  const spanPct = Number.isFinite(startMs) && Number.isFinite(endMs) && endMs > startMs
-    ? Math.min(100, Math.max(0, ((Date.now() - startMs) / (endMs - startMs)) * 100))
-    : null;
+  const spanPct = elapsedPct(startDate, endDate);
 
   const thisMonth = new Date().toISOString().slice(0, 7);
   const visitsThisMonth = visits.filter((v) => (v.date ?? '').slice(0, 7) === thisMonth).length;
@@ -200,7 +191,15 @@ function MemberDashboard() {
             {profile.member_code ? ` · #${profile.member_code}` : ''}
           </p>
         </div>
+        <Link href="/member/card" aria-label="Membership card"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] transition-transform active:scale-95"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: C.primary }}>
+          <IdCard size={18} aria-hidden />
+        </Link>
       </m.div>
+
+      {/* ── What to do today ─────────────────────────────────────────────── */}
+      <TodayCard />
 
       {/* ── The plan. The one saturated surface on the page. ─────────────── */}
       <m.section
@@ -371,7 +370,7 @@ function MemberDashboard() {
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
           <Detail icon={<Target size={13} />} label="Goal" value={goalLabel(profile.goal)} />
           <Detail icon={<CalendarDays size={13} />} label="Member since" value={longDate(profile.joining_date)} />
-          <Detail icon={<Clock size={13} />} label="Started" value={longDate(profile.pt_start_date)} />
+          <Detail icon={<Clock size={13} />} label="Started" value={longDate(startDate)} />
           <Detail icon={<Ruler size={13} />} label="Height" value={profile.height ? `${profile.height} cm` : null} />
           <Detail icon={<Mail size={13} />} label="Email" value={profile.email} />
           <Detail icon={<Phone size={13} />} label="Mobile" value={profile.mobile} />
