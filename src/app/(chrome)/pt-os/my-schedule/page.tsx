@@ -427,6 +427,10 @@ export default function MySchedulePage() {
         client_id: c.client_id,
         session_date: roster.data?.data?.date ?? selectedDay,
         program_name: c.plan_name,
+        // The programme the roster matched to today. Left out, the server
+        // picks the same one; sent, a client on two programmes cannot be
+        // linked to the other.
+        ...(c.assignment_id ? { workout_assignment_id: c.assignment_id } : {}),
         workout_day: roster.data?.data?.day_of_week,
       });
       const id = (res as { data?: { id?: string } })?.data?.id;
