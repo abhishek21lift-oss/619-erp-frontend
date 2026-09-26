@@ -14,6 +14,7 @@ import type {
   ClientActivationPreview, ClientLoginStatus,
   MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement, MeSession,
   MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage, MePhoto, MePhotoType,
+  MeLastPerformance, MeWorkoutLogInput, MeWorkoutSummary, MeGoals, MeGoal, MeGoalInput, MeRecap,
   InvitationPreview, InvoiceQuery, InvoiceTotals, LoginEvent, LoginEventQuery,
   OrgBillingProfile, OrgInternalNotes, OrgUser, Organization, OrganizationDetail,
   PlatformUser, PlatformUserQuery, PlatformUserSummary,
@@ -744,6 +745,22 @@ export const me = {
   achievements: () => http<{ data: MeAchievements }>('/api/me/achievements'),
   /** Latest PAR-Q and informed consent. */
   forms: () => http<{ data: MeForms }>('/api/me/forms'),
+  /** Last time's sets and best-ever weight for each named exercise. */
+  lastPerformance: (names: string[]) => {
+    const qs = names.map((n) => `name=${encodeURIComponent(n)}`).join('&');
+    return http<{ data: MeLastPerformance }>(`/api/me/workout/last${qs ? `?${qs}` : ''}`);
+  },
+  /** Save a finished workout. 201 when created, 200 when the request id was already logged. */
+  logWorkout: (body: MeWorkoutLogInput) =>
+    http<{ data: MeWorkoutSummary }>('/api/me/workouts', { method: 'POST', body: JSON.stringify(body) }),
+  /** The member's goals, with progress computed from the records, and the studio's weight target. */
+  goals: () => http<{ data: MeGoals }>('/api/me/goals'),
+  createGoal: (body: MeGoalInput) =>
+    http<{ data: MeGoal }>('/api/me/goals', { method: 'POST', body: JSON.stringify(body) }),
+  deleteGoal: (id: string) => http<void>(`/api/me/goals/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  /** One month in numbers; the latest month with activity when `month` is omitted. */
+  recap: (month?: string) =>
+    http<{ data: MeRecap }>(`/api/me/recap${month ? `?month=${encodeURIComponent(month)}` : ''}`),
   /** Built rather than fetched: opened in a new tab, the session cookie authorises it. */
   consentPdfUrl: (consentId: string) => `${apiBase()}/api/me/forms/consent/${encodeURIComponent(consentId)}/pdf`,
 };

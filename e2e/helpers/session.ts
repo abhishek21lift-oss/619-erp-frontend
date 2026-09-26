@@ -26,6 +26,37 @@ export const ALPHA = {
 
 export const API_URL = process.env.E2E_API_URL ?? 'http://127.0.0.1:5100';
 
+/**
+ * Alpha's client, signed in to the member app (seeded by scripts/seed-e2e.js
+ * as usr-e2e-alpha-member, linked to ALPHA.clientId). The member journeys act
+ * as this account; the studio journeys never do.
+ */
+export const ALPHA_MEMBER = {
+  email: 'member-a@e2e.test',
+  password: 'E2ePassw0rd!seed',
+  clientId: 'ptc-e2e-alpha',
+} as const;
+
+/**
+ * A member API token, for reading back what a member journey saved.
+ *
+ * Minted once per worker: /api/auth/login shares the backend's login budget
+ * with every other sign-in in the run.
+ */
+let memberToken: string | null = null;
+export async function memberApiToken(): Promise<string> {
+  if (memberToken) return memberToken;
+  const res = await fetch(`${API_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: ALPHA_MEMBER.email, password: ALPHA_MEMBER.password, portal: 'member' }),
+  });
+  const body = await res.json();
+  if (!body.token) throw new Error(`E2E member login failed: ${JSON.stringify(body).slice(0, 200)}`);
+  memberToken = body.token as string;
+  return memberToken;
+}
+
 /** Where auth.setup.ts leaves the signed-in session for every other journey. */
 export const STORAGE_STATE = resolve(process.cwd(), 'e2e/.auth/alpha.json');
 export const TOKEN_FILE = resolve(process.cwd(), 'e2e/.auth/token.json');

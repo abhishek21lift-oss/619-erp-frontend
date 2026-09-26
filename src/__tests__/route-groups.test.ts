@@ -73,6 +73,8 @@ const BARE = [
   'member/card',
   'member/messages',
   'member/photos',
+  'member/goals',
+  'member/recap',
   'platform-login',              // the Command Center's door — no session yet
   'pt-os',                       // redirect to /pt-os/clients
   'pt-os/pdf-viewer',            // full-screen viewer

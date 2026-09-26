@@ -62,6 +62,9 @@ export const JOURNEYS = {
   'e2e/session.ui.spec.ts': [
     'src/components/auth/SignInScreen.tsx',
   ],
+  'e2e/member-goals.ui.spec.ts': [
+    'src/app/(bare)/member/goals/page.tsx',
+  ],
 };
 
 /** Every form file some journey claims to cover. */

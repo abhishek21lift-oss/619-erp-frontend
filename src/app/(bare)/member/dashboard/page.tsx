@@ -45,6 +45,7 @@ import MemberShell from '@/components/member/MemberShell';
 import PayBalanceButton from '@/components/member/PayBalanceButton';
 import TodayCard from '@/components/member/TodayCard';
 import InstallAppCard from '@/components/member/InstallAppCard';
+import HomeHighlights from '@/components/member/HomeHighlights';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { api } from '@/lib/api';
 import type { MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement } from '@/lib/api';
@@ -278,6 +279,9 @@ function MemberDashboard() {
         <Shortcut href="/member/diet" icon={<Apple size={16} />} label="Diet" />
         <Shortcut href="/member/checkin" icon={<ClipboardCheck size={16} />} label="Check-in" />
       </nav>
+
+      {/* ── The month so far, and the goal closest to done ────────────────── */}
+      <HomeHighlights />
 
       {/* ── Progress. Only what was actually measured. ───────────────────── */}
       <Section title="Your progress" action={{ href: '/member/progress', label: 'See trend' }}>
