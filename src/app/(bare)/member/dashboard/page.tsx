@@ -38,7 +38,7 @@ import { m } from 'framer-motion';
 import {
   CalendarDays, Wallet, Dumbbell, TrendingDown, TrendingUp, Minus,
   User, Phone, Mail, Target, Ruler, CheckCircle2, Clock, CreditCard,
-  ChevronRight, ShieldCheck, Apple, ClipboardCheck, IdCard,
+  ChevronRight, ShieldCheck, Apple, ClipboardCheck, IdCard, MessageCircle,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
@@ -310,6 +310,11 @@ function MemberDashboard() {
                 {profile.trainer_specialization || 'Personal trainer'}
               </p>
             </div>
+            <Link href="/member/messages"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-[12px] px-3 py-2 text-[12.5px] font-[750] text-white transition-transform active:scale-95"
+              style={{ background: C.primary }}>
+              <MessageCircle size={14} aria-hidden /> Message
+            </Link>
           </div>
         </Section>
       )}

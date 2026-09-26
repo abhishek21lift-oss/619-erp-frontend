@@ -14,7 +14,7 @@ import {
   ShieldCheck, FileSignature, ClipboardList,
   QrCode, Printer, ScrollText, ChevronDown, Mail, ClipboardCheck,
   StickyNote, FileBarChart, Sparkles,
-  Gauge, PersonStanding, Accessibility, Ruler,
+  Gauge, PersonStanding, Accessibility, Ruler, MessagesSquare,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 
@@ -627,7 +627,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   Contact them, message them, sell them a term, renew it. One
                   row, one weight — they are peers, and burying them among the
                   identity made them read as decoration on the card. */}
-              <div className="mb-3 grid grid-cols-4 gap-2">
+              <div className={`mb-3 grid gap-2 ${client.mobile ? 'grid-cols-3 sm:grid-cols-5' : 'grid-cols-3'}`}>
                 {[
                   client.mobile
                     ? { key: 'call', label: client.mobile, icon: <Phone size={16} />, from: '#0067e0', to: '#0067e0', href: `tel:${client.mobile}` }
@@ -635,6 +635,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   client.mobile
                     ? { key: 'wa', label: 'WhatsApp', icon: <MessageCircle size={16} />, from: '#10b981', to: '#059669', href: whatsappHref(client.mobile, client.name), external: true }
                     : null,
+                  { key: 'message', label: 'Message', icon: <MessagesSquare size={16} />, from: '#0067e0', to: '#0059ce', push: `/pt-os/messages?client=${encodeURIComponent(String(id))}` },
                   { key: 'enroll', label: 'Enroll in PT', icon: <Award size={16} />, from: '#f59e0b', to: '#d97706', push: `/pt-os/clients/${id}/enroll` },
                   { key: 'renew', label: 'Renew PT', icon: <Repeat size={16} />, from: '#0067e0', to: '#0059ce', push: `/pt-os/clients/${id}/renew` },
                 ].filter(Boolean).map((a) => {

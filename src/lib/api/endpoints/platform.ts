@@ -13,7 +13,7 @@ import type {
   FeatureOverrideRow, ImpersonationSession, Invitation, InvitationDetail,
   ClientActivationPreview, ClientLoginStatus,
   MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement, MeSession,
-  MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements,
+  MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage,
   InvitationPreview, InvoiceQuery, InvoiceTotals, LoginEvent, LoginEventQuery,
   OrgBillingProfile, OrgInternalNotes, OrgUser, Organization, OrganizationDetail,
   PlatformUser, PlatformUserQuery, PlatformUserSummary,
@@ -721,6 +721,12 @@ export const me = {
   /** Mobile and/or address. Anything else about the record is the trainer's to change. */
   updateContact: (body: MeContactInput) =>
     http<{ data: MeContact }>('/api/me/profile', { method: 'PATCH', body: JSON.stringify(body) }),
+  /** The member's conversation with their studio; opening it marks the studio's messages read. */
+  messages: (before?: string) =>
+    http<{ data: MeMessageThread }>(`/api/me/messages${before ? `?before=${encodeURIComponent(before)}` : ''}`),
+  messagesUnread: () => http<{ data: { unread: number } }>('/api/me/messages/unread-count'),
+  sendMessage: (body: string) =>
+    http<{ data: ChatMessage }>('/api/me/messages', { method: 'POST', body: JSON.stringify({ body }) }),
   /** Records and streaks. */
   achievements: () => http<{ data: MeAchievements }>('/api/me/achievements'),
   /** Latest PAR-Q and informed consent. */

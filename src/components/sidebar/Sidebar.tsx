@@ -27,7 +27,7 @@ import {
   CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap, BookOpen, HeartPulse, Salad,
   Flag, Move, Accessibility, ShieldCheck, FileSignature,
   Receipt, Smartphone, UserRound, UserSearch, ScrollText, ToggleRight, ShieldAlert, LifeBuoy, HardDrive,
-  CalendarDays,
+  CalendarDays, MessagesSquare,
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -38,7 +38,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   LineChart, FileBarChart, Activity, RefreshCcw, Clock, Megaphone, Bell, MessageCircle, Send, Tag, Star,
   UsersRound, Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
   CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap, BookOpen, HeartPulse, Salad,
-  Flag, Move, Accessibility, ShieldCheck, FileSignature, CalendarDays,
+  Flag, Move, Accessibility, ShieldCheck, FileSignature, CalendarDays, MessagesSquare,
   // An icon name that is not registered here renders with NO icon at all —
   // the map is an allowlist, not a lookup with a fallback. Anything added to
   // nav-config.ts must be added here too.
@@ -184,15 +184,29 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
     let cancelled = false;
 
     api.insights.dues({ limit: 100 }).then(
-      (dues) => { if (!cancelled) setBadgeCounts({ duesCount: dues.length }); },
+      (dues) => { if (!cancelled) setBadgeCounts((b) => ({ ...b, duesCount: dues.length })); },
       (err) => {
         console.warn('[sidebar] dues count failed', err);
-        if (!cancelled) setBadgeCounts({ duesCount: 0 });
+        if (!cancelled) setBadgeCounts((b) => ({ ...b, duesCount: 0 }));
       },
     );
 
     return () => { cancelled = true; };
   }, [isTrainer]);
+
+  // Unread member messages. Re-read on navigation, so opening a thread clears
+  // it by the next page, and every minute while the studio app is open.
+  useEffect(() => {
+    if (!isTrainer) return;
+    let cancelled = false;
+    const load = () => api.clientMessages.unreadCount().then(
+      (r) => { if (!cancelled) setBadgeCounts((b) => ({ ...b, messagesUnread: r.data.unread })); },
+      (err) => console.warn('[sidebar] message count failed', err),
+    );
+    void load();
+    const t = setInterval(() => { if (document.visibilityState === 'visible') void load(); }, 60_000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [isTrainer, pathname]);
 
   // The whole nav tree, rebuilt only when something it actually reads changes.
   //

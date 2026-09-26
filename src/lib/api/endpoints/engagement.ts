@@ -7,6 +7,7 @@
 import { http } from '../../http';
 import { buildQs } from '../qs';
 import type {
+  ChatMessage, StudioConversation, StudioMessageThread,
   SupportTicket, TicketCategory, TicketMessage, TicketPriority,
 } from '../types';
 
@@ -60,6 +61,23 @@ export const notifications = {
     http(`/api/v1/notifications/${id}/read`, { method: 'PATCH' }),
   markAllRead: () =>
     http('/api/v1/notifications/read-all', { method: 'PATCH' }),
+};
+
+// ── Member ↔ studio messages (trainer side) ────────────────────
+// The member's side is api.me.messages. Every client id here is checked
+// against the caller's studio server-side; another studio's is a 404.
+export const clientMessages = {
+  inbox: () => http<{ data: StudioConversation[] }>('/api/messages'),
+  unreadCount: () => http<{ data: { unread: number } }>('/api/messages/unread-count'),
+  /** Opening a thread marks the member's messages read. */
+  thread: (clientId: string, before?: string) =>
+    http<{ data: StudioMessageThread }>(
+      `/api/messages/${encodeURIComponent(clientId)}${before ? `?before=${encodeURIComponent(before)}` : ''}`,
+    ),
+  send: (clientId: string, body: string) =>
+    http<{ data: ChatMessage }>(`/api/messages/${encodeURIComponent(clientId)}`, {
+      method: 'POST', body: JSON.stringify({ body }),
+    }),
 };
 
 // ── Automation & Communication ─────────────────────────────────
