@@ -8,6 +8,7 @@
  *   • This week's check-in: due, or sent.
  *   • The training streak, and whether this week still needs a session to
  *     keep it.
+ *   • Above them all, unread messages from the trainer, when there are any.
  *
  * It loads its own data, after the page: a slow or failed request costs only
  * its own row, never the dashboard. A row with nothing true to say is left out
@@ -17,7 +18,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { m } from 'framer-motion';
-import { CheckCircle2, ChevronRight, ClipboardCheck, Dumbbell, Flame, Moon } from 'lucide-react';
+import { CheckCircle2, ChevronRight, ClipboardCheck, Dumbbell, Flame, MessageCircle, Moon } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { EASE, MC } from './MemberUI';
 import { api } from '@/lib/api';
@@ -80,9 +81,20 @@ export default function TodayCard() {
 
   useEffect(() => {
     let live = true;
-    Promise.allSettled([api.me.workout(), api.me.checkins(), api.me.achievements()]).then(([w, c, a]) => {
+    Promise.allSettled([
+      api.me.workout(), api.me.checkins(), api.me.achievements(), api.me.messagesUnread(),
+    ]).then(([w, c, a, msg]) => {
       if (!live) return;
       const out: Row[] = [];
+      // A reply from the trainer is the most time-sensitive thing here.
+      if (msg.status === 'fulfilled' && msg.value.data.unread > 0) {
+        const n = msg.value.data.unread;
+        out.push({
+          key: 'messages', href: '/member/messages', icon: MessageCircle, tone: MC.primary,
+          title: n === 1 ? 'New message from your trainer' : `${n} new messages from your trainer`,
+          sub: 'Tap to read and reply.',
+        });
+      }
       if (w.status === 'fulfilled') { const r = workoutRow(w.value.data ?? []); if (r) out.push(r); }
       if (c.status === 'fulfilled') {
         const { this_week: week, checkins } = c.value.data;

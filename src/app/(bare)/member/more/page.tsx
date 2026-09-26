@@ -3,20 +3,21 @@
  * Member — More.
  *
  * The bottom bar has room for five tabs plus this one. Everything a member
- * visits less than weekly lives here: progress, notifications, their signed
+ * visits less than daily lives here: messages, progress, notifications, their signed
  * forms, their account — and signing out, which used to hold the sixth slot.
  */
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  Bell, ChevronRight, FileSignature, IdCard, LineChart, LogOut, Medal, MoreHorizontal, UserRound,
+  Bell, ChevronRight, FileSignature, IdCard, LineChart, LogOut, Medal, MessageCircle, MoreHorizontal, UserRound,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import { Card, MC, PageTitle } from '@/components/member/MemberUI';
 import { loadMemberNotifications } from '@/components/member/memberNotifications';
+import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { rgba } from '@/lib/palette';
 
@@ -30,21 +31,27 @@ export default function MemberMorePage() {
   );
 }
 
-const LINKS: { href: string; label: string; sub: string; icon: LucideIcon; badge?: boolean }[] = [
+const LINKS: { href: string; label: string; sub: string; icon: LucideIcon; badge?: 'notifications' | 'messages' }[] = [
+  { href: '/member/messages', label: 'Messages', sub: 'Talk to your trainer', icon: MessageCircle, badge: 'messages' },
   { href: '/member/card', label: 'Membership card', sub: 'Check-in code and days left', icon: IdCard },
   { href: '/member/records', label: 'Records', sub: 'Streaks, milestones and personal bests', icon: Medal },
   { href: '/member/progress', label: 'Progress', sub: 'Weight trend and body measurements', icon: LineChart },
-  { href: '/member/notifications', label: 'Notifications', sub: 'Updates from your studio', icon: Bell, badge: true },
+  { href: '/member/notifications', label: 'Notifications', sub: 'Updates from your studio', icon: Bell, badge: 'notifications' },
   { href: '/member/forms', label: 'My forms', sub: 'Health screening and signed consent', icon: FileSignature },
   { href: '/member/account', label: 'Account', sub: 'Contact details and password', icon: UserRound },
 ];
 
 function MoreBody() {
   const { logout } = useAuth();
-  const [unread, setUnread] = useState(0);
+  const [unread, setUnread] = useState<Record<'notifications' | 'messages', number>>({ notifications: 0, messages: 0 });
 
   useEffect(() => {
-    loadMemberNotifications(true).then((n) => setUnread(n.length)).catch(() => setUnread(0));
+    loadMemberNotifications(true)
+      .then((n) => setUnread((u) => ({ ...u, notifications: n.length })))
+      .catch(() => setUnread((u) => ({ ...u, notifications: 0 })));
+    api.me.messagesUnread()
+      .then((r) => setUnread((u) => ({ ...u, messages: r.data.unread })))
+      .catch(() => setUnread((u) => ({ ...u, messages: 0 })));
   }, []);
 
   return (
@@ -63,10 +70,10 @@ function MoreBody() {
                   <span className="block text-[14px] font-[750]" style={{ color: MC.ink }}>{label}</span>
                   <span className="block truncate text-[12px]" style={{ color: MC.muted }}>{sub}</span>
                 </span>
-                {badge && unread > 0 && (
+                {badge && unread[badge] > 0 && (
                   <span className="rounded-full px-2 py-0.5 text-[11px] font-[800] text-white tabular-nums"
                     style={{ background: MC.danger }}>
-                    {unread > 99 ? '99+' : unread}<span className="sr-only"> unread</span>
+                    {unread[badge] > 99 ? '99+' : unread[badge]}<span className="sr-only"> unread</span>
                   </span>
                 )}
                 <ChevronRight size={16} aria-hidden style={{ color: MC.muted }} />

@@ -3002,6 +3002,44 @@ export type MeAchievements = {
   recent_prs: (MeLift & { kind: 'weight' | 'reps' | 'volume' })[];
 };
 
+/** One message in a member ↔ studio conversation. */
+export type ChatMessage = {
+  id: string;
+  /** Which side wrote it. */
+  sender: 'member' | 'studio';
+  body: string;
+  /** Set when the OTHER side opened the thread. */
+  read_at: string | null;
+  created_at: string;
+};
+
+/** The member's conversation with their studio (GET /api/me/messages). */
+export type MeMessageThread = {
+  messages: ChatMessage[];
+  with: { studio_name: string | null; trainer_name: string | null };
+};
+
+/** One conversation in the trainer's inbox (GET /api/messages). */
+export type StudioConversation = {
+  client_id: string;
+  client_name: string;
+  photo_url: string | null;
+  member_code: string | null;
+  last_sender: 'member' | 'studio';
+  last_body: string;
+  last_at: string;
+  /** The member's messages the trainer has not opened. */
+  unread: number;
+  /** False when the client has no active app login, so a reply cannot be read. */
+  has_login: boolean;
+};
+
+/** One thread, trainer side (GET /api/messages/:clientId). */
+export type StudioMessageThread = {
+  messages: ChatMessage[];
+  client: { id: string; name: string; photo_url: string | null; member_code: string | null; has_login: boolean };
+};
+
 /** What a member may change about themselves (PATCH /api/me/profile). */
 export type MeContactInput = { mobile?: string; address?: string | null };
 export type MeContact = { mobile: string | null; address: string | null };

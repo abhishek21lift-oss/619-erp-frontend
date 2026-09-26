@@ -22,7 +22,9 @@ import {
   superAdmin, settings, features, invitations, integrations, whatsapp,
   clientActivation, clientLogin, me,
 } from './endpoints/platform';
-import { campaigns, feedback, communication, notifications, automation, support } from './endpoints/engagement';
+import {
+  campaigns, feedback, communication, notifications, clientMessages, automation, support,
+} from './endpoints/engagement';
 import { reports, insights, search, activity, ai } from './endpoints/insights';
 
 export { http } from '../http';
@@ -69,6 +71,7 @@ export const api = {
   feedback,
   communication,
   notifications,
+  clientMessages,
   automation,
   support,
   reports,

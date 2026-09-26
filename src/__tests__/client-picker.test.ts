@@ -75,7 +75,8 @@ describe('the shared PT-OS client picker', () => {
     // A floor, so converting a page by deleting its picker and forgetting to
     // render the shared one — which type-checks fine, the page just renders
     // nothing — does not pass silently.
-    expect(callers().length).toBe(13);
+    // 14 since Member Messages: its "New message" picks a client the same way.
+    expect(callers().length).toBe(14);
   });
 
   it('every basePath it is given is a route that exists', () => {
