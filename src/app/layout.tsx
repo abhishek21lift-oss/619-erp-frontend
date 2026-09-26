@@ -201,6 +201,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           gesture cannot happen before the page is interactive anyway.
         */}
         <script src="/no-zoom.js" defer />
+        {/*
+          Catches the browser's install prompt before the app hydrates — see
+          /pwa-early.js. Blocking on purpose and tiny: a deferred script can
+          miss the event, and then "Install app" never appears.
+        */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script src="/pwa-early.js" />
         <meta name="mobile-web-app-capable" content="yes" />
         {/* The manifest link moved to the `metadata` export above so nested
             layouts can override it. See the note there. */}

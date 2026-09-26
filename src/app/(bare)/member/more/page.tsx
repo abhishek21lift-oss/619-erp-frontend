@@ -17,6 +17,7 @@ import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import { Card, MC, PageTitle } from '@/components/member/MemberUI';
 import { loadMemberNotifications } from '@/components/member/memberNotifications';
+import InstallAppCard from '@/components/member/InstallAppCard';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { rgba } from '@/lib/palette';
@@ -58,6 +59,8 @@ function MoreBody() {
   return (
     <>
       <PageTitle icon={<MoreHorizontal size={20} />} title="More" />
+      {/* Always findable here, even after "Not now" on Home. */}
+      <InstallAppCard persistent />
       <Card>
         <ul>
           {LINKS.map(({ href, label, sub, icon: Icon, badge }) => (

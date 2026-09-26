@@ -30,16 +30,22 @@ let started = false;
 
 function notify() { listeners.forEach((fn) => fn()); }
 
+type EarlyWindow = Window & { __myptInstallPrompt?: InstallEvent | null };
+
+/** Take whatever /pwa-early.js caught — it runs before hydration, this does not. */
+function syncFromEarly() {
+  deferred = (window as EarlyWindow).__myptInstallPrompt ?? null;
+  notify();
+}
+
 export function initPwa(): void {
   if (started || typeof window === 'undefined') return;
   started = true;
 
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault(); // offer it in our own UI, at a moment that makes sense
-    deferred = e as InstallEvent;
-    notify();
-  });
-  window.addEventListener('appinstalled', () => { deferred = null; notify(); });
+  // The event itself is caught by /pwa-early.js in <head>: Chrome often fires
+  // it before React hydrates, and a listener added here would miss it.
+  syncFromEarly();
+  window.addEventListener('mypt:installable', syncFromEarly);
 
   if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator && window.isSecureContext) {
     const register = () => {
@@ -65,12 +71,28 @@ export function isInstalledApp(): boolean {
   );
 }
 
-/** iPhone/iPad Safari, where installing is a manual Share → Add to Home Screen. */
-export function isIosSafari(): boolean {
+/** iPhone/iPad, any browser: installing is a manual Share → Add to Home Screen. */
+export function isIos(): boolean {
   if (typeof navigator === 'undefined') return false;
   const ua = navigator.userAgent;
-  const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  return ios && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+  return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+/**
+ * How this device installs the app:
+ *   'prompt' — the browser handed us its install dialog (Chrome/Edge/Samsung on Android, desktop Chrome/Edge)
+ *   'ios'    — iPhone/iPad: Share → Add to Home Screen (Safari; also Chrome/Edge on iOS 16.4+)
+ *   'menu'   — another phone browser: the browser menu's Install / Add to Home screen
+ *   null     — already installed, inside the Android APK, or a desktop with no prompt
+ */
+export type InstallMode = 'prompt' | 'ios' | 'menu' | null;
+
+export function installMode(): InstallMode {
+  if (typeof window === 'undefined' || isInstalledApp()) return null;
+  if (canPromptInstall()) return 'prompt';
+  if (isIos()) return 'ios';
+  const phone = window.matchMedia?.('(pointer: coarse)').matches && Math.min(window.screen.width, window.screen.height) < 820;
+  return phone ? 'menu' : null;
 }
 
 export function canPromptInstall(): boolean { return deferred !== null; }
@@ -80,6 +102,7 @@ export async function promptInstall(): Promise<boolean> {
   const e = deferred;
   if (!e) return false;
   deferred = null; // the event can only be used once
+  (window as EarlyWindow).__myptInstallPrompt = null;
   notify();
   await e.prompt();
   const { outcome } = await e.userChoice;
