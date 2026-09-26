@@ -1701,9 +1701,59 @@ export type UpiSubmitUtrInput = {
 /**
  * What an order pays for. `membership` buys a plan and extends the membership
  * window; `balance` pays down what the member already owes and buys no time,
- * so it carries duration_months 0 and its activation has no window.
+ * so it carries duration_months 0 and its activation has no window;
+ * `renewal` is a new term the trainer offered this client at a price they
+ * chose — it extends the window and leaves any older balance owed.
  */
-export type UpiOrderKind = 'membership' | 'balance';
+export type UpiOrderKind = 'membership' | 'balance' | 'renewal';
+
+/** A trainer's renewal offer to one client (POST /api/payments/upi/renewal-offers). */
+export type RenewalOfferInput = {
+  client_id: string;
+  duration_months: number;
+  /** Price before GST; the studio's GST setting is added on top. */
+  amount: number;
+  package_name?: string | null;
+  note?: string | null;
+  /** How long the member has to pay it: 1–30 days, default 7. */
+  valid_days?: number | null;
+};
+
+/** Where a member's plan stands (GET /api/me/renewal). */
+export type MeRenewalPhase = 'active' | 'ending' | 'expired' | 'none';
+
+export type MeRenewal = {
+  plan: {
+    package_name: string | null;
+    start_date: string | null;
+    end_date: string | null;
+    duration_months: number | null;
+    price: number | null;
+    balance: number;
+    /** Negative once the plan has ended; null with no end date on record. */
+    days_left: number | null;
+    phase: MeRenewalPhase;
+  };
+  /** The trainer's live offer, or null. */
+  offer: {
+    id: string;
+    order_no: string;
+    status: UpiOrderStatus;
+    package_name: string;
+    duration_months: number;
+    base_amount: number;
+    gst_percent: number;
+    gst_amount: number;
+    total_amount: number;
+    note: string | null;
+    expires_at: string;
+    created_at: string;
+    /** The dates paying it would buy — extended from the current end if it has not passed. */
+    window: { activated_from: string; activated_to: string };
+  } | null;
+  /** A renewal request the trainer has not opened yet. */
+  requested_at: string | null;
+};
 
 export type UpiOrder = {
   id: string;

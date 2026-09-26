@@ -58,6 +58,12 @@ export function fmtCountdown(expiresAt: string): { label: string; expired: boole
   if (mins < 1) return { label: 'less than a minute left', expired: false };
   if (mins < 60) return { label: `${mins} minute${mins === 1 ? '' : 's'} left`, expired: false };
   const hrs = Math.floor(mins / 60);
+  // A renewal offer stays open for days; "167 hours left" reads as a timer to
+  // beat rather than a week to pay.
+  if (hrs >= 48) {
+    const days = Math.floor(hrs / 24);
+    return { label: `${days} days left`, expired: false };
+  }
   return { label: `${hrs} hour${hrs === 1 ? '' : 's'} left`, expired: false };
 }
 

@@ -278,6 +278,12 @@ function Inner() {
                   <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
                     {new Date(p.date).toLocaleDateString('en-IN', { dateStyle: 'medium' })}
                   </p>
+                  {/* Every payment has a receipt, not only the ones made in the app. */}
+                  <a href={api.me.paymentReceiptUrl(p.id)} target="_blank" rel="noopener noreferrer"
+                    className="mt-1 inline-flex items-center gap-1 text-[12.5px] font-[650]"
+                    style={{ color: 'var(--brand)' }}>
+                    <Receipt size={13} aria-hidden /> Receipt <ExternalLink size={11} aria-hidden />
+                  </a>
                 </div>
                 <p className="text-[16px] font-[800] tabular-nums" style={{ color: 'var(--text-primary)' }}>
                   {fmtMoneyExact(p.amount)}

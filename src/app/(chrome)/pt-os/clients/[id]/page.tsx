@@ -14,7 +14,7 @@ import {
   ShieldCheck, FileSignature, ClipboardList,
   QrCode, Printer, ScrollText, ChevronDown, Mail, ClipboardCheck,
   StickyNote, FileBarChart, Sparkles,
-  Gauge, PersonStanding, Accessibility, Ruler, MessagesSquare,
+  Gauge, PersonStanding, Accessibility, Ruler, MessagesSquare, Send,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 
@@ -26,6 +26,7 @@ import ClientAiPanel from '@/components/pt-os/ClientAiPanel';
 import ClientSnapshot from '@/components/pt-os/ClientSnapshot';
 import ClientLoginCard from '@/components/pt-os/ClientLoginCard';
 import ClientAiGenerateCard from '@/components/pt-os/ClientAiGenerateCard';
+import RenewalOfferSheet from '@/components/pt-os/RenewalOfferSheet';
 import {
   ClientTabs, TabPanel, EmptyPanel, LinkPanel, TAB_COLOR, type TabKey,
 } from '@/components/pt-os/client/ClientTabs';
@@ -325,6 +326,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [tab, setTab] = useState<TabKey>('overview');
   /** Ask AI — the read-only assistant scoped to this client. */
   const [aiOpen, setAiOpen] = useState(false);
+  const [offerOpen, setOfferOpen] = useState(false);
 
   const [recentWeights, setRecentWeights] = useState<any[]>([]);
   const [activeGoals, setActiveGoals] = useState<any[]>([]);
@@ -627,7 +629,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   Contact them, message them, sell them a term, renew it. One
                   row, one weight — they are peers, and burying them among the
                   identity made them read as decoration on the card. */}
-              <div className={`mb-3 grid gap-2 ${client.mobile ? 'grid-cols-3 sm:grid-cols-5' : 'grid-cols-3'}`}>
+              <div className={`mb-3 grid gap-2 ${client.mobile ? 'grid-cols-3 sm:grid-cols-6' : 'grid-cols-2 sm:grid-cols-4'}`}>
                 {[
                   client.mobile
                     ? { key: 'call', label: client.mobile, icon: <Phone size={16} />, from: '#0067e0', to: '#0067e0', href: `tel:${client.mobile}` }
@@ -638,8 +640,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   { key: 'message', label: 'Message', icon: <MessagesSquare size={16} />, from: '#0067e0', to: '#0059ce', push: `/pt-os/messages?client=${encodeURIComponent(String(id))}` },
                   { key: 'enroll', label: 'Enroll in PT', icon: <Award size={16} />, from: '#f59e0b', to: '#d97706', push: `/pt-os/clients/${id}/enroll` },
                   { key: 'renew', label: 'Renew PT', icon: <Repeat size={16} />, from: '#0067e0', to: '#0059ce', push: `/pt-os/clients/${id}/renew` },
+                  // The member renews themselves: priced here, paid by UPI in their app.
+                  { key: 'offer', label: 'Renewal offer', icon: <Send size={16} />, from: '#10b981', to: '#059669', onClick: () => setOfferOpen(true) },
                 ].filter(Boolean).map((a) => {
-                  const item = a as { key: string; label: string; icon: React.ReactNode; from: string; to: string; href?: string; push?: string; external?: boolean };
+                  const item = a as { key: string; label: string; icon: React.ReactNode; from: string; to: string; href?: string; push?: string; external?: boolean; onClick?: () => void };
                   const inner = (
                     <>
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
@@ -660,6 +664,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     background: 'var(--bg-card)', border: '1px solid var(--border)',
                     boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                   };
+                  if (item.onClick) return <button key={item.key} type="button" onClick={item.onClick} className={cls} style={st}>{inner}</button>;
                   return item.push
                     ? <button key={item.key} onClick={() => router.push(item.push!)} className={cls} style={st}>{inner}</button>
                     : (
@@ -1199,6 +1204,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
           different client is what guarantees no transcript survives the
           switch. The service re-authorises every turn regardless, but the UI
           should not be showing one client's answers under another's name. */}
+      {offerOpen && client && (
+        <RenewalOfferSheet
+          client={{ id: String(id), name: client.name, mobile: client.mobile, duration_months: client.duration_months, final_amount: client.final_amount }}
+          onClose={() => setOfferOpen(false)} />
+      )}
+
       {aiOpen && client && (
         <ClientAiPanel
           key={client.id}

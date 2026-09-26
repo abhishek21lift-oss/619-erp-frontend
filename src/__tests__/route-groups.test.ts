@@ -75,6 +75,7 @@ const BARE = [
   'member/photos',
   'member/goals',
   'member/recap',
+  'member/renew',
   'platform-login',              // the Command Center's door — no session yet
   'pt-os',                       // redirect to /pt-os/clients
   'pt-os/pdf-viewer',            // full-screen viewer

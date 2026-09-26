@@ -10,7 +10,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  Bell, CalendarRange, Camera, ChevronRight, FileSignature, IdCard, LineChart, LogOut, Medal, MessageCircle, MoreHorizontal, Target, UserRound,
+  Bell, CalendarRange, Camera, RefreshCw, ChevronRight, FileSignature, IdCard, LineChart, LogOut, Medal, MessageCircle, MoreHorizontal, Target, UserRound,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -34,6 +34,7 @@ export default function MemberMorePage() {
 
 const LINKS: { href: string; label: string; sub: string; icon: LucideIcon; badge?: 'notifications' | 'messages' }[] = [
   { href: '/member/messages', label: 'Messages', sub: 'Talk to your trainer', icon: MessageCircle, badge: 'messages' },
+  { href: '/member/renew', label: 'Renew', sub: 'Your plan dates and renewal', icon: RefreshCw },
   { href: '/member/card', label: 'Membership card', sub: 'Check-in code and days left', icon: IdCard },
   { href: '/member/recap', label: 'Monthly recap', sub: 'Your month in numbers — and a card to share', icon: CalendarRange },
   { href: '/member/goals', label: 'Goals', sub: 'Targets with a projected finish date', icon: Target },
