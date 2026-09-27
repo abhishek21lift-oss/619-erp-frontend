@@ -47,9 +47,12 @@ import TodayCard from '@/components/member/TodayCard';
 import InstallAppCard from '@/components/member/InstallAppCard';
 import HomeHighlights from '@/components/member/HomeHighlights';
 import RenewalBanner from '@/components/member/RenewalBanner';
+import HomeHero from '@/components/member/HomeHero';
+import { accentGradient, spectrum } from '@/components/member/memberTheme';
+import type { Accent } from '@/components/member/memberTheme';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { api } from '@/lib/api';
-import type { MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement } from '@/lib/api';
+import type { MeAchievements, MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement } from '@/lib/api';
 import { palette, rgba } from '@/lib/palette';
 import { daysLeft, elapsedPct } from '@/components/member/planDates';
 
@@ -93,18 +96,6 @@ function goalLabel(v: string | null | undefined): string | null {
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : null;
 }
 
-/** "Good morning" / "Good afternoon" / "Good evening", on the member's own clock. */
-function greeting(now = new Date()): string {
-  const h = now.getHours();
-  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-}
-
-/** The first word of a name, for the greeting. Null when there is no usable one. */
-function firstName(name: string | null | undefined): string | null {
-  const first = (name ?? '').trim().split(/\s+/)[0];
-  return first ? first.charAt(0).toUpperCase() + first.slice(1) : null;
-}
-
 export default function MemberDashboardPage() {
   return (
     <Guard role="member">
@@ -119,8 +110,17 @@ function MemberDashboard() {
   const [payments, setPayments] = useState<MePayment[]>([]);
   const [visits, setVisits] = useState<MeAttendance[]>([]);
   const [weights, setWeights] = useState<MeMeasurement[]>([]);
+  const [achievements, setAchievements] = useState<MeAchievements | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+
+  // The hero's streak. Loaded on its own so a slow or failed read costs one
+  // number, never the page.
+  useEffect(() => {
+    let alive = true;
+    api.me.achievements().then((r) => { if (alive) setAchievements(r.data); }).catch(() => { /* streak shows a dash */ });
+    return () => { alive = false; };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -185,39 +185,15 @@ function MemberDashboard() {
 
   return (
     <Shell>
-      {/* ── Who you are ──────────────────────────────────────────────────── */}
-      <m.header
-        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: EASE }}
-        className="mb-5 flex items-center gap-3"
-      >
-        <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-[650]" style={{ color: C.muted }}>
-            {greeting()}{firstName(profile.name) ? ',' : ''}
-          </p>
-          <h1 className="truncate text-[26px] font-[850] leading-tight tracking-[-0.03em]" style={{ color: C.ink }}>
-            {firstName(profile.name) || profile.name}
-          </h1>
-          <p className="mt-0.5 truncate text-[12px] font-[600]" style={{ color: C.muted }}>
-            {profile.studio_name || 'Your studio'}
-            {profile.member_code ? ` · #${profile.member_code}` : ''}
-          </p>
-        </div>
-        <Link href="/member/card" aria-label="Membership card"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full transition-transform active:scale-95"
-          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: C.primary }}>
-          <IdCard size={18} aria-hidden />
-        </Link>
-        <Link href="/member/more" aria-label="Your profile" className="shrink-0 rounded-full transition-transform active:scale-95"
-          style={{ padding: 2, background: `linear-gradient(135deg, ${C.primary}, ${palette.emerald[400]})` }}>
-          <ClientAvatar
-            name={profile.name}
-            photoUrl={profile.photo_url}
-            className="grid h-11 w-11 place-items-center rounded-full text-[15px] font-[800]"
-            style={{ background: 'var(--bg-card)', color: C.primary, boxShadow: '0 0 0 2px var(--bg-canvas)' }}
-          />
-        </Link>
-      </m.header>
+      {/* ── The hero: who, where they stand, what next ─────────────────── */}
+      <HomeHero
+        name={profile.name}
+        photoUrl={profile.photo_url}
+        studio={[profile.studio_name, profile.member_code ? `#${profile.member_code}` : null].filter(Boolean).join(' · ') || null}
+        streak={achievements ? achievements.training.current : null}
+        visitsThisMonth={visitsThisMonth}
+        daysLeft={left}
+      />
 
       {/* ── A renewal offer to pay, or a plan about to run out ──────────────── */}
       <RenewalBanner />
@@ -228,53 +204,48 @@ function MemberDashboard() {
       {/* ── Offer the installable app, when the browser can install it ─────── */}
       <InstallAppCard />
 
-      {/* ── The plan. The one saturated surface on the page. ─────────────── */}
+      {/* ── The plan: dates, balance, and paying it ─────────────────────── */}
       <m.section
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05, duration: 0.45, ease: EASE }}
         aria-label="Your plan"
-        className="relative mb-4 overflow-hidden rounded-[24px] p-5 text-white"
-        style={{
-          background: `linear-gradient(155deg, ${palette.gray[900]} 0%, ${palette.blue[900]} 55%, ${palette.blue[700]} 100%)`,
-          boxShadow: `0 18px 40px -18px ${rgba(palette.blue[700], 0.6)}`,
-        }}
+        className="relative mb-5 overflow-hidden rounded-[24px] p-5"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
       >
-        <span aria-hidden className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full"
-          style={{ background: `radial-gradient(circle, ${rgba(palette.blue[400], 0.45)}, transparent 70%)` }} />
-
+        <span aria-hidden className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full"
+          style={{ background: `radial-gradient(circle, ${rgba(spectrum.pink[400], 0.18)}, transparent 70%)` }} />
         <div className="relative flex items-center gap-4">
           <PlanRing left={left} remaining={spanPct == null ? null : 1 - spanPct / 100} />
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-[750] uppercase tracking-[0.14em] opacity-70">Current plan</p>
-            <p className="mt-0.5 truncate text-[18px] font-[820] leading-tight">
+            <p className="text-[11px] font-[750] uppercase tracking-[0.14em]" style={{ color: C.muted }}>Current plan</p>
+            <p className="mt-0.5 truncate text-[18px] font-[820] leading-tight" style={{ color: C.ink }}>
               {profile.package_type || 'Personal Training'}
             </p>
             <span className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-[750] capitalize"
-              style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.14)' }}>
+              style={{ background: 'var(--bg-subtle)', color: C.ink }}>
               <span aria-hidden className="h-1.5 w-1.5 rounded-full"
-                style={{ background: profile.status === 'active' || !profile.status ? palette.emerald[400] : palette.red[400] }} />
+                style={{ background: profile.status === 'active' || !profile.status ? C.success : C.danger }} />
               {profile.status || 'active'}
             </span>
           </div>
         </div>
 
-        {/* A real number, or an honest absence. The old card printed the unit
-            with nothing in front of it. */}
+        {/* A real number, or an honest absence. */}
         {left === null && (
-          <p className="relative mt-4 text-[13px] font-[600] opacity-75">No end date set — ask your trainer.</p>
+          <p className="relative mt-4 text-[13px] font-[600]" style={{ color: C.muted }}>No end date set — ask your trainer.</p>
         )}
 
         <div className="relative mt-4 grid grid-cols-2 overflow-hidden rounded-[16px]"
-          style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}>
+          style={{ background: 'var(--bg-subtle)' }}>
           <PlanCell label="Ends on" value={endsOn ?? 'Not set'} />
           <PlanCell label="Balance" value={balance > 0 ? inr(balance) : 'Paid up'} divider
-            tone={balance > 0 ? '#FCD34D' : undefined} />
+            tone={balance > 0 ? palette.amber[600] : C.success} />
         </div>
 
         {balance > 0 && (
           <PayBalanceButton
-            className="relative mt-3 flex h-12 w-full items-center justify-center gap-1.5 rounded-[14px] text-[14px] font-[800]"
-            style={{ background: '#fff', color: palette.gray[900] }}>
+            className="relative mt-3 flex h-12 w-full items-center justify-center gap-1.5 rounded-[14px] text-[14px] font-[800] text-white"
+            style={{ background: accentGradient('plan'), boxShadow: `0 10px 24px -12px ${rgba(spectrum.pink[500], 0.7)}` }}>
             <CreditCard size={15} /> Pay {inr(balance)}
           </PayBalanceButton>
         )}
@@ -282,9 +253,9 @@ function MemberDashboard() {
 
       {/* ── What the trainer set, and the weekly check-in ───────────────── */}
       <nav aria-label="Your training" className="mb-5 grid grid-cols-3 gap-2.5">
-        <Shortcut href="/member/workout" icon={<Dumbbell size={18} />} label="Workout" />
-        <Shortcut href="/member/diet" icon={<Apple size={18} />} label="Diet" />
-        <Shortcut href="/member/checkin" icon={<ClipboardCheck size={18} />} label="Check-in" />
+        <Shortcut href="/member/workout" icon={<Dumbbell size={18} />} label="Workout" accent="workout" />
+        <Shortcut href="/member/diet" icon={<Apple size={18} />} label="Diet" accent="diet" />
+        <Shortcut href="/member/checkin" icon={<ClipboardCheck size={18} />} label="Check-in" accent="checkin" />
       </nav>
 
       {/* ── The month so far, and the goal closest to done ────────────────── */}
@@ -293,14 +264,14 @@ function MemberDashboard() {
       {/* ── Progress. Only what was actually measured. ───────────────────── */}
       <Section title="Your progress" action={{ href: '/member/progress', label: 'See trend' }}>
         <div className="grid grid-cols-3 gap-2.5">
-          <Metric icon={<Dumbbell size={13} />} label="Visits" value={String(visitsThisMonth)} sub="this month" />
-          <Metric icon={<Ruler size={13} />} label="Weight"
+          <Metric icon={<Dumbbell size={15} />} label="Visits" value={String(visitsThisMonth)} sub="this month" accent="workout" />
+          <Metric icon={<Ruler size={15} />} label="Weight" accent="progress"
             value={latestWeight != null ? `${latestWeight} kg` : '—'}
             sub={latestWeight != null ? 'latest' : 'not recorded'} />
           <Metric
-            icon={weightDelta == null ? <Minus size={13} />
-              : weightDelta < 0 ? <TrendingDown size={13} /> : <TrendingUp size={13} />}
-            label="Change"
+            icon={weightDelta == null ? <Minus size={15} />
+              : weightDelta < 0 ? <TrendingDown size={15} /> : <TrendingUp size={15} />}
+            label="Change" accent="records"
             value={weightDelta == null ? '—' : `${weightDelta > 0 ? '+' : ''}${weightDelta.toFixed(1)} kg`}
             sub={weightDelta == null ? 'needs 2 readings' : 'since first'}
             tone={weightDelta == null ? undefined : weightDelta < 0 ? C.success : C.warning}
@@ -415,13 +386,13 @@ function Shell({ children }: { children: React.ReactNode }) {
   return <MemberShell>{children}</MemberShell>;
 }
 
-function Shortcut({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+function Shortcut({ href, icon, label, accent }: { href: string; icon: React.ReactNode; label: string; accent: Accent }) {
   return (
     <Link href={href}
-      className="flex min-h-[84px] flex-col items-center justify-center gap-2 rounded-[18px] text-[12px] font-[750] transition-transform active:scale-[0.97]"
+      className="flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-[20px] text-[12px] font-[750] transition-transform active:scale-[0.97]"
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: C.ink }}>
-      <span className="grid h-10 w-10 place-items-center rounded-full"
-        style={{ background: rgba(C.primary, 0.1), color: C.primary }}>{icon}</span>
+      <span className="grid h-11 w-11 place-items-center rounded-[14px] text-white"
+        style={{ background: accentGradient(accent), boxShadow: '0 8px 18px -10px rgba(15,23,42,0.55)' }}>{icon}</span>
       {label}
     </Link>
   );
@@ -447,14 +418,14 @@ function Section({ title, action, children }: {
 
 function PlanCell({ label, value, tone, divider = false }: { label: string; value: string; tone?: string; divider?: boolean }) {
   return (
-    <div className="px-3.5 py-3" style={divider ? { borderLeft: '1px solid rgba(255,255,255,0.1)' } : undefined}>
-      <p className="text-[11px] font-[650] opacity-70">{label}</p>
-      <p className="mt-1 truncate text-[15px] font-[800] tabular-nums" style={{ color: tone ?? '#fff' }}>{value}</p>
+    <div className="px-3.5 py-3" style={divider ? { borderLeft: '1px solid var(--border)' } : undefined}>
+      <p className="text-[11px] font-[650]" style={{ color: C.muted }}>{label}</p>
+      <p className="mt-1 truncate text-[15px] font-[800] tabular-nums" style={{ color: tone ?? C.ink }}>{value}</p>
     </div>
   );
 }
 
-/** Days left, as a ring that empties across the plan. */
+/** Days left, as a ring that empties across the plan — the member app's gradient, amber once it has ended. */
 function PlanRing({ left, remaining }: { left: number | null; remaining: number | null }) {
   const R = 34;
   const CIRC = 2 * Math.PI * R;
@@ -462,33 +433,39 @@ function PlanRing({ left, remaining }: { left: number | null; remaining: number 
   return (
     <div className="relative grid h-[84px] w-[84px] shrink-0 place-items-center">
       <svg viewBox="0 0 84 84" className="absolute inset-0 -rotate-90" aria-hidden>
-        <circle cx="42" cy="42" r={R} fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="6" />
+        <defs>
+          <linearGradient id="plan-ring" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={spectrum.violet[500]} />
+            <stop offset="100%" stopColor={spectrum.pink[500]} />
+          </linearGradient>
+        </defs>
+        <circle cx="42" cy="42" r={R} fill="none" stroke="var(--bg-subtle)" strokeWidth="7" />
         {remaining != null && (
-          <m.circle cx="42" cy="42" r={R} fill="none" stroke={ended ? palette.amber[400] : palette.emerald[400]}
-            strokeWidth="6" strokeLinecap="round" strokeDasharray={CIRC}
+          <m.circle cx="42" cy="42" r={R} fill="none" stroke={ended ? palette.amber[500] : 'url(#plan-ring)'}
+            strokeWidth="7" strokeLinecap="round" strokeDasharray={CIRC}
             initial={{ strokeDashoffset: CIRC }} animate={{ strokeDashoffset: CIRC * (1 - remaining) }}
             transition={{ duration: 1, ease: EASE, delay: 0.15 }} />
         )}
       </svg>
       {left != null ? (
         <p className="text-center leading-none">
-          <span className="block text-[24px] font-[850] tabular-nums tracking-[-0.02em]">{left}</span>
-          <span className="mt-1 block text-[11px] font-[650] opacity-70">day{left === 1 ? '' : 's'} left</span>
+          <span className="block text-[24px] font-[850] tabular-nums tracking-[-0.02em]" style={{ color: C.ink }}>{left}</span>
+          <span className="mt-1 block text-[11px] font-[650]" style={{ color: C.muted }}>day{left === 1 ? '' : 's'} left</span>
         </p>
       ) : (
-        <CalendarDays size={22} aria-hidden className="opacity-70" />
+        <CalendarDays size={22} aria-hidden style={{ color: C.muted }} />
       )}
     </div>
   );
 }
 
-function Metric({ icon, label, value, sub, tone }: {
-  icon: React.ReactNode; label: string; value: string; sub: string; tone?: string;
+function Metric({ icon, label, value, sub, tone, accent }: {
+  icon: React.ReactNode; label: string; value: string; sub: string; tone?: string; accent: Accent;
 }) {
   return (
-    <div className="rounded-[18px] p-3.5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full"
-        style={{ background: rgba(tone ?? C.primary, 0.12), color: tone ?? C.primary }}>
+    <div className="rounded-[20px] p-3.5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      <span className="inline-flex h-8 w-8 items-center justify-center rounded-[11px] text-white"
+        style={{ background: accentGradient(accent) }}>
         {icon}
       </span>
       <p className="mt-2.5 text-[20px] font-[840] leading-none tabular-nums tracking-[-0.02em]"

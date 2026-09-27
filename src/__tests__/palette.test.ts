@@ -127,6 +127,10 @@ describe('the app uses only the palette', () => {
     // "premium" surface, a wider categorical series ramp than five semantic
     // families can carry) lives entirely in theme/colors.ts and is confined
     // there by the assertion below.
+    //
+    // The member app's spectrum is the fifth: decorative colour for the
+    // member portal's hero and tiles, never for status, in
+    // components/member/memberTheme.ts.
     const known = new Set(
       [...allHexes(), ...Object.values(founderGold)].map((h) => h.toUpperCase())
     );
@@ -143,6 +147,8 @@ describe('the app uses only the palette', () => {
         if (p.includes(join('components', 'landing'))) continue;
         // The visualization system is its own system too — confined below.
         if (p.includes(join('components', 'visualizations'))) continue;
+        // The member app's decorative spectrum — its one token file, confined below.
+        if (p.endsWith(join('components', 'member', 'memberTheme.ts'))) continue;
         const text = readFileSync(p, 'utf8');
         for (const m of text.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
           if (!known.has(m.toUpperCase())) offenders.push(`${p}: ${m}`);
@@ -173,6 +179,30 @@ describe('the app uses only the palette', () => {
     };
     walk(join(process.cwd(), 'src'));
     expect(users).toEqual(['components/FounderBadge.tsx']);
+  });
+
+  it('confines the member spectrum to the member portal', () => {
+    // The fifth exception (components/member/memberTheme.ts): a decorative
+    // spectrum for the member app's hero and tiles. Its hexes are exempt from
+    // the scan above only in that file, so a stray one anywhere else already
+    // fails there. This keeps the TOKENS in the portal too: the staff app
+    // importing them would bring colour-without-meaning back to the surfaces
+    // the five families exist for.
+    const users: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = join(dir, entry);
+        if (statSync(p).isDirectory()) { walk(p); continue; }
+        if (!/\.tsx?$/.test(entry)) continue;
+        if (p.includes('__tests__')) continue;
+        if (/member\/memberTheme|['"]\.\/memberTheme['"]/.test(readFileSync(p, 'utf8'))) {
+          users.push(p.split(join('src') + sep)[1].replaceAll(sep, '/'));
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src'));
+    const outside = users.filter((u) => !u.startsWith('components/member/') && !u.startsWith('app/(bare)/member/'));
+    expect(outside).toEqual([]);
   });
 
   it('confines the marketing surface to its own token file', () => {
