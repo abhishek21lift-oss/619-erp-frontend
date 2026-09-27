@@ -55,7 +55,7 @@ function CardBody() {
     return () => { live = false; };
   }, []);
 
-  const title = <PageTitle icon={<IdCard size={20} />} title="Membership card" sub="Show this at the desk" />;
+  const title = <PageTitle accent="studio" icon={<IdCard size={20} />} title="Membership card" sub="Show this at the desk" />;
   if (failed) return <>{title}<LoadError what="membership card" /></>;
   if (!profile) return <PageSkeleton />;
 

@@ -17,6 +17,7 @@ import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import { MEMBER_NAV_CLEARANCE } from '@/components/member/MemberNav';
 import { LoadError, MC, PageSkeleton } from '@/components/member/MemberUI';
+import { heroAccents, heroGradient } from '@/components/member/memberTheme';
 import ChatThread from '@/components/chat/ChatThread';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { api } from '@/lib/api';
@@ -54,13 +55,19 @@ function MessagesBody() {
       // The viewport minus the status-bar inset, the shell's pt-5 and the tab
       // bar: the composer sits just above the tabs, and only messages scroll.
       style={{ height: `calc(100dvh - env(safe-area-inset-top, 0px) - 20px - ${MEMBER_NAV_CLEARANCE})` }}>
-      <header className="flex items-center gap-3 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
-        <ClientAvatar name={who} photoUrl={null}
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[14px] font-[800]"
-          style={{ background: rgba(MC.primary, 0.12), color: MC.primary }} />
-        <div className="min-w-0">
-          <h1 className="truncate text-[17px] font-[820] leading-tight tracking-[-0.02em]" style={{ color: MC.ink }}>{who}</h1>
-          <p className="truncate text-[12px] font-[600]" style={{ color: MC.muted }}>
+      {/* A compact hero in the studio colours: who you are talking to. */}
+      <header className="relative mb-2 flex shrink-0 items-center gap-3 overflow-hidden rounded-[22px] px-4 py-3 text-white"
+        style={{ background: heroGradient('studio'), boxShadow: `0 14px 30px -18px ${rgba(heroAccents.studio.to, 0.7)}` }}>
+        <span aria-hidden className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.22), transparent 68%)' }} />
+        <span className="relative shrink-0 rounded-full p-[2px]" style={{ background: 'rgba(255,255,255,0.45)' }}>
+          <ClientAvatar name={who} photoUrl={null}
+            className="grid h-10 w-10 place-items-center rounded-full text-[14px] font-[800]"
+            style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }} />
+        </span>
+        <div className="relative min-w-0">
+          <h1 className="truncate text-[17px] font-[850] leading-tight tracking-[-0.02em]">{who}</h1>
+          <p className="truncate text-[12px] font-[600] opacity-90">
             Your trainer · {thread.with.studio_name ?? 'your studio'}
           </p>
         </div>

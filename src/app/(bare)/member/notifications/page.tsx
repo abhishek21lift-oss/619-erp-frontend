@@ -58,7 +58,7 @@ function NotificationsBody() {
 
   const unread = items?.filter((n) => !n.read_at).length ?? 0;
   const title = (
-    <PageTitle icon={<Bell size={20} />} title="Notifications"
+    <PageTitle accent="studio" icon={<Bell size={20} />} title="Notifications"
       sub={items ? (unread ? `${unread} unread` : 'All caught up') : null} />
   );
   if (failed) return <>{title}<LoadError what="notifications" /></>;

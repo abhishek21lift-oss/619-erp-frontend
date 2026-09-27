@@ -54,13 +54,13 @@ function DietBody() {
     return () => { alive = false; };
   }, []);
 
-  if (failed) return <><PageTitle icon={<Apple size={20} />} title="My diet" /><LoadError what="diet plan" /></>;
+  if (failed) return <><PageTitle accent="diet" icon={<Apple size={20} />} title="My diet" /><LoadError what="diet plan" /></>;
   if (!plans) return <PageSkeleton />;
 
   if (plans.length === 0) {
     return (
       <>
-        <PageTitle icon={<Apple size={20} />} title="My diet" />
+        <PageTitle accent="diet" icon={<Apple size={20} />} title="My diet" />
         <EmptyState
           icon={<Apple size={20} />}
           title="No diet plan yet"
@@ -72,7 +72,7 @@ function DietBody() {
 
   return (
     <>
-      <PageTitle icon={<Apple size={20} />} title="My diet"
+      <PageTitle accent="diet" icon={<Apple size={20} />} title="My diet"
         sub={plans.length === 1 ? plans[0].name : `${plans.length} active plans`} />
       {plans.map((p) => <DietBlock key={p.assignment_id} plan={p} />)}
     </>

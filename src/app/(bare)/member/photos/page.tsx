@@ -64,7 +64,7 @@ function PhotosBody() {
   useEffect(() => { load(); }, [load]);
 
   const title = (
-    <PageTitle icon={<Camera size={20} />} title="Progress photos"
+    <PageTitle accent="progress" icon={<Camera size={20} />} title="Progress photos"
       sub="Only you and your trainer can see these" />
   );
   if (failed) return <>{title}<LoadError what="photos" /></>;

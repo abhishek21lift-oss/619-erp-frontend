@@ -52,7 +52,7 @@ function CheckinBody() {
 
   useEffect(() => { void load(); }, []);
 
-  if (failed) return <><PageTitle icon={<ClipboardCheck size={20} />} title="Weekly check-in" /><LoadError what="check-ins" /></>;
+  if (failed) return <><PageTitle accent="checkin" icon={<ClipboardCheck size={20} />} title="Weekly check-in" /><LoadError what="check-ins" /></>;
   if (!data) return <PageSkeleton />;
 
   const current = data.checkins.find((c) => String(c.week_start_date).slice(0, 10) === data.this_week) ?? null;
@@ -60,7 +60,7 @@ function CheckinBody() {
 
   return (
     <>
-      <PageTitle icon={<ClipboardCheck size={20} />} title="Weekly check-in"
+      <PageTitle accent="checkin" icon={<ClipboardCheck size={20} />} title="Weekly check-in"
         sub={`Week of ${longDate(data.this_week) ?? data.this_week}`} />
       <CheckinForm key={current?.updated_at ?? 'new'} existing={current} onSaved={load} />
       {past.length > 0 && (
