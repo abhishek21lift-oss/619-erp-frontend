@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
-import { HelpCircle, Mail, MessageCircle, Phone, Search, ChevronDown } from 'lucide-react';
+import Link from 'next/link';
+import { HelpCircle, Mail, MessageCircle, Phone, Search, ChevronDown, ChevronRight, LifeBuoy } from 'lucide-react';
 import Guard from '@/components/Guard';
 
 const FAQS = [
@@ -133,6 +134,28 @@ export default function HelpPage() {
           <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Still need help?</p>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 20px' }}>Reach out to our support team</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* A ticket first: it keeps the whole thread, with replies, in the
+                app (/support). This page used to offer only email, phone and
+                WhatsApp, so the ticketing screen was a second "support" page
+                nothing pointed to. */}
+            <Link href="/support"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
+                borderRadius: 16, background: 'rgba(0,103,224,0.06)',
+                border: '1px solid rgba(0,103,224,0.18)', textDecoration: 'none',
+              }}>
+              <div style={{
+                width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(0,103,224,0.12)',
+              }}>
+                <LifeBuoy size={18} color="#0067e0" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Raise a support ticket</p>
+                <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '1px 0 0' }}>Track replies here in the app</p>
+              </div>
+              <ChevronRight size={16} color="var(--text-muted)" aria-hidden />
+            </Link>
             <a href="mailto:support@myptstudio.com"
               style={{
                 display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
@@ -141,7 +164,7 @@ export default function HelpPage() {
                 transition: 'all 0.2s',
               }}
               onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,103,224,0.05)'; e.currentTarget.style.borderColor = 'rgba(0,103,224,0.2)'; }}
-              onMouseOut={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; }}>
+              onMouseOut={e => { e.currentTarget.style.background = 'var(--bg-subtle)'; e.currentTarget.style.borderColor = 'var(--border)'; }}>
               <div style={{
                 width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: 'rgba(0,103,224,0.08)',
@@ -161,7 +184,7 @@ export default function HelpPage() {
                 transition: 'all 0.2s',
               }}
               onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,103,224,0.05)'; e.currentTarget.style.borderColor = 'rgba(0,103,224,0.2)'; }}
-              onMouseOut={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; }}>
+              onMouseOut={e => { e.currentTarget.style.background = 'var(--bg-subtle)'; e.currentTarget.style.borderColor = 'var(--border)'; }}>
               <div style={{
                 width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: 'rgba(0,103,224,0.08)',
@@ -181,7 +204,7 @@ export default function HelpPage() {
                 transition: 'all 0.2s',
               }}
               onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,103,224,0.05)'; e.currentTarget.style.borderColor = 'rgba(0,103,224,0.2)'; }}
-              onMouseOut={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; }}>
+              onMouseOut={e => { e.currentTarget.style.background = 'var(--bg-subtle)'; e.currentTarget.style.borderColor = 'var(--border)'; }}>
               <div style={{
                 width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: 'rgba(0,103,224,0.08)',

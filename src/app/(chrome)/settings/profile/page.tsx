@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { m, AnimatePresence, useInView } from 'framer-motion';
 import qrcode from 'qrcode-generator';
 import {
@@ -11,7 +12,7 @@ import {
   RefreshCw, LogOut, ShieldCheck, AlertTriangle,
   History, Fingerprint, Copy, Loader2, Settings,
   Zap, Calendar, Wifi, Camera, FileSignature, Dumbbell, ClipboardList,
-  Award, Plus, BadgeCheck, Briefcase, GraduationCap, Trophy, Images,
+  Award, Plus, BadgeCheck, Briefcase, GraduationCap, Trophy, Images, ChevronRight,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { useTheme } from '@/components/ThemeProvider';
@@ -728,6 +729,13 @@ export default function ProfilePage() {
   // ProfileTab is the subset a completion step can link to; Security and
   // Preferences hold nothing that is scored, so they are named separately.
   const [tab, setTab] = useState<ProfileTab | 'security' | 'preferences'>('overview');
+  // ?tab= opens a tab directly, so the avatar menu's "Security" can land on
+  // the security panel instead of a second, thinner security page. Read once
+  // on mount; after that the tab strip owns it.
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('tab');
+    if (t === 'overview' || t === 'credentials' || t === 'portfolio' || t === 'security' || t === 'preferences') setTab(t);
+  }, []);
 
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
@@ -1787,6 +1795,15 @@ export default function ProfilePage() {
                           Sign out all
                         </button>
                       </div>
+                      <Link href="/settings/passkeys"
+                        className="flex items-center justify-between gap-4 rounded-2xl p-4 transition-colors hover:bg-[var(--bg-hover)]"
+                        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                        <span>
+                          <span className="block text-[13px] font-[660]" style={{ color: 'var(--text-primary)' }}>Passkeys &amp; Face ID</span>
+                          <span className="block text-[11px]" style={{ color: 'var(--text-muted)' }}>Sign in without a password on this device</span>
+                        </span>
+                        <ChevronRight size={15} aria-hidden style={{ color: 'var(--text-muted)' }} />
+                      </Link>
                     </div>
                   </GlassCard>
                 </FadeUp>

@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   LogOut, Bell, Settings,
-  Zap, User, HelpCircle, ChevronDown, CreditCard,
-  Menu, CheckCheck, ExternalLink, ChevronRight, KeyRound, Sun, Moon, QrCode, Fingerprint,
+  User, HelpCircle, ChevronDown, CreditCard,
+  Menu, CheckCheck, ExternalLink, ChevronRight, Sun, Moon,
 } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
@@ -135,7 +135,6 @@ function AppShellContent({ children }: AppShellProps) {
   const { features } = useFeatures();
   const searchPages = useMemo(() => buildSearchPages(features), [features]);
 
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   // Desktop sidebar starts expanded; the user's manual collapse/expand choice
@@ -175,7 +174,6 @@ function AppShellContent({ children }: AppShellProps) {
     return new Promise<void>((resolve) => setTimeout(resolve, 450));
   }, []);
 
-  const settingsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
@@ -189,20 +187,11 @@ function AppShellContent({ children }: AppShellProps) {
   const transConfig = { duration: dur, ease: EASE };
 
 
-  // My Profile intentionally lives only in the profile dropdown (avatar menu),
-  // not here in the settings (gear) menu.
-  //
-  // UPI payment settings and the studio's passkey list were built and then
-  // left with no way in: nothing linked to either page, so a trainer could
-  // not set up where members' UPI payments go, or revoke a member's Face ID
-  // login, without typing the URL.
-  const settingsLinks = [
-    { href: '/settings/passkeys',        label: 'Passkeys / Face ID Login', icon: KeyRound },
-    { href: '/settings/biometrics',      label: 'Member Passkeys',       icon: Fingerprint },
-    { href: '/finance/payment-settings', label: 'UPI Payment Settings',  icon: QrCode },
-    { href: '/settings/integrations',    label: 'Integrations',          icon: Zap },
-  ];
-
+  // There is no settings (gear) menu. It listed Passkeys, Member Passkeys,
+  // UPI Payment Settings and Integrations — every one of them already in the
+  // sidebar (Settings, and Finance for UPI) — and, unlike the sidebar, it
+  // ignored plan feature flags. Settings live in the sidebar's Settings group;
+  // the avatar menu keeps what is about the signed-in person.
 
   const handleLogout = async () => {
     // Search history is one person's names and phone numbers. On a shared
@@ -254,7 +243,6 @@ function AppShellContent({ children }: AppShellProps) {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setSettingsOpen(false);
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
     };
@@ -370,54 +358,6 @@ function AppShellContent({ children }: AppShellProps) {
                   </m.div>
                 </AnimatePresence>
               </m.button>
-
-              {/* ── Settings dropdown ── */}
-              <div ref={settingsRef} className="relative">
-                <m.button
-                  type="button"
-                  aria-label="Settings"
-                  onClick={() => setSettingsOpen(s => !s)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={cn('relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden transition-all duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
-                  style={{
-                    background: settingsOpen ? (darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)') : 'transparent',
-                  }}
-                >
-                  <m.div
-                    animate={settingsOpen ? { rotate: 90 } : { rotate: 0 }}
-                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                    style={{ color: settingsOpen ? (darkMode ? '#F8FAFC' : '#0F172A') : (darkMode ? '#94A3B8' : '#64748B') }}
-                  >
-                    <Settings size={16} strokeWidth={settingsOpen ? 2 : 1.5} />
-                  </m.div>
-                </m.button>
-                <AnimatePresence>
-                  {settingsOpen && (
-                    <m.div
-                      initial={{ opacity: 0, y: -4, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4, scale: 0.96 }}
-                      transition={{ duration: 0.12, ease: 'easeOut' }}
-                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_12px_40px_rgba(212,175,55,0.12)]"
-                    >
-                      <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-disabled)]">Settings</div>
-                      <div className="pb-2">
-                        {settingsLinks.map((link) => {
-                          const Icon = link.icon;
-                          return (
-                            <Link key={link.href} href={link.href} onClick={() => setSettingsOpen(false)}
-                              className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
-                              <Icon size={14} strokeWidth={1.5} />
-                              {link.label}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </m.div>
-                  )}
-                </AnimatePresence>
-              </div>
 
               {/* ── Notification bell ── */}
               <div ref={notifRef} className="relative">

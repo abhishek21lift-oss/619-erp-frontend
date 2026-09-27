@@ -83,8 +83,8 @@ const KNOWN = [
   'app/(bare)/start-free/page.tsx:67',
   'app/(chrome)/ai-coach/knowledge/page.tsx:75',
   'app/(chrome)/ai/progress-analysis/page.tsx:76',
-  'app/(chrome)/checkin/qr-scanner/page.tsx:384',
-  'app/(chrome)/checkin/qr-scanner/page.tsx:398',
+  'app/(chrome)/checkin/qr-scanner/page.tsx:385',
+  'app/(chrome)/checkin/qr-scanner/page.tsx:399',
   'app/(chrome)/engagement/notifications/page.tsx:46',
   // The three /stats catches are the reasoned ones: when the SQL aggregate is
   // unavailable the page falls back to summing the rows it has, which is
@@ -108,10 +108,10 @@ const KNOWN = [
   // other two went with the account-management UI.
   'app/(chrome)/settings/page.tsx:47',
   'app/(chrome)/settings/page.tsx:83',
-  'app/(chrome)/settings/profile/page.tsx:1726',
-  'app/(chrome)/settings/profile/page.tsx:2002',
-  'app/(chrome)/settings/profile/page.tsx:902',
-  'app/(chrome)/settings/profile/page.tsx:903',
+  'app/(chrome)/settings/profile/page.tsx:1734',
+  'app/(chrome)/settings/profile/page.tsx:2019',
+  'app/(chrome)/settings/profile/page.tsx:910',
+  'app/(chrome)/settings/profile/page.tsx:911',
   'app/(platform)/platform/_shared/CommandBar.tsx:84',
   'app/(platform)/platform/_shared/CommandBar.tsx:85',
   'app/(platform)/platform/_tabs/ActivityTab.tsx:47',

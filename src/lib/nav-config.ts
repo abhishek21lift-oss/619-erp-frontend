@@ -120,6 +120,10 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/sales/today',               label: "Today's Sales",        icon: 'IndianRupee',  roles: ['trainer'] },
       { href: '/finance/record-payment',    label: 'Record Payment',       icon: 'Wallet',       roles: ['trainer'] },
+      // The queue where a member's UPI transfer is matched to the bank
+      // statement and approved. It had no sidebar entry: the only ways in were
+      // a link on the UPI settings page and one in the renewal-offer sheet.
+      { href: '/finance/verify-payments',   label: 'Verify UPI Payments',  icon: 'BadgeCheck',   badge: 'upiPending', roles: ['trainer'] },
       { href: '/finance/collected-payments', label: 'Collected Payments',  icon: 'Banknote',     roles: ['trainer'] },
       { href: '/finance/invoices',          label: 'Invoices',             icon: 'FileText',     roles: ['trainer'] },
       { href: '/finance/dues',              label: 'Outstanding Dues',     icon: 'AlertCircle',  badge: 'duesCount', roles: ['trainer'] },
