@@ -36,6 +36,8 @@ import { api } from '@/lib/api';
 import type { MeAchievements, MeMembership, MeProfile } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { palette, rgba } from '@/lib/palette';
+import { accentGradient, heroMesh } from '@/components/member/memberTheme';
+import type { Accent } from '@/components/member/memberTheme';
 
 export default function MemberMorePage() {
   return (
@@ -49,12 +51,12 @@ export default function MemberMorePage() {
 
 type Badge = 'notifications' | 'messages';
 type Row = { href: string; label: string; sub: string; icon: LucideIcon; badge?: Badge };
-type Group = { title: string; tone: string; rows: Row[] };
+type Group = { title: string; accent: Accent; rows: Row[] };
 
 const GROUPS: Group[] = [
   {
     title: 'Your training',
-    tone: palette.blue[500],
+    accent: 'workout',
     rows: [
       { href: '/member/goals', label: 'Goals', sub: 'Targets with a projected finish date', icon: Target },
       { href: '/member/records', label: 'Records', sub: 'Streaks, milestones and personal bests', icon: Medal },
@@ -65,7 +67,7 @@ const GROUPS: Group[] = [
   },
   {
     title: 'Membership',
-    tone: palette.emerald[600],
+    accent: 'plan',
     rows: [
       { href: '/member/renew', label: 'Renew', sub: 'Your plan dates and renewal', icon: RefreshCw },
       { href: '/member/card', label: 'Membership card', sub: 'Check-in code and days left', icon: IdCard },
@@ -73,7 +75,7 @@ const GROUPS: Group[] = [
   },
   {
     title: 'Your studio',
-    tone: palette.blue[600],
+    accent: 'studio',
     rows: [
       { href: '/member/messages', label: 'Messages', sub: 'Talk to your trainer', icon: MessageCircle, badge: 'messages' },
       { href: '/member/notifications', label: 'Notifications', sub: 'Updates from your studio', icon: Bell, badge: 'notifications' },
@@ -82,7 +84,7 @@ const GROUPS: Group[] = [
   },
   {
     title: 'Account',
-    tone: palette.gray[600],
+    accent: 'neutral',
     rows: [
       { href: '/member/account', label: 'Account', sub: 'Contact details and password', icon: UserRound },
     ],
@@ -126,7 +128,7 @@ function ProfileBody() {
           </h2>
           <ul className="overflow-hidden rounded-[18px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             {g.rows.map((row, j) => (
-              <MenuRow key={row.href} row={row} tone={g.tone} last={j === g.rows.length - 1}
+              <MenuRow key={row.href} row={row} accent={g.accent} last={j === g.rows.length - 1}
                 count={row.badge ? unread[row.badge] : 0} />
             ))}
           </ul>
@@ -185,19 +187,19 @@ function ProfileHero({ profile, plan, stats }: {
       transition={{ duration: 0.45, ease: EASE }}
       aria-label="Your profile"
       className="relative mb-4 overflow-hidden rounded-[24px] p-5 text-white"
-      style={{ background: `linear-gradient(155deg, ${palette.gray[900]} 0%, ${palette.blue[900]} 55%, ${palette.blue[700]} 100%)` }}
+      style={{ background: heroMesh.base, boxShadow: `0 22px 48px -22px ${rgba(heroMesh.shadow, 0.75)}` }}
     >
-      <span aria-hidden className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full"
-        style={{ background: `radial-gradient(circle, ${rgba(palette.blue[400], 0.45)}, transparent 70%)` }} />
-      <span aria-hidden className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full"
-        style={{ background: `radial-gradient(circle, ${rgba(palette.emerald[400], 0.18)}, transparent 70%)` }} />
+      <span aria-hidden className="pointer-events-none absolute -left-20 -top-24 h-64 w-64 rounded-full"
+        style={{ background: `radial-gradient(circle, ${rgba(heroMesh.glowA, 0.5)}, transparent 68%)` }} />
+      <span aria-hidden className="pointer-events-none absolute -bottom-28 -right-16 h-72 w-72 rounded-full"
+        style={{ background: `radial-gradient(circle, ${rgba(heroMesh.glowB, 0.45)}, transparent 68%)` }} />
 
       <div className="relative flex items-center gap-4">
         <div className="relative grid h-[100px] w-[100px] shrink-0 place-items-center">
           <svg viewBox="0 0 100 100" className="absolute inset-0 -rotate-90" aria-hidden>
-            <circle cx="50" cy="50" r={R} fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="5" />
+            <circle cx="50" cy="50" r={R} fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="5" />
             {remaining != null && (
-              <m.circle cx="50" cy="50" r={R} fill="none" stroke={ended ? palette.amber[400] : palette.emerald[400]}
+              <m.circle cx="50" cy="50" r={R} fill="none" stroke={ended ? palette.amber[400] : '#fff'}
                 strokeWidth="5" strokeLinecap="round" strokeDasharray={C}
                 initial={{ strokeDashoffset: C }} animate={{ strokeDashoffset: C * (1 - remaining) }}
                 transition={{ duration: 1, ease: EASE, delay: 0.15 }} />
@@ -239,7 +241,7 @@ function ProfileHero({ profile, plan, stats }: {
       </div>
 
       <dl className="relative mt-5 grid grid-cols-3 overflow-hidden rounded-[16px]"
-        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}>
+        style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>
         <HeroStat icon={Dumbbell} label="Sessions" value={stats?.totals.sessions} />
         <HeroStat icon={Flame} label="Week streak" value={stats?.training.current} divider />
         <HeroStat icon={Trophy} label="Personal bests" value={stats?.totals.prs} divider />
@@ -252,12 +254,12 @@ function HeroStat({ icon: Icon, label, value, divider = false }: {
   icon: LucideIcon; label: string; value: number | undefined; divider?: boolean;
 }) {
   return (
-    <div className="px-3 py-3 text-center" style={divider ? { borderLeft: '1px solid rgba(255,255,255,0.1)' } : undefined}>
+    <div className="flex flex-col-reverse px-3 py-3 text-center" style={divider ? { borderLeft: '1px solid rgba(255,255,255,0.2)' } : undefined}>
+      <dt className="mt-1.5 text-[11px] font-[650] opacity-85">{label}</dt>
       <dd className="flex items-center justify-center gap-1.5 text-[22px] font-[820] leading-none tabular-nums tracking-[-0.02em]">
-        <Icon size={15} aria-hidden className="opacity-60" />
+        <Icon size={15} aria-hidden className="opacity-80" />
         {value == null ? '—' : value.toLocaleString('en-IN')}
       </dd>
-      <dt className="mt-1.5 text-[11px] font-[650] opacity-70">{label}</dt>
     </div>
   );
 }
@@ -265,22 +267,23 @@ function HeroStat({ icon: Icon, label, value, divider = false }: {
 // ── Quick actions ────────────────────────────────────────────────────────────
 
 function QuickActions({ unreadMessages }: { unreadMessages: number }) {
-  const actions: { href: string; label: string; icon: LucideIcon; count?: number }[] = [
-    { href: '/member/card', label: 'My card', icon: IdCard },
-    { href: '/member/messages', label: 'Message trainer', icon: MessageCircle, count: unreadMessages },
-    { href: '/member/renew', label: 'Renew', icon: RefreshCw },
+  const actions: { href: string; label: string; icon: LucideIcon; accent: Accent; count?: number }[] = [
+    { href: '/member/card', label: 'My card', icon: IdCard, accent: 'studio' },
+    { href: '/member/messages', label: 'Message trainer', icon: MessageCircle, accent: 'workout', count: unreadMessages },
+    { href: '/member/renew', label: 'Renew', icon: RefreshCw, accent: 'plan' },
   ];
   return (
     <m.nav aria-label="Quick actions"
       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: EASE, delay: 0.06 }}
       className="mb-5 grid grid-cols-3 gap-2.5">
-      {actions.map(({ href, label, icon: Icon, count }) => (
+      {actions.map(({ href, label, icon: Icon, accent, count }) => (
         <Link key={href} href={href}
           aria-label={count ? `${label}, ${count} unread` : undefined}
           className="relative flex min-h-[84px] flex-col items-center justify-center gap-2 rounded-[18px] px-2 py-3 text-center transition-transform active:scale-[0.97]"
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-          <span className="grid h-10 w-10 place-items-center rounded-full" style={{ background: rgba(MC.primary, 0.1), color: MC.primary }}>
+          <span className="grid h-11 w-11 place-items-center rounded-[14px] text-white"
+            style={{ background: accentGradient(accent), boxShadow: '0 8px 18px -10px rgba(15,23,42,0.55)' }}>
             <Icon size={18} aria-hidden />
           </span>
           <span className="text-[12px] font-[750] leading-tight" style={{ color: MC.ink }}>{label}</span>
@@ -298,14 +301,14 @@ function QuickActions({ unreadMessages }: { unreadMessages: number }) {
 
 // ── One menu row ─────────────────────────────────────────────────────────────
 
-function MenuRow({ row, tone, last, count }: { row: Row; tone: string; last: boolean; count: number }) {
+function MenuRow({ row, accent, last, count }: { row: Row; accent: Accent; last: boolean; count: number }) {
   const { href, label, sub, icon: Icon } = row;
   return (
     <li style={last ? undefined : { borderBottom: '1px solid var(--border)' }}>
       <Link href={href}
         aria-label={count > 0 ? `${label}, ${count} unread` : undefined}
         className="flex min-h-[60px] items-center gap-3 px-4 py-3 transition-colors hover:bg-[var(--bg-subtle)] active:bg-[var(--bg-subtle)]">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px]" style={{ background: rgba(tone, 0.12), color: tone }}>
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px] text-white" style={{ background: accentGradient(accent) }}>
           <Icon size={17} aria-hidden />
         </span>
         <span className="min-w-0 flex-1">
