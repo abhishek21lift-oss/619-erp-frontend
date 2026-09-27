@@ -5,6 +5,7 @@ import {
   LogOut, Bell, Settings,
   User, HelpCircle, ChevronDown, CreditCard,
   Menu, CheckCheck, ExternalLink, ChevronRight, Sun, Moon,
+  KeyRound, Fingerprint, QrCode, Zap, Building2, Merge,
 } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
@@ -17,7 +18,7 @@ import StudioMark from '@/components/StudioMark';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { api } from '@/lib/api';
 import { roleLabel } from '@/lib/roles';
-import { allNavItems, isVisibleForFeature } from '@/lib/nav-config';
+import { allNavItems, isVisibleForFeature, isVisibleForRole, SETTINGS_GROUP } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
 import { useNavScroll } from '@/contexts/nav-scroll-context';
 import { PullRefreshRegistryProvider } from '@/contexts/pull-refresh-context';
@@ -135,6 +136,7 @@ function AppShellContent({ children }: AppShellProps) {
   const { features } = useFeatures();
   const searchPages = useMemo(() => buildSearchPages(features), [features]);
 
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   // Desktop sidebar starts expanded; the user's manual collapse/expand choice
@@ -174,6 +176,7 @@ function AppShellContent({ children }: AppShellProps) {
     return new Promise<void>((resolve) => setTimeout(resolve, 450));
   }, []);
 
+  const settingsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
@@ -187,11 +190,23 @@ function AppShellContent({ children }: AppShellProps) {
   const transConfig = { duration: dur, ease: EASE };
 
 
-  // There is no settings (gear) menu. It listed Passkeys, Member Passkeys,
-  // UPI Payment Settings and Integrations — every one of them already in the
-  // sidebar (Settings, and Finance for UPI) — and, unlike the sidebar, it
-  // ignored plan feature flags. Settings live in the sidebar's Settings group;
-  // the avatar menu keeps what is about the signed-in person.
+  // The settings (gear) menu. It was removed on the belief that the sidebar
+  // listed these pages; it does not — SETTINGS_GROUP feeds search only — so
+  // Member Passkeys and Integrations became reachable by search alone. It is
+  // back, built from SETTINGS_GROUP so the two cannot drift, and filtered by
+  // role and plan feature like the sidebar (the old hand-written list ignored
+  // feature flags). My Profile, Support and Subscription stay in the avatar
+  // menu; UPI Payment Settings is here as well as under Finance, as before.
+  const settingsLinks = useMemo(() => {
+    const inAvatarMenu = new Set(['/settings/profile', '/support', '/subscription']);
+    const items = [
+      ...SETTINGS_GROUP.items.filter((i) => !inAvatarMenu.has(i.href)),
+      { href: '/finance/payment-settings', label: 'UPI Payment Settings', icon: 'QrCode', roles: ['trainer' as const], feature: 'finance' },
+    ];
+    return items
+      .filter((i) => isVisibleForRole(i, user?.role) && isVisibleForFeature(i, features))
+      .map((i) => ({ href: i.href, label: i.label, icon: SETTINGS_ICONS[i.href] ?? Settings }));
+  }, [user?.role, features]);
 
   const handleLogout = async () => {
     // Search history is one person's names and phone numbers. On a shared
@@ -243,6 +258,7 @@ function AppShellContent({ children }: AppShellProps) {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setSettingsOpen(false);
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
     };
@@ -358,6 +374,54 @@ function AppShellContent({ children }: AppShellProps) {
                   </m.div>
                 </AnimatePresence>
               </m.button>
+
+              {/* ── Settings dropdown ── */}
+              <div ref={settingsRef} className="relative">
+                <m.button
+                  type="button"
+                  aria-label="Settings"
+                  onClick={() => setSettingsOpen(s => !s)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={cn('relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden transition-all duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
+                  style={{
+                    background: settingsOpen ? (darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)') : 'transparent',
+                  }}
+                >
+                  <m.div
+                    animate={settingsOpen ? { rotate: 90 } : { rotate: 0 }}
+                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                    style={{ color: settingsOpen ? (darkMode ? '#F8FAFC' : '#0F172A') : (darkMode ? '#94A3B8' : '#64748B') }}
+                  >
+                    <Settings size={16} strokeWidth={settingsOpen ? 2 : 1.5} />
+                  </m.div>
+                </m.button>
+                <AnimatePresence>
+                  {settingsOpen && (
+                    <m.div
+                      initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -4, scale: 0.96 }}
+                      transition={{ duration: 0.12, ease: 'easeOut' }}
+                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_12px_40px_rgba(212,175,55,0.12)]"
+                    >
+                      <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-disabled)]">Settings</div>
+                      <div className="pb-2">
+                        {settingsLinks.map((link) => {
+                          const Icon = link.icon;
+                          return (
+                            <Link key={link.href} href={link.href} onClick={() => setSettingsOpen(false)}
+                              className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
+                              <Icon size={14} strokeWidth={1.5} />
+                              {link.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </m.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* ── Notification bell ── */}
               <div ref={notifRef} className="relative">
@@ -618,6 +682,16 @@ function AppShellContent({ children }: AppShellProps) {
     </LazyMotion>
   );
 }
+
+/** Icons for the gear menu, by page. */
+const SETTINGS_ICONS: Record<string, React.ElementType> = {
+  '/settings/passkeys': KeyRound,
+  '/settings/biometrics': Fingerprint,
+  '/settings/integrations': Zap,
+  '/settings/branches': Building2,
+  '/settings/merge-duplicates': Merge,
+  '/finance/payment-settings': QrCode,
+};
 
 export default function AppShell(props: AppShellProps) {
   // Mounted once, from src/app/(chrome)/layout.tsx — see the note there. It
