@@ -27,7 +27,7 @@ import {
   CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap, BookOpen, HeartPulse, Salad,
   Flag, Move, Accessibility, ShieldCheck, FileSignature,
   Receipt, Smartphone, UserRound, UserSearch, ScrollText, ToggleRight, ShieldAlert, LifeBuoy, HardDrive,
-  CalendarDays, MessagesSquare,
+  CalendarDays, MessagesSquare, BadgeCheck,
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -38,7 +38,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   LineChart, FileBarChart, Activity, RefreshCcw, Clock, Megaphone, Bell, MessageCircle, Send, Tag, Star,
   UsersRound, Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
   CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap, BookOpen, HeartPulse, Salad,
-  Flag, Move, Accessibility, ShieldCheck, FileSignature, CalendarDays, MessagesSquare,
+  Flag, Move, Accessibility, ShieldCheck, FileSignature, CalendarDays, MessagesSquare, BadgeCheck,
   // An icon name that is not registered here renders with NO icon at all —
   // the map is an allowlist, not a lookup with a fallback. Anything added to
   // nav-config.ts must be added here too.
@@ -202,6 +202,21 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
     const load = () => api.clientMessages.unreadCount().then(
       (r) => { if (!cancelled) setBadgeCounts((b) => ({ ...b, messagesUnread: r.data.unread })); },
       (err) => console.warn('[sidebar] message count failed', err),
+    );
+    void load();
+    const t = setInterval(() => { if (document.visibilityState === 'visible') void load(); }, 60_000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [isTrainer, pathname]);
+
+  // UPI payments waiting for approval. Re-read on navigation, so approving one
+  // clears the count by the next page, and every minute while the app is open:
+  // a member who has paid is waiting on this number reaching zero.
+  useEffect(() => {
+    if (!isTrainer) return;
+    let cancelled = false;
+    const load = () => api.upiPayments.pending({ status: 'VERIFICATION_PENDING', limit: 1 }).then(
+      (r) => { if (!cancelled) setBadgeCounts((b) => ({ ...b, upiPending: r.stats.pending_count })); },
+      (err) => console.warn('[sidebar] UPI pending count failed', err),
     );
     void load();
     const t = setInterval(() => { if (document.visibilityState === 'visible') void load(); }, 60_000);

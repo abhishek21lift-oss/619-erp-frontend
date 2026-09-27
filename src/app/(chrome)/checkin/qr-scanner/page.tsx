@@ -33,10 +33,11 @@
  * auto-resume.
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
+import Link from 'next/link';
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   CheckCircle2, XCircle, Loader2, RefreshCw, Camera, AlertTriangle,
-  ScanLine, Users, ChevronDown, Info, VolumeX, Volume2,
+  ScanLine, Users, ChevronDown, Info, VolumeX, Volume2, BarChart3,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
@@ -464,6 +465,14 @@ export default function QrScannerPage() {
           <Stat value={inside} label="Inside" color={C.success} loading={!statsLoaded} />
           <div className="h-8 w-px" style={{ background: 'var(--border)' }} />
           <Stat value={today} label="Today" color="var(--text-primary)" loading={!statsLoaded} />
+
+          {/* The hourly chart and method breakdown live on the attendance
+              dashboard, which nothing linked to — only search could find it. */}
+          <Link href="/checkin/dashboard" aria-label="Today's check-in stats"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full transition-colors"
+            style={{ background: 'var(--bg-hover)', color: 'var(--text-muted)' }}>
+            <BarChart3 size={15} aria-hidden />
+          </Link>
 
           <button
             type="button"
