@@ -622,7 +622,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
             Profile
           </Link>
           <Link
-            href="/settings"
+            href="/settings/profile?tab=security"
             onClick={onClose}
             title="Settings"
             aria-label="Settings"

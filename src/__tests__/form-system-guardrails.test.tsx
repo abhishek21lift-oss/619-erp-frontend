@@ -68,12 +68,12 @@ describe('one form system, not eighteen', () => {
     // — preserved rather than reconciled, because reconciling them is a design
     // decision and this was not one.
     //
-    // Three fields, not six: the create-account form went with the staff
-    // roles, leaving the change-password form.
+    // The standalone security screen is now a redirect to Profile → Security,
+    // whose change-password form was always the fuller one; its three fields
+    // went with it.
     const account = readFileSync(join(SRC, 'app/(chrome)/settings/page.tsx'), 'utf8');
     const profile = readFileSync(join(SRC, 'app/(chrome)/settings/profile/page.tsx'), 'utf8');
-    expect(account.match(/<FloatInput tone="brand"/g) ?? []).toHaveLength(3);
-    expect(account).not.toMatch(/upperLifted/);
+    expect(account).toContain("redirect('/settings/profile?tab=security')");
     expect(profile.match(/<FloatInput tone="brand" upperLifted/g) ?? []).toHaveLength(10);
   });
 

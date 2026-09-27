@@ -98,11 +98,14 @@ describe('the route groups', () => {
     expect(routesIn('(chrome)')).toContain('');          // the main dashboard
     expect(routesIn('(chrome)')).toContain('pt-os/clients');
     expect(routesIn('(chrome)')).toContain('finance/dues');
-    // The [tab] workspaces read as unshelled in their own page.tsx — the shell
-    // came from ModuleWorkspace. They belong here, and used to be the easiest
-    // thing in this refactor to get wrong.
-    expect(routesIn('(chrome)')).toContain('finance/[tab]');
-    expect(routesIn('(chrome)')).toContain('engagement/[tab]');
+    // Dynamic routes read as unshelled in their own page.tsx and are the
+    // easiest thing to misfile. The ModuleWorkspace [tab] routes that used to
+    // be checked here are gone — every tab they accepted had its own page,
+    // which Next.js always preferred — so the remaining ones stand in.
+    expect(routesIn('(chrome)')).toContain('pt-os/clients/[id]');
+    expect(routesIn('(chrome)')).toContain('insights/[tab]');
+    expect(routesIn('(chrome)')).not.toContain('finance/[tab]');
+    expect(routesIn('(chrome)')).not.toContain('engagement/[tab]');
   });
 
   it('puts the Command Center under (platform), and nothing else', () => {

@@ -1,25 +1,19 @@
-'use client';
+import { notFound, redirect } from 'next/navigation';
 
-import { use } from 'react';
-import { notFound } from 'next/navigation';
-import dynamic from 'next/dynamic';
-const ModuleWorkspace = dynamic(() => import('@/components/modules/ModuleWorkspace'), { ssr: false });
-import { getModuleConfig } from '@/lib/module-config';
+/**
+ * Old /settings/<tab> addresses. This used to render a generic workspace, but
+ * every tab it accepted except "biometric" has its own page (which Next.js
+ * always prefers over this dynamic route), so only /settings/biometric ever
+ * reached it — as a second, generic copy of Member Passkeys. It now sends that
+ * one address to the real page.
+ */
+const CANONICAL: Record<string, string> = {
+  biometric: '/settings/biometrics',
+};
 
-// C-03 fix: guard against unknown settings tab values.
-// /settings/[anything-invalid] now returns 404 instead of a blank workspace.
-const VALID_SETTINGS_TABS = [
-  'profile',
-  'branches',
-  'biometric',
-  'integrations',
-] as const;
-type SettingsTab = typeof VALID_SETTINGS_TABS[number];
-
-export default function SettingsTabPage({ params }: { params: Promise<{ tab: string }> }) {
-  const { tab } = use(params);
-  if (!VALID_SETTINGS_TABS.includes(tab as SettingsTab)) {
-    notFound();
-  }
-  return <ModuleWorkspace config={getModuleConfig('settings', `settings-${tab}`)} />;
+export default async function SettingsTabRedirect({ params }: { params: Promise<{ tab: string }> }) {
+  const { tab } = await params;
+  const target = CANONICAL[tab];
+  if (!target) notFound();
+  redirect(target);
 }

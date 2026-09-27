@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { Suspense, useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { m, AnimatePresence, useInView } from 'framer-motion';
@@ -720,7 +721,12 @@ const NOTIFICATION_ROWS: { key: keyof NotificationPreferences; label: string; de
 /* ─────────────────────────────────────────
    PAGE
 ───────────────────────────────────────── */
+// useSearchParams needs a Suspense boundary above it.
 export default function ProfilePage() {
+  return <Suspense fallback={null}><ProfilePageInner /></Suspense>;
+}
+
+function ProfilePageInner() {
   const founderNumber = useFounder();
   // `user` is the session. The studio name comes from there rather than from
   // the profile form — see the note at the top of ProfileHero.
@@ -729,13 +735,15 @@ export default function ProfilePage() {
   // ProfileTab is the subset a completion step can link to; Security and
   // Preferences hold nothing that is scored, so they are named separately.
   const [tab, setTab] = useState<ProfileTab | 'security' | 'preferences'>('overview');
-  // ?tab= opens a tab directly, so the avatar menu's "Security" can land on
-  // the security panel instead of a second, thinner security page. Read once
-  // on mount; after that the tab strip owns it.
+  // ?tab= opens a tab directly, so the avatar menu's "Security" lands on the
+  // security panel (it replaced a second, thinner /settings page). Keyed on
+  // the query, not read once: following that link while already on this page
+  // is a same-route navigation that keeps this component mounted.
+  const tabParam = useSearchParams().get('tab');
   useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get('tab');
+    const t = tabParam;
     if (t === 'overview' || t === 'credentials' || t === 'portfolio' || t === 'security' || t === 'preferences') setTab(t);
-  }, []);
+  }, [tabParam]);
 
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
