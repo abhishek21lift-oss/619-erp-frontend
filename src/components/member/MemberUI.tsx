@@ -12,6 +12,8 @@ import type { ReactNode } from 'react';
 import { m } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { palette, rgba } from '@/lib/palette';
+import { heroAccents, heroGradient } from './memberTheme';
+import type { Accent } from './memberTheme';
 
 export const MC = {
   primary: palette.blue[500],
@@ -34,24 +36,42 @@ export function longDate(v: string | null | undefined): string | null {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-/** Page heading: title, one line of context, optional icon tile. */
-export function PageTitle({ icon, title, sub }: { icon: ReactNode; title: string; sub?: string | null }) {
+/**
+ * Page hero: a compact gradient band with the page's icon, title and one line
+ * of context, in the page's own accent colour. Deliberately one row tall
+ * (~76px) — it sets the page apart without pushing the content down.
+ */
+export function PageTitle({ icon, title, sub, accent = 'workout', aside }: {
+  icon: ReactNode;
+  title: string;
+  sub?: string | null;
+  /** The page's colour, from the member spectrum. */
+  accent?: Accent;
+  /** An optional control on the right (e.g. Refresh). Render it light-on-dark. */
+  aside?: ReactNode;
+}) {
+  const { to } = heroAccents[accent];
   return (
     <m.header
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: EASE }}
-      className="mb-4 flex items-center gap-3"
+      className="relative mb-4 flex items-center gap-3 overflow-hidden rounded-[22px] px-4 py-3.5 text-white"
+      style={{ background: heroGradient(accent), boxShadow: `0 14px 30px -18px ${rgba(to, 0.7)}` }}
     >
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px]"
-        style={{ background: rgba(MC.primary, 0.12), color: MC.primary }}>
+      {/* One soft glow and a top sheen, for depth without height. */}
+      <span aria-hidden className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.22), transparent 68%)' }} />
+      <span aria-hidden className="pointer-events-none absolute inset-0"
+        style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.08), transparent 45%)' }} />
+      <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-[14px]"
+        style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.28)' }}>
         {icon}
       </span>
-      <div className="min-w-0">
-        <h1 className="truncate text-[20px] font-[820] leading-tight tracking-[-0.02em]" style={{ color: MC.ink }}>
-          {title}
-        </h1>
-        {sub && <p className="mt-0.5 truncate text-[12.5px] font-[600]" style={{ color: MC.muted }}>{sub}</p>}
+      <div className="relative min-w-0 flex-1">
+        <h1 className="truncate text-[20px] font-[850] leading-tight tracking-[-0.02em]">{title}</h1>
+        {sub && <p className="mt-0.5 truncate text-[12.5px] font-[600] opacity-90">{sub}</p>}
       </div>
+      {aside && <div className="relative shrink-0">{aside}</div>}
     </m.header>
   );
 }

@@ -84,7 +84,7 @@ function RecordsBody() {
     writeSeen(earned);
   }, [list]);
 
-  const title = <PageTitle icon={<Medal size={20} />} title="Records" sub="Streaks, milestones and personal bests" />;
+  const title = <PageTitle accent="records" icon={<Medal size={20} />} title="Records" sub="Streaks, milestones and personal bests" />;
   if (failed) return <>{title}<LoadError what="records" /></>;
   if (!data) return <PageSkeleton />;
 

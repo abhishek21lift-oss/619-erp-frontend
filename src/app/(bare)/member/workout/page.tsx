@@ -70,13 +70,13 @@ function WorkoutBody() {
     return () => { alive = false; };
   }, []);
 
-  if (failed) return <><PageTitle icon={<Dumbbell size={20} />} title="My programme" /><LoadError what="programme" /></>;
+  if (failed) return <><PageTitle accent="workout" icon={<Dumbbell size={20} />} title="My programme" /><LoadError what="programme" /></>;
   if (!plans) return <PageSkeleton />;
 
   if (plans.length === 0) {
     return (
       <>
-        <PageTitle icon={<Dumbbell size={20} />} title="My programme" />
+        <PageTitle accent="workout" icon={<Dumbbell size={20} />} title="My programme" />
         <WorkoutLauncher plans={[]} sessions={sessions} onSaved={() => void loadSessions()} />
         <div className="mb-5">
           <EmptyState
@@ -92,7 +92,7 @@ function WorkoutBody() {
 
   return (
     <>
-      <PageTitle icon={<Dumbbell size={20} />} title="My programme"
+      <PageTitle accent="workout" icon={<Dumbbell size={20} />} title="My programme"
         sub={plans.length === 1 ? plans[0].name : `${plans.length} active programmes`} />
       <WorkoutLauncher plans={plans} sessions={sessions} onSaved={() => void loadSessions()} />
       {plans.map((p) => <PlanBlock key={p.assignment_id} plan={p} titled={plans.length > 1} />)}

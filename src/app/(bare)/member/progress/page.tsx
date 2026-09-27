@@ -79,7 +79,7 @@ function ProgressBody() {
     .filter((r) => BODY.some((b) => num(r[b.key]) !== null))
     .sort((a, b) => day(a.measured_at).localeCompare(day(b.measured_at))), [rows]);
 
-  const title = <PageTitle icon={<LineChart size={20} />} title="Progress" sub="Weight and body measurements" />;
+  const title = <PageTitle accent="progress" icon={<LineChart size={20} />} title="Progress" sub="Weight and body measurements" />;
   if (failed) return <>{title}<LoadError what="progress" /></>;
   if (!rows) return <PageSkeleton />;
 

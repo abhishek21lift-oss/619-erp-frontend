@@ -85,7 +85,7 @@ function GoalsBody() {
   }, []);
 
   const title = (
-    <PageTitle icon={<Target size={20} />} title="Goals" sub="Tracked from your workouts and weigh-ins" />
+    <PageTitle accent="plan" icon={<Target size={20} />} title="Goals" sub="Tracked from your workouts and weigh-ins" />
   );
   if (failed) return <>{title}<LoadError what="goals" /></>;
   if (!data) return <PageSkeleton />;

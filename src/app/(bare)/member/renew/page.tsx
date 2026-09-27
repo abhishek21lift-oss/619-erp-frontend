@@ -51,7 +51,7 @@ function RenewBody() {
   const load = () => api.me.renewal().then((r) => setData(r.data)).catch(() => setFailed(true));
   useEffect(() => { void load(); }, []);
 
-  const title = <PageTitle icon={<RefreshCw size={20} />} title="Renew" sub="Your plan and your next term" />;
+  const title = <PageTitle accent="plan" icon={<RefreshCw size={20} />} title="Renew" sub="Your plan and your next term" />;
   if (failed) return <>{title}<LoadError what="plan" /></>;
   if (!data) return <PageSkeleton />;
 

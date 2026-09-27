@@ -21,6 +21,7 @@ import {
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import PayBalanceButton from '@/components/member/PayBalanceButton';
+import { PageTitle } from '@/components/member/MemberUI';
 import { api } from '@/lib/api';
 import type { MePayment, UpiHistoryRow } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -119,23 +120,35 @@ function Inner() {
     // bounces a member straight back out again. It now carries the same
     // chrome as the rest of the portal.
     <MemberShell>
-      <PageHeader
-        title={isMember ? 'My payments' : 'Member payments'}
-        subtitle={isMember
-          ? 'Every payment you have made, and where each one stands.'
-          : 'UPI payments members have submitted, across the studio.'}
-        icon={<Receipt size={19} />}
-        actions={
-          <button type="button" onClick={() => void load()}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-[650]"
-            style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)' }}>
-            <RefreshCw size={14} className={loading ? 'animate-spin' : undefined} /> Refresh
-          </button>
-        }
-      />
+      {isMember ? (
+        <PageTitle accent="records" icon={<Receipt size={20} />} title="My payments"
+          sub="Every payment and its status"
+          aside={
+            <button type="button" onClick={() => void load()} aria-label="Refresh payments"
+              className="grid h-10 w-10 place-items-center rounded-full transition-transform active:scale-95"
+              style={{ background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.28)' }}>
+              <RefreshCw size={16} aria-hidden className={loading ? 'animate-spin' : undefined} />
+            </button>
+          } />
+      ) : (
+        <PageHeader
+          title={isMember ? 'My payments' : 'Member payments'}
+          subtitle={isMember
+            ? 'Every payment you have made, and where each one stands.'
+            : 'UPI payments members have submitted, across the studio.'}
+          icon={<Receipt size={19} />}
+          actions={
+            <button type="button" onClick={() => void load()}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-[650]"
+              style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)' }}>
+              <RefreshCw size={14} className={loading ? 'animate-spin' : undefined} /> Refresh
+            </button>
+          }
+        />
+      )}
 
       {isMember && balance > 0 && (
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4"
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4"
           style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
           <div>
             <p className="text-[12px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-muted)' }}>
@@ -153,7 +166,8 @@ function Inner() {
         </div>
       )}
 
-      <div className="mt-5">
+      {/* The member hero carries its own bottom margin; the staff header does not. */}
+      <div className={isMember ? undefined : 'mt-5'}>
         {error ? (
           <div className="flex items-start gap-2.5 rounded-xl p-4"
             style={{ background: 'var(--danger-soft)', color: 'var(--danger-text)' }}>

@@ -55,7 +55,7 @@ function AccountBody() {
     api.me.profile().then((r) => setProfile(r.data)).catch(() => setFailed(true));
   }, []);
 
-  const title = <PageTitle icon={<UserRound size={20} />} title="Account" sub={profile?.studio_name ?? null} />;
+  const title = <PageTitle accent="workout" icon={<UserRound size={20} />} title="Account" sub={profile?.studio_name ?? null} />;
   if (failed) return <><BackToProfile />{title}<LoadError what="account" /></>;
   if (!profile) return <PageSkeleton />;
 
@@ -70,18 +70,11 @@ function AccountBody() {
   return (
     <>
       <BackToProfile />
-      <m.header initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: EASE }}
-        className="mb-5 flex items-center gap-3.5">
-        <ClientAvatar name={profile.name} photoUrl={profile.photo_url}
-          className="grid h-14 w-14 shrink-0 place-items-center rounded-full text-[18px] font-[820]"
-          style={{ background: rgba(MC.primary, 0.12), color: MC.primary }} />
-        <div className="min-w-0">
-          <h1 className="truncate text-[22px] font-[820] leading-tight tracking-[-0.02em]" style={{ color: MC.ink }}>Account</h1>
-          <p className="mt-0.5 truncate text-[13px] font-[600]" style={{ color: MC.muted }}>
-            {profile.name}{profile.studio_name ? ` · ${profile.studio_name}` : ''}
-          </p>
-        </div>
-      </m.header>
+      <PageTitle accent="workout" title="Account"
+        sub={`${profile.name}${profile.studio_name ? ` · ${profile.studio_name}` : ''}`}
+        icon={<ClientAvatar name={profile.name} photoUrl={profile.photo_url}
+          className="grid h-full w-full place-items-center overflow-hidden rounded-[13px] text-[15px] font-[820]"
+          style={{ color: '#fff' }} />} />
 
       <Section title="Your details">
         <Card>
