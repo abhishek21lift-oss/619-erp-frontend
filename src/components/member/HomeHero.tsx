@@ -63,7 +63,7 @@ export default function HomeHero({ name, photoUrl, studio, streak, visitsThisMon
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: EASE }}
       aria-label="Today at a glance"
-      className="relative mb-5 overflow-hidden rounded-[28px] p-5 text-white"
+      className="relative mb-5 overflow-hidden rounded-[26px] p-4 text-white"
       style={{ background: heroMesh.base, boxShadow: `0 22px 48px -22px ${rgba(heroMesh.shadow, 0.75)}` }}
     >
       {/* The mesh: two soft glows that drift slowly. Framer honours the root
@@ -77,18 +77,20 @@ export default function HomeHero({ name, photoUrl, studio, streak, visitsThisMon
       <span aria-hidden className="pointer-events-none absolute inset-0"
         style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.08), transparent 40%)' }} />
 
-      {/* Who */}
+      {/* Who — the studio rides on the greeting line so it costs no row of its own. */}
       <div className="relative flex items-center gap-3">
         <Link href="/member/more" aria-label="Your profile"
           className="shrink-0 rounded-full p-[2px] transition-transform active:scale-95"
           style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.35))' }}>
           <ClientAvatar name={name} photoUrl={photoUrl}
-            className="grid h-12 w-12 place-items-center rounded-full text-[16px] font-[820]"
+            className="grid h-11 w-11 place-items-center rounded-full text-[15px] font-[820]"
             style={{ background: rgba(spectrum.indigo[700], 0.55), color: '#fff' }} />
         </Link>
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-[650] opacity-85">{greeting()}{first ? ',' : ''}</p>
-          <h1 className="truncate text-[26px] font-[850] leading-tight tracking-[-0.03em]">{first || name}</h1>
+          <p className="truncate text-[12px] font-[650] opacity-85">
+            {greeting()}{studio ? <span className="opacity-80"> · {studio}</span> : null}
+          </p>
+          <h1 className="truncate text-[23px] font-[850] leading-tight tracking-[-0.03em]">{first || name}</h1>
         </div>
         <Link href="/member/card" aria-label="Membership card"
           className="grid h-11 w-11 shrink-0 place-items-center rounded-full transition-transform active:scale-95"
@@ -97,27 +99,27 @@ export default function HomeHero({ name, photoUrl, studio, streak, visitsThisMon
         </Link>
       </div>
 
-      <p className="relative mt-4 text-[16px] font-[700] leading-snug">
+      <p className="relative mt-3 text-[15px] font-[700] leading-snug">
         {heroLine({ streak, daysLeft })}
       </p>
-      {studio && <p className="relative mt-0.5 text-[12px] font-[600] opacity-75">{studio}</p>}
 
-      {/* Where they stand */}
-      <dl className="relative mt-4 grid grid-cols-3 gap-2">
+      {/* Where they stand — one glass strip, three cells. */}
+      <dl className="relative mt-3 grid grid-cols-3 overflow-hidden rounded-[16px]"
+        style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}>
         <HeroStat icon={Flame} label="Week streak" value={streak} />
-        <HeroStat icon={CalendarCheck} label="Visits this month" value={visitsThisMonth} />
-        <HeroStat icon={Hourglass} label="Days left" value={daysLeft} />
+        <HeroStat icon={CalendarCheck} label="Visits this month" value={visitsThisMonth} divider />
+        <HeroStat icon={Hourglass} label="Days left" value={daysLeft} divider />
       </dl>
 
       {/* What next */}
-      <div className="relative mt-4 grid grid-cols-[1.4fr_1fr] gap-2.5">
+      <div className="relative mt-3 grid grid-cols-[1.4fr_1fr] gap-2.5">
         <Link href="/member/workout"
-          className="flex h-12 items-center justify-center gap-2 rounded-[16px] text-[14px] font-[800] transition-transform active:scale-[0.98]"
+          className="flex h-11 items-center justify-center gap-2 rounded-[14px] text-[14px] font-[800] transition-transform active:scale-[0.98]"
           style={{ background: '#fff', color: spectrum.violet[700], boxShadow: '0 8px 20px -10px rgba(0,0,0,0.45)' }}>
           <Dumbbell size={17} aria-hidden /> Start workout
         </Link>
         <Link href="/member/checkin"
-          className="flex h-12 items-center justify-center gap-2 rounded-[16px] text-[14px] font-[750] transition-transform active:scale-[0.98]"
+          className="flex h-11 items-center justify-center gap-2 rounded-[14px] text-[14px] font-[750] transition-transform active:scale-[0.98]"
           style={{ background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.28)' }}>
           <ClipboardCheck size={16} aria-hidden /> Check in
         </Link>
@@ -126,17 +128,17 @@ export default function HomeHero({ name, photoUrl, studio, streak, visitsThisMon
   );
 }
 
-function HeroStat({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: number | null }) {
+function HeroStat({ icon: Icon, label, value, divider }: { icon: LucideIcon; label: string; value: number | null; divider?: boolean }) {
   return (
-    <div className="flex flex-col-reverse items-center rounded-[16px] px-2.5 py-3 text-center"
-      style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}>
+    <div className="flex flex-col-reverse items-center px-2 py-2.5 text-center"
+      style={divider ? { borderLeft: '1px solid rgba(255,255,255,0.2)' } : undefined}>
       {/* dt before dd in the markup, as the list requires; column-reverse puts
           the number on top for the eye. */}
-      <dt className="mt-1 text-[11px] font-[650] leading-tight opacity-85">{label}</dt>
-      <dd className="mt-1.5 text-[22px] font-[850] leading-none tabular-nums tracking-[-0.02em]">
+      <dt className="mt-0.5 text-[11px] font-[650] leading-tight opacity-85">{label}</dt>
+      <dd className="flex items-center gap-1.5 text-[19px] font-[850] leading-none tabular-nums tracking-[-0.02em]">
+        <Icon size={14} aria-hidden className="opacity-90" />
         {value == null ? '—' : value.toLocaleString('en-IN')}
       </dd>
-      <Icon size={15} aria-hidden className="opacity-90" />
     </div>
   );
 }
