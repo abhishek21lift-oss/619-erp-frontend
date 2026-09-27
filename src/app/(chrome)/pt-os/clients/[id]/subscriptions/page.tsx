@@ -8,7 +8,7 @@ import {
   CheckCircle, RefreshCw, User, Dumbbell, Calendar,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, DonutChart } from '@/components/ui';
+import { Button, DonutChart, HeroButton, HeroChip, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 
 interface PtSubscriptionTerm {
@@ -150,47 +150,30 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
           </div>
         ) : client ? (
           <div className="mx-auto max-w-screen-xl pt-1 pb-6">
-            {/* ── Header ── */}
-            <m.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-wrap items-center justify-between gap-4 mb-6"
-            >
-              <div className="flex items-center gap-3">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>{client.name}</h1>
-                    <StatusBadge status={client.status} days_left={client.days_left} />
-                  </div>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <p className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>
-                      {client.client_id || client.unique_id || client.id.slice(0, 8)} · PT Subscription History
-                    </p>
-                    {client.trainer_name && (
-                      <span className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
-                        <User size={11} /> {client.trainer_name}
-                      </span>
-                    )}
-                    {client.package_type && (
-                      <span className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
-                        <Dumbbell size={11} /> {client.package_type}
-                      </span>
-                    )}
-                  </div>
+            <PageHero
+              className="mb-5"
+              icon={<Layers size={20} />}
+              title={client.name}
+              subtitle={`${client.client_id || client.unique_id || client.id.slice(0, 8)} · PT Subscription History`}
+              actions={
+                <div className="flex gap-2">
+                  <HeroButton variant="glass" className="flex-1 sm:flex-none" icon={<ArrowLeft size={14} />}
+                    onClick={() => router.push(`/pt-os/clients/${id}`)}>
+                    Profile
+                  </HeroButton>
+                  <HeroButton className="flex-1 sm:flex-none" icon={<Repeat size={14} />}
+                    onClick={() => router.push(`/pt-os/clients/${id}/renew`)}>
+                    Renew PT
+                  </HeroButton>
                 </div>
+              }
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge status={client.status} days_left={client.days_left} />
+                {client.trainer_name && <HeroChip icon={<User size={12} />}>{client.trainer_name}</HeroChip>}
+                {client.package_type && <HeroChip icon={<Dumbbell size={12} />}>{client.package_type}</HeroChip>}
               </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" iconLeft={<ArrowLeft size={14} />}
-                  onClick={() => router.push(`/pt-os/clients/${id}`)}>
-                  Profile
-                </Button>
-                <Button variant="primary" iconLeft={<Repeat size={14} />}
-                  onClick={() => router.push(`/pt-os/clients/${id}/renew`)}>
-                  Renew PT
-                </Button>
-              </div>
-            </m.div>
+            </PageHero>
 
             {/* ── Summary Cards ── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

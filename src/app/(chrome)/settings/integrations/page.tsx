@@ -9,6 +9,7 @@ import {
   Settings, Clock, CheckCircle2, RefreshCw, Bot, Activity,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
+import { PageHero } from '@/components/ui';
 import WhatsAppCard from '@/components/modules/WhatsAppCard';
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
@@ -507,22 +508,14 @@ export default function IntegrationsPage() {
 
   return (
     <Guard role="trainer">
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', paddingTop: 4 }}>
 
-        {/* ── Hero ── */}
-        <m.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 36px', marginBottom: 32, background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fde68a 100%)', border: '1px solid rgba(245,158,11,0.25)', boxShadow: '0 4px 24px rgba(245,158,11,0.15)' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, position: 'relative', zIndex: 1 }}>
-            <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, #f59e0b, #d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 32px rgba(245,158,11,0.3)' }}>
-              <Zap size={26} color="#fff" />
-            </div>
-            <div>
-              <h1 style={{ fontSize: 28, fontWeight: 800, color: '#92400e', margin: 0, letterSpacing: '-0.03em' }}>Integrations</h1>
-              <p style={{ fontSize: 14, color: '#64748b', margin: '4px 0 0' }}>Connect your studio with powerful tools</p>
-            </div>
-          </div>
-        </m.div>
+        <PageHero
+          className="mb-5"
+          icon={<Zap size={20} />}
+          title="Integrations"
+          subtitle="Connect your studio with powerful tools"
+        />
 
         {/* ── Search & Filters ── */}
         <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} style={{ marginBottom: 28 }}>

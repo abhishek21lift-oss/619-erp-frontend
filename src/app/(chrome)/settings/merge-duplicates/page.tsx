@@ -8,7 +8,7 @@ import {
   Shield, Trash2, X, Search,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button } from '@/components/ui';
+import { Button, HeroButton, PageHero } from '@/components/ui';
 import { api, type DuplicateGroup, type MergeResult } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
@@ -80,36 +80,36 @@ function MergeContent() {
 
   return (
     <div>
-      <div className="mx-auto max-w-screen-xl py-6">
+      <div className="mx-auto max-w-screen-xl pb-6 pt-1">
 
-        {/* ── Header ── */}
-        <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-[14px]"
-              style={{ background: 'rgba(245,158,11,0.1)' }}>
-              <Merge size={22} style={{ color: '#F59E0B' }} />
+        <PageHero
+          className="mb-5"
+          icon={<Merge size={20} />}
+          title="Duplicate Client Merge"
+          subtitle="Audit & merge duplicate PT client profiles"
+          actions={
+            <div className="flex gap-2">
+              <HeroButton
+                variant="glass"
+                onClick={load}
+                disabled={loading}
+                icon={<RefreshCw size={14} className={loading ? 'animate-spin' : undefined} />}
+              >
+                Refresh
+              </HeroButton>
+              {groups.length > 0 && !doneReport && (
+                <HeroButton
+                  className="flex-1 sm:flex-none"
+                  onClick={() => setConfirmOpen(true)}
+                  icon={<Merge size={14} />}
+                  style={{ background: '#DC2626', color: '#fff' }}
+                >
+                  Execute Merge
+                </HeroButton>
+              )}
             </div>
-            <div>
-              <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: 'rgb(15,23,42)' }}>
-                Duplicate Client Merge
-              </h1>
-              <p className="text-[12px] font-[600] uppercase tracking-[0.06em]" style={{ color: 'rgb(148,163,184)' }}>
-                Audit & merge duplicate PT client profiles
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" iconLeft={<RefreshCw size={13} />} onClick={load} loading={loading}>
-              Refresh
-            </Button>
-            {groups.length > 0 && !doneReport && (
-              <Button variant="danger" iconLeft={<Merge size={13} />} onClick={() => setConfirmOpen(true)}>
-                Execute Merge
-              </Button>
-            )}
-          </div>
-        </m.div>
+          }
+        />
 
         {/* ── Done Report ── */}
         {doneReport && (
@@ -118,14 +118,14 @@ function MergeContent() {
             style={{ background: 'rgba(16,185,129,0.06)', borderColor: '#10b98133' }}>
             <div className="flex items-center gap-3 mb-4">
               <CheckCircle size={20} style={{ color: '#10b981' }} />
-              <h2 className="text-[16px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>
+              <h2 className="text-[16px] font-[760]" style={{ color: 'var(--text-primary)' }}>
                 Merge Complete — {doneReport.length} groups merged
               </h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-[12.5px]">
                 <thead>
-                  <tr style={{ color: 'rgb(148,163,184)' }}>
+                  <tr style={{ color: 'var(--text-muted)' }}>
                     <th className="text-left py-2 font-[700] uppercase tracking-wider">Client</th>
                     <th className="text-right py-2 font-[700] uppercase tracking-wider">Records Merged</th>
                     <th className="text-right py-2 font-[700] uppercase tracking-wider">Total Billed</th>
@@ -136,9 +136,9 @@ function MergeContent() {
                 <tbody>
                   {doneReport.map(r => (
                     <tr key={r.master_id} className="border-t" style={{ borderColor: 'rgba(15,23,42,0.05)' }}>
-                      <td className="py-2 font-[600]" style={{ color: 'rgb(15,23,42)' }}>{r.name.toUpperCase()}</td>
-                      <td className="py-2 text-right" style={{ color: 'rgb(148,163,184)' }}>+{r.merged_count}</td>
-                      <td className="py-2 text-right font-[600]" style={{ color: 'rgb(15,23,42)' }}>{fmtINR(r.total_final)}</td>
+                      <td className="py-2 font-[600]" style={{ color: 'var(--text-primary)' }}>{r.name.toUpperCase()}</td>
+                      <td className="py-2 text-right" style={{ color: 'var(--text-muted)' }}>+{r.merged_count}</td>
+                      <td className="py-2 text-right font-[600]" style={{ color: 'var(--text-primary)' }}>{fmtINR(r.total_final)}</td>
                       <td className="py-2 text-right" style={{ color: '#10b981' }}>{fmtINR(r.total_paid)}</td>
                       <td className="py-2 text-right" style={{ color: r.balance > 0 ? '#f59e0b' : '#10b981' }}>
                         {r.balance > 0 ? fmtINR(r.balance) : '✓ Clear'}
@@ -152,17 +152,17 @@ function MergeContent() {
         )}
 
         {loading ? (
-          <div className="text-center py-24 text-[14px]" style={{ color: 'rgb(148,163,184)' }}>
+          <div className="text-center py-24 text-[14px]" style={{ color: 'var(--text-muted)' }}>
             <RefreshCw size={22} className="mx-auto mb-3 animate-spin" />
             Scanning for duplicates...
           </div>
         ) : groups.length === 0 ? (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             className="rounded-[22px] p-16 text-center"
-            style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.8)' }}>
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <CheckCircle size={48} style={{ color: '#10b981' }} className="mx-auto mb-4" />
-            <h3 className="text-[18px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>No Duplicates Found</h3>
-            <p className="text-[13px] mt-2" style={{ color: 'rgb(148,163,184)' }}>
+            <h3 className="text-[18px] font-[760]" style={{ color: 'var(--text-primary)' }}>No Duplicates Found</h3>
+            <p className="text-[13px] mt-2" style={{ color: 'var(--text-muted)' }}>
               All PT client profiles are unique. No merge required.
             </p>
           </m.div>
@@ -178,10 +178,10 @@ function MergeContent() {
               ].map((c, i) => (
                 <m.div key={c.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                   className="rounded-[16px] p-4"
-                  style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                   <div className="flex items-center gap-2 mb-1.5">
                     <span style={{ color: c.color }}>{c.icon}</span>
-                    <span className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>{c.label}</span>
+                    <span className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{c.label}</span>
                   </div>
                   <p className="text-[22px] font-[820]" style={{ color: c.color }}>
                     {(c as any).isText ? c.value : c.value}
@@ -196,7 +196,7 @@ function MergeContent() {
               style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
               <Shield size={16} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 2 }} />
               <div className="text-[12.5px] leading-relaxed" style={{ color: 'rgb(100,116,139)' }}>
-                <strong style={{ color: 'rgb(15,23,42)' }}>Before merging:</strong> Each group below represents the same client with multiple subscription periods imported as separate records.
+                <strong style={{ color: 'var(--text-primary)' }}>Before merging:</strong> Each group below represents the same client with multiple subscription periods imported as separate records.
                 The merge will <strong>keep the oldest record as master</strong>, sum all financials (total lifetime value),
                 set the <strong>latest subscription as the current PT assignment</strong>, and soft-delete duplicates (fully recoverable from backup).
               </div>
@@ -204,11 +204,11 @@ function MergeContent() {
 
             {/* ── Search ── */}
             <div className="relative mb-4" style={{ maxWidth: 340 }}>
-              <Search size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgb(148,163,184)', pointerEvents: 'none' }} />
+              <Search size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
               <input aria-label="Search by name or phone" value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search by name or phone…"
                 className="w-full rounded-[12px] pl-9 pr-4 py-2.5 text-[13px] outline-none"
-                style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }} />
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
             </div>
 
             {/* ── Duplicate Groups List ── */}
@@ -220,7 +220,7 @@ function MergeContent() {
                   <m.div key={grp.master_id}
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
                     className="rounded-[18px] overflow-hidden"
-                    style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
 
                     {/* Row header */}
                     <button
@@ -233,8 +233,8 @@ function MergeContent() {
                           ×{grp.record_count}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[14px] font-[700] truncate" style={{ color: 'rgb(15,23,42)' }}>{grp.display_name}</p>
-                          <p className="text-[11.5px] flex items-center gap-2 mt-0.5 flex-wrap" style={{ color: 'rgb(148,163,184)' }}>
+                          <p className="text-[14px] font-[700] truncate" style={{ color: 'var(--text-primary)' }}>{grp.display_name}</p>
+                          <p className="text-[11.5px] flex items-center gap-2 mt-0.5 flex-wrap" style={{ color: 'var(--text-muted)' }}>
                             {grp.mobile && <span className="flex items-center gap-1"><Phone size={10} />{grp.mobile}</span>}
                             {grp.latest_plan && <span>· {grp.latest_plan}</span>}
                             {grp.trainer_name && <span>· {grp.trainer_name}</span>}
@@ -245,21 +245,21 @@ function MergeContent() {
                       <div className="flex items-center gap-6 shrink-0">
                         <div className="hidden sm:flex gap-6 text-right">
                           <div>
-                            <p className="text-[10px] font-[600] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Total Billed</p>
-                            <p className="text-[14px] font-[720]" style={{ color: 'rgb(15,23,42)' }}>{fmtINR(grp.total_final)}</p>
+                            <p className="text-[10px] font-[600] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Total Billed</p>
+                            <p className="text-[14px] font-[720]" style={{ color: 'var(--text-primary)' }}>{fmtINR(grp.total_final)}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] font-[600] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Subscriptions</p>
+                            <p className="text-[10px] font-[600] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Subscriptions</p>
                             <p className="text-[14px] font-[720]" style={{ color: '#0067e0' }}>{subsCount}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] font-[600] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Balance</p>
+                            <p className="text-[10px] font-[600] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Balance</p>
                             <p className="text-[14px] font-[720]" style={{ color: Number(grp.balance) > 0 ? '#f59e0b' : '#10b981' }}>
                               {Number(grp.balance) > 0 ? fmtINR(grp.balance) : '✓ Clear'}
                             </p>
                           </div>
                         </div>
-                        {isExpanded ? <ChevronUp size={16} style={{ color: 'rgb(148,163,184)' }} /> : <ChevronDown size={16} style={{ color: 'rgb(148,163,184)' }} />}
+                        {isExpanded ? <ChevronUp size={16} style={{ color: 'var(--text-muted)' }} /> : <ChevronDown size={16} style={{ color: 'var(--text-muted)' }} />}
                       </div>
                     </button>
 
@@ -281,7 +281,7 @@ function MergeContent() {
                               ].map(f => (
                                 <div key={f.label} className="rounded-[12px] p-3"
                                   style={{ background: 'rgba(15,23,42,0.03)', border: '1px solid rgba(15,23,42,0.05)' }}>
-                                  <p className="text-[10px] font-[600] uppercase tracking-wider mb-1" style={{ color: 'rgb(148,163,184)' }}>{f.label}</p>
+                                  <p className="text-[10px] font-[600] uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>{f.label}</p>
                                   <p className="text-[13px] font-[700]" style={{ color: f.color }}>{f.value}</p>
                                 </div>
                               ))}
@@ -290,14 +290,14 @@ function MergeContent() {
                             {/* Subscription timeline */}
                             {subsCount > 0 && (
                               <div>
-                                <p className="text-[11px] font-[700] uppercase tracking-wider mb-2.5" style={{ color: 'rgb(148,163,184)' }}>
+                                <p className="text-[11px] font-[700] uppercase tracking-wider mb-2.5" style={{ color: 'var(--text-muted)' }}>
                                   Subscription Timeline ({subsCount} periods — all preserved)
                                 </p>
                                 <div className="flex flex-wrap gap-2">
                                   {(grp.subscription_starts ?? []).map((d, idx) => (
                                     <div key={d} className="flex items-center gap-1.5 rounded-[8px] px-3 py-1.5"
                                       style={{ background: idx === subsCount - 1 ? 'rgba(0,103,224,0.1)' : 'rgba(15,23,42,0.04)', border: idx === subsCount - 1 ? '1px solid rgba(0,103,224,0.25)' : '1px solid rgba(15,23,42,0.06)' }}>
-                                      <Calendar size={10} style={{ color: idx === subsCount - 1 ? '#0067e0' : 'rgb(148,163,184)' }} />
+                                      <Calendar size={10} style={{ color: idx === subsCount - 1 ? '#0067e0' : 'var(--text-muted)' }} />
                                       <span className="text-[11.5px] font-[600]" style={{ color: idx === subsCount - 1 ? '#0067e0' : 'rgb(100,116,139)' }}>
                                         {fmtDate(d)}{idx === subsCount - 1 ? ' (latest)' : ''}
                                       </span>
@@ -311,22 +311,22 @@ function MergeContent() {
                             <div className="rounded-[12px] p-4 grid grid-cols-2 sm:grid-cols-4 gap-3"
                               style={{ background: 'rgba(0,103,224,0.04)', border: '1px solid rgba(0,103,224,0.1)' }}>
                               <div>
-                                <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>After Merge: Total Billed</p>
-                                <p className="text-[15px] font-[760] mt-0.5" style={{ color: 'rgb(15,23,42)' }}>{fmtINR(grp.total_final)}</p>
+                                <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>After Merge: Total Billed</p>
+                                <p className="text-[15px] font-[760] mt-0.5" style={{ color: 'var(--text-primary)' }}>{fmtINR(grp.total_final)}</p>
                               </div>
                               <div>
-                                <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Total Paid</p>
+                                <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Total Paid</p>
                                 <p className="text-[15px] font-[760] mt-0.5" style={{ color: '#10b981' }}>{fmtINR(grp.total_paid)}</p>
                               </div>
                               <div>
-                                <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Balance</p>
+                                <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Balance</p>
                                 <p className="text-[15px] font-[760] mt-0.5" style={{ color: Number(grp.balance) > 0 ? '#f59e0b' : '#10b981' }}>
                                   {Number(grp.balance) > 0 ? fmtINR(grp.balance) : 'Fully Paid ✓'}
                                 </p>
                               </div>
                               <div>
-                                <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Current Plan</p>
-                                <p className="text-[13px] font-[660] mt-0.5" style={{ color: 'rgb(15,23,42)' }}>{grp.latest_plan || '—'}</p>
+                                <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Current Plan</p>
+                                <p className="text-[13px] font-[660] mt-0.5" style={{ color: 'var(--text-primary)' }}>{grp.latest_plan || '—'}</p>
                               </div>
                             </div>
 
@@ -340,7 +340,7 @@ function MergeContent() {
             </div>
 
             {filtered.length === 0 && search && (
-              <div className="text-center py-12 text-[13px]" style={{ color: 'rgb(148,163,184)' }}>
+              <div className="text-center py-12 text-[13px]" style={{ color: 'var(--text-muted)' }}>
                 No results for "{search}"
               </div>
             )}
@@ -376,8 +376,8 @@ function MergeContent() {
                     <Merge size={20} style={{ color: '#F59E0B' }} />
                   </div>
                   <div>
-                    <h3 className="text-[17px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Confirm Merge</h3>
-                    <p className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>This action will modify the database</p>
+                    <h3 className="text-[17px] font-[760]" style={{ color: 'var(--text-primary)' }}>Confirm Merge</h3>
+                    <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>This action will modify the database</p>
                   </div>
                 </div>
                 {!merging && (
@@ -400,7 +400,7 @@ function MergeContent() {
                 ].map(([bold, rest]) => (
                   <div key={bold} className="flex items-center gap-2.5 text-[12.5px]" style={{ color: 'rgb(71,85,105)' }}>
                     <CheckCircle size={13} style={{ color: '#10b981', flexShrink: 0 }} />
-                    <span><strong style={{ color: 'rgb(15,23,42)' }}>{bold}</strong> {rest}</span>
+                    <span><strong style={{ color: 'var(--text-primary)' }}>{bold}</strong> {rest}</span>
                   </div>
                 ))}
               </div>

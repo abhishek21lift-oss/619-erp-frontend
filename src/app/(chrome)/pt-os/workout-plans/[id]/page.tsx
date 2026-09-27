@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import { ClipboardList, Dumbbell, Pencil, Loader2, Target, Clock } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button } from '@/components/ui';
+import { Button, HeroButton, HeroChip, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { WorkoutPlan, WorkoutPlanExercise } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -99,48 +99,35 @@ function Inner() {
 
   return (
     <div className="mx-auto w-full max-w-3xl pt-1 pb-6 sm:pb-8">
-      <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-        className="rounded-[24px] p-6 sm:p-8 mb-6"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)' }}>
-              <Dumbbell size={18} color="#fff" />
-            </span>
-            <div className="min-w-0">
-              <h1 className="truncate text-[22px] font-[800] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>{plan.name}</h1>
-              {clientName && (
-                <p className="mt-0.5 text-[13px] font-[650]" style={{ color: '#0067e0' }}>For {clientName}</p>
-              )}
-              {plan.description && <p className="mt-0.5 text-[13px]" style={{ color: 'var(--text-muted)' }}>{plan.description}</p>}
-            </div>
+      <PageHero
+        className="mb-5"
+        icon={<Dumbbell size={20} />}
+        title={plan.name}
+        subtitle={[clientName ? `For ${clientName}` : null, plan.description].filter(Boolean).join(' · ') || undefined}
+        actions={
+          <div className="flex gap-2">
+            <HeroButton variant="glass" className="flex-1 sm:flex-none" onClick={openBuilder} icon={<Pencil size={14} />}>
+              Edit Exercises
+            </HeroButton>
+            {/* Saved the plan — now log the actual session against it. */}
+            {clientId && (
+              <HeroButton
+                className="flex-1 sm:flex-none"
+                onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log`)}
+                icon={<ClipboardList size={14} />}
+              >
+                Workout Log
+              </HeroButton>
+            )}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-              <Button variant="outline" size="sm" iconLeft={<Pencil size={13} />} onClick={openBuilder}>Edit Exercises</Button>
-              {/* Saved the plan — now log the actual session against it. */}
-              {clientId && (
-                <Button
-                  variant="primary" size="sm" iconLeft={<ClipboardList size={13} />}
-                  onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log`)}
-                >
-                  Workout Log
-                </Button>
-              )}
-          </div>
+        }
+      >
+        <div className="flex flex-wrap gap-2">
+          <HeroChip icon={<Target size={12} />} className="capitalize">{plan.goal.replace('_', ' ')}</HeroChip>
+          <HeroChip icon={<Clock size={12} />}>{plan.sessions_per_week}x/week &middot; {plan.duration_weeks}wk</HeroChip>
+          <HeroChip className="capitalize">{plan.difficulty}</HeroChip>
         </div>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-[650]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
-            <Target size={12} /> {plan.goal.replace('_', ' ')}
-          </span>
-          <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-[650]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
-            <Clock size={12} /> {plan.sessions_per_week}x/week &middot; {plan.duration_weeks}wk
-          </span>
-          <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-[650] capitalize" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
-            {plan.difficulty}
-          </span>
-        </div>
-      </m.div>
+      </PageHero>
 
       <div className="space-y-4">
           {WEEKDAYS.map((day, i) => {

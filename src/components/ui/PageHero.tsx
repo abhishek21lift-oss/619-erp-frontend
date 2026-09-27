@@ -145,39 +145,97 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
         />
       </div>
 
-      <div className="relative z-10">
-        <div className="flex items-start gap-3.5">
-          {icon && (
-            <span
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-white sm:h-12 sm:w-12"
-              style={{
-                background: 'rgba(255,255,255,0.12)',
-                border: '1px solid rgba(255,255,255,0.18)',
-                backdropFilter: 'blur(6px)',
-              }}
-            >
-              {icon}
-            </span>
+      {/* One flex-wrap row rather than two copies of the actions. The actions
+          used to render twice — beside the title for desktop, again under the
+          children for phones — with one copy hidden by CSS: two of every
+          button in the DOM, two tab stops for a keyboard, and two matches for
+          anything that looks a button up by name. `order` moves the single
+          copy instead: beside the title from `sm` up, last on a phone. */}
+      <div className="relative z-10 flex flex-wrap items-start gap-x-3.5 gap-y-4">
+        {icon && (
+          <span
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-white sm:h-12 sm:w-12"
+            style={{
+              background: 'rgba(255,255,255,0.12)',
+              border: '1px solid rgba(255,255,255,0.18)',
+              backdropFilter: 'blur(6px)',
+            }}
+          >
+            {icon}
+          </span>
+        )}
+        <div className="min-w-0 flex-1">
+          {/* Wraps. These titles are two and three words and the old markup
+              let them run into the actions on a narrow screen. */}
+          <h1 className="text-[21px] font-[800] leading-tight tracking-[-0.02em] text-white sm:text-[26px]">
+            {title}
+          </h1>
+          {subtitle && (
+            <p className="mt-1 text-[12.5px] leading-snug sm:text-[13.5px]" style={{ color: 'rgba(255,255,255,0.72)' }}>
+              {subtitle}
+            </p>
           )}
-          <div className="min-w-0 flex-1">
-            {/* Wraps. These titles are two and three words and the old markup
-                let them run into the actions on a narrow screen. */}
-            <h1 className="text-[21px] font-[800] leading-tight tracking-[-0.02em] text-white sm:text-[26px]">
-              {title}
-            </h1>
-            {subtitle && (
-              <p className="mt-1 text-[12.5px] leading-snug sm:text-[13.5px]" style={{ color: 'rgba(255,255,255,0.72)' }}>
-                {subtitle}
-              </p>
-            )}
-          </div>
-          {actions && <div className="hidden shrink-0 sm:block">{actions}</div>}
         </div>
-
-        {children && <div className="mt-4">{children}</div>}
-        {actions && <div className="mt-4 sm:hidden">{actions}</div>}
+        {actions && <div className="order-last w-full sm:order-none sm:w-auto sm:shrink-0">{actions}</div>}
+        {children && <div className="w-full">{children}</div>}
       </div>
     </m.div>
+  );
+}
+
+/**
+ * A button for the hero's `actions` slot.
+ *
+ * The hero is navy in both themes, so the app's own Button variants — built
+ * for the page surface — read as grey slabs on it. Pages had started styling
+ * their hero buttons by hand, each slightly differently. This is that styling
+ * in one place: `solid` (white, the page's primary action) and `glass`
+ * (a translucent secondary, e.g. Refresh).
+ */
+export interface HeroButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'solid' | 'glass';
+  icon?: React.ReactNode;
+}
+
+export const HeroButton = React.forwardRef<HTMLButtonElement, HeroButtonProps>(function HeroButton(
+  { variant = 'solid', icon, className, children, type = 'button', style, ...rest }, ref,
+) {
+  return (
+    <button
+      ref={ref}
+      type={type}
+      className={cn(
+        'inline-flex min-h-[40px] cursor-pointer items-center justify-center gap-1.5 rounded-[12px] px-4 text-[13px] font-[700]',
+        'transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70',
+        variant === 'glass' && 'text-white hover:bg-white/20',
+        variant === 'solid' && 'hover:bg-white/90',
+        className,
+      )}
+      style={{
+        ...(variant === 'solid'
+          ? { background: '#fff', color: '#0F172A' }
+          : { background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }),
+        ...style,
+      }}
+      {...rest}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+});
+
+/** A small glass pill for facts in the hero's children — a goal, a cadence. */
+export function HeroChip({ children, icon, className }: { children: React.ReactNode; icon?: React.ReactNode; className?: string }) {
+  return (
+    <span
+      className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-[650] text-white', className)}
+      style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.16)' }}
+    >
+      {icon}
+      {children}
+    </span>
   );
 }
 

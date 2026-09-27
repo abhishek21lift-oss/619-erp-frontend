@@ -17,7 +17,7 @@ import {
   ScrollText, ChevronDown, ChevronLeft, ChevronRight, Filter, RotateCcw, Loader2, AlertTriangle,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { PageHeader } from '@/components/ui';
+import { PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { ActivityLogEntry } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
@@ -170,10 +170,11 @@ function Inner() {
 
   return (
     <>
-      <PageHeader
+      <PageHero
+        className="mb-5"
         title="Activity Log"
         subtitle="Every client, payment and commission change made in your studio, and the value before."
-        icon={<ScrollText size={19} />}
+        icon={<ScrollText size={20} />}
       />
 
       <div className="space-y-4">
