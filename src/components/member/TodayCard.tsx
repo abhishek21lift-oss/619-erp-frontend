@@ -3,11 +3,12 @@
 /**
  * "Today" on the member's Home: what to do now, in at most three rows.
  *
+ * The streak is not a row here: the Home hero already shows it, with a line
+ * that says whether this week still needs a session.
+ *
  *   • Today's workout from the programme the trainer assigned — or a rest day
  *     when the programme has nothing on today.
  *   • This week's check-in: due, or sent.
- *   • The training streak, and whether this week still needs a session to
- *     keep it.
  *   • Above them all, unread messages from the trainer, when there are any.
  *
  * It loads its own data, after the page: a slow or failed request costs only
@@ -18,14 +19,14 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { m } from 'framer-motion';
-import { CheckCircle2, ChevronRight, ClipboardCheck, Dumbbell, Flame, MessageCircle, Moon } from 'lucide-react';
+import { CheckCircle2, ChevronRight, ClipboardCheck, Dumbbell, MessageCircle, Moon } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { EASE, MC } from './MemberUI';
 import { api } from '@/lib/api';
-import type { MeAchievements, MeWorkoutPlan } from '@/lib/api';
+import type { MeWorkoutPlan } from '@/lib/api';
 import { palette, rgba } from '@/lib/palette';
 
-type Row = { key: string; href: string; icon: LucideIcon; tone: string; title: string; sub: string; done?: boolean };
+type Row = { key: string; href: string; icon: LucideIcon; tone: string; title: string; sub: string };
 
 /** 1 = Monday … 7 = Sunday, matching the programme's day_of_week. */
 function isoDow(d = new Date()): number {
@@ -63,27 +64,14 @@ function checkinRow(c: { this_week: string; sent: boolean }): Row {
         title: 'Weekly check-in', sub: 'Two minutes: weight, sleep, energy and how the week went.' };
 }
 
-function streakRow(a: MeAchievements): Row | null {
-  const { current, this_week: thisWeek } = a.training;
-  if (current === 0 && a.totals.sessions === 0) return null;
-  const weeks = `${current}-week streak`;
-  return {
-    key: 'streak', href: '/member/records', icon: Flame, tone: MC.primary, done: thisWeek,
-    title: current > 0 ? weeks : 'Start a streak',
-    sub: current === 0 ? 'Train this week to start one.'
-      : thisWeek ? 'This week counts. See your records.'
-        : 'Train this week to keep it going.',
-  };
-}
-
 export default function TodayCard() {
   const [rows, setRows] = useState<Row[] | null>(null);
 
   useEffect(() => {
     let live = true;
     Promise.allSettled([
-      api.me.workout(), api.me.checkins(), api.me.achievements(), api.me.messagesUnread(),
-    ]).then(([w, c, a, msg]) => {
+      api.me.workout(), api.me.checkins(), api.me.messagesUnread(),
+    ]).then(([w, c, msg]) => {
       if (!live) return;
       const out: Row[] = [];
       // A reply from the trainer is the most time-sensitive thing here.
@@ -100,7 +88,6 @@ export default function TodayCard() {
         const { this_week: week, checkins } = c.value.data;
         out.push(checkinRow({ this_week: week, sent: checkins.some((x) => String(x.week_start_date).slice(0, 10) === week) }));
       }
-      if (a.status === 'fulfilled') { const r = streakRow(a.value.data); if (r) out.push(r); }
       setRows(out);
     });
     return () => { live = false; };
@@ -122,7 +109,7 @@ export default function TodayCard() {
         <span className="text-[11px] font-[650]" style={{ color: MC.muted }}>{today}</span>
       </div>
       <ul className="overflow-hidden rounded-[18px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-        {rows.map(({ key, href, icon: Icon, tone, title, sub, done }, i) => (
+        {rows.map(({ key, href, icon: Icon, tone, title, sub }, i) => (
           <li key={key} style={i === rows.length - 1 ? undefined : { borderBottom: '1px solid var(--border)' }}>
             <Link href={href} className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-[var(--bg-subtle)] active:bg-[var(--bg-subtle)]">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]"
@@ -130,10 +117,7 @@ export default function TodayCard() {
                 <Icon size={18} aria-hidden />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-1.5 text-[14px] font-[760]" style={{ color: MC.ink }}>
-                  {title}
-                  {done && <CheckCircle2 size={13} aria-label="done" style={{ color: MC.success }} />}
-                </span>
+                <span className="block text-[14px] font-[760]" style={{ color: MC.ink }}>{title}</span>
                 <span className="block truncate text-[12px]" style={{ color: MC.muted }}>{sub}</span>
               </span>
               <ChevronRight size={16} aria-hidden style={{ color: MC.muted }} />

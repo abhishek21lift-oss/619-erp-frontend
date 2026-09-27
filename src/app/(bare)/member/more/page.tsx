@@ -8,8 +8,7 @@
  *   • a hero card — photo or initials inside a ring that is their plan's time
  *     left, name, studio, status, and three numbers counted from the log
  *     (sessions, week streak, personal bests)
- *   • three quick actions — card, messages, renew
- *   • the rest, grouped the way a member thinks about it: training,
+ *   • everything else, grouped the way a member thinks about it: training,
  *     membership, studio, account — and signing out, set apart
  *
  * Every figure is the server's (/api/me/profile, /membership, /achievements). A
@@ -116,7 +115,6 @@ function ProfileBody() {
     <>
       <h1 className="sr-only">Profile</h1>
       <ProfileHero profile={profile} plan={plan} stats={stats} />
-      <QuickActions unreadMessages={unread.messages} />
 
       {GROUPS.map((g, i) => (
         <m.section key={g.title}
@@ -261,41 +259,6 @@ function HeroStat({ icon: Icon, label, value, divider = false }: {
         {value == null ? '—' : value.toLocaleString('en-IN')}
       </dd>
     </div>
-  );
-}
-
-// ── Quick actions ────────────────────────────────────────────────────────────
-
-function QuickActions({ unreadMessages }: { unreadMessages: number }) {
-  const actions: { href: string; label: string; icon: LucideIcon; accent: Accent; count?: number }[] = [
-    { href: '/member/card', label: 'My card', icon: IdCard, accent: 'studio' },
-    { href: '/member/messages', label: 'Message trainer', icon: MessageCircle, accent: 'workout', count: unreadMessages },
-    { href: '/member/renew', label: 'Renew', icon: RefreshCw, accent: 'plan' },
-  ];
-  return (
-    <m.nav aria-label="Quick actions"
-      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: EASE, delay: 0.06 }}
-      className="mb-5 grid grid-cols-3 gap-2.5">
-      {actions.map(({ href, label, icon: Icon, accent, count }) => (
-        <Link key={href} href={href}
-          aria-label={count ? `${label}, ${count} unread` : undefined}
-          className="relative flex min-h-[84px] flex-col items-center justify-center gap-2 rounded-[18px] px-2 py-3 text-center transition-transform active:scale-[0.97]"
-          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-          <span className="grid h-11 w-11 place-items-center rounded-[14px] text-white"
-            style={{ background: accentGradient(accent), boxShadow: '0 8px 18px -10px rgba(15,23,42,0.55)' }}>
-            <Icon size={18} aria-hidden />
-          </span>
-          <span className="text-[12px] font-[750] leading-tight" style={{ color: MC.ink }}>{label}</span>
-          {count ? (
-            <span aria-hidden className="absolute right-2.5 top-2.5 min-w-[20px] rounded-full px-1.5 py-0.5 text-[11px] font-[800] leading-none text-white tabular-nums"
-              style={{ background: MC.danger }}>
-              {count > 99 ? '99+' : count}
-            </span>
-          ) : null}
-        </Link>
-      ))}
-    </m.nav>
   );
 }
 

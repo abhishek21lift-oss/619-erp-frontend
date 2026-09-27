@@ -36,9 +36,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { m } from 'framer-motion';
 import {
-  CalendarDays, Wallet, Dumbbell, TrendingDown, TrendingUp, Minus,
-  User, Phone, Mail, Target, Ruler, CheckCircle2, Clock, CreditCard,
-  ChevronRight, ShieldCheck, Apple, ClipboardCheck, IdCard, MessageCircle,
+  CalendarDays, TrendingDown, TrendingUp, Minus,
+  Ruler, CheckCircle2, CreditCard,
+  ChevronRight, ShieldCheck, MessageCircle,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
@@ -52,7 +52,7 @@ import { accentGradient, spectrum } from '@/components/member/memberTheme';
 import type { Accent } from '@/components/member/memberTheme';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { api } from '@/lib/api';
-import type { MeAchievements, MeProfile, MeMembership, MePayment, MeAttendance, MeMeasurement } from '@/lib/api';
+import type { MeAchievements, MeProfile, MeMembership, MeAttendance, MeMeasurement } from '@/lib/api';
 import { palette, rgba } from '@/lib/palette';
 import { daysLeft, elapsedPct } from '@/components/member/planDates';
 
@@ -86,16 +86,6 @@ function longDate(v: string | null | undefined): string | null {
  * `days_remaining` from an endpoint that never returned it, which is exactly
  * how the card came to print the word "days" with nothing in front of it.
  */
-/**
- * "fat_loss" → "Fat loss". Goals arrive as the trainer's goal codes; free-text
- * goals (already words) pass through with only the first letter raised.
- */
-function goalLabel(v: string | null | undefined): string | null {
-  if (!v) return null;
-  const t = v.replace(/_/g, ' ').trim();
-  return t ? t.charAt(0).toUpperCase() + t.slice(1) : null;
-}
-
 export default function MemberDashboardPage() {
   return (
     <Guard role="member">
@@ -107,7 +97,6 @@ export default function MemberDashboardPage() {
 function MemberDashboard() {
   const [profile, setProfile] = useState<MeProfile | null>(null);
   const [plan, setPlan] = useState<MeMembership | null>(null);
-  const [payments, setPayments] = useState<MePayment[]>([]);
   // null until attendance loads (or when it fails): the hero shows a dash, not a false 0.
   const [visits, setVisits] = useState<MeAttendance[] | null>(null);
   const [weights, setWeights] = useState<MeMeasurement[]>([]);
@@ -129,14 +118,13 @@ function MemberDashboard() {
       // Settled, not all: one endpoint being unavailable costs that section,
       // not the page. The old version wrapped every call in a single try and
       // fell back to a blank screen whenever any of them failed.
-      const [p, mem, pay, att, meas] = await Promise.allSettled([
-        api.me.profile(), api.me.membership(), api.me.payments(),
+      const [p, mem, att, meas] = await Promise.allSettled([
+        api.me.profile(), api.me.membership(),
         api.me.attendance(), api.me.measurements(),
       ]);
       if (!alive) return;
       if (p.status === 'fulfilled') setProfile(p.value.data); else setFailed(true);
       if (mem.status === 'fulfilled') setPlan(mem.value.data);
-      if (pay.status === 'fulfilled') setPayments(pay.value.data ?? []);
       if (att.status === 'fulfilled') setVisits(att.value.data ?? []);
       // A studio measurement can record body sizes with no weight; only rows
       // that carry one belong in the weight figures.
@@ -169,8 +157,6 @@ function MemberDashboard() {
   const startDate = plan?.pt_start_date ?? profile.pt_start_date;
   const left = daysLeft(endDate);
   const balance = num(plan?.balance_amount);
-  const total = num(plan?.final_amount);
-  const paid = num(plan?.paid_amount);
   const endsOn = longDate(endDate);
 
   const spanPct = elapsedPct(startDate, endDate);
@@ -194,6 +180,7 @@ function MemberDashboard() {
         streak={achievements ? achievements.training.current : null}
         visitsThisMonth={visitsThisMonth}
         daysLeft={left}
+        sessions={achievements ? achievements.totals.sessions : null}
       />
 
       {/* ── A renewal offer to pay, or a plan about to run out ──────────────── */}
@@ -252,20 +239,12 @@ function MemberDashboard() {
         )}
       </m.section>
 
-      {/* ── What the trainer set, and the weekly check-in ───────────────── */}
-      <nav aria-label="Your training" className="mb-5 grid grid-cols-3 gap-2.5">
-        <Shortcut href="/member/workout" icon={<Dumbbell size={18} />} label="Workout" accent="workout" />
-        <Shortcut href="/member/diet" icon={<Apple size={18} />} label="Diet" accent="diet" />
-        <Shortcut href="/member/checkin" icon={<ClipboardCheck size={18} />} label="Check-in" accent="checkin" />
-      </nav>
-
       {/* ── The month so far, and the goal closest to done ────────────────── */}
       <HomeHighlights />
 
       {/* ── Progress. Only what was actually measured. ───────────────────── */}
       <Section title="Your progress" action={{ href: '/member/progress', label: 'See trend' }}>
-        <div className="grid grid-cols-3 gap-2.5">
-          <Metric icon={<Dumbbell size={15} />} label="Visits" value={visitsThisMonth == null ? '—' : String(visitsThisMonth)} sub="this month" accent="workout" />
+        <div className="grid grid-cols-2 gap-2.5">
           <Metric icon={<Ruler size={15} />} label="Weight" accent="progress"
             value={latestWeight != null ? `${latestWeight} kg` : '—'}
             sub={latestWeight != null ? 'latest' : 'not recorded'} />
@@ -329,49 +308,6 @@ function MemberDashboard() {
         </Section>
       )}
 
-      {/* ── Payments ─────────────────────────────────────────────────────── */}
-      {payments.length > 0 && (
-        <Section title="Payments" action={{ href: '/member/payments', label: 'All' }}>
-          <div className="overflow-hidden rounded-[18px]"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            {payments.slice(0, 4).map((p, i, arr) => (
-              <div key={p.id} className="flex min-h-[56px] items-center gap-3 px-4 py-2.5"
-                style={i === arr.length - 1 ? undefined : { borderBottom: '1px solid var(--border)' }}>
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full" style={{ background: rgba(C.success, 0.12), color: C.success }}>
-                  <Wallet size={15} aria-hidden />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[14px] font-[750] tabular-nums" style={{ color: C.ink }}>{inr(p.amount)}</p>
-                  <p className="text-[12px] font-[550]" style={{ color: C.muted }}>
-                    {longDate(p.date) ?? p.date}
-                    {p.payment_method ? ` · ${p.payment_method.replace(/_/g, ' ').toLowerCase()}` : ''}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-          {total > 0 && (
-            <p className="mt-2 px-1 text-[12px] font-[600]" style={{ color: C.muted }}>
-              {inr(paid)} paid of {inr(total)}
-            </p>
-          )}
-        </Section>
-      )}
-
-      {/* ── The rest of the record ───────────────────────────────────────── */}
-      <Section title="Your details">
-        <div className="overflow-hidden rounded-[18px]"
-          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-          <Detail icon={<Target size={15} />} label="Goal" value={goalLabel(profile.goal)} />
-          <Detail icon={<CalendarDays size={15} />} label="Member since" value={longDate(profile.joining_date)} />
-          <Detail icon={<Clock size={15} />} label="Started" value={longDate(startDate)} />
-          <Detail icon={<Ruler size={15} />} label="Height" value={profile.height ? `${profile.height} cm` : null} />
-          <Detail icon={<Mail size={15} />} label="Email" value={profile.email} />
-          <Detail icon={<Phone size={15} />} label="Mobile" value={profile.mobile} />
-          <Detail icon={<User size={15} />} label="Date of birth" value={longDate(profile.dob)} last />
-        </div>
-      </Section>
-
       <p className="mt-5 flex items-center justify-center gap-1.5 text-[11px] font-[600]" style={{ color: C.muted }}>
         <ShieldCheck size={12} aria-hidden /> Only you and your studio can see this
       </p>
@@ -385,18 +321,6 @@ function MemberDashboard() {
  *  shell itself is shared with the rest of the portal now. */
 function Shell({ children }: { children: React.ReactNode }) {
   return <MemberShell>{children}</MemberShell>;
-}
-
-function Shortcut({ href, icon, label, accent }: { href: string; icon: React.ReactNode; label: string; accent: Accent }) {
-  return (
-    <Link href={href}
-      className="flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-[20px] text-[12px] font-[750] transition-transform active:scale-[0.97]"
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: C.ink }}>
-      <span className="grid h-11 w-11 place-items-center rounded-[14px] text-white"
-        style={{ background: accentGradient(accent), boxShadow: '0 8px 18px -10px rgba(15,23,42,0.55)' }}>{icon}</span>
-      {label}
-    </Link>
-  );
 }
 
 function Section({ title, action, children }: {
@@ -475,27 +399,6 @@ function Metric({ icon, label, value, sub, tone, accent }: {
       </p>
       <p className="mt-1.5 text-[11px] font-[700]" style={{ color: C.ink }}>{label}</p>
       <p className="text-[11px] font-[550]" style={{ color: C.muted }}>{sub}</p>
-    </div>
-  );
-}
-
-/**
- * A row of the record. Shows an em dash rather than hiding the row, so a
- * member can see what their studio is still missing from them — a blank they
- * can fill is more useful than a row that silently disappeared.
- */
-function Detail({ icon, label, value, last }: {
-  icon: React.ReactNode; label: string; value: string | null | undefined; last?: boolean;
-}) {
-  return (
-    <div className="flex min-h-[48px] items-center gap-3 px-4 py-2.5"
-      style={last ? undefined : { borderBottom: '1px solid var(--border)' }}>
-      <span style={{ color: C.muted }} aria-hidden>{icon}</span>
-      <span className="flex-1 text-[13px] font-[600]" style={{ color: C.muted }}>{label}</span>
-      <span className="max-w-[55%] truncate text-right text-[14px] font-[700]"
-        style={{ color: value ? C.ink : C.muted }}>
-        {value || '—'}
-      </span>
     </div>
   );
 }

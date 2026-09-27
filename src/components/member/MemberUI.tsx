@@ -37,6 +37,16 @@ export function longDate(v: string | null | undefined): string | null {
 }
 
 /**
+ * "fat_loss" → "Fat loss". Goals arrive as the trainer's goal codes; free-text
+ * goals (already words) pass through with only the first letter raised.
+ */
+export function goalLabel(v: string | null | undefined): string | null {
+  if (!v) return null;
+  const t = v.replace(/_/g, ' ').trim();
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : null;
+}
+
+/**
  * Page hero: a compact gradient band with the page's icon, title and one line
  * of context, in the page's own accent colour. Deliberately one row tall
  * (~76px) — it sets the page apart without pushing the content down.

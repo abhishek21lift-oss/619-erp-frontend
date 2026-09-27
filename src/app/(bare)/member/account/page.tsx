@@ -12,15 +12,15 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { m } from 'framer-motion';
 import {
-  BadgeCheck, CalendarDays, ChevronDown, ChevronLeft, Dumbbell, Eye, EyeOff, KeyRound, LogOut, Mail, UserRound,
+  BadgeCheck, Cake, CalendarDays, ChevronDown, ChevronLeft, Dumbbell, Eye, EyeOff, KeyRound, LogOut, Mail, Ruler,
+  Target, UserRound,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import {
-  Card, EASE, LoadError, MC, PageSkeleton, PageTitle, Section, SubmitButton, longDate,
+  Card, LoadError, MC, goalLabel, PageSkeleton, PageTitle, Section, SubmitButton, longDate,
 } from '@/components/member/MemberUI';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { rgba } from '@/lib/palette';
@@ -64,6 +64,9 @@ function AccountBody() {
     [Mail, 'Email', profile.email],
     [BadgeCheck, 'Member ID', profile.member_code],
     [Dumbbell, 'Trainer', profile.trainer_name],
+    [Target, 'Goal', goalLabel(profile.goal)],
+    [Ruler, 'Height', profile.height ? `${profile.height} cm` : null],
+    [Cake, 'Date of birth', longDate(profile.dob)],
     [CalendarDays, 'Member since', longDate(profile.joining_date ?? profile.pt_start_date)],
   ];
 

@@ -6,7 +6,8 @@
  *   • avatar (to Profile), greeting and name, membership card button
  *   • a line that is about THEM: their streak, their plan running out, or an
  *     invitation when there is nothing to report yet
- *   • three numbers — week streak, visits this month, days left on the plan
+ *   • three numbers — week streak, visits this month, sessions logged
+ *     (days left belongs to the plan card just below, so it is not repeated)
  *   • Start workout, and Check in
  *
  * Every number is passed in from what the page already loaded (or null while
@@ -15,7 +16,7 @@
 
 import Link from 'next/link';
 import { m } from 'framer-motion';
-import { CalendarCheck, ClipboardCheck, Dumbbell, Flame, Hourglass, IdCard } from 'lucide-react';
+import { CalendarCheck, ClipboardCheck, Dumbbell, Flame, IdCard } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { EASE } from './MemberUI';
@@ -30,8 +31,11 @@ export type HomeHeroProps = {
   streak: number | null;
   /** Studio visits this calendar month. */
   visitsThisMonth: number | null;
-  /** Whole days left on the plan; null when there is no end date. */
+  /** Whole days left on the plan; null when there is no end date. Drives the
+   *  line under the name only — the plan card shows the number. */
   daysLeft: number | null;
+  /** Workout sessions logged, all time. */
+  sessions: number | null;
 };
 
 /** "Good morning" / "Good afternoon" / "Good evening", on the member's own clock. */
@@ -55,7 +59,7 @@ export function heroLine({ streak, daysLeft }: Pick<HomeHeroProps, 'streak' | 'd
   return "Let's make today count.";
 }
 
-export default function HomeHero({ name, photoUrl, studio, streak, visitsThisMonth, daysLeft }: HomeHeroProps) {
+export default function HomeHero({ name, photoUrl, studio, streak, visitsThisMonth, daysLeft, sessions }: HomeHeroProps) {
   const first = firstName(name);
 
   return (
@@ -108,7 +112,7 @@ export default function HomeHero({ name, photoUrl, studio, streak, visitsThisMon
         style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}>
         <HeroStat icon={Flame} label="Week streak" value={streak} />
         <HeroStat icon={CalendarCheck} label="Visits this month" value={visitsThisMonth} divider />
-        <HeroStat icon={Hourglass} label="Days left" value={daysLeft} divider />
+        <HeroStat icon={Dumbbell} label="Sessions" value={sessions} divider />
       </dl>
 
       {/* What next */}
