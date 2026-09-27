@@ -7,6 +7,10 @@
  * month, when last month's recap is ready. Otherwise it is the month so far.
  * Each tile loads on its own and simply stays away if its data does: Home
  * must never wait on, or break because of, either of them.
+ *
+ * The goal tile shows the member's own open goal nearest done; with none, the
+ * trainer's studio goal. Only with neither does it invite them to set one —
+ * it used to say "Set a goal" to members whose trainer had already set one.
  */
 
 import { useEffect, useState } from 'react';
@@ -16,10 +20,14 @@ import { CalendarRange, ChevronRight, Target } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { MeGoal, MeRecap } from '@/lib/api';
 import { palette, rgba } from '@/lib/palette';
-import { EASE, MC } from './MemberUI';
+import { EASE, MC, goalLabel } from './MemberUI';
 import { isEmptyMonth, monthName } from './recap';
 
-function goalTitle(g: MeGoal): string {
+type Shown = { goal: MeGoal; studio: boolean; label?: string | null };
+
+function goalTitle(g: MeGoal, label?: string | null): string {
+  const named = goalLabel(label);
+  if (named) return `${named} · ${g.target_value} kg`;
   if (g.kind === 'lift') return `${g.exercise_name} ${g.target_value} kg`;
   if (g.kind === 'weight') return `Reach ${g.target_value} kg`;
   return `${g.target_value} sessions`;
@@ -27,7 +35,7 @@ function goalTitle(g: MeGoal): string {
 
 export default function HomeHighlights() {
   const [recap, setRecap] = useState<MeRecap | null>(null);
-  const [goal, setGoal] = useState<MeGoal | null | undefined>(undefined);
+  const [goal, setGoal] = useState<Shown | null | undefined>(undefined);
 
   useEffect(() => {
     let live = true;
@@ -39,7 +47,9 @@ export default function HomeHighlights() {
         if (!live) return;
         const open = r.data.goals.filter((g) => !g.reached);
         open.sort((a, b) => (b.progress_pct ?? -1) - (a.progress_pct ?? -1));
-        setGoal(open[0] ?? null);
+        const studio = r.data.studio && !r.data.studio.reached ? r.data.studio : null;
+        setGoal(open[0] ? { goal: open[0], studio: false }
+          : studio ? { goal: studio, studio: true, label: studio.label } : null);
       })
       .catch(() => { if (live) setGoal(undefined); });
     return () => { live = false; };
@@ -81,19 +91,19 @@ export default function HomeHighlights() {
             className="flex h-full min-h-[118px] flex-col justify-between rounded-[18px] p-3.5 transition-transform active:scale-[0.98]"
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <span className="flex items-center justify-between gap-1 text-[10px] font-[780] uppercase tracking-[0.12em]" style={{ color: MC.muted }}>
-              <span className="flex items-center gap-1.5"><Target size={12} aria-hidden style={{ color: MC.primary }} /> Goal</span>
+              <span className="flex items-center gap-1.5"><Target size={12} aria-hidden style={{ color: MC.primary }} /> {goal?.studio ? 'Studio goal' : 'Goal'}</span>
               <ChevronRight size={13} aria-hidden />
             </span>
             {goal ? (
               <span>
-                <span className="block truncate text-[14px] font-[800]" style={{ color: MC.ink }}>{goalTitle(goal)}</span>
+                <span className="block truncate text-[14px] font-[800]" style={{ color: MC.ink }}>{goalTitle(goal.goal, goal.label)}</span>
                 <span className="mt-2 flex items-center gap-2">
                   <span className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}>
                     <m.span className="block h-full rounded-full" style={{ background: MC.primary }}
-                      initial={{ width: 0 }} animate={{ width: `${goal.progress_pct ?? 0}%` }} transition={{ duration: 0.8, ease: EASE }} />
+                      initial={{ width: 0 }} animate={{ width: `${goal.goal.progress_pct ?? 0}%` }} transition={{ duration: 0.8, ease: EASE }} />
                   </span>
                   <span className="text-[11px] font-[800] tabular-nums" style={{ color: MC.ink }}>
-                    {goal.progress_pct === null ? '—' : `${goal.progress_pct}%`}
+                    {goal.goal.progress_pct === null ? '—' : `${goal.goal.progress_pct}%`}
                   </span>
                 </span>
               </span>

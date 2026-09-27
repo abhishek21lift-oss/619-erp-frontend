@@ -20,7 +20,7 @@ import {
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import {
-  Card, EASE, LoadError, MC, PageSkeleton, PageTitle, Section, longDate,
+  Card, EASE, LoadError, MC, PageSkeleton, PageTitle, Section, goalLabel, longDate,
 } from '@/components/member/MemberUI';
 import {
   ChoiceChips, DateFieldControl, FormErrorBanner, NumberField, SelectField, TextField,
@@ -164,7 +164,7 @@ function GoalCard({ goal, studio = false, onRemoved }: { goal: MeGoal & { label?
   };
 
   const unit = meta.unit === 'sessions' ? '' : ` ${meta.unit}`;
-  const heading = studio && goal.label ? `${sentence(goal.label)} · ${fmt(goal.target_value)} kg` : titleOf(goal);
+  const heading = studio && goal.label ? `${goalLabel(goal.label)} · ${fmt(goal.target_value)} kg` : titleOf(goal);
 
   return (
     <Card className="p-4">
@@ -204,11 +204,6 @@ function GoalCard({ goal, studio = false, onRemoved }: { goal: MeGoal & { label?
       <Outlook goal={goal} />
     </Card>
   );
-}
-
-function sentence(v: string): string {
-  const t = v.replace(/_/g, ' ').trim();
-  return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
 /** One line on where this is heading — a date, or what it is waiting for. */

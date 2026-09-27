@@ -6,7 +6,8 @@
  *   • avatar (to Profile), greeting and name, membership card button
  *   • a line that is about THEM: their streak, their plan running out, or an
  *     invitation when there is nothing to report yet
- *   • three numbers — week streak, visits this month, days left on the plan
+ *   • three numbers — week streak, visits this month, sessions logged
+ *     (days left belongs to the plan card just below, so it is not repeated)
  *   • Start workout, and Check in
  *
  * Every number is passed in from what the page already loaded (or null while
@@ -15,7 +16,7 @@
 
 import Link from 'next/link';
 import { m } from 'framer-motion';
-import { CalendarCheck, ClipboardCheck, Dumbbell, Flame, Hourglass, IdCard } from 'lucide-react';
+import { CalendarCheck, ClipboardCheck, Dumbbell, Flame, IdCard } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { EASE } from './MemberUI';
@@ -28,10 +29,15 @@ export type HomeHeroProps = {
   studio: string | null;
   /** Consecutive weeks trained; null until known. */
   streak: number | null;
+  /** Whether this week already counts toward the streak; null until known. */
+  trainedThisWeek: boolean | null;
   /** Studio visits this calendar month. */
   visitsThisMonth: number | null;
-  /** Whole days left on the plan; null when there is no end date. */
+  /** Whole days left on the plan; null when there is no end date. Drives the
+   *  line under the name only — the plan card shows the number. */
   daysLeft: number | null;
+  /** Workout sessions logged, all time. */
+  sessions: number | null;
 };
 
 /** "Good morning" / "Good afternoon" / "Good evening", on the member's own clock. */
@@ -47,15 +53,23 @@ export function firstName(name: string | null | undefined): string | null {
 }
 
 /** The one line under the name. About the member, from their own numbers. */
-export function heroLine({ streak, daysLeft }: Pick<HomeHeroProps, 'streak' | 'daysLeft'>): string {
+export function heroLine({ streak, trainedThisWeek, daysLeft }: Pick<HomeHeroProps, 'streak' | 'trainedThisWeek' | 'daysLeft'>): string {
   if (daysLeft === 0) return 'Your plan has ended — renew to keep going.';
   if (daysLeft != null && daysLeft <= 7) return `${daysLeft} day${daysLeft === 1 ? '' : 's'} left on your plan. Finish strong.`;
-  if (streak != null && streak >= 2) return `${streak}-week streak. Keep it alive this week.`;
-  if (streak === 1) return 'You trained this week. Make it two.';
+  // A streak counts the current week once it is trained, so "keep it alive"
+  // is only true while this week is still open.
+  if (streak != null && streak >= 2) {
+    return trainedThisWeek
+      ? `${streak}-week streak — this week counts. Nice work.`
+      : `${streak}-week streak. Keep it alive this week.`;
+  }
+  if (streak === 1) {
+    return trainedThisWeek ? 'You trained this week. Make it two.' : 'Train this week to keep your streak going.';
+  }
   return "Let's make today count.";
 }
 
-export default function HomeHero({ name, photoUrl, studio, streak, visitsThisMonth, daysLeft }: HomeHeroProps) {
+export default function HomeHero({ name, photoUrl, studio, streak, trainedThisWeek, visitsThisMonth, daysLeft, sessions }: HomeHeroProps) {
   const first = firstName(name);
 
   return (
@@ -100,7 +114,7 @@ export default function HomeHero({ name, photoUrl, studio, streak, visitsThisMon
       </div>
 
       <p className="relative mt-3 text-[15px] font-[700] leading-snug">
-        {heroLine({ streak, daysLeft })}
+        {heroLine({ streak, trainedThisWeek, daysLeft })}
       </p>
 
       {/* Where they stand — one glass strip, three cells. */}
@@ -108,7 +122,7 @@ export default function HomeHero({ name, photoUrl, studio, streak, visitsThisMon
         style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}>
         <HeroStat icon={Flame} label="Week streak" value={streak} />
         <HeroStat icon={CalendarCheck} label="Visits this month" value={visitsThisMonth} divider />
-        <HeroStat icon={Hourglass} label="Days left" value={daysLeft} divider />
+        <HeroStat icon={Dumbbell} label="Sessions" value={sessions} divider />
       </dl>
 
       {/* What next */}
