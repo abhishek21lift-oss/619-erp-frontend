@@ -578,7 +578,7 @@ function AppShellContent({ children }: AppShellProps) {
                         {/* The studio app is the trainer's alone — the platform
                             operator never reaches it on their own session — so
                             there is no operator branch here. */}
-                        <Link href="/settings" onClick={() => setProfileOpen(false)}
+                        <Link href="/settings/profile?tab=security" onClick={() => setProfileOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                           <Settings size={14} strokeWidth={1.5} /> Security
                         </Link>
