@@ -29,6 +29,8 @@ export type HomeHeroProps = {
   studio: string | null;
   /** Consecutive weeks trained; null until known. */
   streak: number | null;
+  /** Whether this week already counts toward the streak; null until known. */
+  trainedThisWeek: boolean | null;
   /** Studio visits this calendar month. */
   visitsThisMonth: number | null;
   /** Whole days left on the plan; null when there is no end date. Drives the
@@ -51,15 +53,23 @@ export function firstName(name: string | null | undefined): string | null {
 }
 
 /** The one line under the name. About the member, from their own numbers. */
-export function heroLine({ streak, daysLeft }: Pick<HomeHeroProps, 'streak' | 'daysLeft'>): string {
+export function heroLine({ streak, trainedThisWeek, daysLeft }: Pick<HomeHeroProps, 'streak' | 'trainedThisWeek' | 'daysLeft'>): string {
   if (daysLeft === 0) return 'Your plan has ended — renew to keep going.';
   if (daysLeft != null && daysLeft <= 7) return `${daysLeft} day${daysLeft === 1 ? '' : 's'} left on your plan. Finish strong.`;
-  if (streak != null && streak >= 2) return `${streak}-week streak. Keep it alive this week.`;
-  if (streak === 1) return 'You trained this week. Make it two.';
+  // A streak counts the current week once it is trained, so "keep it alive"
+  // is only true while this week is still open.
+  if (streak != null && streak >= 2) {
+    return trainedThisWeek
+      ? `${streak}-week streak — this week counts. Nice work.`
+      : `${streak}-week streak. Keep it alive this week.`;
+  }
+  if (streak === 1) {
+    return trainedThisWeek ? 'You trained this week. Make it two.' : 'Train this week to keep your streak going.';
+  }
   return "Let's make today count.";
 }
 
-export default function HomeHero({ name, photoUrl, studio, streak, visitsThisMonth, daysLeft, sessions }: HomeHeroProps) {
+export default function HomeHero({ name, photoUrl, studio, streak, trainedThisWeek, visitsThisMonth, daysLeft, sessions }: HomeHeroProps) {
   const first = firstName(name);
 
   return (
@@ -104,7 +114,7 @@ export default function HomeHero({ name, photoUrl, studio, streak, visitsThisMon
       </div>
 
       <p className="relative mt-3 text-[15px] font-[700] leading-snug">
-        {heroLine({ streak, daysLeft })}
+        {heroLine({ streak, trainedThisWeek, daysLeft })}
       </p>
 
       {/* Where they stand — one glass strip, three cells. */}

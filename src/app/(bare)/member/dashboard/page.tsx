@@ -178,6 +178,7 @@ function MemberDashboard() {
         photoUrl={profile.photo_url}
         studio={[profile.studio_name, profile.member_code ? `#${profile.member_code}` : null].filter(Boolean).join(' · ') || null}
         streak={achievements ? achievements.training.current : null}
+        trainedThisWeek={achievements ? achievements.training.this_week : null}
         visitsThisMonth={visitsThisMonth}
         daysLeft={left}
         sessions={achievements ? achievements.totals.sessions : null}
