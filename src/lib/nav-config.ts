@@ -118,12 +118,12 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'IndianRupee',
     feature: 'finance',
     items: [
-      { href: '/sales/today',               label: "Today's Sales",        icon: 'IndianRupee',  roles: ['trainer'] },
       { href: '/finance/record-payment',    label: 'Record Payment',       icon: 'Wallet',       roles: ['trainer'] },
       // The queue where a member's UPI transfer is matched to the bank
       // statement and approved. It had no sidebar entry: the only ways in were
       // a link on the UPI settings page and one in the renewal-offer sheet.
       { href: '/finance/verify-payments',   label: 'Verify UPI Payments',  icon: 'BadgeCheck',   badge: 'upiPending', roles: ['trainer'] },
+      // Today's Sales folded in here: Collected Payments has a Today period.
       { href: '/finance/collected-payments', label: 'Collected Payments',  icon: 'Banknote',     roles: ['trainer'] },
       { href: '/finance/invoices',          label: 'Invoices',             icon: 'FileText',     roles: ['trainer'] },
       { href: '/finance/dues',              label: 'Outstanding Dues',     icon: 'AlertCircle',  badge: 'duesCount', roles: ['trainer'] },
@@ -192,10 +192,10 @@ export const NAV_GROUPS: NavGroup[] = [
     roles: ['trainer'],
     feature: 'insights',
     items: [
-      { href: '/reports',                  label: 'All Reports',         icon: 'FileBarChart',  roles: ['trainer'] },
-      { href: '/insights/sessions',        label: 'Session Utilisation', icon: 'Clock',         roles: ['trainer'] },
+      // One revenue page: All Reports and PT Revenue Report were thinner
+      // copies of it. Session Utilisation's weekday chart is on the
+      // Attendance Report, which reads the same endpoint.
       { href: '/insights/revenue',         label: 'Revenue Report',      icon: 'TrendingUp',    roles: ['trainer'] },
-      { href: '/pt-os/reports',            label: 'PT Revenue Report',   icon: 'TrendingUp',    roles: ['trainer'] },
       { href: '/insights/renewal',         label: 'Renewal Report',      icon: 'RefreshCcw',    roles: ['trainer'] },
       { href: '/insights/traffic',         label: 'Attendance Report',   icon: 'Activity',      roles: ['trainer'] },
       { href: '/operations/leaderboard',   label: 'Member Leaderboard',  icon: 'Trophy',        roles: ['trainer'] },

@@ -26,7 +26,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { m } from 'framer-motion';
 import {
   TrendingUp, Wallet, Receipt, Percent,
-  AlertCircle, RefreshCw, CalendarRange, BarChart3,
+  AlertCircle, RefreshCw, CalendarRange, BarChart3, Download,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { KpiCard, PremiumBarChart, PullToRefresh, EmptyState, PageContainer, PageHero } from '@/components/ui';
@@ -218,6 +218,24 @@ function RevenueAnalytics() {
   const yearRevenue = months.reduce((s, r) => s + r.revenue, 0);
   const yearIncentives = months.reduce((s, r) => s + r.incentives, 0);
   const yearPayments = months.reduce((s, r) => s + r.payments, 0);
+  // Best month and the monthly average: the two figures the old Reports
+  // dashboard led with, kept when it folded into this page.
+  const bestMonth = months.reduce<(typeof months)[number] | null>((b, r) => (r.revenue > (b?.revenue ?? 0) ? r : b), null);
+  // Averaged over months that took payments, as the old dashboard did — a
+  // studio that opened in August should not see its average dragged down
+  // by seven months it did not exist.
+  const avgMonthly = yearRevenue / Math.max(months.filter((r) => r.payments > 0).length, 1);
+
+  /** The year's months as CSV — the export the old Reports dashboard had. */
+  const exportCsv = () => {
+    const lines = ['Month,Payments,Revenue,Incentives,Net',
+      ...months.map((r) => `${r.month} ${year},${r.payments},${r.revenue},${r.incentives},${r.revenue - r.incentives}`)];
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
+    a.download = `revenue_${year}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
 
   const thisMonthIdx = year === currentYear ? new Date().getMonth() : 11;
   const thisMonth = months[thisMonthIdx]?.revenue ?? 0;
@@ -242,6 +260,18 @@ function RevenueAnalytics() {
           title="Revenue Analytics"
           subtitle="Collected revenue, incentives and trainer contribution"
           actions={
+            <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={exportCsv}
+              disabled={yearRevenue === 0 && yearIncentives === 0}
+              aria-label={`Export ${year} revenue as CSV`}
+              className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95 disabled:opacity-50"
+              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}
+            >
+              <Download size={13} />
+              CSV
+            </button>
             <button
               type="button"
               onClick={refreshAll}
@@ -252,6 +282,7 @@ function RevenueAnalytics() {
               <RefreshCw size={13} className={monthly.loading ? 'animate-spin' : ''} />
               Refresh
             </button>
+            </div>
           }
         />
 
@@ -364,7 +395,8 @@ function RevenueAnalytics() {
         {/* ── Monthly bar chart (2 series → legend required) ──────────── */}
         <Panel
           title={`Monthly Revenue — ${year}`}
-          subtitle={`${fmtMoney(yearRevenue)} collected across ${yearPayments.toLocaleString('en-IN')} payments`}
+          subtitle={`${fmtMoney(yearRevenue)} collected across ${yearPayments.toLocaleString('en-IN')} payments`
+            + (bestMonth ? ` · best ${bestMonth.month} (${fmtMoney(bestMonth.revenue)}) · avg ${fmtMoney(avgMonthly)}/month` : '')}
           icon={<BarChart3 size={15} />}
           action={<Legend items={[
             { label: 'Revenue', color: REVENUE_COLOR },

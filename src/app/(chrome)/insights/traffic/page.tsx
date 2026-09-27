@@ -5,7 +5,7 @@ import { Activity, Users, Clock, TrendingUp, Calendar, BarChart3, ArrowUpRight }
 import { api } from '@/lib/api';
 import { isCheckIn } from '@/lib/checkin';
 import { scrollIndexIntoCentre } from '@/lib/chart-scroll';
-import { PageContainer, PageHero, KpiCard } from '@/components/ui';
+import { PageContainer, PageHero, KpiCard, PremiumBarChart } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { CanonicalDateRange } from '@/lib/insights/date-range';
 import type { AttendanceMetric } from '@/lib/insights/metrics';
@@ -90,6 +90,19 @@ function Inner() {
   // client-side `visits` list feeds ONLY the hourly chart below.
   const canonTotals = canonical.data?.totals;
   const canonSeries = canonical.data?.series ?? [];
+
+  // Check-ins by day of week, summed from the same server series as every
+  // other figure here. This was the whole of "Session Utilisation", a second
+  // page over this page's endpoint; it lives here now.
+  const byWeekday = useMemo(() => {
+    const counts = [0, 0, 0, 0, 0, 0, 0];
+    for (const s of canonSeries) {
+      if (!s.date) continue;
+      const dow = new Date(s.date.length <= 10 ? `${s.date}T00:00:00` : s.date).getDay();
+      if (!Number.isNaN(dow)) counts[dow] += s.visits;
+    }
+    return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => ({ day, count: counts[i] }));
+  }, [canonSeries]);
   const totalCheckins = canonTotals ? canonTotals.visits : visits.length;
   const peakHour = byHour.reduce((b, h) => (h.count > b.count ? h : b), byHour[0]);
   const activeDays = canonSeries.filter((s) => s.visits > 0).length || byDay.length;
@@ -222,6 +235,23 @@ function Inner() {
               </div>
               </div>
             </div>
+          )}
+        </div>
+
+        <div className="mt-4 rounded-[16px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <div className="mb-3 flex items-center gap-2.5">
+            <div style={{ width: 3, height: 18, borderRadius: 2, background: 'linear-gradient(180deg, #10b981, #059669)' }} />
+            <h2 className="text-[13px] font-[600]" style={{ color: 'var(--text-primary)' }}>Check-ins by day of week</h2>
+          </div>
+          {canonical.loading && !canonical.data ? (
+            <div className="h-[220px] animate-pulse rounded-[10px]" style={{ background: 'var(--bg-subtle)' }} />
+          ) : (
+            <PremiumBarChart
+              data={byWeekday as Record<string, unknown>[]}
+              xKey="day"
+              bars={[{ key: 'count', label: 'Check-ins', color: '#10b981' }]}
+              height={220}
+            />
           )}
         </div>
       </div>

@@ -2269,7 +2269,7 @@ export default function PtOsDashboard() {
                 <StatCard icon={<Users size={17} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
                   sub={`${d.expired_clients} expired`} tone={KPI.clients} delay={0} href="/pt-os/clients" />
                 <StatCard icon={<Wallet size={17} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
-                  sub="this month" tone={KPI.revenue} delay={0.05} href="/pt-os/reports" trend={revTrend} pct={revMoM} format={fmtINR} />
+                  sub="this month" tone={KPI.revenue} delay={0.05} href="/insights/revenue" trend={revTrend} pct={revMoM} format={fmtINR} />
                 {/* The Commission card (coach payouts) went with the multi-coach
                     model; a studio is one trainer, so there is no one to pay. */}
                 <StatCard icon={<Gauge size={17} />} label="Active Share" value={activeSharePct !== null ? `${activeSharePct.toFixed(0)}%` : '—'}

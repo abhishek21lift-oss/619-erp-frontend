@@ -91,8 +91,8 @@ const KNOWN = [
   // correct under the endpoint's own row cap and is documented at each site.
   // They are the fallback, not the failure — the OUTER catch is what used to
   // render a failure as zero, and that is gone from all three.
-  'app/(chrome)/finance/collected-payments/page.tsx:85',
-  'app/(chrome)/finance/dues/page.tsx:99',
+  'app/(chrome)/finance/collected-payments/page.tsx:113',
+  'app/(chrome)/finance/dues/page.tsx:100',
   'components/payments/UpiPayScreen.tsx:202',
   'app/(chrome)/pt-os/clients/[id]/page.tsx:401',
   'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:80',
@@ -102,7 +102,6 @@ const KNOWN = [
   'app/(chrome)/pt-os/exercise-library/[id]/edit/page.tsx:27',
   'app/(chrome)/pt-os/exercise-library/new/page.tsx:28',
   'app/(chrome)/pt-os/workout-plans/[id]/page.tsx:48',
-  'app/(chrome)/sales/today/page.tsx:73',
   'app/(chrome)/settings/integrations/page.tsx:441',
   // Two remain on the Security page (the session count on each panel); the
   // other two went with the account-management UI.
@@ -150,11 +149,11 @@ describe('silent catches are listed, and the list only shrinks', () => {
   });
 });
 
-describe('the two money screens tell a failure from an empty day', () => {
+// sales/today is now a redirect into Collected Payments' Today period.
+describe('the money screens tell a failure from an empty day', () => {
   const read = (...p: string[]) => readFileSync(join(SRC, ...p), 'utf8');
 
   it.each([
-    ['app/(chrome)/sales/today/page.tsx', "Total Revenue Today"],
     ['app/(chrome)/finance/collected-payments/page.tsx', 'Collected payments could not be loaded'],
   ])('%s records the failure instead of rendering zero', (file) => {
     const src = read(...file.split('/'));

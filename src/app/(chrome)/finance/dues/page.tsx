@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { m } from 'framer-motion';
+import Link from 'next/link';
 import Guard from '@/components/Guard';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { KpiCard, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
@@ -11,7 +12,7 @@ import type { DuesItem, DuesSummary } from '@/lib/api';
 import { whatsAppHref } from '@/lib/phone';
 import {
   Search, AlertTriangle, CheckCircle2, TrendingDown,
-  MessageCircle, Users, Banknote,
+  MessageCircle, Users, Banknote, ChevronRight,
 } from 'lucide-react';
 
 export default function OutstandingDuesPage() {
@@ -145,6 +146,14 @@ function Inner() {
             : `${debtorCount} ${debtorCount === 1 ? 'member' : 'members'} with pending dues`
             + (truncated ? ` \u00b7 showing the ${dues.length} largest` : '')
         }
+        // Only the members who owe. Every client's package, paid and balance
+        // — paid-up ones included, with a CSV export — is the Balance Sheet.
+        actions={
+          <Link href="/pt-os/balance-sheet"
+            className="inline-flex h-9 items-center gap-1 rounded-full px-3.5 text-[12px] font-semibold transition active:scale-95"
+            style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
+            All balances <ChevronRight size={13} aria-hidden />
+          </Link>}
       >
         <div className="grid grid-cols-3 gap-2.5">
           {[

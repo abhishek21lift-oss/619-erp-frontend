@@ -15,6 +15,26 @@ import {
   Layers, IndianRupee, List, TrendingUp,
 } from 'lucide-react';
 import { errorMessage } from '@/lib/forms/errors';
+import { todayISO } from '@/lib/forms/domain';
+
+/**
+ * The window the page reads. "Today" is what Today's Sales used to be — a
+ * separate page over the same two endpoints — so it lives here as a period,
+ * and /sales/today opens this page with ?period=today.
+ */
+type Period = 'today' | 'month' | 'all';
+const PERIODS: { id: Period; label: string }[] = [
+  { id: 'today', label: 'Today' },
+  { id: 'month', label: 'This month' },
+  { id: 'all', label: 'All' },
+];
+/** The studio's own calendar day, not UTC's: before 5:30am IST the UTC date
+ *  is still yesterday, and "today" would read yesterday's takings. */
+function rangeOf(period: Period): { from: string; to: string } | undefined {
+  if (period === 'all') return undefined;
+  const to = todayISO();
+  return { from: period === 'today' ? to : `${to.slice(0, 7)}-01`, to };
+}
 
 const fmtINR = (n: number) => '₹' + n.toLocaleString('en-IN');
 
@@ -42,6 +62,13 @@ function Inner() {
   const router = useRouter();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [stats, setStats] = useState<PaymentStats | null>(null);
+  const [period, setPeriod] = useState<Period>('all');
+  // ?period= picks the window on arrival (Today's Sales links here with
+  // ?period=today). Read once; after that the switch owns it.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get('period');
+    if (p === 'today' || p === 'month' || p === 'all') setPeriod(p);
+  }, []);
   const [loading, setLoading] = useState(true);
   // A failed fetch and a studio that has taken nothing are different facts.
   // Without this they shared a state: the catch below set payments to [] and
@@ -80,9 +107,10 @@ function Inner() {
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
+      const range = rangeOf(period);
       const [data, s] = await Promise.all([
-        api.payments.list(),
-        api.payments.stats().catch(() => null),
+        api.payments.list(range),
+        api.payments.stats(range).catch(() => null),
       ]);
       setPayments(Array.isArray(data) ? data : []);
       setStats(s);
@@ -94,7 +122,7 @@ function Inner() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [period]);
 
   useEffect(() => { fetchPayments(); }, [fetchPayments]);
 
@@ -187,8 +215,21 @@ function Inner() {
       <PageHero
         icon={<Banknote size={20} />}
         title="Collected Payments"
-        subtitle="Track and manage all incoming payments"
-      />
+        subtitle={period === 'today' ? "Today's takings, as they come in"
+          : period === 'month' ? 'Everything collected this month' : 'Track and manage all incoming payments'}
+      >
+        <div className="grid grid-cols-3 gap-1 rounded-full p-1" role="tablist" aria-label="Period"
+          style={{ background: 'rgba(255,255,255,0.10)' }}>
+          {PERIODS.map((p) => (
+            <button key={p.id} type="button" role="tab" aria-selected={period === p.id}
+              onClick={() => { setPeriod(p.id); setPage(0); }}
+              className="h-[36px] cursor-pointer truncate rounded-full px-3 text-[12.5px] font-[700] transition-colors"
+              style={{ background: period === p.id ? '#fff' : 'transparent', color: period === p.id ? '#0F172A' : 'rgba(255,255,255,0.82)' }}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </PageHero>
 
       {/* KPI Row — 2-up on mobile instead of stacking full-width. Out of
           the tinted panel and onto the page, as cards. */}
@@ -200,6 +241,27 @@ function Inner() {
           <KpiCard icon={<TrendingUp size={16} />} label="Largest In View" value={fmtINR(largestPayment)} accent="amber" />
         </div>
       )}
+
+      {/* By method, from the server's sums over the whole period — the
+          breakdown Today's Sales showed, now for any period. */}
+      {!loading && stats && (() => {
+        const split = ([['Cash', stats.cash], ['UPI', stats.upi], ['Card', stats.card], ['Bank', stats.bank]] as const)
+          .filter(([, v]) => Number(v) > 0);
+        // One method is just the total again; a split needs two.
+        if (split.length < 2) return null;
+        return (
+          <div className="mt-3 flex flex-wrap gap-2" aria-label="Collected by method">
+            {split.map(([name, v]) => (
+              <span key={name} className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-[700]"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                <span style={{ color: METHOD_COLORS[name] }}>{METHOD_ICONS[name]}</span>
+                {name}
+                <span className="tabular-nums" style={{ color: 'var(--text-muted)' }}>{fmtINR(Number(v))}</span>
+              </span>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* Main Content */}
       <div>

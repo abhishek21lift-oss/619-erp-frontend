@@ -70,7 +70,7 @@ const NAV_KEYWORDS: Record<string, string> = {
   '/finance/collected-payments': 'payments transactions collected',
   '/engagement/notifications':   'communication messaging notifications alerts',
   '/settings':                   'settings configuration preferences',
-  '/reports':                    'reports analytics insights',
+  '/insights/revenue':           'reports revenue analytics insights income monthly',
   '/attendance':                 'attendance check-in sign-in records',
 };
 
