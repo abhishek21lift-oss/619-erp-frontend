@@ -12,7 +12,7 @@ import { notFound, redirect } from 'next/navigation';
 const CANONICAL: Record<string, string> = {
   traffic: '/insights/traffic',
   renewal: '/insights/renewal',
-  sessions: '/insights/sessions',
+  sessions: '/insights/traffic',
 };
 
 export default function InsightsTabPage({ params }: { params: Promise<{ tab: string }> }) {

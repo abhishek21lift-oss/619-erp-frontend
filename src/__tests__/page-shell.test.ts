@@ -66,10 +66,8 @@ describe('no page draws a container box around its own title', () => {
   // squared off against the top bar; it reads as a box drawn around the
   // heading rather than as the page's header.
   const pages = [
-    ['app', 'reports', 'page.tsx'],
     ['app', 'insights', 'renewal', 'page.tsx'],
     ['app', 'insights', 'traffic', 'page.tsx'],
-    ['app', 'insights', 'sessions', 'page.tsx'],
     ['app', 'operations', 'leaderboard', 'page.tsx'],
     ['app', 'attendance', 'page.tsx'],
     ['app', 'pt-os', 'clients', 'page.tsx'],
@@ -617,12 +615,11 @@ describe('the hero', () => {
 });
 
 describe('what the phone screenshots showed', () => {
-  it('the reports KPI row is not four hard columns any more', () => {
-    // `repeat(4,1fr)` at 390px left each tile ~85px, so the values rendered
-    // as "₹..", "J.." and "₹90...".
+  it('the old Reports dashboard opens the page that replaced each tab', () => {
+    // Its KPI row and tab strip were phone-layout fixes to a page that is now
+    // a redirect: Monthly Revenue → Revenue Analytics, Pending Dues → Dues.
     const reports = src('app', 'reports', 'page.tsx');
-    expect(reports).not.toContain("gridTemplateColumns: 'repeat(4,1fr)'");
-    expect(reports).toContain('grid-cols-2');
+    expect(reports).toContain("tab === 'dues' ? '/finance/dues' : '/insights/revenue'");
   });
 
   it('the attendance date fields cannot outgrow their column', () => {
@@ -674,12 +671,10 @@ describe('what the phone screenshots showed', () => {
     expect(att).not.toContain('Biometric device connected');
   });
 
-  it('the report tabs use labels that fit', () => {
-    // Measured: the full labels lay out at 400px in a strip that is 318px
-    // wide on a 390px phone, which is why each one wrapped onto two lines.
-    const reports = src('app', 'reports', 'page.tsx');
-    expect(reports).toContain("short: 'Revenue'");
-    expect(reports).toContain('aria-label={t.label}');
+  it('Revenue Analytics carries what the old Reports dashboard led with', () => {
+    const revenue = src('app', 'insights', 'revenue', 'page.tsx');
+    expect(revenue).toContain('exportCsv');
+    expect(revenue).toMatch(/best \$\{bestMonth\.month\}/);
   });
 });
 

@@ -22,6 +22,8 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { countCheckIns, isCheckIn, CHECKED_IN_STATUSES } from '@/lib/checkin';
 import { buildBoard } from '@/lib/leaderboard';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 // ── P0 #3 — one definition of a check-in ──────────────────────────────────
 
@@ -295,13 +297,11 @@ describe('Total Check-ins agrees across every page that shows it', () => {
     expect(POPULATION.length).toBe(9); // what traffic used to report
   });
 
-  it('insights/sessions reads the headline off the server aggregate', async () => {
-    attendanceMock.list.mockResolvedValue(POPULATION);
-    insightsAttendanceMock.attendance.mockResolvedValue(canonicalAttendance(AUTHORITATIVE_VISITS));
-    mockApi();
-    const { default: Page } = await import('@/app/(chrome)/insights/sessions/page');
-    render(<Page />);
-    await waitFor(() => expect(kpiValue('Total Check-ins')).toBe(String(AUTHORITATIVE_VISITS)));
+  it('insights/sessions opens the Attendance Report, which reads this aggregate', () => {
+    // Session Utilisation was a second page over the same endpoint; its
+    // weekday chart moved onto insights/traffic, tested below.
+    const page = readFileSync(join(process.cwd(), 'src', 'app', '(chrome)', 'insights', 'sessions', 'page.tsx'), 'utf8');
+    expect(page).toContain("redirect('/insights/traffic')");
   });
 
   it('insights/traffic reads the SAME aggregate, not its own row count', async () => {
@@ -317,15 +317,6 @@ describe('Total Check-ins agrees across every page that shows it', () => {
   // if the aggregate call fails the page counts the rows it has. It must count
   // them with the canonical predicate — 5 — and never report the raw row
   // count, which is the 9 traffic used to show while sessions showed 5.
-
-  it('insights/sessions falls back to the canonical count, not the row count', async () => {
-    attendanceMock.list.mockResolvedValue(POPULATION);
-    insightsAttendanceMock.attendance.mockRejectedValue(new Error('aggregate down'));
-    mockApi();
-    const { default: Page } = await import('@/app/(chrome)/insights/sessions/page');
-    render(<Page />);
-    await waitFor(() => expect(kpiValue('Total Check-ins')).toBe(String(EXPECTED_VISITS)));
-  });
 
   it('insights/traffic falls back to the SAME count for the same population', async () => {
     attendanceMock.list.mockResolvedValue(POPULATION);

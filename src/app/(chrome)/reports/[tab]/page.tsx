@@ -10,11 +10,11 @@ import { use } from 'react';
 import { notFound, redirect } from 'next/navigation';
 
 const CANONICAL: Record<string, string> = {
-  overview: '/reports',
+  overview: '/insights/revenue',
   monthly: '/insights/revenue',
   revenue: '/insights/revenue',
   dues: '/finance/dues',
-  trainers: '/reports',
+  trainers: '/insights/revenue',
   attendance: '/insights/traffic',
   traffic: '/insights/traffic',
   renewal: '/insights/renewal',

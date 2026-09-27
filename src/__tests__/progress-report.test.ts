@@ -31,14 +31,14 @@ describe('"Progress Report" opens a client\'s progress, not PT revenue', () => {
     expect(page).toMatch(/hrefFor=\{\(id\) => `\/pt-os\/clients\/\$\{id\}\/training\/analytics`\}/);
   });
 
-  it('the PT revenue report still exists, reachable from Insights instead', () => {
-    // Not renamed, not deleted — just no longer wearing a client's name in
-    // Screening. api.pt.revenue()/trainerPerformance() are unchanged; only
-    // where the sidebar points changed.
-    const item = insights.items.find((i) => i.href === '/pt-os/reports');
+  it('studio revenue is reachable from Insights, as one report', () => {
+    // The PT revenue table folded into Revenue Analytics, which has every
+    // column it had; /pt-os/reports stays as a redirect for old links.
+    const item = insights.items.find((i) => i.href === '/insights/revenue');
     expect(item).toBeTruthy();
     expect(item?.label).not.toMatch(/progress/i);
-    expect(src('app', 'pt-os', 'reports', 'page.tsx')).toContain('api.pt.revenue()');
+    expect(insights.items.find((i) => i.href === '/pt-os/reports')).toBeUndefined();
+    expect(src('app', 'pt-os', 'reports', 'page.tsx')).toContain("redirect('/insights/revenue')");
   });
 
   it('nothing in Screening still points at the revenue page', () => {

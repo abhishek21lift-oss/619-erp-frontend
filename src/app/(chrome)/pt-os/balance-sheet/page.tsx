@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from 'react';
 import { m } from 'framer-motion';
-import { Wallet, TrendingUp, AlertCircle, CheckCircle, Search, Download, Users, Clock } from 'lucide-react';
+import { Wallet, TrendingUp, AlertCircle, CheckCircle, Search, Download, Users, Clock, ChevronRight } from 'lucide-react';
 import Guard from '@/components/Guard';
+import Link from 'next/link';
 import { PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api, PtClientBase } from '@/lib/api';
@@ -119,6 +120,15 @@ export default function BalanceSheetPage() {
         <PageHero
           icon={<Wallet size={20} />}
           title="Balance Sheet"
+          subtitle="Every client's package, paid and balance"
+          // The debtors alone, with risk bands and WhatsApp reminders, are
+          // Outstanding Dues.
+          actions={
+          <Link href="/finance/dues"
+            className="inline-flex h-9 items-center gap-1 rounded-full px-3.5 text-[12px] font-semibold transition active:scale-95"
+            style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
+            Who owes <ChevronRight size={13} aria-hidden />
+          </Link>}
         >
           {overdueCount > 0 && (
             <div className="flex flex-wrap gap-2">

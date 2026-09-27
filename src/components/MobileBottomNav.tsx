@@ -19,11 +19,14 @@ import { useNavScroll } from '@/contexts/nav-scroll-context';
 // gets a shorter bar rather than a tab that 403s — which is worse here than
 // in the sidebar, since this is the only navigation on a phone. Home, Clients
 // and Sessions are core and can never be switched off.
-const BASE_ITEMS = [
+// Sessions opens My Schedule — what is booked, today first — rather than
+// Session History, which is where the tab used to land. It stays lit on the
+// other session screens (history, booking) so the bar still says where you are.
+const BASE_ITEMS: { href: string; icon: typeof Home; label: string; feature?: string; alsoActive?: string[] }[] = [
   { href: '/',                   icon: Home,     label: 'Home'     },
   { href: '/pt-os/clients',      icon: Users,    label: 'Clients'  },
   { href: '/ai-coach',           icon: Bot,      label: 'AI Coach', feature: 'ai_suite'   },
-  { href: '/pt-os/sessions',     icon: Dumbbell, label: 'Sessions' },
+  { href: '/pt-os/my-schedule',  icon: Dumbbell, label: 'Sessions', alsoActive: ['/pt-os/sessions', '/pt-os/schedule-session', '/pt-os/session-balance'] },
   { href: '/checkin/qr-scanner', icon: ScanFace, label: 'Check-in', feature: 'attendance' },
 ];
 
@@ -91,7 +94,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
           const { href, icon: Icon, label } = item;
           const isActive = href === '/'
             ? pathname === '/'
-            : pathname === href || pathname.startsWith(href + '/');
+            : [href, ...(item.alsoActive ?? [])].some((h) => pathname === h || pathname.startsWith(h + '/'));
 
           return (
             <Link

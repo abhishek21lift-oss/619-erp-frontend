@@ -119,9 +119,11 @@ describe('the Reports tab promises what it delivers', () => {
     // /pt-os/reports is revenue, commissions and trainer counts, with no
     // per-client concept and no reading of the parameter it was handed.
     expect(PROFILE).not.toMatch(/pt-os\/reports\?client_id=/);
+    expect(PROFILE).not.toMatch(/insights\/revenue\?client_id=/);
   });
 
   it('still offers the studio report, unparameterised', () => {
-    expect(PROFILE).toMatch(/href: '\/pt-os\/reports'/);
+    // /pt-os/reports is now a redirect to Revenue Analytics; link there directly.
+    expect(PROFILE).toMatch(/href: '\/insights\/revenue'/);
   });
 });
