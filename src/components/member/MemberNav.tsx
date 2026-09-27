@@ -94,7 +94,13 @@ export default function MemberNav() {
       // the staff one are positioned by the same single rule.
       className="mobile-bottom-nav fixed inset-x-0 z-40"
       style={{
-        background: 'var(--bg-card)',
+        // --bg-card is translucent, and the cards scrolling under the bar
+        // showed through its labels. The card tint now sits on the opaque
+        // canvas, so nothing reads through even where backdrop blur is not
+        // supported; where it is, the edge is frosted as on iOS.
+        background: 'linear-gradient(var(--bg-card), var(--bg-card)), var(--bg-canvas)',
+        backdropFilter: 'saturate(180%) blur(20px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(20px)',
         borderTop: '1px solid var(--border)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
