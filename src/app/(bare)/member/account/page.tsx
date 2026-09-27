@@ -176,10 +176,19 @@ function PasswordForm() {
     onSubmit: async (values) => {
       await api.auth.changePassword(values.current ?? '', values.password);
     },
-    onSuccess: () => { toast.success('Password changed'); setOpen(false); },
+    onSuccess: () => { toast.success('Password changed'); close(); },
   });
   const { form, isSubmitting } = f;
   const type = reveal ? 'text' : 'password';
+
+  // Folding the form away forgets it: the typed passwords are cleared and
+  // "show" is switched back off, so reopening never redisplays a secret —
+  // least of all in plain text. Hoisted so onSuccess above can call it.
+  function close() {
+    f.resetTo(blankMemberPassword());
+    setReveal(false);
+    setOpen(false);
+  }
   const toggle = (
     <button type="button" onClick={() => setReveal((v) => !v)}
       aria-label={reveal ? 'Hide passwords' : 'Show passwords'} aria-pressed={reveal}
@@ -193,7 +202,7 @@ function PasswordForm() {
   return (
     <Section title="Password" aside={<KeyRound size={13} aria-hidden style={{ color: MC.muted }} />}>
       <Card>
-        <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="member-password-form"
+        <button type="button" onClick={() => (open ? close() : setOpen(true))} aria-expanded={open} aria-controls="member-password-form"
           className="flex min-h-[56px] w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--bg-subtle)]">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px]" style={{ background: rgba(MC.primary, 0.1), color: MC.primary }}>
             <KeyRound size={16} aria-hidden />

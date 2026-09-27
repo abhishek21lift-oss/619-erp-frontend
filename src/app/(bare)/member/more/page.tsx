@@ -12,7 +12,7 @@
  *   • the rest, grouped the way a member thinks about it: training,
  *     membership, studio, account — and signing out, set apart
  *
- * Every figure is the server's (/api/me/profile, /api/me/achievements). A
+ * Every figure is the server's (/api/me/profile, /membership, /achievements). A
  * number that did not load shows a dash, never a zero — zero sessions is a
  * claim about the member, not about the network.
  */
@@ -33,7 +33,7 @@ import InstallAppCard from '@/components/member/InstallAppCard';
 import { daysLeft, elapsedPct } from '@/components/member/planDates';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { api } from '@/lib/api';
-import type { MeAchievements, MeProfile } from '@/lib/api';
+import type { MeAchievements, MeMembership, MeProfile } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { palette, rgba } from '@/lib/palette';
 
@@ -93,11 +93,13 @@ function ProfileBody() {
   const { logout } = useAuth();
   const [profile, setProfile] = useState<MeProfile | null>(null);
   const [stats, setStats] = useState<MeAchievements | null>(null);
+  const [plan, setPlan] = useState<MeMembership | null>(null);
   const [unread, setUnread] = useState<Record<Badge, number>>({ notifications: 0, messages: 0 });
 
   useEffect(() => {
     let live = true;
     api.me.profile().then((r) => { if (live) setProfile(r.data); }).catch(() => { /* hero falls back to a skeleton-free shell */ });
+    api.me.membership().then((r) => { if (live) setPlan(r.data); }).catch(() => { /* the profile's copy is the fallback */ });
     api.me.achievements().then((r) => { if (live) setStats(r.data); }).catch(() => { /* numbers show a dash */ });
     loadMemberNotifications(true)
       .then((n) => { if (live) setUnread((u) => ({ ...u, notifications: n.length })); })
@@ -111,7 +113,7 @@ function ProfileBody() {
   return (
     <>
       <h1 className="sr-only">Profile</h1>
-      <ProfileHero profile={profile} stats={stats} />
+      <ProfileHero profile={profile} plan={plan} stats={stats} />
       <QuickActions unreadMessages={unread.messages} />
 
       {GROUPS.map((g, i) => (
@@ -155,9 +157,15 @@ function monthYear(v: string | null | undefined): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
 }
 
-function ProfileHero({ profile, stats }: { profile: MeProfile | null; stats: MeAchievements | null }) {
-  const left = daysLeft(profile?.pt_end_date);
-  const elapsed = elapsedPct(profile?.pt_start_date, profile?.pt_end_date);
+function ProfileHero({ profile, plan, stats }: {
+  profile: MeProfile | null; plan: MeMembership | null; stats: MeAchievements | null;
+}) {
+  // The package record is the source of truth, as on Home and the card; the
+  // client row's copy is the fallback, and can lag a renewal.
+  const endDate = plan?.pt_end_date ?? profile?.pt_end_date;
+  const startDate = plan?.pt_start_date ?? profile?.pt_start_date;
+  const left = daysLeft(endDate);
+  const elapsed = elapsedPct(startDate, endDate);
   // The ring is the plan's time LEFT: full at the start, empty at the end.
   const remaining = elapsed == null ? null : 1 - elapsed / 100;
   const ended = left === 0;
