@@ -108,7 +108,8 @@ function MemberDashboard() {
   const [profile, setProfile] = useState<MeProfile | null>(null);
   const [plan, setPlan] = useState<MeMembership | null>(null);
   const [payments, setPayments] = useState<MePayment[]>([]);
-  const [visits, setVisits] = useState<MeAttendance[]>([]);
+  // null until attendance loads (or when it fails): the hero shows a dash, not a false 0.
+  const [visits, setVisits] = useState<MeAttendance[] | null>(null);
   const [weights, setWeights] = useState<MeMeasurement[]>([]);
   const [achievements, setAchievements] = useState<MeAchievements | null>(null);
   const [loading, setLoading] = useState(true);
@@ -175,7 +176,7 @@ function MemberDashboard() {
   const spanPct = elapsedPct(startDate, endDate);
 
   const thisMonth = new Date().toISOString().slice(0, 7);
-  const visitsThisMonth = visits.filter((v) => (v.date ?? '').slice(0, 7) === thisMonth).length;
+  const visitsThisMonth = visits ? visits.filter((v) => (v.date ?? '').slice(0, 7) === thisMonth).length : null;
 
   // Measurements arrive newest-first, so the oldest reading is the last one.
   const latestWeight = weights[0] ? num(weights[0].weight_kg)
@@ -264,7 +265,7 @@ function MemberDashboard() {
       {/* ── Progress. Only what was actually measured. ───────────────────── */}
       <Section title="Your progress" action={{ href: '/member/progress', label: 'See trend' }}>
         <div className="grid grid-cols-3 gap-2.5">
-          <Metric icon={<Dumbbell size={15} />} label="Visits" value={String(visitsThisMonth)} sub="this month" accent="workout" />
+          <Metric icon={<Dumbbell size={15} />} label="Visits" value={visitsThisMonth == null ? '—' : String(visitsThisMonth)} sub="this month" accent="workout" />
           <Metric icon={<Ruler size={15} />} label="Weight" accent="progress"
             value={latestWeight != null ? `${latestWeight} kg` : '—'}
             sub={latestWeight != null ? 'latest' : 'not recorded'} />
@@ -306,7 +307,7 @@ function MemberDashboard() {
       )}
 
       {/* ── Recent visits ────────────────────────────────────────────────── */}
-      {visits.length > 0 && (
+      {visits && visits.length > 0 && (
         <Section title="Recent visits">
           <div className="overflow-hidden rounded-[18px]"
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
