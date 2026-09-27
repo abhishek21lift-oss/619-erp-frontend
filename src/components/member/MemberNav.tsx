@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Apple, ClipboardCheck, Dumbbell, Home, MoreHorizontal, Wallet } from 'lucide-react';
+import { Apple, ClipboardCheck, Dumbbell, Home, UserRound, Wallet } from 'lucide-react';
 import { loadMemberNotifications } from './memberNotifications';
 import { palette } from '@/lib/palette';
 
@@ -43,7 +43,10 @@ import { palette } from '@/lib/palette';
  * shell, so it showed members Clients / Sessions / Check-in, tabs that bounce
  * them straight back out because Guard refuses a member the trainer's portal.
  *
- * ── More ───────────────────────────────────────────────────────────────────
+ * ── More (labelled Profile) ────────────────────────────────────────────────
+ *
+ * /member/more is the member's profile hub; the tab reads "Profile" with a
+ * person icon, which is what members look for to find their account.
  *
  * The sixth slot was Sign out. It is now More: Progress, Notifications,
  * My forms, Account, Records and the membership card live there, and so does
@@ -115,18 +118,18 @@ export default function MemberNav() {
         <Link
           href="/member/more"
           aria-current={moreActive ? 'page' : undefined}
-          aria-label={unread > 0 ? `More, ${unread} unread notification${unread === 1 ? '' : 's'}` : undefined}
+          aria-label={unread > 0 ? `Profile, ${unread} unread notification${unread === 1 ? '' : 's'}` : undefined}
           className="flex flex-1 flex-col items-center gap-1 py-2.5"
           style={{ color: moreActive ? palette.blue[500] : palette.gray[500] }}
         >
           <span className="relative">
-            <MoreHorizontal size={18} strokeWidth={moreActive ? 2.4 : 1.9} />
+            <UserRound size={18} strokeWidth={moreActive ? 2.4 : 1.9} />
             {unread > 0 && (
               <span aria-hidden className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full"
                 style={{ background: palette.red[500], boxShadow: '0 0 0 2px var(--bg-card)' }} />
             )}
           </span>
-          <span className="text-[10px] font-[700]">More</span>
+          <span className="text-[10px] font-[700]">Profile</span>
         </Link>
       </div>
     </nav>
