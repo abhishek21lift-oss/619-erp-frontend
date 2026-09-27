@@ -11,12 +11,19 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Eye, EyeOff, KeyRound, LogOut, UserRound } from 'lucide-react';
+import Link from 'next/link';
+import { m } from 'framer-motion';
+import {
+  BadgeCheck, CalendarDays, ChevronDown, ChevronLeft, Dumbbell, Eye, EyeOff, KeyRound, LogOut, Mail, UserRound,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import {
-  Card, LoadError, MC, PageSkeleton, PageTitle, Section, SubmitButton, longDate,
+  Card, EASE, LoadError, MC, PageSkeleton, PageTitle, Section, SubmitButton, longDate,
 } from '@/components/member/MemberUI';
+import ClientAvatar from '@/components/pt-os/ClientAvatar';
+import { rgba } from '@/lib/palette';
 import { FormErrorBanner, TextAreaField, TextField } from '@/components/ui/form';
 import { api } from '@/lib/api';
 import type { MeProfile } from '@/lib/api';
@@ -49,31 +56,45 @@ function AccountBody() {
   }, []);
 
   const title = <PageTitle icon={<UserRound size={20} />} title="Account" sub={profile?.studio_name ?? null} />;
-  if (failed) return <>{title}<LoadError what="account" /></>;
+  if (failed) return <><BackToProfile />{title}<LoadError what="account" /></>;
   if (!profile) return <PageSkeleton />;
 
-  const facts: [string, string | null][] = [
-    ['Name', profile.name],
-    ['Email', profile.email],
-    ['Member ID', profile.member_code],
-    ['Trainer', profile.trainer_name],
-    ['Member since', longDate(profile.joining_date ?? profile.pt_start_date)],
+  const facts: [LucideIcon, string, string | null][] = [
+    [UserRound, 'Name', profile.name],
+    [Mail, 'Email', profile.email],
+    [BadgeCheck, 'Member ID', profile.member_code],
+    [Dumbbell, 'Trainer', profile.trainer_name],
+    [CalendarDays, 'Member since', longDate(profile.joining_date ?? profile.pt_start_date)],
   ];
 
   return (
     <>
-      {title}
+      <BackToProfile />
+      <m.header initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: EASE }}
+        className="mb-5 flex items-center gap-3.5">
+        <ClientAvatar name={profile.name} photoUrl={profile.photo_url}
+          className="grid h-14 w-14 shrink-0 place-items-center rounded-full text-[18px] font-[820]"
+          style={{ background: rgba(MC.primary, 0.12), color: MC.primary }} />
+        <div className="min-w-0">
+          <h1 className="truncate text-[22px] font-[820] leading-tight tracking-[-0.02em]" style={{ color: MC.ink }}>Account</h1>
+          <p className="mt-0.5 truncate text-[13px] font-[600]" style={{ color: MC.muted }}>
+            {profile.name}{profile.studio_name ? ` · ${profile.studio_name}` : ''}
+          </p>
+        </div>
+      </m.header>
+
       <Section title="Your details">
         <Card>
-          {facts.filter(([, v]) => v).map(([k, v], i, arr) => (
-            <div key={k} className="flex items-center justify-between gap-3 px-4 py-3"
+          {facts.filter(([, , v]) => v).map(([Icon, k, v], i, arr) => (
+            <div key={k} className="flex min-h-[52px] items-center gap-3 px-4 py-3"
               style={i === arr.length - 1 ? undefined : { borderBottom: '1px solid var(--border)' }}>
-              <span className="text-[12.5px] font-[650]" style={{ color: MC.muted }}>{k}</span>
-              <span className="min-w-0 truncate text-right text-[13px] font-[700]" style={{ color: MC.ink }}>{v}</span>
+              <Icon size={16} aria-hidden style={{ color: MC.muted }} className="shrink-0" />
+              <span className="text-[13px] font-[650]" style={{ color: MC.muted }}>{k}</span>
+              <span className="ml-auto min-w-0 truncate text-right text-[14px] font-[700]" style={{ color: MC.ink }}>{v}</span>
             </div>
           ))}
         </Card>
-        <p className="mt-2 px-1 text-[11.5px]" style={{ color: MC.muted }}>
+        <p className="mt-2 px-1 text-[12px]" style={{ color: MC.muted }}>
           Something here wrong? Ask your trainer to correct it.
         </p>
       </Section>
@@ -82,11 +103,21 @@ function AccountBody() {
       <PasswordForm />
 
       <button type="button" onClick={() => logout()}
-        className="mb-2 flex h-12 w-full items-center justify-center gap-2 rounded-[13px] text-[14px] font-[750]"
+        className="mb-2 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[16px] text-[14px] font-[750]"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: MC.danger }}>
         <LogOut size={16} aria-hidden /> Sign out
       </button>
     </>
+  );
+}
+
+/** Account sits under the Profile tab: a way back that is not the browser's. */
+function BackToProfile() {
+  return (
+    <Link href="/member/more" className="-ml-1 mb-3 inline-flex min-h-[44px] items-center gap-0.5 pr-3 text-[14px] font-[700]"
+      style={{ color: MC.primary }}>
+      <ChevronLeft size={18} aria-hidden /> Profile
+    </Link>
   );
 }
 
@@ -137,6 +168,7 @@ function ContactForm({ profile, onSaved }: {
 function PasswordForm() {
   const { toast } = useToast();
   const [reveal, setReveal] = useState(false);
+  const [open, setOpen] = useState(false);
   const f = useAppForm({
     schema: memberPasswordSchema,
     defaultValues: blankMemberPassword(),
@@ -144,7 +176,7 @@ function PasswordForm() {
     onSubmit: async (values) => {
       await api.auth.changePassword(values.current ?? '', values.password);
     },
-    onSuccess: () => toast.success('Password changed'),
+    onSuccess: () => { toast.success('Password changed'); setOpen(false); },
   });
   const { form, isSubmitting } = f;
   const type = reveal ? 'text' : 'password';
@@ -156,32 +188,49 @@ function PasswordForm() {
     </button>
   );
 
+  // Changing a password is rare: the form stays folded behind one row until
+  // asked for, so the page reads as an account and not as a wall of inputs.
   return (
     <Section title="Password" aside={<KeyRound size={13} aria-hidden style={{ color: MC.muted }} />}>
-      <Card className="p-4">
-        <form onSubmit={(e) => { e.preventDefault(); void f.submit(); }} noValidate className="space-y-4">
-          <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} />
-          <form.Field name="current">
-            {(field) => (
-              <TextField field={field} label="Current password" type={type} autoComplete="current-password"
-                required trailing={toggle} serverError={f.errors.fieldErrors.current} />
-            )}
-          </form.Field>
-          <form.Field name="password">
-            {(field) => (
-              <TextField field={field} label="New password" type={type} autoComplete="new-password" required
-                description={`At least ${MIN_LENGTH} characters.`}
-                serverError={f.errors.fieldErrors.password} />
-            )}
-          </form.Field>
-          <form.Field name="confirm">
-            {(field) => (
-              <TextField field={field} label="Confirm new password" type={type} autoComplete="new-password"
-                required serverError={f.errors.fieldErrors.confirm} />
-            )}
-          </form.Field>
-          <SubmitButton busy={isSubmitting} busyLabel="Changing…">Change password</SubmitButton>
-        </form>
+      <Card>
+        <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="member-password-form"
+          className="flex min-h-[56px] w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--bg-subtle)]">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px]" style={{ background: rgba(MC.primary, 0.1), color: MC.primary }}>
+            <KeyRound size={16} aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px] font-[750]" style={{ color: MC.ink }}>Change password</span>
+            <span className="block text-[12px]" style={{ color: MC.muted }}>You will need your current one</span>
+          </span>
+          <ChevronDown size={16} aria-hidden style={{ color: MC.muted, transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 200ms' }} />
+        </button>
+        {open && (
+          <form id="member-password-form" onSubmit={(e) => { e.preventDefault(); void f.submit(); }} noValidate
+            className="space-y-4 px-4 pb-4 pt-1" style={{ borderTop: '1px solid var(--border)' }}>
+            <div className="h-2" aria-hidden />
+            <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} />
+            <form.Field name="current">
+              {(field) => (
+                <TextField field={field} label="Current password" type={type} autoComplete="current-password"
+                  required trailing={toggle} serverError={f.errors.fieldErrors.current} />
+              )}
+            </form.Field>
+            <form.Field name="password">
+              {(field) => (
+                <TextField field={field} label="New password" type={type} autoComplete="new-password" required
+                  description={`At least ${MIN_LENGTH} characters.`}
+                  serverError={f.errors.fieldErrors.password} />
+              )}
+            </form.Field>
+            <form.Field name="confirm">
+              {(field) => (
+                <TextField field={field} label="Confirm new password" type={type} autoComplete="new-password"
+                  required serverError={f.errors.fieldErrors.confirm} />
+              )}
+            </form.Field>
+            <SubmitButton busy={isSubmitting} busyLabel="Changing…">Change password</SubmitButton>
+          </form>
+        )}
       </Card>
     </Section>
   );
