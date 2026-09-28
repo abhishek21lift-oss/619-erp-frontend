@@ -296,7 +296,7 @@ jobs:
         # exactly the kind that must not be lost silently.
         run: node scripts/ai-contract-check.mjs --backend ../backend
 
-      - name: Scoring parity — all six libraries (frontend ↔ backend)
+      - name: Scoring parity — all seven libraries (frontend ↔ backend)
         working-directory: frontend
         # No SCORING_PARITY_OPTIONAL here, ever. That flag exists for a
         # contributor who has not cloned the backend; in CI both are present,

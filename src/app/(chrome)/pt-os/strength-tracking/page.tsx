@@ -27,6 +27,30 @@ interface StrengthLog {
   one_rm_estimate: number | null; log_date: string; notes?: string | null;
 }
 
+// Postgres NUMERIC arrives from node-postgres as a STRING ("102.50"). Read as
+// a number it never was, every sparkline point failed Number.isFinite and was
+// dropped, so the trend never drew. Coerced once, here, at the boundary.
+function toNum(v: unknown): number | null {
+  if (v == null || v === '') return null;
+  const f = typeof v === 'number' ? v : parseFloat(String(v));
+  return Number.isFinite(f) ? f : null;
+}
+
+function normaliseLog(raw: Record<string, unknown>): StrengthLog {
+  return {
+    ...(raw as unknown as StrengthLog),
+    weight_kg: toNum(raw.weight_kg) ?? 0,
+    sets_done: toNum(raw.sets_done) ?? 0,
+    reps_done: toNum(raw.reps_done) ?? 0,
+    one_rm_estimate: toNum(raw.one_rm_estimate),
+    log_date: String(raw.log_date ?? '').slice(0, 10),
+  };
+}
+
+// The API's list default is 50 rows; a client with more lost their oldest
+// history from the trend without any sign of it. 200 is the API's ceiling.
+const LOG_LIMIT = 200;
+
 // Exercises with published relative-strength norms in fitness-calculations.ts
 // (Bench Press/Squat/Deadlift/Shoulder Press/Leg Press) get a Strength Level
 // badge. Bodyweight/isometric moves (Pull Up, Push Up, Lunges, Plank, Side
@@ -86,16 +110,24 @@ function StrengthHub({ clientId }: StrengthHubProps) {
     setLoading(true);
     setLoadError('');
     try {
-      const [clientRes, logsRes] = await Promise.all([
+      const [clientRes, logsRes, assessmentsRes] = await Promise.all([
         api.pt.client(clientId) as Promise<{ data?: Record<string, unknown> }>,
-        api.progress.strengthLogs.list({ client_id: clientId }) as Promise<{ data?: StrengthLog[] }>,
+        api.progress.strengthLogs.list({ client_id: clientId, limit: LOG_LIMIT }) as Promise<{ data?: Record<string, unknown>[] }>,
+        api.progress.assessments.list({ client_id: clientId, limit: 10 }) as Promise<{ data?: Record<string, unknown>[] }>,
       ]);
       const c = clientRes?.data;
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
       setClientName(String(c.name ?? ''));
       setGender((c.gender as Gender) || null);
-      setBodyWeightKg(typeof c.weight === 'number' ? c.weight : null);
-      setLogs(Array.isArray(logsRes?.data) ? logsRes.data : []);
+      // Bodyweight comes from the latest Fitness Test that recorded one — the
+      // number the page's own hint tells the trainer to enter there. The
+      // client profile's weight column is never written by anything (no
+      // client in production had one), so reading only that meant the
+      // Strength Level badges could never appear.
+      const measured = (Array.isArray(assessmentsRes?.data) ? assessmentsRes.data : [])
+        .map((a) => toNum(a.weight)).find((w): w is number => w != null && w > 0);
+      setBodyWeightKg(measured ?? toNum(c.weight));
+      setLogs(Array.isArray(logsRes?.data) ? logsRes.data.map(normaliseLog) : []);
     } catch (err: unknown) {
       setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {

@@ -47,6 +47,7 @@ import * as FE_GOAL from '../src/lib/goal-calculations';
 import * as FE_MOBILITY from '../src/lib/mobility-calculations';
 import * as FE_NUTRITION from '../src/lib/nutrition-calculations';
 import * as FE_POSTURE from '../src/lib/posture-calculations';
+import * as FE_PARQ from '../src/lib/parq-calculations';
 
 const BACKEND_MODULE = 'src/modules/progress/fitness-scoring.js';
 const LIFESTYLE_BACKEND_MODULE = 'src/modules/progress/lifestyle-scoring.js';
@@ -54,6 +55,7 @@ const GOAL_BACKEND_MODULE = 'src/modules/progress/goal-scoring.js';
 const MOBILITY_BACKEND_MODULE = 'src/modules/progress/mobility-scoring.js';
 const NUTRITION_BACKEND_MODULE = 'src/modules/progress/nutrition-scoring.js';
 const POSTURE_BACKEND_MODULE = 'src/modules/progress/posture-scoring.js';
+const PARQ_BACKEND_MODULE = 'src/modules/pt-os/parq-scoring.js';
 
 /** Where the backend checkout might be, in the order worth trying. */
 function findBackend(moduleRelPath: string = BACKEND_MODULE): string | null {
@@ -471,6 +473,34 @@ function buildPostureCases(): Array<{ fn: string; args: unknown[] }> {
   return cases;
 }
 
+/**
+ * PAR-Q risk decides whether a client may train at all, so every answer
+ * pattern over the ten questions is compared — 3^10 would be 59k, so each
+ * question is walked yes/no/blank in turn against a few fixed backgrounds,
+ * plus every pair of yeses, plus the id-as-string shape the API also accepts.
+ */
+function buildParqCases(): Array<{ fn: string; args: unknown[] }> {
+  const cases: Array<{ fn: string; args: unknown[] }> = [];
+  const add = (answers: unknown) => cases.push({ fn: 'computeParqRisk', args: [answers] });
+  const ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const sheet = (pick: (id: number) => string) => ids.map((id) => ({ question_id: id, answer: pick(id) }));
+
+  add(null);
+  add([]);
+  for (const bg of ['no', '', 'yes']) {
+    add(sheet(() => bg));
+    for (const q of ids) for (const v of ['yes', 'no', '']) add(sheet((id) => (id === q ? v : bg)));
+  }
+  for (const a of ids) for (const b of ids) {
+    add(sheet((id) => (id === a || id === b ? 'yes' : 'no')));
+    add(ids.map((id) => ({ question_id: String(id), answer: id === a || id === b ? 'yes' : 'no' })));
+  }
+  for (const a of ids) for (const b of ids) for (const c of ids) {
+    if (a < b && b < c) add(sheet((id) => (id === a || id === b || id === c ? 'yes' : 'no')));
+  }
+  return cases;
+}
+
 /** Compared as JSON so null and undefined cannot read as equal by accident. */
 const norm = (v: unknown) => JSON.stringify(v === undefined ? null : v);
 
@@ -574,6 +604,13 @@ function main() {
       backendModule: POSTURE_BACKEND_MODULE,
       build: buildPostureCases,
       minCalls: 200,
+    },
+    {
+      name: 'parq',
+      frontend: FE_PARQ as unknown as Record<string, unknown>,
+      backendModule: PARQ_BACKEND_MODULE,
+      build: buildParqCases,
+      minCalls: 300,
     },
   ];
 

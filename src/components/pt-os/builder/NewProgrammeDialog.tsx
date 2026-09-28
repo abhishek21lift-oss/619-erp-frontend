@@ -264,7 +264,7 @@ export default function NewProgrammeDialog({
         plan,
         { id: clientId, name: clientName },
         toast,
-        (cid) => router.push(`/pt-os/parq?client_id=${cid}`),
+        (path) => router.push(path),
       );
 
       onCreated?.(plan);

@@ -15,7 +15,7 @@
 
 import { api } from '@/lib/api';
 import type { WorkoutPlan } from '@/lib/api';
-import { ApiError } from '@/lib/http';
+import { screeningBlockOf } from '@/lib/screeningBlock';
 import type { useToast } from '@/lib/toast';
 import { errorMessage } from '@/lib/forms/errors';
 
@@ -25,7 +25,7 @@ export async function assignWorkoutPlan(
   plan: Pick<WorkoutPlan, 'id' | 'name'>,
   client: { id: string; name: string },
   toast: Toast,
-  goToParq: (clientId: string) => void,
+  navigate: (path: string) => void,
 ): Promise<boolean> {
   try {
     const res = await api.workouts.assign({ workout_plan_id: plan.id, client_id: client.id });
@@ -33,18 +33,21 @@ export async function assignWorkoutPlan(
     if (res?.screening_warnings?.length) {
       toast.warning(`${client.name}: ${res.screening_warnings.join(' ')}`, {
         duration: 8000,
-        action: { label: 'Start PAR-Q', onClick: () => goToParq(client.id) },
+        action: { label: 'Start PAR-Q', onClick: () => navigate(`/pt-os/parq?client_id=${client.id}`) },
       });
     }
     return true;
   } catch (err: unknown) {
-    const code = err instanceof ApiError ? err.code : undefined;
-    if (code === 'PARQ_BLOCKED') {
+    const block = screeningBlockOf(err);
+    if (block) {
       // duration: 0 — this must not disappear on its own, because the
       // dialog's own submit navigates away right after this call returns.
-      toast.error(`${client.name}'s PAR-Q screening flags them as medically blocked — clearance is required before assigning a workout.`, {
+      toast.error(`${client.name}'s ${block.reason} before assigning a workout.`, {
         duration: 0,
-        action: { label: 'Review PAR-Q', onClick: () => goToParq(client.id) },
+        action: {
+          label: block.actionLabel,
+          onClick: () => navigate(block.path(client.id)),
+        },
       });
     } else {
       toast.error(errorMessage(err, 'Failed to assign workout plan.'));

@@ -4,11 +4,20 @@ import { useRef, useState } from 'react';
 import { Stethoscope, Upload, FileText, Loader2 } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import { api } from '@/lib/api';
-import type { ParqDocument, ParqDocumentType } from '@/lib/api';
+import type { ParqDocument, ParqDocumentType, ClearanceApprovalStatus } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import type { ParqFormData, MedicalClearanceForm } from './types';
 import { errorMessage } from '@/lib/forms/errors';
 import { checkFile, acceptAttribute, DOCUMENT_RULES } from '@/lib/forms/files';
+
+// The decision this step records. Pending is the honest default: the form is
+// saved and the client stays blocked until a clearance is approved, which
+// needs the doctor, the date and the certificate on file.
+const APPROVAL: { value: ClearanceApprovalStatus; label: string; hint: string; color: string }[] = [
+  { value: 'pending', label: 'Pending', hint: 'Training stays blocked until the clearance is approved.', color: '#d97706' },
+  { value: 'approved', label: 'Approved', hint: 'Unblocks training. Needs the doctor, the clearance date and the certificate.', color: '#059669' },
+  { value: 'rejected', label: 'Not cleared', hint: 'The doctor did not clear this client. Training stays blocked.', color: '#dc2626' },
+];
 
 const DOC_TYPES: { value: ParqDocumentType; label: string }[] = [
   { value: 'medical_report', label: 'Medical Report' },
@@ -75,17 +84,37 @@ export function StepMedicalClearance({ form, set, error, formId, documents, onDo
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Medical Clearance</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">{stepLabel} — required because this client&apos;s live risk is HIGH.</p>
+            <p className="text-[13px] text-slate-400 mt-1.5">{stepLabel} — this client&apos;s risk is HIGH, so training is blocked until a doctor&apos;s clearance is approved. You can submit now and add the clearance later.</p>
           </div>
         </div>
 
+        <div>
+          <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Clearance Status</p>
+          <div role="radiogroup" aria-label="Clearance status" className="flex flex-wrap gap-2">
+            {APPROVAL.map((a) => {
+              const selected = mc.approval_status === a.value;
+              return (
+                <button
+                  key={a.value} type="button" role="radio" aria-checked={selected}
+                  onClick={() => setMc('approval_status', a.value)}
+                  className="rounded-[10px] px-3.5 py-2 text-[12px] font-[700] transition-all"
+                  style={{ background: selected ? a.color : '#f8fafc', color: selected ? '#fff' : '#64748b', border: `1.5px solid ${selected ? a.color : '#e2e8f0'}` }}
+                >
+                  {a.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-[12px] text-slate-500">{APPROVAL.find((a) => a.value === mc.approval_status)?.hint}</p>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FloatInput label="Doctor Name" value={mc.doctor_name} onChange={(v) => setMc('doctor_name', v)} required />
-          <FloatInput label="Hospital / Clinic" value={mc.hospital} onChange={(v) => setMc('hospital', v)} required />
+          <FloatInput label="Doctor Name" value={mc.doctor_name} onChange={(v) => setMc('doctor_name', v)} required={mc.approval_status === 'approved'} />
+          <FloatInput label="Hospital / Clinic" value={mc.hospital} onChange={(v) => setMc('hospital', v)} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FloatInput label="Doctor Contact" value={mc.doctor_contact} onChange={(v) => setMc('doctor_contact', v)} />
-          <FloatInput label="Clearance Date" type="date" value={mc.clearance_date} onChange={(v) => setMc('clearance_date', v)} required />
+          <FloatInput label="Clearance Date" type="date" value={mc.clearance_date} onChange={(v) => setMc('clearance_date', v)} required={mc.approval_status === 'approved'} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FloatInput label="Expiry Date" type="date" value={mc.expiry_date} onChange={(v) => setMc('expiry_date', v)} />
