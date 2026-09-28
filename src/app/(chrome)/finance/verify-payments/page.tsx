@@ -430,6 +430,15 @@ function ActionDialog({
           ? `Approved. Membership active until ${
             new Date(until).toLocaleDateString('en-IN', { dateStyle: 'medium' })}.`
           : 'Approved. The payment has been taken off their balance.');
+        // A balance payment submitted before a desk payment was recorded: the
+        // member has now paid more than they owed. Say so, or nobody knows a
+        // refund (or credit) is due.
+        const overpaid = res.data.overpaid ?? 0;
+        if (overpaid > 0) {
+          toast.warning(`${row.client_name || 'This member'} paid ${fmtMoneyExact(overpaid)} more than they owed.`, {
+            description: 'Their balance was already partly paid when this was approved. Refund it or agree how to use it.',
+          });
+        }
       } else if (kind === 'reject') {
         await api.upiPayments.reject(row.id, reason, note.trim() || undefined);
         toast.success('Rejected. The member can submit a corrected reference.');
