@@ -134,7 +134,7 @@ export function prevStepId(current: StepId): StepId | null {
 // Section 6 (confidentiality) + Section 7 (voluntary participation) +
 // Section 8 (final declaration) — shown together on the Agreement step.
 export const FINAL_ACK_FIELDS: { key: keyof InformedConsentAcknowledgements; label: string }[] = [
-  { key: 'understands_confidentiality', label: 'I understand my personal and medical information will remain confidential and will only be used for designing, monitoring and improving my personal training program.' },
+  { key: 'understands_confidentiality', label: 'I understand my personal and medical information will remain confidential and will only be used for designing, monitoring and improving my personal training program. Parts of my programme may be drafted with the help of AI tools; to do this, relevant details (such as my goals, measurements and health or injury notes, but not my phone number) are sent to an AI service provider that is not permitted to store or train on them, and my trainer reviews everything before it is used.' },
   { key: 'voluntary_participation', label: 'I understand my participation is voluntary and I can withdraw at any time.' },
   {
     key: 'final_declaration',

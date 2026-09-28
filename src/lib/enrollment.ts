@@ -27,7 +27,10 @@ export const AGREEMENT_TEXT =
   'I confirm that the programme details, dates and fees shown above are correct and agreed. '
   + 'I understand that training carries inherent physical risk, that I have disclosed any medical '
   + 'condition relevant to exercise, and that fees already paid are non-refundable except at the '
-  + "studio's discretion. I agree to the studio's cancellation and rescheduling policy.";
+  + "studio's discretion. I agree to the studio's cancellation and rescheduling policy. "
+  // AI audit 2026-09-28, AI-1: client details reach a third-party AI provider
+  // when a trainer uses the AI generators; the agreement says so.
+  + 'Parts of my programme may be drafted with the help of AI tools; to do this, relevant details (such as my goals, measurements and health or injury notes, but not my phone number) are sent to an AI service provider that is not permitted to store or train on them, and my trainer reviews everything before it is used.';
 
 /** Whole years, or null when the date of birth is missing or implausible.
  *  Mirrors ageFrom() in the backend's ptEnrollmentPdf.js so the header and the
