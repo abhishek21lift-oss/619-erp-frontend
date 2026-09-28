@@ -196,7 +196,9 @@ export const upiPayments = {
   },
 
   approve: (orderId: string) =>
-    http<{ data: { order: UpiOrder; activation: UpiActivation } }>(
+    // overpaid: rupees paid beyond the balance owed at approval (a desk
+    // payment landed after the member submitted). 0 when there is none.
+    http<{ data: { order: UpiOrder; activation: UpiActivation; overpaid?: number } }>(
       `/api/payments/upi/${orderId}/approve`, { method: 'POST' }),
 
   reject: (orderId: string, reason: UpiRejectReason, note?: string) =>
