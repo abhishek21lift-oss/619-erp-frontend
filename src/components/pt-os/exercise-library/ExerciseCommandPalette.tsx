@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import type { LibraryExercise } from '@/lib/api';
 import { useSearchFieldFocus } from '@/lib/search-field-focus';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
+import { exerciseRegion, regionTone, toneGradient } from './libraryTheme';
 
 /**
  * ⌘K over the whole library.
@@ -113,9 +114,9 @@ export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseComm
         role="dialog"
         aria-modal="true"
         aria-label="Search exercises"
-        className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0f172a] animate-in slide-in-from-top-2 duration-200"
+        className="relative w-full max-w-xl overflow-hidden rounded-[26px] border border-slate-200/70 bg-white/95 shadow-[0_30px_80px_-20px_rgba(15,23,42,0.45)] backdrop-blur-2xl dark:border-white/10 dark:bg-[#0f172a]/95 animate-in slide-in-from-top-2 duration-200"
       >
-        <div className="flex items-center gap-3 border-b border-slate-200/80 px-4 py-3.5 dark:border-white/[0.07]">
+        <div className="flex items-center gap-3 border-b border-slate-200/70 px-5 py-4 dark:border-white/[0.07]">
           {loading
             ? <Loader2 size={16} className="shrink-0 animate-spin text-[var(--text-muted)]" />
             : <Search size={16} className="shrink-0 text-[var(--text-muted)]" />}
@@ -124,16 +125,16 @@ export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseComm
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search exercises…"
-            className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] outline-none placeholder:text-slate-400 dark:placeholder:text-white/25"
+            className="flex-1 bg-transparent text-[16px] font-[500] text-[var(--text-primary)] outline-none placeholder:text-slate-400 dark:placeholder:text-white/25"
           />
-          <kbd className="hidden rounded border border-slate-200 px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] dark:border-white/10 sm:block">
+          <kbd className="hidden rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-[650] text-[var(--text-muted)] dark:bg-white/10 sm:block">
             ESC
           </kbd>
         </div>
 
         <div className="max-h-[52vh] overflow-y-auto">
           {!q.trim() && recents.length > 0 && (
-            <p className="flex items-center gap-1.5 px-4 pb-1 pt-3 text-[10.5px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+            <p className="flex items-center gap-1.5 px-5 pb-1 pt-3.5 text-[11px] font-[700] text-[var(--text-muted)]">
               <Clock size={10} /> Recently used
             </p>
           )}
@@ -145,7 +146,7 @@ export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseComm
                 : 'Start typing to search the library'}
             </p>
           ) : (
-            <ul ref={listRef} className="py-1">
+            <ul ref={listRef} className="p-2">
               {shown.map((ex, i) => (
                 <li key={ex.id}>
                   <button
@@ -153,10 +154,11 @@ export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseComm
                     onMouseEnter={() => setActive(i)}
                     onClick={() => { onSelect(ex); onClose(); }}
                     className={cn(
-                      'flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors',
-                      i === active ? 'bg-[var(--brand)]/8' : 'hover:bg-slate-50 dark:hover:bg-white/[0.03]',
+                      'flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors',
+                      i === active ? 'bg-[rgba(0,103,224,0.1)]' : 'hover:bg-slate-50 dark:hover:bg-white/[0.03]',
                     )}
                   >
+                    <PaletteIcon exercise={ex} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[13.5px] font-medium text-[var(--text-primary)]">
                         {ex.name}
@@ -184,12 +186,26 @@ export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseComm
           )}
         </div>
 
-        <div className="hidden items-center gap-4 border-t border-slate-200/80 px-4 py-2 text-[10.5px] text-[var(--text-muted)] dark:border-white/[0.07] sm:flex">
+        <div className="hidden items-center gap-4 border-t border-slate-200/70 px-5 py-2.5 text-[11px] font-[500] text-[var(--text-muted)] dark:border-white/[0.07] sm:flex">
           <span>↑↓ navigate</span>
           <span>↵ open</span>
           <span>esc close</span>
         </div>
       </div>
     </div>
+  );
+}
+
+function PaletteIcon({ exercise }: { exercise: LibraryExercise }) {
+  const tone = regionTone(exerciseRegion(exercise));
+  const Icon = tone.icon;
+  return (
+    <span
+      aria-hidden
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]"
+      style={{ background: toneGradient(tone) }}
+    >
+      <Icon size={16} strokeWidth={2.2} />
+    </span>
   );
 }

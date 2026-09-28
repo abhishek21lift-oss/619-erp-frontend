@@ -3,13 +3,15 @@
 import * as React from 'react';
 import {
   X, Star, Pencil, Copy, History, AlertTriangle, Lightbulb, ShieldAlert,
-  Wind, Timer, TrendingUp, TrendingDown, Repeat, Loader2,
+  Wind, Timer, TrendingUp, TrendingDown, Repeat, Loader2, ChevronRight,
+  BookOpen, ListOrdered, Layers, StickyNote, Tag, GraduationCap, Ban,
 } from 'lucide-react';
 import { Badge, Skeleton, cn } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { ExerciseVersion, LibraryExercise } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { errorMessage } from '@/lib/forms/errors';
+import { exerciseRegion, regionTone, toneGradient, toneVars } from './libraryTheme';
 
 /**
  * Full exercise detail, in a right-hand drawer.
@@ -78,7 +80,7 @@ export function ExerciseDetailDrawer({
   return (
     <>
       <div
-        data-no-pull-refresh className="fixed inset-0 z-40 bg-slate-900/25 backdrop-blur-[2px] animate-in fade-in duration-200"
+        data-no-pull-refresh className="fixed inset-0 z-40 bg-slate-900/35 backdrop-blur-[3px] animate-in fade-in duration-200"
         onClick={onClose}
         aria-hidden
       />
@@ -87,7 +89,8 @@ export function ExerciseDetailDrawer({
         role="dialog"
         aria-modal="true"
         aria-label={ex?.name || 'Exercise details'}
-        data-no-pull-refresh className="fixed right-0 top-0 z-50 flex h-full w-full max-w-[520px] flex-col border-l border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0f172a] animate-in slide-in-from-right duration-250"
+        style={ex ? toneVars(regionTone(exerciseRegion(ex))) : undefined}
+        data-no-pull-refresh className="fixed right-0 top-0 z-50 flex h-full w-full max-w-[540px] flex-col border-l border-slate-200/70 bg-[var(--bg-canvas)] shadow-[0_0_80px_-20px_rgba(15,23,42,0.45)] dark:border-white/10 animate-in slide-in-from-right duration-300 sm:rounded-l-[28px] sm:overflow-hidden"
       >
         {/* ── The status bar is not free space ─────────────────────────────
             This panel is `fixed top-0 h-full`, so on a phone its header began
@@ -102,26 +105,20 @@ export function ExerciseDetailDrawer({
             on a long exercise there was no way back to Close without
             scrolling to the top. */}
         <header
-          className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-200/80 bg-white/95 px-5 pb-4 backdrop-blur-xl dark:border-white/[0.07] dark:bg-[#0f172a]/95"
-          style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
+          className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-slate-200/60 bg-slate-50/85 px-4 dark:bg-slate-900/85 pb-3 backdrop-blur-xl dark:border-white/[0.07]"
+          style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}
         >
-          <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
             {loading && !ex ? (
-              <Skeleton className="h-6 w-48" />
-            ) : (
+              <Skeleton className="h-5 w-40" />
+            ) : ex ? (
               <>
-                <h2 className="text-lg font-semibold leading-tight text-[var(--text-primary)]">
-                  {ex?.name}
+                <RegionSquircle exercise={ex} size="sm" />
+                <h2 className="truncate text-[15px] font-[700] tracking-[-0.01em] text-[var(--text-primary)]">
+                  {ex.name}
                 </h2>
-                {ex && (
-                  <p className="mt-1 text-xs text-[var(--text-muted)]">
-                    {ex.primary_muscle || ex.target_muscle}
-                    {ex.equipment_name ? ` · ${ex.equipment_name}` : ''}
-                    {ex.version ? ` · v${ex.version}` : ''}
-                  </p>
-                )}
               </>
-            )}
+            ) : null}
           </div>
 
           <div className="flex shrink-0 items-center gap-1">
@@ -142,7 +139,7 @@ export function ExerciseDetailDrawer({
                     <Pencil size={15} />
                   </IconButton>
                 )}
-                <IconButton label="Version history" onClick={loadVersions}>
+                <IconButton label="Version history" onClick={loadVersions} className={showVersions ? 'bg-[rgba(0,103,224,0.1)] text-[var(--brand)]' : undefined}>
                   <History size={15} />
                 </IconButton>
               </>
@@ -154,11 +151,11 @@ export function ExerciseDetailDrawer({
         </header>
 
         <div
-          className="flex-1 overflow-y-auto px-5 py-4"
+          className="flex-1 overflow-y-auto px-4 py-4 sm:px-5"
           style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
         >
           {error && (
-            <div className="rounded-xl border border-[var(--danger)]/20 bg-[var(--danger)]/5 p-4 text-sm text-[var(--danger-text)]">
+            <div className="rounded-xl border border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.05)] p-4 text-sm text-[var(--danger-text)]">
               {error}
             </div>
           )}
@@ -172,28 +169,11 @@ export function ExerciseDetailDrawer({
           )}
 
           {ex && (
-            <div className="space-y-6">
-              <div className="flex flex-wrap gap-1.5">
-                <Badge tone={ex.difficulty === 'advanced' ? 'danger' : ex.difficulty === 'intermediate' ? 'warning' : 'success'}>
-                  {ex.difficulty}
-                </Badge>
-                {ex.mechanic && (
-                  <Badge tone={ex.mechanic === 'compound' ? 'brand' : 'purple'}>
-                    {ex.mechanic === 'compound' ? 'Compound' : 'Isolation'}
-                  </Badge>
-                )}
-                {ex.force && <Badge tone="info" className="capitalize">{ex.force}</Badge>}
-                {ex.category_name && <Badge tone="neutral">{ex.category_name}</Badge>}
-                {ex.movement_pattern && ex.movement_pattern !== 'General' && (
-                  <Badge tone="neutral">{ex.movement_pattern}</Badge>
-                )}
-                {ex.plane_of_motion && <Badge tone="neutral">{ex.plane_of_motion} plane</Badge>}
-                {ex.is_custom && <Badge tone="brand">Custom</Badge>}
-                {ex.archived_at && <Badge tone="warning">Archived</Badge>}
-              </div>
+            <div className="space-y-3.5">
+              <DetailHero exercise={ex} />
 
               {showVersions && (
-                <Section title="Version history" icon={History}>
+                <Section title="Version history" icon={History} tone="neutral">
                   {versions === null ? (
                     <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
                       <Loader2 size={12} className="animate-spin" /> Loading…
@@ -205,7 +185,7 @@ export function ExerciseDetailDrawer({
                   ) : (
                     <ul className="space-y-1.5">
                       {versions.map((v) => (
-                        <li key={v.id} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-xs dark:bg-white/[0.03]">
+                        <li key={v.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-xs dark:bg-white/[0.04]">
                           <span className="font-medium text-[var(--text-primary)]">v{v.version}</span>
                           <span className="truncate text-[var(--text-muted)]">
                             {v.changed_by_name || 'Unknown'} ·{' '}
@@ -221,7 +201,7 @@ export function ExerciseDetailDrawer({
               <MuscleMap exercise={ex} />
 
               {ex.description && (
-                <Section title="Overview">
+                <Section title="Overview" icon={BookOpen} tone="region">
                   <p className="whitespace-pre-line text-[13px] leading-relaxed text-[var(--text-secondary,var(--text-muted))]">
                     {ex.description}
                   </p>
@@ -231,11 +211,14 @@ export function ExerciseDetailDrawer({
               <Prescription exercise={ex} />
 
               {ex.instructions && (
-                <Section title="Execution">
+                <Section title="Execution" icon={ListOrdered} tone="region">
                   <ol className="space-y-2">
                     {ex.instructions.split('\n').filter(Boolean).map((step, i) => (
                       <li key={i} className="flex gap-2.5 text-[13px] leading-relaxed text-[var(--text-primary)]">
-                        <span className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-[var(--brand)]/10 text-[10px] font-semibold text-[var(--brand)]">
+                        <span
+                          className="mt-px flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full text-[11px] font-[750] text-white"
+                          style={{ background: 'linear-gradient(135deg, var(--rg-from), var(--rg-to))' }}
+                        >
                           {i + 1}
                         </span>
                         <span>{step}</span>
@@ -248,22 +231,22 @@ export function ExerciseDetailDrawer({
               <BulletSection title="Coaching cues" icon={Lightbulb} tone="info" items={ex.coaching_cues} />
               <BulletSection title="Common mistakes" icon={AlertTriangle} tone="warning" items={ex.common_mistakes} />
               <BulletSection title="Safety" icon={ShieldAlert} tone="danger" items={ex.safety_tips} />
-              <BulletSection title="Contraindications" icon={ShieldAlert} tone="danger" items={ex.contraindications} />
+              <BulletSection title="Contraindications" icon={Ban} tone="danger" items={ex.contraindications} />
 
               {ex.progression_notes && (
-                <Section title="Recommended progression" icon={TrendingUp}>
+                <Section title="Recommended progression" icon={TrendingUp} tone="success">
                   <p className="text-[13px] leading-relaxed text-[var(--text-primary)]">{ex.progression_notes}</p>
                 </Section>
               )}
 
               {ex.breathing_tips && (
-                <Section title="Breathing" icon={Wind}>
+                <Section title="Breathing" icon={Wind} tone="info">
                   <p className="text-[13px] leading-relaxed text-[var(--text-primary)]">{ex.breathing_tips}</p>
                 </Section>
               )}
 
               {(ex.beginner_notes || ex.advanced_notes) && (
-                <Section title="Coaching by level">
+                <Section title="Coaching by level" icon={GraduationCap} tone="region">
                   <div className="space-y-2">
                     {ex.beginner_notes && <LevelNote label="Beginner" text={ex.beginner_notes} />}
                     {ex.advanced_notes && <LevelNote label="Advanced" text={ex.advanced_notes} />}
@@ -271,12 +254,12 @@ export function ExerciseDetailDrawer({
                 </Section>
               )}
 
-              <RelationList title="Progressions" icon={TrendingUp} items={ex.progressions} onSelect={onSelectRelated} />
-              <RelationList title="Regressions" icon={TrendingDown} items={ex.regressions} onSelect={onSelectRelated} />
-              <RelationList title="Alternatives" icon={Repeat} items={ex.alternatives} onSelect={onSelectRelated} />
+              <RelationList title="Progressions" icon={TrendingUp} tone="success" items={ex.progressions} onSelect={onSelectRelated} />
+              <RelationList title="Regressions" icon={TrendingDown} tone="info" items={ex.regressions} onSelect={onSelectRelated} />
+              <RelationList title="Alternatives" icon={Repeat} tone="neutral" items={ex.alternatives} onSelect={onSelectRelated} />
 
               {ex.trainer_notes && (
-                <Section title="Trainer notes">
+                <Section title="Trainer notes" icon={StickyNote} tone="warning">
                   <p className="rounded-xl bg-amber-50 p-3 text-[13px] leading-relaxed text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
                     {ex.trainer_notes}
                   </p>
@@ -284,7 +267,7 @@ export function ExerciseDetailDrawer({
               )}
 
               {ex.tags && ex.tags.length > 0 && (
-                <Section title="Tags">
+                <Section title="Tags" icon={Tag} tone="neutral">
                   <div className="flex flex-wrap gap-1.5">
                     {ex.tags.map((t) => <Badge key={t} tone="neutral">{t}</Badge>)}
                   </div>
@@ -298,27 +281,126 @@ export function ExerciseDetailDrawer({
   );
 }
 
+/** The region's icon in its gradient squircle. */
+function RegionSquircle({ exercise: ex, size }: { exercise: LibraryExercise; size: 'sm' | 'lg' }) {
+  const tone = regionTone(exerciseRegion(ex));
+  const Icon = tone.icon;
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'flex shrink-0 items-center justify-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]',
+        size === 'sm' ? 'h-7 w-7 rounded-[9px]' : 'h-12 w-12 rounded-[15px]',
+      )}
+      style={{ background: toneGradient(tone) }}
+    >
+      <Icon size={size === 'sm' ? 14 : 22} strokeWidth={2.2} />
+    </span>
+  );
+}
+
+const DIFFICULTY_DOT: Record<string, string> = {
+  beginner:     'bg-[var(--success)]',
+  intermediate: 'bg-[var(--warning)]',
+  advanced:     'bg-[var(--danger)]',
+};
+
+/**
+ * The exercise's own header card, in its region's colour.
+ *
+ * Difficulty keeps its meaning in colour — a dot in the palette's emerald,
+ * amber or red — because it is a judgement; everything else on this card is
+ * decorative and rides the region gradient.
+ */
+function DetailHero({ exercise: ex }: { exercise: LibraryExercise }) {
+  const region = exerciseRegion(ex);
+  const tone = regionTone(region);
+  const Icon = tone.icon;
+  const facts = [
+    ex.mechanic ? (ex.mechanic === 'compound' ? 'Compound' : 'Isolation') : null,
+    ex.force ? ex.force.charAt(0).toUpperCase() + ex.force.slice(1) : null,
+    ex.category_name || null,
+    ex.movement_pattern && ex.movement_pattern !== 'General' ? ex.movement_pattern : null,
+    ex.plane_of_motion ? `${ex.plane_of_motion} plane` : null,
+  ].filter(Boolean) as string[];
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-[24px] p-5 text-white shadow-[0_18px_40px_-20px_var(--rg-glow)]"
+      style={{ background: toneGradient(tone, 150) }}
+    >
+      <span aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_0%_0%,rgba(255,255,255,0.26),transparent_55%)]" />
+      <span aria-hidden className="pointer-events-none absolute -bottom-8 -right-6 opacity-[0.16]">
+        <Icon size={150} strokeWidth={1.4} />
+      </span>
+
+      <div className="relative flex items-center gap-3">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[15px] bg-white/20 backdrop-blur-sm">
+          <Icon size={22} strokeWidth={2.2} />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[11px] font-[700] uppercase tracking-[0.08em] text-white/75">{region || 'Exercise'}</p>
+          <p className="mt-0.5 text-[13px] font-[600] text-white/90">
+            {ex.primary_muscle || ex.target_muscle}
+            {ex.equipment_name ? ` · ${ex.equipment_name}` : ''}
+          </p>
+        </div>
+      </div>
+
+      <h3 className="relative mt-4 text-[24px] font-[800] leading-tight tracking-[-0.022em]">{ex.name}</h3>
+
+      <div className="relative mt-3.5 flex flex-wrap gap-1.5">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11.5px] font-[700] capitalize text-slate-900">
+          <span aria-hidden className={cn('h-2 w-2 rounded-full', DIFFICULTY_DOT[ex.difficulty] || 'bg-slate-400')} />
+          {ex.difficulty}
+        </span>
+        {facts.map((f) => (
+          <span key={f} className="rounded-full bg-white/20 px-2.5 py-1 text-[11.5px] font-[650] backdrop-blur-sm">{f}</span>
+        ))}
+        {ex.is_custom && <span className="rounded-full bg-white/20 px-2.5 py-1 text-[11.5px] font-[650]">Custom</span>}
+        {ex.version ? <span className="rounded-full bg-white/20 px-2.5 py-1 text-[11.5px] font-[650]">v{ex.version}</span> : null}
+        {ex.archived_at && <Badge tone="warning">Archived</Badge>}
+      </div>
+    </div>
+  );
+}
+
 function MuscleMap({ exercise: ex }: { exercise: LibraryExercise }) {
   const primary = (ex.muscles || []).filter((m) => m.role === 'primary');
   const secondary = (ex.muscles || []).filter((m) => m.role === 'secondary');
   if (!primary.length && !secondary.length) return null;
 
   return (
-    <Section title="Muscles worked">
-      <div className="space-y-2.5">
+    <Section title="Muscles worked" icon={Layers} tone="region">
+      <div className="space-y-3">
         {primary.length > 0 && (
           <div>
-            <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">Primary</p>
+            <p className="mb-1.5 text-[11px] font-[650] text-[var(--text-muted)]">Primary</p>
             <div className="flex flex-wrap gap-1.5">
-              {primary.map((m) => <Badge key={m.slug} tone="brand">{m.name}</Badge>)}
+              {primary.map((m) => (
+                <span
+                  key={m.slug}
+                  className="rounded-full px-3 py-1 text-[12px] font-[700] text-white"
+                  style={{ background: 'linear-gradient(135deg, var(--rg-from), var(--rg-to))' }}
+                >
+                  {m.name}
+                </span>
+              ))}
             </div>
           </div>
         )}
         {secondary.length > 0 && (
           <div>
-            <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">Secondary</p>
+            <p className="mb-1.5 text-[11px] font-[650] text-[var(--text-muted)]">Secondary</p>
             <div className="flex flex-wrap gap-1.5">
-              {secondary.map((m) => <Badge key={m.slug} tone="neutral">{m.name}</Badge>)}
+              {secondary.map((m) => (
+                <span
+                  key={m.slug}
+                  className="rounded-full bg-[var(--rg-wash)] px-3 py-1 text-[12px] font-[650] text-[var(--rg-ink)] dark:text-[var(--rg-ink-d)]"
+                >
+                  {m.name}
+                </span>
+              ))}
             </div>
           </div>
         )}
@@ -338,7 +420,7 @@ function Prescription({ exercise: ex }: { exercise: LibraryExercise }) {
   if (!cells.length && !ex.prescription_mode_primary) return null;
 
   return (
-    <Section title="Prescription" icon={Timer}>
+    <Section title="Prescription" icon={Timer} tone="region">
       {ex.prescription_mode_primary && (
         <div className="mb-3 space-y-2">
           <div className="flex items-center gap-2 text-[12px] font-semibold text-[var(--text-primary)]">
@@ -355,45 +437,46 @@ function Prescription({ exercise: ex }: { exercise: LibraryExercise }) {
         </div>
       )}
       {cells.length > 0 && (
-        <>
-          {/* One strip, not a box each. At grid-cols-2 the usual three values —
-              sets, reps, rest — left the third stranded on a row of its own with a
-              gap beside it, which reads as a missing fourth. A single divided row
-              fits three or four without either looking short. */}
-          <div className="flex divide-x divide-slate-200/80 overflow-hidden rounded-xl border border-slate-200/80 dark:divide-white/[0.07] dark:border-white/[0.07]">
-            {cells.map((c) => (
-              <div key={c.label} className="flex-1 px-3 py-2.5">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">{c.label}</p>
-                <p className="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">{c.value}</p>
-              </div>
-            ))}
-          </div>
-        </>
+        // One row of tiles that share the width, so three values never leave
+        // a stranded fourth slot — the reason this was a single strip before.
+        // Two by two on a phone, where four tiles in a row cut "3-1-1-0" short.
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          {cells.map((c) => (
+            <div key={c.label} className="min-w-0 flex-1 rounded-2xl bg-[var(--rg-wash)] px-3 py-2.5 text-center">
+              <p className="truncate text-[17px] font-[800] tracking-[-0.02em] text-[var(--rg-ink)] tabular-nums dark:text-[var(--rg-ink-d)]">
+                {c.value}
+              </p>
+              <p className="mt-0.5 text-[10.5px] font-[650] uppercase tracking-[0.06em] text-[var(--text-muted)]">{c.label}</p>
+            </div>
+          ))}
+        </div>
       )}
     </Section>
   );
 }
 
 function RelationList({
-  title, icon, items, onSelect,
+  title, icon, items, onSelect, tone,
 }: {
   title: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
   items?: LibraryExercise['progressions'];
   onSelect: (id: string) => void;
+  tone: SectionTone;
 }) {
   if (!items || items.length === 0) return null;
   return (
-    <Section title={title} icon={icon}>
-      <div className="flex flex-wrap gap-1.5">
+    <Section title={title} icon={icon} tone={tone}>
+      <div className="-mx-1 divide-y divide-slate-200/70 dark:divide-white/[0.06]">
         {items.map((r) => (
           <button
             key={r.id}
             type="button"
             onClick={() => onSelect(r.id)}
-            className="rounded-full border border-slate-200 bg-white/60 px-3 py-1.5 text-[12px] font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--brand)]/40 hover:bg-[var(--brand)]/5 hover:text-[var(--brand)] dark:border-white/10 dark:bg-white/[0.03]"
+            className="flex w-full items-center justify-between gap-3 rounded-xl px-1 py-2.5 text-left text-[13px] font-[600] text-[var(--text-primary)] transition-colors hover:text-[var(--brand)]"
           >
-            {r.name}
+            <span className="min-w-0 truncate">{r.name}</span>
+            <ChevronRight size={15} className="shrink-0 text-[var(--text-muted)]" />
           </button>
         ))}
       </div>
@@ -417,11 +500,11 @@ function BulletSection({
   }[tone];
 
   return (
-    <Section title={title} icon={icon}>
-      <ul className="space-y-1.5">
+    <Section title={title} icon={icon} tone={tone}>
+      <ul className="space-y-2">
         {items.map((item, i) => (
-          <li key={i} className="flex gap-2.5 text-[13px] leading-relaxed text-[var(--text-primary)]">
-            <span className={cn('mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full', dot)} />
+          <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed text-[var(--text-primary)]">
+            <span className={cn('mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full', dot)} />
             <span>{item}</span>
           </li>
         ))}
@@ -432,24 +515,50 @@ function BulletSection({
 
 function LevelNote({ label, text }: { label: string; text: string }) {
   return (
-    <div className="rounded-xl border border-slate-200/80 px-3 py-2.5 dark:border-white/[0.07]">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">{label}</p>
+    <div className="rounded-2xl bg-slate-50 px-3.5 py-3 dark:bg-white/[0.04]">
+      <p className="text-[11px] font-[700] uppercase tracking-[0.06em] text-[var(--rg-ink)] dark:text-[var(--rg-ink-d)]">{label}</p>
       <p className="mt-1 text-[13px] leading-relaxed text-[var(--text-primary)]">{text}</p>
     </div>
   );
 }
 
+/**
+ * What a section's icon squircle is painted with. `region` takes the
+ * exercise's own colour (set as CSS variables on the panel); the rest are the
+ * staff palette's meanings — safety is red because it is a warning, not
+ * because red is pretty.
+ */
+type SectionTone = 'region' | 'info' | 'warning' | 'danger' | 'success' | 'neutral';
+
+const SECTION_FILL: Record<SectionTone, string> = {
+  region:  'linear-gradient(135deg, var(--rg-from), var(--rg-to))',
+  info:    'var(--info)',
+  warning: 'var(--warning)',
+  danger:  'var(--danger)',
+  success: 'var(--success)',
+  neutral: 'var(--text-muted)',
+};
+
 function Section({
-  title, icon: Icon, children,
+  title, icon: Icon, children, tone = 'neutral',
 }: {
   title: string;
   icon?: React.ComponentType<{ size?: number; className?: string }>;
   children: React.ReactNode;
+  tone?: SectionTone;
 }) {
   return (
-    <section>
-      <h3 className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-        {Icon && <Icon size={12} />}
+    <section className="rounded-[22px] border border-slate-200/60 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] dark:border-white/[0.07] dark:bg-white/[0.04]">
+      <h3 className="mb-3 flex items-center gap-2 text-[14px] font-[750] tracking-[-0.01em] text-[var(--text-primary)]">
+        {Icon && (
+          <span
+            aria-hidden
+            className="flex h-7 w-7 items-center justify-center rounded-[9px] text-white"
+            style={{ background: SECTION_FILL[tone] }}
+          >
+            <Icon size={14} />
+          </span>
+        )}
         {title}
       </h3>
       {children}
@@ -472,7 +581,7 @@ function IconButton({
       title={label}
       onClick={onClick}
       className={cn(
-        'rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-slate-100 hover:text-[var(--text-primary)] dark:hover:bg-white/10',
+        'flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-muted)] transition-all hover:bg-slate-200/60 hover:text-[var(--text-primary)] active:scale-90 dark:hover:bg-white/10',
         className,
       )}
     >

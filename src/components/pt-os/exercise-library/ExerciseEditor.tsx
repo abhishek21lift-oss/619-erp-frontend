@@ -3,7 +3,9 @@
 import * as React from 'react';
 import {
   X, Check, Loader2, AlertCircle, Plus, Trash2, Eye, ChevronLeft, Save,
+  Type, Layers, Target, ListOrdered, Lightbulb, Timer, StickyNote, Tag, Pencil,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Badge, Button, cn } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -19,6 +21,7 @@ import {
 import {
   TextField, TextAreaField, SelectField, NumberField, FormErrorBanner,
 } from '@/components/ui/form';
+import { FRESH_TONE, regionTone, toneGradient, toneVars } from './libraryTheme';
 
 /**
  * Create / edit an exercise.
@@ -229,6 +232,12 @@ export function ExerciseEditor({
     [meta],
   );
 
+  // The form wears the colour of the region it is being written for, so
+  // picking "Chest · Pectoralis" turns the header pink before anything is saved.
+  const primaryRegion = meta?.all_muscles.find((m) => m.id === values.primary_muscle_id)?.body_region;
+  const tone = primaryRegion ? regionTone(primaryRegion) : FRESH_TONE;
+  const ToneIcon = primaryRegion ? tone.icon : (isEdit ? Pencil : Plus);
+
   return (
     // A page, not a floating window. This form is long enough to scroll on a
     // laptop and much longer than a phone screen, and a modal that tall fights
@@ -238,63 +247,73 @@ export function ExerciseEditor({
     // exercise could not be linked, reloaded or recovered with Back.
     <main
       aria-label={isEdit ? `Edit ${exercise?.name}` : 'Create exercise'}
-      className="mx-auto w-full max-w-3xl px-4 pb-24 pt-4 sm:px-6"
+      className="mx-auto w-full max-w-3xl pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pt-1 lg:pb-24"
+      style={toneVars(tone)}
     >
       <form
         noValidate
         onSubmit={(e) => { e.preventDefault(); handleSave(); }}
-        className="flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#0f172a]"
+        className="flex flex-col gap-3.5"
       >
-        <header className="flex items-center justify-between gap-3 border-b border-slate-200/80 px-5 py-4 dark:border-white/[0.07]">
-          <div className="flex min-w-0 items-center gap-3">
-            {preview && (
-              <button
-                type="button"
-                onClick={() => setPreview(false)}
-                className="rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-slate-100 dark:hover:bg-white/10"
-                aria-label="Back to editing"
-              >
-                <ChevronLeft size={16} />
-              </button>
-            )}
-            <div className="min-w-0">
-              <h2 className="truncate text-base font-semibold text-[var(--text-primary)]">
-                {preview ? 'Preview' : isEdit ? 'Edit exercise' : 'New exercise'}
-              </h2>
-              {!preview && slug && (
-                <p className="truncate font-mono text-[11px] text-[var(--text-muted)]">/{slug}</p>
-              )}
-            </div>
-          </div>
+        {/* The header is a hero card in the region's colour. It keeps the
+            compact tool-header job — back, title, preview — rather than the
+            navy PageHero, because this is a full-screen tool, not a page. */}
+        <header
+          className="relative overflow-hidden rounded-[26px] p-4 text-white shadow-[0_18px_40px_-20px_var(--rg-glow)] transition-[background] duration-500 sm:p-5"
+          style={{ background: toneGradient(tone, 150) }}
+        >
+          <span aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_0%_0%,rgba(255,255,255,0.26),transparent_55%)]" />
+          <span aria-hidden className="pointer-events-none absolute -bottom-10 -right-6 opacity-[0.16]">
+            <ToneIcon size={150} strokeWidth={1.4} />
+          </span>
 
-          <div className="flex shrink-0 items-center gap-1.5">
+          <div className="relative flex items-center justify-between gap-2">
+            {preview ? (
+              <GlassButton onClick={() => setPreview(false)} label="Back to editing">
+                <ChevronLeft size={17} />
+              </GlassButton>
+            ) : (
+              <GlassButton onClick={handleClose} label="Close">
+                <X size={17} />
+              </GlassButton>
+            )}
             <button
               type="button"
               onClick={() => setPreview((p) => !p)}
               aria-pressed={preview}
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-[var(--text-muted)] transition-colors hover:bg-slate-100 hover:text-[var(--text-primary)] dark:hover:bg-white/10"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/20 px-3.5 text-[12.5px] font-[700] backdrop-blur-sm transition-colors hover:bg-white/30"
             >
-              <Eye size={13} /> {preview ? 'Edit' : 'Preview'}
+              {preview ? <><Pencil size={13} /> Edit</> : <><Eye size={13} /> Preview</>}
             </button>
-            <button
-              type="button"
-              onClick={handleClose}
-              aria-label="Close"
-              className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-slate-100 dark:hover:bg-white/10"
-            >
-              <X size={16} />
-            </button>
+          </div>
+
+          <div className="relative mt-5 flex items-center gap-3.5">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[17px] bg-white/20 backdrop-blur-sm">
+              <ToneIcon size={26} strokeWidth={2.1} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-[700] uppercase tracking-[0.08em] text-white/75">
+                {preview ? 'Preview' : isEdit ? 'Edit exercise' : 'New exercise'}
+                {primaryRegion ? ` · ${primaryRegion}` : ''}
+              </p>
+              <h2 className="mt-0.5 truncate text-[22px] font-[800] leading-tight tracking-[-0.022em] sm:text-[26px]">
+                {values.name.trim() || (isEdit ? exercise?.name : 'Untitled exercise')}
+              </h2>
+              {!preview && slug && (
+                <p className="mt-0.5 truncate font-mono text-[11px] text-white/70">/{slug}</p>
+              )}
+            </div>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-5 py-5">
+        <div>
           {preview ? (
             <PreviewPane form={values} meta={meta} />
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-3.5">
               <FormErrorBanner errors={f.errors} onRetry={handleSave} />
 
-              <Fieldset title="Identity">
+              <Fieldset title="Identity" icon={Type}>
                 <form.Field name="name">
                   {(field) => (
                     <div>
@@ -349,7 +368,7 @@ export function ExerciseEditor({
                 </form.Field>
               </Fieldset>
 
-              <Fieldset title="Classification" columns>
+              <Fieldset title="Classification" icon={Layers} columns>
                 <form.Field name="primary_muscle_id">
                   {(field) => (
                     <SelectField
@@ -452,7 +471,7 @@ export function ExerciseEditor({
                 </form.Field>
               </Fieldset>
 
-              <Fieldset title="Secondary muscles">
+              <Fieldset title="Secondary muscles" icon={Target}>
                 <form.Field name="secondary_muscle_ids">
                   {(field) => (
                     <div className="flex flex-wrap gap-1.5">
@@ -469,10 +488,10 @@ export function ExerciseEditor({
                               ? field.state.value.filter((x) => x !== m.id)
                               : [...field.state.value, m.id!])}
                             className={cn(
-                              'rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all',
+                              'rounded-full border px-2.5 py-1 text-[11.5px] font-[600] transition-all active:scale-[0.96]',
                               on
-                                ? 'border-[var(--brand)]/40 bg-[var(--brand)]/10 text-[var(--brand)]'
-                                : 'border-slate-200 text-[var(--text-muted)] hover:border-slate-300 dark:border-white/10',
+                                ? 'border-transparent bg-[var(--rg-wash-hi)] text-[var(--rg-ink)] dark:text-[var(--rg-ink-d)]'
+                                : 'border-slate-200 bg-white text-[var(--text-muted)] hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.03]',
                               isPrimary && 'cursor-not-allowed opacity-30',
                             )}
                           >
@@ -485,7 +504,7 @@ export function ExerciseEditor({
                 </form.Field>
               </Fieldset>
 
-              <Fieldset title="Execution">
+              <Fieldset title="Execution" icon={ListOrdered}>
                 <form.Field name="instructions">
                   {(field) => (
                     <TextAreaField
@@ -502,7 +521,7 @@ export function ExerciseEditor({
                 </form.Field>
               </Fieldset>
 
-              <Fieldset title="Coaching">
+              <Fieldset title="Coaching" icon={Lightbulb}>
                 {([
                   ['coaching_cues', 'Coaching cues', 'Chest tall, knees track over toes'],
                   ['common_mistakes', 'Common mistakes', 'Heels lifting off the floor'],
@@ -534,7 +553,7 @@ export function ExerciseEditor({
                 </form.Field>
               </Fieldset>
 
-              <Fieldset title="Prescription" columns>
+              <Fieldset title="Prescription" icon={Timer} columns>
                 <form.Field name="recommended_sets">
                   {(field) => (
                     <TextField
@@ -584,7 +603,7 @@ export function ExerciseEditor({
                 </form.Field>
               </Fieldset>
 
-              <Fieldset title="Notes">
+              <Fieldset title="Notes" icon={StickyNote}>
                 <form.Field name="beginner_notes">
                   {(field) => (
                     <TextAreaField field={field} label="Beginner notes" rows={2} maxLength={2000} />
@@ -608,7 +627,7 @@ export function ExerciseEditor({
                 </form.Field>
               </Fieldset>
 
-              <Fieldset title="Discovery">
+              <Fieldset title="Discovery" icon={Tag}>
                 <form.Field name="tags">
                   {(field) => (
                     <TagField value={field.state.value} onChange={field.handleChange} />
@@ -619,7 +638,7 @@ export function ExerciseEditor({
           )}
         </div>
 
-        <footer className="flex items-center justify-between gap-3 border-t border-slate-200/80 px-5 py-3.5 dark:border-white/[0.07]">
+        <footer className="flex items-center justify-between gap-3 rounded-[22px] border border-slate-200/60 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.03),0_12px_32px_-18px_rgba(15,23,42,0.18)] dark:border-white/[0.07] dark:bg-white/[0.04] sm:px-5">
           <p className="hidden text-[11px] text-[var(--text-muted)] sm:block">
             {saved ? '' : isDirty && !isEdit ? 'Draft saved automatically' : ''}
             {!isDirty && !saved && 'No changes yet'}
@@ -658,9 +677,9 @@ function PreviewPane({ form, meta }: { form: ExerciseFormState; meta: ExerciseMe
   const cat    = meta?.all_categories.find((c) => c.id === form.category_id);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 rounded-[22px] border border-slate-200/60 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] dark:border-white/[0.07] dark:bg-white/[0.04]">
       <div>
-        <h3 className="text-xl font-semibold text-[var(--text-primary)]">
+        <h3 className="text-[22px] font-[800] tracking-[-0.02em] text-[var(--text-primary)]">
           {form.name || 'Untitled exercise'}
         </h3>
         <p className="mt-1 text-xs text-[var(--text-muted)]">
@@ -685,7 +704,7 @@ function PreviewPane({ form, meta }: { form: ExerciseFormState; meta: ExerciseMe
           <ol className="space-y-1.5">
             {form.instructions.split('\n').filter(Boolean).map((s, i) => (
               <li key={i} className="flex gap-2 text-[13px] text-[var(--text-primary)]">
-                <span className="font-semibold text-[var(--brand)]">{i + 1}.</span>{s}
+                <span className="font-[750] text-[var(--rg-ink)] dark:text-[var(--rg-ink-d)]">{i + 1}.</span>{s}
               </li>
             ))}
           </ol>
@@ -724,7 +743,7 @@ function PreviewPane({ form, meta }: { form: ExerciseFormState; meta: ExerciseMe
 function PreviewBlock({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">{title}</h4>
+      <h4 className="mb-1.5 text-[13px] font-[750] text-[var(--text-primary)]">{title}</h4>
       {children}
     </div>
   );
@@ -737,23 +756,50 @@ function inputCls(hasError: boolean) {
     'w-full rounded-xl border bg-white px-3 py-2 text-[13px] text-[var(--text-primary)] outline-none transition-colors',
     'placeholder:text-slate-400 dark:bg-white/[0.04] dark:placeholder:text-white/25',
     hasError
-      ? 'border-[var(--danger)]/50 focus:border-[var(--danger)]'
-      : 'border-slate-200 focus:border-[var(--brand)]/50 focus:ring-2 focus:ring-[var(--brand)]/15 dark:border-white/10',
+      ? 'border-[rgba(239,68,68,0.5)] focus:border-[var(--danger)]'
+      : 'border-slate-200 focus:border-[rgba(0,103,224,0.5)] focus:ring-2 focus:ring-[rgba(0,103,224,0.15)] dark:border-white/10',
   );
 }
 
 function Fieldset({
-  title, children, columns,
-}: { title: string; children: React.ReactNode; columns?: boolean }) {
+  title, children, columns, icon: Icon,
+}: { title: string; children: React.ReactNode; columns?: boolean; icon?: LucideIcon }) {
   return (
-    <fieldset>
-      <legend className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-        {title}
-      </legend>
-      <div className={cn('gap-3', columns ? 'grid grid-cols-1 sm:grid-cols-2' : 'flex flex-col')}>
-        {children}
-      </div>
-    </fieldset>
+    // The card is a div around the fieldset, not the fieldset itself: a
+    // bordered fieldset notches its border around the legend.
+    <div className="rounded-[22px] border border-slate-200/60 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] dark:border-white/[0.07] dark:bg-white/[0.04] sm:p-5">
+      <fieldset>
+        <legend className="mb-3.5 flex items-center gap-2 text-[15px] font-[750] tracking-[-0.01em] text-[var(--text-primary)]">
+          {Icon && (
+            <span
+              aria-hidden
+              className="flex h-7 w-7 items-center justify-center rounded-[9px] text-white"
+              style={{ background: 'linear-gradient(135deg, var(--rg-from), var(--rg-to))' }}
+            >
+              <Icon size={14} />
+            </span>
+          )}
+          {title}
+        </legend>
+        <div className={cn('gap-3', columns ? 'grid grid-cols-1 sm:grid-cols-2' : 'flex flex-col')}>
+          {children}
+        </div>
+      </fieldset>
+    </div>
+  );
+}
+
+/** A round translucent button for the coloured header. */
+function GlassButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all hover:bg-white/30 active:scale-90"
+    >
+      {children}
+    </button>
   );
 }
 
@@ -786,7 +832,7 @@ function ListField({
       {value.length > 0 && (
         <ul className="mb-2 space-y-1">
           {value.map((item, i) => (
-            <li key={i} className="flex items-start gap-2 rounded-lg bg-slate-50 px-2.5 py-1.5 text-[12.5px] text-[var(--text-primary)] dark:bg-white/[0.04]">
+            <li key={i} className="flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-2 text-[12.5px] text-[var(--text-primary)] dark:bg-white/[0.04]">
               <span className="flex-1">{item}</span>
               <button
                 type="button"
@@ -814,7 +860,7 @@ function ListField({
           onClick={add}
           disabled={!draft.trim()}
           aria-label={`Add to ${label}`}
-          className="shrink-0 rounded-xl border border-slate-200 px-2.5 text-[var(--text-muted)] transition-colors hover:border-[var(--brand)]/40 hover:text-[var(--brand)] disabled:opacity-40 dark:border-white/10"
+          className="shrink-0 rounded-xl border border-slate-200 px-2.5 text-[var(--text-muted)] transition-colors hover:border-[rgba(0,103,224,0.4)] hover:text-[var(--brand)] disabled:opacity-40 dark:border-white/10"
         >
           <Plus size={14} />
         </button>
@@ -837,7 +883,7 @@ function TagField({ value, onChange }: { value: string[]; onChange: (v: string[]
       <label htmlFor={inputId} className="mb-1 block text-[12px] font-medium text-[var(--text-primary)]">Tags</label>
       <div className="flex flex-wrap gap-1.5">
         {value.map((t) => (
-          <span key={t} className="inline-flex items-center gap-1 rounded-full bg-[var(--brand)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--brand)]">
+          <span key={t} className="inline-flex items-center gap-1 rounded-full bg-[var(--rg-wash)] px-2.5 py-1 text-[11.5px] font-[650] text-[var(--rg-ink)] dark:text-[var(--rg-ink-d)]">
             {t}
             <button type="button" onClick={() => onChange(value.filter((x) => x !== t))} aria-label={`Remove ${t}`}>
               <X size={10} />

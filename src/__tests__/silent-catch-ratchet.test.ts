@@ -99,7 +99,7 @@ const KNOWN = [
   'app/(chrome)/pt-os/diet-plans/page.tsx:197',
   'app/(chrome)/pt-os/diet-plans/page.tsx:198',
   'app/(chrome)/pt-os/diet-plans/page.tsx:199',
-  'app/(chrome)/pt-os/exercise-library/[id]/edit/page.tsx:27',
+  'app/(chrome)/pt-os/exercise-library/[id]/edit/page.tsx:28',
   'app/(chrome)/pt-os/exercise-library/new/page.tsx:28',
   'app/(chrome)/pt-os/workout-plans/[id]/page.tsx:48',
   'app/(chrome)/settings/integrations/page.tsx:442',

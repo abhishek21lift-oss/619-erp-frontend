@@ -3,22 +3,26 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Dumbbell, Plus, SlidersHorizontal, Search, Command, ChevronLeft, ChevronRight,
-  RefreshCw, AlertCircle, Star, LayoutGrid,
+  RefreshCw, AlertCircle, Star, LayoutGrid, X, Check,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
-import { Badge, Button, EmptyState, PageContainer, PageHero, Skeleton, cn } from '@/components/ui';
+import { Badge, Button, EmptyState, HeroButton, PageContainer, PageHero, Skeleton, cn } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
 import { useSeededSearch } from '@/lib/use-seeded-search';
-import type { LibraryExercise } from '@/lib/api';
+import type { ExerciseFacet, ExerciseMeta, LibraryExercise } from '@/lib/api';
 
 import { ExerciseCard } from '@/components/pt-os/exercise-library/ExerciseCard';
-import { ExerciseFilterRail } from '@/components/pt-os/exercise-library/ExerciseFilterRail';
+import { ExerciseFilterRail, regionFacets } from '@/components/pt-os/exercise-library/ExerciseFilterRail';
 import { ExerciseDetailDrawer } from '@/components/pt-os/exercise-library/ExerciseDetailDrawer';
 import { ExerciseCommandPalette } from '@/components/pt-os/exercise-library/ExerciseCommandPalette';
 import { PAGE_SIZE, useExerciseLibrary } from '@/components/pt-os/exercise-library/useExerciseLibrary';
+import type { ExerciseFilters } from '@/components/pt-os/exercise-library/useExerciseLibrary';
+import {
+  REGION_ORDER, SPECTRUM_RIBBON, regionTone, toneGradient, toneVars,
+} from '@/components/pt-os/exercise-library/libraryTheme';
 import { errorMessage } from '@/lib/forms/errors';
 
 /**
@@ -147,6 +151,17 @@ function ExerciseLibrary() {
     { key: 'custom_only'    as const, label: 'Custom',    icon: LayoutGrid },
   ]), []);
 
+  const regions = useMemo(() => {
+    const facets = regionFacets(meta);
+    const order = (r: string) => {
+      const i = REGION_ORDER.indexOf(r);
+      return i === -1 ? REGION_ORDER.length : i;
+    };
+    return [...facets].sort((a, b) => order(a.slug) - order(b.slug));
+  }, [meta]);
+
+  const activeChips = useMemo(() => describeActiveFilters(filters, meta), [filters, meta]);
+
   return (
     <PageContainer>
       {/* max-w-[1600px] with its own px-4/sm:px-6 INSIDE .shell-main's gutter
@@ -160,93 +175,141 @@ function ExerciseLibrary() {
           : 'Loading library…'}
         actions={(
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <HeroButton
+              variant="glass"
               onClick={() => lib.refetch()}
               aria-label="Refresh library"
-              className="flex h-[44px] w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-[14px] transition-transform active:scale-95"
-              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
-              <RefreshCw size={16} className={cn(loading && 'animate-spin')} />
-            </button>
+              className="h-[44px] w-[44px] shrink-0 px-0"
+              icon={<RefreshCw size={16} className={cn(loading && 'animate-spin')} />}
+            />
             {canAuthor && (
-              <button
-                type="button"
+              <HeroButton
                 onClick={openCreate}
-                className="inline-flex h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] transition-transform active:scale-95 sm:flex-none"
-                style={{ background: '#fff', color: '#0F172A' }}>
-                <Plus size={16} /> New exercise
-              </button>
+                className="h-[44px] flex-1 rounded-[14px] sm:flex-none"
+                icon={<Plus size={16} />}
+              >
+                New exercise
+              </HeroButton>
             )}
           </div>
         )}
-      />
+      >
+        {/* The library at a glance, in the hero's glass. */}
+        <div className="grid grid-cols-3 gap-2 sm:max-w-[560px] sm:gap-2.5">
+          <HeroStat label="Exercises" value={meta ? meta.total.toLocaleString() : '—'} />
+          <HeroStat label="Custom" value={meta ? meta.custom_total.toLocaleString() : '—'} />
+          <HeroStat label="Groups" value={meta ? String(regions.length) : '—'} />
+        </div>
+        <div aria-hidden className="mt-4 h-[3px] w-full max-w-[560px] rounded-full opacity-90" style={{ background: SPECTRUM_RIBBON }} />
+      </PageHero>
 
-      {/* ── Search bar ─────────────────────────────────────────── */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[220px] flex-1">
+      {/* ── Browse by muscle ───────────────────────────────────── */}
+      {regions.length > 0 && (
+        <section aria-label="Browse by muscle group">
+          <div className="mb-2 flex items-baseline justify-between px-0.5">
+            <h2 className="text-[17px] font-[750] tracking-[-0.015em] text-[var(--text-primary)]">Browse by muscle</h2>
+            {filters.body_region && (
+              <button
+                type="button"
+                onClick={() => setFilter('body_region', '')}
+                className="text-[12.5px] font-[650] text-[var(--brand)] hover:underline"
+              >
+                Show all
+              </button>
+            )}
+          </div>
+          {/* A row that scrolls sideways on a phone and wraps into a grid from
+              md up — eight tiles fit a laptop without scrolling. */}
+          <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-2.5 sm:scroll-px-6 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0 xl:grid-cols-8 [&::-webkit-scrollbar]:hidden">
+            {regions.map((r) => (
+              <RegionTile
+                key={r.slug}
+                region={r.slug}
+                count={r.count ?? 0}
+                active={filters.body_region === r.slug}
+                onSelect={() => {
+                  const next = filters.body_region === r.slug ? '' : r.slug;
+                  setFilter('body_region', next);
+                  // Same rule as the filter rail: a region and a muscle from a
+                  // different region cannot both be true.
+                  if (next && filters.muscle) setFilter('muscle', '');
+                }}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Search and quick filters ───────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[220px] flex-1 basis-full sm:basis-auto">
           <Search
-            size={15}
-            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+            size={16}
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
           />
           <input
             value={filters.q}
             onChange={(e) => { setFilter('q', e.target.value); setSeededQ(e.target.value); }}
             placeholder="Search by name, muscle, equipment…"
             aria-label="Search exercises"
-            className="w-full rounded-xl border border-slate-200 bg-white/70 py-2.5 pl-10 pr-24 text-[13.5px] text-[var(--text-primary)] outline-none backdrop-blur-xl transition-colors placeholder:text-slate-400 focus:border-[var(--brand)]/50 focus:ring-2 focus:ring-[var(--brand)]/15 dark:border-white/10 dark:bg-white/[0.04] dark:placeholder:text-white/25"
+            className="h-12 w-full rounded-2xl border border-slate-200/70 bg-white py-2.5 pl-11 pr-24 text-[14px] text-[var(--text-primary)] shadow-[0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-all placeholder:text-slate-400 focus:border-[rgba(0,103,224,0.5)] focus:shadow-[0_0_0_4px_rgba(0,103,224,0.12)] dark:border-white/10 dark:bg-white/[0.05] dark:placeholder:text-white/30"
           />
           <button
             type="button"
             onClick={() => setPaletteOpen(true)}
-            className="absolute right-2.5 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[10.5px] font-medium text-[var(--text-muted)] transition-colors hover:border-[var(--brand)]/40 hover:text-[var(--brand)] dark:border-white/10 sm:flex"
+            className="absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[10.5px] font-[650] text-[var(--text-muted)] transition-colors hover:text-[var(--brand)] dark:bg-white/10 sm:flex"
           >
             <Command size={10} /> K
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setRailOpen(true)}
-          className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2.5 text-[12.5px] font-medium text-[var(--text-primary)] transition-colors hover:border-slate-300 dark:border-white/10 lg:hidden"
-        >
-          <SlidersHorizontal size={14} /> Filters
-          {lib.activeCount > 0 && <Badge tone="brand">{lib.activeCount}</Badge>}
-        </button>
-
-        {quickChips.map(({ key, label, icon: Icon }) => (
+        {/* Filters, the two quick toggles and sort share one row that slides
+            sideways on a phone instead of wrapping into three ragged lines. */}
+        <div className="-mx-4 -my-1 flex w-[calc(100%+2rem)] gap-2 overflow-x-auto px-4 py-1 [scrollbar-width:none] sm:mx-0 sm:w-auto sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
           <button
-            key={key}
             type="button"
-            onClick={() => setFilter(key, !filters[key])}
-            aria-pressed={filters[key]}
-            className={cn(
-              'flex items-center gap-1.5 rounded-xl border px-3 py-2.5 text-[12.5px] font-medium transition-all',
-              filters[key]
-                ? 'border-[var(--brand)]/40 bg-[var(--brand)]/10 text-[var(--brand)]'
-                : 'border-slate-200 text-[var(--text-muted)] hover:border-slate-300 hover:text-[var(--text-primary)] dark:border-white/10',
-            )}
+            onClick={() => setRailOpen(true)}
+            className="flex h-11 shrink-0 items-center gap-1.5 rounded-2xl border border-slate-200/70 bg-white px-4 sm:h-12 text-[13px] font-[650] text-[var(--text-primary)] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.05] lg:hidden"
           >
-            <Icon size={13} /> {label}
+            <SlidersHorizontal size={15} /> Filters
+            {lib.activeCount > 0 && <Badge tone="brand">{lib.activeCount}</Badge>}
           </button>
-        ))}
 
-        <select
-          value={filters.sort}
-          onChange={(e) => setFilter('sort', e.target.value)}
-          aria-label="Sort exercises"
-          className="rounded-xl border border-slate-200 bg-white/70 px-3 py-2.5 text-[12.5px] font-medium text-[var(--text-primary)] outline-none dark:border-white/10 dark:bg-white/[0.04]"
-        >
-          <option value="name">A → Z</option>
-          <option value="name_desc">Z → A</option>
-          <option value="updated">Recently updated</option>
-          <option value="created">Newest</option>
-        </select>
+          {quickChips.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setFilter(key, !filters[key])}
+              aria-pressed={filters[key]}
+              className={cn(
+                'flex h-11 sm:h-12 items-center gap-1.5 rounded-2xl border px-4 text-[13px] font-[650] transition-all active:scale-[0.97]',
+                filters[key]
+                  ? 'border-transparent bg-[var(--brand)] text-white shadow-[0_8px_20px_-8px_rgba(0,103,224,0.7)]'
+                  : 'border-slate-200/70 bg-white text-[var(--text-muted)] shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:text-[var(--text-primary)] dark:border-white/10 dark:bg-white/[0.05]',
+              )}
+            >
+              <Icon size={14} fill={key === 'favorites_only' && filters[key] ? 'currentColor' : 'none'} /> {label}
+            </button>
+          ))}
+
+          <select
+            value={filters.sort}
+            onChange={(e) => setFilter('sort', e.target.value)}
+            aria-label="Sort exercises"
+            className="h-11 shrink-0 cursor-pointer sm:h-12 rounded-2xl border border-slate-200/70 bg-white px-4 text-[13px] font-[650] text-[var(--text-primary)] shadow-[0_1px_2px_rgba(15,23,42,0.04)] outline-none dark:border-white/10 dark:bg-white/[0.05]"
+          >
+            <option value="name">A → Z</option>
+            <option value="name_desc">Z → A</option>
+            <option value="updated">Recently updated</option>
+            <option value="created">Newest</option>
+          </select>
+        </div>
       </div>
 
       <div className="flex gap-6">
         {/* ── Filter rail ──────────────────────────────────────── */}
-        <div className="hidden w-[248px] shrink-0 lg:block">
-          <div className="sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl border border-slate-200/80 bg-white/60 p-3 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.03]">
+        <div className="hidden w-[260px] shrink-0 lg:block">
+          <div className="sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto rounded-[24px] border border-slate-200/70 bg-white p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_-18px_rgba(15,23,42,0.14)] dark:border-white/[0.08] dark:bg-white/[0.04]">
             <ExerciseFilterRail
               meta={meta}
               filters={filters}
@@ -259,8 +322,13 @@ function ExerciseLibrary() {
 
         {railOpen && (
           <div data-no-pull-refresh className="fixed inset-0 z-50 lg:hidden">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={() => setRailOpen(false)} aria-hidden />
-            <div className="absolute bottom-0 left-0 right-0 max-h-[82vh] overflow-y-auto rounded-t-3xl border-t border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-[#0f172a]">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[3px] animate-in fade-in duration-200" onClick={() => setRailOpen(false)} aria-hidden />
+            <div
+              className="absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto rounded-t-[28px] border-t border-slate-200 bg-white px-4 pt-2 shadow-[0_-20px_60px_-20px_rgba(15,23,42,0.4)] animate-in slide-in-from-bottom duration-300 dark:border-white/10 dark:bg-[#0f172a]"
+              style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+            >
+              {/* The sheet's grabber: says "this slides", the iOS way. */}
+              <div aria-hidden className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-white/20" />
               <ExerciseFilterRail
                 meta={meta}
                 filters={filters}
@@ -275,8 +343,8 @@ function ExerciseLibrary() {
 
         {/* ── Results ──────────────────────────────────────────── */}
         <main className="min-w-0 flex-1">
-          <div className="mb-3 flex items-center justify-between gap-3 text-[12px] text-[var(--text-muted)]">
-            <span aria-live="polite">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-[12.5px] text-[var(--text-muted)]">
+            <span aria-live="polite" className="font-medium">
               {loading
                 ? 'Loading…'
                 : total === 0
@@ -288,15 +356,39 @@ function ExerciseLibrary() {
               <button
                 type="button"
                 onClick={reset}
-                className="font-medium text-[var(--brand)] hover:underline"
+                className="font-[650] text-[var(--brand)] hover:underline"
               >
                 Clear filters
               </button>
             )}
           </div>
 
+          {/* What is narrowing the list, each removable in one tap. */}
+          {activeChips.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {activeChips.map((c) => (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => setFilter(c.key, (typeof filters[c.key] === 'boolean' ? false : '') as never)}
+                  aria-label={`Remove filter: ${c.label}`}
+                  style={c.region ? toneVars(regionTone(c.region)) : undefined}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full py-1 pl-3 pr-2 text-[12px] font-[650] transition-colors',
+                    c.region
+                      ? 'bg-[var(--rg-wash)] text-[var(--rg-ink)] hover:bg-[var(--rg-wash-hi)] dark:text-[var(--rg-ink-d)]'
+                      : 'bg-[rgba(0,103,224,0.1)] text-[var(--brand)] hover:bg-[rgba(0,103,224,0.15)]',
+                  )}
+                >
+                  {c.label}
+                  <X size={12} />
+                </button>
+              ))}
+            </div>
+          )}
+
           {error ? (
-            <div className="flex flex-col items-center gap-3 rounded-2xl border border-[var(--danger)]/20 bg-[var(--danger)]/5 px-6 py-12 text-center">
+            <div className="flex flex-col items-center gap-3 rounded-[24px] border border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.05)] px-6 py-12 text-center">
               <AlertCircle size={24} className="text-[var(--danger-text)]" />
               <div>
                 <p className="text-sm font-medium text-[var(--text-primary)]">Could not load the library</p>
@@ -309,13 +401,16 @@ function ExerciseLibrary() {
               {Array.from({ length: 12 }).map((_, i) => (
                 <div
                   key={i}
-                  className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white/50 p-4 dark:border-white/10 dark:bg-white/[0.03]"
+                  className="flex gap-3 border-b border-slate-200/70 px-1 py-3.5 dark:border-white/[0.07] sm:rounded-[22px] sm:border sm:bg-white sm:p-4 sm:dark:bg-white/[0.04]"
                 >
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-3 w-1/2" />
-                  <div className="flex gap-1.5">
-                    <Skeleton className="h-5 w-16 rounded-full" />
-                    <Skeleton className="h-5 w-20 rounded-full" />
+                  <Skeleton className="h-10 w-10 shrink-0 rounded-[12px]" />
+                  <div className="flex flex-1 flex-col gap-2.5">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                    <div className="flex gap-1.5">
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -373,19 +468,23 @@ function ExerciseLibrary() {
               </div>
 
               {lib.pageCount > 1 && (
-                <nav className="mt-6 flex items-center justify-center gap-1.5" aria-label="Pagination">
-                  <Button
-                    variant="ghost"
+                <nav
+                  className="mx-auto mt-6 flex w-fit items-center justify-center gap-1 rounded-full border border-slate-200/70 bg-white p-1 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_28px_-16px_rgba(15,23,42,0.18)] dark:border-white/10 dark:bg-white/[0.05]"
+                  aria-label="Pagination"
+                >
+                  <button
+                    type="button"
                     onClick={() => lib.setPage(Math.max(0, lib.page - 1))}
                     disabled={lib.page === 0}
                     aria-label="Previous page"
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-primary)] transition-colors hover:bg-slate-100 disabled:opacity-30 dark:hover:bg-white/10"
                   >
-                    <ChevronLeft size={14} />
-                  </Button>
+                    <ChevronLeft size={16} />
+                  </button>
 
                   {pageWindow(lib.page, lib.pageCount).map((p, i) =>
                     p === null ? (
-                      <span key={`gap-${i}`} className="px-1.5 text-[var(--text-muted)]">…</span>
+                      <span key={`gap-${i}`} className="px-1 text-[var(--text-muted)]">…</span>
                     ) : (
                       <button
                         key={p}
@@ -393,9 +492,9 @@ function ExerciseLibrary() {
                         onClick={() => lib.setPage(p)}
                         aria-current={p === lib.page ? 'page' : undefined}
                         className={cn(
-                          'min-w-[34px] rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium transition-colors',
+                          'h-9 min-w-[36px] rounded-full px-2.5 text-[13px] font-[650] tabular-nums transition-all',
                           p === lib.page
-                            ? 'bg-[var(--brand)] text-white'
+                            ? 'bg-[var(--brand)] text-white shadow-[0_6px_16px_-6px_rgba(0,103,224,0.7)]'
                             : 'text-[var(--text-muted)] hover:bg-slate-100 hover:text-[var(--text-primary)] dark:hover:bg-white/10',
                         )}
                       >
@@ -404,14 +503,15 @@ function ExerciseLibrary() {
                     )
                   )}
 
-                  <Button
-                    variant="ghost"
+                  <button
+                    type="button"
                     onClick={() => lib.setPage(Math.min(lib.pageCount - 1, lib.page + 1))}
                     disabled={lib.page >= lib.pageCount - 1}
                     aria-label="Next page"
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-primary)] transition-colors hover:bg-slate-100 disabled:opacity-30 dark:hover:bg-white/10"
                   >
-                    <ChevronRight size={14} />
-                  </Button>
+                    <ChevronRight size={16} />
+                  </button>
                 </nav>
               )}
             </>
@@ -457,5 +557,100 @@ function pageWindow(current: number, count: number): (number | null)[] {
     out.push(p);
     prev = p;
   }
+  return out;
+}
+
+
+/** A number on the hero's glass. */
+function HeroStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      className="rounded-[16px] px-3 py-2.5 sm:px-3.5"
+      style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.14)' }}
+    >
+      <p className="text-[20px] font-[800] leading-none tracking-[-0.02em] text-white tabular-nums sm:text-[24px]">{value}</p>
+      <p className="mt-1.5 truncate text-[10.5px] font-[650] uppercase tracking-[0.06em]" style={{ color: 'rgba(255,255,255,0.66)' }}>
+        {label}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * A body region as a tile in its own colour — the library's front door.
+ * Tapping it filters to that region; tapping it again clears the filter.
+ */
+function RegionTile({
+  region, count, active, onSelect,
+}: { region: string; count: number; active: boolean; onSelect: () => void }) {
+  const tone = regionTone(region);
+  const Icon = tone.icon;
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={active}
+      disabled={count === 0 && !active}
+      style={{ ...toneVars(tone), background: toneGradient(tone, 150) }}
+      className={cn(
+        'group relative flex min-w-[124px] shrink-0 snap-start flex-col items-start overflow-hidden rounded-[20px] p-3.5 text-left text-white',
+        'shadow-[0_10px_24px_-12px_var(--rg-glow)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+        'hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-12px_var(--rg-glow)] active:scale-[0.97]',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2',
+        'disabled:cursor-not-allowed disabled:opacity-40 md:min-w-0',
+        active && 'ring-[3px] ring-[color:var(--rg-from)] ring-offset-2 ring-offset-[color:var(--bg-canvas)]',
+      )}
+    >
+      {/* Gloss: a light top edge and a soft highlight, the Apple tile finish. */}
+      <span aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_0%_0%,rgba(255,255,255,0.28),transparent_55%)]" />
+      <span aria-hidden className="pointer-events-none absolute -bottom-5 -right-4 opacity-20 transition-transform duration-500 group-hover:scale-110">
+        <Icon size={64} strokeWidth={1.6} />
+      </span>
+      <span className="relative flex h-8 w-8 items-center justify-center rounded-[10px] bg-white/20 backdrop-blur-sm">
+        <Icon size={16} strokeWidth={2.3} />
+      </span>
+      <span className="relative mt-3 text-[14px] font-[750] leading-tight tracking-[-0.01em]">{region}</span>
+      <span className="relative mt-0.5 text-[11.5px] font-[600] tabular-nums text-white/80">
+        {count.toLocaleString()} {count === 1 ? 'exercise' : 'exercises'}
+      </span>
+      {active && (
+        <span className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[var(--rg-ink)]">
+          <Check size={12} strokeWidth={3} />
+        </span>
+      )}
+    </button>
+  );
+}
+
+type ChipKey = Exclude<keyof ExerciseFilters, 'q' | 'sort' | 'include_secondary'>;
+
+/**
+ * The filters narrowing the list, named the way the rail names them. Slugs
+ * are looked up in the same facets the rail renders, so a chip never says
+ * "barbell-bb" where the rail said "Barbell".
+ */
+function describeActiveFilters(
+  f: ExerciseFilters, meta: ExerciseMeta | null,
+): { key: ChipKey; label: string; region?: string }[] {
+  const name = (list: ExerciseFacet[] | undefined, slug: string) =>
+    list?.find((o) => o.slug === slug)?.name ?? slug;
+  const out: { key: ChipKey; label: string; region?: string }[] = [];
+  if (f.body_region) out.push({ key: 'body_region', label: f.body_region, region: f.body_region });
+  if (f.muscle) {
+    const m = meta?.muscles.find((o) => o.slug === f.muscle);
+    out.push({ key: 'muscle', label: m?.name ?? f.muscle, region: m?.body_region });
+  }
+  if (f.equipment)  out.push({ key: 'equipment',  label: name(meta?.equipment, f.equipment) });
+  if (f.category)   out.push({ key: 'category',   label: name(meta?.categories, f.category) });
+  if (f.difficulty) {
+    const d = name(meta?.difficulties, f.difficulty);
+    out.push({ key: 'difficulty', label: d.charAt(0).toUpperCase() + d.slice(1) });
+  }
+  if (f.mechanic)   out.push({ key: 'mechanic',   label: name(meta?.mechanics, f.mechanic) });
+  if (f.force)      out.push({ key: 'force',      label: name(meta?.forces, f.force) });
+  if (f.pattern)    out.push({ key: 'pattern',    label: name(meta?.movement_patterns, f.pattern) });
+  if (f.favorites_only)   out.push({ key: 'favorites_only',   label: 'Favorites' });
+  if (f.custom_only)      out.push({ key: 'custom_only',      label: 'Custom' });
+  if (f.include_archived) out.push({ key: 'include_archived', label: 'Including archived' });
   return out;
 }

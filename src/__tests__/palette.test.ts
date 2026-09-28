@@ -131,6 +131,10 @@ describe('the app uses only the palette', () => {
     // The member app's spectrum is the fifth: decorative colour for the
     // member portal's hero and tiles, never for status, in
     // components/member/memberTheme.ts.
+    //
+    // The exercise library's region colours are the sixth, same shape again:
+    // one hue per body region, decorative, in
+    // components/pt-os/exercise-library/libraryTheme.ts.
     const known = new Set(
       [...allHexes(), ...Object.values(founderGold)].map((h) => h.toUpperCase())
     );
@@ -149,6 +153,8 @@ describe('the app uses only the palette', () => {
         if (p.includes(join('components', 'visualizations'))) continue;
         // The member app's decorative spectrum — its one token file, confined below.
         if (p.endsWith(join('components', 'member', 'memberTheme.ts'))) continue;
+        // The exercise library's region colours — its one token file, confined below.
+        if (p.endsWith(join('exercise-library', 'libraryTheme.ts'))) continue;
         const text = readFileSync(p, 'utf8');
         for (const m of text.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
           if (!known.has(m.toUpperCase())) offenders.push(`${p}: ${m}`);
@@ -202,6 +208,31 @@ describe('the app uses only the palette', () => {
     };
     walk(join(process.cwd(), 'src'));
     const outside = users.filter((u) => !u.startsWith('components/member/') && !u.startsWith('app/(bare)/member/'));
+    expect(outside).toEqual([]);
+  });
+
+  it('confines the region colours to the exercise library', () => {
+    // The sixth exception (exercise-library/libraryTheme.ts): one decorative
+    // hue per body region. A muscle group is not a state, so it cannot borrow
+    // a family that means one — but the same hues on a roster or a money
+    // screen would be exactly the colour-without-meaning the five families
+    // replaced. Only the library's own files may import them.
+    const users: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = join(dir, entry);
+        if (statSync(p).isDirectory()) { walk(p); continue; }
+        if (!/\.tsx?$/.test(entry)) continue;
+        if (p.includes('__tests__')) continue;
+        if (/libraryTheme['"]/.test(readFileSync(p, 'utf8'))) {
+          users.push(p.split(join('src') + sep)[1].replaceAll(sep, '/'));
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src'));
+    const outside = users.filter((u) =>
+      !u.startsWith('components/pt-os/exercise-library/') && !u.startsWith('app/(chrome)/pt-os/exercise-library/'));
+    expect(users.length).toBeGreaterThan(0);
     expect(outside).toEqual([]);
   });
 
