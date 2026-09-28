@@ -859,6 +859,13 @@ export interface TodayClient {
   is_rest_day: boolean;
   session_id: string | null;
   session_status: WorkoutSessionStatus | null;
+  /** Exercises in the whole programme, any day. 0 is a programme with nothing
+   *  written yet — not a rest day. Null with no programme. */
+  plan_exercise_total?: number | null;
+  /** Week of the block since it started, NOT held to its length, beside that
+   *  length: week 7 of 4 is a programme that ran past its end. */
+  programme_week?: number | null;
+  duration_weeks?: number | null;
 }
 
 export interface TodayRoster {
@@ -867,7 +874,11 @@ export interface TodayRoster {
   clients: TodayClient[];
 }
 
-export type WorkoutSessionStatus = 'in_progress' | 'completed';
+/**
+ * 'abandoned' is an empty log left open on an earlier day, closed by the
+ * server's sweep (migration 220). It is kept, and counted nowhere.
+ */
+export type WorkoutSessionStatus = 'in_progress' | 'completed' | 'abandoned';
 
 export interface WorkoutSession {
   id: string;
@@ -1396,6 +1407,11 @@ export interface WorkoutPlanAssignment {
   progress_pct: number;
   /** ISO date the client started, used to work out which week they are in. */
   start_date: string | null;
+  /** The CLIENT's status. An expired client's programme is shown but kept
+   *  out of the studio's numbers. */
+  client_status?: string | null;
+  /** The assignment's own end, when it has one. */
+  end_date?: string | null;
 }
 
 export interface WorkoutPlan {

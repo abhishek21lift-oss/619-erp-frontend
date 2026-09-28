@@ -46,6 +46,8 @@ import http from '@/lib/http';
 import dynamic from 'next/dynamic';
 import { fmtTime12 } from '@/lib/format';
 import type { TodayClient, TodayRoster } from '@/lib/api';
+import { programmeNote } from '@/lib/today-notes';
+import { gradient, ringStops, ringTrack, rowTones, todayMark, type RowTone } from '@/components/dashboards/todayTheme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type DashData = {
@@ -1589,6 +1591,11 @@ export type TodayRow = {
    * started yet. Which is most mornings.
    */
   live: boolean;
+  /**
+   * Something about the programme the trainer should know before starting:
+   * it ran past its last week, or it has nothing in it. Null when all's well.
+   */
+  note: string | null;
 };
 
 /**
@@ -1643,8 +1650,13 @@ export function buildTodayQueue(roster: TodayClient[]): TodayRow[] {
       // Every row goes to the same place: the full list, in this same order,
       // where each client has their own Start button.
       href: '/pt-os/today',
+      note: programmeNote(c),
     }));
 }
+
+// programmeNote lives in lib/today-notes so /pt-os/today can use it without
+// importing the dashboard; re-exported here for callers that already do.
+export { programmeNote } from '@/lib/today-notes';
 
 function TodaySchedule() {
   const router = useRouter();
@@ -1666,10 +1678,14 @@ function TodaySchedule() {
   const clients = useMemo(() => roster.data?.clients ?? [], [roster.data?.clients]);
   const done = clients.filter((c) => c.session_status === 'completed').length;
   const queue = useMemo(() => buildTodayQueue(clients), [clients]);
+  const live = queue.filter((r) => r.live).length;
   const loading = roster.loading;
 
   const shown = queue.slice(0, TODAY_VISIBLE);
   const hidden = queue.length - shown.length;
+  // The day's ring: sessions finished out of sessions the day holds. A rest
+  // day is not a session, so it is out of both.
+  const dayTotal = done + queue.length;
 
   const today = new Date().toLocaleDateString('en-IN', {
     weekday: 'long', day: 'numeric', month: 'short',
@@ -1677,67 +1693,82 @@ function TodaySchedule() {
 
   return (
     <Glass className="overflow-hidden">
-      {/* Header. The mark carries the card's colour so the rows below do not
-          have to shout — an earlier version put a tinted band across the whole
-          top and ended up competing with the hero directly above it. */}
-      <div className="flex items-center gap-2.5 px-4 pt-3.5 pb-2.5 sm:px-5">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] text-white"
-          style={{
-            background: `linear-gradient(135deg, ${C.danger}, ${palette.amber[400]})`,
-            boxShadow: `0 4px 12px ${C.danger}40`,
-          }}>
-          <CalendarClock size={14} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-[13px] font-[800] tracking-[-0.01em]" style={{ color: C.ink }}>
-            Today&apos;s Sessions
-          </h3>
-          <p className="text-[10px] font-[560]" style={{ color: C.muted }}>
-            {today}
-            {/* Finished sessions leave the list but not the card — otherwise a
-                day where everything is done looks like a day with nothing on. */}
-            {done > 0 && ` · ${done} done`}
-          </p>
-        </div>
-        {roster.hasResolved && (
-          <span className="shrink-0 rounded-full px-2 py-[3px] text-[10px] font-[780] tabular-nums"
-            style={{ background: `${C.danger}10`, color: C.danger }}>
-            {queue.length} left
+      {/* ── Header ─────────────────────────────────────────────────────────
+          A warm mark, the title, and the day's progress as an activity ring.
+          The old header wore the overdue red and put "3 left" in a red pill,
+          which read as an error on a morning that was simply ahead. */}
+      <div className="relative px-4 pb-3 pt-4 sm:px-5">
+        <span aria-hidden className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full opacity-[0.16] blur-3xl"
+          style={{ background: gradient(todayMark.from, todayMark.to) }} />
+        <div className="relative flex items-center gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-white"
+            style={{
+              background: gradient(todayMark.from, todayMark.to),
+              boxShadow: `0 8px 20px -6px ${todayMark.glow}, inset 0 1px 0 rgba(255,255,255,0.35)`,
+            }}>
+            <CalendarClock size={19} strokeWidth={2.2} />
           </span>
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-[16px] font-[800] tracking-[-0.02em]" style={{ color: C.ink }}>
+              Today&apos;s Sessions
+            </h3>
+            <p className="truncate text-[11.5px] font-[560]" style={{ color: C.muted }}>{today}</p>
+          </div>
+          {roster.hasResolved && dayTotal > 0 && (
+            <DayRing done={done} total={dayTotal} reduce={!!reduce} />
+          )}
+        </div>
+
+        {/* What the day holds, in words the ring cannot say. Only the counts
+            that are not zero — "0 live" is noise. */}
+        {roster.hasResolved && dayTotal > 0 && (
+          <div className="relative mt-3 flex flex-wrap gap-1.5">
+            {live > 0 && <DayChip tone="live" label={`${live} on the floor`} pulse={!reduce} />}
+            {queue.length - live > 0 && <DayChip tone="next" label={`${queue.length - live} to go`} />}
+            {done > 0 && <DayChip tone="done" label={`${done} done`} />}
+          </div>
         )}
       </div>
 
-      <div className="px-4 pb-3.5 sm:px-5">
+      <div className="px-3 pb-3.5 sm:px-4">
         {loading && !roster.hasResolved && (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {[1, 2].map((i) => (
-              <div key={i} className="flex items-center gap-2.5 rounded-[13px] p-2.5" style={{ background: 'rgba(15,23,42,0.03)' }}>
-                <Skel w="w-9" h="h-9" r="rounded-full" />
-                <div className="flex-1 space-y-1.5"><Skel w="w-28" h="h-3" /><Skel w="w-20" h="h-2.5" /></div>
+              <div key={i} className="flex items-center gap-3 rounded-[18px] p-3" style={{ background: 'rgba(15,23,42,0.03)' }}>
+                <Skel w="w-11" h="h-11" r="rounded-full" />
+                <div className="flex-1 space-y-1.5"><Skel w="w-28" h="h-3" /><Skel w="w-36" h="h-2.5" /></div>
               </div>
             ))}
           </div>
         )}
 
         {!loading && queue.length === 0 && (
-          <div className="flex flex-col items-center py-5 text-center">
-            <p className="text-[12.5px] font-[720]" style={{ color: C.ink }}>
+          <div className="flex flex-col items-center rounded-[20px] px-4 py-6 text-center"
+            style={{ background: done > 0 ? rowTones.live.wash : 'rgba(15,23,42,0.025)' }}>
+            <span className="flex h-12 w-12 items-center justify-center rounded-full text-white"
+              style={{
+                background: done > 0 ? gradient(rowTones.live.from, rowTones.live.to) : gradient(todayMark.from, todayMark.to),
+                boxShadow: `0 8px 20px -8px ${done > 0 ? rowTones.live.glow : todayMark.glow}`,
+              }}>
+              {done > 0 ? <CheckCircle2 size={22} /> : <CalendarClock size={20} />}
+            </span>
+            <p className="mt-2.5 text-[14px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>
               {done > 0 ? 'All done for today' : 'Nothing on today'}
             </p>
-            <p className="mt-0.5 max-w-[34ch] text-[10.5px] leading-[1.5]" style={{ color: C.muted }}>
+            <p className="mt-0.5 max-w-[34ch] text-[11.5px] leading-[1.5]" style={{ color: C.muted }}>
               {done > 0
                 ? `${done} session${done === 1 ? '' : 's'} completed.`
-                /* Names all three sources now. It used to name two, which made
-                   it a false statement for a studio whose clients' training
-                   days are recorded on the enrolment form — it asserted
-                   nobody trains today while the enrolment said otherwise. */
+                /* Names all three sources: a studio whose training days live on
+                   the enrolment form must not be told nobody trains today. */
                 : 'No booked slots, no programme day, and nobody enrolled for today.'}
             </p>
-            <button onClick={() => router.push('/pt-os/schedule-session')}
-              className="mt-2.5 inline-flex h-[36px] items-center gap-1.5 rounded-full px-3.5 text-[11px] font-[720] transition-transform active:scale-95"
-              style={{ background: `${C.danger}10`, color: C.danger, border: `1px solid ${C.danger}20` }}>
-              <CalendarPlus size={12} /> Schedule a session
-            </button>
+            {done === 0 && (
+              <button onClick={() => router.push('/pt-os/schedule-session')}
+                className="mt-3 inline-flex h-[38px] items-center gap-1.5 rounded-full px-4 text-[12px] font-[750] text-white transition-transform active:scale-95"
+                style={{ background: gradient(rowTones.next.from, rowTones.next.to), boxShadow: `0 8px 18px -8px ${rowTones.next.glow}` }}>
+                <CalendarPlus size={13} /> Schedule a session
+              </button>
+            )}
           </div>
         )}
 
@@ -1755,72 +1786,98 @@ function TodaySchedule() {
               // `live` rather than counting rows: labelling by index alone
               // would put NEXT on a client who is mid-set.
               const nextUp = !r.live && !shown.slice(0, i).some((p) => !p.live);
-              const accent = r.live ? C.success : nextUp ? C.primary : C.muted;
+              const toneKey: RowTone = r.live ? 'live' : nextUp ? 'next' : 'waiting';
+              const tone = rowTones[toneKey];
+              const t12 = r.time ? fmtTime12(r.time) : null;
               return (
                 <m.button
                   key={r.key}
                   type="button"
                   onClick={() => router.push(r.href)}
-                  initial={reduce ? false : { opacity: 0, y: 4 }}
+                  initial={reduce ? false : { opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: reduce ? 0 : i * 0.05, duration: 0.24, ease: EASE }}
-                  className="relative flex w-full items-center gap-2.5 overflow-hidden rounded-[14px] p-2.5 pl-3 text-left transition-transform active:scale-[0.99]"
+                  transition={{ delay: reduce ? 0 : i * 0.06, duration: 0.3, ease: EASE }}
+                  className="group relative flex w-full flex-col overflow-hidden rounded-[20px] p-3 text-left transition-transform active:scale-[0.985]"
                   style={{
-                    background: `linear-gradient(115deg, ${accent}12 0%, ${accent}05 40%, transparent 88%)`,
-                    border: `1px solid ${accent}2b`,
-                    boxShadow: r.live ? `0 4px 16px ${accent}1f` : 'none',
+                    background: toneKey === 'waiting' ? 'rgba(15,23,42,0.025)' : tone.wash,
+                    border: `1px solid ${toneKey === 'waiting' ? 'rgba(15,23,42,0.06)' : tone.wash}`,
+                    boxShadow: r.live ? `0 10px 24px -14px ${tone.glow}` : 'none',
                   }}
                 >
-                  {/* The one bar of solid colour. It reads down the list as a
-                      spine: green while somebody is training, blue for who is
-                      up next, grey for everyone waiting behind them. */}
-                  <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full"
-                    style={{ background: accent }} aria-hidden />
+                  <span className="flex w-full items-center gap-2.5 sm:gap-3">
+                  {/* Time first, the way a day is read. A due client with no
+                      time says "Any time" rather than inventing one. */}
+                  <span className="flex w-[40px] shrink-0 flex-col items-center leading-none sm:w-[46px]">
+                    {t12 ? (
+                      <>
+                        <span className="text-[15px] font-[800] tabular-nums tracking-[-0.02em]" style={{ color: C.ink }}>
+                          {t12.replace(/\s?[AP]M$/i, '')}
+                        </span>
+                        <span className="mt-1 text-[9.5px] font-[750] uppercase tracking-[0.06em]" style={{ color: C.muted }}>
+                          {/[AP]M$/i.exec(t12)?.[0] ?? ''}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-center text-[10px] font-[700] leading-[1.2]" style={{ color: C.muted }}>Any<br />time</span>
+                    )}
+                  </span>
 
-                  <ClientAvatar
-                    name={r.name}
-                    photoUrl={r.photo}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-[820]"
-                    style={{ background: `${accent}1f`, color: C.ink }} />
+                  {/* The avatar in a gradient halo: the row's state as colour. */}
+                  <span className="relative shrink-0 rounded-full p-[2px]" style={{ background: gradient(tone.from, tone.to) }}>
+                    <ClientAvatar
+                      name={r.name}
+                      photoUrl={r.photo}
+                      className="flex h-10 w-10 items-center justify-center rounded-full text-[11px] font-[820] ring-2 ring-white"
+                      style={{ background: 'white', color: tone.ink }} />
+                    {r.live && (
+                      <span aria-hidden className={cn('absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-white', !reduce && 'animate-pulse')}
+                        style={{ background: C.success }} />
+                    )}
+                  </span>
 
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-1.5">
-                      <span className="truncate text-[12.5px] font-[730]" style={{ color: C.ink }}>
-                        {r.name ?? 'Unknown client'}
+                    {/* The state sits ABOVE the name, not beside it: beside it,
+                        a phone row had room for "M" of "Myself". */}
+                    {(r.live || nextUp) && (
+                      <span className="mb-0.5 inline-flex items-center rounded-full px-1.5 py-[1px] text-[9px] font-[820] uppercase tracking-[0.09em] text-white"
+                        style={{ background: gradient(tone.from, tone.to) }}>
+                        {r.live ? 'On the floor' : 'Next'}
                       </span>
-                      {(r.live || nextUp) && (
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-[1px] text-[8px] font-[820] uppercase tracking-[0.08em]"
-                          style={{ background: `${accent}1a`, color: accent }}>
-                          {r.live && (
-                            // Breathing, because a live session is the one
-                            // thing on this card that is changing while it is
-                            // being looked at. Held still for anybody who has
-                            // asked for less motion.
-                            <span
-                              className={reduce ? 'h-[5px] w-[5px] rounded-full' : 'h-[5px] w-[5px] animate-pulse rounded-full'}
-                              style={{ background: accent }} aria-hidden />
-                          )}
-                          {r.live ? 'On the floor' : 'Next'}
-                        </span>
-                      )}
+                    )}
+                    <span className="block truncate text-[14px] font-[750] tracking-[-0.01em]" style={{ color: C.ink }}>
+                      {r.name ?? 'Unknown client'}
                     </span>
-                    <span className="block truncate text-[10px] font-[540]" style={{ color: C.muted }}>
-                      {/* A time when there is one; the row is a due client when
-                          there is not, and inventing one would be a lie. */}
-                      {r.time ? `${fmtTime12(r.time)} · ` : ''}{r.sub}
+                    <span className="mt-0.5 block truncate text-[11.5px] font-[560]" style={{ color: C.muted }}>
+                      {/* Kept as one string with the time for the full list's
+                          parity: fmtTime12(r.time) is what both screens show. */}
+                      <span className="sr-only">{r.time ? `${fmtTime12(r.time)} · ` : ''}</span>
+                      {r.sub}
                     </span>
                   </span>
 
                   {/* Resume, not Start, once a log is open — pressing Start on
                       a session already running is how a trainer ends up with
-                      two logs for one workout. */}
-                  <span className="inline-flex h-[28px] shrink-0 items-center gap-1 rounded-full px-2.5 text-[10px] font-[800] text-white"
+                      two logs for one workout. Always a solid, readable
+                      button: the waiting rows' old grey-on-white pill was
+                      invisible. */}
+                  <span className="inline-flex h-[34px] shrink-0 items-center gap-0.5 rounded-full px-3 text-[12px] font-[800] text-white transition-transform group-hover:translate-x-0.5 sm:px-3.5"
                     style={{
-                      background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-                      boxShadow: `0 3px 9px ${accent}45`,
+                      background: toneKey === 'waiting' ? C.ink : gradient(tone.from, tone.to),
+                      boxShadow: toneKey === 'waiting' ? 'none' : `0 6px 14px -6px ${tone.glow}`,
                     }}>
-                    {r.live ? 'Resume' : 'Start'} <ChevronRight size={11} />
+                    {r.live ? 'Resume' : 'Start'} <ChevronRight size={13} />
                   </span>
+                  </span>
+
+                  {/* A programme warning gets the row's full width — squeezed
+                      into the text column it read "Finished 1 we…". */}
+                  {r.note && (
+                    <span className="mt-2 flex w-full items-center gap-1.5 rounded-[12px] px-2.5 py-1.5 text-[11px] font-[700]"
+                      style={{ background: rgba(palette.amber[500], 0.14), color: palette.amber[700] }}>
+                      <AlertTriangle size={12} className="shrink-0" />
+                      <span className="min-w-0">{r.note}</span>
+                    </span>
+                  )}
                 </m.button>
               );
             })}
@@ -1829,16 +1886,65 @@ function TodaySchedule() {
               <button
                 type="button"
                 onClick={() => router.push('/pt-os/today')}
-                className="flex w-full items-center justify-center gap-1 rounded-[12px] py-2 text-[11px] font-[700] transition-colors hover:bg-[rgba(15,23,42,0.03)]"
-                style={{ color: C.muted }}
+                className="mx-auto mt-1 flex items-center justify-center gap-1 rounded-full px-4 py-2 text-[12px] font-[750] transition-colors hover:bg-[rgba(15,23,42,0.05)]"
+                style={{ color: rowTones.next.ink, background: rowTones.next.wash }}
               >
-                +{hidden} more today <ChevronRight size={12} />
+                +{hidden} more today <ChevronRight size={13} />
               </button>
             )}
           </div>
         )}
       </div>
     </Glass>
+  );
+}
+
+/** The day's progress as an Apple-style activity ring: done out of the day. */
+function DayRing({ done, total, reduce }: { done: number; total: number; reduce: boolean }) {
+  const gid = useId();
+  const size = 46;
+  const stroke = 6;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const frac = total > 0 ? Math.min(1, done / total) : 0;
+  return (
+    <span className="relative flex shrink-0 items-center justify-center" role="img"
+      aria-label={`${done} of ${total} sessions done today`}>
+      <svg width={size} height={size} className="-rotate-90">
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={ringStops[0]} />
+            <stop offset="100%" stopColor={ringStops[1]} />
+          </linearGradient>
+        </defs>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={ringTrack} strokeWidth={stroke} />
+        <m.circle
+          cx={size / 2} cy={size / 2} r={r} fill="none"
+          stroke={`url(#${gid})`} strokeWidth={stroke} strokeLinecap="round"
+          strokeDasharray={c}
+          initial={reduce ? false : { strokeDashoffset: c }}
+          animate={{ strokeDashoffset: c * (1 - frac) }}
+          transition={{ duration: reduce ? 0 : 0.9, ease: EASE }}
+        />
+      </svg>
+      <span className="absolute text-[11px] font-[820] tabular-nums tracking-[-0.02em]" style={{ color: C.ink }}>
+        {done}/{total}
+      </span>
+    </span>
+  );
+}
+
+function DayChip({ tone, label, pulse }: { tone: 'live' | 'next' | 'done'; label: string; pulse?: boolean }) {
+  const t = tone === 'done' ? rowTones.live : tone === 'live' ? rowTones.live : rowTones.next;
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-[750]"
+      style={{ background: t.wash, color: t.ink }}>
+      {tone === 'live' && (
+        <span aria-hidden className={cn('h-1.5 w-1.5 rounded-full', pulse && 'animate-pulse')} style={{ background: C.success }} />
+      )}
+      {tone === 'done' && <CheckCircle2 size={11} />}
+      {label}
+    </span>
   );
 }
 

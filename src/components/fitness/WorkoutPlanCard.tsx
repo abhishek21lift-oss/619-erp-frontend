@@ -25,7 +25,7 @@
 // instead of rendering the "0" that used to read as a broken card.
 
 import { m, type Variants } from 'framer-motion'
-import { Edit3, Trash2, UserPlus, MoreHorizontal, Plus, User } from 'lucide-react'
+import { AlertTriangle, Edit3, Trash2, UserPlus, MoreHorizontal, Plus, User } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/components/ui/cn'
 
@@ -41,6 +41,11 @@ export interface WorkoutPlanCardProps {
   /** Which week that client is in. Absent unless there is a real start date. */
   currentWeek?: number | null
   durationWeeks?: number | null
+  /**
+   * Something the trainer should act on about the assignment shown: the
+   * programme ran past its last week, or the client's package expired.
+   */
+  note?: string | null
   onOpen?: () => void
   onEdit?: () => void
   onAssign?: () => void
@@ -62,7 +67,7 @@ const ACCENT_LIGHT = '#3B8DF5'
 
 export function WorkoutPlanCard({
   name, goal, prescription, exerciseCount, progress = 0,
-  clientName, currentWeek, durationWeeks,
+  clientName, currentWeek, durationWeeks, note,
   onOpen, onEdit, onAssign, onDelete, onAddExercises,
   compact = false, className, variants,
 }: WorkoutPlanCardProps) {
@@ -114,6 +119,13 @@ export function WorkoutPlanCard({
               <p className="mt-0.5 flex items-center gap-1.5 text-[12.5px] font-[600]" style={{ color: ACCENT }}>
                 <User size={12} className="shrink-0" />
                 <span className="truncate">{clientName}</span>
+              </p>
+            )}
+            {note && (
+              <p className="mt-1 inline-flex max-w-full items-center gap-1 rounded-full px-2 py-[2px] text-[11px] font-[700]"
+                style={{ background: 'rgba(245,158,11,0.14)', color: '#B45309' }}>
+                <AlertTriangle size={11} className="shrink-0" />
+                <span className="truncate">{note}</span>
               </p>
             )}
             {/* Also wraps: truncating this line dropped the exercise count,

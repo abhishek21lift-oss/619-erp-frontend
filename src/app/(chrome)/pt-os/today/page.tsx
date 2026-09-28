@@ -51,6 +51,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
+import { programmeNote } from '@/lib/today-notes';
 import type { TodayClient, TodayRoster } from '@/lib/api';
 import { fmtTime12 } from '@/lib/format';
 import { useToast } from '@/lib/toast';
@@ -366,6 +367,13 @@ function ClientRow({
               ? `${c.plan_name} · nothing scheduled`
               : `${c.plan_name} · ${c.planned_exercises} exercise${c.planned_exercises === 1 ? '' : 's'}`}
         </p>
+        {/* The same programme warning the dashboard card shows (training audit
+            T-6, T-9): a block that ran past its end, or one with nothing in it. */}
+        {programmeNote(c) && (
+          <p className="mt-0.5 truncate text-[11.5px] font-[700]" style={{ color: 'var(--amber-700)' }}>
+            {programmeNote(c)}
+          </p>
+        )}
       </div>
 
       <button

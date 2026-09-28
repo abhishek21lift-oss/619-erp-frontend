@@ -35,9 +35,12 @@ const itemVariants = {
 };
 
 function statusStyle(status: string) {
-  return status === 'completed'
-    ? { label: 'Completed', bg: 'rgba(16,185,129,0.12)', color: '#059669' }
-    : { label: 'In Progress', bg: 'rgba(245,158,11,0.12)', color: '#d97706' };
+  if (status === 'completed') return { label: 'Completed', bg: 'rgba(16,185,129,0.12)', color: '#059669' };
+  // An empty log left open on an earlier day, closed by the server's sweep
+  // (migration 220). Still listed — it can be opened and finished — but it
+  // was never a workout, so it reads as one that did not happen.
+  if (status === 'abandoned') return { label: 'Not logged', bg: 'rgba(100,116,139,0.12)', color: '#475569' };
+  return { label: 'In Progress', bg: 'rgba(245,158,11,0.12)', color: '#d97706' };
 }
 
 export default function WorkoutLogPage({ params }: { params: Promise<{ id: string }> }) {
@@ -171,13 +174,17 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
 
   const stats = useMemo(() => {
     const now = new Date();
-    const thisMonth = sessions.filter((s) => {
+    // Abandoned logs are left out of every count (training audit T-1): they
+    // were 14 of Ajeet's "22 sessions" — open logs with nothing done, from
+    // days that had passed.
+    const real = sessions.filter((s) => s.status !== 'abandoned');
+    const thisMonth = real.filter((s) => {
       const d = new Date(s.session_date);
       return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     }).length;
     return {
-      total: sessions.length,
-      completed: sessions.filter((s) => s.status === 'completed').length,
+      total: real.length,
+      completed: real.filter((s) => s.status === 'completed').length,
       thisMonth,
       progress: activeAssignment?.progress_pct ?? 0,
     };
@@ -510,7 +517,7 @@ function SessionTimeline({ sessions, clientId, router }: { sessions: WorkoutSess
         return (
           <div key={s.id} className="relative">
             <span className="absolute -left-6 top-1 flex h-4.5 w-4.5 items-center justify-center rounded-full"
-              style={{ background: s.status === 'completed' ? '#10b981' : '#F59E0B', width: 18, height: 18 }}>
+              style={{ background: s.status === 'completed' ? '#10b981' : s.status === 'abandoned' ? '#94A3B8' : '#F59E0B', width: 18, height: 18 }}>
               {s.status === 'completed' ? <CheckCircle2 size={11} color="#fff" /> : <Clock size={10} color="#fff" />}
             </span>
             <button onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log/${s.id}`)}
