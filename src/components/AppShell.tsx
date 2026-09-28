@@ -5,7 +5,7 @@ import {
   LogOut, Bell, Settings,
   User, HelpCircle, ChevronDown, CreditCard,
   Menu, CheckCheck, ExternalLink, ChevronRight, Sun, Moon,
-  KeyRound, Fingerprint, QrCode, Zap, Building2, Merge,
+  KeyRound, Fingerprint, Zap,
 } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
@@ -196,13 +196,10 @@ function AppShellContent({ children }: AppShellProps) {
   // back, built from SETTINGS_GROUP so the two cannot drift, and filtered by
   // role and plan feature like the sidebar (the old hand-written list ignored
   // feature flags). My Profile, Support and Subscription stay in the avatar
-  // menu; UPI Payment Settings is here as well as under Finance, as before.
+  // menu. UPI Payment Settings is a tab inside My Profile, not a link here.
   const settingsLinks = useMemo(() => {
     const inAvatarMenu = new Set(['/settings/profile', '/support', '/subscription']);
-    const items = [
-      ...SETTINGS_GROUP.items.filter((i) => !inAvatarMenu.has(i.href)),
-      { href: '/finance/payment-settings', label: 'UPI Payment Settings', icon: 'QrCode', roles: ['trainer' as const], feature: 'finance' },
-    ];
+    const items = SETTINGS_GROUP.items.filter((i) => !inAvatarMenu.has(i.href));
     return items
       .filter((i) => isVisibleForRole(i, user?.role) && isVisibleForFeature(i, features))
       .map((i) => ({ href: i.href, label: i.label, icon: SETTINGS_ICONS[i.href] ?? Settings }));
@@ -688,9 +685,6 @@ const SETTINGS_ICONS: Record<string, React.ElementType> = {
   '/settings/passkeys': KeyRound,
   '/settings/biometrics': Fingerprint,
   '/settings/integrations': Zap,
-  '/settings/branches': Building2,
-  '/settings/merge-duplicates': Merge,
-  '/finance/payment-settings': QrCode,
 };
 
 export default function AppShell(props: AppShellProps) {

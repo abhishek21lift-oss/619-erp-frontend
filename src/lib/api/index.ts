@@ -17,7 +17,7 @@ import { payments, invoices, expenses, offers, upiPayments } from './endpoints/m
 import { workouts, exercises, diet, classes, bookings, calendar } from './endpoints/training';
 import { progress } from './endpoints/progress';
 import { pt } from './endpoints/ptOs';
-import { branches, gymSettings, qr, subscription, membershipPlans } from './endpoints/studio';
+import { gymSettings, qr, subscription, membershipPlans } from './endpoints/studio';
 import {
   superAdmin, settings, features, invitations, integrations, whatsapp,
   clientActivation, clientLogin, me,
@@ -53,7 +53,6 @@ export const api = {
   calendar,
   progress,
   pt,
-  branches,
   gymSettings,
   qr,
   subscription,

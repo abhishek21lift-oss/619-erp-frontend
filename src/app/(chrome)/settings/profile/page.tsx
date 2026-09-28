@@ -13,7 +13,7 @@ import {
   RefreshCw, LogOut, ShieldCheck, AlertTriangle,
   History, Fingerprint, Copy, Loader2, Settings,
   Zap, Calendar, Wifi, Camera, FileSignature, Dumbbell, ClipboardList,
-  Award, Plus, BadgeCheck, Briefcase, GraduationCap, Trophy, Images, ChevronRight,
+  Award, Plus, BadgeCheck, Briefcase, GraduationCap, Trophy, Images, ChevronRight, QrCode,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { useTheme } from '@/components/ThemeProvider';
@@ -56,6 +56,7 @@ import {
   FieldSurface, TextField, DateFieldControl, useStandaloneField,
 } from '@/components/ui/form';
 import { checkFile, AVATAR_RULES, GALLERY_RULES } from '@/lib/forms/files';
+import UpiSettingsPanel from '@/components/payments/UpiSettingsPanel';
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -732,9 +733,12 @@ function ProfilePageInner() {
   // the profile form — see the note at the top of ProfileHero.
   const { logout, user } = useAuth();
   const { toast } = useToast();
-  // ProfileTab is the subset a completion step can link to; Security and
-  // Preferences hold nothing that is scored, so they are named separately.
-  const [tab, setTab] = useState<ProfileTab | 'security' | 'preferences'>('overview');
+  // ProfileTab is the subset a completion step can link to; Security,
+  // Preferences and UPI Payments hold nothing that is scored, so they are
+  // named separately. UPI Payments is the studio's collection settings, so it
+  // is the trainer's alone.
+  const isTrainer = user?.role === 'trainer';
+  const [tab, setTab] = useState<ProfileTab | 'security' | 'preferences' | 'upi'>('overview');
   // ?tab= opens a tab directly, so the avatar menu's "Security" lands on the
   // security panel (it replaced a second, thinner /settings page). Keyed on
   // the query, not read once: following that link while already on this page
@@ -743,7 +747,9 @@ function ProfilePageInner() {
   useEffect(() => {
     const t = tabParam;
     if (t === 'overview' || t === 'credentials' || t === 'portfolio' || t === 'security' || t === 'preferences') setTab(t);
-  }, [tabParam]);
+    // /finance/payment-settings redirects here with ?tab=upi.
+    else if (t === 'upi' && isTrainer) setTab('upi');
+  }, [tabParam, isTrainer]);
 
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
@@ -1353,6 +1359,7 @@ function ProfilePageInner() {
                 { id: 'portfolio', label: 'Portfolio', icon: <Images size={13} /> },
                 { id: 'security', label: 'Security', icon: <Lock size={13} /> },
                 { id: 'preferences', label: 'Preferences', icon: <Settings size={13} /> },
+                ...(isTrainer ? [{ id: 'upi', label: 'UPI Payments', icon: <QrCode size={13} /> }] as const : []),
               ] as const).map(t => (
                 <button
                   key={t.id}
@@ -1702,6 +1709,14 @@ function ProfilePageInner() {
                     notify={{ success: toast.success, error: toast.error }}
                   />
                 </GlassCard>
+              </m.div>
+            )}
+
+            {/* ═══ UPI PAYMENTS ═══ */}
+            {tab === 'upi' && isTrainer && (
+              <m.div key="upi" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+                <UpiSettingsPanel />
               </m.div>
             )}
 

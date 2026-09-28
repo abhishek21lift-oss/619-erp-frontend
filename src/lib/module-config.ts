@@ -338,15 +338,6 @@ const simpleModules: Record<string, Partial<ModuleConfig>> = {
     workflows: ['Analyze revenue', 'Review failures', 'Track dues', 'Export collections'],
     insights: ['Revenue trend', 'Failed payments', 'Pending dues', 'Subscription MRR'],
   },
-  branches: {
-    title: 'Branches',
-    description: 'Multi-branch management, analytics, performance, settings, staff assignment, member allocation, and revenue comparison.',
-    entityName: 'Branch',
-    primaryAction: 'Create branch',
-    statuses: ['Active', 'Setup', 'Paused', 'Under Review', 'Closed'],
-    workflows: ['Configure branch', 'Assign staff', 'Allocate members', 'Compare revenue'],
-    insights: ['Branch revenue', 'Members', 'Staff load', 'Performance rank'],
-  },
   biometric: {
     title: 'Biometric & Face',
     description: 'Face recognition attendance, biometric logs, device sync, real-time tracking, verification, and access control.',
