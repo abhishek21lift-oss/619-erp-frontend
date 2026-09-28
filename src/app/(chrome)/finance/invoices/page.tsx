@@ -19,7 +19,7 @@ import {
   TextField, NumberField, SelectField, DateFieldControl, FormErrorBanner,
 } from '@/components/ui/form';
 import {
-  FileText, Download, Send, CheckCircle2, Search,
+  FileText, Download, CheckCircle2, Search,
   ChevronDown, Eye, Clock,
   AlertTriangle, X, CreditCard,
   Receipt, Plus,
@@ -251,14 +251,10 @@ export default function InvoicesPage() {
     else toast.error('Your browser blocked the invoice window. Allow pop-ups for this site and try again.');
   }, [toast]);
 
-  const handleSendReminder = React.useCallback(async (invoice: Invoice) => {
-    try {
-      await api.invoices.remind(invoice.id);
-      toast.success('Reminder sent');
-    } catch (err: unknown) {
-      toast.error(errorMessage(err, 'Could not send the reminder'));
-    }
-  }, [toast]);
+  // "Send Reminder" is gone from this page (payments audit PAY-4): the API
+  // never sent anything — it logged a line and answered "Reminder sent", and
+  // this page showed that as success. It comes back when a reminder is
+  // actually delivered; until then the client is messaged from their profile.
 
   const handleMarkPaid = React.useCallback(async (invoice: Invoice) => {
     try {
@@ -528,7 +524,7 @@ export default function InvoicesPage() {
                   style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
                 >
                   {invoices.map((invoice, i) => (
-                    <InvoiceCard key={invoice.id} invoice={invoice} index={i} onView={() => setSelectedInvoice(invoice)} onDownload={handleDownloadPDF} onRemind={handleSendReminder} />
+                    <InvoiceCard key={invoice.id} invoice={invoice} index={i} onView={() => setSelectedInvoice(invoice)} onDownload={handleDownloadPDF} />
                   ))}
                 </m.div>
               )}
@@ -550,7 +546,7 @@ export default function InvoicesPage() {
             </>
           }
         >
-          {selectedInvoice && <InvoiceDetail invoice={selectedInvoice} onDownload={handleDownloadPDF} onRemind={handleSendReminder} onMarkPaid={handleMarkPaid} />}
+          {selectedInvoice && <InvoiceDetail invoice={selectedInvoice} onDownload={handleDownloadPDF} onMarkPaid={handleMarkPaid} />}
         </PremiumModal>
 
         {/* Mounted only while open, which is the whole of the reset contract
@@ -707,7 +703,7 @@ function CreateInvoiceModal({
 
 /* ────────── Invoice Card ────────── */
 
-function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice: Invoice; index: number; onView: () => void; onDownload: (i: Invoice) => void; onRemind: (i: Invoice) => void }) {
+function InvoiceCard({ invoice, index, onView, onDownload }: { invoice: Invoice; index: number; onView: () => void; onDownload: (i: Invoice) => void }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [hoveredItem, setHoveredItem] = React.useState<string | null>(null);
   const isSm = useBreakpoint('(min-width: 640px)');
@@ -907,7 +903,6 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
                   {[
                     { icon: <Eye size={13} />, label: 'View Details', action: 'view', color: 'rgba(15,23,42,0.9)' },
                     { icon: <Download size={13} />, label: 'Download PDF', action: 'download', color: 'rgba(15,23,42,0.9)' },
-                    { icon: <Send size={13} />, label: 'Send Reminder', action: 'remind', color: 'rgba(15,23,42,0.9)' },
                     { icon: <CheckCircle2 size={13} />, label: 'Mark as Paid', action: 'mark-paid', color: '#059669' },
                   ].map((item) => (
                     <button
@@ -916,7 +911,6 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
                         setMenuOpen(false);
                         if (item.action === 'view') onView();
                         else if (item.action === 'download') onDownload(invoice);
-                        else if (item.action === 'remind') onRemind(invoice);
                       }}
                       onMouseEnter={() => setHoveredItem(item.action)}
                       onMouseLeave={() => setHoveredItem(null)}
@@ -951,7 +945,7 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
 
 /* ────────── Invoice Detail ────────── */
 
-function InvoiceDetail({ invoice, onDownload, onRemind, onMarkPaid }: { invoice: Invoice; onDownload: (i: Invoice) => void; onRemind: (i: Invoice) => void; onMarkPaid: (i: Invoice) => void }) {
+function InvoiceDetail({ invoice, onDownload, onMarkPaid }: { invoice: Invoice; onDownload: (i: Invoice) => void; onMarkPaid: (i: Invoice) => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div style={{
@@ -1060,9 +1054,6 @@ function InvoiceDetail({ invoice, onDownload, onRemind, onMarkPaid }: { invoice:
 
       <div style={{ display: 'flex', gap: '8px' }}>
         <Button variant="primary" iconLeft={<Download size={16} />} size="sm" onClick={() => onDownload(invoice)}>Download PDF</Button>
-        {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
-          <Button variant="outline" iconLeft={<Send size={16} />} size="sm" onClick={() => onRemind(invoice)}>Send Reminder</Button>
-        )}
         {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
           <Button variant="success" iconLeft={<CheckCircle2 size={16} />} size="sm" onClick={() => onMarkPaid(invoice)}>Mark as Paid</Button>
         )}

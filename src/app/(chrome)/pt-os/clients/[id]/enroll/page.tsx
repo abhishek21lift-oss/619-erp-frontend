@@ -256,6 +256,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
   const [downloading, setDownloading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [hasRenewed, setHasRenewed] = useState(false);
   const [form, setForm] = useState<EnrollFormData>(initForm);
   const [errors, setErrors] = useState<FormErrors>({});
   const [saving, setSaving] = useState(false);
@@ -284,9 +285,17 @@ function EnrollForm({ clientId }: { clientId: string }) {
     setLoading(true);
     setLoadError('');
     try {
-      const clientRes = await api.pt.client(clientId) as { data?: Record<string, unknown> };
+      const [clientRes, renewalsRes] = await Promise.all([
+        api.pt.client(clientId) as Promise<{ data?: Record<string, unknown> }>,
+        api.clients.renewalHistory(clientId).catch(() => ({ data: [] as unknown[] })),
+      ]);
       const c = clientRes?.data;
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
+      // A client who has renewed is not enrolled again: their paid total is a
+      // lifetime figure and this screen treats it as this term's, so saving
+      // here either fails or rewrites their payment history (payments audit
+      // PAY-1). The server refuses it too (USE_RENEW); this says so up front.
+      setHasRenewed(Array.isArray(renewalsRes?.data) && renewalsRes.data.length > 0);
       setClientName(String(c.name ?? ''));
       setClientMeta({
         name: String(c.name ?? ''),
@@ -566,6 +575,23 @@ function EnrollForm({ clientId }: { clientId: string }) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 size={28} className="animate-spin" style={{ color: '#F59E0B' }} />
+      </div>
+    );
+  }
+
+  if (hasRenewed) {
+    return (
+      <div className="mx-auto max-w-md py-24 text-center">
+        <AlertCircle size={32} style={{ color: '#f59e0b', margin: '0 auto 12px' }} />
+        <p className="text-[15px] font-[700] text-slate-700">{clientName || 'This client'} has already renewed</p>
+        <p className="mt-2 text-[13px] text-slate-500">
+          Start their next term from Renew PT, and record any money on the Payments tab. Enrolling again would
+          overwrite what they have already paid.
+        </p>
+        <div className="mt-5 flex justify-center gap-2">
+          <Button variant="outline" onClick={() => router.push(`/pt-os/clients/${clientId}`)}>Back to profile</Button>
+          <Button onClick={() => router.push(`/pt-os/clients/${clientId}/renew`)}>Renew PT</Button>
+        </div>
       </div>
     );
   }
