@@ -215,6 +215,57 @@ export type StoredImpersonation = {
  */
 const HANDOFF_PARAM = 'imp';
 
+/**
+ * Is `token` an impersonation token for `orgId`?
+ *
+ * The fragment is attacker-controllable: anybody can send a studio user a link
+ * to `/#imp=…`. Checking only the payload's shape meant any account's own
+ * access token was accepted as an "impersonation". The victim's tab then ran
+ * as the attacker's account under a banner naming whatever studio the link
+ * said, and Exit followed the link's `returnTo`, including `javascript:`
+ * (Command Center audit 2026-09-28, CC-1).
+ *
+ * Only the platform mints tokens with an `imp` claim
+ * (super-admin/impersonation.js), so requiring one, for the same studio as
+ * the payload, refuses every token an attacker can obtain for themselves.
+ * This decodes without verifying: the signature is still the API's job on
+ * every request. The check only decides whether this tab adopts the token.
+ */
+function isImpersonationTokenFor(token: string, orgId: string): boolean {
+  const part = token.split('.')[1];
+  if (!part) return false;
+  try {
+    const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+    const claims = JSON.parse(atob(b64.padEnd(b64.length + ((4 - (b64.length % 4)) % 4), '=')));
+    const imp = claims && typeof claims === 'object' ? claims.imp : null;
+    return Boolean(imp && typeof imp === 'object' && imp.org != null && String(imp.org) === orgId);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Where "exit impersonation" may send the browser.
+ *
+ * The console only ever sets `${its own origin}/platform`, so anything that is
+ * not an http(s) URL whose path is /platform is refused and falls back to the
+ * same-origin '/platform'. That rules out `javascript:`, `data:` and any
+ * other page a crafted hand-off could name. Applied where the value is USED
+ * as well as where it is stored, because sessionStorage outlives this check.
+ */
+export function safeImpersonationReturnTo(returnTo: unknown): string {
+  if (typeof returnTo !== 'string' || !returnTo) return '/platform';
+  try {
+    const u = new URL(returnTo);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return '/platform';
+    if (u.username || u.password) return '/platform';
+    if (u.pathname !== '/platform' && !u.pathname.startsWith('/platform/')) return '/platform';
+    return u.toString();
+  } catch {
+    return '/platform';
+  }
+}
+
 function consumeHandoff(): StoredImpersonation | null {
   if (typeof window === 'undefined') return null;
   const hash = window.location.hash;
@@ -225,11 +276,15 @@ function consumeHandoff(): StoredImpersonation | null {
     const json = atob(encoded.replace(/-/g, '+').replace(/_/g, '/'));
     const parsed = JSON.parse(json) as StoredImpersonation;
     // Shape check before trusting it. The fragment is attacker-controllable —
-    // anybody can send the operator a link — so a malformed or partial payload
-    // must be dropped rather than stored. It cannot grant anything either way:
-    // `token` is checked by the API, which mints these itself and rejects
-    // anything it did not sign.
+    // anybody can send a link — so a malformed or partial payload is dropped.
     if (!parsed || typeof parsed.token !== 'string' || typeof parsed.orgId !== 'string') return null;
+    // And the token must be a real impersonation token for that studio, or a
+    // link carrying someone's ordinary session would be adopted as one (CC-1).
+    if (!isImpersonationTokenFor(parsed.token, parsed.orgId)) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      return null;
+    }
+    if (parsed.returnTo !== undefined) parsed.returnTo = safeImpersonationReturnTo(parsed.returnTo);
     sessionStorage.setItem(IMPERSONATION_KEY, JSON.stringify(parsed));
     // Strip it so the token is not left in the address bar, in the back/forward
     // history, or in whatever the operator pastes into a support ticket next.

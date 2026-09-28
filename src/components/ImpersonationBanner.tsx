@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import { Eye, LogOut, LogIn } from 'lucide-react';
-import { getImpersonation, clearImpersonation, type StoredImpersonation } from '@/lib/http';
+import { getImpersonation, clearImpersonation, safeImpersonationReturnTo, type StoredImpersonation } from '@/lib/http';
 
 export default function ImpersonationBanner() {
   const [imp, setImp] = useState<StoredImpersonation | null>(null);
@@ -19,7 +19,7 @@ export default function ImpersonationBanner() {
     const onExpired = () => {
       const returnTo = getImpersonation()?.returnTo;
       setImp(null);
-      if (typeof window !== 'undefined') window.location.href = returnTo ?? '/platform';
+      if (typeof window !== 'undefined') window.location.href = safeImpersonationReturnTo(returnTo);
     };
     window.addEventListener('impersonation-changed', sync);
     window.addEventListener('impersonation-expired', onExpired);
@@ -40,9 +40,11 @@ export default function ImpersonationBanner() {
     // path 404s on the studio's domain and the operator is stranded in a
     // studio with no way back. Falls back to it anyway, because that IS the
     // right answer when the two share an origin.
-    const returnTo = imp.returnTo;
+    // Validated at use as well as at hand-off: only an http(s) /platform
+    // address is followed, never `javascript:` (Command Center audit CC-1).
+    const returnTo = safeImpersonationReturnTo(imp.returnTo);
     clearImpersonation();
-    window.location.href = returnTo ?? '/platform';
+    window.location.href = returnTo;
   };
 
   const full = !imp.readonly;
