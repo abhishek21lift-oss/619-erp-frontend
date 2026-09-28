@@ -58,7 +58,11 @@ function weeksSince(startDate: string | null | undefined): number | null {
   return days < 0 ? null : Math.floor(days / 7) + 1;
 }
 
-/** An assigned client whose package is live. Missing status reads as live. */
+/**
+ * An assigned client whose package is live. Missing status reads as live.
+ * Frozen and not-yet-enrolled clients are not training either, so they stay
+ * out of the studio's numbers too — only the card's wording differs.
+ */
 const isLiveClient = (a: { client_status?: string | null }) => (a.client_status ?? 'active') === 'active';
 
 /**
@@ -68,7 +72,17 @@ const isLiveClient = (a: { client_status?: string | null }) => (a.client_status 
  */
 function assignmentNote(a: { client_status?: string | null; start_date?: string | null } | undefined, durationWeeks: number): string | null {
   if (!a) return null;
-  if (!isLiveClient(a)) return "Client's package has expired";
+  if (!isLiveClient(a)) {
+    // Named by the client's actual state — the roster's own words for them.
+    // Every non-active client used to read "expired", which sent a trainer to
+    // re-assign a programme for a client who was only frozen.
+    switch (a.client_status) {
+      case 'expired': return "Client's package has expired";
+      case 'frozen':  return 'Client is frozen';
+      case 'pending': return 'Client is not enrolled yet';
+      default:        return `Client is ${String(a.client_status).replace(/_/g, ' ')}`;
+    }
+  }
   const wk = weeksSince(a.start_date);
   if (wk != null && durationWeeks > 0 && wk > durationWeeks) {
     const over = wk - durationWeeks;

@@ -189,6 +189,18 @@ describe('the KPI row', () => {
     expect(screen.getByText("Client's package has expired")).toBeInTheDocument();
   });
 
+  it('names a frozen or not-enrolled client as such, not as expired', async () => {
+    plansList.mockResolvedValue([
+      plan({ id: 'p1', assignments: [{ ...enrol('c1', 'Frozen Fay', 10), client_status: 'frozen' }] }),
+      plan({ id: 'p2', assignments: [{ ...enrol('c2', 'Pending Pat', 0), client_status: 'pending' }] }),
+    ]);
+    render(<WorkoutPlansPage />);
+    await screen.findByText('Frozen Fay');
+    expect(screen.getByText('Client is frozen')).toBeInTheDocument();
+    expect(screen.getByText('Client is not enrolled yet')).toBeInTheDocument();
+    expect(screen.queryByText("Client's package has expired")).toBeNull();
+  });
+
   it('says a programme ran past its end instead of clamping to its last week', async () => {
     plansList.mockResolvedValue([
       plan({ id: 'p1', duration_weeks: 4, assignments: [enrol('c1', 'Akash', 17, '2026-01-05')] }),
