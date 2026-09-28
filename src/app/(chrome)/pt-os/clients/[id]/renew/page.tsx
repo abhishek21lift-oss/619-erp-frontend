@@ -6,6 +6,7 @@ import { Repeat, CheckCircle, IndianRupee, Calendar, User, Dumbbell, FileText } 
 import Guard from '@/components/Guard';
 import { Button, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
+import { ApiError } from '@/lib/http';
 import { useToast } from '@/lib/toast';
 import { useStore } from '@tanstack/react-form';
 import { useAppForm } from '@/lib/forms/useAppForm';
@@ -59,8 +60,19 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
     schema: renewPtSchema,
     defaultValues: blankRenewPt(),
     onSubmit: async (values) => {
-      await api.clients.renewPt(id, toRenewPtPayload(values));
-      toast.success('PT renewed successfully');
+      try {
+        await api.clients.renewPt(id, toRenewPtPayload(values));
+        toast.success('PT renewed successfully');
+      } catch (err: unknown) {
+        // A double tap or a retried request: the first one already renewed
+        // them, and the server refused to add the term twice. That is the
+        // outcome the trainer wanted, not an error.
+        if (err instanceof ApiError && err.code === 'DUPLICATE_RENEWAL') {
+          toast.info('Already renewed — this renewal was recorded once.');
+          return;
+        }
+        throw err;
+      }
     },
     onSuccess: () => router.push(`/pt-os/clients/${id}`),
   });
