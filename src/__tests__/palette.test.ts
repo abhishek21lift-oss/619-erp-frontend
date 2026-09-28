@@ -135,6 +135,9 @@ describe('the app uses only the palette', () => {
     // The exercise library's region colours are the sixth, same shape again:
     // one hue per body region, decorative, in
     // components/pt-os/exercise-library/libraryTheme.ts.
+    //
+    // The dashboard's Today's Sessions card is the seventh: its mark, day
+    // ring and row halos, in components/dashboards/todayTheme.ts.
     const known = new Set(
       [...allHexes(), ...Object.values(founderGold)].map((h) => h.toUpperCase())
     );
@@ -155,6 +158,8 @@ describe('the app uses only the palette', () => {
         if (p.endsWith(join('components', 'member', 'memberTheme.ts'))) continue;
         // The exercise library's region colours — its one token file, confined below.
         if (p.endsWith(join('exercise-library', 'libraryTheme.ts'))) continue;
+        // The Today card's decorative colour — its one token file, confined below.
+        if (p.endsWith(join('dashboards', 'todayTheme.ts'))) continue;
         const text = readFileSync(p, 'utf8');
         for (const m of text.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
           if (!known.has(m.toUpperCase())) offenders.push(`${p}: ${m}`);
@@ -234,6 +239,26 @@ describe('the app uses only the palette', () => {
       !u.startsWith('components/pt-os/exercise-library/') && !u.startsWith('app/(chrome)/pt-os/exercise-library/'));
     expect(users.length).toBeGreaterThan(0);
     expect(outside).toEqual([]);
+  });
+
+  it('confines the Today card colours to the dashboard', () => {
+    // The seventh exception (dashboards/todayTheme.ts): decoration for the
+    // Today's Sessions card. Only the dashboard may import it — the same hues
+    // on a finance screen would be colour without meaning.
+    const users: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = join(dir, entry);
+        if (statSync(p).isDirectory()) { walk(p); continue; }
+        if (!/\.tsx?$/.test(entry)) continue;
+        if (p.includes('__tests__')) continue;
+        if (/todayTheme['"]/.test(readFileSync(p, 'utf8'))) {
+          users.push(p.split(join('src') + sep)[1].replaceAll(sep, '/'));
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src'));
+    expect(users).toEqual(['components/dashboards/PtOsDashboard.tsx']);
   });
 
   it('confines the marketing surface to its own token file', () => {

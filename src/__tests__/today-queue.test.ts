@@ -19,7 +19,7 @@
 // exactly like one still to run. A re-sorted queue looks like a queue.
 
 import { describe, expect, it } from 'vitest';
-import { buildTodayQueue, TODAY_VISIBLE } from '@/components/dashboards/PtOsDashboard';
+import { buildTodayQueue, programmeNote, TODAY_VISIBLE } from '@/components/dashboards/PtOsDashboard';
 import type { TodayClient } from '@/lib/api';
 
 const row = (over: Partial<TodayClient> & { client_id: string }): TodayClient => ({
@@ -282,5 +282,30 @@ describe('row content', () => {
       row({ client_id: 'c', source: 'enrolled' }),
     ]);
     expect(q.map((r) => r.href)).toEqual(['/pt-os/today', '/pt-os/today', '/pt-os/today']);
+  });
+});
+
+describe('programme notes (training audit T-6, T-9)', () => {
+  it('flags a programme with nothing in it', () => {
+    expect(programmeNote({ plan_name: 'Muscle gain', plan_exercise_total: 0, programme_week: 2, duration_weeks: 4 }))
+      .toBe('Programme has no exercises yet');
+  });
+
+  it('flags a programme that ran past its last week', () => {
+    // Production, 29 Sep: a four-week block in its seventh week.
+    expect(programmeNote({ plan_name: 'Upper lower', plan_exercise_total: 2, programme_week: 7, duration_weeks: 4 }))
+      .toBe('Finished 3 weeks ago · week 7 of 4');
+    expect(programmeNote({ plan_name: 'Full Body', plan_exercise_total: 6, programme_week: 5, duration_weeks: 4 }))
+      .toBe('Finished 1 week ago · week 5 of 4');
+  });
+
+  it('says nothing about a programme in its final week, or with no programme', () => {
+    expect(programmeNote({ plan_name: 'Lower', plan_exercise_total: 3, programme_week: 4, duration_weeks: 4 })).toBeNull();
+    expect(programmeNote({ plan_name: null, plan_exercise_total: null, programme_week: null, duration_weeks: null })).toBeNull();
+  });
+
+  it('rides on the queue row', () => {
+    const [r] = buildTodayQueue([row({ client_id: 'x', plan_exercise_total: 0 })]);
+    expect(r.note).toBe('Programme has no exercises yet');
   });
 });

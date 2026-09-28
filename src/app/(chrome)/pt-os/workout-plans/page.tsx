@@ -46,6 +46,37 @@ function currentWeekOf(startDate: string | null | undefined, durationWeeks: numb
   return Math.min(durationWeeks, Math.floor(days / 7) + 1);
 }
 
+/**
+ * Weeks since an assignment started, NOT held to the plan's length — what
+ * currentWeekOf deliberately clamps. Null without a readable start date.
+ */
+function weeksSince(startDate: string | null | undefined): number | null {
+  if (!startDate) return null;
+  const start = new Date(startDate);
+  if (Number.isNaN(start.getTime())) return null;
+  const days = Math.floor((Date.now() - start.getTime()) / 86_400_000);
+  return days < 0 ? null : Math.floor(days / 7) + 1;
+}
+
+/** An assigned client whose package is live. Missing status reads as live. */
+const isLiveClient = (a: { client_status?: string | null }) => (a.client_status ?? 'active') === 'active';
+
+/**
+ * What to flag on a plan card about the assignment it shows (training audit
+ * T-6). The clamped "Week 4 / 4" hid a block in its seventh week, and an
+ * expired client's programme read as running.
+ */
+function assignmentNote(a: { client_status?: string | null; start_date?: string | null } | undefined, durationWeeks: number): string | null {
+  if (!a) return null;
+  if (!isLiveClient(a)) return "Client's package has expired";
+  const wk = weeksSince(a.start_date);
+  if (wk != null && durationWeeks > 0 && wk > durationWeeks) {
+    const over = wk - durationWeeks;
+    return `Finished ${over} week${over === 1 ? '' : 's'} ago — re-assign to run it again`;
+  }
+  return null;
+}
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
@@ -207,8 +238,12 @@ function Inner() {
   }, [plans]);
 
   /** Every enrolment on screen, flattened — the basis of the two people KPIs. */
+  // Clients whose package is live only (training audit T-6): an expired
+  // client's programme stays visible on its card, flagged, but it is not load
+  // the trainer is delivering — it made "Assigned Clients" 4 for 3 people and
+  // doubled "Sessions / Week".
   const roster = React.useMemo(
-    () => plans.flatMap((p) => p.assignments ?? []),
+    () => plans.flatMap((p) => (p.assignments ?? []).filter(isLiveClient)),
     [plans],
   );
 
@@ -252,7 +287,7 @@ function Inner() {
    */
   const sessionsPerWeek = React.useMemo(
     () => plans.reduce(
-      (sum, p) => sum + (p.assignments?.length ?? 0) * (Number(p.sessions_per_week) || 0),
+      (sum, p) => sum + (p.assignments ?? []).filter(isLiveClient).length * (Number(p.sessions_per_week) || 0),
       0,
     ),
     [plans],
@@ -531,6 +566,7 @@ function Inner() {
                           clientName={assignment?.client_name ?? null}
                           currentWeek={currentWeekOf(assignment?.start_date, plan.duration_weeks)}
                           durationWeeks={plan.duration_weeks}
+                          note={assignmentNote(assignment, plan.duration_weeks)}
                           compact={view === 'list'}
                           onOpen={() => router.push(builderHref)}
                           onEdit={() => router.push(editHref)}

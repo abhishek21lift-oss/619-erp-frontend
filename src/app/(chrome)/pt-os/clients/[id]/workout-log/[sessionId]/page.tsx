@@ -262,6 +262,14 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
   const handleFinish = () => setSummaryOpen(true);
 
   const handleConfirmFinish = async (patch: { notes: string | null; duration_minutes: number | null }) => {
+    // A finished workout with nothing done is not a workout (training audit
+    // T-8: 18 such sessions counted toward progress). Programme progress now
+    // ignores them server-side; this says so before it happens rather than
+    // letting the trainer wonder why the bar did not move.
+    const anyDone = (session?.exercises ?? []).some((ex) => ex.sets?.some((st) => st.completed));
+    if (!anyDone && !window.confirm(
+      'No set is marked done in this session.\n\nFinish anyway? It will be saved, but it will not count toward the programme\'s progress.',
+    )) return;
     await handleHeaderSave({ ...patch, status: 'completed' });
     setSummaryOpen(false);
     toast.success('Workout session completed.');

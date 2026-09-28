@@ -172,6 +172,32 @@ describe('the KPI row', () => {
     expect(kpi(/^Sessions \/ Week$/i)).toBe('6');
   });
 
+  it('leaves an expired client out of the numbers, and flags them on the card', async () => {
+    // Training audit T-6: Vinay's package expired but his programme still
+    // counted — Assigned Clients 4 for 3 people, Sessions / Week 8 for 4.
+    plansList.mockResolvedValue([
+      plan({ id: 'p1', sessions_per_week: 2, assignments: [enrol('c1', 'Live One', 40)] }),
+      plan({ id: 'p2', sessions_per_week: 4, assignments: [
+        { ...enrol('c2', 'Vinay Katiyar', 0), client_status: 'expired' },
+      ] }),
+    ]);
+    render(<WorkoutPlansPage />);
+    await screen.findByText('Vinay Katiyar');
+    expect(kpi(/^Assigned Clients$/i)).toBe('1');
+    expect(kpi(/^Sessions \/ Week$/i)).toBe('2');
+    expect(kpi(/^Avg Completion$/i)).toBe('40');
+    expect(screen.getByText("Client's package has expired")).toBeInTheDocument();
+  });
+
+  it('says a programme ran past its end instead of clamping to its last week', async () => {
+    plansList.mockResolvedValue([
+      plan({ id: 'p1', duration_weeks: 4, assignments: [enrol('c1', 'Akash', 17, '2026-01-05')] }),
+    ]);
+    render(<WorkoutPlansPage />);
+    await screen.findByText('Akash');
+    expect(screen.getByText(/^Finished \d+ weeks? ago — re-assign to run it again$/)).toBeInTheDocument();
+  });
+
   it('reports zero completion for a studio where nobody is training', async () => {
     // Still 0 — but because there is nothing to average, which is a fact
     // about the studio rather than about the query.
