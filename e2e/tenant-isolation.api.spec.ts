@@ -225,12 +225,13 @@ test.describe('cross-tenant isolation — reporting and AI', () => {
 
 test.describe('platform-destructive routes are closed to tenant admins', () => {
   test('a Studio Owner cannot reach the platform data-wipe route', async ({ request }) => {
-    // Audit finding C-1, CVSS 9.6. /api/admin/reset-all-data runs DELETE across
+    // Audit finding C-1, CVSS 9.6. /api/admin/reset-all-data ran DELETE across
     // attendance_logs, payments, invoices and clients with NO organization
-    // filter. It was guarded by `adminOnly` — role === 'admin', the ordinary
-    // Studio Owner role granted to every self-serve trial signup — so any
-    // signup could wipe every studio on the platform. It now requires
-    // super_admin + MFA.
+    // filter. It was once guarded by `adminOnly` (the ordinary Studio Owner
+    // role), so any signup could wipe every studio on the platform. It then
+    // required super_admin + MFA, and has since been deleted outright
+    // (Command Center audit 2026-09-28, CC-2): the route does not exist for
+    // anyone, so a studio owner gets 404 and nothing is wiped.
     const api = await request;
     const res0 = await api.post('/api/auth/login', { data: OWNER_A });
     const token = (await res0.json()).token;
@@ -240,8 +241,6 @@ test.describe('platform-destructive routes are closed to tenant admins', () => {
       data: { otp: '123456' },
     });
 
-    expect(res.status()).toBe(403);
-    const body = await res.json();
-    expect(JSON.stringify(body)).toMatch(/super admin/i);
+    expect(res.status()).toBe(404);
   });
 });
