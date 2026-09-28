@@ -57,20 +57,56 @@ const RISK_MESSAGES: Record<ParqRiskLevel, string> = {
   high: 'Medical Clearance Required — Workout Assignment Disabled',
 };
 
+// Questions whose "yes" is high risk on its own: a diagnosed heart condition
+// (1), chest pain on exertion (3) or at rest (4), dizziness or loss of
+// consciousness (5). PAR-Q+ and ACSM pre-participation screening require
+// medical clearance for any one of them.
+export const PARQ_RED_FLAG_QUESTIONS: ReadonlySet<string> = new Set(['1', '3', '4', '5']);
+
 /**
  * Live preview only — mirrors computeParqAnalysis() in the backend's
- * parq.routes.js exactly (0 yes = low, 1-2 = medium, 3+ = high). Must stay
- * in sync with that function: the server recomputes and owns the source of
- * truth on every submit, so a mismatched preview here would show a trainer
- * one risk level while filling the form and a different one after submit.
+ * src/modules/pt-os/parq-scoring.js exactly: any red-flag "yes" is high,
+ * otherwise 0 yes = low, 1-2 = medium, 3+ = high. Must stay in sync with that
+ * function (scripts/assert-scoring-parity.ts compares them): the server
+ * recomputes and owns the source of truth on every submit, so a mismatched
+ * preview here would show a trainer one risk level while filling the form and
+ * a different one after submit.
  */
-export function computeParqRisk(answers: ParqAnswerLike[]): ParqRiskResult {
-  const yesCount = answers.filter((a) => a.answer === 'yes').length;
+export function computeParqRisk(answers: ParqAnswerLike[] | null | undefined): ParqRiskResult {
+  const list = Array.isArray(answers) ? answers : [];
+  const yes = list.filter((a) => a && a.answer === 'yes');
+  const yesCount = yes.length;
+  const redFlag = yes.some((a) => PARQ_RED_FLAG_QUESTIONS.has(String(a.question_id)));
   let riskLevel: ParqRiskLevel;
-  if (yesCount === 0) riskLevel = 'low';
-  else if (yesCount <= 2) riskLevel = 'medium';
-  else riskLevel = 'high';
+  if (redFlag || yesCount >= 3) riskLevel = 'high';
+  else if (yesCount === 0) riskLevel = 'low';
+  else riskLevel = 'medium';
   return { yesCount, riskLevel, riskMessage: RISK_MESSAGES[riskLevel] };
+}
+
+/**
+ * Why an APPROVED clearance cannot be saved yet, or null. Mirrors the
+ * backend's clearanceApprovalProblem() (src/modules/pt-os/parq-clearance.js),
+ * which refuses the same cases — this only says so before the round trip.
+ */
+export function clearanceApprovalProblem(
+  mc: { approval_status: string; doctor_name: string; clearance_date: string; expiry_date: string; certificate_url: string },
+  hasCertificateDocument: boolean,
+): string | null {
+  if (mc.approval_status !== 'approved') return null;
+  if (!mc.doctor_name.trim()) return 'Doctor name is required to approve a clearance.';
+  if (!mc.clearance_date) return 'Clearance date is required to approve a clearance.';
+  const cleared = Date.parse(mc.clearance_date);
+  if (Number.isNaN(cleared)) return 'Clearance date is not a valid date.';
+  if (cleared > Date.now() + 86400000) return 'Clearance date cannot be in the future.';
+  if (mc.expiry_date) {
+    const expires = Date.parse(mc.expiry_date);
+    if (Number.isNaN(expires) || expires < cleared) return 'Expiry date must be on or after the clearance date.';
+  }
+  if (!mc.certificate_url.trim() && !hasCertificateDocument) {
+    return 'Upload the medical certificate (or link it) before approving the clearance.';
+  }
+  return null;
 }
 
 export const PARQ_QUESTIONS: { id: number; text: string }[] = [

@@ -16,8 +16,11 @@ function round(n: number, decimals = 1): number {
 // ── Step 1: Blood Pressure ── AHA guideline thresholds.
 export function classifyBp(systolic: number | null, diastolic: number | null): { category: BpCategory | null; isUnsafe: boolean } {
   if (systolic == null || diastolic == null) return { category: null, isUnsafe: false };
-  if (systolic < 90 || diastolic < 60) return { category: 'Hypotension', isUnsafe: true };
+  // The more dangerous band wins when the two readings disagree: 160/58 is
+  // stage-2 hypertension with a low diastolic, not hypotension. Both are
+  // unsafe to test; the label is what the trainer acts on and refers with.
   if (systolic >= 140 || diastolic >= 90) return { category: 'Hypertension Stage 2', isUnsafe: true };
+  if (systolic < 90 || diastolic < 60) return { category: 'Hypotension', isUnsafe: true };
   if (systolic >= 130 || diastolic >= 80) return { category: 'Hypertension Stage 1', isUnsafe: false };
   if (systolic >= 120 && diastolic < 80) return { category: 'Elevated', isUnsafe: false };
   return { category: 'Normal', isUnsafe: false };
@@ -132,7 +135,9 @@ export function calc1RM(weightKg: number | null, reps: number | null, formula: '
     const clampedReps = Math.min(reps, 12);
     return round(weightKg * 36 / (37 - clampedReps), 1);
   }
-  // Epley (1985) — default.
+  // Epley (1985) — default. A single IS the 1RM: the formula would add 3.3%
+  // to it (w × 31/30) and credit a lift nobody made.
+  if (reps === 1) return round(weightKg, 1);
   return round(weightKg * (1 + reps / 30), 1);
 }
 

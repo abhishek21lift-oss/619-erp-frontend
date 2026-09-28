@@ -153,7 +153,7 @@ function Inner() {
    *  why that sharing matters. */
   const assignPlanToClient = useCallback(
     (plan: WorkoutPlan, client: ClientOption) =>
-      assignWorkoutPlan(plan, client, toast, (clientId) => router.push(`/pt-os/parq?client_id=${clientId}`)),
+      assignWorkoutPlan(plan, client, toast, (path) => router.push(path)),
     [toast, router],
   );
 

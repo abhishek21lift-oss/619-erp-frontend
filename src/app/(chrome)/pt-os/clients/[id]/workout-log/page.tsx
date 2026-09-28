@@ -14,7 +14,7 @@ import { SpotlightCard } from '@/components/fitness/SpotlightCard';
 import { AnimatedCounter } from '@/components/fitness/AnimatedCounter';
 import { api } from '@/lib/api';
 import type { WorkoutSession, WorkoutProgressPoint, WorkoutVolumePoint, WorkoutAssignment, WorkoutAssignmentDetail } from '@/lib/api';
-import { ApiError } from '@/lib/http';
+import { screeningBlockOf } from '@/lib/screeningBlock';
 import { useToast } from '@/lib/toast';
 import { fmtDate } from '@/lib/format';
 import { errorMessage } from '@/lib/forms/errors';
@@ -146,9 +146,10 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
       }
       router.push(`/pt-os/clients/${clientId}/workout-log/${newId}`);
     } catch (err: unknown) {
-      if (err instanceof ApiError && err.code === 'PARQ_BLOCKED') {
-        toast.error('This client\'s PAR-Q screening flags them as medically blocked — clearance is required before logging a session.', {
-          duration: 0, action: { label: 'Review PAR-Q', onClick: () => router.push(`/pt-os/parq?client_id=${clientId}`) },
+      const block = screeningBlockOf(err);
+      if (block) {
+        toast.error(`This client's ${block.reason} before logging a session.`, {
+          duration: 0, action: { label: block.actionLabel, onClick: () => router.push(block.path(clientId)) },
         });
       } else {
         toast.error(errorMessage(err, 'Could not start a new session.'));

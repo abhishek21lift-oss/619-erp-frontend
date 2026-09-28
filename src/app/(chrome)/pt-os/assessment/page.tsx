@@ -36,6 +36,7 @@ import FitnessDashboard, { type FitnessScores } from '@/components/pt-os/fitness
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
 import AiRecommendationsPanel from '@/components/pt-os/fitness-testing/AiRecommendationsPanel';
 import { errorMessage } from '@/lib/forms/errors';
+import { screeningBlockOf } from '@/lib/screeningBlock';
 
 interface TrainerOption { id: string; name: string; }
 
@@ -357,31 +358,37 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       // Both strength tests get their own progress-log entry now that the
       // step is a 2-test battery — each is an independent lift worth
       // tracking over time on the Strength Tracking page.
-      const oneRM = estimateOneRM(form, 1);
-      if (oneRM != null && created?.id) {
-        await api.progress.strengthLogs.create({
-          client_id: clientId,
-          exercise_name: strengthExerciseName(form, 1) || 'Bench Press',
-          weight_kg: n(form.strengthWeightKg) ?? undefined,
-          reps_done: n(form.strengthReps) ?? undefined,
-          assessment_id: created.id,
-          one_rm_formula: form.strengthFormula,
-          is_direct_1rm: form.strengthMode === 'direct',
-          one_rm_estimate: oneRM,
-        });
+      //
+      // The assessment is already saved by this point. A strength log that
+      // fails here used to fall into the catch below, which said "Failed to
+      // save assessment" and kept the form filled in — so the trainer saved
+      // again and the client got a second, duplicate assessment. Now each log
+      // is attempted on its own and a failure is reported as what it is.
+      // A direct 1RM is logged as one rep at that weight: it sent no weight
+      // at all before, which the API refuses.
+      const logFailures: string[] = [];
+      for (const testNum of [1, 2] as const) {
+        const oneRM = estimateOneRM(form, testNum);
+        if (oneRM == null || !created?.id) continue;
+        const direct = (testNum === 1 ? form.strengthMode : form.strengthMode2) === 'direct';
+        const exercise = strengthExerciseName(form, testNum) || 'Bench Press';
+        try {
+          await api.progress.strengthLogs.create({
+            client_id: clientId,
+            exercise_name: exercise,
+            weight_kg: direct ? oneRM : (n(testNum === 1 ? form.strengthWeightKg : form.strengthWeightKg2) ?? undefined),
+            reps_done: direct ? 1 : (n(testNum === 1 ? form.strengthReps : form.strengthReps2) ?? undefined),
+            assessment_id: created.id,
+            one_rm_formula: testNum === 1 ? form.strengthFormula : form.strengthFormula2,
+            is_direct_1rm: direct,
+            one_rm_estimate: oneRM,
+          });
+        } catch {
+          logFailures.push(exercise);
+        }
       }
-      const oneRM2 = estimateOneRM(form, 2);
-      if (oneRM2 != null && created?.id) {
-        await api.progress.strengthLogs.create({
-          client_id: clientId,
-          exercise_name: strengthExerciseName(form, 2) || 'Bench Press',
-          weight_kg: n(form.strengthWeightKg2) ?? undefined,
-          reps_done: n(form.strengthReps2) ?? undefined,
-          assessment_id: created.id,
-          one_rm_formula: form.strengthFormula2,
-          is_direct_1rm: form.strengthMode2 === 'direct',
-          one_rm_estimate: oneRM2,
-        });
+      if (logFailures.length) {
+        toast.warning(`Assessment saved, but the ${logFailures.join(' and ')} lift could not be added to Strength Tracking — log it there.`);
       }
 
       clear();
@@ -391,7 +398,14 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       if (created) setLastSaved(created);
       setReviewMode(false);
     } catch (err: unknown) {
-      toast.error(errorMessage(err, 'Failed to save assessment.'));
+      const block = screeningBlockOf(err);
+      if (block) {
+        toast.error(`This client's ${block.reason} before fitness testing.`, {
+          duration: 0, action: { label: block.actionLabel, onClick: () => router.push(block.path(clientId)) },
+        });
+      } else {
+        toast.error(errorMessage(err, 'Failed to save assessment.'));
+      }
     } finally {
       setSaving(false);
     }

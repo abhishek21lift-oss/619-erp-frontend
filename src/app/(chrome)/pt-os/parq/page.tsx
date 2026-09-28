@@ -14,7 +14,7 @@ import { api } from '@/lib/api';
 import type { ParqForm, ParqFormDetail, ParqDocument } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
-import { computeParqRisk } from '@/lib/parq-calculations';
+import { computeParqRisk, clearanceApprovalProblem } from '@/lib/parq-calculations';
 import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
 import {
   STEPS, type StepId, type ParqFormData, type FormErrors,
@@ -32,15 +32,20 @@ import { errorMessage } from '@/lib/forms/errors';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-function validateStep(step: StepId, form: ParqFormData, riskLevel: 'low' | 'medium' | 'high'): string | undefined {
+function validateStep(
+  step: StepId, form: ParqFormData, riskLevel: 'low' | 'medium' | 'high', documents: ParqDocument[],
+): string | undefined {
   if (step === 1) {
     const unanswered = form.parqAnswers.filter((a) => !a.answer).length;
     if (unanswered > 0) return `Please answer all ${PARQ_QUESTIONS.length} PAR-Q questions (${unanswered} remaining).`;
   }
+  // A high-risk form can be submitted before the client has seen a doctor —
+  // the form is recorded and training stays blocked. What cannot happen is an
+  // APPROVED clearance with nothing behind it; the backend refuses that too.
   if (step === 2 && riskLevel === 'high') {
-    if (!form.medicalClearance.doctor_name.trim() || !form.medicalClearance.hospital.trim() || !form.medicalClearance.clearance_date) {
-      return 'Doctor name, hospital, and clearance date are required for high-risk clients.';
-    }
+    const hasCertificate = documents.some((d) => d.doc_type === 'medical_certificate' || d.doc_type === 'medical_report');
+    const problem = clearanceApprovalProblem(form.medicalClearance, hasCertificate);
+    if (problem) return problem;
   }
   if (step === 5) {
     const allChecked = CONSENT_CHECKBOX_FIELDS.every((f) => form.consentCheckboxes[f.key]);
@@ -321,7 +326,7 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
 
   const handleNext = async () => {
     const stepDef = STEPS.find((s) => s.id === step)!;
-    const err = validateStep(step, form, riskLevel);
+    const err = validateStep(step, form, riskLevel, documents);
     // The `stepDef.key !== 'review'` exclusion that used to wrap this is gone
     // with the review step: every remaining step has its own error slot, so
     // there is no longer a step whose validation result belongs nowhere.
