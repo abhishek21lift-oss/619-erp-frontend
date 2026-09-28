@@ -5,6 +5,7 @@ import { m, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { HelpCircle, Mail, MessageCircle, Phone, Search, ChevronDown, ChevronRight, LifeBuoy } from 'lucide-react';
 import Guard from '@/components/Guard';
+import { PageHero } from '@/components/ui';
 
 const FAQS = [
   { q: 'How do I add a new member?', a: 'Go to Members → Add Member or click the quick action button from the dashboard.' },
@@ -32,26 +33,14 @@ export default function HelpPage() {
 
   return (
     <Guard>
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
-        {/* ── Hero ── */}
-        <m.div {...fadeUp}
-          style={{
-            position: 'relative', overflow: 'hidden',
-            borderRadius: 24, padding: '32px 36px',
-            display: 'flex', alignItems: 'center', gap: 20,
-            background: 'linear-gradient(135deg, #f1f5f9, #f8fafc, #f8fafc)',
-            border: '1px solid var(--border)',
-            boxShadow: 'var(--shadow-sm)',
-          }}
-        >
-          <div style={{ position: 'relative', zIndex: 1, width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, #0067e0, #0059ce)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(0,103,224,0.3)' }}>
-            <HelpCircle size={26} color="#fff" />
-          </div>
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)', margin: 0 }}>Help &amp; Support</h1>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>Find answers to common questions</p>
-          </div>
-        </m.div>
+      {/* No side padding of its own: the shell already provides the gutter
+          (see PageHero). */}
+      <div style={{ maxWidth: 800, margin: '0 auto', paddingTop: 4, display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <PageHero
+          icon={<HelpCircle size={20} />}
+          title="Help & Support"
+          subtitle="Find answers to common questions"
+        />
 
         {/* ── Search ── */}
         <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}

@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
+import { PageHero } from '@/components/ui';
 import { Search, Check, Smartphone, Banknote, CreditCard, Wallet, Delete } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { Client } from '@/lib/api';
@@ -143,6 +144,12 @@ export default function RecordPaymentPage() {
             hero, and the row's pt-2/pb-2 was the gap that made this page sit
             lower than the rest. Back is the shell's job and the platform's,
             not a control this screen needs to draw for itself. */}
+        <PageHero
+          className="mb-4"
+          icon={<Wallet size={20} />}
+          title="Record Payment"
+          subtitle="Log a cash, UPI, card or bank payment against a client"
+        />
         <AnimatePresence mode="wait">
           {done ? (
             /* ── Success state ── */

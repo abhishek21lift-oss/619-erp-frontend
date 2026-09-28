@@ -15,6 +15,7 @@ import {
 import {
   TextField, NumberField, SelectField, TextAreaField, FormErrorBanner,
 } from '@/components/ui/form';
+import { PageHero } from '@/components/ui';
 
 /* ── shared theme ─────────────────────────────── */
 const a = '#F59E0B', b = '#D97706';
@@ -235,19 +236,13 @@ function PageContent() {
   // canvas and supplies the gutter.
   return (
     <div>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '8px 0 24px', position: 'relative' }}>
-        {/* Header */}
-        <m.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: grad, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 8px 32px ${a}44` }}>
-            <Package size={24} color="#fff" />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', margin: 0 }}>Session Packages</h1>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '2px 0 0' }}>
-              Session-based PT packages with goal types
-            </p>
-          </div>
-        </m.div>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '4px 0 24px', position: 'relative' }}>
+        <PageHero
+          className="mb-5"
+          icon={<Package size={20} />}
+          title="Session Packages"
+          subtitle="Session-based PT packages with goal types"
+        />
 
         {/* Content */}
         <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }}>

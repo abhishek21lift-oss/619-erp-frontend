@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Fingerprint, ShieldCheck, ShieldAlert, Users, Activity, Trash2, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { api } from '@/lib/api';
 import Guard from '@/components/Guard';
+import { HeroButton, PageHero } from '@/components/ui';
 import type { StudioPasskeyStats, StudioPasskeyCredential, StudioPasskeyAuditLog } from '@/lib/api/endpoints/auth';
 
 // The studio's passkeys — the trainer's own and their members' — with revoke
@@ -131,42 +132,23 @@ function BiometricInner() {
   }
 
   return (
-    <div className="space-y-6 py-6 max-w-6xl mx-auto">
+    <div className="mx-auto max-w-6xl space-y-6 pb-6 pt-1">
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: 'linear-gradient(135deg, #EF4444, #DC2626)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 16px rgba(220,38,38,0.3)',
-          }}>
-            <Fingerprint size={22} color="#fff" />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>
-              Biometric Security
-            </h1>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
-              Manage passkeys, view authentication activity and audit logs
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={loadAll}
-          disabled={loading}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '8px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-            background: 'var(--bg-subtle)', border: '1px solid var(--border)',
-            color: 'var(--text-secondary)', cursor: 'pointer',
-          }}
-        >
-          <RefreshCw size={14} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
-          Refresh
-        </button>
-      </div>
+      <PageHero
+        icon={<Fingerprint size={20} />}
+        title="Biometric Security"
+        subtitle="Manage passkeys, view authentication activity and audit logs"
+        actions={
+          <HeroButton
+            variant="glass"
+            onClick={loadAll}
+            disabled={loading}
+            icon={<RefreshCw size={14} className={loading ? 'animate-spin' : undefined} />}
+          >
+            Refresh
+          </HeroButton>
+        }
+      />
 
       {/* Error */}
       {error && (

@@ -7,6 +7,7 @@ import {
   User, Loader2, RefreshCw, Activity, CheckCircle2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
+import { HeroButton, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 
 type Dashboard = Awaited<ReturnType<typeof api.qr.dashboard>>;
@@ -96,29 +97,22 @@ export default function DashboardPage() {
 
   return (
     <Guard role="trainer">
-      {/* Hero */}
-      <div style={{ background: 'var(--bg-subtle)', borderRadius: 16, padding: '20px 24px', marginBottom: 20, border: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#0067e0,#0059ce)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Activity size={22} color="#fff" />
-            </div>
-            <div>
-              <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Attendance Dashboard</h1>
-              <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '3px 0 0' }}>
-                Live · Refreshes every 30s · Last updated {lastRefresh.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={load} disabled={loading}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+      <PageHero
+        className="mb-5"
+        icon={<Activity size={20} />}
+        title="Attendance Dashboard"
+        subtitle={`Live · refreshes every 30s · updated ${lastRefresh.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
+        actions={
+          <HeroButton
+            variant="glass"
+            onClick={load}
+            disabled={loading}
+            icon={<RefreshCw size={14} className={loading ? 'animate-spin' : undefined} />}
           >
-            <RefreshCw size={13} style={loading ? { animation: 'spin 0.9s linear infinite' } : {}} />
             Refresh
-          </button>
-        </div>
-      </div>
+          </HeroButton>
+        }
+      />
 
       {loading && !data ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 60, color: 'var(--text-muted)', gap: 10 }}>

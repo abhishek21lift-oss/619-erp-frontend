@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import ClientAvatar, { initialsOf } from '@/components/pt-os/ClientAvatar';
-import { Button, EmptyState, PullToRefresh } from '@/components/ui';
+import { Button, EmptyState, HeroButton, PageHero, PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
 import type { PtSession, PtSessionStatus, TodayClient } from '@/lib/api';
@@ -456,29 +456,18 @@ export default function MySchedulePage() {
             every other screen. */}
         <div className="relative z-10 mx-auto mt-1 w-full max-w-[1600px] pb-6">
 
-            {/* Header */}
-            <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-              className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px]"
-                  style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 8px 28px rgba(0,103,224,0.35)' }}>
-                  <CalendarCheck size={24} className="text-white" />
-                </div>
-                <div>
-                  <h1 className="text-[24px] sm:text-[28px] font-[860] tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>
-                    My Schedule
-                  </h1>
-                  <p className="mt-0.5 text-[13px] font-[500]" style={{ color: 'var(--text-muted)' }}>
-                    Your own PT sessions, week by week
-                  </p>
-                </div>
-              </div>
-              <Button iconLeft={<CalendarPlus size={15} />}
-                onClick={() => router.push('/pt-os/schedule-session')}
-                style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff' }}>
-                Book Session
-              </Button>
-            </m.div>
+            <PageHero
+              className="mb-5"
+              icon={<CalendarCheck size={20} />}
+              title="My Schedule"
+              subtitle="Your own PT sessions, week by week"
+              actions={
+                <HeroButton className="w-full sm:w-auto" icon={<CalendarPlus size={15} />}
+                  onClick={() => router.push('/pt-os/schedule-session')}>
+                  Book Session
+                </HeroButton>
+              }
+            />
 
             {/* The trainer owns the studio, so their schedule is the studio's
                 sessions — there is no "login not linked to a trainer profile"

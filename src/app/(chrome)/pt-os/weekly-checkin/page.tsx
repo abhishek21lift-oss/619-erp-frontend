@@ -5,7 +5,7 @@ import { ClipboardCheck, Plus, Loader2, Check } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { useAsync } from '@/lib/use-async';
 import { api, Client } from '@/lib/api';
-import { Button, FormField, TextInput, TextArea, SelectInput } from '@/components/ui';
+import { Button, FormField, PageHero, TextInput, TextArea, SelectInput } from '@/components/ui';
 import { PremiumAreaChart } from '@/components/visualizations';
 import WeeklyCheckinInsightCard from '@/components/pt-os/WeeklyCheckinInsightCard';
 
@@ -90,7 +90,7 @@ export default function WeeklyCheckinPage() {
   if (pageError && !clients.loading && !checkins.loading) {
     return (
       <Guard>
-        <div className="mx-auto w-full max-w-7xl py-6 sm:py-8">
+        <div className="mx-auto w-full max-w-7xl pb-6 pt-1 sm:pb-8">
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 320, padding: 40 }}>
             <div style={{
               background: 'var(--bg-card)',
@@ -130,24 +130,12 @@ export default function WeeklyCheckinPage() {
   return (
     <Guard>
       <div className="mx-auto w-full max-w-7xl py-6 sm:py-8">
-        <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
-          style={{ background: '#ECFDF5', border: '1px solid #A7F3D0' }}>
-          <div className="relative z-10">
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(0,89,206,0.1)' }}>
-                <ClipboardCheck size={16} style={{ color: '#0059ce' }} />
-              </div>
-              <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: '#0059ce' }}>Progress Tracking</span>
-            </div>
-            <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
-              Weekly Check-In
-            </h1>
-            <p className="mt-3 max-w-xl text-[14px]" style={{ color: 'var(--text-muted)' }}>
-              Log weekly progress — weight, mood, sleep, adherence, and trainer notes.
-            </p>
-          </div>
-        </m.div>
+        <PageHero
+          className="mb-5"
+          icon={<ClipboardCheck size={20} />}
+          title="Weekly Check-In"
+          subtitle="Log weekly progress — weight, mood, sleep, adherence, and trainer notes."
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>

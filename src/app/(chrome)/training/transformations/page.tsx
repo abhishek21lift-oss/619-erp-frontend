@@ -4,6 +4,7 @@ import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import Link from 'next/link';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
+import { PageHero } from '@/components/ui';
 import { Sparkles, Users, UserCheck, Weight, TrendingUp, Search, ArrowUpRight, ArrowDownRight, Minus, Target, Trophy, Activity } from 'lucide-react';
 import { api, type TransformationRow } from '@/lib/api';
 import { fmtDate } from '@/lib/format';
@@ -123,21 +124,16 @@ function Inner() {
 
   return (
     <>
-      {/* ── Hero ── */}
-      <div style={{ background: 'var(--bg-subtle)', padding: '52px 32px 44px', borderRadius: '0 0 40px 40px', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
-          <m.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] as const }}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 58, height: 58, borderRadius: 18, background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 8px 32px rgba(0,103,224,0.3)', border: '1px solid var(--border)' }}>
-            <Sparkles size={26} color="#fff" />
-          </m.div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Transformations</h1>
-            <p style={{ margin: '4px 0 0', fontSize: 13.5, color: 'var(--text-muted)' }}>Track member progress and body transformation journeys</p>
-          </div>
-        </div>
-      </div>
+      {/* No side padding of its own: the shell already provides the gutter,
+          and 32px on top of it squeezed the KPI grid on a phone (see PageHero). */}
+      <div style={{ paddingTop: 4, maxWidth: 1400, margin: '0 auto' }}>
+        <PageHero
+          className="mb-5"
+          icon={<Sparkles size={20} />}
+          title="Transformations"
+          subtitle="Track member progress and body transformation journeys"
+        />
 
-      <div style={{ padding: '24px 32px', maxWidth: 1400, margin: '0 auto' }}>
         {error && (
           <m.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
             style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: '12px 18px', fontSize: 13, color: '#dc2626', marginBottom: 20 }}>

@@ -15,6 +15,7 @@ import {
   LifeBuoy, Loader2, AlertTriangle, Plus, Send, ChevronLeft, CheckCircle2, X,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
+import { HeroButton, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { SupportTicket, TicketStatus, TicketPriority, TicketCategory } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -254,29 +255,22 @@ function SupportPage() {
   useEffect(() => { load(); }, [load]);
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4">
-      <div>
-        <h1 className="flex items-center gap-2 text-[19px] font-[800]" style={{ color: 'var(--text-primary)' }}>
-          <LifeBuoy size={19} style={{ color: 'var(--brand)' }} /> Support
-        </h1>
-        <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-          Raise a request and we will reply here.
-        </p>
-      </div>
+    <div className="mx-auto w-full max-w-3xl space-y-4 pt-1">
+      <PageHero
+        icon={<LifeBuoy size={20} />}
+        title="Support"
+        subtitle="Raise a request and we will reply here."
+        actions={!open && !composing ? (
+          <HeroButton className="w-full sm:w-auto" onClick={() => setComposing(true)} icon={<Plus size={15} />}>
+            New request
+          </HeroButton>
+        ) : undefined}
+      />
 
       {open ? (
         <Thread id={open} onBack={() => { setOpen(null); load(); }} />
       ) : (
         <>
-          {!composing && (
-            <button
-              onClick={() => setComposing(true)}
-              className="flex h-10 items-center gap-1.5 rounded-[11px] px-3.5 text-[12.5px] font-[700] text-white"
-              style={{ background: 'var(--brand)' }}
-            >
-              <Plus size={14} /> New request
-            </button>
-          )}
           {composing && <NewTicket onClose={() => setComposing(false)} onCreated={load} />}
 
           {error && (

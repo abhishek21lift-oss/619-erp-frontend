@@ -36,7 +36,7 @@ import {
 import type { UpiSettings, UpiSettingsInput } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
-import { PageHeader } from '@/components/ui';
+import { PageHero } from '@/components/ui';
 import { errorMessage } from '@/lib/forms/errors';
 
 export default function PaymentSettingsPage() {
@@ -78,10 +78,11 @@ function Inner() {
 
   return (
     <div className="mx-auto w-full max-w-[560px]">
-      <PageHeader
+      <PageHero
+        className="mb-5"
         title="UPI collection"
         subtitle="Take membership payments over UPI and verify them yourself. No gateway, no per-transaction fee."
-        icon={<Wallet size={19} />}
+        icon={<Wallet size={20} />}
       />
 
       {loadError && !initial ? (
