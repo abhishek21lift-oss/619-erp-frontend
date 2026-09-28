@@ -2,10 +2,10 @@
 import { useState, useEffect } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
-import { MapPin, Plus, Edit3, Trash2, Loader2 } from 'lucide-react';
+import { MapPin, Plus, Edit3, Trash2, Loader2, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { FormField, TextInput } from '@/components/ui';
+import { FormField, HeroButton, PageHero, TextInput } from '@/components/ui';
 
 interface Branch { id: string; name: string; location: string; status: string; member_count: number; }
 
@@ -57,20 +57,18 @@ function BranchesContent() {
   useEffect(() => { load(); }, []);
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px' }}>
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: 'linear-gradient(135deg, #f2f8ff, #f1f5f9)', boxShadow: 'var(--shadow-xs)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)', margin: '0 0 8px' }}>Branches</h1>
-            <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.6, color: 'var(--text-muted)' }}>Manage gym locations and branches.</p>
-          </div>
-          <button onClick={() => setShowForm(v => !v)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '10px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,103,224,0.35)' }}>
-            <Plus size={14} /> {showForm ? 'Cancel' : 'Add Branch'}
-          </button>
-        </div>
-      </m.div>
+    <div className="mx-auto w-full max-w-[1200px] pt-1">
+      <PageHero
+        className="mb-5"
+        icon={<MapPin size={20} />}
+        title="Branches"
+        subtitle="Manage gym locations and branches."
+        actions={
+          <HeroButton className="w-full sm:w-auto" onClick={() => setShowForm(v => !v)} icon={showForm ? <X size={15} /> : <Plus size={15} />}>
+            {showForm ? 'Cancel' : 'Add Branch'}
+          </HeroButton>
+        }
+      />
 
       {error && (
         <div style={{ borderRadius: 14, padding: '14px 20px', marginBottom: 22, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', fontWeight: 600, fontSize: 13 }}>

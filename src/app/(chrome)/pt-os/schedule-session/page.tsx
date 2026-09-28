@@ -26,7 +26,7 @@ import { FloatingPanel } from '@/components/premium/FloatingPanel';
 import { StatusPill } from '@/components/premium/StatusPill';
 import { PremiumTable } from '@/components/premium/PremiumTable';
 import { cn } from '@/components/ui/cn';
-import { Button } from '@/components/ui';
+import { Button, HeroButton, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { identity } from '@/lib/palette';
@@ -356,25 +356,17 @@ function SchedulePageContent() {
       {/* ── HEADER ── */}
       {/* Header — in normal flow on the page background (no sticky bar). */}
       <div>
-        <div className="mx-auto max-w-screen-xl py-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
-                  <Calendar size={16} style={{ color: '#F59E0B' }} />
-                </div>
-                <div>
-                  <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>Schedule Session</h1>
-                  <p className="text-[11px] font-[600] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>
-                    Personal Training / <span style={{ color: '#F59E0B' }}>Schedule Session</span>
-                  </p>
-                </div>
-              </div>
-            </div>
-            <Button variant="primary" iconLeft={<Plus size={14} />} onClick={() => setShowCreateModal(true)}>
-              Book Session
-            </Button>
-          </div>
+        <div className="mx-auto max-w-screen-xl pb-4 pt-1">
+          <PageHero
+            icon={<Calendar size={20} />}
+            title="Schedule Session"
+            subtitle="Your studio's PT sessions by calendar, timeline, week or day"
+            actions={
+              <HeroButton className="w-full sm:w-auto" onClick={() => setShowCreateModal(true)} icon={<Plus size={15} />}>
+                Book Session
+              </HeroButton>
+            }
+          />
 
           {/* View Toggles */}
           <div className="mt-4 flex flex-wrap items-center gap-3">

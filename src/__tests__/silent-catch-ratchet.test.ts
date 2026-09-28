@@ -102,7 +102,7 @@ const KNOWN = [
   'app/(chrome)/pt-os/exercise-library/[id]/edit/page.tsx:27',
   'app/(chrome)/pt-os/exercise-library/new/page.tsx:28',
   'app/(chrome)/pt-os/workout-plans/[id]/page.tsx:48',
-  'app/(chrome)/settings/integrations/page.tsx:441',
+  'app/(chrome)/settings/integrations/page.tsx:442',
   // Two remain on the Security page (the session count on each panel); the
   // other two went with the account-management UI.
   'app/(chrome)/settings/profile/page.tsx:1742',

@@ -111,5 +111,5 @@ export type {
   PremiumAreaEntry,
 } from './chart';
 
-export { PageHero, PageContainer } from './PageHero';
-export type { PageHeroProps } from './PageHero';
+export { PageHero, PageContainer, HeroButton, HeroChip } from './PageHero';
+export type { PageHeroProps, HeroButtonProps } from './PageHero';

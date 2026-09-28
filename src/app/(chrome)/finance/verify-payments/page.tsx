@@ -33,7 +33,7 @@ import type {
 import { PLAN_DURATION_MONTHS } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
-import { PageHeader, EmptyState, cn } from '@/components/ui';
+import { PageHero, HeroButton, EmptyState, cn } from '@/components/ui';
 import {
   REJECT_REASONS, REJECT_REASON_LABELS, UpiStatusBadge, fmtMoney, fmtMoneyExact, orderTermLabel,
 } from '@/components/payments/upi-shared';
@@ -97,30 +97,24 @@ function Inner() {
 
   return (
     <>
-      <PageHeader
+      <PageHero
+        className="mb-5"
         title="Verify payments"
         subtitle="Match each UPI reference against your bank statement, then approve to activate the membership."
-        icon={<ShieldCheck size={19} />}
+        icon={<ShieldCheck size={20} />}
         actions={
           <div className="flex gap-2">
-            <button
-              type="button"
+            <HeroButton
+              variant="glass"
               onClick={() => void load()}
               aria-label="Refresh queue"
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-[650]"
-              style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)' }}
+              icon={<RefreshCw size={14} className={loading ? 'animate-spin' : undefined} />}
             >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : undefined} />
               <span className="hidden sm:inline">Refresh</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setCreating(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-[700] text-white"
-              style={{ background: 'var(--brand)' }}
-            >
-              <Plus size={15} /> New request
-            </button>
+            </HeroButton>
+            <HeroButton className="flex-1 sm:flex-none" onClick={() => setCreating(true)} icon={<Plus size={15} />}>
+              New request
+            </HeroButton>
           </div>
         }
       />

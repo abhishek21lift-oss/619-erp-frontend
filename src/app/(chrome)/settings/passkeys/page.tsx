@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useWebAuthn, isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
 import Guard from '@/components/Guard';
-import { PageTitle } from '@/components/ui';
+import { HeroButton, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
 
@@ -50,7 +50,6 @@ function timeAgo(iso: string | null): string {
 export default function PasskeysPage() {
   return (
     <Guard>
-      <PageTitle>Passkeys &amp; Biometric Login</PageTitle>
       <PasskeysContent />
     </Guard>
   );
@@ -207,46 +206,23 @@ function PasskeysContent() {
   const disabledCount = credentials.filter(c => !c.is_active).length;
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 16px' }}>
+    <div style={{ maxWidth: 720, margin: '0 auto', padding: '4px 0 24px' }}>
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: 14,
-            background: 'linear-gradient(135deg,#0067E0,#0059CE)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 6px 20px rgba(0,103,224,0.35)',
-          }}>
-            <Fingerprint size={24} color="#fff" />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 22, fontWeight: 760, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-              Biometric Login
-            </h1>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
-              Sign in with fingerprint, Face ID, or Windows Hello — no password needed.
-            </p>
-          </div>
-        </div>
-        {supported && available && !showForm && (
-          <button
+      <PageHero
+        className="mb-5"
+        icon={<Fingerprint size={20} />}
+        title="Passkeys & Biometric Login"
+        subtitle="Sign in with fingerprint, Face ID, or Windows Hello — no password needed."
+        actions={supported && available && !showForm ? (
+          <HeroButton
+            className="w-full sm:w-auto"
             onClick={() => { setShowForm(true); setError(''); clearError(); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 7,
-              padding: '9px 18px', borderRadius: 11, fontSize: 13, fontWeight: 660,
-              background: 'linear-gradient(135deg,#0067E0,#0059CE)',
-              color: '#fff', border: 'none', cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(0,103,224,0.35)',
-              transition: 'opacity 150ms',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
-            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+            icon={<Plus size={15} />}
           >
-            <Plus size={15} /> Add New Passkey
-          </button>
-        )}
-      </div>
+            Add New Passkey
+          </HeroButton>
+        ) : undefined}
+      />
 
       {/* Stats bar */}
       {credentials.length > 0 && (
