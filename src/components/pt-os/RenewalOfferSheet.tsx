@@ -94,7 +94,7 @@ export default function RenewalOfferSheet({ client, onClose }: { client: OfferCl
             <p className="mt-1 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
               A renewal offer is paid by UPI to your studio&apos;s account. Add your UPI ID first.
             </p>
-            <Link href="/finance/payment-settings" className="mt-3 inline-flex h-10 items-center rounded-[12px] px-4 text-[13px] font-[750] text-white" style={{ background: BLUE }}>
+            <Link href="/settings/profile?tab=upi" className="mt-3 inline-flex h-10 items-center rounded-[12px] px-4 text-[13px] font-[750] text-white" style={{ background: BLUE }}>
               Set up UPI
             </Link>
           </div>

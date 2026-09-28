@@ -116,7 +116,7 @@ describe('the tags match the platform registry', () => {
     'clients', 'sessions', 'attendance', 'programs', 'exercise_library',
     'screening', 'progress_photos', 'finance', 'packages', 'insights',
     'communication', 'member_portal', 'ai_suite', 'ai_knowledge_base',
-    'branches', 'integrations', 'passkeys',
+    'integrations', 'passkeys',
   ]);
 
   it('uses no key the registry does not define', () => {

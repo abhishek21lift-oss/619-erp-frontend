@@ -129,7 +129,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/finance/dues',              label: 'Outstanding Dues',     icon: 'AlertCircle',  badge: 'duesCount', roles: ['trainer'] },
       { href: '/pt-os/balance-sheet',       label: 'Balance Sheet',        icon: 'Wallet' },
       { href: '/finance/forecast',          label: 'Revenue Forecast',     icon: 'TrendingUp',   roles: ['trainer'] },
-      { href: '/finance/payment-settings',  label: 'UPI Payment Settings', icon: 'QrCode',       roles: ['trainer'] },
+      // UPI Payment Settings lives in My Profile → UPI Payments now.
     ],
   },
   // Members get their own group. It is the only one they see, so it carries
@@ -212,11 +212,9 @@ export const SETTINGS_GROUP: NavGroup = {
     { href: '/settings/profile',          label: 'My Profile',           icon: 'User' },
     { href: '/support',                   label: 'Support',              icon: 'LifeBuoy' },
     { href: '/subscription',              label: 'Subscription & Billing', icon: 'CreditCard',  roles: ['trainer'] },
-    { href: '/settings/branches',         label: 'Branches',             icon: 'Building2',      roles: ['trainer'], feature: 'branches' },
     { href: '/settings/passkeys',         label: 'Passkeys & Security',  icon: 'Shield',         roles: ['trainer'], feature: 'passkeys' },
     { href: '/settings/biometrics',       label: 'Member Passkeys',      icon: 'Shield',         roles: ['trainer'], feature: 'passkeys' },
     { href: '/settings/integrations',     label: 'Integrations',         icon: 'Zap',            roles: ['trainer'], feature: 'integrations' },
-    { href: '/settings/merge-duplicates', label: 'Merge Duplicates',     icon: 'Merge',          roles: ['trainer'] },
   ],
 };
 

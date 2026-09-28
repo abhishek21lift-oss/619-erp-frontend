@@ -652,24 +652,6 @@ export const settings = {
   getAll: () =>
     http<{ settings: Record<string, unknown> }>('/api/settings'),
 
-  /** List branches */
-  getBranches: () =>
-    http<{ id: string; name: string; location: string; status: string; member_count: number }[]>('/api/settings/branches'),
-
-  /** Create a branch */
-  createBranch: (data: { name: string; location?: string }) =>
-    http<{ id: string; name: string; location: string; status: string; member_count: number }>('/api/settings/branches', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-
-  /** Update a branch */
-  updateBranch: (id: string, data: { name?: string; location?: string; status?: string }) =>
-    http<{ id: string; name: string; location: string; status: string }>(`/api/settings/branches/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
-
   /** Update generic settings (key-value) */
   update: (data: Record<string, string>) =>
     http<{ message: string; count: number }>('/api/settings', {

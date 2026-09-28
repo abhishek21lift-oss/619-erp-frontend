@@ -1,19 +1,20 @@
 'use client';
 
 /**
- * UPI collection settings.
+ * UPI collection settings, shown as the "UPI Payments" tab of My Profile.
+ *
+ * It used to be its own page at /finance/payment-settings (linked from the
+ * Finance sidebar group and the top-bar gear menu). That address now
+ * redirects to /settings/profile?tab=upi, so old links still land here.
  *
  * Small screen, high stakes: the VPA entered here is where members' money
  * goes. So the form previews the payee exactly as a UPI app will show it, and
- * collection stays OFF until an admin explicitly turns it on — a half-filled
- * configuration must never be able to put a live QR in front of a member.
+ * collection stays OFF until the trainer explicitly turns it on: a
+ * half-filled configuration must never be able to put a live QR in front of
+ * a member.
  *
- * On the universal form platform. The rules this screen already carried — the
- * VPA pattern, the statutory GST slabs, the 5–1440 link validity — moved into
- * `schemas/upiSettings.ts` unchanged; what the migration added is a real submit
- * guard (two clicks in one frame both saw `saving === false`), a GSTIN format
- * check on a value that is printed on every receipt, and server failures
- * through the shared mapper instead of `err.message` straight from the wire.
+ * On the universal form platform. The rules (VPA pattern, statutory GST slabs,
+ * 5–1440 link validity, GSTIN format) live in `schemas/upiSettings.ts`.
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -22,7 +23,6 @@ import { m } from 'framer-motion';
 import {
   Wallet, Loader2, Check, AlertTriangle, Info, ShieldCheck, ArrowRight,
 } from 'lucide-react';
-import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import { useAppForm } from '@/lib/forms/useAppForm';
 import {
@@ -36,14 +36,9 @@ import {
 import type { UpiSettings, UpiSettingsInput } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
-import { PageHero } from '@/components/ui';
 import { errorMessage } from '@/lib/forms/errors';
 
-export default function PaymentSettingsPage() {
-  return <Guard role="trainer"><Inner /></Guard>;
-}
-
-function Inner() {
+export default function UpiSettingsPanel() {
   const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
@@ -69,7 +64,7 @@ function Inner() {
 
   if (loading || (!initial && !loadError)) {
     return (
-      <div className="mx-auto max-w-[560px] animate-pulse space-y-4 px-1 pt-4">
+      <div className="max-w-[560px] animate-pulse space-y-4">
         <div className="h-8 w-56 rounded" style={{ background: 'var(--bg-subtle)' }} />
         <div className="h-[420px] rounded-2xl" style={{ background: 'var(--bg-subtle)' }} />
       </div>
@@ -77,13 +72,19 @@ function Inner() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[560px]">
-      <PageHero
-        className="mb-5"
-        title="UPI collection"
-        subtitle="Take membership payments over UPI and verify them yourself. No gateway, no per-transaction fee."
-        icon={<Wallet size={20} />}
-      />
+    <div className="w-full max-w-[560px]">
+      <div className="flex items-start gap-3">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
+          style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>
+          <Wallet size={18} />
+        </span>
+        <div>
+          <h2 className="text-[16px] font-[750]" style={{ color: 'var(--text-primary)' }}>UPI collection</h2>
+          <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+            Take membership payments over UPI and verify them yourself. No gateway, no per-transaction fee.
+          </p>
+        </div>
+      </div>
 
       {loadError && !initial ? (
         <p className="mt-4 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>

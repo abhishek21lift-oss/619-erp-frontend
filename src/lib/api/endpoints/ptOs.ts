@@ -7,7 +7,7 @@
 import { http } from '../../http';
 import { buildQs } from '../qs';
 import type {
-  ActivityLogEntry, CheckinInsight, ClientBirthday, ClientSnapshot, CoachGeneration, DuplicateGroup, MergeResult, PtLead, PtSession, RosterSignalSweep, TrainingBrief,
+  ActivityLogEntry, CheckinInsight, ClientBirthday, ClientSnapshot, CoachGeneration, PtLead, PtSession, RosterSignalSweep, TrainingBrief,
   TransformationRow,
 } from '../types';
 
@@ -104,10 +104,6 @@ export const pt = {
     http<{ message: string }>(`/api/pt-os/clients/${id}`, { method: 'DELETE' }),
   subscriptions: (id: string) =>
     http<{ data: unknown[]; total: number }>(`/api/pt-os/clients/${id}/subscriptions`),
-  duplicates: () =>
-    http<{ data: DuplicateGroup[]; total_groups: number; total_records: number; total_duplicates: number; total_financial_value: number }>('/api/pt-os/clients/duplicates'),
-  mergeDuplicates: () =>
-    http<{ success: boolean; run_id: string; merged_groups: number; records_removed: number; results: MergeResult[] }>('/api/pt-os/clients/merge-duplicates', { method: 'POST' }),
   /**
    * The studio's own business-write audit trail — client/payment/commission
    * changes made by its own staff. Always scoped server-side to the caller's

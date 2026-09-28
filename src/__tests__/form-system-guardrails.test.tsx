@@ -288,7 +288,6 @@ describe('the five representative migrations', () => {
       ['Package name', 'Sessions', 'Duration', 'Price', 'Goal type', 'Description']],
     ['app/(chrome)/pt-os/session-balance/page.tsx',
       ['Client', 'Total sessions', 'Package name', 'Valid until']],
-    ['app/(chrome)/settings/branches/page.tsx', ['Branch Name', 'Location']],
     ['app/(chrome)/attendance/page.tsx', ['Search member']],
   ];
 
@@ -331,9 +330,6 @@ describe('the five representative migrations', () => {
       ]],
       ['app/(chrome)/pt-os/session-balance/page.tsx', [
         /onSubmit=\{handleCreate\}/, /value=\{totalSessions\}/, /value=\{endDate\}/,
-      ]],
-      ['app/(chrome)/settings/branches/page.tsx', [
-        /onSubmit=\{addBranch\}/, /value=\{form\.name\}/, /value=\{form\.location\}/,
       ]],
       ['app/(chrome)/attendance/page.tsx', [/value=\{query\}/, /setQuery\(e\.target\.value\)/]],
     ];

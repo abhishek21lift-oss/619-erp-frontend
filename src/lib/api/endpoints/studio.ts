@@ -1,4 +1,4 @@
-// API endpoints: branches, gymSettings, qr, subscription, membershipPlans.
+// API endpoints: gymSettings, qr, subscription, membershipPlans.
 //
 // Lifted verbatim from the single `api` object in the 4,185-line api.ts.
 // Method names, URLs and request shapes are unchanged; index.ts composes these
@@ -9,16 +9,6 @@ import type {
   CouponValidation, MembershipPlan, PlanChangeQuote, SubCheckoutRequest, SubInvoice,
   SubPayment, SubPlan, SubscriptionStatus, UpiPaymentView, UpiRejectReason,
 } from '../types';
-
-// ── Branches ───────────────────────────────────────────────────
-export const branches = {
-  list: () => http<{ id: string; name: string; location: string; status: string; member_count: number }[]>('/api/settings/branches'),
-  create: (data: { name: string; location?: string }) =>
-    http<{ id: string; name: string; location: string }>('/api/settings/branches', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: { name?: string; location?: string; status?: string }) =>
-    http<{ message: string }>(`/api/settings/branches/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => http<{ message: string }>(`/api/settings/branches/${id}`, { method: 'DELETE' }),
-};
 
 export const gymSettings = {
   get: () =>

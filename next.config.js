@@ -87,6 +87,12 @@ const nextConfig = {
       { source: '/operations',         destination: '/operations/leaderboard',   permanent: true },
       { source: '/checkin/reports',    destination: '/attendance/reports',       permanent: true },
       { source: '/pt-os/plans',        destination: '/subscription/packages',    permanent: true },
+      // UPI collection settings moved into My Profile as its own tab. The
+      // Branches and Merge Duplicates features were removed; an old link or
+      // bookmark lands on My Profile instead of a 404.
+      { source: '/finance/payment-settings',  destination: '/settings/profile?tab=upi', permanent: true },
+      { source: '/settings/branches',         destination: '/settings/profile',         permanent: true },
+      { source: '/settings/merge-duplicates', destination: '/settings/profile',         permanent: true },
       // The check-in hub (face / QR / passkey method picker) is gone — the
       // route now goes straight to the QR scanner, which is the only
       // in-app check-in method left. permanent:false because this may

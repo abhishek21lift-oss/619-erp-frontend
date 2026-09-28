@@ -214,8 +214,9 @@ describe('labelling across a component boundary', () => {
     expect(platformField).toMatch(/export function Field/);
 
     // The invariant the above exists to protect: the screen that first exposed
-    // the blind spot still has no nameless control.
-    expect(audit.nameless.filter((x) => x.includes('payment-settings'))).toEqual([]);
+    // the blind spot (UPI settings, now a tab in My Profile) still has no
+    // nameless control.
+    expect(audit.nameless.filter((x) => x.includes('UpiSettingsPanel'))).toEqual([]);
   });
 
   it('does not treat a component that labels an interpolated id as such a wrapper', () => {
