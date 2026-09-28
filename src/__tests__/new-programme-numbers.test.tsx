@@ -1,4 +1,7 @@
-// Weeks and Sessions/week in the New programme dialog.
+// Weeks in the New programme dialog.
+//
+// Sessions/week used to be a second number field here. It is gone: the count
+// comes from the days the builder programmes (backend migration 219).
 //
 // Reported as "not changing — if I try to change it, it becomes 1 and then the
 // value starts after 1". That is precisely what the old code did:
@@ -66,8 +69,8 @@ function numericFields() {
 
 function open() {
   render(<NewProgrammeDialog open onClose={() => {}} presetClientId="c1" />);
-  const [weeks, perWeek] = numericFields();
-  return { weeks, perWeek };
+  const [weeks] = numericFields();
+  return { weeks };
 }
 
 beforeEach(() => {
@@ -107,11 +110,12 @@ describe('typing a new value', () => {
     expect(weeks.value).toBe('12');
   });
 
-  it('does the same for sessions per week', () => {
-    const { perWeek } = open();
-    fireEvent.change(perWeek, { target: { value: '' } });
-    fireEvent.change(perWeek, { target: { value: perWeek.value + '5' } });
-    expect(perWeek.value).toBe('5');
+  it('has no sessions-per-week field left to type in', () => {
+    // Counted from the programmed days instead; a number typed before any
+    // exercise existed disagreed with them on 30 of 35 production plans.
+    open();
+    expect(numericFields()).toHaveLength(1);
+    expect(screen.queryByText(/Sessions \/ week/i)).toBeNull();
   });
 });
 
@@ -133,38 +137,47 @@ describe('clamping on blur', () => {
   });
 
   it('holds the lower bound', () => {
-    const { perWeek } = open();
-    fireEvent.change(perWeek, { target: { value: '0' } });
-    fireEvent.blur(perWeek);
-    expect(perWeek.value).toBe('1');
-  });
-
-  it('caps sessions per week at 14', () => {
-    const { perWeek } = open();
-    fireEvent.change(perWeek, { target: { value: '40' } });
-    fireEvent.blur(perWeek);
-    expect(perWeek.value).toBe('14');
+    const { weeks } = open();
+    fireEvent.change(weeks, { target: { value: '0' } });
+    fireEvent.blur(weeks);
+    expect(weeks.value).toBe('1');
   });
 });
 
 describe('what reaches the API', () => {
   it('submits the typed number, not the starting one', async () => {
-    const { weeks, perWeek } = open();
+    const { weeks } = open();
     fireEvent.change(screen.getByPlaceholderText(/Upper \/ Lower Split/i), {
       target: { value: 'Push Pull Legs' },
     });
     fireEvent.change(weeks, { target: { value: '' } });
     fireEvent.change(weeks, { target: { value: '8' } });
-    fireEvent.change(perWeek, { target: { value: '' } });
-    fireEvent.change(perWeek, { target: { value: '5' } });
 
     fireEvent.click(screen.getByText(/Create and add exercises/i));
 
     await waitFor(() => expect(createPlan).toHaveBeenCalled());
-    expect(createPlan.mock.calls[0][0]).toMatchObject({
-      duration_weeks: 8,
-      sessions_per_week: 5,
-    });
+    const body = createPlan.mock.calls[0][0] as Record<string, unknown>;
+    expect(body).toMatchObject({ duration_weeks: 8 });
+    expect(body).not.toHaveProperty('sessions_per_week');
+  });
+
+  it('saves a client programme as not a template', async () => {
+    // The server read an absent flag as TRUE, so every programme made here
+    // was stored as a template.
+    open();
+    fireEvent.change(screen.getByPlaceholderText(/Upper \/ Lower Split/i), { target: { value: 'PPL' } });
+    fireEvent.click(screen.getByText(/Create and add exercises/i));
+    await waitFor(() => expect(createPlan).toHaveBeenCalled());
+    expect(createPlan.mock.calls[0][0]).toMatchObject({ is_template: false });
+  });
+
+  it('sends the difficulty the trainer chose, not a fixed intermediate', async () => {
+    open();
+    fireEvent.change(screen.getByPlaceholderText(/Upper \/ Lower Split/i), { target: { value: 'First block' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Beginner' }));
+    fireEvent.click(screen.getByText(/Create and add exercises/i));
+    await waitFor(() => expect(createPlan).toHaveBeenCalled());
+    expect(createPlan.mock.calls[0][0]).toMatchObject({ difficulty: 'beginner' });
   });
 
   it('submits a number even if the field is left mid-edit and empty', async () => {

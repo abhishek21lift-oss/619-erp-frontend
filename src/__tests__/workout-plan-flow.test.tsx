@@ -39,7 +39,7 @@ vi.mock('@/lib/api', () => ({
 vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn(), info: vi.fn() } }) }));
 
 import NewProgrammeDialog, {
-  goalFromClient, perWeekFromClient,
+  goalFromClient, difficultyFromClient,
 } from '@/components/pt-os/builder/NewProgrammeDialog';
 
 beforeEach(() => {
@@ -78,12 +78,13 @@ describe('picking a client fills the form', () => {
   it('leaves the programme name empty for the trainer to write', async () => {
     // What kind of plan this is — Push/Pull/Legs, Upper/Lower, a deload block
     // — is the trainer's call, and nothing in the client's record knows it.
-    clientRow.mockResolvedValue({ data: { id: 'c1', name: 'Rahul Sharma', sessions_per_week: 4 } });
+    clientRow.mockResolvedValue({ data: { id: 'c1', name: 'Rahul Sharma', workout_experience_level: 'advanced' } });
     goalsList.mockResolvedValue({ data: [{ goal_type: 'fat_loss', is_active: true }] });
     openDialog();
     await pickClient();
 
-    await waitFor(() => expect((numbers()[1]).value).toBe('4'));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Advanced' })).toHaveAttribute('aria-pressed', 'true'));
     expect(nameField().value).toBe('');
   });
 
@@ -98,56 +99,50 @@ describe('picking a client fills the form', () => {
       expect(screen.getByRole('button', { name: 'Weight Loss' })).toHaveAttribute('aria-pressed', 'true'));
   });
 
-  it('takes sessions per week from what the client is enrolled at', async () => {
-    // pt_clients.sessions_per_week is the PT Enrollment field, and it beats
-    // the older free-text `frequency` when both are present.
-    clientRow.mockResolvedValue({
-      data: { id: 'c1', name: 'Rahul Sharma', sessions_per_week: 5, frequency: '2x/week' },
-    });
+  it('turns a powerlifting screening into a Strength programme', async () => {
+    goalsList.mockResolvedValue({ data: [{ goal_type: 'powerlifting', is_active: true }] });
     openDialog();
     await pickClient();
 
-    await waitFor(() => expect((numbers()[1]).value).toBe('5'));
-    expect((numbers()[0]).value).toBe('4');
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Strength' })).toHaveAttribute('aria-pressed', 'true'));
   });
 
-  it('falls back to the onboarding frequency when the enrolment field is empty', async () => {
-    // Clients who predate migration 053 still fill the field.
-    clientRow.mockResolvedValue({ data: { id: 'c1', name: 'Rahul Sharma', frequency: '3 days' } });
+  it('takes the difficulty from the workout experience recorded at enrolment', async () => {
+    clientRow.mockResolvedValue({ data: { id: 'c1', name: 'Rahul Sharma', workout_experience_level: 'beginner' } });
     openDialog();
     await pickClient();
 
-    await waitFor(() => expect((numbers()[1]).value).toBe('3'));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Beginner' })).toHaveAttribute('aria-pressed', 'true'));
+    // Weeks is not "filled" — nothing on the record says how long a block runs.
+    expect(numbers()[0].value).toBe('4');
   });
 
-  it('leaves the goal alone when the client has never been screened', async () => {
+  it('leaves the goal and difficulty alone when the record answers neither', async () => {
     goalsList.mockResolvedValue({ data: [] });
-    clientRow.mockResolvedValue({ data: { id: 'c1', name: 'Rahul Sharma', sessions_per_week: 2 } });
+    clientRow.mockResolvedValue({ data: { id: 'c1', name: 'Rahul Sharma' } });
     openDialog();
     await pickClient();
 
-    await waitFor(() => expect((numbers()[1]).value).toBe('2'));
-    // By text, not by role name: `Field` wraps the whole group in a <label>,
-    // so the FIRST goal button inherits the label's text as its accessible
-    // name ("Goal Weight Loss Endurance …"). Pre-existing markup, unrelated
-    // to what this test is about.
-    expect(screen.getByText('Muscle Gain').closest('button')).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() => expect(clientRow).toHaveBeenCalled());
+    expect(screen.getByRole('button', { name: 'Muscle Gain' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Intermediate' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('leaves a field alone once the trainer has typed in it', async () => {
-    // Change your mind about the client after setting the sessions and the
-    // number must survive.
-    clientRow.mockResolvedValue({ data: { id: 'c1', name: 'Rahul Sharma', sessions_per_week: 5 } });
+  it('leaves a field alone once the trainer has chosen it', async () => {
+    // Change your mind about the client after choosing a difficulty and the
+    // choice must survive.
+    clientRow.mockResolvedValue({ data: { id: 'c1', name: 'Rahul Sharma', workout_experience_level: 'advanced' } });
     goalsList.mockResolvedValue({ data: [{ goal_type: 'fat_loss' }] });
     openDialog();
-    const [, perWeek] = numbers();
-    fireEvent.change(perWeek, { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Beginner' }));
 
     await pickClient();
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Weight Loss' })).toHaveAttribute('aria-pressed', 'true'));
 
-    expect((numbers()[1]).value).toBe('2');
+    expect(screen.getByRole('button', { name: 'Beginner' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('survives both reads failing', async () => {
@@ -173,30 +168,33 @@ describe('reading a client record', () => {
     expect(goalFromClient(null)).toBeUndefined();
   });
 
-  it('reads the first number out of a free-text frequency', () => {
-    expect(perWeekFromClient('3')).toBe(3);
-    expect(perWeekFromClient('4 days')).toBe(4);
-    expect(perWeekFromClient('5x/week')).toBe(5);
+  it('reads a difficulty out of the recorded workout experience', () => {
+    expect(difficultyFromClient('beginner')).toBe('beginner');
+    expect(difficultyFromClient('Intermediate')).toBe('intermediate');
+    expect(difficultyFromClient('advanced')).toBe('advanced');
+    // An athlete gets an advanced programme — there is no fourth level.
+    expect(difficultyFromClient('athlete')).toBe('advanced');
   });
 
-  it('refuses a frequency it cannot read, or one out of range', () => {
-    // "twice weekly" has no digits; 0 and 99 are outside what the field takes.
-    expect(perWeekFromClient('twice weekly')).toBeUndefined();
-    expect(perWeekFromClient('0')).toBeUndefined();
-    expect(perWeekFromClient('99')).toBeUndefined();
-    expect(perWeekFromClient(undefined)).toBeUndefined();
+  it('gives up on an experience level it does not know', () => {
+    expect(difficultyFromClient('')).toBeUndefined();
+    expect(difficultyFromClient(null)).toBeUndefined();
+    expect(difficultyFromClient('gym rat')).toBeUndefined();
   });
 
   it('maps the screening vocabulary onto a programme goal where they agree', () => {
     expect(goalFromClient('fat_loss')).toBe('weight_loss');
     expect(goalFromClient('marathon_prep')).toBe('endurance');
+    // Strength is a programme goal since migration 219.
+    expect(goalFromClient('strength_gain')).toBe('strength');
+    expect(goalFromClient('powerlifting')).toBe('strength');
   });
 
   it('refuses the screening goals that have no honest equivalent', () => {
-    // Five programme goals against fourteen screening ones. Mapping
-    // powerlifting onto Muscle Gain would put a goal on the programme that
-    // nobody chose.
-    for (const t of ['powerlifting', 'strength_gain', 'body_recomposition', 'mobility',
+    // Six programme goals against fourteen screening ones. Mapping
+    // body recomposition onto Muscle Gain would put a goal on the programme
+    // that nobody chose.
+    for (const t of ['body_recomposition', 'mobility',
       'medical_fitness', 'senior_fitness', 'athletic_performance', 'custom']) {
       expect(goalFromClient(t)).toBeUndefined();
     }

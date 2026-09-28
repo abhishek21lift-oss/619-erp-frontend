@@ -101,7 +101,7 @@ const KNOWN = [
   'app/(chrome)/pt-os/diet-plans/page.tsx:199',
   'app/(chrome)/pt-os/exercise-library/[id]/edit/page.tsx:28',
   'app/(chrome)/pt-os/exercise-library/new/page.tsx:28',
-  'app/(chrome)/pt-os/workout-plans/[id]/page.tsx:48',
+  'app/(chrome)/pt-os/workout-plans/[id]/page.tsx:51',
   'app/(chrome)/settings/integrations/page.tsx:442',
   // Two remain on the Security page (the session count on each panel); the
   // other two went with the account-management UI.
@@ -122,8 +122,8 @@ const KNOWN = [
   'components/fitness/AiCoachPanel.tsx:128',
   'components/fitness/AiCoachPanel.tsx:134',
   'components/pt-os/analytics/LandmarkEditor.tsx:82',
-  'components/pt-os/builder/NewProgrammeDialog.tsx:205',
-  'components/pt-os/builder/NewProgrammeDialog.tsx:208',
+  'components/pt-os/builder/NewProgrammeDialog.tsx:216',
+  'components/pt-os/builder/NewProgrammeDialog.tsx:219',
   'components/pt-os/workout-log/ExercisePicker.tsx:274',
   'components/pt-os/workout-log/ExercisePicker.tsx:288',
   'lib/auth-context.tsx:187',
