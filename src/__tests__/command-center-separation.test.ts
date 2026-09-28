@@ -176,8 +176,15 @@ describe('the impersonation hand-off across origins', () => {
   // server: not to nginx's access log, not to Next.js, not in a Referer. That
   // is the only reason a live access token may travel this way at all.
 
+  // A token shaped like the ones super-admin/impersonation.js mints: a JWT
+  // whose payload carries `imp` for the studio. The signature is irrelevant
+  // here (the API checks it); the hand-off only reads the claims.
+  const b64url = (o: unknown) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const jwtWith = (claims: Record<string, unknown>) => `${b64url({ alg: 'HS256', typ: 'JWT' })}.${b64url(claims)}.sig`;
+  const impToken = (org: string) => jwtWith({ id: 'usr-1', aud: 'tenant', imp: { by: 'op-1', ro: true, org } });
+
   const IMP = {
-    token: 'imp-token-abc', readonly: true,
+    token: impToken('org-1'), readonly: true,
     accountId: 'usr-1', accountName: 'Studio Owner',
     orgId: 'org-1', orgName: 'A Studio',
     returnTo: 'https://admin.example.com/platform',
@@ -226,7 +233,7 @@ describe('the impersonation hand-off across origins', () => {
     // A stored impersonation is the live one. A fragment arriving on top of it
     // — a stale link, a back-button — must not replace it.
     const { encodeImpersonationHandoff, getImpersonation, setImpersonation } = await load();
-    setImpersonation({ ...IMP, orgId: 'org-live', token: 'live' });
+    setImpersonation({ ...IMP, orgId: 'org-live', token: impToken('org-live') });
     window.history.replaceState(null, '', `/#imp=${encodeImpersonationHandoff(IMP)}`);
     expect(getImpersonation()?.orgId).toBe('org-live');
   });
@@ -240,6 +247,54 @@ describe('the impersonation hand-off across origins', () => {
       sessionStorage.clear();
       window.history.replaceState(null, '', `/#imp=${junk}`);
       expect([junk, getImpersonation()]).toEqual([junk, null]);
+    }
+  });
+
+  // ── A crafted link (Command Center audit 2026-09-28, CC-1) ─────────────
+  //
+  // Anyone holding a studio-side account could send a link carrying their OWN
+  // session token as an "impersonation". The victim's tab adopted it, showed a
+  // banner naming any studio the link chose, and Exit followed the link's
+  // returnTo, including `javascript:`, which ran in the victim's session.
+
+  it('refuses a hand-off whose token is an ordinary session, not an impersonation', async () => {
+    const { encodeImpersonationHandoff, getImpersonation } = await load();
+    const ordinary = jwtWith({ id: 'attacker', aud: 'tenant' });
+    window.history.replaceState(null, '', `/#imp=${encodeImpersonationHandoff({ ...IMP, token: ordinary })}`);
+    expect(getImpersonation()).toBeNull();
+    expect(sessionStorage.getItem('619_impersonation')).toBeNull();
+    // And the fragment is still stripped, so the token does not linger.
+    expect(window.location.hash).toBe('');
+  });
+
+  it('refuses an impersonation token minted for a different studio', async () => {
+    const { encodeImpersonationHandoff, getImpersonation } = await load();
+    window.history.replaceState(null, '', `/#imp=${encodeImpersonationHandoff({ ...IMP, token: impToken('org-other') })}`);
+    expect(getImpersonation()).toBeNull();
+  });
+
+  it('refuses a token that is not a JWT at all', async () => {
+    const { encodeImpersonationHandoff, getImpersonation } = await load();
+    window.history.replaceState(null, '', `/#imp=${encodeImpersonationHandoff({ ...IMP, token: 'opaque-token' })}`);
+    expect(getImpersonation()).toBeNull();
+  });
+
+  it('never keeps a javascript: returnTo, even on a genuine hand-off', async () => {
+    const { encodeImpersonationHandoff, getImpersonation } = await load();
+    const evil = { ...IMP, returnTo: "javascript:document.title='x'" };
+    window.history.replaceState(null, '', `/#imp=${encodeImpersonationHandoff(evil)}`);
+    expect(getImpersonation()?.returnTo).toBe('/platform');
+  });
+
+  it('only follows an http(s) /platform address on exit', async () => {
+    const { safeImpersonationReturnTo } = await load();
+    expect(safeImpersonationReturnTo('https://admin.example.com/platform')).toBe('https://admin.example.com/platform');
+    expect(safeImpersonationReturnTo('http://localhost:3000/platform')).toBe('http://localhost:3000/platform');
+    for (const bad of [
+      "javascript:alert(1)", 'JaVaScRiPt:alert(1)', 'data:text/html,hi', 'https://evil.example/steal',
+      'https://user:pw@admin.example.com/platform', '//evil.example/platform', '', undefined, 42,
+    ]) {
+      expect([bad, safeImpersonationReturnTo(bad)]).toEqual([bad, '/platform']);
     }
   });
 
