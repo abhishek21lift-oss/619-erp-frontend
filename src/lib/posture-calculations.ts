@@ -35,3 +35,15 @@ export function classifyRisk(score: number | null): PostureRiskLevel | null {
   if (score == null) return null;
   return score >= 70 ? 'Low' : score >= 40 ? 'Moderate' : 'High';
 }
+
+// Suspected scoliosis is a referral, not a coaching cue: the score weight
+// above says so, and now the result does too. Mirrors calcPostureReferrals()
+// in the backend's posture-scoring.js.
+export function calcPostureReferrals(
+  frontIssues: string[] | null, sideIssues: string[] | null, backIssues: string[] | null,
+): string[] {
+  const all = [...(frontIssues || []), ...(sideIssues || []), ...(backIssues || [])];
+  return all.includes('Scoliosis')
+    ? ['Suspected scoliosis — refer for a medical assessment before loading the spine.']
+    : [];
+}

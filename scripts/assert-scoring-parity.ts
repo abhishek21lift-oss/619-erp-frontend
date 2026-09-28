@@ -371,6 +371,16 @@ function buildMobilityCases(): Array<{ fn: string; args: unknown[] }> {
   }
   add('calcMobilityScore', [null, null]);
   add('calcMobilityScore', [[], []]);
+
+  // Referrals: every pain/no-pain combination across a region and a test,
+  // including the unnamed-item and truthy-but-not-true cases.
+  const PAINS = [undefined, null, false, true, 'yes' as unknown, 1 as unknown];
+  for (const a of PAINS) for (const b of PAINS) {
+    add('calcMobilityReferrals', [[{ region: 'Shoulder', score: 3, pain: a }], [{ test: 'Overhead Squat', score: 3, pain: b }]]);
+    add('calcMobilityReferrals', [[{ score: 3, pain: a }], [{ score: 3, pain: b }]]);
+  }
+  add('calcMobilityReferrals', [null, null]);
+  add('calcMobilityReferrals', [[], []]);
   return cases;
 }
 
@@ -469,6 +479,11 @@ function buildPostureCases(): Array<{ fn: string; args: unknown[] }> {
     add('calcPostureRiskScore', [f, sd, null]);
     add('calcPostureRiskScore', [f, null, sd]);
     add('calcPostureRiskScore', [null, f, sd]);
+  }
+  const REFERRAL_LISTS = [...LISTS, ['Scoliosis'], ['forward_head', 'Scoliosis'], ['scoliosis']];
+  for (const f of REFERRAL_LISTS) for (const b of REFERRAL_LISTS) {
+    add('calcPostureReferrals', [f, null, b]);
+    add('calcPostureReferrals', [null, f, b]);
   }
   return cases;
 }

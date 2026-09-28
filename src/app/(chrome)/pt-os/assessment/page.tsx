@@ -261,17 +261,43 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
 
   const isBeginner = experienceLevel === 'beginner';
 
+  // An unsafe resting BP (stage-2 hypertension or hypotension) stops the
+  // exertion tests — cardio (4), strength (5), endurance (6). The reading,
+  // measurements, body composition and flexibility are still recorded; the
+  // API refuses exertion results alongside an unsafe reading (BP_UNSAFE).
+  // Before this the warning showed on step 1 and the wizard walked straight
+  // on into a step test and a 1RM.
+  const bpUnsafe = useMemo(
+    () => classifyBp(n(form.bpSystolic), n(form.bpDiastolic)).isUnsafe,
+    [form.bpSystolic, form.bpDiastolic],
+  );
+  const isExertionStep = (s: StepId) => s === 4 || s === 5 || s === 6;
+
+  const goToStep = (s: StepId) => {
+    if (bpUnsafe && isExertionStep(s)) {
+      toast.error('Resting blood pressure is unsafe — cardio, strength and endurance tests are skipped.');
+      return;
+    }
+    setStep(s);
+  };
+
   const handleNext = () => {
     const stepDef = STEPS.find((s) => s.id === step)!;
     const err = validateStep(step, form, isBeginner);
     setErrors((e) => ({ ...e, [stepDef.key]: err }));
     if (err) { toast.error(err); return; }
     if (step === 7) { setReviewMode(true); return; }
+    if (bpUnsafe && step === 3) {
+      toast.warning('Resting blood pressure is unsafe — skipping cardio, strength and endurance tests.');
+      setStep(7);
+      return;
+    }
     setStep((s) => (s + 1) as StepId);
   };
 
   const handleBack = () => {
     if (reviewMode) { setReviewMode(false); return; }
+    if (bpUnsafe && step === 7) { setStep(3); return; }
     if (step > 1) { setStep((s) => (s - 1) as StepId); return; }
     if (isDirty && !window.confirm('Discard unsaved changes?')) return;
     router.push(`/pt-os/clients/${clientId}`);
@@ -352,6 +378,13 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
         },
       };
 
+      if (bpUnsafe) {
+        // Anything typed into the exertion steps before the BP reading was
+        // corrected to an unsafe one is not sent — the API would refuse it.
+        for (const k of ['cardio_test_type', 'cardio_test_data', 'strength_exercise', 'strength_exercise_2',
+          'strength_test_data', 'endurance_test_type', 'endurance_test_type_2', 'endurance_test_data']) delete payload[k];
+      }
+
       const res = await api.progress.assessments.create(payload) as { data?: Record<string, unknown> };
       const created = res?.data;
 
@@ -367,7 +400,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       // A direct 1RM is logged as one rep at that weight: it sent no weight
       // at all before, which the API refuses.
       const logFailures: string[] = [];
-      for (const testNum of [1, 2] as const) {
+      for (const testNum of (bpUnsafe ? [] : [1, 2]) as Array<1 | 2>) {
         const oneRM = estimateOneRM(form, testNum);
         if (oneRM == null || !created?.id) continue;
         const direct = (testNum === 1 ? form.strengthMode : form.strengthMode2) === 'direct';
@@ -453,7 +486,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
         subtitle={`${clientName || 'Client'} · Assessment ${nextAssessmentNumber}`}
       >
         {!reviewMode && !lastSaved && (
-          <ProgressTimeline current={step} onStep={setStep} />
+          <ProgressTimeline current={step} onStep={goToStep} />
         )}
       </PageHero>
 

@@ -13,7 +13,8 @@ import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
-import { calcMobilityScore, classifyMobility } from '@/lib/mobility-calculations';
+import { calcMobilityScore, classifyMobility, calcMobilityReferrals } from '@/lib/mobility-calculations';
+import ReferralBanner from '@/components/pt-os/shared/ReferralBanner';
 import { STEPS, initMobilityForm, n } from '@/components/pt-os/mobility-assessment/types';
 import type { MobilityFormData, StepId } from '@/components/pt-os/mobility-assessment/types';
 import MobilityProgressTimeline from '@/components/pt-os/mobility-assessment/MobilityProgressTimeline';
@@ -215,7 +216,8 @@ function MobilityWizard({ clientId, clientName, editing, toast, onDone }: Mobili
   const analysis = useMemo(() => {
     const mobilityScore = calcMobilityScore(form.bodyRegions, form.mobilityTests);
     const mobilityCategory = classifyMobility(mobilityScore);
-    return { mobilityScore, mobilityCategory };
+    const referrals = calcMobilityReferrals(form.bodyRegions, form.mobilityTests);
+    return { mobilityScore, mobilityCategory, referrals };
   }, [form.bodyRegions, form.mobilityTests]);
 
   const handleNext = () => {
@@ -293,6 +295,7 @@ function MobilityWizard({ clientId, clientName, editing, toast, onDone }: Mobili
       </div>
 
       <div className="mx-auto max-w-3xl py-6 space-y-5">
+        <ReferralBanner referrals={analysis.referrals} />
         {!reviewMode ? (
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
             {step === 1 && <StepBodyRegions form={form} set={set} />}

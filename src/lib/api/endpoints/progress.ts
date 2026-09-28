@@ -50,6 +50,11 @@ export const progress = {
       http<{ data: unknown }>('/api/progress/strength-logs', {
         method: 'POST', body: JSON.stringify(data),
       }),
+    update: (id: string, data: Record<string, unknown>) =>
+      http<{ data: unknown }>(`/api/progress/strength-logs/${id}`, {
+        method: 'PATCH', body: JSON.stringify(data),
+      }),
+    delete: (id: string) => http(`/api/progress/strength-logs/${id}`, { method: 'DELETE' }),
   },
   progressPhotos: {
     list: (params?: Record<string, string | number>) =>

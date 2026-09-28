@@ -64,3 +64,36 @@ describe('fitness scoring fixes', () => {
     expect(classifyBp(135, 55)).toEqual({ category: 'Hypotension', isUnsafe: true });
   });
 });
+
+// Second batch: scoring accuracy and referrals (audit F-2, F-4, F-8, G-1,
+// M-1, PO-1). The parity script holds the backend to the same answers.
+import { classifyHarvardPei, classifyEndurance, classifyStrength } from '@/lib/fitness-calculations';
+import { calcLifestyleReadinessScore } from '@/lib/goal-calculations';
+import { calcMobilityReferrals } from '@/lib/mobility-calculations';
+import { calcPostureReferrals } from '@/lib/posture-calculations';
+
+describe('scoring accuracy', () => {
+  it('uses the published Harvard fitness-index bands', () => {
+    expect(classifyHarvardPei(54)).toBe('Poor');
+    expect(classifyHarvardPei(70)).toBe('Average');
+    expect(classifyHarvardPei(85)).toBe('Good');
+    expect(classifyHarvardPei(90)).toBe('Excellent');
+  });
+  it('invents no category for tests or sexes without norms', () => {
+    expect(classifyEndurance('Wall Sit', 90, 'Male')).toBeNull();
+    expect(classifyEndurance('Plank', 90, null)).toBe('Good');
+    expect(classifyEndurance('Push Up Test', 25, null)).toBeNull();
+    expect(classifyStrength(100, 80, 'Lunges', 'Male')).toBeNull();
+  });
+  it('scores goal readiness out of the questions answered', () => {
+    expect(calcLifestyleReadinessScore({ can_train_4_6_days: true, sleep_7_8_hours: true } as never)).toBe(100);
+  });
+});
+
+describe('referrals', () => {
+  it('pain on a movement screen and suspected scoliosis both refer', () => {
+    expect(calcMobilityReferrals([{ region: 'Knee', score: 3, pain: true }], null)).toHaveLength(1);
+    expect(calcPostureReferrals(null, null, ['Scoliosis'])).toHaveLength(1);
+    expect(calcPostureReferrals(['Forward Head'], null, null)).toEqual([]);
+  });
+});

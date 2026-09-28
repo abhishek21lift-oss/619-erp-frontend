@@ -37,7 +37,10 @@ export function calcLifestyleReadinessScore(answers: LifestyleReadinessAnswers |
     if (isFavorable) favorable++;
   }
   if (answered === 0) return null;
-  return Math.round((favorable / keys.length) * 100);
+  // Out of the questions actually answered: an unanswered question is not an
+  // unfavourable one, and dividing by all six marked a client who answered
+  // three favourably as 50% ready rather than 100%.
+  return Math.round((favorable / answered) * 100);
 }
 
 export function goalDirection(startingWeight: number | null, targetWeight: number | null): GoalDirection | null {
