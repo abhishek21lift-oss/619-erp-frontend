@@ -56,6 +56,9 @@ export const JOURNEYS = {
   'e2e/diet-meal.ui.spec.ts': [
     'src/app/(chrome)/pt-os/diet-plans/page.tsx',
   ],
+  'e2e/programme-edit.ui.spec.ts': [
+    'src/components/pt-os/builder/EditProgrammeDialog.tsx',
+  ],
   'e2e/automation-rule.ui.spec.ts': [
     'src/app/(chrome)/engagement/automation/page.tsx',
   ],

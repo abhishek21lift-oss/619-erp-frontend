@@ -34,16 +34,26 @@ export interface ClientOption { id: string; name: string; }
 
 export const PROGRAMME_GOALS = [
   { value: 'muscle_gain', label: 'Muscle Gain' },
+  { value: 'strength', label: 'Strength' },
   { value: 'weight_loss', label: 'Weight Loss' },
   { value: 'endurance', label: 'Endurance' },
   { value: 'general_fitness', label: 'General Fitness' },
   { value: 'recovery', label: 'Recovery' },
 ] as const;
 
+/**
+ * How hard the programme is. It was never asked: every programme was saved
+ * as "intermediate", and that word then showed on the programme page and in
+ * the member app for a client's first-ever plan as much as for a meet prep.
+ */
+export const PROGRAMME_DIFFICULTIES = [
+  { value: 'beginner', label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'advanced', label: 'Advanced' },
+] as const;
+
 export const WEEKS_MIN = 1;
 export const WEEKS_MAX = 52;
-export const PER_WEEK_MIN = 1;
-export const PER_WEEK_MAX = 14;
 
 /**
  * Read a number out of what is currently typed, held to its bounds.
@@ -78,16 +88,20 @@ export function clamp(raw: string, min: number, max: number): number {
  *
  *   fat_loss      → Weight Loss    the same goal under two names
  *   marathon_prep → Endurance      marathon preparation IS endurance work
+ *   strength_gain → Strength       since Strength became a programme goal
+ *   powerlifting  → Strength       (migration 219); a meet prep is strength work
  *
- * The rest — body_recomposition, strength_gain, powerlifting, mobility,
- * wedding_transformation, medical_fitness, senior_fitness,
- * athletic_performance, custom — have no honest equivalent among the five, so
- * they map to nothing and the trainer's own selection stands. Guessing here
+ * The rest — body_recomposition, mobility, wedding_transformation,
+ * medical_fitness, senior_fitness, athletic_performance, custom — have no
+ * honest equivalent among the six, so they map to nothing and the trainer's
+ * own selection stands. Guessing here
  * would put a goal on the programme that nobody chose.
  */
 const SCREENING_GOALS: Record<string, string> = {
   fat_loss: 'weight_loss',
   marathon_prep: 'endurance',
+  strength_gain: 'strength',
+  powerlifting: 'strength',
 };
 
 /**
@@ -105,25 +119,21 @@ export function goalFromClient(raw: unknown): string | undefined {
 }
 
 /**
- * Sessions per week, as the client is actually enrolled.
+ * The programme difficulty a client's recorded workout experience implies.
  *
- * `pt_clients.sessions_per_week` is the PT Enrollment field (migration 053) —
- * a real SMALLINT, and the number the studio sold. `frequency` is the older
- * free-TEXT answer from the onboarding wizard ("3", "3x/week", "4 days",
- * "twice weekly") and is read only when the enrolment column is empty, so a
- * client who predates 053 still fills the field.
+ * `pt_clients.workout_experience_level` is the PT Enrollment field (migration
+ * 077): beginner, intermediate, advanced or athlete. The first three are the
+ * programme's own words; an athlete gets an advanced programme. Anything else
+ * returns undefined and the selection stands.
  *
- * Either way the first integer is the only part that can be read reliably, and
- * it is used only when it lands inside the range the field accepts — "twice
- * weekly" yields nothing, so the default stands rather than a number being
- * invented for it.
+ * Sessions per week used to be read here too. It is no longer asked: the
+ * number is counted from the days the builder programmes (migration 219), so
+ * a figure typed before any exercise existed cannot disagree with them.
  */
-export function perWeekFromClient(raw: unknown): number | undefined {
-  const match = String(raw ?? '').match(/\d+/);
-  if (!match) return undefined;
-  const n = Number(match[0]);
-  if (!Number.isFinite(n) || n < PER_WEEK_MIN || n > PER_WEEK_MAX) return undefined;
-  return n;
+export function difficultyFromClient(raw: unknown): string | undefined {
+  const key = String(raw ?? '').trim().toLowerCase();
+  if (key === 'athlete') return 'advanced';
+  return PROGRAMME_DIFFICULTIES.find((d) => d.value === key)?.value;
 }
 
 export interface NewProgrammeDialogProps {
@@ -149,10 +159,10 @@ export default function NewProgrammeDialog({
   const [clientId, setClientId] = useState<string | null>(presetClientId ?? null);
   const [name, setName] = useState('');
   const [goal, setGoal] = useState<string>(PROGRAMME_GOALS[0].value);
-  // Held as strings, not numbers, and clamped on blur rather than on every
-  // keystroke. See clamp() below for what the numeric version did.
+  const [difficulty, setDifficulty] = useState<string>('intermediate');
+  // Held as a string, not a number, and clamped on blur rather than on every
+  // keystroke. See clamp() above for what the numeric version did.
   const [weeks, setWeeks] = useState('4');
-  const [perWeek, setPerWeek] = useState('3');
   const [saving, setSaving] = useState(false);
   /**
    * Which fields the trainer has typed in themselves.
@@ -162,10 +172,10 @@ export default function NewProgrammeDialog({
    * mind about the client must not watch their own typing disappear. Only
    * untouched fields are filled.
    */
-  const [touched, setTouched] = useState<Record<'name' | 'goal' | 'weeks' | 'perWeek', boolean>>({
-    name: false, goal: false, weeks: false, perWeek: false,
+  const [touched, setTouched] = useState<Record<'name' | 'goal' | 'difficulty', boolean>>({
+    name: false, goal: false, difficulty: false,
   });
-  const touch = (k: 'name' | 'goal' | 'weeks' | 'perWeek') =>
+  const touch = (k: 'name' | 'goal' | 'difficulty') =>
     setTouched((t) => (t[k] ? t : { ...t, [k]: true }));
 
   useEffect(() => {
@@ -184,8 +194,8 @@ export default function NewProgrammeDialog({
    *
    * Two reads, both of endpoints that already exist:
    *
-   *   · the client row, for the sessions per week they are enrolled at
-   *     (pt_clients.sessions_per_week, the PT Enrollment field);
+   *   · the client row, for their workout experience
+   *     (pt_clients.workout_experience_level, the PT Enrollment field);
    *   · their goal-setting screening, for the goal.
    *
    * The programme NAME is deliberately not filled. What kind of plan this is
@@ -194,8 +204,9 @@ export default function NewProgrammeDialog({
    * them to write.
    *
    * Nothing else is invented either: a field is filled only when the record
-   * actually answers it, and the weeks default of 4 is the same default the
-   * form already opened with.
+   * actually answers it. Weeks is not filled at all — nothing on the client's
+   * record says how long a block should run, and "filling" it with the 4 the
+   * form opened with was a step that changed nothing.
    */
   useEffect(() => {
     if (!open || !clientId) return;
@@ -215,13 +226,11 @@ export default function NewProgrammeDialog({
         const screening = (((goalRes as { data?: unknown[] } | null)?.data ?? [])[0] ?? {}) as Record<string, unknown>;
 
         const matchedGoal = goalFromClient(screening.goal_type) ?? goalFromClient(row.goal);
-        const matchedPerWeek = perWeekFromClient(row.sessions_per_week)
-          ?? perWeekFromClient(row.frequency);
+        const matchedDifficulty = difficultyFromClient(row.workout_experience_level);
 
         setTouched((t) => {
           if (!t.goal && matchedGoal) setGoal(matchedGoal);
-          if (!t.perWeek && matchedPerWeek) setPerWeek(String(matchedPerWeek));
-          if (!t.weeks) setWeeks('4');
+          if (!t.difficulty && matchedDifficulty) setDifficulty(matchedDifficulty);
           return t;
         });
       })
@@ -246,9 +255,13 @@ export default function NewProgrammeDialog({
       const { plan } = await api.workouts.plans.create({
         name: name.trim(),
         goal,
-        difficulty: 'intermediate',
+        difficulty,
         duration_weeks: clamp(weeks, WEEKS_MIN, WEEKS_MAX),
-        sessions_per_week: clamp(perWeek, PER_WEEK_MIN, PER_WEEK_MAX),
+        // A client's programme, not a template. The server used to read an
+        // absent flag as TRUE, so every programme made here was stored as one.
+        is_template: false,
+        // No sessions_per_week: the server counts it from the days the
+        // builder programmes (migration 219).
         // Deliberately no exercises: the builder adds them, one granular
         // request each, so they keep stable ids from the moment they exist.
       });
@@ -419,49 +432,32 @@ export default function NewProgrammeDialog({
             />
           </Field>
 
-          <Field label="Goal">
-            <div className="flex flex-wrap gap-1.5">
-              {PROGRAMME_GOALS.map((g) => {
-                const active = g.value === goal;
-                return (
-                  <button
-                    key={g.value}
-                    onClick={() => { setGoal(g.value); touch('goal'); }}
-                    aria-pressed={active}
-                    className="h-[44px] rounded-[12px] px-3 text-[12.5px] font-[700] transition-transform active:scale-95"
-                    style={{
-                      background: active ? 'var(--brand)' : 'var(--bg-subtle)',
-                      color: active ? '#fff' : 'var(--text-muted)',
-                      border: `1px solid ${active ? 'transparent' : 'var(--border)'}`,
-                    }}
-                  >
-                    {g.label}
-                  </button>
-                );
-              })}
-            </div>
-          </Field>
+          <ChoiceField
+            label="Goal"
+            options={PROGRAMME_GOALS}
+            value={goal}
+            onChange={(v) => { setGoal(v); touch('goal'); }}
+          />
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Weeks">
-              <input
-                min={WEEKS_MIN} max={WEEKS_MAX} value={weeks} inputMode="numeric"
-                onChange={(e) => { setWeeks(e.target.value); touch('weeks'); }}
-                onBlur={() => setWeeks(String(clamp(weeks, WEEKS_MIN, WEEKS_MAX)))}
-                className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
-                style={inputStyle}
-              />
-            </Field>
-            <Field label="Sessions / week">
-              <input
-                min={PER_WEEK_MIN} max={PER_WEEK_MAX} value={perWeek} inputMode="numeric"
-                onChange={(e) => { setPerWeek(e.target.value); touch('perWeek'); }}
-                onBlur={() => setPerWeek(String(clamp(perWeek, PER_WEEK_MIN, PER_WEEK_MAX)))}
-                className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
-                style={inputStyle}
-              />
-            </Field>
-          </div>
+          <ChoiceField
+            label="Difficulty"
+            options={PROGRAMME_DIFFICULTIES}
+            value={difficulty}
+            onChange={(v) => { setDifficulty(v); touch('difficulty'); }}
+          />
+
+          <Field label="Weeks">
+            <input
+              min={WEEKS_MIN} max={WEEKS_MAX} value={weeks} inputMode="numeric"
+              onChange={(e) => setWeeks(e.target.value)}
+              onBlur={() => setWeeks(String(clamp(weeks, WEEKS_MIN, WEEKS_MAX)))}
+              className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
+              style={inputStyle}
+            />
+          </Field>
+          <p className="-mt-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+            Sessions per week come from the days you programme in the builder.
+          </p>
 
         </div>
 
@@ -504,5 +500,51 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       </span>
       {children}
     </label>
+  );
+}
+
+/**
+ * A row of pill buttons choosing one value.
+ *
+ * A <div role="group"> with its own caption rather than Field's <label>: a
+ * label wrapping a group of buttons gave the FIRST button the whole caption
+ * as its accessible name ("Goal Weight Loss Endurance …").
+ */
+export function ChoiceField({
+  label, options, value, onChange,
+}: {
+  label: string;
+  options: ReadonlyArray<{ value: string; label: string }>;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const id = `choice-${label.toLowerCase().replace(/\W+/g, '-')}`;
+  return (
+    <div role="group" aria-labelledby={id} className="mb-3">
+      <span id={id} className="mb-1.5 block text-[11px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+        {label}
+      </span>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((o) => {
+          const active = o.value === value;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => onChange(o.value)}
+              aria-pressed={active}
+              className="h-[44px] rounded-[12px] px-3 text-[12.5px] font-[700] transition-transform active:scale-95"
+              style={{
+                background: active ? 'var(--brand)' : 'var(--bg-subtle)',
+                color: active ? '#fff' : 'var(--text-muted)',
+                border: `1px solid ${active ? 'transparent' : 'var(--border)'}`,
+              }}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

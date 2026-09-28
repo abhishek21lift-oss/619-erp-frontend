@@ -3,12 +3,14 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
-import { ClipboardList, Dumbbell, Pencil, Loader2, Target, Clock } from 'lucide-react';
+import { ClipboardList, Dumbbell, Pencil, Loader2, Target, Clock, SlidersHorizontal } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, HeroButton, HeroChip, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { WorkoutPlan, WorkoutPlanExercise } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import EditProgrammeDialog from '@/components/pt-os/builder/EditProgrammeDialog';
+import { PROGRAMME_GOALS } from '@/components/pt-os/builder/NewProgrammeDialog';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -40,6 +42,7 @@ function Inner() {
 
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     if (!clientId) return;
@@ -106,6 +109,9 @@ function Inner() {
         subtitle={[clientName ? `For ${clientName}` : null, plan.description].filter(Boolean).join(' · ') || undefined}
         actions={
           <div className="flex gap-2">
+            <HeroButton variant="glass" className="flex-1 sm:flex-none" onClick={() => setEditing(true)} icon={<SlidersHorizontal size={14} />}>
+              Edit Details
+            </HeroButton>
             <HeroButton variant="glass" className="flex-1 sm:flex-none" onClick={openBuilder} icon={<Pencil size={14} />}>
               Edit Exercises
             </HeroButton>
@@ -123,9 +129,17 @@ function Inner() {
         }
       >
         <div className="flex flex-wrap gap-2">
-          <HeroChip icon={<Target size={12} />} className="capitalize">{plan.goal.replace('_', ' ')}</HeroChip>
+          {/* Goal by its label, and only when there is one: an AI-saved
+              programme can carry none, and `.replace` on null took the page
+              down. The old single `.replace('_', ' ')` also left
+              "general fitness" half-converted. */}
+          {plan.goal && (
+            <HeroChip icon={<Target size={12} />}>
+              {PROGRAMME_GOALS.find((g) => g.value === plan.goal)?.label ?? plan.goal.replace(/_/g, ' ')}
+            </HeroChip>
+          )}
           <HeroChip icon={<Clock size={12} />}>{plan.sessions_per_week}x/week &middot; {plan.duration_weeks}wk</HeroChip>
-          <HeroChip className="capitalize">{plan.difficulty}</HeroChip>
+          {plan.difficulty && <HeroChip className="capitalize">{plan.difficulty}</HeroChip>}
         </div>
       </PageHero>
 
@@ -159,6 +173,13 @@ function Inner() {
             </div>
           )}
       </div>
+      {editing && (
+        <EditProgrammeDialog
+          plan={plan}
+          onClose={() => setEditing(false)}
+          onSaved={setPlan}
+        />
+      )}
     </div>
   );
 }
