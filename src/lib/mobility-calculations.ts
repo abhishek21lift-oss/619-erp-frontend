@@ -58,3 +58,22 @@ export function classifyMobility(score: number | null): MobilityCategory | null 
   if (score >= 30) return 'Below Average';
   return 'Poor';
 }
+
+// Pain during a movement screen is not a score, it is a stop: the pattern
+// that hurts is not loaded until someone qualified has looked at it. Before
+// this, pain only cost the score 5 points and nothing told the trainer to
+// refer. One line per painful region or test, regions first. Mirrors
+// calcMobilityReferrals() in the backend's mobility-scoring.js.
+export function calcMobilityReferrals(
+  bodyRegions: BodyRegionScore[] | null, mobilityTests: MobilityTestScore[] | null,
+): string[] {
+  const out: string[] = [];
+  const all: Array<{ region?: string; test?: string; pain?: boolean | null }> = [...(bodyRegions || []), ...(mobilityTests || [])];
+  for (const i of all) {
+    if (i && i.pain === true) {
+      const what = i.region || i.test || 'a movement';
+      out.push(`Pain on ${what} — do not load this pattern; refer to a physiotherapist.`);
+    }
+  }
+  return out;
+}

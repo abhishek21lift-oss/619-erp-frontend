@@ -62,7 +62,7 @@ export function StepBloodPressure({ form, set, error }: StepBloodPressureProps) 
         <div className="mt-4 flex items-start gap-3 rounded-[16px] p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
           <AlertTriangle size={18} style={{ color: '#dc2626', flexShrink: 0, marginTop: 1 }} />
           <p className="text-[13px] font-[640]" style={{ color: '#991b1b' }}>
-            Exercise not recommended. Medical clearance required.
+            Exercise not recommended. Medical clearance required. Cardio, strength and endurance tests will be skipped — only measurements and flexibility are recorded today.
           </p>
         </div>
       )}

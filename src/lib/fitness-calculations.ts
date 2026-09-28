@@ -85,12 +85,26 @@ export function calcHarvardPei(durationSec: number | null, pulse1: number | null
   return round((durationSec * 100) / (2 * (pulse1 + pulse2 + pulse3)), 1);
 }
 
+
+// 'Male' / 'Female' in any case, or null. Norm tables are split by sex, and
+// anything else — null, 'Other', a lowercase 'male' from an older caller —
+// used to fall through to the FEMALE table and produce a confident category
+// from the wrong norms. No sex, no sex-split category. Mirrors sexOf() in
+// the backend's fitness-scoring.js.
+function sexOf(gender: string | null | undefined): 'Male' | 'Female' | null {
+  const v = typeof gender === 'string' ? gender.trim().toLowerCase() : '';
+  return v === 'male' ? 'Male' : v === 'female' ? 'Female' : null;
+}
+
 export function classifyHarvardPei(pei: number | null): FitnessCategory | null {
   if (pei == null) return null;
-  if (pei < 50) return 'Poor';
-  if (pei < 80) return 'Below Average';
-  if (pei < 90) return 'Average';
-  if (pei <= 100) return 'Good';
+  // Published long-form fitness-index bands: <55 poor, 55–64 low average,
+  // 65–79 average, 80–89 good, 90+ excellent. The old cut-offs sat one band
+  // high — an 85 read "Average" instead of "Good".
+  if (pei < 55) return 'Poor';
+  if (pei < 65) return 'Below Average';
+  if (pei < 80) return 'Average';
+  if (pei < 90) return 'Good';
   return 'Excellent';
 }
 
@@ -108,7 +122,8 @@ function ageBand(age: number): 'young' | 'mid' | 'senior' {
 }
 export function classifyVo2Max(vo2: number | null, age: number | null, gender: Gender | null): FitnessCategory | null {
   if (vo2 == null) return null;
-  const g = gender === 'Male' ? 'Male' : 'Female';
+  const g = sexOf(gender);
+  if (!g) return null;
   const [excellent, good, average, belowAverage] = VO2_MAX_NORMS[g][ageBand(age || 30)];
   if (vo2 >= excellent) return 'Excellent';
   if (vo2 >= good) return 'Good';
@@ -163,8 +178,12 @@ const STRENGTH_NORMS: Record<'Male' | 'Female', Record<string, [number, number, 
 };
 export function classifyStrength(oneRM: number | null, bodyWeightKg: number | null, exercise: string | null, gender: Gender | null): FitnessCategory | null {
   if (oneRM == null || !bodyWeightKg) return null;
-  const g = gender === 'Male' ? 'Male' : 'Female';
-  const thresholds = STRENGTH_NORMS[g][exercise || ''] || STRENGTH_NORMS[g]['Bench Press'];
+  const g = sexOf(gender);
+  if (!g) return null;
+  // No published norms for this lift, no category — bench-press norms applied
+  // to a leg press or a lunge were an invented judgement.
+  const thresholds = STRENGTH_NORMS[g][exercise || ''];
+  if (!thresholds) return null;
   const ratio = oneRM / bodyWeightKg;
   const [excellent, good, average, belowAverage] = thresholds;
   if (ratio >= excellent) return 'Excellent';
@@ -182,11 +201,16 @@ const PLANK_NORMS_SEC: [number, number, number, number] = [120, 60, 30, 15]; // 
 
 export function classifyEndurance(testType: string | null, value: number | null, gender: Gender | null): FitnessCategory | null {
   if (value == null) return null;
-  const g = gender === 'Male' ? 'Male' : 'Female';
+  const g = sexOf(gender);
   let thresholds: [number, number, number, number];
-  if (testType === 'Push Up Test') thresholds = PUSHUP_NORMS[g];
+  // Plank norms are a single scale; the others are split by sex.
+  if (testType === 'Plank') thresholds = PLANK_NORMS_SEC;
+  else if (!g) return null;
+  else if (testType === 'Push Up Test') thresholds = PUSHUP_NORMS[g];
   else if (testType === 'Curl Up Test') thresholds = CURLUP_NORMS[g];
-  else thresholds = PLANK_NORMS_SEC; // Wall Sit/Plank/Bodyweight Squat/Custom fallback
+  // Wall Sit, Bodyweight Squat and Custom have no norms here; plank norms
+  // applied to them were an invented category.
+  else return null;
   const [excellent, good, average, belowAverage] = thresholds;
   if (value >= excellent) return 'Excellent';
   if (value >= good) return 'Good';
@@ -225,7 +249,8 @@ export function scoreCategory(category: FitnessCategory | null): number | null {
 const IDEAL_BODY_FAT: Record<'Male' | 'Female', [number, number]> = { Male: [10, 20], Female: [18, 28] };
 export function scoreBodyComposition(bodyFatPct: number | null, gender: Gender | null): number | null {
   if (bodyFatPct == null) return null;
-  const g = gender === 'Male' ? 'Male' : 'Female';
+  const g = sexOf(gender);
+  if (!g) return null;
   const [low, high] = IDEAL_BODY_FAT[g];
   if (bodyFatPct >= low && bodyFatPct <= high) return 100;
   const distance = bodyFatPct < low ? low - bodyFatPct : bodyFatPct - high;

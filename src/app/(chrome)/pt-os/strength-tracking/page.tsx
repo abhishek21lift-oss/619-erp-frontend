@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  Zap, Loader2, TrendingUp, AlertCircle, Plus, ChevronDown, History,
+  Zap, Loader2, TrendingUp, AlertCircle, Plus, ChevronDown, History, Pencil, Trash2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, PageContainer, PageHero } from '@/components/ui';
@@ -229,21 +229,7 @@ function StrengthHub({ clientId }: StrengthHubProps) {
         ) : (
           <div className="space-y-2">
             {sortedHistory.map((l) => (
-              <div key={l.id} className="flex items-center justify-between gap-3 rounded-[12px] px-4 py-3" style={{ background: 'var(--bg-subtle)' }}>
-                <div>
-                  <span className="text-[13px] font-[700] text-slate-700">{l.exercise_name}</span>
-                  <span className="ml-2 text-[11px] text-slate-400">{l.log_date}</span>
-                </div>
-                <div className="flex items-center gap-3 text-[12px]">
-                  <span className="font-bold" style={{ color: '#f59e0b' }}>{l.weight_kg} kg</span>
-                  <span style={{ color: 'var(--text-muted)' }}>{l.sets_done} × {l.reps_done}</span>
-                  {l.one_rm_estimate != null && (
-                    <span className="flex items-center gap-1" style={{ color: '#0067e0' }}>
-                      <TrendingUp size={11} /> 1RM: {l.one_rm_estimate} kg
-                    </span>
-                  )}
-                </div>
-              </div>
+              <HistoryRow key={l.id} log={l} onChanged={loadData} />
             ))}
           </div>
         )}
@@ -376,6 +362,96 @@ function ExerciseCard({ exercise, accent, latest, trend, gender, bodyWeightKg, o
           </form>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────── HISTORY ROW */
+// A lift can be corrected or removed. It used to be permanent: a 2000 kg
+// typo stayed the client's "latest" lift and a spike on their trend for good.
+// The API recomputes the 1RM from the corrected weight and reps.
+function HistoryRow({ log, onChanged }: { log: StrengthLog; onChanged: () => void }) {
+  const { toast } = useToast();
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [weight, setWeight] = useState(String(log.weight_kg));
+  const [reps, setReps] = useState(String(log.reps_done));
+  const [date, setDate] = useState(log.log_date);
+
+  const save = async () => {
+    const w = inlineNumber(weight);
+    const r = inlineNumber(reps);
+    if (w == null || w <= 0 || w > 1000) { toast.error('Weight must be between 0 and 1000 kg.'); return; }
+    if (r == null || !Number.isInteger(r) || r < 1 || r > 100) { toast.error('Reps must be a whole number from 1 to 100.'); return; }
+    setBusy(true);
+    try {
+      await api.progress.strengthLogs.update(log.id, { weight_kg: w, reps_done: r, log_date: date || undefined });
+      toast.success(`${log.exercise_name} updated.`);
+      setEditing(false);
+      onChanged();
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Could not update the lift.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async () => {
+    if (!window.confirm(`Delete this ${log.exercise_name} lift (${log.weight_kg} kg × ${log.reps_done}, ${log.log_date})?`)) return;
+    setBusy(true);
+    try {
+      await api.progress.strengthLogs.delete(log.id);
+      toast.success('Lift deleted.');
+      onChanged();
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Could not delete the lift.'));
+      setBusy(false);
+    }
+  };
+
+  if (editing) {
+    return (
+      <div className="flex flex-wrap items-end gap-2 rounded-[12px] px-4 py-3" style={{ background: 'var(--bg-subtle)' }}>
+        <span className="w-full text-[13px] font-[700] text-slate-700">{log.exercise_name}</span>
+        <label className="flex flex-col text-[11px] text-slate-500">Weight (kg)
+          <input aria-label="Weight in kg" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)}
+            className="mt-1 w-24 rounded-[8px] border px-2 py-1 text-[13px]" style={{ borderColor: 'var(--border)' }} />
+        </label>
+        <label className="flex flex-col text-[11px] text-slate-500">Reps
+          <input aria-label="Reps" inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)}
+            className="mt-1 w-16 rounded-[8px] border px-2 py-1 text-[13px]" style={{ borderColor: 'var(--border)' }} />
+        </label>
+        <label className="flex flex-col text-[11px] text-slate-500">Date
+          <input aria-label="Date" type="date" value={date} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setDate(e.target.value)}
+            className="mt-1 rounded-[8px] border px-2 py-1 text-[13px]" style={{ borderColor: 'var(--border)' }} />
+        </label>
+        <div className="ml-auto flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setEditing(false)} disabled={busy}>Cancel</Button>
+          <Button size="sm" onClick={save} disabled={busy} loading={busy}>Save</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-[12px] px-4 py-3" style={{ background: 'var(--bg-subtle)' }}>
+      <div>
+        <span className="text-[13px] font-[700] text-slate-700">{log.exercise_name}</span>
+        <span className="ml-2 text-[11px] text-slate-400">{log.log_date}</span>
+      </div>
+      <div className="flex items-center gap-3 text-[12px]">
+        <span className="font-bold" style={{ color: '#f59e0b' }}>{log.weight_kg} kg</span>
+        <span style={{ color: 'var(--text-muted)' }}>{log.sets_done} × {log.reps_done}</span>
+        {log.one_rm_estimate != null && (
+          <span className="flex items-center gap-1" style={{ color: '#0067e0' }}>
+            <TrendingUp size={11} /> 1RM: {log.one_rm_estimate} kg
+          </span>
+        )}
+        <button type="button" aria-label={`Edit ${log.exercise_name} lift`} onClick={() => setEditing(true)} disabled={busy}
+          className="rounded-[8px] p-1.5 text-slate-400 hover:text-slate-700"><Pencil size={13} /></button>
+        <button type="button" aria-label={`Delete ${log.exercise_name} lift`} onClick={remove} disabled={busy}
+          className="rounded-[8px] p-1.5 text-slate-400 hover:text-red-600"><Trash2 size={13} /></button>
+      </div>
     </div>
   );
 }

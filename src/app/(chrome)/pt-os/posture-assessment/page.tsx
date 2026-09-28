@@ -13,7 +13,8 @@ import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
-import { calcPostureRiskScore, classifyRisk } from '@/lib/posture-calculations';
+import { calcPostureRiskScore, classifyRisk, calcPostureReferrals } from '@/lib/posture-calculations';
+import ReferralBanner from '@/components/pt-os/shared/ReferralBanner';
 import { STEPS, initPostureForm, COACH_NOTE_FIELDS } from '@/components/pt-os/posture-assessment/types';
 import type { PostureFormData, StepId, CoachNotes } from '@/components/pt-os/posture-assessment/types';
 import PostureProgressTimeline from '@/components/pt-os/posture-assessment/PostureProgressTimeline';
@@ -212,7 +213,8 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
   const analysis = useMemo(() => {
     const postureRiskScore = calcPostureRiskScore(form.frontIssues, form.sideIssues, form.backIssues);
     const postureRiskLevel = classifyRisk(postureRiskScore);
-    return { postureRiskScore, postureRiskLevel };
+    const referrals = calcPostureReferrals(form.frontIssues, form.sideIssues, form.backIssues);
+    return { postureRiskScore, postureRiskLevel, referrals };
   }, [form.frontIssues, form.sideIssues, form.backIssues]);
 
   const handleNext = () => {
@@ -287,6 +289,7 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
       </div>
 
       <div className="mx-auto max-w-3xl py-6 space-y-5">
+        <ReferralBanner referrals={analysis.referrals} />
         {!reviewMode ? (
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
             {step === 1 && <StepPostureObservations form={form} set={set} />}
