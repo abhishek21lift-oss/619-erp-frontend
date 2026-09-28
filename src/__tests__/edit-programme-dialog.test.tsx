@@ -81,6 +81,31 @@ describe('Edit details', () => {
     expect(update.mock.calls[0]).toEqual(['p1', { name: 'Long block' }]);
   });
 
+  it('does not invent a goal or difficulty for a programme that has none', async () => {
+    // AI-saved programmes can carry neither. A rename must not quietly stamp
+    // "general fitness" and "intermediate" on them.
+    const bare = { ...PLAN, goal: null, difficulty: null } as unknown as WorkoutPlan;
+    render(<EditProgrammeDialog plan={bare} onClose={() => {}} onSaved={() => {}} />);
+    for (const name of ['General Fitness', 'Intermediate', 'Muscle Gain']) {
+      expect(screen.getByRole('button', { name })).toHaveAttribute('aria-pressed', 'false');
+    }
+    fireEvent.change(screen.getByDisplayValue('Meet prep'), { target: { value: 'Renamed' } });
+    fireEvent.click(screen.getByText('Save changes'));
+
+    await waitFor(() => expect(update).toHaveBeenCalled());
+    expect(update.mock.calls[0]).toEqual(['p1', { name: 'Renamed' }]);
+  });
+
+  it('sends a goal the trainer picks for a programme that had none', async () => {
+    const bare = { ...PLAN, goal: null } as unknown as WorkoutPlan;
+    render(<EditProgrammeDialog plan={bare} onClose={() => {}} onSaved={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Endurance' }));
+    fireEvent.click(screen.getByText('Save changes'));
+
+    await waitFor(() => expect(update).toHaveBeenCalled());
+    expect(update.mock.calls[0]).toEqual(['p1', { goal: 'endurance' }]);
+  });
+
   it('has no sessions-per-week field — the builder\'s days decide it', () => {
     render(<EditProgrammeDialog plan={PLAN} onClose={() => {}} onSaved={() => {}} />);
     expect(screen.queryByText(/Sessions/i)).toBeNull();

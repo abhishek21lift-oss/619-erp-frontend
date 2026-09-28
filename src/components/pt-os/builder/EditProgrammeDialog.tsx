@@ -35,8 +35,11 @@ export default function EditProgrammeDialog({ plan, onClose, onSaved }: EditProg
   const dialogRef = useDialogA11y({ open: true, onClose });
 
   const [name, setName] = useState(plan.name);
-  const [goal, setGoal] = useState<string>(plan.goal || 'general_fitness');
-  const [difficulty, setDifficulty] = useState<string>(plan.difficulty || 'intermediate');
+  // '' when the programme has none — an AI-saved programme can carry neither.
+  // Pre-selecting a default here would show a choice nobody made, and then
+  // save it on a mere rename.
+  const [goal, setGoal] = useState<string>(plan.goal ?? '');
+  const [difficulty, setDifficulty] = useState<string>(plan.difficulty ?? '');
   const [weeks, setWeeks] = useState(String(plan.duration_weeks || 4));
   const [saving, setSaving] = useState(false);
 
@@ -53,8 +56,8 @@ export default function EditProgrammeDialog({ plan, onClose, onSaved }: EditProg
     const nextWeeks = clamp(weeks, WEEKS_MIN, weeksMax);
     const patch: { name?: string; goal?: string; difficulty?: string; duration_weeks?: number } = {};
     if (name.trim() !== plan.name) patch.name = name.trim();
-    if (goal !== plan.goal) patch.goal = goal;
-    if (difficulty !== plan.difficulty) patch.difficulty = difficulty;
+    if (goal && goal !== (plan.goal ?? '')) patch.goal = goal;
+    if (difficulty && difficulty !== (plan.difficulty ?? '')) patch.difficulty = difficulty;
     if (nextWeeks !== plan.duration_weeks) patch.duration_weeks = nextWeeks;
 
     if (Object.keys(patch).length === 0) { onClose(); return; }
