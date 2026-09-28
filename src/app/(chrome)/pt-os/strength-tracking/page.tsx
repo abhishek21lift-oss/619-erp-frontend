@@ -367,6 +367,14 @@ function ExerciseCard({ exercise, accent, latest, trend, gender, bodyWeightKg, o
 }
 
 /* ─────────────────────────────────────────────────────── HISTORY ROW */
+// Today on the trainer's own calendar. toISOString() is UTC, which in India
+// (UTC+5:30) is still yesterday until 05:30 — the picker would refuse a lift
+// logged this morning.
+function localToday(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 // A lift can be corrected or removed. It used to be permanent: a 2000 kg
 // typo stayed the client's "latest" lift and a spike on their trend for good.
 // The API recomputes the 1RM from the corrected weight and reps.
@@ -422,7 +430,7 @@ function HistoryRow({ log, onChanged }: { log: StrengthLog; onChanged: () => voi
             className="mt-1 w-16 rounded-[8px] border px-2 py-1 text-[13px]" style={{ borderColor: 'var(--border)' }} />
         </label>
         <label className="flex flex-col text-[11px] text-slate-500">Date
-          <input aria-label="Date" type="date" value={date} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setDate(e.target.value)}
+          <input aria-label="Date" type="date" value={date} max={localToday()} onChange={(e) => setDate(e.target.value)}
             className="mt-1 rounded-[8px] border px-2 py-1 text-[13px]" style={{ borderColor: 'var(--border)' }} />
         </label>
         <div className="ml-auto flex gap-2">
