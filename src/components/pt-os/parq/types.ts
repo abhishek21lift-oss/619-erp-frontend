@@ -8,6 +8,7 @@ import type {
   ParqAnswerValue, ParqStatus, ClearanceApprovalStatus,
 } from '@/lib/api';
 import { n, PARQ_QUESTIONS } from '@/lib/parq-calculations';
+import { todayISO } from '@/lib/forms/domain';
 
 export { PARQ_QUESTIONS, n };
 
@@ -99,6 +100,29 @@ export interface MedicalClearanceForm {
   approval_status: ClearanceApprovalStatus;
 }
 
+/** One relative's history. Only relatives with something ticked are sent. */
+export type FamilyRelation = 'father' | 'mother' | 'brother' | 'sister' | 'grandparent';
+export type FamilyCondition = 'heart_disease' | 'sudden_death' | 'hypertension' | 'diabetes' | 'stroke';
+export type FamilyHistoryForm = Record<FamilyRelation, Record<FamilyCondition, boolean>>;
+
+export const FAMILY_RELATIONS: { key: FamilyRelation; label: string }[] = [
+  { key: 'father', label: 'Father' }, { key: 'mother', label: 'Mother' },
+  { key: 'brother', label: 'Brother' }, { key: 'sister', label: 'Sister' },
+  { key: 'grandparent', label: 'Grandparent' },
+];
+export const FAMILY_CONDITIONS: { key: FamilyCondition; label: string }[] = [
+  { key: 'heart_disease', label: 'Heart disease' },
+  { key: 'sudden_death', label: 'Sudden death' },
+  { key: 'hypertension', label: 'High BP' },
+  { key: 'diabetes', label: 'Diabetes' },
+  { key: 'stroke', label: 'Stroke' },
+];
+
+export function initFamilyHistory(): FamilyHistoryForm {
+  const row = () => ({ heart_disease: false, sudden_death: false, hypertension: false, diabetes: false, stroke: false });
+  return { father: row(), mother: row(), brother: row(), sister: row(), grandparent: row() };
+}
+
 export interface ParqFormData {
   assessmentDate: string;
   fullName: string;
@@ -115,6 +139,7 @@ export interface ParqFormData {
 
   currentHealth: CurrentHealthForm;
   pastHistory: PastHistoryForm;
+  familyHistory: FamilyHistoryForm;
   parqAnswers: ParqAnswerForm[];
   medicalClearance: MedicalClearanceForm;
   trainerNotes: TrainerNotesForm;
@@ -144,6 +169,10 @@ export const STEPS = [
   { id: 2, key: 'medicalClearance', label: 'Medical Clearance', conditional: true },
   { id: 3, key: 'pastHistory', label: 'Past History' },
   { id: 4, key: 'currentHealth', label: 'Current Health' },
+  // The trainer's own findings — contraindications, precautions. The form
+  // always had these fields and sent them, but no step showed them, so they
+  // were saved blank on every screening.
+  { id: 7, key: 'trainerNotes', label: 'Trainer Notes' },
   // Digital Consent is the LAST step, so its primary button reads "Submit"
   // rather than "Next" — that falls out of `isLastStep`, which is
   // `nextStepId(step) == null`, rather than being special-cased anywhere.
@@ -189,14 +218,12 @@ export function prevStepId(current: StepId, riskLevel: 'low' | 'medium' | 'high'
   return vis[idx - 1].id;
 }
 
+// What the PAR-Q signature attests: the answers. Risk, voluntary
+// participation, emergency care and data use are agreed on the Informed
+// Consent — they used to be ticked and signed here too. The other keys stay
+// on ConsentCheckboxesForm because older records carry them.
 export const CONSENT_CHECKBOX_FIELDS: { key: keyof ConsentCheckboxesForm; label: string }[] = [
-  { key: 'info_true', label: 'All information provided above is true and accurate to the best of my knowledge.' },
-  { key: 'understands_risk', label: 'I understand that physical activity carries inherent risks, including injury.' },
-  { key: 'will_inform_changes', label: 'I will inform my trainer immediately of any changes to my health status.' },
-  { key: 'understands_incorrect_info_risk', label: 'I understand that providing incorrect or incomplete information may endanger my health.' },
-  { key: 'voluntary_participation', label: 'My participation in this training program is entirely voluntary.' },
-  { key: 'consents_emergency_care', label: 'I consent to receive emergency medical care if required during a session.' },
-  { key: 'agrees_data_storage', label: "I agree to my health data being securely stored and used for my training program." },
+  { key: 'info_true', label: 'The answers in this screening are true and complete to the best of my knowledge, and I will tell my trainer if my health changes.' },
 ];
 
 export const TRAINER_NOTES_FIELDS: { key: keyof TrainerNotesForm; label: string }[] = [
@@ -264,12 +291,13 @@ export function initConsentCheckboxes(): ConsentCheckboxesForm {
 
 export function initParqForm(): ParqFormData {
   return {
-    assessmentDate: new Date().toISOString().slice(0, 10),
+    assessmentDate: todayISO(),
     fullName: '', gender: '', dob: '', mobile: '', email: '',
     emergencyContact: '', emergencyPhone: '', bloodGroup: '',
     heightCm: '', weightKg: '', trainerName: '',
     currentHealth: initCurrentHealth(),
     pastHistory: initPastHistory(),
+    familyHistory: initFamilyHistory(),
     parqAnswers: initParqAnswers(),
     medicalClearance: initMedicalClearance(),
     trainerNotes: initTrainerNotes(),

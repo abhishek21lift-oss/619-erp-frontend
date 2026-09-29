@@ -24,8 +24,8 @@ export function StepAnthropometric({ form, set, error }: StepAnthropometricProps
           <Ruler size={20} color="#1CA3F9" />
         </div>
         <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Anthropometric Assessment</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 2 of 7 — body measurements.</p>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Anthropometric Assessment</h2>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 2 of 7 — body measurements.</p>
         </div>
       </div>
 
@@ -42,7 +42,7 @@ export function StepAnthropometric({ form, set, error }: StepAnthropometricProps
       </div>
 
       <div className="mt-6">
-        <p className="mb-3 text-[12px] font-[700] uppercase tracking-widest text-slate-400">Limbs (Right / Left)</p>
+        <p className="mb-3 text-[12px] font-[700] uppercase tracking-widest text-[color:var(--text-muted)]">Limbs (Right / Left)</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <FloatInput label="Right Arm (cm)" numeric="decimal" value={form.armRightCm} onChange={(v) => set('armRightCm', v)} />
           <FloatInput label="Left Arm (cm)" numeric="decimal" value={form.armLeftCm} onChange={(v) => set('armLeftCm', v)} />
@@ -60,12 +60,12 @@ export function StepAnthropometric({ form, set, error }: StepAnthropometricProps
       {(bmi != null || whr != null) && (
         <div className="mt-6 rounded-[16px] p-4 grid grid-cols-2 gap-4" style={{ background: 'var(--bg-subtle)' }}>
           <div>
-            <p className="text-[10.5px] font-[700] uppercase tracking-wider text-slate-400">BMI</p>
-            <p className="text-[18px] font-[800] text-slate-900">{bmi ?? '—'}</p>
+            <p className="text-[10.5px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">BMI</p>
+            <p className="text-[18px] font-[800] text-[color:var(--text-primary)]">{bmi ?? '—'}</p>
           </div>
           <div>
-            <p className="text-[10.5px] font-[700] uppercase tracking-wider text-slate-400">Waist-Hip Ratio</p>
-            <p className="text-[18px] font-[800] text-slate-900">{whr ?? '—'}</p>
+            <p className="text-[10.5px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Waist-Hip Ratio</p>
+            <p className="text-[18px] font-[800] text-[color:var(--text-primary)]">{whr ?? '—'}</p>
           </div>
         </div>
       )}

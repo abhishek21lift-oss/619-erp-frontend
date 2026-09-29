@@ -36,24 +36,24 @@ export function StepFoodRestrictions({ form, set, error }: StepFoodRestrictionsP
             <ShieldAlert size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Food Restrictions</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 2 of 8 — allergies and foods to avoid.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Food Restrictions</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 2 of 8 — allergies and foods to avoid.</p>
           </div>
         </div>
 
         <div>
-          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Food Allergies</p>
+          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Food Allergies</p>
           <MultiSelectChips value={form.foodAllergies} onChange={(v) => set('foodAllergies', v)} options={FOOD_ALLERGY_OPTIONS} />
           <div className="mt-3 max-w-sm">
-            <FloatInput label="Other Allergy" value={form.foodAllergyOther} onChange={(v) => set('foodAllergyOther', v)} />
+            <FloatInput label="Other allergies (comma-separated)" maxLength={500} value={form.foodAllergyOther} onChange={(v) => set('foodAllergyOther', v)} />
           </div>
         </div>
 
         <div>
-          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Foods to Avoid</p>
+          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Foods to Avoid</p>
           <MultiSelectChips value={form.foodsToAvoid} onChange={(v) => set('foodsToAvoid', v)} options={FOODS_TO_AVOID_OPTIONS} />
           <div className="mt-3 max-w-sm">
-            <FloatInput label="Other Food to Avoid" value={form.foodsToAvoidOther} onChange={(v) => set('foodsToAvoidOther', v)} />
+            <FloatInput label="Other foods to avoid (comma-separated)" maxLength={500} value={form.foodsToAvoidOther} onChange={(v) => set('foodsToAvoidOther', v)} />
           </div>
         </div>
 

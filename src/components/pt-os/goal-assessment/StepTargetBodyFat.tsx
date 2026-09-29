@@ -11,9 +11,11 @@ interface StepTargetBodyFatProps {
   form: GoalFormData;
   set: <K extends keyof GoalFormData>(key: K, val: GoalFormData[K]) => void;
   currentBodyFat: number | null;
+  /** True when the current body fat comes from a fitness test. */
+  measured: boolean;
 }
 
-export function StepTargetBodyFat({ form, set, currentBodyFat }: StepTargetBodyFatProps) {
+export function StepTargetBodyFat({ form, set, currentBodyFat, measured }: StepTargetBodyFatProps) {
   const target = n(form.targetBodyFat);
   const gap = useMemo(() => (currentBodyFat != null && target != null ? Math.round((target - currentBodyFat) * 10) / 10 : null), [currentBodyFat, target]);
 
@@ -26,20 +28,47 @@ export function StepTargetBodyFat({ form, set, currentBodyFat }: StepTargetBodyF
             <Percent size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Target Body Fat %</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 3 of 8 — optional, leave blank if not applicable.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Target Body Fat %</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 3 of 8 — optional, leave blank if not applicable.</p>
           </div>
         </div>
 
-        <Slider
-          label="Target Body Fat" value={target ?? 20} min={5} max={45} step={0.5}
-          onChange={(v) => set('targetBodyFat', String(v))}
-          formatValue={(v) => `${v}%`}
-          scaleLabels={['5%', '45%']}
-        />
-        <div className="mt-4 max-w-[220px]">
-          <FloatInput label="Or enter exactly (%)" numeric="decimal" value={form.targetBodyFat} onChange={(v) => set('targetBodyFat', v)} />
-        </div>
+        {/* The slider used to sit at 20% on a goal with no body-fat target,
+            showing a number that was never saved. It appears once a target
+            is set, and the target can be cleared again. */}
+        {target != null ? (
+          <>
+            <Slider
+              label="Target Body Fat" value={target} min={5} max={45} step={0.5}
+              onChange={(v) => set('targetBodyFat', String(v))}
+              formatValue={(v) => `${v}%`}
+              scaleLabels={['5%', '45%']}
+            />
+            <div className="mt-4 flex flex-wrap items-end gap-3">
+              <div className="max-w-[220px] flex-1">
+                <FloatInput label="Or enter exactly (%)" numeric="decimal" value={form.targetBodyFat} onChange={(v) => set('targetBodyFat', v)} />
+              </div>
+              <button type="button" onClick={() => set('targetBodyFat', '')}
+                className="h-11 rounded-full px-4 text-[12.5px] font-[700]"
+                style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                No body-fat target
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="max-w-[220px] flex-1">
+              <FloatInput label="Target body fat (%)" numeric="decimal" value={form.targetBodyFat} onChange={(v) => set('targetBodyFat', v)} />
+            </div>
+            <p className="pb-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>No target set — that is fine for goals that are not about body fat.</p>
+          </div>
+        )}
+
+        {!measured && (
+          <div className="mt-4 max-w-[220px]">
+            <FloatInput label="Starting body fat (%)" numeric="decimal" value={form.startingBodyFatManual} onChange={(v) => set('startingBodyFatManual', v)} />
+          </div>
+        )}
 
         {gap != null && (
           <div className="mt-6 rounded-[16px] p-5" style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)' }}>
@@ -62,7 +91,7 @@ export function StepTargetBodyFat({ form, set, currentBodyFat }: StepTargetBodyF
           </div>
         )}
         {currentBodyFat == null && (
-          <p className="mt-4 text-[11px] text-slate-400">No body-fat reading on file yet — this comparison will appear once one is recorded.</p>
+          <p className="mt-4 text-[11px] text-[color:var(--text-muted)]">No body-fat reading on file yet — this comparison will appear once one is recorded.</p>
         )}
       </div>
     </div>

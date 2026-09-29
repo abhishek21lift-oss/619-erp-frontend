@@ -1,6 +1,7 @@
 // Shared form shape for the Lifestyle Assessment module — imported by the
 // main page and every step component so they don't depend on each other.
 
+import { todayISO } from '@/lib/forms/domain';
 import type {
   OccupationType, DailyStepsBracket, BreakfastHabit, SmokingStatus, AlcoholStatus, RecoveryQuality,
 } from '@/lib/lifestyle-calculations';
@@ -77,29 +78,40 @@ export interface FormErrors {
   additionalFactors?: string;
 }
 
-// Deep-audit finding: StepWater and StepFoodPreference were fully built
-// (and their fields, and the hydration score / "drink 3L water" habit
-// suggestion that read them, were never removed) but were missing from
-// this list — there was no way for a new assessment to ever record water
-// intake or food preference. Restored at the positions the field comments
-// above (Step 3 — Water, Step 6 — Food Preference) already documented.
+// Water and food preference are asked in Nutrition, and motivation in Goal:
+// asking them here as well gave the client two answers to one question, and
+// the two could disagree. Lifestyle's hydration and nutrition scores read the
+// latest Nutrition answers instead (the API does this on save). The fields
+// stay on the form so older assessments keep displaying them.
 export const STEPS = [
   { id: 1, key: 'sleep', label: 'Sleep' },
   { id: 2, key: 'stress', label: 'Stress' },
-  { id: 3, key: 'water', label: 'Water Intake' },
-  { id: 4, key: 'occupationActivity', label: 'Occupation & Activity' },
-  { id: 5, key: 'foodPreference', label: 'Food Preference' },
-  { id: 6, key: 'smokingAlcohol', label: 'Smoking & Alcohol' },
-  { id: 7, key: 'additionalFactors', label: 'Additional Factors' },
+  { id: 3, key: 'occupationActivity', label: 'Occupation & Activity' },
+  { id: 4, key: 'smokingAlcohol', label: 'Smoking & Alcohol' },
+  { id: 5, key: 'additionalFactors', label: 'Additional Factors' },
 ] as const;
+
+/** "Step 3 of 5", from the list — each step used to hard-code its own
+ *  number, and after steps were added and removed they said "of 9". */
+export function stepLabel(key: typeof STEPS[number]['key']): string {
+  return `Step ${STEPS.findIndex((s) => s.key === key) + 1} of ${STEPS.length}`;
+}
 
 export type StepId = typeof STEPS[number]['id'];
 
+/** Food preferences an older Lifestyle assessment may hold (the question now
+ *  lives in Nutrition); kept so those records still read back correctly. */
+export const FOOD_PREFERENCE_OPTIONS = [
+  'Vegetarian', 'Eggetarian', 'Non-Vegetarian', 'Vegan', 'Jain', 'Lactose-Free', 'Mixed',
+].map((value) => ({ value, label: value }));
+
 export function initLifestyleForm(): LifestyleFormData {
   return {
-    assessmentDate: new Date().toISOString().slice(0, 10),
-    sleepDurationHours: '7', bedTime: '', wakeTime: '', sleepQuality: '',
-    stressLevel: '5',
+    // The studio's calendar day, not UTC's. Sliders start unset: a default
+    // position used to be saved as the client's answer.
+    assessmentDate: todayISO(),
+    sleepDurationHours: '', bedTime: '', wakeTime: '', sleepQuality: '',
+    stressLevel: '',
     waterIntakeLiters: '',
     occupationType: '', dailyStepsBracket: '',
     workoutExperienceLevel: '', yearsOfExperience: '',
@@ -107,7 +119,7 @@ export function initLifestyleForm(): LifestyleFormData {
     mealFrequency: '', breakfastHabit: '', lateNightEating: null,
     smokingStatus: '', cigarettesPerDay: '', yearsSmoking: '',
     alcoholStatus: '', drinksPerWeek: '',
-    screenTimeBracket: '', travelFrequency: '', energyLevel: '5', motivationToExercise: '5', recoveryQuality: '',
+    screenTimeBracket: '', travelFrequency: '', energyLevel: '', motivationToExercise: '', recoveryQuality: '',
     coachNotes: { recovery: '', nutrition: '', lifestyle: '', stress: '', sleep: '', special_instructions: '' },
   };
 }

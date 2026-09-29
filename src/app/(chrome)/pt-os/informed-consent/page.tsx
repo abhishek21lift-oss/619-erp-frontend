@@ -126,7 +126,7 @@ function ConsentHub({ clientId, toast }: ConsentHubProps) {
     return (
       <div className="mx-auto max-w-md py-24 text-center">
         <AlertCircle size={32} style={{ color: '#ef4444', margin: '0 auto 12px' }} />
-        <p className="text-[14px] font-[600] text-slate-600">{loadError}</p>
+        <p className="text-[14px] font-[600] text-[color:var(--text-secondary)]">{loadError}</p>
         <Button variant="outline" className="mt-4" onClick={loadData}>Retry</Button>
       </div>
     );
@@ -446,7 +446,7 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
         </m.div>
       </div>
 
-      <div className="page-action-bar" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(15,23,42,0.08)' }}>
+      <div className="page-action-bar" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(20px)', borderTop: '1px solid var(--border)' }}>
         <div className="mx-auto max-w-3xl px-5 sm:px-8 py-3.5 flex items-center justify-between gap-3">
           <Button variant="outline" iconLeft={<ArrowLeft size={14} />} onClick={handleBack} disabled={saving || creatingDraft}>Back</Button>
           <div className="flex items-center gap-3">

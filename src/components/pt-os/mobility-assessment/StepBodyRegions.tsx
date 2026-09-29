@@ -23,8 +23,8 @@ export function StepBodyRegions({ form, set }: StepBodyRegionsProps) {
           <Move size={20} color="#1CA3F9" />
         </div>
         <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Body Regions</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 1 of 3 — rate range of motion for each region, 1 (very restricted) to 5 (excellent).</p>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Body Regions</h2>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 1 of 3 — rate range of motion for each region, 1 (very restricted) to 5 (excellent). Mark pain felt today here; injury history lives on the PAR-Q.</p>
         </div>
       </div>
 
@@ -51,7 +51,7 @@ interface ToggleFieldProps { label: string; value: boolean; onChange: (v: boolea
 function ToggleField({ label, value, onChange }: ToggleFieldProps) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[11.5px] font-[620] text-slate-500">{label}</span>
+      <span className="text-[11.5px] font-[620] text-[color:var(--text-muted)]">{label}</span>
       <div className="flex gap-1.5">
         {[{ v: true, label: 'Yes' }, { v: false, label: 'No' }].map((o) => {
           const selected = value === o.v;
@@ -60,9 +60,9 @@ function ToggleField({ label, value, onChange }: ToggleFieldProps) {
               key={o.label} type="button" onClick={() => onChange(o.v)}
               className="rounded-[8px] px-2.5 py-1 text-[11px] font-[700] transition-all"
               style={{
-                background: selected ? (o.v ? '#dc2626' : '#0f172a') : '#f8fafc',
-                color: selected ? '#fff' : '#64748b',
-                border: selected ? 'none' : '1.5px solid #e2e8f0',
+                background: selected ? (o.v ? '#dc2626' : 'var(--text-primary)') : 'var(--bg-subtle)',
+                color: selected ? 'var(--bg-card)' : 'var(--text-muted)',
+                border: selected ? 'none' : '1.5px solid var(--border)',
               }}
             >
               {o.label}

@@ -92,7 +92,17 @@ interface FloatInputProps {
    * exactly rather than reconciled here.
    */
   upperLifted?: boolean;
+  /**
+   * The server's limit for this text. Stops typing at the limit and shows a
+   * count as it gets close — a long note used to be refused only by the
+   * final Save, after the whole wizard had been filled in.
+   */
+  maxLength?: number;
 }
+
+/** Native pickers draw their own placeholder ("--:--", "dd/mm/yyyy"), so the
+ *  label must sit lifted above it, or the two overlap. */
+const PICKER_TYPES = new Set(['time', 'date', 'datetime-local', 'month', 'week']);
 
 /** Types a caller may write that must never reach the DOM. See `numeric`. */
 const NUMERIC_TYPES = new Set(['number']);
@@ -166,6 +176,7 @@ export function FloatInput({
   className,
   tone = 'gold',
   upperLifted = false,
+  maxLength,
 }: FloatInputProps) {
   const t = TONES[tone];
   const id = useId();
@@ -187,7 +198,8 @@ export function FloatInput({
   /** Numeric fields keep their text numeric; everything else passes through. */
   const handleChange = (next: string) =>
     onChange(numericMode ? clampNumericText(next, numericMode) : next);
-  const lifted = focused || value.length > 0;
+  const lifted = focused || value.length > 0 || PICKER_TYPES.has(type);
+  const nearLimit = maxLength != null && value.length >= maxLength * 0.8;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -270,6 +282,7 @@ export function FloatInput({
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? errorId : undefined}
             rows={autoGrow ? 1 : rows}
+            maxLength={maxLength}
             className={cn(baseInputClass, 'resize-none', autoGrow && 'overflow-y-auto')}
             style={{
               caretColor: t.accent,
@@ -292,6 +305,7 @@ export function FloatInput({
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? errorId : undefined}
             className={baseInputClass}
+            maxLength={maxLength}
             style={{ caretColor: t.accent }}
           />
         )}
@@ -311,6 +325,11 @@ export function FloatInput({
       {error && (
         <p id={errorId} className="mt-1.5 text-[11px] font-medium text-[var(--danger-text)]">
           {error}
+        </p>
+      )}
+      {nearLimit && (
+        <p className="mt-1 text-right text-[11px] font-medium tabular-nums text-[var(--text-muted)]" aria-live="polite">
+          {value.length} / {maxLength}
         </p>
       )}
     </div>

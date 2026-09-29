@@ -42,16 +42,16 @@ export function GoalSummaryCard({
             <ClipboardList size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Goal Summary</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Everything captured, at a glance.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Goal Summary</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Everything captured, at a glance.</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
           {rows.map((r) => (
             <div key={r.label} className="flex items-center justify-between rounded-[12px] px-4 py-2.5" style={{ background: 'var(--bg-subtle)' }}>
-              <span className="text-[12px] font-[600] text-slate-500">{r.label}</span>
-              <span className="text-[13px] font-[760] text-slate-900">{r.value}</span>
+              <span className="text-[12px] font-[600] text-[color:var(--text-muted)]">{r.label}</span>
+              <span className="text-[13px] font-[760] text-[color:var(--text-primary)]">{r.value}</span>
             </div>
           ))}
         </div>

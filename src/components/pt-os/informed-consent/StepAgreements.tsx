@@ -23,8 +23,8 @@ export function StepAgreements({ form, set, error }: StepAgreementsProps) {
           <ShieldCheck size={20} color="#1CA3F9" />
         </div>
         <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Confidentiality, Participation & Declaration</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 2 of 3 — all items must be checked to continue.</p>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Confidentiality, Participation & Declaration</h2>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 2 of 3 — all items must be checked to continue.</p>
         </div>
       </div>
 
@@ -35,12 +35,12 @@ export function StepAgreements({ form, set, error }: StepAgreementsProps) {
             <button
               key={f.key} type="button" onClick={() => toggle(f.key)}
               className="flex w-full items-start gap-3 rounded-[14px] px-4 py-3.5 text-left transition-all"
-              style={{ background: checked ? 'rgba(0,103,224,0.05)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #0067E0' : '1.5px solid rgba(15,23,42,0.08)' }}
+              style={{ background: checked ? 'rgba(0,103,224,0.05)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #0067E0' : '1.5px solid var(--border)' }}
             >
-              <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]" style={{ background: checked ? '#0067E0' : '#fff', border: checked ? 'none' : '1.5px solid #cbd5e1' }}>
+              <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]" style={{ background: checked ? '#0067E0' : 'var(--bg-card)', border: checked ? 'none' : '1.5px solid var(--border-2)' }}>
                 {checked && <Check size={13} color="#fff" strokeWidth={3} />}
               </span>
-              <span className="text-[13px] font-[600] leading-snug" style={{ color: checked ? '#0f172a' : '#475569' }}>
+              <span className="text-[13px] font-[600] leading-snug" style={{ color: checked ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                 {f.label}
                 <span className="ml-0.5 text-[var(--gold,#0067E0)]" aria-hidden>*</span>
               </span>

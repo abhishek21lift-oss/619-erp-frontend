@@ -83,13 +83,13 @@ export function StepMedicalClearance({ form, set, error, formId, documents, onDo
             <Stethoscope size={20} color="#fff" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Medical Clearance</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">{stepLabel} — this client&apos;s risk is HIGH, so training is blocked until a doctor&apos;s clearance is approved. You can submit now and add the clearance later.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Medical Clearance</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">{stepLabel} — this client&apos;s risk is HIGH, so training is blocked until a doctor&apos;s clearance is approved. You can submit now and add the clearance later.</p>
           </div>
         </div>
 
         <div>
-          <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Clearance Status</p>
+          <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Clearance Status</p>
           <div role="radiogroup" aria-label="Clearance status" className="flex flex-wrap gap-2">
             {APPROVAL.map((a) => {
               const selected = mc.approval_status === a.value;
@@ -98,31 +98,31 @@ export function StepMedicalClearance({ form, set, error, formId, documents, onDo
                   key={a.value} type="button" role="radio" aria-checked={selected}
                   onClick={() => setMc('approval_status', a.value)}
                   className="rounded-[10px] px-3.5 py-2 text-[12px] font-[700] transition-all"
-                  style={{ background: selected ? a.color : '#f8fafc', color: selected ? '#fff' : '#64748b', border: `1.5px solid ${selected ? a.color : '#e2e8f0'}` }}
+                  style={{ background: selected ? a.color : 'var(--bg-subtle)', color: selected ? 'var(--bg-card)' : 'var(--text-muted)', border: `1.5px solid ${selected ? a.color : 'var(--border)'}` }}
                 >
                   {a.label}
                 </button>
               );
             })}
           </div>
-          <p className="mt-2 text-[12px] text-slate-500">{APPROVAL.find((a) => a.value === mc.approval_status)?.hint}</p>
+          <p className="mt-2 text-[12px] text-[color:var(--text-muted)]">{APPROVAL.find((a) => a.value === mc.approval_status)?.hint}</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FloatInput label="Doctor Name" value={mc.doctor_name} onChange={(v) => setMc('doctor_name', v)} required={mc.approval_status === 'approved'} />
-          <FloatInput label="Hospital / Clinic" value={mc.hospital} onChange={(v) => setMc('hospital', v)} />
+          <FloatInput label="Doctor Name" maxLength={255} value={mc.doctor_name} onChange={(v) => setMc('doctor_name', v)} required={mc.approval_status === 'approved'} />
+          <FloatInput label="Hospital / Clinic" maxLength={255} value={mc.hospital} onChange={(v) => setMc('hospital', v)} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FloatInput label="Doctor Contact" value={mc.doctor_contact} onChange={(v) => setMc('doctor_contact', v)} />
+          <FloatInput label="Doctor Contact" maxLength={50} value={mc.doctor_contact} onChange={(v) => setMc('doctor_contact', v)} />
           <FloatInput label="Clearance Date" type="date" value={mc.clearance_date} onChange={(v) => setMc('clearance_date', v)} required={mc.approval_status === 'approved'} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FloatInput label="Expiry Date" type="date" value={mc.expiry_date} onChange={(v) => setMc('expiry_date', v)} />
-          <FloatInput label="Certificate URL" value={mc.certificate_url} onChange={(v) => setMc('certificate_url', v)} placeholder="Auto-filled after upload, or paste a link" />
+          <FloatInput label="Certificate URL" maxLength={1000} value={mc.certificate_url} onChange={(v) => setMc('certificate_url', v)} placeholder="Auto-filled after upload, or paste a link" />
         </div>
 
         <div>
-          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Supporting Documents</p>
+          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Supporting Documents</p>
           <div className="flex flex-wrap items-center gap-2 mb-3">
             {DOC_TYPES.map((d) => {
               const selected = docType === d.value;
@@ -130,7 +130,7 @@ export function StepMedicalClearance({ form, set, error, formId, documents, onDo
                 <button
                   key={d.value} type="button" onClick={() => setDocType(d.value)}
                   className="rounded-[10px] px-3.5 py-2 text-[12px] font-[700] transition-all"
-                  style={{ background: selected ? '#0f172a' : '#f8fafc', color: selected ? '#fff' : '#64748b', border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0' }}
+                  style={{ background: selected ? 'var(--text-primary)' : 'var(--bg-subtle)', color: selected ? 'var(--bg-card)' : 'var(--text-muted)', border: selected ? '1.5px solid var(--text-primary)' : '1.5px solid var(--border)' }}
                 >
                   {d.label}
                 </button>
@@ -157,7 +157,7 @@ export function StepMedicalClearance({ form, set, error, formId, documents, onDo
                   className="flex items-center gap-2 rounded-[10px] px-3 py-2 text-[12px] font-[600]"
                   style={{ background: 'var(--bg-subtle)', color: '#334155' }}
                 >
-                  <FileText size={13} style={{ color: '#94a3b8' }} />
+                  <FileText size={13} style={{ color: 'var(--text-muted)' }} />
                   {d.file_name || d.doc_type}
                 </a>
               ))}

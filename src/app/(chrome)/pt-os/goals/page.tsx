@@ -34,6 +34,8 @@ import GoalTimeline from '@/components/pt-os/goal-assessment/GoalTimeline';
 import GoalCard from '@/components/pt-os/goal-assessment/GoalCard';
 import GoalProgressTimeline from '@/components/pt-os/goal-assessment/GoalProgressTimeline';
 import { errorMessage } from '@/lib/forms/errors';
+import { todayISO } from '@/lib/forms/domain';
+import { rangeIssue } from '@/lib/forms/ranges';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const CHALLENGE_VALUES = new Set(CHALLENGE_OPTIONS.map((c) => c.value));
@@ -47,7 +49,16 @@ function validateStep(id: StepId, form: GoalFormData): string | undefined {
     if (!form.goalType) return 'Please select a primary goal.';
     if (form.goalType === 'custom' && !form.goalName.trim()) return 'Please name the custom goal.';
   }
+  if (id === 2) {
+    return rangeIssue(['Target weight', form.targetWeight, 25, 300, 'kg'], ['Starting weight', form.startingWeightManual, 25, 350, 'kg']);
+  }
+  if (id === 3) {
+    return rangeIssue(['Target body fat', form.targetBodyFat, 3, 60, '%'], ['Starting body fat', form.startingBodyFatManual, 2, 75, '%']);
+  }
   if (id === 4 && !form.targetDate) return 'Please choose a target date.';
+  // A past target date used to be accepted, and the whole analysis then came
+  // back blank without a word.
+  if (id === 4 && form.targetDate < todayISO()) return 'The target date must be today or later.';
   if (id === 5 && !form.priorityGoal) return 'Please select a top priority.';
   return undefined;
 }
@@ -113,6 +124,9 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
   const [clientName, setClientName] = useState('');
   const [latestWeight, setLatestWeight] = useState<number | null>(null);
   const [latestBodyFat, setLatestBodyFat] = useState<number | null>(null);
+  // Sleep and water are asked in Lifestyle and Nutrition. A new goal's
+  // readiness answers start from them rather than asking a second time.
+  const [habits, setHabits] = useState<Partial<LifestyleAnswers>>({});
   const [goals, setGoals] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -123,11 +137,19 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
     setLoading(true);
     setLoadError('');
     try {
-      const [clientRes, assessRes, goalsRes] = await Promise.all([
+      const [clientRes, assessRes, goalsRes, lifestyleRes, nutritionRes] = await Promise.all([
         api.pt.client(clientId) as Promise<{ data?: Record<string, unknown> }>,
         api.progress.assessments.list({ client_id: clientId, limit: 1 }) as Promise<{ data?: Record<string, unknown>[] }>,
         api.progress.goals.list({ client_id: clientId }) as Promise<{ data?: Record<string, unknown>[] }>,
+        api.progress.lifestyleAssessments.list({ client_id: clientId }) as Promise<{ data?: Record<string, unknown>[] }>,
+        api.progress.nutritionAssessments.list({ client_id: clientId }) as Promise<{ data?: Record<string, unknown>[] }>,
       ]);
+      const sleep = Number((lifestyleRes?.data ?? [])[0]?.sleep_duration_hours);
+      const water = Number((nutritionRes?.data ?? [])[0]?.water_intake_liters);
+      setHabits({
+        ...(Number.isFinite(sleep) && sleep > 0 ? { sleep_7_8_hours: sleep >= 7 } : {}),
+        ...(Number.isFinite(water) && water > 0 ? { drink_enough_water: water >= 2.5 } : {}),
+      });
       const c = clientRes?.data;
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
       setClientName(String(c.name ?? ''));
@@ -151,6 +173,19 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
     setView('wizard');
   };
 
+  // One active goal at a time: a new goal archives the old one, and an
+  // archived goal can be made the active one again. There was no way to do
+  // either, so every goal ever set stayed "active".
+  const setActive = async (goalId: string, isActive: boolean) => {
+    try {
+      await api.progress.goals.update(goalId, { is_active: isActive });
+      toast.success(isActive ? 'Goal made active.' : 'Goal archived.');
+      loadData();
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Could not update the goal.'));
+    }
+  };
+
   const closeWizard = (refresh: boolean) => {
     setView('list');
     setEditingGoalId(null);
@@ -164,7 +199,7 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
     return (
       <div className="mx-auto max-w-md py-24 text-center">
         <AlertCircle size={32} style={{ color: '#ef4444', margin: '0 auto 12px' }} />
-        <p className="text-[14px] font-[600] text-slate-600">{loadError}</p>
+        <p className="text-[14px] font-[600] text-[color:var(--text-secondary)]">{loadError}</p>
         <Button variant="outline" className="mt-4" onClick={loadData}>Retry</Button>
       </div>
     );
@@ -177,6 +212,7 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
         clientId={clientId} clientName={clientName}
         latestWeight={latestWeight} latestBodyFat={latestBodyFat}
         editingGoal={editingGoal || null}
+        habits={habits}
         toast={toast}
         onDone={closeWizard}
       />
@@ -201,14 +237,23 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
       <div className="mx-auto w-full max-w-3xl space-y-3">
         {goals.length === 0 && (
           <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <p className="text-[14px] font-[600] text-slate-500">No goals set yet.</p>
+            <p className="text-[14px] font-[600] text-[color:var(--text-muted)]">No goals set yet.</p>
             <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}>
               Set First Goal
             </Button>
           </div>
         )}
         {goals.map((g) => (
-          <GoalCard key={String(g.id)} goal={g} latestWeight={latestWeight} onClick={() => openWizard(String(g.id))} />
+          <div key={String(g.id)} className="space-y-1.5">
+            <GoalCard goal={g} latestWeight={latestWeight} onClick={() => openWizard(String(g.id))} />
+            <div className="flex justify-end px-1">
+              <button type="button" onClick={() => setActive(String(g.id), !g.is_active)}
+                className="rounded-full px-3 py-1.5 text-[12px] font-[700]"
+                style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                {g.is_active ? 'Archive goal' : 'Make active'}
+              </button>
+            </div>
+          </div>
         ))}
       </div>
     </PageContainer>
@@ -222,13 +267,18 @@ interface GoalWizardProps {
   latestWeight: number | null;
   latestBodyFat: number | null;
   editingGoal: Record<string, unknown> | null;
+  habits: Partial<LifestyleAnswers>;
   toast: ReturnType<typeof useToast>['toast'];
   onDone: (refresh: boolean) => void;
 }
 
-function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editingGoal, toast, onDone }: GoalWizardProps) {
+function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editingGoal, habits, toast, onDone }: GoalWizardProps) {
   const goalId = editingGoal ? String(editingGoal.id) : null;
-  const initial = useMemo(() => (editingGoal ? formFromGoalRow(editingGoal) : initGoalForm()), [editingGoal]);
+  const initial = useMemo(() => {
+    if (editingGoal) return formFromGoalRow(editingGoal);
+    const fresh = initGoalForm();
+    return { ...fresh, lifestyle: { ...fresh.lifestyle, ...habits } };
+  }, [editingGoal, habits]);
 
   const [form, setForm] = useState<GoalFormData>(initial);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -242,7 +292,9 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
   const { restore, clear, saveNow } = useAutoSaveDraft({ key: draftKey, data: form, isDirty });
 
   useEffect(() => {
-    const draft = restore();
+    // Never lay a draft over a goal saved after it (another device, or saved since).
+    const savedAt = editingGoal ? Date.parse(String(editingGoal.updated_at ?? editingGoal.created_at ?? '')) || 0 : 0;
+    const draft = restore(savedAt ? { notBefore: savedAt } : undefined);
     if (draft) { setForm({ ...initial, ...draft }); toast.info('Restored your unsaved draft.'); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -310,20 +362,20 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
       const payload: Record<string, unknown> = {
         client_id: clientId,
         goal_type: form.goalType,
-        goal_other: form.goalType === 'custom' ? form.goalName.trim() || undefined : undefined,
-        goal_description: form.goalType === 'custom' ? form.goalDescription || undefined : undefined,
-        target_weight: n(form.targetWeight) ?? undefined,
-        target_body_fat: n(form.targetBodyFat) ?? undefined,
-        target_date: form.targetDate || undefined,
-        priority_goal: form.priorityGoal || undefined,
-        motivation_reason: form.motivationReason || undefined,
-        motivation_level: n(form.motivationLevel) ?? undefined,
-        commitment_level: n(form.commitmentLevel) ?? undefined,
-        biggest_challenges: challenges.length ? challenges : undefined,
-        lifestyle_readiness: buildLifestylePayload(form.lifestyle),
+        goal_other: form.goalType === 'custom' ? form.goalName.trim() || null : null,
+        goal_description: form.goalType === 'custom' ? form.goalDescription.trim() || null : null,
+        target_weight: n(form.targetWeight) ?? null,
+        target_body_fat: n(form.targetBodyFat) ?? null,
+        target_date: form.targetDate || null,
+        priority_goal: form.priorityGoal || null,
+        motivation_reason: form.motivationReason || null,
+        motivation_level: n(form.motivationLevel) ?? null,
+        commitment_level: n(form.commitmentLevel) ?? null,
+        biggest_challenges: challenges,
+        lifestyle_readiness: buildLifestylePayload(form.lifestyle) ?? null,
         starting_weight: latestWeight == null ? (n(form.startingWeightManual) ?? undefined) : undefined,
         starting_body_fat_pct: latestBodyFat == null ? (n(form.startingBodyFatManual) ?? undefined) : undefined,
-        notes: form.notes || undefined,
+        notes: form.notes || null,
       };
 
       if (goalId) {
@@ -359,8 +411,8 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
         {!reviewMode ? (
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
             {step === 1 && <StepPrimaryGoal form={form} set={set} error={errors.primaryGoal} />}
-            {step === 2 && <StepTargetWeight form={form} set={set} currentWeight={latestWeight} error={errors.targetWeight} />}
-            {step === 3 && <StepTargetBodyFat form={form} set={set} currentBodyFat={latestBodyFat} />}
+            {step === 2 && <StepTargetWeight form={form} set={set} currentWeight={currentWeight} measured={latestWeight != null} error={errors.targetWeight} />}
+            {step === 3 && <StepTargetBodyFat form={form} set={set} currentBodyFat={currentBodyFat} measured={latestBodyFat != null} />}
             {step === 4 && <StepDeadline form={form} set={set} error={errors.deadline} />}
             {step === 5 && <StepPriority form={form} set={set} error={errors.priority} />}
             {step === 6 && <StepMotivationCommitment form={form} set={set} />}
@@ -386,7 +438,7 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
         )}
       </div>
 
-      <div className="page-action-bar" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(15,23,42,0.08)' }}>
+      <div className="page-action-bar" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(20px)', borderTop: '1px solid var(--border)' }}>
         <div className="mx-auto max-w-3xl px-5 sm:px-8 py-3.5 flex items-center justify-between gap-3">
           <Button variant="outline" iconLeft={<ArrowLeft size={14} />} onClick={handleBack}>Back</Button>
           <div className="flex items-center gap-3">

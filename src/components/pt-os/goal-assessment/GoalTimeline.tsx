@@ -32,8 +32,8 @@ export function GoalTimeline({ targetDate }: GoalTimelineProps) {
             <Flag size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Goal Timeline</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">The roadmap from today to goal day.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Goal Timeline</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">The roadmap from today to goal day.</p>
           </div>
         </div>
 
@@ -45,14 +45,14 @@ export function GoalTimeline({ targetDate }: GoalTimelineProps) {
                   <div
                     className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full"
                     style={{
-                      background: i === milestones.length - 1 ? '#0067E0' : i === 0 ? '#0f172a' : '#f1f5f9',
-                      color: i === milestones.length - 1 || i === 0 ? '#fff' : '#94a3b8',
+                      background: i === milestones.length - 1 ? '#0067E0' : i === 0 ? '#0f172a' : 'var(--bg-subtle)',
+                      color: i === milestones.length - 1 || i === 0 ? '#fff' : 'var(--text-muted)',
                     }}
                   >
                     {i === milestones.length - 1 ? <Flag size={15} /> : <MapPin size={14} />}
                   </div>
-                  <span className="text-[10.5px] font-[680] tracking-tight whitespace-nowrap text-center" style={{ color: '#475569' }}>{m.label}</span>
-                  <span className="text-[10px] font-[600]" style={{ color: '#94a3b8' }}>{fmtDate(m.date)}</span>
+                  <span className="text-[10.5px] font-[680] tracking-tight whitespace-nowrap text-center" style={{ color: 'var(--text-secondary)' }}>{m.label}</span>
+                  <span className="text-[10px] font-[600]" style={{ color: 'var(--text-muted)' }}>{fmtDate(m.date)}</span>
                 </div>
                 {i < milestones.length - 1 && (
                   <div className="h-[2px] w-10 sm:w-16 mx-1.5 mb-6 rounded-full" style={{ background: 'linear-gradient(90deg, #0067E0, #0059CE)' }} />

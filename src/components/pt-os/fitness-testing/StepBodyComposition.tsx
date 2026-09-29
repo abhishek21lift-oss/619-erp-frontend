@@ -34,8 +34,8 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
           <Activity size={20} color="#1CA3F9" />
         </div>
         <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Body Composition</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 3 of 7 — choose an assessment method.</p>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Body Composition</h2>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 3 of 7 — choose an assessment method.</p>
         </div>
       </div>
 
@@ -59,7 +59,7 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
         <FloatInput label="Bone Mass (kg)" numeric="decimal" value={form.boneMassKg} onChange={(v) => set('boneMassKg', v)} />
         <div>
           <FloatInput label="BMR (kcal)" numeric="integer" value={form.bmr} onChange={(v) => set('bmr', v)} />
-          <p className="mt-1.5 text-[11px] text-slate-400">
+          <p className="mt-1.5 text-[11px] text-[color:var(--text-muted)]">
             {suggestedBmr != null
               ? `Leave blank to auto-suggest ${suggestedBmr} kcal (Mifflin-St Jeor).`
               : 'Leave blank to auto-suggest via Mifflin-St Jeor.'}

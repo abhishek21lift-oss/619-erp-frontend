@@ -6,7 +6,7 @@ import { calcCompletionPct, calcAchievementStatus, daysRemaining } from '@/lib/g
 import { GOAL_TYPE_META } from './types';
 
 const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-  not_started: { bg: 'rgba(148,163,184,0.15)', color: '#64748b', label: 'Not Started' },
+  not_started: { bg: 'rgba(148,163,184,0.15)', color: 'var(--text-muted)', label: 'Not Started' },
   on_track: { bg: 'rgba(16,185,129,0.15)', color: '#10b981', label: 'On Track' },
   behind: { bg: 'rgba(245,158,11,0.15)', color: '#d97706', label: 'Behind' },
   achieved: { bg: 'rgba(16,185,129,0.2)', color: '#059669', label: 'Achieved' },
@@ -70,9 +70,9 @@ export function GoalCard({ goal, latestWeight, onClick }: GoalCardProps) {
           {/* Target is also the 'custom' goal icon, which is the right
               fallback for a goal_type this build does not know about. */}
           {(() => { const Icon = meta?.icon ?? Target; return <Icon size={15} strokeWidth={2} className="flex-shrink-0" style={{ color: '#0059CE' }} />; })()}
-          <p className="text-[14px] font-[760] text-slate-900 truncate">{label}</p>
+          <p className="text-[14px] font-[760] text-[color:var(--text-primary)] truncate">{label}</p>
           {!goal.is_active && (
-            <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]" style={{ background: 'rgba(148,163,184,0.15)', color: '#64748b' }}>Inactive</span>
+            <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]" style={{ background: 'rgba(148,163,184,0.15)', color: 'var(--text-muted)' }}>Inactive</span>
           )}
         </div>
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
@@ -80,17 +80,17 @@ export function GoalCard({ goal, latestWeight, onClick }: GoalCardProps) {
             {status.label}
           </span>
           {days != null && (
-            <span className="text-[11.5px] font-[600] text-slate-400">
+            <span className="text-[11.5px] font-[600] text-[color:var(--text-muted)]">
               {days < 0 ? `${Math.abs(days)}d overdue` : `${days}d remaining`}
             </span>
           )}
           {goal.goal_difficulty != null && (
-            <span className="text-[11.5px] font-[600] text-slate-400">· {String(goal.goal_difficulty)}</span>
+            <span className="text-[11.5px] font-[600] text-[color:var(--text-muted)]">· {String(goal.goal_difficulty)}</span>
           )}
         </div>
       </div>
 
-      <ChevronRight size={16} style={{ color: '#cbd5e1', flexShrink: 0 }} />
+      <ChevronRight size={16} style={{ color: 'var(--border-2)', flexShrink: 0 }} />
     </button>
   );
 }

@@ -5,6 +5,13 @@ import { Eraser, PenLine } from 'lucide-react';
 
 interface SignaturePadProps {
   label?: string;
+  /**
+   * A signature already captured (a data URL). Drawn onto the pad when it
+   * mounts, so returning to this step — or opening a saved record — shows the
+   * signature that will be submitted. The pad used to come up blank while the
+   * old signature was still sent.
+   */
+  value?: string;
   onChange: (dataUrl: string) => void;
   onClear?: () => void;
   /** Fixed aspect ratio (width / height) for the canvas box. Defaults to a wide signature strip. */
@@ -18,7 +25,7 @@ interface SignaturePadProps {
  *  anywhere in the repo, and this is a genuinely small (~100 line) capture
  *  surface, so a new npm dependency isn't warranted. Uses Pointer Events,
  *  which unify mouse/touch/pen input in one listener set. */
-export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabled, error, required }: SignaturePadProps) {
+export function SignaturePad({ label, value, onChange, onClear, aspectRatio = 3, disabled, error, required }: SignaturePadProps) {
   const baseId = useId();
   const labelId = `${baseId}-label`;
   const hintId = `${baseId}-hint`;
@@ -73,6 +80,23 @@ export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabl
     return () => window.removeEventListener('resize', resizeCanvas);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Paint a signature captured earlier. Only onto an empty pad: once the
+  // person draws, what they draw is the value, and it is not repainted.
+  useEffect(() => {
+    if (!value || hasStroke) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    const img = new Image();
+    img.onload = () => {
+      const dpr = window.devicePixelRatio || 1;
+      ctx.drawImage(img, 0, 0, canvas.width / dpr, canvas.height / dpr);
+      setHasStroke(true);
+    };
+    img.src = value;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   const getPoint = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current!;
@@ -165,7 +189,7 @@ export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabl
   return (
     <div>
       {label && (
-        <p id={labelId} className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
+        <p id={labelId} className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
           {label}
           {required && <span className="ml-0.5 text-[var(--gold,#0067E0)]" aria-hidden>*</span>}
         </p>
@@ -174,7 +198,7 @@ export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabl
         ref={containerRef}
         className="relative w-full overflow-hidden rounded-[14px]"
         style={{
-          background: disabled ? '#f1f5f9' : '#fff',
+          background: disabled ? 'var(--bg-subtle)' : '#fff',
           border: error ? '1.5px solid rgba(239,68,68,0.5)' : '1.5px dashed rgba(15,23,42,0.18)',
           touchAction: 'none',
         }}
@@ -210,7 +234,7 @@ export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabl
           onPointerCancel={endStroke}
         />
         {!hasStroke && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2" style={{ color: '#cbd5e1' }}>
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2" style={{ color: 'var(--border-2)' }}>
             <PenLine size={14} aria-hidden />
             <span className="text-[12px] font-[600]">Sign here</span>
           </div>
@@ -239,7 +263,7 @@ export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabl
             }
           }}
           className="min-w-0 flex-1 rounded-[8px] px-2.5 py-1.5 text-[12px] disabled:opacity-40"
-          style={{ color: '#0f172a', background: '#fff', border: '1px solid #e2e8f0' }}
+          style={{ color: 'var(--text-primary)', background: '#fff', border: '1px solid var(--border)' }}
         />
         <button
           type="button"
@@ -261,7 +285,7 @@ export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabl
           disabled={disabled}
           aria-label={`Clear ${label || 'signature'}`}
           className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-[11.5px] font-[650] transition-all disabled:opacity-40"
-          style={{ color: '#64748b', background: '#f8fafc', border: '1px solid #e2e8f0' }}
+          style={{ color: 'var(--text-muted)', background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
         >
           <Eraser size={12} aria-hidden /> Clear
         </button>

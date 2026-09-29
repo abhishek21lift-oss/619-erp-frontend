@@ -50,8 +50,8 @@ export function StepEndurance({ form, set, gender, error }: StepEnduranceProps) 
           <Repeat size={20} color="#1CA3F9" />
         </div>
         <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Muscular Endurance</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 6 of 7 — two sustained-effort tests, e.g. an upper-body test plus a core test.</p>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Muscular Endurance</h2>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 6 of 7 — two sustained-effort tests, e.g. an upper-body test plus a core test.</p>
         </div>
       </div>
 
@@ -89,8 +89,8 @@ export function StepEndurance({ form, set, gender, error }: StepEnduranceProps) 
       {combinedScore != null && (
         <div className="mt-6 flex flex-wrap items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>
           <div>
-            <p className="text-[10.5px] font-[700] uppercase tracking-wider text-slate-400">Combined Endurance Score</p>
-            <p className="text-[18px] font-[800] text-slate-900">{combinedScore}</p>
+            <p className="text-[10.5px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Combined Endurance Score</p>
+            <p className="text-[18px] font-[800] text-[color:var(--text-primary)]">{combinedScore}</p>
           </div>
           {t1.category && (
             <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706' }}>
@@ -122,7 +122,7 @@ interface EnduranceTestBlockProps {
 function EnduranceTestBlock({ label, options, testType, onTestType, valueType, reps, onReps, durationSec, onDurationSec, result }: EnduranceTestBlockProps) {
   return (
     <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-      <p className="mb-3 text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>{label}</p>
+      <p className="mb-3 text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
       <div className="mb-4">
         <SearchableSelect label="Test" required allowCustom={false} value={testType} onChange={onTestType} options={options} />
       </div>
@@ -133,7 +133,7 @@ function EnduranceTestBlock({ label, options, testType, onTestType, valueType, r
       ) : null}
       {result.category && (
         <div className="mt-3 flex items-center gap-2">
-          <span className="text-[12px] font-[700] text-slate-700">{result.value} {valueType === 'reps' ? 'reps' : 'sec'}</span>
+          <span className="text-[12px] font-[700] text-[color:var(--text-secondary)]">{result.value} {valueType === 'reps' ? 'reps' : 'sec'}</span>
           <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706' }}>{result.category}</span>
         </div>
       )}

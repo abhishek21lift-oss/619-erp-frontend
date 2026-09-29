@@ -1,7 +1,9 @@
 'use client';
 
-import { m, AnimatePresence } from 'framer-motion';
-import { Check } from 'lucide-react';
+// This wizard's steps on the shared stepper. Six near-identical copies of
+// the stepper used to live one per wizard, and drifted: some kept a light
+// style that disappeared on the dark hero, some cut long labels off.
+import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
 import { STEPS, type StepId } from './types';
 
 interface LifestyleProgressTimelineProps {
@@ -11,61 +13,11 @@ interface LifestyleProgressTimelineProps {
 
 export function LifestyleProgressTimeline({ current, onStep }: LifestyleProgressTimelineProps) {
   return (
-    <div className="overflow-x-auto pb-1">
-      <div className="flex items-center min-w-max px-1">
-        {STEPS.map((s, i) => {
-          const done = current > s.id;
-          const active = current === s.id;
-          return (
-            <div key={s.id} className="flex items-center">
-              <button
-                type="button"
-                onClick={() => { if (s.id <= current + 1) onStep(s.id as StepId); }}
-                className="flex flex-col items-center gap-2 min-w-0"
-              >
-                <div
-                  className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[13px] font-[800] transition-all duration-300"
-                  style={{
-                    background: done ? '#0067E0' : active ? '#0f172a' : '#f1f5f9',
-                    color: done || active ? '#fff' : '#94a3b8',
-                    boxShadow: active ? '0 0 0 4px rgba(15,23,42,0.10), 0 2px 8px rgba(15,23,42,0.14)' : 'none',
-                    transform: active ? 'scale(1.08)' : 'scale(1)',
-                  }}
-                >
-                  <AnimatePresence mode="wait">
-                    {done ? (
-                      <m.span key="ck" initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }} transition={{ duration: 0.2 }}>
-                        <Check size={15} strokeWidth={3} />
-                      </m.span>
-                    ) : (
-                      <m.span key="nm" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ duration: 0.15 }}>
-                        {s.id}
-                      </m.span>
-                    )}
-                  </AnimatePresence>
-                </div>
-                <span
-                  className="text-[10.5px] font-[680] tracking-tight whitespace-nowrap max-w-[90px] text-center leading-tight"
-                  style={{ color: active ? '#0f172a' : done ? '#0067E0' : '#94a3b8' }}
-                >
-                  {s.label}
-                </span>
-              </button>
-              {i < STEPS.length - 1 && (
-                <div className="relative h-[2px] w-8 sm:w-12 mx-1.5 mb-5 rounded-full overflow-hidden" style={{ background: '#e2e8f0' }}>
-                  <m.div
-                    className="absolute inset-y-0 left-0 rounded-full"
-                    style={{ background: 'linear-gradient(90deg, #0067E0, #0059CE)' }}
-                    animate={{ width: done ? '100%' : '0%' }}
-                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <StepperTimeline
+      steps={STEPS.map((s) => ({ id: s.id, label: s.label }))}
+      current={current}
+      onStep={(id) => onStep(id as StepId)}
+    />
   );
 }
 

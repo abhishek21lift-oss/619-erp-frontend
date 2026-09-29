@@ -46,14 +46,14 @@ export function StepMotivationCommitment({ form, set }: StepMotivationCommitment
             <Flame size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Motivation &amp; Commitment</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 6 of 8 — how ready is this client, really?</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Motivation &amp; Commitment</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 6 of 8 — how ready is this client, really?</p>
           </div>
         </div>
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Motivation Level</p>
+            <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Motivation Level</p>
             {(() => {
               const Face = motivationFace(motivation);
               return <Face size={24} strokeWidth={1.75} style={{ color: commitmentColor(motivation) }} />;
@@ -65,7 +65,7 @@ export function StepMotivationCommitment({ form, set }: StepMotivationCommitment
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Commitment Level</p>
+            <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Commitment Level</p>
             <span className="h-3 w-3 rounded-full" style={{ background: commitmentColor(commitment) }} />
           </div>
           <Slider label="" ariaLabel="Commitment Level" value={commitment} min={1} max={10} onChange={(v) => set('commitmentLevel', String(v))}

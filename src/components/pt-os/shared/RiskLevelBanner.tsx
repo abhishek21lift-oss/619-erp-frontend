@@ -110,7 +110,7 @@ export function RiskLevelBanner({ level, title, message, stat, className }: Risk
             >
               {title ?? meta.defaultTitle}
             </h2>
-            <p className="mt-1.5 text-[13px] font-[500]" style={{ color: '#475569' }}>
+            <p className="mt-1.5 text-[13px] font-[500]" style={{ color: 'var(--text-secondary)' }}>
               {message ?? meta.defaultMessage}
             </p>
           </div>

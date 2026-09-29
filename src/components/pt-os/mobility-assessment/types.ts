@@ -3,10 +3,13 @@
 // on each other.
 
 import type { BodyRegionScore, MobilityTestScore } from '@/lib/mobility-calculations';
+import { todayISO } from '@/lib/forms/domain';
 
 const BODY_REGIONS = ['Neck', 'Shoulders', 'Thoracic Spine', 'Hip', 'Hamstrings', 'Quadriceps', 'Ankles', 'Wrists'];
 
-const MOBILITY_TESTS = ['Sit and Reach', 'Shoulder Reach', 'Overhead Squat', 'Deep Squat', 'Hip Internal Rotation', 'Ankle Dorsiflexion'];
+// Sit and Reach is measured in centimetres in Fitness Testing's flexibility
+// step; scoring it again here on a 1-5 scale gave one test three records.
+const MOBILITY_TESTS = ['Shoulder Reach', 'Overhead Squat', 'Deep Squat', 'Hip Internal Rotation', 'Ankle Dorsiflexion'];
 
 export interface MobilityFormData {
   assessmentDate: string;
@@ -39,7 +42,7 @@ export type StepId = typeof STEPS[number]['id'];
 
 export function initMobilityForm(): MobilityFormData {
   return {
-    assessmentDate: new Date().toISOString().slice(0, 10),
+    assessmentDate: todayISO(),
     bodyRegions: BODY_REGIONS.map((region) => ({ region, score: 3, pain: false, restriction: false })),
     mobilityTests: MOBILITY_TESTS.map((test) => ({ test, score: 3, notes: '', pain: false, restriction: false })),
     gripStrengthKg: '', verticalJumpCm: '', sitReachCm: '', balanceTestSeconds: '', reactionTimeMs: '',

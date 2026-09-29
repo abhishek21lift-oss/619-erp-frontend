@@ -2,6 +2,7 @@
 
 import { Cigarette, Wine } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
+import { stepLabel } from './types';
 import type { LifestyleFormData } from './types';
 
 const SMOKING_OPTIONS: { value: LifestyleFormData['smokingStatus']; label: string; icon: string }[] = [
@@ -35,29 +36,34 @@ export function StepSmokingAlcohol({ form, set, error }: StepSmokingAlcoholProps
             <Cigarette size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Smoking &amp; Alcohol</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 8 of 9 — habits that affect recovery and risk.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Smoking &amp; Alcohol</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">{stepLabel('smokingAlcohol')} — habits that affect recovery and risk.</p>
           </div>
         </div>
 
         <div>
-          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Smoking</p>
+          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Smoking</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {SMOKING_OPTIONS.map((o) => {
               const selected = form.smokingStatus === o.value;
               return (
                 <button
                   key={o.value} type="button"
-                  onClick={() => set('smokingStatus', o.value)}
+                  onClick={() => {
+                    set('smokingStatus', o.value);
+                    // A count for a habit the client does not have is left over
+                    // from an earlier answer, and used to be saved beside "Never".
+                    if (o.value === 'never') { set('cigarettesPerDay', ''); set('yearsSmoking', ''); }
+                  }}
                   className="flex flex-col items-center gap-2 rounded-[16px] px-3 py-4 text-center transition-all duration-200"
                   style={{
                     background: selected ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)',
-                    border: selected ? '2px solid #0067E0' : '2px solid rgba(15,23,42,0.08)',
+                    border: selected ? '2px solid #0067E0' : '2px solid var(--border)',
                     boxShadow: selected ? '0 4px 16px rgba(0,103,224,0.18)' : 'none',
                   }}
                 >
                   <span className="text-[20px]">{o.icon}</span>
-                  <span className="text-[11.5px] font-[700]" style={{ color: selected ? '#0f172a' : '#475569' }}>{o.label}</span>
+                  <span className="text-[11.5px] font-[700]" style={{ color: selected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{o.label}</span>
                 </button>
               );
             })}
@@ -72,8 +78,8 @@ export function StepSmokingAlcohol({ form, set, error }: StepSmokingAlcoholProps
 
         <div>
           <div className="mb-3 flex items-center gap-2">
-            <Wine size={14} style={{ color: '#94a3b8' }} />
-            <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Alcohol</p>
+            <Wine size={14} style={{ color: 'var(--text-muted)' }} />
+            <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Alcohol</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {ALCOHOL_OPTIONS.map((o) => {
@@ -81,16 +87,19 @@ export function StepSmokingAlcohol({ form, set, error }: StepSmokingAlcoholProps
               return (
                 <button
                   key={o.value} type="button"
-                  onClick={() => set('alcoholStatus', o.value)}
+                  onClick={() => {
+                    set('alcoholStatus', o.value);
+                    if (o.value === 'never') set('drinksPerWeek', '');
+                  }}
                   className="flex flex-col items-center gap-2 rounded-[16px] px-3 py-4 text-center transition-all duration-200"
                   style={{
                     background: selected ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)',
-                    border: selected ? '2px solid #0067E0' : '2px solid rgba(15,23,42,0.08)',
+                    border: selected ? '2px solid #0067E0' : '2px solid var(--border)',
                     boxShadow: selected ? '0 4px 16px rgba(0,103,224,0.18)' : 'none',
                   }}
                 >
                   <span className="text-[20px]">{o.icon}</span>
-                  <span className="text-[11.5px] font-[700]" style={{ color: selected ? '#0f172a' : '#475569' }}>{o.label}</span>
+                  <span className="text-[11.5px] font-[700]" style={{ color: selected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{o.label}</span>
                 </button>
               );
             })}

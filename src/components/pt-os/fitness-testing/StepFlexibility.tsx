@@ -51,8 +51,8 @@ export function StepFlexibility({ form, set, error }: StepFlexibilityProps) {
           <Move size={20} color="#1CA3F9" />
         </div>
         <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Flexibility &amp; Mobility</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 7 of 7 — two range-of-motion tests.</p>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Flexibility &amp; Mobility</h2>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 7 of 7 — two range-of-motion tests.</p>
         </div>
       </div>
 
@@ -85,7 +85,7 @@ export function StepFlexibility({ form, set, error }: StepFlexibilityProps) {
 
       {combinedScore != null && (
         <div className="mt-6 flex items-center gap-2">
-          <span className="text-[11px] font-[700] uppercase tracking-wider text-slate-400">Combined Score</span>
+          <span className="text-[11px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Combined Score</span>
           <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706' }}>
             {combinedScore}
           </span>
@@ -124,13 +124,13 @@ function FlexibilityTestBlock({
 }: FlexibilityTestBlockProps) {
   return (
     <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-      <p className="mb-3 text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>{label}</p>
+      <p className="mb-3 text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
 
       <div className="mb-4">
         <SearchableSelect label="Test" required allowCustom={false} value={testType} onChange={onTestType} options={options} />
         {testType === 'Custom' && (
           <div className="mt-3">
-            <FloatInput label="Custom Test Name" value={customTest} onChange={onCustomTest} />
+            <FloatInput label="Custom Test Name" maxLength={100} value={customTest} onChange={onCustomTest} />
           </div>
         )}
       </div>
@@ -141,17 +141,17 @@ function FlexibilityTestBlock({
         <FloatInput label="Range of Motion (deg)" numeric="integer" value={rom} onChange={onRom} />
         <div>
           <FloatInput label="Composite Score (0-10)" numeric="decimal" value={score} onChange={onScore} />
-          <p className="mt-1.5 text-[11px] text-slate-400">Trainer-assessed, 0 = very limited, 10 = excellent.</p>
+          <p className="mt-1.5 text-[11px] text-[color:var(--text-muted)]">Trainer-assessed, 0 = very limited, 10 = excellent.</p>
         </div>
       </div>
 
       <div className="mt-4">
-        <FloatInput label="Limitation Notes" multiline autoGrow value={limitationNotes} onChange={onLimitationNotes} />
+        <FloatInput label="Limitation Notes" multiline autoGrow maxLength={1000} value={limitationNotes} onChange={onLimitationNotes} />
       </div>
 
       {result.category && (
         <div className="mt-3 flex items-center gap-2">
-          <span className="text-[11px] font-[700] uppercase tracking-wider text-slate-400">Classification</span>
+          <span className="text-[11px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Classification</span>
           <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706' }}>{result.category}</span>
         </div>
       )}

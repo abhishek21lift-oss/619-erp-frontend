@@ -12,6 +12,7 @@
 // match cannot tell a rendered field from a commented-out one, and cannot tell
 // whether removing the field left the wizard impossible to complete — which is
 // the failure that would actually reach a trainer.
+import { todayISO } from '@/lib/forms/domain';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import StepExerciseProgrammeConsent from '@/components/pt-os/informed-consent/StepExerciseProgrammeConsent';
@@ -87,7 +88,26 @@ describe('step 3 — Signature', () => {
   it('now requires the date it displays', () => {
     const signed = { clientSignature: 'data:image/png;base64,C', trainerSignature: 'data:image/png;base64,T' };
     expect(validateStep(3, form({ ...signed, exerciseConsentDate: '' }))).toMatch(/date/i);
-    expect(validateStep(3, form({ ...signed, exerciseConsentDate: '2026-03-14' }))).toBeUndefined();
+    expect(validateStep(3, form({ ...signed, exerciseConsentDate: todayISO() }))).toBeUndefined();
+  });
+
+  it('dates the signature within the last 7 days, never ahead of today', () => {
+    // Any date used to be accepted, so a consent could be back- or future-dated.
+    const signed = { clientSignature: 'data:image/png;base64,C', trainerSignature: 'data:image/png;base64,T' };
+    const shift = (days: number) => {
+      const d = new Date(); d.setDate(d.getDate() + days);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+    expect(validateStep(3, form({ ...signed, exerciseConsentDate: shift(-3) }))).toBeUndefined();
+    expect(validateStep(3, form({ ...signed, exerciseConsentDate: shift(-10) }))).toMatch(/last 7 days/);
+    expect(validateStep(3, form({ ...signed, exerciseConsentDate: shift(1) }))).toMatch(/future/);
+  });
+
+  it('takes a witness as a name and a signature, or not at all', () => {
+    const base = { clientSignature: 'C', trainerSignature: 'T', exerciseConsentDate: todayISO() };
+    expect(validateStep(3, form({ ...base, witnessName: 'Ravi' }))).toMatch(/witness signature/i);
+    expect(validateStep(3, form({ ...base, witnessSignature: 'W' }))).toMatch(/witness name/i);
+    expect(validateStep(3, form({ ...base, witnessName: 'Ravi', witnessSignature: 'W' }))).toBeUndefined();
   });
 
   it('still requires both signatures', () => {

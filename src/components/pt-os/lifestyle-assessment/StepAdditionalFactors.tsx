@@ -4,7 +4,7 @@ import { Sparkles } from 'lucide-react';
 import { Slider } from '@/components/ui';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import type { LifestyleFormData } from './types';
-import { n } from './types';
+import { n, stepLabel } from './types';
 import type { RecoveryQuality } from '@/lib/lifestyle-calculations';
 
 const SCREEN_TIME_OPTIONS = [
@@ -35,8 +35,8 @@ export function StepAdditionalFactors({ form, set }: StepAdditionalFactorsProps)
             <Sparkles size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Additional Lifestyle Factors</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 9 of 9 — the last few pieces of the picture.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Additional Lifestyle Factors</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">{stepLabel('additionalFactors')} — the last few pieces of the picture.</p>
           </div>
         </div>
 
@@ -45,11 +45,12 @@ export function StepAdditionalFactors({ form, set }: StepAdditionalFactorsProps)
           <SearchableSelect label="Travel Frequency" allowCustom={false} value={form.travelFrequency} onChange={(v) => set('travelFrequency', v as LifestyleFormData['travelFrequency'])} options={TRAVEL_OPTIONS} />
         </div>
 
-        <Slider label="Energy Level" value={n(form.energyLevel) ?? 5} min={1} max={10} onChange={(v) => set('energyLevel', String(v))} scaleLabels={['1 · Low', '10 · High']} />
-        <Slider label="Motivation to Exercise" value={n(form.motivationToExercise) ?? 5} min={1} max={10} onChange={(v) => set('motivationToExercise', String(v))} scaleLabels={['1 · Low', '10 · High']} />
+        <Slider label="Energy Level" value={n(form.energyLevel) ?? 5} unset={n(form.energyLevel) == null} min={1} max={10} onChange={(v) => set('energyLevel', String(v))} scaleLabels={['1 · Low', '10 · High']} />
+        {/* Motivation is asked on the Goal, beside commitment. Asking it here
+            too gave the client two motivation scores. */}
 
         <div>
-          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Recovery Quality</p>
+          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Recovery Quality</p>
           <div className="flex gap-2 flex-wrap">
             {RECOVERY_OPTIONS.map((r) => {
               const selected = form.recoveryQuality === r.value;
@@ -59,9 +60,9 @@ export function StepAdditionalFactors({ form, set }: StepAdditionalFactorsProps)
                   onClick={() => set('recoveryQuality', r.value)}
                   className="rounded-[11px] px-4 py-2.5 text-[13px] font-[700] transition-all"
                   style={{
-                    background: selected ? '#0f172a' : '#f8fafc',
-                    color: selected ? '#fff' : '#64748b',
-                    border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0',
+                    background: selected ? 'var(--text-primary)' : 'var(--bg-subtle)',
+                    color: selected ? 'var(--bg-card)' : 'var(--text-muted)',
+                    border: selected ? '1.5px solid var(--text-primary)' : '1.5px solid var(--border)',
                   }}
                 >
                   {r.label}

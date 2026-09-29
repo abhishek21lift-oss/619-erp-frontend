@@ -68,16 +68,16 @@ describe('parseFloat parsed a prefix; this does not', () => {
 });
 
 describe('the bounds are generous and not open-ended', () => {
-  it('accepts a world-record-beating lift', () => {
-    // 500 is above every listed record for the lifts this screen tracks, so
-    // the bound can never refuse a real one.
-    expect(strengthLogSchema.safeParse(lift({ weight_kg: '499' })).success).toBe(true);
+  it('accepts a heavy leg press', () => {
+    // 1000 matches the API and the edit form. Leg Press is on this screen and
+    // is loaded past 500 kg in ordinary gyms; the old 500 refused it.
+    expect(strengthLogSchema.safeParse(lift({ weight_kg: '640' })).success).toBe(true);
   });
 
   it('refuses the mistyped 5000 that would top every percentile chart', () => {
     const r = strengthLogSchema.safeParse(lift({ weight_kg: '5000' }));
     expect(r.success).toBe(false);
-    expect(messages(r)).toContain('Weight cannot be more than 500 kg.');
+    expect(messages(r)).toContain('Weight cannot be more than 1000 kg.');
   });
 
   it('refuses zero and negative weight', () => {

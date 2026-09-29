@@ -21,8 +21,8 @@ export function StepPrimaryGoal({ form, set, error }: StepPrimaryGoalProps) {
             <Target size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Primary Goal</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 1 of 8 — what does this client want to achieve?</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Primary Goal</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 1 of 8 — what does this client want to achieve?</p>
           </div>
         </div>
 
@@ -36,14 +36,14 @@ export function StepPrimaryGoal({ form, set, error }: StepPrimaryGoalProps) {
                 className="flex flex-col items-center gap-2 rounded-[16px] px-4 py-5 text-center transition-all duration-200"
                 style={{
                   background: selected ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)',
-                  border: selected ? '2px solid #0067E0' : '2px solid rgba(15,23,42,0.08)',
+                  border: selected ? '2px solid #0067E0' : '2px solid var(--border)',
                   boxShadow: selected ? '0 4px 16px rgba(0,103,224,0.18)' : 'none',
                   transform: selected ? 'scale(1.02)' : 'scale(1)',
                 }}
               >
                 {/* Inherits the selected colour, which an emoji could not. */}
-                <g.icon size={24} strokeWidth={1.75} color={selected ? '#0059CE' : '#64748b'} />
-                <span className="text-[12.5px] font-[700]" style={{ color: selected ? '#0f172a' : '#475569' }}>{g.label}</span>
+                <g.icon size={24} strokeWidth={1.75} color={selected ? '#0059CE' : 'var(--text-muted)'} />
+                <span className="text-[12.5px] font-[700]" style={{ color: selected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{g.label}</span>
               </button>
             );
           })}
@@ -53,8 +53,8 @@ export function StepPrimaryGoal({ form, set, error }: StepPrimaryGoalProps) {
 
         {form.goalType === 'custom' && (
           <div className="mt-6 space-y-4">
-            <FloatInput label="Goal Name" required value={form.goalName} onChange={(v) => set('goalName', v)} />
-            <FloatInput label="Goal Description" multiline autoGrow value={form.goalDescription} onChange={(v) => set('goalDescription', v)} />
+            <FloatInput label="Goal Name" required maxLength={200} value={form.goalName} onChange={(v) => set('goalName', v)} />
+            <FloatInput label="Goal Description" multiline autoGrow maxLength={2000} value={form.goalDescription} onChange={(v) => set('goalDescription', v)} />
           </div>
         )}
       </div>

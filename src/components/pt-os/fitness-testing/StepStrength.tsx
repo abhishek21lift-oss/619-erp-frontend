@@ -59,8 +59,8 @@ export function StepStrength({ form, set, gender, error, isBeginner }: StepStren
           <Dumbbell size={20} color="#1CA3F9" />
         </div>
         <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Muscular Strength</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Muscular Strength</h2>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">
             Step 5 of 7 — {isBeginner ? 'optional; two one-rep max tests.' : 'two one-rep max tests, e.g. an upper-body lift plus a lower-body lift.'}
           </p>
         </div>
@@ -105,8 +105,8 @@ export function StepStrength({ form, set, gender, error, isBeginner }: StepStren
       {combinedScore != null && (
         <div className="mt-6 flex flex-wrap items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>
           <div>
-            <p className="text-[10.5px] font-[700] uppercase tracking-wider text-slate-400">Combined Strength Score</p>
-            <p className="text-[18px] font-[800] text-slate-900">{combinedScore}</p>
+            <p className="text-[10.5px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Combined Strength Score</p>
+            <p className="text-[18px] font-[800] text-[color:var(--text-primary)]">{combinedScore}</p>
           </div>
           {t1.category && (
             <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706' }}>
@@ -119,7 +119,7 @@ export function StepStrength({ form, set, gender, error, isBeginner }: StepStren
             </span>
           )}
           {!t1.category && !t2.category && !bodyWeight && (
-            <p className="text-[11px] text-slate-400">Enter weight in the Anthropometric step to classify strength level.</p>
+            <p className="text-[11px] text-[color:var(--text-muted)]">Enter weight in the Anthropometric step to classify strength level.</p>
           )}
         </div>
       )}
@@ -150,13 +150,13 @@ function StrengthTestBlock({
 }: StrengthTestBlockProps) {
   return (
     <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-      <p className="mb-3 text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>{label}</p>
+      <p className="mb-3 text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
 
       <div className="mb-4">
         <SearchableSelect label="Exercise" required={!isBeginner} allowCustom={false} value={exercise} onChange={onExercise} options={options} />
         {exercise === 'Custom Exercise' && (
           <div className="mt-3">
-            <FloatInput label="Custom Exercise Name" value={customExercise} onChange={onCustomExercise} />
+            <FloatInput label="Custom Exercise Name" maxLength={100} value={customExercise} onChange={onCustomExercise} />
           </div>
         )}
       </div>
@@ -168,9 +168,9 @@ function StrengthTestBlock({
             onClick={() => onMode(m)}
             className="rounded-[11px] px-4 py-2.5 text-[13px] font-[660] transition-all duration-200"
             style={{
-              background: mode === m ? '#0f172a' : '#fff',
-              color: mode === m ? '#fff' : '#64748b',
-              border: mode === m ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0',
+              background: mode === m ? 'var(--text-primary)' : 'var(--bg-card)',
+              color: mode === m ? 'var(--bg-card)' : 'var(--text-muted)',
+              border: mode === m ? '1.5px solid var(--text-primary)' : '1.5px solid var(--border)',
             }}
           >
             {m === 'estimated' ? 'Estimated 1RM' : 'Direct 1RM'}
@@ -185,7 +185,7 @@ function StrengthTestBlock({
             <FloatInput label="Repetitions" numeric="integer" value={reps} onChange={onReps} />
           </div>
           <div className="mt-4">
-            <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Formula</p>
+            <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Formula</p>
             <div className="flex gap-2">
               {(['epley', 'brzycki'] as const).map((f) => (
                 <button
@@ -193,9 +193,9 @@ function StrengthTestBlock({
                   onClick={() => onFormula(f)}
                   className="rounded-[10px] px-3.5 py-2 text-[12px] font-[640] capitalize transition-all"
                   style={{
-                    background: formula === f ? '#0067E0' : '#fff',
-                    color: formula === f ? '#fff' : '#64748b',
-                    border: formula === f ? '1.5px solid #0067E0' : '1.5px solid #e2e8f0',
+                    background: formula === f ? '#0067E0' : 'var(--bg-card)',
+                    color: formula === f ? 'var(--bg-card)' : 'var(--text-muted)',
+                    border: formula === f ? '1.5px solid #0067E0' : '1.5px solid var(--border)',
                   }}
                 >
                   {f}
@@ -210,7 +210,7 @@ function StrengthTestBlock({
 
       {result.oneRM != null && (
         <div className="mt-3 flex items-center gap-2">
-          <span className="text-[12px] font-[700] text-slate-700">
+          <span className="text-[12px] font-[700] text-[color:var(--text-secondary)]">
             {mode === 'direct' ? 'Direct 1RM' : 'Estimated 1RM'}: {result.oneRM} kg
           </span>
           {result.category && (

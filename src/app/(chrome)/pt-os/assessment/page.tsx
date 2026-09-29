@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
   ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, ClipboardCheck,
-  History, CheckCircle2, Plus, Download, Sparkles,
+  History, CheckCircle2, Plus, Download, Sparkles, Pencil, Trash2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, PageContainer, PageHero } from '@/components/ui';
@@ -21,7 +21,9 @@ import {
   scoreCategory, scoreBodyComposition, scoreHealthRisk, scoreTestBattery, computeOverallScore,
 } from '@/lib/fitness-calculations';
 import type { FitnessCategory, Gender } from '@/lib/fitness-calculations';
-import { STEPS, initAssessmentForm, n } from '@/components/pt-os/fitness-testing/types';
+import { STEPS, initAssessmentForm, formFromAssessmentRow, n } from '@/components/pt-os/fitness-testing/types';
+import { todayISO } from '@/lib/forms/domain';
+import { rangeIssue } from '@/lib/forms/ranges';
 import type { AssessmentFormData, FormErrors, StepId } from '@/components/pt-os/fitness-testing/types';
 import ProgressTimeline from '@/components/pt-os/fitness-testing/ProgressTimeline';
 import AssessmentInfoCard from '@/components/pt-os/fitness-testing/AssessmentInfoCard';
@@ -93,6 +95,34 @@ function scoresFromRow(row: Record<string, unknown>): FitnessScores {
 }
 
 function validateStep(id: StepId, form: AssessmentFormData, isBeginner: boolean): string | undefined {
+  if (id === 1) {
+    if (form.assessmentDate > todayISO()) return 'The assessment date cannot be in the future.';
+    if (!form.bpSystolic && !form.bpDiastolic && !form.bpNotMeasured) {
+      return 'Enter the resting blood pressure, or confirm it was not measured.';
+    }
+    return rangeIssue(
+      ['Systolic', form.bpSystolic, 60, 260, 'mmHg'], ['Diastolic', form.bpDiastolic, 30, 160, 'mmHg'],
+      ['Resting heart rate', form.restingHeartRate, 25, 220, 'bpm'], ['SpO₂', form.restingSpo2, 50, 100, '%'],
+    );
+  }
+  if (id === 2) {
+    return rangeIssue(
+      ['Weight', form.weight, 20, 350, 'kg'], ['Height', form.heightCm, 80, 250, 'cm'],
+      ['Waist', form.waistCm, 30, 250, 'cm'], ['Waist (iliac)', form.waistIliacCm, 30, 250, 'cm'],
+      ['Hips', form.hipsCm, 30, 250, 'cm'], ['Neck', form.neckCm, 15, 80, 'cm'], ['Chest', form.chestCm, 40, 250, 'cm'],
+      ['Right arm', form.armRightCm, 10, 100, 'cm'], ['Left arm', form.armLeftCm, 10, 100, 'cm'],
+      ['Right thigh', form.thighRightCm, 20, 150, 'cm'], ['Left thigh', form.thighLeftCm, 20, 150, 'cm'],
+      ['Right calf', form.calfRightCm, 15, 100, 'cm'], ['Left calf', form.calfLeftCm, 15, 100, 'cm'],
+    );
+  }
+  if (id === 3) {
+    return rangeIssue(
+      ['Body fat', form.bodyFatPct, 2, 75, '%'], ['Muscle mass', form.muscleMassPct, 5, 80, '%'],
+      ['Visceral fat', form.visceralFat, 1, 60], ['Subcutaneous fat', form.subcutaneousFatPct, 1, 70, '%'],
+      ['Body water', form.bodyWaterPct, 20, 80, '%'], ['Bone mass', form.boneMassKg, 0.5, 10, 'kg'],
+      ['BMR', form.bmr, 500, 5000, 'kcal'], ['Metabolic age', form.metabolicAge, 10, 110],
+    );
+  }
   if (id === 4) return form.cardioTestType ? undefined : 'Please select a cardiorespiratory test.';
   // Muscular strength (1RM) testing isn't expected for beginner clients — optional for them.
   // Any exercise may be tested, but exactly 2 are required to complete the step.
@@ -146,9 +176,12 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Record<string, unknown> | null>(null);
   const [historyAiId, setHistoryAiId] = useState<string | null>(null);
+  /** The saved test being corrected, or null for a new one. */
+  const [editingId, setEditingId] = useState<string | null>(null);
   const initFormRef = useRef<AssessmentFormData>(initAssessmentForm());
 
-  const draftKey = `fitness-testing-draft.v1:${clientId}`;
+  // A draft belongs to the new test only; an edit starts from the saved one.
+  const draftKey = `fitness-testing-draft.v2:${clientId}:${editingId ?? 'new'}`;
   const isDirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(initFormRef.current), [form]);
   const { restore, clear, saveNow } = useAutoSaveDraft({ key: draftKey, data: form, isDirty });
 
@@ -156,11 +189,10 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     setLoading(true);
     setLoadError('');
     try {
-      const [clientRes, trainersRes, historyRes, lifestyleRes] = await Promise.all([
+      const [clientRes, trainersRes, historyRes] = await Promise.all([
         api.pt.client(clientId) as Promise<{ data?: Record<string, unknown> }>,
         api.pt.trainers() as Promise<{ data?: TrainerOption[] }>,
         api.progress.assessments.list({ client_id: clientId, limit: 50 }) as Promise<{ data?: Record<string, unknown>[] }>,
-        api.progress.lifestyleAssessments.list({ client_id: clientId }) as Promise<{ data?: Record<string, unknown>[] }>,
       ]);
       const c = clientRes?.data;
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
@@ -173,8 +205,10 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       const hist = Array.isArray(historyRes?.data) ? historyRes.data : [];
       setHistory(hist);
 
-      const lifestyleRows = Array.isArray(lifestyleRes?.data) ? lifestyleRes.data : [];
-      setExperienceLevel(String(lifestyleRows[0]?.workout_experience_level ?? ''));
+      // Training experience is recorded at Enrollment, on the client. It was
+      // read from the latest Lifestyle assessment, which stopped asking it —
+      // so every beginner was made to do two 1RM tests.
+      setExperienceLevel(String(c.workout_experience_level ?? ''));
 
       const existingTrainerId = String(c.trainer_id ?? '');
       const existingTrainerName = String(c.trainer_name ?? '');
@@ -316,30 +350,31 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
         trainer_id: form.trainerId || undefined,
         assessment_date: form.assessmentDate,
         assessment_type: form.assessmentType,
-        assessment_notes: form.assessmentNotes || undefined,
+        assessment_notes: form.assessmentNotes.trim() || null,
         age: age ?? undefined, gender: gender ?? undefined,
+        bp_not_measured: form.bpNotMeasured && !form.bpSystolic && !form.bpDiastolic,
 
-        bp_systolic: n(form.bpSystolic) ?? undefined, bp_diastolic: n(form.bpDiastolic) ?? undefined,
-        resting_heart_rate: n(form.restingHeartRate) ?? undefined, resting_spo2: n(form.restingSpo2) ?? undefined,
+        bp_systolic: n(form.bpSystolic) ?? null, bp_diastolic: n(form.bpDiastolic) ?? null,
+        resting_heart_rate: n(form.restingHeartRate) ?? null, resting_spo2: n(form.restingSpo2) ?? null,
 
-        weight: n(form.weight) ?? undefined, height_cm: n(form.heightCm) ?? undefined,
-        waist_cm: n(form.waistCm) ?? undefined, waist_iliac_cm: n(form.waistIliacCm) ?? undefined, hips_cm: n(form.hipsCm) ?? undefined,
-        neck_cm: n(form.neckCm) ?? undefined, chest_cm: n(form.chestCm) ?? undefined,
-        arm_right_cm: n(form.armRightCm) ?? undefined, arm_left_cm: n(form.armLeftCm) ?? undefined,
-        thigh_right_cm: n(form.thighRightCm) ?? undefined, thigh_left_cm: n(form.thighLeftCm) ?? undefined,
-        calf_right_cm: n(form.calfRightCm) ?? undefined, calf_left_cm: n(form.calfLeftCm) ?? undefined,
+        weight: n(form.weight) ?? null, height_cm: n(form.heightCm) ?? null,
+        waist_cm: n(form.waistCm) ?? null, waist_iliac_cm: n(form.waistIliacCm) ?? null, hips_cm: n(form.hipsCm) ?? null,
+        neck_cm: n(form.neckCm) ?? null, chest_cm: n(form.chestCm) ?? null,
+        arm_right_cm: n(form.armRightCm) ?? null, arm_left_cm: n(form.armLeftCm) ?? null,
+        thigh_right_cm: n(form.thighRightCm) ?? null, thigh_left_cm: n(form.thighLeftCm) ?? null,
+        calf_right_cm: n(form.calfRightCm) ?? null, calf_left_cm: n(form.calfLeftCm) ?? null,
 
-        body_comp_method: form.bodyCompMethod || undefined,
-        body_fat_pct: n(form.bodyFatPct) ?? undefined, muscle_mass_pct: n(form.muscleMassPct) ?? undefined,
-        visceral_fat: n(form.visceralFat) ?? undefined, subcutaneous_fat_pct: n(form.subcutaneousFatPct) ?? undefined,
-        body_water_pct: n(form.bodyWaterPct) ?? undefined, bone_mass_kg: n(form.boneMassKg) ?? undefined,
-        bmr: n(form.bmr) ?? undefined, metabolic_age: n(form.metabolicAge) ?? undefined,
+        body_comp_method: form.bodyCompMethod || null,
+        body_fat_pct: n(form.bodyFatPct) ?? null, muscle_mass_pct: n(form.muscleMassPct) ?? null,
+        visceral_fat: n(form.visceralFat) ?? null, subcutaneous_fat_pct: n(form.subcutaneousFatPct) ?? null,
+        body_water_pct: n(form.bodyWaterPct) ?? null, bone_mass_kg: n(form.boneMassKg) ?? null,
+        bmr: n(form.bmr) ?? null, metabolic_age: n(form.metabolicAge) ?? null,
 
-        cardio_test_type: form.cardioTestType || undefined,
+        cardio_test_type: form.cardioTestType || null,
         cardio_test_data: buildCardioTestData(form),
 
-        strength_exercise: strengthExerciseName(form, 1) || undefined,
-        strength_exercise_2: strengthExerciseName(form, 2) || undefined,
+        strength_exercise: strengthExerciseName(form, 1) || null,
+        strength_exercise_2: strengthExerciseName(form, 2) || null,
         strength_test_data: {
           test1: {
             weightKg: n(form.strengthWeightKg) ?? undefined, reps: n(form.strengthReps) ?? undefined,
@@ -353,8 +388,8 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
           },
         },
 
-        endurance_test_type: form.enduranceTestType || undefined,
-        endurance_test_type_2: form.enduranceTestType2 || undefined,
+        endurance_test_type: form.enduranceTestType || null,
+        endurance_test_type_2: form.enduranceTestType2 || null,
         endurance_test_data: {
           test1: { reps: n(form.enduranceReps) ?? undefined, durationSec: n(form.enduranceDurationSec) ?? undefined },
           test2: { reps: n(form.enduranceReps2) ?? undefined, durationSec: n(form.enduranceDurationSec2) ?? undefined },
@@ -385,48 +420,18 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
           'strength_test_data', 'endurance_test_type', 'endurance_test_type_2', 'endurance_test_data']) delete payload[k];
       }
 
-      const res = await api.progress.assessments.create(payload) as { data?: Record<string, unknown> };
+      // The 1RMs reach Strength Tracking from the API now, which also keeps
+      // them in step when a test is edited or deleted. They used to be
+      // posted from here, one request per lift, after the test was saved.
+      const res = (editingId
+        ? await api.progress.assessments.update(editingId, payload)
+        : await api.progress.assessments.create(payload)) as { data?: Record<string, unknown> };
       const created = res?.data;
 
-      // Both strength tests get their own progress-log entry now that the
-      // step is a 2-test battery — each is an independent lift worth
-      // tracking over time on the Strength Tracking page.
-      //
-      // The assessment is already saved by this point. A strength log that
-      // fails here used to fall into the catch below, which said "Failed to
-      // save assessment" and kept the form filled in — so the trainer saved
-      // again and the client got a second, duplicate assessment. Now each log
-      // is attempted on its own and a failure is reported as what it is.
-      // A direct 1RM is logged as one rep at that weight: it sent no weight
-      // at all before, which the API refuses.
-      const logFailures: string[] = [];
-      for (const testNum of (bpUnsafe ? [] : [1, 2]) as Array<1 | 2>) {
-        const oneRM = estimateOneRM(form, testNum);
-        if (oneRM == null || !created?.id) continue;
-        const direct = (testNum === 1 ? form.strengthMode : form.strengthMode2) === 'direct';
-        const exercise = strengthExerciseName(form, testNum) || 'Bench Press';
-        try {
-          await api.progress.strengthLogs.create({
-            client_id: clientId,
-            exercise_name: exercise,
-            weight_kg: direct ? oneRM : (n(testNum === 1 ? form.strengthWeightKg : form.strengthWeightKg2) ?? undefined),
-            reps_done: direct ? 1 : (n(testNum === 1 ? form.strengthReps : form.strengthReps2) ?? undefined),
-            assessment_id: created.id,
-            one_rm_formula: testNum === 1 ? form.strengthFormula : form.strengthFormula2,
-            is_direct_1rm: direct,
-            one_rm_estimate: oneRM,
-          });
-        } catch {
-          logFailures.push(exercise);
-        }
-      }
-      if (logFailures.length) {
-        toast.warning(`Assessment saved, but the ${logFailures.join(' and ')} lift could not be added to Strength Tracking — log it there.`);
-      }
-
       clear();
-      if (created) setHistory((h) => [created, ...h]);
-      toast.success(created?.bp_unsafe ? 'Assessment saved. Blood pressure flagged unsafe — medical clearance recommended.' : 'Assessment saved.');
+      if (created) setHistory((h) => [created, ...h.filter((x) => String(x.id) !== String(created.id))]);
+      toast.success(created?.bp_unsafe ? 'Assessment saved. Blood pressure flagged unsafe — medical clearance recommended.' : editingId ? 'Assessment updated.' : 'Assessment saved.');
+      setEditingId(null);
 
       if (created) setLastSaved(created);
       setReviewMode(false);
@@ -444,7 +449,35 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     }
   };
 
+  /** Open a saved test in the wizard. */
+  const handleEdit = (row: Record<string, unknown>) => {
+    if (isDirty && !window.confirm('Discard the unsaved assessment and edit this one?')) return;
+    const loaded = formFromAssessmentRow(row);
+    setForm(loaded);
+    initFormRef.current = loaded;
+    setEditingId(String(row.id));
+    setErrors({});
+    setReviewMode(false);
+    setLastSaved(null);
+    setStep(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (row: Record<string, unknown>) => {
+    const date = String(row.assessment_date ?? '').slice(0, 10);
+    if (!window.confirm(`Delete the assessment from ${date}? Its lifts are removed from Strength Tracking too.`)) return;
+    try {
+      await api.progress.assessments.delete(String(row.id));
+      setHistory((h) => h.filter((x) => String(x.id) !== String(row.id)));
+      if (editingId === String(row.id)) handleNewAssessment();
+      toast.success('Assessment deleted.');
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Could not delete the assessment.'));
+    }
+  };
+
   const handleNewAssessment = () => {
+    setEditingId(null);
     const fresh = initAssessmentForm();
     fresh.trainerId = form.trainerId;
     fresh.trainerName = form.trainerName;
@@ -467,7 +500,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     return (
       <div className="mx-auto max-w-md py-24 text-center">
         <AlertCircle size={32} style={{ color: '#ef4444', margin: '0 auto 12px' }} />
-        <p className="text-[14px] font-[600] text-slate-600">{loadError}</p>
+        <p className="text-[14px] font-[600] text-[color:var(--text-secondary)]">{loadError}</p>
         <Button variant="outline" className="mt-4" onClick={loadData}>Retry</Button>
       </div>
     );
@@ -483,7 +516,9 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       <PageHero
         icon={<ClipboardCheck size={18} />}
         title="Fitness Testing"
-        subtitle={`${clientName || 'Client'} · Assessment ${nextAssessmentNumber}`}
+        subtitle={editingId
+          ? `${clientName || 'Client'} · Editing the ${form.assessmentDate} assessment`
+          : `${clientName || 'Client'} · Assessment ${nextAssessmentNumber}`}
       >
         {!reviewMode && !lastSaved && (
           <ProgressTimeline current={step} onStep={goToStep} />
@@ -496,8 +531,8 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
             <div className="flex items-center gap-4 rounded-[20px] p-5" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)' }}>
               <CheckCircle2 size={22} style={{ color: '#059669', flexShrink: 0 }} />
               <div>
-                <p className="text-[14px] font-[760] text-slate-900">Assessment Saved</p>
-                <p className="text-[12.5px] text-slate-500">
+                <p className="text-[14px] font-[760] text-[color:var(--text-primary)]">Assessment Saved</p>
+                <p className="text-[12.5px] text-[color:var(--text-muted)]">
                   Assessment {String(lastSaved.assessment_number ?? '')} recorded for {clientName}.
                 </p>
               </div>
@@ -545,14 +580,14 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
             <div className="p-6 sm:p-8">
               <div className="flex items-center gap-2.5 mb-5">
                 <History size={16} style={{ color: 'var(--text-muted)' }} />
-                <h2 className="text-[15px] font-[760] text-slate-900">Assessment History</h2>
+                <h2 className="text-[15px] font-[760] text-[color:var(--text-primary)]">Assessment History</h2>
               </div>
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
                 {sortedHistory.map((a) => (
                   <div key={String(a.id)} className="flex items-center justify-between gap-3 rounded-[14px] px-4 py-3" style={{ background: 'var(--bg-subtle)' }}>
                     <div>
-                      <p className="text-[13px] font-[700] text-slate-700">{String(a.assessment_date ?? '').slice(0, 10)}</p>
-                      <p className="text-[11px] text-slate-400 capitalize">{String(a.assessment_type ?? '').replace(/_/g, ' ')}</p>
+                      <p className="text-[13px] font-[700] text-[color:var(--text-secondary)]">{String(a.assessment_date ?? '').slice(0, 10)}</p>
+                      <p className="text-[11px] text-[color:var(--text-muted)] capitalize">{String(a.assessment_type ?? '').replace(/_/g, ' ')}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       {a.overall_fitness_score != null && (
@@ -562,15 +597,27 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
                       )}
                       <button
                         type="button" title="AI Recommendations" onClick={() => setHistoryAiId(String(a.id))}
-                        className="flex h-7 w-7 items-center justify-center rounded-[8px] transition-colors hover:bg-white"
+                        className="flex h-7 w-7 items-center justify-center rounded-[8px] transition-colors hover:bg-[var(--bg-hover)]"
                       >
-                        <Sparkles size={13} style={{ color: '#94a3b8' }} />
+                        <Sparkles size={13} style={{ color: 'var(--text-muted)' }} />
                       </button>
                       <button
-                        type="button" title="Download PDF" onClick={() => downloadAssessmentPdf(a, clientName)}
-                        className="flex h-7 w-7 items-center justify-center rounded-[8px] transition-colors hover:bg-white"
+                        type="button" title="Download PDF" aria-label="Download PDF" onClick={() => downloadAssessmentPdf(a, clientName)}
+                        className="flex h-7 w-7 items-center justify-center rounded-[8px] transition-colors hover:bg-[var(--bg-hover)]"
                       >
-                        <Download size={13} style={{ color: '#94a3b8' }} />
+                        <Download size={13} style={{ color: 'var(--text-muted)' }} />
+                      </button>
+                      <button
+                        type="button" title="Edit" aria-label={`Edit the ${String(a.assessment_date ?? '').slice(0, 10)} assessment`} onClick={() => handleEdit(a)}
+                        className="flex h-7 w-7 items-center justify-center rounded-[8px] transition-colors hover:bg-[var(--bg-hover)]"
+                      >
+                        <Pencil size={13} style={{ color: 'var(--text-muted)' }} />
+                      </button>
+                      <button
+                        type="button" title="Delete" aria-label={`Delete the ${String(a.assessment_date ?? '').slice(0, 10)} assessment`} onClick={() => handleDelete(a)}
+                        className="flex h-7 w-7 items-center justify-center rounded-[8px] transition-colors hover:bg-[var(--bg-hover)]"
+                      >
+                        <Trash2 size={13} style={{ color: '#dc2626' }} />
                       </button>
                     </div>
                   </div>
@@ -582,7 +629,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       </div>
 
       {!lastSaved && (
-        <div className="page-action-bar" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(15,23,42,0.08)' }}>
+        <div className="page-action-bar" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(20px)', borderTop: '1px solid var(--border)' }}>
           <div className="mx-auto max-w-3xl px-5 sm:px-8 py-3.5 flex items-center justify-between gap-3">
             <Button variant="outline" iconLeft={<ArrowLeft size={14} />} onClick={handleBack}>Back</Button>
             <div className="flex items-center gap-3">
@@ -602,7 +649,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
                   onClick={handleSubmit}
                   style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
                 >
-                  {saving ? 'Saving...' : 'Save Assessment'}
+                  {saving ? 'Saving...' : editingId ? 'Update Assessment' : 'Save Assessment'}
                 </Button>
               )}
             </div>

@@ -35,8 +35,8 @@ export function WeeklyHabitGoals({ sleepDurationHours, waterIntakeLiters, dailyS
             <ListTodo size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Weekly Habit Goals</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Suggested targets for the week ahead.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Weekly Habit Goals</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Suggested targets for the week ahead.</p>
           </div>
         </div>
 
@@ -44,7 +44,7 @@ export function WeeklyHabitGoals({ sleepDurationHours, waterIntakeLiters, dailyS
           {goals.map((g) => (
             <li key={g} className="flex items-center gap-2.5 rounded-[12px] px-4 py-2.5" style={{ background: 'var(--bg-subtle)' }}>
               <CheckCircle2 size={16} style={{ color: '#10b981', flexShrink: 0 }} />
-              <span className="text-[13px] font-[640] text-slate-700">{g}</span>
+              <span className="text-[13px] font-[640] text-[color:var(--text-secondary)]">{g}</span>
             </li>
           ))}
         </ul>

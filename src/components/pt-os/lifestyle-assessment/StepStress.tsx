@@ -4,7 +4,7 @@ import { Brain } from 'lucide-react';
 import { Slider } from '@/components/ui';
 import { calcStressScore } from '@/lib/lifestyle-calculations';
 import type { LifestyleFormData } from './types';
-import { n } from './types';
+import { n, stepLabel } from './types';
 
 function stressEmoji(level: number): string {
   if (level <= 2) return '😌';
@@ -27,8 +27,9 @@ interface StepStressProps {
 }
 
 export function StepStress({ form, set }: StepStressProps) {
-  const level = n(form.stressLevel) ?? 5;
-  const score = calcStressScore(level);
+  const answered = n(form.stressLevel);
+  const level = answered ?? 5;
+  const score = answered == null ? null : calcStressScore(level);
 
   return (
     <div>
@@ -37,23 +38,23 @@ export function StepStress({ form, set }: StepStressProps) {
           <Brain size={20} color="#1CA3F9" />
         </div>
         <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Stress Level</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 2 of 9 — how stressed does this client feel day to day?</p>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Stress Level</h2>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">{stepLabel('stress')} — how stressed does this client feel day to day?</p>
         </div>
       </div>
 
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Stress Level</p>
+        <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Stress Level</p>
         <span className="text-[26px]">{stressEmoji(level)}</span>
       </div>
-      <Slider label="" ariaLabel="Stress Level" value={level} min={1} max={10} onChange={(v) => set('stressLevel', String(v))}
+      <Slider label="" ariaLabel="Stress Level" value={level} min={1} max={10} unset={answered == null} onChange={(v) => set('stressLevel', String(v))}
         scaleLabels={['😌 Very Low', '😐 Moderate', '😫 Very High']} />
 
       <div className="mt-6 flex items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>
         <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706' }}>
           {stressLabel(level)}
         </span>
-        {score != null && <span className="text-[12.5px] font-[600] text-slate-400">Stress score {score}</span>}
+        {score != null && <span className="text-[12.5px] font-[600] text-[color:var(--text-muted)]">Stress score {score}</span>}
       </div>
     </div>
   );

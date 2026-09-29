@@ -20,8 +20,8 @@ export function HabitRiskBadges({ riskFactors }: HabitRiskBadgesProps) {
             <AlertTriangle size={20} color="#F59E0B" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Habit Risk Detection</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Flagged from this assessment&apos;s answers.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Habit Risk Detection</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Flagged from this assessment&apos;s answers.</p>
           </div>
         </div>
 

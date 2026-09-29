@@ -21,12 +21,14 @@ import {
   initParqForm, visibleSteps, stepPositionLabel, nextStepId, prevStepId,
   CONSENT_CHECKBOX_FIELDS, PARQ_QUESTIONS,
 } from '@/components/pt-os/parq/types';
-import { formFromRow, buildFormPayload, buildClearancePayload, buildConsentPayload } from '@/components/pt-os/parq/mappers';
+import { formFromRow, buildFormPayload, buildClearancePayload, buildConsentPayload, answersKey } from '@/components/pt-os/parq/mappers';
 import StepCurrentHealth from '@/components/pt-os/parq/StepCurrentHealth';
 import StepPastHistory from '@/components/pt-os/parq/StepPastHistory';
 import StepParqQuestionnaire from '@/components/pt-os/parq/StepParqQuestionnaire';
 import StepMedicalClearance from '@/components/pt-os/parq/StepMedicalClearance';
 import StepConsent from '@/components/pt-os/parq/StepConsent';
+import StepTrainerNotes from '@/components/pt-os/parq/StepTrainerNotes';
+import ParqClientDetails from '@/components/pt-os/parq/ParqClientDetails';
 import ParqCard from '@/components/pt-os/parq/ParqCard';
 import ScreeningNotice, { latestScreened, screeningIssues } from '@/components/pt-os/parq/ScreeningNotice';
 import { errorMessage } from '@/lib/forms/errors';
@@ -50,9 +52,8 @@ function validateStep(
   }
   if (step === 5) {
     const allChecked = CONSENT_CHECKBOX_FIELDS.every((f) => form.consentCheckboxes[f.key]);
-    if (!allChecked) return 'All 7 consent checkboxes must be checked.';
+    if (!allChecked) return 'The client must confirm their answers are true.';
     if (!form.clientSignature) return 'Client signature is required.';
-    if (!form.trainerSignature) return 'Trainer signature is required.';
   }
   return undefined;
 }
@@ -137,7 +138,7 @@ function ParqHub({ clientId, toast }: ParqHubProps) {
     return (
       <div className="mx-auto max-w-md py-24 text-center">
         <AlertCircle size={32} style={{ color: '#ef4444', margin: '0 auto 12px' }} />
-        <p className="text-[14px] font-[600] text-slate-600">{loadError}</p>
+        <p className="text-[14px] font-[600] text-[color:var(--text-secondary)]">{loadError}</p>
         <Button variant="outline" className="mt-4" onClick={loadData}>Retry</Button>
       </div>
     );
@@ -173,7 +174,7 @@ function ParqHub({ clientId, toast }: ParqHubProps) {
         )}
         {forms.length === 0 && (
           <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <p className="text-[14px] font-[600] text-slate-500">No PAR-Q screenings yet.</p>
+            <p className="text-[14px] font-[600] text-[color:var(--text-muted)]">No PAR-Q screenings yet.</p>
             <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}>
               Start First Screening
             </Button>
@@ -182,7 +183,7 @@ function ParqHub({ clientId, toast }: ParqHubProps) {
         {forms.length > 0 && (
           <div className="flex items-center gap-2 px-1">
             <History size={14} style={{ color: 'var(--text-muted)' }} />
-            <p className="text-[12.5px] font-[700] text-slate-500">Screening History</p>
+            <p className="text-[12.5px] font-[700] text-[color:var(--text-muted)]">Screening History</p>
           </div>
         )}
         {forms.map((f) => (
@@ -214,6 +215,9 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
   const [currentFormId, setCurrentFormId] = useState<string | null>(formId);
   const [clearanceId, setClearanceId] = useState<string | null>(null);
   const [consentCreated, setConsentCreated] = useState(false);
+  // The answers the signature on file attests to. An edit that changes any
+  // of them used to keep the old signature and the old PDF.
+  const [signedAnswers, setSignedAnswers] = useState<string | null>(null);
   const [documents, setDocuments] = useState<ParqDocument[]>([]);
   const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
   const initFormRef = useRef<ParqFormData>(form);
@@ -243,7 +247,10 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
             if (!cancelled) {
               setDocuments(row.documents ?? []);
               if (row.medical_clearance?.id) setClearanceId(String(row.medical_clearance.id));
-              if (row.consent) setConsentCreated(true);
+              if (row.consent) {
+                setConsentCreated(true);
+                setSignedAnswers(answersKey(formFromRow(row)));
+              }
             }
           }
         } catch (err: unknown) {
@@ -266,6 +273,8 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
               heightCm: c.height != null ? String(c.height) : '',
               weightKg: c.weight != null ? String(c.weight) : '',
               trainerName: String(c.trainer_name ?? ''),
+              emergencyContact: String(c.emergency_contact ?? ''),
+              emergencyPhone: String(c.emergency_phone ?? ''),
               pastHistory: { ...base.pastHistory, occupation: String(c.occupation ?? '') },
             };
           }
@@ -304,6 +313,14 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
   }, []);
 
   const risk = useMemo(() => computeParqRisk(form.parqAnswers), [form.parqAnswers]);
+
+  // Answers changed after signing → the old signature no longer covers them.
+  const resignRequired = consentCreated && signedAnswers != null && answersKey(form) !== signedAnswers;
+  const needsConsent = !consentCreated || resignRequired;
+  useEffect(() => {
+    if (!resignRequired) return;
+    setForm((f) => ({ ...f, clientSignature: '', consentCheckboxes: { ...f.consentCheckboxes, info_true: false } }));
+  }, [resignRequired]);
   const riskLevel = risk.riskLevel;
   const stepperSteps = useMemo(() => visibleSteps(riskLevel).map((s) => ({ id: s.id, label: s.label })), [riskLevel]);
   const isLastStep = nextStepId(step, riskLevel) == null;
@@ -325,7 +342,12 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
       }
       if (!fid) throw new Error('Could not save the form.');
 
-      if (riskLevel === 'high' && (form.medicalClearance.doctor_name || form.medicalClearance.hospital)) {
+      // Any clearance detail at all — an approval status set on its own used
+      // to be dropped because no doctor or hospital name had been typed.
+      const mc = form.medicalClearance;
+      const clearanceTouched = mc.approval_status !== 'pending'
+        || [mc.doctor_name, mc.hospital, mc.clearance_date, mc.certificate_url, mc.doctor_contact, mc.expiry_date].some((v) => v.trim());
+      if (riskLevel === 'high' && clearanceTouched) {
         const clearancePayload = buildClearancePayload(form);
         if (clearanceId) {
           await api.progress.parqClearance.update(clearanceId, clearancePayload);
@@ -336,12 +358,13 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
       }
 
       let pdfUrl: string | undefined;
-      if (!consentCreated) {
+      if (needsConsent) {
         const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
         const consentPayload = buildConsentPayload(form, userAgent);
         const consentRes = await api.progress.parqConsent.create(fid, consentPayload);
         pdfUrl = consentRes?.data?.pdf_url;
         setConsentCreated(true);
+        setSignedAnswers(answersKey(form));
       }
 
       clear();
@@ -353,7 +376,7 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
       setSaving(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, clientId, currentFormId, riskLevel, clearanceId, consentCreated]);
+  }, [form, clientId, currentFormId, riskLevel, clearanceId, needsConsent]);
 
   const handleNext = async () => {
     const stepDef = STEPS.find((s) => s.id === step)!;
@@ -440,7 +463,12 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
 
       <div className="mx-auto max-w-3xl space-y-5">
         <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
-          {step === 1 && <StepParqQuestionnaire form={form} set={set} error={errors.parqQuestionnaire} stepLabel={stepPositionLabel('parqQuestionnaire', riskLevel)} />}
+          {step === 1 && (
+            <div className="space-y-5">
+              <ParqClientDetails form={form} set={set} />
+              <StepParqQuestionnaire form={form} set={set} error={errors.parqQuestionnaire} stepLabel={stepPositionLabel('parqQuestionnaire', riskLevel)} />
+            </div>
+          )}
           {step === 2 && riskLevel === 'high' && (
             <StepMedicalClearance
               form={form} set={set} error={errors.medicalClearance}
@@ -451,11 +479,12 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
           )}
           {step === 3 && <StepPastHistory form={form} set={set} error={errors.pastHistory} stepLabel={stepPositionLabel('pastHistory', riskLevel)} />}
           {step === 4 && <StepCurrentHealth form={form} set={set} error={errors.currentHealth} stepLabel={stepPositionLabel('currentHealth', riskLevel)} />}
-          {step === 5 && <StepConsent form={form} set={set} error={errors.consent} stepLabel={stepPositionLabel('consent', riskLevel)} />}
+          {step === 7 && <StepTrainerNotes form={form} set={set} stepLabel={stepPositionLabel('trainerNotes', riskLevel)} />}
+          {step === 5 && <StepConsent form={form} set={set} error={errors.consent} stepLabel={stepPositionLabel('consent', riskLevel)} resignRequired={resignRequired} />}
         </m.div>
       </div>
 
-      <div className="page-action-bar" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(15,23,42,0.08)' }}>
+      <div className="page-action-bar" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(20px)', borderTop: '1px solid var(--border)' }}>
         <div className="mx-auto max-w-3xl px-5 sm:px-8 py-3.5 flex items-center justify-between gap-3">
           <Button variant="outline" iconLeft={<ArrowLeft size={14} />} onClick={handleBack} disabled={saving || creatingDraft}>Back</Button>
           <div className="flex items-center gap-3">

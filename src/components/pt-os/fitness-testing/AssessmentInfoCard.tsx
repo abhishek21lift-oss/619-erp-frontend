@@ -31,8 +31,8 @@ export function AssessmentInfoCard({
           <ClipboardList size={18} color="#1CA3F9" />
         </div>
         <div>
-          <h2 className="text-[18px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Assessment Information</h2>
-          <p className="text-[12.5px] text-slate-400 mt-1.5">Scientific Baseline Performance Assessment</p>
+          <h2 className="text-[18px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Assessment Information</h2>
+          <p className="text-[12.5px] text-[color:var(--text-muted)] mt-1.5">Scientific Baseline Performance Assessment</p>
         </div>
       </div>
 
@@ -55,7 +55,7 @@ export function AssessmentInfoCard({
 
       <div className="mt-4">
         <FloatInput
-          label="Assessment Notes" multiline autoGrow
+          label="Assessment Notes" multiline autoGrow maxLength={2000}
           value={form.assessmentNotes}
           onChange={(v) => set('assessmentNotes', v)}
         />

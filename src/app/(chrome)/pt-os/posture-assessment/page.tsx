@@ -4,11 +4,10 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, Accessibility, Plus,
-  X, History,
+  ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, Accessibility, Plus, History,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button } from '@/components/ui';
+import { Button, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -24,6 +23,7 @@ import PostureRiskBadges from '@/components/pt-os/posture-assessment/PostureRisk
 import PostureComparison from '@/components/pt-os/posture-assessment/PostureComparison';
 import PostureCard from '@/components/pt-os/posture-assessment/PostureCard';
 import { errorMessage } from '@/lib/forms/errors';
+import AssessmentDateField, { assessmentDateIssue } from '@/components/pt-os/shared/AssessmentDateField';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -107,7 +107,7 @@ function PostureHub({ clientId, toast }: PostureHubProps) {
     return (
       <div className="mx-auto max-w-md py-24 text-center">
         <AlertCircle size={32} style={{ color: '#ef4444', margin: '0 auto 12px' }} />
-        <p className="text-[14px] font-[600] text-slate-600">{loadError}</p>
+        <p className="text-[14px] font-[600] text-[color:var(--text-secondary)]">{loadError}</p>
         <Button variant="outline" className="mt-4" onClick={loadData}>Retry</Button>
       </div>
     );
@@ -124,33 +124,23 @@ function PostureHub({ clientId, toast }: PostureHubProps) {
 
   return (
     <div className="mx-auto w-full max-w-3xl py-6 space-y-5">
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
-                <Accessibility size={16} style={{ color: 'var(--text-muted)' }} />
-              </div>
-              <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>Posture Assessment</span>
-            </div>
-            <h1 className="text-[26px] sm:text-[32px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
-              {clientName}&apos;s Posture
-            </h1>
-          </div>
-          <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}>
+      <PageHero
+        icon={<Accessibility size={18} />}
+        title={`${clientName}'s Posture`}
+        subtitle="Posture Assessment"
+        actions={
+          <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: '#fff', color: '#0F172A' }}>
             New Assessment
           </Button>
-        </div>
-      </m.div>
+        }
+      />
 
       {sorted.length >= 2 && <PostureComparison initial={initial} latest={latest} />}
 
       <div className="space-y-3">
         {sorted.length === 0 && (
           <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <p className="text-[14px] font-[600] text-slate-500">No posture assessments yet.</p>
+            <p className="text-[14px] font-[600] text-[color:var(--text-muted)]">No posture assessments yet.</p>
             <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}>
               Start First Assessment
             </Button>
@@ -159,7 +149,7 @@ function PostureHub({ clientId, toast }: PostureHubProps) {
         {sorted.length > 0 && (
           <div className="flex items-center gap-2 px-1">
             <History size={14} style={{ color: 'var(--text-muted)' }} />
-            <p className="text-[12.5px] font-[700] text-slate-500">Assessment History</p>
+            <p className="text-[12.5px] font-[700] text-[color:var(--text-muted)]">Assessment History</p>
           </div>
         )}
         {sorted.map((a) => (
@@ -194,7 +184,9 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
   const { restore, clear, saveNow } = useAutoSaveDraft({ key: draftKey, data: form, isDirty });
 
   useEffect(() => {
-    const draft = restore();
+    // Never lay a local draft over a record saved after it.
+    const savedAt = editing ? Date.parse(String(editing.updated_at ?? editing.created_at ?? '')) || 0 : 0;
+    const draft = restore(savedAt ? { notBefore: savedAt } : undefined);
     if (draft) { setForm({ ...initial, ...draft }); toast.info('Restored your unsaved draft.'); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -218,6 +210,8 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
   }, [form.frontIssues, form.sideIssues, form.backIssues]);
 
   const handleNext = () => {
+    const dateErr = step === 1 ? assessmentDateIssue(form.assessmentDate) : undefined;
+    if (dateErr) { toast.error(dateErr); return; }
     if (step === 2) { setReviewMode(true); return; }
     setStep((s) => (s + 1) as StepId);
   };
@@ -237,13 +231,15 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
   const handleSubmit = async () => {
     setSaving(true);
     try {
+      // Emptied lists and notes go as [] / null: `undefined` dropped the key,
+      // so un-ticking every issue on an edit left them all saved.
       const payload: Record<string, unknown> = {
         client_id: clientId,
-        assessment_date: form.assessmentDate || undefined,
-        front_issues: form.frontIssues.length ? form.frontIssues : undefined,
-        side_issues: form.sideIssues.length ? form.sideIssues : undefined,
-        back_issues: form.backIssues.length ? form.backIssues : undefined,
-        other_issue_notes: form.otherIssueNotes || undefined,
+        assessment_date: form.assessmentDate,
+        front_issues: form.frontIssues,
+        side_issues: form.sideIssues,
+        back_issues: form.backIssues,
+        other_issue_notes: form.otherIssueNotes.trim() || null,
         coach_notes: form.coachNotes,
       };
 
@@ -265,34 +261,26 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
 
   return (
     <div className="pb-28">
-      {/* Header — in normal flow on the page background (no sticky card). */}
-      <div className="pt-1">
-        <div className="mx-auto max-w-3xl py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', boxShadow: '0 6px 18px rgba(0,103,224,0.3)' }}>
-              <Accessibility size={18} color="#fff" />
-            </div>
-            <div>
-              <h1 className="text-[19px] font-[860] tracking-[-0.03em] text-slate-900 leading-none sm:text-[22px]">{assessmentId ? 'Edit Assessment' : 'New Assessment'}</h1>
-              <p className="text-[12px] font-[600] text-slate-400 mt-1">{clientName}</p>
-            </div>
-          </div>
-          <button type="button" onClick={() => onDone(false)} className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-[650] transition-colors hover:bg-white" style={{ color: '#64748b', border: '1px solid rgba(15,23,42,0.08)' }}>
-            <X size={12} /> Cancel
-          </button>
-        </div>
-        {!reviewMode && (
-          <div className="mx-auto max-w-3xl pb-3">
-            <PostureProgressTimeline current={step} onStep={setStep} />
-          </div>
-        )}
+      {/* The shared hero, as on Consent, PAR-Q, Fitness and Goal. This page
+          had its own plain header, and a Cancel that discarded the wizard
+          without the "Discard changes?" check Back makes; Back on the first
+          step is the way out now. */}
+      <div className="mx-auto max-w-3xl pt-1">
+        <PageHero icon={<Accessibility size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'} subtitle={clientName}>
+          {!reviewMode && <PostureProgressTimeline current={step} onStep={setStep} />}
+        </PageHero>
       </div>
 
       <div className="mx-auto max-w-3xl py-6 space-y-5">
         <ReferralBanner referrals={analysis.referrals} />
         {!reviewMode ? (
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
-            {step === 1 && <StepPostureObservations form={form} set={set} />}
+            {step === 1 && (
+              <div className="space-y-6">
+                <AssessmentDateField value={form.assessmentDate} onChange={(v) => set('assessmentDate', v)} />
+                <StepPostureObservations form={form} set={set} />
+              </div>
+            )}
             {step === 2 && <CoachNotesPanel
                 fields={COACH_NOTE_FIELDS}
                 notes={form.coachNotes}
@@ -323,7 +311,7 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
         )}
       </div>
 
-      <div className="page-action-bar" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(15,23,42,0.08)' }}>
+      <div className="page-action-bar" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(20px)', borderTop: '1px solid var(--border)' }}>
         <div className="mx-auto max-w-3xl px-5 sm:px-8 py-3.5 flex items-center justify-between gap-3">
           <Button variant="outline" iconLeft={<ArrowLeft size={14} />} onClick={handleBack}>Back</Button>
           <div className="flex items-center gap-3">

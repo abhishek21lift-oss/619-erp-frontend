@@ -22,6 +22,11 @@ export const progress = {
       http<{ data: unknown }>('/api/progress/assessments', {
         method: 'POST', body: JSON.stringify(data),
       }),
+    update: (id: string, data: Record<string, unknown>) =>
+      http<{ data: unknown }>(`/api/progress/assessments/${id}`, {
+        method: 'PATCH', body: JSON.stringify(data),
+      }),
+    delete: (id: string) => http(`/api/progress/assessments/${id}`, { method: 'DELETE' }),
   },
   goals: {
     list: (params?: Record<string, string | number>) =>

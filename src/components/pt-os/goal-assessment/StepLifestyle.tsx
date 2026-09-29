@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import FloatInput from '@/components/ui/FloatInput';
 import { HeartHandshake } from 'lucide-react';
 import { calcLifestyleReadinessScore } from '@/lib/goal-calculations';
 import type { GoalFormData, LifestyleAnswers } from './types';
@@ -41,8 +42,8 @@ export function StepLifestyle({ form, set, error }: StepLifestyleProps) {
             <HeartHandshake size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Lifestyle Readiness</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 8 of 8 — quick yes / no questions.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Lifestyle Readiness</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 8 of 8 — quick yes / no questions.</p>
           </div>
         </div>
 
@@ -51,7 +52,7 @@ export function StepLifestyle({ form, set, error }: StepLifestyleProps) {
             const val = form.lifestyle[q.key];
             return (
               <div key={q.key} className="flex items-center justify-between gap-3 rounded-[14px] px-4 py-3" style={{ background: 'var(--bg-subtle)' }}>
-                <span className="text-[13.5px] font-[640] text-slate-700">{q.label}</span>
+                <span className="text-[13.5px] font-[640] text-[color:var(--text-secondary)]">{q.label}</span>
                 <div className="flex gap-2">
                   {(['Yes', 'No'] as const).map((opt) => {
                     const boolVal = opt === 'Yes';
@@ -62,9 +63,9 @@ export function StepLifestyle({ form, set, error }: StepLifestyleProps) {
                         onClick={() => setAnswer(q.key, boolVal)}
                         className="rounded-[9px] px-4 py-1.5 text-[12.5px] font-[700] transition-all"
                         style={{
-                          background: selected ? '#0f172a' : '#fff',
-                          color: selected ? '#fff' : '#94a3b8',
-                          border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0',
+                          background: selected ? 'var(--text-primary)' : 'var(--bg-card)',
+                          color: selected ? 'var(--bg-card)' : 'var(--text-muted)',
+                          border: selected ? '1.5px solid var(--text-primary)' : '1.5px solid var(--border)',
                         }}
                       >
                         {opt}
@@ -77,12 +78,17 @@ export function StepLifestyle({ form, set, error }: StepLifestyleProps) {
           })}
         </div>
 
+        {/* Notes were saved with every goal but had no box to type in. */}
+        <div className="mt-6">
+          <FloatInput label="Notes (optional)" multiline autoGrow maxLength={2000} value={form.notes} onChange={(v) => set('notes', v)} />
+        </div>
+
         {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
         {score != null && (
           <div className="mt-6 flex items-center gap-4 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>
             <div>
-              <p className="text-[10.5px] font-[700] uppercase tracking-wider text-slate-400">Lifestyle Readiness Score</p>
+              <p className="text-[10.5px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Lifestyle Readiness Score</p>
               <p className="text-[24px] font-[900]" style={{ color: scoreColor(score) }}>{score}%</p>
             </div>
           </div>

@@ -40,22 +40,22 @@ export function StepChallenges({ form, set, error }: StepChallengesProps) {
             <HelpCircle size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Goal Importance &amp; Challenges</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 7 of 8 — the psychology behind the plan.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Goal Importance &amp; Challenges</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 7 of 8 — the psychology behind the plan.</p>
           </div>
         </div>
 
         <FloatInput
-          label="Why do you want to achieve this goal?" multiline autoGrow
+          label="Why do you want to achieve this goal?" multiline autoGrow maxLength={2000}
           value={form.motivationReason} onChange={(v) => set('motivationReason', v)}
           placeholder="Wedding, competition, health, confidence, doctor recommendation, lifestyle, vacation..."
         />
 
         <div>
-          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Biggest Challenge</p>
+          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Biggest Challenge</p>
           <MultiSelectChips value={form.biggestChallenges} onChange={(v) => set('biggestChallenges', v)} options={CHALLENGE_OPTIONS} />
           <div className="mt-3 max-w-sm">
-            <FloatInput label="Other" value={form.challengeOther} onChange={(v) => set('challengeOther', v)} />
+            <FloatInput label="Other" maxLength={200} value={form.challengeOther} onChange={(v) => set('challengeOther', v)} />
           </div>
           {error && <p className="mt-2 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
         </div>

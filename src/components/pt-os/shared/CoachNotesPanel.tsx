@@ -48,15 +48,15 @@ export function CoachNotesPanel<T>({ fields, notes, onChange, title = 'Coach Not
             <NotebookPen size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">{title}</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">{subtitle}</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">{title}</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">{subtitle}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {fields.map((f) => (
             <FloatInput
-              key={f.key} label={f.label} multiline autoGrow
+              key={f.key} label={f.label} multiline autoGrow maxLength={2000}
               value={String(notes[f.key] ?? '')}
               onChange={(v) => onChange(f.key, v)}
             />

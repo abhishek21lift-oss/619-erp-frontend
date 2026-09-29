@@ -34,8 +34,8 @@ export function PostureComparison({ initial, latest }: PostureComparisonProps) {
             <GitCompare size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Postural Improvement</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Postural Improvement</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">
               Initial ({String(initial.assessment_date ?? '—')}) vs. Latest ({String(latest.assessment_date ?? '—')})
             </p>
           </div>
@@ -47,9 +47,9 @@ export function PostureComparison({ initial, latest }: PostureComparisonProps) {
             { label: 'Distinct Issues Flagged', a: countA, b: countB, delta: countDelta, improved: countImproved },
           ].map((m) => (
             <div key={m.label} className="flex items-center justify-between gap-3 rounded-[14px] px-4 py-3" style={{ background: 'var(--bg-subtle)' }}>
-              <span className="text-[13px] font-[640] text-slate-600">{m.label}</span>
+              <span className="text-[13px] font-[640] text-[color:var(--text-secondary)]">{m.label}</span>
               <div className="flex items-center gap-3">
-                <span className="text-[12.5px] font-[600] text-slate-400">
+                <span className="text-[12.5px] font-[600] text-[color:var(--text-muted)]">
                   {m.a ?? '—'} <span className="mx-1">→</span> {m.b ?? '—'}
                 </span>
                 {m.delta != null && (
@@ -57,7 +57,7 @@ export function PostureComparison({ initial, latest }: PostureComparisonProps) {
                     className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-[700]"
                     style={{
                       background: m.improved == null ? 'rgba(148,163,184,0.14)' : m.improved ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
-                      color: m.improved == null ? '#64748b' : m.improved ? '#059669' : '#dc2626',
+                      color: m.improved == null ? 'var(--text-muted)' : m.improved ? '#059669' : '#dc2626',
                     }}
                   >
                     {m.delta === 0 ? <Minus size={11} /> : m.delta > 0 ? <ArrowUp size={11} /> : <ArrowDown size={11} />}

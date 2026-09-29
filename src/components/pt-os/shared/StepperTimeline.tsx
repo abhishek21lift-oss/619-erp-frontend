@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import { Check } from 'lucide-react';
 
@@ -25,17 +26,28 @@ export function StepperTimeline({ steps, current, onStep }: StepperTimelineProps
   // block the next reachable step.
   const currentIndex = steps.findIndex((s) => s.id === current);
 
+  // On a phone a 7- or 8-step bar is wider than the screen, and the steps
+  // past the edge used to sit there cut off. The current step is scrolled
+  // into view whenever it changes.
+  const activeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    activeRef.current?.scrollIntoView?.({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  }, [current]);
+
   return (
     <div className="overflow-x-auto pb-1">
       <div className="flex items-center min-w-max px-1">
         {steps.map((s, i) => {
-          const done = current > s.id;
+          // By position, like reachability: ids may have gaps.
+          const done = currentIndex > -1 && i < currentIndex;
           const active = current === s.id;
           const reachable = currentIndex === -1 || i <= currentIndex + 1;
           return (
             <div key={s.id} className="flex items-center">
               <button
                 type="button"
+                ref={active ? activeRef : undefined}
+                aria-current={active ? 'step' : undefined}
                 onClick={() => { if (reachable) onStep(s.id); }}
                 className="flex flex-col items-center gap-2 min-w-0"
               >
@@ -60,8 +72,12 @@ export function StepperTimeline({ steps, current, onStep }: StepperTimelineProps
                     )}
                   </AnimatePresence>
                 </div>
+                {/* Wraps rather than nowrap: long names ("Cardiorespiratory
+                    Endurance") overflowed a 90px column into the next label.
+                    min-h keeps one- and two-line labels the same height so
+                    the connector sits level with every circle. */}
                 <span
-                  className="text-[10.5px] font-[680] tracking-tight whitespace-nowrap max-w-[90px] text-center leading-tight"
+                  className="min-h-[26px] max-w-[90px] text-center text-[10.5px] font-[680] leading-tight tracking-tight"
                   style={{ color: active ? '#fff' : done ? '#7FB4FF' : 'rgba(255,255,255,0.55)' }}
                 >
                   {s.label}
