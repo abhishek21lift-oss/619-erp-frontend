@@ -19,6 +19,7 @@ import {
   FieldSurface, TextField, MonthFieldControl, TimeFieldControl, useStandaloneField,
 } from '@/components/ui/form';
 import { PROFILE_LIMITS, PROFILE_MAX, type ProfileIssueMap } from '@/lib/forms/schemas/profile';
+import { tones, gradient } from './profileTheme';
 
 const MODE_LABELS: Record<CoachingMode, { label: string; hint: string }> = {
   offline: { label: 'In person', hint: 'At a gym or studio' },
@@ -66,14 +67,14 @@ function CoachingModes({ value, onChange }: { value: CoachingMode[]; onChange: (
             key={m} onClick={() => toggle(m)} aria-pressed={on}
             className="flex items-start gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors"
             style={{
-              background: on ? 'rgba(0,103,224,0.10)' : 'var(--bg-subtle)',
-              border: `1px solid ${on ? 'rgba(0,103,224,0.30)' : 'var(--border)'}`,
+              background: on ? tones.mint.wash : 'var(--bg-subtle)',
+              border: `1px solid ${on ? tones.mint.glow : 'var(--border)'}`,
             }}
           >
             <span
               aria-hidden
               className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] text-[10px] font-[800] text-white"
-              style={{ background: on ? '#0067e0' : 'transparent', border: `1.5px solid ${on ? '#0067e0' : 'var(--border-3, var(--border))'}` }}
+              style={{ background: on ? gradient(tones.mint) : 'transparent', border: on ? 'none' : '1.5px solid var(--border-3, var(--border))' }}
             >
               {on ? '✓' : ''}
             </span>
@@ -377,7 +378,7 @@ export function ProfessionalSection({
               }],
             })}
             className="flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-[12px] font-[700] text-white transition-transform hover:scale-[1.03] disabled:opacity-50 disabled:hover:scale-100"
-            style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)', boxShadow: '0 4px 14px rgba(0,103,224,0.32)' }}
+            style={{ background: gradient(tones.indigo), boxShadow: `0 4px 14px ${tones.indigo.glow}` }}
           >
             <Plus size={13} /> Add
           </button>

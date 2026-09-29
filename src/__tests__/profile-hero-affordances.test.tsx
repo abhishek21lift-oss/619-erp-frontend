@@ -164,7 +164,7 @@ describe('targets a finger can hit', () => {
   it('keeps the avatar itself well past 44px', () => {
     hero();
     expect(screen.getByRole('button', { name: 'Add a profile photo' }).className)
-      .toContain('h-[72px]');
+      .toContain('h-[80px]');
   });
 });
 

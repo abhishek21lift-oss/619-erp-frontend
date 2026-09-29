@@ -20,6 +20,12 @@ interface Ctx {
   loginWithGoogle: (credential: string) => Promise<void>;
   loginWithPasskey: (email?: string) => Promise<void>;
   logout: () => void;
+  /**
+   * Merge fields into the signed-in user — the photo or studio logo just
+   * uploaded on My Profile — so the top bar and sidebar change at once rather
+   * than on the next sign-in.
+   */
+  updateUser: (patch: Partial<User>) => void;
 }
 
 const AuthContext = createContext<Ctx>({
@@ -29,6 +35,7 @@ const AuthContext = createContext<Ctx>({
   loginWithGoogle: async () => {},
   loginWithPasskey: async () => {},
   logout: () => {},
+  updateUser: () => {},
 });
 
 // Drop the cached minimal user so the next full-page load re-resolves identity
@@ -40,6 +47,19 @@ export function clearCachedAuthUser(): void {
 }
 
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes idle timeout
+
+/**
+ * The non-sensitive fields kept across a hard refresh, so the shell paints the
+ * studio's logo and the trainer's photo at once instead of flashing initials.
+ * One writer, so a field added here reaches every path that caches.
+ */
+function cacheable(u: User): string {
+  return JSON.stringify({
+    id: u.id, name: u.name, role: u.role,
+    organization_name: u.organization_name, organization_logo_url: u.organization_logo_url,
+    is_founder: u.is_founder, founder_number: u.founder_number, avatar_url: u.avatar_url ?? null,
+  });
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user,    setUser]    = useState<User | null>(null);
@@ -83,12 +103,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let cachedUser: User | null = null;
     if (cachedRaw) {
       try {
-        const partial = JSON.parse(cachedRaw) as { id: string; name: string; role: string; organization_name?: string | null; organization_logo_url?: string | null; is_founder?: boolean; founder_number?: number | null };
+        const partial = JSON.parse(cachedRaw) as { id: string; name: string; role: string; organization_name?: string | null; organization_logo_url?: string | null; is_founder?: boolean; founder_number?: number | null; avatar_url?: string | null };
         // founder_number is cached alongside the name for the same reason the
         // name is: without it the badge pops in a beat after every hard
         // refresh, which for a permanent mark of status reads as a glitch.
         // Not PII — it is displayed publicly on the studio page.
-        cachedUser = { id: partial.id, name: partial.name, role: partial.role as any, email: '', organization_name: partial.organization_name ?? null, organization_logo_url: partial.organization_logo_url ?? null, is_founder: partial.is_founder ?? false, founder_number: partial.founder_number ?? null };
+        cachedUser = { id: partial.id, name: partial.name, role: partial.role as any, email: '', organization_name: partial.organization_name ?? null, organization_logo_url: partial.organization_logo_url ?? null, is_founder: partial.is_founder ?? false, founder_number: partial.founder_number ?? null, avatar_url: partial.avatar_url ?? null };
       } catch { clearCachedUser(); }
     }
     if (cachedUser) setUser(cachedUser);
@@ -128,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (res?.user) {
           const u = res.user as User;
           setUser(u);
-          writeCachedUser(JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url, is_founder: u.is_founder, founder_number: u.founder_number }));
+          writeCachedUser(cacheable(u));
         } else {
           setUser(null);
           clearCachedUser();
@@ -217,6 +237,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [user, _clearSession, backToSignIn]);
 
+  const updateUser = useCallback(function (patch: Partial<User>): void {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch };
+      writeCachedUser(cacheable(next));
+      return next;
+    });
+  }, []);
+
   /**
    * Take on a freshly authenticated identity.
    *
@@ -237,7 +266,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // logout ever running.
     clearImpersonation();
     setUser(u);
-    writeCachedUser(JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url, is_founder: u.is_founder, founder_number: u.founder_number }));
+    writeCachedUser(cacheable(u));
     setLoading(false);
   }, []);
 
@@ -271,7 +300,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [_clearSession, backToSignIn]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, loginWithPasskey, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, loginWithPasskey, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

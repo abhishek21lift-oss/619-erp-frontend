@@ -22,11 +22,13 @@ import FounderBadge from '@/components/FounderBadge';
 import { m } from 'framer-motion';
 import {
   Camera, Loader2, ImagePlus, Trash2, Mail, Phone, MapPin, Calendar,
-  ShieldCheck, Building2, Award, Clock,
+  ShieldCheck, Building2, Award, Clock, Upload,
 } from 'lucide-react';
 import type { ProfileMe } from '@/lib/api';
+import StudioMark from '@/components/StudioMark';
 import { CompletionRing } from './CompletionPanel';
-import { acceptAttribute, GALLERY_RULES } from '@/lib/forms/files';
+import { acceptAttribute, GALLERY_RULES, LOGO_RULES } from '@/lib/forms/files';
+import { tones, gradient, heroMesh, ringStops, type Tone } from './profileTheme';
 
 /** Two letters, or one. Used whenever there is no avatar. */
 function initials(name: string) {
@@ -45,11 +47,11 @@ function Meta({ icon, children }: { icon: React.ReactNode; children: React.React
   );
 }
 
-function Badge({ icon, label, tint }: { icon: React.ReactNode; label: string; tint: string }) {
+function Badge({ icon, label, tone }: { icon: React.ReactNode; label: string; tone: Tone }) {
   return (
     <span
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-[740]"
-      style={{ background: `${tint}1a`, color: tint, border: `1px solid ${tint}33` }}
+      className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-[760] text-white"
+      style={{ background: gradient(tone), boxShadow: `0 4px 12px -4px ${tone.glow}` }}
     >
       {icon} {label}
     </span>
@@ -109,6 +111,16 @@ export interface ProfileHeroProps {
   onPickAvatar: (file: File) => void;
   onPickCover: (file: File) => void;
   onRemoveCover: () => void;
+  /**
+   * The studio's logo, for the trainer who owns the studio. Absent for anyone
+   * else — a member never sees this page, but the control is the owner's.
+   */
+  studioLogo?: {
+    url: string | null;
+    busy: boolean;
+    onPick: (file: File) => void;
+    onRemove: () => void;
+  };
 }
 
 /**
@@ -120,12 +132,14 @@ export interface ProfileHeroProps {
  * in the parent's pick handlers, on the bytes.
  */
 const ACCEPT = acceptAttribute(GALLERY_RULES);
+const LOGO_ACCEPT = acceptAttribute(LOGO_RULES);
 
 export function ProfileHero({
   me, organizationName, founderNumber, resolveUrl, roleLabel, memberSince,
-  avatarUploading, coverBusy, onPickAvatar, onPickCover, onRemoveCover,
+  avatarUploading, coverBusy, onPickAvatar, onPickCover, onRemoveCover, studioLogo,
 }: ProfileHeroProps) {
   const avatarInput = useRef<HTMLInputElement>(null);
+  const logoInput = useRef<HTMLInputElement>(null);
   const coverInput = useRef<HTMLInputElement>(null);
   // The banner is the one image that changes size on load; without this the
   // gradient beneath it flashes through on a slow connection.
@@ -147,12 +161,12 @@ export function ProfileHero({
 
   return (
     <section
-      className="relative mb-7 overflow-hidden rounded-3xl"
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(15,23,42,0.07)' }}
+      className="relative mb-7 overflow-hidden rounded-[28px]"
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 24px 50px -30px rgba(79,70,229,0.45), 0 2px 12px rgba(15,23,42,0.05)' }}
       aria-label="Profile header"
     >
       {/* ── COVER ────────────────────────────────────────────────────────── */}
-      <div className="relative h-28 w-full sm:h-40 lg:h-48">
+      <div className="relative h-32 w-full sm:h-44 lg:h-52">
         {/* The gradient is the default, not a placeholder: a profile with no
             banner should look designed rather than unfinished. */}
         <div
@@ -165,9 +179,13 @@ export function ProfileHero({
             // `rounded-3xl overflow-hidden`. Reported on iOS against the client
             // profile card, which carried the identical pattern. 260px was
             // fitted against the old rendering by pixel comparison: 0.30/255.
+            // An Apple-style colour mesh: two soft glows over a four-stop
+            // sweep. Glows are gradient layers, never blurred children —
+            // see the WebKit note above.
             background: [
-              'radial-gradient(circle 260px at calc(100% - 48px) 48px, rgba(255,255,255,0.1), transparent 70%)',
-              'linear-gradient(135deg,#0067e0 0%,#0067e0 40%,#0067e0 70%,#7fb4ff 100%)',
+              `radial-gradient(circle 280px at 12% 110%, ${heroMesh.glowA}, transparent 70%)`,
+              `radial-gradient(circle 260px at calc(100% - 40px) -20px, ${heroMesh.glowB}, transparent 70%)`,
+              heroMesh.base,
             ].join(', '),
           }}
         />
@@ -216,17 +234,20 @@ export function ProfileHero({
               onClick={() => avatarInput.current?.click()}
               disabled={avatarUploading}
               aria-label={avatar ? 'Change profile photo' : 'Add a profile photo'}
-              className="group relative flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-[22px] text-[26px] font-[880] text-white transition-transform hover:scale-[1.03] sm:h-[92px] sm:w-[92px] sm:text-[32px]"
+              className="group relative flex h-[80px] w-[80px] items-center justify-center overflow-hidden rounded-full text-[28px] font-[880] text-white transition-transform hover:scale-[1.03] sm:h-[104px] sm:w-[104px] sm:text-[36px]"
               style={{
-                background: avatar ? 'var(--bg-card)' : 'linear-gradient(135deg,#0067e0,#0059ce)',
-                border: '3px solid var(--bg-card)',
-                boxShadow: '0 6px 24px rgba(15,23,42,0.20)',
+                // A gradient ring, Apple Fitness style: the padding-box is the
+                // photo's plate, the border-box paints the ring through a
+                // transparent border.
+                background: `${avatar ? 'linear-gradient(var(--bg-card), var(--bg-card))' : gradient(tones.indigo)} padding-box, conic-gradient(from 200deg, ${ringStops.join(', ')}, ${tones.violet.from}, ${ringStops[0]}) border-box`,
+                border: '4px solid transparent',
+                boxShadow: '0 14px 30px -12px rgba(219,39,119,0.45), 0 0 0 4px var(--bg-card)',
                 letterSpacing: '-0.02em',
               }}
             >
               {avatar
                 // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={avatar} alt="" className="h-full w-full object-cover" />
+                ? <img src={avatar} alt="" className="h-full w-full rounded-full object-cover" />
                 : initials(me.name)}
               {/*
                 The scrim stays hover-only — it is an enhancement, and dimming
@@ -235,7 +256,7 @@ export function ProfileHero({
               */}
               <span
                 aria-hidden
-                className="absolute inset-0 hidden items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 sm:flex"
+                className="absolute inset-0 hidden items-center justify-center rounded-full opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 sm:flex"
                 style={{ background: 'rgba(15,23,42,0.55)' }}
               >
                 <Camera size={18} className="text-white" />
@@ -263,8 +284,8 @@ export function ProfileHero({
               data-avatar-affordance
               className="pointer-events-none absolute bottom-0 right-0 flex items-center justify-center rounded-full"
               style={{
-                height: 26, width: 26,
-                background: 'var(--brand)',
+                height: 28, width: 28,
+                background: gradient(tones.sunset),
                 border: '2.5px solid var(--bg-card)',
                 boxShadow: '0 2px 8px rgba(15,23,42,0.28)',
               }}
@@ -280,22 +301,22 @@ export function ProfileHero({
               page, which it is not. */}
           {me.completion && (
             <div className="shrink-0 pb-1">
-              <CompletionRing percent={me.completion.percent} size={56} />
+              <CompletionRing percent={me.completion.percent} size={60} />
             </div>
           )}
         </div>
 
         <div className="mt-3 min-w-0">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2">
-            <h2 className="text-[21px] font-[880] tracking-[-0.03em] sm:text-[26px]" style={{ color: 'var(--text-primary)' }}>
+            <h2 className="text-[22px] font-[880] tracking-[-0.03em] sm:text-[28px]" style={{ color: 'var(--text-primary)' }}>
               {me.name}
             </h2>
-            <Badge icon={<ShieldCheck size={10} />} label={roleLabel} tint="#0067e0" />
+            <Badge icon={<ShieldCheck size={10} />} label={roleLabel} tone={tones.indigo} />
             {me.yearsExperience !== null && me.yearsExperience > 0 && (
-              <Badge icon={<Clock size={10} />} label={`${me.yearsExperience} yr${me.yearsExperience === 1 ? '' : 's'} coaching`} tint="#0067e0" />
+              <Badge icon={<Clock size={10} />} label={`${me.yearsExperience} yr${me.yearsExperience === 1 ? '' : 's'} coaching`} tone={tones.sunset} />
             )}
             {validCerts > 0 && (
-              <Badge icon={<Award size={10} />} label={`${validCerts} certification${validCerts === 1 ? '' : 's'}`} tint="#047857" />
+              <Badge icon={<Award size={10} />} label={`${validCerts} certification${validCerts === 1 ? '' : 's'}`} tone={tones.lime} />
             )}
           </div>
 
@@ -321,6 +342,45 @@ export function ProfileHero({
             {me.location && <Meta icon={<MapPin size={11} />}>{me.location}</Meta>}
             <Meta icon={<Calendar size={11} />}>Since {memberSince}</Meta>
           </div>
+
+          {studioLogo && (
+            <div className="mt-5 flex flex-wrap items-center gap-3 rounded-[20px] p-3 sm:p-3.5"
+              style={{
+                background: `linear-gradient(120deg, ${tones.violet.wash}, ${tones.sky.wash})`,
+                border: '1px solid var(--border)',
+              }}>
+              <div className="rounded-[14px] p-[2px]" style={{ background: gradient(tones.violet) }}>
+                <StudioMark name={organizationName || me.name} logoUrl={studioLogo.url} size={48} radius={12} background="#FFFFFF" />
+              </div>
+              <div className="min-w-[180px] flex-1">
+                <p className="text-[13px] font-[780]" style={{ color: 'var(--text-primary)' }}>Studio logo</p>
+                <p className="text-[11.5px] leading-snug" style={{ color: 'var(--text-muted)' }}>
+                  {studioLogo.url
+                    ? 'Shown at the top of your sidebar and in your clients\u2019 app.'
+                    : 'Add your logo and it replaces the letters at the top of your sidebar. Your photo shows at the top right.'}
+                </p>
+              </div>
+              <input aria-label="Upload a studio logo" ref={logoInput} type="file" accept={LOGO_ACCEPT} className="hidden"
+                onChange={(e) => take(e, studioLogo.onPick)} />
+              {/* A row of its own on a phone, so the sentence keeps its width. */}
+              <div className="flex w-full items-center gap-2 sm:w-auto">
+                <button type="button" onClick={() => logoInput.current?.click()} disabled={studioLogo.busy}
+                  className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full px-4 text-[12px] font-[750] text-white transition-transform hover:scale-[1.03] disabled:opacity-60"
+                  style={{ background: gradient(tones.violet), boxShadow: `0 8px 18px -8px ${tones.violet.glow}` }}>
+                  {studioLogo.busy ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                  {studioLogo.url ? 'Change logo' : 'Upload logo'}
+                </button>
+                {studioLogo.url && (
+                  <button type="button" onClick={studioLogo.onRemove} disabled={studioLogo.busy}
+                    aria-label="Remove studio logo"
+                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full px-3.5 text-[12px] font-[700] transition-colors hover:bg-[var(--bg-hover)] disabled:opacity-60"
+                    style={{ color: 'var(--text-secondary)', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                    <Trash2 size={13} /> Remove
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -332,7 +392,7 @@ export function ProfileHero({
         animate={{ scaleX: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="h-[3px] w-full origin-left"
-        style={{ background: 'linear-gradient(90deg,#0067e0,#0067e0,#7fb4ff)' }}
+        style={{ background: `linear-gradient(90deg, ${tones.indigo.from}, ${tones.violet.from}, ${tones.berry.from}, ${tones.sunset.from}, ${tones.gold.from})` }}
       />
     </section>
   );

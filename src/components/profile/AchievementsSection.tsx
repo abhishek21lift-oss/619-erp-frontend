@@ -28,6 +28,7 @@ import {
 import {
   PROFILE_LIMITS, PROFILE_MAX, maxProfileYear, type ProfileIssueMap,
 } from '@/lib/forms/schemas/profile';
+import { tones, gradient, type Tone } from './profileTheme';
 
 const MAX_ENTRIES = PROFILE_MAX.achievements;
 
@@ -35,15 +36,15 @@ const MAX_ENTRIES = PROFILE_MAX.achievements;
  * The kinds the server accepts. Each carries an icon and a word — an unknown
  * kind is stored as 'other' rather than rejected, so this map is total.
  */
-const KINDS: { value: AchievementKind; label: string; icon: React.ReactNode; tint: string }[] = [
-  { value: 'competition', label: 'Competition', icon: <Trophy size={13} />, tint: '#d97706' },
-  { value: 'record', label: 'Record', icon: <Medal size={13} />, tint: '#dc2626' },
-  { value: 'award', label: 'Award', icon: <Award size={13} />, tint: '#0067e0' },
-  { value: 'certification', label: 'Certification', icon: <BadgeCheck size={13} />, tint: '#047857' },
-  { value: 'speaking', label: 'Speaking', icon: <Mic size={13} />, tint: '#0059ce' },
-  { value: 'media', label: 'Media', icon: <Newspaper size={13} />, tint: '#475569' },
-  { value: 'publication', label: 'Publication', icon: <BookOpen size={13} />, tint: '#0059ce' },
-  { value: 'other', label: 'Other', icon: <Star size={13} />, tint: '#0067e0' },
+const KINDS: { value: AchievementKind; label: string; icon: React.ReactNode; tone: Tone }[] = [
+  { value: 'competition', label: 'Competition', icon: <Trophy size={13} />, tone: tones.gold },
+  { value: 'record', label: 'Record', icon: <Medal size={13} />, tone: tones.rose },
+  { value: 'award', label: 'Award', icon: <Award size={13} />, tone: tones.violet },
+  { value: 'certification', label: 'Certification', icon: <BadgeCheck size={13} />, tone: tones.mint },
+  { value: 'speaking', label: 'Speaking', icon: <Mic size={13} />, tone: tones.sky },
+  { value: 'media', label: 'Media', icon: <Newspaper size={13} />, tone: tones.indigo },
+  { value: 'publication', label: 'Publication', icon: <BookOpen size={13} />, tone: tones.berry },
+  { value: 'other', label: 'Other', icon: <Star size={13} />, tone: tones.sunset },
 ];
 const KIND_MAP = Object.fromEntries(KINDS.map((k) => [k.value, k])) as Record<AchievementKind, typeof KINDS[number]>;
 
@@ -98,7 +99,7 @@ function AchievementRow({ entry, index, issues, onChange, onRemove, last }: {
         <span
           aria-hidden
           className="flex h-7 w-7 items-center justify-center rounded-full text-white"
-          style={{ background: kind.tint, boxShadow: `0 3px 10px ${kind.tint}55` }}
+          style={{ background: gradient(kind.tone), boxShadow: `0 3px 10px ${kind.tone.glow}` }}
         >
           {kind.icon}
         </span>
@@ -180,7 +181,7 @@ export function AchievementsSection({ value, onChange, issues = {} }: {
             issuer: '', year: null, detail: '',
           }])}
           className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-[700] text-white transition-transform hover:scale-[1.03] disabled:opacity-50 disabled:hover:scale-100"
-          style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)', boxShadow: '0 4px 14px rgba(0,103,224,0.32)' }}
+          style={{ background: gradient(tones.sunset), boxShadow: `0 4px 14px ${tones.sunset.glow}` }}
         >
           <Plus size={13} /> Add
         </button>

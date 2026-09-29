@@ -271,12 +271,13 @@ function MemberDashboard() {
               className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[13px] font-[800]"
               style={{ background: rgba(C.primary, 0.12), color: C.primary }}
             />
-            <div className="min-w-0 flex-1">
+            {/* The name opens the coach's full profile. */}
+            <Link href="/member/coach" className="min-w-0 flex-1">
               <p className="truncate text-[14px] font-[750]" style={{ color: C.ink }}>{profile.trainer_name}</p>
               <p className="truncate text-[11.5px] font-[550]" style={{ color: C.muted }}>
-                {profile.trainer_specialization || 'Personal trainer'}
+                {profile.trainer_specialization || 'Personal trainer'} · View profile
               </p>
-            </div>
+            </Link>
             <Link href="/member/messages"
               className="inline-flex shrink-0 items-center gap-1.5 rounded-[12px] px-3 py-2 text-[12.5px] font-[750] text-white transition-transform active:scale-95"
               style={{ background: C.primary }}>

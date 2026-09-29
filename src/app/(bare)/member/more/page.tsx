@@ -29,10 +29,11 @@ import MemberShell from '@/components/member/MemberShell';
 import { EASE, MC } from '@/components/member/MemberUI';
 import { loadMemberNotifications } from '@/components/member/memberNotifications';
 import InstallAppCard from '@/components/member/InstallAppCard';
+import CoachCard from '@/components/member/CoachCard';
 import { daysLeft, elapsedPct } from '@/components/member/planDates';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { api } from '@/lib/api';
-import type { MeAchievements, MeMembership, MeProfile } from '@/lib/api';
+import type { MeAchievements, MeCoach, MeMembership, MeProfile } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { palette, rgba } from '@/lib/palette';
 import { accentGradient, heroMesh } from '@/components/member/memberTheme';
@@ -95,6 +96,7 @@ function ProfileBody() {
   const [profile, setProfile] = useState<MeProfile | null>(null);
   const [stats, setStats] = useState<MeAchievements | null>(null);
   const [plan, setPlan] = useState<MeMembership | null>(null);
+  const [coach, setCoach] = useState<MeCoach | null>(null);
   const [unread, setUnread] = useState<Record<Badge, number>>({ notifications: 0, messages: 0 });
 
   useEffect(() => {
@@ -102,6 +104,7 @@ function ProfileBody() {
     api.me.profile().then((r) => { if (live) setProfile(r.data); }).catch(() => { /* hero falls back to a skeleton-free shell */ });
     api.me.membership().then((r) => { if (live) setPlan(r.data); }).catch(() => { /* the profile's copy is the fallback */ });
     api.me.achievements().then((r) => { if (live) setStats(r.data); }).catch(() => { /* numbers show a dash */ });
+    api.me.coach().then((r) => { if (live) setCoach(r.data); }).catch(() => { /* the card is left out */ });
     loadMemberNotifications(true)
       .then((n) => { if (live) setUnread((u) => ({ ...u, notifications: n.length })); })
       .catch(() => { /* a badge is not worth an error */ });
@@ -115,6 +118,7 @@ function ProfileBody() {
     <>
       <h1 className="sr-only">Profile</h1>
       <ProfileHero profile={profile} plan={plan} stats={stats} />
+      {coach && <CoachCard coach={coach} delay={0.08} />}
 
       {GROUPS.map((g, i) => (
         <m.section key={g.title}
