@@ -23,11 +23,29 @@ import { describe, it, expect } from 'vitest';
 import {
   automationRuleSchema, blankAutomationRule, toAutomationRulePayload,
   variablesFor, inspectRuleTemplate,
-  TRIGGER_CONTEXT, ALWAYS_AVAILABLE, MAX_DELAY_MINUTES,
+  TRIGGER_CONTEXT, ALWAYS_AVAILABLE, MAX_DELAY_MINUTES, SAMPLE_VALUES, previewRuleTemplate,
 } from '@/lib/forms/schemas/automationRule';
 
 const draft = blankAutomationRule();
 const valid = { ...draft, name: 'Welcome', template: 'Hi {{name}}, welcome!' };
+
+describe('the live preview', () => {
+  it('fills the placeholders this trigger provides', () => {
+    expect(previewRuleTemplate('Hi {{name}}, {{ amount }} is due', 'payment_due'))
+      .toBe('Hi Priya, ₹5,000 is due');
+  });
+
+  it("leaves one the trigger does NOT provide exactly as the client would see it", () => {
+    // {{amount}} on a birthday goes out as literal braces — the preview must
+    // show that, not paper over it with a sample amount.
+    expect(previewRuleTemplate('Happy birthday {{name}}, {{amount}}', 'birthday'))
+      .toBe('Happy birthday Priya, {{amount}}');
+  });
+
+  it('leaves an unknown placeholder standing', () => {
+    expect(previewRuleTemplate('Hi {{nmae}}', 'member_created')).toBe('Hi {{nmae}}');
+  });
+});
 
 describe('the variable vocabulary', () => {
   it('gives every trigger {{name}}, which the engine always adds', () => {
@@ -51,7 +69,14 @@ describe('the variable vocabulary', () => {
       anniversary: ['years'],
       attendance_missed: ['days', 'last_visit'],
       followup_due: ['follow_up_date', 'package'],
+      payment_due: ['amount', 'amount_value'],
     });
+  });
+
+  it('has an example value for every placeholder any trigger provides', () => {
+    for (const event of Object.keys(TRIGGER_CONTEXT)) {
+      for (const v of variablesFor(event)) expect(SAMPLE_VALUES[v]).toBeDefined();
+    }
   });
 
   it('is per event, not one flat list', () => {
