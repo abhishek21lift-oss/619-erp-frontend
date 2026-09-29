@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import {
   X, Star, Pencil, Copy, History, AlertTriangle, Lightbulb, ShieldAlert,
   Wind, Timer, TrendingUp, TrendingDown, Repeat, Loader2, ChevronRight,
@@ -79,9 +80,30 @@ export function ExerciseDetailDrawer({
     }
   }, [ex, versions]);
 
-  if (!exerciseId) return null;
+  // Portalled to <body>, not rendered in place.
+  //
+  // In place, the panel sat inside the page's animated route wrapper and
+  // pull-to-refresh container. A transform (or filter) on any ancestor makes
+  // it the containing block for `position: fixed`, so on a phone the panel was
+  // positioned and sized against the page instead of the viewport: it started
+  // part-way down the screen, grew as tall as the page, the page scrolled
+  // instead of the panel, and the hero slid under the sticky header. At body
+  // level `fixed` means the viewport again, whatever the page does.
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => { setMounted(true); }, []);
 
-  return (
+  // The page behind must not scroll while the panel is open — on iOS a
+  // scroll that reaches the panel's end otherwise carries on into the page.
+  React.useEffect(() => {
+    if (!exerciseId) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [exerciseId]);
+
+  if (!exerciseId || !mounted) return null;
+
+  return createPortal(
     <>
       <div
         data-no-pull-refresh className="fixed inset-0 z-40 bg-slate-900/35 backdrop-blur-[3px] animate-in fade-in duration-200"
@@ -94,7 +116,10 @@ export function ExerciseDetailDrawer({
         aria-modal="true"
         aria-label={ex?.name || 'Exercise details'}
         style={ex ? toneVars(regionTone(exerciseRegion(ex))) : undefined}
-        data-no-pull-refresh className="fixed right-0 top-0 z-50 flex h-full w-full max-w-[540px] flex-col border-l border-slate-200/70 bg-[var(--bg-canvas)] shadow-[0_0_80px_-20px_rgba(15,23,42,0.45)] dark:border-white/10 animate-in slide-in-from-right duration-300 sm:rounded-l-[28px] sm:overflow-hidden"
+        // 100dvh, not h-full: the visible viewport, so Safari's toolbar can
+        // never push the panel's foot off-screen. overflow-hidden at every
+        // width so only the body below the header scrolls.
+        data-no-pull-refresh className="fixed right-0 top-0 z-50 flex h-[100dvh] w-full max-w-[540px] flex-col overflow-hidden border-l border-slate-200/70 bg-[var(--bg-canvas)] shadow-[0_0_80px_-20px_rgba(15,23,42,0.45)] dark:border-white/10 animate-in slide-in-from-right duration-300 sm:rounded-l-[28px]"
       >
         {/* ── The status bar is not free space ─────────────────────────────
             This panel is `fixed top-0 h-full`, so on a phone its header began
@@ -105,11 +130,11 @@ export function ExerciseDetailDrawer({
             padding so the header keeps its own height and simply starts below
             the inset. Zero on a device without one, so nothing changes on a
             desktop.
-            Sticky as well: the actions were scrolling away with the title, and
-            on a long exercise there was no way back to Close without
-            scrolling to the top. */}
+            Outside the scroll area, so the actions never scroll away and the
+            content can never slide underneath it: only the body below
+            scrolls. */}
         <header
-          className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-slate-200/60 bg-slate-50/85 px-4 dark:bg-slate-900/85 pb-3 backdrop-blur-xl dark:border-white/[0.07]"
+          className="relative z-10 flex shrink-0 items-center justify-between gap-3 border-b border-slate-200/60 bg-slate-50/85 px-4 dark:bg-slate-900/85 pb-3 backdrop-blur-xl dark:border-white/[0.07]"
           style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}
         >
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
@@ -155,7 +180,7 @@ export function ExerciseDetailDrawer({
         </header>
 
         <div
-          className="flex-1 overflow-y-auto px-4 py-4 sm:px-5"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5"
           style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
         >
           {error && (
@@ -281,7 +306,8 @@ export function ExerciseDetailDrawer({
           )}
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   );
 }
 
