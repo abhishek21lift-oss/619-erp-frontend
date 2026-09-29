@@ -17,6 +17,15 @@ export interface InformedConsentFormData {
   acknowledgements: InformedConsentAcknowledgements;
   exerciseConsentChecked: boolean;
   exerciseConsentDate: string;
+  /**
+   * Has a doctor advised this client against exercise? null until answered.
+   * "Yes" is a hard stop on training (the screening gate's
+   * PHYSICIAN_ADVISED_AGAINST) until a medical clearance is uploaded.
+   */
+  physicianAdvisedAgainst: boolean | null;
+  physicianName: string;
+  physicianHospital: string;
+  medicalCondition: string;
   exerciseConsentSignature: string;
   clientSignature: string;
   trainerSignature: string;
@@ -34,6 +43,7 @@ export function initInformedConsentForm(): InformedConsentFormData {
     emergencyContact: '', emergencyPhone: '', address: '', occupation: '',
     acknowledgements: {},
     exerciseConsentChecked: false, exerciseConsentDate: todayStr(), exerciseConsentSignature: '',
+    physicianAdvisedAgainst: null, physicianName: '', physicianHospital: '', medicalCondition: '',
     clientSignature: '', trainerSignature: '', witnessSignature: '', witnessName: '',
   };
 }
@@ -53,10 +63,30 @@ export function formFromRecord(r: InformedConsent): InformedConsentFormData {
     exerciseConsentChecked: r.exercise_consent_checked ?? false,
     exerciseConsentDate: r.exercise_consent_date ? String(r.exercise_consent_date).slice(0, 10) : todayStr(),
     exerciseConsentSignature: r.exercise_consent_signature || '',
+    physicianAdvisedAgainst: r.physician_advised_against ?? null,
+    physicianName: r.physician_name || '',
+    physicianHospital: r.hospital || '',
+    medicalCondition: r.medical_condition || '',
     clientSignature: r.client_signature || '',
     trainerSignature: r.trainer_signature || '',
     witnessSignature: r.witness_signature || '',
     witnessName: r.witness_name || '',
+  };
+}
+
+/**
+ * The starting point for a new version of a signed (or revoked) consent: the
+ * client's details and medical answers carry over, but everything that is
+ * GIVEN — the acceptance, the agreements, every signature — is given again.
+ */
+export function amendFormFromRecord(r: InformedConsent): InformedConsentFormData {
+  return {
+    ...formFromRecord(r),
+    acknowledgements: {},
+    exerciseConsentChecked: false,
+    exerciseConsentDate: todayStr(),
+    exerciseConsentSignature: '',
+    clientSignature: '', trainerSignature: '', witnessSignature: '', witnessName: '',
   };
 }
 
@@ -109,6 +139,10 @@ export function validateStep(step: StepId, form: InformedConsentFormData): strin
   // step 3. One document, one signature, taken last.
   if (step === 1) {
     if (!form.exerciseConsentChecked) return 'Please check the consent acknowledgement to continue.';
+    if (form.physicianAdvisedAgainst == null) return 'Answer whether a doctor has advised against exercise.';
+    if (form.physicianAdvisedAgainst && !form.medicalCondition.trim()) {
+      return 'Describe the condition the doctor advised about.';
+    }
   }
   if (step === 2) {
     const missing = FINAL_ACK_FIELDS.some((f) => !form.acknowledgements[f.key]);
@@ -169,6 +203,14 @@ export function buildUpdatePayload(form: InformedConsentFormData): Record<string
     address: form.address || null,
     occupation: form.occupation || null,
     acknowledgements: form.acknowledgements,
+    // Unanswered stays unsent rather than becoming "no": a draft saved before
+    // the question was reached must not record an answer nobody gave.
+    ...(form.physicianAdvisedAgainst == null ? {} : {
+      physician_advised_against: form.physicianAdvisedAgainst,
+      physician_name: form.physicianAdvisedAgainst ? form.physicianName.trim() || null : null,
+      hospital: form.physicianAdvisedAgainst ? form.physicianHospital.trim() || null : null,
+      medical_condition: form.physicianAdvisedAgainst ? form.medicalCondition.trim() || null : null,
+    }),
     // Sent verbatim so the backend stores exactly what was shown/signed,
     // independent of future edits to the canonical text in this file.
     exercise_consent_text: EXERCISE_PROGRAMME_CONSENT_TEXT,

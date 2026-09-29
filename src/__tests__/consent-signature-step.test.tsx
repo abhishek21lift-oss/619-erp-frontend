@@ -56,7 +56,7 @@ describe('step 1 — Consent', () => {
     // The regression that would strand a trainer: a field removed from the
     // screen but still required by the step's validation, so Next refuses and
     // there is nothing on the page to fix.
-    expect(validateStep(1, form({ exerciseConsentChecked: true }))).toBeUndefined();
+    expect(validateStep(1, form({ exerciseConsentChecked: true, physicianAdvisedAgainst: false }))).toBeUndefined();
   });
 
   it('still refuses to move on with the box unchecked', () => {

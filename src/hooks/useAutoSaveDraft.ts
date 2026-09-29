@@ -34,11 +34,17 @@ export function useAutoSaveDraft<T>({ key, data, isDirty, debounceMs = 2000 }: U
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [key, data, isDirty, debounceMs]);
 
-  const restore = useCallback((): T | null => {
+  /**
+   * The saved draft, if any. `notBefore` (epoch ms) discards a draft written
+   * before that moment — pass the server copy's updated_at so a stale local
+   * draft is never laid over newer saved data.
+   */
+  const restore = useCallback((opts?: { notBefore?: number }): T | null => {
     try {
       const raw = localStorage.getItem(key);
       if (!raw) return null;
       const parsed = JSON.parse(raw) as DraftEnvelope<T>;
+      if (opts?.notBefore && !(Number(parsed?.savedAt) > opts.notBefore)) return null;
       return parsed?.data ?? null;
     } catch {
       return null;

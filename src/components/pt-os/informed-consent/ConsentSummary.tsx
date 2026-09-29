@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { fmtDate } from '@/lib/format';
+import { checkFile, acceptAttribute, DOCUMENT_RULES } from '@/lib/forms/files';
 import {
   BRAND_BLUE_LABEL, BRAND_GRADIENT, BRAND_HERO_GRADIENT, BRAND_HERO_SHADOW,
   ON_BRAND_BORDER, ON_BRAND_TEXT,
@@ -34,8 +35,13 @@ import type { InformedConsent } from '@/lib/api';
 import { statusStyle } from './statusConfig';
 import { FINAL_ACK_FIELDS } from './types';
 
-/** Total acknowledgements the wizard collects, for the "N of M" summary. */
-const TOTAL_ACKNOWLEDGEMENTS = 10;
+/**
+ * Total acknowledgements the wizard collects, for the "N of M" summary.
+ *
+ * Derived, not typed: it said 10 after the wizard shrank to three, so every
+ * fully agreed consent read "3 of 10 — 7 declarations outstanding".
+ */
+const TOTAL_ACKNOWLEDGEMENTS = FINAL_ACK_FIELDS.length;
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
@@ -129,14 +135,20 @@ interface ConsentSummaryProps {
   history: InformedConsent[];
   onAmend: () => void;
   onContinue: () => void;
+  /** Uploads the doctor's clearance when one is owed (physician advised against exercise). */
+  onUploadClearance?: (file: File) => Promise<void>;
   onDownload: () => void;
   onPrint: () => void;
 }
 
 export default function ConsentSummary({
-  clientName, record, history, onAmend, onContinue, onDownload, onPrint,
+  clientName, record, history, onAmend, onContinue, onDownload, onPrint, onUploadClearance,
 }: ConsentSummaryProps) {
   const reduce = useReducedMotion();
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const clearanceOwed = Boolean(record.physician_advised_against && !record.medical_clearance_file_url)
+    && record.status !== 'archived';
   const [showAcks, setShowAcks] = useState(false);
 
   const style = statusStyle(record.status);
@@ -144,7 +156,10 @@ export default function ConsentSummary({
   const isRevoked = record.status === 'revoked';
   const inProgress = !isCompleted && !isRevoked && record.status !== 'archived' && record.status !== 'expired';
 
-  const agreed = Object.values(record.acknowledgements ?? {}).filter(Boolean).length;
+  // Counted over the keys the wizard asks for, so an older record's retired
+  // acknowledgements cannot push the count past the total.
+  const acks = (record.acknowledgements ?? {}) as Record<string, unknown>;
+  const agreed = FINAL_ACK_FIELDS.filter((f) => acks[f.key] === true).length;
   const allAgreed = agreed >= TOTAL_ACKNOWLEDGEMENTS;
 
   const hasMedicalFlag = Boolean(
@@ -384,6 +399,37 @@ export default function ConsentSummary({
               >
                 <FileText size={14} /> Medical clearance document
               </a>
+            )}
+            {clearanceOwed && onUploadClearance && (
+              <div className="mt-3">
+                <p className="mb-2 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                  Training is blocked until the doctor&apos;s clearance is on file. PDF, PNG or JPG.
+                </p>
+                <label
+                  className={`inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-[12px] px-4 text-[13px] font-[700] ${uploading ? 'pointer-events-none opacity-60' : ''}`}
+                  style={{ background: BRAND_GRADIENT, color: '#fff' }}
+                >
+                  <FileText size={14} /> {uploading ? 'Uploading…' : 'Upload medical clearance'}
+                  <input
+                    type="file" accept={acceptAttribute(DOCUMENT_RULES)} className="sr-only" disabled={uploading}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = '';
+                      if (!file) return;
+                      // The bytes decide, not the extension — same document
+                      // rule set as every other attachment (the server repeats it).
+                      const check = await checkFile(file, DOCUMENT_RULES);
+                      if (!check.ok) { setUploadError(check.message); return; }
+                      setUploadError('');
+                      setUploading(true);
+                      try { await onUploadClearance(file); } finally { setUploading(false); }
+                    }}
+                  />
+                </label>
+                {uploadError && (
+                  <p role="alert" className="mt-2 text-[12px] font-[600]" style={{ color: 'var(--danger-text)' }}>{uploadError}</p>
+                )}
+              </div>
             )}
           </Card>
         </m.div>

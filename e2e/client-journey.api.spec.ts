@@ -149,16 +149,9 @@ test.describe('the client journey, asserted on what was persisted', () => {
         // A clean screening: every answer 'no'. The gate has to be DERIVED
         // from these rather than defaulted — a gate reading "cleared" for a
         // form nobody filled in is the failure that matters, because the
-        // workout generator reads it.
-        parq_answers: [
-          { question_id: 1, answer: 'no' },
-          { question_id: 2, answer: 'no' },
-          { question_id: 3, answer: 'no' },
-          { question_id: 4, answer: 'no' },
-          { question_id: 5, answer: 'no' },
-          { question_id: 6, answer: 'no' },
-          { question_id: 7, answer: 'no' },
-        ],
+        // workout generator reads it. All ten: the API refuses to submit a
+        // PAR-Q with any question unanswered.
+        parq_answers: Array.from({ length: 10 }, (_, i) => ({ question_id: i + 1, answer: 'no' })),
         status: 'submitted',
       },
     });
