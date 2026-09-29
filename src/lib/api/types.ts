@@ -1019,6 +1019,8 @@ export interface WorkoutPlannedExercise {
   config?: Record<string, unknown> | null;
   /** Which week these numbers describe. */
   week_number?: number;
+  /** The library's tracking mode; `config.tracking_mode` may override it. */
+  prescription_mode_primary?: string | null;
 }
 
 export interface WorkoutPlanned {
@@ -1369,6 +1371,15 @@ export interface WorkoutPlanExercise {
   // a second request.
   video_url?: string | null;
   gif_url?: string | null;
+
+  /**
+   * How the library measures this exercise (load × reps, hold, carry, cardio …),
+   * joined from `exercises`. The builder shows the fields that mode needs; a
+   * row can override it via `config.tracking_mode`. See lib/training-tracking.
+   */
+  exercise_type?: string | null;
+  prescription_mode_primary?: string | null;
+  prescription_mode_allowed?: string[] | null;
 }
 
 /** Fields the builder may write on a planned exercise. */
@@ -3094,7 +3105,7 @@ export type MeWorkoutLogInput = {
   duration_minutes?: number | null;
   exercises: {
     name: string;
-    sets: { weight_kg?: number | null; reps?: number | null; duration_seconds?: number | null }[];
+    sets: { weight_kg?: number | null; reps?: number | null; duration_seconds?: number | null; distance_m?: number | null }[];
   }[];
 };
 
@@ -3324,6 +3335,12 @@ export type MeWorkoutExercise = {
   equipment: string | null;
   media_url: string | null;
   video_url: string | null;
+  /** How the member logs it — see lib/training-tracking. Absent on older servers. */
+  tracking_mode?: string | null;
+  /** Time/distance targets for holds, carries and cardio. */
+  target_duration_seconds?: number | null;
+  target_distance?: number | null;
+  target_distance_unit?: string | null;
 };
 
 /** An active programme: 1 = Monday … 7 = Sunday, 0 = unscheduled. */

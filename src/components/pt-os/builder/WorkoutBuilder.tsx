@@ -276,6 +276,9 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
         sets: row.sets, reps: row.reps, rest_seconds: row.rest_seconds,
         notes: row.notes, target_weight: row.target_weight, tempo: row.tempo,
         rpe: row.rpe, warmup_sets: row.warmup_sets, superset_group: row.superset_group,
+        // Time/distance targets, the tracking override and drop sets all live
+        // here; a copy without it is a different prescription.
+        config: row.config ?? null,
       });
       setRows((prev) => [...prev, created]);
       if (week > 1) markEdited();

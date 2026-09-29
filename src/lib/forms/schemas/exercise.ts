@@ -38,6 +38,7 @@
 
 import { z } from 'zod';
 import { textField, integerField } from '../primitives';
+import { TRACKING_MODES } from '@/lib/training-tracking';
 
 export const DIFFICULTIES = ['beginner', 'intermediate', 'advanced'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
@@ -82,6 +83,11 @@ export const exerciseSchema = z.object({
   force: textField({ label: 'Force', maxLength: 32 }),
   movement_pattern: textField({ label: 'Movement pattern', maxLength: 48 }),
   plane_of_motion: textField({ label: 'Plane of motion', maxLength: 32 }),
+  /**
+   * How the exercise is measured — load × reps, a hold, a carry, time/distance.
+   * Blank means "legacy": the plan builder and loggers treat it as load × reps.
+   */
+  tracking_mode: z.union([z.literal(''), z.enum(TRACKING_MODES as [string, ...string[]])]),
 
   instructions: note('Instructions', 4000),
   coaching_cues: z.array(z.string()),
@@ -122,6 +128,7 @@ export type ExerciseFormState = {
   force: string;
   movement_pattern: string;
   plane_of_motion: string;
+  tracking_mode: string;
   instructions: string;
   coaching_cues: string[];
   common_mistakes: string[];
@@ -152,7 +159,7 @@ export function blankExercise(): ExerciseFormState {
     primary_muscle_id: '', secondary_muscle_ids: [],
     equipment_id: '', category_id: '',
     difficulty: 'beginner', mechanic: '', force: '',
-    movement_pattern: '', plane_of_motion: '', instructions: '',
+    movement_pattern: '', plane_of_motion: '', tracking_mode: '', instructions: '',
     coaching_cues: [], common_mistakes: [], safety_tips: [], contraindications: [],
     breathing_tips: '', tempo_recommendation: '',
     recommended_sets: '', recommended_reps: '', rest_seconds: '',
@@ -175,6 +182,7 @@ export function exerciseToFormValues(
     category_id?: string | null; difficulty?: string | null;
     mechanic?: string | null; force?: string | null;
     movement_pattern?: string | null; plane_of_motion?: string | null;
+    prescription_mode_primary?: string | null;
     instructions?: string | null;
     coaching_cues?: string[] | null; common_mistakes?: string[] | null;
     safety_tips?: string[] | null; contraindications?: string[] | null;
@@ -203,6 +211,7 @@ export function exerciseToFormValues(
     force: text(ex.force),
     movement_pattern: text(ex.movement_pattern),
     plane_of_motion: text(ex.plane_of_motion),
+    tracking_mode: text(ex.prescription_mode_primary),
     instructions: text(ex.instructions),
     coaching_cues: list(ex.coaching_cues),
     common_mistakes: list(ex.common_mistakes),
@@ -264,6 +273,7 @@ export function toExercisePayload(v: ExerciseValues): Record<string, unknown> {
     force: v.force,
     movement_pattern: v.movement_pattern,
     plane_of_motion: v.plane_of_motion,
+    prescription_mode_primary: v.tracking_mode === '' ? null : v.tracking_mode,
     instructions: v.instructions,
     coaching_cues: v.coaching_cues,
     common_mistakes: v.common_mistakes,

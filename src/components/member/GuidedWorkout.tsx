@@ -33,7 +33,8 @@ import { palette, rgba } from '@/lib/palette';
 import { EASE, MC } from './MemberUI';
 import {
   DEFAULT_REST, beatsBest, clearDraft, exercisesDone, fmtKg, isLogged, loggedSetCount, num, saveDraft,
-  toLogInput, volumeOf, type DraftExercise, type DraftSet, type WorkoutDraft,
+  toLogInput, volumeOf, hasWork, setColumns,
+  type DraftExercise, type DraftSet, type SetColumn, type SetField, type WorkoutDraft,
 } from './workoutDraft';
 
 const GOOD = palette.emerald[500];
@@ -84,20 +85,21 @@ export default function GuidedWorkout({
 
   const update = (fn: (d: WorkoutDraft) => WorkoutDraft) => setDraft((d) => fn(structuredClone(d)));
 
-  const setField = (i: number, field: 'weight' | 'reps', value: string) =>
+  const setField = (i: number, field: SetField, value: string) =>
     update((d) => { d.exercises[d.current].sets[i][field] = value.replace(/[^\d.,]/g, '').slice(0, 6); return d; });
 
-  const step = (i: number, field: 'weight' | 'reps', delta: number) => update((d) => {
+  const step = (i: number, field: SetField, delta: number) => update((d) => {
     const s = d.exercises[d.current].sets[i];
-    const next = Math.max(0, (num(s[field]) ?? 0) + delta);
-    s[field] = field === 'weight' ? fmtKg(next) : String(Math.round(next));
+    const next = Math.max(0, (num(s[field] ?? '') ?? 0) + delta);
+    // Reps are whole; kg, minutes and km keep their half-steps.
+    s[field] = field === 'reps' ? String(Math.round(next)) : fmtKg(next);
     return d;
   });
 
   const toggleDone = (i: number) => {
     const s = ex.sets[i];
     const becomingDone = !s.done;
-    if (becomingDone && (num(s.reps) ?? 0) <= 0) return;
+    if (becomingDone && !hasWork(s)) return;
     update((d) => { d.exercises[d.current].sets[i].done = becomingDone; return d; });
     if (!becomingDone) return;
     if (beatsBest(s, ex.best_kg)) {
@@ -112,7 +114,9 @@ export default function GuidedWorkout({
   const addSet = () => update((d) => {
     const sets = d.exercises[d.current].sets;
     const prev = sets[sets.length - 1];
-    if (sets.length < 20) sets.push({ weight: prev?.weight ?? '', reps: prev?.reps ?? '', done: false });
+    if (sets.length < 20) {
+      sets.push({ weight: prev?.weight ?? '', reps: prev?.reps ?? '', time: prev?.time, distance: prev?.distance, done: false });
+    }
     return d;
   });
 
@@ -367,18 +371,23 @@ function shortDate(ymd: string): string {
 
 function SetTable({ ex, onField, onStep, onToggle, onRemove }: {
   ex: DraftExercise;
-  onField: (i: number, field: 'weight' | 'reps', value: string) => void;
-  onStep: (i: number, field: 'weight' | 'reps', delta: number) => void;
+  onField: (i: number, field: SetField, value: string) => void;
+  onStep: (i: number, field: SetField, delta: number) => void;
   onToggle: (i: number) => void;
   onRemove: (i: number) => void;
 }) {
+  // kg × reps for a lift, +kg × seconds for a plank, kg × metres for a carry,
+  // minutes × km for a run — the same two-column row either way.
+  const columns = setColumns(ex.kind);
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-[28px_1fr_1fr_48px] items-center gap-2 px-1 text-[10px] font-[780] uppercase tracking-[0.12em]" style={{ color: MC.muted }}>
-        <span>Set</span><span className="text-center">kg</span><span className="text-center">Reps</span><span className="sr-only">Done</span>
+        <span>Set</span>
+        {columns.map((c) => <span key={c.field} className="text-center">{c.label}</span>)}
+        <span className="sr-only">Done</span>
       </div>
       {ex.sets.map((s, i) => (
-        <SetRow key={i} n={i + 1} s={s} best={ex.best_kg} canRemove={ex.sets.length > 1}
+        <SetRow key={i} n={i + 1} s={s} best={ex.best_kg} canRemove={ex.sets.length > 1} columns={columns}
           onField={(f, v) => onField(i, f, v)} onStep={(f, d) => onStep(i, f, d)}
           onToggle={() => onToggle(i)} onRemove={() => onRemove(i)} />
       ))}
@@ -386,14 +395,15 @@ function SetTable({ ex, onField, onStep, onToggle, onRemove }: {
   );
 }
 
-function SetRow({ n, s, best, canRemove, onField, onStep, onToggle, onRemove }: {
+function SetRow({ n, s, best, canRemove, columns, onField, onStep, onToggle, onRemove }: {
   n: number; s: DraftSet; best: number | null; canRemove: boolean;
-  onField: (f: 'weight' | 'reps', v: string) => void;
-  onStep: (f: 'weight' | 'reps', d: number) => void;
+  columns: [SetColumn, SetColumn];
+  onField: (f: SetField, v: string) => void;
+  onStep: (f: SetField, d: number) => void;
   onToggle: () => void;
   onRemove: () => void;
 }) {
-  const ready = (num(s.reps) ?? 0) > 0;
+  const ready = hasWork(s);
   const pr = s.done && beatsBest(s, best);
   return (
     <m.div layout className="grid grid-cols-[28px_1fr_1fr_48px] items-center gap-2 rounded-[14px] p-1.5"
@@ -406,10 +416,10 @@ function SetRow({ n, s, best, canRemove, onField, onStep, onToggle, onRemove }: 
         className="grid h-9 w-7 place-items-center text-[13px] font-[800] tabular-nums" style={{ color: pr ? GOOD : MC.muted }}>
         {pr ? <Trophy size={14} aria-label="New best" /> : n}
       </button>
-      <Stepper label={`Set ${n} weight, kg`} value={s.weight} inputMode="decimal" disabled={s.done}
-        onChange={(v) => onField('weight', v)} onMinus={() => onStep('weight', -2.5)} onPlus={() => onStep('weight', 2.5)} />
-      <Stepper label={`Set ${n} reps`} value={s.reps} inputMode="numeric" disabled={s.done}
-        onChange={(v) => onField('reps', v)} onMinus={() => onStep('reps', -1)} onPlus={() => onStep('reps', 1)} />
+      {columns.map((c) => (
+        <Stepper key={c.field} label={`Set ${n} ${c.spoken}`} value={s[c.field] ?? ''} inputMode={c.inputMode} disabled={s.done}
+          onChange={(v) => onField(c.field, v)} onMinus={() => onStep(c.field, -c.step)} onPlus={() => onStep(c.field, c.step)} />
+      ))}
       <m.button type="button" onClick={onToggle} disabled={!ready && !s.done} whileTap={{ scale: 0.9 }}
         aria-pressed={s.done} aria-label={s.done ? `Set ${n} done — tap to undo` : `Mark set ${n} done`}
         className="grid h-11 w-12 place-items-center rounded-[12px] transition-colors disabled:opacity-40"

@@ -10,16 +10,62 @@
  */
 
 import type { MeLastPerformance, MeWorkoutLogInput } from '@/lib/api';
+import {
+  describePrescription, formatDuration, kindFields, trackingKind, type TrackingKind,
+} from '@/lib/training-tracking';
 
 export type DraftSet = {
   /** Kept as text while typing ("62.", ""), parsed when used. */
   weight: string;
   reps: string;
+  /**
+   * Holds in seconds, cardio in minutes (see `timeUnit`). Optional so a draft
+   * saved on the phone before these existed still loads.
+   */
+  time?: string;
+  /** Carries in metres, cardio in kilometres (see `distanceUnit`). */
+  distance?: string;
   done: boolean;
 };
 
+/** What the member types into each column, by how the exercise is measured. */
+export type SetField = 'weight' | 'reps' | 'time' | 'distance';
+
+export interface SetColumn {
+  field: SetField;
+  /** Column header. */
+  label: string;
+  /** Spoken label fragment for the stepper ("weight, kg"). */
+  spoken: string;
+  inputMode: 'decimal' | 'numeric';
+  step: number;
+}
+
+const COL: Record<string, SetColumn> = {
+  kg:     { field: 'weight', label: 'kg', spoken: 'weight, kg', inputMode: 'decimal', step: 2.5 },
+  plusKg: { field: 'weight', label: '+kg', spoken: 'added load, kg', inputMode: 'decimal', step: 2.5 },
+  reps:   { field: 'reps', label: 'Reps', spoken: 'reps', inputMode: 'numeric', step: 1 },
+  sec:    { field: 'time', label: 'Sec', spoken: 'seconds', inputMode: 'numeric', step: 5 },
+  min:    { field: 'time', label: 'Min', spoken: 'minutes', inputMode: 'decimal', step: 1 },
+  m:      { field: 'distance', label: 'm', spoken: 'metres', inputMode: 'decimal', step: 5 },
+  km:     { field: 'distance', label: 'km', spoken: 'kilometres', inputMode: 'decimal', step: 0.5 },
+};
+
+/** The two columns a set row shows. Every kind fits the same two-column row. */
+export function setColumns(kind: TrackingKind | undefined): [SetColumn, SetColumn] {
+  switch (kind) {
+    case 'reps': return [COL.plusKg, COL.reps];
+    case 'hold': return [COL.plusKg, COL.sec];
+    case 'carry': return [COL.kg, COL.m];
+    case 'cardio': return [COL.min, COL.km];
+    default: return [COL.kg, COL.reps];
+  }
+}
+
 export type DraftExercise = {
   name: string;
+  /** How it is measured; absent on drafts saved before modes, which were all load × reps. */
+  kind?: TrackingKind;
   /** "3 × 8–10 · 60 kg" — what the trainer prescribed, if anything. */
   prescription: string | null;
   rest_seconds: number | null;
@@ -71,7 +117,39 @@ export function fmtKg(n: number | null | undefined): string {
   return String(Math.round(n * 100) / 100);
 }
 
-export function prescriptionOf(x: { sets: number | null; reps: string | number | null; target_weight: number | null }): string | null {
+/** A planned exercise as the member app receives it (see MeWorkoutExercise). */
+type PlannedInput = {
+  sets: number | null;
+  reps: string | number | null;
+  target_weight: number | null;
+  tracking_mode?: string | null;
+  target_duration_seconds?: number | null;
+  target_distance?: number | null;
+  target_distance_unit?: string | null;
+};
+
+/** Target distance in metres, whatever unit the trainer wrote it in. */
+function metres(distance: number | null | undefined, unit: string | null | undefined): number | null {
+  if (distance == null || !Number.isFinite(distance)) return null;
+  if (unit === 'km') return distance * 1000;
+  if (unit === 'mile') return Math.round(distance * 1609.344);
+  return distance;
+}
+
+export function prescriptionOf(x: PlannedInput): string | null {
+  const kind = trackingKind(x.tracking_mode);
+  if (kind !== 'load_reps') {
+    const text = describePrescription({
+      kind,
+      sets: x.sets,
+      reps: firstInt(x.reps),
+      target_weight: x.target_weight,
+      duration_seconds: x.target_duration_seconds,
+      distance: x.target_distance,
+      distance_unit: x.target_distance_unit,
+    });
+    return text || null;
+  }
   const parts = [
     x.sets && x.reps ? `${x.sets} × ${x.reps}` : x.sets ? `${x.sets} sets` : x.reps ? `${x.reps} reps` : null,
     x.target_weight != null ? `${fmtKg(x.target_weight)} kg` : null,
@@ -87,16 +165,29 @@ export const keyOf = (name: string) => name.trim().toLowerCase();
  * Nothing is ticked done — a pre-filled number is a suggestion.
  */
 export function prefillSets(
-  planned: { sets: number | null; reps: string | number | null; target_weight: number | null },
+  planned: PlannedInput,
   last: MeLastPerformance[string] | undefined,
 ): DraftSet[] {
-  const count = Math.max(1, Math.min(10, planned.sets ?? last?.sets.length ?? 3));
-  const plannedReps = firstInt(planned.reps);
+  const kind = trackingKind(planned.tracking_mode);
+  const shape = kindFields(kind);
+  // A run is one effort unless the trainer asked for rounds.
+  const fallbackCount = kind === 'cardio' ? 1 : 3;
+  const count = Math.max(1, Math.min(10, planned.sets ?? last?.sets.length ?? fallbackCount));
+  const plannedReps = shape.reps ? firstInt(planned.reps) : null;
+  const targetM = metres(planned.target_distance, planned.target_distance_unit);
   return Array.from({ length: count }, (_, i) => {
     const prev = last?.sets[i] ?? last?.sets[last.sets.length - 1];
-    const weight = prev?.weight_kg ?? planned.target_weight ?? null;
-    const reps = plannedReps ?? prev?.reps ?? null;
-    return { weight: fmtKg(weight), reps: reps === null ? '' : String(reps), done: false };
+    const weight = shape.load === 'none' ? null : prev?.weight_kg ?? planned.target_weight ?? null;
+    const reps = plannedReps ?? (shape.reps ? prev?.reps ?? null : null);
+    const seconds = planned.target_duration_seconds ?? prev?.duration_seconds ?? null;
+    const set: DraftSet = { weight: fmtKg(weight), reps: reps === null ? '' : String(reps), done: false };
+    if (shape.duration && seconds != null) {
+      set.time = kind === 'cardio' ? fmtKg(Math.round((seconds / 60) * 10) / 10) : String(Math.round(seconds));
+    }
+    if (shape.distance && targetM != null) {
+      set.distance = kind === 'cardio' ? fmtKg(targetM / 1000) : fmtKg(targetM);
+    }
+    return set;
   });
 }
 
@@ -106,16 +197,13 @@ export function newDraft(input: {
   assignment_id?: string | null;
   program_name?: string | null;
   workout_day?: string | null;
-  exercises: {
+  exercises: (PlannedInput & {
     name: string;
-    sets: number | null;
-    reps: string | number | null;
-    target_weight: number | null;
     rest_seconds?: number | null;
     notes?: string | null;
     media_url?: string | null;
     video_url?: string | null;
-  }[];
+  })[];
   last: MeLastPerformance;
   now?: Date;
   requestId?: string;
@@ -131,6 +219,7 @@ export function newDraft(input: {
     current: 0,
     exercises: input.exercises.map((x) => ({
       name: x.name,
+      kind: trackingKind(x.tracking_mode),
       prescription: prescriptionOf(x),
       rest_seconds: x.rest_seconds ?? null,
       notes: x.notes ?? null,
@@ -150,7 +239,10 @@ export function lastSummary(last: MeLastPerformance[string] | undefined): string
   const one = (s: MeLastPerformance[string]['sets'][number]) => {
     if (s.weight_kg !== null && s.reps !== null) return `${fmtKg(s.weight_kg)} kg × ${s.reps}`;
     if (s.reps !== null) return `${s.reps} reps`;
-    if (s.duration_seconds !== null) return `${Math.round(s.duration_seconds / 60)} min`;
+    if (s.duration_seconds !== null) {
+      const d = formatDuration(s.duration_seconds);
+      return s.weight_kg !== null ? `${d} @ ${fmtKg(s.weight_kg)} kg` : d;
+    }
     return null;
   };
   const parts = last.sets.map(one).filter(Boolean) as string[];
@@ -164,9 +256,14 @@ export function newRequestId(): string {
   return `w-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
-/** A set that counts: ticked, with reps. */
+/** Something was actually done: reps, time held or run, or distance covered. */
+export function hasWork(s: DraftSet): boolean {
+  return (num(s.reps) ?? 0) > 0 || (num(s.time ?? '') ?? 0) > 0 || (num(s.distance ?? '') ?? 0) > 0;
+}
+
+/** A set that counts: ticked, with work in it. */
 export function isLogged(s: DraftSet): boolean {
-  return s.done && (num(s.reps) ?? 0) > 0;
+  return s.done && hasWork(s);
 }
 
 export function loggedSetCount(d: WorkoutDraft): number {
@@ -208,10 +305,28 @@ export function toLogInput(d: WorkoutDraft, now: Date = new Date()): MeWorkoutLo
     exercises: d.exercises
       .map((x) => ({
         name: x.name,
-        sets: x.sets.filter(isLogged).map((s) => ({ weight_kg: num(s.weight), reps: num(s.reps) })),
+        sets: x.sets.filter(isLogged).map((s) => toLogSet(s, x.kind)),
       }))
       .filter((x) => x.sets.length > 0),
   };
+}
+
+/** One ticked set in the units the server stores: kg, reps, seconds, metres. */
+function toLogSet(s: DraftSet, kind: TrackingKind | undefined): MeWorkoutLogInput['exercises'][number]['sets'][number] {
+  const shape = kindFields(kind ?? 'load_reps');
+  const time = num(s.time ?? '');
+  const distance = num(s.distance ?? '');
+  const out: MeWorkoutLogInput['exercises'][number]['sets'][number] = {
+    weight_kg: shape.load === 'none' ? null : num(s.weight),
+    reps: shape.reps ? num(s.reps) : null,
+  };
+  if (shape.duration && time !== null) {
+    out.duration_seconds = Math.round(kind === 'cardio' ? time * 60 : time);
+  }
+  if (shape.distance && distance !== null) {
+    out.distance_m = Math.round((kind === 'cardio' ? distance * 1000 : distance) * 100) / 100;
+  }
+  return out;
 }
 
 // ── Persistence ──────────────────────────────────────────────────────────────

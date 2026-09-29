@@ -12,6 +12,10 @@ import type { ExerciseVersion, LibraryExercise } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { errorMessage } from '@/lib/forms/errors';
 import { exerciseRegion, regionTone, toneGradient, toneVars } from './libraryTheme';
+import { TRACKING_MODE_LABEL, isTrackingMode } from '@/lib/training-tracking';
+
+/** "Hold (time)" rather than "HOLD"; unknown values fall back to readable text. */
+const modeLabel = (mode: string) => (isTrackingMode(mode) ? TRACKING_MODE_LABEL[mode] : mode.replace(/_/g, ' '));
 
 /**
  * Full exercise detail, in a right-hand drawer.
@@ -424,13 +428,13 @@ function Prescription({ exercise: ex }: { exercise: LibraryExercise }) {
       {ex.prescription_mode_primary && (
         <div className="mb-3 space-y-2">
           <div className="flex items-center gap-2 text-[12px] font-semibold text-[var(--text-primary)]">
-            <span>Primary mode</span>
-            <Badge tone="brand">{ex.prescription_mode_primary.replace(/_/g, ' ')}</Badge>
+            <span>Tracked as</span>
+            <Badge tone="brand">{modeLabel(ex.prescription_mode_primary)}</Badge>
           </div>
           {ex.prescription_mode_allowed && ex.prescription_mode_allowed.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {ex.prescription_mode_allowed.map((mode) => (
-                <Badge key={mode} tone="neutral">{mode.replace(/_/g, ' ')}</Badge>
+                <Badge key={mode} tone="neutral">{modeLabel(mode)}</Badge>
               ))}
             </div>
           )}

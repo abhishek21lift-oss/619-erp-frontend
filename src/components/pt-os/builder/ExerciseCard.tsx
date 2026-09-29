@@ -30,6 +30,10 @@ import {
   GripVertical, Copy, Trash2, ChevronDown, StickyNote, PlayCircle, TrendingUp,
 } from 'lucide-react';
 import type { ProgressionPreview, WorkoutPlanExercise, WorkoutExerciseInput } from '@/lib/api';
+import {
+  TRACKING_MODE_LABEL, allowedModes, effectiveMode, trackingKind,
+  type TrackingKind, type TrackingMode,
+} from '@/lib/training-tracking';
 
 /** Muscle-group hues. Fixed per group so a group keeps its colour everywhere. */
 const GROUP_TONE: Record<string, string> = {
@@ -50,15 +54,47 @@ type FieldSpec = {
   primary?: boolean;
 };
 
+/**
+ * A time/distance target. These live in `config` (migration 136 reserved it
+ * for timed sets) rather than in columns, so they are read and written through
+ * the JSON object instead of a top-level key.
+ */
+type ConfigSpec = {
+  configKey: 'duration_seconds' | 'distance';
+  label: string;
+  suffix: string;
+  /** Shown in minutes, stored in seconds. */
+  minutes?: boolean;
+  /** Stored alongside a distance so a number is never unitless. */
+  distanceUnit?: 'm' | 'km';
+};
+
+type AnySpec = FieldSpec | ConfigSpec;
+const isConfigSpec = (f: AnySpec): f is ConfigSpec => 'configKey' in f;
+
+const SETS: FieldSpec = { key: 'sets', label: 'Sets', mode: 'numeric', primary: true };
+const REPS: FieldSpec = { key: 'reps', label: 'Reps', mode: 'numeric', primary: true };
+const REST: FieldSpec = { key: 'rest_seconds', label: 'Rest', mode: 'numeric', suffix: 's', primary: true };
+const load = (label: string): FieldSpec => ({ key: 'target_weight', label, mode: 'decimal', suffix: 'kg', primary: true });
+
 // Order is the visual hierarchy from the brief: the four a trainer sets on
-// every exercise first, then the intensity detail behind a disclosure.
-const PRIMARY: FieldSpec[] = [
-  { key: 'sets',          label: 'Sets',   mode: 'numeric', primary: true },
-  { key: 'reps',          label: 'Reps',   mode: 'numeric', primary: true },
-  { key: 'target_weight', label: 'Weight', mode: 'decimal', suffix: 'kg', primary: true },
-  { key: 'rest_seconds',  label: 'Rest',   mode: 'numeric', suffix: 's',  primary: true },
-];
-const ADVANCED: FieldSpec[] = [
+// every exercise first, then the intensity detail behind a disclosure. WHICH
+// four depends on how the exercise is measured — a plank prescribed as
+// "3 × 12 reps" or a treadmill run as "3 × 12 @ kg" is the bug the tracking
+// modes exist to remove (see lib/training-tracking).
+const PRIMARY: Record<TrackingKind, AnySpec[]> = {
+  load_reps: [SETS, REPS, load('Weight'), REST],
+  reps:      [SETS, REPS, load('+ Load'), REST],
+  hold:      [SETS, { configKey: 'duration_seconds', label: 'Hold', suffix: 's' }, load('+ Load'), REST],
+  carry:     [SETS, { configKey: 'distance', label: 'Distance', suffix: 'm', distanceUnit: 'm' }, load('Load'), REST],
+  cardio:    [
+    { configKey: 'duration_seconds', label: 'Time', suffix: 'min', minutes: true },
+    { configKey: 'distance', label: 'Distance', suffix: 'km', distanceUnit: 'km' },
+    { key: 'rpe', label: 'RPE', mode: 'decimal' },
+    { ...SETS, label: 'Rounds' },
+  ],
+};
+const ADVANCED_ALL: FieldSpec[] = [
   { key: 'tempo',       label: 'Tempo',    mode: 'text',    placeholder: '3-1-2-0' },
   { key: 'rpe',         label: 'RPE / RIR', mode: 'decimal' },
   { key: 'warmup_sets', label: 'Warm-up sets', mode: 'numeric' },
@@ -69,6 +105,17 @@ const ADVANCED: FieldSpec[] = [
   // together, and "A"/"B" is what a coach writes on the sheet.
   { key: 'superset_group', label: 'Superset', mode: 'text', placeholder: 'A' },
 ];
+
+/**
+ * Intensity detail per kind. Tempo and drop sets describe a rep, so they mean
+ * nothing on a hold, a carry or a run; RPE is already a primary field for
+ * cardio.
+ */
+function advancedFor(kind: TrackingKind): FieldSpec[] {
+  if (kind === 'cardio') return ADVANCED_ALL.filter((f) => f.key === 'warmup_sets' || f.key === 'superset_group');
+  if (kind === 'hold' || kind === 'carry') return ADVANCED_ALL.filter((f) => f.key !== 'tempo');
+  return ADVANCED_ALL;
+}
 
 export interface ExerciseCardProps {
   exercise: WorkoutPlanExercise;
@@ -105,6 +152,11 @@ export default function ExerciseCard({
   const tone = toneFor(exercise.muscle_group);
   const demo = exercise.video_url || exercise.gif_url;
   const commit = onChange ?? (() => {});
+  const mode = effectiveMode(exercise);
+  const kind = trackingKind(mode, exercise.exercise_type);
+  const primary = PRIMARY[kind];
+  const advanced = advancedFor(kind);
+  const repBased = kind === 'load_reps' || kind === 'reps';
 
   return (
     <m.div
@@ -170,6 +222,7 @@ export default function ExerciseCard({
                 {exercise.muscle_group}
               </span>
             )}
+            <TrackingChip exercise={exercise} mode={mode} onCommit={commit} readOnly={readOnly} />
             {exercise.superset_group && (
               <span
                 className="rounded-full px-2 py-0.5 text-[10.5px] font-[700]"
@@ -204,11 +257,16 @@ export default function ExerciseCard({
 
       {/* ── Parameters ── */}
       <div className="mt-3 grid grid-cols-4 gap-2">
-        {PRIMARY.map((f) => (
-          readOnly
+        {primary.map((f) => {
+          if (isConfigSpec(f)) {
+            return readOnly
+              ? <StaticConfigField key={f.configKey} spec={f} exercise={exercise} />
+              : <ConfigField key={f.configKey} spec={f} exercise={exercise} onCommit={commit} />;
+          }
+          return readOnly
             ? <StaticField key={String(f.key)} spec={f} exercise={exercise} />
-            : <InlineField key={String(f.key)} spec={f} exercise={exercise} onCommit={commit} />
-        ))}
+            : <InlineField key={String(f.key)} spec={f} exercise={exercise} onCommit={commit} />;
+        })}
       </div>
 
       {/* ── Where the rule takes this exercise ──
@@ -216,7 +274,7 @@ export default function ExerciseCard({
           exercise with no prescribed load under a weight rule is not
           progressed at all — inventing a starting weight to show a ramp from
           would be a number the trainer never wrote. */}
-      {preview && <RampLine preview={preview} exercise={exercise} />}
+      {preview && <RampLine preview={preview} exercise={exercise} kind={kind} />}
 
       {/* ── Intensity detail, folded away ──
           Sets/reps/weight/rest are set on nearly every exercise; tempo and RPE
@@ -233,7 +291,7 @@ export default function ExerciseCard({
           size={14}
           style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .18s' }}
         />
-        {open ? 'Fewer options' : 'Tempo, RPE, warm-up, drop sets'}
+        {open ? 'Fewer options' : repBased ? 'Tempo, RPE, warm-up, drop sets' : kind === 'cardio' ? 'Warm-up, superset' : 'RPE, warm-up, superset'}
       </button>
 
       {open && (
@@ -247,13 +305,13 @@ export default function ExerciseCard({
               own row at 390px reads as a mistake, and 2×2 keeps each box wide
               enough for "3-1-2-0" to fit without scrolling inside itself. */}
           <div className="grid grid-cols-2 gap-2 pt-1">
-            {ADVANCED.map((f) => (
+            {advanced.map((f) => (
               readOnly
                 ? <StaticField key={String(f.key)} spec={f} exercise={exercise} />
                 : <InlineField key={String(f.key)} spec={f} exercise={exercise} onCommit={commit} />
             ))}
           </div>
-          <DropSetField exercise={exercise} onCommit={commit} readOnly={readOnly} />
+          {repBased && <DropSetField exercise={exercise} onCommit={commit} readOnly={readOnly} />}
         </m.div>
       )}
 
@@ -282,7 +340,9 @@ export default function ExerciseCard({
  * the same arithmetic in TypeScript would eventually disagree with it — at
  * which point the builder promises a number the gym floor never shows.
  */
-function RampLine({ preview, exercise }: { preview: ProgressionPreview; exercise: WorkoutPlanExercise }) {
+function RampLine({
+  preview, exercise, kind,
+}: { preview: ProgressionPreview; exercise: WorkoutPlanExercise; kind: TrackingKind }) {
   const { first, last } = preview;
 
   // The preview was computed from the numbers as they were when the plan was
@@ -299,9 +359,13 @@ function RampLine({ preview, exercise }: { preview: ProgressionPreview; exercise
   // Which measure moved decides what to print. Nothing moved (a bodyweight
   // exercise under a weight rule, an exercise with no RPE under an RPE rule)
   // means there is no ramp to show, and a flat "60 → 60" is noise.
+  // Reps are not shown on a hold, carry or run, so a reps rule moving the
+  // (hidden) column must not surface as "12 → 16 reps" under a plank.
+  const repBased = kind === 'load_reps' || kind === 'reps';
   const moved =
-    first.target_weight !== last.target_weight ? { from: first.target_weight, to: last.target_weight, unit: 'kg' }
-      : first.reps !== last.reps ? { from: first.reps, to: last.reps, unit: 'reps' }
+    kind !== 'cardio' && first.target_weight !== last.target_weight
+      ? { from: first.target_weight, to: last.target_weight, unit: 'kg' }
+      : repBased && first.reps !== last.reps ? { from: first.reps, to: last.reps, unit: 'reps' }
         : first.rpe !== last.rpe ? { from: first.rpe, to: last.rpe, unit: 'RPE' }
           : null;
   if (!moved || moved.from == null || moved.to == null) return null;
@@ -405,6 +469,146 @@ function DropSetField({
         })}
       </div>
     </div>
+  );
+}
+
+/**
+ * What this row is measured in, and — when the library allows more than one —
+ * the switch. A plank can be prescribed as a 45s hold or as reps of plank
+ * shoulder taps; the default is the library's, the choice is the trainer's.
+ *
+ * Stored as `config.tracking_mode`, written back with the rest of config so a
+ * drop-set count or a time target already there survives the change.
+ */
+function TrackingChip({
+  exercise, mode, onCommit, readOnly,
+}: {
+  exercise: WorkoutPlanExercise;
+  mode: TrackingMode | null;
+  onCommit: (p: WorkoutExerciseInput) => void;
+  readOnly?: boolean;
+}) {
+  const options = allowedModes(exercise);
+  if (!mode) return null;
+  const chipStyle: React.CSSProperties = { background: 'var(--bg-subtle)', color: 'var(--text-muted)' };
+
+  if (readOnly || options.length < 2) {
+    return (
+      <span className="rounded-full px-2 py-0.5 text-[10.5px] font-[700]" style={chipStyle}>
+        {TRACKING_MODE_LABEL[mode]}
+      </span>
+    );
+  }
+
+  const change = (next: TrackingMode) => {
+    const cfg = { ...((exercise.config ?? {}) as Record<string, unknown>) };
+    if (next === exercise.prescription_mode_primary) delete cfg.tracking_mode;
+    else cfg.tracking_mode = next;
+    onCommit({ config: Object.keys(cfg).length === 0 ? null : cfg });
+  };
+
+  return (
+    <select
+      aria-label={`Track ${exercise.name} by`}
+      value={mode}
+      onChange={(e) => change(e.target.value as TrackingMode)}
+      // 44px like every other control here — this one is tapped at the rack.
+      className="h-[44px] cursor-pointer rounded-[12px] border-0 px-2.5 text-[11px] font-[700] outline-none focus-visible:ring-2"
+      style={chipStyle}
+    >
+      {options.map((m) => <option key={m} value={m}>{TRACKING_MODE_LABEL[m]}</option>)}
+    </select>
+  );
+}
+
+/** A config-held target as the field shows it: minutes for cardio time. */
+function configText(exercise: WorkoutPlanExercise, spec: ConfigSpec): string {
+  const raw = (exercise.config ?? {})[spec.configKey];
+  const n = raw === null || raw === undefined || raw === '' ? null : Number(raw);
+  if (n === null || !Number.isFinite(n)) return '';
+  return String(spec.minutes ? Math.round((n / 60) * 10) / 10 : n);
+}
+
+function StaticConfigField({ spec, exercise }: { spec: ConfigSpec; exercise: WorkoutPlanExercise }) {
+  const text = configText(exercise, spec) || '—';
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+        {spec.label}
+      </span>
+      <div className="flex h-[44px] items-center justify-center gap-0.5 px-1.5" style={inputStyle}>
+        <span className="truncate text-[14px] font-[700]" style={{ color: 'var(--text-primary)' }}>{text}</span>
+        {text !== '—' && (
+          <span className="text-[10px] font-[600]" style={{ color: 'var(--text-muted)' }}>{spec.suffix}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A time or distance target, edited like any other field but stored inside
+ * `config`. The whole object is written back — `config` is one JSON column,
+ * so a patch of just this key would erase drop sets or the tracking override.
+ */
+function ConfigField({
+  spec, exercise, onCommit,
+}: { spec: ConfigSpec; exercise: WorkoutPlanExercise; onCommit: (p: WorkoutExerciseInput) => void }) {
+  const asText = configText(exercise, spec);
+  const [draft, setDraft] = useState(asText);
+  const lastCommitted = useRef(asText);
+
+  useEffect(() => {
+    if (asText !== lastCommitted.current) {
+      lastCommitted.current = asText;
+      setDraft(asText);
+    }
+  }, [asText]);
+
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (trimmed === lastCommitted.current) return;
+    const cfg = { ...((exercise.config ?? {}) as Record<string, unknown>) };
+    if (trimmed === '') {
+      delete cfg[spec.configKey];
+      if (spec.distanceUnit) delete cfg.distance_unit;
+    } else {
+      const n = Number(trimmed.replace(',', '.'));
+      if (!Number.isFinite(n) || n < 0) { setDraft(lastCommitted.current); return; }
+      cfg[spec.configKey] = spec.minutes ? Math.round(n * 60) : n;
+      if (spec.distanceUnit) cfg.distance_unit = spec.distanceUnit;
+    }
+    lastCommitted.current = trimmed;
+    onCommit({ config: Object.keys(cfg).length === 0 ? null : cfg });
+  };
+
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+        {spec.label}
+      </span>
+      <div className="flex items-center overflow-hidden" style={inputStyle}>
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur();
+            if (e.key === 'Escape') { setDraft(lastCommitted.current); e.currentTarget.blur(); }
+          }}
+          inputMode="decimal"
+          placeholder="—"
+          aria-label={`${spec.label} (${spec.suffix}) for ${exercise.name}`}
+          className="h-[44px] w-full min-w-0 flex-1 bg-transparent px-1.5 text-center text-[14px] font-[700] outline-none"
+          style={{ color: 'var(--text-primary)' }}
+        />
+        {draft !== '' && (
+          <span className="shrink-0 pr-2 text-[10px] font-[600]" style={{ color: 'var(--text-muted)' }}>
+            {spec.suffix}
+          </span>
+        )}
+      </div>
+    </label>
   );
 }
 
