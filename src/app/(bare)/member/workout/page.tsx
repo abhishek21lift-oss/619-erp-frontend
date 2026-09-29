@@ -23,6 +23,7 @@ import { api } from '@/lib/api';
 import type { MeSession, MeSessionSet, MeWorkoutExercise, MeWorkoutPlan } from '@/lib/api';
 import { rgba } from '@/lib/palette';
 import WorkoutLauncher from '@/components/member/WorkoutLauncher';
+import { describePrescription, trackingKind } from '@/lib/training-tracking';
 
 const DAY_NAMES = ['Anytime', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -184,9 +185,20 @@ function PlanBlock({ plan, titled }: { plan: MeWorkoutPlan; titled: boolean }) {
 }
 
 function ExerciseRow({ x, n }: { x: MeWorkoutExercise; n: number }) {
+  // A plank reads "3 × 45s", a carry "3 × 40 m @ 32 kg", a run "20 min · 3 km";
+  // only a lift is described as sets × reps.
+  const kind = trackingKind(x.tracking_mode);
+  const main = kind === 'load_reps'
+    ? [
+        x.sets && x.reps ? `${x.sets} × ${x.reps}` : x.sets ? `${x.sets} sets` : x.reps ? `${x.reps} reps` : null,
+        x.target_weight != null ? `${x.target_weight} kg` : null,
+      ]
+    : [describePrescription({
+        kind, sets: x.sets, reps: x.reps, target_weight: x.target_weight,
+        duration_seconds: x.target_duration_seconds, distance: x.target_distance, distance_unit: x.target_distance_unit,
+      }) || null];
   const prescription = [
-    x.sets && x.reps ? `${x.sets} × ${x.reps}` : x.sets ? `${x.sets} sets` : x.reps ? `${x.reps} reps` : null,
-    x.target_weight != null ? `${x.target_weight} kg` : null,
+    ...main,
     x.rpe != null ? `RPE ${x.rpe}` : null,
     x.tempo ? `Tempo ${x.tempo}` : null,
   ].filter(Boolean) as string[];

@@ -19,6 +19,9 @@ import { useToast } from '@/lib/toast';
 import { fmtDate } from '@/lib/format';
 import { errorMessage } from '@/lib/forms/errors';
 import { inlineNumber, stepFrom } from '@/lib/forms/inline';
+import {
+  describePrescription, effectiveKind, formatDuration, kindFields, timedTargets, trackingKind, type TrackingKind,
+} from '@/lib/training-tracking';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -48,6 +51,17 @@ const CARDIO_FIELDS: Array<{
   { key: 'rounds_completed', label: 'Rounds', modes: ['ROUNDS'] },
 ];
 
+// A hold is timed in SECONDS — "0.75 min" is not how anyone writes a plank.
+const HOLD_FIELD: (typeof CARDIO_FIELDS)[number] = { key: 'duration_seconds', label: 'Hold (s)', modes: ['HOLD'] };
+
+/** The time/distance actuals a set row shows for its kind. */
+function timedFieldsFor(kind: TrackingKind, modes: string[]): (typeof CARDIO_FIELDS)[number][] {
+  if (kind === 'cardio') return CARDIO_FIELDS.filter((f) => f.modes.some((m) => modes.includes(m)));
+  if (kind === 'hold') return [HOLD_FIELD];
+  if (kind === 'carry') return CARDIO_FIELDS.filter((f) => f.key === 'distance' || f.key === 'duration_seconds');
+  return [];
+}
+
 const DISTANCE_UNITS: WorkoutDistanceUnit[] = ['km', 'm', 'mile'];
 const SPEED_UNITS: WorkoutSpeedUnit[] = ['kmh', 'mph'];
 
@@ -55,7 +69,7 @@ const SPEED_UNITS: WorkoutSpeedUnit[] = ['kmh', 'mph'];
  *  reads back only the numbers that were actually logged, joined by ·. */
 function previousChip(ps: WorkoutSet): string {
   const parts: string[] = [];
-  if (ps.duration_seconds != null) parts.push(`${Math.round((ps.duration_seconds / 60) * 10) / 10} min`);
+  if (ps.duration_seconds != null) parts.push(formatDuration(ps.duration_seconds));
   if (ps.distance != null) parts.push(`${ps.distance} ${ps.distance_unit ?? ''}`.trim());
   if (ps.average_speed != null) parts.push(`${ps.average_speed} ${ps.speed_unit ?? ''}`.trim());
   if (ps.calories_burned != null) parts.push(`${ps.calories_burned} cal`);
@@ -64,6 +78,8 @@ function previousChip(ps: WorkoutSet): string {
   if (ps.steps_completed != null) parts.push(`${ps.steps_completed} steps`);
   if (ps.floors_completed != null) parts.push(`${ps.floors_completed} fl`);
   if (ps.rounds_completed != null) parts.push(`×${ps.rounds_completed}`);
+  // A weighted hold or a carry: the load is half of what was done.
+  if (parts.length > 0 && ps.weight_kg != null) parts.push(`${ps.weight_kg} kg`);
   if (parts.length > 0) return parts.join(' · ');
   return `${ps.weight_kg ?? '—'}kg × ${ps.reps ?? '—'}`;
 }
@@ -176,15 +192,28 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
     });
     const newExerciseId = res?.data?.id;
     if (newExerciseId) {
-      for (let i = 1; i <= planned.sets; i++) {
+      // A hold, carry or run is prefilled with its time/distance target, not
+      // the reps column (which on those rows is only the table's default).
+      const kind = effectiveKind(planned);
+      const fields = kindFields(kind);
+      const target = timedTargets(planned.config);
+      const timed = {
+        duration_seconds: fields.duration ? target.duration_seconds : null,
+        distance: fields.distance ? target.distance : null,
+        distance_unit: fields.distance && target.distance != null ? target.distance_unit : null,
+      };
+      // Cardio is one continuous effort unless the trainer asked for rounds.
+      const count = kind === 'cardio' ? Math.max(1, Math.min(planned.sets || 1, 20)) : planned.sets;
+      for (let i = 1; i <= count; i++) {
         await api.progress.workoutLog.sets.add(newExerciseId, {
-          set_number: i, reps: planned.reps, rest_seconds: planned.rest_seconds, completed: false,
+          set_number: i, reps: fields.reps ? planned.reps : null, rest_seconds: planned.rest_seconds, completed: false,
+          ...timed,
           // The prescribed load for the week the client is actually in, which
           // the server resolved. Prefilling it is the entire payoff of the
           // progression rule: a trainer who has to retype "65" every set has
           // been given a spreadsheet, not a programme. It stays editable —
           // this is what was ASKED for, and the log records what was done.
-          weight_kg: planned.target_weight ?? null,
+          weight_kg: fields.load === 'none' ? null : planned.target_weight ?? null,
           rpe: planned.rpe ?? null,
           tempo: planned.tempo ?? null,
         });
@@ -479,8 +508,11 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
                           changes from week to week was invisible on the only
                           screen used at the rack. */}
                       <p className="text-[11px]" style={{ color: '#7fb4ff' }}>
-                        {ex.sets} &times; {ex.reps}
-                        {ex.target_weight != null ? ` @ ${ex.target_weight} kg` : ''}
+                        {describePrescription({
+                          kind: effectiveKind(ex),
+                          sets: ex.sets, reps: ex.reps, target_weight: ex.target_weight,
+                          ...timedTargets(ex.config),
+                        }) || 'No target'}
                         {ex.rpe != null ? ` · RPE ${ex.rpe}` : ''} target
                       </p>
                     </div>
@@ -579,10 +611,10 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
 
   const nextSetNumber = exercise.sets.length + 1;
 
-  // What this exercise can be logged AS. Cardio exercises render actuals
-  // (time/distance/speed/…) instead of weight × reps; anything without a
-  // library type — ad-hoc rows whose exercise went away — stays strength.
-  const isCardio = exercise.exercise_type === 'Cardio';
+  // What this exercise can be logged AS: its library tracking mode (load ×
+  // reps, bodyweight reps, hold, carry, cardio). Rows without a library
+  // exercise — ad-hoc names — fall back to load × reps.
+  const kind = trackingKind(exercise.prescription_mode_primary, exercise.exercise_type);
   const cardioModes = exercise.prescription_mode_allowed?.length
     ? exercise.prescription_mode_allowed
     : exercise.prescription_mode_primary
@@ -719,7 +751,7 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
 
               <div className="space-y-2.5">
                 {exercise.sets.map((set) => (
-                  <SetRow key={set.id} set={set} isCardio={isCardio} modes={cardioModes} onChanged={onChanged} />
+                  <SetRow key={set.id} set={set} kind={kind} modes={cardioModes} onChanged={onChanged} />
                 ))}
               </div>
 
@@ -797,28 +829,31 @@ const CARDIO_KEYS = [
  * A set as its row's inputs show it: every editable value as the string the
  * field holds, units included. Duration is shown in minutes.
  */
-function setFields(set: WorkoutSet): Record<string, string> {
+function setFields(set: WorkoutSet, kind: TrackingKind = 'cardio'): Record<string, string> {
   const str = (v: number | null | undefined) => (v != null ? String(v) : '');
   const fields: Record<string, string> = {
     weight_kg: str(set.weight_kg),
     reps: str(set.reps),
     rpe: str(set.rpe),
     rir: str(set.rir),
-    distance_unit: set.distance_unit ?? 'km',
+    // A carry is measured in metres; a run in kilometres.
+    distance_unit: set.distance_unit ?? (kind === 'carry' ? 'm' : 'km'),
     speed_unit: set.speed_unit ?? 'kmh',
   };
   for (const k of CARDIO_KEYS) {
     const v = set[k] as number | null | undefined;
-    fields[k] = k === 'duration_seconds'
+    fields[k] = k === 'duration_seconds' && kind !== 'hold'
       ? (v != null ? String(Math.round((v / 60) * 10) / 10) : '')
       : str(v);
   }
   return fields;
 }
 
-function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio: boolean; modes: string[]; onChanged: () => Promise<void> }) {
+function SetRow({ set, kind, modes, onChanged }: { set: WorkoutSet; kind: TrackingKind; modes: string[]; onChanged: () => Promise<void> }) {
   const { toast } = useToast();
-  const initial = setFields(set);
+  const isCardio = kind === 'cardio';
+  const shape = kindFields(kind);
+  const initial = setFields(set, kind);
   const [weight, setWeight] = useState(initial.weight_kg);
   const [reps, setReps] = useState(initial.reps);
   const [rpe, setRpe] = useState(initial.rpe);
@@ -858,7 +893,7 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
    * another device wrote).
    */
   const lastServer = useRef(initial);
-  const server = setFields(set);
+  const server = setFields(set, kind);
   const serverKey = JSON.stringify(server);
 
   useEffect(() => {
@@ -882,9 +917,7 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
     }
   }, [serverKey]);
 
-  const visibleCardioFields = isCardio
-    ? CARDIO_FIELDS.filter((f) => f.modes.some((m) => modes.includes(m)))
-    : [];
+  const visibleCardioFields = timedFieldsFor(kind, modes);
   const showCardioRpe = isCardio && modes.includes('RPE');
 
   const save = async (patch: Record<string, unknown>) => {
@@ -1010,8 +1043,8 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
           vocabulary publishes, two per row at thumb height. No weight/reps —
           forcing cardio into sets × reps is exactly what the prescription
           upgrade removed everywhere else. */}
-      {isCardio && (
-        <div className="grid grid-cols-2 gap-2.5">
+      {visibleCardioFields.length > 0 && (
+        <div className={`grid ${visibleCardioFields.length === 1 && !showCardioRpe ? 'grid-cols-1' : 'grid-cols-2'} gap-2.5`}>
           {visibleCardioFields.map((field) => (
             <label key={field.key} className="flex items-center gap-1 rounded-[10px] px-1 pl-2.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
               <span className="shrink-0 text-[9.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>{field.label}</span>
@@ -1049,9 +1082,11 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
 
       {!isCardio && (
         <>
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className={`grid ${shape.reps ? 'grid-cols-2' : 'grid-cols-1'} gap-2.5 ${visibleCardioFields.length > 0 ? 'mt-2.5' : ''}`}>
         <div>
-          <p className="mb-1 text-center text-[9.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Weight (kg)</p>
+          <p className="mb-1 text-center text-[9.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>
+            {shape.loadLabel} (kg){shape.load === 'optional' ? ' · optional' : ''}
+          </p>
           <div className="flex items-center gap-1.5">
             <button onClick={() => adjustWeight(-2.5)} aria-label="Decrease weight"
               className="flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-[12px] transition active:scale-95"
@@ -1070,6 +1105,7 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
             </button>
           </div>
         </div>
+        {shape.reps && (
         <div>
           <p className="mb-1 text-center text-[9.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Reps</p>
           <div className="flex items-center gap-1.5">
@@ -1090,6 +1126,7 @@ function SetRow({ set, isCardio, modes, onChanged }: { set: WorkoutSet; isCardio
             </button>
           </div>
         </div>
+        )}
       </div>
 
       <div className="mt-2.5 flex items-center gap-2.5">

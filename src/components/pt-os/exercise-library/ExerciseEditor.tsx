@@ -22,6 +22,17 @@ import {
   TextField, TextAreaField, SelectField, NumberField, FormErrorBanner,
 } from '@/components/ui/form';
 import { FRESH_TONE, regionTone, toneGradient, toneVars } from './libraryTheme';
+import { PRIMARY_MODE_CHOICES, TRACKING_MODE_LABEL, isTrackingMode } from '@/lib/training-tracking';
+
+/**
+ * How the plan builder and the loggers will ask for this exercise. The common
+ * shapes only; a built-in cardio row's richer modes (speed, pace …) are kept
+ * as an extra option when an exercise already carries one.
+ */
+const TRACKING_OPTIONS = [
+  { value: '', label: 'Load × reps (default)' },
+  ...PRIMARY_MODE_CHOICES.map((m) => ({ value: m, label: TRACKING_MODE_LABEL[m] })),
+];
 
 /**
  * Create / edit an exercise.
@@ -400,6 +411,21 @@ export function ExerciseEditor({
                       label="Category"
                       options={[{ value: '', label: 'Select…' }, ...categoryOptions]}
                       serverError={f.errors.fieldErrors.category_id}
+                    />
+                  )}
+                </form.Field>
+
+                <form.Field name="tracking_mode">
+                  {(field) => (
+                    <SelectField
+                      field={field}
+                      label="Tracked as"
+                      options={
+                        isTrackingMode(field.state.value) && !TRACKING_OPTIONS.some((o) => o.value === field.state.value)
+                          ? [...TRACKING_OPTIONS, { value: field.state.value, label: TRACKING_MODE_LABEL[field.state.value] }]
+                          : TRACKING_OPTIONS
+                      }
+                      serverError={f.errors.fieldErrors.tracking_mode}
                     />
                   )}
                 </form.Field>
