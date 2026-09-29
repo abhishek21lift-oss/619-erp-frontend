@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, FileSignature } from 'lucide-react';
+import { AlertTriangle, Check, FileSignature } from 'lucide-react';
 import type { InformedConsentFormData } from './types';
 import { EXERCISE_PROGRAMME_CONSENT_PARAGRAPHS, EXERCISE_PROGRAMME_CHECKBOX_LABEL } from './types';
 
@@ -63,7 +63,79 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
           step-3 signature and date, so the PDF's Exercise Programme Consent
           block is unchanged. */}
 
+      <PhysicianAdvice form={form} set={set} />
+
       {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
+    </div>
+  );
+}
+
+/**
+ * "Has a doctor advised against exercise?"
+ *
+ * The record and the screening gate have always carried this answer — a "yes"
+ * with no clearance on file stops training outright — but nothing in the app
+ * ever asked it, so the stop could never fire. It sits beside the paragraph
+ * that commits the client to getting written permission when it is needed.
+ */
+function PhysicianAdvice({ form, set }: Pick<StepExerciseProgrammeConsentProps, 'form' | 'set'>) {
+  const answer = form.physicianAdvisedAgainst;
+  const option = (value: boolean, label: string) => {
+    const on = answer === value;
+    return (
+      <button
+        type="button" role="radio" aria-checked={on}
+        onClick={() => set('physicianAdvisedAgainst', value)}
+        className="min-h-[44px] flex-1 rounded-[12px] px-4 text-[13px] font-[700] transition-all"
+        style={{
+          background: on ? (value ? 'rgba(220,38,38,0.08)' : 'rgba(0,89,206,0.06)') : 'var(--bg-subtle)',
+          border: on ? `1.5px solid ${value ? '#dc2626' : '#0059ce'}` : '1.5px solid rgba(15,23,42,0.08)',
+          color: on ? (value ? '#dc2626' : '#0f172a') : '#475569',
+        }}
+      >
+        {label}
+      </button>
+    );
+  };
+  const field = (key: 'physicianName' | 'physicianHospital' | 'medicalCondition', label: string, required = false) => (
+    <label className="block">
+      <span className="mb-1.5 block text-[12px] font-[650] text-slate-600">
+        {label}{required && <span className="ml-0.5 text-[var(--gold,#0067E0)]" aria-hidden>*</span>}
+      </span>
+      <input
+        value={form[key]} onChange={(e) => set(key, e.target.value)} maxLength={key === 'medicalCondition' ? 1000 : 255}
+        required={required}
+        className="h-[44px] w-full rounded-[12px] px-3.5 text-[14px] outline-none"
+        style={{ background: 'var(--bg-card)', border: '1.5px solid rgba(15,23,42,0.1)', color: 'var(--text-primary)' }}
+      />
+    </label>
+  );
+
+  return (
+    <div className="rounded-[16px] p-4 sm:p-5 space-y-3.5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+      <p id="physician-advice-q" className="text-[13px] font-[700] text-slate-800">
+        Has a doctor ever advised this client against physical activity?
+        <span className="ml-0.5 text-[var(--gold,#0067E0)]" aria-hidden>*</span>
+      </p>
+      <div role="radiogroup" aria-labelledby="physician-advice-q" className="flex gap-2.5">
+        {option(false, 'No')}
+        {option(true, 'Yes')}
+      </div>
+      {answer === true && (
+        <div className="space-y-3">
+          <div className="flex items-start gap-2.5 rounded-[12px] px-3 py-2.5" style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)' }}>
+            <AlertTriangle size={15} style={{ color: '#dc2626', flexShrink: 0, marginTop: 1 }} />
+            <p className="text-[12.5px] font-[600] leading-snug" style={{ color: '#dc2626' }}>
+              Training stays blocked until a medical clearance from the doctor is uploaded to this consent.
+            </p>
+          </div>
+          {field('medicalCondition', 'Condition', true)}
+          <div className="grid gap-3 sm:grid-cols-2">
+            {field('physicianName', 'Doctor')}
+            {field('physicianHospital', 'Hospital / clinic')}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

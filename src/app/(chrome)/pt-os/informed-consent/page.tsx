@@ -18,13 +18,14 @@ import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
 import {
   STEPS, type StepId, type InformedConsentFormData,
-  initInformedConsentForm, formFromRecord, nextStepId, prevStepId, validateStep,
+  initInformedConsentForm, formFromRecord, amendFormFromRecord, nextStepId, prevStepId, validateStep,
   buildCreatePayload, buildUpdatePayload,
 } from '@/components/pt-os/informed-consent/types';
 import StepAgreements from '@/components/pt-os/informed-consent/StepAgreements';
 import StepExerciseProgrammeConsent from '@/components/pt-os/informed-consent/StepExerciseProgrammeConsent';
 import StepSignatures from '@/components/pt-os/informed-consent/StepSignatures';
 import { errorMessage } from '@/lib/forms/errors';
+import { ApiError } from '@/lib/http';
 
 interface FormErrors { [key: string]: string | undefined; }
 
@@ -181,6 +182,15 @@ function ConsentHub({ clientId, toast }: ConsentHubProps) {
       clientName={clientName}
       record={record}
       history={history}
+      onUploadClearance={async (file) => {
+        try {
+          await api.progress.informedConsent.uploadClearance(record.id, file);
+          toast.success('Medical clearance uploaded.');
+          await loadData();
+        } catch (err: unknown) {
+          toast.error(errorMessage(err, 'Could not upload the clearance.'));
+        }
+      }}
       onAmend={openWizard}
       onContinue={openWizard}
       onDownload={() => {
@@ -202,15 +212,39 @@ interface ConsentWizardProps {
 
 interface SubmitResult { pdfUrl?: string; }
 
+/** The live consent a create collided with (409 ACTIVE_CONSENT_EXISTS), if that is what this error is. */
+function activeConsentId(err: unknown): string | null {
+  if (!(err instanceof ApiError) || err.status !== 409 || err.code !== 'ACTIVE_CONSENT_EXISTS') return null;
+  const id = (err.payload as { error?: { id?: unknown } } | undefined)?.error?.id;
+  return typeof id === 'string' ? id : null;
+}
+
 function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentWizardProps) {
-  const isResume = Boolean(record && record.status !== 'completed' && record.status !== 'revoked' && record.status !== 'archived');
-  const [form, setForm] = useState<InformedConsentFormData>(() => (isResume && record ? formFromRecord(record) : initInformedConsentForm()));
+  // What this wizard is doing to the record on file:
+  //   resume — finishing a draft in place;
+  //   amend  — a new version of a completed consent. Its first save PATCHes
+  //            the completed record, which the server archives and replaces
+  //            with a draft (the one-live-consent-per-client rule means a
+  //            second POST can never succeed while it is live);
+  //   renew  — a new consent after a revoked or expired one;
+  //   new    — nothing on file.
+  const mode: 'resume' | 'amend' | 'renew' | 'new' = !record ? 'new'
+    : record.status === 'completed' ? 'amend'
+    : record.status === 'draft' ? 'resume'
+    : 'renew';
+  const isResume = mode === 'resume';
+  const [form, setForm] = useState<InformedConsentFormData>(() => {
+    if (!record || mode === 'new') return initInformedConsentForm();
+    return isResume ? formFromRecord(record) : amendFormFromRecord(record);
+  });
   const [errors, setErrors] = useState<FormErrors>({});
   const [step, setStep] = useState<StepId>(1);
   const [saving, setSaving] = useState(false);
   const [creatingDraft, setCreatingDraft] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [currentId, setCurrentId] = useState<string | null>(isResume && record ? record.id : null);
+  const [currentId, setCurrentId] = useState<string | null>(
+    (mode === 'resume' || mode === 'amend') && record ? record.id : null,
+  );
   const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
   const initFormRef = useRef<InformedConsentFormData>(form);
   const restoredRef = useRef(false);
@@ -220,8 +254,9 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
   const { restore, clear, saveNow } = useAutoSaveDraft({ key: draftKey, data: form, isDirty });
 
   // Auto-fill from the client profile when starting fresh (no existing record).
+  // An amendment or renewal starts from the record's own details instead.
   useEffect(() => {
-    if (isResume) return;
+    if (mode !== 'new') return;
     let cancelled = false;
     async function load() {
       setDetailLoading(true);
@@ -276,14 +311,25 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
   // Persists whatever has been filled in so far. Returns the (possibly new,
   // if this PATCH versioned a completed record) record id.
   const persist = useCallback(async (): Promise<string> => {
-    if (!currentId) {
-      const res = await api.progress.informedConsent.create(buildCreatePayload(form, clientId));
-      const id = res?.data?.id;
-      if (!id) throw new Error('Server did not return a record id.');
-      setCurrentId(id);
-      return id;
+    let targetId = currentId;
+    if (!targetId) {
+      try {
+        const res = await api.progress.informedConsent.create(buildCreatePayload(form, clientId));
+        const id = res?.data?.id;
+        if (!id) throw new Error('Server did not return a record id.');
+        setCurrentId(id);
+        return id;
+      } catch (err: unknown) {
+        // Someone (another tab, another device) started or finished a consent
+        // for this client since the page loaded. Save into that record — a
+        // draft is continued, a completed one is versioned — rather than
+        // failing the step.
+        const existing = activeConsentId(err);
+        if (!existing) throw err;
+        targetId = existing;
+      }
     }
-    const res = await api.progress.informedConsent.update(currentId, buildUpdatePayload(form));
+    const res = await api.progress.informedConsent.update(targetId, buildUpdatePayload(form));
     const id = res?.data?.id;
     if (!id) throw new Error('Server did not return a record id.');
     if (id !== currentId) setCurrentId(id);
@@ -294,15 +340,18 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
     setSaving(true);
     try {
       const id = await persist();
-      await api.progress.informedConsent.sign(id, { signer: 'client', signature: form.clientSignature });
-      const res = await api.progress.informedConsent.sign(id, { signer: 'trainer', signature: form.trainerSignature });
-      let final = res?.data;
+      // The witness signs FIRST. The record completes — and stops accepting
+      // signatures — the moment client and trainer have both signed, so a
+      // witness signing last was refused (409): the consent was saved but
+      // the operator was told it had failed, and the witness never recorded.
       if (form.witnessSignature) {
-        const wRes = await api.progress.informedConsent.sign(id, {
+        await api.progress.informedConsent.sign(id, {
           signer: 'witness', signature: form.witnessSignature, witness_name: form.witnessName || undefined,
         });
-        final = wRes?.data ?? final;
       }
+      await api.progress.informedConsent.sign(id, { signer: 'client', signature: form.clientSignature });
+      const res = await api.progress.informedConsent.sign(id, { signer: 'trainer', signature: form.trainerSignature });
+      const final = res?.data;
       clear();
       toast.success('Informed consent completed.');
       setSubmitResult({ pdfUrl: final?.pdf_url ?? undefined });
@@ -319,6 +368,17 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
     setErrors((e) => ({ ...e, [`step${step}`]: err }));
     if (err) { toast.error(err); return; }
 
+    // An amendment is not saved step by step: its first save archives the
+    // signed consent, and until the new version is signed the client would
+    // have no consent on file at all. The form stays local (and in the
+    // autosaved draft) until Finish, which saves and signs in one go.
+    const next = nextStepId(step);
+    // The last step saves inside handleFinish, once. Saving here as well ran
+    // two saves from one render's closure: when the first one created or
+    // versioned the record, the second still held the old id.
+    if (next == null) { await handleFinish(); return; }
+    if (mode === 'amend' && currentId === record?.id) { setStep(next); return; }
+
     setCreatingDraft(!currentId);
     try {
       await persist();
@@ -328,9 +388,6 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
       return;
     }
     setCreatingDraft(false);
-
-    const next = nextStepId(step);
-    if (next == null) { await handleFinish(); return; }
     setStep(next);
   };
 
@@ -375,7 +432,7 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
           wizard at step 1 with the same discard-confirm guard. */}
       <PageHero
         icon={<FileSignature size={18} />}
-        title={currentId ? 'Continue Consent' : 'New Informed Consent'}
+        title={mode === 'amend' ? 'Amend Consent' : mode === 'resume' ? 'Continue Consent' : 'New Informed Consent'}
         subtitle={clientName}
       >
         <StepperTimeline steps={stepperSteps} current={step} onStep={(id) => handleStepClick(id as StepId)} />

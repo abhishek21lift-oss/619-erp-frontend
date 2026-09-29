@@ -28,6 +28,7 @@ import StepParqQuestionnaire from '@/components/pt-os/parq/StepParqQuestionnaire
 import StepMedicalClearance from '@/components/pt-os/parq/StepMedicalClearance';
 import StepConsent from '@/components/pt-os/parq/StepConsent';
 import ParqCard from '@/components/pt-os/parq/ParqCard';
+import ScreeningNotice, { latestScreened, screeningIssues } from '@/components/pt-os/parq/ScreeningNotice';
 import { errorMessage } from '@/lib/forms/errors';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -114,6 +115,19 @@ function ParqHub({ clientId, toast }: ParqHubProps) {
   useEffect(() => { loadData(); }, [loadData]);
 
   const openWizard = (id: string | null) => { setEditingId(id); setView('wizard'); };
+  const latest = useMemo(() => latestScreened(forms), [forms]);
+  const issues = useMemo(() => screeningIssues(latest), [latest]);
+
+  const markReviewed = async () => {
+    if (!latest?.id) return;
+    try {
+      await api.progress.parqForms.update(String(latest.id), { status: 'reviewed' });
+      toast.success('Screening marked reviewed.');
+      await loadData();
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Could not mark the screening reviewed.'));
+    }
+  };
   const closeWizard = (refresh: boolean) => { setView('list'); setEditingId(null); if (refresh) loadData(); };
 
   if (loading) {
@@ -149,6 +163,14 @@ function ParqHub({ clientId, toast }: ParqHubProps) {
       />
 
       <div className="mx-auto w-full max-w-3xl space-y-3">
+        {latest && (
+          <ScreeningNotice
+            form={latest} issues={issues}
+            onOpen={() => openWizard(String(latest.id))}
+            onNewScreening={() => openWizard(null)}
+            onMarkReviewed={markReviewed}
+          />
+        )}
         {forms.length === 0 && (
           <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <p className="text-[14px] font-[600] text-slate-500">No PAR-Q screenings yet.</p>
@@ -206,6 +228,10 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
     let cancelled = false;
     async function load() {
       let base = initParqForm();
+      // When the server copy was saved, so an older local draft cannot be
+      // laid over newer answers (another device, or this form submitted
+      // since the draft was written).
+      let serverSavedAt = 0;
       if (formId) {
         setDetailLoading(true);
         try {
@@ -213,6 +239,7 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
           const row = res?.data as ParqFormDetail | undefined;
           if (row) {
             base = formFromRow(row);
+            serverSavedAt = Date.parse(String(row.updated_at ?? row.created_at ?? '')) || 0;
             if (!cancelled) {
               setDocuments(row.documents ?? []);
               if (row.medical_clearance?.id) setClearanceId(String(row.medical_clearance.id));
@@ -249,10 +276,12 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
       // Merge a local draft on top of the freshly loaded/autofilled baseline.
       if (!restoredRef.current) {
         restoredRef.current = true;
-        const draft = restore();
+        const draft = restore({ notBefore: serverSavedAt });
         if (draft) {
           base = { ...base, ...draft };
           toast.info('Restored your unsaved draft.');
+        } else if (serverSavedAt) {
+          clear();
         }
       }
       initFormRef.current = base;
@@ -283,7 +312,9 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
     setSaving(true);
     try {
       const payload = buildFormPayload(form, clientId);
-      payload.status = 'submitted';
+      // A reviewed screening keeps its review; the server drops it back to
+      // submitted by itself if this save changed any answer.
+      payload.status = form.status === 'reviewed' ? 'reviewed' : 'submitted';
       let fid = currentFormId;
       if (fid) {
         await api.progress.parqForms.update(fid, payload);
