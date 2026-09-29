@@ -61,9 +61,17 @@ export interface PageHeroProps {
    * cannot drift into two different headers.
    */
   compact?: boolean;
+  /**
+   * A page's own colour for the full hero, in place of the navy: its CSS
+   * `background` and the glow under it. The shape, grid, spacing and layout
+   * stay the shared hero's — only the paint changes, and the navy's gold and
+   * blue glows step aside so they do not muddy it. The colours come from the
+   * page's token file (e.g. components/attendance/attendanceTheme.ts).
+   */
+  surface?: { background: string; shadow: string };
 }
 
-export function PageHero({ title, subtitle, icon, children, actions, className, compact }: PageHeroProps) {
+export function PageHero({ title, subtitle, icon, children, actions, className, compact, surface }: PageHeroProps) {
   const reduce = useReducedMotion();
 
   if (compact) {
@@ -111,7 +119,10 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: reduce ? 0 : 0.5, ease: [0.16, 1, 0.3, 1] }}
       className={cn('relative overflow-hidden rounded-[24px] p-5 sm:rounded-[30px] sm:p-7', className)}
-      style={{
+      style={surface ? {
+        background: surface.background,
+        boxShadow: `0 26px 56px -24px ${surface.shadow}, inset 0 1px 0 rgba(255,255,255,0.14)`,
+      } : {
         background:
           'radial-gradient(130% 150% at 50% -25%, #0050AD 0%, transparent 55%),'
           + 'linear-gradient(158deg, #0F172A 0%, #0050AD 42%, #0F172A 72%, #0050AD 100%)',
@@ -123,14 +134,18 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
       {/* Decorative layers, matching the dashboard hero. All non-interactive
           and all behind the content — a hero you cannot read is not a hero. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -right-14 -top-20 h-60 w-60 rounded-full opacity-35"
-          style={{ background: 'radial-gradient(circle, #FCD34D 0%, transparent 70%)', filter: 'blur(46px)' }}
-        />
-        <div
-          className="absolute -bottom-20 -left-14 h-60 w-60 rounded-full opacity-25"
-          style={{ background: 'radial-gradient(circle, #7fb4ff 0%, transparent 70%)', filter: 'blur(54px)' }}
-        />
+        {!surface && (
+          <>
+            <div
+              className="absolute -right-14 -top-20 h-60 w-60 rounded-full opacity-35"
+              style={{ background: 'radial-gradient(circle, #FCD34D 0%, transparent 70%)', filter: 'blur(46px)' }}
+            />
+            <div
+              className="absolute -bottom-20 -left-14 h-60 w-60 rounded-full opacity-25"
+              style={{ background: 'radial-gradient(circle, #7fb4ff 0%, transparent 70%)', filter: 'blur(54px)' }}
+            />
+          </>
+        )}
         <svg className="absolute inset-0 h-full w-full opacity-[0.055]" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="ph-grid" width="34" height="34" patternUnits="userSpaceOnUse">
@@ -141,7 +156,7 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
         </svg>
         <div
           className="absolute inset-0"
-          style={{ background: 'radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(15,23,42,0.55) 100%)' }}
+          style={{ background: `radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(15,23,42,${surface ? 0.22 : 0.55}) 100%)` }}
         />
       </div>
 

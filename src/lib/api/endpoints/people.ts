@@ -86,4 +86,8 @@ export const attendance = {
     http('/api/attendance', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: Record<string, unknown>) =>
     http(`/api/attendance/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  /** Up to 200 rows in one request; each is checked against the studio server-side. */
+  bulk: (records: Record<string, unknown>[]) =>
+    http<{ processed: number; failed: number; errors?: { index: number; error: string }[] }>(
+      '/api/attendance/bulk', { method: 'POST', body: JSON.stringify({ records }) }),
 };

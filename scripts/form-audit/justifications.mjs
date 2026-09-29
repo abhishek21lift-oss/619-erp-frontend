@@ -200,17 +200,15 @@ export const JUSTIFIED = {
   },
 
   'src/app/(chrome)/attendance/page.tsx': {
-    allow: 3,
+    allow: 1,
     reason:
       'The manual-entry modal — the only thing on this page that WRITES a ' +
-      'record — is on the platform: attendanceEntrySchema, useAppForm, and a ' +
-      'refusal to file a correction for a day that has not happened. The ' +
-      'three that remain are the ones §1 names as acceptable and are ' +
-      'checkable as such: the hero date input is a FILTER (it re-reads the ' +
-      "day's rows and posts nothing), the member box is a search over the " +
-      'loaded list, and the header checkbox is a table bulk-select whose ' +
-      'per-row twin is rendered inside the <tbody>. None of the three is ' +
-      'part of a payload.',
+      'record by hand — is on the platform: attendanceEntrySchema, useAppForm, ' +
+      'and a refusal to file a correction for a day that has not happened. ' +
+      'The one native control that remains is the hero date input, a FILTER: ' +
+      "it re-reads the day's rows and posts nothing, and is clamped to today. " +
+      'The member search and the table bulk-select that also had allowances ' +
+      'went with the redesign.',
   },
 
   'src/components/revenue/MonthlyTargetHero.tsx': {

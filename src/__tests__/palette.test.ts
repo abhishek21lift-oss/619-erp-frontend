@@ -141,6 +141,9 @@ describe('the app uses only the palette', () => {
     //
     // My Profile is the eighth: section tiles, tab pills and the hero mesh,
     // in components/profile/profileTheme.ts.
+    //
+    // Attendance and Check-In are the ninth: hero meshes, the rate ring and
+    // the viewfinder glow, in components/attendance/attendanceTheme.ts.
     const known = new Set(
       [...allHexes(), ...Object.values(founderGold)].map((h) => h.toUpperCase())
     );
@@ -165,6 +168,8 @@ describe('the app uses only the palette', () => {
         if (p.endsWith(join('dashboards', 'todayTheme.ts'))) continue;
         // My Profile's decorative colour — its one token file, confined below.
         if (p.endsWith(join('components', 'profile', 'profileTheme.ts'))) continue;
+        // The front-desk screens' decorative colour — confined below.
+        if (p.endsWith(join('components', 'attendance', 'attendanceTheme.ts'))) continue;
         const text = readFileSync(p, 'utf8');
         for (const m of text.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
           if (!known.has(m.toUpperCase())) offenders.push(`${p}: ${m}`);
@@ -289,6 +294,26 @@ describe('the app uses only the palette', () => {
       !u.startsWith('components/profile/')
       && u !== 'app/(chrome)/settings/profile/page.tsx'
       && u !== 'app/(chrome)/pt-os/clients/[id]/page.tsx');
+    expect(users.length).toBeGreaterThan(0);
+    expect(outside).toEqual([]);
+  });
+
+  it('confines the front-desk colours to Attendance and Check-In', () => {
+    const users: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = join(dir, entry);
+        if (statSync(p).isDirectory()) { walk(p); continue; }
+        if (!/\.tsx?$/.test(entry)) continue;
+        if (p.includes('__tests__')) continue;
+        if (/attendanceTheme['"]/.test(readFileSync(p, 'utf8'))) {
+          users.push(p.split(join('src') + sep)[1].replaceAll(sep, '/'));
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src'));
+    const allowed = ['app/(chrome)/attendance/page.tsx', 'app/(chrome)/checkin/qr-scanner/page.tsx'];
+    const outside = users.filter((u) => !u.startsWith('components/attendance/') && !allowed.includes(u));
     expect(users.length).toBeGreaterThan(0);
     expect(outside).toEqual([]);
   });
