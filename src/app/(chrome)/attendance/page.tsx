@@ -1,48 +1,52 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef, useMemo, Suspense } from 'react';
-import ClientAvatar from '@/components/pt-os/ClientAvatar';
+/**
+ * Attendance — the day's register.
+ *
+ * Mark who came in, correct a record, and see who is turning up. Check-in
+ * itself happens in one place, the QR scanner; this page reads and corrects
+ * what it wrote.
+ *
+ * ── What changed in the redesign, beyond the look ──────────────────────────
+ *
+ * Wiring the old page got wrong while still rendering plausible numbers (the
+ * arithmetic lives in lib/attendance-view.ts, with its tests):
+ *
+ *   · "Today" was the UTC date, so before 5:30 AM the page opened on yesterday.
+ *   · Export opened `/api/attendance?format=csv`, which the API does not serve —
+ *     it downloaded JSON. The CSV is now built here, for every active member.
+ *   · Trends asked for `?days=` and `?months=`, which the API ignores, so every
+ *     range showed the same latest 200 rows. It sends `from`/`to` now.
+ *   · check_in arrives as an ISO timestamp and was glued onto '1970-01-01T':
+ *     the feed's "min ago" and the peak-hours chart were computed from NaN.
+ *   · Unmarked was roster size minus record count, which a record for anyone
+ *     off the active roster pushed wrong.
+ *   · The "weekly" chart was drawn from one day's records.
+ *   · Mark All Present fired one request per member; it is one bulk request,
+ *     asks first, and marks only the members still unmarked.
+ *
+ * Gone: a footer that claimed "all changes saved automatically" beside a
+ * "Sync Devices" button that only refetched, a Quick Actions grid that
+ * repeated the hero's buttons, and "AI-powered" alerts that were three
+ * counts. Nothing here claims something the page does not do.
+ */
+
+import React, { useEffect, useState, useCallback, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { m, AnimatePresence } from 'framer-motion';
+import {
+  AlertTriangle, ArrowRight, BarChart3, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight,
+  Clock, Download, Loader2, Plus, QrCode, Search, Sparkles, UserCheck, UserX, Users,
+} from 'lucide-react';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
-import { PullToRefresh, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button, PageContainer, PageHero, SearchField } from '@/components/ui';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { api, Client, Attendance } from '@/lib/api';
+import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import {
-  Activity,
-  AlertCircle,
-  AlertTriangle,
-  ArrowDownLeft,
-  ArrowUpRight,
-  BarChart3,
-  Bell,
-  Calendar,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  ChevronsUpDown,
-  Clock,
-  Download,
-  Eye,
-  FileText,
-  Grid3x3,
-  LayoutList,
-  Loader2,
-  Mail,
-  MessageSquare,
-  MoreVertical,
-  Plus,
-  Scan,
-  Search,
-  Sparkles,
-  TrendingUp,
-  User,
-  UserCheck,
-  UserX,
-  Users,
-  Wifi,
-  Zap,
-} from 'lucide-react';
+  PullToRefresh, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button, PageContainer, PageHero, SearchField,
+} from '@/components/ui';
+import { api, Client, Attendance } from '@/lib/api';
+import { palette, rgba } from '@/lib/palette';
+import { useToast } from '@/lib/toast';
 import { errorMessage } from '@/lib/forms/errors';
 import { useStore } from '@tanstack/react-form';
 import { useAppForm } from '@/lib/forms/useAppForm';
@@ -51,111 +55,28 @@ import {
   attendanceEntrySchema, blankAttendanceEntry, attendanceDateIssue,
   ATTENDANCE_STATUSES, type AttendanceEntryValues,
 } from '@/lib/forms/schemas/attendance';
-
-/** Range CSV, carried over from /attendance/reports. */
-function exportRangeCSV(records: Attendance[], days: string) {
-  const header = ['Date', 'Member', 'Status', 'Check-In Time', 'Check-Out Time'];
-  const rows = records.map(r => [r.date ?? '', r.ref_name ?? r.ref_id ?? '', r.status ?? '', r.check_in ?? '', r.check_out ?? '']);
-  const csv = [header, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `attendance-${days}days-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+import {
+  todayYmd, shiftDay, lastDays, dayLabel, clockTime, ago, summarize, dailySeries, peakHours,
+  dayCsv, downloadCsv, type DaySummary,
+} from '@/lib/attendance-view';
+import {
+  tones, gradient, attendanceMesh, ringStops, barGradient, type ToneName,
+} from '@/components/attendance/attendanceTheme';
 
 /* ────────────────────────────────────────────────────────────────
-   TYPES
+   STATUS — the meaning colours, from the palette
 ──────────────────────────────────────────────────────────────── */
-type ViewMode = 'table' | 'grid';
-type StatusFilter = 'all' | 'present' | 'absent' | 'late' | 'unmarked';
+type Status = 'present' | 'late' | 'absent' | 'unmarked';
+type StatusFilter = 'all' | Status;
 
-export interface FeedItem {
-  id: string | number;
-  name: string;
-  action: string;
-  time: string;
-  status: string;
-  avatar: string;
-}
+const STATUS: Record<Status, { label: string; short: string; color: string; Icon: typeof UserCheck }> = {
+  present:  { label: 'Present',  short: 'P', color: palette.emerald[500], Icon: UserCheck },
+  late:     { label: 'Late',     short: 'L', color: palette.amber[500],   Icon: Clock },
+  absent:   { label: 'Absent',   short: 'A', color: palette.red[500],     Icon: UserX },
+  unmarked: { label: 'Unmarked', short: '–', color: palette.gray[400],    Icon: Users },
+};
 
-function buildFeedFromRecords(records: Attendance[], clients: Client[]): FeedItem[] {
-  const now = Date.now();
-  return records
-    .filter(r => r.check_in)
-    .slice(0, 6)
-    .map(r => {
-      const client = clients.find(c => c.id === r.ref_id);
-      const name = client?.name || r.ref_name || 'Unknown';
-      const initials = name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
-      const checkTime = r.check_in ? new Date(`1970-01-01T${r.check_in}`).getTime() : 0;
-      const minsAgo = Math.round((now - checkTime) / 60000);
-      const action = r.status === 'late' ? 'arrived late' : 'checked in';
-      return { id: r.id ?? '', name, action, time: `${Math.max(1, minsAgo)} min ago`, status: r.status, avatar: initials };
-    });
-}
-
-function buildWeeklyBars(records: Attendance[]): { day: string; pct: number }[] {
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const dayCount: Record<string, { present: number; total: number }> = {};
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    dayCount[days[d.getDay()]] = { present: 0, total: 0 };
-  }
-  records.forEach(r => {
-    const d = new Date(r.date || Date.now());
-    const key = days[d.getDay()];
-    if (dayCount[key]) {
-      dayCount[key].total++;
-      if (r.status === 'present' || r.status === 'late') dayCount[key].present++;
-    }
-  });
-  return Object.entries(dayCount).map(([day, v]) => ({
-    day,
-    pct: v.total > 0 ? Math.round((v.present / v.total) * 100) : 0,
-  }));
-}
-
-interface SmartAlert { type: string; title: string; desc: string; icon: React.ReactNode; statusFilter: StatusFilter; }
-
-function buildAlerts(recordMap: Map<string | number, Attendance>, records: Attendance[], clients: Client[]): SmartAlert[] {
-  const alerts: SmartAlert[] = [];
-  const absent = clients.filter(c => !recordMap.has(c.id));
-  if (absent.length > 0) {
-    alerts.push({ type: 'warn', title: `${absent.length} members absent today`, desc: 'No check-in recorded for these members.', icon: <AlertTriangle className="h-4 w-4" />, statusFilter: 'unmarked' });
-  }
-  const late = records.filter(r => r.status === 'late');
-  if (late.length > 0) {
-    const names = late.slice(0, 3).map(r => r.ref_name).filter(Boolean).join(', ');
-    alerts.push({ type: 'amber', title: `${late.length} members arrived late`, desc: names ? `${names} checking in after 10 AM.` : 'Late check-ins detected.', icon: <ArrowDownLeft className="h-4 w-4" />, statusFilter: 'late' });
-  }
-  const perfect = clients.filter(c => recordMap.get(c.id)?.status === 'present');
-  if (perfect.length > 0) {
-    alerts.push({ type: 'green', title: `${perfect.length} members marked present`, desc: 'On-time attendance recorded.', icon: <Sparkles className="h-4 w-4" />, statusFilter: 'present' });
-  }
-  return alerts.length > 0 ? alerts : [{ type: 'info', title: 'All clear', desc: 'No attendance anomalies detected today.', icon: <Clock className="h-4 w-4" />, statusFilter: 'all' }];
-}
-
-const PEAK_HOUR_BUCKETS = [
-  { label: '6–8 AM', startHour: 6, endHour: 8 },
-  { label: '8–10 AM', startHour: 8, endHour: 10 },
-  { label: '10 AM–12', startHour: 10, endHour: 12 },
-  { label: '4–6 PM', startHour: 16, endHour: 18 },
-  { label: '6–8 PM', startHour: 18, endHour: 20 },
-];
-
-function buildPeakHours(records: Attendance[], totalClients: number): { label: string; pct: number }[] {
-  const counts = PEAK_HOUR_BUCKETS.map(() => 0);
-  records.forEach(r => {
-    if (!r.check_in) return;
-    const hour = new Date(`1970-01-01T${r.check_in}`).getHours();
-    PEAK_HOUR_BUCKETS.forEach((b, i) => { if (hour >= b.startHour && hour < b.endHour) counts[i]++; });
-  });
-  const denom = totalClients || 1;
-  return PEAK_HOUR_BUCKETS.map((b, i) => ({ label: b.label, pct: Math.round((counts[i] / denom) * 100) }));
-}
+const EASE = [0.16, 1, 0.3, 1] as const;
 
 /* ────────────────────────────────────────────────────────────────
    ROOT
@@ -171,764 +92,718 @@ export default function AttendancePage() {
   );
 }
 
-/* ────────────────────────────────────────────────────────────────
-   MAIN CONTENT  —  all original logic preserved
-──────────────────────────────────────────────────────────────── */
+type Tab = 'members' | 'insights' | 'alerts';
+
 function AttendanceContent() {
-  const router  = useRouter();
-  const today   = new Date().toISOString().split('T')[0];
+  const { toast } = useToast();
+  const today = todayYmd();
 
-  /* ── state ── */
-  const [date,      setDate]      = useState(today);
-  const [clients,   setClients]   = useState<Client[]>([]);
-  const [records,   setRecords]   = useState<Attendance[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [saving,    setSaving]    = useState<string | null>(null);
-  const [error,     setError]     = useState('');
-  const [success,   setSuccess]   = useState('');
-  const [search,    setSearch]    = useState('');
+  const [date, setDate] = useState(today);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [records, setRecords] = useState<Attendance[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [manualEntryOpen, setManualEntryOpen] = useState(false);
+  const [confirmAll, setConfirmAll] = useState(false);
+  const [markingAll, setMarkingAll] = useState(false);
 
-  /* ── UI state ── */
-  const [viewMode,      setViewMode]      = useState<ViewMode>('table');
-  const [statusFilter,  setStatusFilter]  = useState<StatusFilter>('all');
   // ?tab=insights is what /attendance/reports redirects to, so the old
   // bookmark lands on the panel its content moved into rather than on the
   // member list.
   const sp = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'members' | 'insights' | 'alerts'>(
+  const [activeTab, setActiveTab] = useState<Tab>(
     sp.get('tab') === 'insights' ? 'insights' : sp.get('tab') === 'alerts' ? 'alerts' : 'members',
   );
-  const [manualEntryOpen, setManualEntryOpen] = useState(false);
 
-  /* ── Trends, merged in from the old /attendance/reports page ──
-     Fetched only once the Insights tab is opened: it is two more requests
-     over 90 days of history, and the tab a trainer actually lands on is the
-     member list. */
+  /* ── Trends, fetched only once the tab is opened ── */
   const [range, setRange] = useState('7');
   const [rangeRecords, setRangeRecords] = useState<Attendance[]>([]);
   const [rangeLoading, setRangeLoading] = useState(false);
   const [monthlyRecords, setMonthlyRecords] = useState<Attendance[]>([]);
-  const successTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const errorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  function showSuccess(msg: string) { clearTimeout(successTimer.current); setSuccess(msg); successTimer.current = setTimeout(() => setSuccess(''), 1800); }
-  function showError(msg: string) { clearTimeout(errorTimer.current); setError(msg); errorTimer.current = setTimeout(() => setError(''), 5000); }
+  const loadDay = useCallback(async (quiet = false) => {
+    if (!quiet) setLoading(true);
+    try {
+      const [c, a] = await Promise.all([
+        api.clients.list({ status: 'active' }),
+        api.attendance.list({ date, type: 'client' }),
+      ]);
+      setClients(c);
+      setRecords(a);
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, 'Could not load attendance'));
+    } finally {
+      setLoading(false);
+    }
+  }, [date, toast]);
 
-  /* ── data fetch ── */
-  const loadData = useCallback(() => {
-    setLoading(true);
-    return Promise.all([
-      api.clients.list({ status: 'active' }),
-      api.attendance.list({ date, type: 'client' }),
-    ])
-      .then(([c, a]) => { setClients(c); setRecords(a); })
-      .catch((e: Error) => showError(e.message))
-      .finally(() => setLoading(false));
-  }, [date]);
-
-  useEffect(() => {
-    loadData();
-    return () => { clearTimeout(successTimer.current); clearTimeout(errorTimer.current); };
-  }, [date, loadData]);
+  useEffect(() => { void loadDay(); }, [loadDay]);
 
   useEffect(() => {
     if (activeTab !== 'insights') return;
     let alive = true;
     setRangeLoading(true);
+    // `from`/`to`, which the API reads. It ignores `days` and `months`, which
+    // is what this used to send — every range showed the same latest rows.
+    const win = lastDays(Number(range), today);
+    const year = lastDays(365, today);
     Promise.all([
-      api.attendance.list({ days: range }),
-      api.attendance.list({ months: '12' }),
+      api.attendance.list({ ...win, type: 'client' }),
+      api.attendance.list({ ...year, type: 'client' }),
     ])
-      .then(([r, m]) => {
+      .then(([r, mo]) => {
         if (!alive) return;
         setRangeRecords(Array.isArray(r) ? r : []);
-        setMonthlyRecords(Array.isArray(m) ? m : []);
+        setMonthlyRecords(Array.isArray(mo) ? mo : []);
       })
-      .catch((e: Error) => alive && showError(e.message))
+      .catch((e: unknown) => alive && toast.error(errorMessage(e, 'Could not load trends')))
       .finally(() => alive && setRangeLoading(false));
     return () => { alive = false; };
-  }, [activeTab, range]);
+  }, [activeTab, range, today, toast]);
 
-  /* ── mark function ── */
+  const recordMap = useMemo(() => new Map(records.map((r) => [String(r.ref_id), r])), [records]);
+  const statusOf = useCallback((c: Client): Status => {
+    const s = recordMap.get(String(c.id))?.status;
+    return s === 'present' || s === 'late' || s === 'absent' ? s : 'unmarked';
+  }, [recordMap]);
+
+  const summary = useMemo(() => summarize(clients, records), [clients, records]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return clients.filter((c) => {
+      const matchSearch = !q || c.name.toLowerCase().includes(q) || (c.mobile || '').includes(q) || (c.client_id || '').toLowerCase().includes(q);
+      return matchSearch && (statusFilter === 'all' || statusOf(c) === statusFilter);
+    });
+  }, [clients, search, statusFilter, statusOf]);
+
+  const unmarked = useMemo(() => clients.filter((c) => statusOf(c) === 'unmarked'), [clients, statusOf]);
+
   const mark = useCallback(async (client: Client, status: string) => {
     setSaving(client.id);
     try {
       await api.attendance.mark({
-        type:         'client',
-        ref_id:       client.id,
-        ref_name:     client.name,
-        trainer_id:   client.trainer_id,
-        trainer_name: client.trainer_name,
-        date,
-        status,
+        type: 'client', ref_id: client.id, ref_name: client.name,
+        trainer_id: client.trainer_id, trainer_name: client.trainer_name, date, status,
       });
-      const updated = await api.attendance.list({ date, type: 'client' });
-      setRecords(updated);
-      showSuccess(`Marked ${client.name} as ${status}`);
+      setRecords(await api.attendance.list({ date, type: 'client' }));
     } catch (e: unknown) {
-      showError(errorMessage(e, 'Failed to mark attendance'));
+      toast.error(errorMessage(e, 'Failed to mark attendance'));
     } finally {
       setSaving(null);
     }
-  }, [date]);
+  }, [date, toast]);
 
-  /* ── O(1) record lookup map ── */
-  const recordMap = useMemo(
-    () => new Map<string | number, Attendance>(records.map(r => [r.ref_id, r])),
-    [records]
-  );
-
-  /* ── bulk mark-all: parallel API calls + single re-fetch ── */
   async function markAllPresent() {
-    const toMark = filtered.filter(c => !recordMap.has(c.id));
-    if (!toMark.length) return;
+    if (!unmarked.length) return;
+    setMarkingAll(true);
     try {
-      await Promise.all(
-        toMark.map(c =>
-          api.attendance.mark({
-            type:         'client',
-            ref_id:       c.id,
-            ref_name:     c.name,
-            trainer_id:   c.trainer_id,
-            trainer_name: c.trainer_name,
-            date,
-            status:       'present',
-          })
-        )
-      );
-      const updated = await api.attendance.list({ date, type: 'client' });
-      setRecords(updated);
-      showSuccess(`Marked ${toMark.length} member${toMark.length > 1 ? 's' : ''} present`);
+      const res = await api.attendance.bulk(unmarked.map((c) => ({
+        type: 'client', ref_id: c.id, ref_name: c.name, date, status: 'present',
+      })));
+      setRecords(await api.attendance.list({ date, type: 'client' }));
+      if (res.failed) toast.error(`${res.processed} marked, ${res.failed} could not be`);
+      else toast.success(`Marked ${res.processed} member${res.processed === 1 ? '' : 's'} present`);
+      setConfirmAll(false);
     } catch (e: unknown) {
-      showError(errorMessage(e, 'Failed to mark all present'));
+      toast.error(errorMessage(e, 'Failed to mark all present'));
+    } finally {
+      setMarkingAll(false);
     }
   }
 
-  function getRecord(clientId: string | number) {
-    return recordMap.get(clientId);
+  function exportDay() {
+    downloadCsv(dayCsv(clients, records, date), `attendance-${date}.csv`);
   }
 
-  /* ── derived: single-pass summary + rate ── */
-  const summary = useMemo(() => {
-    let present = 0, absent = 0, late = 0;
-    for (const r of records) {
-      if (r.status === 'present') present++;
-      else if (r.status === 'absent') absent++;
-      else if (r.status === 'late') late++;
-    }
-    const total = clients.length;
-    const attendanceRate = total > 0
-      ? Math.round(((present + late) / total) * 100)
-      : 0;
-    return { present, absent, late, unmarked: total - records.length, total, attendanceRate };
-  }, [records, clients]);
+  const recent = useMemo(() => records
+    .filter((r) => r.check_in && (r.status === 'present' || r.status === 'late'))
+    .sort((a, b) => String(b.check_in).localeCompare(String(a.check_in)))
+    .slice(0, 6), [records]);
 
-  const feedItems   = useMemo(() => buildFeedFromRecords(records, clients), [records, clients]);
-  const weeklyBars  = useMemo(() => buildWeeklyBars(records), [records]);
-  const smartAlerts = useMemo(() => buildAlerts(recordMap, records, clients), [recordMap, records, clients]);
-  const peakHours   = useMemo(() => buildPeakHours(records, clients.length), [records, clients]);
-
-  const filtered = useMemo(() =>
-    clients.filter((c) => {
-      const rec = recordMap.get(c.id);
-      const matchSearch = !search ||
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        (c.mobile || '').includes(search) ||
-        (c.client_id || '').includes(search);
-      const matchStatus =
-        statusFilter === 'all'      ? true :
-        statusFilter === 'present'  ? rec?.status === 'present' :
-        statusFilter === 'absent'   ? rec?.status === 'absent' :
-        statusFilter === 'late'     ? rec?.status === 'late' :
-        statusFilter === 'unmarked' ? !rec : true;
-      return matchSearch && matchStatus;
-    }),
-    [clients, recordMap, search, statusFilter]
-  );
-
-  const { attendanceRate } = summary;
+  const attention = useMemo(() => buildAttention(summary, date === today), [summary, date, today]);
 
   return (
     <div className="relative min-h-screen">
-      {/* FooterBar below is position:sticky, which breaks under a
-          transformed ancestor — keep it outside PullToRefresh's wrapper. */}
-      <PullToRefresh onRefresh={loadData}>
-      <PageContainer>
+      <PullToRefresh onRefresh={() => loadDay(true)}>
+        <PageContainer>
+          <AttendanceHero
+            date={date} today={today} setDate={setDate} summary={summary} loading={loading}
+            onManualEntry={() => setManualEntryOpen(true)}
+            onExport={exportDay}
+            onGenerateReport={() => setActiveTab('insights')}
+          />
 
-        {/* ── toasts ── */}
-        {error   && <Toast msg={error}   type="error"   onClose={() => setError('')} />}
-        {success && <Toast msg={success} type="success" onClose={() => setSuccess('')} />}
+          {/* ── Status tiles: tap to filter the list ── */}
+          <section className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Today by status">
+            {(['present', 'late', 'absent', 'unmarked'] as const).map((s, i) => (
+              <StatusTile key={s} status={s} value={summary[s]} total={summary.total} loading={loading}
+                active={statusFilter === s} delay={i * 0.04}
+                onClick={() => { setStatusFilter(statusFilter === s ? 'all' : s); setActiveTab('members'); }} />
+            ))}
+          </section>
 
-        {/* ── HERO ── */}
-        <AttendanceHero
-          date={date} setDate={setDate} today={today}
-          onMarkAll={date === today ? markAllPresent : undefined}
-          onManualEntry={() => setManualEntryOpen(true)}
-          onExport={() => window.open(`/api/attendance?format=csv&date=${date}`, '_blank')}
-          onReports={() => setActiveTab('insights')}
-        />
+          {/* ── Mark the rest ── */}
+          {!loading && unmarked.length > 0 && (
+            <m.button
+              type="button"
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: EASE }}
+              onClick={() => setConfirmAll(true)}
+              className="mt-3 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[18px] text-[14px] font-[800] text-white transition-transform active:scale-[0.99]"
+              style={{ background: gradient(tones.aqua), boxShadow: `0 14px 30px -14px ${tones.aqua.glow}` }}
+            >
+              <CheckCircle2 size={17} aria-hidden />
+              Mark {unmarked.length} unmarked present
+            </m.button>
+          )}
 
-        {/* ── KPI CARDS ── */}
-        <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6 lg:gap-4">
-          <KpiCard label="Present"   value={summary.present}  hint={`${summary.total > 0 ? Math.round(summary.present / summary.total * 100) : 0}% of total`}  accent="emerald" icon={<UserCheck className="h-5 w-5" />} onClick={() => setStatusFilter('present')}  active={statusFilter === 'present'} />
-          <KpiCard label="Absent"    value={summary.absent}   hint={`${summary.total > 0 ? Math.round(summary.absent  / summary.total * 100) : 0}% of total`}  accent="rose"    icon={<UserX    className="h-5 w-5" />} onClick={() => setStatusFilter('absent')}   active={statusFilter === 'absent'} />
-          <KpiCard label="Late"      value={summary.late}     hint="Arrived after cut-off" accent="amber"   icon={<Clock    className="h-5 w-5" />} onClick={() => setStatusFilter('late')}     active={statusFilter === 'late'} />
-          <KpiCard label="Unmarked"  value={summary.unmarked} hint="Pending today"         accent="zinc"    icon={<Users    className="h-5 w-5" />} onClick={() => setStatusFilter('unmarked')} active={statusFilter === 'unmarked'} />
-          <KpiCard label="Total"     value={summary.total}    hint="Active members"        accent="sky"     icon={<Activity className="h-5 w-5" />} onClick={() => setStatusFilter('all')}      active={statusFilter === 'all'} />
-          <KpiCard label="Rate"      value={`${attendanceRate}%`} hint="Attendance today"  accent="violet"  icon={<TrendingUp className="h-5 w-5" />} />
-        </section>
+          {/* ── Tabs ── */}
+          <Segmented
+            className="mt-5"
+            value={activeTab}
+            onChange={setActiveTab}
+            options={[
+              { id: 'members', label: 'Members', tone: 'indigo' },
+              { id: 'insights', label: 'Trends', tone: 'berry' },
+              { id: 'alerts', label: 'Attention', tone: 'sunset', badge: attention.length },
+            ]}
+          />
 
-        {/* This page used to carry a check-in panel of its own — fingerprint
-            and member-code entry — which wrote the same attendance_logs rows
-            the QR scanner writes. Check-in now happens in exactly one place,
-            /checkin/qr-scanner. This page reads and corrects the record. */}
-
-        {/* ── TAB BAR ── */}
-        <div className="mt-6 flex flex-wrap gap-2 rounded-[22px] border border-zinc-200/80 bg-white/70 p-2 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
-          {(['members', 'insights', 'alerts'] as const).map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`rounded-[16px] px-4 py-2.5 text-sm font-medium capitalize transition ${
-                activeTab === tab
-                  ? 'bg-[linear-gradient(135deg,#F59E0B,#D97706)] text-white shadow-[0_6px_20px_rgba(245,158,11,0.3)]'
-                  : 'text-zinc-600 hover:bg-zinc-100 dark:bg-white/10 hover:text-zinc-900 dark:text-white/55 dark:hover:bg-white/10 dark:hover:text-white'
-              }`}>
-              {tab === 'members' ? 'Member Attendance' : tab === 'insights' ? 'Insights & Trends' : 'Smart Alerts'}
-              {tab === 'alerts' && smartAlerts.length > 0 && (
-                <span className="ml-2 rounded-full bg-rose-500 px-1.5 py-0.5 text-xs text-white">{smartAlerts.length}</span>
+          <div className="mt-4">
+            <AnimatePresence mode="wait" initial={false}>
+              {activeTab === 'members' && (
+                <m.div key="members" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25, ease: EASE }}>
+                  <MembersPanel
+                    filtered={filtered} loading={loading} total={clients.length}
+                    search={search} setSearch={setSearch}
+                    statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+                    saving={saving} statusOf={statusOf} recordOf={(c) => recordMap.get(String(c.id))} mark={mark}
+                  />
+                  {date === today && <RecentPanel recent={recent} clients={clients} />}
+                </m.div>
               )}
-            </button>
-          ))}
-        </div>
-
-        {/* ── TAB PANELS ── */}
-        <div className="mt-5">
-          {activeTab === 'members' && (
-            <MembersPanel
-              filtered={filtered} loading={loading}
-              search={search} setSearch={setSearch}
-              statusFilter={statusFilter} setStatusFilter={setStatusFilter}
-              viewMode={viewMode} setViewMode={setViewMode}
-              saving={saving} getRecord={getRecord} mark={mark}
-              date={date} today={today} onMarkAll={date === today ? markAllPresent : undefined}
-            />
-          )}
-          {activeTab === 'insights' && (
-            <InsightsPanel
-              summary={summary} weeklyBars={weeklyBars} peakHours={peakHours}
-              range={range} setRange={setRange}
-              rangeRecords={rangeRecords} rangeLoading={rangeLoading}
-              monthlyRecords={monthlyRecords}
-              onExport={() => exportRangeCSV(rangeRecords, range)}
-            />
-          )}
-          {activeTab === 'alerts'   && (
-            <AlertsPanel
-              alerts={smartAlerts}
-              onViewMembers={(f) => { setStatusFilter(f); setActiveTab('members'); }}
-              onSendReminder={() => router.push('/engagement/notifications')}
-            />
-          )}
-        </div>
-
-        {/* ── LIVE FEED ── */}
-        <LiveFeedPanel feedItems={feedItems} />
-
-        {/* ── QUICK ACTIONS ── */}
-        <QuickActionsPanel onMarkAll={date === today ? markAllPresent : undefined} onTrends={() => setActiveTab('insights')} />
-
-      </PageContainer>
+              {activeTab === 'insights' && (
+                <m.div key="insights" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25, ease: EASE }}>
+                  <InsightsPanel
+                    range={range} setRange={setRange} today={today} rosterSize={clients.length}
+                    rangeRecords={rangeRecords} rangeLoading={rangeLoading} monthlyRecords={monthlyRecords}
+                    onExport={() => downloadCsv(rangeCsv(rangeRecords), `attendance-${range}days-${today}.csv`)}
+                  />
+                </m.div>
+              )}
+              {activeTab === 'alerts' && (
+                <m.div key="alerts" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25, ease: EASE }}>
+                  <AlertsPanel alerts={attention} onView={(f) => { setStatusFilter(f); setActiveTab('members'); }} />
+                </m.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </PageContainer>
       </PullToRefresh>
 
-      {/* ── FOOTER BAR ── */}
-      <FooterBar onSync={loadData} onGenerateReport={() => setActiveTab('insights')} />
-
-      {/* ── MANUAL ENTRY MODAL ── */}
       <ManualEntryModal
         open={manualEntryOpen}
         onOpenChange={setManualEntryOpen}
         clients={clients}
         date={date}
-        onSuccess={loadData}
+        onSuccess={() => loadDay(true)}
       />
+
+      <Dialog open={confirmAll} onOpenChange={(o) => !markingAll && setConfirmAll(o)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark {unmarked.length} member{unmarked.length === 1 ? '' : 's'} present?</DialogTitle>
+          </DialogHeader>
+          <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+            Everyone still unmarked for {dayLabel(date, today).toLowerCase() === 'today' ? 'today' : dayLabel(date, today)} is recorded as present.
+            Members already marked keep their status. You can change any of them afterwards.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmAll(false)} disabled={markingAll}>Cancel</Button>
+            <Button onClick={markAllPresent} loading={markingAll}>Mark present</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
+/** The range CSV: one row per record in the window. */
+function rangeCsv(records: Attendance[]): string {
+  const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const rows = records.map((r) => [String(r.date ?? '').slice(0, 10), r.ref_name ?? r.ref_id, r.status, clockTime(r.check_in) ?? '', clockTime(r.check_out) ?? '', r.method ?? '']);
+  return [['Date', 'Member', 'Status', 'Check-in', 'Check-out', 'Method'], ...rows].map((row) => row.map(esc).join(',')).join('\n');
+}
+
 /* ────────────────────────────────────────────────────────────────
-   HERO
+   HERO — the day, and how much of the roster has come in
 ──────────────────────────────────────────────────────────────── */
-/**
- * ── What came out of this hero, and why ───────────────────────────────────
- *
- * A pale `#f8fafc` slab — a container box drawn around the title, on its own
- * surface, squared off against the top bar. It is PageHero now, the same one
- * the dashboard uses.
- *
- * Four stat tiles: Present today, Attendance rate, Late arrivals, Unmarked.
- * Every one of those numbers is repeated in the KPI row that renders directly
- * underneath, which also adds Absent and Total. On a phone the two stacks are
- * both one-per-row, so the page opened with the same four figures twice and
- * you scrolled past two screens of them before reaching a single member. The
- * KPI row is the one that survives: it has all six, and its tiles filter the
- * list when you tap them.
- *
- * "Live sync active" and "Biometric device connected". Neither was connected
- * to anything — no socket, no device handshake, no state of any kind behind
- * them; they were literals that always rendered. A green pulsing dot that
- * claims a device is online when nothing has asked a device anything is worse
- * than no indicator, because a trainer will believe it and stop checking. Gone
- * until something real backs them.
- */
-function AttendanceHero({ date, setDate, today, onMarkAll, onManualEntry, onExport, onReports }: {
-  date: string; setDate: (d: string) => void; today: string;
-  onMarkAll?: () => void;
-  onManualEntry: () => void;
-  onExport: () => void;
-  onReports: () => void;
+function AttendanceHero({ date, today, setDate, summary, loading, onManualEntry, onExport, onGenerateReport }: {
+  date: string; today: string; setDate: (d: string) => void;
+  summary: DaySummary; loading: boolean;
+  onManualEntry: () => void; onExport: () => void; onGenerateReport: () => void;
 }) {
+  const isToday = date === today;
   return (
     <PageHero
-      icon={<UserCheck size={20} />}
-      title="Member Attendance"
-      subtitle="Mark the day, correct a record, and see who is turning up."
+      title="Attendance"
+      subtitle="Mark the day, correct a record, see who is turning up."
+      icon={<UserCheck size={20} aria-hidden />}
+      surface={{
+        background: [
+          `radial-gradient(circle 240px at 8% 110%, ${attendanceMesh.glowA}, transparent 70%)`,
+          `radial-gradient(circle 220px at 100% -10%, ${attendanceMesh.glowB}, transparent 70%)`,
+          attendanceMesh.base,
+        ].join(', '),
+        shadow: attendanceMesh.shadow,
+      }}
     >
-      <div className="space-y-2.5">
-        <input
-          aria-label="Attendance date"
-          type="date" value={date}
-          onChange={e => setDate(e.target.value)}
-          max={today}
-          className="h-[44px] w-full min-w-0 rounded-[12px] px-3 text-[13px] font-[600] text-white outline-none sm:max-w-[220px]"
-          style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', colorScheme: 'dark' }}
-        />
-        {/* Mark All Present is the destructive-ish one — it writes a row for
-            every active member — so it sits apart from the three that only
-            read, and it is the only one that gets a solid fill. The four used
-            to be an undifferentiated wrap of pills. */}
-        <div className="grid grid-cols-3 gap-2">
-          <HeroBtn label="Manual" icon={<Plus className="h-4 w-4" />} light onClick={onManualEntry} />
-          <HeroBtn label="Export" icon={<Download className="h-4 w-4" />} light onClick={onExport} />
-          <HeroBtn label="Trends" icon={<FileText className="h-4 w-4" />} light onClick={onReports} />
+      <div className="text-white">
+        {/* The ring and what it counts. */}
+        <div className="flex items-center gap-4">
+          <RateRing rate={summary.rate} checkedIn={summary.checkedIn} total={summary.total} loading={loading} />
+          <div className="min-w-0 flex-1">
+            <p className="text-[28px] font-[850] leading-none tabular-nums tracking-[-0.03em]">
+              {loading ? '—' : summary.checkedIn}
+              <span className="ml-1.5 text-[15px] font-[700] text-white/70">of {loading ? '—' : summary.total} in</span>
+            </p>
+            <p className="mt-1.5 text-[12.5px] font-[650] text-white/75">
+              {isToday ? 'Checked in today' : `Checked in · ${dayLabel(date, today)}`}
+            </p>
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {(['present', 'late', 'absent'] as const).map((k) => (
+                <span key={k} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-[750]"
+                  style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.18)' }}>
+                  <span className="h-2 w-2 rounded-full" style={{ background: STATUS[k].color }} />
+                  {loading ? '—' : summary[k]} {STATUS[k].label.toLowerCase()}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
-        {onMarkAll && (
-          <HeroBtn label="Mark All Present" icon={<CheckCircle2 className="h-4 w-4" />} primary onClick={onMarkAll} full />
-        )}
+
+        {/* The date strip: step a day, or pick one. */}
+        <div className="mt-4 flex items-center gap-2">
+          <button type="button" aria-label="Previous day" onClick={() => setDate(shiftDay(date, -1))}
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/20"
+            style={{ background: 'rgba(255,255,255,0.14)' }}>
+            <ChevronLeft size={18} aria-hidden />
+          </button>
+          <label className="relative flex h-11 min-w-0 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full px-4 text-[14px] font-[800] sm:w-[260px] sm:flex-none"
+            style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.22)' }}>
+            <CalendarDays size={15} aria-hidden className="shrink-0 opacity-85" />
+            <span className="truncate">{dayLabel(date, today)}</span>
+            {/* The native picker, invisible over the chip, so tapping the
+                label opens the phone's own date wheel. */}
+            <input aria-label="Attendance date" type="date" value={date} max={today}
+              onChange={(e) => e.target.value && setDate(e.target.value > today ? today : e.target.value)}
+              className="absolute inset-0 cursor-pointer opacity-0" style={{ colorScheme: 'dark' }} />
+          </label>
+          <button type="button" aria-label="Next day" onClick={() => setDate(shiftDay(date, 1))} disabled={isToday}
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/20 disabled:opacity-35"
+            style={{ background: 'rgba(255,255,255,0.14)' }}>
+            <ChevronRight size={18} aria-hidden />
+          </button>
+          {!isToday && (
+            <button type="button" onClick={() => setDate(today)}
+              className="h-11 shrink-0 rounded-full px-4 text-[12.5px] font-[800]"
+              style={{ background: '#fff', color: palette.gray[900] }}>
+              Today
+            </button>
+          )}
+        </div>
+
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <GlassAction label="Manual" icon={<Plus size={16} />} onClick={onManualEntry} />
+          <GlassAction label="Export" icon={<Download size={16} />} onClick={onExport} />
+          <GlassAction label="Trends" icon={<BarChart3 size={16} />} onClick={onGenerateReport} />
+        </div>
       </div>
     </PageHero>
   );
 }
 
-/* ────────────────────────────────────────────────────────────────
-   MEMBERS TABLE PANEL
-──────────────────────────────────────────────────────────────── */
-function MembersPanel({ filtered, loading, search, setSearch, statusFilter, setStatusFilter, viewMode, setViewMode, saving, getRecord, mark, date, today, onMarkAll }: {
-  filtered: Client[]; loading: boolean;
-  search: string; setSearch: (v: string) => void;
-  statusFilter: StatusFilter; setStatusFilter: (v: StatusFilter) => void;
-  viewMode: ViewMode; setViewMode: (v: ViewMode) => void;
-  saving: string | null;
-  getRecord: (id: string) => Attendance | undefined;
-  mark: (c: Client, status: string) => Promise<void>;
-  date: string; today: string;
-  onMarkAll?: () => void;
-}) {
-  const STATUS_FILTERS: { id: StatusFilter; label: string }[] = [
-    { id: 'all', label: 'All' }, { id: 'present', label: 'Present' },
-    { id: 'absent', label: 'Absent' }, { id: 'late', label: 'Late' }, { id: 'unmarked', label: 'Unmarked' },
-  ];
-
+/** Apple's Exercise ring: the share of the roster that came in. */
+function RateRing({ rate, checkedIn, total, loading }: { rate: number; checkedIn: number; total: number; loading: boolean }) {
+  const size = 96;
+  const stroke = 11;
+  const r = (size - stroke) / 2;
   return (
-    <section className="rounded-[30px] border border-zinc-200/70 bg-white/75 p-5 shadow-[0_10px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 sm:p-6">
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight text-zinc-950 dark:text-white">Member Attendance</h2>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-white/45">{filtered.length} members · P = Present · A = Absent · L = Late</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {onMarkAll && (
-            <button onClick={onMarkAll} className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3.5 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-500/20 dark:text-emerald-400">
-              <CheckCircle2 className="h-4 w-4" />Mark All Present
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* toolbar */}
-      <div className="mb-5 flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[180px] max-w-xs">
-          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-white/40" />
-          <input aria-label="Search members" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search member…"
-            className="w-full rounded-[14px] border border-zinc-200 bg-white/80 py-2.5 pl-10 pr-4 text-sm outline-none placeholder:text-zinc-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/30" />
-        </div>
-        <div className="flex gap-1 rounded-[14px] border border-zinc-200 bg-zinc-50 p-1 dark:border-white/10 dark:bg-white/5">
-          {STATUS_FILTERS.map(f => (
-            <button key={f.id} onClick={() => setStatusFilter(f.id)}
-              className={`rounded-[10px] px-3 py-1.5 text-xs font-medium transition ${
-                statusFilter === f.id ? 'bg-white text-zinc-900 shadow-sm dark:bg-white/12 dark:text-white' : 'text-zinc-500 hover:text-zinc-900 dark:text-white/40 dark:hover:text-white/70'
-              }`}>{f.label}
-            </button>
-          ))}
-        </div>
-        <div className="ml-auto flex gap-1 rounded-[14px] border border-zinc-200 bg-zinc-50 p-1 dark:border-white/10 dark:bg-white/5">
-          <button aria-label="Table view" onClick={() => setViewMode('table')} className={`rounded-[10px] p-2 transition ${ viewMode === 'table' ? 'bg-white shadow-sm dark:bg-white/12' : 'text-zinc-400 dark:text-white/30' }`}><LayoutList className="h-4 w-4" /></button>
-          <button aria-label="Grid view"  onClick={() => setViewMode('grid')}  className={`rounded-[10px] p-2 transition ${ viewMode === 'grid'  ? 'bg-white shadow-sm dark:bg-white/12' : 'text-zinc-400 dark:text-white/30' }`}><Grid3x3  className="h-4 w-4" /></button>
-        </div>
-      </div>
-
-      {loading ? (
-        <SkeletonRows />
-      ) : filtered.length === 0 ? (
-        <EmptyState icon={<Users className="h-8 w-8" />} title="No members found" desc="Try adjusting search or status filters." />
-      ) : viewMode === 'table' ? (
-        <TableView filtered={filtered} saving={saving} getRecord={getRecord} mark={mark} />
-      ) : (
-        <GridView filtered={filtered} saving={saving} getRecord={getRecord} mark={mark} />
-      )}
-    </section>
-  );
-}
-
-type SortCol = 'Member' | 'Plan' | 'Trainer' | 'Status' | 'Check-in';
-
-function SortIcon({ col, sortCol, sortDir }: { col: string; sortCol: SortCol | null; sortDir: 'asc' | 'desc' }) {
-  if (sortCol !== col) return <ChevronsUpDown className="w-3 h-3 opacity-30 group-hover:opacity-60 transition-opacity" />;
-  return sortDir === 'asc'
-    ? <ChevronUp className="w-3 h-3 text-amber-500" />
-    : <ChevronDown className="w-3 h-3 text-amber-500" />;
-}
-
-function TableView({ filtered, saving, getRecord, mark }: {
-  filtered: Client[]; saving: string | null;
-  getRecord: (id: string) => Attendance | undefined;
-  mark: (c: Client, s: string) => Promise<void>;
-}) {
-  const [sortCol, setSortCol] = useState<SortCol | null>(null);
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulkSaving, setBulkSaving] = useState(false);
-
-  const handleSort = (col: SortCol) => {
-    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortCol(col); setSortDir('asc'); }
-  };
-
-  const sorted = useMemo(() => {
-    if (!sortCol) return filtered;
-    return [...filtered].sort((a, b) => {
-      let av = '', bv = '';
-      if (sortCol === 'Member') { av = a.name ?? ''; bv = b.name ?? ''; }
-      else if (sortCol === 'Plan') { av = a.package_type ?? ''; bv = b.package_type ?? ''; }
-      else if (sortCol === 'Trainer') { av = a.trainer_name ?? ''; bv = b.trainer_name ?? ''; }
-      else if (sortCol === 'Status') { av = getRecord(a.id)?.status ?? 'unmarked'; bv = getRecord(b.id)?.status ?? 'unmarked'; }
-      else if (sortCol === 'Check-in') { av = getRecord(a.id)?.check_in ?? ''; bv = getRecord(b.id)?.check_in ?? ''; }
-      const cmp = av.localeCompare(bv);
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-  }, [filtered, sortCol, sortDir, getRecord]);
-
-  const allSelected = filtered.length > 0 && filtered.every(c => selected.has(c.id));
-  const someSelected = !allSelected && filtered.some(c => selected.has(c.id));
-
-  const toggleAll = () => {
-    if (allSelected) setSelected(new Set());
-    else setSelected(new Set(filtered.map(c => c.id)));
-  };
-
-  const toggleRow = (id: string) => {
-    setSelected(s => {
-      const next = new Set(s);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
-  const bulkMark = async (status: string) => {
-    const clients = filtered.filter(c => selected.has(c.id));
-    setBulkSaving(true);
-    await Promise.allSettled(clients.map(c => mark(c, status)));
-    setBulkSaving(false);
-    setSelected(new Set());
-  };
-
-  const SORTABLE: SortCol[] = ['Member', 'Plan', 'Trainer', 'Status', 'Check-in'];
-
-  return (
-    <div className="space-y-2">
-      {/* Bulk action bar */}
-      {selected.size > 0 && (
-        <div className="flex items-center gap-3 rounded-[14px] border border-amber-200/60 bg-amber-50/80 px-4 py-2.5 dark:border-amber-400/20 dark:bg-amber-400/5">
-          <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
-            {selected.size} selected
-          </span>
-          <div className="flex items-center gap-1.5 ml-auto">
-            <span className="text-xs text-zinc-500 dark:text-white/40 mr-1">Mark as:</span>
-            {[
-              { status: 'present', label: 'Present', cls: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
-              { status: 'absent',  label: 'Absent',  cls: 'bg-rose-500 hover:bg-rose-600 text-white' },
-              { status: 'late',    label: 'Late',    cls: 'bg-amber-500 hover:bg-amber-600 text-white' },
-            ].map(({ status, label, cls }) => (
-              <button
-                key={status}
-                onClick={() => bulkMark(status)}
-                disabled={bulkSaving}
-                className={`px-3 py-1 rounded-[8px] text-xs font-bold transition disabled:opacity-50 ${cls}`}
-              >
-                {bulkSaving ? '…' : label}
-              </button>
-            ))}
-            <button
-              onClick={() => setSelected(new Set())}
-              className="ml-1 px-2.5 py-1 rounded-[8px] text-xs font-medium text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-white/40 dark:hover:text-white/70 dark:hover:bg-white/5 transition"
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="overflow-x-auto rounded-[20px] border border-zinc-200/70 dark:border-white/10">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-zinc-50/80 text-xs uppercase tracking-wider text-zinc-500 dark:bg-white/5 dark:text-white/40">
-            <tr>
-              {/* Bulk select all */}
-              <th className="px-4 py-4 w-10">
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  ref={el => { if (el) el.indeterminate = someSelected; }}
-                  onChange={toggleAll}
-                  className="h-4 w-4 rounded border-zinc-300 accent-amber-500 cursor-pointer dark:border-white/20"
-                  aria-label="Select all"
-                />
-              </th>
-              {SORTABLE.map(h => (
-                <th key={h} className="px-5 py-4 font-medium">
-                  <button
-                    onClick={() => handleSort(h)}
-                    className="group inline-flex items-center gap-1 font-medium uppercase tracking-wider hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
-                  >
-                    {h}
-                    <SortIcon col={h} sortCol={sortCol} sortDir={sortDir} />
-                  </button>
-                </th>
-              ))}
-              <th className="px-5 py-4 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map(c => {
-              const rec = getRecord(c.id);
-              const isSelected = selected.has(c.id);
-              return (
-                <tr
-                  key={c.id}
-                  className={`border-t border-zinc-100 transition hover:bg-zinc-50 dark:border-white/5 dark:hover:bg-white/5 ${isSelected ? 'bg-amber-50/60 dark:bg-amber-400/5' : ''}`}
-                >
-                  <td className="px-4 py-4">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleRow(c.id)}
-                      className="h-4 w-4 rounded border-zinc-300 accent-amber-500 cursor-pointer dark:border-white/20"
-                      aria-label={`Select ${c.name}`}
-                    />
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <MemberAvatar client={c} />
-                      <div>
-                        <p className="font-semibold text-zinc-900 dark:text-white">{c.name}</p>
-                        <p className="text-xs text-zinc-400 dark:text-white/30">{c.client_id || ''}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:bg-white/10 dark:text-white/65">{c.package_type || '—'}</span>
-                  </td>
-                  <td className="px-5 py-4 text-sm text-zinc-500 dark:text-white/40">{c.trainer_name || '—'}</td>
-                  <td className="px-5 py-4">{rec ? <StatusBadge status={rec.status} /> : <StatusBadge status="unmarked" />}</td>
-                  <td className="px-5 py-4 text-xs tabular-nums text-zinc-500 dark:text-white/40">{rec?.check_in || '—'}</td>
-                  <td className="px-5 py-4">
-                    <AttendanceBtns client={c} rec={rec} saving={saving} mark={mark} />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img"
+        aria-label={loading ? 'Loading' : `${checkedIn} of ${total} members in, ${rate}%`}>
+        <defs>
+          <linearGradient id="att-ring" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={ringStops[0]} />
+            <stop offset="55%" stopColor={ringStops[1]} />
+            <stop offset="100%" stopColor={ringStops[2]} />
+          </linearGradient>
+        </defs>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth={stroke} />
+        <m.circle
+          cx={size / 2} cy={size / 2} r={r} fill="none" stroke="url(#att-ring)" strokeWidth={stroke}
+          strokeLinecap="round" pathLength={100} transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          initial={{ strokeDasharray: '0 100' }}
+          animate={{ strokeDasharray: `${loading ? 0 : Math.max(rate, 0.5)} 100` }}
+          transition={{ duration: 0.9, ease: EASE }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-[22px] font-[850] leading-none tabular-nums tracking-[-0.03em]">{loading ? '—' : `${rate}%`}</span>
       </div>
     </div>
   );
 }
 
-function GridView({ filtered, saving, getRecord, mark }: {
-  filtered: Client[]; saving: string | null;
-  getRecord: (id: string) => Attendance | undefined;
-  mark: (c: Client, s: string) => Promise<void>;
+function GlassAction({ label, icon, onClick }: { label: string; icon: React.ReactNode; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick}
+      className="flex h-11 items-center justify-center gap-1.5 rounded-full text-[13px] font-[750] transition-transform active:scale-95"
+      style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
+      {icon}{label}
+    </button>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   STATUS TILES
+──────────────────────────────────────────────────────────────── */
+function StatusTile({ status, value, total, loading, active, onClick, delay }: {
+  status: Status; value: number; total: number; loading: boolean; active: boolean; onClick: () => void; delay: number;
+}) {
+  const s = STATUS[status];
+  const share = total ? Math.round((value / total) * 100) : 0;
+  return (
+    <m.button
+      type="button"
+      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: EASE, delay }}
+      onClick={onClick}
+      aria-pressed={active}
+      className="relative overflow-hidden rounded-[22px] p-4 text-left transition-transform active:scale-[0.98]"
+      style={{
+        background: `radial-gradient(160px circle at 100% 0%, ${rgba(s.color, 0.16)}, transparent 70%), var(--bg-card)`,
+        border: `1.5px solid ${active ? s.color : 'var(--border)'}`,
+        boxShadow: active ? `0 12px 28px -14px ${rgba(s.color, 0.6)}` : '0 2px 12px rgba(15,23,42,0.05)',
+      }}
+    >
+      <span className="grid h-10 w-10 place-items-center rounded-[13px] text-white"
+        style={{ background: `linear-gradient(135deg, ${rgba(s.color, 0.85)}, ${s.color})`, boxShadow: `0 8px 18px -8px ${rgba(s.color, 0.7)}` }}>
+        <s.Icon size={18} aria-hidden />
+      </span>
+      <p className="mt-3 text-[28px] font-[850] leading-none tabular-nums tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>
+        {loading ? '—' : value}
+      </p>
+      <p className="mt-1.5 flex items-baseline justify-between gap-2 text-[13px] font-[750]" style={{ color: 'var(--text-secondary)' }}>
+        {s.label}
+        <span className="text-[11px] font-[650] tabular-nums" style={{ color: 'var(--text-muted)' }}>{loading ? '' : `${share}%`}</span>
+      </p>
+      {/* A thin meter of the roster, so four tiles compare at a glance. */}
+      <span className="mt-2.5 block h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}>
+        <m.span className="block h-full rounded-full" style={{ background: s.color }}
+          initial={{ width: 0 }} animate={{ width: `${loading ? 0 : share}%` }} transition={{ duration: 0.7, ease: EASE, delay }} />
+      </span>
+    </m.button>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   SEGMENTED CONTROL
+──────────────────────────────────────────────────────────────── */
+function Segmented<T extends string>({ value, onChange, options, className = '' }: {
+  value: T; onChange: (v: T) => void; className?: string;
+  options: { id: T; label: string; tone: ToneName; badge?: number }[];
 }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {filtered.map(c => {
-        const rec = getRecord(c.id);
+    <div role="tablist" className={`flex gap-1 rounded-[18px] p-1.5 ${className}`}
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      {options.map((o) => {
+        const on = value === o.id;
+        const t = tones[o.tone];
         return (
-          <div key={c.id} className="rounded-[22px] border border-zinc-200/70 bg-white/85 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-[0_14px_36px_rgba(15,23,42,0.1)] dark:border-white/10 dark:bg-white/5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <MemberAvatar client={c} large />
-                <div>
-                  <p className="font-semibold text-zinc-900 dark:text-white">{c.name}</p>
-                  <p className="text-xs text-zinc-400 dark:text-white/30">{c.package_type || '—'}</p>
-                </div>
-              </div>
-              {rec ? <StatusBadge status={rec.status} /> : <StatusBadge status="unmarked" />}
-            </div>
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-xs text-zinc-500 dark:text-white/40">{rec?.check_in ? `Checked in ${rec.check_in}` : 'Not yet marked'}</p>
-            </div>
-            <div className="mt-4 flex gap-2">
-              <AttendanceBtns client={c} rec={rec} saving={saving} mark={mark} />
-            </div>
-          </div>
+          <button key={o.id} type="button" role="tab" aria-selected={on} onClick={() => onChange(o.id)}
+            className="relative flex h-11 flex-1 items-center justify-center gap-1.5 rounded-[13px] text-[13.5px] font-[780] transition-colors"
+            style={{ color: on ? '#fff' : 'var(--text-secondary)' }}>
+            {on && (
+              <m.span layoutId="att-tab" aria-hidden className="absolute inset-0 rounded-[13px]"
+                transition={{ type: 'spring', stiffness: 520, damping: 38 }}
+                style={{ background: gradient(t), boxShadow: `0 8px 18px -10px ${t.glow}` }} />
+            )}
+            <span className="relative">{o.label}</span>
+            {!!o.badge && (
+              <span className="relative grid h-5 min-w-[20px] place-items-center rounded-full px-1.5 text-[11px] font-[850] tabular-nums"
+                style={{ background: on ? 'rgba(255,255,255,0.3)' : gradient(t), color: '#fff' }}>
+                {o.badge}
+              </span>
+            )}
+          </button>
         );
       })}
     </div>
   );
 }
 
-const AttendanceBtns = React.memo(function AttendanceBtns({ client, rec, saving, mark }: {
-  client: Client; rec: Attendance | undefined; saving: string | null;
+/* ────────────────────────────────────────────────────────────────
+   MEMBERS
+──────────────────────────────────────────────────────────────── */
+function MembersPanel({ filtered, loading, total, search, setSearch, statusFilter, setStatusFilter, saving, statusOf, recordOf, mark }: {
+  filtered: Client[]; loading: boolean; total: number;
+  search: string; setSearch: (v: string) => void;
+  statusFilter: StatusFilter; setStatusFilter: (v: StatusFilter) => void;
+  saving: string | null;
+  statusOf: (c: Client) => Status;
+  recordOf: (c: Client) => Attendance | undefined;
   mark: (c: Client, s: string) => Promise<void>;
 }) {
-  const isSaving = saving === client.id;
+  const FILTERS: { id: StatusFilter; label: string }[] = [
+    { id: 'all', label: 'All' }, { id: 'unmarked', label: 'Unmarked' },
+    { id: 'present', label: 'Present' }, { id: 'late', label: 'Late' }, { id: 'absent', label: 'Absent' },
+  ];
   return (
-    <div className="flex items-center gap-1.5">
-      {([
-        { status: 'present', label: 'P', active: 'bg-emerald-500/15 text-emerald-700 border-emerald-400/40 ring-2 ring-emerald-300/30 dark:text-emerald-300', inactive: 'border-zinc-200 bg-white text-zinc-500 hover:border-emerald-300 hover:text-emerald-600 dark:border-white/10 dark:bg-white/5 dark:text-white/40' },
-        { status: 'absent',  label: 'A', active: 'bg-rose-500/15 text-rose-700 border-rose-400/40 ring-2 ring-rose-300/30 dark:text-rose-300',             inactive: 'border-zinc-200 bg-white text-zinc-500 hover:border-rose-300 hover:text-rose-600 dark:border-white/10 dark:bg-white/5 dark:text-white/40' },
-        { status: 'late',    label: 'L', active: 'bg-amber-500/15 text-amber-700 border-amber-400/40 ring-2 ring-amber-300/30 dark:text-amber-300',          inactive: 'border-zinc-200 bg-white text-zinc-500 hover:border-amber-300 hover:text-amber-600 dark:border-white/10 dark:bg-white/5 dark:text-white/40' },
-      ] as const).map(({ status, label, active, inactive }) => (
-        <button
-          key={status}
-          onClick={() => mark(client, status)}
-          disabled={isSaving}
-          className={`h-9 w-9 rounded-[10px] border text-xs font-bold transition ${ rec?.status === status ? active : inactive } ${isSaving ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-        >
-          {isSaving ? '…' : label}
-        </button>
-      ))}
-    </div>
+    <section className="rounded-[26px] p-4 sm:p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      <div className="relative">
+        <Search size={16} aria-hidden className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+        <input aria-label="Search members" value={search} onChange={(e) => setSearch(e.target.value)}
+          placeholder={`Search ${total} member${total === 1 ? '' : 's'}…`}
+          className="h-11 w-full rounded-[14px] pl-10 pr-4 text-[14px] outline-none"
+          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
+      </div>
+
+      <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {FILTERS.map((f) => {
+          const on = statusFilter === f.id;
+          const color = f.id === 'all' ? tones.indigo.from : STATUS[f.id as Status].color;
+          return (
+            <button key={f.id} type="button" onClick={() => setStatusFilter(f.id)} aria-pressed={on}
+              className="h-9 shrink-0 rounded-full px-3.5 text-[12.5px] font-[750] transition-colors"
+              style={on
+                ? { background: color, color: '#fff' }
+                : { background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+              {f.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-3">
+        {loading ? (
+          <div className="space-y-2.5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-[72px] animate-pulse rounded-[18px]" style={{ background: 'var(--bg-subtle)' }} />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center rounded-[20px] px-6 py-10 text-center" style={{ background: 'var(--bg-subtle)' }}>
+            <span className="grid h-12 w-12 place-items-center rounded-[15px] text-white" style={{ background: gradient(tones.indigo) }}>
+              <Users size={22} aria-hidden />
+            </span>
+            <p className="mt-3 text-[14px] font-[780]" style={{ color: 'var(--text-primary)' }}>
+              {total === 0 ? 'No active members yet' : 'Nobody matches'}
+            </p>
+            <p className="mt-1 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+              {total === 0 ? 'Active clients appear here to be marked.' : 'Try another search or filter.'}
+            </p>
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {filtered.map((c) => (
+              <MemberRow key={c.id} client={c} status={statusOf(c)} record={recordOf(c)} saving={saving === c.id} mark={mark} />
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  );
+}
+
+const METHOD_LABEL: Record<string, string> = {
+  qr: 'QR', manual: 'Manual', face: 'Face', face_id: 'Face ID', fingerprint: 'Fingerprint', touch_id: 'Touch ID', passkey: 'Passkey', biometric: 'Biometric',
+};
+
+const MemberRow = React.memo(function MemberRow({ client, status, record, saving, mark }: {
+  client: Client; status: Status; record: Attendance | undefined; saving: boolean;
+  mark: (c: Client, s: string) => Promise<void>;
+}) {
+  const s = STATUS[status];
+  const time = clockTime(record?.check_in);
+  const method = record?.method ? METHOD_LABEL[record.method] ?? record.method : null;
+  return (
+    <li className="flex items-center gap-3 rounded-[18px] p-2.5 pr-3"
+      style={{ background: status === 'unmarked' ? 'var(--bg-subtle)' : rgba(s.color, 0.07), border: '1px solid var(--border)' }}>
+      <span className="shrink-0 rounded-full p-[2.5px]" style={{ background: status === 'unmarked' ? 'var(--border)' : s.color }}>
+        <ClientAvatar name={client.name} photoUrl={client.photo_url}
+          className="grid h-11 w-11 place-items-center rounded-full text-[13px] font-[800] text-white"
+          style={{ background: gradient(tones.indigo), border: '2px solid var(--bg-card)' }} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>{client.name}</p>
+        <p className="mt-0.5 flex items-center gap-1.5 truncate text-[12px] font-[600]" style={{ color: 'var(--text-muted)' }}>
+          <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: s.color }} />
+          {status === 'unmarked' ? 'Not marked' : s.label}
+          {time && <> · {time}</>}
+          {method && <> · {method}</>}
+        </p>
+      </div>
+      {/* iOS segmented control: the day's status, one tap to change. */}
+      <div role="group" aria-label={`Mark ${client.name}`} className="flex shrink-0 gap-0.5 rounded-[12px] p-0.5"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+        {(['present', 'late', 'absent'] as const).map((k) => {
+          const on = status === k;
+          const c = STATUS[k];
+          return (
+            <button key={k} type="button" onClick={() => !on && mark(client, k)} disabled={saving}
+              aria-pressed={on} aria-label={c.label} title={c.label}
+              className="grid h-9 w-9 place-items-center rounded-[10px] text-[12.5px] font-[850] transition-colors disabled:opacity-60"
+              style={on ? { background: c.color, color: '#fff', boxShadow: `0 4px 10px -4px ${rgba(c.color, 0.8)}` } : { color: 'var(--text-muted)' }}>
+              {saving ? <Loader2 size={13} className="animate-spin" /> : c.short}
+            </button>
+          );
+        })}
+      </div>
+    </li>
   );
 });
 
 /* ────────────────────────────────────────────────────────────────
-   INSIGHTS PANEL
+   RECENT CHECK-INS
 ──────────────────────────────────────────────────────────────── */
-/**
- * Insights & Trends — the merged panel.
- *
- * ── What was merged into it ────────────────────────────────────────────────
- *
- * /attendance/reports was a second page called "Reports & Dashboard",
- * reachable only from two buttons on this one. It read the same
- * api.attendance.list this page reads and led with the same four numbers —
- * Total, Present, Late, Absent — over a range instead of a day. So a trainer
- * asking "how has attendance been" had two pages telling them, in two visual
- * languages, from one table.
- *
- * Its three parts are here now: the range selector, the check-in method
- * breakdown and the monthly summary. /attendance/reports redirects here, so
- * anything bookmarked or linked still lands in the right place.
- *
- * What did not come across is its "Footfall Trend" card. It was labelled a
- * trend and drew one bar per STATUS — present, late, absent — with no time
- * axis at all. It could not show a trend; the Weekly Attendance Trends chart
- * below, which does plot days, is what that card was pretending to be.
- */
-function InsightsPanel({
-  summary, weeklyBars, peakHours, range, setRange, rangeRecords, rangeLoading, monthlyRecords, onExport,
-}: {
-  summary: { present: number; absent: number; late: number; unmarked: number; total: number };
-  weeklyBars: { day: string; pct: number }[];
-  peakHours: { label: string; pct: number }[];
-  range: string;
-  setRange: (r: string) => void;
-  rangeRecords: Attendance[];
-  rangeLoading: boolean;
-  monthlyRecords: Attendance[];
-  onExport: () => void;
-}) {
-  const bars = weeklyBars.length > 0 ? weeklyBars : [{ day: '—', pct: 0 }];
-  const max = Math.max(...bars.map(b => b.pct), 1);
+function RecentPanel({ recent, clients }: { recent: Attendance[]; clients: Client[] }) {
+  const byId = useMemo(() => new Map(clients.map((c) => [String(c.id), c])), [clients]);
   return (
-    <div className="space-y-4">
-      <RangeBar range={range} setRange={setRange} onExport={onExport} />
-      <RangeKpis records={rangeRecords} loading={rangeLoading} />
-      <MethodBreakdown records={rangeRecords} range={range} />
-
-      <div className="grid gap-5 xl:grid-cols-[1.3fr_0.7fr]">
-      <PremiumCard title="Weekly Attendance Trends" subtitle="Last 7 days — daily attendance rate">
-        <div className="flex h-44 items-end gap-2 pt-4">
-          {bars.map((b, i) => (
-            <div key={i} className="flex flex-1 flex-col items-center gap-2">
-              <p className="text-xs font-semibold text-zinc-600 dark:text-white/55">{b.pct}%</p>
-              <div className="w-full rounded-t-[10px] transition-all" style={{ height: `${(b.pct / max) * 140}px`, background: b.pct >= 85 ? 'linear-gradient(180deg,#10b981,#059669)' : b.pct >= 70 ? 'linear-gradient(180deg,#F59E0B,#D97706)' : 'linear-gradient(180deg,#ef4444,#dc2626)' }} />
-              <p className="text-xs text-zinc-400 dark:text-white/30">{b.day}</p>
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 flex flex-wrap gap-4 text-xs">
-          {[['#10b981', '≥ 85% great'], ['#F59E0B', '70–84% average'], ['#ef4444', '< 70% low']].map(([c, l]) => (
-            <span key={l} className="flex items-center gap-1.5 text-zinc-500 dark:text-white/40"><span className="h-2.5 w-2.5 rounded-full" style={{ background: c }} />{l}</span>
-          ))}
-        </div>
-      </PremiumCard>
-
-      <div className="space-y-4">
-        <PremiumCard title="Today's breakdown" subtitle="Live distribution">
-          <div className="space-y-3">
-            {([
-              { label: 'Present',  value: summary.present,  color: '#10b981', bg: 'bg-emerald-500/15' },
-              { label: 'Absent',   value: summary.absent,   color: '#dc2626', bg: 'bg-rose-500/15' },
-              { label: 'Late',     value: summary.late,     color: '#f59e0b', bg: 'bg-amber-500/15' },
-              { label: 'Unmarked', value: summary.unmarked, color: '#64748b', bg: 'bg-zinc-400/15' },
-            ] as const).map(item => (
-              <div key={item.label} className="rounded-[14px] bg-zinc-50 p-3 dark:bg-white/5">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-zinc-700 dark:text-white/70">{item.label}</p>
-                  <p className="text-sm font-semibold tabular-nums" style={{ color: item.color }}>{item.value}</p>
-                </div>
-                <div className="mt-2 h-1.5 rounded-full bg-zinc-200 dark:bg-white/10">
-                  <div className="h-1.5 rounded-full transition-all" style={{ width: `${summary.total > 0 ? (item.value / summary.total) * 100 : 0}%`, background: item.color }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </PremiumCard>
-
-        <PremiumCard title="Peak hours" subtitle="Today's check-in distribution">
-          <div className="space-y-2">
-            {peakHours.map(({ label, pct }) => (
-              <div key={label} className="flex items-center gap-3">
-                <p className="w-20 shrink-0 text-xs text-zinc-500 dark:text-white/40">{label}</p>
-                <div className="flex-1 h-2 rounded-full bg-zinc-100 dark:bg-white/10">
-                  <div className="h-2 rounded-full bg-[linear-gradient(90deg,#F59E0B,#FBBF24)]" style={{ width: `${Math.min(pct, 100)}%` }} />
-                </div>
-                <p className="w-8 text-right text-xs font-medium text-zinc-600 dark:text-white/55">{pct}%</p>
-              </div>
-            ))}
-          </div>
-        </PremiumCard>
+    <section className="mt-4 rounded-[26px] p-4 sm:p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <SectionTitle icon={<Sparkles size={16} />} tone="aqua" title="Just checked in" subtitle="Today, newest first" />
+        <Link href="/checkin/qr-scanner" className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-[780] text-white"
+          style={{ background: gradient(tones.aqua) }}>
+          <QrCode size={14} aria-hidden /> Scanner
+        </Link>
       </div>
-      </div>
+      {recent.length === 0 ? (
+        <p className="rounded-[16px] px-4 py-6 text-center text-[13px]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+          No check-ins yet today.
+        </p>
+      ) : (
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {recent.map((r) => {
+            const c = byId.get(String(r.ref_id));
+            const s = STATUS[r.status === 'late' ? 'late' : 'present'];
+            return (
+              <li key={r.id ?? `${r.ref_id}`} className="flex items-center gap-3 rounded-[16px] p-2.5" style={{ background: 'var(--bg-subtle)' }}>
+                <span className="shrink-0 rounded-full p-[2px]" style={{ background: s.color }}>
+                  <ClientAvatar name={c?.name ?? r.ref_name} photoUrl={c?.photo_url}
+                    className="grid h-10 w-10 place-items-center rounded-full text-[12px] font-[800] text-white"
+                    style={{ background: gradient(tones.aqua), border: '2px solid var(--bg-card)' }} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>{c?.name ?? r.ref_name ?? 'Member'}</p>
+                  <p className="text-[12px] font-[600]" style={{ color: 'var(--text-muted)' }}>
+                    {clockTime(r.check_in)}{r.method ? ` · ${METHOD_LABEL[r.method] ?? r.method}` : ''}
+                  </p>
+                </div>
+                <span className="shrink-0 text-[11.5px] font-[700]" style={{ color: 'var(--text-muted)' }}>{ago(r.check_in)}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
 
-      <MonthlySummary records={monthlyRecords} />
+function SectionTitle({ icon, tone, title, subtitle }: { icon: React.ReactNode; tone: ToneName; title: string; subtitle?: string }) {
+  const t = tones[tone];
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px] text-white"
+        style={{ background: gradient(t), boxShadow: `0 6px 16px -6px ${t.glow}` }}>{icon}</span>
+      <div className="min-w-0">
+        <h2 className="truncate text-[15px] font-[800] tracking-[-0.015em]" style={{ color: 'var(--text-primary)' }}>{title}</h2>
+        {subtitle && <p className="truncate text-[12px]" style={{ color: 'var(--text-muted)' }}>{subtitle}</p>}
+      </div>
     </div>
   );
 }
 
+function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <section className={`rounded-[26px] p-4 sm:p-5 ${className}`} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      {children}
+    </section>
+  );
+}
+
 /* ────────────────────────────────────────────────────────────────
-   MERGED FROM /attendance/reports
+   TRENDS (the Insights tab)
 ──────────────────────────────────────────────────────────────── */
+function InsightsPanel({ range, setRange, today, rosterSize, rangeRecords, rangeLoading, monthlyRecords, onExport }: {
+  range: string; setRange: (r: string) => void; today: string; rosterSize: number;
+  rangeRecords: Attendance[]; rangeLoading: boolean; monthlyRecords: Attendance[]; onExport: () => void;
+}) {
+  // The daily chart is always the last seven days — a 90-bar chart on a phone
+  // is a barcode. The range picker drives the figures around it.
+  const week = useMemo(() => {
+    const w = lastDays(7, today);
+    return dailySeries(rangeRecords, w.from, w.to, rosterSize);
+  }, [rangeRecords, today, rosterSize]);
+  const hours = useMemo(() => peakHours(rangeRecords), [rangeRecords]);
+  const max = Math.max(...week.map((p) => p.checkedIn), 1);
+
+  return (
+    <div className="space-y-4">
+      <RangeBar range={range} setRange={setRange} onExport={onExport} />
+      <RangeKpis records={rangeRecords} loading={rangeLoading} />
+
+      <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
+        <Card>
+          <SectionTitle icon={<BarChart3 size={16} />} tone="indigo" title="Weekly Attendance Trends"
+            subtitle="Members in each day, last 7 days" />
+          <div className="mt-4 flex h-48 items-end gap-2">
+            {week.map((p, i) => (
+              <div key={p.date} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
+                <span className="text-[11.5px] font-[800] tabular-nums" style={{ color: 'var(--text-secondary)' }}>
+                  {rangeLoading ? '' : p.checkedIn}
+                </span>
+                <m.div className="w-full max-w-[44px] rounded-[10px]"
+                  style={{ background: p.date === today ? gradient(tones.aqua, 180) : barGradient, minHeight: 6 }}
+                  initial={{ height: 6 }}
+                  animate={{ height: rangeLoading ? 6 : `${Math.max(4, (p.checkedIn / max) * 100)}%` }}
+                  transition={{ duration: 0.6, ease: EASE, delay: i * 0.04 }} />
+                <span className="text-[11px] font-[700]" style={{ color: p.date === today ? tones.aqua.ink : 'var(--text-muted)' }}>
+                  {p.date === today ? 'Today' : p.label}
+                </span>
+              </div>
+            ))}
+          </div>
+          {rosterSize > 0 && (
+            <p className="mt-3 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+              Out of {rosterSize} active member{rosterSize === 1 ? '' : 's'} today.
+            </p>
+          )}
+        </Card>
+
+        <Card>
+          <SectionTitle icon={<Clock size={16} />} tone="sunset" title="Peak hours" subtitle={`When members come in · last ${range} days`} />
+          <div className="mt-4 space-y-2.5">
+            {hours.map((h) => (
+              <div key={h.label} className="flex items-center gap-3">
+                <p className="w-[86px] shrink-0 text-[12px] font-[650]" style={{ color: 'var(--text-secondary)' }}>{h.label}</p>
+                <div className="h-2.5 flex-1 overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}>
+                  <m.div className="h-full rounded-full" style={{ background: gradient(tones.sunset, 90) }}
+                    initial={{ width: 0 }} animate={{ width: `${h.share}%` }} transition={{ duration: 0.6, ease: EASE }} />
+                </div>
+                <p className="w-7 text-right text-[12px] font-[800] tabular-nums" style={{ color: 'var(--text-primary)' }}>{h.count}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      <MethodBreakdown records={rangeRecords} range={range} />
+      <MonthlySummary records={monthlyRecords} />
+    </div>
+  );
+}
 
 const RANGES = [
   { id: '7', label: '7 days' },
@@ -938,66 +813,53 @@ const RANGES = [
 
 function RangeBar({ range, setRange, onExport }: { range: string; setRange: (r: string) => void; onExport: () => void }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div
-        className="grid flex-1 gap-1 rounded-full p-1"
-        style={{ background: 'var(--bg-subtle)', gridTemplateColumns: `repeat(${RANGES.length}, minmax(0, 1fr))` }}
-        role="tablist"
-        aria-label="Date range"
-      >
-        {RANGES.map(r => {
-          const active = range === r.id;
+    <div className="flex items-center gap-2">
+      <div role="tablist" aria-label="Date range" className="grid flex-1 grid-cols-3 gap-1 rounded-full p-1"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+        {RANGES.map((r) => {
+          const on = range === r.id;
           return (
-            <button
-              key={r.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => setRange(r.id)}
-              className="h-[38px] cursor-pointer truncate rounded-full px-2 text-[12.5px] font-[700] transition-colors"
-              style={{
-                background: active ? 'var(--brand)' : 'transparent',
-                color: active ? '#fff' : 'var(--text-secondary)',
-              }}
-            >
+            <button key={r.id} type="button" role="tab" aria-selected={on} onClick={() => setRange(r.id)}
+              className="h-10 truncate rounded-full px-2 text-[13px] font-[750] transition-colors"
+              style={on ? { background: gradient(tones.berry), color: '#fff' } : { color: 'var(--text-secondary)' }}>
               {r.label}
             </button>
           );
         })}
       </div>
-      <button
-        type="button"
-        onClick={onExport}
-        className="inline-flex h-[40px] shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-4 text-[12.5px] font-[700] transition-transform active:scale-95"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
-      >
-        <Download size={14} /> Export
+      <button type="button" onClick={onExport}
+        className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full px-4 text-[13px] font-[750]"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+        <Download size={15} aria-hidden /> Export
       </button>
     </div>
   );
 }
 
 const RANGE_KPIS = [
-  { key: 'total',   label: 'Check-ins', color: 'var(--brand)' },
-  { key: 'present', label: 'Present',   color: '#059669' },
-  { key: 'late',    label: 'Late',      color: '#B45309' },
-  { key: 'absent',  label: 'Absent',    color: '#DC2626' },
+  { key: 'visits', label: 'Check-ins', tone: 'indigo' },
+  { key: 'present', label: 'Present', status: 'present' },
+  { key: 'late', label: 'Late', status: 'late' },
+  { key: 'absent', label: 'Absent', status: 'absent' },
 ] as const;
 
 function RangeKpis({ records, loading }: { records: Attendance[]; loading: boolean }) {
   return (
-    // Two up on a phone. The page this came from used
-    // `auto-fit minmax(200px, 1fr)`, which is one full-width tile per row at
-    // 390px — four numbers, four screenfuls.
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {RANGE_KPIS.map(k => {
-        const value = k.key === 'total' ? records.length : records.filter(r => r.status === k.key).length;
+      {RANGE_KPIS.map((k) => {
+        // A check-in is a present or late row; absences are records of NOT
+        // coming in and were once counted here as visits.
+        const value = k.key === 'visits'
+          ? records.filter((r) => r.status === 'present' || r.status === 'late').length
+          : records.filter((r) => r.status === k.key).length;
+        const color = 'status' in k ? STATUS[k.status].color : tones.indigo.from;
         return (
-          <div key={k.key} className="rounded-[16px] p-3.5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <p className="text-[10px] font-[800] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{k.label}</p>
+          <div key={k.key} className="rounded-[20px] p-4"
+            style={{ background: `radial-gradient(140px circle at 100% 0%, ${rgba(color, 0.14)}, transparent 70%), var(--bg-card)`, border: '1px solid var(--border)' }}>
+            <p className="text-[11px] font-[800] uppercase tracking-[0.08em]" style={{ color: 'var(--text-muted)' }}>{k.label}</p>
             {loading
-              ? <div className="mt-2 h-[26px] w-12 animate-pulse rounded-md" style={{ background: 'var(--bg-subtle)' }} />
-              : <p className="mt-1.5 text-[24px] font-[800] tabular-nums leading-none" style={{ color: k.color }}>{value}</p>}
+              ? <div className="mt-2 h-7 w-12 animate-pulse rounded-md" style={{ background: 'var(--bg-subtle)' }} />
+              : <p className="mt-1.5 text-[26px] font-[850] leading-none tabular-nums" style={{ color }}>{value}</p>}
           </div>
         );
       })}
@@ -1005,49 +867,44 @@ function RangeKpis({ records, loading }: { records: Attendance[]; loading: boole
   );
 }
 
-const METHOD_META: Record<string, { label: string; color: string }> = {
-  qr:          { label: 'QR Code',     color: '#0067e0' },
-  face:        { label: 'Face',        color: '#0067e0' },
-  face_id:     { label: 'Face ID',     color: '#0067e0' },
-  touch_id:    { label: 'Touch ID',    color: '#059669' },
-  fingerprint: { label: 'Fingerprint', color: '#059669' },
-  passkey:     { label: 'Passkey',     color: '#0067e0' },
-  biometric:   { label: 'Biometric',   color: '#B45309' },
-  manual:      { label: 'Manual',      color: '#64748B' },
+const METHOD_TONE: Record<string, ToneName> = {
+  qr: 'aqua', manual: 'indigo', face: 'berry', face_id: 'berry', fingerprint: 'gold', touch_id: 'gold', passkey: 'sky', biometric: 'sunset',
 };
 
 function MethodBreakdown({ records, range }: { records: Attendance[]; range: string }) {
   const counts = useMemo(() => {
     const acc: Record<string, number> = {};
     for (const r of records) {
-      const m = (r as Attendance & { check_in_method?: string }).check_in_method || 'manual';
-      acc[m] = (acc[m] || 0) + 1;
+      if (r.status !== 'present' && r.status !== 'late') continue;
+      const mth = r.method || 'manual';
+      acc[mth] = (acc[mth] || 0) + 1;
     }
     return Object.entries(acc).sort((a, b) => b[1] - a[1]);
   }, [records]);
 
   if (counts.length === 0) return null;
-  const total = records.length || 1;
+  const total = counts.reduce((n, [, c]) => n + c, 0) || 1;
 
   return (
-    <PremiumCard title="Check-in methods" subtitle={`Last ${range} days`}>
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+    <Card>
+      <SectionTitle icon={<QrCode size={16} />} tone="aqua" title="Check-in methods" subtitle={`Last ${range} days`} />
+      <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
         {counts.map(([method, count]) => {
-          const meta = METHOD_META[method] ?? { label: method, color: '#64748B' };
+          const t = tones[METHOD_TONE[method] ?? 'indigo'];
           const pct = Math.round((count / total) * 100);
           return (
-            <div key={method} className="rounded-[14px] p-3" style={{ background: 'var(--bg-subtle)' }}>
-              <p className="truncate text-[11.5px] font-[650]" style={{ color: 'var(--text-secondary)' }}>{meta.label}</p>
-              <p className="mt-1 text-[20px] font-[800] tabular-nums leading-none" style={{ color: 'var(--text-primary)' }}>{count}</p>
-              <div className="mt-2 h-1 overflow-hidden rounded-full" style={{ background: 'var(--border-2)' }}>
-                <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: meta.color }} />
+            <div key={method} className="rounded-[16px] p-3" style={{ background: 'var(--bg-subtle)' }}>
+              <p className="truncate text-[12px] font-[700]" style={{ color: 'var(--text-secondary)' }}>{METHOD_LABEL[method] ?? method}</p>
+              <p className="mt-1 text-[22px] font-[850] tabular-nums leading-none" style={{ color: 'var(--text-primary)' }}>{count}</p>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--border)' }}>
+                <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: gradient(t, 90) }} />
               </div>
-              <p className="mt-1 text-[10.5px]" style={{ color: 'var(--text-muted)' }}>{pct}% of check-ins</p>
+              <p className="mt-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>{pct}% of check-ins</p>
             </div>
           );
         })}
       </div>
-    </PremiumCard>
+    </Card>
   );
 }
 
@@ -1055,7 +912,8 @@ function MonthlySummary({ records }: { records: Attendance[] }) {
   const rows = useMemo(() => {
     const byMonth: Record<string, { checkins: number; members: Set<string>; present: number; days: Set<string> }> = {};
     for (const r of records) {
-      const date = r.date || '';
+      if (r.status !== 'present' && r.status !== 'late') continue;
+      const date = String(r.date || '').slice(0, 10);
       const key = date.slice(0, 7);
       if (!key) continue;
       byMonth[key] ??= { checkins: 0, members: new Set(), present: 0, days: new Set() };
@@ -1066,174 +924,98 @@ function MonthlySummary({ records }: { records: Attendance[] }) {
     }
     return Object.entries(byMonth).sort().reverse().slice(0, 6).map(([month, d]) => ({
       month,
+      label: new Date(`${month}-01T12:00:00`).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
       checkins: d.checkins,
       members: d.members.size,
       // Per DAY the studio was open, not per record — the version this came
       // from divided the month's check-ins by the number of records in that
       // month, which is checkins/checkins and prints 1 for every month.
       avgDaily: Math.round(d.checkins / Math.max(d.days.size, 1)),
-      presentPct: Math.round((d.present / Math.max(d.checkins, 1)) * 100),
+      onTime: Math.round((d.present / Math.max(d.checkins, 1)) * 100),
     }));
   }, [records]);
 
   return (
-    <PremiumCard title="Monthly summary" subtitle="Last 6 months">
+    <Card>
+      <SectionTitle icon={<CalendarDays size={16} />} tone="sky" title="Monthly summary" subtitle="Last 6 months" />
       {rows.length === 0 ? (
         <p className="py-8 text-center text-[13px]" style={{ color: 'var(--text-muted)' }}>No monthly data yet.</p>
       ) : (
-        // Cards, not a five-column table. At 390px a table of Month /
-        // Check-Ins / Members / Avg Daily / Peak Day gives each column about
-        // 60px, and the page this came from simply let it scroll sideways.
-        <div className="space-y-2.5">
-          {rows.map(r => (
-            <div key={r.month} className="rounded-[14px] p-3" style={{ background: 'var(--bg-subtle)' }}>
+        <div className="mt-4 space-y-2.5">
+          {rows.map((r) => (
+            <div key={r.month} className="rounded-[16px] p-3.5" style={{ background: 'var(--bg-subtle)' }}>
               <div className="flex items-baseline justify-between gap-3">
-                <p className="text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>{r.month}</p>
-                <p className="text-[13px] font-[800] tabular-nums" style={{ color: 'var(--text-primary)' }}>
+                <p className="text-[14px] font-[780]" style={{ color: 'var(--text-primary)' }}>{r.label}</p>
+                <p className="text-[14px] font-[850] tabular-nums" style={{ color: 'var(--text-primary)' }}>
                   {r.checkins}
-                  <span className="ml-1 text-[10.5px] font-[700]" style={{ color: 'var(--text-muted)' }}>check-ins</span>
+                  <span className="ml-1 text-[11px] font-[700]" style={{ color: 'var(--text-muted)' }}>check-ins</span>
                 </p>
               </div>
-              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
                 <span><b className="tabular-nums" style={{ color: 'var(--text-secondary)' }}>{r.members}</b> members</span>
                 <span><b className="tabular-nums" style={{ color: 'var(--text-secondary)' }}>{r.avgDaily}</b> avg/day</span>
-                <span><b className="tabular-nums" style={{ color: 'var(--text-secondary)' }}>{r.presentPct}%</b> present</span>
+                <span><b className="tabular-nums" style={{ color: 'var(--text-secondary)' }}>{r.onTime}%</b> on time</span>
               </div>
             </div>
           ))}
         </div>
       )}
-    </PremiumCard>
+    </Card>
   );
 }
 
 /* ────────────────────────────────────────────────────────────────
-   ALERTS PANEL
+   ATTENTION — what needs a trainer, from the day's own figures
 ──────────────────────────────────────────────────────────────── */
-function AlertsPanel({ alerts, onViewMembers, onSendReminder }: {
-  alerts: SmartAlert[];
-  onViewMembers: (filter: StatusFilter) => void;
-  onSendReminder: () => void;
-}) {
-  const COLORS: Record<string, string> = {
-    warn:  'border-rose-400/30 bg-rose-500/8 dark:bg-rose-900/15',
-    info:  'border-sky-400/30 bg-sky-500/8 dark:bg-sky-900/15',
-    amber: 'border-amber-400/30 bg-amber-500/8 dark:bg-amber-900/15',
-    green: 'border-emerald-400/30 bg-emerald-500/8 dark:bg-emerald-900/15',
-  };
-  const ICON_COLORS: Record<string, string> = {
-    warn: 'text-rose-500', info: 'text-sky-500', amber: 'text-amber-500', green: 'text-emerald-500',
-  };
+type AttentionItem = { key: string; title: string; desc: string; status: Status };
+
+function buildAttention(s: DaySummary, isToday: boolean): AttentionItem[] {
+  const out: AttentionItem[] = [];
+  const day = isToday ? 'today' : 'that day';
+  if (s.unmarked > 0) out.push({ key: 'unmarked', status: 'unmarked', title: `${s.unmarked} not marked ${day}`, desc: 'No check-in and no mark yet. Mark them, or scan them in as they arrive.' });
+  if (s.absent > 0) out.push({ key: 'absent', status: 'absent', title: `${s.absent} marked absent`, desc: 'Worth a message — an absence noticed early is easier to turn around.' });
+  if (s.late > 0) out.push({ key: 'late', status: 'late', title: `${s.late} arrived late`, desc: 'Marked late on the register.' });
+  return out;
+}
+
+function AlertsPanel({ alerts, onView }: { alerts: AttentionItem[]; onView: (f: StatusFilter) => void }) {
+  if (alerts.length === 0) {
+    return (
+      <Card>
+        <div className="flex flex-col items-center py-8 text-center">
+          <span className="grid h-14 w-14 place-items-center rounded-[18px] text-white" style={{ background: gradient(tones.aqua) }}>
+            <CheckCircle2 size={26} aria-hidden />
+          </span>
+          <p className="mt-3 text-[15px] font-[800]" style={{ color: 'var(--text-primary)' }}>All clear</p>
+          <p className="mt-1 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>Everyone is marked and nobody is absent or late.</p>
+        </div>
+      </Card>
+    );
+  }
   return (
-    <PremiumCard title="Smart Alerts" subtitle="AI-powered operational insights based on attendance patterns">
-      <div className="grid gap-4 sm:grid-cols-2">
-        {alerts.map((a, i) => (
-          <div key={i} className={`rounded-[20px] border p-5 transition hover:-translate-y-0.5 ${COLORS[a.type]}`}>
+    <div className="grid gap-3 sm:grid-cols-2">
+      {alerts.map((a) => {
+        const s = STATUS[a.status];
+        return (
+          <div key={a.key} className="rounded-[22px] p-4"
+            style={{ background: `radial-gradient(200px circle at 0% 0%, ${rgba(s.color, 0.14)}, transparent 70%), var(--bg-card)`, border: '1px solid var(--border)' }}>
             <div className="flex items-start gap-3">
-              <div className={`mt-0.5 ${ICON_COLORS[a.type]}`}>{a.icon}</div>
-              <div className="flex-1">
-                <p className="font-semibold text-zinc-900 dark:text-white/90">{a.title}</p>
-                <p className="mt-1.5 text-sm text-zinc-500 dark:text-white/45">{a.desc}</p>
-              </div>
-            </div>
-            <div className="mt-4 flex gap-2">
-              <SmBtn label="View members" icon={<Eye className="h-3.5 w-3.5" />} onClick={() => onViewMembers(a.statusFilter)} />
-              <SmBtn label="Send reminder" icon={<Bell className="h-3.5 w-3.5" />} onClick={onSendReminder} />
-            </div>
-          </div>
-        ))}
-      </div>
-    </PremiumCard>
-  );
-}
-
-/* ────────────────────────────────────────────────────────────────
-   LIVE FEED
-──────────────────────────────────────────────────────────────── */
-function LiveFeedPanel({ feedItems }: { feedItems: FeedItem[] }) {
-  return (
-    <section className="mt-6">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-500 dark:text-white/40">Live activity</p>
-          <h2 className="mt-1 text-xl font-semibold text-zinc-900 dark:text-white">Real-time feed</h2>
-        </div>
-        <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-300">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />Live
-        </span>
-      </div>
-      {feedItems.length === 0 ? (
-        <div className="rounded-[20px] border border-zinc-200/70 bg-white/80 px-4 py-8 text-center text-sm text-zinc-400 dark:border-white/10 dark:bg-white/5">
-          No check-ins recorded yet today
-        </div>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {feedItems.map(f => (
-            <div key={f.id} className="flex items-center gap-3.5 rounded-[20px] border border-zinc-200/70 bg-white/80 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-              <FeedAvatar initials={f.avatar} status={f.status} size="lg" />
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] text-white" style={{ background: s.color }}>
+                {a.status === 'unmarked' ? <AlertTriangle size={18} aria-hidden /> : <s.Icon size={18} aria-hidden />}
+              </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-zinc-900 dark:text-white">{f.name}</p>
-                <p className="text-xs text-zinc-500 dark:text-white/40">{f.action}</p>
+                <p className="text-[14px] font-[800]" style={{ color: 'var(--text-primary)' }}>{a.title}</p>
+                <p className="mt-1 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{a.desc}</p>
               </div>
-              <p className="shrink-0 text-xs text-zinc-400 dark:text-white/30">{f.time}</p>
             </div>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-/* ────────────────────────────────────────────────────────────────
-   QUICK ACTIONS
-──────────────────────────────────────────────────────────────── */
-function QuickActionsPanel({ onMarkAll, onTrends }: { onMarkAll?: () => void; onTrends: () => void }) {
-  const router = useRouter();
-  const actions = [
-    { label: 'Mark All Present', icon: <CheckCircle2 className="h-5 w-5" />, color: 'from-emerald-500/20 to-green-500/10', onClick: onMarkAll },
-    { label: 'Bulk Attendance',  icon: <Users className="h-5 w-5" />,        color: 'from-sky-500/20 to-blue-500/10', onClick: onMarkAll },
-    { label: 'Export CSV',       icon: <Download className="h-5 w-5" />,      color: 'from-violet-500/20 to-purple-500/10', onClick: () => window.open(`/api/attendance?format=csv&date=${new Date().toISOString().split('T')[0]}`, '_blank') },
-    { label: 'Send Reminders',   icon: <Bell className="h-5 w-5" />,          color: 'from-amber-500/20 to-yellow-500/10', onClick: () => router.push('/engagement/notifications') },
-    { label: 'Trends',           icon: <BarChart3 className="h-5 w-5" />,     color: 'from-rose-500/20 to-red-500/10', onClick: onTrends },
-  ];
-  return (
-    <section className="mt-6">
-      <div className="mb-4">
-        <p className="text-xs uppercase tracking-[0.24em] text-zinc-500 dark:text-white/40">Quick actions</p>
-        <h2 className="mt-1 text-xl font-semibold text-zinc-900 dark:text-white">Common operations</h2>
-      </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {actions.map(a => (
-          <button key={a.label} onClick={a.onClick}
-            className={`group rounded-[22px] border border-zinc-200 dark:border-white/10/70 bg-gradient-to-br ${a.color} p-5 text-left transition hover:-translate-y-1 hover:shadow-[0_14px_36px_rgba(15,23,42,0.10)] dark:border-white/10`}>
-            <div className="mb-4 h-10 w-10 rounded-[14px] border border-zinc-200/70 bg-white/80 flex items-center justify-center text-zinc-700 shadow-sm transition group-hover:scale-110 dark:border-white/10 dark:bg-white/10 dark:text-white/75">{a.icon}</div>
-            <p className="text-sm font-semibold leading-snug text-zinc-900 dark:text-white">{a.label}</p>
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* ────────────────────────────────────────────────────────────────
-   FOOTER BAR
-──────────────────────────────────────────────────────────────── */
-function FooterBar({ onSync, onGenerateReport }: { onSync: () => void; onGenerateReport: () => void }) {
-  return (
-    <div className="sticky above-bottom-nav z-20 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-5xl flex-col gap-3 rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.84),rgba(15,23,42,0.72))] px-4 py-4 shadow-[0_18px_60px_rgba(0,0,0,0.38)] backdrop-blur-2xl sm:flex-row sm:items-center sm:justify-between sm:px-5">
-        <div className="flex items-center gap-3 text-white">
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-          <div>
-            <p className="text-sm font-medium">All changes saved automatically</p>
-            <p className="text-xs text-white/50">Sync updates attendance records across all devices.</p>
+            <button type="button" onClick={() => onView(a.status)}
+              className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-[780]"
+              style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+              View members <ArrowRight size={13} aria-hidden />
+            </button>
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <HeroBtn label="Sync Devices"    icon={<Wifi className="h-4 w-4" />}           onClick={onSync} compact />
-          <HeroBtn label="Generate Report" icon={<FileText className="h-4 w-4" />}       onClick={onGenerateReport} compact />
-        </div>
-      </div>
+        );
+      })}
     </div>
   );
 }
@@ -1427,160 +1209,3 @@ function ManualEntryModal({ open, onOpenChange, clients, date, onSuccess }: {
   );
 }
 
-/* ────────────────────────────────────────────────────────────────
-   SHARED ATOMS
-──────────────────────────────────────────────────────────────── */
-function PremiumCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-[30px] border border-zinc-200/70 bg-white/75 p-5 shadow-[0_10px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 sm:p-6">
-      <div className="mb-5">
-        <h2 className="text-xl font-semibold tracking-tight text-zinc-950 dark:text-white">{title}</h2>
-        {subtitle && <p className="mt-1 text-sm text-zinc-500 dark:text-white/45">{subtitle}</p>}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function KpiCard({ label, value, hint, accent, icon, onClick, active }: {
-  label: string; value: string | number; hint: string;
-  accent: string; icon: React.ReactNode;
-  onClick?: () => void; active?: boolean;
-}) {
-  const accents: Record<string, string> = {
-    emerald: 'from-emerald-500/15 to-green-500/8',
-    rose:    'from-rose-500/15 to-red-500/8',
-    amber:   'from-amber-500/15 to-yellow-500/8',
-    sky:     'from-sky-500/15 to-blue-500/8',
-    violet:  'from-violet-500/15 to-purple-500/8',
-    zinc:    'from-zinc-400/15 to-zinc-500/8',
-  };
-  return (
-    <button onClick={onClick}
-      className={`group rounded-[22px] border bg-gradient-to-br ${accents[accent] ?? accents.zinc} bg-white/80 p-4 shadow-sm text-left transition hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(15,23,42,0.10)] dark:bg-white/5 ${
-        active ? 'border-amber-400/40 ring-2 ring-amber-200/30 dark:border-amber-400/30 dark:ring-amber-900/20' : 'border-zinc-200/70 dark:border-white/10'
-      }`}>
-      <div className="mb-3 flex items-center justify-between">
-        <div className="h-9 w-9 rounded-[12px] border border-zinc-200/70 bg-white/90 flex items-center justify-center text-zinc-600 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-white/70">{icon}</div>
-      </div>
-      <p className="text-2xl font-semibold tabular-nums text-zinc-950 dark:text-white">{value}</p>
-      <p className="mt-1 text-sm font-medium text-zinc-700 dark:text-white/70">{label}</p>
-      <p className="mt-1 text-xs text-zinc-500 dark:text-white/40">{hint}</p>
-    </button>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    present:  'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300',
-    absent:   'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-300',
-    late:     'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300',
-    unmarked: 'bg-zinc-100 text-zinc-500 dark:bg-white/10 dark:text-white/40',
-  };
-  const dots: Record<string, string> = {
-    present: 'bg-emerald-500', absent: 'bg-rose-500', late: 'bg-amber-500', unmarked: 'bg-zinc-400',
-  };
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium capitalize ${map[status] ?? map.unmarked}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${dots[status] ?? dots.unmarked}`} />
-      {status}
-    </span>
-  );
-}
-
-function MemberAvatar({ client, large }: { client: Client; large?: boolean }) {
-  const sz = large ? 'h-12 w-12 text-sm' : 'h-9 w-9 text-xs';
-  // This used to branch on photo_url and render the image with no onError, so
-  // a stored path this deployment cannot serve left a broken-image icon in the
-  // roster. ClientAvatar falls back to the initials instead.
-  return (
-    <ClientAvatar
-      name={client.name}
-      photoUrl={client.photo_url}
-      className={`${sz} shrink-0 rounded-full bg-[linear-gradient(135deg,#F59E0B,#0067e0)] flex items-center justify-center font-semibold text-white shadow-sm`}
-    />
-  );
-}
-
-function FeedAvatar({ initials, status, size = 'sm' }: { initials: string; status: string; size?: 'sm' | 'lg' }) {
-  const sz = size === 'lg' ? 'h-10 w-10 text-sm' : 'h-7 w-7 text-xs';
-  const ringColor = status === 'present' ? 'ring-emerald-400' : status === 'late' ? 'ring-amber-400' : status === 'error' ? 'ring-rose-400' : status === 'warn' ? 'ring-amber-400' : 'ring-zinc-300';
-  return (
-    <div className={`${sz} shrink-0 rounded-full bg-[linear-gradient(135deg,#F59E0B,#0067e0)] flex items-center justify-center font-semibold text-white ring-2 ${ringColor}`}>
-      {initials}
-    </div>
-  );
-}
-
-function HeroBtn({ label, icon, primary, compact, onClick, light, full }: { label: string; icon: React.ReactNode; primary?: boolean; compact?: boolean; onClick?: () => void; light?: boolean; full?: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      // h-[44px] rather than py-2.5: these sit on a hero a trainer taps at
-      // arm's length, and `light` used to mean a white pill on a pale slab —
-      // on the dark hero it is a translucent one, so the variant now describes
-      // where it sits rather than what colour it happens to be.
-      className={`inline-flex h-[44px] cursor-pointer items-center justify-center gap-2 truncate rounded-full border font-medium transition-transform active:scale-95 ${
-        full ? 'w-full' : ''
-      } ${compact ? 'px-3.5 text-sm' : 'px-4 text-[13px]'} ${
-        primary
-          ? 'border-transparent bg-[linear-gradient(135deg,#F59E0B,#D97706)] text-white shadow-[0_10px_28px_rgba(245,158,11,0.32)]'
-          : light
-            ? 'border-white/18 bg-white/12 text-white backdrop-blur-md'
-            : 'border-white/15 bg-white/10 text-white/85 backdrop-blur-md'
-      }`}>
-      {icon}{label}
-    </button>
-  );
-}
-
-function SmBtn({ label, icon, onClick }: { label: string; icon: React.ReactNode; onClick?: () => void }) {
-  return (
-    <button onClick={onClick}
-      className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white/80 px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:-translate-y-0.5 hover:shadow-sm dark:border-white/10 dark:bg-white/8 dark:text-white/70 dark:hover:bg-white/15">
-      {icon}{label}
-    </button>
-  );
-}
-
-function SkeletonRows() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-4 rounded-[16px] bg-zinc-100/70 p-4 dark:bg-white/5">
-          <div className="h-9 w-9 rounded-full bg-zinc-200 dark:bg-white/10" />
-          <div className="flex-1 space-y-2">
-            <div className="h-3.5 w-1/3 rounded-full bg-zinc-200 dark:bg-white/10" />
-            <div className="h-2.5 w-1/4 rounded-full bg-zinc-200 dark:bg-white/10" />
-          </div>
-          <div className="h-8 w-24 rounded-[10px] bg-zinc-200 dark:bg-white/10" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Toast({ msg, type, onClose }: { msg: string; type: 'error' | 'success'; onClose: () => void }) {
-  return (
-    <div className={`mb-4 flex items-center gap-3 rounded-[16px] border px-4 py-3.5 text-sm font-medium shadow-sm ${
-      type === 'success'
-        ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-900/20 dark:text-emerald-300'
-        : 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-400/20 dark:bg-rose-900/20 dark:text-rose-300'
-    }`}>
-      {type === 'success' ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
-      <span className="flex-1">{msg}</span>
-      <button onClick={onClose} className="ml-2 opacity-60 hover:opacity-100">✕</button>
-    </div>
-  );
-}
-
-function EmptyState({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
-  return (
-    <div className="flex flex-col items-center rounded-[22px] border border-dashed border-zinc-200 bg-zinc-50/60 px-6 py-12 text-center dark:border-white/10 dark:bg-white/3">
-      <div className="mb-4 text-zinc-400 dark:text-white/30">{icon}</div>
-      <p className="font-semibold text-zinc-800 dark:text-white/80">{title}</p>
-      <p className="mt-2 max-w-xs text-sm text-zinc-500 dark:text-white/40">{desc}</p>
-    </div>
-  );
-}
