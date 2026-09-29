@@ -31,6 +31,8 @@ export type User = {
    */
   is_founder?: boolean;
   founder_number?: number | null;
+  /** The account's My Profile photo (a stored /uploads path), or null. */
+  avatar_url?: string | null;
 };
 
 // Types matching the /api/profile/* contract exactly (src/routes/profile.js).
@@ -2965,6 +2967,35 @@ export type MeProfile = {
   trainer_name: string | null;
   trainer_photo: string | null;
   trainer_specialization: string | null;
+  studio_name: string | null;
+  studio_logo: string | null;
+};
+
+/**
+ * The member's coach, as the coach wrote it on My Profile (/api/me/coach).
+ * The public face only: no contact details, no credential numbers, and no
+ * lapsed certificates.
+ */
+export type MeCoach = {
+  name: string;
+  photo_url: string | null;
+  cover_url: string | null;
+  designation: string;
+  job_title: string;
+  years_experience: number | null;
+  location: string;
+  bio: string;
+  philosophy: string;
+  training_style: string;
+  specialisations: string[];
+  languages: string[];
+  coaching_modes: string[];
+  certifications: { id: string; name: string; issuer: string; expires_on: string | null; status: 'valid' | 'expiring' | 'unknown' }[];
+  achievements: { id: string; title: string; kind: string; issuer: string; year: number | null; detail: string }[];
+  education: { id: string; institution: string; degree: string; field: string; year: number | null }[];
+  previous_gyms: { id: string; name: string; role: string; from: string | null; to: string | null }[];
+  working_hours: Record<string, { from: string; to: string }[]>;
+  weekly_minutes: number;
   studio_name: string | null;
   studio_logo: string | null;
 };

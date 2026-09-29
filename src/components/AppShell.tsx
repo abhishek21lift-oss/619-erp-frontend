@@ -15,6 +15,8 @@ import Link from 'next/link';
 import { cn } from '@/components/ui/cn';
 import Sidebar from '@/components/sidebar';
 import StudioMark from '@/components/StudioMark';
+import UserPhoto from '@/components/UserPhoto';
+import { palette } from '@/lib/palette';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { api } from '@/lib/api';
 import { roleLabel } from '@/lib/roles';
@@ -542,7 +544,12 @@ function AppShellContent({ children }: AppShellProps) {
                 <button onClick={() => setProfileOpen(s => !s)}
                   className="flex items-center gap-2.5 pl-3 transition-all duration-200 hover:opacity-80"
                   style={{ borderLeft: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}>
-                  <StudioMark name={studioName} logoUrl={user?.organization_logo_url} size={28} radius={8} />
+                  {/* The trainer's photo when they have one, else the studio's
+                      logo, else its letters — never letters when a picture
+                      exists. */}
+                  <UserPhoto url={user?.avatar_url} name={user?.name} size={32}
+                    ring={`linear-gradient(135deg, ${palette.blue[300]}, ${palette.blue[600]})`}
+                    fallback={<StudioMark name={studioName} logoUrl={user?.organization_logo_url} size={28} radius={8} />} />
                   <div className="hidden sm:block text-left">
                     <p className={cn('max-w-[150px] truncate text-[12px] font-semibold uppercase leading-tight', darkMode ? 'text-slate-100' : 'text-slate-800')}>{studioName}</p>
                     <p className={cn('text-[10px] leading-tight capitalize', darkMode ? 'text-slate-400' : 'text-slate-500')}>{roleLabel(user?.role) || '—'}</p>

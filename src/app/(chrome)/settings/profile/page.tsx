@@ -29,6 +29,7 @@ import { ProfessionalSection, WorkingHoursEditor } from '@/components/profile/Pr
 import { EducationSection } from '@/components/profile/EducationSection';
 import { AchievementsSection } from '@/components/profile/AchievementsSection';
 import { CompletionPanel } from '@/components/profile/CompletionPanel';
+import { tones, tabTones, gradient, type ToneName } from '@/components/profile/profileTheme';
 import { ProfileHero } from '@/components/profile/ProfileHero';
 import { useFounder } from '@/lib/use-founder';
 import { PortfolioSkeleton } from '@/components/profile/PortfolioSection';
@@ -55,7 +56,7 @@ import {
 import {
   FieldSurface, TextField, DateFieldControl, useStandaloneField,
 } from '@/components/ui/form';
-import { checkFile, AVATAR_RULES, GALLERY_RULES } from '@/lib/forms/files';
+import { checkFile, AVATAR_RULES, GALLERY_RULES, LOGO_RULES } from '@/lib/forms/files';
 import UpiSettingsPanel from '@/components/payments/UpiSettingsPanel';
 
 /* ─────────────────────────────────────────
@@ -115,15 +116,15 @@ const ACTIVITY_LABELS: Record<string, string> = {
   'workout_log.session.delete': 'Workout session deleted',
 };
 
-function activityIcon(category: string): { icon: React.ReactNode; color: string; bg: string } {
-  const map: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
-    profile:           { icon: <User size={11} />,          color: '#0067e0', bg: 'rgba(0,103,224,0.12)' },
-    parq:               { icon: <ShieldCheck size={11} />,   color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-    informed_consent:   { icon: <FileSignature size={11} />, color: '#0067e0', bg: 'rgba(0,103,224,0.12)' },
-    workout:            { icon: <Dumbbell size={11} />,      color: '#0067e0', bg: 'rgba(0,103,224,0.12)' },
-    workout_log:        { icon: <ClipboardList size={11} />, color: '#0067e0', bg: 'rgba(0,103,224,0.12)' },
+function activityIcon(category: string): { icon: React.ReactNode; tone: ToneName } {
+  const map: Record<string, { icon: React.ReactNode; tone: ToneName }> = {
+    profile:          { icon: <User size={11} />,          tone: 'indigo' },
+    parq:             { icon: <ShieldCheck size={11} />,   tone: 'gold' },
+    informed_consent: { icon: <FileSignature size={11} />, tone: 'violet' },
+    workout:          { icon: <Dumbbell size={11} />,      tone: 'sunset' },
+    workout_log:      { icon: <ClipboardList size={11} />, tone: 'mint' },
   };
-  return map[category] ?? { icon: <Activity size={11} />, color: '#0067e0', bg: 'rgba(0,103,224,0.12)' };
+  return map[category] ?? { icon: <Activity size={11} />, tone: 'sky' };
 }
 
 function deviceIcon(type: string, size = 16, color = '#0067e0') {
@@ -152,21 +153,26 @@ function FadeUp({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 /* ─────────────────────────────────────────
    GLASS CARD
 ───────────────────────────────────────── */
-function GlassCard({ children, className = '', style = {}, glow = false }: {
+function GlassCard({ children, className = '', style = {}, glow = false, tone }: {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
   glow?: boolean;
+  /** A faint wash of the section's colour in the top corner. */
+  tone?: ToneName;
 }) {
+  const t = tone ? tones[tone] : null;
   return (
     <div
-      className={`rounded-3xl ${className}`}
+      className={`relative overflow-hidden rounded-[26px] ${className}`}
       style={{
-        background: 'var(--bg-card)',
+        background: t
+          ? `radial-gradient(420px circle at 0% 0%, ${t.wash}, transparent 62%), var(--bg-card)`
+          : 'var(--bg-card)',
         border: '1px solid var(--border)',
-        boxShadow: glow
-          ? '0 4px 32px rgba(0,103,224,0.10), 0 1px 0 rgba(255,255,255,0.9) inset'
-          : '0 2px 20px rgba(15,23,42,0.07), 0 1px 0 rgba(255,255,255,0.9) inset',
+        boxShadow: glow && t
+          ? `0 18px 40px -24px ${t.glow}, 0 2px 12px rgba(15,23,42,0.05)`
+          : '0 2px 20px rgba(15,23,42,0.06)',
         ...style,
       }}
     >
@@ -363,7 +369,7 @@ function SpecialisationEditor({ value, onChange }: { value: string[]; onChange: 
           <span
             key={sp}
             className="inline-flex items-center gap-1.5 rounded-full py-1.5 pl-3 pr-1.5 text-[12px] font-[680]"
-            style={{ background: 'rgba(0,103,224,0.10)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.22)' }}
+            style={{ background: tones.rose.wash, color: tones.rose.ink, border: `1px solid ${tones.rose.glow}` }}
           >
             {sp}
             <button
@@ -400,17 +406,25 @@ function SpecialisationEditor({ value, onChange }: { value: string[]; onChange: 
 /* ─────────────────────────────────────────
    SECTION HEADER
 ───────────────────────────────────────── */
-function SectionHeader({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle: string }) {
+/**
+ * A section's title with its tile — Settings-app style: a white glyph on the
+ * section's own gradient, so a long page is scannable by colour before a
+ * word of it is read.
+ */
+function SectionHeader({ icon, title, subtitle, tone = 'indigo' }: {
+  icon: React.ReactNode; title: string; subtitle: string; tone?: ToneName;
+}) {
+  const t = tones[tone];
   return (
     <div className="mb-5 flex items-center gap-3">
       <div
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-        style={{ background: 'linear-gradient(135deg,rgba(0,103,224,0.15),rgba(0,103,224,0.10))' }}
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] text-white"
+        style={{ background: gradient(t), boxShadow: `0 6px 16px -6px ${t.glow}, inset 0 1px 0 rgba(255,255,255,0.35)` }}
       >
         {icon}
       </div>
-      <div>
-        <p className="text-[14px] font-[780] tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>{title}</p>
+      <div className="min-w-0">
+        <p className="text-[15px] font-[800] tracking-[-0.015em]" style={{ color: 'var(--text-primary)' }}>{title}</p>
         <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{subtitle}</p>
       </div>
     </div>
@@ -435,10 +449,10 @@ function Toggle({ enabled, onChange, disabled }: { enabled: boolean; onChange: (
       style={{
         width: 44, height: 26,
         borderRadius: 999,
-        background: enabled
-          ? 'linear-gradient(135deg,#0067e0,#0059ce)'
-          : 'var(--border-3)',
-        boxShadow: enabled ? '0 0 16px rgba(0,103,224,0.30)' : 'none',
+        // iOS: on is green. Mint rather than the emerald family, which on
+        // this app means a completed state, not a switch position.
+        background: enabled ? gradient(tones.mint) : 'var(--border-3)',
+        boxShadow: enabled ? `0 0 14px ${tones.mint.glow}` : 'none',
         border: 'none',
         cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'background 250ms, box-shadow 250ms',
@@ -462,31 +476,32 @@ function Toggle({ enabled, onChange, disabled }: { enabled: boolean; onChange: (
 /* ─────────────────────────────────────────
    STAT CHIP
 ───────────────────────────────────────── */
-function StatChip({ icon, label, value, gradient }: {
+function StatChip({ icon, label, value, tone }: {
   icon: React.ReactNode; label: string; value: string;
-  gradient: string;
+  tone: ToneName;
 }) {
+  const t = tones[tone];
   return (
     <m.div
-      whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(0,103,224,0.14)' }}
+      whileHover={{ y: -3, boxShadow: `0 14px 30px -14px ${t.glow}` }}
       whileTap={{ scale: 0.97 }}
-      className="flex-shrink-0 rounded-2xl p-4"
+      className="relative flex-shrink-0 overflow-hidden rounded-[20px] p-4"
       style={{
-        background: 'var(--bg-card)',
+        background: `radial-gradient(160px circle at 100% 0%, ${t.wash}, transparent 70%), var(--bg-card)`,
         border: '1px solid var(--border)',
         boxShadow: '0 2px 12px rgba(15,23,42,0.06)',
-        minWidth: 130,
+        minWidth: 150,
         cursor: 'default',
       }}
     >
       <div
-        className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl"
-        style={{ background: gradient }}
+        className="mb-3 flex h-10 w-10 items-center justify-center rounded-[12px] text-white"
+        style={{ background: gradient(t), boxShadow: `0 8px 18px -8px ${t.glow}, inset 0 1px 0 rgba(255,255,255,0.35)` }}
       >
         {icon}
       </div>
-      <p className="text-[16px] font-[820] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>{value}</p>
-      <p className="mt-0.5 text-[10.5px] font-[500]" style={{ color: 'var(--text-muted)' }}>{label}</p>
+      <p className="text-[17px] font-[840] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>{value}</p>
+      <p className="mt-0.5 text-[11px] font-[600]" style={{ color: 'var(--text-muted)' }}>{label}</p>
     </m.div>
   );
 }
@@ -502,7 +517,7 @@ function SettingRow({ label, description, children, accent = false }: {
     <div
       className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-2xl transition-colors"
       style={{
-        background: accent ? 'rgba(0,103,224,0.05)' : 'var(--bg-subtle)',
+        background: accent ? tones.mint.wash : 'var(--bg-subtle)',
         border: '1px solid var(--border)',
       }}
     >
@@ -731,7 +746,7 @@ function ProfilePageInner() {
   const founderNumber = useFounder();
   // `user` is the session. The studio name comes from there rather than from
   // the profile form — see the note at the top of ProfileHero.
-  const { logout, user } = useAuth();
+  const { logout, user, updateUser } = useAuth();
   const { toast } = useToast();
   // ProfileTab is the subset a completion step can link to; Security,
   // Preferences and UPI Payments hold nothing that is scored, so they are
@@ -878,6 +893,7 @@ function ProfilePageInner() {
   /* Avatar + cover banner */
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [coverBusy, setCoverBusy] = useState(false);
+  const [logoBusy, setLogoBusy] = useState(false);
 
   /* Password */
   const [currentPw, setCurrentPw] = useState('');
@@ -1066,6 +1082,8 @@ function ProfilePageInner() {
     try {
       const { avatarUrl } = await api.profile.uploadAvatar(file);
       setMe(prev => prev ? { ...prev, avatarUrl } : prev);
+      // The top bar and sidebar read the session, so they change now.
+      updateUser({ avatar_url: avatarUrl });
       toast.success('Profile photo updated');
       refreshDerived();
     } catch (err: unknown) {
@@ -1106,6 +1124,35 @@ function ProfilePageInner() {
       toast.error(errorMessage(err, 'Failed to remove banner'));
     } finally {
       setCoverBusy(false);
+    }
+  };
+
+  /* ── Studio logo (the trainer's studio) ── */
+  const handleLogoFile = async (file: File) => {
+    const check = await checkFile(file, LOGO_RULES);
+    if (!check.ok) { toast.error(check.message); return; }
+    setLogoBusy(true);
+    try {
+      const { logoUrl } = await api.profile.uploadStudioLogo(file);
+      updateUser({ organization_logo_url: logoUrl });
+      toast.success('Studio logo updated');
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Failed to upload logo'));
+    } finally {
+      setLogoBusy(false);
+    }
+  };
+
+  const handleLogoRemove = async () => {
+    setLogoBusy(true);
+    try {
+      await api.profile.removeStudioLogo();
+      updateUser({ organization_logo_url: null });
+      toast.success('Studio logo removed');
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Failed to remove logo'));
+    } finally {
+      setLogoBusy(false);
     }
   };
 
@@ -1323,6 +1370,12 @@ function ProfilePageInner() {
                 onPickAvatar={handleAvatarFile}
                 onPickCover={handleCoverFile}
                 onRemoveCover={handleCoverRemove}
+                studioLogo={isTrainer ? {
+                  url: user?.organization_logo_url ?? null,
+                  busy: logoBusy,
+                  onPick: handleLogoFile,
+                  onRemove: handleLogoRemove,
+                } : undefined}
               />
             </FadeUp>
           )}
@@ -1332,10 +1385,11 @@ function ProfilePageInner() {
             <div className="mb-7 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
               <div className="flex gap-3" style={{ minWidth: 'max-content' }}>
                 {[
-                  { icon: <Calendar size={16} style={{ color: '#0067e0' }} />, label: 'Member Since', value: fmtDate(me?.createdAt), gradient: 'linear-gradient(135deg,rgba(0,103,224,0.15),rgba(0,103,224,0.06))' },
-                  { icon: <Shield size={16} style={{ color: me?.mfaEnabled ? '#10b981' : '#f59e0b' }} />, label: 'Two-Factor Auth', value: me?.mfaEnabled ? 'Enabled' : 'Disabled', gradient: me?.mfaEnabled ? 'linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.06))' : 'linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.06))' },
-                  { icon: <ShieldCheck size={16} style={{ color: '#0067e0' }} />, label: 'Role', value: roleLabel, gradient: 'linear-gradient(135deg,rgba(0,103,224,0.15),rgba(0,103,224,0.06))' },
-                  { icon: <History size={16} style={{ color: '#0067e0' }} />, label: 'All-Time Actions', value: String(activityTotal), gradient: 'linear-gradient(135deg,rgba(0,103,224,0.15),rgba(0,103,224,0.06))' },
+                  { icon: <Calendar size={17} />, label: 'Member since', value: fmtDate(me?.createdAt), tone: 'indigo' as const },
+                  { icon: <Shield size={17} />, label: 'Two-factor auth', value: me?.mfaEnabled ? 'Enabled' : 'Disabled', tone: (me?.mfaEnabled ? 'mint' : 'gold') as ToneName },
+                  { icon: <ShieldCheck size={17} />, label: 'Role', value: roleLabel, tone: 'berry' as const },
+                  { icon: <History size={17} />, label: 'All-time actions', value: String(activityTotal), tone: 'sunset' as const },
+                  ...(me ? [{ icon: <Award size={17} />, label: 'Certifications', value: String(me.credentialSummary.total - me.credentialSummary.expired), tone: 'lime' as const }] : []),
                 ].map((s, i) => (
                   <FadeUp key={s.label} delay={0.04 * i}>
                     <StatChip {...s} />
@@ -1351,29 +1405,42 @@ function ProfilePageInner() {
                 it: a fourth tab was cut mid-word with no scrollbar and no
                 hint there was anything past it. Full width scrolls properly,
                 and the tabs no longer shrink below their labels. */}
-            <div className="mb-7 flex w-full overflow-x-auto rounded-2xl p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(15,23,42,0.05)' }}>
+            <div className="mb-7 flex w-full gap-1 overflow-x-auto rounded-[20px] p-1.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(15,23,42,0.05)' }}>
               {([
-                { id: 'overview', label: 'Overview', icon: <User size={13} /> },
-                { id: 'credentials', label: 'Credentials', icon: <Award size={13} /> },
-                { id: 'portfolio', label: 'Portfolio', icon: <Images size={13} /> },
-                { id: 'security', label: 'Security', icon: <Lock size={13} /> },
-                { id: 'preferences', label: 'Preferences', icon: <Settings size={13} /> },
-                ...(isTrainer ? [{ id: 'upi', label: 'UPI Payments', icon: <QrCode size={13} /> }] as const : []),
-              ] as const).map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  className="relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[13px] px-4 py-2.5 text-[12.5px] font-[680] transition-all"
-                  style={{
-                    background: tab === t.id ? 'rgba(0,103,224,1)' : 'transparent',
-                    color: tab === t.id ? 'white' : 'var(--text-muted)',
-                    boxShadow: tab === t.id ? '0 2px 8px rgba(0,103,224,0.35)' : 'none',
-                  }}
-                >
-                  {t.icon} {t.label}
-                </button>
-              ))}
+                { id: 'overview', label: 'Overview', icon: <User size={14} /> },
+                { id: 'credentials', label: 'Credentials', icon: <Award size={14} /> },
+                { id: 'portfolio', label: 'Portfolio', icon: <Images size={14} /> },
+                { id: 'security', label: 'Security', icon: <Lock size={14} /> },
+                { id: 'preferences', label: 'Preferences', icon: <Settings size={14} /> },
+                ...(isTrainer ? [{ id: 'upi', label: 'UPI Payments', icon: <QrCode size={14} /> }] as const : []),
+              ] as const).map(t => {
+                // Each tab wears its own colour, and so do its sections: the
+                // strip doubles as a legend for the page below it.
+                const tt = tones[tabTones[t.id]];
+                const on = tab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setTab(t.id)}
+                    aria-pressed={on}
+                    className="relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[14px] px-4 py-2.5 text-[12.5px] font-[720] transition-colors"
+                    style={{ color: on ? '#fff' : 'var(--text-secondary)' }}
+                  >
+                    {on && (
+                      <m.span layoutId="profile-tab-pill" aria-hidden
+                        className="absolute inset-0 rounded-[14px]"
+                        transition={{ type: 'spring', stiffness: 520, damping: 38 }}
+                        style={{ background: gradient(tt), boxShadow: `0 8px 18px -8px ${tt.glow}` }} />
+                    )}
+                    <span className="relative grid h-5 w-5 place-items-center rounded-[7px]"
+                      style={on ? undefined : { background: gradient(tt), color: '#fff' }}>
+                      {React.cloneElement(t.icon, { size: on ? 14 : 12 })}
+                    </span>
+                    <span className="relative">{t.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </FadeUp>
 
@@ -1391,9 +1458,9 @@ function ProfilePageInner() {
                     lg:col-span-2 because the checklist reads as a list, not
                     as a column beside another card. */}
                 {me?.completion && (
-                  <GlassCard className="p-6 lg:col-span-2" glow>
-                    <SectionHeader
-                      icon={<BadgeCheck size={15} style={{ color: '#0067e0' }} />}
+                  <GlassCard className="p-6 lg:col-span-2" glow tone="sunset">
+                    <SectionHeader tone="sunset"
+                      icon={<BadgeCheck size={15} />}
                       title="Profile completion"
                       subtitle="Scored on what you've saved, not what you've typed"
                     />
@@ -1403,8 +1470,8 @@ function ProfilePageInner() {
 
                 {/* Personal Information */}
                 <FadeUp>
-                  <GlassCard className="p-6">
-                    <SectionHeader icon={<User size={14} style={{ color: '#0067e0' }} />} title="Personal Information" subtitle="Your name, contact and bio" />
+                  <GlassCard className="p-6" tone="indigo">
+                    <SectionHeader tone="indigo" icon={<User size={15} />} title="Personal Information" subtitle="Your name, contact and bio" />
                     <div className="flex flex-col gap-3">
                       <FloatInput tone="brand" upperLifted label="Full Name" value={name} onChange={setName} required />
                       <FloatInput tone="brand" upperLifted label="Email Address" type="email" value={email} onChange={setEmail} required />
@@ -1417,8 +1484,8 @@ function ProfilePageInner() {
 
                 {/* Activity Timeline */}
                 <FadeUp delay={0.05}>
-                  <GlassCard className="p-6">
-                    <SectionHeader icon={<History size={14} style={{ color: '#0067e0' }} />} title="Activity Timeline" subtitle="Recent account events" />
+                  <GlassCard className="p-6" tone="violet">
+                    <SectionHeader tone="violet" icon={<History size={15} />} title="Activity Timeline" subtitle="Recent account events" />
                     {activityLoading ? (
                       <div className="flex items-center justify-center py-10">
                         <Loader2 size={18} className="animate-spin" style={{ color: 'var(--text-disabled)' }} />
@@ -1428,15 +1495,15 @@ function ProfilePageInner() {
                     ) : (
                       <div className="relative pl-5">
                         <div className="absolute left-[9px] top-2 bottom-2 w-px"
-                          style={{ background: 'linear-gradient(to bottom, rgba(0,103,224,0.3), rgba(0,103,224,0.05))' }} />
+                          style={{ background: `linear-gradient(to bottom, ${tones.violet.glow}, transparent)` }} />
                         <div className="flex flex-col gap-4">
                           {activityItems.map((item, i) => {
                             const ico = activityIcon(item.category);
                             return (
                               <m.div key={item.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: i * 0.06, duration: 0.35 }} className="relative flex items-start gap-3">
-                                <div className="absolute -left-5 flex h-4 w-4 items-center justify-center rounded-full"
-                                  style={{ background: ico.bg, color: ico.color, top: 2 }}>
+                                <div className="absolute -left-[22px] flex h-5 w-5 items-center justify-center rounded-full text-white"
+                                  style={{ background: gradient(tones[ico.tone]), boxShadow: `0 0 0 3px var(--bg-card)`, top: 0 }}>
                                   {ico.icon}
                                 </div>
                                 <div className="min-w-0 flex-1">
@@ -1461,17 +1528,17 @@ function ProfilePageInner() {
 
                 {/* Current Session */}
                 <FadeUp delay={0.08}>
-                  <GlassCard className="p-6 lg:col-span-2">
-                    <SectionHeader icon={<Wifi size={14} style={{ color: '#0067e0' }} />} title="Current Session" subtitle="This device, right now" />
+                  <GlassCard className="p-6 lg:col-span-2" tone="sky">
+                    <SectionHeader tone="sky" icon={<Wifi size={15} />} title="Current Session" subtitle="This device, right now" />
                     {!device || !session ? (
                       <p className="text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>Session info unavailable.</p>
                     ) : (
                       <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-3 rounded-2xl p-4"
-                          style={{ background: 'rgba(0,103,224,0.05)', border: '1px solid rgba(0,103,224,0.18)' }}>
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                            style={{ background: 'linear-gradient(135deg,rgba(0,103,224,0.15),rgba(0,103,224,0.10))' }}>
-                            {deviceIcon(device.type)}
+                          style={{ background: tones.sky.wash, border: `1px solid ${tones.sky.glow}` }}>
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px]"
+                            style={{ background: gradient(tones.sky), boxShadow: `0 8px 18px -8px ${tones.sky.glow}` }}>
+                            {deviceIcon(device.type, 18, '#fff')}
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
@@ -1535,9 +1602,9 @@ function ProfilePageInner() {
                   </div>
                 )}
 
-                <GlassCard className="p-6" glow>
-                  <SectionHeader
-                    icon={<Briefcase size={15} style={{ color: '#0067e0' }} />}
+                <GlassCard className="p-6" glow tone="sunset">
+                  <SectionHeader tone="sunset"
+                    icon={<Briefcase size={15} />}
                     title="Professional profile"
                     subtitle="What you do, as opposed to what the software lets you click"
                   />
@@ -1565,9 +1632,9 @@ function ProfilePageInner() {
                   </div>
                 </GlassCard>
 
-                <GlassCard className="p-6">
-                  <SectionHeader
-                    icon={<User size={15} style={{ color: '#0067e0' }} />}
+                <GlassCard className="p-6" tone="berry">
+                  <SectionHeader tone="berry"
+                    icon={<User size={15} />}
                     title="About"
                     subtitle="What you'd tell someone before they train with you"
                   />
@@ -1582,9 +1649,9 @@ function ProfilePageInner() {
                   />
                 </GlassCard>
 
-                <GlassCard className="p-6">
-                  <SectionHeader
-                    icon={<Briefcase size={15} style={{ color: '#0067e0' }} />}
+                <GlassCard className="p-6" tone="indigo">
+                  <SectionHeader tone="indigo"
+                    icon={<Briefcase size={15} />}
                     title="Professional information"
                     subtitle="Your designation, how you coach, and where you've coached"
                   />
@@ -1599,9 +1666,9 @@ function ProfilePageInner() {
                   />
                 </GlassCard>
 
-                <GlassCard className="p-6">
-                  <SectionHeader
-                    icon={<Calendar size={15} style={{ color: '#0067e0' }} />}
+                <GlassCard className="p-6" tone="mint">
+                  <SectionHeader tone="mint"
+                    icon={<Calendar size={15} />}
                     title="Availability"
                     subtitle="When you take sessions. Split shifts are supported."
                   />
@@ -1612,37 +1679,37 @@ function ProfilePageInner() {
                   />
                 </GlassCard>
 
-                <GlassCard className="p-6">
-                  <SectionHeader
-                    icon={<Dumbbell size={15} style={{ color: '#0067e0' }} />}
+                <GlassCard className="p-6" tone="rose">
+                  <SectionHeader tone="rose"
+                    icon={<Dumbbell size={15} />}
                     title="Specialisations"
                     subtitle="The work you take on"
                   />
                   <SpecialisationEditor value={specialisations} onChange={setSpecialisations} />
                 </GlassCard>
 
-                <GlassCard className="p-6">
-                  <SectionHeader
-                    icon={<GraduationCap size={15} style={{ color: '#0067e0' }} />}
+                <GlassCard className="p-6" tone="sky">
+                  <SectionHeader tone="sky"
+                    icon={<GraduationCap size={15} />}
                     title="Education"
                     subtitle="Degrees, diplomas and academy courses"
                   />
                   <EducationSection value={education} onChange={setEducation} issues={fieldIssues} />
                 </GlassCard>
 
-                <GlassCard className="p-6">
-                  <SectionHeader
-                    icon={<Trophy size={15} style={{ color: '#0067e0' }} />}
+                <GlassCard className="p-6" tone="gold">
+                  <SectionHeader tone="gold"
+                    icon={<Trophy size={15} />}
                     title="Achievements"
                     subtitle="Competitions, records, awards and media — newest first"
                   />
                   <AchievementsSection value={achievements} onChange={setAchievements} issues={fieldIssues} />
                 </GlassCard>
 
-                <GlassCard className="p-6">
+                <GlassCard className="p-6" tone="lime">
                   <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-                    <SectionHeader
-                      icon={<Award size={15} style={{ color: '#0067e0' }} />}
+                    <SectionHeader tone="lime"
+                      icon={<Award size={15} />}
                       title="Certifications"
                       subtitle={me && me.credentialSummary.total > 0
                         ? `${me.credentialSummary.total} on file${me.credentialSummary.unknown > 0 ? ` · ${me.credentialSummary.unknown} with no expiry recorded` : ''}`
@@ -1655,7 +1722,7 @@ function ProfilePageInner() {
                         name: '', issuer: '', issued_on: null, expires_on: null, credential_id: '',
                       }])}
                       className="flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-[700] text-white transition-transform hover:scale-[1.03]"
-                      style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)', boxShadow: '0 4px 14px rgba(0,103,224,0.32)' }}
+                      style={{ background: gradient(tones.lime), boxShadow: `0 4px 14px ${tones.lime.glow}` }}
                     >
                       <Plus size={13} /> Add
                     </button>
@@ -1694,9 +1761,9 @@ function ProfilePageInner() {
             {tab === 'portfolio' && (
               <m.div key="portfolio" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-                <GlassCard className="p-5 sm:p-6">
-                  <SectionHeader
-                    icon={<Images size={14} style={{ color: '#0067e0' }} />}
+                <GlassCard className="p-5 sm:p-6" tone="berry">
+                  <SectionHeader tone="berry"
+                    icon={<Images size={15} />}
                     title="Portfolio"
                     subtitle="Transformations, sessions and clips — saved as you go, not on Save"
                   />
@@ -1727,8 +1794,8 @@ function ProfilePageInner() {
 
                 {/* Two-Factor Authentication */}
                 <FadeUp>
-                  <GlassCard className="p-6" glow>
-                    <SectionHeader icon={<Fingerprint size={14} style={{ color: '#0067e0' }} />} title="Two-Factor Authentication" subtitle="Authenticator app (TOTP)" />
+                  <GlassCard className="p-6" glow tone="mint">
+                    <SectionHeader tone="mint" icon={<Fingerprint size={15} />} title="Two-Factor Authentication" subtitle="Authenticator app (TOTP)" />
 
                     {me?.mfaEnabled ? (
                       <div className="flex flex-col gap-4">
@@ -1796,8 +1863,8 @@ function ProfilePageInner() {
 
                 {/* Login Alerts + Sign out everywhere */}
                 <FadeUp delay={0.05}>
-                  <GlassCard className="p-6">
-                    <SectionHeader icon={<Bell size={14} style={{ color: '#0067e0' }} />} title="Login Security" subtitle="Alerts and active session control" />
+                  <GlassCard className="p-6" tone="violet">
+                    <SectionHeader tone="violet" icon={<Bell size={15} />} title="Login Security" subtitle="Alerts and active session control" />
                     <div className="flex flex-col gap-3">
                       <SettingRow label="Login Alerts" description="Email me on new sign-ins" accent>
                         <Toggle
@@ -1833,8 +1900,8 @@ function ProfilePageInner() {
 
                 {/* Change Password */}
                 <FadeUp delay={0.08}>
-                  <GlassCard className="p-6 lg:col-span-2">
-                    <SectionHeader icon={<Lock size={14} style={{ color: '#0067e0' }} />} title="Change Password" subtitle="Use a strong, unique password" />
+                  <GlassCard className="p-6 lg:col-span-2" tone="rose">
+                    <SectionHeader tone="rose" icon={<Lock size={15} />} title="Change Password" subtitle="Use a strong, unique password" />
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="flex flex-col gap-3">
                         <FloatInput tone="brand" upperLifted label="Current Password" type={showCur ? 'text' : 'password'} value={currentPw} onChange={setCurrentPw}
@@ -1923,36 +1990,43 @@ function ProfilePageInner() {
 
                 {/* Theme */}
                 <FadeUp>
-                  <GlassCard className="p-6">
-                    <SectionHeader icon={<Sun size={14} style={{ color: '#0067e0' }} />} title="Appearance" subtitle="Theme preference" />
+                  <GlassCard className="p-6" tone="gold">
+                    <SectionHeader tone="gold" icon={<Sun size={15} />} title="Appearance" subtitle="Theme preference" />
                     <div className="grid grid-cols-3 gap-2">
                       {([
-                        { id: 'light', label: 'Light', icon: <Sun size={18} /> },
-                        { id: 'dark', label: 'Dark', icon: <Moon size={18} /> },
-                        { id: 'system', label: 'System', icon: <Monitor size={18} /> },
-                      ] as const).map(opt => (
-                        <m.button key={opt.id} whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}
-                          onClick={() => setPreference('theme', opt.id)}
-                          disabled={!preferences}
-                          className="flex flex-col items-center gap-2 rounded-2xl p-4 text-center transition-all disabled:opacity-50"
-                          style={{
-                            background: preferences?.theme === opt.id ? 'rgba(0,103,224,0.08)' : 'var(--bg-subtle)',
-                            border: preferences?.theme === opt.id ? '1.5px solid rgba(0,103,224,0.30)' : '1px solid var(--border)',
-                            boxShadow: preferences?.theme === opt.id ? '0 4px 12px rgba(0,103,224,0.12)' : 'none',
-                            color: preferences?.theme === opt.id ? '#0067e0' : 'var(--text-muted)',
-                          }}>
-                          {opt.icon}
-                          <span className="text-[11px] font-[660]">{opt.label}</span>
-                        </m.button>
-                      ))}
+                        { id: 'light', label: 'Light', icon: <Sun size={18} />, tone: 'gold' },
+                        { id: 'dark', label: 'Dark', icon: <Moon size={18} />, tone: 'indigo' },
+                        { id: 'system', label: 'System', icon: <Monitor size={18} />, tone: 'sky' },
+                      ] as const).map(opt => {
+                        const on = preferences?.theme === opt.id;
+                        const t = tones[opt.tone];
+                        return (
+                          <m.button key={opt.id} whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}
+                            onClick={() => setPreference('theme', opt.id)}
+                            disabled={!preferences}
+                            aria-pressed={on}
+                            className="flex flex-col items-center gap-2 rounded-[18px] p-4 text-center transition-all disabled:opacity-50"
+                            style={{
+                              background: on ? t.wash : 'var(--bg-subtle)',
+                              border: on ? `1.5px solid ${t.glow}` : '1px solid var(--border)',
+                              boxShadow: on ? `0 10px 22px -14px ${t.glow}` : 'none',
+                            }}>
+                            <span className="grid h-10 w-10 place-items-center rounded-[12px] text-white"
+                              style={{ background: gradient(t), opacity: on ? 1 : 0.8 }}>
+                              {opt.icon}
+                            </span>
+                            <span className="text-[11.5px] font-[720]" style={{ color: on ? 'var(--text-primary)' : 'var(--text-muted)' }}>{opt.label}</span>
+                          </m.button>
+                        );
+                      })}
                     </div>
                   </GlassCard>
                 </FadeUp>
 
                 {/* Locale */}
                 <FadeUp delay={0.04}>
-                  <GlassCard className="p-6">
-                    <SectionHeader icon={<Globe size={14} style={{ color: '#0067e0' }} />} title="Locale" subtitle="Timezone and date format" />
+                  <GlassCard className="p-6" tone="sky">
+                    <SectionHeader tone="sky" icon={<Globe size={15} />} title="Locale" subtitle="Timezone and date format" />
                     <div className="flex flex-col gap-2.5">
                       <SettingRow label="Language" description="Interface language">
                         <span className="text-[12.5px] font-[660]" style={{ color: 'var(--text-primary)' }}>English (India)</span>
@@ -1974,8 +2048,8 @@ function ProfilePageInner() {
 
                 {/* Notifications */}
                 <FadeUp delay={0.08}>
-                  <GlassCard className="p-6 lg:col-span-2">
-                    <SectionHeader icon={<Bell size={14} style={{ color: '#0067e0' }} />} title="Notification Preferences" subtitle="Choose how you want to be notified" />
+                  <GlassCard className="p-6 lg:col-span-2" tone="berry">
+                    <SectionHeader tone="berry" icon={<Bell size={15} />} title="Notification Preferences" subtitle="Choose how you want to be notified" />
                     {notifications ? (
                       <>
                         <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
@@ -1988,7 +2062,7 @@ function ProfilePageInner() {
                               <button key={f.value} onClick={() => setFrequency(f.value)}
                                 className="rounded-[9px] px-3 py-1.5 text-[11px] font-[700] transition-all"
                                 style={{
-                                  background: notifications.frequency === f.value ? '#0067e0' : 'transparent',
+                                  background: notifications.frequency === f.value ? gradient(tones.berry) : 'transparent',
                                   color: notifications.frequency === f.value ? '#fff' : 'var(--text-muted)',
                                 }}>
                                 {f.label}

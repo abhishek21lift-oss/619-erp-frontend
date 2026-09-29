@@ -14,6 +14,7 @@
 import React from 'react';
 import { CheckCircle2, Circle, ArrowRight, PartyPopper } from 'lucide-react';
 import type { ProfileCompletion, ProfileTab } from '@/lib/api';
+import { ringStops, tones } from './profileTheme';
 
 /** Where the ring stops feeling like a warning and starts feeling like progress. */
 const TONE = (percent: number) =>
@@ -27,21 +28,30 @@ const TONE = (percent: number) =>
  * `pathLength={100}` makes the dash array a literal percentage, so the geometry
  * does not have to be recomputed if the radius ever changes.
  */
-export function CompletionRing({ percent, size = 84 }: { percent: number; size?: number }) {
-  const tone = TONE(percent);
-  const stroke = 8;
+export function CompletionRing({ percent, size = 84, onDark = false }: { percent: number; size?: number; onDark?: boolean }) {
+  // Apple's Move ring: a warm gradient on a faint track of itself. The
+  // percentage beside it says how far along; the ring is the celebration.
+  const stroke = Math.max(6, Math.round(size / 9));
   const r = (size - stroke) / 2;
+  const id = `ring-${size}-${onDark ? 'd' : 'l'}`;
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img"
         aria-label={`Profile ${percent}% complete`}>
+        <defs>
+          <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={ringStops[0]} />
+            <stop offset="60%" stopColor={ringStops[1]} />
+            <stop offset="100%" stopColor={ringStops[2]} />
+          </linearGradient>
+        </defs>
         <circle
           cx={size / 2} cy={size / 2} r={r} fill="none"
-          stroke="var(--border)" strokeWidth={stroke}
+          stroke={onDark ? 'rgba(255,255,255,0.22)' : 'rgba(236,72,153,0.14)'} strokeWidth={stroke}
         />
         <circle
           cx={size / 2} cy={size / 2} r={r} fill="none"
-          stroke={tone.ring} strokeWidth={stroke} strokeLinecap="round"
+          stroke={`url(#${id})`} strokeWidth={stroke} strokeLinecap="round"
           pathLength={100} strokeDasharray={`${percent} 100`}
           // Start at twelve o'clock rather than three, which is where a
           // progress ring is read from.
@@ -50,8 +60,9 @@ export function CompletionRing({ percent, size = 84 }: { percent: number; size?:
         />
       </svg>
       <span className="absolute inset-0 flex items-center justify-center">
-        <span className="tabular-nums text-[19px] font-[820] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
-          {percent}<span className="text-[12px] font-[700]">%</span>
+        <span className="tabular-nums font-[820] tracking-[-0.02em]"
+          style={{ color: onDark ? '#fff' : 'var(--text-primary)', fontSize: Math.max(13, Math.round(size * 0.23)) }}>
+          {percent}<span style={{ fontSize: Math.max(9, Math.round(size * 0.14)) }} className="font-[700]">%</span>
         </span>
       </span>
     </div>
@@ -89,10 +100,13 @@ export function CompletionPanel({ completion, onGoToTab }: {
             <button
               key={s.key}
               onClick={() => onGoToTab(s.tab)}
-              className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-left transition-colors hover:bg-[var(--bg-hover)]"
+              className="flex items-center gap-3 rounded-2xl px-3.5 py-3 text-left transition-all hover:-translate-y-px hover:bg-[var(--bg-hover)]"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
             >
-              <Circle size={15} className="shrink-0" style={{ color: tone.ring }} />
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-white"
+                style={{ background: `linear-gradient(135deg, ${tones.sunset.from}, ${tones.sunset.to})` }}>
+                <Circle size={10} strokeWidth={3} />
+              </span>
               <span className="min-w-0 flex-1 text-[12.5px] font-[620]" style={{ color: 'var(--text-primary)' }}>
                 {s.label}
               </span>

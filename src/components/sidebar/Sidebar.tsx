@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { m, AnimatePresence } from 'framer-motion';
 import { cn } from '@/components/ui/cn';
 import StudioMark from '@/components/StudioMark';
+import UserPhoto from '@/components/UserPhoto';
 import { NAV_GROUPS, isVisibleForRole, isGroupVisibleForRole, isVisibleForFeature, isGroupVisibleForFeature } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
 import { roleLabel } from '@/lib/roles';
@@ -519,12 +520,14 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
           title={`${user?.name || 'Profile'} · ${roleLabel(user?.role) || 'Trainer'}`}
           className="relative"
         >
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-bold text-white select-none"
-            style={{ background: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)' }}
-          >
-            {initials}
-          </div>
+          <UserPhoto url={user?.avatar_url} name={user?.name} size={32} radius={8} fallback={
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-bold text-white select-none"
+              style={{ background: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)' }}
+            >
+              {initials}
+            </div>
+          } />
           <span
             className="absolute -bottom-[1px] -right-[1px] block h-2 w-2 rounded-full border-[1.5px]"
             style={{ background: '#10B981', borderColor: '#0F172A' }}
@@ -555,15 +558,17 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
         {/* Avatar + name + email */}
         <div className="flex items-center gap-3 mb-2.5">
           <div className="relative shrink-0">
-            <div
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-[12px] font-bold text-white select-none"
-              style={{
-                background: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)',
-                boxShadow: '0 2px 10px rgba(245,158,11,0.22)',
-              }}
-            >
-              {initials}
-            </div>
+            <UserPhoto url={user?.avatar_url} name={user?.name} size={36} radius={12} fallback={
+              <div
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[12px] font-bold text-white select-none"
+                style={{
+                  background: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)',
+                  boxShadow: '0 2px 10px rgba(245,158,11,0.22)',
+                }}
+              >
+                {initials}
+              </div>
+            } />
             <span
               className="absolute -bottom-[1px] -right-[1px] block h-2.5 w-2.5 rounded-full border-2"
               style={{ background: '#10B981', borderColor: '#0f172a' }}
@@ -741,9 +746,11 @@ export default function Sidebar({
               {/* White, explicitly. This drawer is navy in both themes, so the
                   default --bg-white plate goes dark with the theme and hides
                   the black half of a two-tone logo. */}
+              {/* The studio's logo; a studio with no logo yet shows its
+                  trainer's photo rather than two letters. */}
               <StudioMark
                 name={studioName}
-                logoUrl={user?.organization_logo_url}
+                logoUrl={user?.organization_logo_url || user?.avatar_url}
                 size={collapsed ? 32 : 38}
                 background="#FFFFFF"
               />

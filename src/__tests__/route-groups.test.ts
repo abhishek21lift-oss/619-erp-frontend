@@ -69,6 +69,7 @@ const BARE = [
   'member/notifications',
   'member/forms',
   'member/account',
+  'member/coach',
   'member/records',
   'member/card',
   'member/messages',

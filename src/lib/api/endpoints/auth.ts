@@ -177,6 +177,15 @@ export const profile = {
   removeCover: () =>
     http<{ coverUrl: null }>('/api/profile/cover', { method: 'DELETE' }),
 
+  /** The studio's logo — the trainer's to set. Sidebar and member app. */
+  uploadStudioLogo: (file: File) => {
+    const formData = new FormData();
+    formData.append('logo', file);
+    return http<{ logoUrl: string }>('/api/profile/studio-logo', { method: 'POST', body: formData });
+  },
+  removeStudioLogo: () =>
+    http<{ logoUrl: null }>('/api/profile/studio-logo', { method: 'DELETE' }),
+
   /**
    * Portfolio actions are immediate and per-item, so they never touch the
    * page's dirty baseline — unlike every field on the main form, there is

@@ -138,6 +138,9 @@ describe('the app uses only the palette', () => {
     //
     // The dashboard's Today's Sessions card is the seventh: its mark, day
     // ring and row halos, in components/dashboards/todayTheme.ts.
+    //
+    // My Profile is the eighth: section tiles, tab pills and the hero mesh,
+    // in components/profile/profileTheme.ts.
     const known = new Set(
       [...allHexes(), ...Object.values(founderGold)].map((h) => h.toUpperCase())
     );
@@ -160,6 +163,8 @@ describe('the app uses only the palette', () => {
         if (p.endsWith(join('exercise-library', 'libraryTheme.ts'))) continue;
         // The Today card's decorative colour — its one token file, confined below.
         if (p.endsWith(join('dashboards', 'todayTheme.ts'))) continue;
+        // My Profile's decorative colour — its one token file, confined below.
+        if (p.endsWith(join('components', 'profile', 'profileTheme.ts'))) continue;
         const text = readFileSync(p, 'utf8');
         for (const m of text.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
           if (!known.has(m.toUpperCase())) offenders.push(`${p}: ${m}`);
@@ -259,6 +264,28 @@ describe('the app uses only the palette', () => {
     };
     walk(join(process.cwd(), 'src'));
     expect(users).toEqual(['components/dashboards/PtOsDashboard.tsx']);
+  });
+
+  it('confines the profile colours to My Profile', () => {
+    // The eighth exception (profile/profileTheme.ts): decoration for the
+    // trainer's own profile page and its sections. Only those may import it.
+    const users: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = join(dir, entry);
+        if (statSync(p).isDirectory()) { walk(p); continue; }
+        if (!/\.tsx?$/.test(entry)) continue;
+        if (p.includes('__tests__')) continue;
+        if (/profileTheme['"]/.test(readFileSync(p, 'utf8'))) {
+          users.push(p.split(join('src') + sep)[1].replaceAll(sep, '/'));
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src'));
+    const outside = users.filter((u) =>
+      !u.startsWith('components/profile/') && u !== 'app/(chrome)/settings/profile/page.tsx');
+    expect(users.length).toBeGreaterThan(0);
+    expect(outside).toEqual([]);
   });
 
   it('confines the marketing surface to its own token file', () => {
