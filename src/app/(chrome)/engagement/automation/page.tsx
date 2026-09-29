@@ -20,12 +20,13 @@ import { errorMessage } from '@/lib/forms/errors';
 import { useAppForm } from '@/lib/forms/useAppForm';
 import {
   automationRuleSchema, blankAutomationRule, toAutomationRulePayload,
-  variablesFor, MAX_DELAY_MINUTES,
+  variablesFor, previewRuleTemplate, MAX_DELAY_MINUTES,
   type AutomationRuleValues, type AutomationRuleState,
 } from '@/lib/forms/schemas/automationRule';
 import { TEMPLATE_MAX_LENGTH } from '@/lib/forms/domain';
+import { palette } from '@/lib/palette';
 
-// The eleven events that something in the backend actually emits, and a note
+// The twelve events that something in the backend actually emits, and a note
 // on when each one fires — because "Missed Attendance" tells a studio owner
 // what the rule is called and not whether it will reach anybody today.
 //
@@ -43,14 +44,17 @@ const TRIGGER_EVENTS = [
   { value: 'member_created', label: 'Member Created', hint: 'when a client is enrolled' },
   { value: 'lead_created', label: 'Lead Created', hint: 'when a lead is captured' },
   { value: 'payment_received', label: 'Payment Received', hint: 'when a payment is recorded' },
-  { value: 'session_low', label: 'Low Session Balance', hint: 'at 3 sessions or fewer remaining' },
+  // Only session packs tracked on the Session Balance page count down — a
+  // date-based PT package has no session count to run low.
+  { value: 'session_low', label: 'Low Session Balance', hint: 'at 3 or fewer left on a Session Balance pack' },
   { value: 'trial_scheduled', label: 'Trial Scheduled', hint: 'when a lead is marked trial scheduled' },
   { value: 'membership_expiring', label: 'Membership Expiring', hint: '7, 3 and 1 days before expiry' },
   { value: 'membership_expired', label: 'Membership Expired', hint: 'the morning after expiry' },
   { value: 'birthday', label: 'Birthday', hint: 'on the day, current clients only' },
   { value: 'anniversary', label: 'Anniversary', hint: 'each year they joined' },
-  { value: 'attendance_missed', label: 'Missed Attendance', hint: 'after 14 days without a check-in' },
+  { value: 'attendance_missed', label: 'Missed Attendance', hint: 'after 14 days with no check-in or logged workout' },
   { value: 'followup_due', label: 'Follow-Up Due', hint: "when a lead's follow-up date passes" },
+  { value: 'payment_due', label: 'Payment Due', hint: 'weekly while a client has a balance to pay' },
 ];
 
 const KPIS = [
@@ -147,6 +151,14 @@ function AutoContent() {
   const availableVars = useMemo(
     () => variablesFor(String(selectedEvent ?? 'member_created')),
     [selectedEvent],
+  );
+  // What the client would actually receive, with example values — so a
+  // placeholder this trigger cannot fill shows up as the literal braces a
+  // client would get, before the rule is saved rather than after it fires.
+  const draftTemplate = useStore(f.form.store, (st) => st.values.template);
+  const preview = useMemo(
+    () => previewRuleTemplate(String(draftTemplate ?? ''), String(selectedEvent ?? 'member_created')),
+    [draftTemplate, selectedEvent],
   );
 
   async function toggleRule(rule: AutomationRule) {
@@ -300,6 +312,24 @@ function AutoContent() {
                 />
               )}
             </f.form.Field>
+
+            {preview.trim() && (
+              <div aria-live="polite" style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                <p style={{ fontSize:11, fontWeight:700, color:'var(--text-muted)', margin:0, textTransform:'uppercase', letterSpacing:'0.06em' }}>
+                  Preview · example client
+                </p>
+                {/* A WhatsApp-style outgoing bubble. The copy is exactly what
+                    the engine would send, with example values filled in. */}
+                <div style={{
+                  alignSelf:'flex-end', maxWidth:'92%', whiteSpace:'pre-wrap', wordBreak:'break-word',
+                  fontSize:13, lineHeight:1.45, color:palette.gray[900], padding:'8px 12px',
+                  borderRadius:'14px 14px 4px 14px', background:palette.emerald[100],
+                  boxShadow:'0 1px 2px rgba(0,0,0,0.12)',
+                }}>
+                  {preview}
+                </div>
+              </div>
+            )}
 
             <f.form.Field name="delayMinutes">
               {(field) => (

@@ -56,6 +56,8 @@ export const TRIGGER_CONTEXT: Record<string, readonly string[]> = {
   anniversary: ['years'],
   attendance_missed: ['days', 'last_visit'],
   followup_due: ['follow_up_date', 'package'],
+  // Migration 222: weekly while a balance is unpaid. `amount` is "₹5,000".
+  payment_due: ['amount', 'amount_value'],
 };
 
 export const TRIGGER_EVENT_VALUES = Object.keys(TRIGGER_CONTEXT) as [string, ...string[]];
@@ -63,6 +65,41 @@ export const TRIGGER_EVENT_VALUES = Object.keys(TRIGGER_CONTEXT) as [string, ...
 /** Every placeholder that will resolve for `event`, in the order to show them. */
 export function variablesFor(event: string): readonly string[] {
   return [...ALWAYS_AVAILABLE, ...(TRIGGER_CONTEXT[event] ?? [])];
+}
+
+/**
+ * Example values for the live preview in the rule editor, one per placeholder
+ * any trigger provides. Shaped like what the backend sends: `amount` already
+ * carries the rupee sign, dates are YYYY-MM-DD as the sweep formats them.
+ */
+export const SAMPLE_VALUES: Record<string, string> = {
+  name: 'Priya',
+  amount: '₹5,000',
+  amount_value: '5000',
+  remaining: '2',
+  days: '3',
+  expiry_date: '2026-10-31',
+  years: '2',
+  last_visit: '2026-09-10',
+  follow_up_date: '2026-10-02',
+  source: 'Instagram',
+  package: 'Transformation',
+};
+
+/**
+ * The message a client would receive, filled with example values.
+ *
+ * The same substitution as the backend's engine.render: `{{ key }}` for a
+ * placeholder this trigger provides is replaced, and anything else is left
+ * exactly as typed — which is what the client would see, so the preview shows
+ * it too rather than hiding the mistake.
+ */
+export function previewRuleTemplate(template: string, event: string): string {
+  const known = new Set(variablesFor(event));
+  return String(template).replace(/\{\{\s*([a-z0-9_]+)\s*\}\}/gi, (whole, key: string) => {
+    const k = key.toLowerCase();
+    return known.has(k) && SAMPLE_VALUES[k] !== undefined ? SAMPLE_VALUES[k] : whole;
+  });
 }
 
 /** The problems in a template, checked against the selected trigger's variables. */
