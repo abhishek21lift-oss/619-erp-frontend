@@ -37,8 +37,8 @@ export function StepParqQuestionnaire({ form, set, error, stepLabel }: StepParqQ
           <ListChecks size={20} color="#1CA3F9" />
         </div>
         <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">PAR-Q Questionnaire</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">{stepLabel} — {answeredCount}/{PARQ_QUESTIONS.length} answered. YES expands follow-up details.</p>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">PAR-Q Questionnaire</h2>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">{stepLabel} — {answeredCount}/{PARQ_QUESTIONS.length} answered. YES expands follow-up details.</p>
         </div>
       </div>
 
@@ -76,9 +76,9 @@ export function StepParqQuestionnaire({ form, set, error, stepLabel }: StepParqQ
                           onClick={() => updateAnswer(q.id, { answer: opt.value })}
                           className="rounded-[10px] px-4 py-2 text-[12.5px] font-[700] transition-all"
                           style={{
-                            background: selected ? color : '#fff',
-                            color: selected ? '#fff' : '#64748b',
-                            border: selected ? `1.5px solid ${color}` : '1.5px solid #e2e8f0',
+                            background: selected ? color : 'var(--bg-card)',
+                            color: selected ? 'var(--bg-card)' : 'var(--text-muted)',
+                            border: selected ? `1.5px solid ${color}` : '1.5px solid var(--border)',
                           }}
                         >
                           {opt.label}
@@ -89,12 +89,12 @@ export function StepParqQuestionnaire({ form, set, error, stepLabel }: StepParqQ
 
                   {expanded && (
                     <div className="ml-9 mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <FloatInput label="Explanation" multiline autoGrow value={a.explanation} onChange={(v) => updateAnswer(q.id, { explanation: v })} />
+                      <FloatInput label="Explanation" multiline autoGrow maxLength={1000} value={a.explanation} onChange={(v) => updateAnswer(q.id, { explanation: v })} />
                       <FloatInput label="Diagnosis Date" type="date" value={a.diagnosis_date} onChange={(v) => updateAnswer(q.id, { diagnosis_date: v })} />
-                      <FloatInput label="Treatment" value={a.treatment} onChange={(v) => updateAnswer(q.id, { treatment: v })} />
-                      <FloatInput label="Doctor Name" value={a.doctor_name} onChange={(v) => updateAnswer(q.id, { doctor_name: v })} />
-                      <FloatInput label="Hospital" value={a.hospital} onChange={(v) => updateAnswer(q.id, { hospital: v })} />
-                      <FloatInput label="Notes" value={a.notes} onChange={(v) => updateAnswer(q.id, { notes: v })} />
+                      <FloatInput label="Treatment" maxLength={500} value={a.treatment} onChange={(v) => updateAnswer(q.id, { treatment: v })} />
+                      <FloatInput label="Doctor Name" maxLength={255} value={a.doctor_name} onChange={(v) => updateAnswer(q.id, { doctor_name: v })} />
+                      <FloatInput label="Hospital" maxLength={255} value={a.hospital} onChange={(v) => updateAnswer(q.id, { hospital: v })} />
+                      <FloatInput label="Notes" maxLength={1000} value={a.notes} onChange={(v) => updateAnswer(q.id, { notes: v })} />
                     </div>
                   )}
                 </div>

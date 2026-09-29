@@ -4,11 +4,10 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, Salad, Plus, X,
-  History,
+  ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, Salad, Plus, History,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button } from '@/components/ui';
+import { Button, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -35,19 +34,34 @@ import CoachNotesPanel from '@/components/pt-os/shared/CoachNotesPanel';
 import NutritionComparison from '@/components/pt-os/nutrition-assessment/NutritionComparison';
 import NutritionCard from '@/components/pt-os/nutrition-assessment/NutritionCard';
 import { errorMessage } from '@/lib/forms/errors';
+import AssessmentDateField, { assessmentDateIssue } from '@/components/pt-os/shared/AssessmentDateField';
+import { rangeIssue } from '@/lib/forms/ranges';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 function validateStep(id: StepId, form: NutritionFormData): string | undefined {
+  if (id === 1) return assessmentDateIssue(form.assessmentDate);
   if (id === 4 && form.takesSupplements === null) return 'Please indicate whether the client takes supplements.';
+  if (id === 6) return rangeIssue(['Meals per day', form.mealsPerDay, 1, 10], ['Snacks per day', form.snacksPerDay, 0, 15]);
+  if (id === 7) {
+    return rangeIssue(['Water', form.waterIntakeLiters, 0, 10, 'L'], ['Tea', form.teaCupsPerDay, 0, 30, 'cups'],
+      ['Coffee', form.coffeeCupsPerDay, 0, 30, 'cups'], ['Soft drinks', form.softDrinksPerDay, 0, 30],
+      ['Juices', form.juicesPerDay, 0, 30]);
+  }
   return undefined;
+}
+
+/** "Other" values, comma-separated: one box used to hold one — a second
+ *  allergy typed there was lost. */
+function splitList(text: string): string[] {
+  return text.split(',').map((v) => v.trim()).filter(Boolean);
 }
 
 function splitOther(values: string[], known: string[]): { known: string[]; other: string } {
   const knownSet = new Set(known);
   return {
     known: values.filter((v) => knownSet.has(v)),
-    other: values.find((v) => !knownSet.has(v)) || '',
+    other: values.filter((v) => !knownSet.has(v)).join(', '),
   };
 }
 
@@ -164,7 +178,7 @@ function NutritionHub({ clientId, toast }: NutritionHubProps) {
     return (
       <div className="mx-auto max-w-md py-24 text-center">
         <AlertCircle size={32} style={{ color: '#ef4444', margin: '0 auto 12px' }} />
-        <p className="text-[14px] font-[600] text-slate-600">{loadError}</p>
+        <p className="text-[14px] font-[600] text-[color:var(--text-secondary)]">{loadError}</p>
         <Button variant="outline" className="mt-4" onClick={loadData}>Retry</Button>
       </div>
     );
@@ -181,33 +195,23 @@ function NutritionHub({ clientId, toast }: NutritionHubProps) {
 
   return (
     <div className="mx-auto w-full max-w-3xl py-6 space-y-5">
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
-                <Salad size={16} style={{ color: 'var(--text-muted)' }} />
-              </div>
-              <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>Nutrition Assessment</span>
-            </div>
-            <h1 className="text-[26px] sm:text-[32px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
-              {clientName}&apos;s Nutrition
-            </h1>
-          </div>
-          <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}>
+      <PageHero
+        icon={<Salad size={18} />}
+        title={`${clientName}'s Nutrition`}
+        subtitle="Nutrition Assessment"
+        actions={
+          <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: '#fff', color: '#0F172A' }}>
             New Assessment
           </Button>
-        </div>
-      </m.div>
+        }
+      />
 
       {sorted.length >= 2 && <NutritionComparison initial={initial} latest={latest} />}
 
       <div className="space-y-3">
         {sorted.length === 0 && (
           <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <p className="text-[14px] font-[600] text-slate-500">No nutrition assessments yet.</p>
+            <p className="text-[14px] font-[600] text-[color:var(--text-muted)]">No nutrition assessments yet.</p>
             <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}>
               Start First Assessment
             </Button>
@@ -216,7 +220,7 @@ function NutritionHub({ clientId, toast }: NutritionHubProps) {
         {sorted.length > 0 && (
           <div className="flex items-center gap-2 px-1">
             <History size={14} style={{ color: 'var(--text-muted)' }} />
-            <p className="text-[12.5px] font-[700] text-slate-500">Assessment History</p>
+            <p className="text-[12.5px] font-[700] text-[color:var(--text-muted)]">Assessment History</p>
           </div>
         )}
         {sorted.map((a) => (
@@ -252,7 +256,9 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
   const { restore, clear, saveNow } = useAutoSaveDraft({ key: draftKey, data: form, isDirty });
 
   useEffect(() => {
-    const draft = restore();
+    // Never lay a local draft over a record saved after it.
+    const savedAt = editing ? Date.parse(String(editing.updated_at ?? editing.created_at ?? '')) || 0 : 0;
+    const draft = restore(savedAt ? { notBefore: savedAt } : undefined);
     if (draft) { setForm({ ...initial, ...draft }); toast.info('Restored your unsaved draft.'); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -329,44 +335,43 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      const foodAllergies = [...form.foodAllergies];
-      if (form.foodAllergyOther.trim()) foodAllergies.push(form.foodAllergyOther.trim());
-      const foodsToAvoid = [...form.foodsToAvoid];
-      if (form.foodsToAvoidOther.trim()) foodsToAvoid.push(form.foodsToAvoidOther.trim());
-      const favouriteFoods = [...form.favouriteFoods];
-      if (form.favouriteFoodOther.trim()) favouriteFoods.push(form.favouriteFoodOther.trim());
+      const foodAllergies = [...form.foodAllergies, ...splitList(form.foodAllergyOther)];
+      const foodsToAvoid = [...form.foodsToAvoid, ...splitList(form.foodsToAvoidOther)];
+      const favouriteFoods = [...form.favouriteFoods, ...splitList(form.favouriteFoodOther)];
 
       const payload: Record<string, unknown> = {
+        // Blank is sent as null (or []) so an edit can clear an answer. The
+        // fields this wizard does not ask stay undefined, so an older value is kept.
         client_id: clientId,
-        assessment_date: form.assessmentDate || undefined,
-        diet_preferences: form.dietPreferences.length ? form.dietPreferences : undefined,
-        food_allergies: foodAllergies.length ? foodAllergies : undefined,
-        foods_to_avoid: foodsToAvoid.length ? foodsToAvoid : undefined,
-        foods_to_avoid_reason: form.foodsToAvoidReason || undefined,
-        favourite_foods: favouriteFoods.length ? favouriteFoods : undefined,
-        takes_supplements: form.takesSupplements ?? undefined,
-        supplements: form.supplements.length ? form.supplements : undefined,
-        digestive_issues: form.digestiveIssues.length ? form.digestiveIssues : undefined,
-        meals_per_day: n(form.mealsPerDay) ?? undefined,
-        breakfast_regularity: form.breakfastRegularity || undefined,
-        lunch_regularity: form.lunchRegularity || undefined,
-        dinner_regularity: form.dinnerRegularity || undefined,
-        snacks_per_day: n(form.snacksPerDay) ?? undefined,
-        late_night_eating: form.lateNightEating ?? undefined,
-        meal_timing_consistency: form.mealTimingConsistency || undefined,
-        eating_out_frequency: form.eatingOutFrequency || undefined,
-        weekend_eating_habits: form.weekendEatingHabits || undefined,
-        eating_behaviours: form.eatingBehaviours.length ? form.eatingBehaviours : undefined,
-        water_intake_liters: n(form.waterIntakeLiters) ?? undefined,
-        tea_cups_per_day: n(form.teaCupsPerDay) ?? undefined,
-        coffee_cups_per_day: n(form.coffeeCupsPerDay) ?? undefined,
-        soft_drinks_per_day: n(form.softDrinksPerDay) ?? undefined,
-        juices_per_day: n(form.juicesPerDay) ?? undefined,
+        assessment_date: form.assessmentDate,
+        diet_preferences: form.dietPreferences,
+        food_allergies: foodAllergies,
+        foods_to_avoid: foodsToAvoid,
+        foods_to_avoid_reason: form.foodsToAvoidReason || null,
+        favourite_foods: favouriteFoods,
+        takes_supplements: form.takesSupplements ?? null,
+        supplements: form.supplements,
+        digestive_issues: form.digestiveIssues,
+        meals_per_day: n(form.mealsPerDay) ?? null,
+        breakfast_regularity: form.breakfastRegularity || null,
+        lunch_regularity: form.lunchRegularity || null,
+        dinner_regularity: form.dinnerRegularity || null,
+        snacks_per_day: n(form.snacksPerDay) ?? null,
+        late_night_eating: form.lateNightEating ?? null,
+        meal_timing_consistency: form.mealTimingConsistency || null,
+        eating_out_frequency: form.eatingOutFrequency || null,
+        weekend_eating_habits: form.weekendEatingHabits || null,
+        eating_behaviours: form.eatingBehaviours,
+        water_intake_liters: n(form.waterIntakeLiters) ?? null,
+        tea_cups_per_day: n(form.teaCupsPerDay) ?? null,
+        coffee_cups_per_day: n(form.coffeeCupsPerDay) ?? null,
+        soft_drinks_per_day: n(form.softDrinksPerDay) ?? null,
+        juices_per_day: n(form.juicesPerDay) ?? null,
         alcoholic_drinks_per_week: n(form.alcoholicDrinksPerWeek) ?? undefined,
-        cravings: form.cravings.length ? form.cravings : undefined,
-        craving_frequency: form.cravingFrequency || undefined,
-        meal_preparer: form.mealPreparer || undefined,
-        nutrition_budget: form.nutritionBudget || undefined,
+        cravings: form.cravings,
+        craving_frequency: form.cravingFrequency || null,
+        meal_preparer: form.mealPreparer || null,
+        nutrition_budget: form.nutritionBudget || null,
         medical_conditions: form.medicalConditions.length ? form.medicalConditions : undefined,
         medical_notes: form.medicalNotes || undefined,
         coach_notes: form.coachNotes,
@@ -390,33 +395,25 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
 
   return (
     <div className="pb-28">
-      {/* Header — in normal flow on the page background (no sticky card). */}
-      <div className="pt-1">
-        <div className="mx-auto max-w-3xl py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', boxShadow: '0 6px 18px rgba(0,103,224,0.3)' }}>
-              <Salad size={18} color="#fff" />
-            </div>
-            <div>
-              <h1 className="text-[19px] font-[860] tracking-[-0.03em] text-slate-900 leading-none sm:text-[22px]">{assessmentId ? 'Edit Assessment' : 'New Assessment'}</h1>
-              <p className="text-[12px] font-[600] text-slate-400 mt-1">{clientName}</p>
-            </div>
-          </div>
-          <button type="button" onClick={() => onDone(false)} className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-[650] transition-colors hover:bg-white" style={{ color: '#64748b', border: '1px solid rgba(15,23,42,0.08)' }}>
-            <X size={12} /> Cancel
-          </button>
-        </div>
-        {!reviewMode && (
-          <div className="mx-auto max-w-3xl pb-3">
-            <NutritionProgressTimeline current={step} onStep={setStep} />
-          </div>
-        )}
+      {/* The shared hero, as on Consent, PAR-Q, Fitness and Goal. This page
+          had its own plain header, and a Cancel that discarded the wizard
+          without the "Discard changes?" check Back makes; Back on the first
+          step is the way out now. */}
+      <div className="mx-auto max-w-3xl pt-1">
+        <PageHero icon={<Salad size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'} subtitle={clientName}>
+          {!reviewMode && <NutritionProgressTimeline current={step} onStep={setStep} />}
+        </PageHero>
       </div>
 
       <div className="mx-auto max-w-3xl py-6 space-y-5">
         {!reviewMode ? (
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
-            {step === 1 && <StepDietPreference form={form} set={set} error={errors.dietPreference} />}
+            {step === 1 && (
+              <div className="space-y-6">
+                <AssessmentDateField value={form.assessmentDate} onChange={(v) => set('assessmentDate', v)} />
+                <StepDietPreference form={form} set={set} error={errors.dietPreference} />
+              </div>
+            )}
             {step === 2 && <StepFoodRestrictions form={form} set={set} error={errors.foodRestrictions} />}
             {step === 3 && <StepFavouriteFoods form={form} set={set} error={errors.favouriteFoods} />}
             {step === 4 && <StepSupplements form={form} set={set} error={errors.supplements} />}
@@ -438,7 +435,7 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
         )}
       </div>
 
-      <div className="page-action-bar" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(15,23,42,0.08)' }}>
+      <div className="page-action-bar" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(20px)', borderTop: '1px solid var(--border)' }}>
         <div className="mx-auto max-w-3xl px-5 sm:px-8 py-3.5 flex items-center justify-between gap-3">
           <Button variant="outline" iconLeft={<ArrowLeft size={14} />} onClick={handleBack}>Back</Button>
           <div className="flex items-center gap-3">

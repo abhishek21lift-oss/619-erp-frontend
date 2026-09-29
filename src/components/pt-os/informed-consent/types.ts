@@ -3,6 +3,7 @@
 // wizard. Mirrors the pattern in src/components/pt-os/parq/types.ts.
 
 import type { InformedConsent, InformedConsentAcknowledgements } from '@/lib/api';
+import { todayISO } from '@/lib/forms/domain';
 
 export interface InformedConsentFormData {
   fullName: string;
@@ -33,8 +34,28 @@ export interface InformedConsentFormData {
   witnessName: string;
 }
 
+/** Today in the studio's own calendar — toISOString() is UTC, which dated a
+ *  consent signed before 5:30 AM in India with yesterday's date. */
 function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
+  return todayISO();
+}
+
+/** An email the API will accept, or nothing. A malformed address on the
+ *  client profile used to fail the whole save with "Invalid request". */
+function emailOrNull(v: string): string | null {
+  const t = v.trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t) ? t : null;
+}
+
+/** The signing date: within the last 7 days and not in the future. */
+export function consentDateIssue(ymd: string): string | undefined {
+  const today = todayISO();
+  if (ymd > today) return 'The signing date cannot be in the future.';
+  const [y, m, d] = today.split('-').map(Number);
+  const weekAgo = new Date(y, m - 1, d - 7);
+  const floor = `${weekAgo.getFullYear()}-${String(weekAgo.getMonth() + 1).padStart(2, '0')}-${String(weekAgo.getDate()).padStart(2, '0')}`;
+  if (ymd < floor) return 'The signing date must be within the last 7 days.';
+  return undefined;
 }
 
 export function initInformedConsentForm(): InformedConsentFormData {
@@ -152,6 +173,14 @@ export function validateStep(step: StepId, form: InformedConsentFormData): strin
     if (!form.clientSignature) return 'Client signature is required.';
     if (!form.trainerSignature) return 'Trainer signature is required.';
     if (!form.exerciseConsentDate) return 'Date is required.';
+    const signedOn = consentDateIssue(form.exerciseConsentDate);
+    if (signedOn) return signedOn;
+    // A witness is optional, but a witness is a name AND a signature: either
+    // alone identifies nobody.
+    const hasName = !!form.witnessName.trim();
+    if (hasName !== !!form.witnessSignature) {
+      return hasName ? 'Add the witness signature, or clear the witness name.' : 'Add the witness name for the witness signature.';
+    }
   }
   return undefined;
 }
@@ -183,7 +212,7 @@ export function buildCreatePayload(form: InformedConsentFormData, clientId: stri
     gender: form.gender || null,
     dob: form.dob || null,
     mobile: form.mobile || null,
-    email: form.email || null,
+    email: emailOrNull(form.email),
     emergency_contact: form.emergencyContact || null,
     emergency_phone: form.emergencyPhone || null,
     address: form.address || null,
@@ -197,7 +226,7 @@ export function buildUpdatePayload(form: InformedConsentFormData): Record<string
     gender: form.gender || null,
     dob: form.dob || null,
     mobile: form.mobile || null,
-    email: form.email || null,
+    email: emailOrNull(form.email),
     emergency_contact: form.emergencyContact || null,
     emergency_phone: form.emergencyPhone || null,
     address: form.address || null,

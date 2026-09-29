@@ -41,7 +41,7 @@ interface RegularityRowProps {
 function RegularityRow({ label, value, onChange }: RegularityRowProps) {
   return (
     <div>
-      <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>{label}</p>
+      <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
       <div className="flex gap-2">
         {REGULARITY_OPTIONS.map((o) => {
           const selected = value === o.value;
@@ -50,9 +50,9 @@ function RegularityRow({ label, value, onChange }: RegularityRowProps) {
               key={o.value} type="button" onClick={() => onChange(o.value)}
               className="rounded-[11px] px-4 py-2 text-[12.5px] font-[700] transition-all"
               style={{
-                background: selected ? '#0f172a' : '#f8fafc',
-                color: selected ? '#fff' : '#64748b',
-                border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0',
+                background: selected ? 'var(--text-primary)' : 'var(--bg-subtle)',
+                color: selected ? 'var(--bg-card)' : 'var(--text-muted)',
+                border: selected ? '1.5px solid var(--text-primary)' : '1.5px solid var(--border)',
               }}
             >
               {o.label}
@@ -78,8 +78,8 @@ export function StepMealPatternBehaviour({ form, set, error }: StepMealPatternBe
             <Clock3 size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Meal Pattern &amp; Eating Behaviour</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 6 of 8 — how and when the client typically eats.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Meal Pattern &amp; Eating Behaviour</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 6 of 8 — how and when the client typically eats.</p>
           </div>
         </div>
 
@@ -95,7 +95,7 @@ export function StepMealPatternBehaviour({ form, set, error }: StepMealPatternBe
         </div>
 
         <div>
-          <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Late-Night Eating</p>
+          <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Late-Night Eating</p>
           <div className="flex gap-3">
             {[{ v: true, label: 'Yes' }, { v: false, label: 'No' }].map((o) => {
               const selected = form.lateNightEating === o.v;
@@ -104,9 +104,9 @@ export function StepMealPatternBehaviour({ form, set, error }: StepMealPatternBe
                   key={o.label} type="button" onClick={() => set('lateNightEating', o.v)}
                   className="rounded-[11px] px-6 py-2.5 text-[13px] font-[700] transition-all"
                   style={{
-                    background: selected ? '#0f172a' : '#f8fafc',
-                    color: selected ? '#fff' : '#64748b',
-                    border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0',
+                    background: selected ? 'var(--text-primary)' : 'var(--bg-subtle)',
+                    color: selected ? 'var(--bg-card)' : 'var(--text-muted)',
+                    border: selected ? '1.5px solid var(--text-primary)' : '1.5px solid var(--border)',
                   }}
                 >
                   {o.label}
@@ -126,7 +126,7 @@ export function StepMealPatternBehaviour({ form, set, error }: StepMealPatternBe
         </div>
 
         <div>
-          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Eating Behaviour Traits</p>
+          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Eating Behaviour Traits</p>
           <MultiSelectChips value={form.eatingBehaviours} onChange={(v) => set('eatingBehaviours', v)} options={EATING_BEHAVIOUR_OPTIONS} />
         </div>
 

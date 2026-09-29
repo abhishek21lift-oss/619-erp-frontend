@@ -140,10 +140,18 @@ describe('local drafts never overwrite newer server data', () => {
   beforeEach(() => localStorage.clear());
 
   it('a draft written before the server copy was saved is ignored', () => {
-    localStorage.setItem('k', JSON.stringify({ data: { a: 1 }, savedAt: 1_000 }));
+    const savedAt = Date.now() - 60_000;
+    localStorage.setItem('k', JSON.stringify({ data: { a: 1 }, savedAt }));
     const { result } = renderHook(() => useAutoSaveDraft({ key: 'k', data: {}, isDirty: false }));
-    expect(result.current.restore({ notBefore: 2_000 })).toBeNull();
-    expect(result.current.restore({ notBefore: 500 })).toEqual({ a: 1 });
+    expect(result.current.restore({ notBefore: savedAt + 1_000 })).toBeNull();
+    expect(result.current.restore({ notBefore: savedAt - 1_000 })).toEqual({ a: 1 });
     expect(result.current.restore()).toEqual({ a: 1 });
+  });
+
+  it('a draft older than a week is discarded — they are client health data on a shared device', () => {
+    localStorage.setItem('old', JSON.stringify({ data: { a: 1 }, savedAt: Date.now() - 8 * 86_400_000 }));
+    const { result } = renderHook(() => useAutoSaveDraft({ key: 'old', data: {}, isDirty: false }));
+    expect(result.current.restore()).toBeNull();
+    expect(localStorage.getItem('old')).toBeNull();
   });
 });

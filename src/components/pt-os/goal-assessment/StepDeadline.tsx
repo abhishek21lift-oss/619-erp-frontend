@@ -26,8 +26,8 @@ export function StepDeadline({ form, set, error }: StepDeadlineProps) {
             <CalendarClock size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Target Deadline</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 4 of 8 — when should this goal be achieved?</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Target Deadline</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 4 of 8 — when should this goal be achieved?</p>
           </div>
         </div>
 

@@ -30,18 +30,18 @@ export function ParqCard({ form, onClick }: ParqCardProps) {
         className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[14px]"
         style={{ background: risk?.bg ?? 'var(--bg-subtle)' }}
       >
-        <Icon size={20} color={risk?.color ?? '#94a3b8'} />
+        <Icon size={20} color={risk?.color ?? 'var(--text-muted)'} />
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-[14px] font-[760] text-slate-900">{date}</p>
+        <p className="text-[14px] font-[760] text-[color:var(--text-primary)]">{date}</p>
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
           {form.risk_level && (
             <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700] capitalize" style={{ background: risk?.bg, color: risk?.color }}>
               {form.risk_level} risk
             </span>
           )}
-          <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700] capitalize" style={{ background: '#f1f5f9', color: '#64748b' }}>
+          <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700] capitalize" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
             {form.status}
           </span>
           {gated && (
@@ -50,7 +50,7 @@ export function ParqCard({ form, onClick }: ParqCardProps) {
         </div>
       </div>
 
-      <ChevronRight size={16} style={{ color: '#cbd5e1', flexShrink: 0 }} />
+      <ChevronRight size={16} style={{ color: 'var(--border-2)', flexShrink: 0 }} />
     </button>
   );
 }

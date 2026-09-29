@@ -17,8 +17,8 @@ export function StepPerformanceMetrics({ form, set }: StepPerformanceMetricsProp
           <Gauge size={20} color="#1CA3F9" />
         </div>
         <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Performance Metrics</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 3 of 3 — optional power, speed &amp; balance tests. Resting heart rate and blood pressure already live in Fitness Testing, so they aren&apos;t re-asked here.</p>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Performance Metrics</h2>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 3 of 3 — optional power, speed &amp; balance tests. Resting heart rate and blood pressure already live in Fitness Testing, so they aren&apos;t re-asked here.</p>
         </div>
       </div>
 
@@ -29,7 +29,21 @@ export function StepPerformanceMetrics({ form, set }: StepPerformanceMetricsProp
         <FloatInput label="Reaction Time (ms)" numeric="decimal" value={form.reactionTimeMs} onChange={(v) => set('reactionTimeMs', v)} />
       </div>
 
-      <FloatInput label="Performance Notes" multiline autoGrow value={form.performanceNotes} onChange={(v) => set('performanceNotes', v)} />
+      {/* Sit & Reach moved to Fitness Testing. An older assessment that
+          recorded one shows it here, and it can be cleared. */}
+      {form.sitReachCm && (
+        <div className="flex items-center justify-between gap-3 rounded-[14px] px-4 py-3" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+          <p className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
+            Sit &amp; Reach (older record): <b style={{ color: 'var(--text-primary)' }}>{form.sitReachCm} cm</b> — now measured in Fitness Testing.
+          </p>
+          <button type="button" onClick={() => set('sitReachCm', '')} className="rounded-full px-3 py-1.5 text-[12px] font-[700]"
+            style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+            Clear
+          </button>
+        </div>
+      )}
+
+      <FloatInput label="Performance Notes" multiline autoGrow maxLength={2000} value={form.performanceNotes} onChange={(v) => set('performanceNotes', v)} />
     </div>
   );
 }

@@ -24,10 +24,11 @@
  *
  * ── The bounds ──────────────────────────────────────────────────────────────
  *
- * Deliberately generous and not open-ended. 500 kg is above every listed world
- * record for the lifts this screen tracks, so it cannot refuse a real one; it
- * is far below the mistyped 5000 that would put a client at the top of every
- * percentile chart in the product.
+ * Deliberately generous and not open-ended. 1000 kg is the API's limit and
+ * the edit form's: this form used to stop at 500 while both of those allowed
+ * 1000, and Leg Press — one of the lifts on this screen — is loaded past 500
+ * kg in ordinary gyms. It is still far below the mistyped 5000 that would put
+ * a client at the top of every percentile chart in the product.
  */
 
 import { z } from 'zod';
@@ -35,7 +36,7 @@ import { decimalField, integerField } from '../primitives';
 
 export const strengthLogSchema = z.object({
   weight_kg: decimalField({
-    label: 'Weight', required: true, min: 0.5, max: 500, unit: 'kg',
+    label: 'Weight', required: true, min: 0.5, max: 1000, unit: 'kg',
   }),
   sets: integerField({ label: 'Sets', required: true, min: 1, max: 50 }),
   reps: integerField({ label: 'Reps', required: true, min: 1, max: 100 }),

@@ -20,8 +20,8 @@ export function StepPriority({ form, set, error }: StepPriorityProps) {
             <ListChecks size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Priority Goal</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 5 of 8 — what matters most right now?</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Priority Goal</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 5 of 8 — what matters most right now?</p>
           </div>
         </div>
 
@@ -35,13 +35,13 @@ export function StepPriority({ form, set, error }: StepPriorityProps) {
                 className="flex flex-col items-center gap-2 rounded-[16px] px-3 py-4 text-center transition-all duration-200"
                 style={{
                   background: selected ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)',
-                  border: selected ? '2px solid #0067E0' : '2px solid rgba(15,23,42,0.08)',
+                  border: selected ? '2px solid #0067E0' : '2px solid var(--border)',
                   boxShadow: selected ? '0 4px 16px rgba(0,103,224,0.18)' : 'none',
                   transform: selected ? 'scale(1.02)' : 'scale(1)',
                 }}
               >
-                <p.icon size={21} strokeWidth={1.75} color={selected ? '#0059CE' : '#64748b'} />
-                <span className="text-[11.5px] font-[700]" style={{ color: selected ? '#0f172a' : '#475569' }}>{p.label}</span>
+                <p.icon size={21} strokeWidth={1.75} color={selected ? '#0059CE' : 'var(--text-muted)'} />
+                <span className="text-[11.5px] font-[700]" style={{ color: selected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{p.label}</span>
               </button>
             );
           })}

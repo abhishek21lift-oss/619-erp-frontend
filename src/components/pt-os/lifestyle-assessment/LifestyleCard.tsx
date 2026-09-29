@@ -33,7 +33,7 @@ export function LifestyleCard({ assessment, onClick }: LifestyleCardProps) {
         <DonutChart
           data={[
             { name: 'Score', value: score ?? 0, color: '#F59E0B' },
-            { name: 'Remaining', value: 100 - (score ?? 0), color: '#f1f5f9' },
+            { name: 'Remaining', value: 100 - (score ?? 0), color: 'var(--bg-subtle)' },
           ]}
           centerValue={<span style={{ fontSize: 13 }}>{score ?? '—'}</span>}
           hideLegend thin height={64}
@@ -41,7 +41,7 @@ export function LifestyleCard({ assessment, onClick }: LifestyleCardProps) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-[14px] font-[760] text-slate-900">{date}</p>
+        <p className="text-[14px] font-[760] text-[color:var(--text-primary)]">{date}</p>
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
           {readiness && style && (
             <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: style.bg, color: style.color }}>
@@ -56,7 +56,7 @@ export function LifestyleCard({ assessment, onClick }: LifestyleCardProps) {
         </div>
       </div>
 
-      <ChevronRight size={16} style={{ color: '#cbd5e1', flexShrink: 0 }} />
+      <ChevronRight size={16} style={{ color: 'var(--border-2)', flexShrink: 0 }} />
     </button>
   );
 }

@@ -8,9 +8,11 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, PageContainer, PageHero } from '@/components/ui';
+import FloatInput from '@/components/ui/FloatInput';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { PremiumSparkline } from '@/components/visualizations';
 import { api } from '@/lib/api';
+import { palette } from '@/lib/palette';
 import { useToast } from '@/lib/toast';
 import { calc1RM, classifyStrength } from '@/lib/fitness-calculations';
 import type { Gender, FitnessCategory } from '@/lib/fitness-calculations';
@@ -157,17 +159,41 @@ function StrengthHub({ clientId }: StrengthHubProps) {
     return out;
   }, [logs]);
 
-  const handleLog = async (exercise: string, weightKg: number, setsDone: number, repsDone: number) => {
+  const handleLog = async (exercise: string, weightKg: number, setsDone: number, repsDone: number, opts: LogOptions) => {
     try {
       await api.progress.strengthLogs.create({
         client_id: clientId, exercise_name: exercise,
-        weight_kg: weightKg, sets_done: setsDone, reps_done: repsDone,
+        weight_kg: weightKg,
+        sets_done: opts.direct ? 1 : setsDone,
+        reps_done: opts.direct ? 1 : repsDone,
+        is_direct_1rm: opts.direct,
+        ...(opts.direct ? { one_rm_estimate: weightKg } : {}),
+        log_date: opts.date,
       });
       toast.success(`${exercise} logged.`);
       loadData();
     } catch (err: unknown) {
       toast.error(errorMessage(err, 'Failed to log lift.'));
+      // Re-thrown so the form stays open with what was typed. The error was
+      // swallowed here, so the form's success path ran: the card closed and
+      // the weight was wiped on a lift that was never saved.
+      throw err;
     }
+  };
+
+  // Exercises beyond the fixed lists: any already logged, plus any added here.
+  const known = new Set(CATEGORIES.flatMap((c) => c.exercises));
+  const [addedExercises, setAddedExercises] = useState<string[]>([]);
+  const [newExercise, setNewExercise] = useState('');
+  const otherExercises = Array.from(new Set([
+    ...logs.map((l) => l.exercise_name).filter((e) => !known.has(e)),
+    ...addedExercises,
+  ]));
+  const categories = otherExercises.length ? [...CATEGORIES, { label: 'Other', exercises: otherExercises }] : CATEGORIES;
+  const addExercise = () => {
+    const name = newExercise.trim().slice(0, 100);
+    if (name && !known.has(name) && !otherExercises.includes(name)) setAddedExercises((a) => [...a, name]);
+    setNewExercise('');
   };
 
   if (loading) {
@@ -177,7 +203,7 @@ function StrengthHub({ clientId }: StrengthHubProps) {
     return (
       <div className="mx-auto max-w-md py-24 text-center">
         <AlertCircle size={32} style={{ color: '#ef4444', margin: '0 auto 12px' }} />
-        <p className="text-[14px] font-[600] text-slate-600">{loadError}</p>
+        <p className="text-[14px] font-[600] text-[color:var(--text-secondary)]">{loadError}</p>
         <Button variant="outline" className="mt-4" onClick={loadData}>Retry</Button>
       </div>
     );
@@ -200,28 +226,35 @@ function StrengthHub({ clientId }: StrengthHubProps) {
       </PageHero>
 
     <div className="mx-auto w-full max-w-4xl space-y-6">
-      {CATEGORIES.map((cat) => (
+      {categories.map((cat) => (
         <div key={cat.label}>
           <div className="flex items-center gap-2 mb-3 px-1">
-            <span className="h-2 w-2 rounded-full" style={{ background: CATEGORY_COLOR[cat.label] }} />
+            <span className="h-2 w-2 rounded-full" style={{ background: CATEGORY_COLOR[cat.label] ?? palette.gray[500] }} />
             <h2 className="text-[13px] font-[760] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{cat.label}</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {cat.exercises.map((ex) => (
               <ExerciseCard
-                key={ex} exercise={ex} accent={CATEGORY_COLOR[cat.label]}
+                key={ex} exercise={ex} accent={CATEGORY_COLOR[cat.label] ?? palette.gray[500]}
                 latest={latestByExercise[ex]} trend={trendByExercise[ex]}
                 gender={gender} bodyWeightKg={bodyWeightKg}
-                onLog={(w, s, r) => handleLog(ex, w, s, r)}
+                onLog={(w, s, r, o) => handleLog(ex, w, s, r, o)}
               />
             ))}
           </div>
         </div>
       ))}
 
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="min-w-[220px] flex-1 sm:max-w-sm">
+          <FloatInput label="Add another exercise" maxLength={100} value={newExercise} onChange={setNewExercise} />
+        </div>
+        <Button variant="outline" iconLeft={<Plus size={13} />} onClick={addExercise} disabled={!newExercise.trim()}>Add</Button>
+      </div>
+
       <div className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
         <div className="flex items-center gap-2 mb-4">
-          <History size={14} style={{ color: '#94a3b8' }} />
+          <History size={14} style={{ color: 'var(--text-muted)' }} />
           <h2 className="text-[16px] font-[760]" style={{ color: 'var(--text-primary)' }}>Recent Lifts</h2>
         </div>
         {sortedHistory.length === 0 ? (
@@ -245,18 +278,24 @@ interface ExerciseCardProps {
   latest: StrengthLog | undefined;
   trend: { label: string; value: number }[] | undefined;
   gender: Gender | null; bodyWeightKg: number | null;
-  onLog: (weightKg: number, setsDone: number, repsDone: number) => void;
+  onLog: (weightKg: number, setsDone: number, repsDone: number, opts: LogOptions) => Promise<void>;
 }
+
+interface LogOptions { direct: boolean; date: string }
 
 function ExerciseCard({ exercise, accent, latest, trend, gender, bodyWeightKg, onLog }: ExerciseCardProps) {
   const [expanded, setExpanded] = useState(false);
+  // A lift entered after the session can carry the day it was done, and a
+  // tested single can be recorded as the 1RM it is.
+  const [logDate, setLogDate] = useState(localToday());
+  const [direct, setDirect] = useState(false);
 
   const f = useAppForm({
     schema: strengthLogSchema,
     defaultValues: blankStrengthLog(),
     keepValuesOnSuccess: true,
     onSubmit: async (values) => {
-      await onLog(values.weight_kg as number, values.sets as number, values.reps as number);
+      await onLog(values.weight_kg as number, values.sets as number, values.reps as number, { direct, date: logDate > localToday() ? localToday() : logDate });
     },
     onSuccess: () => {
       // Sets and reps survive: a trainer logging a second lift on the same
@@ -288,11 +327,11 @@ function ExerciseCard({ exercise, accent, latest, trend, gender, bodyWeightKg, o
     <div className="rounded-[16px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
       <button type="button" onClick={() => setExpanded((v) => !v)} className="flex w-full items-center justify-between px-4 py-3.5">
         <div className="text-left">
-          <p className="text-[13.5px] font-[760] text-slate-900">{exercise}</p>
+          <p className="text-[13.5px] font-[760] text-[color:var(--text-primary)]">{exercise}</p>
           {latest ? (
             <div className="mt-1 flex items-center gap-2 flex-wrap">
               <span className="text-[12px] font-[600]" style={{ color: accent }}>{latest.weight_kg} kg × {latest.reps_done}</span>
-              {latest.one_rm_estimate != null && <span className="text-[11px] text-slate-400">1RM ~{latest.one_rm_estimate} kg</span>}
+              {latest.one_rm_estimate != null && <span className="text-[11px] text-[color:var(--text-muted)]">1RM ~{latest.one_rm_estimate} kg</span>}
               {level && (
                 <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]" style={{ background: LEVEL_STYLE[level].bg, color: LEVEL_STYLE[level].color }}>
                   {level}
@@ -300,10 +339,10 @@ function ExerciseCard({ exercise, accent, latest, trend, gender, bodyWeightKg, o
               )}
             </div>
           ) : (
-            <p className="mt-1 text-[11.5px] text-slate-400">No baseline logged yet</p>
+            <p className="mt-1 text-[11.5px] text-[color:var(--text-muted)]">No baseline logged yet</p>
           )}
         </div>
-        <ChevronDown size={15} style={{ color: '#94a3b8', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
+        <ChevronDown size={15} style={{ color: 'var(--text-muted)', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
       </button>
 
       {/* A trend needs at least two readings — one point is a number, not a
@@ -343,7 +382,19 @@ function ExerciseCard({ exercise, accent, latest, trend, gender, bodyWeightKg, o
               </form.Field>
             </div>
 
-            {previewOneRm != null && (
+            <div className="mb-2 flex flex-wrap items-end gap-3">
+              <label className="flex items-center gap-2 text-[12px] font-[650]" style={{ color: 'var(--text-secondary)' }}>
+                <input type="checkbox" checked={direct} onChange={(e) => setDirect(e.target.checked)} />
+                Tested 1RM (one rep at this weight)
+              </label>
+              <label className="flex flex-col text-[11px]" style={{ color: 'var(--text-muted)' }}>Date
+                <input type="date" value={logDate} max={localToday()} onChange={(e) => setLogDate(e.target.value)}
+                  className="mt-1 rounded-[8px] border px-2 py-1 text-[13px]"
+                  style={{ borderColor: 'var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} />
+              </label>
+            </div>
+
+            {!direct && previewOneRm != null && (
               <p className="mb-2 text-[11.5px] font-[600]" style={{ color: accent }}>Est. 1RM: {previewOneRm} kg</p>
             )}
 
@@ -384,6 +435,7 @@ function HistoryRow({ log, onChanged }: { log: StrengthLog; onChanged: () => voi
   const [busy, setBusy] = useState(false);
   const [weight, setWeight] = useState(String(log.weight_kg));
   const [reps, setReps] = useState(String(log.reps_done));
+  const [sets, setSets] = useState(String(log.sets_done ?? ''));
   const [date, setDate] = useState(log.log_date);
 
   const save = async () => {
@@ -391,9 +443,11 @@ function HistoryRow({ log, onChanged }: { log: StrengthLog; onChanged: () => voi
     const r = inlineNumber(reps);
     if (w == null || w <= 0 || w > 1000) { toast.error('Weight must be between 0 and 1000 kg.'); return; }
     if (r == null || !Number.isInteger(r) || r < 1 || r > 100) { toast.error('Reps must be a whole number from 1 to 100.'); return; }
+    const st = inlineNumber(sets);
+    if (st == null || !Number.isInteger(st) || st < 1 || st > 50) { toast.error('Sets must be a whole number from 1 to 50.'); return; }
     setBusy(true);
     try {
-      await api.progress.strengthLogs.update(log.id, { weight_kg: w, reps_done: r, log_date: date || undefined });
+      await api.progress.strengthLogs.update(log.id, { weight_kg: w, sets_done: st, reps_done: r, log_date: date || undefined });
       toast.success(`${log.exercise_name} updated.`);
       setEditing(false);
       onChanged();
@@ -420,18 +474,22 @@ function HistoryRow({ log, onChanged }: { log: StrengthLog; onChanged: () => voi
   if (editing) {
     return (
       <div className="flex flex-wrap items-end gap-2 rounded-[12px] px-4 py-3" style={{ background: 'var(--bg-subtle)' }}>
-        <span className="w-full text-[13px] font-[700] text-slate-700">{log.exercise_name}</span>
-        <label className="flex flex-col text-[11px] text-slate-500">Weight (kg)
+        <span className="w-full text-[13px] font-[700] text-[color:var(--text-secondary)]">{log.exercise_name}</span>
+        <label className="flex flex-col text-[11px] text-[color:var(--text-muted)]">Weight (kg)
           <input aria-label="Weight in kg" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)}
-            className="mt-1 w-24 rounded-[8px] border px-2 py-1 text-[13px]" style={{ borderColor: 'var(--border)' }} />
+            className="mt-1 w-24 rounded-[8px] border px-2 py-1 text-[13px]" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} />
         </label>
-        <label className="flex flex-col text-[11px] text-slate-500">Reps
+        <label className="flex flex-col text-[11px] text-[color:var(--text-muted)]">Sets
+          <input aria-label="Sets" inputMode="numeric" value={sets} onChange={(e) => setSets(e.target.value)}
+            className="mt-1 w-14 rounded-[8px] border px-2 py-1 text-[13px]" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} />
+        </label>
+        <label className="flex flex-col text-[11px] text-[color:var(--text-muted)]">Reps
           <input aria-label="Reps" inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)}
-            className="mt-1 w-16 rounded-[8px] border px-2 py-1 text-[13px]" style={{ borderColor: 'var(--border)' }} />
+            className="mt-1 w-16 rounded-[8px] border px-2 py-1 text-[13px]" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} />
         </label>
-        <label className="flex flex-col text-[11px] text-slate-500">Date
+        <label className="flex flex-col text-[11px] text-[color:var(--text-muted)]">Date
           <input aria-label="Date" type="date" value={date} max={localToday()} onChange={(e) => setDate(e.target.value)}
-            className="mt-1 rounded-[8px] border px-2 py-1 text-[13px]" style={{ borderColor: 'var(--border)' }} />
+            className="mt-1 rounded-[8px] border px-2 py-1 text-[13px]" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} />
         </label>
         <div className="ml-auto flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setEditing(false)} disabled={busy}>Cancel</Button>
@@ -444,8 +502,8 @@ function HistoryRow({ log, onChanged }: { log: StrengthLog; onChanged: () => voi
   return (
     <div className="flex items-center justify-between gap-3 rounded-[12px] px-4 py-3" style={{ background: 'var(--bg-subtle)' }}>
       <div>
-        <span className="text-[13px] font-[700] text-slate-700">{log.exercise_name}</span>
-        <span className="ml-2 text-[11px] text-slate-400">{log.log_date}</span>
+        <span className="text-[13px] font-[700] text-[color:var(--text-secondary)]">{log.exercise_name}</span>
+        <span className="ml-2 text-[11px] text-[color:var(--text-muted)]">{log.log_date}</span>
       </div>
       <div className="flex items-center gap-3 text-[12px]">
         <span className="font-bold" style={{ color: '#f59e0b' }}>{log.weight_kg} kg</span>
@@ -456,9 +514,9 @@ function HistoryRow({ log, onChanged }: { log: StrengthLog; onChanged: () => voi
           </span>
         )}
         <button type="button" aria-label={`Edit ${log.exercise_name} lift`} onClick={() => setEditing(true)} disabled={busy}
-          className="rounded-[8px] p-1.5 text-slate-400 hover:text-slate-700"><Pencil size={13} /></button>
+          className="rounded-[8px] p-1.5 text-[color:var(--text-muted)] hover:text-[color:var(--text-secondary)]"><Pencil size={13} /></button>
         <button type="button" aria-label={`Delete ${log.exercise_name} lift`} onClick={remove} disabled={busy}
-          className="rounded-[8px] p-1.5 text-slate-400 hover:text-red-600"><Trash2 size={13} /></button>
+          className="rounded-[8px] p-1.5 text-[color:var(--text-muted)] hover:text-red-600"><Trash2 size={13} /></button>
       </div>
     </div>
   );

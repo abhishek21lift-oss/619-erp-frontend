@@ -41,18 +41,18 @@ export function DigestiveIssuesChecklist({ value, onChange }: DigestiveIssuesChe
         const checked = isChecked(issue);
         const item = get(issue);
         return (
-          <div key={issue} className="rounded-[16px] transition-all" style={{ border: checked ? '2px solid #0067E0' : '2px solid rgba(15,23,42,0.08)', background: checked ? 'rgba(0,103,224,0.04)' : 'var(--bg-subtle)' }}>
+          <div key={issue} className="rounded-[16px] transition-all" style={{ border: checked ? '2px solid #0067E0' : '2px solid var(--border)', background: checked ? 'rgba(0,103,224,0.04)' : 'var(--bg-subtle)' }}>
             <button
               type="button" onClick={() => toggle(issue)}
               className="flex w-full items-center gap-3 px-4 py-3.5 text-left"
             >
               <span
                 className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px] transition-all"
-                style={{ background: checked ? '#0067E0' : '#fff', border: checked ? 'none' : '1.5px solid #cbd5e1' }}
+                style={{ background: checked ? '#0067E0' : 'var(--bg-card)', border: checked ? 'none' : '1.5px solid var(--border-2)' }}
               >
                 {checked && <Check size={13} color="#fff" strokeWidth={3} />}
               </span>
-              <span className="text-[13.5px] font-[700]" style={{ color: checked ? '#0f172a' : '#475569' }}>{issue}</span>
+              <span className="text-[13.5px] font-[700]" style={{ color: checked ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{issue}</span>
             </button>
             {checked && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-4 pb-4">

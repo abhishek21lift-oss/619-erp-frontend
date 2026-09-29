@@ -13,6 +13,7 @@ import FloatInput from '@/components/ui/FloatInput';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import { AGREEMENT_TEXT, PAYMENT_METHODS, ageFrom } from '@/lib/enrollment';
 import { SignaturePad } from '@/components/pt-os/shared/SignaturePad';
+import { GOAL_TYPE_META } from '@/components/pt-os/goal-assessment/types';
 import { api } from '@/lib/api';
 import { ApiError, apiBase, tenantAuthHeaders } from '@/lib/http';
 import { toMoneyOrNull } from '@/lib/forms/normalize';
@@ -229,6 +230,14 @@ function initForm(): EnrollFormData {
 
 
 /* ─────────────────────────────────────────────────────── PAGE EXPORT */
+/** The active goal from the Goals page, as a label. */
+function activeGoalLabel(goals: Record<string, unknown>[] | undefined): string | null {
+  const g = (goals ?? []).find((x) => x.is_active);
+  if (!g) return null;
+  if (g.goal_type === 'custom') return String(g.goal_other ?? '') || 'Custom goal';
+  return GOAL_TYPE_META.find((m) => m.value === g.goal_type)?.label ?? String(g.goal_type ?? '');
+}
+
 export default function PTEnrollmentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   return <Guard><EnrollForm clientId={id} /></Guard>;
@@ -285,9 +294,13 @@ function EnrollForm({ clientId }: { clientId: string }) {
     setLoading(true);
     setLoadError('');
     try {
-      const [clientRes, renewalsRes] = await Promise.all([
+      const [clientRes, renewalsRes, goalsRes] = await Promise.all([
         api.pt.client(clientId) as Promise<{ data?: Record<string, unknown> }>,
         api.clients.renewalHistory(clientId).catch(() => ({ data: [] as unknown[] })),
+        // The goal shown here is the one set on the Goals page. The profile's
+        // own `goal` text was a second, older goal nothing kept in step.
+        (api.progress.goals.list({ client_id: clientId }) as Promise<{ data?: Record<string, unknown>[] }>)
+          .catch((err: unknown) => { console.warn('[enroll] goals unavailable', err); return { data: [] as Record<string, unknown>[] }; }),
       ]);
       const c = clientRes?.data;
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
@@ -302,7 +315,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
         photoUrl: c.photo_url ? String(c.photo_url) : null,
         dob: c.dob ? String(c.dob) : null,
         weight: Number(c.weight) > 0 ? Number(c.weight) : null,
-        goal: c.goal ? String(c.goal) : null,
+        goal: activeGoalLabel(goalsRes?.data) ?? (c.goal ? String(c.goal) : null),
         // joining_date is the studio's own record of when they signed up;
         // created_at is when the row happened to be typed in. Prefer the
         // first and fall back to the second.

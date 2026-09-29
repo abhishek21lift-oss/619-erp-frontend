@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { PersonStanding } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import MultiSelectChips from '@/components/pt-os/MultiSelectChips';
-import { POSTURE_ISSUE_OPTIONS } from './types';
+import { POSTURE_ISSUES_BY_VIEW } from './types';
 import type { PostureFormData } from './types';
 
 const VIEWS: { key: 'frontIssues' | 'sideIssues' | 'backIssues'; label: string }[] = [
@@ -30,8 +30,8 @@ export function StepPostureObservations({ form, set }: StepPostureObservationsPr
             <PersonStanding size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Posture Observations</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 1 of 2 — select any deviations noted from each view.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Posture Observations</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 1 of 2 — select any deviations noted from each view.</p>
           </div>
         </div>
 
@@ -44,16 +44,16 @@ export function StepPostureObservations({ form, set }: StepPostureObservationsPr
                 key={v.key} type="button" onClick={() => setActiveView(v.key)}
                 className="flex items-center gap-1.5 rounded-[11px] px-4 py-2.5 text-[13px] font-[700] transition-all"
                 style={{
-                  background: selected ? '#0f172a' : '#f8fafc',
-                  color: selected ? '#fff' : '#64748b',
-                  border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0',
+                  background: selected ? 'var(--text-primary)' : 'var(--bg-subtle)',
+                  color: selected ? 'var(--bg-card)' : 'var(--text-muted)',
+                  border: selected ? '1.5px solid var(--text-primary)' : '1.5px solid var(--border)',
                 }}
               >
                 {v.label}
                 {count > 0 && (
                   <span
                     className="flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-[800]"
-                    style={{ background: selected ? '#0067E0' : '#e2e8f0', color: selected ? '#0f172a' : '#64748b' }}
+                    style={{ background: selected ? '#0067E0' : 'var(--border)', color: selected ? '#fff' : 'var(--text-muted)' }}
                   >
                     {count}
                   </span>
@@ -63,9 +63,12 @@ export function StepPostureObservations({ form, set }: StepPostureObservationsPr
           })}
         </div>
 
-        <MultiSelectChips value={form[activeView]} onChange={(v) => set(activeView, v)} options={POSTURE_ISSUE_OPTIONS} />
+        {/* An issue saved on an older record from a view that no longer lists
+            it still shows, so it can be seen and removed. */}
+        <MultiSelectChips value={form[activeView]} onChange={(v) => set(activeView, v)}
+          options={[...POSTURE_ISSUES_BY_VIEW[activeView], ...form[activeView].filter((i) => !POSTURE_ISSUES_BY_VIEW[activeView].includes(i))]} />
 
-        <FloatInput label="Other Notes" multiline autoGrow value={form.otherIssueNotes} onChange={(v) => set('otherIssueNotes', v)} />
+        <FloatInput label="Other Notes" multiline autoGrow maxLength={1000} value={form.otherIssueNotes} onChange={(v) => set('otherIssueNotes', v)} />
       </div>
     </div>
   );

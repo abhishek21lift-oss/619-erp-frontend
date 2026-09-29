@@ -88,7 +88,7 @@ function Signatory({ role, name, signedAt, signature }: {
         className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
         style={{
           background: signed ? 'rgba(16,185,129,0.14)' : 'rgba(148,163,184,0.16)',
-          color: signed ? '#059669' : '#94a3b8',
+          color: signed ? '#059669' : 'var(--text-muted)',
         }}
       >
         {/* Icon as well as colour: status must not be carried by hue alone. */}
@@ -354,7 +354,7 @@ export default function ConsentSummary({
                 const ok = Boolean(record.acknowledgements?.[f.key]);
                 return (
                   <li key={f.key} className="flex gap-2.5">
-                    <span className="mt-0.5 flex-shrink-0" style={{ color: ok ? '#059669' : '#94a3b8' }}>
+                    <span className="mt-0.5 flex-shrink-0" style={{ color: ok ? '#059669' : 'var(--text-muted)' }}>
                       {ok ? <Check size={14} strokeWidth={3} /> : <Clock size={13} />}
                     </span>
                     <span className="text-[12.5px] leading-[1.55]" style={{ color: 'var(--text-muted)' }}>

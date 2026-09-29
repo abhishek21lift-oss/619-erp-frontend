@@ -57,8 +57,8 @@ export function StepCardio({ form, set, age, gender, error }: StepCardioProps) {
           <Wind size={20} color="#1CA3F9" />
         </div>
         <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Cardiorespiratory Endurance</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 4 of 7 — choose a test.</p>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Cardiorespiratory Endurance</h2>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 4 of 7 — choose a test.</p>
         </div>
       </div>
 
@@ -94,11 +94,11 @@ export function StepCardio({ form, set, age, gender, error }: StepCardioProps) {
       {form.cardioTestType === 'YMCA 3-Minute Step Test' && (
         <div>
           <FloatInput label="Recovery Heart Rate (bpm)" numeric="integer" value={form.cardioRecoveryHr} onChange={(v) => set('cardioRecoveryHr', v)} />
-          <p className="mt-1.5 text-[11px] text-slate-400">No standard VO₂max formula for this test — classified by heart-rate recovery only.</p>
+          <p className="mt-1.5 text-[11px] text-[color:var(--text-muted)]">No standard VO₂max formula for this test — classified by heart-rate recovery only.</p>
         </div>
       )}
       {form.cardioTestType === 'Custom' && (
-        <FloatInput label="Notes" multiline autoGrow value={form.cardioDistanceMeters} onChange={(v) => set('cardioDistanceMeters', v)} />
+        <FloatInput label="Notes" multiline autoGrow maxLength={1000} value={form.cardioDistanceMeters} onChange={(v) => set('cardioDistanceMeters', v)} />
       )}
 
       {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
@@ -107,8 +107,8 @@ export function StepCardio({ form, set, age, gender, error }: StepCardioProps) {
         <div className="mt-6 flex flex-wrap items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>
           {preview.vo2 != null && (
             <div>
-              <p className="text-[10.5px] font-[700] uppercase tracking-wider text-slate-400">Estimated VO₂ Max</p>
-              <p className="text-[18px] font-[800] text-slate-900">{preview.vo2} mL/kg/min</p>
+              <p className="text-[10.5px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Estimated VO₂ Max</p>
+              <p className="text-[18px] font-[800] text-[color:var(--text-primary)]">{preview.vo2} mL/kg/min</p>
             </div>
           )}
           {preview.category && (

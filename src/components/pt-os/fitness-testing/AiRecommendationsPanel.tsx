@@ -49,8 +49,8 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
             <Brain size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">AI Recommendations</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">A sports-scientist read of this assessment.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">AI Recommendations</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">A sports-scientist read of this assessment.</p>
           </div>
         </div>
 
@@ -67,7 +67,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
         {loading && (
           <div className="flex items-center gap-3 py-6">
             <Loader2 size={18} className="animate-spin" style={{ color: '#0067E0' }} />
-            <span className="text-[13px] font-[600] text-slate-500">Analysing assessment…</span>
+            <span className="text-[13px] font-[600] text-[color:var(--text-muted)]">Analysing assessment…</span>
           </div>
         )}
 
@@ -91,15 +91,15 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
               </span>
             )}
 
-            <p className="text-[14px] leading-relaxed text-slate-700">{analysis.summary}</p>
-            <p className="text-[13px] leading-relaxed text-slate-500">{analysis.overall_assessment}</p>
+            <p className="text-[14px] leading-relaxed text-[color:var(--text-secondary)]">{analysis.summary}</p>
+            <p className="text-[13px] leading-relaxed text-[color:var(--text-muted)]">{analysis.overall_assessment}</p>
 
             {analysis.strengths.length > 0 && (
               <div>
-                <p className="mb-2 text-[11.5px] font-[700] uppercase tracking-wider text-slate-400">Strengths</p>
+                <p className="mb-2 text-[11.5px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Strengths</p>
                 <ul className="space-y-1.5">
                   {analysis.strengths.map((s, i) => (
-                    <li key={i} className="flex items-start gap-2 text-[13px] text-slate-700">
+                    <li key={i} className="flex items-start gap-2 text-[13px] text-[color:var(--text-secondary)]">
                       <CheckCircle2 size={14} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} /> {s}
                     </li>
                   ))}
@@ -109,10 +109,10 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
 
             {analysis.areas_to_improve.length > 0 && (
               <div>
-                <p className="mb-2 text-[11.5px] font-[700] uppercase tracking-wider text-slate-400">Areas to Improve</p>
+                <p className="mb-2 text-[11.5px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Areas to Improve</p>
                 <ul className="space-y-1.5">
                   {analysis.areas_to_improve.map((s, i) => (
-                    <li key={i} className="flex items-start gap-2 text-[13px] text-slate-700">
+                    <li key={i} className="flex items-start gap-2 text-[13px] text-[color:var(--text-secondary)]">
                       <ArrowUpCircle size={14} style={{ color: '#d97706', flexShrink: 0, marginTop: 2 }} /> {s}
                     </li>
                   ))}
@@ -122,7 +122,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
 
             {analysis.risk_flags.length > 0 && (
               <div className="space-y-2">
-                <p className="text-[11.5px] font-[700] uppercase tracking-wider text-slate-400">Risk Flags</p>
+                <p className="text-[11.5px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Risk Flags</p>
                 {analysis.risk_flags.map((r, i) => {
                   const style = SEVERITY_STYLE[r.severity] || SEVERITY_STYLE.medium;
                   return (
@@ -130,7 +130,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
                       <AlertTriangle size={16} style={{ color: style.color, flexShrink: 0, marginTop: 1 }} />
                       <div>
                         <p className="text-[13px] font-[700]" style={{ color: style.color }}>{r.flag}</p>
-                        <p className="text-[12px] text-slate-600 mt-0.5">{r.action}</p>
+                        <p className="text-[12px] text-[color:var(--text-secondary)] mt-0.5">{r.action}</p>
                       </div>
                     </div>
                   );
@@ -140,17 +140,17 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
 
             {analysis.recommendations.length > 0 && (
               <div className="space-y-2">
-                <p className="text-[11.5px] font-[700] uppercase tracking-wider text-slate-400">Recommendations</p>
+                <p className="text-[11.5px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Recommendations</p>
                 {[...analysis.recommendations].sort((a, b) => a.priority - b.priority).map((r, i) => (
                   <div key={i} className="rounded-[14px] p-3.5" style={{ background: 'var(--bg-subtle)' }}>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-[800]" style={{ background: '#0f172a', color: '#0067E0' }}>
                         {r.priority}
                       </span>
-                      <p className="text-[13px] font-[700] text-slate-800">{r.focus_area}</p>
+                      <p className="text-[13px] font-[700] text-[color:var(--text-primary)]">{r.focus_area}</p>
                     </div>
-                    <p className="text-[12.5px] text-slate-600">{r.action}</p>
-                    <p className="text-[11.5px] text-slate-400 mt-1 italic">{r.rationale}</p>
+                    <p className="text-[12.5px] text-[color:var(--text-secondary)]">{r.action}</p>
+                    <p className="text-[11.5px] text-[color:var(--text-muted)] mt-1 italic">{r.rationale}</p>
                   </div>
                 ))}
               </div>
@@ -159,7 +159,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
             {analysis.suggested_next_test_focus && (
               <div className="flex items-start gap-3 rounded-[14px] p-4" style={{ background: 'rgba(0,103,224,0.08)', border: '1px solid rgba(0,103,224,0.2)' }}>
                 <Target size={16} style={{ color: '#d97706', flexShrink: 0, marginTop: 1 }} />
-                <p className="text-[12.5px] font-[600] text-slate-700">{analysis.suggested_next_test_focus}</p>
+                <p className="text-[12.5px] font-[600] text-[color:var(--text-secondary)]">{analysis.suggested_next_test_focus}</p>
               </div>
             )}
 
@@ -172,7 +172,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
 
             <button
               type="button" onClick={generate}
-              className="flex items-center gap-1.5 text-[12px] font-[700]" style={{ color: '#94a3b8' }}
+              className="flex items-center gap-1.5 text-[12px] font-[700]" style={{ color: 'var(--text-muted)' }}
             >
               <RefreshCw size={12} /> Regenerate
             </button>

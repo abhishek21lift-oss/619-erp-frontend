@@ -1,6 +1,7 @@
 'use client';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { clearAllDrafts } from '@/hooks/useAutoSaveDraft';
 import { api, type User, http } from './api';
 import { resetRedirectLock, refreshSession, clearImpersonation } from './http';
 // Minimal non-sensitive user fields cached in sessionStorage (cleared on tab
@@ -77,6 +78,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     api.auth.logout?.().catch((_err) => console.warn('[auth] logout failed', _err));
     setUser(null);
     clearCachedUser();
+    // Unsent assessment drafts are client health data; they do not outlive
+    // the session that typed them.
+    clearAllDrafts();
     // An impersonation token OUTLIVES the cookie it was minted under, because
     // it is a Bearer token in sessionStorage and logout only clears the cookie.
     // http.ts sends that Bearer whenever it is present, and the backend reads

@@ -1,6 +1,7 @@
 'use client';
 
-import { AlertTriangle, Check, FileSignature } from 'lucide-react';
+import { AlertTriangle, Check, FileSignature, UserRound } from 'lucide-react';
+import FloatInput from '@/components/ui/FloatInput';
 import type { InformedConsentFormData } from './types';
 import { EXERCISE_PROGRAMME_CONSENT_PARAGRAPHS, EXERCISE_PROGRAMME_CHECKBOX_LABEL } from './types';
 
@@ -20,15 +21,39 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
           <FileSignature size={20} color="#fff" />
         </div>
         <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Consent</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 1 of 3</p>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Consent</h2>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 1 of 3</p>
         </div>
+      </div>
+
+      {/* The client this consent is for. These details are copied from the
+          client profile onto the signed record — they used to be copied
+          silently, so a missing emergency contact went out on the PDF with
+          no way to add it here. */}
+      <div className="rounded-[16px] p-5 space-y-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+        <div className="flex items-center gap-2">
+          <UserRound size={15} style={{ color: 'var(--text-muted)' }} aria-hidden />
+          <p className="text-[12px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Client details</p>
+        </div>
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-[13px] sm:grid-cols-3">
+          {([['Name', form.fullName], ['Mobile', form.mobile], ['Email', form.email]] as const).map(([k, v]) => (
+            <div key={k} className="min-w-0">
+              <dt style={{ color: 'var(--text-muted)' }}>{k}</dt>
+              <dd className="truncate font-[650]" style={{ color: 'var(--text-primary)' }}>{v || '—'}</dd>
+            </div>
+          ))}
+        </dl>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <FloatInput label="Emergency contact name" maxLength={255} value={form.emergencyContact} onChange={(v) => set('emergencyContact', v)} />
+          <FloatInput label="Emergency contact phone" type="tel" maxLength={20} value={form.emergencyPhone} onChange={(v) => set('emergencyPhone', v)} />
+        </div>
+        <FloatInput label="Address" multiline autoGrow maxLength={1000} value={form.address} onChange={(v) => set('address', v)} />
       </div>
 
       {/* Verbatim consent text card */}
       <div className="rounded-[16px] p-5 sm:p-6 space-y-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
         {EXERCISE_PROGRAMME_CONSENT_PARAGRAPHS.map((para, i) => (
-          <p key={i} className="text-[13.5px] leading-relaxed text-slate-700">{para}</p>
+          <p key={i} className="text-[13.5px] leading-relaxed text-[color:var(--text-secondary)]">{para}</p>
         ))}
       </div>
 
@@ -38,13 +63,13 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
         className="flex w-full items-start gap-3 rounded-[14px] px-4 py-3.5 text-left transition-all"
         style={{
           background: form.exerciseConsentChecked ? 'rgba(0,89,206,0.06)' : 'var(--bg-subtle)',
-          border: form.exerciseConsentChecked ? '1.5px solid #0059ce' : '1.5px solid rgba(15,23,42,0.08)',
+          border: form.exerciseConsentChecked ? '1.5px solid #0059ce' : '1.5px solid var(--border)',
         }}>
         <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]"
-          style={{ background: form.exerciseConsentChecked ? '#0059ce' : '#fff', border: form.exerciseConsentChecked ? 'none' : '1.5px solid #cbd5e1' }}>
+          style={{ background: form.exerciseConsentChecked ? '#0059ce' : 'var(--bg-card)', border: form.exerciseConsentChecked ? 'none' : '1.5px solid var(--border-2)' }}>
           {form.exerciseConsentChecked && <Check size={13} color="#fff" strokeWidth={3} />}
         </span>
-        <span className="text-[13px] font-[600] leading-snug" style={{ color: form.exerciseConsentChecked ? '#0f172a' : '#475569' }}>
+        <span className="text-[13px] font-[600] leading-snug" style={{ color: form.exerciseConsentChecked ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
           {EXERCISE_PROGRAMME_CHECKBOX_LABEL}
           <span className="ml-0.5 text-[var(--gold,#0067E0)]" aria-hidden>*</span>
         </span>
@@ -89,8 +114,8 @@ function PhysicianAdvice({ form, set }: Pick<StepExerciseProgrammeConsentProps, 
         className="min-h-[44px] flex-1 rounded-[12px] px-4 text-[13px] font-[700] transition-all"
         style={{
           background: on ? (value ? 'rgba(220,38,38,0.08)' : 'rgba(0,89,206,0.06)') : 'var(--bg-subtle)',
-          border: on ? `1.5px solid ${value ? '#dc2626' : '#0059ce'}` : '1.5px solid rgba(15,23,42,0.08)',
-          color: on ? (value ? '#dc2626' : '#0f172a') : '#475569',
+          border: on ? `1.5px solid ${value ? '#dc2626' : '#0059ce'}` : '1.5px solid var(--border)',
+          color: on ? (value ? '#dc2626' : '#0f172a') : 'var(--text-secondary)',
         }}
       >
         {label}
@@ -99,7 +124,7 @@ function PhysicianAdvice({ form, set }: Pick<StepExerciseProgrammeConsentProps, 
   };
   const field = (key: 'physicianName' | 'physicianHospital' | 'medicalCondition', label: string, required = false) => (
     <label className="block">
-      <span className="mb-1.5 block text-[12px] font-[650] text-slate-600">
+      <span className="mb-1.5 block text-[12px] font-[650] text-[color:var(--text-secondary)]">
         {label}{required && <span className="ml-0.5 text-[var(--gold,#0067E0)]" aria-hidden>*</span>}
       </span>
       <input
@@ -113,7 +138,7 @@ function PhysicianAdvice({ form, set }: Pick<StepExerciseProgrammeConsentProps, 
 
   return (
     <div className="rounded-[16px] p-4 sm:p-5 space-y-3.5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-      <p id="physician-advice-q" className="text-[13px] font-[700] text-slate-800">
+      <p id="physician-advice-q" className="text-[13px] font-[700] text-[color:var(--text-primary)]">
         Has a doctor ever advised this client against physical activity?
         <span className="ml-0.5 text-[var(--gold,#0067E0)]" aria-hidden>*</span>
       </p>

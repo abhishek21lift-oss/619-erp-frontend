@@ -4,11 +4,10 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, HeartPulse, Plus, X,
-  History,
+  ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, HeartPulse, Plus, History,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button } from '@/components/ui';
+import { Button, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -18,14 +17,14 @@ import {
   calcNutritionScore, calcRecoveryScore, classifyRisk, calcHabitRiskScore,
   buildLifestyleRiskFactors, calcLifestyleScore, classifyLifestyleReadiness,
 } from '@/lib/lifestyle-calculations';
-import { STEPS, initLifestyleForm, n, COACH_NOTE_FIELDS } from '@/components/pt-os/lifestyle-assessment/types';
+import { STEPS, initLifestyleForm, n, COACH_NOTE_FIELDS, FOOD_PREFERENCE_OPTIONS } from '@/components/pt-os/lifestyle-assessment/types';
 import type { LifestyleFormData, FormErrors, StepId, CoachNotes } from '@/components/pt-os/lifestyle-assessment/types';
 import LifestyleProgressTimeline from '@/components/pt-os/lifestyle-assessment/LifestyleProgressTimeline';
 import StepSleep from '@/components/pt-os/lifestyle-assessment/StepSleep';
 import StepStress from '@/components/pt-os/lifestyle-assessment/StepStress';
 import StepOccupationActivity from '@/components/pt-os/lifestyle-assessment/StepOccupationActivity';
-import StepWater from '@/components/pt-os/lifestyle-assessment/StepWater';
-import StepFoodPreference, { FOOD_PREFERENCE_OPTIONS } from '@/components/pt-os/lifestyle-assessment/StepFoodPreference';
+import AssessmentDateField, { assessmentDateIssue } from '@/components/pt-os/shared/AssessmentDateField';
+import { rangeIssue } from '@/lib/forms/ranges';
 import StepSmokingAlcohol from '@/components/pt-os/lifestyle-assessment/StepSmokingAlcohol';
 import StepAdditionalFactors from '@/components/pt-os/lifestyle-assessment/StepAdditionalFactors';
 import LifestyleDashboard from '@/components/pt-os/lifestyle-assessment/LifestyleDashboard';
@@ -39,10 +38,28 @@ import { errorMessage } from '@/lib/forms/errors';
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 function validateStep(id: StepId, form: LifestyleFormData): string | undefined {
-  if (id === 4 && !form.occupationType) return 'Please select an occupation type.';
-  if (id === 6 && !form.smokingStatus) return 'Please select a smoking status.';
-  if (id === 6 && !form.alcoholStatus) return 'Please select an alcohol status.';
+  if (id === 1) return assessmentDateIssue(form.assessmentDate);
+  if (id === 3 && !form.occupationType) return 'Please select an occupation type.';
+  if (id === 4 && !form.smokingStatus) return 'Please select a smoking status.';
+  if (id === 4 && !form.alcoholStatus) return 'Please select an alcohol status.';
+  if (id === 4) {
+    return rangeIssue(['Cigarettes per day', form.cigarettesPerDay, 0, 100], ['Years of smoking', form.yearsSmoking, 0, 80],
+      ['Drinks per week', form.drinksPerWeek, 0, 100]);
+  }
   return undefined;
+}
+
+type NutritionHabits = Pick<LifestyleFormData, 'waterIntakeLiters' | 'mealFrequency' | 'breakfastHabit' | 'lateNightEating'>;
+
+/** This assessment's own water and meal answers (older records have them),
+ *  else the latest Nutrition assessment's. */
+function withNutrition(form: LifestyleFormData, nh: NutritionHabits | null): NutritionHabits {
+  return {
+    waterIntakeLiters: form.waterIntakeLiters || nh?.waterIntakeLiters || '',
+    mealFrequency: form.mealFrequency || nh?.mealFrequency || '',
+    breakfastHabit: form.breakfastHabit || nh?.breakfastHabit || '',
+    lateNightEating: form.lateNightEating ?? nh?.lateNightEating ?? null,
+  };
 }
 
 function formFromRow(row: Record<string, unknown>): LifestyleFormData {
@@ -117,18 +134,30 @@ function LifestyleHub({ clientId, toast }: LifestyleHubProps) {
   const [view, setView] = useState<'list' | 'wizard'>('list');
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  // Water and meals are asked in Nutrition; this wizard scores them from the
+  // latest Nutrition assessment (as the API does on save).
+  const [nutritionHabits, setNutritionHabits] = useState<NutritionHabits | null>(null);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     setLoadError('');
     try {
-      const [clientRes, listRes] = await Promise.all([
+      const [clientRes, listRes, nutritionRes] = await Promise.all([
         api.pt.client(clientId) as Promise<{ data?: Record<string, unknown> }>,
         api.progress.lifestyleAssessments.list({ client_id: clientId }) as Promise<{ data?: Record<string, unknown>[] }>,
+        api.progress.nutritionAssessments.list({ client_id: clientId }) as Promise<{ data?: Record<string, unknown>[] }>,
       ]);
       const c = clientRes?.data;
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
       setClientName(String(c.name ?? ''));
       setAssessments(Array.isArray(listRes?.data) ? listRes.data : []);
+      const latestNutrition = (nutritionRes?.data ?? [])[0];
+      setNutritionHabits(latestNutrition ? {
+        waterIntakeLiters: latestNutrition.water_intake_liters != null ? String(latestNutrition.water_intake_liters) : '',
+        mealFrequency: latestNutrition.meals_per_day != null ? String(latestNutrition.meals_per_day) : '',
+        breakfastHabit: (latestNutrition.breakfast_regularity as LifestyleFormData['breakfastHabit']) || '',
+        lateNightEating: typeof latestNutrition.late_night_eating === 'boolean' ? latestNutrition.late_night_eating : null,
+      } : null);
     } catch (err: unknown) {
       setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {
@@ -148,7 +177,7 @@ function LifestyleHub({ clientId, toast }: LifestyleHubProps) {
     return (
       <div className="mx-auto max-w-md py-24 text-center">
         <AlertCircle size={32} style={{ color: '#ef4444', margin: '0 auto 12px' }} />
-        <p className="text-[14px] font-[600] text-slate-600">{loadError}</p>
+        <p className="text-[14px] font-[600] text-[color:var(--text-secondary)]">{loadError}</p>
         <Button variant="outline" className="mt-4" onClick={loadData}>Retry</Button>
       </div>
     );
@@ -156,7 +185,7 @@ function LifestyleHub({ clientId, toast }: LifestyleHubProps) {
 
   if (view === 'wizard') {
     const editing = editingId ? assessments.find((a) => String(a.id) === editingId) : null;
-    return <LifestyleWizard clientId={clientId} clientName={clientName} editing={editing || null} toast={toast} onDone={closeWizard} />;
+    return <LifestyleWizard clientId={clientId} clientName={clientName} editing={editing || null} nutritionHabits={nutritionHabits} toast={toast} onDone={closeWizard} />;
   }
 
   const sorted = [...assessments].sort((a, b) => String(b.assessment_date ?? '').localeCompare(String(a.assessment_date ?? '')));
@@ -165,33 +194,23 @@ function LifestyleHub({ clientId, toast }: LifestyleHubProps) {
 
   return (
     <div className="mx-auto w-full max-w-3xl py-6 space-y-5">
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
-                <HeartPulse size={16} style={{ color: 'var(--text-muted)' }} />
-              </div>
-              <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>Lifestyle Assessment</span>
-            </div>
-            <h1 className="text-[26px] sm:text-[32px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
-              {clientName}&apos;s Lifestyle
-            </h1>
-          </div>
-          <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}>
+      <PageHero
+        icon={<HeartPulse size={18} />}
+        title={`${clientName}'s Lifestyle`}
+        subtitle="Lifestyle Assessment"
+        actions={
+          <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: '#fff', color: '#0F172A' }}>
             New Assessment
           </Button>
-        </div>
-      </m.div>
+        }
+      />
 
       {sorted.length >= 2 && <LifestyleComparison initial={initial} latest={latest} />}
 
       <div className="space-y-3">
         {sorted.length === 0 && (
           <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <p className="text-[14px] font-[600] text-slate-500">No lifestyle assessments yet.</p>
+            <p className="text-[14px] font-[600] text-[color:var(--text-muted)]">No lifestyle assessments yet.</p>
             <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}>
               Start First Assessment
             </Button>
@@ -200,7 +219,7 @@ function LifestyleHub({ clientId, toast }: LifestyleHubProps) {
         {sorted.length > 0 && (
           <div className="flex items-center gap-2 px-1">
             <History size={14} style={{ color: 'var(--text-muted)' }} />
-            <p className="text-[12.5px] font-[700] text-slate-500">Assessment History</p>
+            <p className="text-[12.5px] font-[700] text-[color:var(--text-muted)]">Assessment History</p>
           </div>
         )}
         {sorted.map((a) => (
@@ -216,11 +235,12 @@ interface LifestyleWizardProps {
   clientId: string;
   clientName: string;
   editing: Record<string, unknown> | null;
+  nutritionHabits: NutritionHabits | null;
   toast: ReturnType<typeof useToast>['toast'];
   onDone: (refresh: boolean) => void;
 }
 
-function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: LifestyleWizardProps) {
+function LifestyleWizard({ clientId, clientName, editing, nutritionHabits, toast, onDone }: LifestyleWizardProps) {
   const assessmentId = editing ? String(editing.id) : null;
   const initial = useMemo(() => (editing ? formFromRow(editing) : initLifestyleForm()), [editing]);
 
@@ -236,7 +256,9 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
   const { restore, clear, saveNow } = useAutoSaveDraft({ key: draftKey, data: form, isDirty });
 
   useEffect(() => {
-    const draft = restore();
+    // Never lay a local draft over a record saved after it.
+    const savedAt = editing ? Date.parse(String(editing.updated_at ?? editing.created_at ?? '')) || 0 : 0;
+    const draft = restore(savedAt ? { notBefore: savedAt } : undefined);
     if (draft) { setForm({ ...initial, ...draft }); toast.info('Restored your unsaved draft.'); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -269,9 +291,10 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
     // Lifestyle Score on this review screen was several points above the one
     // being written, and could sit in a different readiness band than the one
     // the record ends up showing. Pass the absence through.
-    const hydration = classifyHydration(n(form.waterIntakeLiters));
+    const habits = withNutrition(form, nutritionHabits);
+    const hydration = classifyHydration(n(habits.waterIntakeLiters));
     const activity = classifyActivity(form.dailyStepsBracket || null, form.occupationType || null);
-    const nutritionScore = calcNutritionScore(n(form.mealFrequency), form.breakfastHabit || null, form.lateNightEating);
+    const nutritionScore = calcNutritionScore(n(habits.mealFrequency), habits.breakfastHabit || null, habits.lateNightEating);
     const recoveryScore = calcRecoveryScore(sleep.score, stressScore, n(form.energyLevel), form.recoveryQuality || null);
     const sedentaryRisk = classifyRisk(activity.score);
     const recoveryRisk = classifyRisk(recoveryScore);
@@ -290,7 +313,7 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
       sleepScore: sleep.score, stressScore, hydrationScore: hydration.score, activityScore: activity.score,
       nutritionScore, recoveryScore, sedentaryRisk, recoveryRisk, habitRiskScore, riskFactors, lifestyleScore, lifestyleReadiness,
     };
-  }, [form]);
+  }, [form, nutritionHabits]);
 
   const handleNext = () => {
     const stepDef = STEPS.find((s) => s.id === step)!;
@@ -330,36 +353,30 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      const foodPreferences = [...form.foodPreferences];
-      if (form.foodPreferenceOther.trim()) foodPreferences.push(form.foodPreferenceOther.trim());
-
+      // Every field this wizard asks is sent, as null when it is blank, so an
+      // edit can clear an answer — `undefined` used to drop the key and the
+      // old value stayed. Water, food preference, meals and motivation are
+      // not asked here any more (Nutrition and Goal ask them); they are not
+      // sent, so an older assessment keeps what it recorded.
       const payload: Record<string, unknown> = {
         client_id: clientId,
-        assessment_date: form.assessmentDate || undefined,
-        sleep_duration_hours: n(form.sleepDurationHours) ?? undefined,
-        bed_time: form.bedTime || undefined,
-        wake_time: form.wakeTime || undefined,
-        sleep_quality: n(form.sleepQuality) ?? undefined,
-        stress_level: n(form.stressLevel) ?? undefined,
-        water_intake_liters: n(form.waterIntakeLiters) ?? undefined,
-        occupation_type: form.occupationType || undefined,
-        daily_steps_bracket: form.dailyStepsBracket || undefined,
-        workout_experience_level: form.workoutExperienceLevel || undefined,
-        years_of_experience: n(form.yearsOfExperience) ?? undefined,
-        food_preferences: foodPreferences.length ? foodPreferences : undefined,
-        meal_frequency: n(form.mealFrequency) ?? undefined,
-        breakfast_habit: form.breakfastHabit || undefined,
-        late_night_eating: form.lateNightEating ?? undefined,
-        smoking_status: form.smokingStatus || undefined,
-        cigarettes_per_day: n(form.cigarettesPerDay) ?? undefined,
-        years_smoking: n(form.yearsSmoking) ?? undefined,
-        alcohol_status: form.alcoholStatus || undefined,
-        drinks_per_week: n(form.drinksPerWeek) ?? undefined,
-        screen_time_bracket: form.screenTimeBracket || undefined,
-        travel_frequency: form.travelFrequency || undefined,
-        energy_level: n(form.energyLevel) ?? undefined,
-        motivation_to_exercise: n(form.motivationToExercise) ?? undefined,
-        recovery_quality: form.recoveryQuality || undefined,
+        assessment_date: form.assessmentDate,
+        sleep_duration_hours: n(form.sleepDurationHours) ?? null,
+        bed_time: form.bedTime || null,
+        wake_time: form.wakeTime || null,
+        sleep_quality: n(form.sleepQuality) ?? null,
+        stress_level: n(form.stressLevel) ?? null,
+        occupation_type: form.occupationType || null,
+        daily_steps_bracket: form.dailyStepsBracket || null,
+        smoking_status: form.smokingStatus || null,
+        cigarettes_per_day: form.smokingStatus && form.smokingStatus !== 'never' ? n(form.cigarettesPerDay) ?? null : null,
+        years_smoking: form.smokingStatus && form.smokingStatus !== 'never' ? n(form.yearsSmoking) ?? null : null,
+        alcohol_status: form.alcoholStatus || null,
+        drinks_per_week: form.alcoholStatus && form.alcoholStatus !== 'never' ? n(form.drinksPerWeek) ?? null : null,
+        screen_time_bracket: form.screenTimeBracket || null,
+        travel_frequency: form.travelFrequency || null,
+        energy_level: n(form.energyLevel) ?? null,
+        recovery_quality: form.recoveryQuality || null,
         coach_notes: form.coachNotes,
       };
 
@@ -381,39 +398,29 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
 
   return (
     <div className="pb-28">
-      {/* Header — in normal flow on the page background (no sticky card). */}
-      <div className="pt-1">
-        <div className="mx-auto max-w-3xl py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', boxShadow: '0 6px 18px rgba(0,103,224,0.3)' }}>
-              <HeartPulse size={18} color="#fff" />
-            </div>
-            <div>
-              <h1 className="text-[19px] font-[860] tracking-[-0.03em] text-slate-900 leading-none sm:text-[22px]">{assessmentId ? 'Edit Assessment' : 'New Assessment'}</h1>
-              <p className="text-[12px] font-[600] text-slate-400 mt-1">{clientName}</p>
-            </div>
-          </div>
-          <button type="button" onClick={() => onDone(false)} className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-[650] transition-colors hover:bg-white" style={{ color: '#64748b', border: '1px solid rgba(15,23,42,0.08)' }}>
-            <X size={12} /> Cancel
-          </button>
-        </div>
-        {!reviewMode && (
-          <div className="mx-auto max-w-3xl pb-3">
-            <LifestyleProgressTimeline current={step} onStep={handleStepClick} />
-          </div>
-        )}
+      {/* The shared hero, as on Consent, PAR-Q, Fitness and Goal. This page
+          had its own plain header, and a Cancel that discarded the wizard
+          without the "Discard changes?" check Back makes; Back on the first
+          step is the way out now. */}
+      <div className="mx-auto max-w-3xl pt-1">
+        <PageHero icon={<HeartPulse size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'} subtitle={clientName}>
+          {!reviewMode && <LifestyleProgressTimeline current={step} onStep={handleStepClick} />}
+        </PageHero>
       </div>
 
       <div className="mx-auto max-w-3xl py-6 space-y-5">
         {!reviewMode ? (
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
-            {step === 1 && <StepSleep form={form} set={set} error={errors.sleep} />}
+            {step === 1 && (
+              <div className="space-y-6">
+                <AssessmentDateField value={form.assessmentDate} onChange={(v) => set('assessmentDate', v)} />
+                <StepSleep form={form} set={set} error={errors.sleep} />
+              </div>
+            )}
             {step === 2 && <StepStress form={form} set={set} />}
-            {step === 3 && <StepWater form={form} set={set} />}
-            {step === 4 && <StepOccupationActivity form={form} set={set} error={errors.occupationActivity} />}
-            {step === 5 && <StepFoodPreference form={form} set={set} error={errors.foodPreference} />}
-            {step === 6 && <StepSmokingAlcohol form={form} set={set} error={errors.smokingAlcohol} />}
-            {step === 7 && <StepAdditionalFactors form={form} set={set} />}
+            {step === 3 && <StepOccupationActivity form={form} set={set} error={errors.occupationActivity} />}
+            {step === 4 && <StepSmokingAlcohol form={form} set={set} error={errors.smokingAlcohol} />}
+            {step === 5 && <StepAdditionalFactors form={form} set={set} />}
           </m.div>
         ) : (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-5">
@@ -421,10 +428,10 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
             <HabitRiskBadges riskFactors={analysis.riskFactors} />
             <WeeklyHabitGoals
               sleepDurationHours={n(form.sleepDurationHours)}
-              waterIntakeLiters={n(form.waterIntakeLiters)}
+              waterIntakeLiters={n(withNutrition(form, nutritionHabits).waterIntakeLiters)}
               dailyStepsBracket={form.dailyStepsBracket || null}
               stressLevel={n(form.stressLevel)}
-              mealFrequency={n(form.mealFrequency)}
+              mealFrequency={n(withNutrition(form, nutritionHabits).mealFrequency)}
             />
             <CoachNotesPanel
                 fields={COACH_NOTE_FIELDS}
@@ -435,7 +442,7 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
         )}
       </div>
 
-      <div className="page-action-bar" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(15,23,42,0.08)' }}>
+      <div className="page-action-bar" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(20px)', borderTop: '1px solid var(--border)' }}>
         <div className="mx-auto max-w-3xl px-5 sm:px-8 py-3.5 flex items-center justify-between gap-3">
           <Button variant="outline" iconLeft={<ArrowLeft size={14} />} onClick={handleBack}>Back</Button>
           <div className="flex items-center gap-3">

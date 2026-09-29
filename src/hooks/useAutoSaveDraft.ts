@@ -16,6 +16,30 @@ interface DraftEnvelope<T> {
   savedAt: number;
 }
 
+/**
+ * How long an unsent draft is kept. These drafts are client health records
+ * (PAR-Q answers, medications, pain) sitting in a browser that is often the
+ * studio's shared front-desk device; they used to stay there indefinitely.
+ */
+const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Every assessment draft key ends in `-draft.v<N>:<client>:<record>`. */
+const DRAFT_KEY = /-draft\.v\d+:/;
+
+/** Removes every assessment draft from this browser — called at logout. */
+export function clearAllDrafts(): void {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && DRAFT_KEY.test(k)) keys.push(k);
+    }
+    keys.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    /* storage unavailable — nothing was saved there either */
+  }
+}
+
 /** Debounced localStorage draft save + restore + clear, reusable across forms. */
 export function useAutoSaveDraft<T>({ key, data, isDirty, debounceMs = 2000 }: UseAutoSaveDraftOptions<T>) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -44,6 +68,10 @@ export function useAutoSaveDraft<T>({ key, data, isDirty, debounceMs = 2000 }: U
       const raw = localStorage.getItem(key);
       if (!raw) return null;
       const parsed = JSON.parse(raw) as DraftEnvelope<T>;
+      if (!(Number(parsed?.savedAt) > Date.now() - DRAFT_TTL_MS)) {
+        localStorage.removeItem(key);
+        return null;
+      }
       if (opts?.notBefore && !(Number(parsed?.savedAt) > opts.notBefore)) return null;
       return parsed?.data ?? null;
     } catch {

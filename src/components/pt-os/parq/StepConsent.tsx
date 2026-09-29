@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check, FileSignature, MapPin } from 'lucide-react';
+import { AlertTriangle, Check, FileSignature, MapPin } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import SignaturePad from '@/components/pt-os/shared/SignaturePad';
 import type { ParqFormData, ConsentCheckboxesForm } from './types';
@@ -12,9 +12,12 @@ interface StepConsentProps {
   set: <K extends keyof ParqFormData>(key: K, val: ParqFormData[K]) => void;
   error?: string;
   stepLabel: string;
+  /** Editing a signed screening whose answers have changed: the signature on
+   *  file attests to the old answers, so the client signs again. */
+  resignRequired?: boolean;
 }
 
-export function StepConsent({ form, set, error, stepLabel }: StepConsentProps) {
+export function StepConsent({ form, set, error, stepLabel, resignRequired }: StepConsentProps) {
   const [userAgent, setUserAgent] = useState('');
   useEffect(() => { if (typeof navigator !== 'undefined') setUserAgent(navigator.userAgent); }, []);
 
@@ -30,10 +33,22 @@ export function StepConsent({ form, set, error, stepLabel }: StepConsentProps) {
             <FileSignature size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Digital Consent</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">{stepLabel} — all boxes must be checked, both signatures required.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Digital Consent</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">{stepLabel} — the client confirms these answers and signs.</p>
           </div>
         </div>
+
+        {/* Risk, voluntary participation, emergency care and data use are
+            agreed on the Informed Consent. They were asked here as well, so
+            the client ticked and signed the same statements twice. */}
+        {resignRequired && (
+          <div className="flex items-start gap-3 rounded-[14px] p-4" style={{ background: 'rgba(217,119,6,0.10)', border: '1px solid rgba(217,119,6,0.35)' }} role="status">
+            <AlertTriangle size={17} className="mt-0.5 flex-shrink-0" style={{ color: '#d97706' }} aria-hidden />
+            <p className="text-[13px] font-[600] leading-snug" style={{ color: 'var(--text-primary)' }}>
+              Answers changed since this screening was signed. The client must confirm and sign again — the new signature and PDF replace the old ones.
+            </p>
+          </div>
+        )}
 
         <div className="space-y-2.5">
           {CONSENT_CHECKBOX_FIELDS.map((f) => {
@@ -42,31 +57,30 @@ export function StepConsent({ form, set, error, stepLabel }: StepConsentProps) {
               <button
                 key={f.key} type="button" onClick={() => toggleCheckbox(f.key)}
                 className="flex w-full items-start gap-3 rounded-[14px] px-4 py-3.5 text-left transition-all"
-                style={{ background: checked ? 'rgba(0,103,224,0.05)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #0067E0' : '1.5px solid rgba(15,23,42,0.08)' }}
+                style={{ background: checked ? 'rgba(0,103,224,0.05)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #0067E0' : '1.5px solid var(--border)' }}
               >
-                <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]" style={{ background: checked ? '#0067E0' : '#fff', border: checked ? 'none' : '1.5px solid #cbd5e1' }}>
+                <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]" style={{ background: checked ? '#0067E0' : 'var(--bg-card)', border: checked ? 'none' : '1.5px solid var(--border-2)' }}>
                   {checked && <Check size={13} color="#fff" strokeWidth={3} />}
                 </span>
-                <span className="text-[13px] font-[600] leading-snug" style={{ color: checked ? '#0f172a' : '#475569' }}>{f.label}</span>
+                <span className="text-[13px] font-[600] leading-snug" style={{ color: checked ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{f.label}</span>
               </button>
             );
           })}
           {!allChecked && (
-            <p className="text-[11.5px] font-[600]" style={{ color: '#d97706' }}>All 7 items must be checked before you can continue.</p>
+            <p className="text-[11.5px] font-[600]" style={{ color: '#d97706' }}>The client must confirm their answers before signing.</p>
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <SignaturePad label="Client Signature" onChange={(v) => set('clientSignature', v)} />
-          <SignaturePad label="Trainer Signature" onChange={(v) => set('trainerSignature', v)} />
+        <div className="sm:max-w-[520px]">
+          <SignaturePad label="Client Signature" required value={form.clientSignature} onChange={(v) => set('clientSignature', v)} />
         </div>
 
         <FloatInput
-          label="Location (optional)" value={form.consentLocation} onChange={(v) => set('consentLocation', v)}
+          label="Location (optional)" maxLength={500} value={form.consentLocation} onChange={(v) => set('consentLocation', v)}
           placeholder="e.g. Gold's Gym, Andheri West" prefix={<MapPin size={14} />}
         />
         {userAgent && (
-          <p className="text-[10.5px] font-[550]" style={{ color: '#cbd5e1' }}>
+          <p className="text-[10.5px] font-[550]" style={{ color: 'var(--border-2)' }}>
             Device recorded for this consent: {userAgent}
           </p>
         )}

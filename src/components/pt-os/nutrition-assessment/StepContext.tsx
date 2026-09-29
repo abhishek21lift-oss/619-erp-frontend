@@ -33,13 +33,13 @@ export function StepContext({ form, set }: StepContextProps) {
             <Wallet size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Context</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 8 of 8 — cooking and budget.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Context</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 8 of 8 — cooking and budget.</p>
           </div>
         </div>
 
         <div>
-          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Who Prepares Meals?</p>
+          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Who Prepares Meals?</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {MEAL_PREPARER_OPTIONS.map((o) => {
               const selected = form.mealPreparer === o.value;
@@ -50,12 +50,12 @@ export function StepContext({ form, set }: StepContextProps) {
                   className="flex flex-col items-center gap-2 rounded-[16px] px-3 py-4 text-center transition-all duration-200"
                   style={{
                     background: selected ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)',
-                    border: selected ? '2px solid #0067E0' : '2px solid rgba(15,23,42,0.08)',
+                    border: selected ? '2px solid #0067E0' : '2px solid var(--border)',
                     boxShadow: selected ? '0 4px 16px rgba(0,103,224,0.18)' : 'none',
                   }}
                 >
                   <span className="text-[20px]">{o.icon}</span>
-                  <span className="text-[11.5px] font-[700]" style={{ color: selected ? '#0f172a' : '#475569' }}>{o.label}</span>
+                  <span className="text-[11.5px] font-[700]" style={{ color: selected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{o.label}</span>
                 </button>
               );
             })}
@@ -63,7 +63,7 @@ export function StepContext({ form, set }: StepContextProps) {
         </div>
 
         <div>
-          <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Nutrition Budget</p>
+          <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Nutrition Budget</p>
           <div className="flex gap-2">
             {BUDGET_OPTIONS.map((o) => {
               const selected = form.nutritionBudget === o.value;
@@ -72,9 +72,9 @@ export function StepContext({ form, set }: StepContextProps) {
                   key={o.value} type="button" onClick={() => set('nutritionBudget', o.value)}
                   className="rounded-[11px] px-4 py-2.5 text-[13px] font-[700] transition-all"
                   style={{
-                    background: selected ? '#0f172a' : '#f8fafc',
-                    color: selected ? '#fff' : '#64748b',
-                    border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0',
+                    background: selected ? 'var(--text-primary)' : 'var(--bg-subtle)',
+                    color: selected ? 'var(--bg-card)' : 'var(--text-muted)',
+                    border: selected ? '1.5px solid var(--text-primary)' : '1.5px solid var(--border)',
                   }}
                 >
                   {o.label}

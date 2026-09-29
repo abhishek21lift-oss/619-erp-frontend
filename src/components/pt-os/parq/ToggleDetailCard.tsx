@@ -24,7 +24,7 @@ export function ToggleDetailCard({
     <div
       className="rounded-[16px] overflow-hidden transition-all"
       style={{
-        border: checked ? '2px solid #0067E0' : '2px solid rgba(15,23,42,0.08)',
+        border: checked ? '2px solid #0067E0' : '2px solid var(--border)',
         background: checked ? 'rgba(0,103,224,0.04)' : 'var(--bg-subtle)',
       }}
     >
@@ -36,17 +36,17 @@ export function ToggleDetailCard({
         <span className="flex items-center gap-3">
           <span
             className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px] transition-all"
-            style={{ background: checked ? '#0067E0' : '#fff', border: checked ? 'none' : '1.5px solid #cbd5e1' }}
+            style={{ background: checked ? '#0067E0' : 'var(--bg-card)', border: checked ? 'none' : '1.5px solid var(--border-2)' }}
           >
             {checked && <Check size={13} color="#fff" strokeWidth={3} />}
           </span>
-          <span className="text-[13.5px] font-[700]" style={{ color: checked ? '#0f172a' : '#475569' }}>{label}</span>
+          <span className="text-[13.5px] font-[700]" style={{ color: checked ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{label}</span>
         </span>
-        {helperText && <span className="text-[11px] font-[600]" style={{ color: '#94a3b8' }}>{helperText}</span>}
+        {helperText && <span className="text-[11px] font-[600]" style={{ color: 'var(--text-muted)' }}>{helperText}</span>}
       </button>
       {checked && (
         <div className="px-4 pb-4">
-          <FloatInput label={detailsLabel} multiline autoGrow value={details} onChange={onDetailsChange} />
+          <FloatInput label={detailsLabel} multiline autoGrow maxLength={1000} value={details} onChange={onDetailsChange} />
         </div>
       )}
     </div>

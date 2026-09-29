@@ -1,7 +1,8 @@
 'use client';
 
 import { ClipboardList, Check } from 'lucide-react';
-import type { ParqFormData, PastHistoryForm } from './types';
+import type { ParqFormData, PastHistoryForm, FamilyRelation, FamilyCondition } from './types';
+import { FAMILY_RELATIONS, FAMILY_CONDITIONS } from './types';
 
 type PastHistoryBoolKey =
   | 'heart_disease' | 'respiratory_disease' | 'asthma' | 'copd' | 'tuberculosis'
@@ -37,6 +38,10 @@ export function StepPastHistory({ form, set, error, stepLabel }: StepPastHistory
     set('pastHistory', { ...ph, [key]: val });
   };
   const toggleBool = (key: PastHistoryBoolKey) => setPh(key, !ph[key]);
+  const toggleFamily = (rel: FamilyRelation, cond: FamilyCondition) => {
+    const fh = form.familyHistory;
+    set('familyHistory', { ...fh, [rel]: { ...fh[rel], [cond]: !fh[rel][cond] } });
+  };
 
   return (
     <div className="space-y-7">
@@ -45,8 +50,8 @@ export function StepPastHistory({ form, set, error, stepLabel }: StepPastHistory
             <ClipboardList size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Past Medical History</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">{stepLabel} — select any conditions ever diagnosed.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Past Medical History</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">{stepLabel} — select any conditions ever diagnosed.</p>
           </div>
         </div>
 
@@ -57,12 +62,12 @@ export function StepPastHistory({ form, set, error, stepLabel }: StepPastHistory
               <button
                 key={c.key} type="button" onClick={() => toggleBool(c.key)}
                 className="flex items-center gap-2 rounded-[12px] px-3 py-2.5 text-left transition-all"
-                style={{ background: checked ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #0067E0' : '1.5px solid rgba(15,23,42,0.08)' }}
+                style={{ background: checked ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #0067E0' : '1.5px solid var(--border)' }}
               >
-                <span className="flex h-4.5 w-4.5 flex-shrink-0 items-center justify-center rounded-[5px]" style={{ background: checked ? '#0067E0' : '#fff', border: checked ? 'none' : '1.5px solid #cbd5e1', width: 18, height: 18 }}>
+                <span className="flex h-4.5 w-4.5 flex-shrink-0 items-center justify-center rounded-[5px]" style={{ background: checked ? '#0067E0' : 'var(--bg-card)', border: checked ? 'none' : '1.5px solid var(--border-2)', width: 18, height: 18 }}>
                   {checked && <Check size={11} color="#fff" strokeWidth={3} />}
                 </span>
-                <span className="text-[12px] font-[650]" style={{ color: checked ? '#0f172a' : '#475569' }}>{c.label}</span>
+                <span className="text-[12px] font-[650]" style={{ color: checked ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{c.label}</span>
               </button>
             );
           })}
@@ -76,13 +81,55 @@ export function StepPastHistory({ form, set, error, stepLabel }: StepPastHistory
         <button
           type="button" onClick={() => toggleBool('previous_physiotherapy')}
           className="flex w-full items-center gap-2.5 rounded-[12px] px-3.5 py-3 text-left transition-all sm:w-auto"
-          style={{ background: ph.previous_physiotherapy ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)', border: ph.previous_physiotherapy ? '1.5px solid #0067E0' : '1.5px solid rgba(15,23,42,0.08)' }}
+          style={{ background: ph.previous_physiotherapy ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)', border: ph.previous_physiotherapy ? '1.5px solid #0067E0' : '1.5px solid var(--border)' }}
         >
-          <span className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-[5px]" style={{ background: ph.previous_physiotherapy ? '#0067E0' : '#fff', border: ph.previous_physiotherapy ? 'none' : '1.5px solid #cbd5e1' }}>
+          <span className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-[5px]" style={{ background: ph.previous_physiotherapy ? '#0067E0' : 'var(--bg-card)', border: ph.previous_physiotherapy ? 'none' : '1.5px solid var(--border-2)' }}>
             {ph.previous_physiotherapy && <Check size={11} color="#fff" strokeWidth={3} />}
           </span>
-          <span className="text-[12.5px] font-[650]" style={{ color: ph.previous_physiotherapy ? '#0f172a' : '#475569' }}>Previous Physiotherapy</span>
+          <span className="text-[12.5px] font-[650]" style={{ color: ph.previous_physiotherapy ? 'var(--text-primary)' : 'var(--text-secondary)' }}>Previous Physiotherapy</span>
         </button>
+
+        {/* Family history. PAR-Q question 2 asks yes/no; this records who
+            and what — a parent's sudden death or early heart disease is the
+            detail a referral asks for. The API always had the table; nothing
+            filled it. */}
+        <div className="space-y-2">
+          <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Family history</p>
+          <div className="overflow-x-auto rounded-[12px]" style={{ border: '1px solid var(--border)' }}>
+            <table className="w-full min-w-[440px] text-[12px]">
+              <thead>
+                <tr style={{ background: 'var(--bg-subtle)' }}>
+                  <th className="px-3 py-2 text-left font-[700]" style={{ color: 'var(--text-muted)' }} scope="col">Relative</th>
+                  {FAMILY_CONDITIONS.map((c) => (
+                    <th key={c.key} className="px-2 py-2 text-center font-[700]" style={{ color: 'var(--text-muted)' }} scope="col">{c.label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {FAMILY_RELATIONS.map((r) => (
+                  <tr key={r.key} style={{ borderTop: '1px solid var(--border)' }}>
+                    <th className="px-3 py-2 text-left font-[650]" style={{ color: 'var(--text-primary)' }} scope="row">{r.label}</th>
+                    {FAMILY_CONDITIONS.map((c) => {
+                      const on = form.familyHistory[r.key][c.key];
+                      return (
+                        <td key={c.key} className="px-2 py-1.5 text-center">
+                          <button
+                            type="button" aria-pressed={on} aria-label={`${r.label}: ${c.label}`}
+                            onClick={() => toggleFamily(r.key, c.key)}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-[7px]"
+                            style={{ background: on ? '#dc2626' : 'var(--bg-card)', border: on ? 'none' : '1.5px solid var(--border-2)' }}
+                          >
+                            {on && <Check size={13} color="#fff" strokeWidth={3} />}
+                          </button>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
       {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
     </div>

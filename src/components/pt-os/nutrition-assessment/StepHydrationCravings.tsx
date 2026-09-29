@@ -55,13 +55,13 @@ export function StepHydrationCravings({ form, set, error }: StepHydrationCraving
             <GlassWater size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Hydration &amp; Cravings</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 7 of 8 — fluid intake and craving patterns.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Hydration &amp; Cravings</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 7 of 8 — fluid intake and craving patterns.</p>
           </div>
         </div>
 
         <div>
-          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Water Intake (L)</p>
+          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Water Intake (L)</p>
           <div className="mb-3 flex gap-2">
             {QUICK_VALUES.map((v) => {
               const selected = liters === v;
@@ -71,9 +71,9 @@ export function StepHydrationCravings({ form, set, error }: StepHydrationCraving
                   onClick={() => set('waterIntakeLiters', String(v))}
                   className="rounded-[11px] px-4 py-2.5 text-[13px] font-[700] transition-all"
                   style={{
-                    background: selected ? '#0f172a' : '#f8fafc',
-                    color: selected ? '#fff' : '#64748b',
-                    border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0',
+                    background: selected ? 'var(--text-primary)' : 'var(--bg-subtle)',
+                    color: selected ? 'var(--bg-card)' : 'var(--text-muted)',
+                    border: selected ? '1.5px solid var(--text-primary)' : '1.5px solid var(--border)',
                   }}
                 >
                   {v} L
@@ -95,7 +95,7 @@ export function StepHydrationCravings({ form, set, error }: StepHydrationCraving
 
         {(dailyFluidIntake != null || label) && (
           <div className="flex flex-wrap items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>
-            {dailyFluidIntake != null && <span className="text-[12.5px] font-[600] text-slate-400">Daily Fluid Intake ≈ <strong className="text-slate-700">{dailyFluidIntake} L</strong></span>}
+            {dailyFluidIntake != null && <span className="text-[12.5px] font-[600] text-[color:var(--text-muted)]">Daily Fluid Intake ≈ <strong className="text-[color:var(--text-secondary)]">{dailyFluidIntake} L</strong></span>}
             {label && badge && (
               <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: badge.bg, color: badge.color }}>
                 {label} Hydration
@@ -105,12 +105,12 @@ export function StepHydrationCravings({ form, set, error }: StepHydrationCraving
         )}
 
         <div>
-          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Cravings</p>
+          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Cravings</p>
           <MultiSelectChips value={form.cravings} onChange={(v) => set('cravings', v)} options={CRAVING_OPTIONS} />
         </div>
 
         <div>
-          <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Craving Frequency</p>
+          <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Craving Frequency</p>
           <div className="flex gap-2">
             {CRAVING_FREQUENCY_OPTIONS.map((o) => {
               const selected = form.cravingFrequency === o.value;
@@ -119,9 +119,9 @@ export function StepHydrationCravings({ form, set, error }: StepHydrationCraving
                   key={o.value} type="button" onClick={() => set('cravingFrequency', o.value)}
                   className="rounded-[11px] px-4 py-2 text-[12.5px] font-[700] transition-all"
                   style={{
-                    background: selected ? '#0f172a' : '#f8fafc',
-                    color: selected ? '#fff' : '#64748b',
-                    border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0',
+                    background: selected ? 'var(--text-primary)' : 'var(--bg-subtle)',
+                    color: selected ? 'var(--bg-card)' : 'var(--text-muted)',
+                    border: selected ? '1.5px solid var(--text-primary)' : '1.5px solid var(--border)',
                   }}
                 >
                   {o.label}

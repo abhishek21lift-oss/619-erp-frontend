@@ -27,7 +27,7 @@ interface MobilityDashboardProps {
 
 export function MobilityDashboard({ mobilityScore, mobilityCategory, bodyRegions }: MobilityDashboardProps) {
   const radarData = bodyRegions.map((r) => ({ category: r.region, score: (r.score ?? 0) * 20 }));
-  const readinessColor = mobilityCategory ? READINESS_COLOR[mobilityCategory] : '#94a3b8';
+  const readinessColor = mobilityCategory ? READINESS_COLOR[mobilityCategory] : 'var(--text-muted)';
 
   return (
     <div className="rounded-[24px] overflow-hidden" style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)', boxShadow: '0 12px 40px rgba(15,23,42,0.25)' }}>

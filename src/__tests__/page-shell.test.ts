@@ -13,7 +13,7 @@
 // either side that nothing else notices.
 
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { srcPath } from '@/__tests__/helpers/app-routes';
 
@@ -708,11 +708,14 @@ describe('informed consent, PAR-Q and fitness testing wizards', () => {
     // PageHero. StepperTimeline is shared by the consent and PAR-Q wizards;
     // fitness-testing/ProgressTimeline has one caller, the assessment wizard.
     const stepper = src('components', 'pt-os', 'shared', 'StepperTimeline.tsx');
-    const fitnessStepper = src('components', 'pt-os', 'fitness-testing', 'ProgressTimeline.tsx');
-    for (const s of [stepper, fitnessStepper]) {
-      expect(s).not.toContain("color: '#0f172a'");
-      expect(s).not.toContain("background: '#e2e8f0'");
-      expect(s).toContain('rgba(255,255,255,0.14)');
+    expect(stepper).not.toContain("color: '#0f172a'");
+    expect(stepper).not.toContain("background: '#e2e8f0'");
+    expect(stepper).toContain('rgba(255,255,255,0.14)');
+    // Every wizard's stepper is now the shared one — six near-identical
+    // copies used to drift apart, some still light-on-light.
+    for (const dir of ['fitness-testing', 'goal-assessment', 'lifestyle-assessment', 'nutrition-assessment', 'mobility-assessment', 'posture-assessment']) {
+      const file = readdirSync(join(process.cwd(), 'src', 'components', 'pt-os', dir)).find((f) => f.endsWith('ProgressTimeline.tsx'))!;
+      expect(src('components', 'pt-os', dir, file)).toContain("import StepperTimeline from '@/components/pt-os/shared/StepperTimeline'");
     }
   });
 });

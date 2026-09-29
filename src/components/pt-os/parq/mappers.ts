@@ -5,8 +5,9 @@ import type {
   ParqFormDetail, ParqAnswerValue, ParqStatus, ClearanceApprovalStatus,
 } from '@/lib/api';
 import {
-  type ParqFormData, type ParqAnswerForm,
-  initParqForm, initParqAnswers, PARQ_QUESTIONS, n,
+  type ParqFormData, type ParqAnswerForm, type FamilyHistoryForm, type FamilyRelation,
+  initParqForm, initParqAnswers, initFamilyHistory, PARQ_QUESTIONS, TRAINER_NOTES_FIELDS,
+  CONSENT_CHECKBOX_FIELDS, FAMILY_CONDITIONS, n,
 } from './types';
 
 function s(v: unknown): string {
@@ -79,6 +80,7 @@ export function formFromRow(row: ParqFormDetail): ParqFormData {
       exercise_experience: s(ph.exercise_experience),
     },
     parqAnswers,
+    familyHistory: familyFromRows(row.family_history),
     medicalClearance: mc ? {
       doctor_name: s(mc.doctor_name), hospital: s(mc.hospital),
       clearance_date: mc.clearance_date ? String(mc.clearance_date).slice(0, 10) : '',
@@ -98,6 +100,43 @@ export function formFromRow(row: ParqFormDetail): ParqFormData {
   };
 }
 
+/** An email the API will accept, or nothing. The address is copied from the
+ *  client profile and never shown here, so a malformed one used to fail the
+ *  whole screening with "Invalid request" and nothing the trainer could fix. */
+function emailOrUndefined(v: string): string | undefined {
+  const t = v.trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t) ? t : undefined;
+}
+
+/** Details only while their toggle is on: switching Medications off used to
+ *  keep and save the list typed before. */
+const detail = (on: boolean, text: string) => (on && text.trim() ? text.trim() : undefined);
+
+/**
+ * A field the wizard no longer asks (smoking, alcohol, sleep, occupation, …
+ * — those live in Lifestyle and Nutrition now). A new screening does not send
+ * them: they used to go out as `false`, so the record said "does not smoke"
+ * although nobody had asked. An older screening that holds a real answer
+ * keeps it on edit.
+ */
+const kept = <T,>(v: T): T | undefined => (v === true || (typeof v === 'string' && v.trim() !== '') ? v : undefined);
+
+function familyFromRows(rows: unknown): FamilyHistoryForm {
+  const out = initFamilyHistory();
+  for (const r of Array.isArray(rows) ? rows : []) {
+    const rel = (r as { relation?: string }).relation as FamilyRelation;
+    if (!out[rel]) continue;
+    for (const c of FAMILY_CONDITIONS) out[rel][c.key] = (r as Record<string, unknown>)[c.key] === true;
+  }
+  return out;
+}
+
+function familyPayload(f: FamilyHistoryForm) {
+  return (Object.keys(f) as FamilyRelation[])
+    .filter((rel) => FAMILY_CONDITIONS.some((c) => f[rel][c.key]))
+    .map((rel) => ({ relation: rel, ...f[rel] }));
+}
+
 /** Builds the POST/PATCH body for /api/pt-os/parq/forms. Never includes
  *  parq_yes_count / risk_level / risk_message / workout_gate_status — those
  *  are server-computed and would be ignored/overwritten anyway. */
@@ -112,45 +151,49 @@ export function buildFormPayload(form: ParqFormData, clientId: string): Record<s
     gender: form.gender || undefined,
     dob: form.dob || undefined,
     mobile: form.mobile || undefined,
-    email: form.email || undefined,
-    emergency_contact: form.emergencyContact || undefined,
-    emergency_phone: form.emergencyPhone || undefined,
+    email: emailOrUndefined(form.email),
+    emergency_contact: form.emergencyContact.trim() || undefined,
+    emergency_phone: form.emergencyPhone.trim() || undefined,
     blood_group: form.bloodGroup || undefined,
     height_cm: n(form.heightCm) ?? undefined,
     weight_kg: n(form.weightKg) ?? undefined,
     trainer_name: form.trainerName || undefined,
     current_health: {
-      known_disease: ch.known_disease, known_disease_details: ch.known_disease_details || undefined,
-      activity_level: ch.activity_level || undefined, dietary_habits: ch.dietary_habits || undefined,
-      water_intake: ch.water_intake || undefined,
-      caffeine: ch.caffeine, caffeine_details: ch.caffeine_details || undefined,
-      alcohol: ch.alcohol, alcohol_details: ch.alcohol_details || undefined,
-      smoking: ch.smoking, smoking_details: ch.smoking_details || undefined,
-      tobacco: ch.tobacco, tobacco_details: ch.tobacco_details || undefined,
-      nicotine: ch.nicotine, nicotine_details: ch.nicotine_details || undefined,
-      sleep_hours: n(ch.sleep_hours) ?? undefined,
-      medications: ch.medications, medications_details: ch.medications_details || undefined,
-      supplements: ch.supplements, supplements_details: ch.supplements_details || undefined,
-      steroids_ped: ch.steroids_ped, steroids_ped_details: ch.steroids_ped_details || undefined,
-      recreational_drugs: ch.recreational_drugs, recreational_drugs_details: ch.recreational_drugs_details || undefined,
-      current_treatment: ch.current_treatment, current_treatment_details: ch.current_treatment_details || undefined,
+      // Asked on the Current Health step.
+      known_disease: ch.known_disease, known_disease_details: detail(ch.known_disease, ch.known_disease_details),
+      medications: ch.medications, medications_details: detail(ch.medications, ch.medications_details),
+      steroids_ped: ch.steroids_ped, steroids_ped_details: detail(ch.steroids_ped, ch.steroids_ped_details),
+      recreational_drugs: ch.recreational_drugs, recreational_drugs_details: detail(ch.recreational_drugs, ch.recreational_drugs_details),
+      current_treatment: ch.current_treatment, current_treatment_details: detail(ch.current_treatment, ch.current_treatment_details),
       has_pain: ch.has_pain,
-      pain_scale: n(ch.pain_scale) ?? undefined,
-      pain_location: ch.pain_location || undefined, pain_description: ch.pain_description || undefined,
+      pain_scale: ch.has_pain ? n(ch.pain_scale) ?? undefined : undefined,
+      pain_location: detail(ch.has_pain, ch.pain_location),
+      pain_description: detail(ch.has_pain, ch.pain_description),
+      // No longer asked here — kept only when an older screening answered them.
+      activity_level: kept(ch.activity_level), dietary_habits: kept(ch.dietary_habits), water_intake: kept(ch.water_intake),
+      caffeine: kept(ch.caffeine), caffeine_details: kept(ch.caffeine_details),
+      alcohol: kept(ch.alcohol), alcohol_details: kept(ch.alcohol_details),
+      smoking: kept(ch.smoking), smoking_details: kept(ch.smoking_details),
+      tobacco: kept(ch.tobacco), tobacco_details: kept(ch.tobacco_details),
+      nicotine: kept(ch.nicotine), nicotine_details: kept(ch.nicotine_details),
+      sleep_hours: n(ch.sleep_hours) ?? undefined,
+      supplements: kept(ch.supplements), supplements_details: kept(ch.supplements_details),
     },
     past_history: {
-      heart_disease: ph.heart_disease, respiratory_disease: ph.respiratory_disease, asthma: ph.asthma,
-      copd: ph.copd, tuberculosis: ph.tuberculosis, joint_problems: ph.joint_problems,
-      back_pain: ph.back_pain, neck_pain: ph.neck_pain, knee_pain: ph.knee_pain,
-      shoulder_pain: ph.shoulder_pain, hip_pain: ph.hip_pain, previous_fractures: ph.previous_fractures,
-      surgeries: ph.surgeries, hospitalization: ph.hospitalization,
-      exercise_history: ph.exercise_history || undefined, occupation: ph.occupation || undefined,
-      work_posture: ph.work_posture || undefined,
+      // Asked on the Past History step.
+      respiratory_disease: ph.respiratory_disease, copd: ph.copd, tuberculosis: ph.tuberculosis,
+      previous_fractures: ph.previous_fractures, surgeries: ph.surgeries, hospitalization: ph.hospitalization,
+      previous_physiotherapy: ph.previous_physiotherapy,
+      // No longer asked here — kept only when an older screening answered them.
+      heart_disease: kept(ph.heart_disease), asthma: kept(ph.asthma), joint_problems: kept(ph.joint_problems),
+      back_pain: kept(ph.back_pain), neck_pain: kept(ph.neck_pain), knee_pain: kept(ph.knee_pain),
+      shoulder_pain: kept(ph.shoulder_pain), hip_pain: kept(ph.hip_pain),
+      exercise_history: kept(ph.exercise_history), occupation: kept(ph.occupation), work_posture: kept(ph.work_posture),
       daily_sitting_hours: n(ph.daily_sitting_hours) ?? undefined,
-      previous_injuries: ph.previous_injuries || undefined,
-      previous_physiotherapy: ph.previous_physiotherapy, previous_trainer: ph.previous_trainer,
-      exercise_experience: ph.exercise_experience || undefined,
+      previous_injuries: kept(ph.previous_injuries), previous_trainer: kept(ph.previous_trainer),
+      exercise_experience: kept(ph.exercise_experience),
     },
+    family_history: familyPayload(form.familyHistory),
     parq_answers: form.parqAnswers
       .filter((a) => a.answer)
       .map((a) => ({
@@ -163,9 +206,20 @@ export function buildFormPayload(form: ParqFormData, clientId: string): Record<s
         hospital: a.hospital || undefined,
         notes: a.notes || undefined,
       })),
-    trainer_notes: { ...form.trainerNotes },
+    // The notes the Trainer Notes step shows — and nothing it does not.
+    trainer_notes: {
+      ...Object.fromEntries(TRAINER_NOTES_FIELDS.map((f) => [f.key, form.trainerNotes[f.key].trim()])),
+      // Posture is recorded in the Posture assessment; an older note is kept.
+      posture: kept(form.trainerNotes.posture),
+    },
     status: form.status,
   };
+}
+
+/** The answers, as a comparable key: the signature on file attests to
+ *  exactly these. */
+export function answersKey(form: ParqFormData): string {
+  return form.parqAnswers.map((a) => `${a.question_id}:${a.answer}`).join('|');
 }
 
 export function buildClearancePayload(form: ParqFormData): Record<string, unknown> {
@@ -187,9 +241,9 @@ export function buildClearancePayload(form: ParqFormData): Record<string, unknow
  *  ignores unknown JSON keys. */
 export function buildConsentPayload(form: ParqFormData, userAgent?: string): Record<string, unknown> {
   return {
-    consent_checkboxes: { ...form.consentCheckboxes },
+    // Only the statements this screening asks.
+    consent_checkboxes: Object.fromEntries(CONSENT_CHECKBOX_FIELDS.map((f) => [f.key, form.consentCheckboxes[f.key] === true])),
     client_signature: form.clientSignature,
-    trainer_signature: form.trainerSignature,
     location: form.consentLocation || undefined,
     user_agent: userAgent || undefined,
   };

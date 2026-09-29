@@ -24,8 +24,8 @@ export function StepFunctionalTests({ form, set }: StepFunctionalTestsProps) {
           <ClipboardCheck size={20} color="#1CA3F9" />
         </div>
         <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Functional Tests</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 2 of 3 — score each movement screen, 1 (poor) to 5 (excellent).</p>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Functional Tests</h2>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 2 of 3 — score each movement screen, 1 (poor) to 5 (excellent).</p>
         </div>
       </div>
 
@@ -39,7 +39,7 @@ export function StepFunctionalTests({ form, set }: StepFunctionalTestsProps) {
             />
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
               <div className="sm:col-span-1">
-                <FloatInput label="Notes" value={t.notes || ''} onChange={(v) => updateTest(i, { notes: v })} />
+                <FloatInput label="Notes" maxLength={500} value={t.notes || ''} onChange={(v) => updateTest(i, { notes: v })} />
               </div>
               <div className="sm:col-span-2 flex flex-wrap gap-4 pt-2">
                 <ToggleField label="Pain?" value={t.pain ?? false} onChange={(v) => updateTest(i, { pain: v })} />
@@ -57,7 +57,7 @@ interface ToggleFieldProps { label: string; value: boolean; onChange: (v: boolea
 function ToggleField({ label, value, onChange }: ToggleFieldProps) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[11.5px] font-[620] text-slate-500">{label}</span>
+      <span className="text-[11.5px] font-[620] text-[color:var(--text-muted)]">{label}</span>
       <div className="flex gap-1.5">
         {[{ v: true, label: 'Yes' }, { v: false, label: 'No' }].map((o) => {
           const selected = value === o.v;
@@ -66,9 +66,9 @@ function ToggleField({ label, value, onChange }: ToggleFieldProps) {
               key={o.label} type="button" onClick={() => onChange(o.v)}
               className="rounded-[8px] px-2.5 py-1 text-[11px] font-[700] transition-all"
               style={{
-                background: selected ? (o.v ? '#dc2626' : '#0f172a') : '#f8fafc',
-                color: selected ? '#fff' : '#64748b',
-                border: selected ? 'none' : '1.5px solid #e2e8f0',
+                background: selected ? (o.v ? '#dc2626' : 'var(--text-primary)') : 'var(--bg-subtle)',
+                color: selected ? 'var(--bg-card)' : 'var(--text-muted)',
+                border: selected ? 'none' : '1.5px solid var(--border)',
               }}
             >
               {o.label}

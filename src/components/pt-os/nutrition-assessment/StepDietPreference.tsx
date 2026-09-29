@@ -32,8 +32,8 @@ export function StepDietPreference({ form, set, error }: StepDietPreferenceProps
           <Utensils size={20} color="#1CA3F9" />
         </div>
         <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Diet Preference</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 1 of 8 — select all that apply.</p>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Diet Preference</h2>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 1 of 8 — select all that apply.</p>
         </div>
       </div>
 
@@ -47,12 +47,12 @@ export function StepDietPreference({ form, set, error }: StepDietPreferenceProps
               className="flex flex-col items-center gap-2 rounded-[16px] px-3 py-4 text-center transition-all duration-200"
               style={{
                 background: selected ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)',
-                border: selected ? '2px solid #0067E0' : '2px solid rgba(15,23,42,0.08)',
+                border: selected ? '2px solid #0067E0' : '2px solid var(--border)',
                 boxShadow: selected ? '0 4px 16px rgba(0,103,224,0.18)' : 'none',
               }}
             >
               <span className="text-[20px]">{o.icon}</span>
-              <span className="text-[11.5px] font-[700]" style={{ color: selected ? '#0f172a' : '#475569' }}>{o.label}</span>
+              <span className="text-[11.5px] font-[700]" style={{ color: selected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{o.label}</span>
             </button>
           );
         })}

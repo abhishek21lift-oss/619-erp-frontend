@@ -28,14 +28,14 @@ export function StepFavouriteFoods({ form, set, error }: StepFavouriteFoodsProps
           <Heart size={20} color="#1CA3F9" />
         </div>
         <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Favourite Foods</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 3 of 8 — what does the client already enjoy eating?</p>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Favourite Foods</h2>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 3 of 8 — what does the client already enjoy eating?</p>
         </div>
       </div>
 
       <MultiSelectChips value={form.favouriteFoods} onChange={(v) => set('favouriteFoods', v)} options={FAVOURITE_FOOD_OPTIONS} />
       <div className="mt-4 max-w-sm">
-        <FloatInput label="Other" value={form.favouriteFoodOther} onChange={(v) => set('favouriteFoodOther', v)} />
+        <FloatInput label="Other favourites (comma-separated)" maxLength={500} value={form.favouriteFoodOther} onChange={(v) => set('favouriteFoodOther', v)} />
       </div>
 
       {form.favouriteFoods.length > 0 && (
@@ -43,7 +43,7 @@ export function StepFavouriteFoods({ form, set, error }: StepFavouriteFoodsProps
           <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706' }}>
             {protein.assessment} Protein
           </span>
-          <span className="text-[12.5px] font-[600] text-slate-400">Preference-based estimate, score {protein.score}</span>
+          <span className="text-[12.5px] font-[600] text-[color:var(--text-muted)]">Preference-based estimate, score {protein.score}</span>
         </div>
       )}
 

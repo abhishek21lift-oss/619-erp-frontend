@@ -23,8 +23,8 @@ export function StepSupplements({ form, set, error }: StepSupplementsProps) {
             <Pill size={20} color="#1CA3F9" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Supplement Usage</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 4 of 8 — does the client currently take supplements?</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Supplement Usage</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 4 of 8 — does the client currently take supplements?</p>
           </div>
         </div>
 
@@ -37,9 +37,9 @@ export function StepSupplements({ form, set, error }: StepSupplementsProps) {
                 onClick={() => setTakes(o.v)}
                 className="rounded-[11px] px-6 py-2.5 text-[13px] font-[700] transition-all"
                 style={{
-                  background: selected ? '#0f172a' : '#f8fafc',
-                  color: selected ? '#fff' : '#64748b',
-                  border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0',
+                  background: selected ? 'var(--text-primary)' : 'var(--bg-subtle)',
+                  color: selected ? 'var(--bg-card)' : 'var(--text-muted)',
+                  border: selected ? '1.5px solid var(--text-primary)' : '1.5px solid var(--border)',
                 }}
               >
                 {o.label}

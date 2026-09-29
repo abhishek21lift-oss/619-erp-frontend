@@ -22,8 +22,8 @@ export function StepDigestiveHealth({ form, set }: StepDigestiveHealthProps) {
           <Activity size={20} color="#1CA3F9" />
         </div>
         <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Digestive Health</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 5 of 8 — select any recurring issues.</p>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Digestive Health</h2>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 5 of 8 — select any recurring issues.</p>
         </div>
       </div>
 
@@ -32,9 +32,9 @@ export function StepDigestiveHealth({ form, set }: StepDigestiveHealthProps) {
         onClick={() => set('digestiveIssues', [])}
         className="rounded-[11px] px-4 py-2.5 text-[13px] font-[700] transition-all"
         style={{
-          background: noIssues ? '#0f172a' : '#f8fafc',
-          color: noIssues ? '#fff' : '#64748b',
-          border: noIssues ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0',
+          background: noIssues ? 'var(--text-primary)' : 'var(--bg-subtle)',
+          color: noIssues ? 'var(--bg-card)' : 'var(--text-muted)',
+          border: noIssues ? '1.5px solid var(--text-primary)' : '1.5px solid var(--border)',
         }}
       >
         No Issues
@@ -43,7 +43,7 @@ export function StepDigestiveHealth({ form, set }: StepDigestiveHealthProps) {
       <DigestiveIssuesChecklist value={form.digestiveIssues} onChange={(v) => set('digestiveIssues', v)} />
 
       <div className="flex items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>
-        <span className="text-[12.5px] font-[600] text-slate-400">Digestive Health Score</span>
+        <span className="text-[12.5px] font-[600] text-[color:var(--text-muted)]">Digestive Health Score</span>
         <span className="text-[16px] font-[800]" style={{ color: score >= 70 ? '#059669' : score >= 50 ? '#d97706' : '#dc2626' }}>{score}</span>
       </div>
     </div>
