@@ -3,18 +3,18 @@
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CopyId } from '@/components/ui/CopyId';
-import { m, AnimatePresence } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   User, Calendar, Target,
-  Dumbbell, Wallet, FileText, Activity, RefreshCw,
+  Dumbbell, Wallet, FileText, RefreshCw,
   CheckCircle, AlertTriangle, Clock, IndianRupee,
-  Camera, Zap, Repeat, ChevronRight,
-  TrendingUp, MessageCircle, Save, Trash2, Pencil,
-  Award, HeartPulse, Salad, Phone,
+  Zap, Repeat, ChevronRight,
+  TrendingUp, MessageCircle, Save, Pencil,
+  HeartPulse, Salad, Phone,
   ShieldCheck, FileSignature, ClipboardList,
-  QrCode, Printer, ScrollText, ChevronDown, Mail, ClipboardCheck,
-  StickyNote, FileBarChart, Sparkles,
+  QrCode, Printer, ScrollText, ChevronDown, Mail, FileBarChart, Sparkles,
   Gauge, PersonStanding, Accessibility, Ruler, MessagesSquare, Send,
+  Cake, UserPlus, Megaphone, Hourglass, CalendarRange, UserCheck,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 
@@ -28,15 +28,16 @@ import ClientLoginCard from '@/components/pt-os/ClientLoginCard';
 import ClientAiGenerateCard from '@/components/pt-os/ClientAiGenerateCard';
 import RenewalOfferSheet from '@/components/pt-os/RenewalOfferSheet';
 import {
-  ClientTabs, TabPanel, EmptyPanel, LinkPanel, TAB_COLOR, type TabKey,
+  ClientTabs, TabPanel, LinkPanel, TAB_COLOR, type TabKey,
 } from '@/components/pt-os/client/ClientTabs';
 import RecoveryPanel from '@/components/pt-os/client/RecoveryPanel';
 import PhotosPanel from '@/components/pt-os/client/PhotosPanel';
 import type { ClientRecovery } from '@/lib/api';
 import { printWindowCloseButtonHtml } from '@/lib/printWindowChrome';
-import { activatable } from '@/lib/a11y';
 import { errorMessage } from '@/lib/forms/errors';
 import { whatsAppHref } from '@/lib/phone';
+import { amber, blue, emerald, gray, red, rgba } from '@/lib/palette';
+import { tones, gradient, heroMesh, type Tone } from '@/components/profile/profileTheme';
 
 interface PtClientDetail {
   id: string; unique_id?: string; client_id?: string; name: string;
@@ -72,11 +73,6 @@ interface PtClientDetail {
 const fmtINR = (n: number | string | null | undefined) =>
   '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
-// No ₹ prefix — used only by the Term Fee/Paid/Balance cards, where the
-// label above each figure already says what it is.
-const fmtNum = (n: number | string | null | undefined) =>
-  Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
-
 const fmtDate = (d?: string) => {
   if (!d) return '—';
   const dt = new Date(d);
@@ -84,58 +80,139 @@ const fmtDate = (d?: string) => {
   return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
+// ── Colour ─────────────────────────────────────────────────────────────
+// Decoration (section tiles, action buttons, the hero mesh) comes from the
+// same Apple-style spectrum as My Profile — profileTheme.ts — so the coach's
+// own page and the client pages they work on share one look. STATE never
+// does: paid, due, overdue, expiring and document status keep the palette
+// families that mean those things everywhere else in the app.
+const state = (c: { 300: string; 400: string; 500: string; 600: string; 700: string }): Tone => ({
+  from: c[400], to: c[600], ink: c[700], inkDark: c[300], wash: rgba(c[500], 0.12), glow: rgba(c[500], 0.32),
+});
+const OK = state(emerald);
+const WARN = state(amber);
+const BAD = state(red);
+const NEUTRAL: Tone = {
+  from: gray[400], to: gray[600], ink: gray[600], inkDark: gray[300], wash: rgba(gray[500], 0.12), glow: rgba(gray[500], 0.3),
+};
+
+/** Text in a tone that stays readable in dark mode (Tailwind `dark` is class-based). */
+const inkClass = 'text-[var(--tone-ink)] dark:text-[var(--tone-ink-dark)]';
+const inkVars = (t: Tone) => ({ '--tone-ink': t.ink, '--tone-ink-dark': t.inkDark }) as React.CSSProperties;
+
 function getStatusConfig(status: string, days_left: number | null, pt_end_date?: string) {
   const endPassed = pt_end_date ? new Date(pt_end_date) < new Date() : (days_left != null && days_left <= 0);
-  if (endPassed) return { label: 'Inactive', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
-  if (status === 'frozen') return { label: 'Frozen', color: '#0067e0', bg: 'rgba(0,103,224,0.12)', dot: '#0067e0' };
-  if (status === 'active' && days_left != null && days_left <= 7) return { label: 'Expiring', color: '#f87171', bg: 'rgba(248,113,113,0.12)', dot: '#ef4444' };
-  if (status === 'active') return { label: 'Active', color: '#34d399', bg: 'rgba(52,211,153,0.12)', dot: '#10b981' };
-  if (status === 'expired' || status === 'inactive') return { label: 'Inactive', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
-  return { label: status, color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
+  if (endPassed) return { label: 'Inactive', dot: gray[400] };
+  if (status === 'frozen') return { label: 'Frozen', dot: blue[300] };
+  if (status === 'active' && days_left != null && days_left <= 7) return { label: 'Expiring', dot: amber[400] };
+  if (status === 'active') return { label: 'Active', dot: emerald[400] };
+  if (status === 'expired' || status === 'inactive') return { label: 'Inactive', dot: gray[400] };
+  return { label: status, dot: gray[400] };
 }
 
-function InfoRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
+/** A tinted squircle — the iOS Settings row icon. */
+function Squircle({ tint, size = 30, children }: { tint: Tone; size?: number; children: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-3 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
-      <span className="shrink-0 text-[12px] font-[500] text-slate-500">{label}</span>
-      <span className="min-w-0 flex-1 break-words text-right text-[12.5px] font-[650]" style={{ color: valueColor ?? '#0F172A' }}>{value}</span>
+    <span
+      aria-hidden
+      className="flex shrink-0 items-center justify-center text-white"
+      style={{
+        width: size, height: size, borderRadius: Math.round(size * 0.3),
+        background: gradient(tint),
+        boxShadow: `0 4px 12px -4px ${tint.from}99, inset 0 1px 0 rgba(255,255,255,0.28)`,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+/**
+ * A section on the page. Theme tokens throughout — the old card hard-coded
+ * `bg-white` and `text-gray-900`, so in dark mode every section stayed a
+ * white slab with near-black text on a dark page.
+ */
+function SectionCard({ title, icon, tint, action, children, className = '' }: {
+  title: string; icon: React.ReactNode; tint: Tone; action?: React.ReactNode;
+  children: React.ReactNode; className?: string;
+}) {
+  return (
+    <m.section
+      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className={`overflow-hidden rounded-[24px] ${className}`}
+      style={{
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 12px 32px -18px rgba(15,23,42,0.18)',
+        backdropFilter: 'saturate(180%) blur(20px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+      }}
+    >
+      <header className="flex items-center justify-between gap-3 px-5 pb-3 pt-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <Squircle tint={tint}>{icon}</Squircle>
+          <h3 className="truncate text-[15px] font-[720] tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+        </div>
+        {action}
+      </header>
+      <div className="px-5 pb-5">{children}</div>
+    </m.section>
+  );
+}
+
+/** A grouped-list row: tinted icon, label, value — the iOS Contacts detail row. */
+function InfoRow({ icon, tint, label, value, danger, last }: {
+  icon: React.ReactNode; tint: Tone; label: string; value: string; danger?: boolean; last?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3 py-2.5" style={last ? undefined : { borderBottom: '1px solid var(--border)' }}>
+      <Squircle tint={tint} size={26}>{icon}</Squircle>
+      <span className="shrink-0 text-[13px] font-[560]" style={{ color: 'var(--text-muted)' }}>{label}</span>
+      <span className={`min-w-0 flex-1 break-words text-right text-[13.5px] font-[650] ${danger ? inkClass : ''}`}
+        style={danger ? inkVars(BAD) : { color: 'var(--text-primary)' }}>
+        {value}
+      </span>
     </div>
   );
 }
 
 // ── Documents card: PAR-Q + Informed Consent status at a glance ──
-const DOC_STATUS_STYLE: Record<string, { label: string; bg: string; color: string }> = {
+const DOC_STATUS_STYLE: Record<string, { label: string; tone: Tone }> = {
   // Distinct from `none`, and the distinction is the point: "we could not
   // check" and "there is nothing on file" need different words, because only
   // one of them means the client still has to be screened.
-  unknown: { label: 'Not Checked', bg: 'rgba(148,163,184,0.10)', color: '#94a3b8' },
-  none: { label: 'Not Started', bg: 'rgba(148,163,184,0.15)', color: '#64748b' },
-  draft: { label: 'Draft', bg: 'rgba(148,163,184,0.15)', color: '#64748b' },
-  submitted: { label: 'Submitted', bg: 'rgba(16,185,129,0.15)', color: '#059669' },
-  reviewed: { label: 'Reviewed', bg: 'rgba(16,185,129,0.15)', color: '#059669' },
-  pending_client_signature: { label: 'Pending Signature', bg: 'rgba(245,158,11,0.15)', color: '#d97706' },
-  pending_trainer_signature: { label: 'Pending Signature', bg: 'rgba(245,158,11,0.15)', color: '#d97706' },
-  completed: { label: 'Completed', bg: 'rgba(16,185,129,0.15)', color: '#059669' },
-  revoked: { label: 'Revoked', bg: 'rgba(220,38,38,0.15)', color: '#dc2626' },
+  unknown: { label: 'Not checked', tone: NEUTRAL },
+  none: { label: 'Not started', tone: NEUTRAL },
+  draft: { label: 'Draft', tone: NEUTRAL },
+  submitted: { label: 'Submitted', tone: OK },
+  reviewed: { label: 'Reviewed', tone: OK },
+  pending_client_signature: { label: 'Pending signature', tone: WARN },
+  pending_trainer_signature: { label: 'Pending signature', tone: WARN },
+  completed: { label: 'Completed', tone: OK },
+  revoked: { label: 'Revoked', tone: BAD },
 };
 
-function DocumentRow({ icon, label, status, onClick }: { icon: React.ReactNode; label: string; status: string; onClick: () => void }) {
+function DocumentRow({ icon, tint, label, status, onClick }: {
+  icon: React.ReactNode; tint: Tone; label: string; status: string; onClick: () => void;
+}) {
   // Falls back to `unknown`, not to `none`: a status this table has not
   // heard of is one we cannot interpret, which is not the same as a form
   // that was never started.
   const style = DOC_STATUS_STYLE[status] || DOC_STATUS_STYLE.unknown;
   return (
-    <button onClick={onClick} className="flex w-full items-center justify-between gap-3 rounded-[12px] p-3 text-left transition hover:opacity-80"
-      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-      <div className="flex items-center gap-2.5">
-        <span style={{ color: '#64748b' }}>{icon}</span>
-        <span className="text-[12.5px] font-[650] text-gray-900">{label}</span>
+    <button onClick={onClick}
+      className="flex min-h-[52px] w-full items-center justify-between gap-3 rounded-[14px] px-3 py-2.5 text-left transition active:scale-[0.99]"
+      style={{ background: 'var(--bg-subtle)' }}>
+      <div className="flex min-w-0 items-center gap-2.5">
+        <Squircle tint={tint} size={26}>{icon}</Squircle>
+        <span className="truncate text-[13px] font-[650]" style={{ color: 'var(--text-primary)' }}>{label}</span>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="rounded-full px-2.5 py-1 text-[10.5px] font-[700]" style={{ background: style.bg, color: style.color }}>
+      <div className="flex shrink-0 items-center gap-1.5">
+        <span className={`rounded-full px-2.5 py-1 text-[11px] font-[700] ${inkClass}`} style={{ background: style.tone.wash, ...inkVars(style.tone) }}>
           {style.label}
         </span>
-        <ChevronRight size={14} style={{ color: '#cbd5e1' }} />
+        <ChevronRight size={15} style={{ color: 'var(--text-muted)' }} />
       </div>
     </button>
   );
@@ -144,15 +221,8 @@ function DocumentRow({ icon, label, status, onClick }: { icon: React.ReactNode; 
 function DocumentsCard({ clientId }: { clientId: string }) {
   const router = useRouter();
   // 'unknown' until the request answers, and it stays 'unknown' if the request
-  // fails.
-  //
-  // Both statuses used to start at 'none' behind
-  // `.catch(() => ({ data: [] }))`, which made a failed request indistinguishable
-  // from a client with no form on file — the card then said "Not Started" for a
-  // PAR-Q that may well be signed. That is the wrong claim to make confidently
-  // about the document that decides whether somebody is cleared to train: a
-  // trainer reading it either re-screens a client for nothing, or believes a
-  // consent is missing and chases it.
+  // fails — a failed request must not read as "Not started" for a PAR-Q that
+  // may well be signed.
   const [parqStatus, setParqStatus] = useState('unknown');
   const [consentStatus, setConsentStatus] = useState('unknown');
 
@@ -160,15 +230,12 @@ function DocumentsCard({ clientId }: { clientId: string }) {
     let cancelled = false;
     setParqStatus('unknown');
     setConsentStatus('unknown');
-
-    // Settled per document rather than one combined catch, so one failing
-    // endpoint does not blank the other.
+    // Settled per document, so one failing endpoint does not blank the other.
     Promise.allSettled([
       api.progress.parqForms.list({ client_id: clientId }),
       api.progress.informedConsent.list({ client_id: clientId }),
     ]).then(([parqRes, consentRes]) => {
       if (cancelled) return;
-
       if (parqRes.status === 'fulfilled') {
         const latest = parqRes.value?.data?.[0] as { status?: string } | undefined;
         setParqStatus(latest ? String(latest.status || 'draft') : 'none');
@@ -182,18 +249,14 @@ function DocumentsCard({ clientId }: { clientId: string }) {
   }, [clientId]);
 
   return (
-    <DarkCard title="Documents" icon={<FileSignature size={14} />} from="#0f172a">
-      <div className="space-y-2.5">
-        <DocumentRow
-          icon={<ShieldCheck size={15} />} label="PAR-Q Screening" status={parqStatus}
-          onClick={() => router.push(`/pt-os/parq?client_id=${clientId}`)}
-        />
-        <DocumentRow
-          icon={<FileSignature size={15} />} label="Informed Consent" status={consentStatus}
-          onClick={() => router.push(`/pt-os/informed-consent?client_id=${clientId}`)}
-        />
+    <SectionCard title="Documents" icon={<FileSignature size={15} />} tint={NEUTRAL}>
+      <div className="space-y-2">
+        <DocumentRow icon={<ShieldCheck size={14} />} tint={tones.lime} label="PAR-Q screening" status={parqStatus}
+          onClick={() => router.push(`/pt-os/parq?client_id=${clientId}`)} />
+        <DocumentRow icon={<FileSignature size={14} />} tint={tones.sky} label="Informed consent" status={consentStatus}
+          onClick={() => router.push(`/pt-os/informed-consent?client_id=${clientId}`)} />
       </div>
-    </DarkCard>
+    </SectionCard>
   );
 }
 
@@ -234,83 +297,160 @@ function QrCheckinCard({ clientId, clientName }: { clientId: string; clientName:
   };
 
   return (
-    <DarkCard title="Check-in QR Code" icon={<QrCode size={14} />} from="#0059ce">
-      {/* Collapsed by default. This is a print-once artefact — a trainer looks
-          at it when a client joins and never again — and open it took 200px of
-          a rail where everything else is read on every visit. */}
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className="flex h-[44px] w-full items-center justify-between gap-2 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80"
-        style={{ background: 'rgba(0,89,206,0.10)', color: '#0059ce', border: '1px solid rgba(0,89,206,0.20)' }}
-      >
+    <SectionCard title="Check-in QR" icon={<QrCode size={15} />} tint={tones.indigo}>
+      {/* Collapsed by default: a print-once artefact, looked at when a client
+          joins and rarely again. */}
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
+        className={`flex h-[44px] w-full items-center justify-between gap-2 rounded-[12px] px-3.5 text-[13px] font-[650] transition active:scale-[0.99] ${inkClass}`}
+        style={{ background: 'var(--bg-subtle)', ...inkVars(tones.indigo) }}>
         {open ? 'Hide code' : 'Show code'}
-        <ChevronDown size={14} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} />
+        <ChevronDown size={15} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} />
       </button>
       {open && (
         <div className="mt-3">
-          {loading && <p className="text-[12px] text-gray-400">Generating…</p>}
-          {error && <p className="text-[12px] text-red-500">{error}</p>}
+          {loading && <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>Generating…</p>}
+          {error && <p className={`text-[12.5px] ${inkClass}`} style={inkVars(BAD)}>{error}</p>}
           {dataUrl && !loading && (
             <div className="flex flex-col items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={dataUrl} alt="Check-in QR code" className="h-40 w-40 rounded-lg border border-zinc-100" />
-              <button
-                onClick={handlePrint}
-                className="flex h-[44px] items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80"
-                style={{ background: 'rgba(0,89,206,0.10)', color: '#0059ce', border: '1px solid rgba(0,89,206,0.20)' }}
-              >
-                <Printer size={13} /> Print Card
+              <img src={dataUrl} alt="Check-in QR code" className="h-40 w-40 rounded-[16px] bg-white p-2" />
+              <button onClick={handlePrint}
+                className="flex h-[44px] items-center gap-1.5 rounded-[12px] px-4 text-[13px] font-[650] text-white"
+                style={{ background: gradient(tones.indigo) }}>
+                <Printer size={14} /> Print card
               </button>
             </div>
           )}
         </div>
       )}
-    </DarkCard>
+    </SectionCard>
   );
 }
 
-function DarkCard({ title, icon, from, children, className = '' }:
-  { title: string; icon: React.ReactNode; from: string; children: React.ReactNode; className?: string }) {
+/**
+ * Coach notes — one editor, shown on Overview and in the Notes tab.
+ *
+ * The Notes tab used to be a panel whose only content was a button sending
+ * you back to Overview, where the notes actually lived.
+ */
+function NotesCard({ notes, onSave }: { notes?: string; onSave: (next: string) => Promise<boolean> }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(notes || '');
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { if (!editing) setDraft(notes || ''); }, [notes, editing]);
+
+  const save = async () => {
+    setSaving(true);
+    const ok = await onSave(draft);
+    setSaving(false);
+    if (ok) setEditing(false);
+  };
+
   return (
-    <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      className={`overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm ${className}`}>
-      <div className="flex items-center gap-3 px-5 pt-5 pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
-        <div className="flex h-8 w-8 items-center justify-center rounded-[10px]"
-          style={{ background: `${from}20`, border: `1px solid ${from}30` }}>
-          <span style={{ color: from }}>{icon}</span>
+    <SectionCard
+      title="Coach notes" icon={<FileText size={15} />} tint={tones.sunset}
+      action={!editing ? (
+        <button type="button" onClick={() => setEditing(true)}
+          className={`flex h-[36px] items-center gap-1.5 rounded-full px-3 text-[12.5px] font-[650] ${inkClass}`}
+          style={{ background: tones.sunset.wash, ...inkVars(tones.sunset) }}>
+          <Pencil size={12} /> {notes ? 'Edit' : 'Add'}
+        </button>
+      ) : undefined}
+    >
+      {editing ? (
+        <div className="space-y-3">
+          <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={5} autoFocus
+            aria-label="Coach notes"
+            className="w-full resize-none rounded-[14px] px-3.5 py-3 text-[14px] leading-relaxed outline-none focus-visible:ring-2"
+            style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)' }}
+            placeholder="Injuries, preferences, what worked last session…" />
+          <div className="flex gap-2">
+            <button onClick={save} disabled={saving}
+              className="flex h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[12px] text-[13.5px] font-[700] text-white disabled:opacity-60"
+              style={{ background: gradient(tones.sunset) }}>
+              <Save size={14} /> {saving ? 'Saving…' : 'Save'}
+            </button>
+            <button onClick={() => { setEditing(false); setDraft(notes || ''); }}
+              className="h-[44px] flex-1 rounded-[12px] text-[13.5px] font-[650]"
+              style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+              Cancel
+            </button>
+          </div>
         </div>
-        <h3 className="text-[13.5px] font-[740] text-gray-900">{title}</h3>
-      </div>
-      <div className="p-5">{children}</div>
-    </m.div>
+      ) : notes ? (
+        <p className="whitespace-pre-wrap text-[14px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{notes}</p>
+      ) : (
+        <p className="text-[13.5px]" style={{ color: 'var(--text-muted)' }}>
+          Nothing written yet. Notes sit here beside the client&apos;s details, so they are read on every visit.
+        </p>
+      )}
+    </SectionCard>
   );
 }
 
-interface QuickActionChild {
-  label: string;
-  icon: React.ReactNode;
-  href: (id: string) => string;
+/** One glass figure on the hero. */
+function HeroStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-[18px] px-3 py-2.5 sm:px-3.5 sm:py-3"
+      style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
+      <p className="flex items-center gap-1 text-[10px] font-[700] uppercase tracking-[0.08em] text-white/75">
+        {icon}{label}
+      </p>
+      <p className="mt-1 truncate text-[16px] font-[780] leading-tight tracking-[-0.01em] text-white sm:text-[18px]">{value}</p>
+    </div>
+  );
 }
 
-interface QuickAction {
+/** A round action with its label underneath — the iOS Contacts action row. */
+function ActionButton({ label, ariaLabel, icon, tint, onClick, href, external }: {
   label: string;
-  icon: React.ReactNode;
-  from: string;
-  to: string;
-  /** Flat actions navigate directly; grouped actions (e.g. "Screening")
-   *  open a sub-menu instead and omit href. */
-  href?: (id: string) => string;
-  children?: QuickActionChild[];
+  /** The full name for assistive tech when the visible label is abbreviated. */
+  ariaLabel?: string;
+  icon: React.ReactNode; tint: Tone;
+  onClick?: () => void; href?: string; external?: boolean;
+}) {
+  const inner = (
+    <>
+      <span className="flex h-[52px] w-[52px] items-center justify-center rounded-full text-white transition-transform group-active:scale-95"
+        style={{ background: gradient(tint), boxShadow: `0 8px 20px -8px ${tint.from}, inset 0 1px 0 rgba(255,255,255,0.3)` }}>
+        {icon}
+      </span>
+      <span className="w-full truncate text-center text-[11.5px] font-[620]" style={{ color: 'var(--text-secondary)' }}>{label}</span>
+    </>
+  );
+  const cls = 'group flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-[16px] py-1 outline-none focus-visible:ring-2';
+  if (href) {
+    return (
+      <a href={href} className={cls} aria-label={ariaLabel ?? label}
+        {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+        {inner}
+      </a>
+    );
+  }
+  return <button type="button" onClick={onClick} className={cls} aria-label={ariaLabel ?? label}>{inner}</button>;
 }
 
-// Baseline Setup is NOT in this list. It belongs to onboarding — once a client
-// has been measured or given a goal there is nothing to set up, and leaving it
-// among the everyday actions made a one-time step look like a recurring one.
-// It is prepended only while `baseline_done` is false. Delete is not here
-// either: a destructive action does not belong in a grid of navigation tiles
-// where it sits one row from "Photos". It lives inside Edit.
+function ProfileSkeleton() {
+  const block = (h: number, r = 24) => (
+    <div className="animate-pulse" style={{ height: h, borderRadius: r, background: 'var(--bg-subtle)' }} />
+  );
+  return (
+    <div className="space-y-4" aria-busy="true" aria-label="Loading client profile">
+      {block(236, 32)}
+      <div className="flex justify-between gap-3 px-2">
+        {Array.from({ length: 5 }, (_, i) => (
+          <div key={i} className="h-[52px] w-[52px] animate-pulse rounded-full" style={{ background: 'var(--bg-subtle)' }} />
+        ))}
+      </div>
+      {block(170)}
+      {block(120)}
+    </div>
+  );
+}
+
+// Baseline Setup is not an action here: it belongs to onboarding (see
+// ClientSnapshot). Delete is not either — a destructive action does not
+// belong beside "Call". It lives inside Edit.
 export default function PtClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -319,7 +459,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [client, setClient] = useState<PtClientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  /** From the snapshot: hides the one-time Baseline Setup tile once onboarded. */
   /** Readiness, lifted off the snapshot so the Check-ins tab can render it. */
   const [recovery, setRecovery] = useState<ClientRecovery | undefined>(undefined);
   /** Which section of the workspace is open. Overview is where you land. */
@@ -330,8 +469,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
   const [recentWeights, setRecentWeights] = useState<any[]>([]);
   const [activeGoals, setActiveGoals] = useState<any[]>([]);
-  const [editNotes, setEditNotes] = useState(false);
-  const [notesDraft, setNotesDraft] = useState('');
   const [subscriptionHistory, setSubscriptionHistory] = useState<any[]>([]);
 
   const loadData = async () => {
@@ -340,27 +477,11 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
       const clientRes = await api.pt.client(id);
       const c = (clientRes as any)?.data ?? null;
       if (!c) { setError('Client not found'); setLoading(false); return; }
-      setClient(c); setNotesDraft(c?.notes || '');
+      setClient(c);
 
-      // ── Three requests, not five ─────────────────────────────────────────
-      //
-      // `weeklyCheckins.list` and `pt.payments` used to be fetched here too.
-      // Their ONLY consumer was an `activityCounts` state feeding the Activity
-      // Mix donut — and that donut was removed (see the note above
-      // ClientSnapshot below), leaving the state written on every load and read
-      // nowhere. Two API round trips per profile open, for a chart that no
-      // longer exists.
-      //
-      // Its comment claimed the counts were "unfiltered on purpose: these are
-      // totals", while the code fetched check-ins with limit 5 and assessments
-      // with limit 10 and used those lengths AS the totals. The donut had been
-      // capping at 5 and 10 for every established client.
-      //
-      // The tab strip does render a badge per tab when `counts` is supplied
-      // (ClientTabs.tsx), and it is deliberately NOT supplied: none of these
-      // endpoints returns a total, only a limited page, so any badge built
-      // from them would be a wrong number on screen rather than a missing one.
-      // Wiring it up needs a count endpoint first.
+      // Three requests. Check-in and payment lists are not fetched here: none
+      // of these endpoints returns a total, so a count built from a limited
+      // page would be a wrong number on screen rather than a missing one.
       const [assessmentsRes, goalsRes, renewalsRes] = await Promise.allSettled([
         api.progress.assessments.list({ client_id: id, limit: 10 }),
         api.progress.goals.list({ client_id: id }),
@@ -375,7 +496,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
       const renewals = renewalsRes.status === 'fulfilled' && Array.isArray((renewalsRes.value as any)?.data) ? (renewalsRes.value as any).data : [];
       setSubscriptionHistory(renewals);
-
     } catch (err: any) {
       setError(err?.message || 'Failed to load client');
     } finally {
@@ -383,12 +503,15 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     }
   };
 
-  const handleSaveNotes = async () => {
+  const handleSaveNotes = async (next: string): Promise<boolean> => {
     try {
-      await api.clients.update(id, { notes: notesDraft });
-      setEditNotes(false);
-      setClient(prev => prev ? { ...prev, notes: notesDraft } : prev);
-    } catch { toast.error('Failed to save notes'); }
+      await api.clients.update(id, { notes: next });
+      setClient(prev => prev ? { ...prev, notes: next } : prev);
+      return true;
+    } catch {
+      toast.error('Failed to save notes');
+      return false;
+    }
   };
 
   useEffect(() => { loadData(); }, [id]);
@@ -402,10 +525,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     return () => { cancelled = true; };
   }, [id]);
 
-  // Shared, length-based normalisation — see lib/phone.ts. This was
-  // `p.startsWith('91') ? p : '91' + p`, which reads the ordinary ten-digit
-  // mobile 9198765432 as already carrying a country code and opens a chat with
-  // a different number.
+  // Shared, length-based normalisation — see lib/phone.ts.
   const whatsappHref = (phone?: string, name?: string) =>
     whatsAppHref(phone, `Hi ${name ?? 'there'}, this is your trainer from ${user?.organization_name || 'MY PT STUDIO'}.`);
 
@@ -416,43 +536,19 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const initials = (name: string) =>
     name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
 
-  // The backend owns the current-term definition — see GET /clients/:id in
-  // pt-os.routes.js. This page reads it and does not re-derive it.
-  //
-  // What was here before preferred subscriptionHistory[length - 1] over the
-  // client row, and that is exactly backwards. A pt_client_subscriptions row
-  // is a snapshot written once at enrollment or renewal; no payment path
-  // updates it. So the one source the page trusted first was the one
-  // guaranteed to be stale the moment a client paid anything afterwards — a
-  // fully paid-up client whose snapshot happened to be written with zeros
-  // rendered ₹0 / ₹0 / ₹0 while the client row and the payment ledger agreed
-  // on 80000 / 60000 / 20000.
-  //
-  // It also picked by ARRAY POSITION, which only coincides with "current"
-  // while the API's ORDER BY holds. That ordering is `start_date ASC NULLS
-  // LAST`, so a single row with a NULL start_date sorts last and would have
-  // become "the current term" no matter how old it was.
-  //
-  // The fallbacks below are the client's own fields — never a subscription
-  // row — so that even against an older API response this cannot regress to
-  // reading history.
+  // The backend owns the current-term definition (GET /clients/:id). A
+  // pt_client_subscriptions row is a snapshot no payment path updates, so it
+  // is never read for the current term; the fallbacks are the client's own
+  // fields, for an older API response.
   const currentTermFee     = Number(client?.current_term_fee     ?? client?.final_amount   ?? 0);
   const currentTermPaid    = Number(client?.current_term_paid    ?? client?.paid_amount    ?? 0);
   const currentTermBalance = Number(client?.current_term_balance ?? client?.balance_amount ?? 0);
 
-  // Lifetime paid across every PT term. pt_clients.paid_amount IS that total:
-  // every payment increments it and /renew adds to it rather than resetting,
-  // which is precisely why it is the wrong number for the CURRENT term above.
-  //
-  // Summing the snapshot rows instead — what this did before — undercounts by
-  // every payment made after a term row was written, and reported 0 for the
-  // client whose only snapshot carried zeros.
+  // Lifetime paid across every PT term — pt_clients.paid_amount is that total.
   const lifetimePaid = Number(client?.paid_amount ?? 0);
   const lifetimeTermCount = subscriptionHistory.length > 0 ? subscriptionHistory.length : 1;
 
-  // ── PT term progress, as a percentage for the bar ──
-  // Elapsed over total, clamped: a term whose end date has passed is 100%
-  // through it, not 140%.
+  // PT term progress: elapsed over total, clamped so a finished term is 100%.
   const totalDurationDays = client?.pt_start_date && client?.pt_end_date
     ? Math.max(1, Math.round((new Date(client.pt_end_date).getTime() - new Date(client.pt_start_date).getTime()) / 86400000))
     : 0;
@@ -460,37 +556,29 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     ? Math.max(0, Math.min(totalDurationDays, Math.round((Date.now() - new Date(client.pt_start_date).getTime()) / 86400000)))
     : 0;
   const ptTermPct = totalDurationDays > 0 ? Math.round((elapsedDays / totalDurationDays) * 100) : 0;
+  const hasTerm = !!client?.pt_start_date;
 
+  // Null when the number cannot be normalised — no button then, rather than
+  // a WhatsApp link to nobody.
+  const waHref = client?.mobile ? whatsappHref(client.mobile, client.name) : null;
   const statusCfg = client ? getStatusConfig(client.status, client.days_left, client.pt_end_date) : null;
+  const balanceTint = currentTermBalance > 0 ? (client?.due_status === 'OVERDUE' ? BAD : WARN) : OK;
+  const daysTint = client?.days_left != null && client.days_left <= 7 ? WARN : tones.sky;
 
   return (
     <Guard>
       <div className="min-h-screen">
-
         <div className="relative mx-auto max-w-screen-lg pb-6">
 
-          {/* ── LOADING ── */}
-          {loading && (
-            <div className="flex flex-col items-center justify-center min-h-[70vh] gap-4">
-              <div className="relative h-14 w-14">
-                <div className="absolute inset-0 rounded-full"
-                  style={{ border: '2px solid rgba(0,103,224,0.15)', borderTopColor: '#0067e0', animation: 'spin 0.9s linear infinite' }} />
-              </div>
-              <p className="text-[13px] font-[500] text-slate-500">Loading client profile…</p>
-            </div>
-          )}
+          {loading && <ProfileSkeleton />}
 
-          {/* ── ERROR ── */}
           {!loading && error && (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-[20px]"
-                style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                <AlertTriangle size={26} className="text-red-400" />
-              </div>
-              <p className="text-[14px] text-slate-400">{error}</p>
+            <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
+              <Squircle tint={BAD} size={60}><AlertTriangle size={26} /></Squircle>
+              <p className="text-[14px]" style={{ color: 'var(--text-muted)' }}>{error}</p>
               <button onClick={loadData}
-                className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[13px] font-[700] text-white"
-                style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)' }}>
+                className="flex h-[44px] items-center gap-2 rounded-full px-5 text-[13.5px] font-[700] text-white"
+                style={{ background: gradient(tones.sky) }}>
                 <RefreshCw size={14} /> Retry
               </button>
             </div>
@@ -498,493 +586,258 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
           {!loading && !error && client && (
             <>
-              {/* ── HERO ── */}
-              {/* ── PROFILE CARD ──
-                  Who this is, and the one action that edits them. Nothing
-                  else: contact, enrolment and money each earned their own
-                  block below, because stacking four unrelated jobs on one
-                  surface made a card nobody could scan. */}
-              <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+              {/* ── HERO ──
+                  Who this is, how they stand, and the one action that edits
+                  them. A colour mesh rather than a flat navy slab: indigo into
+                  purple with pink and orange light — the page is somebody's
+                  profile, not a finance statement. The glows are background
+                  layers, never blurred children: on iOS Safari a filtered
+                  child escapes the rounded clip as a square wedge. */}
+              <m.section
+                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="relative mb-3 overflow-hidden rounded-[28px] p-5 sm:p-7"
+                className="relative mb-5 overflow-hidden rounded-[32px] p-5 text-white sm:p-7"
                 style={{
-                  // The two corner glows are BACKGROUND LAYERS, not child divs.
-                  //
-                  // They used to be absolutely-positioned divs with
-                  // `blur-3xl`. On iOS Safari a `filter: blur()` child is
-                  // promoted to its own compositing layer, and the ancestor's
-                  // `overflow-hidden` + `border-radius` clip is then applied
-                  // to that layer as a RECTANGLE. The glow's square corner
-                  // showed outside the card's rounded corner as a pale blue
-                  // wedge — crisp on the outer edges (the border box), soft
-                  // on the inside (the blur). Confirmed by which corners were
-                  // affected: top-right and bottom-left, where the two glows
-                  // sat; top-right had no such artifact.
-                  //
-                  // A background layer cannot escape, because backgrounds are
-                  // always painted inside the border-radius. That makes this
-                  // correct by construction rather than by relying on
-                  // compositor behaviour — which matters, since the bug only
-                  // reproduces on WebKit and cannot be regression-tested here.
-                  //
-                  // The 180px radius was fitted against the old rendering by
-                  // pixel comparison: mean difference 1.1/255 (0.43%), and the
-                  // fit is flat between 140px and 200px, so it is not a
-                  // magic number. Two fewer DOM nodes and two fewer 288px
-                  // blur(64px) layers per card is a mobile paint win as well.
                   background: [
-                    'radial-gradient(circle 180px at calc(100% - 48px) 32px, rgba(0,103,224,0.40), transparent 70%)',
-                    'radial-gradient(circle 180px at 48px calc(100% - 16px), rgba(0,103,224,0.20), transparent 70%)',
-                    'linear-gradient(135deg, #0050ad 0%, #003f87 55%, #003f87 100%)',
+                    `radial-gradient(circle 280px at 12% 110%, ${heroMesh.glowA}, transparent 70%)`,
+                    `radial-gradient(circle 260px at calc(100% - 40px) -20px, ${heroMesh.glowB}, transparent 70%)`,
+                    heroMesh.base,
                   ].join(', '),
-                  boxShadow: '0 20px 48px rgba(0,80,173,0.35)',
-                }}>
-
-                <div className="relative flex items-start gap-4 sm:gap-6">
-                  {/* ── The client's face, when the client has one ──────────
-                      photo_url has been on this type all along and nothing
-                      rendered it, so every client looked like two letters.
-                      Rendered directly rather than through a URL helper
-                      because the field carries both data URLs (the in-app
-                      camera crop) and stored paths; onError is what makes
-                      that safe — a path this deployment cannot serve falls
-                      back to the initials instead of leaving a broken image
-                      on the client's own profile. */}
-                  <div className="relative flex h-[92px] w-[92px] shrink-0 items-center justify-center overflow-hidden rounded-[26px] text-[30px] font-[860] text-white sm:h-[120px] sm:w-[120px] sm:rounded-[34px] sm:text-[38px]"
+                  boxShadow: `0 28px 60px -24px ${tones.violet.glow}, inset 0 1px 0 rgba(255,255,255,0.18)`,
+                }}
+              >
+                <div className="flex items-start gap-4 sm:gap-6">
+                  {/* The client's face when there is one; onError falls back
+                      to initials rather than a broken image. */}
+                  <div className="relative flex h-[84px] w-[84px] shrink-0 items-center justify-center overflow-hidden rounded-full text-[28px] font-[800] sm:h-[112px] sm:w-[112px] sm:text-[36px]"
                     style={{
-                      background: 'rgba(255,255,255,0.09)',
-                      border: '1px solid rgba(255,255,255,0.16)',
-                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 10px 24px rgba(0,0,0,0.28)',
+                      background: 'linear-gradient(145deg, rgba(255,255,255,0.35), rgba(255,255,255,0.08))',
+                      border: '3px solid rgba(255,255,255,0.55)',
+                      boxShadow: '0 12px 28px -10px rgba(0,0,0,0.45)',
                     }}>
                     {client.photo_url && !photoBroken ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={client.photo_url}
-                        alt={client.name}
-                        onError={() => setPhotoBroken(true)}
-                        className="h-full w-full object-cover"
-                      />
+                      <img src={client.photo_url} alt={client.name} onError={() => setPhotoBroken(true)}
+                        className="h-full w-full object-cover" />
                     ) : (
                       initials(client.name)
                     )}
                   </div>
 
-                  <div className="min-w-0 flex-1">
-                    {/* The name gets its own line and truncates rather than
-                        wrapping. It used to share the row with the status
-                        pill, which left roughly 120px for it on a phone —
-                        enough for "Ajeet Yadav" and not for "Hari Narayan
-                        Singh", so real names wrapped to two and three lines
-                        and the card grew to fit them. */}
-                    <h1 className="truncate text-[22px] font-[880] leading-[1.15] tracking-[-0.03em] text-white sm:text-[34px]">
+                  <div className="min-w-0 flex-1 pt-1">
+                    <h1 className="truncate text-[24px] font-[800] leading-[1.1] tracking-[-0.03em] sm:text-[34px]">
                       {client.name}
                     </h1>
-
-                    <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                      {/* #0067e0 is the brand blue, and CopyId tints its own background and
-                          border from the colour it is given — which on this navy card
-                          meant blue text on blue at 8% alpha, at 10px. This light blue
-                          is the one the rest of the card's chips use. */}
-                      <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color="#b8d7ff" />
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       {statusCfg && (
-                        // statusCfg.bg is a 12%-alpha tint and the border 30/255 —
-                        // both mixed for a light card, and both nearly invisible
-                        // against this gradient. Same hue, enough of it to read.
-                        <span className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1"
-                          style={{ background: `${statusCfg.color}26`, border: `1px solid ${statusCfg.color}66` }}>
-                          <span className="h-1.5 w-1.5 rounded-full" style={{ background: statusCfg.dot }} />
-                          <span className="text-[10px] font-[800] uppercase tracking-wider" style={{ color: statusCfg.color }}>
-                            {statusCfg.label}
-                          </span>
+                        <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-[700]"
+                          style={{ background: 'rgba(255,255,255,0.20)', border: '1px solid rgba(255,255,255,0.28)' }}>
+                          <span className="h-2 w-2 rounded-full" style={{ background: statusCfg.dot, boxShadow: `0 0 0 2px rgba(255,255,255,0.6)` }} />
+                          {statusCfg.label}
                         </span>
                       )}
+                      <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color={gray[0]} />
                     </div>
-
-                    {client.email && (
-                      <p className="mt-2 truncate text-[12px] font-[600]" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                        {client.email}
+                    {(client.email || client.package_type) && (
+                      <p className="mt-2 truncate text-[12.5px] font-[560] text-white/75">
+                        {[client.package_type, client.email].filter(Boolean).join(' · ')}
                       </p>
                     )}
-
-                    {/* Edit sits at the bottom of the identity column rather
-                        than on a row of its own below the card. Its own row
-                        cost the card the button's full height plus a 16px
-                        gap; here it shares the row the 92px avatar already
-                        sets, so part of it is paid for by space that was
-                        empty blue. Still the lower right, just smaller — 36px
-                        and 11.5px type, which is what a secondary action next
-                        to somebody's name should weigh. */}
-                    <div className="mt-3 flex justify-end">
-                      <button onClick={() => router.push(`/pt-os/clients/${id}/edit`)}
-                        className="flex h-[36px] items-center gap-1.5 rounded-[11px] px-3.5 text-[11.5px] font-[750] text-white transition-all hover:brightness-125"
-                        style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
-                        <Pencil size={12} /> Edit profile
-                      </button>
-                    </div>
                   </div>
+
+                  <button onClick={() => router.push(`/pt-os/clients/${id}/edit`)}
+                    aria-label="Edit profile"
+                    className="flex h-[44px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-[700] text-white transition active:scale-95"
+                    style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.28)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
+                    <Pencil size={13} /> <span className="hidden sm:inline">Edit</span>
+                  </button>
                 </div>
-              </m.div>
 
-              {/* ── THE FOUR THINGS YOU DO FROM HERE ──
-                  Contact them, message them, sell them a term, renew it. One
-                  row, one weight — they are peers, and burying them among the
-                  identity made them read as decoration on the card. */}
-              <div className={`mb-3 grid gap-2 ${client.mobile ? 'grid-cols-3 sm:grid-cols-6' : 'grid-cols-2 sm:grid-cols-4'}`}>
-                {[
-                  client.mobile
-                    ? { key: 'call', label: client.mobile, icon: <Phone size={16} />, from: '#0067e0', to: '#0067e0', href: `tel:${client.mobile}` }
-                    : null,
-                  client.mobile
-                    ? { key: 'wa', label: 'WhatsApp', icon: <MessageCircle size={16} />, from: '#10b981', to: '#059669', href: whatsappHref(client.mobile, client.name), external: true }
-                    : null,
-                  { key: 'message', label: 'Message', icon: <MessagesSquare size={16} />, from: '#0067e0', to: '#0059ce', push: `/pt-os/messages?client=${encodeURIComponent(String(id))}` },
-                  { key: 'enroll', label: 'Enroll in PT', icon: <Award size={16} />, from: '#f59e0b', to: '#d97706', push: `/pt-os/clients/${id}/enroll` },
-                  { key: 'renew', label: 'Renew PT', icon: <Repeat size={16} />, from: '#0067e0', to: '#0059ce', push: `/pt-os/clients/${id}/renew` },
-                  // The member renews themselves: priced here, paid by UPI in their app.
-                  { key: 'offer', label: 'Renewal offer', icon: <Send size={16} />, from: '#10b981', to: '#059669', onClick: () => setOfferOpen(true) },
-                ].filter(Boolean).map((a) => {
-                  const item = a as { key: string; label: string; icon: React.ReactNode; from: string; to: string; href?: string; push?: string; external?: boolean; onClick?: () => void };
-                  const inner = (
-                    <>
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
-                        style={{ background: `linear-gradient(135deg, ${item.from}, ${item.to})`, boxShadow: `0 3px 10px ${item.from}40` }}>
-                        <span className="text-white">{item.icon}</span>
-                      </span>
-                      {/* Wraps rather than truncates. A phone number cut to
-                          "+919876…" is worse than no number at all — you
-                          cannot read it and you cannot dial it. */}
-                      <span className="w-full text-center text-[10px] font-[720] leading-tight text-slate-700 sm:text-[12px]"
-                        style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
-                        {item.label}
-                      </span>
-                    </>
-                  );
-                  const cls = 'flex min-h-[76px] w-full flex-col items-center justify-center gap-2 rounded-[18px] p-2.5 transition-all duration-200 hover:-translate-y-0.5 sm:min-h-[64px] sm:flex-row sm:gap-2.5 sm:p-3';
-                  const st: React.CSSProperties = {
-                    background: 'var(--bg-card)', border: '1px solid var(--border)',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-                  };
-                  if (item.onClick) return <button key={item.key} type="button" onClick={item.onClick} className={cls} style={st}>{inner}</button>;
-                  return item.push
-                    ? <button key={item.key} onClick={() => router.push(item.push!)} className={cls} style={st}>{inner}</button>
-                    : (
-                      <a key={item.key} href={item.href}
-                        {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                        className={cls} style={st}>{inner}</a>
-                    );
-                })}
-              </div>
+                <div className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
+                  <HeroStat icon={<Hourglass size={11} />} label="Days left"
+                    value={client.days_left != null ? String(Math.max(0, client.days_left)) : '—'} />
+                  <HeroStat icon={<UserCheck size={11} />} label="Trainer" value={client.trainer_name || '—'} />
+                  <HeroStat icon={<ScrollText size={11} />} label="Programme" value={activePlanName || 'None yet'} />
+                </div>
+              </m.section>
 
-              {/* ── MONEY ──
-                  Three KPI cards instead of one solid block. The block used
-                  the hero's own navy blue at full strength, so scrolling
-                  past it read as the hero continuing rather than as a new,
-                  different question — "who is this" bleeding into "what do
-                  they owe".
-                  A plain white card with only the icon tinted (the first
-                  cut of this) read as flat next to the colourful tab strip
-                  and its panels below — three cards, not twelve, so a soft
-                  colour wash on the card itself (the same tinted-chip
-                  treatment Quick Actions uses) reads as considered rather
-                  than busy here. Term Fee keeps the hero's blue (it is the
-                  one neutral fact of the three); Paid and Balance keep the
-                  green/amber/red they already had, because paid-or-owed is
-                  a status this app colours everywhere else. */}
-              <div className="mb-4 grid grid-cols-3 gap-2 sm:gap-3">
-                {[
-                  {
-                    label: 'Term Fee', value: fmtNum(currentTermFee),
-                    icon: <IndianRupee size={13} />, color: '#0067e0',
-                  },
-                  {
-                    label: 'Paid', value: fmtNum(currentTermPaid),
-                    icon: <CheckCircle size={13} />, color: '#10b981',
-                  },
-                  {
-                    label: 'Balance', value: fmtNum(currentTermBalance),
-                    // Not rendered. Balance is the one card whose state is
-                    // carried ONLY by its colour now that the sub-labels are
-                    // gone, and red-versus-amber is exactly the distinction a
-                    // colour-blind reader cannot make. Announced to assistive
-                    // tech instead of drawn, so the card stays the shape it is
-                    // meant to be without the state going missing.
-                    state: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'Overdue' : 'Due') : 'Cleared',
-                    icon: currentTermBalance > 0 ? <AlertTriangle size={13} /> : <CheckCircle size={13} />,
-                    color: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? '#ef4444' : '#f59e0b') : '#10b981',
-                  },
-                ].map((k, i) => (
-                  // A short rectangle, sized by its own content.
-                  //
-                  // The icon chip was 36px with a 16px glyph, sitting above a
-                  // number that then had to compete with it — the mark read
-                  // as the loudest thing on a card whose whole job is the
-                  // figure. It is 26px with a 13px glyph now, which puts it
-                  // back where a mark belongs: identifying the card, not
-                  // announcing it.
-                  //
-                  // These were square (aspect-square + justify-between), which
-                  // made the card as tall as a third of the viewport is wide —
-                  // most of it empty, and on a phone that is a whole band of
-                  // nothing between the hero and the actions below it. The
-                  // sub-labels that filled the bottom said little the figure
-                  // did not already ('Current term' under Term Fee, 'Cleared'
-                  // under a balance of 0) and they are gone, so the height
-                  // they justified goes with them.
-                  //
-                  // No fixed height replaces it: a pixel height is right on
-                  // one handset and wrong on the next. Three cards holding the
-                  // same three rows are the same height as each other on every
-                  // one of them, which is the property that actually mattered.
-                  <m.div key={k.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.08 + i * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                    className="flex flex-col gap-1.5 rounded-[18px] p-2.5 sm:p-3"
-                    style={{
-                      background: `linear-gradient(160deg, ${k.color}14 0%, ${k.color}05 100%)`,
-                      border: `1px solid ${k.color}22`,
-                      boxShadow: `0 4px 14px ${k.color}14`,
-                    }}>
-                    <span className="flex h-[26px] w-[26px] items-center justify-center rounded-[9px] text-white"
-                      style={{ background: `linear-gradient(135deg, ${k.color}, ${k.color}cc)`, boxShadow: `0 3px 8px ${k.color}40` }}>
-                      {k.icon}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[9px] font-[750] uppercase tracking-wider" style={{ color: `${k.color}b3` }}>
-                        {k.label}
+              {/* ── ACTIONS ──
+                  Round, coloured, labelled underneath — the Contacts row.
+                  Enroll only for somebody without a PT term, Renew only for
+                  somebody with one: showing both offered a choice that only
+                  ever had one right answer. */}
+              <nav aria-label="Client actions" className="mb-5 flex items-start justify-between gap-1 px-1 sm:justify-start sm:gap-6 sm:px-2">
+                {client.mobile && (
+                  <ActionButton label="Call" icon={<Phone size={20} />} tint={tones.lime} href={`tel:${client.mobile}`} />
+                )}
+                {waHref && (
+                  <ActionButton label="WhatsApp" icon={<MessageCircle size={20} />} tint={tones.mint} href={waHref} external />
+                )}
+                <ActionButton label="Message" icon={<MessagesSquare size={20} />} tint={tones.sky}
+                  onClick={() => router.push(`/pt-os/messages?client=${encodeURIComponent(String(id))}`)} />
+                {hasTerm ? (
+                  <ActionButton label="Renew" icon={<Repeat size={20} />} tint={tones.indigo}
+                    onClick={() => router.push(`/pt-os/clients/${id}/renew`)} />
+                ) : (
+                  <ActionButton label="Enroll" icon={<UserPlus size={20} />} tint={tones.indigo}
+                    onClick={() => router.push(`/pt-os/clients/${id}/enroll`)} />
+                )}
+                {/* The member renews themselves: priced here, paid by UPI in their app. */}
+                <ActionButton label="Offer" ariaLabel="Renewal offer" icon={<Send size={20} />} tint={tones.berry} onClick={() => setOfferOpen(true)} />
+              </nav>
+
+              {/* ── MEMBERSHIP ──
+                  The term and its money in one card — they answer one
+                  question ("where do they stand?") and were two blocks apart. */}
+              <SectionCard
+                title="PT membership" icon={<CalendarRange size={15} />} tint={tones.sky} className="mb-5"
+                action={hasTerm && client.days_left != null ? (
+                  <span className={`text-[13px] font-[750] tabular-nums ${inkClass}`} style={inkVars(daysTint)}>
+                    {Math.max(0, client.days_left)} days left
+                  </span>
+                ) : undefined}
+              >
+                {hasTerm ? (
+                  <>
+                    <div className="h-2.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}
+                      role="progressbar" aria-label="PT term elapsed" aria-valuenow={ptTermPct} aria-valuemin={0} aria-valuemax={100}>
+                      <m.div initial={{ width: 0 }} animate={{ width: `${ptTermPct}%` }}
+                        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                        className="h-full rounded-full"
+                        style={{ background: `linear-gradient(90deg, ${tones.sky.from}, ${tones.indigo.to} 55%, ${tones.berry.from})` }} />
+                    </div>
+                    <div className="mt-2 flex justify-between text-[11.5px] font-[560]" style={{ color: 'var(--text-muted)' }}>
+                      <span>{fmtDate(client.pt_start_date)}</span>
+                      <span>{fmtDate(client.pt_end_date)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>
+                    No PT term yet — enroll them to start one.
+                  </p>
+                )}
+
+                <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
+                  {[
+                    { label: 'Term fee', value: fmtINR(currentTermFee), tint: tones.sky, icon: <IndianRupee size={12} /> },
+                    { label: 'Paid', value: fmtINR(currentTermPaid), tint: OK, icon: <CheckCircle size={12} /> },
+                    {
+                      label: 'Balance', value: fmtINR(currentTermBalance), tint: balanceTint,
+                      icon: currentTermBalance > 0 ? <AlertTriangle size={12} /> : <CheckCircle size={12} />,
+                      // Balance's state is otherwise carried only by colour.
+                      state: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'Overdue' : 'Due') : 'Cleared',
+                    },
+                  ].map((k) => (
+                    <div key={k.label} className="min-w-0 rounded-[18px] p-3"
+                      style={{ background: `linear-gradient(160deg, ${k.tint.wash}, transparent)`, border: `1px solid ${k.tint.wash}` }}>
+                      <p className={`flex items-center gap-1 text-[10.5px] font-[700] uppercase tracking-[0.06em] ${inkClass}`} style={inkVars(k.tint)}>
+                        {k.icon}{k.label}
                         {k.state && <span className="sr-only"> — {k.state}</span>}
                       </p>
-                      <p className="mt-0.5 truncate text-[21px] font-[860] leading-none tracking-[-0.02em] tabular-nums sm:text-[25px]" style={{ color: k.color }}>
+                      <p className="mt-1 truncate text-[18px] font-[800] leading-tight tracking-[-0.02em] tabular-nums sm:text-[22px]"
+                        style={{ color: 'var(--text-primary)' }}>
                         {k.value}
                       </p>
                     </div>
-                  </m.div>
-                ))}
-              </div>
-
-              {/* ── GENERATE AI WORKOUT / DIET ──
-                  One tap each, using the client already on screen. The
-                  generators take manual profile fields — the backend does not
-                  read the client's own record — so the card fills them from
-                  what the profile carries and says in the preview what it had
-                  to assume. The result is for review; nothing is written to
-                  the client's record. */}
-              <div className="mb-4">
-                <ClientAiGenerateCard client={client} goalType={activeGoals[0]?.goal_type} />
-              </div>
+                  ))}
+                </div>
+              </SectionCard>
 
               {/* ── CLIENT LOGIN ──
-                  Directly under the money, because eligibility depends on
-                  it: a login is what somebody gets for having paid, and the
-                  card says so plainly when they have not. The component
-                  picks which of its three shapes to render from the
-                  server's answer, and renders nothing at all if the status
-                  read fails — a profile page must not break over it. */}
-              <div className="mb-4">
+                  Under the money, because eligibility depends on it. Renders
+                  nothing if the status read fails. */}
+              <div className="mb-5">
                 <ClientLoginCard clientId={client.id} />
               </div>
 
-              {/* ── WHAT NEEDS ATTENTION, THE GOAL, THE COACH, THE RECORDS ──
-                  Replaces three donuts. A ring is the right shape for a
-                  share of a whole and the wrong one for progress toward a
-                  target: you cannot see whether 68% is ahead or behind, and
-                  there is nowhere to put the numbers that make it mean
-                  something. Activity Mix went entirely — the ratio of
-                  payments to check-ins is not a question anybody asks. */}
-              {/* Only `recovery` is kept: it feeds the Check-ins panel below.
-                  `baseline_done` was also captured into state that nothing
-                  ever read. */}
+              {/* What needs attention, the goal, the coach, the records. */}
               <ClientSnapshot clientId={client.id} onLoaded={(s) => setRecovery(s.recovery)} />
 
-              {/* PT term, as a bar. The one donut worth keeping as a figure,
-                  because "days left" is what gets asked, but a bar shows how
-                  far through the term they are without having to read a ring. */}
-              <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.35 }}
-                className="mb-5 rounded-[22px] bg-white p-4 sm:p-5"
-                style={{ border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-                <div className="mb-3.5 flex items-center justify-between gap-3 pb-3.5"
-                  style={{ borderBottom: '1px solid var(--border)' }}>
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
-                      style={{ background: 'linear-gradient(135deg, #7fb4ff, #0067e0)', boxShadow: '0 3px 12px #6366f145' }}>
-                      <Clock size={16} className="text-white" />
-                    </span>
-                    <h3 className="text-[13.5px] font-[740] text-gray-900">PT term</h3>
-                  </div>
-                  <span className="text-[13px] font-[820] tabular-nums" style={{ color: '#0067e0' }}>
-                    {client.days_left != null ? `${client.days_left} days left` : '—'}
-                  </span>
-                </div>
-                <div className="h-2.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}
-                  role="progressbar" aria-valuenow={ptTermPct} aria-valuemin={0} aria-valuemax={100}>
-                  <m.div initial={{ width: 0 }} animate={{ width: `${ptTermPct}%` }}
-                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                    className="h-full rounded-full"
-                    style={{ background: 'linear-gradient(90deg, #0067e0, #6366f1bb)' }} />
-                </div>
-                <div className="mt-2.5 flex justify-between">
-                  <span className="text-[10.5px] font-[600] text-slate-500">Start {fmtDate(client.pt_start_date)}</span>
-                  <span className="text-[10.5px] font-[600] text-slate-500">End {fmtDate(client.pt_end_date)}</span>
-                </div>
-              </m.div>
-
-              {/* ── WORKSPACE ──
-                  Twelve sections instead of thirteen tiles. The tiles all
-                  did the same thing — leave. Working on a client meant open
-                  profile, tap tile, read, go back, tap the next one. Tabs
-                  keep the trainer on the client, and a tab says what it
-                  holds before you open it. Every destination the grid had is
-                  still reachable, inside the section it belongs to. */}
+              {/* ── WORKSPACE ── */}
               <ClientTabs active={tab} onChange={setTab} clientId={client.id} />
 
               <TabPanel id="overview" active={tab}>
-
-              {/* ── DETAIL BANDS ──
-                  Was a 2/1 split: a main column and a taller rail.
-                  With the weight chart hidden — which it is for any
-                  client with fewer than two readings, i.e. most of
-                  them — the main column held one card while the rail
-                  held four, so the page ended in a column-high void.
-                  Full-width bands instead: each row is balanced by
-                  construction and there is nothing left to run out. */}
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-                {/* Weight Trend */}
-                {recentWeights.length >= 2 && (
-                  <DarkCard title="Weight Trend" icon={<TrendingUp size={14} />} from="#10b981">
-                    <PremiumAreaChart
-                      data={recentWeights.map((a: any) => ({
-                        date: fmtDate(a.created_at || a.assessment_date).slice(0, 5),
-                        weight: Number(a.weight),
-                      })) as Record<string, unknown>[]}
-                      xKey="date"
-                      areas={[{ key: 'weight', label: 'Weight (kg)', color: '#10b981' }]}
-                      height={100}
-                      formatValue={(v) => `${v} kg`}
-                    />
-                  </DarkCard>
-                )}
-
-                {/* Active Goals */}
-                {activeGoals.length > 0 && (
-                  <DarkCard title="Active Goals" icon={<Target size={14} />} from="#0067e0">
-                    <div className="space-y-2">
-                      {activeGoals.slice(0, 3).map((g: any) => (
-                        <div key={g.id}
-                          className="flex items-center justify-between rounded-[12px] p-3"
-                          style={{ background: 'rgba(0,103,224,0.06)', border: '1px solid rgba(0,103,224,0.15)' }}>
-                          <div>
-                            <p className="text-[12.5px] font-[660] text-gray-900">{g.goal_type || g.type || 'Goal'}</p>
-                            <p className="text-[10.5px] text-slate-500 mt-0.5">
-                              {g.target_weight ? `Target: ${g.target_weight} kg` : ''}
-                              {g.target_body_fat ? ` BF: ${g.target_body_fat}%` : ''}
-                            </p>
-                          </div>
-                          <button onClick={() => router.push(`/pt-os/goals?client_id=${client.id}`)}
-                            className="rounded-[8px] px-2.5 py-1.5 text-[10.5px] font-[700] transition hover:opacity-80"
-                            style={{ background: 'rgba(0,103,224,0.12)', color: '#0067e0' }}>
-                            View
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </DarkCard>
-                )}
-
-              </div>
-
-              <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
-                {/* Personal Info */}
-                <DarkCard title="Personal Info" icon={<User size={14} />} from="#0067e0">
-                  <InfoRow label="Gender" value={client.gender || '—'} />
-                  <InfoRow label="Date of Birth" value={fmtDate(client.dob)} />
-                  <InfoRow label="Phone" value={client.mobile || '—'} />
-                  <InfoRow label="Email" value={client.email || '—'} />
-                  <InfoRow label="Joined" value={fmtDate(client.joining_date)} />
-                  {/* Asked at intake and, until now, never shown again — a
-                      question the operator answers into a void. It is also
-                      the one field here a studio owner reads on purpose. */}
-                  <InfoRow label="Source" value={client.client_source || '—'} />
-                </DarkCard>
-                {/* PT Assignment */}
-                <DarkCard title="PT Assignment" icon={<Dumbbell size={14} />} from="#0067e0">
-                  <InfoRow label="Start" value={fmtDate(client.pt_start_date)} />
-                  <InfoRow label="End" value={fmtDate(client.pt_end_date)} />
-                  <InfoRow label="Duration" value={client.duration_months ? `${client.duration_months} months` : '—'} />
-                  <InfoRow label="Monthly Fee" value={fmtINR(client.monthly_pt_amount)} />
-                  <InfoRow label="Days Left" value={client.days_left != null ? `${client.days_left} days` : '—'}
-                    valueColor={client.days_left != null && client.days_left <= 7 ? '#ef4444' : undefined} />
-                </DarkCard>
-
-              </div>
-
-              <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {/* Check-in QR */}
-                <QrCheckinCard clientId={client.id} clientName={client.name} />
-
-                {/* Notes */}
-                <DarkCard title="Notes" icon={<FileText size={14} />} from="#f59e0b">
-                  {editNotes ? (
-                    <div className="space-y-3">
-                      <textarea value={notesDraft} onChange={e => setNotesDraft(e.target.value)} rows={4}
-                        className="w-full resize-none rounded-[12px] px-3.5 py-2.5 text-[13px] outline-none transition-all"
-                        style={{
-                          background: 'var(--bg-card)',
-                          border: '1.5px solid rgba(245,158,11,0.3)',
-                          color: 'var(--text-primary)',
-                        }}
-                        onFocus={e => { e.currentTarget.style.borderColor = 'rgba(245,158,11,0.6)'; }}
-                        onBlur={e => { e.currentTarget.style.borderColor = 'rgba(245,158,11,0.3)'; }}
-                        placeholder="Add notes about this client…" />
-                      <div className="flex gap-2">
-                        <button onClick={handleSaveNotes}
-                          className="flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[700] text-white transition hover:opacity-80"
-                          style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
-                          <Save size={11} /> Save
-                        </button>
-                        <button onClick={() => { setEditNotes(false); setNotesDraft(client.notes || ''); }}
-                          className="rounded-[10px] px-3 py-2 text-[12px] font-[700] text-slate-500 transition hover:text-slate-700"
-                          style={{ background: 'var(--bg-subtle)' }}>
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div {...activatable(() => setEditNotes(true), { label: 'Edit notes' })} className="group cursor-pointer rounded-[12px] p-3 transition-all"
-                      style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.12)' }}>
-                      {client.notes ? (
-                        <p className="text-[12.5px] leading-relaxed text-gray-700">{client.notes}</p>
-                      ) : (
-                        <>
-                          <p className="text-[12.5px] italic text-slate-400 group-hover:hidden">No notes yet…</p>
-                          <p className="hidden text-[12.5px] text-amber-500 group-hover:block">Click to add notes…</p>
-                        </>
-                      )}
-                    </div>
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  {recentWeights.length >= 2 && (
+                    <SectionCard title="Weight trend" icon={<TrendingUp size={15} />} tint={tones.lime}>
+                      <PremiumAreaChart
+                        data={recentWeights.map((a: any) => ({
+                          date: fmtDate(a.created_at || a.assessment_date).slice(0, 5),
+                          weight: Number(a.weight),
+                        })) as Record<string, unknown>[]}
+                        xKey="date"
+                        areas={[{ key: 'weight', label: 'Weight (kg)', color: emerald[500] }]}
+                        height={110}
+                        formatValue={(v) => `${v} kg`}
+                      />
+                    </SectionCard>
                   )}
-                </DarkCard>
 
-                {/* Session Balance */}
-                <button onClick={() => router.push(`/pt-os/session-balance?client_id=${client.id}`)}
-                  className="group w-full rounded-[20px] p-5 text-left transition-all duration-200 hover:-translate-y-0.5 bg-white"
-                  style={{
-                    border: '1px solid rgba(0,103,224,0.18)',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-                  }}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-[12px]"
-                        style={{ background: 'rgba(0,103,224,0.12)' }}>
-                        <Calendar size={16} className="text-cyan-500" />
+                  {activeGoals.length > 0 && (
+                    <SectionCard title="Active goals" icon={<Target size={15} />} tint={tones.berry}
+                      action={(
+                        <button onClick={() => router.push(`/pt-os/goals?client_id=${client.id}`)}
+                          className={`h-[36px] rounded-full px-3 text-[12.5px] font-[650] ${inkClass}`}
+                          style={{ background: tones.berry.wash, ...inkVars(tones.berry) }}>
+                          View all
+                        </button>
+                      )}>
+                      <div className="space-y-2">
+                        {activeGoals.slice(0, 3).map((g: any) => (
+                          <div key={g.id} className="rounded-[14px] px-3.5 py-3" style={{ background: 'var(--bg-subtle)' }}>
+                            <p className="text-[13.5px] font-[680] capitalize" style={{ color: 'var(--text-primary)' }}>
+                              {String(g.goal_type || g.type || 'Goal').replace(/_/g, ' ')}
+                            </p>
+                            {(g.target_weight || g.target_body_fat) && (
+                              <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                                {[g.target_weight ? `Target ${g.target_weight} kg` : null, g.target_body_fat ? `Body fat ${g.target_body_fat}%` : null]
+                                  .filter(Boolean).join(' · ')}
+                              </p>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                      <div>
-                        <p className="text-[13px] font-[700] text-gray-900">Session Balance</p>
-                        <p className="text-[10.5px] text-slate-500 mt-0.5">Packages &amp; remaining sessions</p>
+                    </SectionCard>
+                  )}
+
+                  <SectionCard title="Personal info" icon={<User size={15} />} tint={tones.sky}>
+                    <InfoRow icon={<User size={13} />} tint={tones.indigo} label="Gender" value={client.gender || '—'} />
+                    <InfoRow icon={<Cake size={13} />} tint={tones.berry} label="Birthday" value={fmtDate(client.dob)} />
+                    <InfoRow icon={<Phone size={13} />} tint={tones.lime} label="Phone" value={client.mobile || '—'} />
+                    <InfoRow icon={<Mail size={13} />} tint={tones.sky} label="Email" value={client.email || '—'} />
+                    <InfoRow icon={<Calendar size={13} />} tint={tones.sunset} label="Joined" value={fmtDate(client.joining_date)} />
+                    {/* Asked at intake; the one field here a studio owner reads on purpose. */}
+                    <InfoRow icon={<Megaphone size={13} />} tint={tones.violet} label="Source" value={client.client_source || '—'} last />
+                  </SectionCard>
+
+                  <SectionCard title="PT assignment" icon={<Dumbbell size={15} />} tint={tones.indigo}>
+                    <InfoRow icon={<Calendar size={13} />} tint={tones.lime} label="Start" value={fmtDate(client.pt_start_date)} />
+                    <InfoRow icon={<Calendar size={13} />} tint={tones.rose} label="End" value={fmtDate(client.pt_end_date)} />
+                    <InfoRow icon={<Clock size={13} />} tint={tones.mint} label="Duration" value={client.duration_months ? `${client.duration_months} months` : '—'} />
+                    <InfoRow icon={<IndianRupee size={13} />} tint={tones.sky} label="Monthly fee" value={fmtINR(client.monthly_pt_amount)} />
+                    <InfoRow icon={<Hourglass size={13} />} tint={daysTint} label="Days left"
+                      value={client.days_left != null ? `${client.days_left} days` : '—'}
+                      danger={client.days_left != null && client.days_left <= 7} last />
+                  </SectionCard>
+
+                  <NotesCard notes={client.notes} onSave={handleSaveNotes} />
+
+                  <div className="grid grid-cols-1 gap-4">
+                    <button onClick={() => router.push(`/pt-os/session-balance?client_id=${client.id}`)}
+                      className="group flex w-full items-center justify-between gap-3 rounded-[24px] p-4 text-left transition active:scale-[0.99]"
+                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 12px 32px -18px rgba(15,23,42,0.18)' }}>
+                      <div className="flex items-center gap-3">
+                        <Squircle tint={tones.mint} size={40}><Zap size={17} /></Squircle>
+                        <div>
+                          <p className="text-[14px] font-[700]" style={{ color: 'var(--text-primary)' }}>Session balance</p>
+                          <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>Packages and sessions left</p>
+                        </div>
                       </div>
-                    </div>
-                    <ChevronRight size={16} className="text-cyan-500 transition-transform duration-200 group-hover:translate-x-0.5" />
+                      <ChevronRight size={18} className="transition-transform group-hover:translate-x-0.5" style={{ color: 'var(--text-muted)' }} />
+                    </button>
+                    <QrCheckinCard clientId={client.id} clientName={client.name} />
                   </div>
-                </button>
-              </div>
-
+                </div>
               </TabPanel>
 
               <TabPanel id="payments" active={tab}>
@@ -1000,58 +853,33 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     ]}
                   />
                 </div>
-              {/* ── SUBSCRIPTION HISTORY (summary → dedicated page) ── */}
-              <m.button
-                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-                onClick={() => router.push(`/pt-os/clients/${client.id}/subscriptions`)}
-                className="group mt-5 block w-full overflow-hidden rounded-[24px] p-6 text-left transition-all duration-200 hover:-translate-y-0.5 bg-white"
-                style={{
-                  border: '1px solid var(--border)',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-                }}>
-                <div className="flex flex-wrap items-center justify-between gap-4">
+                <m.button
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                  onClick={() => router.push(`/pt-os/clients/${client.id}/subscriptions`)}
+                  className="group flex w-full flex-wrap items-center justify-between gap-4 rounded-[24px] p-5 text-left transition active:scale-[0.99]"
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 12px 32px -18px rgba(15,23,42,0.18)' }}>
                   <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-[13px]"
-                      style={{ background: 'rgba(0,103,224,0.12)', border: '1px solid rgba(0,103,224,0.2)' }}>
-                      <Repeat size={18} className="text-indigo-500" />
-                    </div>
+                    <Squircle tint={tones.indigo} size={42}><Repeat size={18} /></Squircle>
                     <div>
-                      <h3 className="text-[14px] font-[760] text-gray-900">PT Subscription History</h3>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
+                      <h3 className="text-[15px] font-[720]" style={{ color: 'var(--text-primary)' }}>PT subscription history</h3>
+                      <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
                         {lifetimeTermCount} term{lifetimeTermCount !== 1 ? 's' : ''} · {fmtINR(lifetimePaid)} lifetime paid
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    {currentTermBalance > 0 ? (
-                      <span className="rounded-[7px] px-2.5 py-1 text-[10px] font-[700] uppercase tracking-wider"
-                        style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
-                        {fmtINR(currentTermBalance)} due
-                      </span>
-                    ) : (
-                      <span className="rounded-[7px] px-2.5 py-1 text-[10px] font-[700] uppercase tracking-wider"
-                        style={{ background: 'rgba(16,185,129,0.1)', color: '#059669' }}>
-                        Cleared
-                      </span>
-                    )}
-                    <ChevronRight size={18} className="text-indigo-400 transition-transform duration-200 group-hover:translate-x-0.5" />
+                  <div className="flex items-center gap-2">
+                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-[700] ${inkClass}`}
+                      style={{ background: balanceTint.wash, ...inkVars(balanceTint) }}>
+                      {currentTermBalance > 0 ? `${fmtINR(currentTermBalance)} due` : 'Cleared'}
+                    </span>
+                    <ChevronRight size={18} className="transition-transform group-hover:translate-x-0.5" style={{ color: 'var(--text-muted)' }} />
                   </div>
-                </div>
-              </m.button>
-
+                </m.button>
               </TabPanel>
 
-              {/* ── The sections whose work lives on its own screen ──
-                  These do NOT re-implement the workout log, the diet
-                  planner or the photo gallery. Those pages exist and work; a
-                  second copy inside a tab is a second thing to keep correct,
-                  and the copy is the one that drifts. Each panel says what
-                  is there and sends you to the screen that owns it.
-
-                  The empty states are not placeholders. Most of these tables
-                  are empty in a new studio, and a tab that renders nothing
-                  reads as a broken feature — so each says what would be here
-                  and carries the control that puts it there. */}
+              {/* Tabs whose work lives on its own screen send you there rather
+                  than re-implementing it; Workout Log, Measurements and
+                  Nutrition go straight to their screens (see ClientTabs). */}
               <TabPanel id="training" active={tab}>
                 <LinkPanel
                   icon={<Dumbbell size={16} />}
@@ -1068,67 +896,36 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 />
               </TabPanel>
 
-              {/* Workout Log, Measurements and Nutrition have no panels.
-                  Each of those was a panel whose entire content was a list of
-                  links to the screen that already does the job — a tap to
-                  reach a tap, with a paragraph in between explaining what you
-                  would find if you took the second one. Their tabs go
-                  straight there now (see ClientTabs, where the destination
-                  lives beside the tab). */}
-
               <TabPanel id="checkins" active={tab}>
-                {/* Real readiness now, not a placeholder: the score, the four
-                    components behind it, how many questions were answered,
-                    and the trend once three weeks exist. It carries its own
-                    empty state, so this tab tells the truth whether or not
-                    anybody has run a check-in. */}
                 <RecoveryPanel recovery={recovery} clientId={client.id} />
               </TabPanel>
 
               <TabPanel id="photos" active={tab}>
-                {/* Fetches. This was a hardcoded EmptyPanel that queried
-                    nothing, so the tab told every client on the platform they
-                    had no photos — including the ones with twenty on file. */}
                 <PhotosPanel clientId={client.id} />
               </TabPanel>
 
               <TabPanel id="notes" active={tab}>
-                <LinkPanel
-                  icon={<StickyNote size={16} />}
-                  title="Notes"
-                  body="Coach notes live on the Overview tab, beside the client's details — they are read alongside everything else rather than filed away."
-                  color={TAB_COLOR.primary}
-                  /* A button that switches the tab, not a link to this page's
-                     own URL. It linked to /pt-os/clients/{id} — the page you
-                     are already on — so tapping it navigated nowhere and left
-                     the Notes panel exactly where it was. */
-                  action={(
-                    <Button
-                      iconLeft={<StickyNote size={15} />}
-                      onClick={() => setTab('overview')}
-                      style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff' }}
-                    >
-                      Go to Overview
-                    </Button>
-                  )}
-                  links={[]}
-                />
+                {/* The notes themselves, not a button back to Overview. */}
+                <NotesCard notes={client.notes} onSave={handleSaveNotes} />
               </TabPanel>
 
               <TabPanel id="ai" active={tab}>
+                {/* The one-tap generators live with the rest of the AI tools
+                    rather than between the money and the tabs, where they
+                    pushed the workspace a full screen down on a phone. */}
+                <div className="mb-4">
+                  <ClientAiGenerateCard client={client} goalType={activeGoals[0]?.goal_type} />
+                </div>
                 <LinkPanel
                   icon={<Sparkles size={16} />}
                   title="AI Coach"
                   body="The observations above the tabs are derived from this client's own readings. The assistant can go further — ask it about their programme, recovery or nutrition."
                   color={TAB_COLOR.warning}
                   action={(
-                    // First, and a button rather than a link: this is the only
-                    // item here that answers a question about THIS client
-                    // instead of navigating away to generate an artefact.
                     <Button
                       iconLeft={<Sparkles size={15} />}
                       onClick={() => setAiOpen(true)}
-                      style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff' }}
+                      style={{ background: gradient(tones.violet), color: '#fff' }}
                     >
                       Ask AI about {client.name?.split(' ')[0] || 'this client'}
                     </Button>
@@ -1143,13 +940,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
               </TabPanel>
 
               <TabPanel id="reports" active={tab}>
-                {/* The links here are the ones that are actually ABOUT this
-                    client. This panel used to promise "a shareable summary of
-                    this client's month" and send you to /pt-os/reports, which
-                    is the studio's finance report — revenue, commissions,
-                    trainer counts — with no per-client concept and no reading
-                    of the client_id it was handed. The promise and the
-                    destination had nothing to do with each other. */}
                 <LinkPanel
                   icon={<FileBarChart size={16} />}
                   title="Reports"
@@ -1165,10 +955,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
               </TabPanel>
 
               <TabPanel id="documents" active={tab}>
-                {/* Screening. These forms were reachable only from the old
-                    grid's Screening submenu, so removing the grid would have
-                    stranded lifestyle, posture and mobility — assessments the
-                    training brief reads from and nothing else links to. */}
                 <div className="mb-4">
                   <LinkPanel
                     icon={<ShieldCheck size={16} />}
@@ -1185,25 +971,15 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     ]}
                   />
                 </div>
-              {/* ── DOCUMENTS ──
-                  At the bottom on purpose. PAR-Q and consent are a status you
-                  check once when onboarding and then only if something is
-                  wrong; sitting at the top of the rail it pushed the notes a
-                  trainer actually reads on every visit below the fold. */}
-              <div className="mt-5">
                 <DocumentsCard clientId={client.id} />
-              </div>
               </TabPanel>
-
             </>
           )}
         </div>
       </div>
 
-      {/* Rendered only while open, and keyed by client id: remounting on a
-          different client is what guarantees no transcript survives the
-          switch. The service re-authorises every turn regardless, but the UI
-          should not be showing one client's answers under another's name. */}
+      {/* Rendered only while open. The AI panel is keyed by client id, so no
+          transcript survives a switch to another client. */}
       {offerOpen && client && (
         <RenewalOfferSheet
           client={{ id: String(id), name: client.name, mobile: client.mobile, duration_months: client.duration_months, final_amount: client.final_amount }}

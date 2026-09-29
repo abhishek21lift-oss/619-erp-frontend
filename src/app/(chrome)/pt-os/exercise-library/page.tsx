@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
-import { Badge, Button, EmptyState, PageContainer, PageHero, Skeleton, cn } from '@/components/ui';
+import { Badge, Button, EmptyState, HeroButton, PageContainer, PageHero, Skeleton, cn } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -21,7 +21,7 @@ import { ExerciseCommandPalette } from '@/components/pt-os/exercise-library/Exer
 import { PAGE_SIZE, useExerciseLibrary } from '@/components/pt-os/exercise-library/useExerciseLibrary';
 import type { ExerciseFilters } from '@/components/pt-os/exercise-library/useExerciseLibrary';
 import {
-  REGION_ORDER, regionTone, toneGradient, toneVars,
+  REGION_ORDER, SPECTRUM_RIBBON, regionTone, toneGradient, toneVars,
 } from '@/components/pt-os/exercise-library/libraryTheme';
 import { errorMessage } from '@/lib/forms/errors';
 
@@ -167,20 +167,25 @@ function ExerciseLibrary() {
       {/* max-w-[1600px] with its own px-4/sm:px-6 INSIDE .shell-main's gutter
           — so this page was 320px wider than the dashboard and paid its
           padding twice. */}
-      {/* Compact: a trainer opens the library to find an exercise, so the
-          header is furniture, not an arrival moment. No counts or refresh —
-          the list below is the library, and it refetches on every filter. */}
+      {/* The full hero, kept lean: title, one line of context and the one
+          action. The counters and the refresh button are gone — the list
+          below is the library, and it refetches on every filter change. */}
       <PageHero
-        compact
-        icon={<Dumbbell size={18} />}
+        icon={<Dumbbell size={20} />}
         title="Exercise Library"
         subtitle="Browse by muscle, equipment or name"
         actions={canAuthor ? (
-          <Button onClick={openCreate} iconLeft={<Plus size={16} />} className="h-[44px] w-full sm:w-auto">
+          <HeroButton
+            onClick={openCreate}
+            className="h-[44px] w-full rounded-[14px] sm:w-auto"
+            icon={<Plus size={16} />}
+          >
             New exercise
-          </Button>
+          </HeroButton>
         ) : undefined}
-      />
+      >
+        <div aria-hidden className="h-[3px] w-full max-w-[560px] rounded-full opacity-90" style={{ background: SPECTRUM_RIBBON }} />
+      </PageHero>
 
       {/* ── Browse by muscle ───────────────────────────────────── */}
       {regions.length > 0 && (

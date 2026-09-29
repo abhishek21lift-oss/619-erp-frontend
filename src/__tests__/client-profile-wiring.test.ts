@@ -110,7 +110,10 @@ describe('the Notes tab goes somewhere', () => {
   it('switches tab instead of linking to the page you are already on', () => {
     // It linked to /pt-os/clients/{id} — this page's own URL — so tapping it
     // navigated nowhere and left the Notes panel exactly where it was.
-    expect(PROFILE).toMatch(/onClick=\{\(\) => setTab\('overview'\)\}/);
+    // Then it was a panel whose only button switched back to Overview. It
+    // now holds the notes editor itself.
+    expect(PROFILE).toMatch(/<TabPanel id="notes" active=\{tab\}>[\s\S]{0,200}?<NotesCard /);
+    expect(PROFILE).not.toMatch(/\/pt-os\/clients\/\$\{client\.id\}`[^/]/);
   });
 });
 
