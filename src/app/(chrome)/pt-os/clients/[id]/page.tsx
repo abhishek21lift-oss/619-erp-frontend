@@ -402,8 +402,11 @@ function HeroStat({ icon, label, value }: { icon: React.ReactNode; label: string
 }
 
 /** A round action with its label underneath — the iOS Contacts action row. */
-function ActionButton({ label, icon, tint, onClick, href, external }: {
-  label: string; icon: React.ReactNode; tint: Tone;
+function ActionButton({ label, ariaLabel, icon, tint, onClick, href, external }: {
+  label: string;
+  /** The full name for assistive tech when the visible label is abbreviated. */
+  ariaLabel?: string;
+  icon: React.ReactNode; tint: Tone;
   onClick?: () => void; href?: string; external?: boolean;
 }) {
   const inner = (
@@ -418,13 +421,13 @@ function ActionButton({ label, icon, tint, onClick, href, external }: {
   const cls = 'group flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-[16px] py-1 outline-none focus-visible:ring-2';
   if (href) {
     return (
-      <a href={href} className={cls} aria-label={label}
+      <a href={href} className={cls} aria-label={ariaLabel ?? label}
         {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
         {inner}
       </a>
     );
   }
-  return <button type="button" onClick={onClick} className={cls} aria-label={label}>{inner}</button>;
+  return <button type="button" onClick={onClick} className={cls} aria-label={ariaLabel ?? label}>{inner}</button>;
 }
 
 function ProfileSkeleton() {
@@ -680,7 +683,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     onClick={() => router.push(`/pt-os/clients/${id}/enroll`)} />
                 )}
                 {/* The member renews themselves: priced here, paid by UPI in their app. */}
-                <ActionButton label="Offer" icon={<Send size={20} />} tint={tones.berry} onClick={() => setOfferOpen(true)} />
+                <ActionButton label="Offer" ariaLabel="Renewal offer" icon={<Send size={20} />} tint={tones.berry} onClick={() => setOfferOpen(true)} />
               </nav>
 
               {/* ── MEMBERSHIP ──

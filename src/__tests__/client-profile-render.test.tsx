@@ -45,6 +45,8 @@ describe('client profile', () => {
     expect(screen.getByRole('button', { name: 'Renew' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Enroll' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Call' })).toBeTruthy();
+    // The e2e renewal-offer journey opens the sheet by this accessible name.
+    expect(screen.getByRole('button', { name: 'Renewal offer' })).toBeTruthy();
     expect(screen.getByText('5 days left')).toBeTruthy();
     expect(screen.getByText('PT membership')).toBeTruthy();
     expect(screen.getByText('— Overdue')).toBeTruthy();
