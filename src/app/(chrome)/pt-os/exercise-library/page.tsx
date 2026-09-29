@@ -3,11 +3,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Dumbbell, Plus, SlidersHorizontal, Search, Command, ChevronLeft, ChevronRight,
-  RefreshCw, AlertCircle, Star, LayoutGrid, X, Check,
+  AlertCircle, Star, LayoutGrid, X, Check,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
-import { Badge, Button, EmptyState, HeroButton, PageContainer, PageHero, Skeleton, cn } from '@/components/ui';
+import { Badge, Button, EmptyState, PageContainer, PageHero, Skeleton, cn } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -21,7 +21,7 @@ import { ExerciseCommandPalette } from '@/components/pt-os/exercise-library/Exer
 import { PAGE_SIZE, useExerciseLibrary } from '@/components/pt-os/exercise-library/useExerciseLibrary';
 import type { ExerciseFilters } from '@/components/pt-os/exercise-library/useExerciseLibrary';
 import {
-  REGION_ORDER, SPECTRUM_RIBBON, regionTone, toneGradient, toneVars,
+  REGION_ORDER, regionTone, toneGradient, toneVars,
 } from '@/components/pt-os/exercise-library/libraryTheme';
 import { errorMessage } from '@/lib/forms/errors';
 
@@ -167,41 +167,20 @@ function ExerciseLibrary() {
       {/* max-w-[1600px] with its own px-4/sm:px-6 INSIDE .shell-main's gutter
           — so this page was 320px wider than the dashboard and paid its
           padding twice. */}
+      {/* Compact: a trainer opens the library to find an exercise, so the
+          header is furniture, not an arrival moment. No counts or refresh —
+          the list below is the library, and it refetches on every filter. */}
       <PageHero
-        icon={<Dumbbell size={20} />}
+        compact
+        icon={<Dumbbell size={18} />}
         title="Exercise Library"
-        subtitle={meta
-          ? `${meta.total.toLocaleString()} exercises${meta.custom_total > 0 ? ` · ${meta.custom_total} custom` : ''}`
-          : 'Loading library…'}
-        actions={(
-          <div className="flex items-center gap-2">
-            <HeroButton
-              variant="glass"
-              onClick={() => lib.refetch()}
-              aria-label="Refresh library"
-              className="h-[44px] w-[44px] shrink-0 px-0"
-              icon={<RefreshCw size={16} className={cn(loading && 'animate-spin')} />}
-            />
-            {canAuthor && (
-              <HeroButton
-                onClick={openCreate}
-                className="h-[44px] flex-1 rounded-[14px] sm:flex-none"
-                icon={<Plus size={16} />}
-              >
-                New exercise
-              </HeroButton>
-            )}
-          </div>
-        )}
-      >
-        {/* The library at a glance, in the hero's glass. */}
-        <div className="grid grid-cols-3 gap-2 sm:max-w-[560px] sm:gap-2.5">
-          <HeroStat label="Exercises" value={meta ? meta.total.toLocaleString() : '—'} />
-          <HeroStat label="Custom" value={meta ? meta.custom_total.toLocaleString() : '—'} />
-          <HeroStat label="Groups" value={meta ? String(regions.length) : '—'} />
-        </div>
-        <div aria-hidden className="mt-4 h-[3px] w-full max-w-[560px] rounded-full opacity-90" style={{ background: SPECTRUM_RIBBON }} />
-      </PageHero>
+        subtitle="Browse by muscle, equipment or name"
+        actions={canAuthor ? (
+          <Button onClick={openCreate} iconLeft={<Plus size={16} />} className="h-[44px] w-full sm:w-auto">
+            New exercise
+          </Button>
+        ) : undefined}
+      />
 
       {/* ── Browse by muscle ───────────────────────────────────── */}
       {regions.length > 0 && (
@@ -560,21 +539,6 @@ function pageWindow(current: number, count: number): (number | null)[] {
   return out;
 }
 
-
-/** A number on the hero's glass. */
-function HeroStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      className="rounded-[16px] px-3 py-2.5 sm:px-3.5"
-      style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.14)' }}
-    >
-      <p className="text-[20px] font-[800] leading-none tracking-[-0.02em] text-white tabular-nums sm:text-[24px]">{value}</p>
-      <p className="mt-1.5 truncate text-[10.5px] font-[650] uppercase tracking-[0.06em]" style={{ color: 'rgba(255,255,255,0.66)' }}>
-        {label}
-      </p>
-    </div>
-  );
-}
 
 /**
  * A body region as a tile in its own colour — the library's front door.
