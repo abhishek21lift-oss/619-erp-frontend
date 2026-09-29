@@ -266,7 +266,7 @@ describe('the app uses only the palette', () => {
     expect(users).toEqual(['components/dashboards/PtOsDashboard.tsx']);
   });
 
-  it('confines the profile colours to My Profile', () => {
+  it('confines the profile colours to My Profile and the client profile', () => {
     // The eighth exception (profile/profileTheme.ts): decoration for the
     // trainer's own profile page and its sections. Only those may import it.
     const users: string[] = [];
@@ -282,8 +282,13 @@ describe('the app uses only the palette', () => {
       }
     };
     walk(join(process.cwd(), 'src'));
+    // The trainer's client profile shares the same decoration, so the coach's
+    // own page and the client pages they work on read as one family. State on
+    // it (paid, due, overdue, document status) stays in the five families.
     const outside = users.filter((u) =>
-      !u.startsWith('components/profile/') && u !== 'app/(chrome)/settings/profile/page.tsx');
+      !u.startsWith('components/profile/')
+      && u !== 'app/(chrome)/settings/profile/page.tsx'
+      && u !== 'app/(chrome)/pt-os/clients/[id]/page.tsx');
     expect(users.length).toBeGreaterThan(0);
     expect(outside).toEqual([]);
   });

@@ -13,6 +13,11 @@
 // redesign — this app colours a settled-or-owed status the same way
 // everywhere else, and that mapping never needed to change, only the shape
 // of the card carrying it.
+//
+// The Apple-style redesign folded the cards into the PT membership card
+// beside the term's progress bar — one question, "where do they stand?".
+// The colour rule is unchanged, only spelled through the palette families
+// (OK / WARN / BAD are emerald / amber / red) instead of raw hexes.
 
 import {describe, expect, it} from 'vitest';
 import {readFileSync} from 'node:fs';
@@ -39,24 +44,26 @@ describe('the Term Fee / Paid / Balance cards are not a copy of the hero', () =>
     // read as flat next to everything colourful around it. Scoped to the
     // money cards' own block — the page uses a plain white card elsewhere,
     // legitimately, for unrelated UI.
-    const block = page.slice(page.indexOf('MONEY'), page.indexOf('CLIENT LOGIN'));
-    expect(block).not.toContain("background: 'var(--bg-card)'");
-    expect(block).toContain('background: `linear-gradient(160deg, ${k.color}14 0%, ${k.color}05 100%)`');
+    const block = page.slice(page.indexOf('MEMBERSHIP'), page.indexOf('CLIENT LOGIN'));
+    expect(block).toContain('background: `linear-gradient(160deg, ${k.tint.wash}, transparent)`');
   });
 
   it('still carries all three labels', () => {
-    for (const label of ['Term Fee', 'Paid', 'Balance']) {
+    for (const label of ['Term fee', 'Paid', 'Balance']) {
       expect(page).toContain(`label: '${label}'`);
     }
   });
 
   it('keeps Term Fee on the hero\'s own blue — the one neutral fact of the three', () => {
-    expect(page).toMatch(/label: 'Term Fee'[\s\S]{0,120}?color: '#0067e0'/);
+    expect(page).toMatch(/label: 'Term fee'[\s\S]{0,80}?tint: tones\.sky/);
   });
 
   it('keeps the paid-or-owed colouring this app uses everywhere: green, amber, or red', () => {
-    expect(page).toContain("color: '#10b981'"); // Paid, and Balance when cleared
-    expect(page).toContain("color: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? '#ef4444' : '#f59e0b') : '#10b981'");
+    expect(page).toMatch(/label: 'Paid'[\s\S]{0,80}?tint: OK/); // Paid, and Balance when cleared
+    expect(page).toContain("const balanceTint = currentTermBalance > 0 ? (client?.due_status === 'OVERDUE' ? BAD : WARN) : OK;");
+    expect(page).toContain('const OK = state(emerald);');
+    expect(page).toContain('const WARN = state(amber);');
+    expect(page).toContain('const BAD = state(red);');
   });
 
   it('switches the Balance icon with the same state its colour already reads', () => {
@@ -73,14 +80,10 @@ describe('the Term Fee / Paid / Balance cards are not a copy of the hero', () =>
   });
 
   it('keeps the mark smaller than the figure it belongs to', () => {
-    // The reason these cards were rebuilt: a 36px chip with a 16px glyph sat
-    // above the number and read as the loudest thing on a card whose whole
-    // job is the figure. A mark identifies a card; it does not announce it.
-    const chip = page.match(/className="flex h-\[(\d+)px\] w-\[\d+px\] items-center justify-center rounded-\[9px\] text-white"/);
-    expect(chip, 'the money cards\' icon chip').not.toBeNull();
-    expect(Number(chip![1])).toBeLessThanOrEqual(28);
-
-    const glyphs = [...page.matchAll(/<(?:IndianRupee|CheckCircle|AlertTriangle) size=\{(\d+)\} \/>/g)]
+    // A mark identifies a card; it does not announce it. The money tiles
+    // carry a 12px glyph inline with their label, well under the figure.
+    const block = page.slice(page.indexOf('MEMBERSHIP'), page.indexOf('CLIENT LOGIN'));
+    const glyphs = [...block.matchAll(/<(?:IndianRupee|CheckCircle|AlertTriangle) size=\{(\d+)\} \/>/g)]
       .map((m) => Number(m[1]));
     expect(glyphs.length).toBeGreaterThanOrEqual(3);
     for (const g of glyphs) expect(g).toBeLessThanOrEqual(14);
@@ -96,7 +99,7 @@ describe('the Term Fee / Paid / Balance cards are not a copy of the hero', () =>
     // come out the same height as each other on every one of them, which is
     // the property the square was actually bought for.
     expect(code).not.toContain('aspect-square');
-    expect(code).toContain('flex flex-col gap-1.5 rounded-[18px]');
+    expect(code).toContain('className="min-w-0 rounded-[18px] p-3"');
   });
 
   it('carries no sub-label under the figure', () => {
