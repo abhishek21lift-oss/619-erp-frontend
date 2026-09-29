@@ -144,9 +144,14 @@ export function ProfileHero({
   // The banner is the one image that changes size on load; without this the
   // gradient beneath it flashes through on a slow connection.
   const [coverLoaded, setCoverLoaded] = useState(false);
+  // A stored photo that no longer loads falls back to the initials, as the
+  // top bar does, rather than a broken-image icon inside the ring.
+  const [avatarBroken, setAvatarBroken] = useState<string | null>(null);
 
   const cover = me.coverUrl ? resolveUrl(me.coverUrl) : null;
-  const avatar = me.avatarUrl ? resolveUrl(me.avatarUrl) : null;
+  const resolvedAvatar = me.avatarUrl ? resolveUrl(me.avatarUrl) : null;
+  // Keyed on the URL, so uploading a new photo tries again.
+  const avatar = resolvedAvatar && resolvedAvatar !== avatarBroken ? resolvedAvatar : null;
   const subtitle = me.designation || me.jobTitle;
   const validCerts = me.credentialSummary
     ? me.credentialSummary.total - me.credentialSummary.expired
@@ -247,7 +252,7 @@ export function ProfileHero({
             >
               {avatar
                 // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={avatar} alt="" className="h-full w-full rounded-full object-cover" />
+                ? <img src={avatar} alt="" onError={() => setAvatarBroken(avatar)} className="h-full w-full rounded-full object-cover" />
                 : initials(me.name)}
               {/*
                 The scrim stays hover-only — it is an enhancement, and dimming
