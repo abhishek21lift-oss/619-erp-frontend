@@ -2969,6 +2969,8 @@ export type MeProfile = {
   name: string;
   email: string | null;
   mobile: string | null;
+  /** Where automated WhatsApp goes; falls back to mobile when empty. */
+  whatsapp: string | null;
   gender: string | null;
   dob: string | null;
   photo_url: string | null;
@@ -3261,8 +3263,10 @@ export type StudioMessageThread = {
 };
 
 /** What a member may change about themselves (PATCH /api/me/profile). */
-export type MeContactInput = { mobile?: string; address?: string | null };
-export type MeContact = { mobile: string | null; address: string | null };
+/** whatsapp: omit it and the server moves WhatsApp with the mobile when the
+ *  two were the same number; send it to set a different one. */
+export type MeContactInput = { mobile?: string; whatsapp?: string; address?: string | null };
+export type MeContact = { mobile: string | null; whatsapp: string | null; address: string | null };
 
 /** The member's latest PAR-Q. The trainer's private notes are never included. */
 export type MeParq = {

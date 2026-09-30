@@ -708,6 +708,11 @@ export const me = {
   submitCheckin: (body: MeCheckinInput) =>
     http<{ data: MeCheckin }>('/api/me/checkins', { method: 'POST', body: JSON.stringify(body) }),
   /** Mobile and/or address. Anything else about the record is the trainer's to change. */
+  /** The member's own profile photo: a cropped, downscaled JPEG/PNG/WebP data URL. */
+  setPhoto: (photo: string) =>
+    http<{ data: { photo_url: string | null } }>('/api/me/photo', { method: 'POST', body: JSON.stringify({ photo }) }),
+  removePhoto: () =>
+    http<{ data: { photo_url: string | null } }>('/api/me/photo', { method: 'DELETE' }),
   updateContact: (body: MeContactInput) =>
     http<{ data: MeContact }>('/api/me/profile', { method: 'PATCH', body: JSON.stringify(body) }),
   /** The member's conversation with their studio; opening it marks the studio's messages read. */

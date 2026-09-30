@@ -13,8 +13,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  BadgeCheck, Cake, CalendarDays, ChevronDown, ChevronLeft, Dumbbell, Eye, EyeOff, KeyRound, LogOut, Mail, Ruler,
-  Target, UserRound,
+  BadgeCheck, Cake, CalendarDays, Camera, ChevronDown, ChevronLeft, Dumbbell, Eye, EyeOff, KeyRound, LogOut, Mail, Ruler,
+  Scale, Target, UserRound,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -23,10 +23,12 @@ import {
   Card, LoadError, MC, goalLabel, PageSkeleton, PageTitle, Section, SubmitButton, longDate,
 } from '@/components/member/MemberUI';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
+import PhotoCropModal from '@/components/pt-os/PhotoCropModal';
+import { errorMessage } from '@/lib/forms/errors';
 import { rgba } from '@/lib/palette';
 import { FormErrorBanner, TextAreaField, TextField } from '@/components/ui/form';
 import { api } from '@/lib/api';
-import type { MeProfile } from '@/lib/api';
+import type { MeContact, MeProfile } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAppForm } from '@/lib/forms/useAppForm';
 import {
@@ -65,7 +67,9 @@ function AccountBody() {
     [BadgeCheck, 'Member ID', profile.member_code],
     [Dumbbell, 'Trainer', profile.trainer_name],
     [Target, 'Goal', goalLabel(profile.goal)],
-    [Ruler, 'Height', profile.height ? `${profile.height} cm` : null],
+    [UserRound, 'Gender', profile.gender ? profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1) : null],
+    [Ruler, 'Height', profile.height ? `${Number(profile.height)} cm` : null],
+    [Scale, 'Weight', profile.weight ? `${Number(profile.weight)} kg` : null],
     [Cake, 'Date of birth', longDate(profile.dob)],
     [CalendarDays, 'Member since', longDate(profile.joining_date ?? profile.pt_start_date)],
   ];
@@ -78,6 +82,8 @@ function AccountBody() {
         icon={<ClientAvatar name={profile.name} photoUrl={profile.photo_url}
           className="grid h-full w-full place-items-center overflow-hidden rounded-[13px] text-[15px] font-[820]"
           style={{ color: '#fff' }} />} />
+
+      <PhotoRow profile={profile} onSaved={(photo_url) => setProfile({ ...profile, photo_url })} />
 
       <Section title="Your details">
         <Card>
@@ -107,6 +113,75 @@ function AccountBody() {
   );
 }
 
+/**
+ * The member's own photo. Only the trainer could set it before, so nearly
+ * every member saw their initials on every screen. Cropped square and
+ * downscaled on the phone (the trainer's crop tool), then checked by the
+ * server — it accepts image bytes only, whatever the file claims to be.
+ */
+function PhotoRow({ profile, onSaved }: { profile: MeProfile; onSaved: (url: string | null) => void }) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function save(dataUrl: string) {
+    setBusy(true);
+    try {
+      const r = await api.me.setPhoto(dataUrl);
+      onSaved(r.data.photo_url);
+      toast.success('Photo updated');
+      setOpen(false);
+    } catch (e) {
+      toast.error(errorMessage(e, 'Could not save the photo'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove() {
+    setBusy(true);
+    try {
+      const r = await api.me.removePhoto();
+      onSaved(r.data.photo_url);
+      toast.success('Photo removed');
+    } catch (e) {
+      toast.error(errorMessage(e, 'Could not remove the photo'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Section title="Photo">
+      <Card className="flex items-center gap-3 p-4">
+        <span className="h-14 w-14 shrink-0 overflow-hidden rounded-[18px]">
+          <ClientAvatar name={profile.name} photoUrl={profile.photo_url}
+            className="grid h-full w-full place-items-center text-[18px] font-[820]" style={{ color: '#fff' }} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[14px] font-[750]" style={{ color: MC.ink }}>{profile.photo_url ? 'Your photo' : 'No photo yet'}</p>
+          <p className="text-[12px]" style={{ color: MC.muted }}>Your trainer sees it on your record.</p>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          {profile.photo_url && (
+            <button type="button" onClick={() => void remove()} disabled={busy}
+              className="min-h-[40px] rounded-[12px] px-3 text-[13px] font-[700] disabled:opacity-50"
+              style={{ background: 'var(--bg-subtle)', color: MC.danger }}>
+              Remove
+            </button>
+          )}
+          <button type="button" onClick={() => setOpen(true)} disabled={busy}
+            className="flex min-h-[40px] items-center gap-1.5 rounded-[12px] px-3 text-[13px] font-[750] text-white disabled:opacity-50"
+            style={{ background: MC.primary }}>
+            <Camera size={15} aria-hidden /> {profile.photo_url ? 'Change' : 'Add'}
+          </button>
+        </div>
+      </Card>
+      <PhotoCropModal open={open} onClose={() => setOpen(false)} onConfirm={(d) => void save(d)} title="Your photo" />
+    </Section>
+  );
+}
+
 /** Account sits under the Profile tab: a way back that is not the browser's. */
 function BackToProfile() {
   return (
@@ -119,7 +194,7 @@ function BackToProfile() {
 
 function ContactForm({ profile, onSaved }: {
   profile: MeProfile;
-  onSaved: (c: { mobile: string | null; address: string | null }) => void;
+  onSaved: (c: MeContact) => void;
 }) {
   const { toast } = useToast();
   const f = useAppForm({
@@ -127,8 +202,10 @@ function ContactForm({ profile, onSaved }: {
     defaultValues: blankMemberContact(profile),
     keepValuesOnSuccess: true,
     onSubmit: async (values) => {
-      const r = await api.me.updateContact(toMemberContactPayload(values));
+      const r = await api.me.updateContact(toMemberContactPayload(values, profile));
       onSaved(r.data);
+      // Show what the server stored: a new mobile can carry WhatsApp with it.
+      f.resetTo(blankMemberContact(r.data));
     },
     onSuccess: () => toast.success('Contact details saved'),
   });
@@ -143,8 +220,16 @@ function ContactForm({ profile, onSaved }: {
             {(field) => (
               <TextField field={field} label="Mobile" type="tel" autoComplete="tel-national" required
                 placeholder="10-digit mobile number"
-                description="Your trainer reaches you on this number, including on WhatsApp."
+                description="Your trainer calls you on this number."
                 serverError={f.errors.fieldErrors.mobile} />
+            )}
+          </form.Field>
+          <form.Field name="whatsapp">
+            {(field) => (
+              <TextField field={field} label="WhatsApp number" type="tel" autoComplete="tel-national"
+                placeholder="Same as mobile"
+                description="Reminders and messages from your studio go here. Change your mobile and this moves with it, unless it is a different number."
+                serverError={f.errors.fieldErrors.whatsapp} />
             )}
           </form.Field>
           <form.Field name="address">

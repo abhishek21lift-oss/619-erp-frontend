@@ -25,19 +25,29 @@ import type { MeContactInput, MeProfile } from '@/lib/api';
 
 export const memberContactSchema = z.object({
   mobile: phoneField({ label: 'Mobile', required: true }),
+  whatsapp: phoneField({ label: 'WhatsApp number' }),
   address: textField({ label: 'Address', maxLength: 500 }),
 });
 
 export type MemberContactValues = z.output<typeof memberContactSchema>;
-export type MemberContactState = { mobile: string; address: string };
+export type MemberContactState = { mobile: string; whatsapp: string; address: string };
 
-export function blankMemberContact(p?: Pick<MeProfile, 'mobile' | 'address'> | null): MemberContactState {
-  return { mobile: p?.mobile ?? '', address: p?.address ?? '' };
+export function blankMemberContact(p?: Pick<MeProfile, 'mobile' | 'whatsapp' | 'address'> | null): MemberContactState {
+  return { mobile: p?.mobile ?? '', whatsapp: p?.whatsapp ?? '', address: p?.address ?? '' };
 }
 
-export function toMemberContactPayload(v: MemberContactValues): MeContactInput {
+/**
+ * The PATCH body. WhatsApp is sent only when the member changed it: left as it
+ * was, the server moves it along with a new mobile (when the two were the same
+ * number) — which is what the form promises. Sending the unchanged old value
+ * would pin WhatsApp to the old number.
+ */
+export function toMemberContactPayload(v: MemberContactValues, before?: Pick<MeProfile, 'whatsapp'> | null): MeContactInput {
   // phoneField is required, so a parsed value always carries a mobile.
-  return { mobile: v.mobile ?? '', address: v.address };
+  const out: MeContactInput = { mobile: v.mobile ?? '', address: v.address };
+  const wa = (v.whatsapp ?? '').trim();
+  if (wa && wa !== (before?.whatsapp ?? '')) out.whatsapp = wa;
+  return out;
 }
 
 /* ── Password ────────────────────────────────────────────────────────────── */

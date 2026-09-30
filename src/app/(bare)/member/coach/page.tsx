@@ -102,7 +102,8 @@ function CoachBody() {
       <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: EASE, delay: 0.08 }}
         className="mb-5 grid grid-cols-3 gap-2.5">
         <StatTile icon={Clock} accent="checkin" label="Years coaching" value={coach.years_experience ? String(coach.years_experience) : '—'} />
-        <StatTile icon={Award} accent="diet" label="Certifications" value={String(coach.certifications.length)} />
+        {/* A dash, not "0": nothing typed yet is not the same claim as "no certifications". */}
+        <StatTile icon={Award} accent="diet" label="Certifications" value={coach.certifications.length ? String(coach.certifications.length) : '—'} />
         <StatTile icon={CalendarClock} accent="progress" label="Hours a week" value={weeklyHours > 0 ? String(weeklyHours) : '—'} />
       </m.div>
 

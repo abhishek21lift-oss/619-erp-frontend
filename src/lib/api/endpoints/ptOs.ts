@@ -7,6 +7,7 @@
 import { http } from '../../http';
 import { buildQs } from '../qs';
 import type {
+  MeGoals,
   ActivityLogEntry, CheckinInsight, ClientBirthday, ClientSnapshot, CoachGeneration, PtLead, PtSession, RosterSignalSweep, TrainingBrief,
   TransformationRow,
 } from '../types';
@@ -65,6 +66,10 @@ export const pt = {
    * POST and on demand, same reasoning as coach() above — check-in history
    * doesn't change between two page opens an hour apart.
    */
+  /** The goals the member set for themselves in the member app, with the
+   *  progress they see. Read-only on this side. */
+  memberGoals: (id: string) =>
+    http<{ data: MeGoals }>(`/api/pt-os/clients/${id}/member-goals`),
   checkinInsight: (id: string) =>
     http<{ data: CheckinInsight }>(`/api/pt-os/clients/${id}/checkin-insight`, { method: 'POST' }),
   create: (data: Record<string, unknown>) =>

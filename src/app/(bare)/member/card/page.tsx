@@ -19,6 +19,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { m } from 'framer-motion';
+import Link from 'next/link';
 import { CalendarClock, IdCard, QrCode, RefreshCw } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
@@ -63,12 +64,17 @@ function CardBody() {
   const end = plan?.pt_end_date ?? profile.pt_end_date;
   const left = daysLeft(end);
   const pct = elapsedPct(start, end);
-  const active = (profile.status ?? 'active') === 'active';
+  // Not assumed. A missing status used to read as "active", and a plan whose
+  // end date had passed still printed an active card — the card is shown at
+  // the desk as proof of membership, so it says what is actually true.
+  const ended = end != null && left === 0 && new Date(end).setHours(23, 59, 59, 999) < Date.now();
+  const active = profile.status === 'active' && !ended;
+  const badge = active ? 'Member' : ended ? 'Plan ended' : (profile.status ?? 'Status unknown');
 
   return (
     <>
       {title}
-      <MemberCardFace profile={profile} end={end} active={active} />
+      <MemberCardFace profile={profile} end={end} active={active} badge={badge} />
       <CheckInCode />
 
       <Section title="Your package">
@@ -76,18 +82,22 @@ function CardBody() {
           <div className="flex items-center gap-4">
             <DaysRing left={left} pct={pct} />
             <div className="min-w-0 flex-1 space-y-1.5">
-              <Fact k="Package" v={plan?.package_type ?? profile.package_type ?? 'Personal Training'} />
+              <Fact k="Package" v={plan?.package_type ?? profile.package_type ?? 'Not set'} />
               <Fact k="Started" v={longDate(start) ?? 'Not set'} />
               <Fact k="Ends" v={longDate(end) ?? 'Not set'} />
               {profile.trainer_name && <Fact k="Trainer" v={profile.trainer_name} />}
             </div>
           </div>
           {left !== null && left <= 14 && (
-            <p className="mt-3 flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[650]"
+            // The app has a Renew screen; this used to send the member off to
+            // "talk to your trainer" instead of to it.
+            <Link href="/member/renew"
+              className="mt-3 flex min-h-[44px] items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[650]"
               style={{ background: rgba(palette.amber[500], 0.12), color: 'var(--warning-text)' }}>
               <CalendarClock size={14} aria-hidden />
-              {left === 0 ? 'Your package has ended — talk to your trainer to renew.' : `Ends in ${left} day${left === 1 ? '' : 's'} — talk to your trainer about renewing.`}
-            </p>
+              <span className="flex-1">{left === 0 ? 'Your package has ended.' : `Ends in ${left} day${left === 1 ? '' : 's'}.`}</span>
+              <span className="font-[780]">Renew →</span>
+            </Link>
           )}
         </Card>
       </Section>
@@ -105,7 +115,7 @@ function Fact({ k, v }: { k: string; v: string }) {
 }
 
 /** The card itself: a credit-card proportioned face, deep blue with a soft sheen. */
-function MemberCardFace({ profile, end, active }: { profile: MeProfile; end: string | null; active: boolean }) {
+function MemberCardFace({ profile, end, active, badge }: { profile: MeProfile; end: string | null; active: boolean; badge: string }) {
   const valid = end ? new Date(end) : null;
   const thru = valid && !Number.isNaN(valid.getTime())
     ? valid.toLocaleDateString('en-IN', { month: '2-digit', year: '2-digit' })
@@ -144,7 +154,7 @@ function MemberCardFace({ profile, end, active }: { profile: MeProfile; end: str
           </div>
           <span className="shrink-0 rounded-full px-2.5 py-1 text-[9.5px] font-[780] uppercase tracking-[0.12em]"
             style={{ background: active ? 'rgba(255,255,255,0.16)' : rgba(palette.red[500], 0.9) }}>
-            {active ? 'Member' : (profile.status ?? 'Inactive')}
+            {badge}
           </span>
         </div>
 

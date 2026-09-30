@@ -14,7 +14,7 @@ import {
   ShieldCheck, FileSignature, ClipboardList,
   QrCode, Printer, ScrollText, ChevronDown, Mail, FileBarChart, Sparkles,
   Gauge, PersonStanding, Accessibility, Ruler, MessagesSquare, Send,
-  Cake, UserPlus, Megaphone, Hourglass, CalendarRange, UserCheck,
+  Cake, UserPlus, Megaphone, Hourglass, CalendarRange, UserCheck, Flag,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 
@@ -28,11 +28,11 @@ import ClientLoginCard from '@/components/pt-os/ClientLoginCard';
 import ClientAiGenerateCard from '@/components/pt-os/ClientAiGenerateCard';
 import RenewalOfferSheet from '@/components/pt-os/RenewalOfferSheet';
 import {
-  ClientTabs, TabPanel, LinkPanel, TAB_COLOR, type TabKey,
+  ClientTabs, TabPanel, LinkPanel, TAB_COLOR, TAB_KEYS, type TabKey,
 } from '@/components/pt-os/client/ClientTabs';
 import RecoveryPanel from '@/components/pt-os/client/RecoveryPanel';
 import PhotosPanel from '@/components/pt-os/client/PhotosPanel';
-import type { ClientRecovery } from '@/lib/api';
+import type { ClientRecovery, MeGoal, MeGoals } from '@/lib/api';
 import { printWindowCloseButtonHtml } from '@/lib/printWindowChrome';
 import { errorMessage } from '@/lib/forms/errors';
 import { whatsAppHref } from '@/lib/phone';
@@ -41,7 +41,7 @@ import { tones, gradient, heroMesh, type Tone } from '@/components/profile/profi
 
 interface PtClientDetail {
   id: string; unique_id?: string; client_id?: string; name: string;
-  email?: string; mobile?: string; gender?: string; dob?: string;
+  email?: string; mobile?: string; whatsapp?: string; gender?: string; dob?: string;
   address?: string; photo_url?: string;
   emergency_contact?: string;
   emergency_contact_relationship?: string;
@@ -132,6 +132,36 @@ function Squircle({ tint, size = 30, children }: { tint: Tone; size?: number; ch
  * `bg-white` and `text-gray-900`, so in dark mode every section stayed a
  * white slab with near-black text on a dark page.
  */
+/** One goal the member set, with the progress the member sees. */
+function MemberGoalRow({ goal: g }: { goal: MeGoal }) {
+  const label = g.kind === 'weight' ? `Reach ${g.target_value} kg`
+    : g.kind === 'lift' ? `${g.exercise_name ?? 'Lift'} ${g.target_value} kg`
+      : `${g.target_value} sessions`;
+  const now = g.current_value == null ? null
+    : g.kind === 'sessions' ? `${g.current_value} done` : `now ${g.current_value} kg`;
+  const pct = g.progress_pct == null ? null : Math.max(0, Math.min(100, Math.round(g.progress_pct)));
+  const tint = g.reached ? tones.lime : g.status === 'behind' ? tones.sunset : tones.violet;
+  return (
+    <div className="rounded-[14px] px-3.5 py-3" style={{ background: 'var(--bg-subtle)' }}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="min-w-0 truncate text-[13.5px] font-[680]" style={{ color: 'var(--text-primary)' }}>{label}</p>
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-[700] ${inkClass}`} style={{ background: tint.wash, ...inkVars(tint) }}>
+          {g.reached ? 'Reached' : g.status === 'behind' ? 'Behind' : g.status === 'on_track' ? 'On track' : pct != null ? `${pct}%` : 'Started'}
+        </span>
+      </div>
+      <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+        {[now, g.target_date ? `by ${fmtDate(g.target_date)}` : null, g.projection?.eta ? `on pace for ${fmtDate(g.projection.eta)}` : null]
+          .filter(Boolean).join(' · ') || 'No reading yet'}
+      </p>
+      {pct != null && !g.reached && (
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--border)' }}>
+          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: gradient(tint) }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SectionCard({ title, icon, tint, action, children, className = '' }: {
   title: string; icon: React.ReactNode; tint: Tone; action?: React.ReactNode;
   children: React.ReactNode; className?: string;
@@ -463,12 +493,20 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [recovery, setRecovery] = useState<ClientRecovery | undefined>(undefined);
   /** Which section of the workspace is open. Overview is where you land. */
   const [tab, setTab] = useState<TabKey>('overview');
+  // Notifications deep-link a section (a weekly check-in lands on Check-ins).
+  // Read once on mount; the tabs are this page's own state after that.
+  useEffect(() => {
+    const want = new URLSearchParams(window.location.search).get('tab');
+    if (want && (TAB_KEYS as readonly string[]).includes(want)) setTab(want as TabKey);
+  }, []);
   /** Ask AI — the read-only assistant scoped to this client. */
   const [aiOpen, setAiOpen] = useState(false);
   const [offerOpen, setOfferOpen] = useState(false);
 
   const [recentWeights, setRecentWeights] = useState<any[]>([]);
   const [activeGoals, setActiveGoals] = useState<any[]>([]);
+  /** Targets the member set in the member app. null until loaded or on failure. */
+  const [memberGoals, setMemberGoals] = useState<MeGoals | null>(null);
   const [subscriptionHistory, setSubscriptionHistory] = useState<any[]>([]);
 
   const loadData = async () => {
@@ -482,11 +520,13 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
       // Three requests. Check-in and payment lists are not fetched here: none
       // of these endpoints returns a total, so a count built from a limited
       // page would be a wrong number on screen rather than a missing one.
-      const [assessmentsRes, goalsRes, renewalsRes] = await Promise.allSettled([
+      const [assessmentsRes, goalsRes, renewalsRes, memberGoalsRes] = await Promise.allSettled([
         api.progress.assessments.list({ client_id: id, limit: 10 }),
         api.progress.goals.list({ client_id: id }),
         api.pt.subscriptions(id),
+        api.pt.memberGoals(id),
       ]);
+      setMemberGoals(memberGoalsRes.status === 'fulfilled' ? memberGoalsRes.value.data : null);
 
       const assessments = assessmentsRes.status === 'fulfilled' && Array.isArray((assessmentsRes.value as any)?.data) ? (assessmentsRes.value as any).data : [];
       setRecentWeights(assessments.filter((a: any) => a.weight).slice(0, 6));
@@ -560,7 +600,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
   // Null when the number cannot be normalised — no button then, rather than
   // a WhatsApp link to nobody.
-  const waHref = client?.mobile ? whatsappHref(client.mobile, client.name) : null;
+  // The WhatsApp number when the client has one — the number every automated
+  // message goes to — else the mobile. This button used the mobile alone, so
+  // the trainer and the studio's own reminders could be writing to two
+  // different numbers.
+  const waNumber = client?.whatsapp || client?.mobile;
+  const waHref = waNumber ? whatsappHref(waNumber, client?.name) : null;
   const statusCfg = client ? getStatusConfig(client.status, client.days_left, client.pt_end_date) : null;
   const balanceTint = currentTermBalance > 0 ? (client?.due_status === 'OVERDUE' ? BAD : WARN) : OK;
   const daysTint = client?.days_left != null && client.days_left <= 7 ? WARN : tones.sky;
@@ -800,10 +845,26 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     </SectionCard>
                   )}
 
+                  {memberGoals && memberGoals.goals.length > 0 && (
+                    <SectionCard title="Their own goals" icon={<Flag size={15} />} tint={tones.violet}>
+                      {/* Set by the member in the member app. Nothing on this
+                          side read them before; the trainer heard of one only
+                          when it was reached. */}
+                      <div className="space-y-2">
+                        {memberGoals.goals.slice(0, 5).map((g) => (
+                          <MemberGoalRow key={g.id} goal={g} />
+                        ))}
+                      </div>
+                    </SectionCard>
+                  )}
+
                   <SectionCard title="Personal info" icon={<User size={15} />} tint={tones.sky}>
                     <InfoRow icon={<User size={13} />} tint={tones.indigo} label="Gender" value={client.gender || '—'} />
                     <InfoRow icon={<Cake size={13} />} tint={tones.berry} label="Birthday" value={fmtDate(client.dob)} />
                     <InfoRow icon={<Phone size={13} />} tint={tones.lime} label="Phone" value={client.mobile || '—'} />
+                    {client.whatsapp && client.whatsapp !== client.mobile && (
+                      <InfoRow icon={<MessageCircle size={13} />} tint={tones.mint} label="WhatsApp" value={client.whatsapp} />
+                    )}
                     <InfoRow icon={<Mail size={13} />} tint={tones.sky} label="Email" value={client.email || '—'} />
                     <InfoRow icon={<Calendar size={13} />} tint={tones.sunset} label="Joined" value={fmtDate(client.joining_date)} />
                     {/* Asked at intake; the one field here a studio owner reads on purpose. */}
