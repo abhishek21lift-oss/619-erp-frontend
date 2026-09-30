@@ -54,9 +54,11 @@ export const TAB_COLOR = {
   dangerDeep: palette.red[900],
 };
 
-export type TabKey =
-  | 'overview' | 'training' | 'nutrition' | 'measurements' | 'log' | 'checkins'
-  | 'photos' | 'documents' | 'payments' | 'notes' | 'ai' | 'reports';
+export const TAB_KEYS = [
+  'overview', 'training', 'nutrition', 'measurements', 'log', 'checkins',
+  'photos', 'documents', 'payments', 'notes', 'ai', 'reports',
+] as const;
+export type TabKey = typeof TAB_KEYS[number];
 
 interface TabDef {
   key: TabKey;

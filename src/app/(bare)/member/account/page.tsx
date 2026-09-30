@@ -26,7 +26,7 @@ import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { rgba } from '@/lib/palette';
 import { FormErrorBanner, TextAreaField, TextField } from '@/components/ui/form';
 import { api } from '@/lib/api';
-import type { MeProfile } from '@/lib/api';
+import type { MeContact, MeProfile } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAppForm } from '@/lib/forms/useAppForm';
 import {
@@ -119,7 +119,7 @@ function BackToProfile() {
 
 function ContactForm({ profile, onSaved }: {
   profile: MeProfile;
-  onSaved: (c: { mobile: string | null; address: string | null }) => void;
+  onSaved: (c: MeContact) => void;
 }) {
   const { toast } = useToast();
   const f = useAppForm({
@@ -127,8 +127,10 @@ function ContactForm({ profile, onSaved }: {
     defaultValues: blankMemberContact(profile),
     keepValuesOnSuccess: true,
     onSubmit: async (values) => {
-      const r = await api.me.updateContact(toMemberContactPayload(values));
+      const r = await api.me.updateContact(toMemberContactPayload(values, profile));
       onSaved(r.data);
+      // Show what the server stored: a new mobile can carry WhatsApp with it.
+      f.resetTo(blankMemberContact(r.data));
     },
     onSuccess: () => toast.success('Contact details saved'),
   });
@@ -143,8 +145,16 @@ function ContactForm({ profile, onSaved }: {
             {(field) => (
               <TextField field={field} label="Mobile" type="tel" autoComplete="tel-national" required
                 placeholder="10-digit mobile number"
-                description="Your trainer reaches you on this number, including on WhatsApp."
+                description="Your trainer calls you on this number."
                 serverError={f.errors.fieldErrors.mobile} />
+            )}
+          </form.Field>
+          <form.Field name="whatsapp">
+            {(field) => (
+              <TextField field={field} label="WhatsApp number" type="tel" autoComplete="tel-national"
+                placeholder="Same as mobile"
+                description="Reminders and messages from your studio go here. Change your mobile and this moves with it, unless it is a different number."
+                serverError={f.errors.fieldErrors.whatsapp} />
             )}
           </form.Field>
           <form.Field name="address">
