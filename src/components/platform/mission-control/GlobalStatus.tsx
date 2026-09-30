@@ -61,7 +61,7 @@ export const GlobalStatus: React.FC<{ snap: CommandCenterSnapshot }> = ({ snap }
 
   return (
     <section style={surface.panel} className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center">
-      <div className="relative mx-auto h-[168px] w-[168px] shrink-0 sm:mx-0">
+      <div className="relative mx-auto h-[188px] w-[188px] shrink-0 sm:mx-0">
         <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
           {/* Tracks. Drawn first so the arcs sit on top of them. */}
           <circle cx="60" cy="60" r={R_OUTER} fill="none" stroke="var(--border)" strokeWidth="9" opacity={0.5} />
@@ -86,7 +86,7 @@ export const GlobalStatus: React.FC<{ snap: CommandCenterSnapshot }> = ({ snap }
           </b>
           <span className="mt-1.5 text-[9px] font-[800] uppercase tracking-[.14em] tabular-nums"
             style={{ color: 'var(--text-tertiary)' }}>
-            {healthy}/{measured.length} measured ok
+            {healthy}/{measured.length} ok
           </span>
           {partiallyBlind && (
             <span className="mt-0.5 text-[9px] font-[800] tabular-nums"

@@ -464,6 +464,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "superAdmin.orgFeatures → /api/platform/organizations/",
   "superAdmin.orgNotes → /api/platform/organizations/",
   "superAdmin.overview → /api/platform/overview",
+  "superAdmin.plans → /api/platform/plans",
   "superAdmin.platformPaymentSettings → /api/platform/platform-payment-settings",
   "superAdmin.previewAnnouncement → /api/platform/announcements/",
   "superAdmin.reactivateSubscription → /api/platform/organizations/",

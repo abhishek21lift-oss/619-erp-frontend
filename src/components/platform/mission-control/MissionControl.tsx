@@ -82,42 +82,26 @@ export const MissionControl: React.FC = () => {
         style={{ background: tone.color, opacity: 0.07 }}
       />
 
-      <header className="relative flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[9.5px] font-[900] uppercase tracking-[.2em]"
-            style={{ color: tone.color }}>
-            <span className="relative flex h-1.5 w-1.5">
-              {snap.status !== 'healthy' && (
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60"
-                  style={{ background: tone.color }} />
-              )}
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: tone.color }} />
-            </span>
-            Command Center
-          </div>
-          <h1 className="mt-1 text-[26px] font-[950] leading-none tracking-[-.045em] sm:text-[30px]"
-            style={{ color: 'var(--text-primary)' }}>
-            Platform operations
-          </h1>
-        </div>
-
+      {/* The module hero above names this screen; what stays here is the
+          control an operator reaches for — a fresh probe. */}
+      <div className="relative flex flex-wrap items-center justify-end gap-3">
         <button
           type="button"
           onClick={handleRefresh}
           disabled={refreshing}
-          className="flex shrink-0 items-center gap-2 rounded-[12px] border px-3.5 py-2 text-[11px] font-[850] disabled:opacity-60"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--text-primary)' }}
+          className="flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-[11.5px] font-[800] disabled:opacity-60"
+          style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', boxShadow: 'var(--shadow-sm)' }}
         >
           <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
           Re-probe
         </button>
-      </header>
+      </div>
 
       <ObservabilityBar snap={snap} transport={transport} refreshing={refreshing} />
 
       <GlobalStatus snap={snap} />
 
-      <div className="grid gap-4 xl:grid-cols-[1.15fr_.85fr]">
+      <div className="grid gap-4 xl:grid-cols-[1.15fr_.85fr] [&>*]:min-w-0">
         <HealthMatrix snap={snap} history={history} />
         <Topology snap={snap} />
       </div>
@@ -143,11 +127,9 @@ export const MissionControl: React.FC = () => {
               style={{ color: active ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
             >
               {active && (
-                <m.span
-                  layoutId="deck-pill"
+                <span
                   className="absolute inset-0 rounded-[11px]"
                   style={{ background: 'var(--surface)', boxShadow: '0 2px 8px rgba(15,23,42,.08)' }}
-                  transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                 />
               )}
               <Icon size={13} className="relative" />

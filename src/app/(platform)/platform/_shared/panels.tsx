@@ -42,4 +42,6 @@ export const StorageCentre = dynamic(() => import('@/components/platform/storage
 });
 export const AnalyticsPanel = dynamic(() => import('@/components/platform/analytics'), {
   loading: () => <PanelSkeleton label="Crunching platform usage…" />,
+});export const TenancyCentre = dynamic(() => import('@/components/platform/tenancy-centre'), {
+  loading: () => <PanelSkeleton label="Checking tenant isolation…" />,
 });

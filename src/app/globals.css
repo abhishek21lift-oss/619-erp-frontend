@@ -148,6 +148,14 @@
   --text-brand:     var(--brand);
   --rgb-text:       15 23 42;
 
+  /* Aliases the Command Center has always used and nothing ever defined.
+     An undefined --surface made its donut centres and cards transparent (the
+     centre of the health donut painted black), and an undefined
+     --text-tertiary left 82 captions at full body colour instead of muted.
+     Declared in both theme blocks so each resolves against its own theme. */
+  --surface:        var(--bg-elevated);
+  --text-tertiary:  var(--text-muted);
+
   /* ── Status / semantic ───────────────────────────────────── */
   /*
    * -text variants exist because the 500 tone of a status colour is a FILL,
@@ -317,6 +325,8 @@
   /* gray-300, not gray-400: 4.04:1 on --bg-subtle, same failure inverted. */
   --text-muted:     #CBD5E1;
   --text-disabled:  #64748B;
+  --surface:        var(--bg-elevated);
+  --text-tertiary:  var(--text-muted);
   --text-inverse:   #0F172A;
   --rgb-text:       248 250 252;
 
@@ -2283,4 +2293,17 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
   [contenteditable='true'] {
     font-size: 16px !important;
   }
+}
+
+/* ── Command Center chart motion ─────────────────────────────────────────
+   Bars rise from their baseline and rings draw on once, on mount. Transform
+   and stroke only, so nothing reflows; off entirely under reduced motion. */
+@keyframes cc-rise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes cc-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes cc-draw { from { stroke-dasharray: 0 999; } }
+.cc-rise { transform-origin: bottom; animation: cc-rise 700ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.cc-grow { transform-origin: left; animation: cc-grow 700ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.cc-draw { animation: cc-draw 900ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .cc-rise, .cc-grow, .cc-draw { animation: none; }
 }

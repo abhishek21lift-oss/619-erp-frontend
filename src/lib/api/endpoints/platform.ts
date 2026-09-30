@@ -7,6 +7,7 @@
 import { http, apiBase } from '../../http';
 import { qsOf } from '../qs';
 import type {
+  SubPlan,
   ActiveSession, ActivityEntry, AiModelRate, AiModelUsage, AiOverview, AiRouting,
   AiSettings, AiStudioUsage, AiTrendPoint, Announcement, AnnouncementInput,
   AnnouncementPreview, AuditEntry, AuditFilters, AuditPaging, AuditQuery, Coupon, FeatureCatalogue,
@@ -29,7 +30,7 @@ import type {
   SystemAlert, SystemAlertList, GuardianReport, GuardianNarration,
   LogTail, LogHistory,
   PlatformKpis, TenancyHealth, TenancyOrphans, TenancyOrphanRow,
-  TenancyAttempts, TenancyAttemptRow, TenancyKnownGap,
+  TenancyAttemptRow, TenancyKnownGap,
   TenancyIsolationRunResult, StudioHealth, StudioMemberships,
   StudioPtRevenue, PlatformSearchResponse, PlatformSearchKind,
 } from '../types';
@@ -532,6 +533,10 @@ export const superAdmin = {
   subscriptions: () =>
     http<{ data: { studios: SubStudio[]; kpis: SubKpis } }>('/api/platform/subscriptions'),
   /** SaaS run-rate metrics: MRR/ARR, plan mix, conversion, founders, trends. */
+  /** The plan catalogue, on the platform boundary. /api/subscription/plans is
+   *  a tenant route and refuses a Command Center session. */
+  plans: () =>
+    http<{ data: { plans: SubPlan[]; founder_slots_remaining: number; founder_limit: number } }>('/api/platform/plans'),
   subscriptionMetrics: () =>
     http<{ data: SubscriptionMetrics }>('/api/platform/subscription-metrics'),
 
@@ -620,7 +625,7 @@ export const superAdmin = {
   tenancyOrphans: () =>
     http<{ data: TenancyOrphans }>('/api/platform/tenancy/orphans'),
   tenancyCrossTenantAttempts: (limit = 50, offset = 0) =>
-    http<{ data: TenancyAttempts }>(`/api/platform/tenancy/cross-tenant-attempts?limit=${limit}&offset=${offset}`),
+    http<{ data: TenancyAttemptRow[]; total: number; limit: number; offset: number }>(`/api/platform/tenancy/cross-tenant-attempts?limit=${limit}&offset=${offset}`),
   tenancyKnownGaps: () =>
     http<{ data: TenancyKnownGap[] }>('/api/platform/tenancy/known-gaps'),
   // POST is the only mutation. 5-min per-user cooldown; backend returns

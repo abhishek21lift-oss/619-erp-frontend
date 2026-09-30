@@ -23,6 +23,7 @@ import { useRouter } from 'next/navigation';
 import {
   Building2, LayoutDashboard, Activity, CreditCard, Receipt, Ticket, Search, ScrollText,
   HeartPulse, HardDrive, User, UserCog, Users,
+  UserPlus, Mail, Users2, Wallet, TrendingUp, Bot, LifeBuoy, ShieldAlert, Fingerprint, ToggleRight, Megaphone,
 } from 'lucide-react';
 import StudioMark from '@/components/StudioMark';
 import { useSearchFieldFocus } from '@/lib/search-field-focus';
@@ -51,16 +52,34 @@ const SERVER_LABEL: Record<PlatformSearchKind, string> = {
   audit: 'Audit',
 };
 
+/** Fired on window to open the bar from outside this component — the shell's
+ *  search button, which is the only way in on a phone. */
+export const OPEN_COMMAND_BAR = 'cc:open-command-bar';
+
+// Every screen in the console. This listed nine of seventeen: Registrations,
+// Invitations, Users, Analytics, AI, Support, Security, Features and
+// Announcements could not be reached from the bar at all.
 export const NAV_TARGETS: { tab: Tab; label: string; icon: React.ReactNode; opts?: NavOpts }[] = [
   { tab: 'overview', label: 'Go to Overview', icon: <LayoutDashboard size={14} /> },
   { tab: 'studios', label: 'Go to Studios', icon: <Building2 size={14} /> },
+  { tab: 'registrations', label: 'Go to Registrations', icon: <UserPlus size={14} /> },
+  { tab: 'invitations', label: 'Go to Invitations', icon: <Mail size={14} /> },
+  { tab: 'users', label: 'Go to Users', icon: <Users2 size={14} /> },
   { tab: 'finance', label: 'Go to Finance · Billing', icon: <CreditCard size={14} />, opts: { financeSubTab: 'billing' } },
+  { tab: 'finance', label: 'Go to Finance · Payments', icon: <Wallet size={14} />, opts: { financeSubTab: 'payments' } },
   { tab: 'finance', label: 'Go to Finance · Invoices', icon: <Receipt size={14} />, opts: { financeSubTab: 'invoices' } },
   { tab: 'finance', label: 'Go to Finance · Coupons', icon: <Ticket size={14} />, opts: { financeSubTab: 'coupons' } },
-  { tab: 'activity', label: 'Go to Activity', icon: <Activity size={14} /> },
-  { tab: 'audit', label: 'Go to Audit Centre', icon: <ScrollText size={14} /> },
-  { tab: 'storage', label: 'Go to Storage', icon: <HardDrive size={14} /> },
+  { tab: 'analytics', label: 'Go to Analytics', icon: <TrendingUp size={14} /> },
+  { tab: 'ai', label: 'Go to AI Control', icon: <Bot size={14} /> },
   { tab: 'health', label: 'Go to System Health', icon: <HeartPulse size={14} /> },
+  { tab: 'storage', label: 'Go to Storage', icon: <HardDrive size={14} /> },
+  { tab: 'support', label: 'Go to Support', icon: <LifeBuoy size={14} /> },
+  { tab: 'security', label: 'Go to Security', icon: <ShieldAlert size={14} /> },
+  { tab: 'tenancy', label: 'Go to Tenancy', icon: <Fingerprint size={14} /> },
+  { tab: 'audit', label: 'Go to Audit Centre', icon: <ScrollText size={14} /> },
+  { tab: 'activity', label: 'Go to Activity', icon: <Activity size={14} /> },
+  { tab: 'features', label: 'Go to Feature Flags', icon: <ToggleRight size={14} /> },
+  { tab: 'announcements', label: 'Go to Announcements', icon: <Megaphone size={14} /> },
 ];
 
 export function CommandBar({ open, onClose, onNavigate }: { open: boolean; onClose: () => void; onNavigate: (tab: Tab, opts?: NavOpts) => void }) {

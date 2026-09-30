@@ -170,6 +170,7 @@ describe('the app uses only the palette', () => {
         if (p.endsWith(join('components', 'profile', 'profileTheme.ts'))) continue;
         // The front-desk screens' decorative colour — confined below.
         if (p.endsWith(join('components', 'attendance', 'attendanceTheme.ts'))) continue;
+        if (p.endsWith(join('components', 'platform', 'ccTheme.ts'))) continue;
         const text = readFileSync(p, 'utf8');
         for (const m of text.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
           if (!known.has(m.toUpperCase())) offenders.push(`${p}: ${m}`);
@@ -314,6 +315,28 @@ describe('the app uses only the palette', () => {
     walk(join(process.cwd(), 'src'));
     const allowed = ['app/(chrome)/attendance/page.tsx', 'app/(chrome)/checkin/qr-scanner/page.tsx'];
     const outside = users.filter((u) => !u.startsWith('components/attendance/') && !allowed.includes(u));
+    expect(users.length).toBeGreaterThan(0);
+    expect(outside).toEqual([]);
+  });
+
+  it('confines the Command Center colours to the console', () => {
+    // ccTheme is the Command Center's decoration and category palette. The
+    // studio app must not pick it up: a trainer's screen in Apple system
+    // colours would be a second design language, not a redesign.
+    const users: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = join(dir, entry);
+        if (statSync(p).isDirectory()) { walk(p); continue; }
+        if (!/\.tsx?$/.test(entry)) continue;
+        if (p.includes('__tests__')) continue;
+        if (/ccTheme['"]/.test(readFileSync(p, 'utf8'))) {
+          users.push(p.split(join('src') + sep)[1].replaceAll(sep, '/'));
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src'));
+    const outside = users.filter((u) => !u.startsWith('components/platform/') && !u.startsWith('app/(platform)/'));
     expect(users.length).toBeGreaterThan(0);
     expect(outside).toEqual([]);
   });

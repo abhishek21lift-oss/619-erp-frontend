@@ -18,6 +18,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './auth-context';
 import { api } from './api';
+import { portalForRole } from './portals';
 
 interface FeaturesCtx {
   /** True unless the server explicitly disabled this key for this studio. */
@@ -39,6 +40,11 @@ export function FeaturesProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!user) return;
+    // The Command Center has no studio, so /api/features — a tenant route —
+    // refuses its session with TENANT_SESSION_REQUIRED. That 403 fired on
+    // every console page load. Nothing on the console is feature-gated, so
+    // there is nothing to fetch: everything stays enabled.
+    if (portalForRole(user.role) === 'platform') { setLoaded(true); return; }
     api.features.map()
       .then((r) => { setFeatures(r.data ?? {}); setLoaded(true); })
       .catch(() => setLoaded(true));

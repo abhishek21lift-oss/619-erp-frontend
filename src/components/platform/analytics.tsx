@@ -27,7 +27,8 @@ import { api } from '@/lib/api';
 import type {
   PlatformAnalytics, AnalyticsTrendPoint, AnalyticsCohort,
 } from '@/lib/api';
-import { Panel, SectionLabel, StatTile, Reveal } from './console';
+import { Panel, SectionLabel, Reveal } from './console';
+import { CcBars, CcCard, CcHBars, CcStat } from './cc-viz';
 import { EmptyState } from '@/components/ui';
 import { errorMessage } from '@/lib/forms/errors';
 
@@ -54,99 +55,6 @@ function fmtWhen(d?: string | null): string {
  *
  * Hover is on by default: an HTML chart that cannot tell you which month a
  * point is has thrown away the only thing it had over a number.
- */
-function Sparkline({ points, label, icon, total }: {
-  points: { label: string; value: number }[];
-  label: string;
-  icon: React.ReactNode;
-  total: number;
-}) {
-  const [hover, setHover] = useState<number | null>(null);
-
-  const W = 100;
-  const H = 30;
-  const max = Math.max(1, ...points.map((p) => p.value));
-  const step = points.length > 1 ? W / (points.length - 1) : W;
-
-  const xy = points.map((p, i) => ({
-    x: points.length > 1 ? i * step : W / 2,
-    y: H - (p.value / max) * (H - 3) - 1.5,
-  }));
-
-  const line = xy.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
-  const area = xy.length
-    ? `${line} L${xy[xy.length - 1].x.toFixed(2)},${H} L${xy[0].x.toFixed(2)},${H} Z`
-    : '';
-
-  const active = hover !== null ? points[hover] : null;
-
-  return (
-    <Panel className="h-full">
-      <div className="mb-1.5 flex items-center gap-2">
-        <span style={{ color: 'var(--text-muted)' }}>{icon}</span>
-        <span
-          className="text-[10px] font-[750] uppercase"
-          style={{ color: 'var(--text-muted)', letterSpacing: '0.13em' }}
-        >
-          {label}
-        </span>
-      </div>
-
-      {/* The headline reads the hovered month when there is one, the window
-          total otherwise — so the number and the mark never disagree. */}
-      <p
-        className="tabular-nums text-[20px]"
-        style={{ color: 'var(--text-primary)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1 }}
-      >
-        {nf(active ? active.value : total)}
-      </p>
-      <p className="mb-2 h-[14px] text-[10.5px]" style={{ color: 'var(--text-disabled)' }}>
-        {active ? active.label : `across ${points.length} months`}
-      </p>
-
-      <div className="relative">
-        <svg
-          viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none"
-          className="h-[38px] w-full overflow-visible"
-          role="img" aria-label={`${label}: ${nf(total)} across ${points.length} months`}
-          onMouseLeave={() => setHover(null)}
-        >
-          <path d={area} fill="color-mix(in srgb, var(--brand) 14%, transparent)" />
-          {/* vectorEffect keeps the stroke 2px after the non-uniform scale that
-              preserveAspectRatio="none" applies — without it the line thins to
-              a hairline on a wide panel. */}
-          <path
-            d={line} fill="none" stroke="var(--brand)" strokeWidth={2}
-            strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"
-          />
-          {hover !== null && (
-            <circle
-              cx={xy[hover].x} cy={xy[hover].y} r={3}
-              fill="var(--brand)" stroke="var(--bg-elevated)" strokeWidth={2}
-              vectorEffect="non-scaling-stroke"
-            />
-          )}
-          {/* Invisible hit bands, one per month. Far bigger than the marks —
-              a 2px line is not a pointer target. */}
-          {points.map((p, i) => (
-            <rect
-              key={p.label}
-              x={i * step - step / 2} y={0} width={step} height={H}
-              fill="transparent" onMouseEnter={() => setHover(i)}
-            />
-          ))}
-        </svg>
-      </div>
-    </Panel>
-  );
-}
-
-/* ── Retention cohorts ───────────────────────────────────────────────────── */
-
-/**
- * Rows are signup months, columns are months since. A single hue, light to
- * dark — this is a magnitude scale, and a rainbow here would invent
- * categories that do not exist.
  */
 function CohortGrid({ cohorts }: { cohorts: AnalyticsCohort[] }) {
   const width = useMemo(() => {
@@ -241,38 +149,6 @@ const ADOPTION_LABEL: Record<string, string> = {
   ai_suite: 'AI Suite used',
 };
 
-function AdoptionBars({ rows, live }: {
-  rows: PlatformAnalytics['adoption']; live: number;
-}) {
-  return (
-    <Panel>
-      <div className="flex flex-col gap-3.5">
-        {rows.map((r) => (
-          <div key={r.key}>
-            <div className="mb-1.5 flex items-baseline justify-between gap-3">
-              <span className="text-[12px] font-[650]" style={{ color: 'var(--text-primary)' }}>
-                {ADOPTION_LABEL[r.key] ?? r.key}
-              </span>
-              <span className="shrink-0 text-[11px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
-                {r.studios} of {live} · {r.pct}%
-              </span>
-            </div>
-            <div className="h-[7px] w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}>
-              <m.div
-                className="h-full rounded-full"
-                style={{ background: 'var(--brand)' }}
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min(100, r.pct)}%` }}
-                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </Panel>
-  );
-}
-
 /* ── Panel ───────────────────────────────────────────────────────────────── */
 
 const WINDOWS = [6, 12, 24];
@@ -363,50 +239,37 @@ export default function AnalyticsPanel() {
 
       {/* ── KPIs ── */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile
-          label="Active studios" value={totals.activeNow} icon={<Activity size={15} />} tone="brand"
-          sub={`${engagedPct}% of ${live} live studios worked this month`} delay={0}
-        />
-        <StatTile
-          label="At risk" value={data.at_risk.length} icon={<AlertTriangle size={15} />}
-          tone={data.at_risk.length > 0 ? 'caution' : 'positive'}
-          sub="Paying, but nothing done in 30 days" delay={0.04}
-        />
-        <StatTile
-          label="Clients added" value={nf(totals.clients)} icon={<Users size={15} />} tone="positive"
-          sub={`Across the last ${data.months} months`} delay={0.08}
-        />
-        <StatTile
-          label="Studios joined" value={nf(totals.joined)} icon={<Building2 size={15} />} tone="brand"
-          sub={`Across the last ${data.months} months`} delay={0.12}
-        />
+        <CcStat tone="sky" label="Active studios" value={nf(totals.activeNow)} icon={<Activity size={15} />}
+          sub={`${engagedPct}% of ${live} live worked this month`} />
+        <CcStat tone={data.at_risk.length > 0 ? 'orange' : 'green'} label="At risk" value={nf(data.at_risk.length)} icon={<AlertTriangle size={15} />}
+          sub="Paying, nothing done in 30 days" />
+        <CcStat tone="teal" label="Clients added" value={nf(totals.clients)} icon={<Users size={15} />}
+          sub={`Across ${data.months} months`} />
+        <CcStat tone="purple" label="Studios joined" value={nf(totals.joined)} icon={<Building2 size={15} />}
+          sub={`Across ${data.months} months`} />
       </div>
 
-      {/* ── Trend, as small multiples ── */}
-      <div>
-        <SectionLabel hint="Each panel has its own scale">Engagement trend</SectionLabel>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {([
-            { key: 'active_studios', label: 'Active studios', icon: <Activity size={13} />, total: totals.activeNow },
-            { key: 'clients_added', label: 'Clients added', icon: <Users size={13} />, total: totals.clients },
-            { key: 'check_ins', label: 'Check-ins', icon: <ScanFace size={13} />, total: totals.checkIns },
-            { key: 'sessions', label: 'Sessions', icon: <CalendarDays size={13} />, total: totals.sessions },
-          ] as const).map((s, i) => (
-            <Reveal key={s.key} delay={0.04 * i}>
-              <Sparkline
-                label={s.label} icon={s.icon} total={s.total}
-                points={data.trend.map((p) => ({ label: p.label, value: Number(p[s.key] ?? 0) }))}
-              />
-            </Reveal>
-          ))}
-        </div>
+      {/* ── Trend, as small multiples — each on its own scale ── */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {([
+          { key: 'active_studios', label: 'Active studios', icon: <Activity size={15} />, total: totals.activeNow, tone: 'sky', sub: 'this month' },
+          { key: 'clients_added', label: 'Clients added', icon: <Users size={15} />, total: totals.clients, tone: 'teal', sub: `${data.months} months` },
+          { key: 'check_ins', label: 'Check-ins', icon: <ScanFace size={15} />, total: totals.checkIns, tone: 'orange', sub: `${data.months} months` },
+          { key: 'sessions', label: 'Sessions', icon: <CalendarDays size={15} />, total: totals.sessions, tone: 'purple', sub: `${data.months} months` },
+        ] as const).map((sp) => (
+          <CcCard key={sp.key} tone={sp.tone} eyebrow="Engagement" title={sp.label} icon={sp.icon}
+            action={<span className="text-right"><span className="block text-[18px] font-[850] tabular-nums" style={{ color: 'var(--text-primary)' }}>{nf(sp.total)}</span><span className="text-[10.5px]" style={{ color: 'var(--text-muted)' }}>{sp.sub}</span></span>}>
+            <CcBars tone={sp.tone} height={120}
+              data={data.trend.map((p) => ({ label: p.label.split(' ')[0], title: p.label, value: Number(p[sp.key] ?? 0) }))}
+              empty={`No ${sp.label.toLowerCase()} in ${data.months} months`} />
+          </CcCard>
+        ))}
       </div>
 
       {/* ── Adoption ── */}
-      <div>
-        <SectionLabel hint="Studios that used it in the last 30 days">Feature adoption</SectionLabel>
-        <Reveal><AdoptionBars rows={data.adoption} live={live} /></Reveal>
-      </div>
+      <CcCard tone="indigo" eyebrow="Feature adoption" title={`Studios using each feature · ${live} live`} icon={<Building2 size={15} />}>
+        <CcHBars max={100} rows={data.adoption.map((r) => ({ label: ADOPTION_LABEL[r.key] ?? r.key, value: r.pct, sub: `${r.studios} of ${live} · ${r.pct}%` }))} empty="No live studio yet" />
+      </CcCard>
 
       {/* ── Cohorts ── */}
       <div>
