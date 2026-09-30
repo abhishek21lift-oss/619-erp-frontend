@@ -1678,7 +1678,6 @@ function TodaySchedule() {
   const clients = useMemo(() => roster.data?.clients ?? [], [roster.data?.clients]);
   const done = clients.filter((c) => c.session_status === 'completed').length;
   const queue = useMemo(() => buildTodayQueue(clients), [clients]);
-  const live = queue.filter((r) => r.live).length;
   const loading = roster.loading;
 
   const shown = queue.slice(0, TODAY_VISIBLE);
@@ -1687,14 +1686,12 @@ function TodaySchedule() {
   // day is not a session, so it is out of both.
   const dayTotal = done + queue.length;
 
-  const today = new Date().toLocaleDateString('en-IN', {
-    weekday: 'long', day: 'numeric', month: 'short',
-  });
-
   return (
     <Glass className="overflow-hidden">
       {/* ── Header ─────────────────────────────────────────────────────────
-          A warm mark, the title, and the day's progress as an activity ring.
+          A warm mark, the title, and the day's progress as an activity ring —
+          nothing else. The date line and the "2 to go · 1 done" chips were
+          dropped to keep the card compact; the ring already says both.
           The old header wore the overdue red and put "3 left" in a red pill,
           which read as an error on a morning that was simply ahead. */}
       <div className="relative px-4 pb-3 pt-4 sm:px-5">
@@ -1712,22 +1709,11 @@ function TodaySchedule() {
             <h3 className="truncate text-[16px] font-[800] tracking-[-0.02em]" style={{ color: C.ink }}>
               Today&apos;s Sessions
             </h3>
-            <p className="truncate text-[11.5px] font-[560]" style={{ color: C.muted }}>{today}</p>
           </div>
           {roster.hasResolved && dayTotal > 0 && (
             <DayRing done={done} total={dayTotal} reduce={!!reduce} />
           )}
         </div>
-
-        {/* What the day holds, in words the ring cannot say. Only the counts
-            that are not zero — "0 live" is noise. */}
-        {roster.hasResolved && dayTotal > 0 && (
-          <div className="relative mt-3 flex flex-wrap gap-1.5">
-            {live > 0 && <DayChip tone="live" label={`${live} on the floor`} pulse={!reduce} />}
-            {queue.length - live > 0 && <DayChip tone="next" label={`${queue.length - live} to go`} />}
-            {done > 0 && <DayChip tone="done" label={`${done} done`} />}
-          </div>
-        )}
       </div>
 
       <div className="px-3 pb-3.5 sm:px-4">
@@ -1930,20 +1916,6 @@ function DayRing({ done, total, reduce }: { done: number; total: number; reduce:
       <span className="absolute text-[11px] font-[820] tabular-nums tracking-[-0.02em]" style={{ color: C.ink }}>
         {done}/{total}
       </span>
-    </span>
-  );
-}
-
-function DayChip({ tone, label, pulse }: { tone: 'live' | 'next' | 'done'; label: string; pulse?: boolean }) {
-  const t = tone === 'done' ? rowTones.live : tone === 'live' ? rowTones.live : rowTones.next;
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-[750]"
-      style={{ background: t.wash, color: t.ink }}>
-      {tone === 'live' && (
-        <span aria-hidden className={cn('h-1.5 w-1.5 rounded-full', pulse && 'animate-pulse')} style={{ background: C.success }} />
-      )}
-      {tone === 'done' && <CheckCircle2 size={11} />}
-      {label}
     </span>
   );
 }
@@ -2320,7 +2292,7 @@ export default function PtOsDashboard() {
                 ever see the appointment book.
 
                 No SectionLabel here. "TODAY" sat directly above a card whose
-                own header reads "Today's Sessions / Thursday, 6 Aug" — the
+                own header reads "Today's Sessions" — the
                 label said the word twice and cost 23px to do it. Every other
                 section keeps its label, because none of them repeat their
                 heading the way this one did.
