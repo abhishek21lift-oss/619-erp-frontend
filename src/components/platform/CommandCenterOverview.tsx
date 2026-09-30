@@ -1,147 +1,415 @@
 'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps */
+
+/**
+ * The Command Center home — the platform's "right now", from live data only.
+ *
+ * What this replaced, and why it was rebuilt rather than patched:
+ *
+ *   - "Risk posture: LIVE". It read `guardian.score` and `analytics.risk_score`,
+ *     neither of which any endpoint returns, and printed LIVE in their place.
+ *   - Security, Storage and Infrastructure tiles read `.status` fields that do
+ *     not exist and fell back to the word "live" — a label shaped like a reading.
+ *   - Empty model and studio charts drew one full-width bar labelled "No
+ *     telemetry yet"; health with no cards read "0/1".
+ *   - Sixteen "operator surface" cards — Playground, Fusion, Embeddings, Image
+ *     & vision, Audio/TTS, MCP & API docs, Client integrations, Agents — for
+ *     features this product does not have. Every one routed to the AI tab.
+ *   - The money was missing entirely: MRR, ARR, the plan mix, the lifecycle
+ *     spread, trial conversion and churn were computed by
+ *     /subscription-metrics and shown nowhere in the console.
+ *
+ * Every number below comes from one of the platform endpoints; a failed
+ * source shows as unavailable rather than as a zero.
+ */
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Activity, ArrowUpRight, BarChart3, Bot, Boxes, BrainCircuit, CheckCircle2,
-  CircleAlert, Database, Gauge, GitBranch, HeartPulse, KeyRound, Layers3,
-  LineChart, LockKeyhole, MessageSquare, Network, PlayCircle, RefreshCw,
-  ServerCog, ShieldCheck, Sparkles, TerminalSquare, Timer, Users2, Volume2,
-  WandSparkles, Workflow, Zap,
+  Activity, AlertTriangle, Bot, Building2, CheckCircle2, CreditCard, HeartPulse, IndianRupee,
+  LayoutDashboard, LifeBuoy, RefreshCw, ShieldAlert, ShieldCheck, ToggleRight, TrendingUp, Users2,
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { palette } from '@/lib/palette';
+import type {
+  AiOverview, AiTrendPoint, CommandCenterSnapshot, GuardianReport, PlatformAnalytics, PlatformKpis,
+  SecurityOverview, SubscriptionMetrics, SupportOverview, SystemAlertList,
+} from '@/lib/api';
+import {
+  CcBars, CcCard, CcChip, CcDonut, CcEmpty, CcHBars, CcHero, CcHeroButton, CcHeroStat, CcIcon, CcLink, CcRing, CcStat,
+  compact, fillMonths, inr, inrCompact, nfIN, type Tone,
+} from './cc-viz';
+import { ccSeries, ccState } from './ccTheme';
+import { MODULES } from '@/app/(platform)/platform/_shared/types';
+import type { ModuleId } from '@/app/(platform)/platform/_shared/types';
 
-const C = {
-  blue: palette.blue[500], cyan: palette.blue[300], violet: palette.blue[700],
-  emerald: palette.emerald[500], amber: palette.amber[500], rose: palette.red[500],
-  slate: palette.gray[500], indigo: palette.blue[600],
+type Sources = {
+  kpis?: PlatformKpis;
+  money?: SubscriptionMetrics;
+  snapshot?: CommandCenterSnapshot;
+  alerts?: SystemAlertList;
+  guardian?: GuardianReport;
+  ai?: AiOverview;
+  aiTrend?: AiTrendPoint[];
+  analytics?: PlatformAnalytics;
+  security?: SecurityOverview;
+  support?: SupportOverview;
 };
 
-const fmt = (n: number) => n >= 1e9 ? `${(n / 1e9).toFixed(2)}B` : n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : Math.round(n).toLocaleString('en-IN');
-const pct = (n: number) => `${Math.max(0, Math.min(100, n)).toFixed(n % 1 ? 1 : 0)}%`;
+const LOADERS: { [K in keyof Sources]-?: (fresh: boolean) => Promise<{ data: NonNullable<Sources[K]> }> } = {
+  kpis: () => api.superAdmin.kpis(),
+  money: () => api.superAdmin.subscriptionMetrics(),
+  snapshot: (fresh) => api.superAdmin.commandCenter({ fresh }),
+  alerts: () => api.superAdmin.commandCenterAlerts({ scope: 'live', limit: 8 }),
+  guardian: (fresh) => api.superAdmin.commandCenterGuardian({ fresh }),
+  ai: () => api.superAdmin.aiOverview(30),
+  aiTrend: () => api.superAdmin.aiTrend(30),
+  analytics: () => api.superAdmin.analytics(6),
+  security: () => api.superAdmin.securityOverview(),
+  support: () => api.superAdmin.supportOverview(),
+};
 
-function Glass({ children, className = '', glow = C.blue }: { children: ReactNode; className?: string; glow?: string }) {
-  return <section className={`relative overflow-hidden rounded-[28px] border p-4 sm:p-5 ${className}`} style={{ borderColor: 'var(--border)', background: 'linear-gradient(145deg,color-mix(in srgb,var(--surface) 97%,transparent),color-mix(in srgb,var(--bg-subtle) 92%,transparent))', boxShadow: '0 22px 70px rgba(15,23,42,.07), inset 0 1px 0 rgba(255,255,255,.7)' }}><span aria-hidden className="pointer-events-none absolute -right-20 -top-20 h-44 w-44 rounded-full blur-3xl" style={{ background: glow, opacity: .12 }} /><div className="relative">{children}</div></section>;
-}
+const MODULE_META: Record<ModuleId, { icon: ReactNode; tone: Tone; copy: string }> = {
+  overview: { icon: <LayoutDashboard size={17} />, tone: 'indigo', copy: 'This page' },
+  studios: { icon: <Building2 size={17} />, tone: 'sky', copy: 'Studios, sign-ups and invitations' },
+  users: { icon: <Users2 size={17} />, tone: 'teal', copy: 'Every account on the platform' },
+  revenue: { icon: <CreditCard size={17} />, tone: 'green', copy: 'Billing, payments, invoices, coupons' },
+  ai: { icon: <Bot size={17} />, tone: 'purple', copy: 'Usage, cost, allowances and routing' },
+  operations: { icon: <HeartPulse size={17} />, tone: 'orange', copy: 'Health, storage and support' },
+  security: { icon: <ShieldAlert size={17} />, tone: 'pink', copy: 'Sign-ins, audit, activity, tenancy' },
+  control: { icon: <ToggleRight size={17} />, tone: 'blue', copy: 'Feature flags and announcements' },
+};
 
-function SectionTitle({ icon: Icon, label, title, action }: { icon: typeof Activity; label: string; title: string; action?: ReactNode }) {
-  return <div className="mb-4 flex items-start justify-between gap-3"><div><div className="flex items-center gap-2 text-[9px] font-[900] uppercase tracking-[.18em]" style={{ color: C.blue }}><Icon size={13} />{label}</div><h2 className="mt-1 text-[18px] font-[950] tracking-[-.03em]" style={{ color: 'var(--text-primary)' }}>{title}</h2></div>{action}</div>;
-}
-
-function Donut({ healthy, warning, critical }: { healthy: number; warning: number; critical: number }) {
-  const total = Math.max(1, healthy + warning + critical); const r = 43; const circ = 2 * Math.PI * r;
-  const parts = [{ v: healthy, color: C.emerald }, { v: warning, color: C.amber }, { v: critical, color: C.rose }]; let offset = 0;
-  return <div className="relative h-[190px] w-[190px] shrink-0"><svg viewBox="0 0 110 110" className="h-full w-full -rotate-90 drop-shadow-[0_16px_22px_rgba(37,99,235,.16)]"><defs><filter id="ccGlow"><feGaussianBlur stdDeviation="1.8" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter></defs><circle cx="55" cy="55" r={r} fill="none" stroke="rgba(100,116,139,.13)" strokeWidth="12" />{parts.map((p, i) => { const len = p.v / total * circ; const node = <circle key={i} cx="55" cy="55" r={r} fill="none" stroke={p.color} strokeWidth="12" strokeLinecap="round" strokeDasharray={`${Math.max(0, len - 2)} ${circ}`} strokeDashoffset={-offset} filter="url(#ccGlow)" />; offset += len; return node; })}<circle cx="55" cy="55" r="31" fill="var(--surface)" /></svg><div className="absolute inset-0 flex flex-col items-center justify-center"><b className="text-[28px] font-[950]" style={{ color: 'var(--text-primary)' }}>{Math.round(healthy / total * 100)}%</b><span className="text-[9px] font-[900] uppercase tracking-[.16em]" style={{ color: 'var(--text-tertiary)' }}>healthy</span></div></div>;
-}
-
-function MiniBars({ items, color = C.blue }: { items: Array<{ label: string; value: number; sub?: string }>; color?: string }) {
-  const max = Math.max(1, ...items.map((x) => x.value));
-  return <div className="space-y-3">{items.map((x) => <div key={x.label}><div className="mb-1.5 flex items-center justify-between gap-3"><span className="min-w-0 truncate text-[10.5px] font-[750]" style={{ color: 'var(--text-secondary)' }}>{x.label}</span><span className="shrink-0 text-[10px] font-[900] tabular-nums" style={{ color }}>{x.sub ?? fmt(x.value)}</span></div><div className="h-2 overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}><div className="h-full rounded-full" style={{ width: `${(x.value / max) * 100}%`, background: `linear-gradient(90deg,${color},color-mix(in srgb,${color} 45%,white))`, boxShadow: `0 0 14px ${color}44` }} /></div></div>)}</div>;
-}
-
-function Sparkline({ values, color = C.blue }: { values: number[]; color?: string }) {
-  if (!values.length) return <div className="h-[150px] rounded-2xl" style={{ background: 'var(--bg-subtle)' }} />;
-  const max = Math.max(...values, 1); const min = Math.min(...values, 0); const span = Math.max(1, max - min);
-  const points = values.map((v, i) => `${(i / Math.max(1, values.length - 1)) * 100},${92 - ((v - min) / span) * 72}`).join(' ');
-  const area = `0,100 ${points} 100,100`;
-  return <div className="relative h-[150px] overflow-hidden rounded-2xl border" style={{ borderColor: 'var(--border)', background: 'linear-gradient(180deg,color-mix(in srgb,var(--bg-subtle) 72%,transparent),transparent)' }}><svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full"><defs><linearGradient id="ccArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor={color} stopOpacity=".32" /><stop offset="1" stopColor={color} stopOpacity="0" /></linearGradient></defs><polygon points={area} fill="url(#ccArea)" /><polyline points={points} fill="none" stroke={color} strokeWidth="1.8" vectorEffect="non-scaling-stroke" /></svg><div className="absolute inset-x-3 bottom-2 flex justify-between text-[8px] font-[700]" style={{ color: 'var(--text-disabled)' }}><span>30d ago</span><span>Today</span></div></div>;
-}
-
-function ModuleCard({ icon: Icon, title, copy, color, onClick }: { icon: typeof Activity; title: string; copy: string; color: string; onClick?: () => void }) {
-  return <button type="button" onClick={onClick} className="group relative overflow-hidden rounded-[22px] border p-4 text-left transition-all duration-200 hover:-translate-y-0.5" style={{ borderColor: `${color}28`, background: `linear-gradient(145deg,color-mix(in srgb,${color} 7%,var(--surface)),var(--surface))`, boxShadow: '0 14px 38px rgba(15,23,42,.05)' }}><div className="absolute inset-x-0 top-0 h-0.5" style={{ background: `linear-gradient(90deg,${color},transparent)` }} /><span className="mb-5 flex h-9 w-9 items-center justify-center rounded-xl" style={{ color, background: `${color}12`, border: `1px solid ${color}20` }}><Icon size={17} /></span><div className="text-[13px] font-[900]" style={{ color: 'var(--text-primary)' }}>{title}</div><div className="mt-1 text-[10px] leading-4" style={{ color: 'var(--text-tertiary)' }}>{copy}</div><ArrowUpRight size={13} className="absolute bottom-4 right-4 opacity-40 transition-opacity group-hover:opacity-100" style={{ color }} /></button>;
+function greeting(): string {
+  const h = new Date().getHours();
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 }
 
 export default function CommandCenterOverview() {
   const router = useRouter();
-  const [d, setD] = useState<any>({});
-  const [loading, setLoading] = useState(true); const [refreshing, setRefreshing] = useState(false); const [error, setError] = useState('');
+  const go = (tab: string) => router.push(tab === 'overview' ? '/platform' : `/platform?tab=${tab}`);
+  const [d, setD] = useState<Sources>({});
+  const [failed, setFailed] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async (fresh = false) => {
-    fresh ? setRefreshing(true) : setLoading(true); setError('');
-    const jobs = [
-      ['snapshot', () => api.superAdmin.commandCenter({ fresh })],
-      ['ai', () => api.superAdmin.aiOverview(30)],
-      ['models', () => api.superAdmin.aiByModel(30)],
-      ['studios', () => api.superAdmin.aiByStudio(30)],
-      ['trend', () => api.superAdmin.aiTrend(30)],
-      ['routing', () => api.superAdmin.aiRouting()],
-      ['alerts', () => api.superAdmin.commandCenterAlerts({ scope: 'live', limit: 8 })],
-      ['guardian', () => api.superAdmin.commandCenterGuardian({ fresh })],
-      ['analytics', () => api.superAdmin.analytics(12)],
-      ['security', () => api.superAdmin.securityOverview()],
-      ['health', () => api.superAdmin.systemHealth()],
-      ['storage', () => api.superAdmin.storageOverview()],
-      ['support', () => api.superAdmin.supportOverview()],
-    ] as const;
-    const results = await Promise.allSettled(jobs.map(([, fn]) => fn())); const next: any = {};
+    if (fresh) setRefreshing(true);
+    const keys = Object.keys(LOADERS) as (keyof Sources)[];
+    const results = await Promise.allSettled(keys.map((k) => LOADERS[k](fresh)));
+    const next: Sources = {}; const bad: string[] = [];
     results.forEach((r, i) => {
-      if (r.status !== 'fulfilled') return;
-      const value = r.value;
-      next[jobs[i][0]] = value && typeof value === 'object' && 'data' in value ? value.data : value;
+      const k = keys[i];
+      if (r.status === 'fulfilled') (next as Record<string, unknown>)[k] = r.value.data;
+      else bad.push(k);
     });
-    setD(next);
-    if (!next.snapshot && !next.ai) setError('Command Center telemetry is temporarily unavailable.');
-    setLoading(false); setRefreshing(false);
+    setD(next); setFailed(bad); setLoading(false); setRefreshing(false);
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const snapshot = d.snapshot ?? {}; const cards = Object.values(snapshot.cards ?? {}) as any[];
-  const counts = cards.reduce((a: any, c: any) => { a[c.status] = (a[c.status] ?? 0) + 1; return a; }, {});
-  const healthy = counts.healthy ?? 0; const warning = (counts.warning ?? 0) + (counts.timeout ?? 0); const critical = counts.critical ?? 0;
-  const ai = d.ai ?? {}; const models = Array.isArray(d.models) ? d.models : []; const studios = Array.isArray(d.studios) ? d.studios : []; const trend = Array.isArray(d.trend) ? d.trend : [];
-  const modelBars = useMemo(() => models.slice(0, 8).map((m: any) => ({ label: String(m.model ?? 'unknown').split('/').pop()?.slice(0, 22) ?? 'unknown', value: Number(m.requests ?? 0) })), [models]);
-  const studioBars = useMemo(() => studios.slice(0, 7).map((s: any) => ({ label: String(s.organization_name ?? 'Unknown').slice(0, 20), value: Number(s.tokens ?? 0) })), [studios]);
-  const tokenSeries = useMemo(() => trend.map((x: any) => Number(x.tokens ?? 0)), [trend]);
-  const fallback = Number(ai.fallback_pct ?? 0); const requests = Number(ai.requests ?? 0); const tokens = Number(ai.tokens ?? 0);
-  const risk = d.guardian?.score ?? d.analytics?.risk_score ?? null;
-  const liveAlerts = Array.isArray(d.alerts?.alerts) ? d.alerts.alerts : Array.isArray(d.alerts) ? d.alerts : [];
-  const riskLabel = risk == null ? 'Telemetry' : risk >= 80 ? 'Critical' : risk >= 60 ? 'Elevated' : risk >= 35 ? 'Watch' : 'Healthy';
+  const { kpis, money, snapshot, alerts, guardian, ai, aiTrend, analytics, security, support } = d;
 
-  if (loading) return <div className="flex min-h-[620px] items-center justify-center"><RefreshCw size={24} className="animate-spin" style={{ color: C.blue }} /></div>;
-  if (error && !Object.keys(d).length) return <div className="rounded-[26px] border p-10 text-center" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}><CircleAlert className="mx-auto" style={{ color: C.amber }} /><p className="mt-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{error}</p><button onClick={() => void load(true)} className="mt-4 rounded-xl px-4 py-2 text-xs font-bold text-white" style={{ background: C.blue }}>Retry</button></div>;
+  // ── Health, from the collector cards ────────────────────────────────────
+  const health = useMemo(() => {
+    const cards = Object.values(snapshot?.cards ?? {});
+    const n = (pred: (s: string) => boolean) => cards.filter((c) => pred(c.status)).length;
+    return {
+      total: cards.length,
+      healthy: n((s) => s === 'healthy'),
+      attention: n((s) => s === 'warning' || s === 'degraded' || s === 'timeout'),
+      critical: n((s) => s === 'critical'),
+      unmeasured: n((s) => s === 'unavailable'),
+    };
+  }, [snapshot]);
 
-  const kpis = [
-    ['Platform health', `${healthy}/${Math.max(1, cards.length)}`, 'healthy signals', HeartPulse, C.emerald],
-    ['AI requests', fmt(requests), 'last 30 days', Bot, C.blue],
-    ['AI tokens', fmt(tokens), `${pct(fallback)} fallback`, Zap, C.cyan],
-    ['Live alerts', String(liveAlerts.length), liveAlerts.length ? 'operator attention' : 'all clear', CircleAlert, liveAlerts.length ? C.amber : C.emerald],
-    ['Risk posture', risk == null ? 'LIVE' : String(Math.round(risk)), riskLabel, ShieldCheck, riskLabel === 'Healthy' ? C.emerald : C.amber],
-  ] as const;
+  const revenueBars = useMemo(() => fillMonths(money?.revenue_trend ?? [], 12, (r) => r.revenue_inr), [money]);
+  const growthBars = useMemo(() => fillMonths(money?.growth ?? [], 12, (r) => r.new_studios), [money]);
+  const aiBars = useMemo(() => (aiTrend ?? []).map((p) => ({
+    label: new Date(p.day).toLocaleDateString('en-IN', { day: 'numeric' }),
+    title: new Date(p.day).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+    value: p.tokens,
+  })), [aiTrend]);
+  const usage = analytics?.trend ?? [];
 
-  return <div className="relative space-y-5 overflow-hidden pb-10">
-    <div aria-hidden className="pointer-events-none absolute -left-48 -top-44 h-[520px] w-[520px] rounded-full blur-3xl" style={{ background: `radial-gradient(circle,${C.blue}22,transparent 68%)` }} /><div aria-hidden className="pointer-events-none absolute -right-56 top-[300px] h-[620px] w-[620px] rounded-full blur-3xl" style={{ background: `radial-gradient(circle,${C.violet}18,transparent 68%)` }} />
-    <div className="relative flex flex-wrap items-end justify-between gap-4"><div><div className="flex items-center gap-2 text-[10px] font-[900] uppercase tracking-[.2em]" style={{ color: C.blue }}><Sparkles size={12} /> Command Center</div><h1 className="mt-1 text-[31px] font-[950] tracking-[-.05em]" style={{ color: 'var(--text-primary)' }}>The whole platform, in one cockpit.</h1><p className="mt-1 max-w-[860px] text-[12px] leading-5" style={{ color: 'var(--text-secondary)' }}>Every operator surface in one place: platform health, alerts, the Guardian, AI routing and telemetry, infrastructure, queues, storage, security, logs and the recovery ladder.</p></div><button type="button" onClick={() => void load(true)} disabled={refreshing} className="flex items-center gap-2 rounded-[14px] border px-4 py-2.5 text-[11px] font-[850]" style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--text-primary)' }}><RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />{refreshing ? 'Refreshing' : 'Refresh live'}</button></div>
+  if (loading) {
+    return (
+      <div className="flex min-h-[520px] items-center justify-center" role="status" aria-label="Loading the Command Center">
+        <RefreshCw size={24} className="animate-spin" style={{ color: 'var(--brand)' }} />
+      </div>
+    );
+  }
 
-    <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">{kpis.map(([label, value, sub, Icon, color]) => <Glass key={label} glow={color}><div className="flex items-start justify-between"><span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ color, background: `${color}12` }}><Icon size={17} /></span><span className="h-2 w-2 rounded-full" style={{ background: color, boxShadow: `0 0 12px ${color}` }} /></div><div className="mt-4 text-[9px] font-[900] uppercase tracking-[.14em]" style={{ color: 'var(--text-tertiary)' }}>{label}</div><div className="mt-1 text-[23px] font-[950] tabular-nums" style={{ color }}>{value}</div><div className="text-[9.5px]" style={{ color: 'var(--text-tertiary)' }}>{sub}</div></Glass>)}</div>
+  const liveAlerts = alerts?.alerts ?? [];
+  const findings = guardian?.findings ?? [];
+  const status = snapshot?.status;
+  const headline = !snapshot ? 'Platform health is unavailable'
+    : status === 'critical' ? 'Something is failing right now'
+    : health.attention > 0 ? `${health.attention} signal${health.attention === 1 ? '' : 's'} need a look`
+    : 'Everything is running';
+  const statusColor = !snapshot ? ccState.unknown
+    : status === 'critical' ? ccState.critical
+    : health.attention > 0 ? ccState.warning : ccState.healthy;
+  const b = kpis?.business;
+  const states = money?.states;
+  const unavailable = (k: keyof Sources) => failed.includes(k);
 
-    <div className="grid gap-5 xl:grid-cols-[1.08fr_.92fr]"><Glass glow={C.blue}><SectionTitle icon={Network} label="AI control plane" title="Smart routing & fallback fabric" action={<button onClick={() => router.push('/platform?tab=ai')} className="rounded-full px-3 py-1.5 text-[9px] font-[900]" style={{ background: `${C.blue}10`, color: C.blue }}>Open AI Control →</button>} /><div className="grid gap-2 lg:grid-cols-3">{[['Primary', d.routing?.effective?.primary, C.blue, BrainCircuit], ['Secondary', d.routing?.effective?.secondary, C.cyan, GitBranch], ['Fallback', d.routing?.effective?.fallback, C.amber, ServerCog]].map(([label, value, color, Icon]) => <div key={String(label)} className="rounded-[20px] border p-3.5" style={{ borderColor: `${color}35`, background: `${color}08` }}><div className="flex items-center gap-2 text-[10px] font-[900]" style={{ color: String(color) }}><Icon size={14} />{label}</div><div className="mt-2 truncate font-mono text-[10px] font-[800]" style={{ color: 'var(--text-primary)' }}>{String(value ?? 'Not configured')}</div><div className="mt-1 text-[9px]" style={{ color: 'var(--text-tertiary)' }}>Live routing tier</div></div>)}</div><div className="mt-4 grid grid-cols-3 gap-2"><div className="rounded-xl p-3" style={{ background: 'var(--bg-subtle)' }}><span className="text-[8px] uppercase" style={{ color: 'var(--text-tertiary)' }}>Models</span><b className="mt-1 block text-[17px]">{models.length}</b></div><div className="rounded-xl p-3" style={{ background: 'var(--bg-subtle)' }}><span className="text-[8px] uppercase" style={{ color: 'var(--text-tertiary)' }}>Fallback</span><b className="mt-1 block text-[17px]" style={{ color: fallback > 10 ? C.amber : C.emerald }}>{pct(fallback)}</b></div><div className="rounded-xl p-3" style={{ background: 'var(--bg-subtle)' }}><span className="text-[8px] uppercase" style={{ color: 'var(--text-tertiary)' }}>Latency</span><b className="mt-1 block text-[17px]">{Number(ai.avg_latency_ms ?? 0)}ms</b></div></div></Glass>
-      <Glass glow={C.emerald}><SectionTitle icon={Gauge} label="Platform topology" title="Live health pulse" /><div className="flex items-center gap-5"><Donut healthy={healthy} warning={warning} critical={critical} /><div className="min-w-0 flex-1 space-y-2.5">{[['Healthy', healthy, C.emerald], ['Warning / timeout', warning, C.amber], ['Critical', critical, C.rose]].map(([label, value, color]) => <div key={String(label)} className="flex items-center justify-between"><span className="flex items-center gap-2 text-[10px]" style={{ color: 'var(--text-secondary)' }}><i className="h-2 w-2 rounded-full" style={{ background: String(color) }} />{label}</span><b className="text-[12px]">{value}</b></div>)}<div className="mt-3 rounded-xl p-3" style={{ background: 'var(--bg-subtle)' }}><div className="flex items-center gap-2 text-[9px] font-[900] uppercase" style={{ color: C.emerald }}><CheckCircle2 size={12} /> {snapshot.status ?? 'live'}</div><p className="mt-1 text-[9px] leading-4" style={{ color: 'var(--text-tertiary)' }}>Snapshot collected in {snapshot.duration_ms ?? 0}ms.</p></div></div></div></Glass></div>
+  return (
+    <div className="relative space-y-5 pb-10">
+      <CcHero
+        tone="indigo"
+        eyebrow={`${greeting()} · Command Center`}
+        title={headline}
+        icon={<LayoutDashboard size={22} />}
+        subtitle={snapshot
+          ? <>{health.healthy} of {health.total} signals healthy{health.critical ? ` · ${health.critical} critical` : ''}{health.unmeasured ? ` · ${health.unmeasured} not measured` : ''} · checked {new Date(snapshot.collected_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}</>
+          : 'The health collector did not answer. Studio and revenue figures below are still live.'}
+        actions={<CcHeroButton onClick={() => void load(true)} disabled={refreshing}><RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />{refreshing ? 'Refreshing' : 'Refresh'}</CcHeroButton>}
+      >
+        <CcHeroStat label="Studios" value={b ? nfIN(b.active_studios) : '—'} sub={b ? `active of ${nfIN(b.total_studios)} · ${nfIN(b.trial_studios)} on trial` : 'unavailable'} />
+        <CcHeroStat label="Clients" value={b ? nfIN(b.active_clients) : '—'} sub={b ? `active · +${nfIN(b.new_clients_30d)} in 30 days` : 'unavailable'} />
+        <CcHeroStat label="MRR" value={money ? inrCompact(money.mrr_inr) : '—'} sub={money ? `${nfIN(money.paying_studios)} paying · ARR ${inrCompact(money.arr_inr)}` : 'unavailable'} />
+        <CcHeroStat label="Collected · 30d" value={kpis ? inrCompact(kpis.platform_revenue.collected_30d_inr) : '—'} sub={kpis ? `${nfIN(kpis.operations.failed_payments_30d)} failed payments` : 'unavailable'} />
+      </CcHero>
 
-    <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]"><Glass glow={C.cyan}><SectionTitle icon={LineChart} label="AI telemetry" title="Token flow & request pressure" action={<span className="rounded-full px-2.5 py-1 text-[8px] font-[900]" style={{ background: `${C.cyan}10`, color: C.cyan }}>30 DAY</span>} /><Sparkline values={tokenSeries} color={C.cyan} /><div className="mt-3 grid grid-cols-3 gap-2"><div className="rounded-xl p-3" style={{ background: 'var(--bg-subtle)' }}><span className="text-[8px] uppercase" style={{ color: 'var(--text-tertiary)' }}>Peak day</span><b className="mt-1 block text-[14px]">{fmt(Math.max(0, ...tokenSeries))}</b></div><div className="rounded-xl p-3" style={{ background: 'var(--bg-subtle)' }}><span className="text-[8px] uppercase" style={{ color: 'var(--text-tertiary)' }}>Avg latency</span><b className="mt-1 block text-[14px]">{Number(ai.avg_latency_ms ?? 0)}ms</b></div><div className="rounded-xl p-3" style={{ background: 'var(--bg-subtle)' }}><span className="text-[8px] uppercase" style={{ color: 'var(--text-tertiary)' }}>Fallback</span><b className="mt-1 block text-[14px]">{pct(fallback)}</b></div></div></Glass><Glass glow={C.violet}><SectionTitle icon={BarChart3} label="Model intelligence" title="Top model traffic" action={<span className="text-[9px]" style={{ color: 'var(--text-tertiary)' }}>requests</span>} /><MiniBars items={modelBars.length ? modelBars : [{ label: 'No model telemetry yet', value: 1, sub: '—' }]} color={C.violet} /></Glass></div>
+      {failed.length > 0 && (
+        <div role="status" className="flex items-start gap-2.5 rounded-[16px] px-4 py-3 text-[12px]" style={{ background: 'var(--warning-bg, rgba(245,158,11,0.1))', border: '1px solid var(--warning-border, rgba(245,158,11,0.3))', color: 'var(--text-secondary)' }}>
+          <AlertTriangle size={15} style={{ color: ccState.warning, flexShrink: 0, marginTop: 1 }} />
+          <span>Some sources did not answer and are shown as unavailable, not as zero: <b>{failed.join(', ')}</b>.</span>
+        </div>
+      )}
 
-    <div className="grid gap-5 xl:grid-cols-2"><Glass glow={C.indigo}><SectionTitle icon={Users2} label="Multi-tenant intelligence" title="Studio AI consumption" action={<button onClick={() => router.push('/platform?tab=analytics')} className="text-[9px] font-[900]" style={{ color: C.indigo }}>Open Analytics →</button>} /><MiniBars items={studioBars.length ? studioBars : [{ label: 'No studio telemetry yet', value: 1, sub: '—' }]} color={C.indigo} /></Glass><Glass glow={C.amber}><SectionTitle icon={CircleAlert as typeof Activity} label="Operator alerts" title="What needs attention" action={<button onClick={() => router.push('/platform?tab=health')} className="text-[9px] font-[900]" style={{ color: C.amber }}>Open Health →</button>} />{liveAlerts.length ? <div className="space-y-2">{liveAlerts.slice(0, 5).map((a: any) => <div key={String(a.id ?? a.title)} className="flex items-center gap-3 rounded-xl p-3" style={{ background: 'var(--bg-subtle)' }}><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: a.severity === 'critical' ? C.rose : C.amber }} /><div className="min-w-0 flex-1"><div className="truncate text-[10.5px] font-[850]" style={{ color: 'var(--text-primary)' }}>{a.title ?? a.message ?? 'Operator alert'}</div><div className="mt-0.5 truncate text-[9px]" style={{ color: 'var(--text-tertiary)' }}>{a.severity ?? 'warning'} · {a.source ?? 'platform'}</div></div></div>)}</div> : <div className="flex items-center gap-3 rounded-2xl p-5" style={{ background: `${C.emerald}08` }}><CheckCircle2 size={19} style={{ color: C.emerald }} /><div><b className="text-[11px]" style={{ color: 'var(--text-primary)' }}>No live alerts</b><p className="mt-0.5 text-[9px]" style={{ color: 'var(--text-tertiary)' }}>The operator queue is clear right now.</p></div></div>}</Glass></div>
+      {/* ── Attention row ─────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <CcStat tone="pink" icon={<AlertTriangle size={15} />} label="Live alerts"
+          value={alerts ? nfIN(liveAlerts.length) : '—'}
+          sub={alerts ? (alerts.stats.critical ? `${alerts.stats.critical} critical` : liveAlerts.length ? 'none critical' : 'all clear') : 'unavailable'}
+          onClick={() => go('health')} />
+        <CcStat tone="purple" icon={<ShieldCheck size={15} />} label="Guardian"
+          value={guardian ? nfIN(findings.length) : '—'}
+          sub={guardian ? (findings.length ? `finding${findings.length === 1 ? '' : 's'} · ${guardian.rules_evaluated} rules run` : `${guardian.rules_evaluated} rules, none matched`) : 'unavailable'}
+          onClick={() => go('health')} />
+        <CcStat tone="orange" icon={<LifeBuoy size={15} />} label="Support queue"
+          value={support ? nfIN(support.open + support.pending) : '—'}
+          sub={support ? `${support.urgent_live} urgent · ${support.awaiting_first_reply} unanswered` : 'unavailable'}
+          onClick={() => go('support')} />
+        <CcStat tone="sky" icon={<ShieldAlert size={15} />} label="Operators w/o MFA"
+          value={security ? `${security.operators.without_mfa}/${security.operators.total}` : '—'}
+          sub={security ? `${security.logins_24h.failed_24h} failed sign-ins · 24h` : 'unavailable'}
+          onClick={() => go('security')} />
+      </div>
 
-    <Glass glow={C.rose}><SectionTitle icon={ShieldCheck} label="Risk & observability" title="Security, infrastructure and service posture" /><div className="grid grid-cols-2 gap-2 md:grid-cols-4">{[['Security', d.security?.status ?? d.security?.level ?? 'live', LockKeyhole, C.rose, '/platform?tab=security'], ['Infrastructure', d.health?.status ?? 'live', ServerCog, C.emerald, '/platform?tab=health'], ['Storage', d.storage?.status ?? 'live', Database, C.cyan, '/platform?tab=storage'], ['Support', d.support?.open_tickets ?? d.support?.open ?? 'live', MessageSquare, C.violet, '/platform?tab=support']].map(([label, value, Icon, color, href]) => <button key={String(label)} onClick={() => router.push(String(href))} className="rounded-[18px] border p-3 text-left transition-transform hover:-translate-y-0.5" style={{ borderColor: `${color}22`, background: `${color}07` }}><Icon size={15} style={{ color: String(color) }} /><div className="mt-3 text-[10px] font-[900]" style={{ color: 'var(--text-primary)' }}>{label}</div><div className="mt-1 truncate text-[10px] font-[800]" style={{ color: String(color) }}>{String(value)}</div></button>)}</div></Glass>
+      {/* ── Money ─────────────────────────────────────────────────────── */}
+      <div className="grid gap-5 xl:grid-cols-[1.35fr_1fr]">
+        <CcCard tone="green" eyebrow="Revenue" title="Subscription cash collected" icon={<IndianRupee size={16} />}
+          action={<CcLink tone="green" onClick={() => go('finance')}>Open Finance →</CcLink>}>
+          {money ? (
+            <>
+              <div className="mb-4 grid grid-cols-3 gap-2">
+                {[
+                  ['12 months', inrCompact(revenueBars.reduce((a, x) => a + x.value, 0))],
+                  ['ARPU', money.paying_studios ? inr(money.arpu_inr) : '—'],
+                  ['Refunded', inrCompact((money.revenue_trend ?? []).reduce((a, x) => a + x.refunded_inr, 0))],
+                ].map(([k, v]) => (
+                  <div key={k} className="rounded-[14px] px-3 py-2.5" style={{ background: 'var(--bg-subtle)' }}>
+                    <p className="text-[10px] font-[750] uppercase tracking-[0.1em]" style={{ color: 'var(--text-muted)' }}>{k}</p>
+                    <p className="mt-0.5 text-[16px] font-[850] tabular-nums" style={{ color: 'var(--text-primary)' }}>{v}</p>
+                  </div>
+                ))}
+              </div>
+              <CcBars data={revenueBars} tone="green" format={inr} height={170} empty="No subscription payment in the last 12 months" />
+            </>
+          ) : <CcEmpty title="Revenue is unavailable" body="The subscription metrics did not load." />}
+        </CcCard>
 
-    <div><div className="mb-3 flex items-end justify-between"><div><div className="text-[9px] font-[900] uppercase tracking-[.18em]" style={{ color: C.blue }}>Operator surfaces</div><h2 className="mt-1 text-[21px] font-[950] tracking-[-.035em]" style={{ color: 'var(--text-primary)' }}>Every operator surface, one command deck.</h2></div><span className="hidden text-[9px] font-[800] sm:block" style={{ color: 'var(--text-tertiary)' }}>navigation — each module opens in place</span></div><div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">{[
-      [Layers3, 'Models', 'Catalog, capabilities & health', C.blue, '/platform?tab=ai'],
-      [Workflow, 'Routing', 'Balanced, fastest, smartest & fallback', C.cyan, '/platform?tab=ai'],
-      [BarChart3, 'Analytics', 'Usage, latency, tokens & trends', C.violet, '/platform?tab=analytics'],
-      [GitBranch, 'Fallbacks', 'Failure trail & resilience', C.amber, '/platform?tab=health'],
-      [KeyRound, 'Keys & access', 'Access, sessions & security', C.rose, '/platform?tab=security'],
-      [WandSparkles, 'Agents', 'AI operators & automation', C.indigo, '/platform?tab=ai'],
-      [PlayCircle, 'Playground', 'Live AI testing surface', C.emerald, '/platform?tab=ai'],
-      [Boxes, 'Fusion', 'Multi-model synthesis', C.violet, '/platform?tab=ai'],
-      [Activity, 'Logs', 'Live tail & persisted history', C.slate, '/platform?tab=activity'],
-      [Database, 'Embeddings', 'Vector model readiness', C.cyan, '/platform?tab=ai'],
-      [WandSparkles, 'Image & vision', 'Media capability readiness', C.rose, '/platform?tab=ai'],
-      [Volume2, 'Audio / TTS', 'Speech model readiness', C.amber, '/platform?tab=ai'],
-      [Timer, 'Cache', 'Response efficiency & savings', C.emerald, '/platform?tab=health'],
-      [TerminalSquare, 'MCP & API docs', 'Developer gateway surfaces', C.indigo, '/platform?tab=ai'],
-      [Network, 'Provider health', 'Upstream reliability matrix', C.blue, '/platform?tab=health'],
-      [MessageSquare, 'Client integrations', 'SDKs, agents & connectors', C.violet, '/platform?tab=ai'],
-    ].map(([Icon, title, copy, color, href]) => <ModuleCard key={String(title)} icon={Icon as typeof Activity} title={String(title)} copy={String(copy)} color={String(color)} onClick={() => router.push(String(href))} />)}</div></div>
-  </div>;
+        <CcCard tone="sky" eyebrow="Lifecycle" title="Where every studio stands" icon={<Building2 size={16} />}
+          action={<CcLink tone="sky" onClick={() => go('studios')}>Studios →</CcLink>}>
+          {states ? (
+            <CcDonut centerLabel="studios" data={[
+              { label: 'Paying', value: states.active, color: ccSeries[0] },
+              { label: 'On trial', value: states.on_trial, color: ccSeries[3] },
+              { label: 'Trial lapsed', value: states.trial_lapsed, color: ccSeries[2] },
+              { label: 'Period lapsed', value: states.lapsed, color: ccSeries[6] },
+              { label: 'Frozen', value: states.frozen, color: ccSeries[5] },
+              { label: 'Suspended', value: states.suspended, color: ccSeries[4] },
+              { label: 'Cancelled / expired', value: states.cancelled + states.expired, color: ccState.unknown },
+            ]} />
+          ) : <CcEmpty title="Lifecycle is unavailable" />}
+        </CcCard>
+      </div>
+
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <CcCard tone="purple" eyebrow="Plan mix" title="Paying studios by plan" icon={<CreditCard size={16} />}>
+          {money ? (
+            <CcDonut stack size={148} centerLabel="paying" data={money.plan_distribution.map((p) => ({ label: p.name, value: p.studios }))} empty="No paying studio yet" />
+          ) : <CcEmpty title="Plan mix is unavailable" />}
+        </CcCard>
+
+        <CcCard tone="orange" eyebrow="Platform health" title="Signals by state" icon={<HeartPulse size={16} />}
+          action={<CcLink tone="orange" onClick={() => go('health')}>Health →</CcLink>}>
+          {snapshot ? (
+            <CcDonut stack size={148} centerLabel={`of ${health.total} healthy`} centerValue={nfIN(health.healthy)} data={[
+              { label: 'Healthy', value: health.healthy, color: ccState.healthy },
+              { label: 'Needs a look', value: health.attention, color: ccState.warning },
+              { label: 'Critical', value: health.critical, color: ccState.critical },
+              { label: 'Not measured', value: health.unmeasured, color: ccState.unknown },
+            ]} />
+          ) : <CcEmpty title="The health collector did not answer" />}
+        </CcCard>
+
+        <CcCard tone="teal" eyebrow="Conversion" title="Trials and churn" icon={<TrendingUp size={16} />}>
+          {money ? (
+            <div className="grid grid-cols-2 gap-3">
+              <CcRing tone="teal" size={112} pct={money.trial_conversion.rate_pct} label="Trial → paid"
+                sub={money.trial_conversion.started ? `${money.trial_conversion.converted} of ${money.trial_conversion.started}` : 'no trial yet'} />
+              <CcRing tone="pink" size={112} pct={money.churn.rate_30d_pct} label="Churn · 30d"
+                sub={money.churn.rate_30d_pct == null ? 'nobody paying yet' : `${money.churn.cancelled_30d} cancelled`} />
+              <div className="col-span-2 rounded-[14px] px-3 py-2.5 text-[11.5px]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+                Founder slots: <b style={{ color: 'var(--text-primary)' }}>{money.founders.granted}</b> of {money.founders.limit} granted · {money.founders.slots_remaining} left
+              </div>
+            </div>
+          ) : <CcEmpty title="Conversion is unavailable" />}
+        </CcCard>
+      </div>
+
+      {/* ── Growth and usage ──────────────────────────────────────────── */}
+      <div className="grid gap-5 xl:grid-cols-2">
+        <CcCard tone="sky" eyebrow="Growth" title="New paying studios per month" icon={<Building2 size={16} />}>
+          {money ? <CcBars data={growthBars} tone="sky" height={150} empty="No studio has activated a paid plan in 12 months" /> : <CcEmpty title="Growth is unavailable" />}
+        </CcCard>
+        <CcCard tone="teal" eyebrow="Product usage" title="What studios did · 6 months" icon={<Activity size={16} />}
+          action={<CcLink tone="teal" onClick={() => go('analytics')}>Analytics →</CcLink>}>
+          {analytics ? (
+            <>
+              <CcBars data={usage.map((p) => ({ label: p.label.split(' ')[0], title: p.label, value: p.clients_added }))} tone="teal" height={120} empty="No client was added in 6 months" />
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {[
+                  ['Clients added', usage.reduce((a, p) => a + p.clients_added, 0)],
+                  ['Sessions', usage.reduce((a, p) => a + p.sessions, 0)],
+                  ['Check-ins', usage.reduce((a, p) => a + p.check_ins, 0)],
+                ].map(([k, v]) => (
+                  <div key={k} className="rounded-[14px] px-3 py-2.5" style={{ background: 'var(--bg-subtle)' }}>
+                    <p className="text-[10px] font-[750] uppercase tracking-[0.1em]" style={{ color: 'var(--text-muted)' }}>{k}</p>
+                    <p className="mt-0.5 text-[16px] font-[850] tabular-nums" style={{ color: 'var(--text-primary)' }}>{nfIN(Number(v))}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : <CcEmpty title="Usage is unavailable" />}
+        </CcCard>
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-[1.35fr_1fr]">
+        <CcCard tone="purple" eyebrow="AI Suite" title="Tokens per day · 30 days" icon={<Bot size={16} />}
+          action={<CcLink tone="purple" onClick={() => go('ai')}>AI Control →</CcLink>}>
+          {ai ? (
+            <>
+              <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {[
+                  ['Requests', nfIN(ai.requests)],
+                  ['Tokens', compact(ai.tokens)],
+                  ['Avg latency', ai.requests ? `${nfIN(ai.avg_latency_ms)} ms` : '—'],
+                  ['Fell back', ai.requests ? `${ai.fallback_pct}%` : '—'],
+                ].map(([k, v]) => (
+                  <div key={k} className="rounded-[14px] px-3 py-2.5" style={{ background: 'var(--bg-subtle)' }}>
+                    <p className="text-[10px] font-[750] uppercase tracking-[0.1em]" style={{ color: 'var(--text-muted)' }}>{k}</p>
+                    <p className="mt-0.5 text-[16px] font-[850] tabular-nums" style={{ color: 'var(--text-primary)' }}>{v}</p>
+                  </div>
+                ))}
+              </div>
+              <CcBars data={aiBars} tone="purple" format={compact} height={130} empty="No AI request in the last 30 days" />
+            </>
+          ) : <CcEmpty title="AI usage is unavailable" />}
+        </CcCard>
+
+        <CcCard tone="pink" eyebrow="Needs attention" title="Alerts and Guardian findings" icon={<AlertTriangle size={16} />}
+          action={<CcLink tone="pink" onClick={() => go('health')}>Open →</CcLink>}>
+          {!alerts && !guardian ? <CcEmpty title="Alerts are unavailable" />
+            : liveAlerts.length === 0 && findings.length === 0 ? (
+              <div className="flex items-center gap-3 rounded-[16px] p-4" style={{ background: `color-mix(in srgb, ${ccState.healthy} 10%, transparent)` }}>
+                <CheckCircle2 size={20} style={{ color: ccState.healthy }} />
+                <div>
+                  <p className="text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>Nothing needs you</p>
+                  <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>No live alert, and every Guardian rule ran clean.</p>
+                </div>
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {liveAlerts.slice(0, 4).map((a) => (
+                  <li key={a.id} className="rounded-[14px] px-3 py-2.5" style={{ background: 'var(--bg-subtle)' }}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="min-w-0 truncate text-[12.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{a.title}</p>
+                      <CcChip color={a.severity === 'critical' ? ccState.critical : ccState.warning}>{a.severity}</CcChip>
+                    </div>
+                    {a.reason && <p className="mt-0.5 line-clamp-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>{a.reason}</p>}
+                  </li>
+                ))}
+                {findings.slice(0, Math.max(0, 5 - Math.min(4, liveAlerts.length))).map((f) => (
+                  <li key={f.id} className="rounded-[14px] px-3 py-2.5" style={{ background: 'var(--bg-subtle)' }}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="min-w-0 truncate text-[12.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{f.title}</p>
+                      <CcChip color={f.severity === 'critical' ? ccState.critical : f.severity === 'warning' ? ccState.warning : ccState.info}>Guardian</CcChip>
+                    </div>
+                    <p className="mt-0.5 line-clamp-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>{f.conclusion}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+        </CcCard>
+      </div>
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <CcCard tone="pink" eyebrow="Security · 24h" title="Sign-in outcomes" icon={<ShieldAlert size={16} />}
+          action={<CcLink tone="pink" onClick={() => go('security')}>Security →</CcLink>}>
+          {security ? (
+            <CcDonut size={140} centerLabel="sign-ins" data={[
+              { label: 'Succeeded', value: security.logins_24h.success_24h, color: ccState.healthy },
+              { label: 'Failed', value: security.logins_24h.failed_24h, color: ccState.critical },
+              { label: 'MFA failed', value: security.logins_24h.mfa_failed_24h, color: ccState.warning },
+            ]} empty="No sign-in in 24h" />
+          ) : <CcEmpty title="Security is unavailable" />}
+        </CcCard>
+        <CcCard tone="orange" eyebrow="Support" title="Ticket queue" icon={<LifeBuoy size={16} />}
+          action={<CcLink tone="orange" onClick={() => go('support')}>Support →</CcLink>}>
+          {support ? (
+            <>
+              <CcHBars rows={[
+                { label: 'Open', value: support.open },
+                { label: 'Pending', value: support.pending },
+                { label: 'Unassigned', value: support.unassigned },
+                { label: 'Never answered', value: support.awaiting_first_reply },
+                { label: 'Resolved', value: support.resolved },
+              ]} />
+              <p className="mt-3 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                Median first reply {support.median_first_response_hours == null ? '—' : `${support.median_first_response_hours}h`} · median resolution {support.median_resolution_hours == null ? '—' : `${support.median_resolution_hours}h`}
+              </p>
+            </>
+          ) : <CcEmpty title="Support is unavailable" />}
+        </CcCard>
+      </div>
+
+      {/* ── Modules — the eight that exist, nothing more ─────────────── */}
+      <div>
+        <p className="mb-3 text-[10.5px] font-[800] uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>Jump to</p>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {MODULES.filter((m) => m.id !== 'overview').map((m) => {
+            const meta = MODULE_META[m.id];
+            const live = unavailable('kpis') ? null : m.id === 'studios' ? b?.total_studios
+              : m.id === 'operations' ? (alerts ? liveAlerts.length : null) : null;
+            return (
+              <button key={m.id} type="button" onClick={() => go(m.tabs[0])}
+                className="group flex items-center gap-3 rounded-[20px] p-3.5 text-left transition-transform hover:-translate-y-0.5"
+                style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
+                <CcIcon tone={meta.tone} size={40}>{meta.icon}</CcIcon>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
+                    <span className="text-[13.5px] font-[800]" style={{ color: 'var(--text-primary)' }}>{m.label}</span>
+                    {live != null && <span className="rounded-full px-1.5 text-[10px] font-[800] tabular-nums" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>{live}</span>}
+                  </span>
+                  <span className="block truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>{meta.copy}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -29,18 +29,19 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   Loader2, ChevronLeft, AlertTriangle, CheckCircle2, HelpCircle, ShieldOff, Users, Database,
-  IndianRupee, TrendingUp, Receipt,
+  IndianRupee, TrendingUp, Receipt, Building2,
 } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import { api } from '@/lib/api';
 import type {
   StudioHealth, StudioMemberships, StudioMembership, StudioPtRevenue,
-  TenancySectionStatus,
+  TenancySectionStatus, OrganizationDetail,
 } from '@/lib/api';
 import { Panel, Reveal, SectionLabel, StatTile } from '@/components/platform/console';
 import { fmtDate, fmtINR } from '../../_shared/format';
 import { Center, ErrorState } from '../../_shared/ui';
 import { errorMessage } from '@/lib/forms/errors';
+import { CcHero, CcHeroStat } from '@/components/platform/cc-viz';
 
 type Section = 'health' | 'memberships' | 'revenue';
 
@@ -70,42 +71,56 @@ export default function Studio360Page() {
   const id = params?.id ?? '';
   const [section, setSection] = useState<Section>('health');
 
+  // The page used to title itself with the first eight characters of the
+  // UUID ("0B000000…"): nothing on it loaded the studio's name.
+  const [org, setOrg] = useState<OrganizationDetail | null>(null);
+  useEffect(() => {
+    let live = true;
+    api.superAdmin.getOrg(id).then((r) => { if (live) setOrg(r.data); }).catch(() => { /* the sections below report their own errors */ });
+    return () => { live = false; };
+  }, [id]);
+  const owners = org?.users?.length ?? null;
+
   return (
     <div className="space-y-5">
-      <Reveal delay={0.02}>
-        <button
-          onClick={() => router.push('/platform?tab=studios')}
-          className="flex items-center gap-1.5 text-[12px] font-[650] transition-colors"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <ChevronLeft size={13} /> All studios
-        </button>
-      </Reveal>
+      <button
+        onClick={() => router.push('/platform?tab=studios')}
+        className="flex items-center gap-1.5 text-[12px] font-[650] transition-colors"
+        style={{ color: 'var(--text-muted)' }}
+      >
+        <ChevronLeft size={13} /> All studios
+      </button>
 
-      <Reveal delay={0.04}>
-        <div className="max-w-[500px]">
-          <SectionLabel>{id.slice(0, 8)}…</SectionLabel>
-        </div>
-      </Reveal>
-
-      <Reveal delay={0.06}>
-        <div className="flex flex-wrap gap-2">
-          {(Object.keys(SECTION_LABEL) as Section[]).map((s) => (
-            <button
-              key={s}
-              onClick={() => setSection(s)}
-              className="rounded-[10px] px-3.5 py-1.5 text-[12.5px] font-[650] transition-colors"
-              style={{
-                background: s === section ? 'var(--brand)' : 'var(--bg-subtle)',
-                color: s === section ? '#fff' : 'var(--text-secondary)',
-                border: `1px solid ${s === section ? 'var(--brand)' : 'var(--border)'}`,
-              }}
-            >
-              {SECTION_LABEL[s]}
-            </button>
-          ))}
-        </div>
-      </Reveal>
+      <CcHero
+        tone="sky"
+        eyebrow="Studio 360"
+        title={org?.name ?? 'Studio'}
+        subtitle={org ? `/${org.slug} · joined ${fmtDate(org.created_at)}${org.plan_code ? ` · ${org.plan_code} plan` : ' · no plan'}` : id}
+        icon={<Building2 size={22} />}
+      >
+        <CcHeroStat label="Status" value={org ? org.status : '—'} />
+        <CcHeroStat label="Subscription" value={org ? (org.subscription_status ?? '—') : '—'} sub={org?.current_period_end ? `until ${fmtDate(org.current_period_end)}` : undefined} />
+        <CcHeroStat label="Accounts" value={owners == null ? '—' : String(owners)} />
+        <nav aria-label="Studio sections" className="col-span-2 flex flex-wrap gap-1.5 sm:col-span-1 sm:items-end">
+          {(Object.keys(SECTION_LABEL) as Section[]).map((s) => {
+            const on = s === section;
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setSection(s)}
+                aria-current={on ? 'page' : undefined}
+                className="rounded-full px-3.5 py-2 text-[12px] font-[750] transition-colors"
+                style={on
+                  ? { background: '#FFFFFF', color: '#0F172A' }
+                  : { background: 'rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.92)', border: '1px solid rgba(255,255,255,0.22)' }}
+              >
+                {SECTION_LABEL[s]}
+              </button>
+            );
+          })}
+        </nav>
+      </CcHero>
 
       {section === 'health' && <HealthSection id={id} />}
       {section === 'memberships' && <MembershipsSection id={id} />}

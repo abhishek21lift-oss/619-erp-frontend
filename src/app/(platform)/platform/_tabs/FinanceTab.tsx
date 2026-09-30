@@ -96,7 +96,7 @@ export function BillingTab() {
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { api.subscription.plans().then((r) => setPlans(r.data.plans ?? [])).catch(() => {}); }, []);
+  useEffect(() => { api.superAdmin.plans().then((r) => setPlans(r.data.plans ?? [])).catch(() => {}); }, []);
 
   const quickFreeze = async (s: SubStudio, freeze: boolean) => {
     if (freeze && !window.confirm(`Freeze ${s.name}? Their team is signed out of protected features until they pay. No data is deleted.`)) return;

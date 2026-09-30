@@ -26,7 +26,8 @@ import { api } from '@/lib/api';
 import type {
   AiOverview, AiStudioUsage, AiModelUsage, AiTrendPoint, AiSettings, AiRouting,
 } from '@/lib/api';
-import { Panel, SectionLabel, StatTile, Reveal } from './console';
+import { Panel, SectionLabel, Reveal } from './console';
+import { CcBars, CcCard, CcDonut, CcStat } from './cc-viz';
 import { useToast } from '@/lib/toast';
 import { errorMessage } from '@/lib/forms/errors';
 
@@ -61,57 +62,6 @@ function fmtWhen(iso: string | null) {
    One measure, one hue — the house convention set by the Analytics tab. Its
    own y-scale anchored at zero, so the height of the line means the value and
    not its distance from an arbitrary floor. */
-function TokenTrend({ points }: { points: AiTrendPoint[] }) {
-  const [hover, setHover] = useState<number | null>(null);
-  const W = 100; const H = 32;
-  const max = Math.max(1, ...points.map((p) => p.tokens));
-  const step = points.length > 1 ? W / (points.length - 1) : W;
-
-  const xy = points.map((p, i) => ({
-    x: points.length > 1 ? i * step : W / 2,
-    y: H - (p.tokens / max) * (H - 3) - 1.5,
-  }));
-  const line = xy.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
-  const area = xy.length ? `${line} L${xy[xy.length - 1].x.toFixed(2)},${H} L${xy[0].x.toFixed(2)},${H} Z` : '';
-  const active = hover !== null ? points[hover] : null;
-  const total = points.reduce((a, p) => a + p.tokens, 0);
-
-  return (
-    <Panel>
-      <p className="text-[12.5px] font-[760]" style={{ color: 'var(--text-primary)' }}>Tokens per day</p>
-      {/* The headline reads the hovered day when there is one, so the number
-          and the mark can never disagree. */}
-      <p className="mt-1 text-[20px] font-[800] tabular-nums leading-tight" style={{ color: 'var(--text-primary)' }}>
-        {fmtTokens(active ? active.tokens : total)}
-      </p>
-      <p className="mb-2 h-[14px] text-[10.5px]" style={{ color: 'var(--text-disabled)' }}>
-        {active ? `${active.day} · ${nf(active.requests)} requests` : `across ${points.length} days`}
-      </p>
-      <svg
-        viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none"
-        className="h-[46px] w-full overflow-visible" role="img"
-        aria-label={`Tokens per day: ${fmtTokens(total)} across ${points.length} days`}
-        onMouseLeave={() => setHover(null)}
-      >
-        <path d={area} fill="color-mix(in srgb, var(--brand) 14%, transparent)" />
-        {/* vectorEffect keeps the stroke 2px after the non-uniform scale that
-            preserveAspectRatio="none" applies. */}
-        <path d={line} fill="none" stroke="var(--brand)" strokeWidth={2}
-          strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-        {hover !== null && (
-          <circle cx={xy[hover].x} cy={xy[hover].y} r={3} fill="var(--brand)"
-            stroke="var(--bg-elevated)" strokeWidth={2} vectorEffect="non-scaling-stroke" />
-        )}
-        {/* Hit bands far bigger than the marks — a 2px line is not a target. */}
-        {points.map((p, i) => (
-          <rect key={p.day} x={i * step - step / 2} y={0} width={step} height={H}
-            fill="transparent" onMouseEnter={() => setHover(i)} />
-        ))}
-      </svg>
-    </Panel>
-  );
-}
-
 /* ── Per-studio usage against allowance ─────────────────────────────────── */
 function StudioTable({ rows, onChanged }: { rows: AiStudioUsage[]; onChanged: () => void }) {
   const { toast } = useToast();
@@ -478,7 +428,11 @@ function RoutingPanel({ routing, onChanged }: { routing: AiRouting; onChanged: (
         )}
         <span className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
           <Route size={11} />
-          {routing.updated_at
+          {/* updated_at alone is not a change: the settings row is created
+              with a timestamp by its migration, so a platform nobody had
+              touched read "Last changed by an operator today". Only a row
+              that names who saved it has been changed. */}
+          {routing.updated_at && (routing.updated_by_name || Object.values(routing.override ?? {}).some(Boolean))
             ? `Last changed by ${routing.updated_by_name ?? 'an operator'} ${fmtWhen(routing.updated_at)}`
             : 'Never changed — every tier is following the deploy'}
         </span>
@@ -594,21 +548,24 @@ export default function AiControlCentre() {
       <div>
         <SectionLabel hint={`last ${days} days`}>Usage</SectionLabel>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatTile label="Requests" value={nf(overview.requests)}
+          <CcStat tone="purple" label="Requests" value={nf(overview.requests)}
             sub={`${overview.users} people · ${overview.studios} studios`} icon={<Bot size={15} />} />
-          <StatTile label="Tokens" value={fmtTokens(overview.tokens)}
-            sub={`${fmtTokens(overview.tokens_prompt)} in · ${fmtTokens(overview.tokens_completion)} out`}
-            tone="brand" icon={<Zap size={15} />} delay={0.04} />
-          <StatTile
+          <CcStat tone="indigo" label="Tokens" value={fmtTokens(overview.tokens)}
+            sub={`${fmtTokens(overview.tokens_prompt)} in · ${fmtTokens(overview.tokens_completion)} out`} icon={<Zap size={15} />} />
+          <CcStat tone={partialCost ? 'orange' : 'green'}
             label={partialCost ? 'Cost (partial)' : 'Cost'}
             value={fmtINR(overview.cost_inr)}
             // The honesty valve: the API told us some models have no rate, so
             // this figure is a floor and the tile says which ones are missing.
-            sub={partialCost ? `excludes ${overview.unpriced_models.length} unpriced model${overview.unpriced_models.length === 1 ? '' : 's'}` : 'all models priced'}
-            tone={partialCost ? 'caution' : 'positive'} icon={<Coins size={15} />} delay={0.08} />
-          <StatTile label="Avg latency" value={`${overview.avg_latency_ms}ms`}
-            sub={`${overview.fallback_pct}% fell back to a backup model`}
-            tone={overview.fallback_pct > 10 ? 'critical' : 'neutral'} icon={<Timer size={15} />} delay={0.12} />
+            // With no request at all there is nothing to have priced.
+            sub={partialCost ? `excludes ${overview.unpriced_models.length} unpriced model${overview.unpriced_models.length === 1 ? '' : 's'}` : overview.requests ? 'all models priced' : 'no usage in this window'}
+            icon={<Coins size={15} />} />
+          {/* Latency and fallback are averages over requests; with none, a
+              "0ms" and "0%" would read as a fast, reliable AI. */}
+          <CcStat tone={overview.fallback_pct > 10 ? 'pink' : 'sky'} label="Avg latency"
+            value={overview.requests ? `${nf(overview.avg_latency_ms)} ms` : '—'}
+            sub={overview.requests ? `${overview.fallback_pct}% fell back to a backup model` : 'no request to time'}
+            icon={<Timer size={15} />} />
         </div>
         {partialCost && (
           <p className="mt-2 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
@@ -618,7 +575,18 @@ export default function AiControlCentre() {
         )}
       </div>
 
-      <Reveal delay={0.06}><TokenTrend points={trend} /></Reveal>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.5fr_1fr]">
+        <CcCard tone="purple" eyebrow="Tokens per day" title={`${fmtTokens(trend.reduce((a, p) => a + p.tokens, 0))} across ${trend.length} days`} icon={<Zap size={15} />}>
+          <CcBars tone="purple" height={150} format={fmtTokens}
+            data={trend.map((p) => ({ label: new Date(p.day).toLocaleDateString('en-IN', { day: 'numeric' }), title: `${new Date(p.day).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · ${nf(p.requests)} requests`, value: p.tokens }))}
+            empty={`No AI request in the last ${days} days`} />
+        </CcCard>
+        <CcCard tone="indigo" eyebrow="Model share" title="Requests by model" icon={<Bot size={15} />}>
+          <CcDonut stack size={140} centerLabel="requests"
+            data={models.slice(0, 6).map((mm) => ({ label: String(mm.model ?? 'unknown').split('/').pop() ?? 'unknown', value: mm.requests }))}
+            empty="No request yet" />
+        </CcCard>
+      </div>
 
       <div>
         <SectionLabel hint="ranked by tokens">By studio</SectionLabel>

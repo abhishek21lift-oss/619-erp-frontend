@@ -21,7 +21,8 @@ import { api } from '@/lib/api';
 import type {
   SupportTicket, SupportOverview, TicketStatus, TicketPriority,
 } from '@/lib/api';
-import { Panel, SectionLabel, StatTile, Reveal } from './console';
+import { Panel, SectionLabel, Reveal } from './console';
+import { CcCard, CcDonut, CcStat } from './cc-viz';
 import { useToast } from '@/lib/toast';
 import { errorMessage } from '@/lib/forms/errors';
 
@@ -298,20 +299,21 @@ export default function SupportCentre() {
         </div>
       )}
 
-      <div>
-        <SectionLabel>Queue</SectionLabel>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatTile label="Open" value={String(o.open)} sub={`${o.pending} awaiting the studio`}
-            icon={<Inbox size={15} />} tone={o.open > 0 ? 'critical' : 'positive'} />
-          <StatTile label="Unassigned" value={String(o.unassigned)} sub="nobody owns these"
-            icon={<LifeBuoy size={15} />} tone={o.unassigned > 0 ? 'caution' : 'neutral'} delay={0.04} />
-          <StatTile label="Median first reply" value={fmtHours(o.median_first_response_hours)}
-            sub="how long a studio waits" icon={<Timer size={15} />} tone="brand" delay={0.08} />
-          <StatTile label="Median resolution" value={fmtHours(o.median_resolution_hours)}
-            sub={`${o.resolved + o.closed} resolved all time`} icon={<CheckCircle2 size={15} />}
-            tone="positive" delay={0.12} />
-        </div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <CcStat tone={o.open > 0 ? 'pink' : 'green'} label="Open" value={String(o.open)} sub={`${o.pending} awaiting the studio`} icon={<Inbox size={15} />} />
+        <CcStat tone={o.unassigned > 0 ? 'orange' : 'teal'} label="Unassigned" value={String(o.unassigned)} sub="nobody owns these" icon={<LifeBuoy size={15} />} />
+        <CcStat tone="sky" label="Median first reply" value={fmtHours(o.median_first_response_hours)} sub="how long a studio waits" icon={<Timer size={15} />} />
+        <CcStat tone="purple" label="Median resolution" value={fmtHours(o.median_resolution_hours)} sub={`${o.resolved + o.closed} resolved all time`} icon={<CheckCircle2 size={15} />} />
       </div>
+
+      <CcCard tone="orange" eyebrow="Every ticket" title="Where the queue stands" icon={<Inbox size={15} />}>
+        <CcDonut size={140} centerLabel="tickets" empty="No ticket yet" data={[
+          { label: 'Open', value: o.open },
+          { label: 'Pending on the studio', value: o.pending },
+          { label: 'Resolved', value: o.resolved },
+          { label: 'Closed', value: o.closed },
+        ]} />
+      </CcCard>
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex gap-1 rounded-[11px] p-1" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>

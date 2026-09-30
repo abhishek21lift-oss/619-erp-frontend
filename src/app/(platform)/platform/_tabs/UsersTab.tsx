@@ -29,42 +29,47 @@ import { roleLabel } from '@/lib/roles';
 import { fmtWhen } from '../_shared/format';
 import { Center, ErrorState, inputCls, inputStyle } from '../_shared/ui';
 import { errorMessage } from '@/lib/forms/errors';
+import { CcCard, CcDonut, CcHBars } from '@/components/platform/cc-viz';
+import { ccState } from '@/components/platform/ccTheme';
 
 const PAGE = 50;
 
 type RoleFilter = '' | 'trainer' | 'member' | 'platform';
 type StatusFilter = '' | 'active' | 'inactive' | 'deleted';
 
-/** The summary strip. Counts come from the server in one pass, unpaged. */
+/**
+ * The summary, drawn. Counts come from the server in one pass, unpaged.
+ * While they load the donuts read "—", never 0: a real zero and "not yet
+ * known" are different facts.
+ */
 function SummaryStrip({ s }: { s: PlatformUserSummary | null }) {
-  const items: { label: string; value: number | undefined; icon: React.ReactNode }[] = [
-    { label: 'Accounts', value: s?.total, icon: <Users2 size={13} /> },
-    { label: 'Trainers', value: s?.owners, icon: <ShieldCheck size={13} /> },
-    { label: 'Members', value: s?.members, icon: <Users2 size={13} /> },
-    { label: 'Platform', value: s?.platform, icon: <KeyRound size={13} /> },
-    { label: 'Never signed in', value: s?.never_signed_in, icon: <UserX size={13} /> },
-    { label: 'Dormant 90d', value: s?.dormant_90d, icon: <Clock size={13} /> },
-  ];
+  const other = s ? Math.max(0, s.total - s.owners - s.members - s.platform) : 0;
   return (
-    <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-      {items.map((it) => (
-        <div
-          key={it.label}
-          className="rounded-[12px] px-3 py-2.5"
-          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
-        >
-          <div className="flex items-center gap-1.5 text-[11px] font-[650]" style={{ color: 'var(--text-muted)' }}>
-            {it.icon}
-            <span className="truncate">{it.label}</span>
-          </div>
-          {/* An em dash while loading rather than 0: a real zero and "not yet
-              known" are different facts, and showing 0 for the second is how a
-              console teaches an operator to distrust it. */}
-          <div className="mt-1 text-[19px] font-[750] tabular-nums" style={{ color: 'var(--text-primary)' }}>
-            {it.value ?? '—'}
-          </div>
-        </div>
-      ))}
+    <div className="mb-5 grid gap-4 lg:grid-cols-3">
+      <CcCard tone="teal" eyebrow="Accounts" title={s ? `${s.total} on the platform` : 'Accounts'} icon={<Users2 size={15} />}>
+        <CcDonut stack size={136} centerLabel="accounts" empty={s ? 'No account' : 'Loading'} data={s ? [
+          { label: 'Trainers (studio owners)', value: s.owners },
+          { label: 'Members', value: s.members },
+          { label: 'Platform operators', value: s.platform },
+          ...(other ? [{ label: 'Other staff', value: other }] : []),
+        ] : []} />
+      </CcCard>
+      <CcCard tone="sky" eyebrow="State" title="Active, disabled, deleted" icon={<ShieldCheck size={15} />}>
+        <CcDonut stack size={136} centerLabel="accounts" empty={s ? 'No account' : 'Loading'} data={s ? [
+          { label: 'Active', value: s.active, color: ccState.healthy },
+          { label: 'Disabled', value: s.inactive, color: ccState.warning },
+          { label: 'Deleted', value: s.deleted, color: ccState.unknown },
+        ] : []} />
+      </CcCard>
+      <CcCard tone="purple" eyebrow="Engagement" title="Who is actually signing in" icon={<Clock size={15} />}>
+        {s ? (
+          <CcHBars max={Math.max(1, s.total)} rows={[
+            { label: 'Signed in at least once', value: s.total - s.never_signed_in, sub: `${s.total - s.never_signed_in} of ${s.total}` },
+            { label: 'Never signed in', value: s.never_signed_in, sub: `${s.never_signed_in} of ${s.total}` },
+            { label: 'Dormant 90 days', value: s.dormant_90d, sub: `${s.dormant_90d} of ${s.total}` },
+          ]} />
+        ) : <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>—</p>}
+      </CcCard>
     </div>
   );
 }

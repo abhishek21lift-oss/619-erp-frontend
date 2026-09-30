@@ -455,7 +455,7 @@ export default function NotificationCentre() {
   useEffect(() => {
     // The plan catalogue is the same one studios see; there is no super-admin
     // variant of it, and the rest of the Control Centre reads it from here too.
-    api.subscription.plans().then((r) => setPlans(r.data.plans ?? [])).catch(() => setPlans([]));
+    api.superAdmin.plans().then((r) => setPlans(r.data.plans ?? [])).catch(() => setPlans([]));
   }, []);
 
   const counts = useMemo(() => {

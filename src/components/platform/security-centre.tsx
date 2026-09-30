@@ -23,6 +23,8 @@ import type {
   SecurityOverview, SecurityThreats, LoginEvent, LoginEventQuery, ActiveSession,
 } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
+import { CcCard, CcDonut, CcRing, CcStat } from './cc-viz';
+import { ccState } from './ccTheme';
 
 const PAGE_SIZE = 50;
 const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)' } as const;
@@ -66,23 +68,6 @@ function parseAgent(ua?: string | null) {
   return os ? `${browser} · ${os}` : browser;
 }
 
-function Tile({ label, value, sub, tone, icon }: {
-  label: string; value: string; sub?: string;
-  tone?: 'good' | 'warn' | 'bad'; icon: React.ReactNode;
-}) {
-  const colour = tone === 'good' ? 'var(--success-text)' : tone === 'bad' ? 'var(--danger-text)'
-    : tone === 'warn' ? '#b45309' : 'var(--text-primary)';
-  return (
-    <div className="rounded-[14px] p-3.5" style={cardStyle}>
-      <div className="flex items-center gap-1.5" style={{ color: 'var(--text-disabled)' }}>
-        {icon}
-        <p className="text-[10px] font-[750] uppercase tracking-[0.08em]">{label}</p>
-      </div>
-      <p className="mt-1 text-[19px] font-[800] tabular-nums leading-tight" style={{ color: colour }}>{value}</p>
-      {sub && <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>{sub}</p>}
-    </div>
-  );
-}
 
 /* ── Panel ───────────────────────────────────────────────────────────────── */
 export default function SecurityCentre() {
@@ -212,31 +197,44 @@ export default function SecurityCentre() {
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Tile
+        <CcStat tone={(l?.failed_24h ?? 0) > 0 ? 'orange' : 'green'}
           label="Failed sign-ins" value={String(l?.failed_24h ?? 0)}
-          sub={`${l?.targeted_accounts_24h ?? 0} account${l?.targeted_accounts_24h === 1 ? '' : 's'} targeted · last 24h`}
-          tone={(l?.failed_24h ?? 0) > 0 ? 'warn' : undefined}
-          icon={<ShieldAlert size={12} />}
-        />
-        <Tile
+          sub={`${l?.targeted_accounts_24h ?? 0} account${l?.targeted_accounts_24h === 1 ? '' : 's'} targeted · 24h`}
+          icon={<ShieldAlert size={15} />} />
+        <CcStat tone={(l?.mfa_failed_24h ?? 0) > 0 ? 'pink' : 'teal'}
           label="MFA failures" value={String(l?.mfa_failed_24h ?? 0)}
           sub={(l?.mfa_failed_24h ?? 0) > 0 ? 'correct password, wrong factor' : 'none in 24h'}
-          tone={(l?.mfa_failed_24h ?? 0) > 0 ? 'bad' : undefined}
-          icon={<Fingerprint size={12} />}
-        />
-        <Tile
+          icon={<Fingerprint size={15} />} />
+        <CcStat tone={noMfa ? 'pink' : 'green'}
           label="Operators protected"
           value={`${(overview?.operators.total ?? 0) - noMfa}/${overview?.operators.total ?? 0}`}
           sub={noMfa ? `${noMfa} without MFA` : 'all have a second factor'}
-          tone={noMfa ? 'bad' : 'good'}
-          icon={<ShieldCheck size={12} />}
-        />
-        <Tile
+          icon={<ShieldCheck size={15} />} />
+        <CcStat tone="sky"
           label="Active sessions" value={String(overview?.active_sessions ?? 0)}
           sub={`${overview?.impersonations_7d ?? 0} impersonation${overview?.impersonations_7d === 1 ? '' : 's'} in 7d`}
-          icon={<Users size={12} />}
-        />
+          icon={<Users size={15} />} />
       </div>
+
+      {l && overview && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
+          <CcCard tone="pink" eyebrow="Last 24 hours" title="Sign-in outcomes" icon={<ShieldAlert size={15} />}>
+            <CcDonut size={140} centerLabel="attempts" empty="No sign-in in 24h" data={[
+              { label: 'Succeeded', value: l.success_24h, color: ccState.healthy },
+              { label: 'Wrong password', value: l.failed_24h, color: ccState.critical },
+              { label: 'Wrong second factor', value: l.mfa_failed_24h, color: ccState.warning },
+            ]} />
+          </CcCard>
+          <CcCard tone="purple" eyebrow="Operators" title="Second factor coverage" icon={<Fingerprint size={15} />}>
+            <div className="flex justify-center">
+              <CcRing size={130} label="operators with MFA"
+                pct={overview.operators.total ? (100 * (overview.operators.total - noMfa)) / overview.operators.total : null}
+                color={noMfa ? ccState.critical : ccState.healthy}
+                sub={`${overview.operators.total - noMfa} of ${overview.operators.total}`} />
+            </div>
+          </CcCard>
+        </div>
+      )}
 
       {/* Two groupings, because they are two different attacks. */}
       {(threats?.by_account.length || threats?.by_ip.length) ? (

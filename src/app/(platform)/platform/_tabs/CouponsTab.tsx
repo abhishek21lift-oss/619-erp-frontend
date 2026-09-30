@@ -61,7 +61,7 @@ export function CouponsTab() {
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { api.subscription.plans().then((r) => setPlans(r.data.plans ?? [])).catch(() => {}); }, []);
+  useEffect(() => { api.superAdmin.plans().then((r) => setPlans(r.data.plans ?? [])).catch(() => {}); }, []);
 
   const toggleActive = async (c: Coupon) => {
     setBusy(c.id);

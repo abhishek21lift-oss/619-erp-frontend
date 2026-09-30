@@ -1888,7 +1888,14 @@ export type OrgUser = {
   trainer_id: string | null; is_active: boolean;
   last_login?: string | null; created_at?: string; organization_id?: string;
 };
-export type OrganizationDetail = Organization & { users: OrgUser[] };
+/** GET /api/platform/organizations/:id — the organizations row plus its accounts. */
+export type OrganizationDetail = Organization & {
+  users: OrgUser[];
+  plan_code?: string | null;
+  subscription_status?: string | null;
+  trial_ends_at?: string | null;
+  current_period_end?: string | null;
+};
 
 /**
  * A row in the platform user directory (GET /api/platform/users).
@@ -4296,7 +4303,10 @@ export interface PlatformKpis {
     new_clients_30d: number;
   };
   platform_revenue: {
+    /** Cash collected in the last 30 days. Kept as mrr_inr too, for old
+     *  consumers — it is NOT the run-rate; SubscriptionMetrics.mrr_inr is. */
     mrr_inr: number;
+    collected_30d_inr: number;
     active_subscriptions: number;
     trial_subscriptions: number;
     expiring_in_7d: number;
@@ -4304,6 +4314,7 @@ export interface PlatformKpis {
   operations: {
     failed_payments_30d: number;
   };
+  /** Live system alerts (open or acknowledged). high = warning, medium = timeout. */
   security: {
     critical_alerts: number;
     high_alerts: number;
@@ -4314,48 +4325,44 @@ export interface PlatformKpis {
 /** Per-section status. Each is independent — one WARNING does not cascade. */
 export type TenancySectionStatus = 'HEALTHY' | 'WARNING' | 'CRITICAL' | 'UNKNOWN';
 
-/** GET /api/platform/tenancy-health — 5-line honest summary. */
+/**
+ * GET /api/platform/tenancy-health — five honest lines.
+ *
+ * Rewritten against what tenancy.js actually returns. The previous types
+ * (policy_count/org_scoped_count/note, attempts_30d, open/high, a paged
+ * orphans object) described a response that never existed; nothing rendered
+ * this data, so nothing noticed until the Tenancy page was built on it.
+ */
 export interface TenancyHealth {
-  /** RLS posture: 247 policies on public, 0 are org-scoped today. */
-  rls: { status: TenancySectionStatus; policy_count: number; org_scoped_count: number; note: string };
-  /** Tenant-scope enforcement: the app-layer tenantScope() chain. */
-  isolation: { status: TenancySectionStatus; tables_under_scope: number; note: string };
-  /** Rows with NULL organization_id across tenant tables (MV). */
-  orphans: { status: TenancySectionStatus; total: number; top_table: string | null; note: string };
-  /** Cross-tenant attempts blocked in activity_log. */
-  cross_tenant: { status: TenancySectionStatus; attempts_30d: number; note: string };
-  /** Known unfixed gaps from the convention test. */
-  known_gaps: { status: TenancySectionStatus; open: number; high: number; note: string };
+  isolation: {
+    status: TenancySectionStatus;
+    last_run: { id: number; ran_at: string; by_user_name: string | null; passed: boolean; total_tests: number; failed_tests: number; duration_ms: number } | null;
+    reason: string;
+  };
+  rls: { status: TenancySectionStatus; policy_count: number; reason: string };
+  orphans: { status: TenancySectionStatus; total: number; breakdown: TenancyOrphanRow[]; reason: string };
+  cross_tenant: { status: TenancySectionStatus; attempts_24h: number; reason: string };
+  known_gaps: { status: TenancySectionStatus; open_count: number; reason: string };
 }
 
-/** GET /api/platform/tenancy/orphans — drilldown from orphans_mv. */
+/** GET /api/platform/tenancy/orphans — rows with no organization, per table. */
 export interface TenancyOrphanRow {
-  table_name: string;
-  null_org_rows: number;
-  total_rows: number;
-  ratio: number;
+  table: string;
+  count: number;
 }
+export type TenancyOrphans = TenancyOrphanRow[];
 
-export interface TenancyOrphans {
-  data: TenancyOrphanRow[];
-  total: number;
-}
-
-/** GET /api/platform/tenancy/cross-tenant-attempts. */
+/** GET /api/platform/tenancy/cross-tenant-attempts — from activity_log. */
 export interface TenancyAttemptRow {
   id: string;
-  action: string;
+  user_id: string | null;
   user_name: string | null;
-  org_name: string | null;
+  action: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  new_data: Record<string, unknown> | null;
+  ip_address: string | null;
   created_at: string;
-  meta: Record<string, unknown> | null;
-}
-
-export interface TenancyAttempts {
-  data: TenancyAttemptRow[];
-  total: number;
-  limit: number;
-  offset: number;
 }
 
 /** GET /api/platform/tenancy/known-gaps. */
@@ -4372,18 +4379,18 @@ export interface TenancyKnownGap {
 export interface TenancyIsolationTestCase {
   name: string;
   passed: boolean;
-  detail: string;
+  detail: unknown;
 }
 
 export interface TenancyIsolationRunResult {
-  run_id: number;
+  id: number;
+  ran_at: string;
   passed: boolean;
   total_tests: number;
   failed_tests: number;
   duration_ms: number;
-  cases: TenancyIsolationTestCase[];
-  ran_at: string;
-  cooldown_remaining_s: number;
+  tests: TenancyIsolationTestCase[];
+  cleanup_failed: boolean;
 }
 
 /** GET /api/platform/studios/:id/health. */

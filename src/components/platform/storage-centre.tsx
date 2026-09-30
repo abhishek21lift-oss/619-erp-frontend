@@ -32,7 +32,8 @@ import { api } from '@/lib/api';
 import type {
   StorageOverview, StorageStudio, StorageTrendPoint, StorageObject,
 } from '@/lib/api';
-import { Panel, SectionLabel, StatTile, Reveal } from './console';
+import { Panel, SectionLabel, Reveal } from './console';
+import { CcBars, CcCard, CcDonut, CcStat } from './cc-viz';
 import { errorMessage } from '@/lib/forms/errors';
 
 const RANGES = [7, 30, 90];
@@ -106,117 +107,6 @@ function CoverageNote({ since }: { since: string | null }) {
    What ARRIVED each day, not a running total of what is stored. A cumulative
    line only ever rises, which hides the one thing worth seeing: the day
    something unusual landed. One measure, one hue — the house convention. */
-function StorageTrend({ points, days }: { points: StorageTrendPoint[]; days: number }) {
-  const [hover, setHover] = useState<number | null>(null);
-  const W = 100; const H = 32;
-  const max = Math.max(1, ...points.map((p) => p.bytes));
-  const step = points.length > 1 ? W / (points.length - 1) : W;
-
-  const xy = points.map((p, i) => ({
-    x: points.length > 1 ? i * step : W / 2,
-    y: H - (p.bytes / max) * (H - 3) - 1.5,
-  }));
-  const line = xy.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
-  const area = xy.length ? `${line} L${xy[xy.length - 1].x.toFixed(2)},${H} L${xy[0].x.toFixed(2)},${H} Z` : '';
-  const active = hover !== null ? points[hover] : null;
-  const total = points.reduce((a, p) => a + p.bytes, 0);
-
-  return (
-    <Panel>
-      <p className="text-[12.5px] font-[760]" style={{ color: 'var(--text-primary)' }}>Accounted per day</p>
-      {/* The headline reads the hovered day when there is one, so the number
-          and the mark can never disagree. */}
-      <p className="mt-1 text-[20px] font-[800] tabular-nums leading-tight" style={{ color: 'var(--text-primary)' }}>
-        {fmtBytes(active ? active.bytes : total)}
-      </p>
-      <p className="mb-2 h-[14px] text-[10.5px]" style={{ color: 'var(--text-disabled)' }}>
-        {active ? `${active.day} · ${nf(active.objects)} object${active.objects === 1 ? '' : 's'}` : `over ${days} days`}
-      </p>
-      {points.length === 0 ? (
-        <p className="py-5 text-center text-[12px]" style={{ color: 'var(--text-disabled)' }}>
-          Nothing uploaded in this window.
-        </p>
-      ) : (
-        <svg
-          viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none"
-          className="h-[46px] w-full overflow-visible" role="img"
-          aria-label={`Storage accounted per day: ${fmtBytes(total)} over ${days} days`}
-          onMouseLeave={() => setHover(null)}
-        >
-          <path d={area} fill="color-mix(in srgb, var(--brand) 14%, transparent)" />
-          {/* vectorEffect keeps the stroke 2px after the non-uniform scale
-              preserveAspectRatio="none" applies. */}
-          <path d={line} fill="none" stroke="var(--brand)" strokeWidth={2}
-            strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-          {hover !== null && (
-            <circle cx={xy[hover].x} cy={xy[hover].y} r={3} fill="var(--brand)"
-              stroke="var(--bg-elevated)" strokeWidth={2} vectorEffect="non-scaling-stroke" />
-          )}
-          {/* Hit bands far bigger than the marks — a 2px line is not a target. */}
-          {points.map((p, i) => (
-            <rect key={p.day} x={i * step - step / 2} y={0} width={step} height={H}
-              fill="transparent" onMouseEnter={() => setHover(i)} />
-          ))}
-        </svg>
-      )}
-    </Panel>
-  );
-}
-
-/* ── What kind of file is it ─────────────────────────────────────────────────
-   A sorted bar list, not a stacked bar or a donut. The question is "which
-   category is biggest, and by how much" — lengths from a common baseline
-   answer that; angles and stacked segments do not. It also means one hue does
-   the whole chart, so nothing here depends on telling six colours apart. */
-function CategoryBars({ rows, total }: { rows: StorageOverview['by_category']; total: number }) {
-  if (!rows.length) {
-    return (
-      <Panel>
-        <p className="py-6 text-center text-[12px]" style={{ color: 'var(--text-disabled)' }}>
-          No objects accounted yet.
-        </p>
-      </Panel>
-    );
-  }
-  const max = Math.max(...rows.map((r) => r.bytes), 1);
-  return (
-    <Panel>
-      <p className="mb-3 text-[12.5px] font-[760]" style={{ color: 'var(--text-primary)' }}>By category</p>
-      <div className="space-y-2.5">
-        {rows.map((r) => (
-          <div key={r.category}>
-            <div className="mb-1 flex items-baseline justify-between gap-3">
-              <span className="truncate text-[12px] font-[650]" style={{ color: 'var(--text-secondary)' }}>
-                {prettyCategory(r.category)}
-              </span>
-              <span className="shrink-0 tabular-nums text-[11.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>
-                {fmtBytes(r.bytes)}
-                <span className="ml-1.5 font-[600]" style={{ color: 'var(--text-disabled)' }}>
-                  {total > 0 ? `${Math.round((r.bytes / total) * 100)}%` : '—'}
-                </span>
-              </span>
-            </div>
-            <div className="h-[6px] w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}>
-              {/* Scaled to the LARGEST category, not to the total: with one
-                  dominant category every other bar would be a sliver and the
-                  comparison between them — the actual question — would be
-                  unreadable. */}
-              <div
-                className="h-full rounded-full"
-                style={{ width: `${Math.max(2, (r.bytes / max) * 100)}%`, background: 'var(--brand)' }}
-              />
-            </div>
-            <p className="mt-0.5 text-[10.5px]" style={{ color: 'var(--text-disabled)' }}>
-              {nf(r.objects)} object{r.objects === 1 ? '' : 's'}
-            </p>
-          </div>
-        ))}
-      </div>
-    </Panel>
-  );
-}
-
-/* ── Per-studio ──────────────────────────────────────────────────────────── */
 function StudioTable({ rows }: { rows: StorageStudio[] }) {
   if (!rows.length) {
     return (
@@ -426,25 +316,25 @@ export default function StorageCentre() {
           Stored
         </SectionLabel>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatTile
+          <CcStat tone="orange"
             label="Live storage" value={fmtBytes(overview.bytes)}
             sub={`${nf(overview.objects)} object${overview.objects === 1 ? '' : 's'} · ${overview.studios} studio${overview.studios === 1 ? '' : 's'}`}
             icon={<HardDrive size={15} />}
           />
-          <StatTile
+          <CcStat tone="sky"
             label={`Added · ${days}d`} value={fmtBytes(overview.bytes_added)}
             sub={`${nf(overview.objects_added)} new object${overview.objects_added === 1 ? '' : 's'}`}
-            tone="brand" icon={<TrendingUp size={15} />} delay={0.04}
+            icon={<TrendingUp size={15} />}
           />
-          <StatTile
+          <CcStat tone={overview.deleted_bytes > 0 ? 'pink' : 'teal'}
             label="Reclaimable" value={fmtBytes(overview.deleted_bytes)}
             // Deleted here means "the app deleted it and the row was kept".
             // Whether the bytes have actually left the bucket is R2's business,
             // so this is framed as what could be reclaimed, not what was.
             sub={`${nf(overview.deleted_objects)} deleted object${overview.deleted_objects === 1 ? '' : 's'}`}
-            tone={overview.deleted_bytes > 0 ? 'caution' : 'brand'} icon={<Trash2 size={15} />} delay={0.08}
+            icon={<Trash2 size={15} />}
           />
-          <StatTile
+          <CcStat
             label="Unattributed" value={fmtBytes(overview.unattributed_bytes)}
             // Shown even at zero: an operator needs to know this figure exists
             // and is being watched, not discover it the first time it is not
@@ -456,15 +346,23 @@ export default function StorageCentre() {
             // Amber only once the gap is big enough to distort the per-studio
             // figures; below that it is brand like every other tile, so colour on
             // this screen always means "look here".
-            tone={unattributedPct >= 10 ? 'caution' : 'brand'}
-            icon={<FileQuestion size={15} />} delay={0.12}
+            tone={unattributedPct >= 10 ? 'orange' : 'purple'}
+            icon={<FileQuestion size={15} />}
           />
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Reveal delay={0.04}><StorageTrend points={trend} days={days} /></Reveal>
-        <Reveal delay={0.08}><CategoryBars rows={overview.by_category} total={overview.bytes} /></Reveal>
+      <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <CcCard tone="orange" eyebrow="Accounted per day" title={`${fmtBytes(trend.reduce((a, p) => a + p.bytes, 0))} over ${days} days`} icon={<TrendingUp size={15} />}>
+          <CcBars tone="orange" height={150} format={fmtBytes}
+            data={trend.map((p) => ({ label: new Date(p.day).toLocaleDateString('en-IN', { day: 'numeric' }), title: `${new Date(p.day).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · ${nf(p.objects)} objects`, value: p.bytes }))}
+            empty="Nothing uploaded in this window" />
+        </CcCard>
+        <CcCard tone="purple" eyebrow="By category" title="What the bytes are" icon={<HardDrive size={15} />}>
+          <CcDonut stack size={140} centerLabel="stored" format={fmtBytes}
+            data={overview.by_category.map((c) => ({ label: prettyCategory(c.category), value: c.bytes }))}
+            empty="No object accounted yet" />
+        </CcCard>
       </div>
 
       <div>
