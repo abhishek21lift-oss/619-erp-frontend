@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import Guard from '@/components/Guard';
+import Guard, { GuardPending } from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 
 /**
@@ -55,11 +55,43 @@ export function isLandingRoute(pathname: string): boolean {
   return pathname === LANDING_PATH;
 }
 
-export default function ChromeGate({ children }: { children: React.ReactNode }) {
+/**
+ * ── `anonymousHint`, and the server-rendered landing page ──────────────────
+ *
+ * The rule above meant the HTML the server sends for `/` was always Guard's
+ * splash — `loading` is true until the browser has asked /api/auth/me — so a
+ * crawler that does not run JavaScript never saw the landing page at all.
+ *
+ * When the request carried no session cookie (lib/session-hint.ts), `/` now
+ * renders the landing page during the bootstrap too, with Guard's own splash
+ * laid over it until the check answers. What a person sees is unchanged: the
+ * same splash, then the landing page (no session) or the dashboard (session).
+ * The splash is an overlay rather than a replacement so the landing page is in
+ * the HTML underneath it, and `{loading && …}` keeps the tree's shape stable so
+ * the page is not remounted when the overlay goes.
+ *
+ * A cached user (`user` set while still loading) takes the shell path, as
+ * before. Every other route is untouched.
+ */
+export default function ChromeGate({
+  children,
+  anonymousHint = false,
+}: { children: React.ReactNode; anonymousHint?: boolean }) {
   const pathname = usePathname() ?? '';
   const { user, loading } = useAuth();
 
-  if (isLandingRoute(pathname) && !loading && !user) return <>{children}</>;
+  if (isLandingRoute(pathname) && !user && (!loading || anonymousHint)) {
+    return (
+      <>
+        {children}
+        {loading && (
+          <div className="fixed inset-0 z-[2147483000]" data-no-pull-refresh>
+            <GuardPending />
+          </div>
+        )}
+      </>
+    );
+  }
 
   return (
     <Guard>

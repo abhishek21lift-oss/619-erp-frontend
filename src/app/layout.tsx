@@ -100,19 +100,20 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent' },
   // Default-deny, and the default is the whole point.
   //
-  // 122 of this app's 124 routes are authenticated and hold client health
-  // data, payment records, revenue and staff HR. Exactly two — `/` and
-  // `/start-free` — are marketing. Making noindex the default and requiring a
+  // Nearly every route in this app is authenticated and holds client health
+  // data, payment records, revenue and staff HR. Exactly three — `/`, `/pt-os`
+  // and `/start-free` (lib/seo-routes.ts) — are marketing. Making noindex the default and requiring a
   // page to opt IN means the failure mode of forgetting is "a marketing page
   // is not indexed" (recoverable, visible in Search Console) rather than
   // "/finance/revenue is in Google" (not recoverable — caches and scrapers
   // keep it).
   //
-  // The two opt-ins live in:
+  // The three opt-ins live in:
   //   src/app/(chrome)/page.tsx              → /
+  //   src/app/(bare)/pt-os/page.tsx          → /pt-os
   //   src/app/(bare)/start-free/layout.tsx   → /start-free
   //
-  // publicRoutes.seo.test.ts pins that list, so adding a third is a deliberate
+  // publicRoutes.seo.test.ts pins that list, so adding another is a deliberate
   // act rather than a side effect. Until this change the default applied with
   // no exceptions at all, so `/` could not be indexed while `sitemap.ts` was
   // advertising it at priority 1.0 — the sitemap invited crawlers to a page

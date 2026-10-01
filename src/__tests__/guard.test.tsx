@@ -59,8 +59,8 @@ describe('<Guard />', () => {
   });
 
   it('sends a signed-in user with the wrong role home, not to /login', async () => {
-    // Home is '/', not '/pt-os' — that route now 308s to '/' via next.config
-    // redirects. Sending them to /login would be worse than useless: they have
+    // Home is '/', not '/pt-os' — /pt-os is the public PT OS landing page.
+    // Sending them to /login would be worse than useless: they have
     // a valid session, so the login page would detect it and bounce them
     // straight back here.
     mockUseAuth.mockReturnValue({ user: { id: 'u3', role: 'trainer' as Role }, loading: false });

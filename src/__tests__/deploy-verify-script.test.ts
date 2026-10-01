@@ -8,7 +8,7 @@
 // It is a real file now, so these run it: against a real HTTP server, covering
 // both ways the gate can be wrong — passing a deploy that did not happen, and
 // failing one that did.
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, afterAll } from 'vitest';
 import http from 'node:http';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -26,12 +26,34 @@ function serve(handler: http.RequestListener): Promise<http.Server> {
   });
 }
 
+// A `docker` that does nothing, first on PATH for every run of the script.
+//
+// The script calls `docker compose logs` when verification fails and `docker
+// image prune -f` when it passes. Without this the tests ran the REAL docker
+// of whatever machine they were on: on a GitHub runner, where docker exists,
+// `docker compose logs` took long enough that the two failure-path tests
+// passed on one run and timed out at 5s on the next — and the success-path
+// tests pruned that machine's images. Neither call is what these tests are
+// about; both are `|| true` in the script.
+const FAKE_BIN = fs.mkdtempSync(path.join(os.tmpdir(), 'deployverify-bin-'));
+fs.writeFileSync(path.join(FAKE_BIN, 'docker'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+afterAll(() => fs.rmSync(FAKE_BIN, { recursive: true, force: true }));
+
 function runScript(args: string[], env: Record<string, string> = {}) {
   return new Promise<{ code: number; stdout: string }>((resolve) => {
     execFile(
       'bash',
       [SCRIPT, ...args],
-      { env: { ...process.env, VERIFY_ATTEMPTS: '2', VERIFY_INTERVAL: '0', ...env }, timeout: 30_000 },
+      {
+        env: {
+          ...process.env,
+          PATH: `${FAKE_BIN}${path.delimiter}${process.env.PATH ?? ''}`,
+          VERIFY_ATTEMPTS: '2',
+          VERIFY_INTERVAL: '0',
+          ...env,
+        },
+        timeout: 30_000,
+      },
       (err, stdout) => resolve({ code: err ? ((err as never as { code?: number }).code ?? 1) : 0, stdout: String(stdout) }),
     );
   });

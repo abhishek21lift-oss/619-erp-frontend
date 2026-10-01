@@ -85,58 +85,7 @@ export default function Guard({ children, role, roles }: Props) {
   }, [verdict, user, userPortal, router, pathname]);
 
   if (verdict === 'pending') {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100dvh',
-          background: 'var(--bg-canvas)',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 14,
-          }}
-        >
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              background: 'var(--brand-lo)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 8px 24px var(--brand-glow)',
-            }}
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
-          </div>
-          <div style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid var(--brand-soft)', borderTopColor: 'var(--brand-lo)', animation: 'spin 0.8s linear infinite' }} />
-
-          <div
-            style={{
-              fontSize: 11,
-              color: 'var(--text-muted)',
-              letterSpacing: '2px',
-              textTransform: 'uppercase',
-              fontWeight: 700,
-            }}
-          >
-            Loading
-          </div>
-        </div>
-      </div>
-    );
+    return <GuardPending />;
   }
 
   // A redirect is asynchronous, so render nothing while it is in flight rather
@@ -146,4 +95,65 @@ export default function Guard({ children, role, roles }: Props) {
   if (verdict === 'redirect') return null;
 
   return <>{children}</>;
+}
+
+/**
+ * What Guard shows while the session is still being resolved. Exported so the
+ * landing gate (ChromeGate) can lay the same screen over the server-rendered
+ * landing page at `/` — a visitor sees exactly what they saw before, while a
+ * crawler reading the HTML gets the page's content.
+ */
+export function GuardPending() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100dvh',
+        background: 'var(--bg-canvas)',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 14,
+        }}
+      >
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            background: 'var(--brand-lo)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 8px 24px var(--brand-glow)',
+          }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+        </div>
+        <div style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid var(--brand-soft)', borderTopColor: 'var(--brand-lo)', animation: 'spin 0.8s linear infinite' }} />
+
+        <div
+          style={{
+            fontSize: 11,
+            color: 'var(--text-muted)',
+            letterSpacing: '2px',
+            textTransform: 'uppercase',
+            fontWeight: 700,
+          }}
+        >
+          Loading
+        </div>
+      </div>
+    </div>
+  );
 }

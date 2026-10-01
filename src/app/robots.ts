@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { PUBLIC_SEO_ROUTES, SITE_URL } from '@/lib/seo-routes';
 
 /** Authenticated URL segments that crawlers should not fetch. */
 const PRIVATE_SEGMENTS = [
@@ -37,11 +38,11 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: ['/', '/pt-os'],
+        allow: [...PUBLIC_SEO_ROUTES],
         disallow: ['/api/', '/login', ...PRIVATE_SEGMENTS],
       },
     ],
-    sitemap: 'https://myptstudio.com/sitemap.xml',
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }
 

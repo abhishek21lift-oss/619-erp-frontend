@@ -143,3 +143,46 @@ describe('while the session is still being resolved', () => {
     expect(screen.getByTestId('app-shell')).toBeTruthy();
   });
 });
+
+// The server-rendered landing page. During the auth bootstrap `loading` is
+// true, which is also what the server renders with — so before `anonymousHint`
+// the HTML for `/` was always Guard's splash and a crawler that does not run
+// JavaScript never saw the landing page. A request with no session cookie now
+// renders the page under the same splash.
+describe('the server-rendered landing page (anonymousHint)', () => {
+  it('renders the page under a splash while a cookie-less request is still loading', async () => {
+    session = { user: null, loading: true };
+    render(<ChromeGate anonymousHint>{PAGE}</ChromeGate>);
+    expect(screen.getByTestId('page')).toBeTruthy();
+    expect(screen.getByText('Loading')).toBeTruthy();
+    expect(screen.queryByTestId('app-shell')).toBeNull();
+    await waitFor(() => expect(replace).not.toHaveBeenCalled());
+  });
+
+  it('keeps the old behaviour while loading when the request had a session cookie', () => {
+    session = { user: null, loading: true };
+    render(<ChromeGate anonymousHint={false}>{PAGE}</ChromeGate>);
+    expect(screen.queryByTestId('page')).toBeNull();
+    expect(screen.getByText('Loading')).toBeTruthy();
+  });
+
+  it('drops the splash once the session check says nobody is signed in', () => {
+    session = { user: null, loading: false };
+    render(<ChromeGate anonymousHint>{PAGE}</ChromeGate>);
+    expect(screen.getByTestId('page')).toBeTruthy();
+    expect(screen.queryByText('Loading')).toBeNull();
+  });
+
+  it('gives a signed-in user the shell, whatever the hint said', () => {
+    session = { user: TRAINER, loading: false };
+    render(<ChromeGate anonymousHint>{PAGE}</ChromeGate>);
+    expect(screen.getByTestId('app-shell')).toBeTruthy();
+  });
+
+  it('is only ever about `/`: other routes still gate while loading', () => {
+    session = { user: null, loading: true };
+    pathname = '/pt-os/clients';
+    render(<ChromeGate anonymousHint>{PAGE}</ChromeGate>);
+    expect(screen.queryByTestId('page')).toBeNull();
+  });
+});

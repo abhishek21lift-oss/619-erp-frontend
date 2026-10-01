@@ -82,7 +82,12 @@ const nextConfig = {
       // was removed (Trainer → Members). Same page, new home.
       { source: '/admin/biometrics',   destination: '/settings/biometrics',      permanent: true },
       { source: '/member',             destination: '/member/dashboard',         permanent: true },
-      { source: '/pt-os',              destination: '/',                         permanent: true },
+      // No `/pt-os` entry. It used to 308 here to `/`, from when /pt-os was the
+      // studio app's home. It is now the public PT OS landing page —
+      // src/app/(bare)/pt-os/page.tsx, indexable, self-canonical and in the
+      // sitemap — and redirects are checked before the filesystem, so that
+      // entry made the page unreachable while the sitemap advertised it.
+      // Trainers' post-sign-in home is `/` directly (lib/portals.ts).
       { source: '/trainer',            destination: '/trainer/dashboard',        permanent: true },
       { source: '/operations',         destination: '/operations/leaderboard',   permanent: true },
       { source: '/checkin/reports',    destination: '/attendance/reports',       permanent: true },

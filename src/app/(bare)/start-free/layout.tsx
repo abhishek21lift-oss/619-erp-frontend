@@ -1,4 +1,4 @@
-// Metadata for /start-free, the second and last indexable route.
+// Metadata for /start-free, one of the three indexable routes (lib/seo-routes.ts).
 //
 // A layout rather than a server-component wrapper around the page, which is
 // what `/` needed. The two differ for a structural reason, not a stylistic
