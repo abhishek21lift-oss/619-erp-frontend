@@ -25,7 +25,8 @@ import type {
   StorageTrendPoint, SubCheckoutQueueRow, SubCheckoutStats, SubDetail, SubKpis, SubStudio,
   SubscriptionInvoice, SubscriptionMetrics, SupportOverview, SupportTicket, SystemHealth,
   TicketMessage, TicketPriority, TicketStatus, UpiRejectReason,
-  CommandCenterSnapshot, CommandCenterCommand, CommandCenterRunResult, CommandCenterDryRun,
+  CommandCenterSnapshot, CommandCenterCommand, CommandCenterRunResult,
+  CommandCenterApiRestartStatus, CommandCenterDryRun,
   CommandCenterStreamTicket,
   SystemAlert, SystemAlertList, GuardianReport, GuardianNarration,
   LogTail, LogHistory,
@@ -270,10 +271,20 @@ export const superAdmin = {
   runCommandCenterCommand: (
     name: string,
     body: { queue?: string; confirm?: string; dryRun?: boolean } = {},
+    /** Sent as x-request-id, so the caller knows the audit id before the
+     *  response — which, for the API restart, may never arrive. */
+    opts: { requestId?: string } = {},
   ) =>
     http<{ data: CommandCenterRunResult | CommandCenterDryRun }>(
       `/api/platform/command-center/commands/${encodeURIComponent(name)}`,
-      { method: 'POST', body },
+      { method: 'POST', body, ...(opts.requestId ? { headers: { 'x-request-id': opts.requestId } } : {}) },
+    ),
+
+  /** The API restart's outcome, recorded by the NEW API process once it has
+   *  booted and read its own health. Polled after "Restart API container". */
+  commandCenterApiRestartStatus: (requestId: string) =>
+    http<{ data: CommandCenterApiRestartStatus }>(
+      `/api/platform/command-center/commands/container.restart/status/${encodeURIComponent(requestId)}`,
     ),
 
   /** Alert Center. Returns the alerts and the badge counts in one call — the

@@ -2240,6 +2240,21 @@ export interface CommandCenterRunResult {
   output: unknown;
 }
 
+/**
+ * The API restart's verdict, written by the API process that came up after it.
+ * `pending` until that process has booted and read its health; `not_restarted`
+ * when the old process is still the one answering past the deadline.
+ */
+export interface CommandCenterApiRestartStatus {
+  state: 'unknown' | 'pending' | 'verified' | 'not_restarted';
+  request_id: string;
+  outcome?: 'recovered' | 'not_recovered' | 'unverifiable' | 'not_restarted';
+  summary?: string;
+  requested_at?: string;
+  new_process_started_at?: string | null;
+  downtime_ms?: number;
+}
+
 /** What a `dryRun` returns instead of running anything. */
 export interface CommandCenterDryRun {
   dry_run: true;

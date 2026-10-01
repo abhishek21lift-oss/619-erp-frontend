@@ -430,6 +430,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "superAdmin.clearOrgFeature → /api/platform/organizations/",
   "superAdmin.commandCenter → /api/platform/command-center/snapshot",
   "superAdmin.commandCenterAlerts → /api/platform/command-center/alerts",
+  "superAdmin.commandCenterApiRestartStatus → /api/platform/command-center/commands/container.restart/status/",
   "superAdmin.commandCenterCommands → /api/platform/command-center/commands",
   "superAdmin.commandCenterGuardian → /api/platform/command-center/guardian",
   "superAdmin.commandCenterLogHistory → /api/platform/command-center/logs/history",
