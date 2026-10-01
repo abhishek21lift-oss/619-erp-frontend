@@ -1,7 +1,6 @@
 'use client';
 
 import { AlertTriangle, Check, FileSignature, UserRound } from 'lucide-react';
-import FloatInput from '@/components/ui/FloatInput';
 import type { InformedConsentFormData } from './types';
 import { EXERCISE_PROGRAMME_CONSENT_PARAGRAPHS, EXERCISE_PROGRAMME_CHECKBOX_LABEL } from './types';
 
@@ -26,28 +25,30 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
         </div>
       </div>
 
-      {/* The client this consent is for. These details are copied from the
-          client profile onto the signed record — they used to be copied
-          silently, so a missing emergency contact went out on the PDF with
-          no way to add it here. */}
+      {/* The client this consent is for, read-only. These details are copied
+          from the client profile onto the signed record; they are edited on
+          the client's profile, not here, so the consent never holds a second,
+          diverging copy of them. */}
       <div className="rounded-[16px] p-5 space-y-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
         <div className="flex items-center gap-2">
           <UserRound size={15} style={{ color: 'var(--text-muted)' }} aria-hidden />
           <p className="text-[12px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Client details</p>
         </div>
         <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-[13px] sm:grid-cols-3">
-          {([['Name', form.fullName], ['Mobile', form.mobile], ['Email', form.email]] as const).map(([k, v]) => (
+          {([
+            ['Name', form.fullName], ['Mobile', form.mobile], ['Email', form.email],
+            ['Emergency contact', form.emergencyContact], ['Emergency phone', form.emergencyPhone],
+          ] as const).map(([k, v]) => (
             <div key={k} className="min-w-0">
               <dt style={{ color: 'var(--text-muted)' }}>{k}</dt>
               <dd className="truncate font-[650]" style={{ color: 'var(--text-primary)' }}>{v || '—'}</dd>
             </div>
           ))}
+          <div className="min-w-0 sm:col-span-3">
+            <dt style={{ color: 'var(--text-muted)' }}>Address</dt>
+            <dd className="whitespace-pre-line break-words font-[650]" style={{ color: 'var(--text-primary)' }}>{form.address || '—'}</dd>
+          </div>
         </dl>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <FloatInput label="Emergency contact name" maxLength={255} value={form.emergencyContact} onChange={(v) => set('emergencyContact', v)} />
-          <FloatInput label="Emergency contact phone" type="tel" maxLength={20} value={form.emergencyPhone} onChange={(v) => set('emergencyPhone', v)} />
-        </div>
-        <FloatInput label="Address" multiline autoGrow maxLength={1000} value={form.address} onChange={(v) => set('address', v)} />
       </div>
 
       {/* Verbatim consent text card */}
