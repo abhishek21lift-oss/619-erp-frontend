@@ -34,12 +34,17 @@ import type { CommandCenterCommand } from '@/lib/api';
 import { Center, ErrorState } from '@/app/(platform)/platform/_shared/ui';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { errorMessage } from '@/lib/forms/errors';
+import { uuid } from '@/lib/uuid';
 
 /** What came back from the last press, per command. */
 type Outcome =
   | { kind: 'ok'; text: string }
   | { kind: 'error'; text: string }
-  | { kind: 'cooldown'; text: string };
+  | { kind: 'cooldown'; text: string }
+  | { kind: 'pending'; text: string };
+
+/** The one command whose result is reported by a different process. */
+const API_RESTART = 'container.restart';
 
 /** The command awaiting a typed confirmation, if any. */
 type Pending = { cmd: CommandCenterCommand; queue?: string };
@@ -48,7 +53,7 @@ function outcomeTone(kind: Outcome['kind']): string {
   if (kind === 'ok') return semantic.success;
   // A cooldown is not a failure — the command ran, just now. Amber, not red,
   // so the operator does not go looking for a problem that does not exist.
-  if (kind === 'cooldown') return semantic.warning;
+  if (kind === 'cooldown' || kind === 'pending') return semantic.warning;
   return semantic.danger;
 }
 
@@ -56,6 +61,10 @@ function outcomeTone(kind: Outcome['kind']): string {
 function summarise(output: unknown): string {
   if (output === null || output === undefined) return 'done';
   if (typeof output !== 'object') return String(output);
+  // A command that grades its own result (the recovery rungs) says so in a
+  // sentence; show that rather than a dump of its fields.
+  const summary = (output as { summary?: unknown }).summary;
+  if (typeof summary === 'string' && summary) return summary;
   const entries = Object.entries(output as Record<string, unknown>)
     .filter(([, v]) => v !== null && typeof v !== 'object')
     .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${String(v)}`);
@@ -329,12 +338,57 @@ export default function CommandPanel({ onRan }: { onRan?: () => void }) {
     return () => { alive = false; };
   }, []);
 
+  // ── The API restart's verdict comes from the NEXT process ───────────────
+  //
+  // Pressing "Restart API container" restarts the process that answers the
+  // press, so its response is usually lost and never says whether it worked.
+  // The new process records the verdict against the request id this panel
+  // chose up front; poll for it while the API comes back.
+  const watchApiRestart = useCallback(async (requestId: string) => {
+    const deadline = Date.now() + 6 * 60_000;
+    setOutcomes((prev) => ({
+      ...prev,
+      [API_RESTART]: { kind: 'pending', text: 'API restarting — waiting for the new process to verify its health…' },
+    }));
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 3000));
+      try {
+        const { data } = await api.superAdmin.commandCenterApiRestartStatus(requestId);
+        if (data.state === 'verified' || data.state === 'not_restarted') {
+          const ok = data.outcome === 'recovered';
+          setOutcomes((prev) => ({
+            ...prev,
+            [API_RESTART]: {
+              kind: ok ? 'ok' : 'error',
+              text: `${data.summary ?? data.outcome ?? data.state}${
+                data.downtime_ms != null ? ` · back after ${Math.round(data.downtime_ms / 1000)}s` : ''}`,
+            },
+          }));
+          onRan?.();
+          return;
+        }
+      } catch { /* the API is down mid-restart; keep waiting */ }
+    }
+    setOutcomes((prev) => ({
+      ...prev,
+      [API_RESTART]: { kind: 'error', text: 'No verified result within 6 minutes. Treat the API restart as unresolved and check the audit log.' },
+    }));
+  }, [onRan]);
+
   const execute = useCallback(async (cmd: CommandCenterCommand, confirm?: string) => {
     setRunning(cmd.name);
     const queue = cmd.accepts_queue ? queues[cmd.name] : undefined;
+    // Chosen here, not by the server, so it is known even if the response
+    // never arrives. Selects an audit row; it never selects a container.
+    const requestId = cmd.name === API_RESTART && confirm ? uuid() : undefined;
     try {
-      const res = await api.superAdmin.runCommandCenterCommand(cmd.name, { queue, confirm });
+      const res = await api.superAdmin.runCommandCenterCommand(cmd.name, { queue, confirm }, { requestId });
       const data = res.data;
+      if (requestId && !('dry_run' in data)) {
+        setPending(null);
+        void watchApiRestart(requestId);
+        return;
+      }
       setOutcomes((prev) => ({
         ...prev,
         [cmd.name]: {
@@ -355,6 +409,14 @@ export default function CommandPanel({ onRan }: { onRan?: () => void }) {
         setRunning(null);
         return;
       }
+      // The connection dropping, or nginx answering 502/504, is the expected
+      // result of restarting the API that was serving this request.
+      if (requestId && (!(e instanceof ApiError) || [502, 503, 504].includes(e.status))
+          && !(e instanceof ApiError && e.code === 'COMMAND_UNAVAILABLE')) {
+        setPending(null);
+        void watchApiRestart(requestId);
+        return;
+      }
       const kind: Outcome['kind'] = e instanceof ApiError && e.status === 429 ? 'cooldown' : 'error';
       setOutcomes((prev) => ({
         ...prev,
@@ -364,7 +426,7 @@ export default function CommandPanel({ onRan }: { onRan?: () => void }) {
     } finally {
       setRunning(null);
     }
-  }, [queues, onRan]);
+  }, [queues, onRan, watchApiRestart]);
 
   if (error) return <Center><ErrorState error={error} onRetry={() => window.location.reload()} /></Center>;
 
