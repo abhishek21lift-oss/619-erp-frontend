@@ -1,8 +1,7 @@
 'use client';
 
 import { ClipboardList, Check } from 'lucide-react';
-import type { ParqFormData, PastHistoryForm, FamilyRelation, FamilyCondition } from './types';
-import { FAMILY_RELATIONS, FAMILY_CONDITIONS } from './types';
+import type { ParqFormData, PastHistoryForm } from './types';
 
 type PastHistoryBoolKey =
   | 'heart_disease' | 'respiratory_disease' | 'asthma' | 'copd' | 'tuberculosis'
@@ -38,10 +37,6 @@ export function StepPastHistory({ form, set, error, stepLabel }: StepPastHistory
     set('pastHistory', { ...ph, [key]: val });
   };
   const toggleBool = (key: PastHistoryBoolKey) => setPh(key, !ph[key]);
-  const toggleFamily = (rel: FamilyRelation, cond: FamilyCondition) => {
-    const fh = form.familyHistory;
-    set('familyHistory', { ...fh, [rel]: { ...fh[rel], [cond]: !fh[rel][cond] } });
-  };
 
   return (
     <div className="space-y-7">
@@ -88,48 +83,6 @@ export function StepPastHistory({ form, set, error, stepLabel }: StepPastHistory
           </span>
           <span className="text-[12.5px] font-[650]" style={{ color: ph.previous_physiotherapy ? 'var(--text-primary)' : 'var(--text-secondary)' }}>Previous Physiotherapy</span>
         </button>
-
-        {/* Family history. PAR-Q question 2 asks yes/no; this records who
-            and what — a parent's sudden death or early heart disease is the
-            detail a referral asks for. The API always had the table; nothing
-            filled it. */}
-        <div className="space-y-2">
-          <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Family history</p>
-          <div className="overflow-x-auto rounded-[12px]" style={{ border: '1px solid var(--border)' }}>
-            <table className="w-full min-w-[440px] text-[12px]">
-              <thead>
-                <tr style={{ background: 'var(--bg-subtle)' }}>
-                  <th className="px-3 py-2 text-left font-[700]" style={{ color: 'var(--text-muted)' }} scope="col">Relative</th>
-                  {FAMILY_CONDITIONS.map((c) => (
-                    <th key={c.key} className="px-2 py-2 text-center font-[700]" style={{ color: 'var(--text-muted)' }} scope="col">{c.label}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {FAMILY_RELATIONS.map((r) => (
-                  <tr key={r.key} style={{ borderTop: '1px solid var(--border)' }}>
-                    <th className="px-3 py-2 text-left font-[650]" style={{ color: 'var(--text-primary)' }} scope="row">{r.label}</th>
-                    {FAMILY_CONDITIONS.map((c) => {
-                      const on = form.familyHistory[r.key][c.key];
-                      return (
-                        <td key={c.key} className="px-2 py-1.5 text-center">
-                          <button
-                            type="button" aria-pressed={on} aria-label={`${r.label}: ${c.label}`}
-                            onClick={() => toggleFamily(r.key, c.key)}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-[7px]"
-                            style={{ background: on ? '#dc2626' : 'var(--bg-card)', border: on ? 'none' : '1.5px solid var(--border-2)' }}
-                          >
-                            {on && <Check size={13} color="#fff" strokeWidth={3} />}
-                          </button>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
 
       {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
     </div>
