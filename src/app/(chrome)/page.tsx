@@ -1,4 +1,4 @@
-// `/` — the one indexable route on this origin.
+// `/` — one of the three indexable routes on this origin (lib/seo-routes.ts).
 //
 // ── Why this file is a server component doing almost nothing ────────────────
 //
@@ -34,6 +34,7 @@
 
 import type { Metadata } from 'next';
 import StudioHome from '@/components/StudioHome';
+import { isAnonymousRequest } from '@/lib/session-hint';
 
 export const metadata: Metadata = {
   // The opt-in. Explicit on both keys rather than relying on a partial merge
@@ -46,6 +47,9 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
 };
 
-export default function Page() {
-  return <StudioHome />;
+// `anonymousHint` lets the server put the landing page itself into the HTML
+// for a request with no session cookie, rather than a loading splash — see
+// lib/session-hint.ts. A signed-in user's page is unchanged.
+export default async function Page() {
+  return <StudioHome anonymousHint={await isAnonymousRequest()} />;
 }

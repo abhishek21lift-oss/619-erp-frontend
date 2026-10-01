@@ -335,8 +335,9 @@ describe('where signing in lands you', () => {
     expect(postSignInPath('member')).toBe('/member/dashboard');
   });
 
-  it('sends the trainer to their client list', () => {
-    expect(postSignInPath('trainer')).toBe('/pt-os');
+  it('sends the trainer to the studio dashboard', () => {
+    // `/`, not '/pt-os': /pt-os is the public landing page now, not a redirect.
+    expect(postSignInPath('trainer')).toBe('/');
   });
 
   it('sends a retired role to a door rather than into somebody\'s app', () => {

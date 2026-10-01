@@ -36,7 +36,8 @@
 // <Guard><AppShell> it always had. See the comment there.
 
 import ChromeGate from '@/components/ChromeGate';
+import { isAnonymousRequest } from '@/lib/session-hint';
 
-export default function ChromeLayout({ children }: { children: React.ReactNode }) {
-  return <ChromeGate>{children}</ChromeGate>;
+export default async function ChromeLayout({ children }: { children: React.ReactNode }) {
+  return <ChromeGate anonymousHint={await isAnonymousRequest()}>{children}</ChromeGate>;
 }

@@ -29,7 +29,13 @@ import BrandLogo from '@/components/BrandLogo';
 // resolving at all; a slow API is already somebody else's job.
 const INIT_TIMEOUT_MS = 20_000;
 
-export default function StudioHome() {
+/**
+ * `anonymousHint`: the request carried no session cookie (lib/session-hint.ts).
+ * While the session check is still running, such a request renders the landing
+ * page rather than the loading splash, so the server HTML holds the real
+ * content. ChromeGate lays the same splash over it until the check answers.
+ */
+export default function StudioHome({ anonymousHint = false }: { anonymousHint?: boolean }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [timedOut, setTimedOut] = useState(false);
@@ -64,7 +70,7 @@ export default function StudioHome() {
     return () => clearTimeout(t);
   }, [loading]);
 
-  if (loading && !timedOut) {
+  if (loading && !timedOut && !(anonymousHint && !user)) {
     return (
       <div
         className="login-shell"

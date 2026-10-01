@@ -140,8 +140,8 @@ export function homeFor(portal: Portal): string {
  * NOT the same as homeFor(), and the difference is why this exists as its own
  * function. homeFor answers "where does this account belong when it wanders
  * somewhere it may not be" — a fallback. This answers "what screen does this
- * person want first", which for the trainer is the client list rather than the
- * dashboard.
+ * person want first". The two agree today (the trainer's first screen is the
+ * studio dashboard at `/`), but they answer different questions.
  *
  * ── Why it is a function at all ─────────────────────────────────────────────
  *
@@ -167,7 +167,10 @@ export function postSignInPath(role: string | null | undefined): string {
   const portal = portalForRole(role);
   if (portal === 'platform') return '/platform';
   if (portal === 'member') return '/member/dashboard';
-  if (portal === 'trainer') return '/pt-os';
+  // `/` is the studio dashboard. This used to be '/pt-os', which reached the
+  // dashboard only through a next.config redirect; /pt-os is now the public
+  // PT OS landing page.
+  if (portal === 'trainer') return '/';
   // An account with no portal has nowhere to go but a door.
   return '/login';
 }

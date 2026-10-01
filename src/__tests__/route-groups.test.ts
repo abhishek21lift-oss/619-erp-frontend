@@ -152,7 +152,9 @@ describe('the shell is mounted once', () => {
     // landing-page-gate.test.tsx answers it by rendering ChromeGate under both
     // session states. A regex here could not tell the two apart.
     expect(existsSync(join(APP_DIR, '(chrome)', 'layout.tsx'))).toBe(true);
-    expect(code(layout)).toMatch(/<ChromeGate>\{children\}<\/ChromeGate>/);
+    // Props are allowed (the layout passes `anonymousHint` for the
+    // server-rendered landing page); wrapping anything else around children is not.
+    expect(code(layout)).toMatch(/<ChromeGate(\s[^>]*)?>\{children\}<\/ChromeGate>/);
     expect(code(layout)).not.toMatch(/<AppShell>/);
   });
 
