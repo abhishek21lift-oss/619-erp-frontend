@@ -273,6 +273,7 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
             mobile: String(c.mobile ?? ''),
             email: String(c.email ?? ''),
             emergencyContact: String(c.emergency_contact ?? ''),
+            emergencyPhone: String(c.emergency_phone ?? ''),
             address: String(c.address ?? ''),
             occupation: String(c.occupation ?? ''),
           };
