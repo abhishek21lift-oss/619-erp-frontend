@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Check, FileSignature, MapPin } from 'lucide-react';
-import FloatInput from '@/components/ui/FloatInput';
+import { AlertTriangle, Check, FileSignature } from 'lucide-react';
 import SignaturePad from '@/components/pt-os/shared/SignaturePad';
 import type { ParqFormData, ConsentCheckboxesForm } from './types';
 import { CONSENT_CHECKBOX_FIELDS } from './types';
@@ -75,10 +74,6 @@ export function StepConsent({ form, set, error, stepLabel, resignRequired }: Ste
           <SignaturePad label="Client Signature" required value={form.clientSignature} onChange={(v) => set('clientSignature', v)} />
         </div>
 
-        <FloatInput
-          label="Location (optional)" maxLength={500} value={form.consentLocation} onChange={(v) => set('consentLocation', v)}
-          placeholder="e.g. Gold's Gym, Andheri West" prefix={<MapPin size={14} />}
-        />
         {userAgent && (
           <p className="text-[10.5px] font-[550]" style={{ color: 'var(--border-2)' }}>
             Device recorded for this consent: {userAgent}

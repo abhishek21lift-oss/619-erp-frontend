@@ -28,7 +28,6 @@ import StepParqQuestionnaire from '@/components/pt-os/parq/StepParqQuestionnaire
 import StepMedicalClearance from '@/components/pt-os/parq/StepMedicalClearance';
 import StepConsent from '@/components/pt-os/parq/StepConsent';
 import StepTrainerNotes from '@/components/pt-os/parq/StepTrainerNotes';
-import ParqClientDetails from '@/components/pt-os/parq/ParqClientDetails';
 import ParqCard from '@/components/pt-os/parq/ParqCard';
 import ScreeningNotice, { latestScreened, screeningIssues } from '@/components/pt-os/parq/ScreeningNotice';
 import { errorMessage } from '@/lib/forms/errors';
@@ -465,7 +464,6 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
         <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
           {step === 1 && (
             <div className="space-y-5">
-              <ParqClientDetails form={form} set={set} />
               <StepParqQuestionnaire form={form} set={set} error={errors.parqQuestionnaire} stepLabel={stepPositionLabel('parqQuestionnaire', riskLevel)} />
             </div>
           )}

@@ -6,8 +6,6 @@ import { Slider } from '@/components/ui';
 import ToggleDetailCard from './ToggleDetailCard';
 import type { ParqFormData, CurrentHealthForm } from './types';
 
-const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
-
 interface StepCurrentHealthProps {
   form: ParqFormData;
   set: <K extends keyof ParqFormData>(key: K, val: ParqFormData[K]) => void;
@@ -30,28 +28,6 @@ export function StepCurrentHealth({ form, set, error, stepLabel }: StepCurrentHe
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Current Health</h2>
             <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">{stepLabel} — toggle YES for anything that applies.</p>
-          </div>
-        </div>
-
-        <div>
-          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Blood Group</p>
-          <div className="flex flex-wrap gap-2">
-            {BLOOD_GROUPS.map((bg) => {
-              const selected = form.bloodGroup === bg;
-              return (
-                <button
-                  key={bg} type="button" onClick={() => set('bloodGroup', bg)}
-                  className="rounded-[11px] px-3.5 py-2 text-[12.5px] font-[700] transition-all"
-                  style={{
-                    background: selected ? 'var(--text-primary)' : 'var(--bg-subtle)',
-                    color: selected ? 'var(--bg-card)' : 'var(--text-muted)',
-                    border: selected ? '1.5px solid var(--text-primary)' : '1.5px solid var(--border)',
-                  }}
-                >
-                  {bg}
-                </button>
-              );
-            })}
           </div>
         </div>
 
