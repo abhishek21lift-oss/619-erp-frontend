@@ -36,6 +36,7 @@ import GoalProgressTimeline from '@/components/pt-os/goal-assessment/GoalProgres
 import { errorMessage } from '@/lib/forms/errors';
 import { todayISO } from '@/lib/forms/domain';
 import { rangeIssue } from '@/lib/forms/ranges';
+import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const CHALLENGE_VALUES = new Set(CHALLENGE_OPTIONS.map((c) => c.value));
@@ -255,6 +256,12 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
             </div>
           </div>
         ))}
+        {/* Once a goal is set, the next intake step (usually PT Enrolment). */}
+        {goals.length > 0 && (
+          <div className="flex justify-end pt-2">
+            <JourneyNextButton clientId={clientId} current="goals" />
+          </div>
+        )}
       </div>
     </PageContainer>
   );

@@ -89,18 +89,17 @@ describe('the review step is gone', () => {
   });
 });
 
-describe('the submitted screen continues to Goal Setting', () => {
-  it('navigates to the goals page carrying the same client', () => {
-    // Goal Setting reads `client_id` from the query string, so the client has
-    // to travel with the navigation or the trainer picks them a second time.
-    expect(parqPage).toMatch(
-      /router\.push\(`\/pt-os\/goals\?client_id=\$\{encodeURIComponent\(clientId\)\}`\)/,
-    );
+describe('the submitted screen continues to the next journey step', () => {
+  it('asks the server for the next step rather than hard-coding Goal Setting', () => {
+    // Phase 2: after the PAR-Q comes the Client Interview, then the Fitness
+    // Assessment; which of them is outstanding is the server's answer
+    // (GET …/journey), so the button is JourneyNextButton for this client.
+    expect(parqPage).toMatch(/<JourneyNextButton[^>]*clientId=\{clientId\}[^>]*current="parq"/);
+    expect(parqPage).not.toMatch(/Continue to Goal Setting/);
   });
 
   it('no longer sends the trainer back to the screening history', () => {
     expect(parqPage).not.toMatch(/Back to Screening History/);
-    expect(parqPage).toMatch(/Continue to Goal Setting/);
   });
 
   it('passes the client id into the success screen', () => {

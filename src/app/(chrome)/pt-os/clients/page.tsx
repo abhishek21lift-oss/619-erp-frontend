@@ -10,6 +10,7 @@ import ClientKpiStrip from '@/components/pt-os/ClientKpiStrip';
 import { PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api, PtClientBase } from '@/lib/api';
+import { termEnded } from '@/lib/term-dates';
 
 type PtClient = PtClientBase & {
   gender: string;
@@ -45,7 +46,8 @@ function getStatusInfo(status: string, days_left: number | null) {
   // Not yet enrolled in a package — added to the roster but no active PT program.
   if (status === 'pending') return { label: 'Not Enrolled', color: '#7fb4ff', bg: 'rgba(127,180,255,0.14)', dot: '#0067e0' };
   if (status === 'frozen') return { label: 'Frozen', color: '#0067e0', bg: 'rgba(0,103,224,0.12)', dot: '#0067e0' };
-  if (!days_left || days_left <= 0) return { label: 'Expired', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
+  // days_left 0 is the term's last day, which is still a valid day (lib/term-dates.ts).
+  if (days_left == null || termEnded(days_left)) return { label: 'Expired', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
   if (days_left <= 7) return { label: 'Expiring', color: '#f87171', bg: 'rgba(248,113,113,0.12)', dot: '#ef4444' };
   if (days_left <= 30) return { label: 'Soon', color: '#fbbf24', bg: 'rgba(251,191,36,0.12)', dot: '#f59e0b' };
   return { label: 'Active', color: '#34d399', bg: 'rgba(52,211,153,0.12)', dot: '#10b981' };

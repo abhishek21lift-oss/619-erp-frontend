@@ -21,7 +21,7 @@ const deep = (): any => new Proxy(function () {}, {
 vi.mock('@/lib/api', () => ({
   api: new Proxy({}, {
     get: (_t, k) => {
-      if (k === 'pt') return { client: () => Promise.resolve({ data: client }), subscriptions: () => Promise.resolve({ data: [] }), memberGoals: () => Promise.resolve({ data: { studio: null, goals: [] } }) };
+      if (k === 'pt') return { client: () => Promise.resolve({ data: client }), subscriptions: () => Promise.resolve({ data: [] }), memberGoals: () => Promise.resolve({ data: { studio: null, goals: [] } }), journey: () => Promise.resolve({ data: { steps: [{ key: 'registration', state: 'done' }, { key: 'consent', state: 'todo' }], next: 'consent', screening: null } }) };
       if (k === 'workouts') return { assignments: { list: () => Promise.resolve([{ plan_name: 'Hypertrophy A' }]) } };
       return deep();
     },

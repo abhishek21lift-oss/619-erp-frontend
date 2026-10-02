@@ -227,8 +227,8 @@ export default function BalanceSheetPage() {
                       <ActiveBadge status={item.status} />
                     </td>
                     <td style={{ padding: '13px 16px' }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: item.days_left !== null && item.days_left <= 0 ? '#dc2626' : 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
-                        {item.days_left !== null ? (item.days_left <= 0 ? `${Math.abs(item.days_left)}d overdue` : `${item.days_left}d`) : '—'}
+                      <span style={{ fontSize: 11, fontWeight: 600, color: item.days_left !== null && item.days_left < 0 ? '#dc2626' : 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                        {item.days_left !== null ? (item.days_left < 0 ? `${Math.abs(item.days_left)}d overdue` : item.days_left === 0 ? 'Last day' : `${item.days_left}d`) : '—'}
                       </span>
                     </td>
                   </m.tr>

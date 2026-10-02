@@ -15,6 +15,7 @@ import {
   QrCode, Printer, ScrollText, ChevronDown, Mail, FileBarChart, Sparkles,
   Gauge, PersonStanding, Accessibility, Ruler, MessagesSquare, Send,
   Cake, UserPlus, Megaphone, Hourglass, CalendarRange, UserCheck, Flag,
+  Route,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 
@@ -39,6 +40,10 @@ import { whatsAppHref } from '@/lib/phone';
 import { amber, blue, emerald, gray, red, rgba } from '@/lib/palette';
 import { tones, gradient, heroMesh, type Tone } from '@/components/profile/profileTheme';
 import { hasPtTerm } from '@/lib/pt-term';
+import type { ScreeningSummary } from '@/lib/screening';
+import { termEnded } from '@/lib/term-dates';
+import MessagePreferences from '@/components/pt-os/client/MessagePreferences';
+import ClientJourneyCard from '@/components/pt-os/client/ClientJourneyCard';
 
 interface PtClientDetail {
   id: string; unique_id?: string; client_id?: string; name: string;
@@ -51,6 +56,12 @@ interface PtClientDetail {
   package_type?: string;
   /** The server's answer to "Enroll or Renew?" (backend lib/ptTerm.js). */
   has_pt_term?: boolean;
+  /** The training gate's reading of consent + PAR-Q (lib/screening.ts). */
+  screening?: ScreeningSummary | null;
+  /** Migration 226: the client asked to stop reminders/offers on a channel. */
+  whatsapp_opt_out?: boolean;
+  email_opt_out?: boolean;
+  comm_prefs_updated_at?: string | null;
   base_amount: number; discount: number; final_amount: number;
   /** LIFETIME paid and its derived balance — NOT this term's. See current_term_* below. */
   paid_amount: number; balance_amount: number;
@@ -104,7 +115,8 @@ const inkClass = 'text-[var(--tone-ink)] dark:text-[var(--tone-ink-dark)]';
 const inkVars = (t: Tone) => ({ '--tone-ink': t.ink, '--tone-ink-dark': t.inkDark }) as React.CSSProperties;
 
 function getStatusConfig(status: string, days_left: number | null, pt_end_date?: string) {
-  const endPassed = pt_end_date ? new Date(pt_end_date) < new Date() : (days_left != null && days_left <= 0);
+  // The last day of the term is a valid day (lib/term-dates.ts).
+  const endPassed = termEnded(days_left, pt_end_date);
   if (endPassed) return { label: 'Inactive', dot: gray[400] };
   if (status === 'frozen') return { label: 'Frozen', dot: blue[300] };
   if (status === 'active' && days_left != null && days_left <= 7) return { label: 'Expiring', dot: amber[400] };
@@ -210,24 +222,24 @@ function InfoRow({ icon, tint, label, value, danger, last }: {
   );
 }
 
-// ── Documents card: PAR-Q + Informed Consent status at a glance ──
+// ── Documents card: PAR-Q + Informed Consent, as the training gate reads them ──
 const DOC_STATUS_STYLE: Record<string, { label: string; tone: Tone }> = {
   // Distinct from `none`, and the distinction is the point: "we could not
   // check" and "there is nothing on file" need different words, because only
   // one of them means the client still has to be screened.
   unknown: { label: 'Not checked', tone: NEUTRAL },
   none: { label: 'Not started', tone: NEUTRAL },
-  draft: { label: 'Draft', tone: NEUTRAL },
+  in_progress: { label: 'In progress', tone: WARN },
   submitted: { label: 'Submitted', tone: OK },
   reviewed: { label: 'Reviewed', tone: OK },
-  pending_client_signature: { label: 'Pending signature', tone: WARN },
-  pending_trainer_signature: { label: 'Pending signature', tone: WARN },
   completed: { label: 'Completed', tone: OK },
   revoked: { label: 'Revoked', tone: BAD },
+  expired: { label: 'Expired', tone: BAD },
 };
 
-function DocumentRow({ icon, tint, label, status, onClick }: {
-  icon: React.ReactNode; tint: Tone; label: string; status: string; onClick: () => void;
+function DocumentRow({ icon, tint, label, status, detail, onClick }: {
+  icon: React.ReactNode; tint: Tone; label: string; status: string; detail?: { text: string; tone: Tone } | null;
+  onClick: () => void;
 }) {
   // Falls back to `unknown`, not to `none`: a status this table has not
   // heard of is one we cannot interpret, which is not the same as a form
@@ -242,6 +254,11 @@ function DocumentRow({ icon, tint, label, status, onClick }: {
         <span className="truncate text-[13px] font-[650]" style={{ color: 'var(--text-primary)' }}>{label}</span>
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
+        {detail && (
+          <span className={`rounded-full px-2.5 py-1 text-[11px] font-[700] ${inkClass}`} style={{ background: detail.tone.wash, ...inkVars(detail.tone) }}>
+            {detail.text}
+          </span>
+        )}
         <span className={`rounded-full px-2.5 py-1 text-[11px] font-[700] ${inkClass}`} style={{ background: style.tone.wash, ...inkVars(style.tone) }}>
           {style.label}
         </span>
@@ -251,43 +268,46 @@ function DocumentRow({ icon, tint, label, status, onClick }: {
   );
 }
 
-function DocumentsCard({ clientId }: { clientId: string }) {
+/**
+ * Reads `client.screening` — the server's own reading, the same one that
+ * allows or refuses training — rather than guessing from the newest row of
+ * each list. Without it (an older server) every row says "Not checked".
+ */
+function DocumentsCard({ clientId, screening }: { clientId: string; screening?: ScreeningSummary | null }) {
   const router = useRouter();
-  // 'unknown' until the request answers, and it stays 'unknown' if the request
-  // fails — a failed request must not read as "Not started" for a PAR-Q that
-  // may well be signed.
-  const [parqStatus, setParqStatus] = useState('unknown');
-  const [consentStatus, setConsentStatus] = useState('unknown');
-
-  useEffect(() => {
-    let cancelled = false;
-    setParqStatus('unknown');
-    setConsentStatus('unknown');
-    // Settled per document, so one failing endpoint does not blank the other.
-    Promise.allSettled([
-      api.progress.parqForms.list({ client_id: clientId }),
-      api.progress.informedConsent.list({ client_id: clientId }),
-    ]).then(([parqRes, consentRes]) => {
-      if (cancelled) return;
-      if (parqRes.status === 'fulfilled') {
-        const latest = parqRes.value?.data?.[0] as { status?: string } | undefined;
-        setParqStatus(latest ? String(latest.status || 'draft') : 'none');
-      }
-      if (consentRes.status === 'fulfilled') {
-        const latest = consentRes.value?.data?.[0] as { status?: string } | undefined;
-        setConsentStatus(latest ? String(latest.status || 'draft') : 'none');
-      }
-    });
-    return () => { cancelled = true; };
-  }, [clientId]);
+  const parq = screening?.parq;
+  const riskDetail = parq?.risk_level === 'high'
+    ? { text: parq.has_valid_clearance ? 'High risk · cleared' : 'High risk', tone: parq.has_valid_clearance ? WARN : BAD }
+    : parq?.risk_level === 'medium' ? { text: 'Needs review', tone: WARN } : null;
 
   return (
     <SectionCard title="Documents" icon={<FileSignature size={15} />} tint={NEUTRAL}>
       <div className="space-y-2">
-        <DocumentRow icon={<ShieldCheck size={14} />} tint={tones.lime} label="PAR-Q screening" status={parqStatus}
-          onClick={() => router.push(`/pt-os/parq?client_id=${clientId}`)} />
-        <DocumentRow icon={<FileSignature size={14} />} tint={tones.sky} label="Informed consent" status={consentStatus}
+        {screening?.block && (
+          <div role="alert" className="flex items-start gap-2.5 rounded-[14px] px-3 py-2.5" style={{ background: BAD.wash }}>
+            <AlertTriangle size={16} className={`mt-0.5 shrink-0 ${inkClass}`} style={inkVars(BAD)} />
+            <div className="min-w-0">
+              <p className={`text-[12.5px] font-[750] ${inkClass}`} style={inkVars(BAD)}>Training is blocked</p>
+              <p className="text-[12.5px] leading-snug" style={{ color: 'var(--text-primary)' }}>{screening.block.message}</p>
+            </div>
+          </div>
+        )}
+        <DocumentRow icon={<FileSignature size={14} />} tint={tones.sky} label="Informed consent"
+          status={screening?.consent.status ?? 'unknown'}
           onClick={() => router.push(`/pt-os/informed-consent?client_id=${clientId}`)} />
+        <DocumentRow icon={<ShieldCheck size={14} />} tint={tones.lime} label="PAR-Q screening"
+          status={parq?.status ?? 'unknown'} detail={riskDetail}
+          onClick={() => router.push(`/pt-os/parq?client_id=${clientId}`)} />
+        {!screening?.block && (screening?.warnings?.length ?? 0) > 0 && (
+          <ul className="space-y-1 px-1 pt-1">
+            {screening!.warnings.map((w) => (
+              <li key={w} className="flex items-start gap-1.5 text-[12px] leading-snug" style={{ color: 'var(--text-muted)' }}>
+                <AlertTriangle size={12} className={`mt-0.5 shrink-0 ${inkClass}`} style={inkVars(WARN)} />
+                <span>{w}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </SectionCard>
   );
@@ -808,6 +828,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
               <TabPanel id="overview" active={tab}>
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  {/* Where the client is in intake, and the one next thing to do. */}
+                  <SectionCard title="Client journey" icon={<Route size={15} />} tint={tones.indigo}>
+                    <ClientJourneyCard clientId={client.id} />
+                  </SectionCard>
                   {recentWeights.length >= 2 && (
                     <SectionCard title="Weight trend" icon={<TrendingUp size={15} />} tint={tones.lime}>
                       <PremiumAreaChart
@@ -874,6 +898,13 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     <InfoRow icon={<Calendar size={13} />} tint={tones.sunset} label="Joined" value={fmtDate(client.joining_date)} />
                     {/* Asked at intake; the one field here a studio owner reads on purpose. */}
                     <InfoRow icon={<Megaphone size={13} />} tint={tones.violet} label="Source" value={client.client_source || '—'} last />
+                  </SectionCard>
+
+                  <SectionCard title="Messages" icon={<MessageCircle size={15} />} tint={tones.mint}>
+                    <MessagePreferences clientId={client.id}
+                      whatsappOptOut={client.whatsapp_opt_out === true}
+                      emailOptOut={client.email_opt_out === true}
+                      updatedAt={client.comm_prefs_updated_at ?? null} />
                   </SectionCard>
 
                   <SectionCard title="PT assignment" icon={<Dumbbell size={15} />} tint={tones.indigo}>
@@ -1030,6 +1061,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     links={[
                       { label: 'PAR-Q', href: `/pt-os/parq?client_id=${client.id}`, hint: 'Medical clearance', icon: <ShieldCheck size={15} />, color: TAB_COLOR.success },
                       { label: 'Informed consent', href: `/pt-os/informed-consent?client_id=${client.id}`, hint: 'Signed agreement', icon: <FileSignature size={15} />, color: TAB_COLOR.primary },
+                      { label: 'Client interview', href: `/pt-os/interview?client_id=${client.id}`, hint: 'History, pain, lifestyle, goals', icon: <MessagesSquare size={15} />, color: TAB_COLOR.primary },
                       { label: 'Lifestyle assessment', href: `/pt-os/lifestyle-assessment?client_id=${client.id}`, hint: 'Sleep, stress, recovery', icon: <HeartPulse size={15} />, color: TAB_COLOR.danger },
                       { label: 'Posture assessment', href: `/pt-os/posture-assessment?client_id=${client.id}`, hint: 'Alignment findings', icon: <Accessibility size={15} />, color: TAB_COLOR.primary },
                       { label: 'Mobility assessment', href: `/pt-os/mobility-assessment?client_id=${client.id}`, hint: 'Restriction and pain', icon: <PersonStanding size={15} />, color: TAB_COLOR.danger },
@@ -1037,7 +1069,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     ]}
                   />
                 </div>
-                <DocumentsCard clientId={client.id} />
+                <DocumentsCard clientId={client.id} screening={client.screening} />
               </TabPanel>
             </>
           )}

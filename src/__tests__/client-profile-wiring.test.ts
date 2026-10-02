@@ -65,18 +65,20 @@ describe('a failed save is not silent', () => {
 });
 
 describe('the Documents card tells "could not check" from "nothing on file"', () => {
-  it('starts unknown rather than none', () => {
+  it('without the server\'s reading, says unknown rather than none', () => {
     // Both used to start at 'none' behind `.catch(() => ({ data: [] }))`, so a
     // failed request rendered "Not Started" for a PAR-Q that may be signed —
     // the wrong claim to make confidently about the form that decides whether
-    // somebody is cleared to train.
-    expect(PROFILE).toMatch(/useState\('unknown'\)/);
+    // somebody is cleared to train. Since Phase 2 the card reads the server's
+    // own screening summary; when it is absent each row is unknown.
+    expect(PROFILE).toMatch(/status=\{screening\?\.consent\.status \?\? 'unknown'\}/);
+    expect(PROFILE).toMatch(/status=\{parq\?\.status \?\? 'unknown'\}/);
     expect(PROFILE).not.toMatch(/catch\(\(\) => \(\{ data: \[\] \}\)\)/);
   });
 
-  it('settles each document separately', () => {
-    // One combined catch let a single failing endpoint blank the other.
-    expect(PROFILE).toMatch(/Promise\.allSettled\(\[\s*\n\s*api\.progress\.parqForms/);
+  it('shows the gate\'s own block reason, not a guess from the newest row', () => {
+    expect(PROFILE).toMatch(/<DocumentsCard clientId=\{client\.id\} screening=\{client\.screening\} \/>/);
+    expect(PROFILE).toMatch(/role="alert"[\s\S]{0,800}\{screening\.block\.message\}/);
   });
 
   it('an unrecognised status falls back to unknown, not to Not Started', () => {
