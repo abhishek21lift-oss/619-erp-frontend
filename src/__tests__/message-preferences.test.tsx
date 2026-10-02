@@ -41,3 +41,12 @@ describe('MessagePreferences', () => {
     expect(screen.getByText(/Payment receipts are always sent/)).toBeInTheDocument();
   });
 });
+
+describe('a suppressed message reads as the opt-out being honoured', () => {
+  it('opted_out is a note with words, not a red failure', async () => {
+    const { failureLine, failureTone } = await import('@/lib/communication-state');
+    const row = { status: 'suppressed', failure_reason: 'opted_out' } as Parameters<typeof failureTone>[0];
+    expect(failureTone(row)).toBe('note');
+    expect(failureLine(row)).toMatch(/opted out/);
+  });
+});

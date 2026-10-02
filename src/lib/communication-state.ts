@@ -59,6 +59,8 @@ export function deliveryStages(row: CommunicationLogRow): DeliveryStage[] {
  * hiding it — the backend adds reasons faster than this map will learn them.
  */
 const REASON_TEXT: Record<string, string> = {
+  // Migration 226: the client asked the studio to stop this channel.
+  opted_out: 'Not sent — the client opted out of these messages',
   whatsapp_logged_out: 'WhatsApp was logged out — reconnect it to resume sending',
   whatsapp_disconnected: 'WhatsApp was disconnected — reconnect it to resume sending',
   not_connected: 'WhatsApp was not connected — reconnect it to resume sending',
@@ -87,7 +89,8 @@ export function failureText(reason?: string | null): string | null {
  * twice" trains people to ignore red badges.
  */
 export function isBenignFailure(reason?: string | null): boolean {
-  return reason === 'duplicate_in_flight';
+  // An opt-out is the client's choice being honoured, not a fault either.
+  return reason === 'duplicate_in_flight' || reason === 'opted_out';
 }
 
 /**
