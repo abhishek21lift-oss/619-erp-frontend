@@ -41,6 +41,7 @@ import { tones, gradient, heroMesh, type Tone } from '@/components/profile/profi
 import { hasPtTerm } from '@/lib/pt-term';
 import type { ScreeningSummary } from '@/lib/screening';
 import { termEnded } from '@/lib/term-dates';
+import MessagePreferences from '@/components/pt-os/client/MessagePreferences';
 
 interface PtClientDetail {
   id: string; unique_id?: string; client_id?: string; name: string;
@@ -55,6 +56,10 @@ interface PtClientDetail {
   has_pt_term?: boolean;
   /** The training gate's reading of consent + PAR-Q (lib/screening.ts). */
   screening?: ScreeningSummary | null;
+  /** Migration 226: the client asked to stop reminders/offers on a channel. */
+  whatsapp_opt_out?: boolean;
+  email_opt_out?: boolean;
+  comm_prefs_updated_at?: string | null;
   base_amount: number; discount: number; final_amount: number;
   /** LIFETIME paid and its derived balance — NOT this term's. See current_term_* below. */
   paid_amount: number; balance_amount: number;
@@ -887,6 +892,13 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     <InfoRow icon={<Calendar size={13} />} tint={tones.sunset} label="Joined" value={fmtDate(client.joining_date)} />
                     {/* Asked at intake; the one field here a studio owner reads on purpose. */}
                     <InfoRow icon={<Megaphone size={13} />} tint={tones.violet} label="Source" value={client.client_source || '—'} last />
+                  </SectionCard>
+
+                  <SectionCard title="Messages" icon={<MessageCircle size={15} />} tint={tones.mint}>
+                    <MessagePreferences clientId={client.id}
+                      whatsappOptOut={client.whatsapp_opt_out === true}
+                      emailOptOut={client.email_opt_out === true}
+                      updatedAt={client.comm_prefs_updated_at ?? null} />
                   </SectionCard>
 
                   <SectionCard title="PT assignment" icon={<Dumbbell size={15} />} tint={tones.indigo}>
