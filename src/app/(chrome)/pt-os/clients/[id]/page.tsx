@@ -40,6 +40,7 @@ import { amber, blue, emerald, gray, red, rgba } from '@/lib/palette';
 import { tones, gradient, heroMesh, type Tone } from '@/components/profile/profileTheme';
 import { hasPtTerm } from '@/lib/pt-term';
 import type { ScreeningSummary } from '@/lib/screening';
+import { termEnded } from '@/lib/term-dates';
 
 interface PtClientDetail {
   id: string; unique_id?: string; client_id?: string; name: string;
@@ -107,7 +108,8 @@ const inkClass = 'text-[var(--tone-ink)] dark:text-[var(--tone-ink-dark)]';
 const inkVars = (t: Tone) => ({ '--tone-ink': t.ink, '--tone-ink-dark': t.inkDark }) as React.CSSProperties;
 
 function getStatusConfig(status: string, days_left: number | null, pt_end_date?: string) {
-  const endPassed = pt_end_date ? new Date(pt_end_date) < new Date() : (days_left != null && days_left <= 0);
+  // The last day of the term is a valid day (lib/term-dates.ts).
+  const endPassed = termEnded(days_left, pt_end_date);
   if (endPassed) return { label: 'Inactive', dot: gray[400] };
   if (status === 'frozen') return { label: 'Frozen', dot: blue[300] };
   if (status === 'active' && days_left != null && days_left <= 7) return { label: 'Expiring', dot: amber[400] };
