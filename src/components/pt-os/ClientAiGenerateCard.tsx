@@ -301,6 +301,11 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
       // A warning, not a success, for the one case the trainer has to act on.
       if (clash > 0) toast.warning(message, { description: detail });
       else toast.success(message, detail ? { description: detail } : undefined);
+      // Saving assigned the plan, so it passed the same screening gate as
+      // Assign; paperwork it found missing is said the same way Assign says it.
+      if (out.screening_warnings?.length) {
+        toast.warning(`${client.name}: ${out.screening_warnings.join(' ')}`);
+      }
 
       router.push(`/pt-os/workout-plans/${out.plan_id}/builder`);
     } catch (err) {

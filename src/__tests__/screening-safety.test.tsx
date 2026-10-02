@@ -2,6 +2,7 @@
 //
 // The PAR-Q and Informed Consent are what let a client train. These pin the
 // client-side half of the fixes; the backend repeats every rule that matters.
+import type React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, renderHook } from '@testing-library/react';
 import StepExerciseProgrammeConsent from '@/components/pt-os/informed-consent/StepExerciseProgrammeConsent';
@@ -11,7 +12,7 @@ import {
 } from '@/components/pt-os/informed-consent/types';
 import type { InformedConsentFormData } from '@/components/pt-os/informed-consent/types';
 import { latestScreened, screeningIssues } from '@/components/pt-os/parq/ScreeningNotice';
-import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
+import { useAutoSaveDraft, DraftScopeContext, scopedDraftKey } from '@/hooks/useAutoSaveDraft';
 import type { InformedConsent, ParqForm } from '@/lib/api';
 
 vi.mock('@/components/pt-os/shared/SignaturePad', () => ({
@@ -138,20 +139,26 @@ describe('PAR-Q — what the gate will warn about', () => {
 
 describe('local drafts never overwrite newer server data', () => {
   beforeEach(() => localStorage.clear());
+  // Drafts are filed under the signed-in user + studio (see useAutoSaveDraft).
+  const SCOPE = 'u1@o1';
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <DraftScopeContext.Provider value={SCOPE}>{children}</DraftScopeContext.Provider>
+  );
 
   it('a draft written before the server copy was saved is ignored', () => {
     const savedAt = Date.now() - 60_000;
-    localStorage.setItem('k', JSON.stringify({ data: { a: 1 }, savedAt }));
-    const { result } = renderHook(() => useAutoSaveDraft({ key: 'k', data: {}, isDirty: false }));
+    localStorage.setItem(scopedDraftKey(SCOPE, 'k'), JSON.stringify({ data: { a: 1 }, savedAt }));
+    const { result } = renderHook(() => useAutoSaveDraft({ key: 'k', data: {}, isDirty: false }), { wrapper });
     expect(result.current.restore({ notBefore: savedAt + 1_000 })).toBeNull();
     expect(result.current.restore({ notBefore: savedAt - 1_000 })).toEqual({ a: 1 });
     expect(result.current.restore()).toEqual({ a: 1 });
   });
 
   it('a draft older than a week is discarded — they are client health data on a shared device', () => {
-    localStorage.setItem('old', JSON.stringify({ data: { a: 1 }, savedAt: Date.now() - 8 * 86_400_000 }));
-    const { result } = renderHook(() => useAutoSaveDraft({ key: 'old', data: {}, isDirty: false }));
+    const key = scopedDraftKey(SCOPE, 'old');
+    localStorage.setItem(key, JSON.stringify({ data: { a: 1 }, savedAt: Date.now() - 8 * 86_400_000 }));
+    const { result } = renderHook(() => useAutoSaveDraft({ key: 'old', data: {}, isDirty: false }), { wrapper });
     expect(result.current.restore()).toBeNull();
-    expect(localStorage.getItem('old')).toBeNull();
+    expect(localStorage.getItem(key)).toBeNull();
   });
 });

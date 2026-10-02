@@ -3916,6 +3916,13 @@ export type SavedFromGeneration = {
    * trainer has to pick. Reported so they can, rather than guessed at.
    */
   other_active_assignments?: number;
+  /**
+   * Missing or stale screening paperwork. Saving assigns the plan, so the
+   * server runs the same PAR-Q / consent gate as /workouts/assign: a hard
+   * block is a 403 with the reason, and anything short of that comes back
+   * here for the trainer to act on.
+   */
+  screening_warnings?: string[];
 };
 
 /**

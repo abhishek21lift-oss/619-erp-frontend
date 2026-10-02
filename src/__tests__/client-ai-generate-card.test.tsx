@@ -346,6 +346,30 @@ describe('saving a generated programme', () => {
     expect(msg).toContain('add them in the builder');
   });
 
+  it('says what screening paperwork is missing, as Assign does', async () => {
+    mockSaveFromGeneration.mockResolvedValue({
+      message: 'ok', plan_id: 'plan-9', client_id: 'cl-1', name: 'Block', saved: 6,
+      unresolved: [], unknown_days: [], assigned: true,
+      screening_warnings: ['No PAR-Q health screening on file for this client.'],
+    });
+
+    await generateThenSave();
+
+    await waitFor(() => expect(mockToastWarning).toHaveBeenCalled());
+    expect(String(mockToastWarning.mock.calls.at(-1)?.[0])).toContain('No PAR-Q health screening on file');
+  });
+
+  it('a client the screening gate blocks gets the reason and no plan', async () => {
+    mockSaveFromGeneration.mockRejectedValue(new Error(
+      "This client's PAR-Q screening flags them as medically blocked — clearance is required before training.",
+    ));
+
+    await generateThenSave();
+
+    await waitFor(() => expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('clearance is required')));
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
   it('reports a failure without navigating away from the preview', async () => {
     mockSaveFromGeneration.mockRejectedValue(new Error('This proposal has already been saved'));
 
