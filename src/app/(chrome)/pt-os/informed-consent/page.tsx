@@ -15,6 +15,7 @@ import { api } from '@/lib/api';
 import type { InformedConsent } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
+import { restoreKeepingIdentity } from '@/lib/draft-identity';
 import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
 import {
   STEPS, type StepId, type InformedConsentFormData,
@@ -261,12 +262,13 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
     async function load() {
       setDetailLoading(true);
       let base = initInformedConsentForm();
+      // The profile's identity, when it loaded — laid over any restored draft.
+      let profileIdentity: Partial<InformedConsentFormData> | null = null;
       try {
         const res = await api.pt.client(clientId) as { data?: Record<string, unknown> };
         const c = res?.data;
         if (c) {
-          base = {
-            ...base,
+          profileIdentity = {
             fullName: String(c.name ?? ''),
             gender: String(c.gender ?? ''),
             dob: c.dob ? String(c.dob).slice(0, 10) : '',
@@ -277,6 +279,7 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
             address: String(c.address ?? ''),
             occupation: String(c.occupation ?? ''),
           };
+          base = { ...base, ...profileIdentity };
         }
       } catch { /* non-fatal — leave fields blank for manual entry */ }
       if (cancelled) return;
@@ -284,7 +287,8 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
       if (!restoredRef.current) {
         restoredRef.current = true;
         const draft = restore();
-        if (draft) { base = { ...base, ...draft }; toast.info('Restored your unsaved draft.'); }
+        // Identity comes from the profile as it is now, never from the draft.
+        if (draft) { base = restoreKeepingIdentity(base, draft, profileIdentity); toast.info('Restored your unsaved draft.'); }
       }
       initFormRef.current = base;
       setForm(base);

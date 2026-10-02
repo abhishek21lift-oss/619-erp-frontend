@@ -31,6 +31,7 @@ import StepTrainerNotes from '@/components/pt-os/parq/StepTrainerNotes';
 import ParqCard from '@/components/pt-os/parq/ParqCard';
 import ScreeningNotice, { latestScreened, screeningIssues } from '@/components/pt-os/parq/ScreeningNotice';
 import { errorMessage } from '@/lib/forms/errors';
+import { restoreKeepingIdentity } from '@/lib/draft-identity';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -231,6 +232,9 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
     let cancelled = false;
     async function load() {
       let base = initParqForm();
+      // The profile's identity, when it loaded — laid over any restored draft.
+      let profileIdentity: Partial<ParqFormData> | null = null;
+      let profileOccupation: string | null = null;
       // When the server copy was saved, so an older local draft cannot be
       // laid over newer answers (another device, or this form submitted
       // since the draft was written).
@@ -262,8 +266,7 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
           const res = await api.pt.client(clientId) as { data?: Record<string, unknown> };
           const c = res?.data;
           if (c) {
-            base = {
-              ...base,
+            profileIdentity = {
               fullName: String(c.name ?? ''),
               gender: String(c.gender ?? ''),
               dob: c.dob ? String(c.dob).slice(0, 10) : '',
@@ -274,7 +277,12 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
               trainerName: String(c.trainer_name ?? ''),
               emergencyContact: String(c.emergency_contact ?? ''),
               emergencyPhone: String(c.emergency_phone ?? ''),
-              pastHistory: { ...base.pastHistory, occupation: String(c.occupation ?? '') },
+            };
+            profileOccupation = String(c.occupation ?? '');
+            base = {
+              ...base,
+              ...profileIdentity,
+              pastHistory: { ...base.pastHistory, occupation: profileOccupation },
             };
           }
         } catch { /* non-fatal — leave fields blank for manual entry */ }
@@ -286,7 +294,11 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
         restoredRef.current = true;
         const draft = restore({ notBefore: serverSavedAt });
         if (draft) {
-          base = { ...base, ...draft };
+          // Identity comes from the profile as it is now, never from the draft.
+          base = restoreKeepingIdentity(base, draft, profileIdentity);
+          if (profileOccupation !== null) {
+            base = { ...base, pastHistory: { ...base.pastHistory, occupation: profileOccupation } };
+          }
           toast.info('Restored your unsaved draft.');
         } else if (serverSavedAt) {
           clear();
