@@ -2,11 +2,12 @@
 
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Repeat, CheckCircle, IndianRupee, Calendar, User, Dumbbell, FileText } from 'lucide-react';
+import { Repeat, CheckCircle, IndianRupee, Calendar, User, Dumbbell, FileText, UserPlus } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import { ApiError } from '@/lib/http';
+import { hasPtTerm } from '@/lib/pt-term';
 import { useToast } from '@/lib/toast';
 import { useStore } from '@tanstack/react-form';
 import { useAppForm } from '@/lib/forms/useAppForm';
@@ -32,6 +33,7 @@ interface Client {
   id: string; name: string; mobile?: string; trainer_name?: string;
   package_type?: string; pt_end_date?: string; final_amount: number;
   paid_amount: number; balance_amount: number;
+  has_pt_term?: boolean;
 }
 
 function ReadOnly({ label, value, highlight }: { label: string; value: string; highlight?: string }) {
@@ -69,6 +71,13 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
         // outcome the trainer wanted, not an error.
         if (err instanceof ApiError && err.code === 'DUPLICATE_RENEWAL') {
           toast.info('Already renewed — this renewal was recorded once.');
+          return;
+        }
+        // Nothing to renew: the server refuses a client with no PT term
+        // (lib/ptTerm.js). They are enrolled, not renewed.
+        if (err instanceof ApiError && err.code === 'NOT_ENROLLED') {
+          toast.info('No PT term to renew yet — enroll them in PT first.');
+          router.replace(`/pt-os/clients/${id}/enroll`);
           return;
         }
         throw err;
@@ -146,7 +155,28 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
           </div>
         )}
 
+        {/* A renewal continues a term. A client who has none is enrolled, and
+            the server refuses this form for them (409 NOT_ENROLLED), so say so
+            before they fill it in rather than after. */}
+        {client && !hasPtTerm(client) && (
+          <div className="mb-6 rounded-[18px] p-5 text-center"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <p className="text-[15px] font-[700]" style={{ color: 'var(--text-primary)' }}>
+              {client.name} has no PT term to renew yet
+            </p>
+            <p className="mt-1.5 text-[13px]" style={{ color: 'var(--text-muted)' }}>
+              Enroll them in PT to start their first term.
+            </p>
+            <div className="mt-4 flex justify-center">
+              <Button iconLeft={<UserPlus size={14} />} onClick={() => router.push(`/pt-os/clients/${id}/enroll`)}>
+                Enroll in PT
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Form sections (flat — no wrapper card) */}
+        {(!client || hasPtTerm(client)) && (
         <form
           noValidate
           onSubmit={(e) => { e.preventDefault(); void f.submit(); }}
@@ -259,6 +289,7 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
             </Button>
           </div>
         </form>
+        )}
       </div>
       </PageContainer>
     </Guard>

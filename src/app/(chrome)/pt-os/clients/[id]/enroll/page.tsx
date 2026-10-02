@@ -1,6 +1,7 @@
 'use client';
 
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { hasPtTerm, type PtTermFields } from '@/lib/pt-term';
 import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
@@ -327,7 +328,10 @@ function EnrollForm({ clientId }: { clientId: string }) {
         : [];
 
       const loaded: EnrollFormData = {
-        startDate: String(c.pt_start_date ?? '').slice(0, 10) || todayStr(),
+        // An existing term's start date is kept; a client with no term starts
+        // today. Client creation used to stamp pt_start_date on everyone, so a
+        // stale "start" from the day they were added would otherwise pre-fill.
+        startDate: (hasPtTerm(c as PtTermFields) && String(c.pt_start_date ?? '').slice(0, 10)) || todayStr(),
         duration: c.duration_months ? String(c.duration_months) : '',
         trainerId: String(c.trainer_id ?? ''),
         trainerName: String(c.trainer_name ?? ''),
