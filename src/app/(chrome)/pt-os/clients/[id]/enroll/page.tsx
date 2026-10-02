@@ -2,11 +2,13 @@
 
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { hasPtTerm, type PtTermFields } from '@/lib/pt-term';
+import type { ScreeningSummary } from '@/lib/screening';
 import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Calendar, Award,
   Check, Sparkles, AlertCircle, Loader2, X, Download, FileSignature,
+  ShieldAlert,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, PageContainer, PageHero } from '@/components/ui';
@@ -22,6 +24,7 @@ import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { errorMessage } from '@/lib/forms/errors';
+import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
 
 /* ─────────────────────────────────────────────────────── TYPES */
 interface EnrollFormData {
@@ -267,6 +270,10 @@ function EnrollForm({ clientId }: { clientId: string }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [hasRenewed, setHasRenewed] = useState(false);
+  // What a NEW client's screening is still missing. Enrolment waits for a
+  // completed Informed Consent and a fully answered PAR-Q; the server refuses
+  // it otherwise (SCREENING_REQUIRED), and this says so before the form.
+  const [screeningMissing, setScreeningMissing] = useState<{ consent: boolean; parq: boolean; block: string | null } | null>(null);
   const [form, setForm] = useState<EnrollFormData>(initForm);
   const [errors, setErrors] = useState<FormErrors>({});
   const [saving, setSaving] = useState(false);
@@ -310,6 +317,16 @@ function EnrollForm({ clientId }: { clientId: string }) {
       // here either fails or rewrites their payment history (payments audit
       // PAY-1). The server refuses it too (USE_RENEW); this says so up front.
       setHasRenewed(Array.isArray(renewalsRes?.data) && renewalsRes.data.length > 0);
+      const screening = c.screening as ScreeningSummary | undefined;
+      if (screening && !hasPtTerm(c as PtTermFields) && !screening.complete) {
+        setScreeningMissing({
+          consent: screening.consent.status !== 'completed',
+          parq: !screening.parq.complete || screening.parq.status === 'none' || screening.parq.status === 'in_progress',
+          block: screening.block?.message ?? null,
+        });
+      } else {
+        setScreeningMissing(null);
+      }
       setClientName(String(c.name ?? ''));
       setClientMeta({
         name: String(c.name ?? ''),
@@ -596,6 +613,32 @@ function EnrollForm({ clientId }: { clientId: string }) {
     );
   }
 
+  if (screeningMissing) {
+    return (
+      <div className="mx-auto max-w-md py-20 text-center">
+        <ShieldAlert size={34} style={{ color: '#EF4444', margin: '0 auto 12px' }} />
+        <p className="text-[16px] font-[760]" style={{ color: 'var(--text-primary)' }}>Complete {clientName || 'this client'}&apos;s screening first</p>
+        <p className="mt-2 text-[13px]" style={{ color: 'var(--text-muted)' }}>
+          A new client is enrolled in PT only after their Informed Consent is completed and their PAR-Q is fully answered.
+        </p>
+        {screeningMissing.block && (
+          <p role="alert" className="mt-3 rounded-[12px] px-3 py-2 text-[12.5px]" style={{ background: 'rgba(255,69,58,0.10)', color: 'var(--text-primary)' }}>
+            {screeningMissing.block}
+          </p>
+        )}
+        <div className="mt-6 flex flex-col gap-2">
+          {screeningMissing.consent && (
+            <Button onClick={() => router.push(`/pt-os/informed-consent?client_id=${clientId}`)}>Complete Informed Consent</Button>
+          )}
+          {screeningMissing.parq && (
+            <Button variant={screeningMissing.consent ? 'outline' : undefined} onClick={() => router.push(`/pt-os/parq?client_id=${clientId}`)}>Complete PAR-Q</Button>
+          )}
+          <Button variant="outline" onClick={() => router.push(`/pt-os/clients/${clientId}`)}>Back to profile</Button>
+        </div>
+      </div>
+    );
+  }
+
   if (hasRenewed) {
     return (
       <div className="mx-auto max-w-md py-24 text-center">
@@ -654,6 +697,8 @@ function EnrollForm({ clientId }: { clientId: string }) {
             {downloading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
             {downloading ? 'Preparing…' : 'Download enrolment form (PDF)'}
           </button>
+          {/* The next journey step — a workout plan, once enrolled. */}
+          <JourneyNextButton clientId={clientId} current="enrolment" />
           <button
             type="button"
             onClick={() => router.push(`/pt-os/clients/${clientId}`)}
@@ -708,7 +753,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
               className="flex items-center gap-2 rounded-[14px] px-4 py-3"
               style={{ background: 'rgba(0,89,206,0.08)', border: '1px solid rgba(0,89,206,0.2)' }}
             >
-              <Sparkles size={14} style={{ color: '#0059ce', flexShrink: 0 }} />
+              <Sparkles size={14} style={{ color: '#0059CE', flexShrink: 0 }} />
               <span className="text-[12.5px] font-[640]" style={{ color: '#065f46' }}>Client starts today.</span>
             </m.div>
           )}
@@ -813,7 +858,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                         className="mt-2 flex items-center gap-1.5 rounded-[10px] px-3 py-2"
                         style={{ background: 'rgba(0,89,206,0.08)', border: '1px solid rgba(0,89,206,0.2)' }}
                       >
-                        <Check size={13} style={{ color: '#0059ce', flexShrink: 0 }} />
+                        <Check size={13} style={{ color: '#0059CE', flexShrink: 0 }} />
                         <span className="text-[12px] font-[700]" style={{ color: '#065f46' }}>Paid in Full</span>
                       </m.div>
                     )}

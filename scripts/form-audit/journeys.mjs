@@ -41,6 +41,9 @@ export const JOURNEYS = {
   'e2e/client-edit.ui.spec.ts': [
     'src/app/(chrome)/pt-os/clients/[id]/edit/page.tsx',
   ],
+  'e2e/client-interview.ui.spec.ts': [
+    'src/app/(chrome)/pt-os/interview/page.tsx',
+  ],
   'e2e/enrollment.ui.spec.ts': [
     'src/app/(chrome)/pt-os/clients/[id]/enroll/page.tsx',
   ],

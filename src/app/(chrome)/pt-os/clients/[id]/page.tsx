@@ -15,6 +15,7 @@ import {
   QrCode, Printer, ScrollText, ChevronDown, Mail, FileBarChart, Sparkles,
   Gauge, PersonStanding, Accessibility, Ruler, MessagesSquare, Send,
   Cake, UserPlus, Megaphone, Hourglass, CalendarRange, UserCheck, Flag,
+  Route,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 
@@ -42,6 +43,7 @@ import { hasPtTerm } from '@/lib/pt-term';
 import type { ScreeningSummary } from '@/lib/screening';
 import { termEnded } from '@/lib/term-dates';
 import MessagePreferences from '@/components/pt-os/client/MessagePreferences';
+import ClientJourneyCard from '@/components/pt-os/client/ClientJourneyCard';
 
 interface PtClientDetail {
   id: string; unique_id?: string; client_id?: string; name: string;
@@ -826,6 +828,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
               <TabPanel id="overview" active={tab}>
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  {/* Where the client is in intake, and the one next thing to do. */}
+                  <SectionCard title="Client journey" icon={<Route size={15} />} tint={tones.indigo}>
+                    <ClientJourneyCard clientId={client.id} />
+                  </SectionCard>
                   {recentWeights.length >= 2 && (
                     <SectionCard title="Weight trend" icon={<TrendingUp size={15} />} tint={tones.lime}>
                       <PremiumAreaChart
@@ -1055,6 +1061,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     links={[
                       { label: 'PAR-Q', href: `/pt-os/parq?client_id=${client.id}`, hint: 'Medical clearance', icon: <ShieldCheck size={15} />, color: TAB_COLOR.success },
                       { label: 'Informed consent', href: `/pt-os/informed-consent?client_id=${client.id}`, hint: 'Signed agreement', icon: <FileSignature size={15} />, color: TAB_COLOR.primary },
+                      { label: 'Client interview', href: `/pt-os/interview?client_id=${client.id}`, hint: 'History, pain, lifestyle, goals', icon: <MessagesSquare size={15} />, color: TAB_COLOR.primary },
                       { label: 'Lifestyle assessment', href: `/pt-os/lifestyle-assessment?client_id=${client.id}`, hint: 'Sleep, stress, recovery', icon: <HeartPulse size={15} />, color: TAB_COLOR.danger },
                       { label: 'Posture assessment', href: `/pt-os/posture-assessment?client_id=${client.id}`, hint: 'Alignment findings', icon: <Accessibility size={15} />, color: TAB_COLOR.primary },
                       { label: 'Mobility assessment', href: `/pt-os/mobility-assessment?client_id=${client.id}`, hint: 'Restriction and pain', icon: <PersonStanding size={15} />, color: TAB_COLOR.danger },

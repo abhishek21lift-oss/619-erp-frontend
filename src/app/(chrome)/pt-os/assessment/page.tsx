@@ -39,6 +39,7 @@ import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressCompa
 import AiRecommendationsPanel from '@/components/pt-os/fitness-testing/AiRecommendationsPanel';
 import { errorMessage } from '@/lib/forms/errors';
 import { screeningBlockOf } from '@/lib/screeningBlock';
+import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
 
 interface TrainerOption { id: string; name: string; }
 
@@ -552,6 +553,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
               <Button variant="outline" iconLeft={<Plus size={14} />} onClick={handleNewAssessment}>
                 New Assessment
               </Button>
+              <JourneyNextButton clientId={clientId} current="assessment" />
             </div>
           </m.div>
         ) : !reviewMode ? (

@@ -32,6 +32,7 @@ import ParqCard from '@/components/pt-os/parq/ParqCard';
 import ScreeningNotice, { latestScreened, screeningIssues } from '@/components/pt-os/parq/ScreeningNotice';
 import { errorMessage } from '@/lib/forms/errors';
 import { restoreKeepingIdentity } from '@/lib/draft-identity';
+import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -557,21 +558,10 @@ function SubmitSuccess({ clientId, clientName, result }: { clientId: string; cli
         <p className="mt-3 text-[11.5px]" style={{ color: 'var(--text-disabled)' }}>The signed PDF will appear here once it finishes generating — check the screening history shortly.</p>
       )}
 
-      {/* Continue to Goal Setting, not back to the screening history.
-          Screening is step one of an intake sequence — PAR-Q, then goals —
-          and the previous button sent the trainer backwards to a list of the
-          thing they had just finished. Goal Setting is the actual next task,
-          and it takes the same `client_id` this wizard was opened with, so
-          the client carries through rather than being picked again.
-          The screening history remains reachable from the PAR-Q nav entry. */}
-      <Button
-        className="mt-8"
-        iconLeft={<ArrowRight size={14} />}
-        onClick={() => router.push(`/pt-os/goals?client_id=${encodeURIComponent(clientId)}`)}
-        style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
-      >
-        Continue to Goal Setting
-      </Button>
+      {/* Continue to the next journey step, read from the server (the Client
+          Interview, for a client going through intake in order), not back to
+          the screening history. The client carries through by id. */}
+      <JourneyNextButton className="mt-8" clientId={clientId} current="parq" />
     </div>
   );
 }

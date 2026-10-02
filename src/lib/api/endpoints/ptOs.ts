@@ -11,6 +11,7 @@ import type {
   ActivityLogEntry, CheckinInsight, ClientBirthday, ClientSnapshot, CoachGeneration, PtLead, PtSession, RosterSignalSweep, TrainingBrief,
   TransformationRow,
 } from '../types';
+import type { ClientInterview, ClientJourney } from '../../journey';
 
 // ── PT OS ────────────────────────────────────────────────────
 export const pt = {
@@ -109,6 +110,18 @@ export const pt = {
     http<{ message: string }>(`/api/pt-os/clients/${id}`, { method: 'DELETE' }),
   subscriptions: (id: string) =>
     http<{ data: unknown[]; total: number }>(`/api/pt-os/clients/${id}/subscriptions`),
+  /** Every intake-journey step's state and the next one (lib/journey.ts). */
+  journey: (id: string) =>
+    http<{ data: ClientJourney }>(`/api/pt-os/clients/${id}/journey`),
+  /** The Client Interview step (migration 227). */
+  interviews: {
+    list: (clientId: string) =>
+      http<{ data: ClientInterview[] }>(`/api/pt-os/clients/${clientId}/interviews`),
+    create: (clientId: string, data: Record<string, unknown>) =>
+      http<{ data: ClientInterview }>(`/api/pt-os/clients/${clientId}/interviews`, { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Record<string, unknown>) =>
+      http<{ data: ClientInterview }>(`/api/pt-os/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  },
   /**
    * The studio's own business-write audit trail — client/payment/commission
    * changes made by its own staff. Always scoped server-side to the caller's

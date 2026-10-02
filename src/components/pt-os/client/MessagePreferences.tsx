@@ -27,7 +27,7 @@ export interface MessagePreferencesProps {
 
 const ROWS: { key: Channel; label: string; icon: React.ReactNode; color: string }[] = [
   { key: 'whatsapp_opt_out', label: 'WhatsApp reminders & offers', icon: <MessageCircle size={14} />, color: '#10b981' },
-  { key: 'email_opt_out', label: 'Email reminders & offers', icon: <Mail size={14} />, color: '#0a84ff' },
+  { key: 'email_opt_out', label: 'Email reminders & offers', icon: <Mail size={14} />, color: '#0067E0' },
 ];
 
 export default function MessagePreferences({ clientId, whatsappOptOut, emailOptOut, updatedAt, onSaved }: MessagePreferencesProps) {
@@ -71,7 +71,7 @@ export default function MessagePreferences({ clientId, whatsappOptOut, emailOptO
             <button type="button" role="switch" aria-checked={receives} aria-label={label}
               disabled={saving !== null} onClick={() => toggle(key)}
               className="relative h-[28px] w-[48px] shrink-0 rounded-full transition disabled:opacity-60"
-              style={{ background: receives ? '#34c759' : 'var(--border)' }}>
+              style={{ background: receives ? '#10B981' : 'var(--border)' }}>
               <span className="absolute top-[3px] h-[22px] w-[22px] rounded-full bg-white shadow transition-all"
                 style={{ left: receives ? 23 : 3 }} />
             </button>

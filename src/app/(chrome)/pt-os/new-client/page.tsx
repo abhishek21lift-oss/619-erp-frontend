@@ -408,12 +408,9 @@ function NewClientForm() {
               <ClipboardCheck size={17} className="mr-2" />
               Start Client Screening
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/pt-os/clients/${createdId}/enroll`)}
-            >
-              Enroll in PT
-            </Button>
+            {/* No "Enroll in PT" here: a new client is enrolled only after their
+                Informed Consent and PAR-Q are complete — the server refuses it
+                before then (SCREENING_REQUIRED). Screening is the next step. */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button variant="outline" onClick={() => router.push(`/pt-os/clients/${createdId}`)}>
                 View Client Profile
