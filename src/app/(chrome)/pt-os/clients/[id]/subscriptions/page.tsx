@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
   ArrowLeft, Repeat, Layers, PiggyBank, IndianRupee, AlertTriangle,
-  CheckCircle, RefreshCw, User, Dumbbell, Calendar,
+  CheckCircle, RefreshCw, User, Dumbbell, Calendar, UserPlus,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
+import { hasPtTerm } from '@/lib/pt-term';
 import { Button, DonutChart, HeroButton, HeroChip, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 
@@ -33,6 +34,7 @@ interface PtClientDetail {
   final_amount: number; paid_amount: number; balance_amount: number;
   status: string; days_left: number | null; due_status?: string;
   pt_start_date?: string; pt_end_date?: string;
+  has_pt_term?: boolean;
 }
 
 function fmtINR(n: number | string | null | undefined) {
@@ -161,10 +163,18 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
                     onClick={() => router.push(`/pt-os/clients/${id}`)}>
                     Profile
                   </HeroButton>
-                  <HeroButton className="flex-1 sm:flex-none" icon={<Repeat size={14} />}
-                    onClick={() => router.push(`/pt-os/clients/${id}/renew`)}>
-                    Renew PT
-                  </HeroButton>
+                  {/* Renew only continues a term; a client without one is enrolled. */}
+                  {hasPtTerm(client) ? (
+                    <HeroButton className="flex-1 sm:flex-none" icon={<Repeat size={14} />}
+                      onClick={() => router.push(`/pt-os/clients/${id}/renew`)}>
+                      Renew PT
+                    </HeroButton>
+                  ) : (
+                    <HeroButton className="flex-1 sm:flex-none" icon={<UserPlus size={14} />}
+                      onClick={() => router.push(`/pt-os/clients/${id}/enroll`)}>
+                      Enroll in PT
+                    </HeroButton>
+                  )}
                 </div>
               }
             >

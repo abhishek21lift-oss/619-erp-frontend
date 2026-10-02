@@ -38,6 +38,7 @@ import { errorMessage } from '@/lib/forms/errors';
 import { whatsAppHref } from '@/lib/phone';
 import { amber, blue, emerald, gray, red, rgba } from '@/lib/palette';
 import { tones, gradient, heroMesh, type Tone } from '@/components/profile/profileTheme';
+import { hasPtTerm } from '@/lib/pt-term';
 
 interface PtClientDetail {
   id: string; unique_id?: string; client_id?: string; name: string;
@@ -48,6 +49,8 @@ interface PtClientDetail {
   client_source?: string;
   trainer_id?: string; trainer_name?: string;
   package_type?: string;
+  /** The server's answer to "Enroll or Renew?" (backend lib/ptTerm.js). */
+  has_pt_term?: boolean;
   base_amount: number; discount: number; final_amount: number;
   /** LIFETIME paid and its derived balance — NOT this term's. See current_term_* below. */
   paid_amount: number; balance_amount: number;
@@ -596,7 +599,9 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     ? Math.max(0, Math.min(totalDurationDays, Math.round((Date.now() - new Date(client.pt_start_date).getTime()) / 86400000)))
     : 0;
   const ptTermPct = totalDurationDays > 0 ? Math.round((elapsedDays / totalDurationDays) * 100) : 0;
-  const hasTerm = !!client?.pt_start_date;
+  // Enroll vs Renew, from the server's term flag — never from pt_start_date,
+  // which client creation used to default for everyone (lib/pt-term.ts).
+  const hasTerm = hasPtTerm(client);
 
   // Null when the number cannot be normalised — no button then, rather than
   // a WhatsApp link to nobody.
