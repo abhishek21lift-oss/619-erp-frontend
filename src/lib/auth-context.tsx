@@ -1,7 +1,7 @@
 'use client';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { clearAllDrafts } from '@/hooks/useAutoSaveDraft';
+import { clearAllDrafts, clearDraftsOutside, draftScopeFor, DraftScopeContext } from '@/hooks/useAutoSaveDraft';
 import { api, type User, http } from './api';
 import { resetRedirectLock, refreshSession, clearImpersonation } from './http';
 // Minimal non-sensitive user fields cached in sessionStorage (cleared on tab
@@ -57,6 +57,9 @@ const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes idle timeout
 function cacheable(u: User): string {
   return JSON.stringify({
     id: u.id, name: u.name, role: u.role,
+    // The studio's id, not a name or contact detail: drafts are filed under
+    // user + studio (useAutoSaveDraft), and a hard refresh must find them.
+    organization_id: u.organization_id ?? null,
     organization_name: u.organization_name, organization_logo_url: u.organization_logo_url,
     is_founder: u.is_founder, founder_number: u.founder_number, avatar_url: u.avatar_url ?? null,
   });
@@ -107,12 +110,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let cachedUser: User | null = null;
     if (cachedRaw) {
       try {
-        const partial = JSON.parse(cachedRaw) as { id: string; name: string; role: string; organization_name?: string | null; organization_logo_url?: string | null; is_founder?: boolean; founder_number?: number | null; avatar_url?: string | null };
+        const partial = JSON.parse(cachedRaw) as { id: string; name: string; role: string; organization_id?: string | null; organization_name?: string | null; organization_logo_url?: string | null; is_founder?: boolean; founder_number?: number | null; avatar_url?: string | null };
         // founder_number is cached alongside the name for the same reason the
         // name is: without it the badge pops in a beat after every hard
         // refresh, which for a permanent mark of status reads as a glitch.
         // Not PII — it is displayed publicly on the studio page.
-        cachedUser = { id: partial.id, name: partial.name, role: partial.role as any, email: '', organization_name: partial.organization_name ?? null, organization_logo_url: partial.organization_logo_url ?? null, is_founder: partial.is_founder ?? false, founder_number: partial.founder_number ?? null, avatar_url: partial.avatar_url ?? null };
+        cachedUser = { id: partial.id, name: partial.name, role: partial.role as any, email: '', organization_id: partial.organization_id ?? null, organization_name: partial.organization_name ?? null, organization_logo_url: partial.organization_logo_url ?? null, is_founder: partial.is_founder ?? false, founder_number: partial.founder_number ?? null, avatar_url: partial.avatar_url ?? null };
       } catch { clearCachedUser(); }
     }
     if (cachedUser) setUser(cachedUser);
@@ -269,6 +272,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Logout clears this too; both, because a session can expire without a
     // logout ever running.
     clearImpersonation();
+    // A new identity cannot read anyone else's drafts (they are scoped), and
+    // it should not leave them on this device either: a session that ended
+    // without a logout — a closed tab, an expired cookie — never purged them.
+    const scope = draftScopeFor(u);
+    if (scope) clearDraftsOutside(scope); else clearAllDrafts();
     setUser(u);
     writeCachedUser(cacheable(u));
     setLoading(false);
@@ -305,7 +313,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, loginWithPasskey, logout, updateUser }}>
-      {children}
+      <DraftScopeContext.Provider value={draftScopeFor(user)}>
+        {children}
+      </DraftScopeContext.Provider>
     </AuthContext.Provider>
   );
 }
