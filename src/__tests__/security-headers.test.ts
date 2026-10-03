@@ -213,3 +213,59 @@ describe('securityHeaders', () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 });
+
+// ── Sentry ingest in connect-src ─────────────────────────────────────────────
+//
+// Same class of failure as the wss:// origin above, and found the same way: the
+// policy is right for everything it was written for and silently blocks the one
+// request nobody was looking at.
+//
+// The browser SDK ships an envelope to `https://<org>.ingest.sentry.io` — an XHR
+// to a third-party origin, which is exactly what connect-src governs. With the
+// DSN set and no ingest host listed, the browser refuses the POST, the SDK sees
+// a transport failure, and the console shows a healthy client with zero events
+// arriving. Nothing errors visibly, so the only symptom is "Sentry is empty",
+// which is indistinguishable from "nothing has broken yet".
+//
+// Derived from the DSN rather than hardcoded, so an unset DSN produces no host
+// at all and the policy stays exactly as tight as it is today.
+describe('buildCsp — Sentry', () => {
+  const DSN = 'https://abc123@o4507.ingest.sentry.io/4507';
+
+  it('permits the ingest origin derived from a configured DSN', () => {
+    const csp = buildCsp({ NEXT_PUBLIC_SENTRY_DSN: DSN });
+    expect(csp).toMatch(/connect-src[^;]*https:\/\/o4507\.ingest\.sentry\.io/);
+  });
+
+  it('admits nothing extra when no DSN is configured', () => {
+    // The load-bearing assertion. An unconfigured deploy must get a byte-identical
+    // policy, or enabling this has silently loosened production for everyone who
+    // is not using Sentry.
+    const withDsn = buildCsp({ NEXT_PUBLIC_API_URL: 'https://api.myptstudio.com' });
+    const without = buildCsp({
+      NEXT_PUBLIC_API_URL: 'https://api.myptstudio.com',
+      NEXT_PUBLIC_SENTRY_DSN: '',
+    });
+    expect(without).toBe(withDsn);
+    expect(without).not.toContain('sentry.io');
+  });
+
+  it('takes the host from the DSN, so a self-hosted or region-specific DSN works', () => {
+    // A hardcoded sentry.io would block a self-hosted relay and any EU ingest
+    // host, and the failure would look identical to "Sentry is broken".
+    const csp = buildCsp({ NEXT_PUBLIC_SENTRY_DSN: 'https://k@errors.internal.example.com/9' });
+    expect(csp).toContain('https://errors.internal.example.com');
+    expect(csp).not.toContain('sentry.io');
+  });
+
+  it('does not widen any other directive', () => {
+    // connect-src only. A DSN must never reach script-src or img-src — the
+    // public key in a DSN is not a secret, but a script source is not where it
+    // belongs.
+    const csp = buildCsp({ NEXT_PUBLIC_SENTRY_DSN: DSN });
+    const directive = (name: string) => csp.split(';').find((d) => d.trim().startsWith(name));
+    expect(directive('script-src')).not.toContain('sentry');
+    expect(directive('img-src')).not.toContain('sentry');
+    expect(directive('connect-src')).toContain('sentry');
+  });
+});
