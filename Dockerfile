@@ -69,6 +69,25 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
+# The Sentry DSN is NEXT_PUBLIC_, which means Next.js INLINES it into the
+# client bundle at build time — setting it in the runner stage's environment, or
+# in docker-compose's runtime `environment:`, does nothing at all. The symptom
+# is a silently inert integration: src/lib/sentry.ts reads
+# process.env.NEXT_PUBLIC_SENTRY_DSN, gets undefined, and returns before
+# Sentry.init(), so the bundle never carries a DSN and no error is ever
+# reported — while the Command Centre's `sentry_configured` check, which reads
+# the BACKEND's SENTRY_DSN, can be perfectly green. Half-configured, and the two
+# halves disagree.
+#
+# An ARG for the same reason as NEXT_PUBLIC_API_URL above. Optional: unset means
+# no DSN is inlined, the SDK stays inert, and the build succeeds.
+ARG NEXT_PUBLIC_SENTRY_DSN
+ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
+
+# The CSP in src/lib/security-headers.js derives the Sentry ingest origin from
+# this same variable, so the header and the bundle agree by construction rather
+# than by two people remembering to update both.
+
 # Where the AI service (repo: mps-ai) lives on the compose network. Read by
 # next.config.js's rewrites(), which Next.js evaluates at BUILD time and bakes
 # into routes-manifest.json — so this has to be an ARG, not a runtime env var.

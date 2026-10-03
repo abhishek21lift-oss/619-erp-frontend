@@ -53,6 +53,30 @@ function buildCsp(env = process.env, opts = {}) {
   const supabaseHost = hostOf(env.NEXT_PUBLIC_SUPABASE_URL) || '*.supabase.co';
   const apiOrigin = originOf(env.NEXT_PUBLIC_API_URL);
 
+  // ── Why the Sentry ingest host is listed ──────────────────────────────────
+  //
+  // The browser SDK ships each envelope as an XHR to
+  // `https://<org>.ingest.sentry.io` — a third-party request, which is exactly
+  // what connect-src governs. With a DSN set and no ingest host listed, the
+  // browser refuses the POST and the SDK sees a transport failure. Nothing
+  // surfaces visibly: the console looks healthy, the DSN looks accepted, and
+  // events simply never arrive. "Sentry is empty" is indistinguishable from
+  // "nothing has broken yet", which is why this reads as a config gap rather
+  // than a bug for a long time.
+  //
+  // Derived from the DSN, exactly like the two origins above, so:
+  //   · an unset DSN contributes NO host — the policy is byte-identical to what
+  //     it was, which is the property the test pins;
+  //   · a self-hosted relay or a region-specific ingest host works without a
+  //     code change, where a hardcoded sentry.io would block it and look
+  //     identical to Sentry being broken.
+  //
+  // Origin, not just host: a DSN's public key is not a secret, but there is no
+  // reason to widen past the origin, and the port is carried for a relay on a
+  // non-default one.
+  const sentryOrigin = originOf(env.NEXT_PUBLIC_SENTRY_DSN);
+  const sentryConnect = sentryOrigin ? ` ${sentryOrigin}` : '';
+
   // ── Why the wss:// origin is listed SEPARATELY ────────────────────────────
   //
   // `https://api.example.com` in connect-src does NOT permit
@@ -127,7 +151,7 @@ function buildCsp(env = process.env, opts = {}) {
 
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/",
     `img-src 'self' data: blob: https://${supabaseHost} https://lh3.googleusercontent.com`,
-    `connect-src 'self' https://${supabaseHost}${apiConnect} https://accounts.google.com`,
+    `connect-src 'self' https://${supabaseHost}${apiConnect}${sentryConnect} https://accounts.google.com`,
     "font-src 'self' https://fonts.gstatic.com",
     "media-src 'self' blob:",
     "worker-src 'self' blob:",
