@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, Check, FileSignature, UserRound } from 'lucide-react';
+import { AlertTriangle, Check, FileSignature } from 'lucide-react';
 import type { InformedConsentFormData } from './types';
 import { EXERCISE_PROGRAMME_CONSENT_PARAGRAPHS, EXERCISE_PROGRAMME_CHECKBOX_LABEL } from './types';
 
@@ -25,31 +25,18 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
         </div>
       </div>
 
-      {/* The client this consent is for, read-only. These details are copied
-          from the client profile onto the signed record; they are edited on
-          the client's profile, not here, so the consent never holds a second,
-          diverging copy of them. */}
-      <div className="rounded-[16px] p-5 space-y-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-        <div className="flex items-center gap-2">
-          <UserRound size={15} style={{ color: 'var(--text-muted)' }} aria-hidden />
-          <p className="text-[12px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Client details</p>
-        </div>
-        <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-[13px] sm:grid-cols-3">
-          {([
-            ['Name', form.fullName], ['Mobile', form.mobile], ['Email', form.email],
-            ['Emergency contact', form.emergencyContact], ['Emergency phone', form.emergencyPhone],
-          ] as const).map(([k, v]) => (
-            <div key={k} className="min-w-0">
-              <dt style={{ color: 'var(--text-muted)' }}>{k}</dt>
-              <dd className="truncate font-[650]" style={{ color: 'var(--text-primary)' }}>{v || '—'}</dd>
-            </div>
-          ))}
-          <div className="min-w-0 sm:col-span-3">
-            <dt style={{ color: 'var(--text-muted)' }}>Address</dt>
-            <dd className="whitespace-pre-line break-words font-[650]" style={{ color: 'var(--text-primary)' }}>{form.address || '—'}</dd>
-          </div>
-        </dl>
-      </div>
+      {/* The client's identity is not shown here. It is read from the client
+          profile onto the signed record — full_name, gender, dob, mobile,
+          email, emergency contact, emergency phone, address, occupation — and
+          the profile is where it is edited, so the consent never held a second,
+          diverging copy of it on screen.
+
+          The values are still LOADED and still SAVED: this is a display
+          removal only. initInformedConsentForm + the page's profile autofill
+          fill the fields, buildCreatePayload/buildUpdatePayload send them, and
+          the columns on pt_informed_consents and the PDF are untouched, so
+          every existing record keeps its data. Removing the inputs earlier
+          (55f09d7d) had already left nothing editable here to display. */}
 
       {/* Verbatim consent text card */}
       <div className="rounded-[16px] p-5 sm:p-6 space-y-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>

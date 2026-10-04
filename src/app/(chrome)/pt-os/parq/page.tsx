@@ -27,7 +27,7 @@ import StepPastHistory from '@/components/pt-os/parq/StepPastHistory';
 import StepParqQuestionnaire from '@/components/pt-os/parq/StepParqQuestionnaire';
 import StepMedicalClearance from '@/components/pt-os/parq/StepMedicalClearance';
 import StepConsent from '@/components/pt-os/parq/StepConsent';
-import StepTrainerNotes from '@/components/pt-os/parq/StepTrainerNotes';
+
 import ParqCard from '@/components/pt-os/parq/ParqCard';
 import ScreeningNotice, { latestScreened, screeningIssues } from '@/components/pt-os/parq/ScreeningNotice';
 import { errorMessage } from '@/lib/forms/errors';
@@ -490,7 +490,6 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
           )}
           {step === 3 && <StepPastHistory form={form} set={set} error={errors.pastHistory} stepLabel={stepPositionLabel('pastHistory', riskLevel)} />}
           {step === 4 && <StepCurrentHealth form={form} set={set} error={errors.currentHealth} stepLabel={stepPositionLabel('currentHealth', riskLevel)} />}
-          {step === 7 && <StepTrainerNotes form={form} set={set} stepLabel={stepPositionLabel('trainerNotes', riskLevel)} />}
           {step === 5 && <StepConsent form={form} set={set} error={errors.consent} stepLabel={stepPositionLabel('consent', riskLevel)} resignRequired={resignRequired} />}
         </m.div>
       </div>

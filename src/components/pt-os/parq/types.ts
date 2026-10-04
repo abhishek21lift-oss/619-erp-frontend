@@ -169,10 +169,19 @@ export const STEPS = [
   { id: 2, key: 'medicalClearance', label: 'Medical Clearance', conditional: true },
   { id: 3, key: 'pastHistory', label: 'Past History' },
   { id: 4, key: 'currentHealth', label: 'Current Health' },
-  // The trainer's own findings — contraindications, precautions. The form
-  // always had these fields and sent them, but no step showed them, so they
-  // were saved blank on every screening.
-  { id: 7, key: 'trainerNotes', label: 'Trainer Notes' },
+  // A `trainerNotes` step used to sit here (id 7), between Current Health and
+  // Digital Consent. It is no longer shown: the trainer's own findings are
+  // recorded elsewhere, and an empty step between two steps of the client's own
+  // screening was a dead end to click through.
+  //
+  // Display-only removal. `trainer_notes` is still a column, still on
+  // ParqFormDetail, still read by mappers.ts, and still written by the submit
+  // payload — so a screening that already carries notes keeps them, and
+  // re-submitting an amended screening round-trips them untouched. Everything
+  // that walks the wizard derives from this array, so dropping the entry
+  // renumbers the stepper, nextStepId, prevStepId and stepPositionLabel
+  // together; nothing else needed changing.
+  //
   // Digital Consent is the LAST step, so its primary button reads "Submit"
   // rather than "Next" — that falls out of `isLastStep`, which is
   // `nextStepId(step) == null`, rather than being special-cased anywhere.

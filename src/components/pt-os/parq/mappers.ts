@@ -206,7 +206,10 @@ export function buildFormPayload(form: ParqFormData, clientId: string): Record<s
         hospital: a.hospital || undefined,
         notes: a.notes || undefined,
       })),
-    // The notes the Trainer Notes step shows — and nothing it does not.
+    // The trainer's notes. No step shows them any more, but the column, the
+    // read above and this write are all untouched: a screening that already
+    // carries notes loads them and re-submits them unchanged. Removing the UI
+    // removed a way to ADD notes, not the ones on file.
     trainer_notes: {
       ...Object.fromEntries(TRAINER_NOTES_FIELDS.map((f) => [f.key, form.trainerNotes[f.key].trim()])),
       // Posture is recorded in the Posture assessment; an older note is kept.
