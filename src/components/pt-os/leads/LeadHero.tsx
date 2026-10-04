@@ -2,20 +2,42 @@
 
 // The Leads page header.
 //
-// This exists instead of reusing the shared PageHero because the reference
+// This exists instead of reusing the shared PageHero because the
 // design is a specific thing the shared hero is not built to be:
 //
-//   · a SOLID deep-blue surface, not the shared hero's dark-navy gradient with
-//     its yellow and periwinkle glows;
-//   · a visible grid texture across the whole card;
-//   · and — the reason a variant prop could not have done it — the two actions
-//     live INSIDE the card, full-width and stacked, not beside the title.
+//   · a saturated, colourful surface, not the shared hero's
+//     dark-navy gradient with its yellow and periwinkle glows;
+//   · two actions INSIDE the card, full-width and stacked, not
+//     beside the title from `sm` up.
 //
-// PageHero is used by every page in the studio app. Restyling it to match a
-// single reference would change all of them, which is out of scope for this
-// task. So this is a Leads-only surface, and the page renders it in place of
-// PageHero. Everything it needs it takes as props or children — it fetches
-// nothing and owns no state.
+// PageHero is used by every page in the studio app. Restyling it to
+// match a single page would change all of them, which is out of
+// scope. So this is a Leads-only surface, and the page renders it in
+// place of PageHero. Everything it needs it takes as props or
+// children — it fetches nothing and owns no state.
+//
+// ── On "colourful" inside a five-family palette ───────────────────
+//
+// The app's palette is deliberately narrow — blue, emerald, amber,
+// red, gray, 47 values, and palette.test.ts refuses a hex outside
+// them (comments included). KpiCard.tsx still carries accent names
+// called violet, rose and sky, but those resolve to blue and red,
+// because a previous pass ran them through the same rule. So
+// "colourful" here cannot mean purple-and-teal: it has to be built
+// from what the palette actually has.
+//
+// Which is enough, and is how iOS does it anyway: not many hues, but
+// several SATURATED ones placed as soft light rather than as flat
+// fills. A deep blue base with an emerald bloom upper-right and an
+// azure bloom (blue 950) lower-left — the aurora in the iOS 18
+// wallpapers. The page behind it stays white and light grey; all the
+// saturation lives in this one card, so it reads as the focal point
+// rather than as an app that has lost control of its palette.
+//
+// The blooms are the technique PageHero already uses for its
+// decorative layers (absolutely-positioned circles, radial-gradient
+// fill, heavy blur), so this is the house style applied more
+// saturated, not a new idea.
 
 import type { ReactNode } from 'react';
 import { UserSearch, Plus } from 'lucide-react';
@@ -26,51 +48,61 @@ interface LeadHeroProps {
   onAddLead: () => void;
 }
 
+/** One blurred colour bloom. Positioned and coloured by the caller. */
+function Bloom({ className, colour }: { className: string; colour: string }) {
+  return (
+    <div
+      aria-hidden
+      className={`pointer-events-none absolute rounded-full ${className}`}
+      style={{ background: `radial-gradient(circle, ${colour} 0%, transparent 72%)`, filter: 'blur(36px)' }}
+    />
+  );
+}
+
 export function LeadHero({ followUpAction, onAddLead }: LeadHeroProps) {
   return (
     <div
       className="relative overflow-hidden rounded-[28px] px-5 pb-5 pt-6 sm:rounded-[30px] sm:px-8 sm:pb-7 sm:pt-7"
       style={{
-        // Solid deep blue, lighter toward the top-right and settling to navy at
-        // the bottom-left. Flat, with tonal depth only — no glows.
-        // Palette blue 700 → 800 → 900. The first draft used three hand-picked
-        // blues that are off-palette; palette.test.ts scans for hex outside the
-        // five families (comments included, which is why they are not written
-        // out here) and refused them. These three are the same visual idea — a
-        // saturated blue settling into navy — from tokens the app already uses.
-        background:
-          'radial-gradient(120% 130% at 88% 8%, #0271EB 0%, transparent 58%),'
-          + 'linear-gradient(158deg, #0050AD 0%, #003F87 46%, #002D61 100%)',
+        // Saturated blue that the blooms then light. Palette blue 700
+        // → 800 → 900. The first draft of this file used three
+        // hand-picked blues that are off-palette; palette.test.ts scans
+        // for hex outside the five families (comments included) and
+        // refused them. These are the same visual idea from tokens the
+        // app already uses.
+        background: 'linear-gradient(155deg, #0067E0 0%, #0050AD 46%, #002D61 100%)',
         boxShadow:
-          '0 22px 48px -20px rgba(0,45,97,0.55), inset 0 1px 0 rgba(255,255,255,0.14)',
+          '0 22px 48px -20px rgba(0,45,97,0.55), inset 0 1px 0 rgba(255,255,255,0.20)',
       }}
     >
-      {/* The reference card carries a fine square grid across its whole
-          surface. Two repeating-linear-gradients are cheaper than the SVG
-          <pattern> the shared hero uses and render identically here, because
-          this texture never has to animate. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          opacity: 1,
-          backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.075) 1px, transparent 1px),'
-            + 'linear-gradient(90deg, rgba(255,255,255,0.075) 1px, transparent 1px)',
-          backgroundSize: '34px 34px',
-        }}
-      />
+      {/* Colour. All decorative, all behind the content, none
+          interactive — a hero you cannot read is not a hero. The
+          emerald bloom upper-right and the azure bloom lower-left sit
+          on the blue base; a soft lift from the bottom edge reads as
+          light coming up through the card rather than as a stain on it. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <Bloom className="-right-12 -top-14 h-72 w-72" colour="rgba(16,185,129,0.80)" />
+        <Bloom className="-bottom-16 -left-14 h-72 w-72" colour="rgba(28,163,249,0.85)" />
+        <div
+          className="absolute inset-x-0 bottom-0 h-56"
+          style={{ background: 'linear-gradient(0deg, rgba(28,163,249,0.16) 0%, transparent 100%)' }}
+        />
+      </div>
 
       <div className="relative z-10">
-        {/* Icon + title. The reference puts the icon in a translucent bordered
-            square roughly twice the size the shared hero uses. */}
+        {/* Icon + title. The reference puts the icon in a translucent
+            bordered square roughly twice the size the shared hero uses.
+            Frosted — translucent fill, a light ring, and a backdrop
+            blur so the bloom behind it shows through. */}
         <div className="flex items-start gap-4">
           <span
             className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] text-white sm:h-[64px] sm:w-[64px]"
             style={{
-              background: 'rgba(255,255,255,0.13)',
-              border: '1px solid rgba(255,255,255,0.26)',
-              backdropFilter: 'blur(6px)',
+              background: 'rgba(255,255,255,0.18)',
+              border: '1px solid rgba(255,255,255,0.32)',
+              backdropFilter: 'blur(14px) saturate(160%)',
+              WebkitBackdropFilter: 'blur(14px) saturate(160%)',
+              boxShadow: '0 8px 20px -8px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.28)',
             }}
           >
             <UserSearch size={27} strokeWidth={2} />
@@ -85,16 +117,16 @@ export function LeadHero({ followUpAction, onAddLead }: LeadHeroProps) {
                 ~246px wide beside the icon, and the reference sizes its
                 subtitle well under this heading. 12px is the size that fits
                 without truncating. */}
-            <p className="mt-1 text-[12px] leading-snug sm:text-[14px]" style={{ color: 'rgba(255,255,255,0.78)' }}>
+            <p className="mt-1 text-[12px] leading-snug sm:text-[14px]" style={{ color: 'rgba(255,255,255,0.80)' }}>
               Prospective clients, before they enrol in PT
             </p>
           </div>
         </div>
 
-        {/* Full-width stacked actions. Draft follow-ups first and secondary —
-            the reference orders it above the primary, and Add Lead is the one
-            you reach for most often but it reads as the primary because it is
-            solid white. */}
+        {/* Full-width stacked actions. Draft follow-ups first and
+            secondary — the reference orders it above the primary, and
+            Add Lead is the one you reach for most often but it reads as
+            the primary because it is solid white. */}
         <div className="mt-5 flex flex-col gap-2.5 sm:mt-6">
           <div className="w-full">{followUpAction}</div>
 
@@ -102,7 +134,10 @@ export function LeadHero({ followUpAction, onAddLead }: LeadHeroProps) {
             type="button"
             onClick={onAddLead}
             className="inline-flex h-[54px] w-full cursor-pointer items-center justify-center gap-2 rounded-[15px] text-[14px] font-[720] text-[#0F172A] transition active:scale-[0.985] sm:h-[52px] sm:text-[14px]"
-            style={{ background: '#fff', boxShadow: '0 8px 20px -8px rgba(0,0,0,0.35)' }}
+            style={{
+              background: 'rgba(255,255,255,0.96)',
+              boxShadow: '0 10px 24px -10px rgba(0,0,0,0.40), inset 0 1px 0 rgba(255,255,255,0.9)',
+            }}
           >
             <Plus size={18} strokeWidth={2.4} /> Add Lead
           </button>
