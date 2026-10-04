@@ -70,6 +70,24 @@ export function initInformedConsentForm(): InformedConsentFormData {
 }
 
 export function formFromRecord(r: InformedConsent): InformedConsentFormData {
+  // A stored consent date is only meaningful inside the window it can be
+  // signed in. A DRAFT's date is provisional — nothing has been signed yet —
+  // but it was still written to the record by the save that ran at the end of
+  // the previous step, and the backend refuses to save it again once it is
+  // more than ~7 days old (updateSchema's refine on exercise_consent_date).
+  //
+  // So a trainer who started a consent, walked away, and came back after a
+  // fortnight resumed a form holding a date the server would reject. Step 1's
+  // Next calls persist(), the PATCH was refused, and handleNext returned before
+  // setStep — the button did nothing, on every attempt, with only a generic
+  // toast. Worse, the date they were shown on step 3 was one no signature could
+  // ever carry, and step 3 refuses it too, so the wizard was a dead end.
+  //
+  // A client who signs today did not sign last month: outside the window, the
+  // date reads as today. Inside it, the record's own date is kept, so a consent
+  // signed three days ago still shows the day it was actually signed.
+  const storedDate = r.exercise_consent_date ? String(r.exercise_consent_date).slice(0, 10) : '';
+  const exerciseConsentDate = storedDate && !consentDateIssue(storedDate) ? storedDate : todayStr();
   return {
     fullName: r.full_name || '',
     gender: r.gender || '',
@@ -82,7 +100,7 @@ export function formFromRecord(r: InformedConsent): InformedConsentFormData {
     occupation: r.occupation || '',
     acknowledgements: r.acknowledgements || {},
     exerciseConsentChecked: r.exercise_consent_checked ?? false,
-    exerciseConsentDate: r.exercise_consent_date ? String(r.exercise_consent_date).slice(0, 10) : todayStr(),
+    exerciseConsentDate,
     exerciseConsentSignature: r.exercise_consent_signature || '',
     physicianAdvisedAgainst: r.physician_advised_against ?? null,
     physicianName: r.physician_name || '',
@@ -208,7 +226,29 @@ export const FINAL_ACK_FIELDS: { key: keyof InformedConsentAcknowledgements; lab
 export function buildCreatePayload(form: InformedConsentFormData, clientId: string): Record<string, unknown> {
   return {
     client_id: clientId,
-    full_name: form.fullName,
+    // `|| null` on every field, full_name included, and the asymmetry with
+    // buildUpdatePayload below is deliberate — do not "fix" it there.
+    //
+    // The server treats a body value as an OVERRIDE of the profile snapshot it
+    // is otherwise going to fill the row from:
+    //
+    //     values[key] = b[key] !== undefined && b[key] !== null ? b[key] : snapshot[key]
+    //     if (!values.full_name) return 400 FULL_NAME_REQUIRED
+    //
+    // so null asks for the snapshot and '' suppresses it. This form's identity
+    // is filled from the client profile on mount, and that fetch is
+    // best-effort — its catch is a comment calling it non-fatal. When it
+    // failed, fullName was '' and this payload asked the server to override a
+    // name it already had with nothing, so the create was refused and step 1's
+    // Next returned before setStep: a dead button, with nowhere on the page to
+    // type the name that would have fixed it (the inputs were made read-only in
+    // 55f09d7d, and the read-only summary has since been taken off the page).
+    //
+    // createSchema declares full_name `.optional().nullable()` for exactly this,
+    // so null is the way to say "use the profile". updateSchema is
+    // `.optional()` WITHOUT `.nullable()` — null there is a 400, which is why
+    // buildUpdatePayload must keep sending a string.
+    full_name: form.fullName || null,
     gender: form.gender || null,
     dob: form.dob || null,
     mobile: form.mobile || null,
