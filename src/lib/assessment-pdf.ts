@@ -12,9 +12,22 @@ type Row = Record<string, unknown>;
 
 const CATEGORY_BY_SCORE: Record<number, string> = { 95: 'Excellent', 80: 'Good', 60: 'Average', 40: 'Below Average', 20: 'Poor' };
 
+// Every value rendered into the report is escaped on the way in, because this
+// HTML is written into a same-origin popup where the enforced CSP still allows
+// inline script. It is escaped HERE, at the value boundary, rather than at the
+// end: the template below legitimately contains markup we authored — <strong>,
+// <li>, <em>, and entities like `&amp;` in section titles — so escaping the
+// finished string would print those tags literally and break every report.
+//
+// This matters most for the AI block. aiAnalysis is model output, and the
+// prompt it answers is built from trainer-entered assessment text, so an
+// injected instruction can come back out of the model as markup. Before this
+// it went straight into document.write() unescaped.
+import { escapeHtml as e } from './escapeHtml';
+
 function v(val: unknown, unit = ''): string {
   if (val === null || val === undefined || val === '') return '—';
-  return `${val}${unit}`;
+  return e(`${val}${unit}`);
 }
 
 function scoreLabel(score: unknown): string {
@@ -35,11 +48,16 @@ function list(items: string[]): string {
   return `<ul>${items.map((i) => `<li>${i}</li>`).join('')}</ul>`;
 }
 
-function generateAssessmentReportHTML(assessment: Row, clientName: string, aiAnalysis?: AiFitnessTestAnalysis | null): string {
-  const date = String(assessment.assessment_date ?? '').slice(0, 10) || '—';
-  const type = String(assessment.assessment_type ?? '').replace(/_/g, ' ') || '—';
-  const number = assessment.assessment_number != null ? String(assessment.assessment_number) : '—';
-  const coach = String(assessment.trainer_name ?? '') || '—';
+// Exported for print-popup-xss.test.ts. The DOM assertions there are the only
+// check that escaping happens at the value boundary rather than somewhere that
+// would break the report's own markup.
+export function generateAssessmentReportHTML(assessment: Row, clientName: string, aiAnalysis?: AiFitnessTestAnalysis | null): string {
+  const date = e(String(assessment.assessment_date ?? '').slice(0, 10)) || '—';
+  // Underscores become spaces for display, and the result is escaped — a
+  // trainer name is a database value, not a literal.
+  const type = e(String(assessment.assessment_type ?? '').replace(/_/g, ' ')) || '—';
+  const number = assessment.assessment_number != null ? e(String(assessment.assessment_number)) : '—';
+  const coach = e(String(assessment.trainer_name ?? '')) || '—';
 
   const vitals = section('Blood Pressure', [
     field('Systolic', v(assessment.bp_systolic, ' mmHg')),
@@ -120,20 +138,27 @@ function generateAssessmentReportHTML(assessment: Row, clientName: string, aiAna
   </div>`;
 
   const notesParts: string[] = [];
-  if (assessment.posture_notes) notesParts.push(field('Posture Notes', String(assessment.posture_notes)));
-  if (assessment.health_notes) notesParts.push(field('Health Notes', String(assessment.health_notes)));
-  if (assessment.trainer_notes) notesParts.push(field('Assessment Notes', String(assessment.trainer_notes)));
+  // These three are free-text written by a trainer about a client, then fed to
+  // the AI prompt. Escaped like everything else — they are the most likely
+  // place for markup to enter this document.
+  if (assessment.posture_notes) notesParts.push(field('Posture Notes', e(String(assessment.posture_notes))));
+  if (assessment.health_notes) notesParts.push(field('Health Notes', e(String(assessment.health_notes))));
+  if (assessment.trainer_notes) notesParts.push(field('Assessment Notes', e(String(assessment.trainer_notes))));
   const notes = notesParts.length ? section('Notes', notesParts.join('')) : '';
 
+  // LLM OUTPUT. Untrusted in the strongest sense available here: it is a
+  // model's reply to a prompt built from trainer-entered free text, so an
+  // injected instruction can come back as markup. Every field below is
+  // escaped; the <strong>/<li>/<em> tags around them are ours and stay.
   const ai = aiAnalysis ? `<div class="section ai">
     <h2>AI Recommendations</h2>
-    <p>${aiAnalysis.summary}</p>
-    <p class="muted">${aiAnalysis.overall_assessment}</p>
-    ${aiAnalysis.strengths.length ? `<h3>Strengths</h3>${list(aiAnalysis.strengths)}` : ''}
-    ${aiAnalysis.areas_to_improve.length ? `<h3>Areas to Improve</h3>${list(aiAnalysis.areas_to_improve)}` : ''}
-    ${aiAnalysis.risk_flags.length ? `<h3>Risk Flags</h3>${list(aiAnalysis.risk_flags.map((r) => `<strong>${r.flag}</strong> (${r.severity}) — ${r.action}`))}` : ''}
-    ${aiAnalysis.recommendations.length ? `<h3>Recommendations</h3>${list([...aiAnalysis.recommendations].sort((a, b) => a.priority - b.priority).map((r) => `<strong>${r.priority}. ${r.focus_area}</strong> — ${r.action}`))}` : ''}
-    ${aiAnalysis.suggested_next_test_focus ? `<p class="muted"><em>Next test focus: ${aiAnalysis.suggested_next_test_focus}</em></p>` : ''}
+    <p>${e(aiAnalysis.summary)}</p>
+    <p class="muted">${e(aiAnalysis.overall_assessment)}</p>
+    ${aiAnalysis.strengths.length ? `<h3>Strengths</h3>${list(aiAnalysis.strengths.map(e))}` : ''}
+    ${aiAnalysis.areas_to_improve.length ? `<h3>Areas to Improve</h3>${list(aiAnalysis.areas_to_improve.map(e))}` : ''}
+    ${aiAnalysis.risk_flags.length ? `<h3>Risk Flags</h3>${list(aiAnalysis.risk_flags.map((r) => `<strong>${e(r.flag)}</strong> (${e(r.severity)}) — ${e(r.action)}`))}` : ''}
+    ${aiAnalysis.recommendations.length ? `<h3>Recommendations</h3>${list([...aiAnalysis.recommendations].sort((a, b) => a.priority - b.priority).map((r) => `<strong>${e(r.priority)}. ${e(r.focus_area)}</strong> — ${e(r.action)}`))}` : ''}
+    ${aiAnalysis.suggested_next_test_focus ? `<p class="muted"><em>Next test focus: ${e(aiAnalysis.suggested_next_test_focus)}</em></p>` : ''}
   </div>` : '';
 
   return `<!DOCTYPE html><html><head><title>Fitness Assessment ${number}</title>
@@ -161,7 +186,7 @@ p{font-size:14px;font-weight:600;margin:4px 0}
 </style></head><body>
 ${printWindowCloseButtonHtml()}
 <h1>Fitness Testing Report</h1>
-<p style="color:#64748b;font-weight:500;margin-bottom:24px">${clientName}</p>
+<p style="color:#64748b;font-weight:500;margin-bottom:24px">${e(clientName)}</p>
 <div class="top">
   ${field('Assessment', number)}
   ${field('Date', date)}

@@ -35,6 +35,7 @@ import RecoveryPanel from '@/components/pt-os/client/RecoveryPanel';
 import PhotosPanel from '@/components/pt-os/client/PhotosPanel';
 import type { ClientRecovery, MeGoal, MeGoals } from '@/lib/api';
 import { printWindowCloseButtonHtml } from '@/lib/printWindowChrome';
+import { escapeHtml, escapeImageDataUrl } from '@/lib/escapeHtml';
 import { errorMessage } from '@/lib/forms/errors';
 import { whatsAppHref } from '@/lib/phone';
 import { amber, blue, emerald, gray, red, rgba } from '@/lib/palette';
@@ -335,12 +336,16 @@ function QrCheckinCard({ clientId, clientName }: { clientId: string; clientName:
     if (!dataUrl) return;
     const w = window.open('', '_blank', 'width=420,height=560');
     if (!w) return;
+    // This popup is same-origin (window.open('') inherits the opener's origin)
+    // and the enforced CSP still allows inline script, so clientName — a
+    // database value — is escaped and the QR src is validated as an image data
+    // URL rather than merely quoted. See lib/escapeHtml.ts.
     w.document.write(
-      `<html><head><title>${clientName} — Check-in QR</title></head>` +
+      `<html><head><title>${escapeHtml(clientName)} — Check-in QR</title></head>` +
       `<body style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif;">` +
       printWindowCloseButtonHtml() +
-      `<img src="${dataUrl}" width="280" height="280" alt="Check-in QR code" />` +
-      `<p style="margin-top:12px;font-size:16px;font-weight:700;">${clientName}</p>` +
+      `<img src="${escapeImageDataUrl(dataUrl)}" width="280" height="280" alt="Check-in QR code" />` +
+      `<p style="margin-top:12px;font-size:16px;font-weight:700;">${escapeHtml(clientName)}</p>` +
       `<p style="margin-top:2px;font-size:12px;color:#666;">Scan at check-in</p>` +
       `</body></html>`
     );
