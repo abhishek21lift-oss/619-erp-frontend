@@ -149,6 +149,26 @@ describe('streamAiChat', () => {
     await expect(streamAiChat({ message: 'hi' })).rejects.toThrow(/session has expired/i);
   });
 
+  it('surfaces the backend JSON error instead of a bare status', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 501,
+      text: async () => JSON.stringify({ error: 'AI not configured', message: 'An API key is missing.' }),
+    }));
+    await expect(streamAiChat({ message: 'hi' })).rejects.toThrow('An API key is missing.');
+  });
+
+  it('reads the nested quota envelope', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      text: async () => JSON.stringify({
+        error: { code: 'AI_QUOTA_EXCEEDED', message: 'This studio has used its AI allowance for this month.' },
+      }),
+    }));
+    await expect(streamAiChat({ message: 'hi' })).rejects.toThrow(/allowance/i);
+  });
+
   // Stop is a decision, not a failure. Whatever streamed stays on screen.
   it('returns the partial text when the caller aborts mid-stream', async () => {
     const controller = new AbortController();

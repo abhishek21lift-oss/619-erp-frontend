@@ -13,6 +13,7 @@ import {
   NumberField, SelectField, TextField, ChoiceChips, useStandaloneField,
 } from '@/components/ui/form';
 import { aiDietInputSchema, stated } from '@/lib/forms/schemas/aiGenerator';
+import { AiClientPicker, type AiClientOption } from '@/components/ai/AiClientPicker';
 
 const ACCENT = '#10B981';
 const ACCENT_SOFT = '#34D399';
@@ -110,9 +111,12 @@ function MealCard({ meal, index }: { meal: AiDietMeal; index: number }) {
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 export default function DietGeneratorPage() {
   // Same correction as the workout generator: /api/ai/diet/generate requires
-  // a client_id and this page never sent one, so every generation from it
-  // answered 400. The id comes from the query string.
-  const clientId = useSearchParams().get('client_id');
+  // a client_id. The id comes from the query string when a profile, the
+  // assistant or the AI Coach sends one — and from the picker below when the
+  // page is opened bare from the nav or the landing page.
+  const linkedClientId = useSearchParams().get('client_id');
+  const [pickedClient, setPickedClient] = useState<AiClientOption | null>(null);
+  const clientId = linkedClientId ?? (pickedClient ? String(pickedClient.id) : null);
   const [form, setForm] = useState({
     age: '', gender: 'male', weight_kg: '', height_cm: '',
     activity_level: 'moderately_active', goal: 'maintenance',
@@ -156,7 +160,7 @@ export default function DietGeneratorPage() {
   const handleGenerate = async () => {
     if (generatingRef.current) return;
     if (!clientId) {
-      setError('Open this generator from a client profile — a plan is written for a specific client.');
+      setError('Select a client above — a plan is written for a specific client.');
       return;
     }
 
@@ -250,6 +254,11 @@ export default function DietGeneratorPage() {
               <div className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>Calories and macros are calculated from these</div>
             </div>
           </div>
+
+          {/* Shown only on a bare entry (nav, landing, unattached Coach). */}
+          {!linkedClientId && (
+            <AiClientPicker selected={pickedClient} onSelect={setPickedClient} />
+          )}
 
           {/* No asterisks. These three are OPTIONAL and the server says so: it
               prefers its own record every time, and a blank box means "the
