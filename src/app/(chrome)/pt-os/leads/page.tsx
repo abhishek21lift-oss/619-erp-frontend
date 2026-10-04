@@ -279,24 +279,54 @@ export default function LeadsPage() {
             />
 
             {/* KPIs — 2x2 on a phone, 4 across from `sm`, which is the
-                reference's arrangement. Counts come from the loaded leads and
-                the status values the backend actually uses; nothing here is
-                hardcoded, so a zero is a real zero. */}
+                reference's arrangement. Each card takes its OWN
+                accent rather than three-of-the-same-blue, which is
+                what makes the row read as colourful once the hero's
+                saturation is spent. Semantics drive the choice: In
+                Progress is work outstanding so it is amber, Converted
+                is a success so it is emerald, the two that are just
+                "leads we have" stay in blue at different tones. Counts
+                come from the loaded leads and the status values the
+                backend actually uses — nothing here is hardcoded, so a
+                zero is a real zero. */}
             <div className="mt-4 grid grid-cols-2 gap-3.5 sm:mt-5 sm:grid-cols-4 sm:gap-4">
               {[
                 { label: 'Total Leads', value: counts.total, icon: <Users size={21} className="text-white" strokeWidth={2.1} />, from: '#0271EB', to: '#0067E0' },
-                { label: 'New', value: counts.new, icon: <Target size={21} className="text-white" strokeWidth={2.1} />, from: '#0271EB', to: '#0067E0' },
-                { label: 'In Progress', value: counts.inProgress, icon: <PhoneCall size={21} className="text-white" strokeWidth={2.1} />, from: '#0271EB', to: '#0067E0' },
+                { label: 'New', value: counts.new, icon: <Target size={21} className="text-white" strokeWidth={2.1} />, from: '#3B8DF5', to: '#0271EB' },
+                { label: 'In Progress', value: counts.inProgress, icon: <PhoneCall size={21} className="text-white" strokeWidth={2.1} />, from: '#F59E0B', to: '#D97706' },
                 { label: 'Converted', value: counts.converted, icon: <TrendingUp size={21} className="text-white" strokeWidth={2.1} />, from: '#10B981', to: '#059669' },
               ].map((c) => (
                 <div
                   key={c.label}
-                  className="rounded-[22px] p-4 sm:p-5"
-                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 10px -2px rgba(15,23,42,0.07)' }}
+                  className="relative overflow-hidden rounded-[22px] p-4 sm:p-5"
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
+                    // Two-part shadow: a tight contact shadow plus a
+                    // wider tinted one, which is what lifts a white card
+                    // off a light grey page without the heavy drop
+                    // shadow the old card used.
+                    boxShadow: `0 1px 2px rgba(15,23,42,0.04), 0 10px 24px -14px ${c.to}59`,
+                  }}
                 >
+                  {/* A hairline of the card's own accent along the top
+                      edge. Sits behind the content and is clipped by
+                      the radius. */}
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-0 top-0 h-[3px]"
+                    style={{ background: `linear-gradient(90deg, ${c.from}, ${c.to})` }}
+                  />
+
+                  {/* Frosted tile: translucent over the card, ringed,
+                      blurred — the same material cue as the hero icon,
+                      at card scale. */}
                   <div
-                    className="mb-3.5 flex h-12 w-12 items-center justify-center rounded-[15px]"
-                    style={{ background: `linear-gradient(140deg, ${c.from}, ${c.to})`, boxShadow: `0 6px 16px -6px ${c.to}` }}
+                    className="mb-3.5 flex h-12 w-12 items-center justify-center rounded-[15px] text-white"
+                    style={{
+                      background: `linear-gradient(140deg, ${c.from}, ${c.to})`,
+                      boxShadow: `0 8px 18px -8px ${c.to}, inset 0 1px 0 rgba(255,255,255,0.32)`,
+                    }}
                   >
                     {c.icon}
                   </div>
@@ -320,8 +350,13 @@ export default function LeadsPage() {
                 aria-label="Search leads"
                 type="text" placeholder="Search leads…" value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-[52px] w-full rounded-[15px] pl-12 pr-4 text-[15px] font-[500] outline-none transition-colors sm:max-w-sm"
-                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                className="h-[52px] w-full rounded-[15px] pl-12 pr-4 text-[15px] font-[500] outline-none transition-all focus:border-[#3B8DF5] sm:max-w-sm"
+                style={{
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-primary)',
+                  boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 8px 20px -16px rgba(15,23,42,0.30)',
+                }}
               />
             </div>
 
