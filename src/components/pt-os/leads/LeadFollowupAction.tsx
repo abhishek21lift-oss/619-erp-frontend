@@ -21,7 +21,20 @@ import { errorMessage } from '@/lib/forms/errors';
 
 const ACTION_ID = 'lead_followup';
 
-export default function LeadFollowupAction() {
+interface LeadFollowupActionProps {
+  /**
+   * 'default' — the page-surface treatment this button has always had.
+   * 'hero'    — the translucent treatment the Leads hero reference shows.
+   *
+   * A prop rather than a CSS override because the button's colours are inline
+   * styles, and an inline style beats any class a parent tries to put on it.
+   * Defaulting to the existing look keeps every other caller — and this
+   * component's own test — rendering exactly what they did before.
+   */
+  variant?: 'default' | 'hero';
+}
+
+export default function LeadFollowupAction({ variant = 'default' }: LeadFollowupActionProps = {}) {
   const [open, setOpen] = useState(false);
   const [planning, setPlanning] = useState(false);
   const [plan, setPlan] = useState<AiActionPlan | null>(null);
@@ -81,10 +94,14 @@ export default function LeadFollowupAction() {
       <button
         type="button"
         onClick={() => void propose()}
-        className="inline-flex h-[44px] items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] transition-transform active:scale-95"
-        style={{ background: 'rgba(0,103,224,0.10)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.22)' }}
+        className={variant === 'hero'
+          ? 'inline-flex h-[54px] w-full items-center justify-center gap-2 rounded-[15px] text-[14px] font-[700] transition-transform active:scale-[0.985] sm:h-[52px] sm:text-[14px]'
+          : 'inline-flex h-[44px] items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] transition-transform active:scale-95'}
+        style={variant === 'hero'
+          ? { background: 'rgba(255,255,255,0.10)', color: '#7FB4FF', border: '1px solid rgba(255,255,255,0.25)' }
+          : { background: 'rgba(0,103,224,0.10)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.22)' }}
       >
-        <Sparkles size={15} /> Draft follow-ups
+        <Sparkles size={variant === 'hero' ? 17 : 15} /> Draft follow-ups
       </button>
 
       <Dialog open={open} onOpenChange={(o) => { if (!o) close(); }}>

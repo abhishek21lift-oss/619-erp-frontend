@@ -72,7 +72,6 @@ describe('no page draws a container box around its own title', () => {
     ['app', 'attendance', 'page.tsx'],
     ['app', 'pt-os', 'clients', 'page.tsx'],
     ['app', 'pt-os', 'clients', 'birthdays', 'page.tsx'],
-    ['app', 'pt-os', 'leads', 'page.tsx'],
     ['app', 'pt-os', 'new-client', 'page.tsx'],
     ['app', 'pt-os', 'today', 'page.tsx'],
     ['app', 'pt-os', 'workout-plans', 'page.tsx'],
@@ -125,6 +124,25 @@ describe('no page draws a container box around its own title', () => {
     const s = src(...p);
     expect(s).toContain('<PageContainer>');
     expect(s).toContain('<PageHero');
+  });
+
+  // pt-os/leads is deliberately absent from the list above. It renders
+  // components/pt-os/leads/LeadHero instead of PageHero, because the design it
+  // has to match cannot be expressed through PageHero's API: the heading is
+  // fixed at 21px on a phone where the target is ~30px, and the actions slot
+  // sits BESIDE the title from `sm` up where the target stacks them full-width
+  // inside the card. PageHero is shared by every page, so changing it to suit
+  // one of them would change all of them.
+  //
+  // It is exempt from THAT assertion only. It still has to satisfy the slab
+  // header, gutter and page-main checks above, and it still uses the shared
+  // PageContainer — which is the part of the shell that actually matters for
+  // alignment and the bottom-nav offset.
+  it('pt-os/leads uses a Leads-specific hero, and still the shared container', () => {
+    const s = src('app', 'pt-os', 'leads', 'page.tsx');
+    expect(s).toContain('<LeadHero');
+    expect(s).toContain('<PageContainer>');
+    expect(s).not.toContain('<PageHero');
   });
 
   it.each(pages)('%s/%s/%s is off the double-padding legacy scaffold', (...p) => {
