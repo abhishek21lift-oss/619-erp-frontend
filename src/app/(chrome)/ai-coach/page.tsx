@@ -478,7 +478,12 @@ export default function AiCoachPage() {
                 <EmptyState
                   onPrompt={(p) => send(p)}
                   generators={visibleGenerators}
-                  onGenerator={(href) => router.push(href)}
+                  onGenerator={(href) => router.push(
+                    // An attached client qualifies every answer on screen, so a
+                    // generator opened from here carries it — otherwise the
+                    // generator refuses at Generate time for want of a client.
+                    selectedClient ? `${href}?client_id=${selectedClient.id}` : href
+                  )}
                   onKnowledgeBase={() => router.push('/ai-coach/knowledge')}
                 />
               ) : (

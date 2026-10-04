@@ -57,6 +57,32 @@ export interface AiStreamRequest {
 export class AiStreamError extends Error {}
 
 /**
+ * Pre-stream failures arrive as the backend's JSON error envelope —
+ * `{ error: 'AI not configured', message }` or `{ error: { code, message } }`
+ * for quota and rate limits — and collapsing all of that to "Request failed
+ * (503)" is what left trainers staring at a status code instead of an
+ * action. Read the envelope; fall back to the status only when there is
+ * nothing readable on the body.
+ */
+async function chatFailureMessage(res: Response): Promise<string> {
+  if (res.status === 401) return 'Your session has expired — please sign in again.';
+  try {
+    const raw = await res.text();
+    if (raw) {
+      const body = JSON.parse(raw) as { error?: unknown; message?: unknown };
+      if (typeof body.message === 'string' && body.message) return body.message;
+      if (typeof body.error === 'string' && body.error) return body.error;
+      const nested = (body.error as { message?: unknown } | null)?.message;
+      if (typeof nested === 'string' && nested) return nested;
+    }
+  } catch {
+    // HTML error page, SSE fragment, or an unreadable body — the status
+    // below is still more useful than a parse error about .json().
+  }
+  return `Request failed (${res.status}).`;
+}
+
+/**
  * Streams one answer. Resolves with the final text once the stream ends.
  *
  * Aborting is not an error: whatever streamed before the abort is returned,
@@ -94,11 +120,7 @@ export async function streamAiChat(
   }
 
   if (!res.ok || !res.body) {
-    throw new AiStreamError(
-      res.status === 401
-        ? 'Your session has expired — please sign in again.'
-        : `Request failed (${res.status}).`,
-    );
+    throw new AiStreamError(await chatFailureMessage(res));
   }
 
   const reader = res.body.getReader();

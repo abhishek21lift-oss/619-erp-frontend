@@ -120,6 +120,10 @@ const KNOWN = [
   'components/LandingPage.tsx:60',
   'components/LandingPage.tsx:67',
   'components/TrialBanner.tsx:19',
+  // Same reasoned silence as the progress-analysis picker this was extracted
+  // from (app/(chrome)/ai/progress-analysis/page.tsx:76): an optional client
+  // list whose load failure leaves an empty dropdown, never a wrong number.
+  'components/ai/AiClientPicker.tsx:35',
   'components/fitness/AiCoachPanel.tsx:128',
   'components/fitness/AiCoachPanel.tsx:134',
   'components/pt-os/analytics/LandmarkEditor.tsx:82',

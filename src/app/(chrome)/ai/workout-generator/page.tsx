@@ -13,6 +13,7 @@ import {
   NumberField, SelectField, TextField, ChoiceChips, useStandaloneField,
 } from '@/components/ui/form';
 import { aiWorkoutInputSchema, stated } from '@/lib/forms/schemas/aiGenerator';
+import { AiClientPicker, type AiClientOption } from '@/components/ai/AiClientPicker';
 
 const ACCENT = '#0067E0';
 const ACCENT_SOFT = '#0067E0';
@@ -133,9 +134,12 @@ export default function WorkoutGeneratorPage() {
   // the client profile all linked to it. The profile link already carries
   // ?client_id=, which is the one caller that would have worked.
   //
-  // So: the id comes from the query string, and without it the form says to
-  // pick a client instead of posting a request that cannot succeed.
-  const clientId = useSearchParams().get('client_id');
+  // So: the id comes from the query string when a profile, the assistant
+  // or the AI Coach sends one — and from the picker below when the page is
+  // opened bare from the nav or the landing page, where no client is known.
+  const linkedClientId = useSearchParams().get('client_id');
+  const [pickedClient, setPickedClient] = useState<AiClientOption | null>(null);
+  const clientId = linkedClientId ?? (pickedClient ? String(pickedClient.id) : null);
   const [form, setForm] = useState({
     age: '', gender: 'male', weight_kg: '', height_cm: '',
     goal: 'general_fitness', experience_level: 'beginner',
@@ -177,7 +181,7 @@ export default function WorkoutGeneratorPage() {
   const handleGenerate = async () => {
     if (generatingRef.current) return;
     if (!clientId) {
-      setError('Open this generator from a client profile — a programme is written for a specific client.');
+      setError('Select a client above — a programme is written for a specific client.');
       return;
     }
 
@@ -272,6 +276,13 @@ export default function WorkoutGeneratorPage() {
               <div className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>The plan is calibrated to everything below</div>
             </div>
           </div>
+
+          {/* Shown only on a bare entry (nav, landing, unattached Coach):
+              with ?client_id= the client is already known and this stays out
+              of the way. */}
+          {!linkedClientId && (
+            <AiClientPicker selected={pickedClient} onSelect={setPickedClient} />
+          )}
 
           {/* No asterisks. These three are OPTIONAL and the server says so: it
               prefers its own record every time, and a blank box means "the
