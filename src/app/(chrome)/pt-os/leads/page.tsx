@@ -8,11 +8,12 @@ import {
   ArrowRightCircle, X, Check, Loader2, Users, TrendingUp, Target, PhoneCall,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, EmptyState, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
+import { Button, EmptyState, PageContainer, PullToRefresh } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { LeadFormFields, SOURCE_OPTIONS, emptyLeadForm } from '@/components/pt-os/leads/LeadFormFields';
 import type { LeadFormState } from '@/components/pt-os/leads/LeadFormFields';
 import LeadFollowupAction from '@/components/pt-os/leads/LeadFollowupAction';
+import { LeadHero } from '@/components/pt-os/leads/LeadHero';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
 import type { PtLead } from '@/lib/api';
@@ -272,64 +273,76 @@ export default function LeadsPage() {
             max-w-[1600px] with mt-1. */}
         <PageContainer>
 
-            <PageHero
-              icon={<UserSearch size={20} />}
-              title="Leads"
-              subtitle="Prospective clients, before they enrol in PT"
-              actions={(
-                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                  <LeadFollowupAction />
-                  <button
-                    type="button"
-                    onClick={() => router.push('/pt-os/leads/new')}
-                    className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
-                    style={{ background: '#fff', color: '#0F172A' }}>
-                    <Plus size={16} /> Add Lead
-                  </button>
-                </div>
-              )}
+            <LeadHero
+              followUpAction={<LeadFollowupAction variant="hero" />}
+              onAddLead={() => router.push('/pt-os/leads/new')}
             />
 
-            {/* KPIs */}
-            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {/* KPIs — 2x2 on a phone, 4 across from `sm`, which is the
+                reference's arrangement. Counts come from the loaded leads and
+                the status values the backend actually uses; nothing here is
+                hardcoded, so a zero is a real zero. */}
+            <div className="mt-4 grid grid-cols-2 gap-3.5 sm:mt-5 sm:grid-cols-4 sm:gap-4">
               {[
-                { label: 'Total Leads', value: counts.total, icon: <Users size={16} className="text-white" />, from: '#0067e0', to: '#0067e0' },
-                { label: 'New', value: counts.new, icon: <Target size={16} className="text-white" />, from: '#0067e0', to: '#0067e0' },
-                { label: 'In Progress', value: counts.inProgress, icon: <PhoneCall size={16} className="text-white" />, from: '#0067e0', to: '#0067e0' },
-                { label: 'Converted', value: counts.converted, icon: <TrendingUp size={16} className="text-white" />, from: '#10b981', to: '#059669' },
+                { label: 'Total Leads', value: counts.total, icon: <Users size={21} className="text-white" strokeWidth={2.1} />, from: '#0271EB', to: '#0067E0' },
+                { label: 'New', value: counts.new, icon: <Target size={21} className="text-white" strokeWidth={2.1} />, from: '#0271EB', to: '#0067E0' },
+                { label: 'In Progress', value: counts.inProgress, icon: <PhoneCall size={21} className="text-white" strokeWidth={2.1} />, from: '#0271EB', to: '#0067E0' },
+                { label: 'Converted', value: counts.converted, icon: <TrendingUp size={21} className="text-white" strokeWidth={2.1} />, from: '#10B981', to: '#059669' },
               ].map((c) => (
-                <div key={c.label} className="rounded-[16px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-                  <div className="mb-2.5 flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: `linear-gradient(135deg, ${c.from}, ${c.to})` }}>
+                <div
+                  key={c.label}
+                  className="rounded-[22px] p-4 sm:p-5"
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 10px -2px rgba(15,23,42,0.07)' }}
+                >
+                  <div
+                    className="mb-3.5 flex h-12 w-12 items-center justify-center rounded-[15px]"
+                    style={{ background: `linear-gradient(140deg, ${c.from}, ${c.to})`, boxShadow: `0 6px 16px -6px ${c.to}` }}
+                  >
                     {c.icon}
                   </div>
-                  <p className="text-[20px] font-[820] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>{leads.data ? c.value : '—'}</p>
-                  <p className="mt-0.5 text-[10.5px] font-[650] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{c.label}</p>
+                  <p className="text-[28px] font-[820] leading-none tracking-[-0.03em] sm:text-[30px]" style={{ color: 'var(--text-primary)' }}>
+                    {leads.data ? c.value : '—'}
+                  </p>
+                  <p className="mt-1.5 text-[11.5px] font-[700] uppercase tracking-[0.055em] sm:text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                    {c.label}
+                  </p>
                 </div>
               ))}
             </div>
 
-            {/* Toolbar */}
-            <div className="mb-4 flex flex-wrap items-center gap-2.5">
-              <div className="relative min-w-[200px] flex-1 sm:max-w-sm">
-                <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-                <input aria-label="Search leads"
-                  type="text" placeholder="Search leads…" value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full rounded-[12px] py-2.5 pl-9 pr-4 text-[12.5px] font-[500] outline-none transition-colors"
-                  style={{ background: 'var(--bg-card)', border: '1.5px solid var(--border)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div className="flex flex-wrap gap-1 rounded-[12px] p-1" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                {STATUS_FILTERS.map((f) => (
-                  <button key={f.value} onClick={() => setStatusFilter(f.value)}
-                    className="rounded-[8px] px-3 py-2 text-[11px] font-[700] transition-all"
-                    style={statusFilter === f.value
-                      ? { background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff' }
-                      : { color: 'var(--text-muted)' }}>
-                    {f.label}
-                  </button>
-                ))}
-              </div>
+            {/* Search — full width on a phone, as in the reference. It was
+                capped at `sm:max-w-sm` and shared a row with the filters; the
+                reference stacks them, which is also what stops the filter pills
+                wrapping under a cramped input. */}
+            <div className="relative mt-4 sm:mt-5">
+              <Search size={19} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+              <input
+                aria-label="Search leads"
+                type="text" placeholder="Search leads…" value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-[52px] w-full rounded-[15px] pl-12 pr-4 text-[15px] font-[500] outline-none transition-colors sm:max-w-sm"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+              />
+            </div>
+
+            {/* Status filters — their own rounded light-slate container,
+                wrapping onto a second line exactly as the reference does.
+                The internal values are unchanged: they are the status strings
+                the API returns, only the labels are display text. */}
+            <div
+              className="mt-3.5 flex flex-wrap gap-1 rounded-[16px] p-2"
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+            >
+              {STATUS_FILTERS.map((f) => (
+                <button key={f.value} onClick={() => setStatusFilter(f.value)}
+                  aria-pressed={statusFilter === f.value}
+                  className="rounded-[11px] px-2.5 py-2 text-[11.5px] font-[700] transition-all active:scale-[0.97] sm:px-3.5 sm:text-[13px]"
+                  style={statusFilter === f.value
+                    ? { background: 'linear-gradient(140deg, #0271EB, #0067E0)', color: '#fff', boxShadow: '0 4px 12px -4px rgba(0,103,224,0.6)' }
+                    : { color: 'var(--text-secondary)' }}>
+                  {f.label}
+                </button>
+              ))}
             </div>
 
             {/* List */}
