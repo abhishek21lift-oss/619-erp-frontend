@@ -3,6 +3,7 @@
 import * as React from 'react';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { useSeededSearch } from '@/lib/use-seeded-search';
+import { generateInvoiceHTML } from '@/lib/invoice-print';
 import { m, AnimatePresence } from 'framer-motion';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -168,30 +169,6 @@ function SkeletonCard() {
   );
 }
 
-
-function generateInvoiceHTML(invoice: Invoice): string {
-  return `<!DOCTYPE html><html><head><title>Invoice ${invoice.id}</title>
-<style>body{font-family:sans-serif;padding:40px;color:#0f172a}h1{font-size:24px;margin-bottom:4px}
-.row{display:flex;gap:32px;margin-bottom:24px}.field{flex:1}
-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;font-weight:700}
-p{font-size:15px;font-weight:600;margin:4px 0}
-.amount{font-size:28px;font-weight:800;color:#0f172a}
-.status{display:inline-block;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700;
-background:${invoice.status==='paid'?'#d1fae5':invoice.status==='overdue'?'#fee2e2':'#fef3c7'};
-color:${invoice.status==='paid'?'#059669':invoice.status==='overdue'?'#dc2626':'#d97706'}}
-@media print{button{display:none}}</style></head><body>
-<h1>Invoice</h1><p style="color:#64748b;margin-bottom:24px">${invoice.id}</p>
-<div class="row"><div class="field"><label>Bill To</label><p>${invoice.memberName}</p></div>
-<div class="field"><label>Status</label><div style="margin-top:4px"><span class="status">${invoice.status.toUpperCase()}</span></div></div></div>
-<div class="row"><div class="field"><label>Issue Date</label><p>${invoice.date}</p></div>
-<div class="field"><label>Due Date</label><p>${invoice.dueDate}</p></div></div>
-<div style="border-top:2px solid #e2e8f0;padding-top:16px;margin-bottom:24px">
-<label>Description</label><p>${invoice.description}</p></div>
-<div style="background:#f8fafc;border-radius:12px;padding:24px;text-align:right">
-<label>Total Amount</label><div class="amount">&#8377;${invoice.amount.toLocaleString('en-IN')}</div>
-${invoice.paymentMethod?`<p style="color:#64748b;font-size:13px;margin-top:8px">Via ${PAYMENT_ICONS[invoice.paymentMethod]?.label}</p>`:''}
-</div></body></html>`;
-}
 
 export default function InvoicesPage() {
   const [statusTab, setStatusTab] = React.useState<InvoiceStatus | 'all'>('all');
