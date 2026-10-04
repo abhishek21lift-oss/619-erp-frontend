@@ -62,6 +62,7 @@ export function AiClientPicker({
 
         {open && visible.length > 0 && (
           <div
+            data-no-pull-refresh
             className="absolute z-20 mt-1 w-full overflow-y-auto rounded-[14px]"
             style={{
               background: 'var(--bg-card)', border: '1px solid var(--border)',
