@@ -41,9 +41,9 @@ import ClientAvatar, { initialsOf } from '@/components/pt-os/ClientAvatar';
 import { EmptyState, PageContainer, PageHero, Skeleton } from '@/components/ui';
 import { PremiumBarChart } from '@/components/visualizations';
 import { api } from '@/lib/api';
-import type { Attendance, Client } from '@/lib/api';
+import type { Client } from '@/lib/api';
 import { fmtDate, toInputDate } from '@/lib/format';
-import { buildBoard, type BoardRow } from '@/lib/leaderboard';
+import { boardFromCounts, type BoardRow } from '@/lib/leaderboard';
 import { errorMessage } from '@/lib/forms/errors';
 
 export default function LeaderboardPage() {
@@ -98,25 +98,34 @@ function Inner() {
   const [from, setFrom] = useState(initial.from);
   const [to, setTo] = useState(initial.to);
 
-  const [records, setRecords] = useState<Attendance[] | null>(null);
+  const [counts, setCounts] = useState<{ ref_id: string; ref_name: string | null; checkins: number }[] | null>(null);
   const [photos, setPhotos] = useState<Map<string, string | null>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // A cleared or inverted range queries unbounded-below (the server treats ''
+  // as absent) or matches nothing — both silently. Refuse instead.
+  const invalidRange = !from || !to || from > to;
 
   const load = useCallback(() => {
     let alive = true;
     setLoading(true);
     setError('');
+    if (!from || !to || from > to) {
+      setLoading(false);
+      setCounts([]);
+      return () => { alive = false; };
+    }
     // Photos are a nicety and clients/ is a second request, so a failure there
-    // must not cost the board. The names come off the attendance rows either
+    // must not cost the board. The names come off the aggregate rows either
     // way; without photos the rows fall back to initials.
     Promise.all([
-      api.attendance.list({ from, to, type: 'client' }),
+      api.attendance.leaderboard({ from, to, type: 'client' }),
       api.clients.list({ limit: 2000 }).catch(() => [] as Client[]),
     ])
-      .then(([att, clients]) => {
+      .then(([rows, clients]) => {
         if (!alive) return;
-        setRecords(Array.isArray(att) ? att : []);
+        setCounts(Array.isArray(rows) ? rows : []);
         setPhotos(new Map((clients as Client[]).map((c) => [String(c.id), c.photo_url ?? null])));
       })
       .catch((e: unknown) => alive && setError(errorMessage(e, 'Failed to load attendance')))
@@ -132,7 +141,7 @@ function Inner() {
     if (r) { setFrom(r.from); setTo(r.to); }
   };
 
-  const board = useMemo(() => buildBoard(records ?? [], photos), [records, photos]);
+  const board = useMemo(() => boardFromCounts(counts ?? [], photos), [counts, photos]);
   const top = board[0]?.checkins || 0;
   const totalCheckins = board.reduce((s, r) => s + r.checkins, 0);
   const avg = board.length ? totalCheckins / board.length : 0;
@@ -213,16 +222,28 @@ function Inner() {
         </div>
 
         {/* Three numbers off the same request. The old page made the reader
-            add the column up to learn how many check-ins there had been. */}
+            add the column up to learn how many check-ins there had been.
+            "Checked in" is attenders, not roster — zero-visit members are not
+            on this board and must not read as counted. */}
         <div className="grid grid-cols-3 gap-2.5">
           <Stat icon={<UserCheck size={14} />} label="Check-ins" value={loading ? null : totalCheckins} />
-          <Stat icon={<Users size={14} />} label="Members" value={loading ? null : board.length} />
+          <Stat icon={<Users size={14} />} label="Checked in" value={loading ? null : board.length} />
           <Stat
             icon={<CalendarRange size={14} />}
             label="Avg each"
             value={loading ? null : (Math.round(avg * 10) / 10).toString()}
           />
         </div>
+
+        <button
+          type="button"
+          onClick={load}
+          disabled={loading}
+          className="inline-flex h-[40px] cursor-pointer items-center gap-2 self-start rounded-[12px] px-3.5 text-[12.5px] font-[700] transition-transform active:scale-95 disabled:opacity-50"
+          style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}
+        >
+          <RotateCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh board
+        </button>
 
         {error ? (
           <EmptyState
@@ -242,6 +263,12 @@ function Inner() {
           />
         ) : loading ? (
           <BoardSkeleton />
+        ) : invalidRange ? (
+          <EmptyState
+            icon={<Trophy size={22} />}
+            title="Check the range"
+            description="The start date is after the end date (or one is cleared). Pick a valid range to see the board."
+          />
         ) : board.length === 0 ? (
           <EmptyState
             icon={<Trophy size={22} />}

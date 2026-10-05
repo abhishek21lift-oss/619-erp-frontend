@@ -26,7 +26,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { m } from 'framer-motion';
 import {
   TrendingUp, Wallet, Receipt, Percent,
-  AlertCircle, RefreshCw, CalendarRange, BarChart3, Download,
+  AlertCircle, AlertTriangle, RefreshCw, CalendarRange, BarChart3, Download,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { KpiCard, PremiumBarChart, PullToRefresh, EmptyState, PageContainer, PageHero } from '@/components/ui';
@@ -341,49 +341,73 @@ function RevenueAnalytics() {
           </label>
           <p className="text-[11px] basis-full sm:basis-auto sm:ml-auto sm:self-center"
             style={{ color: 'var(--text-disabled)' }}>
-            Year drives the monthly chart · range drives the range KPI
+            Year drives the monthly chart · range drives the range KPI · dues are a live snapshot
           </p>
         </div>
 
-        {/* ── KPI row ─────────────────────────────────────────────────── */}
+        {/* A failed fetch must never read as an empty year. Sections that
+            errored with nothing to show get named here with one retry; the
+            cards below fall back to dashes and the table to an error. */}
+        {((monthly.error && !monthly.data) || ((duesTotals.error && !duesTotals.data) && !dues.data) || (range.error && !range.data)) && (
+          <div role="alert" className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-3.5 text-[13px] font-medium text-red-700">
+            <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+            <span className="flex-1">
+              Couldn&apos;t load {[
+                monthly.error && !monthly.data && 'monthly figures',
+                duesTotals.error && !duesTotals.data && !dues.data && 'dues',
+                range.error && !range.data && 'the selected range',
+              ].filter(Boolean).join(', ')}. What you see below may be incomplete.
+            </span>
+            <button
+              type="button" onClick={refreshAll}
+              className="flex shrink-0 cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-[12.5px] font-bold hover:bg-red-100"
+            >
+              <RefreshCw size={13} /> Retry
+            </button>
+          </div>
+        )}
+
+        {/* ── KPI row ───────────────────────────────────────────────────
+            A section that errored with no data shows a dash, never ₹0 — the
+            alert above names it. */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           <KpiCard
             label={`${year} Revenue`}
-            value={fmtCompact(yearRevenue)}
+            value={monthly.error && !monthly.data ? '—' : fmtCompact(yearRevenue)}
             hint={`${yearPayments.toLocaleString('en-IN')} payments`}
             icon={<Wallet size={16} />}
             accent="blue"
             loading={monthly.loading && !monthly.data}
           />
           <KpiCard
-            label="This Month"
-            value={fmtCompact(thisMonth)}
+            label={year === currentYear ? 'This Month' : `${months[thisMonthIdx]?.month ?? ''} ${year}`.trim()}
+            value={monthly.error && !monthly.data ? '—' : fmtCompact(thisMonth)}
             delta={momDelta}
-            hint="vs previous month"
+            hint={momDelta !== undefined ? 'vs previous month' : undefined}
             icon={<TrendingUp size={16} />}
             accent="emerald"
             loading={monthly.loading && !monthly.data}
           />
           <KpiCard
             label="Incentives Paid"
-            value={fmtCompact(yearIncentives)}
+            value={monthly.error && !monthly.data ? '—' : fmtCompact(yearIncentives)}
             hint={yearRevenue > 0 ? `${((yearIncentives / yearRevenue) * 100).toFixed(0)}% of revenue` : undefined}
             icon={<Percent size={16} />}
             accent="amber"
             loading={monthly.loading && !monthly.data}
           />
           <KpiCard
-            label="Pending Collections"
-            value={fmtCompact(pendingTotal)}
-            hint={`${(dues.data ?? []).length} client${(dues.data ?? []).length === 1 ? '' : 's'}`}
+            label={duesTotals.data ? 'Pending Collections' : 'Outstanding (shown)'}
+            value={(duesTotals.error && !duesTotals.data && !dues.data) ? '—' : fmtCompact(pendingTotal)}
+            hint={`${((duesTotals.data?.debtor_count ?? (dues.data ?? []).length)).toLocaleString('en-IN')} client${(duesTotals.data?.debtor_count ?? (dues.data ?? []).length) === 1 ? '' : 's'}`}
             icon={<Receipt size={16} />}
             accent="coral"
             href="/finance/dues"
-            loading={dues.loading && !dues.data}
+            loading={(dues.loading || duesTotals.loading) && !dues.data && !duesTotals.data}
           />
           <KpiCard
             label="Selected Range"
-            value={fmtCompact(num(range.data?.total))}
+            value={range.error && !range.data ? '—' : fmtCompact(num(range.data?.total))}
             hint={`${num(range.data?.count).toLocaleString('en-IN')} payments`}
             icon={<CalendarRange size={16} />}
             accent="cyan"
@@ -436,6 +460,9 @@ function RevenueAnalytics() {
           subtitle="Same figures as the chart, in tabular form"
           icon={<Receipt size={15} />}
         >
+          {monthly.error && !monthly.data ? (
+            <LoadError what="monthly revenue" onRetry={monthly.refetch} />
+          ) : (
           <div className="overflow-x-auto -mx-4 sm:-mx-5 px-4 sm:px-5">
             <table className="w-full border-collapse text-[12.5px]" style={{ minWidth: 480 }}>
               <caption className="sr-only">
@@ -496,6 +523,7 @@ function RevenueAnalytics() {
               </tfoot>
             </table>
           </div>
+          )}
         </Panel>
       </PageContainer>
     </PullToRefresh>

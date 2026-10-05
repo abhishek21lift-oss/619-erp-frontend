@@ -80,6 +80,15 @@ export const clients = {
 export const attendance = {
   list: (params?: Record<string, string>) =>
     http<Attendance[]>(`/api/attendance${buildQs(params)}`),
+  /**
+   * Server-side rank aggregation: per-member present+late counts, no row
+   * cap. The list branch caps at 500 rows, which silently corrupts ranks for
+   * busy windows — the board must read from here, never from list().
+   */
+  leaderboard: (params?: Record<string, string>) =>
+    http<{ ref_id: string; ref_name: string | null; checkins: number }[]>(
+      `/api/attendance/leaderboard${buildQs(params)}`
+    ),
   mark: (data: Record<string, unknown>) =>
     http<Attendance>('/api/attendance', { method: 'POST', body: JSON.stringify(data) }),
   create: (data: Record<string, unknown>) =>

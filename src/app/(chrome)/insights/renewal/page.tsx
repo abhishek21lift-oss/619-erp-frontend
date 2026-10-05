@@ -21,8 +21,9 @@ export default function RenewalAnalysisPage() {
 }
 
 function Inner() {
-  // TRUE renewal conversion window. Same {from,to} feeds the conversion AND
-  // the pipeline counts, so the KPI and the table cannot disagree.
+  // TRUE renewal conversion window. {from,to} feeds the conversion KPIs;
+  // the pipeline table below is always the next 30 days (fixed days/limit),
+  // so the two answer different questions by design.
   const [from, setFrom] = useState(() => isoDaysAgo(90));
   const [to, setTo] = useState(() => isoToday());
 
@@ -34,6 +35,9 @@ function Inner() {
     () => api.insights.renewalRows({ days: 30, limit: 100 }) as Promise<Array<{ id: string; name: string; package_type?: string | null; trainer_name?: string | null; pt_end_date?: string | null; days_left: number }>>,
     [],
   );
+  const { refetch: refetchRenewals } = renewals;
+  const { refetch: refetchRows } = rows;
+  const retryAll = () => { void refetchRenewals(); void refetchRows(); };
 
   const m = renewals.data;
   const loading = renewals.loading || rows.loading;
@@ -50,7 +54,17 @@ function Inner() {
         <CanonicalDateRange from={from} to={to} onFrom={setFrom} onTo={setTo} dark />
       </PageHero>
 
-      {error && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: '10px 16px', fontSize: 13, color: '#ef4444' }}>{error}</div>}
+      {error && (
+        <div role="alert" style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: '10px 16px', fontSize: 13, color: '#ef4444' }}>
+          <span style={{ flex: 1 }}>{error}</span>
+          <button type="button" onClick={retryAll} style={{ fontWeight: 700, cursor: 'pointer', background: 'transparent', border: 'none', color: '#ef4444' }}>Retry</button>
+        </div>
+      )}
+      {from > to && (
+        <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 12, padding: '10px 16px', fontSize: 13, color: '#b45309' }}>
+          The start date is after the end date — the conversion reads empty until the range is valid.
+        </div>
+      )}
 
       {/* Canonical KPIs — server-computed. renewal_rate is TRUE conversion
           (null = no expiries in window, rendered as em dash, never 0%).
@@ -63,7 +77,7 @@ function Inner() {
       </div>
       {m && (
         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-          Window {m.from} → {m.to}: {m.expired_cohort} expired, {m.renewed_in_period} renewal transactions
+          Window {m.from} → {m.to}: {m.expired_cohort} expired, {m.renewal_transactions} renewal transactions
           {m.renewal_revenue > 0 && <> · {fmtMoney(m.renewal_revenue)} renewal revenue</>} · {m.active} active / {m.expired} expired now.
         </div>
       )}
@@ -75,7 +89,7 @@ function Inner() {
               <div style={{ width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #0067e0, #0059ce)', display: 'inline-block' }} />
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Members Up for Renewal — Next 30 Days</span>
             </div>
-            <span style={{ fontSize: 11, color: 'var(--text-disabled)' }}>{upcoming.length} {upcoming.length === 1 ? 'member' : 'members'}</span>
+            <span style={{ fontSize: 11, color: 'var(--text-disabled)' }} title={upcoming.length >= 100 ? 'Showing the 100 soonest expiries' : undefined}>{upcoming.length}{upcoming.length >= 100 ? '+' : ''} {upcoming.length === 1 ? 'member' : 'members'}</span>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
