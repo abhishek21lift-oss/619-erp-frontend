@@ -84,12 +84,17 @@ function Inner() {
 
       <div>
         <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', background: 'var(--bg-card)' }}>
-          <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-subtle)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #0067e0, #0059ce)', display: 'inline-block' }} />
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Members Up for Renewal — Next 30 Days</span>
+          <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #0067e0, #0059ce)', display: 'inline-block' }} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Members Up for Renewal — Next 30 Days</span>
+              </div>
+              <span style={{ fontSize: 11, color: 'var(--text-disabled)' }} title={upcoming.length >= 100 ? 'Showing the 100 soonest expiries' : undefined}>{upcoming.length}{upcoming.length >= 100 ? '+' : ''} {upcoming.length === 1 ? 'member' : 'members'}</span>
             </div>
-            <span style={{ fontSize: 11, color: 'var(--text-disabled)' }} title={upcoming.length >= 100 ? 'Showing the 100 soonest expiries' : undefined}>{upcoming.length}{upcoming.length >= 100 ? '+' : ''} {upcoming.length === 1 ? 'member' : 'members'}</span>
+            <div style={{ paddingTop: 6, fontSize: 11, color: 'var(--text-disabled)' }}>
+              Pipeline only — always the next 30 days, independent of the conversion window above.
+            </div>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>

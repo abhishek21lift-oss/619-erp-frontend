@@ -185,6 +185,16 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
 
   useEffect(() => { void loadContext(); }, [loadContext]);
 
+  // A result belongs to the client it was generated for. Without this,
+  // switching clients leaves the previous plan on screen with a Save button
+  // that writes to the OLD client's ledger while the toast names the new one.
+  useEffect(() => {
+    setResult(null);
+    setSaving(false);
+    setSavedDiet(false);
+    setError(null);
+  }, [client.id]);
+
   const generate = async (kind: 'workout' | 'diet') => {
     if (busyRef.current) return;
     busyRef.current = true;

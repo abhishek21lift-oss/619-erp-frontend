@@ -128,9 +128,14 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
   useEffect(() => { fetchAll(); }, [id]);
 
   const totalTerms = terms.length;
+  // Lifetime money reads the LIVE client row, never the snapshots: a snapshot
+  // is written once at sale time and no payment path updates it, so summing
+  // amount_paid/balance_amount across terms undercounts every payment made
+  // after enrollment (the profile documents the same rule). Fee is the one
+  // figure snapshots keep correctly — a sale price never changes afterwards.
   const lifetimeFee = terms.reduce((s, t) => s + Number(t.selling_price ?? 0), 0);
-  const lifetimePaid = terms.reduce((s, t) => s + Number(t.amount_paid ?? 0), 0);
-  const lifetimeBalance = terms.reduce((s, t) => s + Number(t.balance_amount ?? 0), 0);
+  const lifetimePaid = Number(client?.paid_amount ?? terms.reduce((s, t) => s + Number(t.amount_paid ?? 0), 0));
+  const lifetimeBalance = Math.max(lifetimeFee - lifetimePaid, 0);
 
   const paymentsByTermData = terms.map((t, idx) => ({
     name: t.plan_name || `Term ${idx + 1}`,

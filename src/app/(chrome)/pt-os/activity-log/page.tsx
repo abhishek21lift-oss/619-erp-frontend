@@ -173,7 +173,7 @@ function Inner() {
       <PageHero
         className="mb-5"
         title="Activity Log"
-        subtitle="Every client, payment and commission change made in your studio, and the value before."
+        subtitle="Every client, payment and commission change made in your studio — with before-and-after values where they were recorded."
         icon={<ScrollText size={20} />}
       />
 

@@ -39,6 +39,13 @@ interface Msg extends ClientAiTurn {
   truncated?: boolean;
   /** The service's check of this answer's figures against the client's records. */
   grounding?: ClientAiGrounding;
+  /**
+   * A proposed action the service attached, shown verbatim with an explicit
+   * "nothing was done" note. There is no confirm path for these yet, so a
+   * proposal the panel swallowed would void the plan-then-confirm property
+   * silently — displaying it keeps the proposal visible and unactioned.
+   */
+  proposal?: { text: string; needsConfirm: boolean } | null;
 }
 
 /** `getClientTrainingBrief` → `training brief`. */
@@ -138,6 +145,12 @@ export default function ClientAiPanel({
         tools: res.toolsUsed,
         unavailable: res.toolsUnavailable,
         grounding: res.grounding,
+        proposal: res.proposedAction == null ? null : {
+          text: typeof res.proposedAction === 'string'
+            ? res.proposedAction
+            : JSON.stringify(res.proposedAction).slice(0, 500),
+          needsConfirm: res.requiresConfirmation,
+        },
         streaming: false,
       });
     } catch (err) {
@@ -325,11 +338,27 @@ export default function ClientAiPanel({
                       </div>
                     )}
 
+                    {/* A proposed action, shown and explicitly NOT taken. There
+                        is no confirm path for these yet — rendering it keeps
+                        the proposal visible while the safety property holds. */}
+                    {!!msg.proposal && (
+                      <div
+                        className="mt-2.5 rounded-[10px] px-2.5 py-2"
+                        style={{ background: 'rgba(0,103,224,0.07)', border: '1px solid rgba(0,103,224,0.25)' }}
+                      >
+                        <p className="text-[10.5px] font-[750]" style={{ color: '#0067e0' }}>
+                          Suggested action — nothing was done{msg.proposal.needsConfirm ? ' (needs your confirmation, which this panel cannot take yet)' : ''}:
+                        </p>
+                        <p className="mt-1 text-[10.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                          {msg.proposal.text}
+                        </p>
+                      </div>
+                    )}
+
                     {/* Provenance. A trainer acting on this deserves to know
                         which records it rests on — and which it could not read,
                         because a silent gap reads as "there is nothing there". */}
-                    {!!msg.tools?.length && (
-                      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                    {!!msg.tools?.length && (                      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                         <Database size={10} style={{ color: 'var(--text-muted)' }} />
                         {msg.tools.map((t) => (
                           <span
