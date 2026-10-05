@@ -23,6 +23,7 @@ type PtClient = PtClientBase & {
   monthly_pt_amount: number;
   trainer_commission: number;
   total_earned_commission: number;
+  current_term_balance?: number;
 };
 
 function fmtShortINR(n: number): string {
@@ -42,8 +43,17 @@ const CLIENT_PALETTES = [
   { from: '#0059ce', to: '#0059ce', glow: 'rgba(0,89,206,0.35)' },
 ];
 
-function getStatusInfo(status: string, days_left: number | null) {
-  // Not yet enrolled in a package — added to the roster but no active PT program.
+/**
+ * What the row owes on the CURRENT term — the same definition as the profile
+ * (GET /clients/:id) and the backend list query. Stored balance_amount mixes
+ * a current-term fee with lifetime payments and understates renewed clients.
+ * Falls back to the stored figure when the server predates the field.
+ */
+function termBalance(c: PtClient): number {
+  return Number(c.current_term_balance ?? c.balance_amount ?? 0);
+}
+
+function getStatusInfo(status: string, days_left: number | null) {  // Not yet enrolled in a package — added to the roster but no active PT program.
   if (status === 'pending') return { label: 'Not Enrolled', color: '#7fb4ff', bg: 'rgba(127,180,255,0.14)', dot: '#0067e0' };
   if (status === 'frozen') return { label: 'Frozen', color: '#0067e0', bg: 'rgba(0,103,224,0.12)', dot: '#0067e0' };
   // days_left 0 is the term's last day, which is still a valid day (lib/term-dates.ts).
@@ -171,8 +181,8 @@ function ClientTableRow({ client, index }: { client: PtClient; index: number }) 
           client's own page. */}
       <td className="py-3.5 px-4 text-right">
         <span className="text-[13px] font-[760] tabular-nums"
-          style={{ color: client.balance_amount > 0 ? '#dc2626' : '#059669' }}>
-          {fmtShortINR(client.balance_amount)}
+          style={{ color: termBalance(client) > 0 ? '#dc2626' : '#059669' }}>
+          {fmtShortINR(termBalance(client))}
         </span>
       </td>
       <td className="py-3.5 px-4 text-right hidden xl:table-cell">
@@ -208,7 +218,12 @@ export default function PtClientsPage() {
         || (c.mobile || '').toLowerCase().includes(q) || (c.email || '').toLowerCase().includes(q)))
         return false;
     }
-    if (statusFilter !== 'all' && c.status !== statusFilter) return false;
+    // The Expired badge is derived from days_left, so the pill must match the
+    // derivation — filtering on raw status alone hides lapsed-term rows under
+    // Active and misses them under Expired when the sweep hasn't run yet.
+    if (statusFilter === 'expired') {
+      if (!(c.status === 'expired' || termEnded(c.days_left))) return false;
+    } else if (statusFilter !== 'all' && c.status !== statusFilter) return false;
     return true;
   }), [clients.data, search, statusFilter]);
 
@@ -217,12 +232,14 @@ export default function PtClientsPage() {
       total: acc.total + 1,
       revenue: acc.revenue + Number(c.final_amount || 0),
       paid: acc.paid + Number(c.paid_amount || 0),
-      balance: acc.balance + Number(c.balance_amount || 0),
+      balance: acc.balance + termBalance(c),
     }),
     { total: 0, revenue: 0, paid: 0, balance: 0 },
   ), [clients.data]);
 
-  const activeCount = useMemo(() => (clients.data?.data ?? []).filter(c => c.status === 'active' && (c.days_left ?? 0) > 0).length, [clients.data]);
+  // Last-day clients (days_left === 0) are still valid — termEnded says so —
+  // so they count as active here, matching their badge.
+  const activeCount = useMemo(() => (clients.data?.data ?? []).filter(c => c.status === 'active' && (c.days_left ?? 0) >= 0).length, [clients.data]);
 
   return (
     <Guard>
@@ -345,6 +362,22 @@ export default function PtClientsPage() {
                 </div>
               )}
             </div>
+
+            {/* ── ERROR — a failed load must never read as an empty roster ── */}
+            {clients.error && !clients.data && (
+              <div role="alert" className="flex items-center gap-2.5 rounded-[16px] border border-red-200 bg-red-50 p-4">
+                <span className="flex-1 text-[13px] font-[600] text-red-700">
+                  Couldn&apos;t load clients. Check your connection and try again.
+                </span>
+                <button
+                  onClick={() => void clients.refetch()}
+                  className="inline-flex h-[40px] cursor-pointer items-center rounded-[12px] px-4 text-[13px] font-[700] text-white"
+                  style={{ background: '#dc2626' }}
+                >
+                  Retry
+                </button>
+              </div>
+            )}
 
             {/* ── LOADING ── */}
             {clients.loading && !clients.data && (
