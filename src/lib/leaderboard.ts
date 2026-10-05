@@ -35,8 +35,29 @@ export function buildBoard(
     map.set(id, row);
   }
 
-  const sorted = Array.from(map.entries())
-    .map(([id, v]) => ({ id, ...v }))
+  return rankBoard(Array.from(map.entries()).map(([id, v]) => ({ id, ...v })), photos);
+}
+
+/**
+ * Board from the server aggregate (`GET /api/attendance/leaderboard`):
+ * per-member counts, no row cap. Same sort and joint-rank rule as
+ * buildBoard — the counting moved to SQL, the ranking did not.
+ */
+export function boardFromCounts(
+  rows: { ref_id: string; ref_name: string | null; checkins: number }[],
+  photos: Map<string, string | null> = new Map(),
+): BoardRow[] {
+  return rankBoard(
+    rows.map((r) => ({ id: String(r.ref_id), name: r.ref_name || 'Member', checkins: r.checkins })),
+    photos,
+  );
+}
+
+function rankBoard(
+  entries: { id: string; name: string; checkins: number }[],
+  photos: Map<string, string | null>,
+): BoardRow[] {
+  const sorted = entries
     // Name as the tiebreak, so the order of two level members is stable across
     // reloads rather than following whatever order the rows arrived in.
     .sort((a, b) => b.checkins - a.checkins || a.name.localeCompare(b.name));

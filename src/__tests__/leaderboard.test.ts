@@ -9,7 +9,7 @@
 // None of this fails loudly. A miscounted board looks exactly like a board.
 
 import { describe, expect, it } from 'vitest';
-import { buildBoard } from '@/lib/leaderboard';
+import { buildBoard, boardFromCounts } from '@/lib/leaderboard';
 import type { Attendance } from '@/lib/api';
 
 const visit = (ref_id: string, ref_name: string, status = 'present'): Attendance =>
@@ -113,5 +113,24 @@ describe('photos', () => {
 describe('an empty range', () => {
   it('is an empty board, not a board of zeroes', () => {
     expect(buildBoard([])).toEqual([]);
+  });
+});
+
+describe('boardFromCounts (server aggregate)', () => {
+  it('ranks pre-counted rows with the same joint-rank rule', () => {
+    const board = boardFromCounts([
+      { ref_id: 'c1', ref_name: 'Zed', checkins: 5 },
+      { ref_id: 'c2', ref_name: 'Amy', checkins: 5 },
+      { ref_id: 'c3', ref_name: 'Bo', checkins: 3 },
+    ]);
+    expect(board.map((r) => [r.name, r.rank])).toEqual([['Amy', 1], ['Zed', 1], ['Bo', 3]]);
+  });
+
+  it('falls back to Member on a missing name and attaches photos', () => {
+    const board = boardFromCounts(
+      [{ ref_id: 'c1', ref_name: null, checkins: 2 }],
+      new Map([['c1', 'pic.jpg']]),
+    );
+    expect(board[0]).toMatchObject({ name: 'Member', photo: 'pic.jpg', rank: 1 });
   });
 });
