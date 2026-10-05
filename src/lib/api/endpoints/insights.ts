@@ -8,10 +8,10 @@ import { http, httpSSE } from '../../http';
 import { buildQs } from '../qs';
 import type {
   ActivityFeed, AiActionPlan, AiActionResult, AiActionSummary,
-  AiBusinessInsights, AiConversation, AiDietParams, AiDietPlan,
+  AiBusinessInsights, AiBusinessRawData, AiConversation, AiDietParams, AiDietPlan,
   AiFitnessTestAnalysis, AiHealthResponse, AiKnowledgeDocument, AiMessage, AiModelStat,
-  AiProgressAnalysis, AiProviderSettings, AiUsageStats, AiWorkoutParams, AiWorkoutPlan,
-  AiWorkoutGenerationResult, AiWorkoutContext,
+  AiProgressAnalysis, AiProgressDataCounts, AiProviderSettings, AiUsageStats, AiWorkoutParams, AiWorkoutPlan,
+  AiWorkoutGenerationResult, AiWorkoutContext, AiWeightPoint,
   DuesItem, DuesSummary, ProfileDevice, ProfileSession, SearchResponse,
 } from '../types';
 
@@ -204,7 +204,7 @@ export const ai = {
     }),
 
   analyzeProgress: (client_id: string) =>
-    httpSSE<{ data: AiProgressAnalysis; model: string; tier: string; used_fallback: boolean }>('/api/ai/progress/analyze', {
+    httpSSE<{ data: AiProgressAnalysis; data_counts?: AiProgressDataCounts; weight_history?: AiWeightPoint[]; model: string; tier: string; used_fallback: boolean }>('/api/ai/progress/analyze', {
       method: 'POST',
       body: JSON.stringify({ client_id }),
     }),
@@ -216,7 +216,10 @@ export const ai = {
     }),
 
   businessInsights: (params?: { from?: string; to?: string }) =>
-    httpSSE<{ data: AiBusinessInsights; model: string; tier: string; used_fallback: boolean }>('/api/ai/business/insights', {
+    // Plain JSON, not SSE: the endpoint answers res.json({ data, raw_data,
+    // ... }) in one shot. httpSSE waited for a `data: …done` event that never
+    // comes and every click ended in "No result received from AI generation".
+    http<{ data: AiBusinessInsights; raw_data?: AiBusinessRawData; model: string; tier: string; used_fallback: boolean }>('/api/ai/business/insights', {
       method: 'POST',
       body: JSON.stringify(params || {}),
     }),

@@ -1,13 +1,17 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { TrendingUp, Loader2, Sparkles, AlertTriangle, CheckCircle2, User, TrendingDown, Minus, Target, Brain, ChevronRight } from 'lucide-react';
+import {
+  TrendingUp, Loader2, Sparkles, AlertTriangle, AlertCircle, CheckCircle2,
+  User, TrendingDown, Minus, Target, Brain, ChevronRight, RefreshCw, X,
+} from 'lucide-react';
 import { m, type Variants } from 'framer-motion';
 import { api } from '@/lib/api';
-import type { AiProgressAnalysis } from '@/lib/api';
+import type { AiProgressAnalysis, AiProgressDataCounts, AiWeightPoint } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
+import { PremiumLineChart } from '@/components/visualizations';
 import { errorMessage } from '@/lib/forms/errors';
 
 const ACCENT = '#FBBF24';
@@ -39,10 +43,18 @@ function TrendBadge({ direction }: { direction: string }) {
       <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Down</span>
     </div>
   );
-  return (
+  // Unknown is "no data", never "Stable" — absence of a reading must not
+  // render as a flat trend.
+  if (direction === 'stable' || direction === 'flat') return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-disabled)' }}>
       <Minus size={15} />
       <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Stable</span>
+    </div>
+  );
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-disabled)' }}>
+      <Minus size={15} />
+      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>No data</span>
     </div>
   );
 }
@@ -68,12 +80,24 @@ function ProgressAnalysisInner() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<AiProgressAnalysis | null>(null);
+  const [counts, setCounts] = useState<AiProgressDataCounts | null>(null);
+  const [weights, setWeights] = useState<AiWeightPoint[]>([]);
   const [meta, setMeta] = useState<{ model?: string; tier?: string; used_fallback?: boolean } | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [error, setError] = useState('');
 
+  // Debounced search with a sequence guard. The old effect fired per
+  // keystroke with no abort — typing "ann" could render "a"'s results last.
+  const searchSeq = useRef(0);
   useEffect(() => {
-    const load = clientSearch ? api.clients.search(clientSearch) : api.clients.list({ limit: 20 });
-    load.then((data) => setClients(data as unknown as Client[])).catch(() => {});
+    const id = setTimeout(() => {
+      const seq = ++searchSeq.current;
+      const load = clientSearch ? api.clients.search(clientSearch) : api.clients.list({ limit: 20 });
+      load.then((data) => {
+        if (searchSeq.current === seq) setClients(data as unknown as Client[]);
+      }).catch(() => {});
+    }, clientSearch ? 300 : 0);
+    return () => clearTimeout(id);
   }, [clientSearch]);
 
   // Resolve the linked client by id.
@@ -104,11 +128,15 @@ function ProgressAnalysisInner() {
 
   const handleAnalyze = async () => {
     if (!selectedClient) { setError('Please select a client first.'); return; }
-    setError(''); setLoading(true); setAnalysis(null); setMeta(null);
+    setError(''); setLoading(true);
+    // A re-run keeps the previous analysis on screen while loading.
     try {
       const res = await api.ai.analyzeProgress(String(selectedClient.id));
       setAnalysis(res.data);
+      setCounts(res.data_counts ?? null);
+      setWeights(res.weight_history ?? []);
       setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback });
+      setUpdatedAt(new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }));
     } catch (e: unknown) {
       setError(errorMessage(e, 'Failed to analyse progress.'));
     } finally { setLoading(false); }
@@ -117,6 +145,12 @@ function ProgressAnalysisInner() {
   const filteredClients = clients.filter((c) =>
     c.name.toLowerCase().includes(clientSearch.toLowerCase())
   );
+
+  const thinData = counts !== null &&
+    counts.assessments === 0 && counts.checkins === 0 &&
+    counts.strength_logs === 0 && counts.goals === 0;
+
+  const rate = analysis?.attendance_trend?.rate_pct;
 
   return (
     <Guard>
@@ -137,41 +171,50 @@ function ProgressAnalysisInner() {
           </div>
         </PageHero>
 
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      <div className="mx-auto w-full max-w-4xl">
 
         {/* Client selector */}
-        <m.div variants={fadeUp} initial="hidden" animate="show" custom={1} style={{
-          borderRadius: 24, padding: '28px',
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-          marginBottom: 32,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 10, background: ACCENT_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <m.div variants={fadeUp} initial="hidden" animate="show" custom={1}
+          className="mb-8 rounded-[24px] border border-gray-200 bg-white p-5 sm:p-7"
+          style={{ boxShadow: 'var(--shadow-xs)' }}>
+          <div className="mb-6 flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: ACCENT_DIM }}>
               <User size={16} color={ACCENT} />
             </div>
-            <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 15 }}>Select Client</span>
+            <span className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>Select Client</span>
           </div>
 
-          <div style={{ position: 'relative' }}>
-            <div style={{ position: 'relative' }}>
-              <User size={16} color="#94a3b8" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          <div className="relative">
+            <div className="relative">
+              <User size={16} color="#94a3b8" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input aria-label="Search clients by name"
+                role="combobox"
+                aria-expanded={showDropdown}
+                aria-controls="pa-client-list"
+                aria-autocomplete="list"
                 type="text"
-                style={{
-                  width: '100%', padding: '12px 14px 12px 42px', borderRadius: 12, fontSize: 14,
-                  background: 'var(--bg-card)', border: '1px solid #cbd5e1',
-                  color: 'var(--text-primary)', boxSizing: 'border-box',
-                }}
+                className="h-[52px] w-full rounded-[15px] py-2.5 pl-12 pr-10 text-[15px] font-[500] outline-none"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
                 placeholder="Search clients by name…"
                 value={selectedClient ? selectedClient.name : clientSearch}
-                onFocus={() => { setShowDropdown(true); if (selectedClient) { setClientSearch(''); setSelectedClient(null); } }}
+                onFocus={() => setShowDropdown(true)}
                 onChange={(e) => { setClientSearch(e.target.value); setSelectedClient(null); setShowDropdown(true); }}
+                onKeyDown={(e) => { if (e.key === 'Escape') setShowDropdown(false); }}
               />
+              {selectedClient && (
+                <button
+                  type="button"
+                  aria-label="Clear selected client"
+                  onClick={() => { setSelectedClient(null); setClientSearch(''); setShowDropdown(true); }}
+                  className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
 
             {showDropdown && filteredClients.length > 0 && (
-              <div style={{
+              <div id="pa-client-list" role="listbox" aria-label="Matching clients" style={{
                 position: 'absolute', zIndex: 20, width: '100%', marginTop: 4,
                 background: 'var(--bg-card)', border: '1px solid var(--border)',
                 borderRadius: 14, boxShadow: 'var(--shadow-card)',
@@ -180,13 +223,19 @@ function ProgressAnalysisInner() {
                 {filteredClients.map((c, i) => (
                   <button
                     key={c.id}
+                    type="button"
+                    role="option"
+                    aria-selected={selectedClient?.id === c.id}
                     style={{
                       width: '100%', textAlign: 'left', padding: '12px 16px',
                       background: 'transparent', border: 'none', cursor: 'pointer',
                       borderBottom: i < filteredClients.length - 1 ? '1px solid #f1f5f9' : 'none',
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     }}
-                    onMouseDown={() => { setSelectedClient(c); setClientSearch(c.name); setShowDropdown(false); }}
+                    // onClick, not onMouseDown: keyboard Enter/Space on a
+                    // focused button fires click, never mousedown — the old
+                    // handler made every option inert for keyboard users.
+                    onClick={() => { setSelectedClient(c); setClientSearch(c.name); setShowDropdown(false); }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#F8FAFC'; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
                   >
@@ -202,16 +251,25 @@ function ProgressAnalysisInner() {
           </div>
 
           {error && (
-            <div style={{ marginTop: 16, padding: '10px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', fontSize: 13 }}>{error}</div>
+            <div role="alert" className="mt-4 flex items-start gap-2 rounded-[10px] px-3.5 py-2.5 text-[13px] font-medium"
+              style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span className="flex-1">{error}</span>
+              <button
+                onClick={handleAnalyze}
+                className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-0.5 font-semibold hover:bg-red-100"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Retry
+              </button>
+            </div>
           )}
 
-          <div style={{ marginTop: 20 }}>
+          <div className="mt-5">
             <button
               onClick={handleAnalyze}
               disabled={loading || !selectedClient}
+              className="flex items-center gap-2 rounded-xl px-7 py-3 text-[14px] font-bold transition-all"
               style={{
-                display: 'flex', alignItems: 'center', gap: 8, padding: '12px 28px',
-                borderRadius: 12, fontSize: 14, fontWeight: 700,
                 background: !selectedClient || loading ? 'rgba(251,191,36,0.3)' : `linear-gradient(135deg, ${ACCENT}, #F59E0B)`,
                 color: 'var(--text-primary)', border: 'none',
                 cursor: !selectedClient || loading ? 'not-allowed' : 'pointer',
@@ -219,124 +277,168 @@ function ProgressAnalysisInner() {
               }}
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-              {loading ? 'Analysing…' : 'Analyse Progress'}
+              {loading ? 'Analysing…' : analysis ? 'Re-analyse Progress' : 'Analyse Progress'}
             </button>
           </div>
         </m.div>
 
-        {/* Loading */}
-        {loading && (
-          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '60px 0',
-          }}>
-            <div style={{
-              width: 64, height: 64, borderRadius: 20, background: ACCENT_DIM,
-              border: '1px solid rgba(251,191,36,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
+        {/* Loading — only when there is nothing to show yet */}
+        {loading && !analysis && (
+          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-4 py-14">
+            <div className="flex h-16 w-16 items-center justify-center rounded-[20px]"
+              style={{ background: ACCENT_DIM, border: '1px solid rgba(251,191,36,0.2)' }}>
               <Loader2 size={28} color={ACCENT} className="animate-spin" />
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Analysing progress data…</div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>AI is reviewing workouts, nutrition, and attendance patterns</div>
+            <div className="text-center">
+              <div className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>Analysing progress data…</div>
+              <div className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>AI is reviewing workouts, nutrition, and attendance patterns</div>
             </div>
           </m.div>
         )}
 
         {/* Results */}
         {analysis && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            {meta && (
-              <m.div variants={fadeUp} initial="hidden" animate="show" custom={0} style={{
-                display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px',
-                borderRadius: 20, width: 'fit-content',
-                background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
-              }}>
-                <Sparkles size={13} color="#F59E0B" />
-                <span style={{ fontSize: 12, color: '#F59E0B', fontWeight: 600 }}>Analysed by {meta.model}</span>
-                {meta.used_fallback && <span style={{ fontSize: 11, color: '#D97706', marginLeft: 4 }}>(fallback)</span>}
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-wrap items-center gap-2">
+              {meta && (
+                <m.div variants={fadeUp} initial="hidden" animate="show" custom={0}
+                  className="flex w-fit items-center gap-2 rounded-[20px] px-3.5 py-2"
+                  style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                  <Sparkles size={13} color="#F59E0B" />
+                  <span className="text-[12px] font-semibold" style={{ color: '#F59E0B' }}>Analysed by {meta.model}</span>
+                  {meta.used_fallback && <span className="ml-1 text-[11px]" style={{ color: '#D97706' }}>(fallback)</span>}
+                </m.div>
+              )}
+              {updatedAt && (
+                <span className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>Updated {updatedAt}</span>
+              )}
+              <button
+                onClick={handleAnalyze}
+                disabled={loading}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-bold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
+              </button>
+            </div>
+
+            {/* Provenance: what the reading rests on */}
+            {counts && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[16px] border border-gray-200 bg-white px-4 py-3 text-[12px]"
+                style={{ boxShadow: 'var(--shadow-xs)', color: 'var(--text-secondary)' }}>
+                <span className="font-bold" style={{ color: 'var(--text-primary)' }}>Based on</span>
+                <span>{counts.assessments} assessments</span>
+                <span>·</span>
+                <span>{counts.checkins} check-ins</span>
+                <span>·</span>
+                <span>{counts.strength_logs} strength logs</span>
+                {thinData && (
+                  <span className="font-semibold text-amber-700">— almost no records on file; treat the reading below as a starting template, not a verdict.</span>
+                )}
+              </div>
+            )}
+
+            {/* AI-estimate disclaimer */}
+            <div className="flex items-start gap-2 rounded-[16px] border border-amber-200 bg-amber-50 p-4 text-xs leading-relaxed text-amber-800">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                The reading below is an <strong>AI-generated estimate</strong> from the
+                records above — direction and judgement, not measured fact. Figures the
+                model states (attendance %, weight deltas) are its arithmetic, not
+                computed metrics. Verify before acting on them.
+              </span>
+            </div>
+
+            {/* Summary */}
+            {analysis.summary && (
+              <m.div variants={fadeUp} initial="hidden" animate="show" custom={1}
+                className="rounded-[20px] p-6"
+                style={{ background: '#FFFBEB', border: '1px solid rgba(251,191,36,0.25)' }}>
+                <div className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: ACCENT }}>AI Summary</div>
+                <p className="m-0 text-[15px] leading-[1.7]" style={{ color: 'var(--text-primary)' }}>{analysis.summary}</p>
+                {analysis.period_analysed && (
+                  <div className="mt-3 text-[12px]" style={{ color: 'var(--text-disabled)' }}>
+                    Period analysed: <strong style={{ color: 'var(--text-secondary)' }}>{analysis.period_analysed}</strong>
+                  </div>
+                )}
               </m.div>
             )}
 
-            {/* Summary */}
-            <m.div variants={fadeUp} initial="hidden" animate="show" custom={1} style={{
-              borderRadius: 20, padding: '24px',
-              background: '#FFFBEB',
-              border: '1px solid rgba(251,191,36,0.25)',
-            }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>AI Summary</div>
-              <p style={{ fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.7, margin: 0 }}>{analysis.summary}</p>
-              {analysis.period_analysed && (
-                <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text-disabled)' }}>
-                  Period analysed: <strong style={{ color: 'var(--text-secondary)' }}>{analysis.period_analysed}</strong>
-                </div>
-              )}
-            </m.div>
+            {/* Weight history — verified assessment readings */}
+            <PremiumLineChart
+              data={weights.map((w) => ({ date: w.date, weight: w.weight_kg }))}
+              xKey="date"
+              lines={[{ key: 'weight', label: 'Weight (kg)' }]}
+              title="Weight history"
+              subtitle="Verified assessment readings, oldest → newest"
+              formatValue={(v) => `${v} kg`}
+              emptyTitle="No weight readings yet"
+              emptyDescription="Log an assessment with a weight to start the trend."
+            />
 
             {/* Trend cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
               {analysis.weight_trend && (
-                <m.div variants={fadeUp} initial="hidden" animate="show" custom={2} style={{
-                  borderRadius: 16, padding: '20px',
-                  background: 'var(--bg-card)', border: '1px solid var(--border)',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Weight</span>
+                <m.div variants={fadeUp} initial="hidden" animate="show" custom={2}
+                  className="rounded-[16px] border border-gray-200 bg-white p-5"
+                  style={{ boxShadow: 'var(--shadow-xs)' }}>
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--text-disabled)' }}>Weight</span>
                     <TrendBadge direction={analysis.weight_trend.direction} />
                   </div>
-                  {analysis.weight_trend.change_kg !== undefined && (
-                    <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6 }}>
+                  {typeof analysis.weight_trend.change_kg === 'number' && Number.isFinite(analysis.weight_trend.change_kg) ? (
+                    <div className="mb-1.5 text-[28px] font-extrabold" style={{ color: 'var(--text-primary)' }}>
                       {analysis.weight_trend.change_kg > 0 ? '+' : ''}{analysis.weight_trend.change_kg}
-                      <span style={{ fontSize: 14, color: 'var(--text-disabled)', marginLeft: 4 }}>kg</span>
+                      <span className="ml-1 text-[14px] font-medium" style={{ color: 'var(--text-disabled)' }}>kg</span>
                     </div>
-                  )}
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>{analysis.weight_trend.insight}</p>
+                  ) : null}
+                  <p className="m-0 text-[12px] leading-[1.5]" style={{ color: 'var(--text-muted)' }}>{analysis.weight_trend.insight}</p>
+                  <p className="m-0 mt-1.5 text-[11px]" style={{ color: 'var(--text-disabled)' }}>AI estimate</p>
                 </m.div>
               )}
               {analysis.strength_trend && (
-                <m.div variants={fadeUp} initial="hidden" animate="show" custom={3} style={{
-                  borderRadius: 16, padding: '20px',
-                  background: 'var(--bg-card)', border: '1px solid var(--border)',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Strength</span>
+                <m.div variants={fadeUp} initial="hidden" animate="show" custom={3}
+                  className="rounded-[16px] border border-gray-200 bg-white p-5"
+                  style={{ boxShadow: 'var(--shadow-xs)' }}>
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--text-disabled)' }}>Strength</span>
                     <TrendBadge direction={analysis.strength_trend.direction} />
                   </div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>{analysis.strength_trend.highlight}</div>
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>{analysis.strength_trend.insight}</p>
+                  <div className="mb-1.5 text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>{analysis.strength_trend.highlight}</div>
+                  <p className="m-0 text-[12px] leading-[1.5]" style={{ color: 'var(--text-muted)' }}>{analysis.strength_trend.insight}</p>
                 </m.div>
               )}
               {analysis.attendance_trend && (
-                <m.div variants={fadeUp} initial="hidden" animate="show" custom={4} style={{
-                  borderRadius: 16, padding: '20px',
-                  background: 'var(--bg-card)', border: '1px solid var(--border)',
-                }}>
-                  <div style={{ marginBottom: 12 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Attendance</span>
+                <m.div variants={fadeUp} initial="hidden" animate="show" custom={4}
+                  className="rounded-[16px] border border-gray-200 bg-white p-5"
+                  style={{ boxShadow: 'var(--shadow-xs)' }}>
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--text-disabled)' }}>Attendance</span>
+                    <TrendBadge direction={(analysis.attendance_trend as { direction?: string }).direction ?? ''} />
                   </div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6 }}>
-                    {analysis.attendance_trend.rate_pct}
-                    <span style={{ fontSize: 14, color: 'var(--text-disabled)', marginLeft: 2 }}>%</span>
+                  <div className="mb-1.5 text-[28px] font-extrabold" style={{ color: 'var(--text-primary)' }}>
+                    {typeof rate === 'number' && Number.isFinite(rate) ? rate : '—'}
+                    <span className="ml-0.5 text-[14px] font-medium" style={{ color: 'var(--text-disabled)' }}>%</span>
                   </div>
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>{analysis.attendance_trend.insight}</p>
+                  <p className="m-0 text-[12px] leading-[1.5]" style={{ color: 'var(--text-muted)' }}>{analysis.attendance_trend.insight}</p>
+                  <p className="m-0 mt-1.5 text-[11px]" style={{ color: 'var(--text-disabled)' }}>AI estimate</p>
                 </m.div>
               )}
             </div>
 
             {/* Wins */}
             {analysis.wins?.length ? (
-              <m.div variants={fadeUp} initial="hidden" animate="show" custom={5} style={{
-                borderRadius: 20, padding: '20px 24px',
-                background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <m.div variants={fadeUp} initial="hidden" animate="show" custom={5}
+                className="rounded-[20px] px-6 py-5"
+                style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)' }}>
+                <div className="mb-3.5 flex items-center gap-2">
                   <CheckCircle2 size={18} color="#10b981" />
-                  <span style={{ fontWeight: 700, color: '#059669', fontSize: 14 }}>Wins &amp; Achievements</span>
+                  <span className="text-[14px] font-bold" style={{ color: '#059669' }}>Wins &amp; Achievements</span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div className="flex flex-col gap-2">
                   {analysis.wins.map((w, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: '#10b981', marginTop: 6 }} />
-                      <span style={{ fontSize: 14, color: '#059669', lineHeight: 1.5 }}>{w}</span>
+                    <div key={i} className="flex items-start gap-2.5">
+                      <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: '#10b981' }} />
+                      <span className="text-[14px] leading-[1.5]" style={{ color: '#059669' }}>{w}</span>
                     </div>
                   ))}
                 </div>
@@ -345,28 +447,29 @@ function ProgressAnalysisInner() {
 
             {/* Risks */}
             {analysis.risks?.length ? (
-              <m.div variants={fadeUp} initial="hidden" animate="show" custom={6} style={{
-                borderRadius: 20, overflow: 'hidden',
-                background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.2)',
-              }}>
-                <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(251,191,36,0.15)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <m.div variants={fadeUp} initial="hidden" animate="show" custom={6}
+                className="overflow-hidden rounded-[20px]"
+                style={{ background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.2)' }}>
+                <div className="flex items-center gap-2 px-6 py-4" style={{ borderBottom: '1px solid rgba(251,191,36,0.15)' }}>
                   <AlertTriangle size={18} color={ACCENT} />
-                  <span style={{ fontWeight: 700, color: ACCENT, fontSize: 14 }}>Risk Factors</span>
+                  <span className="text-[14px] font-bold" style={{ color: ACCENT }}>Risk Factors</span>
                 </div>
                 {analysis.risks.map((r, i) => (
                   <div key={i} style={{
                     padding: '16px 24px',
                     borderBottom: i < analysis.risks!.length - 1 ? '1px solid rgba(251,191,36,0.1)' : 'none',
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{r.risk}</span>
-                      <span style={{
-                        fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: '0.05em',
-                        background: r.severity === 'high' ? 'rgba(239,68,68,0.1)' : r.severity === 'medium' ? 'rgba(251,191,36,0.15)' : '#F1F5F9',
-                        color: r.severity === 'high' ? '#ef4444' : r.severity === 'medium' ? ACCENT : '#64748b',
-                      }}>{r.severity}</span>
+                    <div className="mb-1.5 flex items-center gap-2.5">
+                      <span className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>{r.risk}</span>
+                      {r.severity && (
+                        <span className="rounded-[20px] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.05em]"
+                          style={{
+                            background: r.severity === 'high' ? 'rgba(239,68,68,0.1)' : r.severity === 'medium' ? 'rgba(251,191,36,0.15)' : '#F1F5F9',
+                            color: r.severity === 'high' ? '#ef4444' : r.severity === 'medium' ? ACCENT : '#64748b',
+                          }}>{r.severity}</span>
+                      )}
                     </div>
-                    <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>{r.action}</p>
+                    {r.action && <p className="m-0 text-[13px] leading-[1.5]" style={{ color: 'var(--text-muted)' }}>{r.action}</p>}
                   </div>
                 ))}
               </m.div>
@@ -374,30 +477,26 @@ function ProgressAnalysisInner() {
 
             {/* Recommendations */}
             {analysis.recommendations?.length ? (
-              <m.div variants={fadeUp} initial="hidden" animate="show" custom={7} style={{
-                borderRadius: 20, overflow: 'hidden',
-                background: 'var(--bg-card)', border: '1px solid var(--border)',
-              }}>
-                <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <m.div variants={fadeUp} initial="hidden" animate="show" custom={7}
+                className="overflow-hidden rounded-[20px] border border-gray-200 bg-white"
+                style={{ boxShadow: 'var(--shadow-xs)' }}>
+                <div className="flex items-center gap-2 px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
                   <Target size={18} color={ACCENT} />
-                  <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }}>Recommendations</span>
+                  <span className="text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>Recommendations</span>
                 </div>
                 {analysis.recommendations
                   .slice()
-                  .sort((a, b) => a.priority - b.priority)
+                  .sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999))
                   .map((r, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 24px',
-                    borderBottom: i < analysis.recommendations!.length - 1 ? '1px solid #f1f5f9' : 'none',
-                  }}>
-                    <div style={{
-                      width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                      background: ACCENT_DIM, color: ACCENT, fontSize: 12, fontWeight: 800,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>{r.priority}</div>
+                  <div key={i} className="flex items-start gap-3.5 px-6 py-3.5"
+                    style={{ borderBottom: i < analysis.recommendations!.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-extrabold"
+                      style={{ background: ACCENT_DIM, color: ACCENT }}>
+                      {r.priority ?? '–'}
+                    </div>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{r.action}</div>
-                      {r.rationale && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5 }}>{r.rationale}</div>}
+                      <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>{r.action}</div>
+                      {r.rationale && <div className="mt-1 text-[12px] leading-[1.5]" style={{ color: 'var(--text-muted)' }}>{r.rationale}</div>}
                     </div>
                   </div>
                 ))}
@@ -406,28 +505,25 @@ function ProgressAnalysisInner() {
 
             {/* Next month strategy */}
             {analysis.next_month_strategy && (
-              <m.div variants={fadeUp} initial="hidden" animate="show" custom={8} style={{
-                borderRadius: 16, padding: '20px 24px',
-                background: 'var(--bg-card)', border: '1px solid var(--border)',
-                display: 'flex', gap: 14,
-              }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: ACCENT_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <m.div variants={fadeUp} initial="hidden" animate="show" custom={8}
+                className="flex gap-3.5 rounded-[16px] border border-gray-200 bg-white px-6 py-5"
+                style={{ boxShadow: 'var(--shadow-xs)' }}>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]" style={{ background: ACCENT_DIM }}>
                   <Brain size={18} color={ACCENT} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Next Month Strategy</div>
-                  <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{analysis.next_month_strategy}</p>
+                  <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: ACCENT }}>Next Month Strategy</div>
+                  <p className="m-0 text-[14px] leading-[1.6]" style={{ color: 'var(--text-secondary)' }}>{analysis.next_month_strategy}</p>
                 </div>
               </m.div>
             )}
 
             {/* Motivation */}
             {analysis.motivation_message && (
-              <m.div variants={fadeUp} initial="hidden" animate="show" custom={9} style={{
-                borderRadius: 16, padding: '20px 24px',
-                background: ACCENT_DIM, border: '1px solid rgba(251,191,36,0.2)', textAlign: 'center',
-              }}>
-                <p style={{ fontSize: 15, color: ACCENT, fontStyle: 'italic', lineHeight: 1.7, margin: 0, fontWeight: 500 }}>
+              <m.div variants={fadeUp} initial="hidden" animate="show" custom={9}
+                className="rounded-[16px] px-6 py-5 text-center"
+                style={{ background: ACCENT_DIM, border: '1px solid rgba(251,191,36,0.2)' }}>
+                <p className="m-0 text-[15px] font-medium italic leading-[1.7]" style={{ color: ACCENT }}>
                   &ldquo;{analysis.motivation_message}&rdquo;
                 </p>
               </m.div>

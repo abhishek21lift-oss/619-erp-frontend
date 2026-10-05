@@ -4010,6 +4010,18 @@ export type AiProgressAnalysis = {
   motivation_message: string;
 };
 
+// Server-counted provenance companions to the model's prose (additive on
+// the SSE done payload). The client renders counts and the weight chart
+// from these, never from model-emitted numbers.
+export type AiProgressDataCounts = {
+  assessments: number;
+  checkins: number;
+  strength_logs: number;
+  goals: number;
+};
+
+export type AiWeightPoint = { date: string; weight_kg: number };
+
 export type AiFitnessTestRisk = {
   flag: string;
   severity: 'low' | 'medium' | 'high';
@@ -4037,12 +4049,27 @@ export type AiFitnessTestAnalysis = {
 export type AiBusinessInsights = {
   summary: string;
   period: string;
-  kpis: { mrr: number; retention_rate_pct: number; avg_session_utilisation_pct: number; revenue_per_trainer: number };
-  trends: { metric: string; direction: string; change_pct: number; insight: string }[];
+  kpis: { mrr: number | null; renewal_rate_pct: number | null; active_share_pct: number | null; avg_session_utilisation_pct: number | null; revenue_per_trainer: number | null };
+  trends: { metric: string; direction: string; change_pct: number | null; insight: string }[];
   opportunities: { opportunity: string; estimated_impact: string; effort: string }[];
   risks: { risk: string; severity: string; recommended_action: string }[];
   recommendations: { priority: number; action: string; rationale: string; timeframe: string }[];
   executive_summary: string;
+};
+
+// Studio actuals the backend sends beside the model's prose (raw_data).
+// Every number here is SQL-computed — the verified half of the page.
+export type AiBusinessRawData = {
+  period: { from: string; to: string };
+  revenue: { total_revenue: number; total_payments: number };
+  members: { active_members: number; inactive_members: number; new_members_period: number };
+  sessions: { total_sessions: number; active_clients: number };
+  trainers: { trainer_name: string; active_clients: number; month_revenue: number; total_revenue: number }[];
+  renewals: { renewal_rate: number | null; active_share_pct: number | null; expired_cohort: number; renewed_of_cohort: number; total_renewals: number; renewal_revenue: number };
+  outstanding_dues: { clients_with_dues: number; total_dues: number };
+  revenue_per_trainer: number | null;
+  utilisation_pct: number | null;
+  monthly_revenue: { month_num: number; month_name: string; revenue: number; payment_count: number }[];
 };
 
 // ── Training brief ──────────────────────────────────────────────────

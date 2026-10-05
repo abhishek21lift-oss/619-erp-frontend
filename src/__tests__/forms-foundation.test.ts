@@ -403,6 +403,15 @@ describe('errors — every failure produces a message (§12)', () => {
     expect(e.formError).not.toContain('org_id');
   });
 
+  it('surfaces a 501 as configuration, not as a retryable failure', () => {
+    // 501 bodies are hand-written config sentences (requireConfigured /
+    // NOT_CONFIGURED passthroughs), never stacks — and retrying one can
+    // never succeed, so it must not read as transient.
+    const e = mapApiError(new ApiError('AI not configured', 501));
+    expect(e.formError).toBe('AI not configured');
+    expect(e.retryable).toBe(false);
+  });
+
   it('uses a field name the server supplied', () => {
     const e = mapApiError(
       new ApiError('must be greater than 0', 400, 'VALIDATION', {
