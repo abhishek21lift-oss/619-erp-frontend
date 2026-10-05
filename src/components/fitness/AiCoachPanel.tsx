@@ -146,10 +146,15 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
     setGenerationResult(null);
     setGenerationError(null);
 
-    const age = computeAge(selectedClient.dob) ?? 30;
-    const gender = selectedClient.gender || 'male';
-    const weight_kg = selectedClient.weight ?? 75;
-    const height_cm = selectedClient.height ?? 175;
+    // Unknown stays unknown. These used to fall back to invented defaults
+    // (30/male/75/175), which reached the server marked as trainer-stated
+    // facts and programmed a stranger's body. Omitting them lets the server
+    // refuse with "missing data" instead — the trainer then fills the real
+    // record rather than approving a plan built on fiction.
+    const age = computeAge(selectedClient.dob);
+    const gender = selectedClient.gender || undefined;
+    const weight_kg = selectedClient.weight ?? undefined;
+    const height_cm = selectedClient.height ?? undefined;
 
     /*
      * §8 — validated BEFORE the model is invoked.
