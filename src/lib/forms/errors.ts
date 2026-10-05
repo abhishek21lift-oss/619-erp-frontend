@@ -225,6 +225,14 @@ export function mapApiError(error: unknown, opts: MapApiErrorOptions = {}): Form
     return formOnly('The server took too long to respond. Try again.', 'timeout', true);
   }
 
+  // ── 501: not configured — the one 5xx whose body is always a hand-written
+  // config sentence, never a stack (requireConfigured / NOT_CONFIGURED
+  // passthroughs). Surfacing it beats "try again in a moment", which can
+  // never succeed without an operator changing configuration.
+  if (status === 501) {
+    return formOnly(serverMessage ?? 'This feature is not switched on yet.', 'server', false);
+  }
+
   if (status >= 500) {
     // Deliberately not the server's message: a 5xx body can carry a stack or a
     // SQL error, and §14 forbids putting either in front of a user.

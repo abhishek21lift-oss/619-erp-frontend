@@ -82,7 +82,7 @@ function sites(): string[] {
 const KNOWN = [
   'app/(bare)/start-free/page.tsx:67',
   'app/(chrome)/ai-coach/knowledge/page.tsx:75',
-  'app/(chrome)/ai/progress-analysis/page.tsx:76',
+  'app/(chrome)/ai/progress-analysis/page.tsx:98',
   'app/(chrome)/engagement/notifications/page.tsx:46',
   // The three /stats catches are the reasoned ones: when the SQL aggregate is
   // unavailable the page falls back to summing the rows it has, which is
