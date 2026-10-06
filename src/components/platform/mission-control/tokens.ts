@@ -26,7 +26,7 @@
 
 import {
   CheckCircle2, AlertTriangle, XCircle, Timer, HelpCircle, MinusCircle,
-  Cpu, Gauge, Database, Server, Layers, Bot, ShieldAlert, Mail,
+  Cpu, Gauge, Database, Server, Layers, Bot, ShieldAlert, Mail, Network,
   type LucideIcon,
 } from 'lucide-react';
 import { palette, rgba } from '@/lib/palette';
@@ -165,6 +165,7 @@ export const CARD_META: Record<string, CardMeta> = {
   redis: { title: 'Redis', blurb: 'Latency, memory, clients', Icon: Server },
   queues: { title: 'Queues', blurb: 'Depth, failures and workers', Icon: Layers },
   ai: { title: 'AI routing', blurb: 'Models, latency, fallback rate', Icon: Bot },
+  freellmapi: { title: 'AI gateway', blurb: 'FreeLLMAPI providers, models, keys', Icon: Network },
   security: { title: 'Security', blurb: 'Auth pressure and posture', Icon: ShieldAlert },
   smtp: { title: 'Email', blurb: 'SMTP config and delivery', Icon: Mail },
 };

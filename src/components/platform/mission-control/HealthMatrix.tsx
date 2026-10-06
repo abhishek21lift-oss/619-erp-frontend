@@ -60,6 +60,11 @@ function headlineMetric(card: CommandCenterCard): { label: string; value: string
       const r = n(hour?.fallback_rate);
       return r == null ? null : { label: 'fallback 1h', value: `${Math.round(r * 100)}%` };
     }
+    case 'freellmapi': {
+      const pr = (d as { providers?: { total?: number | null; healthy?: number | null } | null }).providers;
+      const total = n(pr?.total); const healthy = n(pr?.healthy);
+      return total == null || healthy == null ? null : { label: 'providers healthy', value: `${healthy}/${total}` };
+    }
     case 'security': {
       const auth = (d as { auth?: { failed_1h?: number } }).auth;
       const f = n(auth?.failed_1h);

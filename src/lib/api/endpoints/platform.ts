@@ -27,7 +27,7 @@ import type {
   TicketMessage, TicketPriority, TicketStatus, UpiRejectReason,
   CommandCenterSnapshot, CommandCenterCommand, CommandCenterRunResult,
   CommandCenterApiRestartStatus, CommandCenterDryRun,
-  CommandCenterStreamTicket,
+  CommandCenterStreamTicket, AiModelInventory,
   SystemAlert, SystemAlertList, GuardianReport, GuardianNarration,
   LogTail, LogHistory,
   PlatformKpis, TenancyHealth, TenancyOrphans, TenancyOrphanRow,
@@ -238,6 +238,16 @@ export const superAdmin = {
       `/api/platform/command-center/snapshot${q ? `?${q}` : ''}`,
     );
   },
+
+  /** The full AI model inventory: every model the gateway's catalog lists,
+   *  joined to the routing tiers that name it and to its last served request.
+   *  Too large for the snapshot tick, so it is read on demand. `fresh`
+   *  re-reads the gateway rather than its 10-second memo. Takes no host,
+   *  provider or model — the server reads only its own configured gateway. */
+  commandCenterAiModels: (opts: { fresh?: boolean } = {}) =>
+    http<{ data: AiModelInventory }>(
+      `/api/platform/command-center/ai/models${opts.fresh ? '?fresh=1' : ''}`,
+    ),
 
   /** Mint the single-use ticket that authenticates the realtime stream.
    *
