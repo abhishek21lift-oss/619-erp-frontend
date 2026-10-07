@@ -106,10 +106,10 @@ const KNOWN = [
   'app/(chrome)/settings/integrations/page.tsx:442',
   // Two remain on the Security page (the session count on each panel); the
   // other two went with the account-management UI.
-  'app/(chrome)/settings/profile/page.tsx:1824',
-  'app/(chrome)/settings/profile/page.tsx:2116',
-  'app/(chrome)/settings/profile/page.tsx:940',
-  'app/(chrome)/settings/profile/page.tsx:941',
+  'app/(chrome)/settings/profile/page.tsx:1864',
+  'app/(chrome)/settings/profile/page.tsx:2156',
+  'app/(chrome)/settings/profile/page.tsx:950',
+  'app/(chrome)/settings/profile/page.tsx:951',
   'app/(platform)/platform/_shared/CommandBar.tsx:103',
   'app/(platform)/platform/_shared/CommandBar.tsx:104',
   'app/(platform)/platform/_tabs/ActivityTab.tsx:47',
