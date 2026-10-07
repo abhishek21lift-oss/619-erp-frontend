@@ -216,6 +216,8 @@ export interface CredentialSummary {
 export interface ProfileUpdate {
   name: string;
   email: string;
+  /** Required by the server only when `email` differs from the saved one. */
+  currentPassword?: string;
   phone?: string;
   location?: string;
   bio?: string;
