@@ -99,6 +99,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/pt-os/informed-consent',  label: 'Consent',              icon: 'FileSignature' },
       { href: '/pt-os/parq',              label: 'PAR-Q',                icon: 'ShieldCheck' },
+      { href: '/pt-os/interview',         label: 'Client Interview',     icon: 'MessagesSquare' },
       { href: '/pt-os/goals',             label: 'Goal Setting',         icon: 'Target' },
       { href: '/pt-os/assessment',        label: 'Fitness Testing',      icon: 'ClipboardCheck' },
       { href: '/pt-os/lifestyle-assessment', label: 'Lifestyle',         icon: 'HeartPulse' },

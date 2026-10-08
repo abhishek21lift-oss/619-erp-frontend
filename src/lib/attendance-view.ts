@@ -30,6 +30,17 @@ export function todayYmd(now: Date = new Date()): string {
   return ymd(now);
 }
 
+/**
+ * The Monday of the viewer's current week, as 'YYYY-MM-DD'. A week is the ISO
+ * week the member app and the server use (Monday start), so a trainer's
+ * check-in and the member's own land on the same row.
+ */
+export function mondayYmd(now: Date = new Date()): string {
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return ymd(d);
+}
+
 /** A date `n` days after `day` (negative for before). Noon avoids DST edges. */
 export function shiftDay(day: string, n: number): string {
   const [y, m, d] = day.split('-').map(Number);

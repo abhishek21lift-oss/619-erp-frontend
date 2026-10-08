@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  todayYmd, shiftDay, lastDays, dayLabel, clockTime, ago, summarize,
+  mondayYmd, todayYmd, shiftDay, lastDays, dayLabel, clockTime, ago, summarize,
   dailySeries, peakHours, dayCsv,
 } from '@/lib/attendance-view';
 import type { Attendance, Client } from '@/lib/api';
@@ -95,5 +95,16 @@ describe('the export', () => {
     expect(lines[1]).toContain('"present"');
     expect(lines[2]).toContain('"Bala ""B"""');
     expect(lines[2]).toContain('"unmarked"');
+  });
+});
+
+describe('mondayYmd — the week a check-in belongs to', () => {
+  it.each([
+    [new Date(2026, 9, 5, 9), '2026-10-05'],  // Monday stays
+    [new Date(2026, 9, 4, 23), '2026-09-28'], // Sunday belongs to the week before
+    [new Date(2026, 9, 8, 1), '2026-10-05'],  // early Thursday, local calendar
+    [new Date(2026, 2, 1, 12), '2026-02-23'], // across a month boundary
+  ])('%s → %s', (now, monday) => {
+    expect(mondayYmd(now)).toBe(monday);
   });
 });
