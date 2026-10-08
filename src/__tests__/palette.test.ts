@@ -294,7 +294,11 @@ describe('the app uses only the palette', () => {
     const outside = users.filter((u) =>
       !u.startsWith('components/profile/')
       && u !== 'app/(chrome)/settings/profile/page.tsx'
-      && u !== 'app/(chrome)/pt-os/clients/[id]/page.tsx');
+      && u !== 'app/(chrome)/pt-os/clients/[id]/page.tsx'
+      // The Client Interview is filled in from that client profile and wears
+      // its tones per question; "answered" stays emerald.
+      && u !== 'app/(chrome)/pt-os/interview/page.tsx'
+      && !u.startsWith('components/pt-os/interview/'));
     expect(users.length).toBeGreaterThan(0);
     expect(outside).toEqual([]);
   });

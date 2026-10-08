@@ -13,37 +13,25 @@
 // The local draft is scoped to the signed-in trainer and studio and purged at
 // logout (useAutoSaveDraft); its key matches the purge pattern.
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { m, useReducedMotion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, Loader2, MessagesSquare, Save } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, PageContainer, PageHero } from '@/components/ui';
-import { FormField, TextArea } from '@/components/ui/form';
+import { Button, PageContainer } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
+import { InterviewSection } from '@/components/pt-os/interview/InterviewSection';
+import { InterviewHero, SectionNav } from '@/components/pt-os/interview/InterviewChrome';
+import {
+  INTERVIEW_QUESTIONS, EMPTY_ANSWERS as EMPTY, answeredCount, type Answers,
+} from '@/components/pt-os/interview/questions';
+import { semantic, rgba } from '@/lib/palette';
+import { gradient, tones } from '@/components/profile/profileTheme';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { errorMessage } from '@/lib/forms/errors';
 import { STEP_LABEL, stepHref, type ClientInterview } from '@/lib/journey';
-
-type Answers = Record<InterviewField, string>;
-type InterviewField =
-  | 'training_history' | 'pain_and_injuries' | 'lifestyle' | 'motivation' | 'availability' | 'preferences' | 'notes';
-
-/** The questions, in the order a trainer asks them. Limits match the server. */
-const INTERVIEW_QUESTIONS: { key: InterviewField; label: string; hint: string; max: number; color: string }[] = [
-  { key: 'training_history', label: 'Training history', hint: 'What have they done before? How long, how often, what stopped them?', max: 2000, color: '#0067E0' },
-  { key: 'pain_and_injuries', label: 'Pain & injuries', hint: 'Anything that hurts now, past injuries, surgeries, what aggravates it.', max: 2000, color: '#0050AD' },
-  { key: 'lifestyle', label: 'Lifestyle', hint: 'Work, sleep, stress, steps, food routine.', max: 2000, color: '#3B8DF5' },
-  { key: 'motivation', label: 'Motivation & goals', hint: 'Why now? What would success look like, in their words?', max: 2000, color: '#002D61' },
-  { key: 'availability', label: 'Availability', hint: 'Days and times they can train; travel or shifts.', max: 1000, color: '#7FB4FF' },
-  { key: 'preferences', label: 'Preferences', hint: 'Training style, likes, dislikes, equipment at home.', max: 1000, color: '#64748B' },
-  { key: 'notes', label: 'Trainer notes', hint: 'Anything else worth remembering.', max: 2000, color: '#94A3B8' },
-];
-
-const EMPTY: Answers = {
-  training_history: '', pain_and_injuries: '', lifestyle: '', motivation: '', availability: '', preferences: '', notes: '',
-};
 
 function answersFrom(row: ClientInterview | null): Answers {
   if (!row) return { ...EMPTY };
@@ -53,7 +41,7 @@ function answersFrom(row: ClientInterview | null): Answers {
 export default function InterviewPage() {
   return (
     <Guard>
-      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>}>
+      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: semantic.primary }} /></div>}>
         <InterviewContent />
       </Suspense>
     </Guard>
@@ -76,6 +64,9 @@ function InterviewForm({ clientId }: { clientId: string }) {
   const [answers, setAnswers] = useState<Answers>({ ...EMPTY });
   const [saving, setSaving] = useState<'draft' | 'completed' | null>(null);
   const [completed, setCompleted] = useState(false);
+
+  const formRef = useRef<HTMLFormElement>(null);
+  const bar = useColumnRect(formRef, !loading && !completed);
 
   const draftKey = `client-interview-draft.v1:${clientId}`;
   const initial = useMemo(() => answersFrom(current), [current]);
@@ -134,61 +125,149 @@ function InterviewForm({ clientId }: { clientId: string }) {
   };
 
   if (loading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>;
+    return <InterviewSkeleton />;
   }
 
-  if (completed) {
-    return (
-      <PageContainer>
-        <div className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full" style={{ background: 'rgba(48,209,88,0.14)' }}>
-            <CheckCircle2 size={32} style={{ color: '#10B981' }} />
-          </div>
-          <h1 className="mt-5 text-[24px] font-[860] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>Interview complete</h1>
-          <p className="mt-2 text-[13.5px]" style={{ color: 'var(--text-muted)' }}>{clientName}&apos;s interview has been recorded.</p>
-          <Button className="mt-8" iconLeft={<ArrowRight size={14} />}
-            onClick={() => router.push(stepHref('assessment', clientId))}
-            style={{ background: 'linear-gradient(135deg, #0067E0, #0059CE)', color: '#fff' }}>
-            Continue to {STEP_LABEL.assessment}
-          </Button>
-          <button type="button" className="mt-3 text-[13px] font-[650]" style={{ color: 'var(--text-muted)' }}
-            onClick={() => router.push(`/pt-os/clients/${clientId}`)}>
-            Back to profile
-          </button>
-        </div>
-      </PageContainer>
-    );
-  }
+  if (completed) return <InterviewComplete clientName={clientName} clientId={clientId} answers={answers} />;
+
+  const answered = answeredCount(answers);
 
   return (
     <PageContainer>
-      <PageHero icon={<MessagesSquare size={20} />} title={`${clientName} — Client Interview`}
-        subtitle="Step 4 of the intake journey · optional" />
-      <form className="mx-auto mt-5 max-w-2xl space-y-3 pb-28" onSubmit={(e) => { e.preventDefault(); save('completed'); }}>
-        {INTERVIEW_QUESTIONS.map(({ key, label, hint, max, color }) => (
-          <div key={key} className="rounded-[18px] p-4"
-            style={{ background: 'var(--bg-card, var(--bg-subtle))', border: '1px solid var(--border)', borderLeft: `3px solid ${color}` }}>
-            <FormField label={label} description={hint}
-              labelAside={<span className="text-[11px] tabular-nums" style={{ color: 'var(--text-muted)' }}>{answers[key].length}/{max}</span>}>
-              <TextArea maxLength={max} rows={3} value={answers[key]}
-                onChange={(e) => setAnswers((a) => ({ ...a, [key]: e.target.value }))} />
-            </FormField>
-          </div>
+      <InterviewHero clientName={clientName} answers={answers} answered={answered} resumed={current !== null} />
+      <form ref={formRef} id="interview-form" className="mx-auto mt-4 max-w-3xl space-y-3 pb-32 sm:space-y-4"
+        onSubmit={(e) => { e.preventDefault(); save('completed'); }}>
+        <SectionNav answers={answers} />
+        {INTERVIEW_QUESTIONS.map((q, i) => (
+          <InterviewSection key={q.key} question={q} index={i} value={answers[q.key]}
+            onChange={(next) => setAnswers((a) => ({ ...a, [q.key]: next }))} />
         ))}
 
-        <div className="sticky bottom-3 flex flex-col gap-2 rounded-[18px] p-3 sm:flex-row sm:justify-end"
-          style={{ background: 'var(--bg-elevated, var(--bg-subtle))', border: '1px solid var(--border)', backdropFilter: 'blur(12px)' }}>
-          <Button type="button" variant="outline" iconLeft={<Save size={14} />} disabled={saving !== null}
-            loading={saving === 'draft'} onClick={() => save('draft')}>
+      </form>
+
+      {/* The action bar: glass, fixed above the bottom nav and laid over the
+          form's own column. Fixed rather than sticky — see SectionNav. */}
+      <div className="fixed above-bottom-nav z-40 flex items-center gap-2 rounded-[22px] p-2.5"
+        style={{
+          left: bar.left, width: bar.width,
+          background: 'color-mix(in srgb, var(--bg-elevated, var(--bg-base)) 82%, transparent)',
+          border: '1px solid var(--border)',
+          backdropFilter: 'blur(20px) saturate(1.4)', WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+          boxShadow: '0 18px 40px -18px rgba(15,23,42,0.35)',
+        }}>
+        <p className="hidden min-w-0 flex-1 pl-2 text-[12.5px] font-[650] sm:block" style={{ color: 'var(--text-muted)' }}
+          aria-live="polite">
+          <span className="tabular-nums" style={{ color: 'var(--text-primary)' }}>{answered}</span> of {INTERVIEW_QUESTIONS.length} answered
+        </p>
+        <div className="flex flex-1 gap-2 sm:flex-none">
+          <Button type="button" variant="outline" className="flex-1 sm:flex-none" iconLeft={<Save size={14} />}
+            disabled={saving !== null} loading={saving === 'draft'} onClick={() => save('draft')}>
             Save draft
           </Button>
-          <Button type="submit" iconLeft={<CheckCircle2 size={14} />} disabled={saving !== null || !hasAnyAnswer}
-            loading={saving === 'completed'}
-            style={{ background: 'linear-gradient(135deg, #10B981, #047857)', color: '#fff' }}>
-            Complete interview
+          <Button type="submit" form="interview-form" className="flex-1 sm:flex-none" iconLeft={<CheckCircle2 size={14} />}
+            disabled={saving !== null || !hasAnyAnswer} loading={saving === 'completed'}
+            style={{ background: `linear-gradient(135deg, ${semantic.success}, ${semantic.successLo})`, color: '#fff' }}>
+            Complete
           </Button>
         </div>
-      </form>
+      </div>
+    </PageContainer>
+  );
+}
+
+/**
+ * Where the form's column is on screen, so a fixed bar can sit over it. It
+ * moves when the sidebar collapses or the window resizes; a viewport-centred
+ * bar would sit half over the sidebar on desktop.
+ */
+function useColumnRect(ref: React.RefObject<HTMLElement | null>, mounted: boolean) {
+  const [rect, setRect] = useState<{ left: number | string; width: number | string }>({ left: 16, width: 'calc(100% - 32px)' });
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0) setRect({ left: r.left, width: r.width });
+    };
+    measure();
+    // The sidebar collapsing resizes the column without resizing the window.
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    ro?.observe(el);
+    window.addEventListener('resize', measure);
+    return () => { ro?.disconnect(); window.removeEventListener('resize', measure); };
+  }, [ref, mounted]);
+  return rect;
+}
+
+/** The finish line: a celebration, what was captured, and the next step. */
+function InterviewComplete({ clientName, clientId, answers }: { clientName: string; clientId: string; answers: Answers }) {
+  const router = useRouter();
+  const reduce = useReducedMotion();
+  const covered = INTERVIEW_QUESTIONS.filter((q) => answers[q.key].trim());
+  return (
+    <PageContainer>
+      <m.div
+        initial={reduce ? false : { opacity: 0, scale: 0.96, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center text-center">
+        <div className="relative">
+          <div aria-hidden className="absolute -inset-6 rounded-full blur-2xl"
+            style={{ background: `radial-gradient(circle, ${rgba(semantic.success, 0.35)}, transparent 70%)` }} />
+          <div className="relative flex h-20 w-20 items-center justify-center rounded-[26px] text-white"
+            style={{ background: `linear-gradient(135deg, ${semantic.success}, ${semantic.successLo})`, boxShadow: `0 16px 34px -12px ${rgba(semantic.success, 0.6)}` }}>
+            <CheckCircle2 size={38} strokeWidth={2.2} />
+          </div>
+        </div>
+        <h1 className="mt-6 text-[26px] font-[860] tracking-[-0.025em]" style={{ color: 'var(--text-primary)' }}>Interview complete</h1>
+        <p className="mt-2 text-[13.5px]" style={{ color: 'var(--text-muted)' }}>
+          {clientName}&apos;s interview has been recorded — {covered.length} of {INTERVIEW_QUESTIONS.length} topics covered.
+        </p>
+        {/* What was captured, in each topic's own tone. */}
+        <ul className="mt-5 flex flex-wrap justify-center gap-1.5" aria-label="Topics covered">
+          {covered.map((q) => {
+            const Icon = q.icon;
+            return (
+              <li key={q.key} className="flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5 text-[11.5px] font-[700]"
+                style={{ background: 'var(--bg-card, var(--bg-elevated))', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                <span aria-hidden className="flex h-5 w-5 items-center justify-center rounded-full text-white"
+                  style={{ background: gradient(tones[q.tone]) }}>
+                  <Icon size={11} strokeWidth={2.4} />
+                </span>
+                {q.label}
+              </li>
+            );
+          })}
+        </ul>
+        <Button className="mt-8" iconLeft={<ArrowRight size={14} />}
+          onClick={() => router.push(stepHref('assessment', clientId))}
+          style={{ background: `linear-gradient(135deg, ${semantic.primaryHi}, ${semantic.primaryLo})`, color: '#fff' }}>
+          Continue to {STEP_LABEL.assessment}
+        </Button>
+        <button type="button" className="mt-3 text-[13px] font-[650]" style={{ color: 'var(--text-muted)' }}
+          onClick={() => router.push(`/pt-os/clients/${clientId}`)}>
+          Back to profile
+        </button>
+      </m.div>
+    </PageContainer>
+  );
+}
+
+/** The page's own shape while the client loads: hero, pills, two cards. */
+function InterviewSkeleton() {
+  const block = (h: string, r = 'rounded-[24px]') => (
+    <div className={`${h} ${r} animate-pulse`} style={{ background: 'var(--bg-subtle)' }} />
+  );
+  return (
+    <PageContainer>
+      <div role="status" aria-label="Loading the interview" className="space-y-4">
+        {block('h-[188px]', 'rounded-[28px]')}
+        <div className="mx-auto max-w-2xl space-y-3">
+          {block('h-9', 'rounded-full')}
+          {block('h-[196px]')}
+          {block('h-[196px]')}
+        </div>
+      </div>
     </PageContainer>
   );
 }
