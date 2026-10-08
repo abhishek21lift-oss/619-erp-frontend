@@ -30,6 +30,12 @@ const OWNER_A = { email: 'owner-a@e2e.test', password: 'E2ePassw0rd!seed' };
 const OWNER_B = { email: 'owner-b@e2e.test', password: 'E2ePassw0rd!seed' };
 
 let seq = 0;
+/**
+ * A signature as the signature pad sends it: a PNG data URL (a 1×1 PNG).
+ * The API refuses anything else, so a placeholder string is a 400, not a
+ * signature.
+ */
+const SIGNATURE_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 const RUN = Date.now().toString(36).toUpperCase();
 const uniqueName = (tag: string) => `LIFECYCLE-${tag}-${RUN}-${++seq}`;
 /** A valid Indian mobile no other row in this run holds. */
@@ -102,7 +108,7 @@ test.describe('the PT client lifecycle, through the real API', () => {
     });
     expect(acked.status(), await acked.text()).toBe(200);
     for (const signer of ['client', 'trainer']) {
-      const signed = await api.post(`/api/pt-os/informed-consent/${id}/sign`, { ...A, data: { signer, signature: `data:${signer}` } });
+      const signed = await api.post(`/api/pt-os/informed-consent/${id}/sign`, { ...A, data: { signer, signature: SIGNATURE_PNG } });
       expect(signed.status(), await signed.text()).toBe(200);
     }
     return id;
@@ -217,7 +223,7 @@ test.describe('the PT client lifecycle, through the real API', () => {
 
     // A revoked consent cannot be revoked or signed again.
     expect((await api.post(`/api/pt-os/informed-consent/${consentId}/revoke`, { ...A, data: {} })).status()).toBe(409);
-    expect(await errorCode(await api.post(`/api/pt-os/informed-consent/${consentId}/sign`, { ...A, data: { signer: 'client', signature: 'x' } })))
+    expect(await errorCode(await api.post(`/api/pt-os/informed-consent/${consentId}/sign`, { ...A, data: { signer: 'client', signature: SIGNATURE_PNG } })))
       .toBe('NOT_SIGNABLE');
   });
 
