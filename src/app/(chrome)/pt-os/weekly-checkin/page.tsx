@@ -8,6 +8,7 @@ import { api, Client } from '@/lib/api';
 import { Button, FormField, PageHero, TextInput, TextArea, SelectInput } from '@/components/ui';
 import { PremiumAreaChart } from '@/components/visualizations';
 import WeeklyCheckinInsightCard from '@/components/pt-os/WeeklyCheckinInsightCard';
+import { mondayYmd } from '@/lib/attendance-view';
 
 const MOODS = [
   { value: 'great', label: 'Great', color: '#10b981' },
@@ -28,10 +29,10 @@ interface CheckinRow {
 
 export default function WeeklyCheckinPage() {
   const [clientId, setClientId] = useState('');
-  const [weekStart, setWeekStart] = useState(() => {
-    const d = new Date(); d.setDate(d.getDate() - d.getDay());
-    return d.toISOString().split('T')[0];
-  });
+  // Monday, in the trainer's own calendar. It was the Sunday before, computed
+  // in UTC — a different week from the member app's, and in India before
+  // 05:30 a different day as well. The server snaps any date to its Monday.
+  const [weekStart, setWeekStart] = useState(() => mondayYmd());
   const [weight, setWeight] = useState('');
   const [mood, setMood] = useState('good');
   const [sleepHours, setSleepHours] = useState('');

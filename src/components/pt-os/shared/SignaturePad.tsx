@@ -25,6 +25,15 @@ interface SignaturePadProps {
  *  anywhere in the repo, and this is a genuinely small (~100 line) capture
  *  surface, so a new npm dependency isn't warranted. Uses Pointer Events,
  *  which unify mouse/touch/pen input in one listener set. */
+// The canvas' backing store is scaled by the screen's pixel ratio, capped at
+// 2. A 3x phone screen exported signatures 2.25x the size of a 2x one with no
+// visible difference on the PDF, and a signature travels in a JSON body with
+// a size limit — two of them in the PAR-Q consent.
+const MAX_PIXEL_RATIO = 2;
+function pixelRatio() {
+  return Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
+}
+
 export function SignaturePad({ label, value, onChange, onClear, aspectRatio = 3, disabled, error, required }: SignaturePadProps) {
   const baseId = useId();
   const labelId = `${baseId}-label`;
@@ -47,7 +56,7 @@ export function SignaturePad({ label, value, onChange, onClear, aspectRatio = 3,
     if (!canvas || !container) return;
     const cssWidth = container.clientWidth;
     const cssHeight = Math.round(cssWidth / aspectRatio);
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = pixelRatio();
 
     // Preserve existing ink across a resize (e.g. orientation change) by
     // snapshotting first — resizing the backing store clears the canvas.
@@ -90,7 +99,7 @@ export function SignaturePad({ label, value, onChange, onClear, aspectRatio = 3,
     if (!canvas || !ctx) return;
     const img = new Image();
     img.onload = () => {
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = pixelRatio();
       ctx.drawImage(img, 0, 0, canvas.width / dpr, canvas.height / dpr);
       setHasStroke(true);
     };
@@ -145,7 +154,7 @@ export function SignaturePad({ label, value, onChange, onClear, aspectRatio = 3,
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (canvas && ctx) {
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = pixelRatio();
       ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
     }
     setHasStroke(false);
@@ -171,7 +180,7 @@ export function SignaturePad({ label, value, onChange, onClear, aspectRatio = 3,
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = pixelRatio();
     const cssWidth = canvas.width / dpr;
     const cssHeight = canvas.height / dpr;
 

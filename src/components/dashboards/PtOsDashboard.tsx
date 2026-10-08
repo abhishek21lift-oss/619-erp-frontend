@@ -33,10 +33,11 @@ import {
   CalendarClock, CheckCircle2,
   FileSignature, HeartPulse, Apple, PersonStanding, MessageCircle, Phone,
   AlertTriangle, Clock, IndianRupee,
-  Accessibility, Dumbbell,
+  Accessibility, Dumbbell, MessagesSquare,
   PartyPopper, TrendingUp,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAsync } from '@/lib/use-async';
 import { DashboardError } from '@/components/dashboards/primitives';
 import { useAuth } from '@/lib/auth-context';
@@ -47,6 +48,7 @@ import dynamic from 'next/dynamic';
 import { fmtTime12 } from '@/lib/format';
 import type { TodayClient, TodayRoster } from '@/lib/api';
 import { programmeNote } from '@/lib/today-notes';
+import { gapChips, gapHref, sortGaps, type ScreeningGapsResponse } from '@/lib/screening-gaps';
 import { gradient, ringStops, ringTrack, rowTones, todayMark, type RowTone } from '@/components/dashboards/todayTheme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -485,8 +487,8 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
 
 /**
  * The quick actions, in the order a trainer actually works through them: take
- * the client on, clear them to train (consent, PAR-Q), run the general
- * fitness assessment, agree what they are training FOR, then the remaining,
+ * the client on, clear them to train (consent, PAR-Q), hear their history
+ * (the interview, the journey's next step), run the general fitness assessment, agree what they are training FOR, then the remaining,
  * more specific assessments.
  *
  * ONE list, rendered by both the mobile strip and the desktop dock. They were
@@ -501,11 +503,16 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
  *
  * `icon` is the component, not an element, so each surface can size it (the
  * strip uses 16, the dock 17).
+ *
+ * Both surfaces render these as links, not buttons that push a route: a
+ * destination is a link, so it can be opened in a new tab, is prefetched, and
+ * is announced as one by a screen reader.
  */
 export const QUICK_ACTIONS = [
   { label: 'Add Client',           icon: UserPlus,       href: '/pt-os/new-client',           color: C.primary },
   { label: 'Consent',              icon: FileSignature,  href: '/pt-os/informed-consent',     color: C.primary },
   { label: 'PAR-Q',                icon: ShieldCheck,    href: '/pt-os/parq',                 color: C.success },
+  { label: 'Interview',            icon: MessagesSquare, href: '/pt-os/interview',            color: C.primary },
   { label: 'Fitness',              icon: Gauge,          href: '/pt-os/assessment',           color: C.warning },
   { label: 'Goal',                 icon: Target,         href: '/pt-os/goals',                color: C.dangerDeep },
   { label: 'Lifestyle',            icon: HeartPulse,     href: '/pt-os/lifestyle-assessment', color: C.danger },
@@ -515,29 +522,117 @@ export const QUICK_ACTIONS = [
   { label: 'Strength',             icon: Dumbbell,       href: '/pt-os/strength-tracking',    color: C.success },
 ] as const;
 
+// ─── Section 1.5 — Not cleared to train ─────────────────────────────────────
+//
+// Active clients with no completed consent, an incomplete PAR-Q, or a hard
+// stop. The screening gate only blocks a client who has no PT term yet; an
+// existing one is trained with a warning that lives on their own pages, so
+// a gap was found when someone happened to open the client — or not at all.
+//
+// It flags, it does not block. Hidden when the list is empty, still loading,
+// or failed: it is a prompt, and an alarm about a read that failed would be
+// a claim about the studio this card cannot back.
+const GAPS_SHOWN = 5;
+
+export function ScreeningGaps() {
+  const gaps = useAsync<ScreeningGapsResponse>(
+    (signal) => http<ScreeningGapsResponse>('/api/pt-os/screening-gaps', { signal }),
+    [],
+  );
+  const rows = useMemo(() => sortGaps(gaps.data?.data ?? []), [gaps.data]);
+  if (gaps.loading || gaps.error || rows.length === 0) return null;
+  const total = gaps.data?.total ?? rows.length;
+  const blocked = rows.filter((g) => g.block).length;
+  const tone = blocked ? C.danger : C.warning;
+
+  return (
+    <section aria-labelledby="screening-gaps-title">
+      <SectionLabel>Screening</SectionLabel>
+      <Glass className="p-4 sm:p-5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px]"
+            style={{ background: rgba(tone, 0.12), color: tone }}>
+            <AlertTriangle size={17} aria-hidden />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 id="screening-gaps-title" className="text-[14px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>
+              {total === 1 ? '1 client is not cleared to train' : `${total} clients are not cleared to train`}
+            </h3>
+            <p className="mt-0.5 text-[11.5px] leading-[1.5]" style={{ color: C.muted }}>
+              {blocked
+                ? `${blocked} with a hard stop. Close these before their next session.`
+                : 'Missing consent or PAR-Q. Close these before their next session.'}
+            </p>
+          </div>
+        </div>
+
+        <ul className="mt-3 space-y-1.5">
+          {rows.slice(0, GAPS_SHOWN).map((g) => (
+            <li key={g.client_id}>
+              <Link href={gapHref(g)}
+                className="flex items-center gap-3 rounded-[14px] px-2.5 py-2 transition hover:bg-[rgba(15,23,42,0.04)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                style={{ outlineColor: C.primary }}>
+                <ClientAvatar name={g.client_name} photoUrl={g.client_photo} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10.5px] font-[820] text-white"
+                  style={{ background: `linear-gradient(135deg, ${C.primary}, ${rgba(C.primary, 0.75)})` }} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[12.5px] font-[720]" style={{ color: C.ink }}>{g.client_name}</span>
+                  <span className="mt-1 flex flex-wrap gap-1">
+                    {gapChips(g).map((chip) => {
+                      const c = chip.severity === 'danger' ? C.danger : C.warning;
+                      return (
+                        <span key={chip.label} className="rounded-full px-2 py-[1px] text-[10px] font-[700]"
+                          // Dark text on a tint, not the hue as text: amber on
+                          // white is under 3:1, so the colour stays a mark.
+                          style={{ background: rgba(c, 0.12), color: C.ink, boxShadow: `inset 0 0 0 1px ${rgba(c, 0.35)}` }}>
+                          {chip.label}
+                        </span>
+                      );
+                    })}
+                  </span>
+                </span>
+                <ChevronRight size={15} aria-hidden style={{ color: C.muted }} />
+              </Link>
+            </li>
+          ))}
+        </ul>
+
+        {total > GAPS_SHOWN && (
+          <Link href="/pt-os/clients"
+            className="mt-2 inline-flex items-center gap-1 px-2.5 text-[11.5px] font-[700]" style={{ color: C.primary }}>
+            {total - GAPS_SHOWN} more in Clients <ChevronRight size={13} aria-hidden />
+          </Link>
+        )}
+      </Glass>
+    </section>
+  );
+}
+
 // ─── Section 2 — Mobile Quick Actions (visible on mobile only) ─────────────────
 function MobileQuickActions() {
-  const router = useRouter();
   const actions = QUICK_ACTIONS;
   return (
     <div className="lg:hidden -mx-3 px-3">
       <SectionLabel>Quick Actions</SectionLabel>
       <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
         {actions.map((a, i) => (
-          <m.button key={a.label}
+          <m.div key={a.label} className="shrink-0"
             initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.04, duration: 0.3 }}
-            onClick={() => router.push(a.href)}
-            className="flex flex-col items-center gap-1.5 shrink-0 rounded-[16px] p-3 transition active:scale-95"
+            transition={{ delay: i * 0.04, duration: 0.3 }}>
+          <Link href={a.href}
+            className="flex flex-col items-center gap-1.5 rounded-[16px] p-3 transition active:scale-95"
             style={{ background: `${a.color}12`, border: `1px solid ${a.color}22`, minWidth: 72 }}>
             <span className="flex h-10 w-10 items-center justify-center rounded-[13px] text-white"
               style={{ background: `linear-gradient(135deg, ${a.color}, ${a.color}cc)`, boxShadow: `0 4px 12px ${a.color}40` }}>
               <a.icon size={16} />
             </span>
-            <span className="text-[9.5px] font-[680] leading-tight text-center whitespace-nowrap" style={{ color: C.ink }}>
+            {/* The theme's ink, not C.ink: this strip sits on the page canvas
+                itself, not on a light Glass card, and in dark mode C.ink is
+                the canvas colour — the labels were invisible. */}
+            <span className="text-[9.5px] font-[680] leading-tight text-center whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
               {a.label}
             </span>
-          </m.button>
+          </Link>
+          </m.div>
         ))}
       </div>
     </div>
@@ -2101,7 +2196,6 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
 
 // ─── Desktop Quick Dock ─────────────────────────────────────────────────────────
 export function QuickDock() {
-  const router = useRouter();
   const actions = QUICK_ACTIONS;
   return (
     // Positioning lives on the wrapper, the animation on the child, and they
@@ -2132,7 +2226,7 @@ export function QuickDock() {
           border: '1px solid rgba(255,255,255,0.92)', boxShadow: '0 16px 48px rgba(15,23,42,0.14), inset 0 1px 0 rgba(255,255,255,0.7)',
         }}>
         {actions.map(a => (
-          <button key={a.label} onClick={() => router.push(a.href)}
+          <Link key={a.label} href={a.href}
             className="group flex shrink-0 flex-col items-center gap-1 rounded-[14px] px-3 py-2 transition-all duration-200 hover:-translate-y-1"
             aria-label={a.label}>
             <span className="flex h-11 w-11 items-center justify-center rounded-[14px] text-white transition-transform duration-200 group-hover:scale-110"
@@ -2140,7 +2234,7 @@ export function QuickDock() {
               <a.icon size={17} />
             </span>
             <span className="text-[9px] font-[650] whitespace-nowrap" style={{ color: C.ink }}>{a.label}</span>
-          </button>
+          </Link>
         ))}
       </m.div>
     </div>
@@ -2303,6 +2397,10 @@ export default function PtOsDashboard() {
             <div style={{ marginTop: 8 }}>
               <TodaySchedule />
             </div>
+
+            {/* 2.5 — Clients not cleared to train. Next to today's sessions
+                because that is when it matters: before someone is trained. */}
+            <ScreeningGaps />
 
             {/* 3 — Mobile quick actions (desktop uses the dock) */}
             <MobileQuickActions />
