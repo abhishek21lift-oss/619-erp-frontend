@@ -2078,13 +2078,196 @@ export interface QueuesTelemetry {
   degradation?: QueueDegradation;
 }
 
+export type AiTier = 'primary' | 'secondary' | 'fallback';
+
+/** Where a tier's effective model came from: the Control Centre override
+ *  (platform_ai_settings), an AI_*_MODEL variable, or the built-in default. */
+export type AiRoutingSource = 'override' | 'env' | 'default';
+
+/** Configuration versus reality, decided on the server. */
+export type AiReconciliationState = 'consistent' | 'mismatch' | 'runtime_failure' | 'not_verified';
+
+export interface AiReconciliationFinding {
+  code: string;
+  severity: 'critical' | 'warning' | 'info';
+  message: string;
+  /** Which two sources disagreed, so the finding can be checked by hand. */
+  source: string;
+}
+
+/** What one API process saw its own gateway calls do. Process-scoped: the
+ *  worker and any second replica keep their own. */
+export interface AiObservedTraffic {
+  scope: 'process';
+  since: string;
+  calls_15m: number;
+  failures_15m: number;
+  consecutive_failures: number;
+  latency_ms: { avg: number; p95: number; max: number; samples: number } | null;
+  last_success: {
+    at: string; requested_model: string | null; served_model: string | null;
+    provider: string | null; latency_ms: number | null;
+  } | null;
+  last_failure: {
+    at: string; requested_model: string | null; error_class: string;
+    http_status: number | null; error: string | null;
+  } | null;
+}
+
 export interface AiTelemetry {
+  /** The EFFECTIVE model per tier — what a request routes to right now. */
+  routing: Record<AiTier, string | null> & {
+    sources: Record<AiTier, AiRoutingSource>;
+    override: Record<AiTier, string | null>;
+    from_env: Record<AiTier, string | null>;
+    updated_at: string | null;
+  };
+  /** The model that served the most recent RETURNED request — never the
+   *  configured one. Null when nothing has been served. */
   active_model: string | null;
+  active_model_at?: string | null;
+  active_used_fallback?: boolean | null;
   last_request_at: string | null;
-  routing: { primary: string | null; secondary: string | null; fallback: string | null };
-  today: { requests: number; avg_latency_ms: number | null; fallbacks: number; cost_inr: number | null };
-  last_hour: { requests: number; fallback_rate: number | null } | null;
+  /** Null when ai_usage_log could not be read. Latencies are null with no traffic. */
+  today: {
+    requests: number; avg_latency_ms: number | null; max_latency_ms?: number | null;
+    p95_latency_ms?: number | null; tokens?: number; fallbacks: number;
+    fallback_rate?: number | null; models_used?: number;
+    cost_inr: number | null; cost_is_floor?: boolean;
+  } | null;
+  last_hour: {
+    requests: number | null; avg_latency_ms?: number | null; max_latency_ms?: number | null;
+    fallbacks?: number; fallback_rate: number | null;
+  } | null;
+  served_models_24h?: Array<{ model: string; requests: number; last_at: string }> | null;
+  gateway: { kind: AiGatewayKind | null; endpoint: string | null; status: CommandCenterStatus; reason: string | null };
+  observed?: AiObservedTraffic;
+  reconciliation: {
+    state: AiReconciliationState;
+    findings: AiReconciliationFinding[];
+    verified: { catalog: boolean; traffic: boolean; gateway: boolean };
+  };
+  usage_readable?: boolean;
   note?: string;
+}
+
+/** What sits at AI_BASE_URL. Only `freellmapi` has a status surface to read. */
+export type AiGatewayKind =
+  | 'not_configured' | 'invalid' | 'openrouter' | 'freellmapi' | 'openai_compatible' | 'unreachable';
+
+export type AiProviderStatus = 'healthy' | 'rate_limited' | 'invalid' | 'unknown';
+
+export interface AiGatewayProvider {
+  id: string;
+  name: string;
+  status: AiProviderStatus;
+  enabled_keys: number | null;
+  resume_at: string | null;
+  last_error: string | null;
+  requests_remaining_pct: number | null;
+  /** Joined from the catalog; null when the catalog was not readable. */
+  models_total: number | null;
+  models_available: number | null;
+}
+
+export interface AiConfiguredModelState {
+  tier: AiTier;
+  id: string | null;
+  /** A router id ("auto") serves a different model per request by design. */
+  router: boolean;
+  /** null = the catalog could not be read, so presence is unknown. */
+  in_catalog: boolean | null;
+  available: boolean | null;
+  unavailable_reason: string | null;
+}
+
+/** A gateway surface the ERP tried to read. `exposed: null` = it did not answer. */
+interface AiGatewaySurface { source: string; exposed: boolean | null; reason: string | null }
+
+export interface FreeLlmApiTelemetry {
+  gateway: { kind: AiGatewayKind; endpoint: string | null; checked_at: string };
+  service: {
+    reachable: boolean; live: boolean | null; version: string | null; uptime_s: number | null;
+    checks: { db: unknown; encryption_key: unknown } | null;
+    latency_ms: number | null; http_status: number | null;
+    error_class: string | null; error: string | null;
+  } | null;
+  readiness: { ready: boolean | null; ready_upstreams: number | null; reason: string | null; http_status: number | null } | null;
+  providers: (AiGatewaySurface & {
+    total: number | null; healthy: number | null; rate_limited: number | null;
+    invalid: number | null; unknown: number | null;
+    items: AiGatewayProvider[] | null;
+  }) | null;
+  models: (AiGatewaySurface & {
+    total: number | null; available: number | null; unavailable: number | null;
+    routers: Array<{ id: string; available: boolean | null }>;
+    by_provider: Array<{ provider: string; total: number; available: number }>;
+    configured: AiConfiguredModelState[];
+  }) | null;
+  /** Per-key health is never held by the ERP: `healthy` and `per_key` stay
+   *  null and `healthy_unavailable_reason` says why. */
+  keys: {
+    source: string;
+    total: number | null;
+    healthy: null;
+    healthy_unavailable_reason: string;
+    per_key: null;
+    by_provider: Array<{
+      provider: string; name: string; enabled_keys: number | null;
+      provider_status: AiProviderStatus; resume_at: string | null;
+    }> | null;
+  } | null;
+  traffic: {
+    scope: 'process'; since: string; window_ms: number; calls: number; failures: number;
+    failure_rate: number | null; consecutive_failures: number;
+    latency_ms: AiObservedTraffic['latency_ms'];
+    last_success: AiObservedTraffic['last_success'];
+    last_failure: AiObservedTraffic['last_failure'];
+    providers: Array<{ provider: string; calls: number; avg_latency_ms: number | null }>;
+  };
+}
+
+/** GET /command-center/ai/models — the full catalog, read on demand. */
+export interface AiModelInventoryEntry {
+  id: string;
+  provider: string | null;
+  available: boolean | null;
+  unavailable_reason: string | null;
+  configured_tiers: AiTier[];
+  /** Null when the usage log was unreadable — not "never used". */
+  last_used_at: string | null;
+  requests_30d: number | null;
+}
+
+export interface AiModelInventory {
+  gateway: { kind: AiGatewayKind; endpoint: string | null; status: CommandCenterStatus; reason: string | null };
+  checked_at: string;
+  source: string | null;
+  exposed: boolean | null;
+  reason: string | null;
+  usage_readable: boolean;
+  configured: Array<{ tier: AiTier; id: string | null; router: boolean }>;
+  models: AiModelInventoryEntry[] | null;
+  routers: AiModelInventoryEntry[] | null;
+  served_not_in_catalog: Array<{ id: string; last_used_at: string; requests_30d: number }> | null;
+}
+
+/** `ai.test` output. On failure it arrives on the error payload instead. */
+export interface AiTestOutput {
+  ok: boolean;
+  latency_ms: number;
+  requested_model: string | null;
+  requested_tier: string | null;
+  model?: string | null;
+  served_tier?: string | null;
+  provider?: string | null;
+  provider_source?: string;
+  used_fallback?: boolean | null;
+  gateway_fallback_attempts?: number | null;
+  gateway: { endpoint: string | null; openrouter: boolean | null; kind?: string | null; status?: string; reason?: string | null };
+  reply?: string | null;
+  attempts?: Array<{ model: string | null; tier: string | null; error_class: string; http_status: number | null; error: string }>;
+  summary?: string;
 }
 
 export interface SecurityTelemetry {
@@ -2121,7 +2304,7 @@ export interface HostTelemetry {
 /** The payload union, discriminated by the card's `name`. */
 export type CommandCenterTelemetry =
   | RuntimeTelemetry | HttpTelemetry | DatabaseTelemetry | RedisTelemetry
-  | QueuesTelemetry | AiTelemetry | SecurityTelemetry | SmtpTelemetry | HostTelemetry;
+  | QueuesTelemetry | AiTelemetry | FreeLlmApiTelemetry | SecurityTelemetry | SmtpTelemetry | HostTelemetry;
 
 export interface CommandCenterCard {
   name: string;
