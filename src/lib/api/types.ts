@@ -2106,10 +2106,22 @@ export interface SmtpTelemetry {
   live_probe?: { ok: boolean } | null;
 }
 
+/** The VPS host (backend `host` collector): /proc + statfs. Ratios are 0–1. */
+export interface HostTelemetry {
+  cpu: { cores: number | null; busy_ratio: number | null; steal_ratio: number | null };
+  memory: { total_bytes: number | null; available_bytes: number | null; used_bytes: number | null; used_ratio: number | null };
+  swap: { total_bytes: number; used_bytes: number; used_ratio: number | null };
+  load: { one: number; five: number; fifteen: number; running_threads: number | null; total_threads: number | null };
+  load_per_core: number | null;
+  uptime_seconds: number | null;
+  disk: { path: string; total_bytes?: number; free_bytes?: number; used_bytes?: number; used_ratio?: number | null; error?: string } | null;
+  source?: string;
+}
+
 /** The payload union, discriminated by the card's `name`. */
 export type CommandCenterTelemetry =
   | RuntimeTelemetry | HttpTelemetry | DatabaseTelemetry | RedisTelemetry
-  | QueuesTelemetry | AiTelemetry | SecurityTelemetry | SmtpTelemetry;
+  | QueuesTelemetry | AiTelemetry | SecurityTelemetry | SmtpTelemetry | HostTelemetry;
 
 export interface CommandCenterCard {
   name: string;
