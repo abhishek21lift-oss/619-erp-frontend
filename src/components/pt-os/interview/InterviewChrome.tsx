@@ -117,13 +117,16 @@ export function SectionNav({ answers }: { answers: Answers }) {
                   document.getElementById(`q-${q.key}`)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
                 }}
                 className="flex items-center gap-1.5 rounded-full py-1.5 pl-1.5 pr-3 text-[12px] font-[700] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                style={{ background: 'var(--bg-card, var(--bg-elevated))', border: '1px solid var(--border)', color: 'var(--text-primary)', outlineColor: t.from }}
-                aria-label={`${i + 1}. ${q.label}${done ? ', answered' : ''}`}>
+                style={{ background: 'var(--bg-card, var(--bg-elevated))', border: '1px solid var(--border)', color: 'var(--text-primary)', outlineColor: t.from }}>
                 <span aria-hidden className="flex h-5 w-5 items-center justify-center rounded-full text-white"
                   style={{ background: done ? semantic.success : gradient(t) }}>
                   {done ? <Check size={11} strokeWidth={3.2} /> : <span className="text-[9.5px] font-[800]">{i + 1}</span>}
                 </span>
+                {/* The visible label is the link's name — no aria-label, which
+                    would also make each pill a match for getByLabel(question)
+                    beside the answer box it points at. */}
                 {q.label}
+                {done && <span className="sr-only">, answered</span>}
               </m.a>
             </li>
           );

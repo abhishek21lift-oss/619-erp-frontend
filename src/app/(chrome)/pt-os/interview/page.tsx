@@ -167,7 +167,7 @@ function InterviewForm({ clientId }: { clientId: string }) {
           <Button type="submit" form="interview-form" className="flex-1 sm:flex-none" iconLeft={<CheckCircle2 size={14} />}
             disabled={saving !== null || !hasAnyAnswer} loading={saving === 'completed'}
             style={{ background: `linear-gradient(135deg, ${semantic.success}, ${semantic.successLo})`, color: '#fff' }}>
-            Complete
+            Complete interview
           </Button>
         </div>
       </div>

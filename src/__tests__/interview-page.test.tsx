@@ -63,7 +63,7 @@ describe('<InterviewPage />', () => {
   it('counts an answer only once something is written, and cannot complete an empty interview', async () => {
     render(<InterviewPage />);
     await screen.findByText('Mina Rao · Client Interview');
-    const complete = screen.getByRole('button', { name: /complete/i }) as HTMLButtonElement;
+    const complete = screen.getByRole('button', { name: 'Complete interview' }) as HTMLButtonElement;
     expect(complete.disabled).toBe(true);
     expect(screen.getByRole('img', { name: '0 of 7 questions answered' })).toBeTruthy();
 
@@ -72,7 +72,10 @@ describe('<InterviewPage />', () => {
 
     fireEvent.change(textareas()[1], { target: { value: 'Left knee, old ACL repair' } });
     expect(screen.getByRole('img', { name: '1 of 7 questions answered' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: '2. Pain & injuries, answered' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Pain & injuries, answered' })).toBeTruthy();
+    // Each answer box is the only thing its label names (the e2e suite
+    // finds fields with getByLabel).
+    for (const q of INTERVIEW_QUESTIONS) expect(screen.getAllByLabelText(q.label)).toHaveLength(1);
     expect(complete.disabled).toBe(false);
   });
 
@@ -94,7 +97,7 @@ describe('<InterviewPage />', () => {
     await screen.findByText('Mina Rao · Client Interview');
     fireEvent.change(textareas()[1], { target: { value: 'Lower back stiffness' } });
     fireEvent.change(textareas()[4], { target: { value: 'Mon, Wed, Fri mornings' } });
-    fireEvent.click(screen.getByRole('button', { name: /complete/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Complete interview' }));
 
     expect(await screen.findByText('Interview complete')).toBeTruthy();
     const body = mockCreate.mock.calls[0][1] as Record<string, string>;
