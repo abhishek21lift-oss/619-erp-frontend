@@ -26,7 +26,7 @@
 
 import {
   CheckCircle2, AlertTriangle, XCircle, Timer, HelpCircle, MinusCircle,
-  Cpu, Gauge, Database, Server, Layers, Bot, ShieldAlert, Mail, Network,
+  Cpu, Gauge, Database, Server, Layers, Bot, ShieldAlert, Mail, Network, HardDrive,
   type LucideIcon,
 } from 'lucide-react';
 import { palette, rgba } from '@/lib/palette';
@@ -168,6 +168,7 @@ export const CARD_META: Record<string, CardMeta> = {
   freellmapi: { title: 'AI gateway', blurb: 'FreeLLMAPI providers, models, keys', Icon: Network },
   security: { title: 'Security', blurb: 'Auth pressure and posture', Icon: ShieldAlert },
   smtp: { title: 'Email', blurb: 'SMTP config and delivery', Icon: Mail },
+  host: { title: 'VPS', blurb: 'Server CPU, memory, load and disk', Icon: HardDrive },
 };
 
 export const metaFor = (name: string): CardMeta =>

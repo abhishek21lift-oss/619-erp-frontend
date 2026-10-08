@@ -70,6 +70,15 @@ function headlineMetric(card: CommandCenterCard): { label: string; value: string
       const f = n(auth?.failed_1h);
       return f == null ? null : { label: 'failed logins 1h', value: String(f) };
     }
+    case 'host': {
+      // Whichever of memory and disk is fuller: those are the two that take the box down.
+      const mem = n((d as { memory?: { used_ratio?: number } }).memory?.used_ratio);
+      const disk = n((d as { disk?: { used_ratio?: number } }).disk?.used_ratio);
+      if (mem == null && disk == null) return null;
+      return (disk ?? -1) > (mem ?? -1)
+        ? { label: 'disk', value: `${Math.round((disk as number) * 100)}%` }
+        : { label: 'memory', value: `${Math.round((mem as number) * 100)}%` };
+    }
     case 'smtp': {
       const del = (d as { delivery?: { invitations_sent?: number; invitations_total?: number } }).delivery;
       if (!del) return null;

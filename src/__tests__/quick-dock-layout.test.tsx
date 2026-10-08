@@ -29,13 +29,15 @@ function renderDock() {
 describe('<QuickDock />', () => {
   it('renders every quick action, including the last two', () => {
     renderDock();
+    // Links, not buttons that push a route: each can be opened in a new tab.
     for (const a of QUICK_ACTIONS) {
-      expect(screen.getByRole('button', { name: a.label })).toBeTruthy();
+      expect(screen.getByRole('link', { name: a.label }).getAttribute('href')).toBe(a.href);
     }
     // Named outright, because these are the two that were missing.
-    expect(screen.getByRole('button', { name: 'Posture' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Strength' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Posture' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Strength' })).toBeTruthy();
   });
+
 
   it('never centres a positioned element with a translate utility', () => {
     // The bug in one assertion, anchored to whichever element actually carries

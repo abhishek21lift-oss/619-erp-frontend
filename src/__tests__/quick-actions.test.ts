@@ -12,12 +12,14 @@ import {routeExists} from '@/__tests__/helpers/app-routes';
 
 describe('QUICK_ACTIONS', () => {
   it('is in the order a trainer works through a new client', () => {
-    // Onboard, clear to train, run the general fitness assessment, agree
-    // the goal, then the remaining specific assessments.
+    // Onboard, clear to train, hear their history (the interview, the
+    // intake journey's step after PAR-Q), run the general fitness
+    // assessment, agree the goal, then the remaining specific assessments.
     expect(QUICK_ACTIONS.map((a) => a.label)).toEqual([
       'Add Client',
       'Consent',
       'PAR-Q',
+      'Interview',
       'Fitness',
       'Goal',
       'Lifestyle',

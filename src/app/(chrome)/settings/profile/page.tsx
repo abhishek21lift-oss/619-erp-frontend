@@ -44,7 +44,7 @@ const PortfolioSection = dynamic(() => import('@/components/profile/PortfolioSec
   ssr: false,
   loading: () => <PortfolioSkeleton />,
 });
-import { apiBase } from '@/lib/http';
+import { apiBase, ApiError } from '@/lib/http';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
 import { fmtDate } from '@/lib/format';
@@ -62,6 +62,11 @@ import UpiSettingsPanel from '@/components/payments/UpiSettingsPanel';
 /* ─────────────────────────────────────────
    HELPERS
 ───────────────────────────────────────── */
+/** The server compares emails trimmed and lower-cased; so must the client. */
+function normaliseEmail(value: string): string {
+  return value.trim().toLowerCase();
+}
+
 function initials(name: string) {
   const n = name.trim();
   if (!n) return '?';
@@ -912,6 +917,11 @@ function ProfilePageInner() {
   const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
   const [disableMfaOpen, setDisableMfaOpen] = useState(false);
   const [signOutAllOpen, setSignOutAllOpen] = useState(false);
+
+  /* Re-authentication for changing the sign-in email (server requires it) */
+  const [reauthOpen, setReauthOpen] = useState(false);
+  const [reauthPw, setReauthPw] = useState('');
+  const [reauthError, setReauthError] = useState<string | null>(null);
   const [signingOutAll, setSigningOutAll] = useState(false);
 
   const strength = useMemo(() => pwStrength(newPw), [newPw]);
@@ -966,7 +976,13 @@ function ProfilePageInner() {
   useEffect(() => { loadProfile(); fetchActivity(); }, [loadProfile, fetchActivity]);
 
   /* ── Save personal info ── */
-  const handleSave = async () => {
+  /*
+   * `currentPassword` is passed only from the re-authentication dialog. The
+   * email is the account's sign-in identity, so the server refuses to change
+   * it without the current password; an unchanged email (resent on every
+   * save) needs none.
+   */
+  const handleSave = async (currentPassword?: string) => {
     if (savingRef.current) return;
 
     /*
@@ -994,12 +1010,21 @@ function ProfilePageInner() {
     }
     setFieldIssues({});
 
+    const emailChanged = normaliseEmail(email) !== normaliseEmail(originalRef.current.email);
+    if (emailChanged && !currentPassword) {
+      setReauthPw('');
+      setReauthError(null);
+      setReauthOpen(true);
+      return;
+    }
+
     savingRef.current = true;
     setSaving(true);
     setSaveMsg(null);
     try {
       const row = await api.profile.updateMe({
         name, email, phone, location, bio,
+        ...(emailChanged ? { currentPassword } : {}),
         job_title: jobTitle,
         philosophy, training_style: trainingStyle, designation,
         languages, coaching_modes: coachingModes,
@@ -1015,9 +1040,24 @@ function ProfilePageInner() {
         })),
       });
       hydrate(row);
+      // The shell (top bar, sidebar) reads name and email from the session user.
+      updateUser({ name: row.name, email: row.email });
+      setReauthOpen(false);
+      setReauthPw('');
+      if (emailChanged) {
+        toast.success('Sign-in email changed. A notice was sent to your previous address.');
+      }
       setSaveMsg({ type: 'success', text: 'Profile saved successfully' });
       setTimeout(() => setSaveMsg(null), 3000);
     } catch (err: unknown) {
+      const code = err instanceof ApiError ? err.code : undefined;
+      if (code === 'REAUTH_REQUIRED' || code === 'REAUTH_FAILED' || code === 'REAUTH_RATE_LIMITED') {
+        // Keep the user in the dialog, where the password they need to fix is.
+        setReauthError(errorMessage(err, 'Could not verify your password'));
+        setReauthOpen(true);
+        return;
+      }
+      setReauthOpen(false);
       const msg = errorMessage(err, 'Failed to save');
       setSaveMsg({ type: 'error', text: msg });
     } finally {
@@ -2094,7 +2134,7 @@ function ProfilePageInner() {
         {/* ── STICKY SAVE BAR ── */}
         <StickySaveBar
           open={isDirty || !!saveMsg} dirty={isDirty} saving={saving}
-          onSave={handleSave} onDiscard={handleDiscard} msg={saveMsg}
+          onSave={() => { void handleSave(); }} onDiscard={handleDiscard} msg={saveMsg}
         />
 
         {/* ── RECOVERY CODES MODAL ── */}
@@ -2124,6 +2164,42 @@ function ProfilePageInner() {
                 Done
               </button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── CONFIRM PASSWORD TO CHANGE SIGN-IN EMAIL ── */}
+        <Dialog open={reauthOpen} onOpenChange={(open) => { if (!open && !saving) { setReauthOpen(false); setReauthPw(''); setReauthError(null); } }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm it&apos;s you</DialogTitle>
+            </DialogHeader>
+            <form
+              onSubmit={(e) => { e.preventDefault(); if (reauthPw) void handleSave(reauthPw); }}
+              className="flex flex-col gap-3"
+            >
+              <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+                You&apos;re changing your sign-in email to <strong style={{ color: 'var(--text-primary)' }}>{email.trim()}</strong>.
+                Enter your current password to continue. We&apos;ll let your previous address know.
+              </p>
+              <FloatInput
+                tone="brand" upperLifted label="Current Password" type="password"
+                value={reauthPw} onChange={(v) => { setReauthPw(v); setReauthError(null); }}
+                error={reauthError ?? undefined} required
+              />
+              <DialogFooter>
+                <button type="button" onClick={() => { setReauthOpen(false); setReauthPw(''); setReauthError(null); }} disabled={saving}
+                  className="rounded-[10px] px-4 py-2 text-[12.5px] font-[700]"
+                  style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={saving || !reauthPw}
+                  className="flex items-center gap-2 rounded-[10px] px-4 py-2 text-[12.5px] font-[700] text-white"
+                  style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)', opacity: saving || !reauthPw ? 0.6 : 1 }}>
+                  {saving ? <Loader2 size={13} className="animate-spin" /> : <Lock size={13} />}
+                  Confirm &amp; save
+                </button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
 

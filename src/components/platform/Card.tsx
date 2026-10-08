@@ -108,6 +108,21 @@ function CardBody({ card }: { card: CommandCenterCard }) {
       const delivery = pick(d, 'delivery'); const probe = pick(d, 'live_probe');
       return <div className="space-y-2.5"><Grid><Metric label="Configured" value={pick(d, 'configured') === true ? 'Yes' : 'No'} /><Metric label="Invitations" value={fmtNum(pick(delivery, 'invitations_total'))} /><Metric label="Sent" value={fmtNum(pick(delivery, 'invitations_sent'))} /><Metric label="Errored" value={fmtNum(pick(delivery, 'invitations_errored'))} /><Metric label="Never sent" value={fmtNum(pick(delivery, 'attempted_never_sent'))} /><Metric label="Last sent" value={pick(delivery, 'last_sent_at') ? new Date(String(pick(delivery, 'last_sent_at'))).toLocaleString() : '—'} /></Grid>{Array.isArray(pick(d, 'missing_vars')) && (pick(d, 'missing_vars') as unknown[]).length > 0 && <p className="text-[10.5px]" style={{ color: 'var(--text-secondary)' }}>Missing: {(pick(d, 'missing_vars') as unknown[]).join(', ')}</p>}{Boolean(probe) && <p className="text-[10.5px]" style={{ color: 'var(--text-secondary)' }}>Live probe: {pick(probe, 'ok') === true ? 'passed' : 'failed'}</p>}{fmtText(pick(delivery, 'last_error')) !== '—' && <p className="truncate text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>Last error: {fmtText(pick(delivery, 'last_error'))}</p>}</div>;
     }
+    case 'host': {
+      const cpu = pick(d, 'cpu'); const mem = pick(d, 'memory'); const swap = pick(d, 'swap'); const load = pick(d, 'load'); const disk = pick(d, 'disk');
+      const loadText = typeof pick(load, 'one') === 'number'
+        ? `${Number(pick(load, 'one')).toFixed(2)} / ${Number(pick(load, 'five')).toFixed(2)} / ${Number(pick(load, 'fifteen')).toFixed(2)}` : '—';
+      return <div className="space-y-2.5"><Grid>
+        <Ratio label="CPU busy" value={pick(cpu, 'busy_ratio')} /><Ratio label="Memory used" value={pick(mem, 'used_ratio')} />
+        <Ratio label="Disk used" value={pick(disk, 'used_ratio')} /><Metric label="Load 1/5/15m" value={loadText} hint={`${fmtNum(pick(cpu, 'cores'))} cores`} />
+        <Metric label="Memory" value={`${fmtBytes(pick(mem, 'used_bytes'))} / ${fmtBytes(pick(mem, 'total_bytes'))}`} />
+        <Metric label="Disk" value={`${fmtBytes(pick(disk, 'used_bytes'))} / ${fmtBytes(pick(disk, 'total_bytes'))}`} />
+        <Metric label="Swap" value={pick(swap, 'total_bytes') ? `${fmtBytes(pick(swap, 'used_bytes'))} / ${fmtBytes(pick(swap, 'total_bytes'))}` : 'None'} />
+        <Metric label="Uptime" value={fmtDuration(pick(d, 'uptime_seconds'))} />
+        <Metric label="CPU steal" value={fmtPct(pick(cpu, 'steal_ratio'))} hint="time taken by other VPS tenants" />
+        <Metric label="Threads" value={fmtNum(pick(load, 'total_threads'))} />
+      </Grid>{fmtText(pick(disk, 'error')) !== '—' && <p className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>Disk unreadable: {fmtText(pick(disk, 'error'))}</p>}</div>;
+    }
     default:
       return <div className="rounded-[10px] px-3 py-2 text-[11px]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-tertiary)' }}>Collector returned data, but this card has no renderer yet.</div>;
   }
