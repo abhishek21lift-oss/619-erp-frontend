@@ -114,6 +114,7 @@ export default function StartFreePage() {
       'No card needed to apply',
       'A person reviews every new studio',
       `${trialDays ? `${trialDays}-day trial` : 'Free trial'}, counted from approval`,
+      'INR pricing, no lock-in after the trial',
     ],
   };
 
