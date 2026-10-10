@@ -302,6 +302,39 @@ export function computeOverallScore(scores: Record<string, number | null>): numb
   return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
 }
 
+// ── Score coverage ── derived, never stored ──
+// How many of the six dashboard categories actually have a result, so a
+// partial battery (a skipped step, an unscored Custom test, a BP-unsafe skip
+// of the exertion tests) is never presented as a complete six-category
+// assessment. Counts a valid numeric score as available — including a
+// legitimate 0 — and treats null/undefined as missing. Nulls are never
+// converted to zero here or anywhere downstream.
+export const SCORED_CATEGORY_KEYS = [
+  'cardioScore',
+  'strengthScore',
+  'enduranceScore',
+  'mobilityScore',
+  'bodyCompositionScore',
+  'healthRiskScore',
+] as const;
+
+export type ScoredCategoryKey = (typeof SCORED_CATEGORY_KEYS)[number];
+
+export interface ScoreCoverage {
+  available: number;
+  total: number;
+  isComplete: boolean;
+}
+
+export function scoreCoverage(scores: Partial<Record<ScoredCategoryKey, number | null | undefined>>): ScoreCoverage {
+  const available = SCORED_CATEGORY_KEYS.filter((k) => scores[k] != null).length;
+  return { available, total: SCORED_CATEGORY_KEYS.length, isComplete: available === SCORED_CATEGORY_KEYS.length };
+}
+
+export function formatCoverage(coverage: ScoreCoverage): string {
+  return `${coverage.available} of ${coverage.total} categories scored`;
+}
+
 export function computeAge(dob: string | null): number | null {
   if (!dob) return null;
   const d = new Date(dob);

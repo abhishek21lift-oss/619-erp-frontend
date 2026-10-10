@@ -3,6 +3,7 @@
 import { Gauge } from 'lucide-react';
 import { DonutChart } from '@/components/ui';
 import FitnessRadarChart from '@/components/pt-os/FitnessRadarChart';
+import { scoreCoverage, formatCoverage } from '@/lib/fitness-calculations';
 
 export interface FitnessScores {
   cardioScore: number | null;
@@ -36,7 +37,10 @@ interface FitnessDashboardProps {
 }
 
 export function FitnessDashboard({ scores }: FitnessDashboardProps) {
-  const radarData = CATEGORY_META.map((c) => ({ category: c.label, score: scores[c.key] ?? 0 }));
+  const coverage = scoreCoverage(scores);
+  // Missing categories stay null all the way into the radar — never 0, so a
+  // skipped test is a gap, not a measured zero.
+  const radarData = CATEGORY_META.map((c) => ({ category: c.label, score: scores[c.key] }));
   const overall = scores.overallScore;
 
   return (
@@ -48,7 +52,19 @@ export function FitnessDashboard({ scores }: FitnessDashboardProps) {
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-white leading-none">Fitness Dashboard</h2>
-            <p className="text-[13px] text-white/40 mt-1.5">Overall performance across all 6 categories.</p>
+            <p className="text-[13px] text-white/40 mt-1.5">
+              {coverage.isComplete
+                ? 'Overall performance across all 6 categories.'
+                : `Partial assessment — ${formatCoverage(coverage)}.`}
+            </p>
+            <p
+              className="mt-2 inline-block rounded-full px-3 py-1 text-[12px] font-[700]"
+              style={coverage.isComplete
+                ? { background: 'rgba(16,185,129,0.15)', color: '#10b981' }
+                : { background: 'rgba(245,158,11,0.15)', color: '#F59E0B' }}
+            >
+              {coverage.isComplete ? `Complete · ${formatCoverage(coverage)}` : `Partial · ${formatCoverage(coverage)}`}
+            </p>
           </div>
         </div>
 
@@ -65,6 +81,13 @@ export function FitnessDashboard({ scores }: FitnessDashboardProps) {
               thin
               height={220}
             />
+            {!coverage.isComplete && (
+              <p className="mt-3 text-center text-[12px] font-[600] text-white/40">
+                {coverage.available === 0
+                  ? 'No categories scored yet — no overall score.'
+                  : `Overall score based on ${formatCoverage(coverage)}.`}
+              </p>
+            )}
           </div>
           <FitnessRadarChart data={radarData} height={240} />
         </div>

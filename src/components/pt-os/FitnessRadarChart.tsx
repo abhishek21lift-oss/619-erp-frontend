@@ -7,7 +7,9 @@ import {
 
 export interface RadarDatum {
   category: string;
-  score: number;
+  // Null = not measured. Passed straight through so a missing test renders
+  // as a gap, never as a zero.
+  score: number | null;
 }
 
 interface FitnessRadarChartProps {
@@ -26,7 +28,7 @@ export function FitnessRadarChart({ data, height = 280 }: FitnessRadarChartProps
         <Radar
           name="Score" dataKey="score"
           stroke="#0067E0" fill="#0067E0" fillOpacity={0.35}
-          strokeWidth={2} isAnimationActive={false}
+          strokeWidth={2} isAnimationActive={false} connectNulls={false}
         />
         <Tooltip
           contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, fontSize: 12 }}

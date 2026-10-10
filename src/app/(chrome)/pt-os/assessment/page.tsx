@@ -35,6 +35,7 @@ import StepStrength from '@/components/pt-os/fitness-testing/StepStrength';
 import StepEndurance from '@/components/pt-os/fitness-testing/StepEndurance';
 import StepFlexibility from '@/components/pt-os/fitness-testing/StepFlexibility';
 import FitnessDashboard, { type FitnessScores } from '@/components/pt-os/fitness-testing/FitnessDashboard';
+import { ScreeningStatusCard, ScreeningWarningsNotice } from '@/components/pt-os/fitness-testing/ScreeningStatusCard';
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
 import AiRecommendationsPanel from '@/components/pt-os/fitness-testing/AiRecommendationsPanel';
 import { errorMessage } from '@/lib/forms/errors';
@@ -176,6 +177,12 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
   const [reviewMode, setReviewMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Record<string, unknown> | null>(null);
+  // Server-computed screening snapshot embedded in GET /api/pt-os/clients/:id
+  // (screeningSummary). Read-only here: the card renders it, never recomputes.
+  const [screening, setScreening] = useState<unknown>(null);
+  // screening_warnings returned with a successful save. Toast behavior is
+  // unchanged; these also render inline so they are not lost.
+  const [saveWarnings, setSaveWarnings] = useState<string[]>([]);
   const [historyAiId, setHistoryAiId] = useState<string | null>(null);
   /** The saved test being corrected, or null for a new one. */
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -210,6 +217,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       // read from the latest Lifestyle assessment, which stopped asking it —
       // so every beginner was made to do two 1RM tests.
       setExperienceLevel(String(c.workout_experience_level ?? ''));
+      setScreening(c.screening ?? null);
 
       const existingTrainerId = String(c.trainer_id ?? '');
       const existingTrainerName = String(c.trainer_name ?? '');
@@ -426,8 +434,14 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       // posted from here, one request per lift, after the test was saved.
       const res = (editingId
         ? await api.progress.assessments.update(editingId, payload)
-        : await api.progress.assessments.create(payload)) as { data?: Record<string, unknown> };
+        : await api.progress.assessments.create(payload)) as { data?: Record<string, unknown>; screening_warnings?: unknown };
       const created = res?.data;
+      // screening_warnings rides along on the existing save contract; read it,
+      // don't reshape the request or the response.
+      const warns = Array.isArray(res?.screening_warnings)
+        ? res.screening_warnings.filter((w): w is string => typeof w === 'string' && w.trim().length > 0)
+        : [];
+      setSaveWarnings(warns);
 
       clear();
       if (created) setHistory((h) => [created, ...h.filter((x) => String(x.id) !== String(created.id))]);
@@ -460,6 +474,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     setErrors({});
     setReviewMode(false);
     setLastSaved(null);
+    setSaveWarnings([]);
     setStep(1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -487,6 +502,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     setErrors({});
     setStep(1);
     setLastSaved(null);
+    setSaveWarnings([]);
   };
 
   if (loading) {
@@ -527,6 +543,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       </PageHero>
 
       <div className="mx-auto max-w-3xl space-y-5">
+        <ScreeningStatusCard screening={screening} clientId={clientId} />
         {lastSaved ? (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-5">
             <div className="flex items-center gap-4 rounded-[20px] p-5" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)' }}>
@@ -539,6 +556,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
               </div>
             </div>
 
+            <ScreeningWarningsNotice warnings={saveWarnings} clientId={clientId} />
             <FitnessDashboard scores={scoresFromRow(lastSaved)} />
             <AiRecommendationsPanel assessmentId={String(lastSaved.id)} />
 
