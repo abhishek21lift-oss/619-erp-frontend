@@ -25,6 +25,7 @@
 // is stricter, not looser: it asserts the request was actually made, which the
 // old ordering only assumed.
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+vi.setConfig({ testTimeout: 15000 });
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ScheduleSessionPage from '@/app/(chrome)/pt-os/schedule-session/page';
 

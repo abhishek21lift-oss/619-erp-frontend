@@ -78,7 +78,7 @@ export function InterviewHero({ clientName, answers, answered, resumed }: {
               : answered === total ? 'Every question answered — Lifestyle & Training Readiness included'
               : `${total - answered} question${total - answered === 1 ? '' : 's'} to go`}
           </p>
-          {/* Bars — one per question */}
+          {/* Bars — one per question: filled = answered, dimmed = open, so you can see
               which ones are still open. */}
           <div className="mt-2 flex gap-1" aria-hidden>
             {INTERVIEW_QUESTIONS.map((q) => (
