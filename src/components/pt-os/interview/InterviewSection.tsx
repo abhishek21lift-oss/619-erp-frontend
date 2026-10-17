@@ -29,8 +29,8 @@ export function InterviewSection({
   const hintId = useId();
   const tone = tones[question.tone];
   const Icon = question.icon;
-  const answered = value.trim().length > 0;
-  const nearLimit = value.length >= question.max * 0.9;
+  const answered = value != null && (typeof value === 'string' ? value.trim().length > 0 : true);
+  const nearLimit = typeof value === 'string' ? value.length >= (question.max || 2000) * 0.9 : false;
 
   return (
     <m.section
@@ -89,20 +89,19 @@ export function InterviewSection({
       <div className="relative mt-3.5">
         <FormField label={question.label} labelHidden>
           <TextArea
-            rows={3}
-            maxLength={question.max}
-            value={value}
-            aria-describedby={hintId}
-            placeholder="Type their answer…"
-            onChange={(e) => onChange(e.target.value)}
-            // Grows with the answer instead of scrolling inside a 3-line box.
-            className="min-h-[92px] [field-sizing:content]"
-          />
+              rows={3}
+              maxLength={question.max}
+              value={String(value ?? '')}
+              aria-describedby={hintId}
+              placeholder="Type their answer…"
+              onChange={(e) => onChange(String(e.target.value))}
+              className="min-h-[92px] [field-sizing:content]"
+            />
         </FormField>
         <div className="mt-1.5 flex justify-end">
           <span className="text-[11px] tabular-nums"
             style={{ color: nearLimit ? semantic.warningLo : 'var(--text-muted)' }}>
-            {value.length.toLocaleString()} / {question.max.toLocaleString()}
+            {typeof value === 'string' ? `${value.length.toLocaleString()} / ${question.max.toLocaleString()}` : 'Answered'}
           </span>
         </div>
       </div>
