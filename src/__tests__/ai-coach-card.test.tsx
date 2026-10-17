@@ -180,3 +180,28 @@ describe('<AICoach />', () => {
     expect(within(row).getByText('Urgent')).toBeTruthy();
   });
 });
+
+// The cockpit renders this board underneath the Next Best Action card, which
+// promotes insights[0]. excludeTop is what keeps the two from printing the
+// same action twice — and what keeps the board from claiming all-clear when
+// the reason it is empty is that the card above already has the item.
+describe('<AICoach excludeTop />', () => {
+  it('lists the remainder, not the promoted insight', () => {
+    renderCard({
+      excludeTop: true,
+      birthdays: [{ id: 'b1', name: 'Akash Sharma', mobile: '9876543214', days_until_birthday: 0 }],
+    });
+    // The expired packages are on the card above now.
+    expect(screen.queryByRole('radio', { name: /packages expired/i })).toBeNull();
+    expect(screen.getByRole('radio', { name: /birthday today/i })).toBeTruthy();
+    expect(screen.getByText('1 to review')).toBeTruthy();
+    // And the action bar targets the remaining cohort.
+    expect(screen.getByText('Akash Sharma')).toBeTruthy();
+  });
+
+  it('never claims "nothing in seven days" when the promoted card is the list', () => {
+    renderCard({ excludeTop: true });
+    expect(screen.getByText(/Nothing else to review/i)).toBeTruthy();
+    expect(screen.queryByText(/next seven days/i)).toBeNull();
+  });
+});

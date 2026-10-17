@@ -1375,11 +1375,14 @@ function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
 // the selected insight and walks its cohort one contact at a time, naming who
 // is next and counting down what is left. That is honest about what a tap
 // does, and it is still one tap per client.
-export function AICoach({ d, ops, birthdays, studioName }: {
+export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
   d: DashData;
   ops: OpsData | null;
   birthdays: CoachBirthday[];
   studioName: string;
+  /** The cockpit's Next Best Action card promotes insights[0]; the board then
+   *  lists the remainder so the same action never renders twice. */
+  excludeTop?: boolean;
 }) {
   const router = useRouter();
   const reduce = useReducedMotion();
@@ -1407,7 +1410,8 @@ export function AICoach({ d, ops, birthdays, studioName }: {
   // so switching insight never resumes halfway through a different list.
   const [cursor, setCursor] = useState(0);
 
-  const selected = insights.find((i) => i.id === selectedId) ?? insights[0] ?? null;
+  const shown = excludeTop ? insights.slice(1) : insights;
+  const selected = shown.find((i) => i.id === selectedId) ?? shown[0] ?? null;
   const targets = useMemo(() => (selected ? reachable(selected.contacts) : []), [selected]);
   const next = targets[Math.min(cursor, Math.max(targets.length - 1, 0))] ?? null;
   const remaining = Math.max(targets.length - cursor, 0);
@@ -1432,7 +1436,11 @@ export function AICoach({ d, ops, birthdays, studioName }: {
     info:     { fg: palette.blue[500],    bg: rgba(palette.blue[500], 0.08),    border: rgba(palette.blue[500], 0.20),    label: 'Nice to do', Icon: Sparkles },
   };
 
-  const done = insights.length === 0;
+  const done = shown.length === 0;
+  // An empty board usually means all clear. With excludeTop it can instead
+  // mean the promoted card above IS the whole list — claiming "nothing in
+  // the next seven days" there would contradict the card the trainer just read.
+  const promotedOnly = excludeTop && shown.length === 0 && insights.length > 0;
 
   return (
     <Glass className="overflow-hidden p-4 sm:p-5"
@@ -1457,12 +1465,20 @@ export function AICoach({ d, ops, birthdays, studioName }: {
         {!done && (
           <span className="shrink-0 rounded-full px-2.5 py-1 text-[10.5px] font-[800] tabular-nums"
             style={{ background: rgba(palette.blue[500], 0.10), color: palette.blue[600] }}>
-            {insights.length} to review
+            {shown.length} to review
           </span>
         )}
       </div>
 
-      {done ? (
+      {promotedOnly ? (
+        <div className="flex items-center gap-2.5 rounded-[13px] px-3 py-2.5"
+          style={{ background: rgba(palette.emerald[500], 0.09) }}>
+          <ShieldCheck size={16} style={{ color: palette.emerald[600] }} />
+          <p className="text-[12px] font-[700]" style={{ color: C.ink }}>
+            Nothing else to review — the card above has it.
+          </p>
+        </div>
+      ) : done ? (
         <div className="flex flex-col items-center py-9 text-center">
           <span className="flex h-12 w-12 items-center justify-center rounded-[15px]"
             style={{ background: rgba(palette.emerald[500], 0.12), color: palette.emerald[600] }}>
@@ -1477,7 +1493,7 @@ export function AICoach({ d, ops, birthdays, studioName }: {
         <>
           {/* Insights — radiogroup, because picking one drives the action bar */}
           <div className="space-y-2" role="radiogroup" aria-label="Coaching insights">
-            {insights.map((ins, i) => {
+            {shown.map((ins, i) => {
               const t = TONE[ins.urgency];
               const isSel = selected?.id === ins.id;
               return (
@@ -2487,10 +2503,13 @@ export default function PtOsDashboard() {
               <RenewalsDue ops={o} loading={ops.loading} />
             </div>
 
-            {/* 5 — AI Coach */}
+            {/* 5 — AI Coach. The board lists everything Left to review after
+                Next Best Action promoted the top of the list, so the screen
+                never shows the same action twice. */}
             <AICoach d={d} ops={o}
               birthdays={birthdayList}
-              studioName={studioName} />
+              studioName={studioName}
+              excludeTop />
 
             {/* 6 — Today's Revenue.
                 Was "Revenue Intelligence": this month, a linear-regression
