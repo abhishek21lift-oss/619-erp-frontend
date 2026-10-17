@@ -39,7 +39,7 @@ import { escapeHtml, escapeImageDataUrl } from '@/lib/escapeHtml';
 import { errorMessage } from '@/lib/forms/errors';
 import { whatsAppHref } from '@/lib/phone';
 import { amber, blue, emerald, gray, red, rgba } from '@/lib/palette';
-import { tones, gradient, heroMesh, type Tone } from '@/components/profile/profileTheme';
+import { tones, gradient, navyHero, type Tone } from '@/components/profile/profileTheme';
 import { hasPtTerm } from '@/lib/pt-term';
 import type { ScreeningSummary } from '@/lib/screening';
 import { termEnded } from '@/lib/term-dates';
@@ -96,11 +96,13 @@ const fmtDate = (d?: string) => {
 };
 
 // ── Colour ─────────────────────────────────────────────────────────────
-// Decoration (section tiles, action buttons, the hero mesh) comes from the
-// same Apple-style spectrum as My Profile — profileTheme.ts — so the coach's
-// own page and the client pages they work on share one look. STATE never
-// does: paid, due, overdue, expiring and document status keep the palette
-// families that mean those things everywhere else in the app.
+// Decoration (section tiles, action buttons, tinted card depth) comes from
+// the same Apple-style spectrum as My Profile — profileTheme.ts — so the
+// coach's own page and the client pages they work on share one look. The
+// hero is deliberately different: it wears the house navy every other
+// top-of-page in the app uses. STATE never does — paid, due, overdue,
+// expiring and document status keep the palette families that mean those
+// things everywhere else in the app.
 const state = (c: { 300: string; 400: string; 500: string; 600: string; 700: string }): Tone => ({
   from: c[400], to: c[600], ink: c[700], inkDark: c[300], wash: rgba(c[500], 0.12), glow: rgba(c[500], 0.32),
 });
@@ -190,7 +192,10 @@ function SectionCard({ title, icon, tint, action, children, className = '' }: {
       style={{
         background: 'var(--bg-card)',
         border: '1px solid var(--border)',
-        boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 12px 32px -18px rgba(15,23,42,0.18)',
+        // Adaptive glass rather than one light-only shadow: the tokens carry
+        // the dark mode, and the tint keeps each section's own colour in its
+        // depth instead of every card casting the same slate.
+        boxShadow: `var(--glass-shadow), inset 0 1px 0 var(--glass-ring), 0 18px 40px -26px ${tint.glow}`,
         backdropFilter: 'saturate(180%) blur(20px)',
         WebkitBackdropFilter: 'saturate(180%) blur(20px)',
       }}
@@ -663,24 +668,42 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
             <>
               {/* ── HERO ──
                   Who this is, how they stand, and the one action that edits
-                  them. A colour mesh rather than a flat navy slab: indigo into
-                  purple with pink and orange light — the page is somebody's
-                  profile, not a finance statement. The glows are background
-                  layers, never blurred children: on iOS Safari a filtered
-                  child escapes the rounded clip as a square wedge. */}
+                  them. The paint is the house hero — the same navy gradient,
+                  gold and blue light, grid and vignette the dashboard and
+                  every other PageHero page open on — so the page a coach
+                  opens most is not the one that looks like a foreign site.
+                  The light is the house's own too: two blurred discs, behind
+                  the content and inside the hero's overflow-hidden, which is
+                  what keeps a blur from escaping the rounded corner. */}
               <m.section
                 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 className="relative mb-5 overflow-hidden rounded-[32px] p-5 text-white sm:p-7"
                 style={{
-                  background: [
-                    `radial-gradient(circle 280px at 12% 110%, ${heroMesh.glowA}, transparent 70%)`,
-                    `radial-gradient(circle 260px at calc(100% - 40px) -20px, ${heroMesh.glowB}, transparent 70%)`,
-                    heroMesh.base,
-                  ].join(', '),
-                  boxShadow: `0 28px 60px -24px ${tones.violet.glow}, inset 0 1px 0 rgba(255,255,255,0.18)`,
+                  background: `${navyHero.crown}, ${navyHero.base}`,
+                  boxShadow: navyHero.shadow,
                 }}
               >
+                {/* Decoration behind the content, matching the house hero. */}
+                <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+                  {/* The house's two lights, blurred behind the content. */}
+                  <div className="absolute -right-14 -top-20 h-60 w-60 rounded-full opacity-35"
+                    style={{ background: `radial-gradient(circle, ${navyHero.glowGold} 0%, transparent 70%)`, filter: 'blur(46px)' }} />
+                  <div className="absolute -bottom-20 -left-14 h-60 w-60 rounded-full opacity-25"
+                    style={{ background: `radial-gradient(circle, ${navyHero.glowBlue} 0%, transparent 70%)`, filter: 'blur(54px)' }} />
+                  <svg className="absolute inset-0 h-full w-full opacity-[0.055]" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <pattern id="cp-grid" width="34" height="34" patternUnits="userSpaceOnUse">
+                        <path d="M 34 0 L 0 0 0 34" fill="none" stroke="white" strokeWidth="0.6" />
+                      </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#cp-grid)" />
+                  </svg>
+                  <div className="absolute inset-0"
+                    style={{ background: 'radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(15,23,42,0.55) 100%)' }} />
+                </div>
+
+                <div className="relative z-10">
                 <div className="flex items-start gap-4 sm:gap-6">
                   {/* The client's face when there is one; onError falls back
                       to initials rather than a broken image. */}
@@ -733,6 +756,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     value={client.days_left != null ? String(Math.max(0, client.days_left)) : '—'} />
                   <HeroStat icon={<UserCheck size={11} />} label="Trainer" value={client.trainer_name || '—'} />
                   <HeroStat icon={<ScrollText size={11} />} label="Programme" value={activePlanName || 'None yet'} />
+                </div>
                 </div>
               </m.section>
 
@@ -927,7 +951,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   <div className="grid grid-cols-1 gap-4">
                     <button onClick={() => router.push(`/pt-os/session-balance?client_id=${client.id}`)}
                       className="group flex w-full items-center justify-between gap-3 rounded-[24px] p-4 text-left transition active:scale-[0.99]"
-                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 12px 32px -18px rgba(15,23,42,0.18)' }}>
+                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: `var(--glass-shadow), inset 0 1px 0 var(--glass-ring), 0 18px 40px -26px ${tones.mint.glow}` }}>
                       <div className="flex items-center gap-3">
                         <Squircle tint={tones.mint} size={40}><Zap size={17} /></Squircle>
                         <div>
@@ -959,7 +983,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                   onClick={() => router.push(`/pt-os/clients/${client.id}/subscriptions`)}
                   className="group flex w-full flex-wrap items-center justify-between gap-4 rounded-[24px] p-5 text-left transition active:scale-[0.99]"
-                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 12px 32px -18px rgba(15,23,42,0.18)' }}>
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: `var(--glass-shadow), inset 0 1px 0 var(--glass-ring), 0 18px 40px -26px ${tones.indigo.glow}` }}>
                   <div className="flex items-center gap-3">
                     <Squircle tint={tones.indigo} size={42}><Repeat size={18} /></Squircle>
                     <div>

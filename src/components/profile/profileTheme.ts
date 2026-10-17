@@ -78,6 +78,25 @@ export const heroMesh = {
   glowB: 'rgba(250,204,21,0.45)',
 } as const;
 
+/**
+ * The house hero — the navy the dashboard and every PageHero page open on,
+ * not this file's spectrum.
+ *
+ * The client profile used to paint itself from `heroMesh` above, which made
+ * the page a trainer opens most the one page in the app that did not look
+ * like the app. Same values as PageHero's default surface, so the two
+ * cannot drift into two hero colours. The glows are the paints its two
+ * discs blur — decoration behind the content and inside the hero's own
+ * overflow-hidden, which is what keeps the blur clipped to the corner.
+ */
+export const navyHero = {
+  base: 'linear-gradient(158deg, #0F172A 0%, #0050AD 42%, #0F172A 72%, #0050AD 100%)',
+  crown: 'radial-gradient(130% 150% at 50% -25%, #0050AD 0%, transparent 55%)',
+  glowGold: '#FCD34D',
+  glowBlue: '#7FB4FF',
+  shadow: '0 24px 64px -14px rgba(15,23,42,0.78), 0 8px 26px rgba(0,103,224,0.22), inset 0 1px 0 rgba(255,255,255,0.10)',
+} as const;
+
 /** The completion ring's stops — Move-ring warm to cool. */
 export const ringStops = [spectrum.pink[500], spectrum.orange[400], spectrum.yellow[400]] as const;
 
