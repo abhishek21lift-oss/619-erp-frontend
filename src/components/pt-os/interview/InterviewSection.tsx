@@ -29,8 +29,8 @@ export function InterviewSection({
   const hintId = useId();
   const tone = tones[question.tone];
   const Icon = question.icon;
-  const answered = value.trim().length > 0;
-  const nearLimit = value.length >= question.max * 0.9;
+  const answered = value != null && (typeof value === 'string' ? value.trim().length > 0 : true);
+  const nearLimit = typeof value === 'string' ? value.length >= (question.max || 2000) * 0.9 : false;
 
   return (
     <m.section
@@ -88,21 +88,45 @@ export function InterviewSection({
 
       <div className="relative mt-3.5">
         <FormField label={question.label} labelHidden>
-          <TextArea
-            rows={3}
-            maxLength={question.max}
-            value={value}
-            aria-describedby={hintId}
-            placeholder="Type their answer…"
-            onChange={(e) => onChange(e.target.value)}
-            // Grows with the answer instead of scrolling inside a 3-line box.
-            className="min-h-[92px] [field-sizing:content]"
-          />
+          {question.control === 'select' && question.options ? (
+            <select
+              className="w-full rounded-[10px] border px-3 py-2.5 text-[13px] bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              value={value ?? ''}
+              onChange={(e) => onChange((e.target.value === '' ? null : e.target.value) as string | null)}
+              aria-describedby={hintId}
+            >
+              <option value="">— Select —</option>
+              {question.options.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          ) : question.control === 'number' ? (
+            <input
+              type="number"
+              min={0} max={question.max}
+              step={question.key === 'lifestyle_training_days' ? 1 : 0.5}
+              className="w-full rounded-[10px] border px-3 py-2.5 text-[13px] bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              value={String((value as number | null) ?? '')}
+              onChange={(e) => onChange((e.target.value === '' ? null : Number(e.target.value)) as number | null)}
+              aria-describedby={hintId}
+              placeholder="Enter value…"
+            />
+          ) : (
+            <TextArea
+              rows={3}
+              maxLength={question.max}
+              value={String(value ?? '')}
+              aria-describedby={hintId}
+              placeholder="Type their answer…"
+              onChange={(e) => onChange(String(e.target.value))}
+              className="min-h-[92px] [field-sizing:content]"
+            />
+          )}
         </FormField>
         <div className="mt-1.5 flex justify-end">
           <span className="text-[11px] tabular-nums"
             style={{ color: nearLimit ? semantic.warningLo : 'var(--text-muted)' }}>
-            {value.length.toLocaleString()} / {question.max.toLocaleString()}
+            {typeof value === 'string' ? `${value.length.toLocaleString()} / ${question.max.toLocaleString()}` : 'Answered'}
           </span>
         </div>
       </div>

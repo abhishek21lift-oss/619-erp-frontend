@@ -35,7 +35,15 @@ import { STEP_LABEL, stepHref, type ClientInterview } from '@/lib/journey';
 
 function answersFrom(row: ClientInterview | null): Answers {
   if (!row) return { ...EMPTY };
-  return Object.fromEntries(INTERVIEW_QUESTIONS.map(({ key }) => [key, String(row[key] ?? '')])) as Answers;
+  const base = Object.fromEntries(INTERVIEW_QUESTIONS.map(({ key }) => {
+    const raw = row[key as keyof ClientInterview];
+    return [key, raw != null ? (typeof raw === 'number' ? raw : String(raw)) : ''] as [string, string | number | null];
+  })) as Answers;
+  const structured = ['lifestyle_occupation','lifestyle_sitting_hours','lifestyle_screen_time','lifestyle_sleep_hours','lifestyle_meal_regularity','lifestyle_smoking','lifestyle_alcohol','lifestyle_training_days'] as const;
+  for (const k of structured) {
+    if (base[k] === '') base[k] = null;
+  }
+  return base;
 }
 
 export default function InterviewPage() {
@@ -100,7 +108,10 @@ function InterviewForm({ clientId }: { clientId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId]);
 
-  const hasAnyAnswer = INTERVIEW_QUESTIONS.some(({ key }) => answers[key].trim());
+  const hasAnyAnswer = INTERVIEW_QUESTIONS.some(({ key }) => {
+    const v = answers[key];
+    return v != null && (typeof v === 'string' ? v.trim().length > 0 : true);
+  });
 
   const save = async (status: 'draft' | 'completed') => {
     if (status === 'completed' && !hasAnyAnswer) {
@@ -109,7 +120,12 @@ function InterviewForm({ clientId }: { clientId: string }) {
     }
     setSaving(status);
     try {
-      const body = { ...answers, status };
+      const structuredKeys = ['lifestyle_occupation','lifestyle_sitting_hours','lifestyle_screen_time','lifestyle_sleep_hours','lifestyle_meal_regularity','lifestyle_smoking','lifestyle_alcohol','lifestyle_training_days'] as const;
+      const body: Record<string, unknown> = { ...answers, status };
+      for (const k of structuredKeys) {
+        const v = answers[k as keyof Answers];
+        body[k] = (v === '' || v == null) ? null : v;
+      }
       const res = current
         ? await api.pt.interviews.update(current.id, body)
         : await api.pt.interviews.create(clientId, body);
@@ -203,7 +219,10 @@ function useColumnRect(ref: React.RefObject<HTMLElement | null>, mounted: boolea
 function InterviewComplete({ clientName, clientId, answers }: { clientName: string; clientId: string; answers: Answers }) {
   const router = useRouter();
   const reduce = useReducedMotion();
-  const covered = INTERVIEW_QUESTIONS.filter((q) => answers[q.key].trim());
+  const covered = INTERVIEW_QUESTIONS.filter((q) => {
+    const v = answers[q.key];
+    return v != null && (typeof v === 'string' ? v.trim().length > 0 : true);
+  });
   return (
     <PageContainer>
       <m.div

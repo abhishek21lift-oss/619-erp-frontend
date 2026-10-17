@@ -43,6 +43,15 @@ export interface ClientInterview {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
+  // Lifestyle & Training Readiness (migration 228)
+  lifestyle_occupation?: string | null;
+  lifestyle_sitting_hours?: number | null;
+  lifestyle_screen_time?: string | null;
+  lifestyle_sleep_hours?: number | null;
+  lifestyle_meal_regularity?: string | null;
+  lifestyle_smoking?: string | null;
+  lifestyle_alcohol?: string | null;
+  lifestyle_training_days?: number | null;
 }
 
 export const STEP_LABEL: Record<JourneyStepKey, string> = {
