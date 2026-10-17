@@ -6,7 +6,7 @@ import { todayISO } from '@/lib/forms/domain';
 export type AssessmentType = 'initial' | 'week_4' | 'week_8' | 'week_12' | 'monthly' | 'quarterly' | 'follow_up' | 'custom';
 export type CardioTestType = 'YMCA 3-Minute Step Test' | 'Rockport 1-Mile Walk' | 'Cooper 12-Minute Run' | 'Bruce Protocol' | 'Harvard Step Test' | 'Custom';
 export type EnduranceTestType = 'Push Up Test' | 'Curl Up Test' | 'Wall Sit' | 'Plank' | 'Bodyweight Squat' | 'Custom';
-export type FlexibilityTestType = 'Sit and Reach' | 'Hamstring' | 'Hip Flexor' | 'Custom';
+export type FlexibilityTestType = 'Hamstrings' | 'Quadriceps' | 'Hip Flexors' | 'Shoulder Reach' | 'Sit and Reach' | 'Custom';
 export type StrengthExercise = 'Bench Press' | 'Leg Press' | 'Squat' | 'Deadlift' | 'Shoulder Press' | 'Custom Exercise';
 
 export interface AssessmentFormData {
@@ -129,7 +129,7 @@ export function initAssessmentForm(): AssessmentFormData {
 export { toMeasurementOrNull as n } from '@/lib/forms/normalize';
 
 const STRENGTH_PRESETS: StrengthExercise[] = ['Bench Press', 'Leg Press', 'Squat', 'Deadlift', 'Shoulder Press'];
-const FLEX_PRESETS: FlexibilityTestType[] = ['Sit and Reach', 'Hamstring', 'Hip Flexor'];
+const FLEX_PRESETS: FlexibilityTestType[] = ['Hamstrings', 'Quadriceps', 'Hip Flexors', 'Shoulder Reach', 'Sit and Reach'];
 
 const str = (v: unknown): string => (v == null ? '' : String(v));
 

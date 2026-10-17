@@ -5,6 +5,7 @@ import { Move, AlertTriangle } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import { checkAsymmetry, classifyFlexibilityScore, scoreCategory, scoreTestBattery } from '@/lib/fitness-calculations';
+import { classifyFlexibilityROM } from '@/lib/flexibility-norms';
 import { tint } from '@/lib/palette';
 import type { AssessmentFormData, FlexibilityTestType } from './types';
 import { n } from './types';
@@ -12,7 +13,7 @@ import { StepHeader } from './StepHeader';
 import { bandInk, categoryPill, gradient, stepTones } from './fitnessTheme';
 
 const FLEXIBILITY_TESTS: FlexibilityTestType[] = [
-  'Sit and Reach', 'Hamstring', 'Hip Flexor', 'Custom',
+  'Hamstrings', 'Quadriceps', 'Hip Flexors', 'Shoulder Reach', 'Sit and Reach', 'Custom',
 ];
 
 const TONE = stepTones[7];
@@ -54,8 +55,8 @@ export function StepFlexibility({ form, set, error }: StepFlexibilityProps) {
       <StepHeader
         icon={Move}
         tone={TONE}
-        title="Flexibility & Mobility"
-        subtitle="Step 7 of 7 — two range-of-motion tests."
+        title="Flexibility Range of Motion (ROM) Assessment"
+        subtitle="Step 7 of 7 — visual assessment + Sit-and-Reach for Hamstrings, Quadriceps, Hip Flexors, Shoulder Reach."
       />
 
       <div className="space-y-5">
@@ -162,6 +163,15 @@ function FlexibilityTestBlock({
           <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: pill.bg, color: pill.color }}>{result.category}</span>
         </div>
       )}
+
+      <div className="mt-3 rounded-[12px] p-3 text-[11px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+        <span className="font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Norm benchmark (age/sex)</span>
+        <p className="mt-1" style={{ color: 'var(--text-secondary)' }}>
+          {classifyFlexibilityROM(testType, n(score) ?? n(rom) ?? n(left), null, null).message}
+          {' — '}
+          <span style={{ color: 'var(--text-muted)' }}>Norm data unavailable until validated reference norms are loaded.</span>
+        </p>
+      </div>
     </div>
   );
 }
