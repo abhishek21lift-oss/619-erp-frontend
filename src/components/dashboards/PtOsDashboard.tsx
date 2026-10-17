@@ -41,6 +41,7 @@ import Link from 'next/link';
 import { useAsync } from '@/lib/use-async';
 import { DashboardError } from '@/components/dashboards/primitives';
 import NextBestActionCard from '@/components/dashboards/cockpit/NextBestActionCard';
+import RosterSignalsCard from '@/components/pt-os/RosterSignalsCard';
 import { useAuth } from '@/lib/auth-context';
 import FounderBadge from '@/components/FounderBadge';
 import { useFounder } from '@/lib/use-founder';
@@ -2444,6 +2445,21 @@ export default function PtOsDashboard() {
             {/* 3 — Mobile quick actions (desktop uses the dock) */}
             <MobileQuickActions />
 
+            {/* 3.5 — The AI Coach board, directly under the card that promoted
+                the top of its list: excludeTop hands this board the remainder,
+                so one action never prints twice. */}
+            <AICoach d={d} ops={o}
+              birthdays={birthdayList}
+              studioName={studioName}
+              excludeTop />
+
+            {/* 3.6 — Who to call. The roster sweep's own section, heading
+                included: the half a trainer cannot see by looking around the
+                gym floor — who stopped coming, who is paying but absent. A
+                failed sweep says so in place rather than rendering an empty,
+                reassuring list. */}
+            <RosterSignalsCard />
+
             {/* 3 — KPI grid.
                 Four cards, and four is now the whole set on every screen:
                 Outstanding has gone. It was the fifth, and it was the same
@@ -2502,14 +2518,6 @@ export default function PtOsDashboard() {
               <SectionLabel>Renewals</SectionLabel>
               <RenewalsDue ops={o} loading={ops.loading} />
             </div>
-
-            {/* 5 — AI Coach. The board lists everything Left to review after
-                Next Best Action promoted the top of the list, so the screen
-                never shows the same action twice. */}
-            <AICoach d={d} ops={o}
-              birthdays={birthdayList}
-              studioName={studioName}
-              excludeTop />
 
             {/* 6 — Today's Revenue.
                 Was "Revenue Intelligence": this month, a linear-regression
