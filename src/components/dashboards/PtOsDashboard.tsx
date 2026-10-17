@@ -40,6 +40,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAsync } from '@/lib/use-async';
 import { DashboardError } from '@/components/dashboards/primitives';
+import NextBestActionCard from '@/components/dashboards/cockpit/NextBestActionCard';
+import RosterSignalsCard from '@/components/pt-os/RosterSignalsCard';
+import ProgressRadarCard from '@/components/dashboards/cockpit/ProgressRadarCard';
 import { useAuth } from '@/lib/auth-context';
 import FounderBadge from '@/components/FounderBadge';
 import { useFounder } from '@/lib/use-founder';
@@ -52,7 +55,9 @@ import { gapChips, gapHref, sortGaps, type ScreeningGapsResponse } from '@/lib/s
 import { gradient, ringStops, ringTrack, rowTones, todayMark, type RowTone } from '@/components/dashboards/todayTheme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type DashData = {
+// Exported for the cockpit cards that take the same props without importing
+// this 2,500-line module at runtime (type-only on their side).
+export type DashData = {
   active_pt_clients: number;
   expired_clients: number;
   clients_with_balance: number;
@@ -69,7 +74,7 @@ type DashData = {
 };
 
 type SessionStatus = 'scheduled' | 'completed' | 'cancelled' | 'no_show';
-type OpsData = {
+export type OpsData = {
   today_sessions: Array<{
     id: string; title: string; session_date: string;
     start_time: string | null; end_time: string | null;
@@ -325,10 +330,18 @@ function Glass({ children, className = '', style, onClick }: {
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
   return (
-    <p className="px-1 text-[10px] font-[750] uppercase tracking-[0.14em] mb-2"
-      style={{ color: 'rgba(100,116,139,0.7)' }}>{children}</p>
+    <p className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-[750] uppercase tracking-[0.14em]"
+      style={{ color: 'rgba(100,116,139,0.7)' }}>
+      {icon && (
+        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px]"
+          style={{ background: 'rgba(100,116,139,0.14)' }} aria-hidden>
+          {icon}
+        </span>
+      )}
+      {children}
+    </p>
   );
 }
 
@@ -547,7 +560,7 @@ export function ScreeningGaps() {
 
   return (
     <section aria-labelledby="screening-gaps-title">
-      <SectionLabel>Screening</SectionLabel>
+      <SectionLabel icon={<ShieldCheck size={10} />}>Screening</SectionLabel>
       <Glass className="p-4 sm:p-5">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px]"
@@ -612,7 +625,7 @@ function MobileQuickActions() {
   const actions = QUICK_ACTIONS;
   return (
     <div className="lg:hidden -mx-3 px-3">
-      <SectionLabel>Quick Actions</SectionLabel>
+      <SectionLabel icon={<Sparkles size={10} />}>Quick Actions</SectionLabel>
       <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
         {actions.map((a, i) => (
           <m.div key={a.label} className="shrink-0"
@@ -1372,11 +1385,14 @@ function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
 // the selected insight and walks its cohort one contact at a time, naming who
 // is next and counting down what is left. That is honest about what a tap
 // does, and it is still one tap per client.
-export function AICoach({ d, ops, birthdays, studioName }: {
+export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
   d: DashData;
   ops: OpsData | null;
   birthdays: CoachBirthday[];
   studioName: string;
+  /** The cockpit's Next Best Action card promotes insights[0]; the board then
+   *  lists the remainder so the same action never renders twice. */
+  excludeTop?: boolean;
 }) {
   const router = useRouter();
   const reduce = useReducedMotion();
@@ -1404,7 +1420,8 @@ export function AICoach({ d, ops, birthdays, studioName }: {
   // so switching insight never resumes halfway through a different list.
   const [cursor, setCursor] = useState(0);
 
-  const selected = insights.find((i) => i.id === selectedId) ?? insights[0] ?? null;
+  const shown = excludeTop ? insights.slice(1) : insights;
+  const selected = shown.find((i) => i.id === selectedId) ?? shown[0] ?? null;
   const targets = useMemo(() => (selected ? reachable(selected.contacts) : []), [selected]);
   const next = targets[Math.min(cursor, Math.max(targets.length - 1, 0))] ?? null;
   const remaining = Math.max(targets.length - cursor, 0);
@@ -1429,7 +1446,11 @@ export function AICoach({ d, ops, birthdays, studioName }: {
     info:     { fg: palette.blue[500],    bg: rgba(palette.blue[500], 0.08),    border: rgba(palette.blue[500], 0.20),    label: 'Nice to do', Icon: Sparkles },
   };
 
-  const done = insights.length === 0;
+  const done = shown.length === 0;
+  // An empty board usually means all clear. With excludeTop it can instead
+  // mean the promoted card above IS the whole list — claiming "nothing in
+  // the next seven days" there would contradict the card the trainer just read.
+  const promotedOnly = excludeTop && shown.length === 0 && insights.length > 0;
 
   return (
     <Glass className="overflow-hidden p-4 sm:p-5"
@@ -1454,12 +1475,20 @@ export function AICoach({ d, ops, birthdays, studioName }: {
         {!done && (
           <span className="shrink-0 rounded-full px-2.5 py-1 text-[10.5px] font-[800] tabular-nums"
             style={{ background: rgba(palette.blue[500], 0.10), color: palette.blue[600] }}>
-            {insights.length} to review
+            {shown.length} to review
           </span>
         )}
       </div>
 
-      {done ? (
+      {promotedOnly ? (
+        <div className="flex items-center gap-2.5 rounded-[13px] px-3 py-2.5"
+          style={{ background: rgba(palette.emerald[500], 0.09) }}>
+          <ShieldCheck size={16} style={{ color: palette.emerald[600] }} />
+          <p className="text-[12px] font-[700]" style={{ color: C.ink }}>
+            Nothing else to review — the card above has it.
+          </p>
+        </div>
+      ) : done ? (
         <div className="flex flex-col items-center py-9 text-center">
           <span className="flex h-12 w-12 items-center justify-center rounded-[15px]"
             style={{ background: rgba(palette.emerald[500], 0.12), color: palette.emerald[600] }}>
@@ -1474,7 +1503,7 @@ export function AICoach({ d, ops, birthdays, studioName }: {
         <>
           {/* Insights — radiogroup, because picking one drives the action bar */}
           <div className="space-y-2" role="radiogroup" aria-label="Coaching insights">
-            {insights.map((ins, i) => {
+            {shown.map((ins, i) => {
               const t = TONE[ins.urgency];
               const isSel = selected?.id === ins.id;
               return (
@@ -2283,6 +2312,17 @@ export default function PtOsDashboard() {
   const o = ops.data;
   const coach = user?.name?.split(' ')[0] || 'Coach';
   const studioName = user?.organization_name || 'PT Studio';
+
+  // Array.isArray, not `?? []`: the nullish default only catches
+  // undefined, so anything ELSE this endpoint yields — an object,
+  // an error envelope, a string — passes through to
+  // buildCoachInsights, which calls .filter on it and takes the
+  // whole dashboard to its error boundary. One malformed list
+  // should cost these cards, not the entire screen. Seen for real:
+  // device-check's fixture table matched `birthdays` as a client
+  // id and served a single client object, and every dashboard run
+  // in that harness rendered "Something went wrong".
+  const birthdayList = Array.isArray(birthdays.data?.data) ? birthdays.data.data : [];
   const founderNumber = useFounder();
 
   const refreshAll = useCallback(async () => {
@@ -2402,8 +2442,38 @@ export default function PtOsDashboard() {
                 because that is when it matters: before someone is trained. */}
             <ScreeningGaps />
 
+            {/* 2.75 — Next Best Action.
+                The single highest-ranked result of the same prioritisation the
+                AI Coach board runs, promoted to its own card with the actions
+                the board keeps one tap deep. Placed with the schedule because
+                both answer "what happens next" — one is what is booked, this
+                is what should be. It derives from data already on this screen;
+                no request of its own. */}
+            <NextBestActionCard d={d} ops={o} birthdays={birthdayList} studioName={studioName} />
+
             {/* 3 — Mobile quick actions (desktop uses the dock) */}
             <MobileQuickActions />
+
+            {/* 3.5 — The AI Coach board, directly under the card that promoted
+                the top of its list: excludeTop hands this board the remainder,
+                so one action never prints twice. */}
+            <AICoach d={d} ops={o}
+              birthdays={birthdayList}
+              studioName={studioName}
+              excludeTop />
+
+            {/* 3.6 — Who to call. The roster sweep's own section, heading
+                included: the half a trainer cannot see by looking around the
+                gym floor — who stopped coming, who is paying but absent. A
+                failed sweep says so in place rather than rendering an empty,
+                reassuring list. */}
+            <RosterSignalsCard />
+
+            {/* 3.7 — Progress Radar. Where the six measured categories actually
+                stand, for the studio's most recently measured client. It reads
+                its own endpoints and fails soft: a broken response removes the
+                card, not the screen. */}
+            <ProgressRadarCard />
 
             {/* 3 — KPI grid.
                 Four cards, and four is now the whole set on every screen:
@@ -2426,12 +2496,12 @@ export default function PtOsDashboard() {
                 the form stays where there is room to explain the lock; this
                 links there. */}
             <div>
-              <SectionLabel>This Month</SectionLabel>
+              <SectionLabel icon={<Target size={10} />}>This Month</SectionLabel>
               <MonthlyTarget />
             </div>
 
             <div>
-              <SectionLabel>Key Metrics</SectionLabel>
+              <SectionLabel icon={<Gauge size={10} />}>Key Metrics</SectionLabel>
               {/* Two up on a phone (all four, as a square block), three on desktop
                     where Commission is hidden — so the row fills at both. It was
                     lg:grid-cols-4 with one of the four hidden at lg, which left an
@@ -2460,23 +2530,9 @@ export default function PtOsDashboard() {
                 keeping it here as well would have been the same list twice, one
                 of them worse. Renewals is full width now that it is alone. */}
             <div>
-              <SectionLabel>Renewals</SectionLabel>
+              <SectionLabel icon={<CalendarClock size={10} />}>Renewals</SectionLabel>
               <RenewalsDue ops={o} loading={ops.loading} />
             </div>
-
-            {/* 5 — AI Coach */}
-            {/* Array.isArray, not `?? []`: the nullish default only catches
-                undefined, so anything ELSE this endpoint yields — an object,
-                an error envelope, a string — passes through to
-                buildCoachInsights, which calls .filter on it and takes the
-                whole dashboard to its error boundary. One malformed list
-                should cost this card, not the entire screen. Seen for real:
-                device-check's fixture table matched `birthdays` as a client
-                id and served a single client object, and every dashboard run
-                in that harness rendered "Something went wrong". */}
-            <AICoach d={d} ops={o}
-              birthdays={Array.isArray(birthdays.data?.data) ? birthdays.data.data : []}
-              studioName={studioName} />
 
             {/* 6 — Today's Revenue.
                 Was "Revenue Intelligence": this month, a linear-regression
@@ -2494,7 +2550,7 @@ export default function PtOsDashboard() {
                 the wrong word for a solo studio. Full width now that it is the
                 only card in the row. */}
             <div>
-              <SectionLabel>Sessions</SectionLabel>
+              <SectionLabel icon={<Dumbbell size={10} />}>Sessions</SectionLabel>
               <SessionActivity ops={o} loading={ops.loading} />
             </div>
           </>

@@ -19,6 +19,7 @@ import {
   calcVo2MaxBruce, calcHarvardPei, classifyHarvardPei, classifyVo2Max, classifyStepTestRecovery,
   calc1RM, classifyStrength, classifyEndurance, classifyFlexibilityScore,
   scoreCategory, scoreBodyComposition, scoreHealthRisk, scoreTestBattery, computeOverallScore,
+  scoreNum, scoresFromAssessmentRow,
 } from '@/lib/fitness-calculations';
 import type { FitnessCategory, Gender } from '@/lib/fitness-calculations';
 import { STEPS, initAssessmentForm, formFromAssessmentRow, n } from '@/components/pt-os/fitness-testing/types';
@@ -79,23 +80,6 @@ function estimateOneRM(form: AssessmentFormData, testNum: 1 | 2 = 1): number | n
   const reps = testNum === 1 ? form.strengthReps : form.strengthReps2;
   const formula = testNum === 1 ? form.strengthFormula : form.strengthFormula2;
   return mode === 'direct' ? n(direct1RM) : calc1RM(n(weightKg), n(reps), formula);
-}
-
-function scoreNum(v: unknown): number | null {
-  const f = typeof v === 'number' ? v : parseFloat(String(v ?? ''));
-  return Number.isFinite(f) ? f : null;
-}
-
-function scoresFromRow(row: Record<string, unknown>): FitnessScores {
-  return {
-    cardioScore: scoreNum(row.cardio_score_computed),
-    strengthScore: scoreNum(row.strength_score_computed),
-    enduranceScore: scoreNum(row.endurance_score_computed),
-    mobilityScore: scoreNum(row.mobility_score_computed),
-    bodyCompositionScore: scoreNum(row.body_composition_score),
-    healthRiskScore: scoreNum(row.health_risk_score),
-    overallScore: scoreNum(row.overall_fitness_score),
-  };
 }
 
 function validateStep(id: StepId, form: AssessmentFormData, isBeginner: boolean): string | undefined {
@@ -577,7 +561,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
             </div>
 
             <ScreeningWarningsNotice warnings={saveWarnings} clientId={clientId} />
-            <FitnessDashboard scores={scoresFromRow(lastSaved)} />
+            <FitnessDashboard scores={scoresFromAssessmentRow(lastSaved)} />
             <AiRecommendationsPanel assessmentId={String(lastSaved.id)} />
 
             <div className="flex flex-wrap gap-3">

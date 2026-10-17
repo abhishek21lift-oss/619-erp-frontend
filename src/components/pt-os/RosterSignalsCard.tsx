@@ -75,7 +75,15 @@ export default function RosterSignalsCard() {
     setFailed(false);
     try {
       const res = await api.pt.signals();
-      setSweep(res?.data ?? null);
+      const body = res?.data;
+      // A 200 can still carry a malformed sweep — a bare object, an array, an
+      // error envelope under the wrong status. The render below reads
+      // `clients_detail.length`, so a body without that array is treated as
+      // the failed read it is; one bad response must not take the app to its
+      // error boundary. `data: null` keeps its old meaning: nothing to say.
+      if (body == null) setSweep(null);
+      else if (Array.isArray(body.clients_detail)) setSweep(body);
+      else setFailed(true);
     } catch {
       // No toast. This card is below the fold of the screen a trainer opens to
       // start a session, and a toast about a secondary read would cover the

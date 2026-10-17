@@ -191,6 +191,17 @@ describe('roster signals card', () => {
     expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
   });
 
+  it('treats a malformed 200 as the failed read it is, never as an empty roster', async () => {
+    // The endpoint can answer 200 with a body that is not a sweep. The render
+    // below reads `clients_detail.length`; one missing array must not take the
+    // whole app to its error boundary — and an empty-looking list is the one
+    // wrong answer a trainer cannot recover from.
+    mockSignals.mockResolvedValue({ data: {} });
+    render(<RosterSignalsCard />);
+
+    expect(await screen.findByText(/did not come back/i)).toBeInTheDocument();
+  });
+
   it('retries the sweep and renders what comes back the second time', async () => {
     mockSignals
       .mockRejectedValueOnce(new Error('network'))
