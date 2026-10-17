@@ -52,12 +52,20 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName }: {
     studioName,
   }), [d, ops, birthdays, studioName]);
 
-  // Which contact the next tap reaches — same cursor idea as the board, so
-  // two consecutive sends never hit the same person twice.
-  const [cursor, setCursor] = useState(0);
-
   const top = insights[0] ?? null;
   const targets = useMemo(() => (top ? reachable(top.contacts) : []), [top]);
+
+  // Which contact the next tap reaches — same cursor idea as the board, so
+  // two consecutive sends never hit the same person twice. It is keyed to the
+  // cohort itself: the dashboard refetches every 60s, and a list that gained
+  // or lost a client must start over rather than resume — or worse, read as
+  // "everyone contacted" against people the trainer never messaged. A stale
+  // key simply derives back to the first contact; nothing claims progress it
+  // cannot prove.
+  const cohortKey = targets.map((c) => c.id).join('|');
+  const [sent, setSent] = useState({ key: cohortKey, cursor: 0 });
+  const cursor = sent.key === cohortKey ? sent.cursor : 0;
+
   const next = targets[Math.min(cursor, Math.max(targets.length - 1, 0))] ?? null;
   const remaining = Math.max(targets.length - cursor, 0);
 
@@ -66,7 +74,11 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName }: {
   const t = TONE[top.urgency];
   const whatsapp = next ? whatsappLink(next, top.message(next.name)) : null;
   const tel = next ? telLink(next) : null;
-  const advance = () => setCursor((c) => Math.min(c + 1, targets.length));
+  const advance = () => setSent((s) => (
+    s.key === cohortKey
+      ? { ...s, cursor: Math.min(s.cursor + 1, targets.length) }
+      : { key: cohortKey, cursor: 1 }
+  ));
 
   const primary = {
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -111,7 +123,7 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName }: {
         <div className="mt-4">
           {next ? (
             <>
-              <p className="mb-2.5 truncate text-[11.5px] font-[600]" style={{ color: 'var(--text-primary)' }}>
+              <p role="status" className="mb-2.5 truncate text-[11.5px] font-[600]" style={{ color: 'var(--text-primary)' }}>
                 {remaining > 0
                   ? <>Next: <span style={{ color: palette.blue[600] }}>{next.name}</span> · {remaining} of {targets.length} left</>
                   : 'Everyone on this list has been contacted.'}
@@ -137,7 +149,9 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName }: {
             </>
           ) : (
             <p className="mb-2.5 text-[11.5px] leading-snug" style={{ color: 'var(--text-muted)' }}>
-              No mobile number on file for these clients — open the list to see who they are.
+              {top.contacts.length === 0
+                ? 'No individual contacts for this one — open the list to see who is behind it.'
+                : 'No reachable mobile on file for these clients — open the list to see who they are.'}
             </p>
           )}
 

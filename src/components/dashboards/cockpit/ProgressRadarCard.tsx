@@ -2,11 +2,15 @@
 // The cockpit's "progress radar" card.
 //
 // The dashboard has no client in context, so this reads the studio's most
-// recent fitness test that actually carries scores — the assessments endpoint
-// is tenant-scoped and returns newest first — and names its client from the
-// roster. Three measured categories is the floor for a spoke chart; below that
-// the card points at the wizard instead of plotting a shape out of missing
-// data, and a failed fetch costs this card, never the screen.
+// recent fitness test — the assessments endpoint is tenant-scoped — and names
+// its client from the roster. Newest is re-established here by date rather
+// than trusted to the server's ORDER BY: the card claims "the latest", and it
+// must not inherit an ordering it cannot see.
+//
+// Three measured categories is the floor for a spoke chart. A test below that
+// still gets its row — it is a test, and "no tests yet" would be false — with
+// the reason there is no radar instead of a shape out of missing data. A
+// failed fetch costs this card, never the screen.
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { Activity, ChevronRight } from 'lucide-react';
@@ -16,22 +20,36 @@ import { fmtDate } from '@/lib/format';
 import { palette, rgba } from '@/lib/palette';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import FitnessRadarChart from '@/components/pt-os/FitnessRadarChart';
-import { radarDataFromScores } from '@/components/pt-os/fitness-testing/FitnessDashboard';
+import { radarDataFromScores, type FitnessScores } from '@/components/pt-os/fitness-testing/FitnessDashboard';
 import { scoresFromAssessmentRow, scoreNum } from '@/lib/fitness-calculations';
 
 type Row = Record<string, unknown>;
 
-/** A radar needs spokes: three measured categories is the floor. */
-function scoredRow(rows: Row[]): Row | null {
+const isRow = (v: unknown): v is Row => !!v && typeof v === 'object' && !Array.isArray(v);
+
+function measuredCount(s: FitnessScores): number {
+  return [
+    s.cardioScore, s.strengthScore, s.enduranceScore,
+    s.mobilityScore, s.bodyCompositionScore, s.healthRiskScore,
+  ].filter((v) => v !== null).length;
+}
+
+/** Newest first, whatever order the server hands back. */
+function newestFirst(rows: Row[]): Row[] {
+  return [...rows].sort((a, b) =>
+    String(b.assessment_date ?? '').localeCompare(String(a.assessment_date ?? '')));
+}
+
+/** The row the card speaks about: the newest test with enough categories for
+ *  a radar, else the newest with an overall score, else the newest row. */
+function pickRow(rows: Row[]): Row | null {
+  let overall: Row | null = null;
   for (const row of rows) {
     const s = scoresFromAssessmentRow(row);
-    const measured = [
-      s.cardioScore, s.strengthScore, s.enduranceScore,
-      s.mobilityScore, s.bodyCompositionScore, s.healthRiskScore,
-    ].filter((v) => v !== null).length;
-    if (measured >= 3) return row;
+    if (measuredCount(s) >= 3) return row;
+    if (!overall && s.overallScore != null) overall = row;
   }
-  return null;
+  return overall ?? rows[0] ?? null;
 }
 
 export default function ProgressRadarCard() {
@@ -44,12 +62,12 @@ export default function ProgressRadarCard() {
     [],
   );
 
-  const rows = Array.isArray(assessments.data) ? assessments.data : null;
-  const scored = useMemo(() => (rows ? scoredRow(rows) : null), [rows]);
+  const rows = Array.isArray(assessments.data) ? assessments.data.filter(isRow) : null;
+  const shown = useMemo(() => (rows ? pickRow(newestFirst(rows)) : null), [rows]);
   const owner = useMemo(() => {
-    const list = Array.isArray(clients.data) ? clients.data : [];
-    return list.find((c) => c.id === scored?.client_id) ?? null;
-  }, [clients.data, scored]);
+    const list = Array.isArray(clients.data) ? clients.data.filter(isRow) : [];
+    return list.find((c) => c.id === shown?.client_id) ?? null;
+  }, [clients.data, shown]);
 
   if (assessments.hasResolved && !rows) return null;
 
@@ -73,8 +91,8 @@ export default function ProgressRadarCard() {
       {!assessments.hasResolved ? (
         <div className="mt-3 h-[240px] animate-pulse rounded-[14px]"
           style={{ background: rgba(palette.blue[500], 0.06) }} />
-      ) : scored ? (
-        <Radar scored={scored} name={owner ? String(owner.name ?? '') : ''}
+      ) : shown ? (
+        <Radar row={shown} name={owner ? String(owner.name ?? '') : ''}
           photo={owner?.photo_url ? String(owner.photo_url) : null} />
       ) : (
         <div className="mt-3">
@@ -93,13 +111,14 @@ export default function ProgressRadarCard() {
   );
 }
 
-function Radar({ scored, name, photo }: { scored: Row; name: string; photo: string | null }) {
-  const scores = scoresFromAssessmentRow(scored);
-  const number = scoreNum(scored.assessment_number);
-  const rawDate = typeof scored.assessment_date === 'string' ? scored.assessment_date : '';
+function Radar({ row, name, photo }: { row: Row; name: string; photo: string | null }) {
+  const scores = scoresFromAssessmentRow(row);
+  const measured = measuredCount(scores);
+  const number = scoreNum(row.assessment_number);
+  const rawDate = typeof row.assessment_date === 'string' ? row.assessment_date : '';
   const meta = [number != null ? `Assessment #${number}` : null, rawDate ? fmtDate(rawDate) : null]
     .filter(Boolean).join(' · ');
-  const clientId = typeof scored.client_id === 'string' ? scored.client_id : '';
+  const clientId = typeof row.client_id === 'string' ? row.client_id : '';
   const href = clientId ? `/pt-os/assessment?client_id=${encodeURIComponent(clientId)}` : '/pt-os/assessment';
 
   return (
@@ -122,10 +141,19 @@ function Radar({ scored, name, photo }: { scored: Row; name: string; photo: stri
         )}
       </div>
 
-      <FitnessRadarChart data={radarDataFromScores(scores)} height={250} variant="onCard" accent={palette.blue[450]} />
+      {measured >= 3 ? (
+        <FitnessRadarChart data={radarDataFromScores(scores)} height={250} variant="onCard" accent={palette.blue[450]} />
+      ) : (
+        <p className="mt-3 rounded-[12px] px-3 py-2.5 text-[11.5px] leading-snug"
+          style={{ background: rgba(palette.blue[500], 0.06), color: 'var(--text-muted)' }}>
+          {measured > 0
+            ? `Only ${measured} of the 6 categories were measured on this test, so there is no radar to draw — the assessment itself has the detail.`
+            : 'No category scores on this test, so there is no radar to draw — the assessment itself has the detail.'}
+        </p>
+      )}
 
       <Link href={href}
-        className="mt-1 flex h-11 items-center justify-center gap-1.5 rounded-[12px] text-[12.5px] font-[750] transition active:scale-[0.98]"
+        className="mt-3 flex h-11 items-center justify-center gap-1.5 rounded-[12px] text-[12.5px] font-[750] transition active:scale-[0.98]"
         style={{ background: rgba(palette.blue[500], 0.10), color: palette.blue[600] }}>
         Open assessment <ChevronRight size={14} />
       </Link>

@@ -1,8 +1,12 @@
 // Next Best Action — the cockpit's one-thing-to-do-now card. It promotes the
 // top result of the same prioritisation the AI Coach board uses, so the two
 // can never disagree about what matters most.
+//
+// The other trap this file guards: the card must not claim anything the data
+// does not support — a missing number is not a missing person, and a list
+// that changed under the card is not a list that has been worked through.
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import NextBestActionCard from '@/components/dashboards/cockpit/NextBestActionCard';
 import type { DashData, OpsData } from '@/components/dashboards/PtOsDashboard';
 import type { CoachBirthday } from '@/lib/coach-insights';
@@ -57,6 +61,32 @@ describe('NextBestActionCard', () => {
     expect(screen.queryByRole('link', { name: /whatsapp/i })).toBeNull();
     expect(screen.queryByRole('link', { name: /^call /i })).toBeNull();
     expect(screen.getByRole('link', { name: /open list/i }).getAttribute('href')).toBe('/pt-os/clients');
+    // And the copy says what is true: a number is missing, not that the
+    // person is — "no mobile on file" is about the client, not the record.
+    expect(screen.getByText(/no reachable mobile/i)).toBeTruthy();
+  });
+
+  it('never claims a missing number when the cohort has no individuals at all', () => {
+    // expired_clients with no renewals, dues or birthdays: the promoted
+    // insight is the inactive cohort, which the engine gives no contacts — a
+    // count, not a list. "No mobile on file" would be a claim about numbers
+    // that were never gathered.
+    render(<NextBestActionCard d={DASH} ops={opsWith([])} birthdays={[]} studioName="Iron Studio" />);
+    expect(screen.getByText(/no individual contacts/i)).toBeTruthy();
+    expect(screen.queryByText(/mobile on file/i)).toBeNull();
+  });
+
+  it("starts the list over when the cohort changes under it — never \"everyone contacted\" against a new list", () => {
+    const OMM = { ...ASHA, id: 'c2', name: 'Omm', mobile: '9876500000' };
+    const { rerender } = render(
+      <NextBestActionCard d={DASH} ops={opsWith([ASHA])} birthdays={[]} studioName="Iron Studio" />);
+    fireEvent.click(screen.getByRole('link', { name: 'Send WhatsApp to Asha' }));
+    expect(screen.getByText(/everyone on this list has been contacted/i)).toBeTruthy();
+
+    // The dashboard refetches every 60s; a second client lands on the same
+    // insight. The card must speak about the list on screen now.
+    rerender(<NextBestActionCard d={DASH} ops={opsWith([ASHA, OMM])} birthdays={[]} studioName="Iron Studio" />);
+    expect(screen.getByRole('status')).toHaveTextContent(/Next: Asha · 2 of 2 left/);
   });
 
   it('renders nothing when no insight exists — the board below carries the all-clear', () => {
