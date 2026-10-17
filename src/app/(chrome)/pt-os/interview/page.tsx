@@ -155,7 +155,7 @@ function InterviewForm({ clientId }: { clientId: string }) {
         onSubmit={(e) => { e.preventDefault(); save('completed'); }}>
         <SectionNav answers={answers} />
         {INTERVIEW_QUESTIONS.map((q, i) => (
-          <InterviewSection key={q.key} question={q} index={i} value={answers[q.key]}
+          <InterviewSection key={q.key} question={q} index={i} value={answers[q.key] == null ? '' : String(answers[q.key])}
             onChange={(next) => setAnswers((a) => ({ ...a, [q.key]: next }))} />
         ))}
 

@@ -81,10 +81,14 @@ export function InterviewHero({ clientName, answers, answered, resumed }: {
           {/* Bars — one per question: filled = answered, dimmed = open, so you can see
               which ones are still open. */}
           <div className="mt-2 flex gap-1" aria-hidden>
-            {INTERVIEW_QUESTIONS.map((q) => (
-              <span key={q.key} className="h-1.5 flex-1 rounded-full transition-opacity duration-300"
-                style={{ background: (answers[q.key] != null && (typeof answers[q.key] === 'string' ? answers[q.key].trim() : true)) ? gradient(tones[q.tone], 90) : 'rgba(255,255,255,0.25)' }} />
-            ))}
+            {INTERVIEW_QUESTIONS.map((q) => {
+              const v = answers[q.key];
+              const filled = v != null && (typeof v === 'string' ? v.trim().length > 0 : true);
+              return (
+                <span key={q.key} className="h-1.5 flex-1 rounded-full transition-opacity duration-300"
+                  style={{ background: filled ? gradient(tones[q.tone], 90) : 'rgba(255,255,255,0.25)' }} />
+              );
+            })}
           </div>
           <p className="mt-1.5 text-[11px] opacity-75">Optional — it never blocks enrolment.</p>
         </div>
@@ -106,7 +110,8 @@ export function SectionNav({ answers }: { answers: Answers }) {
       <ol className="-mx-1 flex gap-1.5 overflow-x-auto px-1 py-0.5 [scrollbar-width:none] sm:flex-wrap sm:justify-center sm:overflow-visible [&::-webkit-scrollbar]:hidden">
         {INTERVIEW_QUESTIONS.map((q, i) => {
           const t = tones[q.tone];
-          const done = answers[q.key] != null && (typeof answers[q.key] === 'string' ? answers[q.key].trim().length > 0 : true);
+          const v = answers[q.key];
+          const done = v != null && (typeof v === 'string' ? v.trim().length > 0 : true);
           return (
             <li key={q.key} className="shrink-0">
               <m.a href={`#q-${q.key}`}

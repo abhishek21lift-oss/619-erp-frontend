@@ -19,6 +19,8 @@ export interface InterviewQuestion {
   max: number;
   icon: LucideIcon;
   tone: ToneName;
+  control?: 'text' | 'number' | 'select';
+  options?: { value: string; label: string }[];
 }
 
 export const INTERVIEW_QUESTIONS: readonly InterviewQuestion[] = [
