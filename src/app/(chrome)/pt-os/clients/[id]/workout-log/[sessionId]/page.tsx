@@ -720,7 +720,7 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
           )}
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <span onClick={(e) => { e.stopPropagation(); onRemove(); }} role="button" tabIndex={0}
+          <span onClick={(e) => { e.stopPropagation(); onRemove(); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onRemove(); } }} role="button" tabIndex={0} aria-label="Remove exercise"
             className="flex h-9 w-9 items-center justify-center rounded-[10px] transition hover:bg-red-50">
             <Trash2 size={14} style={{ color: '#ef4444' }} />
           </span>

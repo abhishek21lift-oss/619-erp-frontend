@@ -65,13 +65,13 @@ describe('<InterviewPage />', () => {
     await screen.findByText('Mina Rao · Client Interview');
     const complete = screen.getByRole('button', { name: 'Complete interview' }) as HTMLButtonElement;
     expect(complete.disabled).toBe(true);
-    expect(screen.getByRole('img', { name: '0 of 7 questions answered' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: '0 of 15 questions answered' })).toBeTruthy();
 
     fireEvent.change(textareas()[0], { target: { value: '   ' } });
-    expect(screen.getByRole('img', { name: '0 of 7 questions answered' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: '0 of 15 questions answered' })).toBeTruthy();
 
     fireEvent.change(textareas()[1], { target: { value: 'Left knee, old ACL repair' } });
-    expect(screen.getByRole('img', { name: '1 of 7 questions answered' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: '1 of 15 questions answered' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Pain & injuries, answered' })).toBeTruthy();
     // Each answer box is the only thing its label names (the e2e suite
     // finds fields with getByLabel).
