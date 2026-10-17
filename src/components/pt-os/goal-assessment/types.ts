@@ -48,6 +48,12 @@ export interface GoalFormData {
   startingBodyFatManual: string;
 
   notes: string;
+
+  // SMART scheduling / routine architecture
+  trainingDays: string;
+  experienceLevel: string;
+  equipment: string;
+  status: 'active' | 'paused' | 'completed' | 'archived';
 }
 
 export interface FormErrors {
@@ -110,6 +116,7 @@ export const STEPS = [
   { id: 6, key: 'motivation', label: 'Motivation' },
   { id: 7, key: 'challenges', label: 'Challenges' },
   { id: 8, key: 'lifestyle', label: 'Lifestyle' },
+  { id: 9, key: 'schedule', label: 'Schedule' },
 ] as const;
 
 export type StepId = typeof STEPS[number]['id'];
@@ -127,6 +134,7 @@ export function initGoalForm(): GoalFormData {
     },
     startingWeightManual: '', startingBodyFatManual: '',
     notes: '',
+    trainingDays: '3', experienceLevel: 'beginner', equipment: 'full_gym', status: 'active',
   };
 }
 

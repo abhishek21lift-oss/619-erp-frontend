@@ -28,6 +28,9 @@ import StepPriority from '@/components/pt-os/goal-assessment/StepPriority';
 import StepMotivationCommitment from '@/components/pt-os/goal-assessment/StepMotivationCommitment';
 import StepChallenges, { CHALLENGE_OPTIONS } from '@/components/pt-os/goal-assessment/StepChallenges';
 import StepLifestyle from '@/components/pt-os/goal-assessment/StepLifestyle';
+import StepSchedule from '@/components/pt-os/goal-assessment/StepSchedule';
+import TrainingSchedulePreview from '@/components/pt-os/goal-assessment/TrainingSchedulePreview';
+import MilestoneTracker from '@/components/pt-os/goal-assessment/MilestoneTracker';
 import GoalAnalysisDashboard from '@/components/pt-os/goal-assessment/GoalAnalysisDashboard';
 import GoalSummaryCard from '@/components/pt-os/goal-assessment/GoalSummaryCard';
 import GoalTimeline from '@/components/pt-os/goal-assessment/GoalTimeline';
@@ -35,6 +38,7 @@ import GoalCard from '@/components/pt-os/goal-assessment/GoalCard';
 import GoalProgressTimeline from '@/components/pt-os/goal-assessment/GoalProgressTimeline';
 import { errorMessage } from '@/lib/forms/errors';
 import { todayISO } from '@/lib/forms/domain';
+import { recommendTrainingSplit, generateMilestones, buildRoutineBlueprint } from '@/lib/goal-scheduling';
 import { rangeIssue } from '@/lib/forms/ranges';
 import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
 
@@ -61,6 +65,7 @@ function validateStep(id: StepId, form: GoalFormData): string | undefined {
   // back blank without a word.
   if (id === 4 && form.targetDate < todayISO()) return 'The target date must be today or later.';
   if (id === 5 && !form.priorityGoal) return 'Please select a top priority.';
+  if (id === 9 && !form.trainingDays) return 'Please choose training days.';
   return undefined;
 }
 
@@ -91,6 +96,10 @@ function formFromGoalRow(row: Record<string, unknown>): GoalFormData {
     startingWeightManual: row.starting_weight != null ? String(row.starting_weight) : '',
     startingBodyFatManual: row.starting_body_fat_pct != null ? String(row.starting_body_fat_pct) : '',
     notes: String(row.notes ?? ''),
+    trainingDays: row.training_days_per_week != null ? String(row.training_days_per_week) : '3',
+    experienceLevel: 'beginner',
+    equipment: 'full_gym',
+    status: (row.status as GoalFormData['status']) || (row.is_active ? 'active' : 'archived'),
   };
 }
 
@@ -177,10 +186,10 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
   // One active goal at a time: a new goal archives the old one, and an
   // archived goal can be made the active one again. There was no way to do
   // either, so every goal ever set stayed "active".
-  const setActive = async (goalId: string, isActive: boolean) => {
+  const setStatus = async (goalId: string, status: 'active' | 'paused' | 'completed' | 'archived') => {
     try {
-      await api.progress.goals.update(goalId, { is_active: isActive });
-      toast.success(isActive ? 'Goal made active.' : 'Goal archived.');
+      await api.progress.goals.update(goalId, { status, is_active: status === 'active' });
+      toast.success(`Goal ${status}.`);
       loadData();
     } catch (err: unknown) {
       toast.error(errorMessage(err, 'Could not update the goal.'));
@@ -247,12 +256,14 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
         {goals.map((g) => (
           <div key={String(g.id)} className="space-y-1.5">
             <GoalCard goal={g} latestWeight={latestWeight} onClick={() => openWizard(String(g.id))} />
-            <div className="flex justify-end px-1">
-              <button type="button" onClick={() => setActive(String(g.id), !g.is_active)}
-                className="rounded-full px-3 py-1.5 text-[12px] font-[700]"
-                style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-                {g.is_active ? 'Archive goal' : 'Make active'}
-              </button>
+            <div className="flex justify-end gap-2 px-1">
+              {(['active','paused','completed','archived'] as const).map((st) => (
+                <button key={st} type="button" onClick={() => setStatus(String(g.id), st)}
+                  className="rounded-full px-3 py-1.5 text-[11px] font-[700]"
+                  style={{ border: '1px solid var(--border)', color: g.status === st ? '#0059CE' : 'var(--text-secondary)', background: g.status === st ? 'rgba(0,103,224,0.08)' : 'transparent' }}>
+                  {st}
+                </button>
+              ))}
             </div>
           </div>
         ))}
@@ -344,7 +355,7 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
     const err = validateStep(step, form);
     setErrors((e) => ({ ...e, [stepDef.key]: err }));
     if (err) { toast.error(err); return; }
-    if (step === 8) { setReviewMode(true); return; }
+    if (step === 9) { setReviewMode(true); return; }
     setStep((s) => (s + 1) as StepId);
   };
 
@@ -383,7 +394,22 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
         starting_weight: latestWeight == null ? (n(form.startingWeightManual) ?? undefined) : undefined,
         starting_body_fat_pct: latestBodyFat == null ? (n(form.startingBodyFatManual) ?? undefined) : undefined,
         notes: form.notes || null,
+        status: form.status,
+        training_days_per_week: n(form.trainingDays) ?? null,
+        experience_level: form.experienceLevel,
+        equipment: form.equipment,
       };
+
+      // Compute recommended schedule, routine blueprint and milestones client-side
+      // (backend also accepts persisted values).
+      const schedule = recommendTrainingSplit(form.trainingDays, { goal: form.goalType, experience: form.experienceLevel });
+      const blueprint = buildRoutineBlueprint({ goal: form.goalType, experience: form.experienceLevel, equipment: form.equipment, trainingDays: form.trainingDays, split: schedule.split });
+      const milestones = generateMilestones(new Date().toISOString().slice(0,10), form.targetDate || null, 8, 12);
+      payload.training_split = schedule.split;
+      payload.routine_blueprint = blueprint;
+      payload.milestones = milestones;
+      payload.short_term_weeks = 8;
+      payload.medium_term_weeks = 12;
 
       if (goalId) {
         await api.progress.goals.update(goalId, payload);
@@ -425,6 +451,7 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
             {step === 6 && <StepMotivationCommitment form={form} set={set} />}
             {step === 7 && <StepChallenges form={form} set={set} error={errors.challenges} />}
             {step === 8 && <StepLifestyle form={form} set={set} error={errors.lifestyle} />}
+            {step === 9 && <StepSchedule form={form} set={set} />}
           </m.div>
         ) : (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-5">
@@ -441,6 +468,8 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
               targetDate={form.targetDate} priorityLabel={labelFor(PRIORITY_META, form.priorityGoal)}
               motivationLevel={n(form.motivationLevel) ?? 0} commitmentLevel={n(form.commitmentLevel) ?? 0}
             />
+            <TrainingSchedulePreview trainingDays={form.trainingDays} goal={form.goalType} experience={form.experienceLevel} />
+            <MilestoneTracker startDate={new Date().toISOString().slice(0,10)} targetDate={form.targetDate || null} />
           </m.div>
         )}
       </div>
@@ -456,7 +485,7 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
                 onClick={handleNext}
                 style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
               >
-                {step === 8 ? 'Review' : 'Next'}
+                {step === 9 ? 'Review' : 'Next'}
               </Button>
             ) : (
               <Button
