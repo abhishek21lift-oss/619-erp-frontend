@@ -330,10 +330,18 @@ function Glass({ children, className = '', style, onClick }: {
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
   return (
-    <p className="px-1 text-[10px] font-[750] uppercase tracking-[0.14em] mb-2"
-      style={{ color: 'rgba(100,116,139,0.7)' }}>{children}</p>
+    <p className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-[750] uppercase tracking-[0.14em]"
+      style={{ color: 'rgba(100,116,139,0.7)' }}>
+      {icon && (
+        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px]"
+          style={{ background: 'rgba(100,116,139,0.14)' }} aria-hidden>
+          {icon}
+        </span>
+      )}
+      {children}
+    </p>
   );
 }
 
@@ -552,7 +560,7 @@ export function ScreeningGaps() {
 
   return (
     <section aria-labelledby="screening-gaps-title">
-      <SectionLabel>Screening</SectionLabel>
+      <SectionLabel icon={<ShieldCheck size={10} />}>Screening</SectionLabel>
       <Glass className="p-4 sm:p-5">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px]"
@@ -617,7 +625,7 @@ function MobileQuickActions() {
   const actions = QUICK_ACTIONS;
   return (
     <div className="lg:hidden -mx-3 px-3">
-      <SectionLabel>Quick Actions</SectionLabel>
+      <SectionLabel icon={<Sparkles size={10} />}>Quick Actions</SectionLabel>
       <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
         {actions.map((a, i) => (
           <m.div key={a.label} className="shrink-0"
@@ -2488,12 +2496,12 @@ export default function PtOsDashboard() {
                 the form stays where there is room to explain the lock; this
                 links there. */}
             <div>
-              <SectionLabel>This Month</SectionLabel>
+              <SectionLabel icon={<Target size={10} />}>This Month</SectionLabel>
               <MonthlyTarget />
             </div>
 
             <div>
-              <SectionLabel>Key Metrics</SectionLabel>
+              <SectionLabel icon={<Gauge size={10} />}>Key Metrics</SectionLabel>
               {/* Two up on a phone (all four, as a square block), three on desktop
                     where Commission is hidden — so the row fills at both. It was
                     lg:grid-cols-4 with one of the four hidden at lg, which left an
@@ -2522,7 +2530,7 @@ export default function PtOsDashboard() {
                 keeping it here as well would have been the same list twice, one
                 of them worse. Renewals is full width now that it is alone. */}
             <div>
-              <SectionLabel>Renewals</SectionLabel>
+              <SectionLabel icon={<CalendarClock size={10} />}>Renewals</SectionLabel>
               <RenewalsDue ops={o} loading={ops.loading} />
             </div>
 
@@ -2542,7 +2550,7 @@ export default function PtOsDashboard() {
                 the wrong word for a solo studio. Full width now that it is the
                 only card in the row. */}
             <div>
-              <SectionLabel>Sessions</SectionLabel>
+              <SectionLabel icon={<Dumbbell size={10} />}>Sessions</SectionLabel>
               <SessionActivity ops={o} loading={ops.loading} />
             </div>
           </>
