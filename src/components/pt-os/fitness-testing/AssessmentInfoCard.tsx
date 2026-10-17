@@ -4,6 +4,7 @@ import { ClipboardList } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import type { AssessmentFormData, AssessmentType } from './types';
+import { gradient, tones } from './fitnessTheme';
 
 const ASSESSMENT_TYPES: { value: AssessmentType; label: string }[] = [
   { value: 'initial', label: 'Initial' },
@@ -27,12 +28,12 @@ export function AssessmentInfoCard({
   return (
     <div className="mb-5">
       <div className="flex items-start gap-4 mb-6">
-        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: '#0f172a' }}>
-          <ClipboardList size={18} color="#1CA3F9" />
+        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px] text-white" style={{ background: gradient(tones.sky), boxShadow: `0 12px 26px -13px ${tones.sky.glow}` }}>
+          <ClipboardList size={18} />
         </div>
         <div>
-          <h2 className="text-[18px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Assessment Information</h2>
-          <p className="text-[12.5px] text-[color:var(--text-muted)] mt-1.5">Scientific Baseline Performance Assessment</p>
+          <h2 className="text-[18px] font-[840] tracking-[-0.03em] leading-none" style={{ color: 'var(--text-primary)' }}>Assessment Information</h2>
+          <p className="text-[12.5px] mt-1.5" style={{ color: 'var(--text-muted)' }}>Scientific Baseline Performance Assessment</p>
         </div>
       </div>
 

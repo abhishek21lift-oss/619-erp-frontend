@@ -144,6 +144,11 @@ describe('the app uses only the palette', () => {
     //
     // Attendance and Check-In are the ninth: hero meshes, the rate ring and
     // the viewfinder glow, in components/attendance/attendanceTheme.ts.
+    //
+    // Fitness Testing is the tenth: the assessment wizard's energy mesh, one
+    // hue per fitness domain and the score ring, in
+    // components/pt-os/fitness-testing/fitnessTheme.ts. Decoration only — a
+    // score band on these screens is still emerald / amber / red.
     const known = new Set(
       [...allHexes(), ...Object.values(founderGold)].map((h) => h.toUpperCase())
     );
@@ -171,6 +176,8 @@ describe('the app uses only the palette', () => {
         // The front-desk screens' decorative colour — confined below.
         if (p.endsWith(join('components', 'attendance', 'attendanceTheme.ts'))) continue;
         if (p.endsWith(join('components', 'platform', 'ccTheme.ts'))) continue;
+        // Fitness Testing's decorative colour — its one token file, confined below.
+        if (p.endsWith(join('components', 'pt-os', 'fitness-testing', 'fitnessTheme.ts'))) continue;
         const text = readFileSync(p, 'utf8');
         for (const m of text.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
           if (!known.has(m.toUpperCase())) offenders.push(`${p}: ${m}`);
@@ -319,6 +326,33 @@ describe('the app uses only the palette', () => {
     walk(join(process.cwd(), 'src'));
     const allowed = ['app/(chrome)/attendance/page.tsx', 'app/(chrome)/checkin/qr-scanner/page.tsx'];
     const outside = users.filter((u) => !u.startsWith('components/attendance/') && !allowed.includes(u));
+    expect(users.length).toBeGreaterThan(0);
+    expect(outside).toEqual([]);
+  });
+
+  it('confines the fitness-testing colours to the assessment module', () => {
+    // fitnessTheme is the tenth exception: the assessment wizard's hero
+    // mesh, one hue per fitness domain and the score ring. Decorative only —
+    // every score band on these screens still comes from the five families,
+    // so a domain tile cannot borrow "green" to mean "all good". Its hexes
+    // are exempt from the scan above, and this keeps them from spreading:
+    // outside the module, only the assessment page itself may reach for the
+    // mesh and the band helpers.
+    const users: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = join(dir, entry);
+        if (statSync(p).isDirectory()) { walk(p); continue; }
+        if (!/\.tsx?$/.test(entry)) continue;
+        if (p.includes('__tests__')) continue;
+        if (/fitnessTheme['"]/.test(readFileSync(p, 'utf8'))) {
+          users.push(p.split(join('src') + sep)[1].replaceAll(sep, '/'));
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src'));
+    const allowed = ['app/(chrome)/pt-os/assessment/page.tsx'];
+    const outside = users.filter((u) => !u.startsWith('components/pt-os/fitness-testing/') && !allowed.includes(u));
     expect(users.length).toBeGreaterThan(0);
     expect(outside).toEqual([]);
   });

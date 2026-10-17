@@ -6,14 +6,8 @@ import FloatInput from '@/components/ui/FloatInput';
 import { classifyBp } from '@/lib/fitness-calculations';
 import type { AssessmentFormData } from './types';
 import { n } from './types';
-
-const BADGE_STYLE: Record<string, { bg: string; color: string }> = {
-  Normal: { bg: 'rgba(16,185,129,0.12)', color: '#059669' },
-  Elevated: { bg: 'rgba(245,158,11,0.12)', color: '#d97706' },
-  'Hypertension Stage 1': { bg: 'rgba(245,158,11,0.14)', color: '#f59e0b' },
-  'Hypertension Stage 2': { bg: 'rgba(239,68,68,0.14)', color: '#dc2626' },
-  Hypotension: { bg: 'rgba(239,68,68,0.14)', color: '#dc2626' },
-};
+import { StepHeader } from './StepHeader';
+import { bpPill, stepTones } from './fitnessTheme';
 
 interface StepBloodPressureProps {
   form: AssessmentFormData;
@@ -26,19 +20,16 @@ export function StepBloodPressure({ form, set, error }: StepBloodPressureProps) 
     () => classifyBp(n(form.bpSystolic), n(form.bpDiastolic)),
     [form.bpSystolic, form.bpDiastolic],
   );
-  const badge = category ? BADGE_STYLE[category] : null;
+  const badge = category ? bpPill(category) : null;
 
   return (
     <div>
-      <div className="flex items-start gap-4 mb-7">
-        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-          <HeartPulse size={20} color="#1CA3F9" />
-        </div>
-        <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Blood Pressure</h2>
-          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 1 of 7 — resting cardiovascular baseline.</p>
-        </div>
-      </div>
+      <StepHeader
+        icon={HeartPulse}
+        tone={stepTones[1]}
+        title="Blood Pressure"
+        subtitle="Step 1 of 7 — resting cardiovascular baseline."
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FloatInput label="Systolic (mmHg)" numeric="integer" value={form.bpSystolic} onChange={(v) => set('bpSystolic', v)} />
@@ -69,8 +60,8 @@ export function StepBloodPressure({ form, set, error }: StepBloodPressureProps) 
       {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
       {category && badge && (
-        <div className="mt-6 flex items-center gap-2">
-          <span className="text-[11px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Classification</span>
+        <div className="mt-6 flex items-center gap-2.5">
+          <span className="text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Classification</span>
           <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: badge.bg, color: badge.color }}>
             {category}
           </span>
@@ -79,8 +70,8 @@ export function StepBloodPressure({ form, set, error }: StepBloodPressureProps) 
 
       {isUnsafe && (
         <div className="mt-4 flex items-start gap-3 rounded-[16px] p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
-          <AlertTriangle size={18} style={{ color: '#dc2626', flexShrink: 0, marginTop: 1 }} />
-          <p className="text-[13px] font-[640]" style={{ color: '#991b1b' }}>
+          <AlertTriangle size={18} style={{ color: 'var(--danger-text)', flexShrink: 0, marginTop: 1 }} />
+          <p className="text-[13px] font-[640]" style={{ color: 'var(--danger-text)' }}>
             Exercise not recommended. Medical clearance required. Cardio, strength and endurance tests will be skipped — only measurements and flexibility are recorded today.
           </p>
         </div>

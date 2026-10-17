@@ -9,6 +9,7 @@ import {
 import { api } from '@/lib/api';
 import type { AiFitnessTestAnalysis } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
+import { deepMesh, gradient, sweep, tones } from './fitnessTheme';
 
 const SEVERITY_STYLE: Record<string, { bg: string; border: string; color: string }> = {
   low: { bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.25)', color: '#059669' },
@@ -42,15 +43,15 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
 
   return (
     <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-      <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
+      <div className="h-1.5 w-full" style={{ background: sweep }} />
       <div className="p-7 sm:p-10">
         <div className="flex items-start gap-4 mb-6">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <Brain size={20} color="#1CA3F9" />
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px] text-white" style={{ background: gradient(tones.violet), boxShadow: `0 14px 30px -14px ${tones.violet.glow}` }}>
+            <Brain size={20} />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">AI Recommendations</h2>
-            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">A sports-scientist read of this assessment.</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] leading-none" style={{ color: 'var(--text-primary)' }}>AI Recommendations</h2>
+            <p className="text-[13px] mt-1.5" style={{ color: 'var(--text-muted)' }}>A sports-scientist read of this assessment.</p>
           </div>
         </div>
 
@@ -67,16 +68,16 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
         {loading && (
           <div className="flex items-center gap-3 py-6">
             <Loader2 size={18} className="animate-spin" style={{ color: '#0067E0' }} />
-            <span className="text-[13px] font-[600] text-[color:var(--text-muted)]">Analysing assessment…</span>
+            <span className="text-[13px] font-[600]" style={{ color: 'var(--text-muted)' }}>Analysing assessment…</span>
           </div>
         )}
 
         {error && (
           <div className="mt-4 flex items-start gap-3 rounded-[16px] p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
-            <AlertTriangle size={18} style={{ color: '#dc2626', flexShrink: 0, marginTop: 1 }} />
+            <AlertTriangle size={18} style={{ color: 'var(--danger-text)', flexShrink: 0, marginTop: 1 }} />
             <div>
-              <p className="text-[13px] font-[640]" style={{ color: '#991b1b' }}>{error}</p>
-              <button type="button" onClick={generate} className="mt-2 text-[12px] font-[700]" style={{ color: '#dc2626' }}>
+              <p className="text-[13px] font-[640]" style={{ color: 'var(--danger-text)' }}>{error}</p>
+              <button type="button" onClick={generate} className="mt-2 text-[12px] font-[700]" style={{ color: 'var(--danger-text)' }}>
                 Try again
               </button>
             </div>
@@ -91,15 +92,15 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
               </span>
             )}
 
-            <p className="text-[14px] leading-relaxed text-[color:var(--text-secondary)]">{analysis.summary}</p>
-            <p className="text-[13px] leading-relaxed text-[color:var(--text-muted)]">{analysis.overall_assessment}</p>
+            <p className="text-[14px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{analysis.summary}</p>
+            <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{analysis.overall_assessment}</p>
 
             {analysis.strengths.length > 0 && (
               <div>
-                <p className="mb-2 text-[11.5px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Strengths</p>
+                <p className="mb-2 text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Strengths</p>
                 <ul className="space-y-1.5">
                   {analysis.strengths.map((s, i) => (
-                    <li key={i} className="flex items-start gap-2 text-[13px] text-[color:var(--text-secondary)]">
+                    <li key={i} className="flex items-start gap-2 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
                       <CheckCircle2 size={14} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} /> {s}
                     </li>
                   ))}
@@ -109,10 +110,10 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
 
             {analysis.areas_to_improve.length > 0 && (
               <div>
-                <p className="mb-2 text-[11.5px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Areas to Improve</p>
+                <p className="mb-2 text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Areas to Improve</p>
                 <ul className="space-y-1.5">
                   {analysis.areas_to_improve.map((s, i) => (
-                    <li key={i} className="flex items-start gap-2 text-[13px] text-[color:var(--text-secondary)]">
+                    <li key={i} className="flex items-start gap-2 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
                       <ArrowUpCircle size={14} style={{ color: '#d97706', flexShrink: 0, marginTop: 2 }} /> {s}
                     </li>
                   ))}
@@ -122,7 +123,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
 
             {analysis.risk_flags.length > 0 && (
               <div className="space-y-2">
-                <p className="text-[11.5px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Risk Flags</p>
+                <p className="text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Risk Flags</p>
                 {analysis.risk_flags.map((r, i) => {
                   const style = SEVERITY_STYLE[r.severity] || SEVERITY_STYLE.medium;
                   return (
@@ -130,7 +131,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
                       <AlertTriangle size={16} style={{ color: style.color, flexShrink: 0, marginTop: 1 }} />
                       <div>
                         <p className="text-[13px] font-[700]" style={{ color: style.color }}>{r.flag}</p>
-                        <p className="text-[12px] text-[color:var(--text-secondary)] mt-0.5">{r.action}</p>
+                        <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>{r.action}</p>
                       </div>
                     </div>
                   );
@@ -140,17 +141,17 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
 
             {analysis.recommendations.length > 0 && (
               <div className="space-y-2">
-                <p className="text-[11.5px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Recommendations</p>
+                <p className="text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Recommendations</p>
                 {[...analysis.recommendations].sort((a, b) => a.priority - b.priority).map((r, i) => (
                   <div key={i} className="rounded-[14px] p-3.5" style={{ background: 'var(--bg-subtle)' }}>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-[800]" style={{ background: '#0f172a', color: '#0067E0' }}>
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-[800] text-white" style={{ background: gradient(tones.violet) }}>
                         {r.priority}
                       </span>
-                      <p className="text-[13px] font-[700] text-[color:var(--text-primary)]">{r.focus_area}</p>
+                      <p className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>{r.focus_area}</p>
                     </div>
-                    <p className="text-[12.5px] text-[color:var(--text-secondary)]">{r.action}</p>
-                    <p className="text-[11.5px] text-[color:var(--text-muted)] mt-1 italic">{r.rationale}</p>
+                    <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{r.action}</p>
+                    <p className="text-[11.5px] mt-1 italic" style={{ color: 'var(--text-muted)' }}>{r.rationale}</p>
                   </div>
                 ))}
               </div>
@@ -158,13 +159,13 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
 
             {analysis.suggested_next_test_focus && (
               <div className="flex items-start gap-3 rounded-[14px] p-4" style={{ background: 'rgba(0,103,224,0.08)', border: '1px solid rgba(0,103,224,0.2)' }}>
-                <Target size={16} style={{ color: '#d97706', flexShrink: 0, marginTop: 1 }} />
-                <p className="text-[12.5px] font-[600] text-[color:var(--text-secondary)]">{analysis.suggested_next_test_focus}</p>
+                <Target size={16} style={{ color: '#0067E0', flexShrink: 0, marginTop: 1 }} />
+                <p className="text-[12.5px] font-[600]" style={{ color: 'var(--text-secondary)' }}>{analysis.suggested_next_test_focus}</p>
               </div>
             )}
 
             {analysis.motivation_message && (
-              <div className="rounded-[16px] p-5" style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)' }}>
+              <div className="rounded-[16px] p-5" style={{ background: deepMesh }}>
                 <Quote size={16} color="#1CA3F9" />
                 <p className="mt-2 text-[13px] italic leading-relaxed text-white/80">{analysis.motivation_message}</p>
               </div>

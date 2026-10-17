@@ -1,5 +1,9 @@
 'use client';
 
+import { ShieldCheck } from 'lucide-react';
+import { amber, emerald, gray, red } from '@/lib/palette';
+import { gradient, tones } from './fitnessTheme';
+
 // Read-only visibility for the medical-screening state the server already
 // computed. Every value below comes from `screeningSummary()` (embedded in
 // GET /api/pt-os/clients/:id) or from `screening_warnings` on a save
@@ -54,6 +58,18 @@ function asWarnings(v: unknown): string[] {
   return v.filter((w): w is string => typeof w === 'string' && w.trim().length > 0);
 }
 
+// One dot per row, from the palette's own state families: done is emerald,
+// waiting or stale is amber, blocked is red, absent is gray.
+function statusDot(status: string | null | undefined, stale?: boolean | null): string {
+  if (stale) return amber[500];
+  switch (status) {
+    case 'completed': case 'submitted': case 'reviewed': return emerald[500];
+    case 'in_progress': return amber[500];
+    case 'revoked': case 'expired': return red[500];
+    default: return gray[400];
+  }
+}
+
 const cardStyle: React.CSSProperties = {
   background: 'var(--bg-card)',
   border: '1px solid var(--border)',
@@ -67,6 +83,10 @@ const rowStyle: React.CSSProperties = {
   gap: 12,
 };
 
+function RowDot({ color }: { color: string }) {
+  return <span aria-hidden className="mr-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full align-middle" style={{ background: color }} />;
+}
+
 export function ScreeningStatusCard({ screening, clientId }: { screening: unknown; clientId: string }) {
   const s = asScreeningSummary(screening);
   if (!s) return null;
@@ -78,34 +98,47 @@ export function ScreeningStatusCard({ screening, clientId }: { screening: unknow
   return (
     <section aria-label="Medical screening status" className="rounded-[24px] overflow-hidden" style={cardStyle}>
       <div className="p-6 sm:p-8">
-        <h2 className="text-[15px] font-[760] text-[color:var(--text-primary)]">Medical screening</h2>
-        <p className="mt-1 text-[12.5px] text-[color:var(--text-muted)]">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[12px] text-white" style={{ background: gradient(tones.sky), boxShadow: `0 10px 24px -12px ${tones.sky.glow}` }}>
+            <ShieldCheck size={17} />
+          </span>
+          <h2 className="text-[15px] font-[760]" style={{ color: 'var(--text-primary)' }}>Medical screening</h2>
+        </div>
+        <p className="mt-2 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
           Snapshot from when this page loaded. The server re-checks eligibility every time you save.
         </p>
         <dl className="mt-4 space-y-2.5">
           <div style={rowStyle}>
-            <dt className="text-[12.5px] font-[600] text-[color:var(--text-muted)]">PAR-Q</dt>
-            <dd className="text-[13px] font-[700] text-[color:var(--text-secondary)]">
+            <dt className="whitespace-nowrap text-[12.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
+              <RowDot color={statusDot(parq?.status, parq?.stale)} />PAR-Q
+            </dt>
+            <dd className="text-[13px] font-[700]" style={{ color: 'var(--text-secondary)' }}>
               {statusWord(parq?.status)}
               {parq?.risk_level ? ` · Risk level: ${riskWord(parq.risk_level)}` : ''}
               {parq?.stale ? ' · older than 12 months' : ''}
             </dd>
           </div>
           <div style={rowStyle}>
-            <dt className="text-[12.5px] font-[600] text-[color:var(--text-muted)]">Medical clearance</dt>
-            <dd className="text-[13px] font-[700] text-[color:var(--text-secondary)]">
+            <dt className="whitespace-nowrap text-[12.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
+              <RowDot color={parq?.has_valid_clearance ? emerald[500] : gray[400]} />Medical clearance
+            </dt>
+            <dd className="text-[13px] font-[700]" style={{ color: 'var(--text-secondary)' }}>
               {parq?.has_valid_clearance ? 'Valid' : 'None recorded'}
             </dd>
           </div>
           <div style={rowStyle}>
-            <dt className="text-[12.5px] font-[600] text-[color:var(--text-muted)]">Informed consent</dt>
-            <dd className="text-[13px] font-[700] text-[color:var(--text-secondary)]">
+            <dt className="whitespace-nowrap text-[12.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
+              <RowDot color={statusDot(consent?.status)} />Informed consent
+            </dt>
+            <dd className="text-[13px] font-[700]" style={{ color: 'var(--text-secondary)' }}>
               {statusWord(consent?.status)}
             </dd>
           </div>
           {block && (
             <div style={rowStyle}>
-              <dt className="text-[12.5px] font-[600] text-[color:var(--text-muted)]">Training block</dt>
+              <dt className="whitespace-nowrap text-[12.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
+                <RowDot color={red[500]} />Training block
+              </dt>
               <dd className="text-[13px] font-[700]" style={{ color: 'var(--danger-text)' }}>
                 {block.message}
               </dd>
@@ -113,8 +146,10 @@ export function ScreeningStatusCard({ screening, clientId }: { screening: unknow
           )}
           {warnings.map((w) => (
             <div key={w} style={rowStyle}>
-              <dt className="text-[12.5px] font-[600] text-[color:var(--text-muted)]">Note</dt>
-              <dd className="text-[13px] font-[600] text-[color:var(--text-secondary)]">{w}</dd>
+              <dt className="whitespace-nowrap text-[12.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
+                <RowDot color={amber[500]} />Note
+              </dt>
+              <dd className="text-[13px] font-[600]" style={{ color: 'var(--text-secondary)' }}>{w}</dd>
             </div>
           ))}
         </dl>
@@ -150,10 +185,10 @@ export function ScreeningWarningsNotice({ warnings, clientId }: { warnings: stri
       className="rounded-[20px] p-5"
       style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}
     >
-      <p className="text-[14px] font-[760] text-[color:var(--text-primary)]">Screening notes</p>
+      <p className="text-[14px] font-[760]" style={{ color: 'var(--text-primary)' }}>Screening notes</p>
       <ul className="mt-2 space-y-1.5">
         {list.map((w) => (
-          <li key={w} className="text-[12.5px] text-[color:var(--text-muted)]">{w}</li>
+          <li key={w} className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>{w}</li>
         ))}
       </ul>
       <div className="mt-3 flex flex-wrap gap-3">

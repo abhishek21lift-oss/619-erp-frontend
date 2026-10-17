@@ -8,8 +8,12 @@ import { calc1RM, classifyStrength, scoreCategory, scoreTestBattery } from '@/li
 import type { Gender, FitnessCategory } from '@/lib/fitness-calculations';
 import type { AssessmentFormData, StrengthExercise } from './types';
 import { n } from './types';
+import { StepHeader } from './StepHeader';
+import { categoryPill, gradient, stepTones } from './fitnessTheme';
 
 const EXERCISES: StrengthExercise[] = ['Bench Press', 'Leg Press', 'Squat', 'Deadlift', 'Shoulder Press', 'Custom Exercise'];
+
+const TONE = stepTones[5];
 
 interface StepStrengthProps {
   form: AssessmentFormData;
@@ -45,6 +49,8 @@ export function StepStrength({ form, set, gender, error, isBeginner }: StepStren
     () => scoreTestBattery(scoreCategory(t1.category), scoreCategory(t2.category)),
     [t1.category, t2.category],
   );
+  const p1 = t1.category ? categoryPill(t1.category) : null;
+  const p2 = t2.category ? categoryPill(t2.category) : null;
 
   // Each test picks from the full list minus whatever the other test
   // already has selected — structurally prevents picking the same exercise
@@ -54,22 +60,17 @@ export function StepStrength({ form, set, gender, error, isBeginner }: StepStren
 
   return (
     <div>
-      <div className="flex items-start gap-4 mb-7">
-        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-          <Dumbbell size={20} color="#1CA3F9" />
-        </div>
-        <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Muscular Strength</h2>
-          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">
-            Step 5 of 7 — {isBeginner ? 'optional; two one-rep max tests.' : 'two one-rep max tests, e.g. an upper-body lift plus a lower-body lift.'}
-          </p>
-        </div>
-      </div>
+      <StepHeader
+        icon={Dumbbell}
+        tone={TONE}
+        title="Muscular Strength"
+        subtitle={`Step 5 of 7 — ${isBeginner ? 'optional; two one-rep max tests.' : 'two one-rep max tests, e.g. an upper-body lift plus a lower-body lift.'}`}
+      />
 
       {isBeginner && (
         <div className="mb-6 flex items-start gap-2.5 rounded-[14px] p-4" style={{ background: 'rgba(0,103,224,0.06)', border: '1px solid rgba(0,103,224,0.18)' }}>
-          <Info size={15} style={{ color: '#d97706', flexShrink: 0, marginTop: 1 }} />
-          <p className="text-[12.5px] leading-relaxed" style={{ color: '#92400e' }}>
+          <Info size={15} style={{ color: '#0067E0', flexShrink: 0, marginTop: 1 }} />
+          <p className="text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
             This client&apos;s workout experience is set to <strong>Beginner</strong> — 1RM strength tests aren&apos;t required at this stage. Skip ahead with Next, or record a baseline anyway if you&apos;d like one.
           </p>
         </div>
@@ -103,23 +104,23 @@ export function StepStrength({ form, set, gender, error, isBeginner }: StepStren
       {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
       {combinedScore != null && (
-        <div className="mt-6 flex flex-wrap items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>
+        <div className="mt-6 flex flex-wrap items-center gap-4 rounded-[18px] p-5" style={{ background: TONE.wash, border: '1px solid var(--border)' }}>
           <div>
-            <p className="text-[10.5px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Combined Strength Score</p>
-            <p className="text-[18px] font-[800] text-[color:var(--text-primary)]">{combinedScore}</p>
+            <p className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Combined Strength Score</p>
+            <p className="mt-1 text-[24px] font-[820] leading-none tabular-nums tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>{combinedScore}</p>
           </div>
-          {t1.category && (
-            <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706' }}>
+          {t1.category && p1 && (
+            <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: p1.bg, color: p1.color }}>
               {form.strengthExercise}: {t1.category}
             </span>
           )}
-          {t2.category && (
-            <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706' }}>
+          {t2.category && p2 && (
+            <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: p2.bg, color: p2.color }}>
               {form.strengthExercise2}: {t2.category}
             </span>
           )}
           {!t1.category && !t2.category && !bodyWeight && (
-            <p className="text-[11px] text-[color:var(--text-muted)]">Enter weight in the Anthropometric step to classify strength level.</p>
+            <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Enter weight in the Anthropometric step to classify strength level.</p>
           )}
         </div>
       )}
@@ -148,9 +149,14 @@ function StrengthTestBlock({
   label, options, isBeginner, exercise, onExercise, customExercise, onCustomExercise,
   mode, onMode, weightKg, onWeightKg, reps, onReps, formula, onFormula, direct1RM, onDirect1RM, result,
 }: StrengthTestBlockProps) {
+  const pill = result.category ? categoryPill(result.category) : null;
+
   return (
     <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-      <p className="mb-3 text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
+      <div className="mb-3 flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-[4px]" style={{ background: gradient(TONE) }} aria-hidden />
+        <p className="text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
+      </div>
 
       <div className="mb-4">
         <SearchableSelect label="Exercise" required={!isBeginner} allowCustom={false} value={exercise} onChange={onExercise} options={options} />
@@ -210,11 +216,11 @@ function StrengthTestBlock({
 
       {result.oneRM != null && (
         <div className="mt-3 flex items-center gap-2">
-          <span className="text-[12px] font-[700] text-[color:var(--text-secondary)]">
+          <span className="text-[12px] font-[700]" style={{ color: 'var(--text-secondary)' }}>
             {mode === 'direct' ? 'Direct 1RM' : 'Estimated 1RM'}: {result.oneRM} kg
           </span>
-          {result.category && (
-            <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706' }}>{result.category}</span>
+          {result.category && pill && (
+            <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: pill.bg, color: pill.color }}>{result.category}</span>
           )}
         </div>
       )}
