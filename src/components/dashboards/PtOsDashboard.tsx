@@ -42,6 +42,7 @@ import { useAsync } from '@/lib/use-async';
 import { DashboardError } from '@/components/dashboards/primitives';
 import NextBestActionCard from '@/components/dashboards/cockpit/NextBestActionCard';
 import RosterSignalsCard from '@/components/pt-os/RosterSignalsCard';
+import ProgressRadarCard from '@/components/dashboards/cockpit/ProgressRadarCard';
 import { useAuth } from '@/lib/auth-context';
 import FounderBadge from '@/components/FounderBadge';
 import { useFounder } from '@/lib/use-founder';
@@ -2459,6 +2460,12 @@ export default function PtOsDashboard() {
                 failed sweep says so in place rather than rendering an empty,
                 reassuring list. */}
             <RosterSignalsCard />
+
+            {/* 3.7 — Progress Radar. Where the six measured categories actually
+                stand, for the studio's most recently measured client. It reads
+                its own endpoints and fails soft: a broken response removes the
+                card, not the screen. */}
+            <ProgressRadarCard />
 
             {/* 3 — KPI grid.
                 Four cards, and four is now the whole set on every screen:

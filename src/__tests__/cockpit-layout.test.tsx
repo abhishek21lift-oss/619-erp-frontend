@@ -59,12 +59,13 @@ describe('cockpit section order', () => {
 
   it('orders the day: schedule, next action, board, who to call, money', async () => {
     render(<PtOsDashboard />);
-    await screen.findByText('Active Clients');
+    await screen.findByText('Active Clients', undefined, { timeout: 3000 });
     assertOrder([
       /Today.s Sessions/i,
       'Next Best Action',
       'AI Coach',
       'Who to call',
+      'Progress Radar',
       'This Month',
       'Key Metrics',
     ]);
@@ -73,7 +74,9 @@ describe('cockpit section order', () => {
   it('keeps the rest of the cockpit when the roster sweep fails', async () => {
     signalsMock.mockRejectedValue(new Error('sweep down'));
     render(<PtOsDashboard />);
-    await screen.findByText(/roster sweep did not come back/i);
+    // A full cockpit render under a loaded machine can outrun findBy's
+    // one-second default; the assertion is about presence, not speed.
+    await screen.findByText(/roster sweep did not come back/i, undefined, { timeout: 3000 });
     expect(screen.getByText('Next Best Action')).toBeTruthy();
     expect(screen.getByText('Active Clients')).toBeTruthy();
   });
