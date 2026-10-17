@@ -4,9 +4,31 @@
 // between the two apps). These are used client-side for live preview only —
 // the backend recomputes and stores the authoritative values.
 
+import type { FitnessScores } from '@/components/pt-os/fitness-testing/FitnessDashboard';
+
 export type FitnessCategory = 'Excellent' | 'Good' | 'Average' | 'Below Average' | 'Poor';
 export type BpCategory = 'Normal' | 'Elevated' | 'Hypertension Stage 1' | 'Hypertension Stage 2' | 'Hypotension';
 export type Gender = 'Male' | 'Female' | 'Other';
+
+/** A pg numeric arrives as a string; an absent metric as null. Both collapse
+ *  to a number or null — never a plausible-looking zero. */
+export function scoreNum(v: unknown): number | null {
+  const f = typeof v === 'number' ? v : parseFloat(String(v ?? ''));
+  return Number.isFinite(f) ? f : null;
+}
+
+/** A stored assessment row, read back as the seven scores the UI renders. */
+export function scoresFromAssessmentRow(row: Record<string, unknown>): FitnessScores {
+  return {
+    cardioScore: scoreNum(row.cardio_score_computed),
+    strengthScore: scoreNum(row.strength_score_computed),
+    enduranceScore: scoreNum(row.endurance_score_computed),
+    mobilityScore: scoreNum(row.mobility_score_computed),
+    bodyCompositionScore: scoreNum(row.body_composition_score),
+    healthRiskScore: scoreNum(row.health_risk_score),
+    overallScore: scoreNum(row.overall_fitness_score),
+  };
+}
 
 function round(n: number, decimals = 1): number {
   const f = 10 ** decimals;

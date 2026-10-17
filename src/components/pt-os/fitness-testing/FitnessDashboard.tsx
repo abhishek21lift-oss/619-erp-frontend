@@ -3,7 +3,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { Activity, Dumbbell, Gauge, HeartPulse, Move, Repeat, ShieldCheck } from 'lucide-react';
 import { m } from 'framer-motion';
-import FitnessRadarChart from '@/components/pt-os/FitnessRadarChart';
+import FitnessRadarChart, { type RadarDatum } from '@/components/pt-os/FitnessRadarChart';
 import { scoreCoverage, formatCoverage } from '@/lib/fitness-calculations';
 import { bandFill, domain, gradient, ringStops, sweep, type Tone } from './fitnessTheme';
 
@@ -26,6 +26,13 @@ const CATEGORY_META: { key: keyof FitnessScores; label: string; tone: Tone; Icon
   { key: 'bodyCompositionScore', label: 'Body Comp.', tone: domain.bodyComposition, Icon: Activity },
   { key: 'healthRiskScore', label: 'Health Risk', tone: domain.healthRisk, Icon: ShieldCheck },
 ];
+
+/** Scores as radar data, labels in the plotting order above. Missing
+ *  categories stay null all the way into the radar — never 0, so a skipped
+ *  test is a gap, not a measured zero. */
+export function radarDataFromScores(scores: FitnessScores): RadarDatum[] {
+  return CATEGORY_META.map((c) => ({ category: c.label, score: scores[c.key] }));
+}
 
 interface FitnessDashboardProps {
   scores: FitnessScores;
@@ -70,9 +77,7 @@ function ScoreRing({ score, size = 208 }: { score: number | null; size?: number 
 
 export function FitnessDashboard({ scores }: FitnessDashboardProps) {
   const coverage = scoreCoverage(scores);
-  // Missing categories stay null all the way into the radar — never 0, so a
-  // skipped test is a gap, not a measured zero.
-  const radarData = CATEGORY_META.map((c) => ({ category: c.label, score: scores[c.key] }));
+  const radarData = radarDataFromScores(scores);
   const overall = scores.overallScore;
 
   return (
