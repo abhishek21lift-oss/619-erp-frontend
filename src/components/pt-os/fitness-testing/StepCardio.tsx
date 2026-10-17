@@ -10,6 +10,8 @@ import {
 } from '@/lib/fitness-calculations';
 import type { AssessmentFormData, CardioTestType } from './types';
 import { n } from './types';
+import { StepHeader } from './StepHeader';
+import { categoryPill, stepTones } from './fitnessTheme';
 
 const CARDIO_TESTS: CardioTestType[] = [
   'YMCA 3-Minute Step Test', 'Rockport 1-Mile Walk', 'Cooper 12-Minute Run',
@@ -50,17 +52,16 @@ export function StepCardio({ form, set, age, gender, error }: StepCardioProps) {
     }
   }, [form, age, gender]);
 
+  const pill = preview.category ? categoryPill(preview.category) : null;
+
   return (
     <div>
-      <div className="flex items-start gap-4 mb-7">
-        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-          <Wind size={20} color="#1CA3F9" />
-        </div>
-        <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Cardiorespiratory Endurance</h2>
-          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 4 of 7 — choose a test.</p>
-        </div>
-      </div>
+      <StepHeader
+        icon={Wind}
+        tone={stepTones[4]}
+        title="Cardiorespiratory Endurance"
+        subtitle="Step 4 of 7 — choose a test."
+      />
 
       <div className="mb-5">
         <SearchableSelect
@@ -94,7 +95,7 @@ export function StepCardio({ form, set, age, gender, error }: StepCardioProps) {
       {form.cardioTestType === 'YMCA 3-Minute Step Test' && (
         <div>
           <FloatInput label="Recovery Heart Rate (bpm)" numeric="integer" value={form.cardioRecoveryHr} onChange={(v) => set('cardioRecoveryHr', v)} />
-          <p className="mt-1.5 text-[11px] text-[color:var(--text-muted)]">No standard VO₂max formula for this test — classified by heart-rate recovery only.</p>
+          <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>No standard VO₂max formula for this test — classified by heart-rate recovery only.</p>
         </div>
       )}
       {form.cardioTestType === 'Custom' && (
@@ -104,15 +105,17 @@ export function StepCardio({ form, set, age, gender, error }: StepCardioProps) {
       {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
       {form.cardioTestType && (preview.vo2 != null || preview.category) && (
-        <div className="mt-6 flex flex-wrap items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>
+        <div className="mt-6 flex flex-wrap items-center gap-4 rounded-[18px] p-5" style={{ background: stepTones[4].wash, border: '1px solid var(--border)' }}>
           {preview.vo2 != null && (
             <div>
-              <p className="text-[10.5px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Estimated VO₂ Max</p>
-              <p className="text-[18px] font-[800] text-[color:var(--text-primary)]">{preview.vo2} mL/kg/min</p>
+              <p className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Estimated VO₂ Max</p>
+              <p className="mt-1 text-[24px] font-[820] leading-none tabular-nums tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
+                {preview.vo2} <span className="text-[13px] font-[640] tracking-normal" style={{ color: 'var(--text-muted)' }}>mL/kg/min</span>
+              </p>
             </div>
           )}
-          {preview.category && (
-            <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706' }}>
+          {preview.category && pill && (
+            <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: pill.bg, color: pill.color }}>
               {preview.category}
             </span>
           )}

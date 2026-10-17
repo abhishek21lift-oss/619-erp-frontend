@@ -1,12 +1,15 @@
 'use client';
 
 import { ArrowDown, ArrowUp, Minus, GitCompare } from 'lucide-react';
+import { gradient, sweep, tones, type Tone } from './fitnessTheme';
 
 interface MetricConfig {
   key: string;
   label: string;
   unit?: string;
   higherIsBetter: boolean;
+  /** The domain hue, for the rows that map to one of the six scores. */
+  tone?: Tone;
 }
 
 const METRICS: MetricConfig[] = [
@@ -14,12 +17,12 @@ const METRICS: MetricConfig[] = [
   { key: 'bmi', label: 'BMI', higherIsBetter: false },
   { key: 'body_fat_pct', label: 'Body Fat', unit: '%', higherIsBetter: false },
   { key: 'waist_cm', label: 'Waist', unit: 'cm', higherIsBetter: false },
-  { key: 'vo2_max', label: 'VO₂ Max', unit: 'mL/kg/min', higherIsBetter: true },
-  { key: 'strength_score_computed', label: 'Strength Score', higherIsBetter: true },
-  { key: 'cardio_score_computed', label: 'Cardio Score', higherIsBetter: true },
-  { key: 'endurance_score_computed', label: 'Endurance Score', higherIsBetter: true },
-  { key: 'mobility_score_computed', label: 'Mobility Score', higherIsBetter: true },
-  { key: 'overall_fitness_score', label: 'Overall Fitness Score', higherIsBetter: true },
+  { key: 'vo2_max', label: 'VO₂ Max', unit: 'mL/kg/min', higherIsBetter: true, tone: tones.berry },
+  { key: 'strength_score_computed', label: 'Strength Score', higherIsBetter: true, tone: tones.sunset },
+  { key: 'cardio_score_computed', label: 'Cardio Score', higherIsBetter: true, tone: tones.berry },
+  { key: 'endurance_score_computed', label: 'Endurance Score', higherIsBetter: true, tone: tones.aqua },
+  { key: 'mobility_score_computed', label: 'Mobility Score', higherIsBetter: true, tone: tones.gold },
+  { key: 'overall_fitness_score', label: 'Overall Fitness Score', higherIsBetter: true, tone: tones.violet },
 ];
 
 interface ProgressComparisonProps {
@@ -35,15 +38,15 @@ function num(v: unknown): number | null {
 export function ProgressComparison({ initial, latest }: ProgressComparisonProps) {
   return (
     <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-      <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
+      <div className="h-1.5 w-full" style={{ background: sweep }} />
       <div className="p-7 sm:p-10">
         <div className="flex items-start gap-4 mb-7">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <GitCompare size={20} color="#1CA3F9" />
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px] text-white" style={{ background: gradient(tones.aqua), boxShadow: `0 14px 30px -14px ${tones.aqua.glow}` }}>
+            <GitCompare size={20} />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Progress Comparison</h2>
-            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] leading-none" style={{ color: 'var(--text-primary)' }}>Progress Comparison</h2>
+            <p className="text-[13px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
               Initial ({String(initial.assessment_date ?? '—')}) vs. Latest ({String(latest.assessment_date ?? '—')})
             </p>
           </div>
@@ -58,9 +61,12 @@ export function ProgressComparison({ initial, latest }: ProgressComparisonProps)
             const improved = delta != null && delta !== 0 ? (delta > 0) === m.higherIsBetter : null;
             return (
               <div key={m.key} className="flex items-center justify-between gap-3 rounded-[14px] px-4 py-3" style={{ background: 'var(--bg-subtle)' }}>
-                <span className="text-[13px] font-[640] text-[color:var(--text-secondary)]">{m.label}</span>
+                <span className="flex items-center gap-2 text-[13px] font-[640]" style={{ color: 'var(--text-secondary)' }}>
+                  {m.tone && <span aria-hidden className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: gradient(m.tone) }} />}
+                  {m.label}
+                </span>
                 <div className="flex items-center gap-3">
-                  <span className="text-[12.5px] font-[600] text-[color:var(--text-muted)]">
+                  <span className="text-[12.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
                     {a ?? '—'} {m.unit || ''} <span className="mx-1">→</span> {b ?? '—'} {m.unit || ''}
                   </span>
                   {delta != null && (

@@ -38,6 +38,8 @@ import FitnessDashboard, { type FitnessScores } from '@/components/pt-os/fitness
 import { ScreeningStatusCard, ScreeningWarningsNotice } from '@/components/pt-os/fitness-testing/ScreeningStatusCard';
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
 import AiRecommendationsPanel from '@/components/pt-os/fitness-testing/AiRecommendationsPanel';
+import { bandInk, fitnessMesh, gradient, tones } from '@/components/pt-os/fitness-testing/fitnessTheme';
+import { blue, emerald, gray, tint } from '@/lib/palette';
 import { errorMessage } from '@/lib/forms/errors';
 import { screeningBlockOf } from '@/lib/screeningBlock';
 import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
@@ -536,18 +538,36 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
         subtitle={editingId
           ? `${clientName || 'Client'} · Editing the ${form.assessmentDate} assessment`
           : `${clientName || 'Client'} · Assessment ${nextAssessmentNumber}`}
-      >
-        {!reviewMode && !lastSaved && (
+        surface={{
+          background: [
+            `radial-gradient(circle 260px at 6% 115%, ${fitnessMesh.glowA}, transparent 70%)`,
+            `radial-gradient(circle 240px at 102% -12%, ${fitnessMesh.glowB}, transparent 70%)`,
+            fitnessMesh.base,
+          ].join(', '),
+          shadow: fitnessMesh.shadow,
+        }}
+      />
+
+      {!reviewMode && !lastSaved && (
+        <div
+          className="mx-auto mb-5 max-w-6xl rounded-[20px] px-4 py-4 sm:px-6"
+          style={{
+            background: `linear-gradient(150deg, ${gray[900]} 0%, ${blue[900]} 55%, ${gray[900]} 100%)`,
+            boxShadow: '0 18px 40px -20px rgba(15,23,42,0.45)',
+          }}
+        >
           <ProgressTimeline current={step} onStep={goToStep} />
-        )}
-      </PageHero>
+        </div>
+      )}
 
       <div className="mx-auto max-w-3xl space-y-5">
         <ScreeningStatusCard screening={screening} clientId={clientId} />
         {lastSaved ? (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-5">
-            <div className="flex items-center gap-4 rounded-[20px] p-5" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)' }}>
-              <CheckCircle2 size={22} style={{ color: '#059669', flexShrink: 0 }} />
+            <div className="flex items-center gap-4 rounded-[20px] p-5" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.10), rgba(16,185,129,0.04))', border: '1px solid rgba(16,185,129,0.25)' }}>
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[13px] text-white" style={{ background: `linear-gradient(135deg, ${emerald[400]}, ${emerald[600]})`, boxShadow: '0 10px 24px -12px rgba(16,185,129,0.6)' }}>
+                <CheckCircle2 size={19} />
+              </span>
               <div>
                 <p className="text-[14px] font-[760] text-[color:var(--text-primary)]">Assessment Saved</p>
                 <p className="text-[12.5px] text-[color:var(--text-muted)]">
@@ -598,20 +618,24 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
         {sortedHistory.length > 0 && (
           <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
             <div className="p-6 sm:p-8">
-              <div className="flex items-center gap-2.5 mb-5">
-                <History size={16} style={{ color: 'var(--text-muted)' }} />
+              <div className="flex items-center gap-3 mb-5">
+                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[10px] text-white" style={{ background: gradient(tones.indigo), boxShadow: `0 8px 18px -10px ${tones.indigo.glow}` }}>
+                  <History size={15} />
+                </span>
                 <h2 className="text-[15px] font-[760] text-[color:var(--text-primary)]">Assessment History</h2>
               </div>
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {sortedHistory.map((a) => (
+                {sortedHistory.map((a) => {
+                  const overall = scoreNum(a.overall_fitness_score);
+                  return (
                   <div key={String(a.id)} className="flex items-center justify-between gap-3 rounded-[14px] px-4 py-3" style={{ background: 'var(--bg-subtle)' }}>
                     <div>
                       <p className="text-[13px] font-[700] text-[color:var(--text-secondary)]">{String(a.assessment_date ?? '').slice(0, 10)}</p>
                       <p className="text-[11px] text-[color:var(--text-muted)] capitalize">{String(a.assessment_type ?? '').replace(/_/g, ' ')}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {a.overall_fitness_score != null && (
-                        <span className="rounded-full px-2.5 py-1 text-[11.5px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706' }}>
+                      {overall != null && (
+                        <span className="rounded-full px-2.5 py-1 text-[11.5px] font-[700]" style={{ background: tint(bandInk(overall), 0.12), color: bandInk(overall) }}>
                           Score {String(a.overall_fitness_score)}
                         </span>
                       )}
@@ -641,7 +665,8 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

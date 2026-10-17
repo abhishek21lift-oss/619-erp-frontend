@@ -8,6 +8,8 @@ import { calcLeanBodyMass, calcFatMass, calcBmr } from '@/lib/fitness-calculatio
 import type { Gender } from '@/lib/fitness-calculations';
 import type { AssessmentFormData } from './types';
 import { n } from './types';
+import { StepHeader } from './StepHeader';
+import { stepTones } from './fitnessTheme';
 
 const METHODS = ['BIA Machine', 'Skinfold', 'DEXA', 'Manual', 'Other'];
 
@@ -29,15 +31,12 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
 
   return (
     <div>
-      <div className="flex items-start gap-4 mb-7">
-        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-          <Activity size={20} color="#1CA3F9" />
-        </div>
-        <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Body Composition</h2>
-          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 3 of 7 — choose an assessment method.</p>
-        </div>
-      </div>
+      <StepHeader
+        icon={Activity}
+        tone={stepTones[3]}
+        title="Body Composition"
+        subtitle="Step 3 of 7 — choose an assessment method."
+      />
 
       <div className="mb-5">
         <SearchableSelect
@@ -59,7 +58,7 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
         <FloatInput label="Bone Mass (kg)" numeric="decimal" value={form.boneMassKg} onChange={(v) => set('boneMassKg', v)} />
         <div>
           <FloatInput label="BMR (kcal)" numeric="integer" value={form.bmr} onChange={(v) => set('bmr', v)} />
-          <p className="mt-1.5 text-[11px] text-[color:var(--text-muted)]">
+          <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
             {suggestedBmr != null
               ? `Leave blank to auto-suggest ${suggestedBmr} kcal (Mifflin-St Jeor).`
               : 'Leave blank to auto-suggest via Mifflin-St Jeor.'}
@@ -71,16 +70,16 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
       {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
       {(leanBodyMass != null || fatMass != null) && (
-        <div className="mt-6 rounded-[16px] p-5" style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)' }}>
-          <p className="text-[11px] font-[700] uppercase tracking-wider text-white/50 mb-3">Body Composition Summary</p>
+        <div className="mt-6 rounded-[18px] p-5" style={{ background: stepTones[3].wash, border: '1px solid var(--border)' }}>
+          <p className="mb-3 text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Body Composition Summary</p>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-[10px] text-white/40 font-[600]">Lean Body Mass</p>
-              <p className="text-[16px] font-[720] text-white">{leanBodyMass ?? '—'} kg</p>
+              <p className="text-[10px] font-[600]" style={{ color: 'var(--text-muted)' }}>Lean Body Mass</p>
+              <p className="mt-0.5 text-[18px] font-[780] tabular-nums" style={{ color: 'var(--text-primary)' }}>{leanBodyMass ?? '—'} kg</p>
             </div>
             <div>
-              <p className="text-[10px] text-white/40 font-[600]">Fat Mass</p>
-              <p className="text-[16px] font-[720] text-white">{fatMass ?? '—'} kg</p>
+              <p className="text-[10px] font-[600]" style={{ color: 'var(--text-muted)' }}>Fat Mass</p>
+              <p className="mt-0.5 text-[18px] font-[780] tabular-nums" style={{ color: 'var(--text-primary)' }}>{fatMass ?? '—'} kg</p>
             </div>
           </div>
         </div>

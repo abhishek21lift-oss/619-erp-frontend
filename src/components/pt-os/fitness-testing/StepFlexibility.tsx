@@ -5,12 +5,17 @@ import { Move, AlertTriangle } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import { checkAsymmetry, classifyFlexibilityScore, scoreCategory, scoreTestBattery } from '@/lib/fitness-calculations';
+import { tint } from '@/lib/palette';
 import type { AssessmentFormData, FlexibilityTestType } from './types';
 import { n } from './types';
+import { StepHeader } from './StepHeader';
+import { bandInk, categoryPill, gradient, stepTones } from './fitnessTheme';
 
 const FLEXIBILITY_TESTS: FlexibilityTestType[] = [
   'Sit and Reach', 'Hamstring', 'Hip Flexor', 'Custom',
 ];
+
+const TONE = stepTones[7];
 
 interface StepFlexibilityProps {
   form: AssessmentFormData;
@@ -46,15 +51,12 @@ export function StepFlexibility({ form, set, error }: StepFlexibilityProps) {
 
   return (
     <div>
-      <div className="flex items-start gap-4 mb-7">
-        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-          <Move size={20} color="#1CA3F9" />
-        </div>
-        <div>
-          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Flexibility &amp; Mobility</h2>
-          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 7 of 7 — two range-of-motion tests.</p>
-        </div>
-      </div>
+      <StepHeader
+        icon={Move}
+        tone={TONE}
+        title="Flexibility & Mobility"
+        subtitle="Step 7 of 7 — two range-of-motion tests."
+      />
 
       <div className="space-y-5">
         <FlexibilityTestBlock
@@ -84,18 +86,18 @@ export function StepFlexibility({ form, set, error }: StepFlexibilityProps) {
       {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
       {combinedScore != null && (
-        <div className="mt-6 flex items-center gap-2">
-          <span className="text-[11px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Combined Score</span>
-          <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706' }}>
+        <div className="mt-6 flex items-center gap-2.5">
+          <span className="text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Combined Score</span>
+          <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: tint(bandInk(combinedScore), 0.13), color: bandInk(combinedScore) }}>
             {combinedScore}
           </span>
         </div>
       )}
 
       {hasAsymmetry && (
-        <div className="mt-4 flex items-start gap-3 rounded-[16px] p-4" style={{ background: 'rgba(0,103,224,0.08)', border: '1px solid rgba(0,103,224,0.25)' }}>
+        <div className="mt-4 flex items-start gap-3 rounded-[16px] p-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
           <AlertTriangle size={18} style={{ color: '#d97706', flexShrink: 0, marginTop: 1 }} />
-          <p className="text-[13px] font-[640]" style={{ color: '#92400e' }}>
+          <p className="text-[13px] font-[640]" style={{ color: 'var(--text-secondary)' }}>
             Left/right asymmetry &gt; 10% detected. Consider a corrective mobility focus.
           </p>
         </div>
@@ -122,9 +124,14 @@ function FlexibilityTestBlock({
   label, options, testType, onTestType, customTest, onCustomTest,
   left, onLeft, right, onRight, rom, onRom, score, onScore, limitationNotes, onLimitationNotes, result,
 }: FlexibilityTestBlockProps) {
+  const pill = result.category ? categoryPill(result.category) : null;
+
   return (
     <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-      <p className="mb-3 text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
+      <div className="mb-3 flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-[4px]" style={{ background: gradient(TONE) }} aria-hidden />
+        <p className="text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
+      </div>
 
       <div className="mb-4">
         <SearchableSelect label="Test" required allowCustom={false} value={testType} onChange={onTestType} options={options} />
@@ -141,7 +148,7 @@ function FlexibilityTestBlock({
         <FloatInput label="Range of Motion (deg)" numeric="integer" value={rom} onChange={onRom} />
         <div>
           <FloatInput label="Composite Score (0-10)" numeric="decimal" value={score} onChange={onScore} />
-          <p className="mt-1.5 text-[11px] text-[color:var(--text-muted)]">Trainer-assessed, 0 = very limited, 10 = excellent.</p>
+          <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>Trainer-assessed, 0 = very limited, 10 = excellent.</p>
         </div>
       </div>
 
@@ -149,10 +156,10 @@ function FlexibilityTestBlock({
         <FloatInput label="Limitation Notes" multiline autoGrow maxLength={1000} value={limitationNotes} onChange={onLimitationNotes} />
       </div>
 
-      {result.category && (
+      {result.category && pill && (
         <div className="mt-3 flex items-center gap-2">
-          <span className="text-[11px] font-[700] uppercase tracking-wider text-[color:var(--text-muted)]">Classification</span>
-          <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706' }}>{result.category}</span>
+          <span className="text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Classification</span>
+          <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: pill.bg, color: pill.color }}>{result.category}</span>
         </div>
       )}
     </div>
