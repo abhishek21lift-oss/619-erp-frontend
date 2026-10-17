@@ -1,0 +1,68 @@
+// The client profile used to open on the profile spectrum's own mesh — indigo
+// into purple with pink and orange light — which made the page a trainer
+// opens most the one page in the app whose top did not match the house navy
+// the dashboard and every shared PageHero page use. These pins hold the
+// redesign in place: the hero wears the navy, the sections keep their
+// spectrum, and the cards take their depth from the adaptive glass tokens
+// instead of one light-only shadow that does nothing in dark mode.
+
+import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { appPath, srcPath } from '@/__tests__/helpers/app-routes';
+import { stripComments } from '@/__tests__/helpers/strip-comments';
+
+const page = readFileSync(appPath('pt-os', 'clients', '[id]', 'page.tsx'), 'utf8');
+const code = stripComments(page);
+const theme = readFileSync(srcPath('components', 'profile', 'profileTheme.ts'), 'utf8');
+
+/** The house hero's gradient, spelled the same way in both existing heroes. */
+const HOUSE =
+  'linear-gradient(158deg, #0F172A 0%, #0050AD 42%, #0F172A 72%, #0050AD 100%)';
+
+const hero = () => page.slice(page.indexOf('── HERO ──'), page.indexOf('── ACTIONS ──'));
+
+describe('the client profile hero wears the house navy', () => {
+  it('paints from the navyHero token, not the spectrum mesh', () => {
+    for (const key of ['glowGold', 'glowBlue', 'crown', 'base', 'shadow']) {
+      expect(hero()).toContain(`navyHero.${key}`);
+    }
+    expect(code).not.toContain('heroMesh');
+  });
+
+  it('renders the house lights as blurred discs, not flat radial washes', () => {
+    // The house heroes blur their light: a 240px disc, half off-canvas, the
+    // blur doing the softening. Baking the same colour into the background
+    // stack as a flat radial reads as a different light at a glance.
+    const block = hero();
+    expect(block).toContain('background: `${navyHero.crown}, ${navyHero.base}`');
+    expect(block).toContain('radial-gradient(circle, ${navyHero.glowGold} 0%, transparent 70%)');
+    expect(block).toContain('radial-gradient(circle, ${navyHero.glowBlue} 0%, transparent 70%)');
+    expect(block).toContain("filter: 'blur(46px)'");
+    expect(block).toContain("filter: 'blur(54px)'");
+  });
+
+  it('uses the gradient the dashboard and PageHero use, so they cannot drift', () => {
+    for (const file of ['components/ui/PageHero.tsx', 'components/dashboards/PtOsDashboard.tsx']) {
+      expect(readFileSync(srcPath(...file.split('/')), 'utf8')).toContain(HOUSE);
+    }
+    expect(theme).toContain(HOUSE);
+  });
+
+  it('keeps the grid and vignette behind the content, never on top', () => {
+    const block = hero();
+    expect(block).toContain('id="cp-grid"');
+    expect(block).toContain('radial-gradient(120% 120% at 50% 38%');
+    // Decoration is absolute and non-interactive; the content sits above it.
+    expect(block).toContain('pointer-events-none absolute inset-0');
+    expect(block).toContain('relative z-10');
+  });
+
+  it('takes card depth from the adaptive glass tokens, tinted per section', () => {
+    expect((code.match(/var\(--glass-shadow\)/g) ?? []).length).toBeGreaterThanOrEqual(3);
+    expect(code).toMatch(/0 18px 40px -26px \$\{tint\.glow\}/);
+    expect(code).toContain('0 18px 40px -26px ${tones.mint.glow}');
+    expect(code).toContain('0 18px 40px -26px ${tones.indigo.glow}');
+    // One light-only shadow on every card is exactly what was removed.
+    expect(code).not.toContain('0 12px 32px -18px rgba(15,23,42,0.18)');
+  });
+});

@@ -38,7 +38,10 @@ vi.mock('@/components/pt-os/ClientAiGenerateCard', () => ({ default: () => <div>
 import Page from '@/app/(chrome)/pt-os/clients/[id]/page';
 
 describe('client profile', () => {
-  it('renders the hero, actions, membership, notes and programme', async () => {
+  // The render itself is ~3s warm (a cold import can double that), so the 5s
+  // default fails under a loaded machine — it timed out at 5.08s on this file
+  // alone. The assertions are unchanged; only the clock is less tight.
+  it('renders the hero, actions, membership, notes and programme', { timeout: 15000 }, async () => {
     const params = Promise.resolve({ id: 'c1' });
     await act(async () => { render(<Suspense fallback="loading"><Page params={params} /></Suspense>); await params; });
     await waitFor(() => expect(screen.getAllByText('Hari Narayan Singh').length).toBeGreaterThan(0), { timeout: 3000 });
