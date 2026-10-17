@@ -4599,3 +4599,212 @@ export interface RosterSignalSweep {
   not_assessable: number;
   clients_detail: RosterSignalClient[];
 }
+
+// ── Hostinger hosting console (platform control plane) ───────────────────────
+//
+// Everything here is a projection of the official Hostinger API, and the
+// upstream payloads are NOT ours: their fields move between revisions. The
+// console renders a named subset and reads every one of them defensively
+// (see hosting-shared.tsx), so these types name what the CONSOLE reads rather
+// than claiming the shape of what the API returns.
+
+/** Where the credential stands. 'unreadable' means stored but undecryptable. */
+export type HostingerCredentialState = 'not_configured' | 'not_connected' | 'connected' | 'unreadable';
+
+/**
+ * A credential row. The masked value is the last four characters; never the
+ * token. `status()` and `connect()` name that field `hint` while
+ * `credential/history` names it `token_hint` — both are read, neither is the
+ * token.
+ */
+export interface HostingerCredential {
+  id: string;
+  label: string | null;
+  hint?: string | null;
+  token_hint?: string | null;
+  token_fingerprint?: string | null;
+  status?: string | null;
+  readable?: boolean;
+  created_at?: string | null;
+  rotated_at?: string | null;
+  revoked_at?: string | null;
+  last_verified_at?: string | null;
+  last_verified_status?: string | null;
+  last_error?: string | null;
+  created_by_name?: string | null;
+  revoked_by_name?: string | null;
+}
+
+export interface HostingerStatus {
+  state: HostingerCredentialState;
+  /** Whether HOSTINGER_TOKEN_KEY is present — the key the token is sealed with. */
+  key_configured: boolean;
+  key_problem?: string | null;
+  credential: HostingerCredential | null;
+  /** Attached by the status route: the last ten, newest first. */
+  history?: HostingerCredential[];
+}
+
+/**
+ * One read of the estate: the data, or the reason there is none.
+ *
+ * Slots fail independently by design — one unreachable API area must not blank
+ * the whole screen — so every consumer checks `ok` before reading `data`.
+ */
+export type HostingerSlot<T = unknown> =
+  | { ok: true; data: T }
+  | { ok: false; error: { code: string; message: string } };
+
+export type HostingerSafety = 'read' | 'mutate' | 'destructive';
+
+export interface HostingerCatalogueParam {
+  in: 'path' | 'query' | 'body';
+  name: string;
+  required: boolean;
+  /** Write-only: the console asks for it at execute time and never stores it. */
+  secret?: boolean;
+}
+
+export interface HostingerCatalogueOperation {
+  id: string;
+  method: string;
+  path: string;
+  group: string;
+  summary: string;
+  safety: HostingerSafety;
+  params: HostingerCatalogueParam[];
+}
+
+export interface HostingerCatalogue {
+  groups: string[];
+  operations: HostingerCatalogueOperation[];
+  safetyLabels: Record<HostingerSafety, string>;
+  /**
+   * The API revision the allow-list was taken from. Present so "the API has no
+   * terminal endpoint" is a statement about a named revision, not a claim about
+   * today — see SPEC_VERSION in the backend's lib/hostinger/catalog.js.
+   */
+  spec?: { version: string; source: string };
+}
+
+export interface HostingerDashboard {
+  cached: boolean;
+  /** False when no credential is connected: the screen is then the connect prompt. */
+  connected: boolean;
+  generated_at: string;
+  credential: HostingerStatus;
+  websites: HostingerSlot | null;
+  domains: HostingerSlot | null;
+  vps: HostingerSlot | null;
+  orders: HostingerSlot | null;
+  subscriptions: HostingerSlot | null;
+  payment_methods: HostingerSlot | null;
+  firewalls: HostingerSlot | null;
+  /** Keyed by website domain. */
+  ssl: Record<string, HostingerSlot | undefined>;
+  /** Keyed by virtual machine id. */
+  resources: Record<string, HostingerSlot | undefined>;
+  /**
+   * What was actually read. The dashboard samples SSL and metrics rather than
+   * walking every website, so "SSL looks fine" must never read as "all of it
+   * was checked".
+   */
+  sampled: {
+    ssl_checked: number;
+    ssl_total: number;
+    metrics_checked: number;
+    metrics_total: number;
+  };
+}
+
+export interface HostingerVpsDetail {
+  virtual_machine_id: number;
+  machine: HostingerSlot | null;
+  actions: HostingerSlot | null;
+  backups: HostingerSlot | null;
+  snapshot: HostingerSlot | null;
+  docker: HostingerSlot | null;
+}
+
+export interface HostingerDockerProject {
+  virtual_machine_id: number;
+  projectName: string;
+  project: HostingerSlot | null;
+  containers: HostingerSlot | null;
+  logs: HostingerSlot | null;
+}
+
+/** What an approval will do, as the operator read it before approving. */
+export interface HostingerApprovalSummary {
+  operation: string;
+  summary: string;
+  safety: HostingerSafety;
+  secret_fields: string[];
+  [key: string]: unknown;
+}
+
+export interface HostingerPlan {
+  approval_id: string;
+  operation: string;
+  safety: HostingerSafety;
+  summary: HostingerApprovalSummary;
+  expires_at: string;
+  created_at: string;
+}
+
+export interface HostingerPendingApproval {
+  id: string;
+  operation: string;
+  safety: HostingerSafety;
+  summary: HostingerApprovalSummary;
+  created_at: string;
+  expires_at: string;
+}
+
+export interface HostingerOperationResult {
+  operation: string;
+  safety: HostingerSafety;
+  approval_id?: string;
+  data: unknown;
+}
+
+export interface HostingerHistoryRow {
+  id: number;
+  user_name: string | null;
+  action: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  new_data: Record<string, unknown> | null;
+  ip_address: string | null;
+  created_at: string;
+}
+
+/** A proposal from the assistant. Rejected proposals carry no operations. */
+export type HostingerProposal =
+  | { rejected: true; reason: string; fields?: Record<string, string> }
+  | {
+      rejected?: false;
+      operation: string;
+      summary: string;
+      safety: HostingerSafety;
+      requires_approval: boolean;
+      params: { path?: Record<string, unknown>; query?: Record<string, unknown>; body?: Record<string, unknown> };
+      secret_fields: string[];
+      note: string | null;
+    };
+
+export interface HostingerAssistantAnswer {
+  answer: string;
+  proposal: HostingerProposal | null;
+  model?: string;
+  used_fallback?: boolean;
+  context_errors: number;
+  rate?: { used: number; limit: number; resets_at?: string };
+}
+
+/** Parameters for one catalogue operation, in the three locations the API uses. */
+export interface HostingerOperationParams {
+  path?: Record<string, unknown>;
+  query?: Record<string, unknown>;
+  body?: Record<string, unknown>;
+}

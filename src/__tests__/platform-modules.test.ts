@@ -99,6 +99,7 @@ describe('existing deep links still resolve', () => {
     ['audit', 'audit'],
     ['security', 'security'],
     ['storage', 'storage'],
+    ['hosting', 'hosting'],
     ['health', 'health'],
     ['support', 'support'],
   ])('?tab=%s still opens %s', (param, expected) => {

@@ -126,6 +126,14 @@ const KNOWN = [
   'components/ai/AiClientPicker.tsx:35',
   'components/fitness/AiCoachPanel.tsx:128',
   'components/fitness/AiCoachPanel.tsx:134',
+  // The hosting console reads the operation allow-list beside the reads that
+  // carry the page: `hostingerCatalogue()` is a local lookup on the server, and
+  // if it fails the screen keeps its compiled-in safety labels and the spec line
+  // says it fell back to "the API revision this console was built against".
+  // A general outage still surfaces — `hostingerStatus()`/`hostingerVps()` in
+  // the same Promise.all rejects into the screen's error state and retry.
+  'components/platform/hosting-centre.tsx:681',
+  'components/platform/hosting-vps.tsx:75',
   'components/pt-os/analytics/LandmarkEditor.tsx:82',
   'components/pt-os/builder/NewProgrammeDialog.tsx:216',
   'components/pt-os/builder/NewProgrammeDialog.tsx:219',
