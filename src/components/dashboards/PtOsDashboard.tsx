@@ -40,6 +40,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAsync } from '@/lib/use-async';
 import { DashboardError } from '@/components/dashboards/primitives';
+import NextBestActionCard from '@/components/dashboards/cockpit/NextBestActionCard';
 import { useAuth } from '@/lib/auth-context';
 import FounderBadge from '@/components/FounderBadge';
 import { useFounder } from '@/lib/use-founder';
@@ -52,7 +53,9 @@ import { gapChips, gapHref, sortGaps, type ScreeningGapsResponse } from '@/lib/s
 import { gradient, ringStops, ringTrack, rowTones, todayMark, type RowTone } from '@/components/dashboards/todayTheme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type DashData = {
+// Exported for the cockpit cards that take the same props without importing
+// this 2,500-line module at runtime (type-only on their side).
+export type DashData = {
   active_pt_clients: number;
   expired_clients: number;
   clients_with_balance: number;
@@ -69,7 +72,7 @@ type DashData = {
 };
 
 type SessionStatus = 'scheduled' | 'completed' | 'cancelled' | 'no_show';
-type OpsData = {
+export type OpsData = {
   today_sessions: Array<{
     id: string; title: string; session_date: string;
     start_time: string | null; end_time: string | null;
@@ -2283,6 +2286,17 @@ export default function PtOsDashboard() {
   const o = ops.data;
   const coach = user?.name?.split(' ')[0] || 'Coach';
   const studioName = user?.organization_name || 'PT Studio';
+
+  // Array.isArray, not `?? []`: the nullish default only catches
+  // undefined, so anything ELSE this endpoint yields — an object,
+  // an error envelope, a string — passes through to
+  // buildCoachInsights, which calls .filter on it and takes the
+  // whole dashboard to its error boundary. One malformed list
+  // should cost these cards, not the entire screen. Seen for real:
+  // device-check's fixture table matched `birthdays` as a client
+  // id and served a single client object, and every dashboard run
+  // in that harness rendered "Something went wrong".
+  const birthdayList = Array.isArray(birthdays.data?.data) ? birthdays.data.data : [];
   const founderNumber = useFounder();
 
   const refreshAll = useCallback(async () => {
@@ -2402,6 +2416,15 @@ export default function PtOsDashboard() {
                 because that is when it matters: before someone is trained. */}
             <ScreeningGaps />
 
+            {/* 2.75 — Next Best Action.
+                The single highest-ranked result of the same prioritisation the
+                AI Coach board runs, promoted to its own card with the actions
+                the board keeps one tap deep. Placed with the schedule because
+                both answer "what happens next" — one is what is booked, this
+                is what should be. It derives from data already on this screen;
+                no request of its own. */}
+            <NextBestActionCard d={d} ops={o} birthdays={birthdayList} studioName={studioName} />
+
             {/* 3 — Mobile quick actions (desktop uses the dock) */}
             <MobileQuickActions />
 
@@ -2465,17 +2488,8 @@ export default function PtOsDashboard() {
             </div>
 
             {/* 5 — AI Coach */}
-            {/* Array.isArray, not `?? []`: the nullish default only catches
-                undefined, so anything ELSE this endpoint yields — an object,
-                an error envelope, a string — passes through to
-                buildCoachInsights, which calls .filter on it and takes the
-                whole dashboard to its error boundary. One malformed list
-                should cost this card, not the entire screen. Seen for real:
-                device-check's fixture table matched `birthdays` as a client
-                id and served a single client object, and every dashboard run
-                in that harness rendered "Something went wrong". */}
             <AICoach d={d} ops={o}
-              birthdays={Array.isArray(birthdays.data?.data) ? birthdays.data.data : []}
+              birthdays={birthdayList}
               studioName={studioName} />
 
             {/* 6 — Today's Revenue.
