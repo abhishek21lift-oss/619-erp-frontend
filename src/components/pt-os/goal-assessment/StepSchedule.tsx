@@ -28,20 +28,20 @@ export default function StepSchedule({ form, set }: StepScheduleProps) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <FormField label="Training days / week">
-            <select value={form.trainingDays} onChange={(e) => set('trainingDays', e.target.value)} className="w-full rounded-[12px] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}>
+          <FormField label="Training days / week" htmlFor="step-schedule-days">
+            <select id="step-schedule-days" value={form.trainingDays} onChange={(e) => set('trainingDays', e.target.value)} className="w-full rounded-[12px] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}>
               {[1,2,3,4,5,6,7].map((d) => <option key={d} value={String(d)}>{d} day{d>1?'s':''}</option>)}
             </select>
           </FormField>
-          <FormField label="Experience level">
-            <select value={form.experienceLevel} onChange={(e) => set('experienceLevel', e.target.value)} className="w-full rounded-[12px] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}>
+          <FormField label="Experience level" htmlFor="step-schedule-exp">
+            <select id="step-schedule-exp" value={form.experienceLevel} onChange={(e) => set('experienceLevel', e.target.value)} className="w-full rounded-[12px] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}>
               <option value="beginner">Beginner</option>
               <option value="intermediate">Intermediate</option>
               <option value="advanced">Advanced</option>
             </select>
           </FormField>
-          <FormField label="Equipment">
-            <select value={form.equipment} onChange={(e) => set('equipment', e.target.value)} className="w-full rounded-[12px] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}>
+          <FormField label="Equipment" htmlFor="step-schedule-equip">
+            <select id="step-schedule-equip" value={form.equipment} onChange={(e) => set('equipment', e.target.value)} className="w-full rounded-[12px] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}>
               <option value="full_gym">Full Gym</option>
               <option value="dumbbells">Dumbbells Only</option>
               <option value="bodyweight">Bodyweight</option>

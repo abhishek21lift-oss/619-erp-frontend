@@ -5,7 +5,7 @@ export interface TrainingSchedule { trainingDays: number; split: string; label: 
 
 const DAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 
-function buildSessions(split: string, days: number, goal: string, experience: string): ScheduleSession[] {
+function buildSessions(split: string, days: number, goal: string, _experience: string): ScheduleSession[] {
   const g = (goal || '').toLowerCase();
   if (split === 'full_body' || split === 'full_body_minimal') {
     const n = split === 'full_body_minimal' ? days : 3;
