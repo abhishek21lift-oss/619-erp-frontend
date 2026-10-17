@@ -12,10 +12,10 @@
 // the shell's top bar and reaches this page through a window event.
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Building2, UserPlus, Loader2, ShieldAlert, LayoutDashboard, Activity, CreditCard, TrendingUp, ScrollText, HeartPulse, ToggleRight, Megaphone, Bot, LifeBuoy, HardDrive, Mail, Users2, Fingerprint } from 'lucide-react';
+import { Building2, UserPlus, Loader2, ShieldAlert, LayoutDashboard, Activity, CreditCard, TrendingUp, ScrollText, HeartPulse, ToggleRight, Megaphone, Bot, LifeBuoy, HardDrive, Mail, Users2, Fingerprint, Server } from 'lucide-react';
 import { getImpersonation } from '@/lib/http';
 import { CommandBar, OPEN_COMMAND_BAR } from './_shared/CommandBar';
-import { AiControlCentre, AnalyticsPanel, AuditCentre, FeatureManager, InvitationsPanel, NotificationCentre, SecurityCentre, StorageCentre, SupportCentre, CommandCenterPanel, TenancyCentre } from './_shared/panels';
+import { AiControlCentre, AnalyticsPanel, AuditCentre, FeatureManager, HostingAssistant, HostingCentre, HostingVps, InvitationsPanel, NotificationCentre, SecurityCentre, StorageCentre, SupportCentre, CommandCenterPanel, TenancyCentre } from './_shared/panels';
 import { FINANCE_DEEP_LINKS, MODULES, TAB_LABELS, moduleForTab, normalizeTab } from './_shared/types';
 import type { FinanceSubTab, ModuleId, NavOpts, Tab } from './_shared/types';
 import { ActivityTab } from './_tabs/ActivityTab';
@@ -25,6 +25,7 @@ import { StudiosTab } from './_tabs/StudiosTab';
 import { UsersTab } from './_tabs/UsersTab';
 import RegistrationsTab from './_tabs/RegistrationsTab';
 import { CcHero } from '@/components/platform/cc-viz';
+import { SegmentedTabs } from '@/components/platform/console';
 import { ccModuleTone } from '@/components/platform/ccTheme';
 import type { CcToneName } from '@/components/platform/ccTheme';
 
@@ -33,7 +34,7 @@ const TAB_ICON: Record<Tab, React.ReactNode> = {
   users: <Users2 size={14} />, finance: <CreditCard size={14} />, analytics: <TrendingUp size={14} />, ai: <Bot size={14} />,
   health: <HeartPulse size={14} />, storage: <HardDrive size={14} />, support: <LifeBuoy size={14} />, security: <ShieldAlert size={14} />,
   tenancy: <Fingerprint size={14} />, audit: <ScrollText size={14} />, activity: <Activity size={14} />, features: <ToggleRight size={14} />,
-  announcements: <Megaphone size={14} />,
+  announcements: <Megaphone size={14} />, hosting: <Server size={14} />,
 };
 
 const MODULE_ICON: Record<ModuleId, React.ReactNode> = {
@@ -60,6 +61,7 @@ const TAB_BLURB: Record<Tab, string> = {
   activity: 'What happened across the platform, most recent first.',
   features: 'Platform-wide switches for every feature.',
   announcements: 'Messages to studios — in-app, email and WhatsApp.',
+  hosting: 'The Hostinger estate — websites, domains, machines, backups and the credential behind them.',
 };
 
 export default function PlatformAdminPage() {
@@ -73,6 +75,13 @@ function PlatformContent() {
   const [financeSubTab, setFinanceSubTab] = useState<FinanceSubTab>(() => (paramTab && FINANCE_DEEP_LINKS[paramTab]) || 'billing');
   const setTab = (t: Tab) => { router.push(t === 'overview' ? '/platform' : `/platform?tab=${t}`, { scroll: false }); };
   const [commandOpen, setCommandOpen] = useState(false);
+  // The Hosting tab is three screens — the estate, one machine, the assistant —
+  // behind one deep link. The sub-screen is component state rather than a URL
+  // parameter on purpose: nothing links to "machine 7" from outside this
+  // console, and a second piece of navigation state is a second thing to keep
+  // honest. Opening a machine from the estate card is the only way in.
+  const [hostingScreen, setHostingScreen] = useState<'estate' | 'machine' | 'assistant'>('estate');
+  const [hostingVpsId, setHostingVpsId] = useState<number | null>(null);
   useEffect(() => { const sub = paramTab ? FINANCE_DEEP_LINKS[paramTab] : undefined; if (sub) setFinanceSubTab(sub); }, [paramTab]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setCommandOpen((s) => !s); } };
@@ -126,6 +135,28 @@ function PlatformContent() {
         {tab === 'audit' && <AuditCentre />}
         {tab === 'storage' && <StorageCentre />}
         {tab === 'health' && <CommandCenterPanel />}
+        {tab === 'hosting' && (
+          <div className="flex flex-col gap-4">
+            <SegmentedTabs
+              tabs={[
+                { id: 'estate', label: 'Estate' },
+                { id: 'machine', label: 'Machine' },
+                { id: 'assistant', label: 'Assistant' },
+              ]}
+              value={hostingScreen}
+              onChange={setHostingScreen}
+            />
+            {hostingScreen === 'machine' && hostingVpsId !== null ? (
+              <HostingVps virtualMachineId={hostingVpsId} onBack={() => setHostingScreen('estate')} />
+            ) : hostingScreen === 'assistant' ? (
+              <HostingAssistant />
+            ) : (
+              <HostingCentre
+                onOpenMachine={(id) => { setHostingVpsId(id); setHostingScreen('machine'); }}
+              />
+            )}
+          </div>
+        )}
       </div>
       <CommandBar open={commandOpen} onClose={() => setCommandOpen(false)} onNavigate={onNavigate} />
     </>

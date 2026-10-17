@@ -34,6 +34,11 @@ import type {
   TenancyAttemptRow, TenancyKnownGap,
   TenancyIsolationRunResult, StudioHealth, StudioMemberships,
   StudioPtRevenue, PlatformSearchResponse, PlatformSearchKind,
+  HostingerAssistantAnswer, HostingerApprovalSummary, HostingerCatalogue,
+  HostingerCredential, HostingerCredentialState, HostingerDashboard,
+  HostingerDockerProject, HostingerHistoryRow, HostingerOperationParams,
+  HostingerOperationResult, HostingerPendingApproval, HostingerPlan,
+  HostingerSlot, HostingerStatus, HostingerVpsDetail,
 } from '../types';
 
 // The `admin` namespace held exportDatabase() and backupDatabase(). Both are
@@ -660,6 +665,88 @@ export const superAdmin = {
     http<{ data: PlatformSearchResponse['data']; query: string; kinds: PlatformSearchKind[]; total: number }>(
       `/api/platform/search?q=${encodeURIComponent(q)}${kinds && kinds.length ? `&kinds=${kinds.join(',')}` : ''}`
     ),
+
+  // ── Hostinger hosting console ───────────────────────────────────────────
+  //
+  // The credential is write-only: it goes up in the body of connect/rotate and
+  // comes back as a hint. No endpoint here returns it, and nothing in this file
+  // may put it anywhere else (a query string would land in an access log).
+  //
+  // `/operations/read` and `/operations/execute` take an operation ID and a
+  // params object. That is not a generic proxy: the backend validates the id
+  // against its 61-operation allow-list and the parameters against the schema
+  // for THAT operation, so an unknown id is a 400 rather than a forwarded call.
+  hostingerStatus: () =>
+    http<HostingerStatus>('/api/platform/hostinger/status'),
+  hostingerConnect: (token: string, label?: string) =>
+    http<{ state: HostingerCredentialState; unchanged: boolean; credential: HostingerCredential }>(
+      '/api/platform/hostinger/credential',
+      { method: 'POST', body: JSON.stringify({ token, ...(label ? { label } : {}) }) },
+    ),
+  hostingerRotate: (token: string, label?: string) =>
+    http<{ state: HostingerCredentialState; unchanged: boolean; credential: HostingerCredential }>(
+      '/api/platform/hostinger/credential/rotate',
+      { method: 'POST', body: JSON.stringify({ token, ...(label ? { label } : {}) }) },
+    ),
+  hostingerVerify: () =>
+    http<{ ok: boolean; status?: number; message?: string; code?: string }>(
+      '/api/platform/hostinger/credential/verify',
+      { method: 'POST', body: JSON.stringify({}) },
+    ),
+  hostingerRevoke: () =>
+    http<{ revoked: boolean; credential: HostingerCredential }>('/api/platform/hostinger/credential', { method: 'DELETE' }),
+  hostingerCredentialHistory: (limit = 50) =>
+    http<{ credentials: HostingerCredential[] }>(`/api/platform/hostinger/credential/history?limit=${limit}`),
+  hostingerCatalogue: () =>
+    http<HostingerCatalogue>('/api/platform/hostinger/catalogue'),
+  // `force` skips the server's 15-second memo. Left off for a mount and a
+  // refresh-click that follows a mutation; a poll would spend the upstream
+  // budget, which is shared with every other user of the same token.
+  hostingerDashboard: (force = false) =>
+    http<HostingerDashboard>(`/api/platform/hostinger/dashboard${force ? '?force=true' : ''}`),
+  hostingerVps: (virtualMachineId: number) =>
+    http<HostingerVpsDetail>(`/api/platform/hostinger/vps/${virtualMachineId}`),
+  hostingerDockerProject: (virtualMachineId: number, projectName: string) =>
+    http<HostingerDockerProject>(`/api/platform/hostinger/vps/${virtualMachineId}/docker/${encodeURIComponent(projectName)}`),
+  hostingerWebsiteFiles: (username: string, domain: string, params: { directory?: string; path?: string; from_line?: number; max_lines?: number } = {}) =>
+    http<{ ok: boolean; files: unknown; content: unknown; error: { code: string; message: string } | null }>(
+      `/api/platform/hostinger/websites/${encodeURIComponent(username)}/${encodeURIComponent(domain)}/files${qsOf(params as Record<string, unknown>)}`,
+    ),
+  hostingerRead: (operation: string, params: HostingerOperationParams = {}) =>
+    http<{ operation: string; data: unknown }>('/api/platform/hostinger/operations/read', {
+      method: 'POST', body: JSON.stringify({ operation, params }),
+    }),
+  hostingerPlan: (operation: string, params: HostingerOperationParams = {}) =>
+    http<HostingerPlan>('/api/platform/hostinger/operations/plan', {
+      method: 'POST', body: JSON.stringify({ operation, params }),
+    }),
+  /**
+   * Run an approved write.
+   *
+   * `secrets` is the one thing that is deliberately NOT replayed from the
+   * request that created the plan — the operator types a root password here,
+   * at the moment of execution, and the server never stores it.
+   */
+  hostingerExecute: (args: { operation: string; approvalId: string; confirmation?: string; secrets?: Record<string, string> }) =>
+    http<HostingerOperationResult>('/api/platform/hostinger/operations/execute', {
+      method: 'POST',
+      body: JSON.stringify({
+        operation: args.operation,
+        approval_id: args.approvalId,
+        ...(args.confirmation ? { confirmation: args.confirmation } : {}),
+        ...(args.secrets && Object.keys(args.secrets).length ? { secrets: args.secrets } : {}),
+      }),
+    }),
+  hostingerApprovals: (limit = 20) =>
+    http<{ approvals: HostingerPendingApproval[] }>(`/api/platform/hostinger/approvals?limit=${limit}`),
+  hostingerDenyApproval: (id: string) =>
+    http<{ denied: boolean; approval_id: string }>(`/api/platform/hostinger/approvals/${id}/deny`, { method: 'POST', body: JSON.stringify({}) }),
+  hostingerHistory: (params: { limit?: number; offset?: number; action?: string } = {}) =>
+    http<{ rows: HostingerHistoryRow[]; total: number }>(`/api/platform/hostinger/history${qsOf(params as Record<string, unknown>)}`),
+  hostingerAsk: (question: string) =>
+    http<HostingerAssistantAnswer>('/api/platform/hostinger/assistant', {
+      method: 'POST', body: JSON.stringify({ question }),
+    }),
 };
 
 // ── Settings ──────────────────────────────────────────────

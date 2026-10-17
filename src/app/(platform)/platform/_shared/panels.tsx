@@ -45,3 +45,16 @@ export const AnalyticsPanel = dynamic(() => import('@/components/platform/analyt
 });export const TenancyCentre = dynamic(() => import('@/components/platform/tenancy-centre'), {
   loading: () => <PanelSkeleton label="Checking tenant isolation…" />,
 });
+// Hosting: the credential, the estate dashboard, the VPS deep view and the ops
+// assistant are three screens behind one tab. Split like the rest — an operator
+// who opened the console for a support ticket should not download the VPS
+// console to read it.
+export const HostingCentre = dynamic(() => import('@/components/platform/hosting-centre'), {
+  loading: () => <PanelSkeleton label="Reading the hosting estate…" />,
+});
+export const HostingVps = dynamic(() => import('@/components/platform/hosting-vps'), {
+  loading: () => <PanelSkeleton label="Loading the virtual machine…" />,
+});
+export const HostingAssistant = dynamic(() => import('@/components/platform/hosting-assistant'), {
+  loading: () => <PanelSkeleton label="Opening the operations assistant…" />,
+});
