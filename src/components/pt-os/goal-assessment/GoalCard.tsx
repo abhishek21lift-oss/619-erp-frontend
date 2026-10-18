@@ -76,6 +76,16 @@ export function GoalCard({ goal, latestWeight, onClick }: GoalCardProps) {
           )}
         </div>
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
+          {!!goal.status && (
+            <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: 'rgba(0,103,224,0.10)', color: '#0059CE' }}>
+              {String(goal.status)}
+            </span>
+          )}
+          {!!goal.training_split && (
+            <span className="text-[11.5px] font-[600] text-[color:var(--text-muted)]">
+              · {String(goal.training_split).replace(/_/g, ' ')}
+            </span>
+          )}
           <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: status.bg, color: status.color }}>
             {status.label}
           </span>

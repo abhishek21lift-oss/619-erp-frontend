@@ -43,7 +43,7 @@ export function StepLifestyle({ form, set, error }: StepLifestyleProps) {
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Lifestyle Readiness</h2>
-            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 8 of 8 — quick yes / no questions.</p>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 8 of 9 — quick yes / no questions.</p>
           </div>
         </div>
 
