@@ -364,12 +364,14 @@ export const workoutGenerator = {
     hasVerified1RM?: boolean;
   }) =>
     http<{
-      client: { id: string; name: string };
-      draft: import('../../workout-generator').GeneratedWorkout;
-      poolSize: number;
-      validation: { ok: boolean; problems: string[] };
+      data: {
+        client: { id: string; name: string };
+        draft: import('../../workout-generator').GeneratedWorkout;
+        poolSize: number;
+        validation: { ok: boolean; problems: string[] };
+      };
     }>(`/api/pt-os/clients/${clientId}/workout-generator/preview`, {
       method: 'POST',
       body: JSON.stringify(data),
-    }),
+    }).then((r) => r.data),
 };
