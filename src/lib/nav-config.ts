@@ -74,6 +74,8 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/pt-os/today',               label: 'Today',                icon: 'CalendarDays' },
       { href: '/pt-os/workout-plans',       label: 'Workouts',             icon: 'Dumbbell',    matchPrefix: '/pt-os/workout-plans' },
+      { href: '/pt-os/workout-generator',   label: 'Workout Generator',    icon: 'Sparkles' },
+      { href: '/pt-os/cardio-calculator',   label: 'Cardio & FITT',        icon: 'HeartPulse' },
       { href: '/pt-os/workout-log',         label: 'Workout Log',          icon: 'ClipboardList', matchPrefix: '/pt-os/workout-log' },
       { href: '/pt-os/exercise-library',    label: 'Exercise Library',     icon: 'BookOpen',    feature: 'exercise_library' },
       { href: '/pt-os/diet-plans',          label: 'Diet Plans',           icon: 'Apple' },

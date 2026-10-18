@@ -14,7 +14,7 @@
 import { auth, webauthn, profile } from './endpoints/auth';
 import { clients, attendance } from './endpoints/people';
 import { payments, invoices, expenses, offers, upiPayments } from './endpoints/money';
-import { workouts, exercises, diet, classes, bookings, calendar } from './endpoints/training';
+import { workouts, exercises, workoutGenerator, diet, classes, bookings, calendar } from './endpoints/training';
 import { progress } from './endpoints/progress';
 import { pt } from './endpoints/ptOs';
 import { gymSettings, qr, subscription, membershipPlans } from './endpoints/studio';
@@ -47,6 +47,7 @@ export const api = {
   upiPayments,
   workouts,
   exercises,
+  workoutGenerator,
   diet,
   classes,
   bookings,
