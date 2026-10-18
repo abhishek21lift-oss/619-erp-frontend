@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { Calendar, Dumbbell } from 'lucide-react';
 import { recommendTrainingSplit, buildRoutineBlueprint } from '@/lib/goal-scheduling';
-import { FormField } from '@/components/ui';
+import { FormField, SelectInput } from '@/components/ui';
 
 interface StepScheduleProps {
   form: { trainingDays: string; experienceLevel: string; equipment: string; goalType: string };
@@ -28,25 +28,25 @@ export default function StepSchedule({ form, set }: StepScheduleProps) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <FormField label="Training days / week" id="step-schedule-days">
-            <select id="step-schedule-days" value={form.trainingDays} onChange={(e) => set('trainingDays', e.target.value)} className="w-full rounded-[12px] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}>
+          <FormField label="Training days / week">
+            <SelectInput value={form.trainingDays} onChange={(e) => set('trainingDays', e.target.value)}>
               {[1,2,3,4,5,6,7].map((d) => <option key={d} value={String(d)}>{d} day{d>1?'s':''}</option>)}
-            </select>
+            </SelectInput>
           </FormField>
-          <FormField label="Experience level" id="step-schedule-exp">
-            <select id="step-schedule-exp" value={form.experienceLevel} onChange={(e) => set('experienceLevel', e.target.value)} className="w-full rounded-[12px] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}>
+          <FormField label="Experience level">
+            <SelectInput value={form.experienceLevel} onChange={(e) => set('experienceLevel', e.target.value)}>
               <option value="beginner">Beginner</option>
               <option value="intermediate">Intermediate</option>
               <option value="advanced">Advanced</option>
-            </select>
+            </SelectInput>
           </FormField>
-          <FormField label="Equipment" id="step-schedule-equip">
-            <select id="step-schedule-equip" value={form.equipment} onChange={(e) => set('equipment', e.target.value)} className="w-full rounded-[12px] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}>
+          <FormField label="Equipment">
+            <SelectInput value={form.equipment} onChange={(e) => set('equipment', e.target.value)}>
               <option value="full_gym">Full Gym</option>
               <option value="dumbbells">Dumbbells Only</option>
               <option value="bodyweight">Bodyweight</option>
               <option value="bands">Resistance Bands</option>
-            </select>
+            </SelectInput>
           </FormField>
         </div>
 
