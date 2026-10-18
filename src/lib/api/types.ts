@@ -1382,6 +1382,14 @@ export interface WorkoutPlanExercise {
   exercise_type?: string | null;
   prescription_mode_primary?: string | null;
   prescription_mode_allowed?: string[] | null;
+
+  /**
+   * Library movement pattern and compound/isolation tag, joined the same way.
+   * The builder's auto-sequence orders by them; rows from an exercise with
+   * neither still sort (they fall in with the accessories).
+   */
+  movement_pattern?: string | null;
+  mechanic?: string | null;
 }
 
 /** Fields the builder may write on a planned exercise. */
