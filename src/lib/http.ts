@@ -88,11 +88,6 @@ export function wsBase(): string {
 // ──────────────────────────────────────────────────────────────────────
 //  ApiError
 // ──────────────────────────────────────────────────────────────────────
-// Phase 1 — Contract consolidation (F-08 / CROSS_REPO_ARCHITECTURE §3):
-// Standard response contract for all domain routes (A/B/C/D). Callers may assume:
-// { message: string; code?: string; payload?: unknown; status: number }
-// This class and its usage across pt-os/*, progress/*, workout-log/* should remain
-// consistent; new routes must use this shape, not invent alternate error structures.
 export class ApiError extends Error {
   status: number;
   code?: string;
