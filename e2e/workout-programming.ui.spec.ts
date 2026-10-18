@@ -76,7 +76,9 @@ test.describe('Workout generator — review a draft, then save it', () => {
   });
 
   test('the saved plan is the draft the trainer reviewed', async ({ page }) => {
-    await page.getByRole('button', { name: ALPHA.clientName, exact: true }).click();
+    // The row's accessible name starts with the avatar's initials, so anchor
+    // on the full name at the end. That also excludes ALPHA-ONLY-CLIENT-TWO.
+    await page.getByRole('button', { name: new RegExp(`${ALPHA.clientName}$`) }).click();
     await expect(page).toHaveURL(new RegExp(`client_id=${ALPHA.clientId}`));
 
     // The preview is requested on arrival; wait for the review surface, not
