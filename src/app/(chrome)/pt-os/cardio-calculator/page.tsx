@@ -10,7 +10,7 @@
  */
 import { useMemo, useState } from 'react';
 import Guard from '@/components/Guard';
-import { PageContainer, PageHero } from '@/components/ui';
+import { PageContainer, PageHero, FormField, TextInput, SelectInput } from '@/components/ui';
 import { HeartPulse } from 'lucide-react';
 import {
   calcTargetHeartRate,
@@ -29,7 +29,17 @@ const PHASE_LABELS = [
   { key: 'stretching', name: 'Static stretching', fraction: 0.3 },
 ];
 
-const FIELD = 'w-full rounded-[10px] border px-3 py-2 text-[13px] outline-none focus:border-[#0271EB]';
+/** Text → a positive integer, or null. Blank is "not entered", never zero. */
+function positiveInteger(text: string): number | null {
+  const n = Number(text);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** Phase minutes: blank or invalid is zero minutes, stated rather than coerced. */
+function minutesOf(text: string): number {
+  const n = Number(text);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
 
 export default function CardioCalculatorPage() {
   const [age, setAge] = useState('');
@@ -38,13 +48,14 @@ export default function CardioCalculatorPage() {
   const [zone, setZone] = useState<CardioIntensityZone>('moderate');
   const [modality, setModality] = useState('');
   const [phases, setPhases] = useState(
-    PHASE_LABELS.map((p) => ({ ...p, minutes: p.key === 'work' ? 20 : 5 })),
+    PHASE_LABELS.map((p) => ({ ...p, minutes: p.key === 'work' ? '20' : '5' })),
   );
 
-  const measuredMhr = mhr ? Number(mhr) : null;
-  const estimatedMhr = !measuredMhr && age ? estimateMaxHeartRate(Number(age)) : null;
+  const ageValue = positiveInteger(age);
+  const measuredMhr = positiveInteger(mhr);
+  const estimatedMhr = measuredMhr == null && ageValue != null ? estimateMaxHeartRate(ageValue) : null;
   const maxHr = measuredMhr ?? estimatedMhr;
-  const restingHr = rhr ? Number(rhr) : null;
+  const restingHr = positiveInteger(rhr);
 
   const valid = maxHr != null && restingHr != null && restingHr < maxHr;
 
@@ -55,7 +66,7 @@ export default function CardioCalculatorPage() {
       restingHeartRate: restingHr as number,
       phases: phases.map((p) => ({
         name: p.name,
-        durationMinutes: Number(p.minutes) || 0,
+        durationMinutes: minutesOf(p.minutes),
         intensityFraction: p.fraction,
       })),
     });
@@ -84,23 +95,25 @@ export default function CardioCalculatorPage() {
           <section className="rounded-[14px] border p-4">
             <h2 className="mb-3 text-[15px] font-[700]">Client numbers</h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="text-[12px]">Age (for estimate only)
-                <input aria-label="Age" type="number" min={1} max={120} className={FIELD} value={age} onChange={(e) => setAge(e.target.value)} />
-              </label>
-              <label className="text-[12px]">Measured max HR (preferred)
-                <input aria-label="Measured max heart rate" type="number" className={FIELD} value={mhr} onChange={(e) => setMhr(e.target.value)} />
-              </label>
-              <label className="text-[12px]">Resting HR
-                <input aria-label="Resting heart rate" type="number" className={FIELD} value={rhr} onChange={(e) => setRhr(e.target.value)} />
-              </label>
-              <label className="text-[12px]">Intensity zone
-                <select aria-label="Intensity zone" className={FIELD} value={zone} onChange={(e) => setZone(e.target.value as CardioIntensityZone)}>
+              <FormField label="Age (for estimate only)">
+                <TextInput inputMode="numeric" min={1} max={120} value={age}
+                  onChange={(e) => setAge(e.target.value)} />
+              </FormField>
+              <FormField label="Measured max HR (preferred)">
+                <TextInput inputMode="numeric" value={mhr} onChange={(e) => setMhr(e.target.value)} />
+              </FormField>
+              <FormField label="Resting HR">
+                <TextInput inputMode="numeric" value={rhr} onChange={(e) => setRhr(e.target.value)} />
+              </FormField>
+              <FormField label="Intensity zone">
+                <SelectInput value={zone} onChange={(e) => setZone(e.target.value as CardioIntensityZone)}>
                   {(Object.keys(INTENSITY_ZONE_FRACTIONS) as CardioIntensityZone[]).map((z) => <option key={z} value={z}>{z}</option>)}
-                </select>
-              </label>
-              <label className="text-[12px] sm:col-span-2">Modality
-                <input aria-label="Modality" className={FIELD} value={modality} onChange={(e) => setModality(e.target.value)} placeholder="Running, elliptical, cycling…" />
-              </label>
+                </SelectInput>
+              </FormField>
+              <FormField label="Modality" className="sm:col-span-2">
+                <TextInput value={modality} onChange={(e) => setModality(e.target.value)}
+                  placeholder="Running, elliptical, cycling…" />
+              </FormField>
             </div>
 
             <div className="mt-4 space-y-1 text-[13px]">
@@ -122,15 +135,13 @@ export default function CardioCalculatorPage() {
               {phases.map((p, i) => (
                 <div key={p.key} className="grid grid-cols-[1fr_84px_84px] items-center gap-2 text-[12px]">
                   <span>{p.name}</span>
-                  <label className="flex items-center gap-1">
-                    <input
-                      aria-label={`${p.name} minutes`}
-                      type="number" min={0} max={180} className={FIELD}
-                      value={p.minutes}
-                      onChange={(e) => setPhases((prev) => prev.map((x, j) => (j === i ? { ...x, minutes: Number(e.target.value) } : x)))}
-                    />
+                  <div className="flex items-center gap-1">
+                    <FormField label={`${p.name} minutes`} labelHidden>
+                      <TextInput inputMode="numeric" min={0} max={180} value={p.minutes}
+                        onChange={(e) => setPhases((prev) => prev.map((x, j) => (j === i ? { ...x, minutes: e.target.value } : x)))} />
+                    </FormField>
                     <span>min</span>
-                  </label>
+                  </div>
                   <span className="text-right">
                     {session?.phases[i]?.targetHeartRate != null ? `${session.phases[i].targetHeartRate} BPM` : '—'}
                   </span>

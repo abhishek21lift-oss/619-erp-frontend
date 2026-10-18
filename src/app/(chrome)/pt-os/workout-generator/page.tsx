@@ -14,7 +14,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Guard from '@/components/Guard';
-import { PageContainer, PageHero, Button } from '@/components/ui';
+import { PageContainer, PageHero, Button, FormField, TextInput, SelectInput } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -62,13 +62,16 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
   const generate = useCallback(async () => {
     setBusy(true);
     try {
+      // Blank means "use the goal default", not zero. A non-numeric entry is
+      // refused rather than coerced to NaN and posted.
+      const cardioMinutes = /^\d+$/.test(cardio.trim()) ? Number(cardio) : undefined;
       const res = await api.workoutGenerator.preview(clientId, {
         goal: goal || undefined,
         experience: experience || undefined,
         avoidPatterns: avoidPatterns ? avoidPatterns.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
         avoidMuscles: avoidMuscles ? avoidMuscles.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
         equipment: equipment ? equipment.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
-        cardioMinutes: cardio ? Number(cardio) : undefined,
+        cardioMinutes,
       });
       setDraft(res.draft);
       setClientName(res.client.name);
@@ -117,8 +120,6 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
     }
   }, [draft, clientName, router, toast]);
 
-  const field = 'w-full rounded-[10px] border px-3 py-2 text-[13px] outline-none focus:border-[#0271EB]';
-
   return (
     <PageContainer>
       <PageHero
@@ -128,12 +129,32 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
       />
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <label className="text-[12px]">Goal<select aria-label="Goal" className={field} value={goal} onChange={(e) => setGoal(e.target.value)}>{GOALS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}</select></label>
-        <label className="text-[12px]">Experience<select aria-label="Experience" className={field} value={experience} onChange={(e) => setExperience(e.target.value)}>{EXPERIENCE.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}</select></label>
-        <label className="text-[12px]">Cardio minutes<input aria-label="Cardio minutes" type="number" min={0} max={180} className={field} value={cardio} onChange={(e) => setCardio(e.target.value)} placeholder="Goal default" /></label>
-        <label className="text-[12px]">Avoid movement patterns<input aria-label="Avoid movement patterns" className={field} value={avoidPatterns} onChange={(e) => setAvoidPatterns(e.target.value)} placeholder="Squat, Hinge (comma separated)" /></label>
-        <label className="text-[12px]">Avoid muscles<input aria-label="Avoid muscles" className={field} value={avoidMuscles} onChange={(e) => setAvoidMuscles(e.target.value)} placeholder="Shoulders, Lower Back" /></label>
-        <label className="text-[12px]">Available equipment<input aria-label="Available equipment" className={field} value={equipment} onChange={(e) => setEquipment(e.target.value)} placeholder="Barbell, Dumbbell (blank = all)" /></label>
+        <FormField label="Goal">
+          <SelectInput value={goal} onChange={(e) => setGoal(e.target.value)}>
+            {GOALS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+          </SelectInput>
+        </FormField>
+        <FormField label="Experience">
+          <SelectInput value={experience} onChange={(e) => setExperience(e.target.value)}>
+            {EXPERIENCE.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+          </SelectInput>
+        </FormField>
+        <FormField label="Cardio minutes">
+          <TextInput inputMode="numeric" min={0} max={180} value={cardio}
+            onChange={(e) => setCardio(e.target.value)} placeholder="Goal default" />
+        </FormField>
+        <FormField label="Avoid movement patterns">
+          <TextInput value={avoidPatterns} onChange={(e) => setAvoidPatterns(e.target.value)}
+            placeholder="Squat, Hinge (comma separated)" />
+        </FormField>
+        <FormField label="Avoid muscles">
+          <TextInput value={avoidMuscles} onChange={(e) => setAvoidMuscles(e.target.value)}
+            placeholder="Shoulders, Lower Back" />
+        </FormField>
+        <FormField label="Available equipment">
+          <TextInput value={equipment} onChange={(e) => setEquipment(e.target.value)}
+            placeholder="Barbell, Dumbbell (blank = all)" />
+        </FormField>
       </div>
       <Button onClick={generate} disabled={busy} className="mb-6">
         {busy ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />} Generate

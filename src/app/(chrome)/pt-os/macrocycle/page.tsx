@@ -10,7 +10,8 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
-import { Button, PageContainer, PageHero } from '@/components/ui';
+import { Button, PageContainer, PageHero, FormField, TextInput, SelectInput } from '@/components/ui';
+import { CheckboxField, type FieldLike } from '@/components/ui/form';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { CalendarRange, Loader2, Plus } from 'lucide-react';
@@ -18,10 +19,11 @@ import {
   MACRO_GOALS, buildMacroCycle, macroPhasePlans, microCycleDays, type MacroGoal,
 } from '@/lib/macro-programming';
 
-const field = 'w-full rounded-[10px] border px-3 py-2 text-[13px] outline-none focus:border-[#0271EB]';
-
-function clamp(n: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, Number.isFinite(n) ? Math.trunc(n) : min));
+/** Text → an integer inside the range, falling back only when the text is not a number. */
+function boundedInteger(text: string, min: number, max: number, fallback: number): number {
+  const n = Number(text);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, Math.trunc(n)));
 }
 
 function weeksLabel(weeks: number[]): string {
@@ -33,9 +35,17 @@ function weeksLabel(weeks: number[]): string {
 export default function MacrocyclePage() {
   const { toast } = useToast();
   const [goal, setGoal] = useState<MacroGoal>('general_fitness');
-  const [totalWeeks, setTotalWeeks] = useState(12);
-  const [daysPerWeek, setDaysPerWeek] = useState(3);
+  const [totalWeeksText, setTotalWeeksText] = useState('12');
+  const [daysPerWeekText, setDaysPerWeekText] = useState('3');
   const [includeDeload, setIncludeDeload] = useState(true);
+  const totalWeeks = boundedInteger(totalWeeksText, 4, 52, 12);
+  const daysPerWeek = boundedInteger(daysPerWeekText, 1, 7, 3);
+  const deloadField: FieldLike<boolean> = {
+    name: 'includeDeload',
+    state: { value: includeDeload, meta: { errors: [], isTouched: false } },
+    handleChange: setIncludeDeload,
+    handleBlur: () => {},
+  };
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState<{
     key: string;
@@ -83,49 +93,22 @@ export default function MacrocyclePage() {
         />
 
         <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <label className="text-[12px]">
-            Goal
-            <select
-              aria-label="Goal"
-              className={field}
-              value={goal}
-              onChange={(e) => setGoal(e.target.value as MacroGoal)}
-            >
+          <FormField label="Goal">
+            <SelectInput value={goal} onChange={(e) => setGoal(e.target.value as MacroGoal)}>
               {MACRO_GOALS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
-            </select>
-          </label>
-          <label className="text-[12px]">
-            Total weeks
-            <input
-              aria-label="Total weeks"
-              type="number"
-              min={4}
-              max={52}
-              className={field}
-              value={totalWeeks}
-              onChange={(e) => setTotalWeeks(clamp(Number(e.target.value), 4, 52))}
-            />
-          </label>
-          <label className="text-[12px]">
-            Days per week
-            <input
-              aria-label="Days per week"
-              type="number"
-              min={1}
-              max={7}
-              className={field}
-              value={daysPerWeek}
-              onChange={(e) => setDaysPerWeek(clamp(Number(e.target.value), 1, 7))}
-            />
-          </label>
-          <label className="flex h-[44px] items-center gap-2 self-end text-[12px]">
-            <input
-              type="checkbox"
-              checked={includeDeload}
-              onChange={(e) => setIncludeDeload(e.target.checked)}
-            />
-            Include deload
-          </label>
+            </SelectInput>
+          </FormField>
+          <FormField label="Total weeks">
+            <TextInput inputMode="numeric" min={4} max={52} value={totalWeeksText}
+              onChange={(e) => setTotalWeeksText(e.target.value)} />
+          </FormField>
+          <FormField label="Days per week">
+            <TextInput inputMode="numeric" min={1} max={7} value={daysPerWeekText}
+              onChange={(e) => setDaysPerWeekText(e.target.value)} />
+          </FormField>
+          <div className="self-end pb-2.5">
+            <CheckboxField field={deloadField} label="Include deload" />
+          </div>
         </div>
 
         <section className="mb-5">
