@@ -21,7 +21,7 @@ const METRICS: MetricConfig[] = [
   { key: 'strength_score_computed', label: 'Strength Score', higherIsBetter: true, tone: tones.sunset },
   { key: 'cardio_score_computed', label: 'Cardio Score', higherIsBetter: true, tone: tones.berry },
   { key: 'endurance_score_computed', label: 'Endurance Score', higherIsBetter: true, tone: tones.aqua },
-  { key: 'mobility_score_computed', label: 'Mobility Score', higherIsBetter: true, tone: tones.gold },
+  { key: 'mobility_score_computed', label: 'Flexibility Score', higherIsBetter: true, tone: tones.gold },
   { key: 'overall_fitness_score', label: 'Overall Fitness Score', higherIsBetter: true, tone: tones.violet },
 ];
 

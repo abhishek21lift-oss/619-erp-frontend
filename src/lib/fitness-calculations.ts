@@ -1,5 +1,11 @@
 // Pure, framework-free calculation/classification functions for the
 // Fitness Testing module. Backend twin: 619-erp-backend/src/modules/progress/fitness-scoring.js
+//
+// Formula-bundle version. Bump whenever any formula in this module changes.
+// Persisting it per assessment requires the approval-gated migration described
+// in F10 (new nullable `scoring_formula_version` column on pt_assessments);
+// until then this is documentation only and legacy rows are treated as unknown.
+export const FITNESS_SCORING_VERSION = '1';
 // (same formulas, duplicated deliberately since there's no shared package
 // between the two apps). These are used client-side for live preview only —
 // the backend recomputes and stores the authoritative values.
@@ -151,7 +157,7 @@ function ageBand(age: number): 'young' | 'mid' | 'senior' {
   return 'senior';
 }
 export function classifyVo2Max(vo2: number | null, age: number | null, gender: Gender | null): FitnessCategory | null {
-  if (vo2 == null) return null;
+  if (vo2 == null || !Number.isFinite(vo2) || vo2 <= 0) return null;
   const g = sexOf(gender);
   if (!g) return null;
   const [excellent, good, average, belowAverage] = VO2_MAX_NORMS[g][ageBand(age || 30)];
@@ -165,7 +171,9 @@ export function classifyVo2Max(vo2: number | null, age: number | null, gender: G
 // YMCA 3-Minute Step Test has no standard closed-form VO2max — classify
 // heart-rate recovery only, on a simplified single scale.
 export function classifyStepTestRecovery(recoveryHr: number | null): FitnessCategory | null {
-  if (recoveryHr == null) return null;
+  // Implausible recovery heart rate (not a real measurement) must not produce
+  // a category — guard the physiological range.
+  if (recoveryHr == null || !Number.isFinite(recoveryHr) || recoveryHr < 40 || recoveryHr > 220) return null;
   if (recoveryHr < 80) return 'Excellent';
   if (recoveryHr < 90) return 'Good';
   if (recoveryHr < 100) return 'Average';
@@ -230,7 +238,9 @@ const CURLUP_NORMS: Record<'Male' | 'Female', [number, number, number, number]> 
 const PLANK_NORMS_SEC: [number, number, number, number] = [120, 60, 30, 15]; // single scale, no standard gender norm
 
 export function classifyEndurance(testType: string | null, value: number | null, gender: Gender | null): FitnessCategory | null {
-  if (value == null) return null;
+  // A zero or negative result is not a performed test — never classify it as
+  // "Poor" (20), which would masquerade as a real (bad) score.
+  if (value == null || !Number.isFinite(value) || value <= 0) return null;
   const g = sexOf(gender);
   let thresholds: [number, number, number, number];
   // Plank norms are a single scale; the others are split by sex.
@@ -258,8 +268,10 @@ export function checkAsymmetry(left: number | null, right: number | null, thresh
 }
 
 export function classifyFlexibilityScore(score: number | null): FitnessCategory | null {
-  // score expected 0-10 (trainer-entered measured/composite score)
-  if (score == null) return null;
+  // score expected 0-10 (trainer-entered measured/composite score). Out-of-range
+  // or non-finite input is not a score — never classify it, so a 25 cannot
+  // masquerade as "Excellent" (95). 0 is legitimate ("very limited").
+  if (score == null || !Number.isFinite(score) || score < 0 || score > 10) return null;
   if (score >= 8) return 'Excellent';
   if (score >= 6) return 'Good';
   if (score >= 4) return 'Average';
@@ -274,8 +286,9 @@ export function scoreCategory(category: FitnessCategory | null): number | null {
   return category ? CATEGORY_SCORES[category] : null;
 }
 
-// Body Composition Score: 100 within a gender-specific "ideal" body-fat
-// range, linear falloff outside it.
+// Body Composition Score: 100 within a gender-specific "ideal" body-fat range,
+// linear falloff outside it. Returns null when gender is missing or 'Other' —
+// there is no sex-neutral reference range, so no score is invented (F14).
 const IDEAL_BODY_FAT: Record<'Male' | 'Female', [number, number]> = { Male: [10, 20], Female: [18, 28] };
 export function scoreBodyComposition(bodyFatPct: number | null, gender: Gender | null): number | null {
   if (bodyFatPct == null) return null;
@@ -287,7 +300,13 @@ export function scoreBodyComposition(bodyFatPct: number | null, gender: Gender |
   return Math.max(0, Math.round(100 - distance * 4));
 }
 
-// Health Risk Score: average of a BP-category subscore and a BMI-category subscore.
+// Health Score (stored column `health_risk_score`): average of a BP-category
+// subscore and a BMI-category subscore. Higher is better — 100 is normal BP
+// within the healthy BMI band — same direction as the other five categories.
+// BP_RISK_SCORE bands follow AHA BP categories. The BMI bands are a project-
+// specific risk proxy (not a clinical diagnosis): healthy band 100, overweight
+// and underweight both 60, obese 30 — there is no separate underweight penalty.
+// Discontinuity: BMI 24.9 → 100, BMI 25.0 → 60.
 const BP_RISK_SCORE: Record<string, number> = { Normal: 100, Elevated: 80, 'Hypertension Stage 1': 55, 'Hypertension Stage 2': 20, Hypotension: 40 };
 function scoreBmiRisk(bmi: number | null): number | null {
   if (bmi == null) return null;

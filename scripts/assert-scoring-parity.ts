@@ -96,8 +96,12 @@ const NUMS = [null, 0, 1, 17, 18.5, 25, 30, 45, 55, 60, 70, 82.5, 100, 120, 175,
  */
 const FINE: number[] = [];
 for (let v = 0; v <= 220; v += 0.5) FINE.push(v);
-const CATEGORIES = [null, 'poor', 'below_average', 'average', 'good', 'excellent', 'superior', 'nonsense'];
-const BP_CATEGORIES = [null, 'normal', 'elevated', 'stage_1', 'stage_2', 'crisis', 'low'];
+// Canonical (real) enum values as emitted by the frontend — title case with
+// spaces. The previous lowercase/underscore spellings never matched a norm
+// table or a score bucket, so every such case scored null on BOTH sides and
+// the check passed vacuously. See F5.
+const FITNESS_CATEGORIES = [null, 'Poor', 'Below Average', 'Average', 'Good', 'Excellent'];
+const BP_CATEGORIES = [null, 'Normal', 'Elevated', 'Hypertension Stage 1', 'Hypertension Stage 2', 'Hypotension'];
 
 function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
   const cases: Array<{ fn: string; args: unknown[] }> = [];
@@ -116,8 +120,8 @@ function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
   for (const p of NUMS) add('classifyHarvardPei', [p]);
   for (const hr of NUMS) add('classifyStepTestRecovery', [hr]);
   for (const w of NUMS) for (const r of [null, 0, 1, 5, 10, 12, 20, 37]) for (const f of ['brzycki', 'epley']) add('calc1RM', [w, r, f]);
-  for (const o of NUMS) for (const bw of NUMS) for (const ex of [null, 'bench_press', 'squat', 'deadlift', 'unknown']) for (const g of GENDERS) add('classifyStrength', [o, bw, ex, g]);
-  for (const tt of [null, 'plank', 'push_up', 'sit_up', 'unknown']) for (const v of NUMS) for (const g of GENDERS) add('classifyEndurance', [tt, v, g]);
+  for (const o of NUMS) for (const bw of NUMS) for (const ex of [null, 'Bench Press', 'Squat', 'Deadlift', 'Shoulder Press', 'Leg Press', 'Lunges']) for (const g of GENDERS) add('classifyStrength', [o, bw, ex, g]);
+  for (const tt of [null, 'Push Up Test', 'Curl Up Test', 'Plank', 'Wall Sit', 'Bodyweight Squat', 'Custom']) for (const v of NUMS) for (const g of GENDERS) add('classifyEndurance', [tt, v, g]);
   for (const l of NUMS) for (const r of NUMS) add('checkAsymmetry', [l, r]);
   for (const s of NUMS) add('classifyFlexibilityScore', [s]);
 
@@ -137,10 +141,10 @@ function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
     for (const g of GENDERS) {
       add('scoreBodyComposition', [v / 2, g]);
       add('classifyVo2Max', [v / 2, 35, g]);
-      add('classifyEndurance', ['plank', v, g]);
-      add('classifyStrength', [v * 2, 80, 'bench_press', g]);
+      add('classifyEndurance', ['Plank', v, g]);
+      add('classifyStrength', [v * 2, 80, 'Bench Press', g]);
     }
-    add('scoreHealthRisk', ['normal', v / 4]);
+    add('scoreHealthRisk', ['Normal', v / 4]);
     // Asymmetry is a RATIO, so one side is pinned and the other walked: this
     // is the sweep that the 10%-to-12% drift slipped through.
     add('checkAsymmetry', [100, v]);
@@ -149,7 +153,7 @@ function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
   for (let reps = 1; reps <= 30; reps += 1) {
     for (const f of ['brzycki', 'epley']) { add('calc1RM', [60, reps, f]); add('calc1RM', [100.5, reps, f]); }
   }
-  for (const c of CATEGORIES) add('scoreCategory', [c]);
+  for (const c of FITNESS_CATEGORIES) add('scoreCategory', [c]);
   for (const f of NUMS) for (const g of GENDERS) add('scoreBodyComposition', [f, g]);
   for (const bp of BP_CATEGORIES) for (const bmi of NUMS) add('scoreHealthRisk', [bp, bmi]);
   for (const a of [null, 0, 40, 60, 100]) for (const b of [null, 0, 40, 60, 100]) add('scoreEnduranceBattery', [a, b]);
@@ -526,6 +530,13 @@ interface Suite {
   cases: Array<{ fn: string; args: unknown[] }>;
   /** Below this, the grid or the export surface moved and the run proves nothing. */
   minCalls: number;
+  /** Minimum cases that must produce a non-null result. Guards against a grid
+   *  that only ever scores null on both sides (vacuous pass). */
+  minNonNullCalls?: number;
+  /** Canonical cases that MUST produce a non-null (real) score on both sides.
+   *  If either side returns null for one of these, the suite fails — this is
+   *  the "both returned null for a case that should score" guard (F5). */
+  mustScore?: Array<{ fn: string; args: unknown[] }>;
 }
 
 /** Compare one suite. Returns the mismatch lines; prints its own summary. */
@@ -535,6 +546,7 @@ function runSuite(suite: Suite, backendPath: string): string[] {
   const mismatches: string[] = [];
   const uncomparable = new Set<string>();
   let compared = 0;
+  let nonNull = 0;
 
   for (const { fn, args } of suite.cases) {
     const fe = suite.frontend[fn];
@@ -548,19 +560,40 @@ function runSuite(suite: Suite, backendPath: string): string[] {
     try { a = (fe as Fn)(...args); } catch (e) { a = `THREW:${(e as Error).message}`; }
     try { b = (be as Fn)(...args); } catch (e) { b = `THREW:${(e as Error).message}`; }
     compared += 1;
+    if (norm(a) !== 'null' || norm(b) !== 'null') nonNull += 1;
     if (norm(a) !== norm(b)) {
       mismatches.push(`  [${suite.name}] ${fn}(${args.map(norm).join(', ')})\n    frontend → ${norm(a)}\n    backend  → ${norm(b)}`);
     }
   }
 
+  // Guard against vacuous null===null passes (F5): a case that should score
+  // but returns null on both sides is not parity, it is a blind spot.
+  if (suite.mustScore) {
+    for (const { fn, args } of suite.mustScore) {
+      const fe = suite.frontend[fn];
+      const be = BE[fn];
+      if (typeof fe !== 'function' || typeof be !== 'function') { uncomparable.add(fn); continue; }
+      let a: unknown; let b: unknown;
+      try { a = (fe as Fn)(...args); } catch (e) { a = `THREW:${(e as Error).message}`; }
+      try { b = (be as Fn)(...args); } catch (e) { b = `THREW:${(e as Error).message}`; }
+      if (norm(a) === 'null' || norm(b) === 'null' || norm(a) !== norm(b)) {
+        mismatches.push(`  [${suite.name}] must-score ${fn}(${args.map(norm).join(', ')})\n    frontend → ${norm(a)}\n    backend  → ${norm(b)}`);
+      }
+    }
+  }
+
   const functions = new Set(suite.cases.map((c) => c.fn)).size;
-  console.info(`scoring parity [${suite.name}]: ${compared} calls across ${functions - uncomparable.size} shared functions`);
+  console.info(`scoring parity [${suite.name}]: ${compared} calls across ${functions - uncomparable.size} shared functions (${nonNull} non-null)`);
   console.info(`  backend: ${backendPath}`);
 
   // Cannot pass vacuously: an empty or tiny comparison means the grid or the
   // export surface changed underneath this, which is itself a failure.
   if (compared < suite.minCalls) {
     console.error(`✗ [${suite.name}] only ${compared} calls compared — the grid or the exports moved; this cannot be trusted`);
+    process.exit(1);
+  }
+  if (suite.minNonNullCalls != null && nonNull < suite.minNonNullCalls) {
+    console.error(`✗ [${suite.name}] only ${nonNull} non-null results (need ≥ ${suite.minNonNullCalls}) — the grid is scoring null on both sides (vacuous pass)`);
     process.exit(1);
   }
 
@@ -584,6 +617,17 @@ function main() {
       backendModule: BACKEND_MODULE,
       build: buildFitnessCases,
       minCalls: 10000,
+      minNonNullCalls: 1000,
+      mustScore: [
+        { fn: 'classifyStrength', args: [100, 80, 'Bench Press', 'Male'] },
+        { fn: 'classifyEndurance', args: ['Push Up Test', 30, 'Male'] },
+        { fn: 'classifyEndurance', args: ['Plank', 60, null] },
+        { fn: 'scoreHealthRisk', args: ['Normal', 22] },
+        { fn: 'scoreCategory', args: ['Good'] },
+        { fn: 'classifyFlexibilityScore', args: [8] },
+        { fn: 'classifyVo2Max', args: [45, 30, 'Male'] },
+        { fn: 'classifyBp', args: [120, 70] },
+      ],
     },
     {
       name: 'lifestyle',
