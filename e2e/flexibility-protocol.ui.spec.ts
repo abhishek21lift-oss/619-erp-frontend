@@ -150,9 +150,13 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
     await page.getByRole('button', { name: 'Leg Press', exact: true }).click();
     await next.click(); // 5 → 6
 
-    // 6: two distinct endurance tests.
+    // 6: two distinct endurance tests. Both pickers are labelled "Test", and
+    // the first one's exit animation keeps its options mounted for ~150ms —
+    // long enough for "Curl Up Test" to match twice if the second picker
+    // opens straight away. Wait for the first picker to be gone.
     await page.getByRole('button', { name: 'Test', exact: true }).first().click();
     await page.getByRole('button', { name: 'Push Up Test', exact: true }).click();
+    await expect(page.getByLabel('Search Test')).toHaveCount(0);
     await page.getByRole('button', { name: 'Test', exact: true }).nth(1).click();
     await page.getByRole('button', { name: 'Curl Up Test', exact: true }).click();
     await next.click(); // 6 → 7
