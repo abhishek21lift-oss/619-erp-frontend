@@ -22,9 +22,13 @@ const CATEGORY_META: { key: keyof FitnessScores; label: string; tone: Tone; Icon
   { key: 'cardioScore', label: 'Cardio', tone: domain.cardio, Icon: HeartPulse },
   { key: 'strengthScore', label: 'Strength', tone: domain.strength, Icon: Dumbbell },
   { key: 'enduranceScore', label: 'Endurance', tone: domain.endurance, Icon: Repeat },
-  { key: 'mobilityScore', label: 'Mobility', tone: domain.mobility, Icon: Move },
+  // The stored column is still `mobility_score_computed` (backward compat), but
+  // the value is the flexibility composite, so the card reads "Flexibility".
+  { key: 'mobilityScore', label: 'Flexibility', tone: domain.mobility, Icon: Move },
   { key: 'bodyCompositionScore', label: 'Body Comp.', tone: domain.bodyComposition, Icon: Activity },
-  { key: 'healthRiskScore', label: 'Health Risk', tone: domain.healthRisk, Icon: ShieldCheck },
+  // Higher is better, like the other five: 100 is normal BP and a healthy BMI.
+  // The column keeps its historical `health_risk_score` name for compatibility.
+  { key: 'healthRiskScore', label: 'Health Score', tone: domain.healthRisk, Icon: ShieldCheck },
 ];
 
 /** Scores as radar data, labels in the plotting order above. Missing

@@ -33,7 +33,12 @@ function v(val: unknown, unit = ''): string {
 function scoreLabel(score: unknown): string {
   const n = typeof score === 'number' ? score : parseFloat(String(score ?? ''));
   if (!Number.isFinite(n)) return '—';
-  return `${n} (${CATEGORY_BY_SCORE[n] || '—'})`;
+  // Only print a band when the score is one of the discrete category buckets.
+  // Battery means (e.g. 88), continuous Body Composition (e.g. 84) and Health
+  // Score values (e.g. 55) are not category labels, so printing "55 (—)"
+  // would imply a classification that does not exist (F8).
+  const band = CATEGORY_BY_SCORE[n];
+  return band ? `${n} (${band})` : `${n}`;
 }
 
 function field(label: string, value: string): string {
@@ -122,18 +127,18 @@ export function generateAssessmentReportHTML(assessment: Row, clientName: string
     field('Test 1 Classification', v(assessment.flexibility_category)),
     field('Test 2 Classification', v(assessment.flexibility_category_2)),
     field('Asymmetry Detected', assessment.has_asymmetry ? 'Yes' : 'No'),
-    field('Combined Mobility Score', scoreLabel(assessment.mobility_score_computed)),
+    field('Combined Flexibility Score', scoreLabel(assessment.mobility_score_computed)),
   ].join(''));
 
   const dashboard = `<div class="dashboard">
     <div class="dscore"><label>Overall Fitness Score</label><div class="big">${v(assessment.overall_fitness_score)}</div></div>
     <div class="dgrid">
       ${field('Body Composition', scoreLabel(assessment.body_composition_score))}
-      ${field('Health Risk', scoreLabel(assessment.health_risk_score))}
+      ${field('Health Score', scoreLabel(assessment.health_risk_score))}
       ${field('Cardio', scoreLabel(assessment.cardio_score_computed))}
       ${field('Strength', scoreLabel(assessment.strength_score_computed))}
       ${field('Endurance', scoreLabel(assessment.endurance_score_computed))}
-      ${field('Mobility', scoreLabel(assessment.mobility_score_computed))}
+      ${field('Flexibility', scoreLabel(assessment.mobility_score_computed))}
     </div>
   </div>`;
 

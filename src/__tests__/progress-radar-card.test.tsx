@@ -52,7 +52,7 @@ describe('progress radar card', () => {
       variant?: string;
     };
     expect(props.data.map((r) => r.category)).toEqual(
-      ['Cardio', 'Strength', 'Endurance', 'Mobility', 'Body Comp.', 'Health Risk']);
+      ['Cardio', 'Strength', 'Endurance', 'Flexibility', 'Body Comp.', 'Health Score']);
     expect(props.data.map((r) => r.score)).toEqual([70, 64, null, 61, 58, 80]);
     expect(props.variant).toBe('onCard');
   });

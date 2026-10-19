@@ -24,7 +24,7 @@ import {
 import type { FitnessCategory, Gender } from '@/lib/fitness-calculations';
 import { STEPS, initAssessmentForm, formFromAssessmentRow, n } from '@/components/pt-os/fitness-testing/types';
 import { todayISO } from '@/lib/forms/domain';
-import { rangeIssue } from '@/lib/forms/ranges';
+import { rangeIssue, type Range } from '@/lib/forms/ranges';
 import type { AssessmentFormData, FormErrors, StepId } from '@/components/pt-os/fitness-testing/types';
 import ProgressTimeline from '@/components/pt-os/fitness-testing/ProgressTimeline';
 import AssessmentInfoCard from '@/components/pt-os/fitness-testing/AssessmentInfoCard';
@@ -82,7 +82,10 @@ function estimateOneRM(form: AssessmentFormData, testNum: 1 | 2 = 1): number | n
   return mode === 'direct' ? n(direct1RM) : calc1RM(n(weightKg), n(reps), formula);
 }
 
-function validateStep(id: StepId, form: AssessmentFormData, isBeginner: boolean): string | undefined {
+function validateStep(id: StepId, form: AssessmentFormData, isBeginner: boolean, bpUnsafe = false): string | undefined {
+  // Exertion tests are intentionally skipped when resting BP is unsafe; they
+  // are not required (and must not block submission) in that case.
+  if (bpUnsafe && (id === 4 || id === 5 || id === 6)) return undefined;
   if (id === 1) {
     if (form.assessmentDate > todayISO()) return 'The assessment date cannot be in the future.';
     if (!form.bpSystolic && !form.bpDiastolic && !form.bpNotMeasured) {
@@ -111,13 +114,46 @@ function validateStep(id: StepId, form: AssessmentFormData, isBeginner: boolean)
       ['BMR', form.bmr, 500, 5000, 'kcal'], ['Metabolic age', form.metabolicAge, 10, 110],
     );
   }
-  if (id === 4) return form.cardioTestType ? undefined : 'Please select a cardiorespiratory test.';
+  if (id === 4) {
+    if (!form.cardioTestType) return 'Please select a cardiorespiratory test.';
+    if (form.cardioTestType === 'Rockport 1-Mile Walk') return rangeIssue(['Time', form.cardioTimeMin, 5, 30, 'min'], ['Heart rate', form.cardioHeartRate, 40, 220, 'bpm']);
+    if (form.cardioTestType === 'Cooper 12-Minute Run') return rangeIssue(['Distance', form.cardioDistanceMeters, 100, 10000, 'm']);
+    if (form.cardioTestType === 'Bruce Protocol') return rangeIssue(['Treadmill time', form.cardioTreadmillMinutes, 1, 30, 'min']);
+    if (form.cardioTestType === 'Harvard Step Test') return rangeIssue(['Duration', form.cardioDurationSec, 60, 1200, 'sec'], ['Pulse 1', form.cardioPulse1, 40, 220, 'bpm'], ['Pulse 2', form.cardioPulse2, 40, 220, 'bpm'], ['Pulse 3', form.cardioPulse3, 40, 220, 'bpm']);
+    if (form.cardioTestType === 'YMCA 3-Minute Step Test') return rangeIssue(['Recovery HR', form.cardioRecoveryHr, 40, 220, 'bpm']);
+    return undefined;
+  }
   // Muscular strength (1RM) testing isn't expected for beginner clients — optional for them.
   // Any exercise may be tested, but exactly 2 are required to complete the step.
-  if (id === 5) return (isBeginner || (form.strengthExercise && form.strengthExercise2)) ? undefined : 'Please select both strength tests.';
-  if (id === 6) return (form.enduranceTestType && form.enduranceTestType2) ? undefined : 'Please select both endurance tests.';
+  if (id === 5) {
+    if (!isBeginner && !(form.strengthExercise && form.strengthExercise2)) return 'Please select both strength tests.';
+    return rangeIssue(
+      ['Test 1 weight', form.strengthWeightKg, 1, 500, 'kg'], ['Test 1 reps', form.strengthReps, 1, 100],
+      ['Test 1 direct 1RM', form.strengthDirect1RM, 1, 500, 'kg'],
+      ['Test 2 weight', form.strengthWeightKg2, 1, 500, 'kg'], ['Test 2 reps', form.strengthReps2, 1, 100],
+      ['Test 2 direct 1RM', form.strengthDirect1RM2, 1, 500, 'kg'],
+    );
+  }
+  if (id === 6) {
+    if (!(form.enduranceTestType && form.enduranceTestType2)) return 'Please select both endurance tests.';
+    const isRep = (t: string) => t === 'Push Up Test' || t === 'Curl Up Test';
+    const checks: Range[] = [];
+    if (isRep(form.enduranceTestType)) checks.push(['Test 1 reps', form.enduranceReps, 1, 200]);
+    else checks.push(['Test 1 duration', form.enduranceDurationSec, 1, 3600, 'sec']);
+    if (isRep(form.enduranceTestType2)) checks.push(['Test 2 reps', form.enduranceReps2, 1, 200]);
+    else checks.push(['Test 2 duration', form.enduranceDurationSec2, 1, 3600, 'sec']);
+    return rangeIssue(...checks);
+  }
   // Same battery pattern — any flexibility test may be performed, 2 are required.
-  if (id === 7) return (form.flexibilityTestType && form.flexibilityTestType2) ? undefined : 'Please select both flexibility tests.';
+  if (id === 7) {
+    if (!(form.flexibilityTestType && form.flexibilityTestType2)) return 'Please select both flexibility tests.';
+    return rangeIssue(
+      ['Test 1 score', form.flexibilityScore, 0, 10], ['Test 1 left', form.flexibilityLeft, 0, 100, 'cm'],
+      ['Test 1 right', form.flexibilityRight, 0, 100, 'cm'], ['Test 1 ROM', form.flexibilityRom, 0, 360, 'deg'],
+      ['Test 2 score', form.flexibilityScore2, 0, 10], ['Test 2 left', form.flexibilityLeft2, 0, 100, 'cm'],
+      ['Test 2 right', form.flexibilityRight2, 0, 100, 'cm'], ['Test 2 ROM', form.flexibilityRom2, 0, 360, 'deg'],
+    );
+  }
   return undefined;
 }
 
@@ -162,6 +198,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
   const [step, setStep] = useState<StepId>(1);
   const [reviewMode, setReviewMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [lastSaved, setLastSaved] = useState<Record<string, unknown> | null>(null);
   // Server-computed screening snapshot embedded in GET /api/pt-os/clients/:id
   // (screeningSummary). Read-only here: the card renders it, never recomputes.
@@ -219,7 +256,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       const finalForm = draft ? { ...loaded, ...draft } : loaded;
       setForm(finalForm);
       initFormRef.current = loaded;
-      if (draft) toast.info('Restored your unsaved draft.');
+      if (draft) toast.info('Restored your unsaved draft (saved on this device).');
     } catch (err: unknown) {
       setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {
@@ -270,9 +307,12 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     const strengthCategory2 = classifyStrength(oneRM2, n(form.weight), form.strengthExercise2 || null, gender);
     const strengthScore = scoreTestBattery(scoreCategory(strengthCategory), scoreCategory(strengthCategory2));
 
-    const enduranceValue = form.enduranceValueType === 'reps' ? n(form.enduranceReps) : n(form.enduranceDurationSec);
+    // Interpret the result by the test's own protocol, not by a stored flag that
+    // can drift out of sync with the selected test type (F7).
+    const isRepBased = (t: string) => t === 'Push Up Test' || t === 'Curl Up Test';
+    const enduranceValue = isRepBased(form.enduranceTestType) ? n(form.enduranceReps) : n(form.enduranceDurationSec);
     const enduranceCategory = classifyEndurance(form.enduranceTestType || null, enduranceValue, gender);
-    const enduranceValue2 = form.enduranceValueType2 === 'reps' ? n(form.enduranceReps2) : n(form.enduranceDurationSec2);
+    const enduranceValue2 = isRepBased(form.enduranceTestType2) ? n(form.enduranceReps2) : n(form.enduranceDurationSec2);
     const enduranceCategory2 = classifyEndurance(form.enduranceTestType2 || null, enduranceValue2, gender);
     const enduranceScore = scoreTestBattery(scoreCategory(enduranceCategory), scoreCategory(enduranceCategory2));
 
@@ -312,7 +352,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
 
   const handleNext = () => {
     const stepDef = STEPS.find((s) => s.id === step)!;
-    const err = validateStep(step, form, isBeginner);
+    const err = validateStep(step, form, isBeginner, bpUnsafe);
     setErrors((e) => ({ ...e, [stepDef.key]: err }));
     if (err) { toast.error(err); return; }
     if (step === 7) { setReviewMode(true); return; }
@@ -334,10 +374,33 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
 
   const handleSaveDraft = () => {
     const ok = saveNow();
-    toast[ok ? 'success' : 'error'](ok ? 'Draft saved.' : 'Could not save draft — storage unavailable.');
+    toast[ok ? 'success' : 'error'](ok ? 'Draft saved on this device.' : 'Could not save draft — storage unavailable.');
   };
 
   const handleSubmit = async () => {
+    if (savingRef.current) return; // prevent duplicate submissions (ref guards the synchronous window)
+    savingRef.current = true;
+    // Complete validation pass over every step — including any reached only via
+    // direct stepper navigation — before any API request is made.
+    const stepErrors: FormErrors = {};
+    let firstFailing: StepId | null = null;
+    for (const s of STEPS) {
+      const err = validateStep(s.id, form, isBeginner, bpUnsafe);
+      if (err) {
+        stepErrors[s.key as keyof FormErrors] = err;
+        if (firstFailing == null) firstFailing = s.id;
+      }
+    }
+    if (firstFailing != null) {
+      setErrors((e) => ({ ...e, ...stepErrors }));
+      const failingKey = STEPS.find((s) => s.id === firstFailing)!.key as keyof FormErrors;
+      toast.error(stepErrors[failingKey]!);
+      setReviewMode(false);
+      setStep(firstFailing);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      savingRef.current = false;
+      return;
+    }
     setSaving(true);
     try {
       const payload: Record<string, unknown> = {
@@ -448,6 +511,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       }
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
   };
 
@@ -473,6 +537,11 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       await api.progress.assessments.delete(String(row.id));
       setHistory((h) => h.filter((x) => String(x.id) !== String(row.id)));
       if (editingId === String(row.id)) handleNewAssessment();
+      // Clear any active state pointing at the deleted record (F4).
+      if (lastSaved && String(lastSaved.id) === String(row.id)) {
+        setLastSaved(null);
+        setSaveWarnings([]);
+      }
       toast.success('Assessment deleted.');
     } catch (err: unknown) {
       toast.error(errorMessage(err, 'Could not delete the assessment.'));
@@ -510,8 +579,17 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     );
   }
 
-  const nextAssessmentNumber = history.length + 1;
-  const sortedHistory = [...history].sort((a, b) => String(b.assessment_date ?? '').localeCompare(String(a.assessment_date ?? '')));
+  // Display number derived from the highest existing number, not the row count,
+  // so a deletion does not reuse or duplicate a number (F11). Server-side
+  // allocation uses MAX+1 under an advisory lock; this is the matching client view.
+  const nextAssessmentNumber = history.reduce((m, r) => Math.max(m, Number(r.assessment_number) || 0), 0) + 1;
+  const sortedHistory = [...history].sort((a, b) => {
+    const d = String(b.assessment_date ?? '').localeCompare(String(a.assessment_date ?? ''));
+    if (d !== 0) return d;
+    const ca = String(a.created_at ?? a.id ?? '');
+    const cb = String(b.created_at ?? b.id ?? '');
+    return cb.localeCompare(ca);
+  });
   const initialAssessment = sortedHistory[sortedHistory.length - 1];
   const latestAssessment = sortedHistory[0];
 

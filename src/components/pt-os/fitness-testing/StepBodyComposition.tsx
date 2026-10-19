@@ -47,6 +47,11 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
         />
       </div>
 
+      {(gender === null || gender === 'Other') && (
+        <p className="mb-4 rounded-[14px] px-4 py-3 text-[12px] leading-snug" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', color: 'var(--text-secondary)' }}>
+          Body Composition score needs a male/female reference range, so it is not computed for this client — body-fat % and the other measurements are still recorded. No score is invented.
+        </p>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FloatInput label="Body Fat %" numeric="decimal" value={form.bodyFatPct} onChange={(v) => set('bodyFatPct', v)} />
         <FloatInput label="Muscle Mass %" numeric="decimal" value={form.muscleMassPct} onChange={(v) => set('muscleMassPct', v)} />

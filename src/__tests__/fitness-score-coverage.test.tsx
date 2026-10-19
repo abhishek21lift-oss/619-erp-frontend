@@ -138,9 +138,9 @@ describe('FitnessDashboard', () => {
       'Cardio',
       'Strength',
       'Endurance',
-      'Mobility',
+      'Flexibility',
       'Body Comp.',
-      'Health Risk',
+      'Health Score',
     ]);
     expect(data.every((d) => typeof d.score === 'number')).toBe(true);
   });
@@ -153,7 +153,7 @@ describe('FitnessDashboard', () => {
       screen.getByText('Overall score based on 3 of 6 categories scored.'),
     ).toBeTruthy();
     // Valid scores stay visible; the three missing tiles keep the — indicator.
-    expect(screen.getAllByText('80').length).toBe(2); // Cardio + Health Risk tiles
+    expect(screen.getAllByText('80').length).toBe(2); // Cardio + Health Score tiles
     expect(screen.getByText('87')).toBeTruthy(); // overall center value
     expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(3);
     const data = radarSpy.mock.calls[0][0].data as { category: string; score: number | null }[];
