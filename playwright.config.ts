@@ -19,6 +19,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const API_URL = process.env.E2E_API_URL ?? 'http://127.0.0.1:5100';
 const APP_URL = process.env.E2E_APP_URL ?? 'http://127.0.0.1:3101';
+const APP_PORT = new URL(APP_URL).port;
 
 // The image ships Chromium at PLAYWRIGHT_BROWSERS_PATH and the headless shell
 // is not always the build Playwright expects, so the path is honoured when
@@ -30,6 +31,31 @@ const CHROMIUM_LAUNCH = process.env.PLAYWRIGHT_CHROMIUM_PATH
 // Written by e2e/auth.setup.ts, replayed by every browser project.
 const STORAGE_STATE = 'e2e/.auth/alpha.json';
 
+// In CI the journeys run against the artifact the deploy ships, not a dev
+// server. `E2E_WEB_SERVER=prod` (set by the workflow) serves `.next/standalone`
+// the way the Dockerfile does — with `output: 'standalone'`, `next start` is not
+// the same thing and Next says so at boot.
+//
+// `next dev` is worse than either: it compiles a route on that route's first
+// request, and a client-side transition does not commit its URL until the
+// destination's RSC payload resolves. The click in client-interview.ui.spec.ts
+// is the first request in the whole suite to touch /pt-os/assessment, so it was
+// racing that compile inside `expect(page).toHaveURL()`: it lost at 10s on a
+// loaded runner, then passed in 6.8s on the retry, when the route was already
+// compiled. Whether that assertion held therefore depended on how busy the
+// runner was, which is a property of the dev server and not of the app — and no
+// timeout can fix it. Serving the built artifact removes the compile from the
+// test path: the same request measures 0.13s there against 8–12s cold here.
+//
+// The directory has to be assembled first, exactly as the Dockerfile assembles
+// it: the standalone bundle omits public/ and .next/static. PORT and HOSTNAME
+// are pinned because the CI runner sets both for its own purposes (its own
+// hostname, and the API's port) and the server binds to whatever it finds.
+const WEB_SERVER_COMMAND =
+  process.env.E2E_WEB_SERVER === 'prod'
+    ? `sh -c 'cp -r public .next/standalone/ 2>/dev/null; mkdir -p .next/standalone/.next && cp -r .next/static .next/standalone/.next/ && PORT=${APP_PORT} HOSTNAME=0.0.0.0 node .next/standalone/server.js'`
+    : `npx next dev --webpack -p ${APP_PORT}`;
+
 export default defineConfig({
   testDir: './e2e',
   // Isolation tests assert on shared seeded rows, so they must not race each
@@ -38,7 +64,14 @@ export default defineConfig({
   workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  reporter: process.env.CI ? [['github'], ['list']] : [['list']],
+  // `github` annotates failures inline, `list` is the live log, and `html` is
+  // what the CI artifact step uploads. It was missing, so every run warned that
+  // `frontend/playwright-report/` did not exist and attached nothing but the
+  // log — no screenshots, no traces, no error-context. Locally `list` stays on
+  // its own: the report is written for whoever has to debug a CI run.
+  reporter: process.env.CI
+    ? [['github'], ['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]]
+    : [['list']],
 
   timeout: 30_000,
   expect: { timeout: 10_000 },
@@ -119,7 +152,7 @@ export default defineConfig({
   // than picking one.
   webServer: true
     ? {
-        command: `npx next dev --webpack -p ${new URL(APP_URL).port}`,
+        command: WEB_SERVER_COMMAND,
         url: APP_URL,
         reuseExistingServer: !process.env.CI,
         timeout: 300_000,
