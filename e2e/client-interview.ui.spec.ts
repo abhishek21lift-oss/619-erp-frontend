@@ -10,9 +10,23 @@ import { gotoApp, apiToken, apiGet, apiPost, apiDelete } from './helpers/session
  * Real browser, real API, real Postgres. The client is arranged through the
  * API (registration is client-create.ui.spec's journey); everything under test
  * is done through the screens, and every outcome is read back from the API.
+ *
+ * The interview is seven topics of selects since 2026-10-19, and what the
+ * selects store is the canonical value, not the label: a band is stored as
+ * its midpoint, and the smoking/drinking columns hold their own tokens. The
+ * free-text columns the form used to fill are still on the record and must
+ * survive a save from this form.
  */
 
-type Interview = { id: string; status: string; training_history: string | null; motivation: string | null; completed_at: string | null };
+type Interview = {
+  id: string;
+  status: string;
+  training_history: string | null;
+  lifestyle_occupation: string | null;
+  lifestyle_sleep_hours: string | number | null;
+  lifestyle_smoking: string | null;
+  completed_at: string | null;
+};
 type Journey = { steps: { key: string; state: string }[]; next: string | null };
 
 let seq = 0;
@@ -54,24 +68,31 @@ test.describe('Client interview and journey', () => {
     await expect(page.getByRole('button', { name: /Complete PAR-Q/ })).toBeVisible();
   });
 
-  test('a completed interview is saved, read back, and continues to the assessment', async ({ page }) => {
+  test('the selects store canonical values, and completing continues to the assessment', async ({ page }) => {
     await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
-    const history = page.getByLabel('Training history');
-    await expect(history).toBeVisible({ timeout: 25_000 });
-    await history.fill('Played football at college; nothing for two years.');
-    await page.getByLabel('Motivation & goals').fill('Wants to run a 10k in March.');
+    const occupation = page.getByLabel('Type of work');
+    await expect(occupation).toBeVisible({ timeout: 25_000 });
+
+    // A label is never what gets stored: "7 – 8 hours" is 7.5, "Active job"
+    // is active_job.
+    await occupation.selectOption('active_job');
+    await page.getByLabel('Sleep per night').selectOption('7.5');
+    await page.getByLabel('Alcohol').selectOption('weekly');
     await page.getByRole('button', { name: 'Complete interview' }).click();
 
     // The UI's own success state.
     await expect(page.getByRole('heading', { name: 'Interview complete' })).toBeVisible({ timeout: 20_000 });
 
-    // The assertion with teeth: the row, as typed, completed once.
+    // The assertion with teeth: the row, in the canonical vocabulary.
     await expect.poll(async () => (await interviews()).length, { timeout: 15_000 }).toBe(1);
     const [row] = await interviews();
     expect(row.status).toBe('completed');
     expect(row.completed_at).toBeTruthy();
-    expect(row.training_history).toBe('Played football at college; nothing for two years.');
-    expect(row.motivation).toBe('Wants to run a 10k in March.');
+    expect(row.lifestyle_occupation).toBe('active_job');
+    expect(String(row.lifestyle_sleep_hours)).toBe('7.5');
+    expect(row.lifestyle_smoking).toBeNull();
+    // This form never writes the free-text columns.
+    expect(row.training_history).toBeNull();
 
     const journey = (await apiGet<{ data: Journey }>(`/api/pt-os/clients/${clientId}/journey`, token)).data;
     expect(journey.steps.find((s) => s.key === 'interview')?.state).toBe('done');
@@ -80,26 +101,42 @@ test.describe('Client interview and journey', () => {
     await expect(page).toHaveURL(new RegExp(`/pt-os/assessment\\?client_id=${clientId}`));
   });
 
-  test('a draft is saved, resumed, and completed as the same interview', async ({ page }) => {
+  test('a draft is saved, resumed on reload, and completed without erasing older answers', async ({ page }) => {
+    // An interview that predates this form: a free-text answer already saved.
+    const seeded = await apiPost<{ data: { id: string } }>(
+      `/api/pt-os/clients/${clientId}/interviews`, token,
+      { training_history: 'Played football at college; nothing for two years.', status: 'draft' },
+    );
+    expect(seeded.status, JSON.stringify(seeded.body)).toBe(201);
+
     await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
-    await expect(page.getByLabel('Lifestyle')).toBeVisible({ timeout: 25_000 });
-    await page.getByLabel('Lifestyle').fill('Desk job, 6 hours of sleep.');
+    const smoking = page.getByLabel('Smoking');
+    await expect(smoking).toBeVisible({ timeout: 25_000 });
+    await smoking.selectOption('daily');
     await page.getByRole('button', { name: 'Save draft' }).click();
     await expect.poll(async () => (await interviews())[0]?.status, { timeout: 15_000 }).toBe('draft');
 
+    // Still the only interview, and the old free-text answer survived a save
+    // from the new form.
+    let rows = await interviews();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].lifestyle_smoking).toBe('daily');
+    expect(rows[0].training_history).toBe('Played football at college; nothing for two years.');
+
     await page.reload();
-    await expect(page.getByLabel('Lifestyle')).toHaveValue('Desk job, 6 hours of sleep.', { timeout: 25_000 });
+    await expect(page.getByLabel('Smoking')).toHaveValue('daily', { timeout: 25_000 });
     await page.getByRole('button', { name: 'Complete interview' }).click();
     await expect(page.getByRole('heading', { name: 'Interview complete' })).toBeVisible({ timeout: 20_000 });
 
-    const rows = await interviews();
+    rows = await interviews();
     expect(rows, 'the draft was completed, not duplicated').toHaveLength(1);
     expect(rows[0].status).toBe('completed');
+    expect(rows[0].training_history).toBe('Played football at college; nothing for two years.');
   });
 
   test('an empty interview cannot be completed', async ({ page }) => {
     await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
-    await expect(page.getByLabel('Training history')).toBeVisible({ timeout: 25_000 });
+    await expect(page.getByLabel('Type of work')).toBeVisible({ timeout: 25_000 });
     await expect(page.getByRole('button', { name: 'Complete interview' })).toBeDisabled();
     expect(await interviews()).toHaveLength(0);
   });
