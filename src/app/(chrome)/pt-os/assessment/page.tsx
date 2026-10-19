@@ -17,7 +17,7 @@ import { downloadAssessmentPdf } from '@/lib/assessment-pdf';
 import {
   computeAge, calcBmi, classifyBp, calcVo2MaxRockport, calcVo2MaxCooper,
   calcVo2MaxBruce, calcHarvardPei, classifyHarvardPei, classifyVo2Max, classifyStepTestRecovery,
-  calc1RM, classifyStrength, classifyEndurance, classifyFlexibilityScore,
+  calc1RM, classifyStrength, classifyEndurance,
   scoreCategory, scoreBodyComposition, scoreHealthRisk, scoreTestBattery, computeOverallScore,
   scoreNum, scoresFromAssessmentRow,
 } from '@/lib/fitness-calculations';
@@ -35,6 +35,8 @@ import StepCardio from '@/components/pt-os/fitness-testing/StepCardio';
 import StepStrength from '@/components/pt-os/fitness-testing/StepStrength';
 import StepEndurance from '@/components/pt-os/fitness-testing/StepEndurance';
 import StepFlexibility from '@/components/pt-os/fitness-testing/StepFlexibility';
+import { FLEXIBILITY_PROTOCOLS, FLEXIBILITY_TEST_ORDER } from '@/components/pt-os/fitness-testing/flexibility/protocol-content';
+import { buildFlexibilityPayload, formTest, legacyMobilityScore } from '@/lib/flexibility-protocol';
 import FitnessDashboard, { type FitnessScores } from '@/components/pt-os/fitness-testing/FitnessDashboard';
 import { ScreeningStatusCard, ScreeningWarningsNotice } from '@/components/pt-os/fitness-testing/ScreeningStatusCard';
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
@@ -116,8 +118,27 @@ function validateStep(id: StepId, form: AssessmentFormData, isBeginner: boolean)
   // Any exercise may be tested, but exactly 2 are required to complete the step.
   if (id === 5) return (isBeginner || (form.strengthExercise && form.strengthExercise2)) ? undefined : 'Please select both strength tests.';
   if (id === 6) return (form.enduranceTestType && form.enduranceTestType2) ? undefined : 'Please select both endurance tests.';
-  // Same battery pattern — any flexibility test may be performed, 2 are required.
-  if (id === 7) return (form.flexibilityTestType && form.flexibilityTestType2) ? undefined : 'Please select both flexibility tests.';
+  // The K11 battery: every one of the four tests either recorded, or recorded
+  // as not performed with a reason — and an override reason for the assessment
+  // whenever any of them is not performed.
+  if (id === 7) {
+    const f = form.flexibility;
+    // A legacy row is posted back exactly as stored; there is nothing to validate.
+    if (!f.recording) return undefined;
+    const notRecorded = FLEXIBILITY_TEST_ORDER.filter((k) => { const t = formTest(f, k); return !t.completed && !t.unable; });
+    if (notRecorded.length) {
+      return `${FLEXIBILITY_PROTOCOLS[notRecorded[0]].name} is not complete — record its measurements and mark it complete, or record why it could not be performed.`;
+    }
+    const reasonMissing = FLEXIBILITY_TEST_ORDER.filter((k) => formTest(f, k).unable && !formTest(f, k).unableReason.trim());
+    if (reasonMissing.length) {
+      return `${FLEXIBILITY_PROTOCOLS[reasonMissing[0]].name}: enter the reason it could not be performed.`;
+    }
+    if (!f.overrideReason.trim()
+      && FLEXIBILITY_TEST_ORDER.some((k) => { const t = formTest(f, k); return t.unable || !t.completed; })) {
+      return 'Some flexibility tests were not performed — enter the override reason for the assessment.';
+    }
+    return undefined;
+  }
   return undefined;
 }
 
@@ -276,9 +297,10 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     const enduranceCategory2 = classifyEndurance(form.enduranceTestType2 || null, enduranceValue2, gender);
     const enduranceScore = scoreTestBattery(scoreCategory(enduranceCategory), scoreCategory(enduranceCategory2));
 
-    const flexCategory = classifyFlexibilityScore(n(form.flexibilityScore));
-    const flexCategory2 = classifyFlexibilityScore(n(form.flexibilityScore2));
-    const mobilityScore = scoreTestBattery(scoreCategory(flexCategory), scoreCategory(flexCategory2));
+    // A v3 battery has no single mobility score — four incompatible units, so
+    // the derived columns stay null on purpose. Only a legacy {test1,test2}
+    // blob still yields the old composite.
+    const mobilityScore = form.flexibility.recording ? null : legacyMobilityScore(form.flexibility.legacy);
 
     const overallScore = computeOverallScore({
       bodyComposition: bodyCompositionScore, endurance: enduranceScore,
@@ -391,22 +413,11 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
           test2: { reps: n(form.enduranceReps2) ?? undefined, durationSec: n(form.enduranceDurationSec2) ?? undefined },
         },
 
-        flexibility_test_data: {
-          test1: {
-            testType: form.flexibilityTestType || undefined,
-            customTestType: form.flexibilityTestType === 'Custom' ? (form.flexibilityCustomTest || undefined) : undefined,
-            left: n(form.flexibilityLeft) ?? undefined, right: n(form.flexibilityRight) ?? undefined,
-            score: n(form.flexibilityScore) ?? undefined, rom: n(form.flexibilityRom) ?? undefined,
-            limitationNotes: form.flexibilityLimitationNotes || undefined,
-          },
-          test2: {
-            testType: form.flexibilityTestType2 || undefined,
-            customTestType: form.flexibilityTestType2 === 'Custom' ? (form.flexibilityCustomTest2 || undefined) : undefined,
-            left: n(form.flexibilityLeft2) ?? undefined, right: n(form.flexibilityRight2) ?? undefined,
-            score: n(form.flexibilityScore2) ?? undefined, rom: n(form.flexibilityRom2) ?? undefined,
-            limitationNotes: form.flexibilityLimitationNotes2 || undefined,
-          },
-        },
+        // v3 rows post the RAW battery — the server derives, validates and
+        // stamps provenance. Legacy rows post the stored blob back untouched.
+        flexibility_test_data: form.flexibility.recording
+          ? buildFlexibilityPayload(form.flexibility)
+          : form.flexibility.legacy,
       };
 
       if (bpUnsafe) {
@@ -514,6 +525,13 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
   const sortedHistory = [...history].sort((a, b) => String(b.assessment_date ?? '').localeCompare(String(a.assessment_date ?? '')));
   const initialAssessment = sortedHistory[sortedHistory.length - 1];
   const latestAssessment = sortedHistory[0];
+  // Most recent saved flexibility result, for the step's comparison line. The
+  // row being edited is skipped so a test never compares to itself.
+  const previousFlexibility = (() => {
+    const row = sortedHistory.find((a) => String(a.id) !== editingId && a.flexibility_test_data);
+    if (!row) return null;
+    return { date: String(row.assessment_date ?? '').slice(0, 10), data: row.flexibility_test_data };
+  })();
 
   return (
     <PageContainer>
@@ -588,7 +606,18 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
             {step === 4 && <StepCardio form={form} set={set} age={age} gender={gender} error={errors.cardio} />}
             {step === 5 && <StepStrength form={form} set={set} gender={gender} error={errors.strength} isBeginner={isBeginner} />}
             {step === 6 && <StepEndurance form={form} set={set} gender={gender} error={errors.endurance} />}
-            {step === 7 && <StepFlexibility form={form} set={set} error={errors.flexibility} />}
+            {step === 7 && (
+              <StepFlexibility
+                form={form}
+                set={set}
+                age={age}
+                gender={gender}
+                clientName={clientName}
+                previous={previousFlexibility}
+                onSaveDraft={handleSaveDraft}
+                error={errors.flexibility}
+              />
+            )}
           </m.div>
         ) : (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
