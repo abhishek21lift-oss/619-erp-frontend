@@ -126,23 +126,17 @@ describe('no page draws a container box around its own title', () => {
     expect(s).toContain('<PageHero');
   });
 
-  // pt-os/leads is deliberately absent from the list above. It renders
-  // components/pt-os/leads/LeadHero instead of PageHero, because the design it
-  // has to match cannot be expressed through PageHero's API: the heading is
-  // fixed at 21px on a phone where the target is ~30px, and the actions slot
-  // sits BESIDE the title from `sm` up where the target stacks them full-width
-  // inside the card. PageHero is shared by every page, so changing it to suit
-  // one of them would change all of them.
-  //
-  // It is exempt from THAT assertion only. It still has to satisfy the slab
-  // header, gutter and page-main checks above, and it still uses the shared
-  // PageContainer — which is the part of the shell that actually matters for
-  // alignment and the bottom-nav offset.
-  it('pt-os/leads uses a Leads-specific hero, and still the shared container', () => {
+  // pt-os/leads used to be deliberately absent from the list above: it
+  // rendered components/pt-os/leads/LeadHero — a Leads-only saturated card,
+  // because the design it had to match could not be expressed through
+  // PageHero's API. It is now on the shared compact hero like every other
+  // list page, so the exception is gone.
+  it('pt-os/leads uses the shared compact hero and container', () => {
     const s = src('app', 'pt-os', 'leads', 'page.tsx');
-    expect(s).toContain('<LeadHero');
+    expect(s).toContain('<PageHero');
+    expect(s).toContain('compact');
     expect(s).toContain('<PageContainer>');
-    expect(s).not.toContain('<PageHero');
+    expect(s).not.toContain('<LeadHero');
   });
 
   it.each(pages)('%s/%s/%s is off the double-padding legacy scaffold', (...p) => {
