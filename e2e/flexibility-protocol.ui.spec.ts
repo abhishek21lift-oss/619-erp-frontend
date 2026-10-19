@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Locator } from '@playwright/test';
-import { gotoApp, apiToken, apiGet, apiPost, apiDelete } from './helpers/session';
+import { gotoApp, apiToken, apiGet, apiPost, apiPatch, apiDelete } from './helpers/session';
 
 /**
  * Journey — the K11 four-test flexibility battery on Step 7 of the fitness
@@ -49,6 +49,9 @@ let seq = 0;
 const uniqueName = () => `E2E-FLEX-${Date.now().toString(36).toUpperCase()}-${++seq}`;
 const uniqueMobile = () => `9${String(Date.now() + ++seq).slice(-9)}`;
 
+/** The API only accepts an image data URL as a signature. */
+const SIGNATURE_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+
 /** The four tests, in the protocol's fixed order. */
 const NAMES = ['Quadriceps', 'Hamstrings 70° Reach', 'Hip Flexors — Thomas', 'YMCA Sit and Reach'] as const;
 
@@ -78,11 +81,25 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
     });
     expect(parq.status, JSON.stringify(parq.body)).toBeLessThan(300);
 
-    const consent = await apiPost('/api/pt-os/informed-consent', token, {
+    const consent = await apiPost<{ data: { id: string } }>('/api/pt-os/informed-consent', token, {
       client_id: clientId, full_name: name, mobile,
       consent_date: new Date().toISOString().slice(0, 10),
     });
-    expect(consent.status, JSON.stringify(consent.body)).toBeLessThan(300);
+    expect(consent.status, JSON.stringify(consent.body)).toBe(201);
+    // A create is only a DRAFT. The gate that guards fitness testing requires
+    // `status === 'completed'` (screeningGate.missingScreening), so the consent
+    // must be acknowledged and signed by both parties — otherwise the save is
+    // refused with 403 SCREENING_REQUIRED and the battery is never stored.
+    const consentId = consent.body.data.id;
+    const acked = await apiPatch(`/api/pt-os/informed-consent/${consentId}`, token, {
+      acknowledgements: { understands_confidentiality: true, voluntary_participation: true, final_declaration: true },
+      exercise_consent_checked: true,
+    });
+    expect(acked.status, JSON.stringify(acked.body)).toBe(200);
+    for (const signer of ['client', 'trainer']) {
+      const signed = await apiPost(`/api/pt-os/informed-consent/${consentId}/sign`, token, { signer, signature: SIGNATURE_PNG });
+      expect(signed.status, JSON.stringify(signed.body)).toBe(200);
+    }
   });
 
   test.afterAll(async () => {
@@ -251,7 +268,15 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
 
     // ── Save through the wizard, then read the row back ────────────────────
     await page.getByRole('button', { name: 'Review', exact: true }).click();
+    // Assert the server's answer, not only the screen: a refused save (screening
+    // gate, validation, 500) shows a toast and never reaches the success panel,
+    // and without this the failure says nothing about why.
+    const saved = page.waitForResponse(
+      (r) => r.url().includes('/api/progress/assessments') && r.request().method() === 'POST',
+    );
     await page.getByRole('button', { name: 'Save Assessment', exact: true }).click();
+    const savedRes = await saved;
+    expect(savedRes.status(), `POST /api/progress/assessments → ${await savedRes.text()}`).toBe(201);
     await expect(page.getByText('Assessment Saved')).toBeVisible({ timeout: 20_000 });
 
     await expect.poll(async () => (await batteries()).length, { timeout: 15_000 }).toBe(1);

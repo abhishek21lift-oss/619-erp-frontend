@@ -236,8 +236,17 @@ export async function apiPut<T = unknown>(
   return writeApi<T>('PUT', path, token, body);
 }
 
+/** PATCH through the API — partial updates while arranging a precondition. */
+export async function apiPatch<T = unknown>(
+  path: string,
+  token: string,
+  body: unknown,
+): Promise<{ status: number; body: T }> {
+  return writeApi<T>('PATCH', path, token, body);
+}
+
 async function writeApi<T>(
-  method: 'POST' | 'PUT',
+  method: 'POST' | 'PUT' | 'PATCH',
   path: string,
   token: string,
   body: unknown,
