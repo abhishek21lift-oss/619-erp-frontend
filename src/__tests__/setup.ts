@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import React from 'react';
 import { webcrypto } from 'node:crypto';
 
 if (typeof globalThis.crypto === 'undefined') {
@@ -65,6 +66,21 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
 // unimplemented. Recording the call is enough — a test asserting that a
 // far-right tab gets scrolled into view cares that it was asked for, not that
 // pixels moved.
+// Recharts' ResponsiveContainer reads layout from ResizeObserver. In jsdom
+// the observed element has zero size by default, which crashes chart
+// renders with "width(0) and height(0)" errors. Give chart containers a
+// non-zero default so sparklines render in tests.
+vi.mock('recharts', async () => {
+  const actual = await vi.importActual<typeof import('recharts')>('recharts');
+  return {
+    ...actual,
+    ResponsiveContainer: ({ children }: { children: React.ReactNode }) => {
+      // No JSX syntax allowed in .ts setup file; use React.createElement.
+      return React.createElement('div', { style: { width: 200, height: 32 }, 'data-testid': 'mock-responsive-container' }, children);
+    },
+  };
+});
+
 if (typeof Element !== 'undefined' && !Element.prototype.scrollTo) {
   Element.prototype.scrollTo = function scrollTo() { /* no layout to scroll */ };
 }
