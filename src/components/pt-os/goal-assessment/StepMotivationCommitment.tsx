@@ -3,6 +3,8 @@
 import { Flame, Frown, Laugh, Meh, Smile } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Slider } from '@/components/ui';
+import { amber, emerald, gray, red } from '@/lib/palette';
+import GoalStepCard from './GoalStepCard';
 import type { GoalFormData } from './types';
 
 /**
@@ -23,37 +25,33 @@ function motivationFace(level: number): LucideIcon {
 // colour in it no longer reads as a warning, and this drives the motivation
 // face as well as the bar.
 function commitmentColor(level: number): string {
-  if (level <= 3) return '#ef4444';
-  if (level <= 7) return '#F59E0B';
-  return '#10b981';
+  if (level <= 3) return red[500];
+  if (level <= 7) return amber[500];
+  return emerald[500];
 }
 
 interface StepMotivationCommitmentProps {
   form: GoalFormData;
   set: <K extends keyof GoalFormData>(key: K, val: GoalFormData[K]) => void;
+  step: number;
 }
 
-export function StepMotivationCommitment({ form, set }: StepMotivationCommitmentProps) {
+export function StepMotivationCommitment({ form, set, step }: StepMotivationCommitmentProps) {
   const motivation = parseInt(form.motivationLevel, 10) || 1;
   const commitment = parseInt(form.commitmentLevel, 10) || 1;
+  // Confidence is asked separately from motivation on purpose: a client can
+  // badly want the result and still not believe they can get it, and that
+  // gap is what the plan has to close rather than the desire.
+  const confidence = parseInt(form.confidenceLevel, 10) || 1;
+
+  const gap = motivation - confidence;
 
   return (
-    <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-      <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
-      <div className="p-7 sm:p-10 space-y-8">
-        <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <Flame size={20} color="#1CA3F9" />
-          </div>
-          <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Motivation &amp; Commitment</h2>
-            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 6 of 8 — how ready is this client, really?</p>
-          </div>
-        </div>
-
+    <GoalStepCard icon={Flame} title="Motivation & Confidence" step={step} hint="how ready is this client, really?">
+      <div className="space-y-8">
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Motivation Level</p>
+            <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: gray[500] }}>Motivation Level</p>
             {(() => {
               const Face = motivationFace(motivation);
               return <Face size={24} strokeWidth={1.75} style={{ color: commitmentColor(motivation) }} />;
@@ -65,14 +63,29 @@ export function StepMotivationCommitment({ form, set }: StepMotivationCommitment
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Commitment Level</p>
+            <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: gray[500] }}>Confidence Level</p>
+            <span className="text-[12px] font-[760]" style={{ color: commitmentColor(confidence) }}>{confidence} / 10</span>
+          </div>
+          <Slider label="" ariaLabel="Confidence Level" value={confidence} min={1} max={10} onChange={(v) => set('confidenceLevel', String(v))}
+            scaleLabels={['1 · Not Confident', '5 · Fairly Confident', '10 · Certain']} />
+          {gap >= 3 && (
+            <p className="mt-3 rounded-[12px] px-3.5 py-2.5 text-[12.5px]" role="status"
+              style={{ background: 'rgba(217,119,6,0.10)', color: gray[800], border: '1px solid rgba(217,119,6,0.35)' }}>
+              Wants this a lot, but is not sure they can do it. The barrier plans on the next step are where that gap gets closed.
+            </p>
+          )}
+        </div>
+
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: gray[500] }}>Commitment Level</p>
             <span className="h-3 w-3 rounded-full" style={{ background: commitmentColor(commitment) }} />
           </div>
           <Slider label="" ariaLabel="Commitment Level" value={commitment} min={1} max={10} onChange={(v) => set('commitmentLevel', String(v))}
             scaleLabels={['1 · Low', '5 · Moderate', '10 · Fully Committed']} />
         </div>
       </div>
-    </div>
+    </GoalStepCard>
   );
 }
 

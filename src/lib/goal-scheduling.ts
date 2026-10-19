@@ -26,7 +26,7 @@ function buildSessions(split: string, days: number, goal: string, _experience: s
   return Array.from({ length: days }, (_, i) => ({ name: `Session ${i + 1}`, focus: 'General fitness' }));
 }
 
-export function recommendTrainingSplit(trainingDays: number | string, opts: { goal?: string; experience?: string } = {}): TrainingSchedule {
+export function recommendTrainingSplit(trainingDays: number | string, opts: { goal?: string; experience?: string; preferredDays?: string[] } = {}): TrainingSchedule {
   const days = Math.max(1, Math.min(7, parseInt(String(trainingDays), 10) || 3));
   const goal = (opts.goal || '').toLowerCase();
   const experience = (opts.experience || 'beginner').toLowerCase();
@@ -50,10 +50,27 @@ export function recommendTrainingSplit(trainingDays: number | string, opts: { go
   }
   unique.sort((a, b) => a - b);
 
+  // Days the client actually nominated win over the spacing suggestion: a
+  // schedule that puts a session on a day they cannot train is not a
+  // recommendation. Extra nominations beyond the chosen frequency are
+  // dropped; a short list is padded from the suggestion above.
+  const preferred = (opts.preferredDays || [])
+    .map((name) => DAY_NAMES.findIndex((d) => d.toLowerCase() === String(name).toLowerCase()))
+    .filter((idx) => idx >= 0);
+  let placed = unique;
+  if (preferred.length) {
+    const chosen = [...new Set(preferred)].sort((a, b) => a - b).slice(0, days);
+    for (const idx of unique) {
+      if (chosen.length >= days) break;
+      if (!chosen.includes(idx)) chosen.push(idx);
+    }
+    placed = chosen.sort((a, b) => a - b);
+  }
+
   const sessions = buildSessions(split, days, goal, experience);
   const calendar: ScheduleDay[] = DAY_NAMES.map((name, idx) => {
-    const isTraining = unique.includes(idx);
-    const session = isTraining ? sessions[unique.indexOf(idx)] : null;
+    const isTraining = placed.includes(idx);
+    const session = isTraining ? sessions[placed.indexOf(idx)] : null;
     return {
       dayIndex: idx, dayName: name,
       type: isTraining ? 'training' : 'rest',

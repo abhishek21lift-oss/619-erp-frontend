@@ -5,7 +5,10 @@ import {
   Dumbbell, HelpCircle, Pizza, Users, Wind,
 } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
+import GoalStepCard from './GoalStepCard';
 import MultiSelectChips from '@/components/pt-os/MultiSelectChips';
+import { blue, gray } from '@/lib/palette';
+import type { BarrierPlan } from '@/lib/goal-plan';
 import type { GoalFormData } from './types';
 
 export const CHALLENGE_OPTIONS = [
@@ -27,24 +30,29 @@ export const CHALLENGE_OPTIONS = [
 interface StepChallengesProps {
   form: GoalFormData;
   set: <K extends keyof GoalFormData>(key: K, val: GoalFormData[K]) => void;
+  step: number;
   error?: string;
 }
 
-export function StepChallenges({ form, set, error }: StepChallengesProps) {
-  return (
-    <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-      <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
-      <div className="p-7 sm:p-10 space-y-7">
-        <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <HelpCircle size={20} color="#1CA3F9" />
-          </div>
-          <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Goal Importance &amp; Challenges</h2>
-            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 7 of 8 — the psychology behind the plan.</p>
-          </div>
-        </div>
+/** The challenges the client named, including a typed "other". */
+export function selectedChallenges(challenges: Pick<GoalFormData, 'biggestChallenges' | 'challengeOther'>): string[] {
+  const other = challenges.challengeOther.trim();
+  return other ? [...challenges.biggestChallenges, other] : [...challenges.biggestChallenges];
+}
 
+export function StepChallenges({ form, set, step, error }: StepChallengesProps) {
+  const challenges = selectedChallenges(form);
+
+  const planFor = (challenge: string) => form.barrierPlans.find((p) => p.challenge === challenge)?.plan ?? '';
+  const setPlan = (challenge: string, plan: string) => {
+    const rest = form.barrierPlans.filter((p) => p.challenge !== challenge);
+    const next: BarrierPlan[] = plan ? [...rest, { challenge, plan }] : rest;
+    set('barrierPlans', next);
+  };
+
+  return (
+    <GoalStepCard icon={HelpCircle} title="Challenges & Barriers" step={step} hint="what gets in the way, and the plan for it">
+      <div className="space-y-7">
         <FloatInput
           label="Why do you want to achieve this goal?" multiline autoGrow maxLength={2000}
           value={form.motivationReason} onChange={(v) => set('motivationReason', v)}
@@ -52,15 +60,43 @@ export function StepChallenges({ form, set, error }: StepChallengesProps) {
         />
 
         <div>
-          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Biggest Challenge</p>
+          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: gray[500] }}>Biggest Challenge</p>
           <MultiSelectChips value={form.biggestChallenges} onChange={(v) => set('biggestChallenges', v)} options={CHALLENGE_OPTIONS} />
           <div className="mt-3 max-w-sm">
             <FloatInput label="Other" maxLength={200} value={form.challengeOther} onChange={(v) => set('challengeOther', v)} />
           </div>
           {error && <p className="mt-2 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
         </div>
+
+        {/* A named barrier with no plan is the same plan as last time. One
+            line per challenge, optional — but if it is written, it is saved. */}
+        {challenges.length > 0 && (
+          <div className="rounded-[18px] p-5" style={{ background: gray[50], border: `1px solid ${gray[200]}` }}>
+            <div className="mb-4">
+              <p className="text-[13px] font-[760]" style={{ color: gray[800] }}>Mitigation plan</p>
+              <p className="text-[12px] mt-1" style={{ color: gray[500] }}>
+                What will the client actually do when this gets in the way? One line each.
+              </p>
+            </div>
+            <div className="space-y-4">
+              {challenges.map((c) => (
+                <div key={c}>
+                  {/* The challenge name is a heading, not a <label>: the field
+                      below already has its own accessible name, and a label
+                      pointing at an id that does not exist names nothing. */}
+                  <p className="mb-1.5 text-[12px] font-[700]" style={{ color: blue[700] }}>{c}</p>
+                  <FloatInput
+                    label="" ariaLabel={`Plan for ${c}`} maxLength={300}
+                    value={planFor(c)} onChange={(v) => setPlan(c, v)}
+                    placeholder="e.g. two 30-minute walks on office days"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </GoalStepCard>
   );
 }
 
