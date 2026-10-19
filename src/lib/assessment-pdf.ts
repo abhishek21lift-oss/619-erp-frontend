@@ -7,6 +7,8 @@
 
 import type { AiFitnessTestAnalysis } from './api';
 import { printWindowCloseButtonHtml } from './printWindowChrome';
+import { deriveFlexibility } from './flexibility-protocol';
+import type { FlexibilityDerived, FlexibilityRecorded } from './flexibility-protocol';
 
 type Row = Record<string, unknown>;
 
@@ -51,6 +53,78 @@ function section(title: string, bodyHtml: string): string {
 
 function list(items: string[]): string {
   return `<ul>${items.map((i) => `<li>${i}</li>`).join('')}</ul>`;
+}
+
+const FLEX_STATUS_TEXT: Record<FlexibilityDerived['overall_status'], string> = {
+  all_tests_recorded: 'All tests recorded',
+  follow_up_recommended: 'Follow-up recommended',
+  completed_with_override: 'Completed with override',
+  incomplete: 'Assessment incomplete',
+};
+
+/**
+ * Step 7 is either the current K11 four-test battery (v3 payload) or the old
+ * two-test blob. A v3 row deliberately has no single mobility score, so the
+ * block reports each test's raw values, interpretation and flags instead of
+ * the null derived columns. Legacy rows render exactly as before.
+ */
+function flexibilitySection(assessment: Row): string {
+  const blob = assessment.flexibility_test_data
+    && typeof assessment.flexibility_test_data === 'object'
+    && !Array.isArray(assessment.flexibility_test_data)
+    ? assessment.flexibility_test_data as Record<string, unknown>
+    : null;
+
+  if (!blob || blob.protocol_version == null) {
+    return section('Flexibility &amp; Mobility', [
+      field('Test 1 Classification', v(assessment.flexibility_category)),
+      field('Test 2 Classification', v(assessment.flexibility_category_2)),
+      field('Asymmetry Detected', assessment.has_asymmetry ? 'Yes' : 'No'),
+      field('Combined Flexibility Score', scoreLabel(assessment.mobility_score_computed)),
+    ].join(''));
+  }
+
+  const d = deriveFlexibility(blob as FlexibilityRecorded);
+  const { quadriceps: q, hamstrings: h, hip_flexors: x, sit_and_reach: s } = d.tests;
+  const yn = (b: boolean | null): string => (b == null ? '—' : b ? 'Yes' : 'No');
+  const sideName = (side: 'left' | 'right') => (side === 'left' ? 'L' : 'R');
+
+  const quad = q.unable_to_complete ? `Not performed: ${e(q.unable_reason ?? '')}`
+    : (['left', 'right'] as const).map((side) =>
+      `${sideName(side)} contact ${yn(q.sides[side].contact)}, gap ${v(q.sides[side].distance_cm, ' cm')}, pain ${yn(q.sides[side].pain)}, pelvis ${yn(q.sides[side].pelvic_compensation)}`,
+    ).join(' · ') + ` · ${q.overall_interpretation ?? 'Not recorded'}`;
+
+  const ham = h.unable_to_complete ? `Not performed: ${e(h.unable_reason ?? '')}`
+    : (['left', 'right'] as const).map((side) =>
+      `${sideName(side)} ${v(h.sides[side].hip_flexion_deg, '°')} (${h.sides_interpretation[side] ?? 'not recorded'}${h.sides_validity[side] === 'invalid_repeat' ? ', repeat' : ''})`,
+    ).join(' · ');
+
+  const hip = x.unable_to_complete ? `Not performed: ${e(x.unable_reason ?? '')}`
+    : (['left', 'right'] as const).map((side) =>
+      `${sideName(side)} thigh ${v(x.sides[side].thigh_position)} (${x.sides_interpretation[side] ?? 'not recorded'})`,
+    ).join(' · ');
+
+  const sit = s.unable_to_complete ? `Not performed: ${e(s.unable_reason ?? '')}`
+    : s.score_inches == null
+      ? 'No valid attempt recorded'
+      : `Best ${v(s.best_raw_inches, ' in')} − ${v(s.zero_point_inches, ' in')} = ${v(s.score_inches, ' in')}`;
+
+  const overrideReason = blob.override && typeof blob.override === 'object'
+    && typeof (blob.override as Row).reason === 'string'
+    ? String((blob.override as Row).reason)
+    : '';
+
+  return section('Flexibility &amp; Mobility', [
+    field('Quadriceps (prone heel-to-buttock)', quad),
+    field('Hamstrings 70° Reach', ham),
+    field('Reference Range', h.unable_to_complete ? '—' : `${v(h.reference.min_deg, '°')}–${v(h.reference.max_deg, '°')} · ${h.reference.note}`),
+    field('Hip Flexors (Thomas Test)', hip),
+    field('YMCA Sit and Reach', sit),
+    field('Norm', s.unable_to_complete ? '—' : s.norm.message),
+    field('Asymmetry Detected', d.has_asymmetry ? 'Yes' : 'No'),
+    field('Overall Status', FLEX_STATUS_TEXT[d.overall_status]),
+    ...(d.override_used ? [field('Override Reason', e(overrideReason))] : []),
+  ].join(''));
 }
 
 // Exported for print-popup-xss.test.ts. The DOM assertions there are the only
@@ -123,12 +197,7 @@ export function generateAssessmentReportHTML(assessment: Row, clientName: string
     field('Combined Endurance Score', scoreLabel(assessment.endurance_score_computed)),
   ].join(''));
 
-  const flexibility = section('Flexibility &amp; Mobility', [
-    field('Test 1 Classification', v(assessment.flexibility_category)),
-    field('Test 2 Classification', v(assessment.flexibility_category_2)),
-    field('Asymmetry Detected', assessment.has_asymmetry ? 'Yes' : 'No'),
-    field('Combined Flexibility Score', scoreLabel(assessment.mobility_score_computed)),
-  ].join(''));
+  const flexibility = flexibilitySection(assessment);
 
   const dashboard = `<div class="dashboard">
     <div class="dscore"><label>Overall Fitness Score</label><div class="big">${v(assessment.overall_fitness_score)}</div></div>

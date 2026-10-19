@@ -84,6 +84,9 @@ export const JOURNEYS = {
     'src/app/(chrome)/pt-os/workout-generator/page.tsx',
     'src/app/(chrome)/pt-os/macrocycle/page.tsx',
   ],
+  'e2e/flexibility-protocol.ui.spec.ts': [
+    'src/app/(chrome)/pt-os/assessment/page.tsx',
+  ],
 };
 
 /** Every form file some journey claims to cover. */

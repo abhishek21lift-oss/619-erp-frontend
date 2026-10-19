@@ -2,11 +2,12 @@
 // page and every step component so they don't depend on each other.
 
 import { todayISO } from '@/lib/forms/domain';
+import { flexibilityFormFromRecorded, initFlexibilityForm, isRecordedBattery } from '@/lib/flexibility-protocol';
+import type { FlexibilityFormState } from '@/lib/flexibility-protocol';
 
 export type AssessmentType = 'initial' | 'week_4' | 'week_8' | 'week_12' | 'monthly' | 'quarterly' | 'follow_up' | 'custom';
 export type CardioTestType = 'YMCA 3-Minute Step Test' | 'Rockport 1-Mile Walk' | 'Cooper 12-Minute Run' | 'Bruce Protocol' | 'Harvard Step Test' | 'Custom';
 export type EnduranceTestType = 'Push Up Test' | 'Curl Up Test' | 'Wall Sit' | 'Plank' | 'Bodyweight Squat' | 'Custom';
-export type FlexibilityTestType = 'Hamstrings' | 'Quadriceps' | 'Hip Flexors' | 'Shoulder Reach' | 'Sit and Reach' | 'Custom';
 export type StrengthExercise = 'Bench Press' | 'Leg Press' | 'Squat' | 'Deadlift' | 'Shoulder Press' | 'Custom Exercise';
 
 export interface AssessmentFormData {
@@ -59,17 +60,9 @@ export interface AssessmentFormData {
   enduranceValueType2: 'reps' | 'time';
   enduranceReps2: string; enduranceDurationSec2: string;
 
-  // Step 7 — Flexibility (two distinct tests required — same battery
-  // pattern as Muscular Endurance/Strength: trainer can perform any of the
-  // available tests, but exactly 2 are needed to complete the step)
-  flexibilityTestType: FlexibilityTestType | '';
-  flexibilityCustomTest: string;
-  flexibilityLeft: string; flexibilityRight: string; flexibilityScore: string;
-  flexibilityLimitationNotes: string; flexibilityRom: string;
-  flexibilityTestType2: FlexibilityTestType | '';
-  flexibilityCustomTest2: string;
-  flexibilityLeft2: string; flexibilityRight2: string; flexibilityScore2: string;
-  flexibilityLimitationNotes2: string; flexibilityRom2: string;
+  // Step 7 — Flexibility: the K11 four-test battery (v3 payload), or a legacy
+  // `{test1,test2}` blob kept read-only for the rows still stored that way.
+  flexibility: FlexibilityFormState;
 }
 
 export interface FormErrors {
@@ -117,12 +110,7 @@ export function initAssessmentForm(): AssessmentFormData {
     strengthWeightKg2: '', strengthReps2: '', strengthFormula2: 'epley', strengthDirect1RM2: '',
     enduranceTestType: '', enduranceValueType: 'reps', enduranceReps: '', enduranceDurationSec: '',
     enduranceTestType2: '', enduranceValueType2: 'reps', enduranceReps2: '', enduranceDurationSec2: '',
-    flexibilityTestType: '', flexibilityCustomTest: '',
-    flexibilityLeft: '', flexibilityRight: '', flexibilityScore: '',
-    flexibilityLimitationNotes: '', flexibilityRom: '',
-    flexibilityTestType2: '', flexibilityCustomTest2: '',
-    flexibilityLeft2: '', flexibilityRight2: '', flexibilityScore2: '',
-    flexibilityLimitationNotes2: '', flexibilityRom2: '',
+    flexibility: initFlexibilityForm(),
   };
 }
 
@@ -133,7 +121,6 @@ export function initAssessmentForm(): AssessmentFormData {
 export { toMeasurementOrNull as n } from '@/lib/forms/normalize';
 
 const STRENGTH_PRESETS: StrengthExercise[] = ['Bench Press', 'Leg Press', 'Squat', 'Deadlift', 'Shoulder Press'];
-const FLEX_PRESETS: FlexibilityTestType[] = ['Hamstrings', 'Quadriceps', 'Hip Flexors', 'Shoulder Reach', 'Sit and Reach'];
 
 const str = (v: unknown): string => (v == null ? '' : String(v));
 
@@ -151,21 +138,13 @@ export function formFromAssessmentRow(row: Record<string, unknown>): AssessmentF
   const fd = obj(row.flexibility_test_data);
   const st = (k: 'test1' | 'test2') => obj(sd[k]);
   const et = (k: 'test1' | 'test2') => obj(ed[k]);
-  const ft = (k: 'test1' | 'test2') => obj(fd[k]);
   const exercise = (name: unknown): { exercise: StrengthExercise | ''; custom: string } => {
     const n = str(name);
     if (!n) return { exercise: '', custom: '' };
     return (STRENGTH_PRESETS as string[]).includes(n) ? { exercise: n as StrengthExercise, custom: '' } : { exercise: 'Custom Exercise', custom: n };
   };
-  const flex = (t: Record<string, unknown>): { type: FlexibilityTestType | ''; custom: string } => {
-    const n = str(t.testType);
-    if (!n) return { type: '', custom: '' };
-    return (FLEX_PRESETS as string[]).includes(n) ? { type: n as FlexibilityTestType, custom: str(t.customTestType) } : { type: 'Custom', custom: str(t.customTestType) || n };
-  };
   const s1 = exercise(row.strength_exercise);
   const s2 = exercise(row.strength_exercise_2);
-  const f1 = flex(ft('test1'));
-  const f2 = flex(ft('test2'));
   return {
     ...f,
     assessmentDate: str(row.assessment_date).slice(0, 10) || f.assessmentDate,
@@ -205,11 +184,13 @@ export function formFromAssessmentRow(row: Record<string, unknown>): AssessmentF
     enduranceTestType2: str(row.endurance_test_type_2) as EnduranceTestType | '',
     enduranceValueType2: et('test2').durationSec != null && et('test2').reps == null ? 'time' : 'reps',
     enduranceReps2: str(et('test2').reps), enduranceDurationSec2: str(et('test2').durationSec),
-    flexibilityTestType: f1.type, flexibilityCustomTest: f1.custom,
-    flexibilityLeft: str(ft('test1').left), flexibilityRight: str(ft('test1').right), flexibilityScore: str(ft('test1').score),
-    flexibilityLimitationNotes: str(ft('test1').limitationNotes), flexibilityRom: str(ft('test1').rom),
-    flexibilityTestType2: f2.type, flexibilityCustomTest2: f2.custom,
-    flexibilityLeft2: str(ft('test2').left), flexibilityRight2: str(ft('test2').right), flexibilityScore2: str(ft('test2').score),
-    flexibilityLimitationNotes2: str(ft('test2').limitationNotes), flexibilityRom2: str(ft('test2').rom),
+    // v3 battery → editable four-test form. Legacy {test1,test2} blob →
+    // read-only until the trainer chooses to re-record, so an edit can never
+    // lose it. Nothing stored → a fresh battery.
+    flexibility: isRecordedBattery(fd)
+      ? flexibilityFormFromRecorded(fd)
+      : Object.keys(fd).length > 0
+        ? { ...initFlexibilityForm(), recording: false, legacy: fd }
+        : f.flexibility,
   };
 }

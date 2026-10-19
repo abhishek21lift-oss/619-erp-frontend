@@ -48,6 +48,7 @@ import * as FE_MOBILITY from '../src/lib/mobility-calculations';
 import * as FE_NUTRITION from '../src/lib/nutrition-calculations';
 import * as FE_POSTURE from '../src/lib/posture-calculations';
 import * as FE_PARQ from '../src/lib/parq-calculations';
+import * as FE_FLEXIBILITY from '../src/lib/flexibility-protocol';
 
 const BACKEND_MODULE = 'src/modules/progress/fitness-scoring.js';
 const LIFESTYLE_BACKEND_MODULE = 'src/modules/progress/lifestyle-scoring.js';
@@ -56,6 +57,7 @@ const MOBILITY_BACKEND_MODULE = 'src/modules/progress/mobility-scoring.js';
 const NUTRITION_BACKEND_MODULE = 'src/modules/progress/nutrition-scoring.js';
 const POSTURE_BACKEND_MODULE = 'src/modules/progress/posture-scoring.js';
 const PARQ_BACKEND_MODULE = 'src/modules/pt-os/parq-scoring.js';
+const FLEXIBILITY_BACKEND_MODULE = 'src/modules/progress/flexibility-protocol.js';
 
 /** Where the backend checkout might be, in the order worth trying. */
 function findBackend(moduleRelPath: string = BACKEND_MODULE): string | null {
@@ -520,6 +522,101 @@ function buildParqCases(): Array<{ fn: string; args: unknown[] }> {
   return cases;
 }
 
+/**
+ * The K11 four-test battery: the frontend's live preview and the payload the
+ * backend derives from the same raw input. Every threshold the plan names is
+ * swept here — the quadriceps answer combinations, the 70–80° window with the
+ * knee and pelvis flags, the thigh positions, the sit-and-reach attempts
+ * (including negative scores and never-valid batteries) and the unable/override
+ * paths that decide the overall status.
+ */
+function buildFlexibilityCases(): Array<{ fn: string; args: unknown[] }> {
+  const cases: Array<{ fn: string; args: unknown[] }> = [];
+  const add = (input: unknown) => cases.push({ fn: 'deriveFlexibility', args: [input] });
+
+  const qSide = (p: Record<string, unknown> = {}) => ({ contact: true, distance_cm: null, pain: false, pelvic_compensation: false, tightness: 'Normal', notes: '', ...p });
+  const hSide = (p: Record<string, unknown> = {}) => ({ hip_flexion_deg: 75, knee_extended: true, pelvic_compensation: false, pain: false, tightness: 'Normal', notes: '', ...p });
+  const xSide = (p: Record<string, unknown> = {}) => ({ thigh_position: 'below', knee_flexion_deg: null, pelvic_compensation: false, pain: false, tightness: 'Normal', notes: '', ...p });
+  const battery = (over: Record<string, unknown> = {}) => {
+    const part = (key: string) => (over[key] && typeof over[key] === 'object' ? over[key] as Record<string, unknown> : {});
+    return {
+      protocol_version: 'k11-2026.01',
+      tests: {
+        quadriceps: { sides: { left: qSide(), right: qSide() }, completed: true, ...part('quadriceps') },
+        hamstrings: { sides: { left: hSide(), right: hSide() }, completed: true, ...part('hamstrings') },
+        hip_flexors: { sides: { left: xSide(), right: xSide() }, completed: true, ...part('hip_flexors') },
+        sit_and_reach: { attempts: [{ inches: 20, valid: true }], knee_bending: false, bouncing: false, completed: true, ...part('sit_and_reach') },
+      },
+      override: over.override ?? null,
+    };
+  };
+
+  const TRI = [null, false, true];
+  for (const side of ['left', 'right'] as const) {
+    for (const contact of TRI) for (const pain of TRI) for (const pelvic of TRI) {
+      const sides = { left: qSide(), right: qSide() };
+      sides[side] = qSide({ contact, pain, pelvic_compensation: pelvic });
+      add(battery({ quadriceps: { sides } }));
+    }
+  }
+  for (const distance of [null, 0, 5.5, 60, '12', 61]) {
+    add(battery({ quadriceps: { sides: { left: qSide({ contact: false, distance_cm: distance }), right: qSide({ contact: false, distance_cm: distance }) } } }));
+  }
+  for (const tightness of ['Normal', 'Mild', 'Moderate', 'Marked', 'nonsense', null]) {
+    add(battery({ quadriceps: { sides: { left: qSide({ tightness }), right: qSide() } } }));
+  }
+  add(battery({ quadriceps: { sides: { left: qSide({ contact: true }), right: qSide({ contact: false }) } } }));
+  add(battery({ quadriceps: { sides: { left: qSide({ contact: null }), right: qSide({ contact: true }) } } }));
+
+  for (let deg = 60; deg <= 90; deg += 1) {
+    for (const knee of TRI) for (const pelvic of TRI) {
+      add(battery({ hamstrings: { sides: { left: hSide({ hip_flexion_deg: deg, knee_extended: knee, pelvic_compensation: pelvic }), right: hSide() } } }));
+    }
+  }
+  for (const deg of [null, 0, 69.5, '70', 'abc', 180, -1]) {
+    add(battery({ hamstrings: { sides: { left: hSide({ hip_flexion_deg: deg }), right: hSide({ hip_flexion_deg: deg }) } } }));
+  }
+  add(battery({ hamstrings: { sides: { left: hSide({ hip_flexion_deg: 70 }), right: hSide({ hip_flexion_deg: 85 }) } } }));
+
+  for (const position of ['below', 'at', 'above', null, 'sideways']) for (const pelvic of TRI) {
+    add(battery({ hip_flexors: { sides: { left: xSide({ thigh_position: position, pelvic_compensation: pelvic }), right: xSide() } } }));
+  }
+  for (const knee of [null, 0, 45, 160, '20']) {
+    add(battery({ hip_flexors: { sides: { left: xSide({ thigh_position: 'above', knee_flexion_deg: knee }), right: xSide() } } }));
+  }
+  add(battery({ hip_flexors: { sides: { left: xSide({ thigh_position: 'below' }), right: xSide({ thigh_position: 'at' }) } } }));
+
+  const attempts = [[null, true], [0, true], [12, true], [18.5, true], [60, false], ['21', true], [12, false], [null, false]];
+  for (const [inches, valid] of attempts) add(battery({ sit_and_reach: { attempts: [{ inches, valid }] } }));
+  for (const [a, av] of attempts) for (const [b, bv] of attempts) {
+    add(battery({ sit_and_reach: { attempts: [{ inches: a, valid: av }, { inches: b, valid: bv }] } }));
+  }
+  add(battery({ sit_and_reach: { attempts: [{ inches: 12, valid: true }, { inches: 25, valid: false }, { inches: 18.5, valid: true }], knee_bending: true, bouncing: true } }));
+  add(battery({ sit_and_reach: { attempts: [], completed: true } }));
+  add(battery({ sit_and_reach: { attempts: 'nope' } }));
+
+  const KEYS = ['quadriceps', 'hamstrings', 'hip_flexors', 'sit_and_reach'];
+  for (const key of KEYS) {
+    for (const reason of [null, '', '  ', 'knee surgery', 7]) {
+      add(battery({ [key]: { unable_to_complete: true, unable_reason: reason } }));
+    }
+    add(battery({ [key]: { completed: false } }));
+    add(battery({ [key]: { completed: true, unable_to_complete: true, unable_reason: 'both flags' } }));
+  }
+  for (const key of KEYS) {
+    for (const override of [null, {}, { reason: '' }, { used: true }, { used: true, reason: ' ' }, { reason: ' recorded as unable ' }, { reason: 9 }]) {
+      add(battery({ [key]: { unable_to_complete: true, unable_reason: 'x' }, override }));
+    }
+  }
+  for (const override of [null, { reason: 'why' }, { used: true, reason: 'why' }]) {
+    add(battery({ hamstrings: { unable_to_complete: true, unable_reason: 'x' }, hip_flexors: { unable_to_complete: true }, override }));
+  }
+
+  for (const input of [null, {}, { tests: 'nope' }, { tests: { quadriceps: 3 }, override: 'yes' }, { protocol_version: 'k11-2099.99' }]) add(input);
+
+  return cases;
+}
+
 /** Compared as JSON so null and undefined cannot read as equal by accident. */
 const norm = (v: unknown) => JSON.stringify(v === undefined ? null : v);
 
@@ -669,6 +766,13 @@ function main() {
       frontend: FE_PARQ as unknown as Record<string, unknown>,
       backendModule: PARQ_BACKEND_MODULE,
       build: buildParqCases,
+      minCalls: 300,
+    },
+    {
+      name: 'flexibility',
+      frontend: FE_FLEXIBILITY as unknown as Record<string, unknown>,
+      backendModule: FLEXIBILITY_BACKEND_MODULE,
+      build: buildFlexibilityCases,
       minCalls: 300,
     },
   ];
