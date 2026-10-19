@@ -94,6 +94,12 @@ test.describe('Member — daily journal', () => {
     expect(created.source).toBe('manual');
     expect(created.steps_source).toBe('manual');
 
+    // The first save's toast outlives it here (4.5s auto-dismiss), and a
+    // second "Journal saved" beside it would turn the next assertion into a
+    // strict-mode violation — or, with .last(), pass on the stale toast. Wait
+    // for it to clear so the assertion can only match the update's own toast.
+    await expect(page.getByText('Journal saved')).toHaveCount(0, { timeout: 15_000 });
+
     await page.getByLabel('Notes (optional)').fill(`${note} edited`);
     await page.getByRole('button', { name: 'Update this day' }).click();
     await expect(page.getByText('Journal saved')).toBeVisible({ timeout: 15_000 });
