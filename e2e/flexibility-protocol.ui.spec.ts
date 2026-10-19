@@ -225,10 +225,10 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
     // the score is 12 − 15 = −3: the box's zero point makes a short reach a
     // real negative result, and an invalid higher attempt must not score.
     await card(page, 'YMCA Sit and Reach').getByRole('button', { name: 'Start', exact: true }).click();
+    // The form opens with two attempts; one "Add attempt" makes the third.
     await page.getByLabel('Attempt 1 reach').fill('8');
     await page.getByRole('button', { name: 'Add attempt', exact: true }).click();
     await page.getByLabel('Attempt 2 reach').fill('12');
-    await page.getByRole('button', { name: 'Add attempt', exact: true }).click();
     await page.getByLabel('Attempt 3 reach').fill('15');
     await attemptRow(page, 3).getByRole('button', { name: 'No', exact: true }).click();
     await expect(page.getByText('-3.0 in')).toBeVisible();
