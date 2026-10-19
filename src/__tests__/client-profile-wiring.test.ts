@@ -53,6 +53,37 @@ describe('pages the profile links to read the client_id it sends', () => {
   });
 });
 
+describe('the session-balance page can do what its endpoints offer', () => {
+  const page = read('app', '(chrome)', 'pt-os', 'session-balance', 'page.tsx');
+
+  it('burns a session through the endpoint that exists for it', () => {
+    // `useSession` was defined in the api client and implemented on the
+    // server, with no control anywhere that reached it: the page could list
+    // balances and create packages, and nothing could ever decrement one.
+    expect(page).toMatch(/sessionBalance\.useSession\(/);
+    expect(page).toMatch(/window\.confirm\(/);
+    expect(page).toMatch(/toast\.success\(/);
+    expect(page).toMatch(/toast\.error\(/);
+  });
+
+  it('does not offer to use a session there are none of', () => {
+    // The API answers 400 once a balance is exhausted or not active; the row
+    // must not invite the click that produces it.
+    expect(page).toMatch(/sb\.remaining_sessions <= 0/);
+    expect(page).toMatch(/sb\.status !== 'active'/);
+  });
+
+  it('the Low and All buttons select the list they name', () => {
+    // They were refresh buttons wearing filter labels: clicking Low refetched
+    // the alert's own fetch, and the panel carried on rendering allBalances.
+    expect(page).toMatch(/aria-pressed=\{scope === 'low'\}/);
+    expect(page).toMatch(/setScope\('all'\)/);
+    expect(page).toMatch(/scope === 'low' \? \(balances\.data/);
+    // The unconditional allBalances list is what made the buttons cosmetic.
+    expect(page).not.toMatch(/\(allBalances\.data as any\[\] \|\| \[\]\)\.map/);
+  });
+});
+
 describe('a failed save is not silent', () => {
   it('session-balance reports why a package could not be created', () => {
     // It was try/finally with no catch at all: a failed save reset the button
