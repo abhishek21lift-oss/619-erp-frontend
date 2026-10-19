@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ArrowLeft, Check, RotateCcw, ShieldAlert } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Button, FloatInput } from '@/components/ui';
 import { flexibilityTestIssues, formTest, FLEXIBILITY_FORM_KEY } from '@/lib/flexibility-protocol';
 import type { FlexibilityDerived, FlexibilityFormState, FlexibilityTestKey } from '@/lib/flexibility-protocol';
 import type { Gender } from '@/lib/fitness-calculations';
@@ -156,15 +156,15 @@ export function TestScreen({ test, form, patchFlex, derived, age, gender, onBack
             {onSaveDraft && <Button variant="ghost" size="sm" onClick={onSaveDraft}>Save Draft</Button>}
 
             <div className="ml-auto flex flex-1 flex-wrap items-center justify-end gap-2">
-              <input
-                aria-label="Reason this test could not be performed"
-                className="min-w-[180px] flex-1 rounded-[10px] px-3 py-1.5 text-[12px]"
-                style={{ background: 'var(--bg-card)', border: '1px solid var(--border-2)', color: 'var(--text-primary)' }}
-                placeholder="Reason if the client cannot perform this test"
-                maxLength={500}
-                value={state.unableReason}
-                onChange={(e) => mark({ unableReason: e.target.value })}
-              />
+              <div className="min-w-[180px] flex-1">
+                <FloatInput
+                  label="Reason this test could not be performed"
+                  value={state.unableReason}
+                  onChange={(v) => mark({ unableReason: v })}
+                  maxLength={500}
+                  placeholder="e.g. recent surgery, pain on positioning"
+                />
+              </div>
               <Button variant="outline" size="sm" iconLeft={<ShieldAlert size={13} />} onClick={recordUnable}>
                 {state.unable ? 'Update reason' : 'Record as unable'}
               </Button>

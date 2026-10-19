@@ -533,16 +533,19 @@ function buildFlexibilityCases(): Array<{ fn: string; args: unknown[] }> {
   const qSide = (p: Record<string, unknown> = {}) => ({ contact: true, distance_cm: null, pain: false, pelvic_compensation: false, tightness: 'Normal', notes: '', ...p });
   const hSide = (p: Record<string, unknown> = {}) => ({ hip_flexion_deg: 75, knee_extended: true, pelvic_compensation: false, pain: false, tightness: 'Normal', notes: '', ...p });
   const xSide = (p: Record<string, unknown> = {}) => ({ thigh_position: 'below', knee_flexion_deg: null, pelvic_compensation: false, pain: false, tightness: 'Normal', notes: '', ...p });
-  const battery = (over: Record<string, Record<string, unknown>> = {}) => ({
-    protocol_version: 'k11-2026.01',
-    tests: {
-      quadriceps: { sides: { left: qSide(), right: qSide() }, completed: true, ...over.quadriceps },
-      hamstrings: { sides: { left: hSide(), right: hSide() }, completed: true, ...over.hamstrings },
-      hip_flexors: { sides: { left: xSide(), right: xSide() }, completed: true, ...over.hip_flexors },
-      sit_and_reach: { attempts: [{ inches: 20, valid: true }], knee_bending: false, bouncing: false, completed: true, ...over.sit_and_reach },
-    },
-    override: over.override ?? null,
-  });
+  const battery = (over: Record<string, unknown> = {}) => {
+    const part = (key: string) => (over[key] && typeof over[key] === 'object' ? over[key] as Record<string, unknown> : {});
+    return {
+      protocol_version: 'k11-2026.01',
+      tests: {
+        quadriceps: { sides: { left: qSide(), right: qSide() }, completed: true, ...part('quadriceps') },
+        hamstrings: { sides: { left: hSide(), right: hSide() }, completed: true, ...part('hamstrings') },
+        hip_flexors: { sides: { left: xSide(), right: xSide() }, completed: true, ...part('hip_flexors') },
+        sit_and_reach: { attempts: [{ inches: 20, valid: true }], knee_bending: false, bouncing: false, completed: true, ...part('sit_and_reach') },
+      },
+      override: over.override ?? null,
+    };
+  };
 
   const TRI = [null, false, true];
   for (const side of ['left', 'right'] as const) {

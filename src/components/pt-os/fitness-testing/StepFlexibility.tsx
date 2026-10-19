@@ -2,13 +2,13 @@
 
 import { useMemo, useState } from 'react';
 import { Move, AlertTriangle, ArrowLeft, FileText, RefreshCw, CheckCircle2, CircleDashed, MinusCircle } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Button, FloatInput } from '@/components/ui';
 import { deriveFlexibility, buildFlexibilityPayload, formTest, legacyBlobSummary } from '@/lib/flexibility-protocol';
 import type { FlexibilityDerived, FlexibilityFormState, FlexibilityTestKey } from '@/lib/flexibility-protocol';
 import type { Gender } from '@/lib/fitness-calculations';
 import type { AssessmentFormData } from './types';
 import { StepHeader } from './StepHeader';
-import { stepTones } from './fitnessTheme';
+import { gradient, stepTones } from './fitnessTheme';
 import { FLEXIBILITY_PROTOCOLS, FLEXIBILITY_TEST_ORDER } from './flexibility/protocol-content';
 import TestScreen from './flexibility/TestScreen';
 import FlexibilitySummary, { type PreviousAssessment } from './flexibility/FlexibilitySummary';
@@ -178,7 +178,7 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
           </div>
 
           <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }} role="progressbar" aria-valuenow={recordedCount} aria-valuemin={0} aria-valuemax={4} aria-label="Flexibility tests recorded">
-            <div className="h-full rounded-full transition-[width] duration-300" style={{ width: `${(recordedCount / 4) * 100}%`, background: 'linear-gradient(90deg, #FACC15, #F97316)' }} />
+            <div className="h-full rounded-full transition-[width] duration-300" style={{ width: `${(recordedCount / 4) * 100}%`, background: gradient(TONE, 90) }} />
           </div>
 
           <div className="space-y-2.5">
@@ -230,18 +230,16 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
 
           {(anyUnable || mustOverride) && (
             <div className="rounded-[16px] p-4" style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-border)' }}>
-              <label className="block text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--warning-text)' }} htmlFor="flex-override-reason">
-                Override reason {anyUnable ? '(required — a test could not be performed)' : '(required when a test is left incomplete)'}
-              </label>
-              <textarea
-                id="flex-override-reason"
-                rows={2}
-                maxLength={500}
+              <FloatInput
+                label={anyUnable
+                  ? 'Override reason (required — a test could not be performed)'
+                  : 'Override reason (required when a test is left incomplete)'}
                 value={flex.overrideReason}
-                onChange={(e) => patchFlex({ overrideReason: e.target.value })}
+                onChange={(v) => patchFlex({ overrideReason: v })}
+                multiline
+                autoGrow
+                maxLength={500}
                 placeholder="Why the assessment is being saved without every test"
-                className="mt-2 w-full rounded-[10px] px-3 py-2 text-[12.5px]"
-                style={{ background: 'var(--bg-card)', border: '1px solid var(--border-2)', color: 'var(--text-primary)' }}
               />
               <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
                 Stored as an override on the assessment, with your name and the time.

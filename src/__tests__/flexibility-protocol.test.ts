@@ -52,16 +52,15 @@ interface Over {
 
 /** A raw payload with all four tests recorded and marked complete. */
 function battery(over: Over = {}): FlexibilityRecorded {
-  return {
-    protocol_version: PROTOCOL_VERSION,
-    tests: {
-      quadriceps: { sides: { left: qSide(), right: qSide() }, completed: true, ...over.quadriceps },
-      hamstrings: { sides: { left: hSide(), right: hSide() }, completed: true, ...over.hamstrings },
-      hip_flexors: { sides: { left: xSide(), right: xSide() }, completed: true, ...over.hip_flexors },
-      sit_and_reach: { attempts: [{ inches: 20, valid: true }], knee_bending: false, bouncing: false, completed: true, ...over.sit_and_reach },
-    },
-    override: over.override ?? null,
-  };
+  // The spread widens every optional field to `| undefined`, which is exactly
+  // what this builder is for: a hand-edited row the derivation still answers.
+  const tests = {
+    quadriceps: { sides: { left: qSide(), right: qSide() }, completed: true, ...over.quadriceps },
+    hamstrings: { sides: { left: hSide(), right: hSide() }, completed: true, ...over.hamstrings },
+    hip_flexors: { sides: { left: xSide(), right: xSide() }, completed: true, ...over.hip_flexors },
+    sit_and_reach: { attempts: [{ inches: 20, valid: true }], knee_bending: false, bouncing: false, completed: true, ...over.sit_and_reach },
+  } as unknown as Partial<RecordedTests>;
+  return { protocol_version: PROTOCOL_VERSION, tests, override: over.override ?? null };
 }
 
 /** The derivation, on a battery with the given overrides. */
@@ -132,7 +131,7 @@ describe('deriveFlexibility — quadriceps', () => {
 
   it('coerces distance strings, keeps a missing tightness null and rejects an unknown one', () => {
     const d = able(derive({
-      quadriceps: { sides: { left: qSide({ contact: false, distance_cm: '3.5' }), right: qSide({ tightness: 'Extreme' as never }) } },
+      quadriceps: { sides: { left: qSide({ contact: false, distance_cm: '3.5' as unknown as number }), right: qSide({ tightness: 'Extreme' as never }) } },
     }).tests.quadriceps);
     expect(d.sides.left.distance_cm).toBe(3.5);
     expect(d.sides.right.tightness).toBeNull();
@@ -235,7 +234,7 @@ describe('deriveFlexibility — sit and reach', () => {
   });
 
   it('coerces attempt strings and always reports the norm as unavailable', () => {
-    const d = sit([{ inches: '21', valid: true }]);
+    const d = sit([{ inches: '21' as unknown as number, valid: true }]);
     expect(d.score_inches).toBe(6);
     expect(d.norm).toEqual({ table_version: null, category: null, message: 'Norm classification unavailable' });
   });
@@ -327,7 +326,7 @@ describe('deriveFlexibility — has_asymmetry', () => {
 
   it('is false on an unrecorded battery and on an unable test\'s dropped sides', () => {
     expect(deriveFlexibility({}).has_asymmetry).toBe(false);
-    expect(deriveFlexibility({ tests: { hamstrings: { unable_to_complete: true }, hip_flexors: { unable_to_complete: true } } }).has_asymmetry).toBe(false);
+    expect(deriveFlexibility({ tests: { hamstrings: { unable_to_complete: true }, hip_flexors: { unable_to_complete: true } } } as unknown as FlexibilityRecorded).has_asymmetry).toBe(false);
   });
 });
 
@@ -466,7 +465,7 @@ describe('flexibility form state', () => {
     const back = flexibilityFormFromRecorded({
       protocol_version: PROTOCOL_VERSION,
       tests: { hamstrings: { unable_to_complete: true, unable_reason: 'cramp' } },
-    });
+    } as unknown as FlexibilityRecorded);
     expect(formTest(back, 'hamstrings')).toMatchObject({ completed: false, unable: true, unableReason: 'cramp' });
   });
 
