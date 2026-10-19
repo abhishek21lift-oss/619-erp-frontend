@@ -94,7 +94,7 @@ function WorkoutBody() {
   return (
     <>
       <PageTitle accent="workout" icon={<Dumbbell size={20} />} title="My programme"
-        sub={plans.length === 1 ? plans[0].name : `${plans.length} active programmes`} />
+ />
       <WorkoutLauncher plans={plans} sessions={sessions} onSaved={() => void loadSessions()} />
       {plans.map((p) => <PlanBlock key={p.assignment_id} plan={p} titled={plans.length > 1} />)}
       <SessionHistory sessions={sessions} />

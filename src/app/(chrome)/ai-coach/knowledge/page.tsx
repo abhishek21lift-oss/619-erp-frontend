@@ -157,7 +157,7 @@ export default function AiKnowledgeBasePage() {
           <PageHero
             icon={<BookOpen size={20} />}
             title="Knowledge Base"
-            subtitle="SOPs, guides & policies the AI Coach answers from before general knowledge"
+
             actions={
               <button type="button" onClick={() => setUploadOpen(true)}
                 className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"

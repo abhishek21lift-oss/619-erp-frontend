@@ -120,7 +120,7 @@ export default function BalanceSheetPage() {
         <PageHero
           icon={<Wallet size={20} />}
           title="Balance Sheet"
-          subtitle="Every client's package, paid and balance"
+
           // The debtors alone, with risk bands and WhatsApp reminders, are
           // Outstanding Dues.
           actions={

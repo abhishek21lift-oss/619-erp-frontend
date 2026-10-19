@@ -140,12 +140,7 @@ function Inner() {
       <PageHero
         icon={<AlertTriangle size={20} />}
         title="Pending Dues"
-        subtitle={
-          search
-            ? `${filtered.length} ${filtered.length === 1 ? 'member' : 'members'} matching`
-            : `${debtorCount} ${debtorCount === 1 ? 'member' : 'members'} with pending dues`
-            + (truncated ? ` \u00b7 showing the ${dues.length} largest` : '')
-        }
+
         // Only the members who owe. Every client's package, paid and balance
         // — paid-up ones included, with a CSV export — is the Balance Sheet.
         actions={

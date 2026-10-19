@@ -14,7 +14,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Camera, ChevronRight, LineChart, Ruler, TrendingDown, TrendingUp } from 'lucide-react';
+import {
+  Activity, CalendarClock, Camera, ChevronRight, ClipboardCheck, LineChart, Ruler,
+  TrendingDown, TrendingUp,
+} from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import {
@@ -22,7 +25,7 @@ import {
 } from '@/components/member/MemberUI';
 import WeightChart, { type WeightPoint } from '@/components/member/WeightChart';
 import { api } from '@/lib/api';
-import type { MeMeasurement } from '@/lib/api';
+import type { MeMeasurement, ProgressComparison, ProgressRetestOverview } from '@/lib/api';
 
 export default function MemberProgressPage() {
   return (
@@ -79,32 +82,32 @@ function ProgressBody() {
     .filter((r) => BODY.some((b) => num(r[b.key]) !== null))
     .sort((a, b) => day(a.measured_at).localeCompare(day(b.measured_at))), [rows]);
 
-  const title = <PageTitle accent="progress" icon={<LineChart size={20} />} title="Progress" sub="Weight and body measurements" />;
+  const title = <PageTitle accent="progress" icon={<LineChart size={20} />} title="Progress" />;
   if (failed) return <>{title}<LoadError what="progress" /></>;
   if (!rows) return <PageSkeleton />;
-
-  if (weights.length === 0 && body.length === 0) {
-    return (
-      <>
-        {title}
-        <EmptyState icon={<Ruler size={18} />} title="No readings yet"
-          body="Add your weight to this week's check-in, or ask your trainer to take your measurements — your progress starts here." />
-        <Link href="/member/checkin"
-          className="mt-3 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-[750] text-white"
-          style={{ background: MC.primary }}>
-          Add this week's weight
-        </Link>
-      </>
-    );
-  }
 
   const first = weights[0];
   const latest = weights[weights.length - 1];
   const delta = latest && first && weights.length > 1 ? latest.kg - first.kg : null;
+  const hasReadings = weights.length > 0 || body.length > 0;
 
   return (
     <>
       {title}
+
+      <AssessmentProgress />
+
+      {!hasReadings && (
+        <>
+          <EmptyState icon={<Ruler size={18} />} title="No readings yet"
+            body="Add your weight to this week's check-in, or ask your trainer to take your measurements — your progress starts here." />
+          <Link href="/member/checkin"
+            className="mt-3 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-[750] text-white"
+            style={{ background: MC.primary }}>
+            Add this week's weight
+          </Link>
+        </>
+      )}
 
       {weights.length > 0 && (
         <>
@@ -155,6 +158,147 @@ function ProgressBody() {
       <BodyMeasurements rows={body} />
       <PhotosLink />
     </>
+  );
+}
+
+/** The re-test countdown and the seven-domain change, in the member's words. */
+function AssessmentProgress() {
+  const [retest, setRetest] = useState<ProgressRetestOverview | null>(null);
+  const [comparison, setComparison] = useState<ProgressComparison | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState({ retest: false, comparison: false });
+
+  useEffect(() => {
+    let live = true;
+    Promise.allSettled([api.me.retest(), api.me.comparison()]).then(([r, c]) => {
+      if (!live) return;
+      if (r.status === 'fulfilled') setRetest(r.value.data);
+      if (c.status === 'fulfilled') setComparison(c.value.data);
+      setFailed({ retest: r.status === 'rejected', comparison: c.status === 'rejected' });
+      setLoading(false);
+    });
+    return () => { live = false; };
+  }, []);
+
+  if (loading) {
+    return (
+      <Section title="Fitness assessment">
+        <Card className="flex items-center gap-2 p-4 text-[12px]">
+          <Activity size={16} className="animate-pulse" /> Loading your next test…
+        </Card>
+      </Section>
+    );
+  }
+
+  if (failed.retest && failed.comparison) {
+    return (
+      <>
+        <Section title="Fitness assessment">
+          <LoadError what="assessment progress" />
+        </Section>
+        <JournalLink />
+      </>
+    );
+  }
+
+  const state = retest?.state.state;
+  const days = retest?.state.days_until;
+  const schedule = retest?.schedule;
+  const summary = comparison?.summary;
+
+  return (
+    <>
+      <Section title="Fitness assessment"
+        aside={<Link href="/member/coach" className="text-[11.5px] font-[720]" style={{ color: MC.primary }}>Ask your trainer</Link>}>
+        <Card className="overflow-hidden p-0">
+          <div className="p-4" style={{ background: 'linear-gradient(135deg, rgba(0,103,224,0.09), rgba(16,185,129,0.07))' }}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10.5px] font-[760] uppercase tracking-[0.08em]" style={{ color: MC.muted }}>Next re-test</p>
+                <p className="mt-1 text-[22px] font-[840] tracking-[-0.03em] tabular-nums" style={{ color: MC.ink }}>
+                  {failed.retest ? 'Unavailable' : schedule ? longDate(schedule.scheduled_date) : 'Not scheduled'}
+                </p>
+                <p className="mt-0.5 text-[12px]" style={{ color: MC.muted }}>
+                  {failed.retest
+                    ? 'We could not load your next test. Refresh the page to try again.'
+                    : state === 'missing_baseline'
+                    ? 'Your first seven-step assessment is the baseline for everything that follows.'
+                    : days == null || !schedule
+                      ? retest?.prompt || 'Your trainer will schedule the next one from your latest result.'
+                      : days === 0
+                        ? 'Due today'
+                        : days > 0
+                          ? `In ${days} day${days === 1 ? '' : 's'}`
+                          : `${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} past due`}
+                </p>
+              </div>
+              <span className="grid h-10 w-10 place-items-center rounded-[12px] bg-white/60"
+                style={{ color: MC.primary }}>
+                <CalendarClock size={19} />
+              </span>
+            </div>
+          </div>
+          {comparison && summary && (
+            <div className="border-t px-4 py-3" style={{ borderColor: 'var(--border)' }}>
+              <p className="text-[11px] font-[720]" style={{ color: MC.muted }}>
+                Since your {longDate(comparison.baseline?.assessment_date as string | undefined) ?? 'baseline'} test
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <span className="rounded-full px-2.5 py-1 text-[10.5px] font-[740]"
+                  style={{ background: 'rgba(16,185,129,0.10)', color: '#047857' }}>{summary.improved ?? 0} improved</span>
+                <span className="rounded-full px-2.5 py-1 text-[10.5px] font-[740]"
+                  style={{ background: 'rgba(239,68,68,0.09)', color: '#b91c1c' }}>{summary.declined ?? 0} declined</span>
+                <span className="rounded-full px-2.5 py-1 text-[10.5px] font-[740]"
+                  style={{ background: 'var(--bg-subtle)', color: MC.muted }}>{summary.unchanged ?? 0} unchanged</span>
+                {(summary.incomparable ?? 0) > 0 && (
+                  <span className="rounded-full px-2.5 py-1 text-[10.5px] font-[740]"
+                    style={{ background: 'rgba(245,158,11,0.10)', color: '#92400e' }}>{summary.incomparable} not comparable</span>
+                )}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                {comparison.domains.map((d) => {
+                  const improved = d.metrics.filter((m) => m.outcome === 'improved').length;
+                  const declined = d.metrics.filter((m) => m.outcome === 'declined').length;
+                  return (
+                    <span key={d.key} className="text-[10.5px]" style={{ color: MC.muted }}>
+                      {d.label}: {!d.comparable ? 'protocol changed' : `${improved} up, ${declined} down`}
+                    </span>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-[10.5px]" style={{ color: MC.muted }}>
+                A missing or changed test is shown as “not comparable”, never as a zero.
+              </p>
+            </div>
+          )}
+          {failed.comparison && (
+            <p className="border-t px-4 py-3 text-[11.5px]" style={{ borderColor: 'var(--border)', color: MC.muted }}>
+              The comparison could not be loaded right now. Your next test is still shown above.
+            </p>
+          )}
+        </Card>
+      </Section>
+
+      <JournalLink />
+    </>
+  );
+}
+
+/** The journal is its own feature: a failed assessment call must not hide it. */
+function JournalLink() {
+  return (
+    <Link href="/member/habits" className="mb-4 flex items-center gap-3 rounded-[16px] p-4 transition-colors hover:bg-[var(--bg-subtle)]"
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]"
+        style={{ background: 'var(--bg-subtle)', color: MC.primary }}>
+        <ClipboardCheck size={18} aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[14px] font-[750]" style={{ color: MC.ink }}>Daily journal</span>
+        <span className="block text-[12px]" style={{ color: MC.muted }}>Sleep, steps, water and recovery</span>
+      </span>
+      <ChevronRight size={16} aria-hidden style={{ color: MC.muted }} />
+    </Link>
   );
 }
 

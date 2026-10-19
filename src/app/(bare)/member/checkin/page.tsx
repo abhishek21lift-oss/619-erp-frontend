@@ -61,7 +61,7 @@ function CheckinBody() {
   return (
     <>
       <PageTitle accent="checkin" icon={<ClipboardCheck size={20} />} title="Weekly check-in"
-        sub={`Week of ${longDate(data.this_week) ?? data.this_week}`} />
+ />
       <CheckinForm key={current?.updated_at ?? 'new'} existing={current} onSaved={load} />
       {past.length > 0 && (
         <Section title="Earlier check-ins">

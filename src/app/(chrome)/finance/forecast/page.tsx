@@ -68,7 +68,7 @@ function Inner() {
       <PageHero
         icon={<TrendingUp size={20} />}
         title="Projected Revenue"
-        subtitle={`Projected vs actual revenue · ${year}`}
+
       >
         <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[12px] font-[700] text-white"
           style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>

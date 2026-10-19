@@ -460,7 +460,7 @@ export default function MySchedulePage() {
               className="mb-5"
               icon={<CalendarCheck size={20} />}
               title="My Schedule"
-              subtitle="Your own PT sessions, week by week"
+
               actions={
                 <HeroButton className="w-full sm:w-auto" icon={<CalendarPlus size={15} />}
                   onClick={() => router.push('/pt-os/schedule-session')}>

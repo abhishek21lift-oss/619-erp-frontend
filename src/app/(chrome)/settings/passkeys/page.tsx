@@ -212,7 +212,7 @@ function PasskeysContent() {
         className="mb-5"
         icon={<Fingerprint size={20} />}
         title="Passkeys & Biometric Login"
-        subtitle="Sign in with fingerprint, Face ID, or Windows Hello — no password needed."
+
         actions={supported && available && !showForm ? (
           <HeroButton
             className="w-full sm:w-auto"

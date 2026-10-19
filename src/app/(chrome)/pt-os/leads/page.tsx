@@ -280,7 +280,7 @@ export default function LeadsPage() {
               compact
               icon={<UserSearch size={18} />}
               title="Leads"
-              subtitle="Prospective clients, before they enrol in PT"
+
               actions={(
                 <div className="flex shrink-0 items-center gap-2">
                   <LeadFollowupAction />

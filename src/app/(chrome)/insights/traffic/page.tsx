@@ -164,7 +164,7 @@ function Inner() {
       <PageHero
         icon={<Activity size={20} />}
         title="Attendance Report"
-        subtitle="Track member check-in patterns and peak traffic hours"
+
       >
         <CanonicalDateRange from={from} to={to} onFrom={setFrom} onTo={setTo} dark />
       </PageHero>

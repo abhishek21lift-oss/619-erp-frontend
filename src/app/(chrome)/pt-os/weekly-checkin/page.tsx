@@ -135,7 +135,7 @@ export default function WeeklyCheckinPage() {
           className="mb-5"
           icon={<ClipboardCheck size={20} />}
           title="Weekly Check-In"
-          subtitle="Log weekly progress — weight, mood, sleep, adherence, and trainer notes."
+
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

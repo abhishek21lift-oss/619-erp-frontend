@@ -65,7 +65,7 @@ function PhotosBody() {
 
   const title = (
     <PageTitle accent="progress" icon={<Camera size={20} />} title="Progress photos"
-      sub="Only you and your trainer can see these" />
+ />
   );
   if (failed) return <>{title}<LoadError what="photos" /></>;
   if (!photos) return <PageSkeleton />;

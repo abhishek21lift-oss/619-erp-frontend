@@ -89,7 +89,7 @@ export default function CardioCalculatorPage() {
         <PageHero
           icon={<HeartPulse size={20} color="#fff" />}
           title="Cardio & FITT"
-          subtitle="Karvonen target heart rate and a five-phase session, built to the client's numbers."
+
         />
         <div className="grid gap-5 lg:grid-cols-2">
           <section className="rounded-[14px] border p-4">

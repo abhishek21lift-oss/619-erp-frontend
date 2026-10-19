@@ -85,7 +85,7 @@ export default function ClientBirthdaysPage() {
           <PageHero
             icon={<Cake size={20} />}
             title="Clients Birthday"
-            subtitle="Never miss a client's birthday — sorted by who's up next"
+
           >
             {todayCount > 0 && (
               <div className="inline-flex items-center gap-2 rounded-[12px] px-3.5 py-2.5"

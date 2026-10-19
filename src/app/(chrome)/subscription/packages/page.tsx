@@ -129,7 +129,6 @@ function PackagesTab() {
     } catch { toast.error('Failed to toggle status'); }
   };
 
-
   const handleDelete = async (id: string) => {
     try {
       await api.automation.ptPackages.delete(id);
@@ -219,7 +218,6 @@ function PackagesTab() {
   );
 }
 
-
 /* ══════════════════════════════════════════════
    PAGE
 ══════════════════════════════════════════════ */
@@ -241,7 +239,7 @@ function PageContent() {
           className="mb-5"
           icon={<Package size={20} />}
           title="Session Packages"
-          subtitle="Session-based PT packages with goal types"
+
         />
 
         {/* Content */}

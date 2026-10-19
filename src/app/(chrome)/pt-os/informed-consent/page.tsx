@@ -157,7 +157,7 @@ function ConsentHub({ clientId, toast }: ConsentHubProps) {
         <PageHero
           icon={<FileSignature size={20} />}
           title={`${clientName || 'This client'}'s Consent`}
-          subtitle="Informed Consent"
+
           actions={
             <button type="button" onClick={openWizard}
               className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
@@ -438,7 +438,7 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
       <PageHero
         icon={<FileSignature size={18} />}
         title={mode === 'amend' ? 'Amend Consent' : mode === 'resume' ? 'Continue Consent' : 'New Informed Consent'}
-        subtitle={clientName}
+
       >
         <StepperTimeline steps={stepperSteps} current={step} onStep={(id) => handleStepClick(id as StepId)} />
       </PageHero>

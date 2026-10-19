@@ -346,6 +346,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
         assessment_date: form.assessmentDate,
         assessment_type: form.assessmentType,
         assessment_notes: form.assessmentNotes.trim() || null,
+        testing_conditions: form.testingConditions.trim() || null,
         age: age ?? undefined, gender: gender ?? undefined,
         bp_not_measured: form.bpNotMeasured && !form.bpSystolic && !form.bpDiastolic,
 
@@ -519,9 +520,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       <PageHero
         icon={<ClipboardCheck size={18} />}
         title="Fitness Testing"
-        subtitle={editingId
-          ? `${clientName || 'Client'} · Editing the ${form.assessmentDate} assessment`
-          : `${clientName || 'Client'} · Assessment ${nextAssessmentNumber}`}
+
         surface={{
           background: [
             `radial-gradient(circle 260px at 6% 115%, ${fitnessMesh.glowA}, transparent 70%)`,
