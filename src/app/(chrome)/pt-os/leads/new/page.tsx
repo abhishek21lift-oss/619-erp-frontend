@@ -71,7 +71,7 @@ function NewLeadForm() {
       <PageHero
         icon={<UserSearch size={20} />}
         title="Add Lead"
-        subtitle="Capture the essentials — you can fill in the rest later."
+
       />
 
       {/* A column of inputs is unusable at full width — max-w-2xl keeps this

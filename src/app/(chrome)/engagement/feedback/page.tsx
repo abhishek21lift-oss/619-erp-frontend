@@ -82,7 +82,7 @@ function FeedbackContent() {
       <PageHero
         icon={<Star size={20} />}
         title="Member Feedback"
-        subtitle="Track, respond & act on member reviews and complaints."
+
       />
 
       {error && <div style={{ borderRadius: 14, padding: '14px 20px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: 600, fontSize: 13 }}>{error}</div>}

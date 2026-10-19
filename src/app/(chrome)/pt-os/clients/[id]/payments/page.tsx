@@ -147,7 +147,6 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 20;
 
-
   const fetchAll = async () => {
     try {
       setLoading(true);
@@ -215,7 +214,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
             <PageHero
               icon={<Wallet size={20} />}
               title={client.name}
-              subtitle={`${client.client_id || client.id.slice(0, 8)} · PT Payments`}
+
               actions={
                 <div className="flex gap-2">
                   <button type="button" onClick={() => router.push(`/pt-os/clients/${id}`)}

@@ -349,7 +349,7 @@ function AttendanceHero({ date, today, setDate, summary, loading, onManualEntry,
   return (
     <PageHero
       title="Attendance"
-      subtitle="Mark the day, correct a record, see who is turning up."
+
       icon={<UserCheck size={20} aria-hidden />}
       surface={{
         background: [

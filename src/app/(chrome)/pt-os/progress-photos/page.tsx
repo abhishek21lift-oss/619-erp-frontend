@@ -145,7 +145,7 @@ function PhotoStudio({ clientId }: PhotoStudioProps) {
       <PageHero
         icon={<Camera size={20} />}
         title={`${clientName}'s Photo Capture Studio`}
-        subtitle="Progress Photos"
+
       />
 
     <div className="mx-auto w-full max-w-4xl space-y-6">

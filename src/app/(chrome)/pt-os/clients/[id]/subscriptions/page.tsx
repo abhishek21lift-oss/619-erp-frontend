@@ -161,7 +161,7 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
               className="mb-5"
               icon={<Layers size={20} />}
               title={client.name}
-              subtitle={`${client.client_id || client.unique_id || client.id.slice(0, 8)} · PT Subscription History`}
+
               actions={
                 <div className="flex gap-2">
                   <HeroButton variant="glass" className="flex-1 sm:flex-none" icon={<ArrowLeft size={14} />}

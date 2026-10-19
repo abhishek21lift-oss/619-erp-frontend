@@ -73,7 +73,7 @@ export default function AssignedWorkoutsPage({ params }: { params: Promise<{ id:
         <PageHero
           icon={<ClipboardList size={20} />}
           title="Assigned Workouts"
-          subtitle="Programmes this client is on, and how far through."
+
         />
 
       <div className="mx-auto max-w-screen-md">

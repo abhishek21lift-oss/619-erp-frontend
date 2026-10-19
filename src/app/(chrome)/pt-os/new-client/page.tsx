@@ -437,7 +437,7 @@ function NewClientForm() {
       <PageHero
         icon={<Award size={20} />}
         title="New PT Client"
-        subtitle="Create a new Personal Training client profile."
+
       >
         <div className="flex items-center justify-between gap-3">
           <span className="text-[11px] font-[800] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.66)' }}>Progress</span>

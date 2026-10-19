@@ -234,7 +234,7 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
       <PageHero
         icon={<Target size={20} />}
         title={`${clientName}'s Goals`}
-        subtitle="Goal Assessment"
+
         actions={
           <button type="button" onClick={() => openWizard(null)}
             className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
@@ -432,7 +432,7 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
       <PageHero
         icon={<Target size={18} />}
         title={goalId ? 'Edit Goal' : 'New Goal'}
-        subtitle={clientName}
+
       >
         {/* No Cancel action here — the sticky footer's Back button already
             exits the wizard at step 1 with the same discard-confirm guard,

@@ -166,7 +166,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
   const { user } = useAuth();
   const { features } = useFeatures();
   const pathname = usePathname();
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [openGroupId, setOpenGroupId] = useState<string | null>(null);
   // The studio app is the trainer's; the badge counts are studio business.
   const isTrainer = user?.role === 'trainer';
   const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
@@ -261,16 +261,28 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
       .filter(g => g.items.length > 0);
   }, [user?.role, features]);
 
-  const toggleGroup = (id: string) => setExpanded(p => ({ ...p, [id]: !p[id] }));
+  // One group open at a time: opening a group closes whichever was open, and
+  // clicking the open one closes it. This used to be a Record, so every group
+  // a trainer had ever clicked stood open together.
+  const toggleGroup = (id: string) => setOpenGroupId(p => (p === id ? null : id));
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
   const anyChildActive = (items: { href?: string; children?: { href?: string }[] }[]) =>
     items.some(i => isActive(i.href || '') || i.children?.some(c => isActive(c.href || '')));
+
+  // Follow the route: whatever page you land on opens its own group. A single
+  // id has no "open by default" fallback the way the Record had, so without
+  // this the group containing the current page would start closed.
+  useEffect(() => {
+    const active = navItems.find(g => anyChildActive(g.items));
+    if (active) setOpenGroupId(active.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, navItems]);
 
   return (
     <nav role="navigation" aria-label="Main navigation" className="px-2.5 py-1">
       {navItems.map((group, groupIndex) => {
         const GroupIcon = ICON_MAP[group.icon] || LayoutDashboard;
-        const open = expanded[group.id] ?? anyChildActive(group.items);
+        const open = openGroupId === group.id;
         const hasActiveChild = anyChildActive(group.items);
         const sectionLabel = SECTION_LABELS[group.id];
 

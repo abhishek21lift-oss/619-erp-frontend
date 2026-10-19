@@ -49,7 +49,7 @@ function Inner() {
       <PageHero
         icon={<RefreshCcw size={20} />}
         title="Renewal Report"
-        subtitle="TRUE renewal conversion — renewed packages over expired packages in the same window"
+
       >
         <CanonicalDateRange from={from} to={to} onFrom={setFrom} onTo={setTo} dark />
       </PageHero>

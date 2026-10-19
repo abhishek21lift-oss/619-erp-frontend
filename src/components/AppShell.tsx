@@ -138,9 +138,13 @@ function AppShellContent({ children }: AppShellProps) {
   const { features } = useFeatures();
   const searchPages = useMemo(() => buildSearchPages(features), [features]);
 
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
+  // One top-bar menu at a time. Three independent booleans let settings, the
+  // bell and the avatar all stand open together; a single id means opening
+  // any of them closes the rest by construction.
+  const [openMenu, setOpenMenu] = useState<'settings' | 'notifications' | 'profile' | null>(null);
+  const settingsOpen = openMenu === 'settings';
+  const notifOpen = openMenu === 'notifications';
+  const profileOpen = openMenu === 'profile';
   // Desktop sidebar starts expanded; the user's manual collapse/expand choice
   // is restored from localStorage by the Sidebar on mount. No hover auto-toggle.
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -252,17 +256,23 @@ function AppShellContent({ children }: AppShellProps) {
         setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read_at: new Date().toISOString() } : x));
       } catch { /* ignore */ }
     }
-    if (n.link) { setNotifOpen(false); router.push(n.link); }
+    if (n.link) { setOpenMenu(null); router.push(n.link); }
   };
 
   useEffect(() => {
+    // Outside click closes whichever menu is open; Escape always does.
     const handleClickOutside = (e: MouseEvent) => {
-      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setSettingsOpen(false);
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
+      const target = e.target as Node;
+      const inside = [settingsRef, notifRef, profileRef].some((r) => r.current?.contains(target));
+      if (!inside) setOpenMenu(null);
     };
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenMenu(null); };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   return (
@@ -379,7 +389,7 @@ function AppShellContent({ children }: AppShellProps) {
                 <m.button
                   type="button"
                   aria-label="Settings"
-                  onClick={() => setSettingsOpen(s => !s)}
+                  onClick={() => setOpenMenu(m => (m === 'settings' ? null : 'settings'))}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className={cn('relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden transition-all duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
@@ -409,7 +419,7 @@ function AppShellContent({ children }: AppShellProps) {
                         {settingsLinks.map((link) => {
                           const Icon = link.icon;
                           return (
-                            <Link key={link.href} href={link.href} onClick={() => setSettingsOpen(false)}
+                            <Link key={link.href} href={link.href} onClick={() => setOpenMenu(null)}
                               className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                               <Icon size={14} strokeWidth={1.5} />
                               {link.label}
@@ -427,7 +437,7 @@ function AppShellContent({ children }: AppShellProps) {
                 <m.button
                   type="button"
                   aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
-                  onClick={() => setNotifOpen(s => !s)}
+                  onClick={() => setOpenMenu(m => (m === 'notifications' ? null : 'notifications'))}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className={cn('relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
@@ -528,7 +538,7 @@ function AppShellContent({ children }: AppShellProps) {
 
                       {/* Footer */}
                       <div className="border-t border-[var(--border)] px-4 py-2.5">
-                        <Link href="/engagement/notifications" onClick={() => setNotifOpen(false)}
+                        <Link href="/engagement/notifications" onClick={() => setOpenMenu(null)}
                           className="flex items-center justify-center gap-1.5 text-[11px] font-medium text-[var(--brand)] hover:text-[var(--text-primary)] transition-colors">
                           View all notifications
                           <ChevronRight size={11} />
@@ -541,7 +551,7 @@ function AppShellContent({ children }: AppShellProps) {
 
               {/* ── Profile dropdown ── */}
               <div ref={profileRef} className="relative">
-                <button onClick={() => setProfileOpen(s => !s)}
+                <button onClick={() => setOpenMenu(m => (m === 'profile' ? null : 'profile'))}
                   className="flex items-center gap-2.5 pl-3 transition-all duration-200 hover:opacity-80"
                   style={{ borderLeft: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}>
                   {/* The trainer's photo when they have one, else the studio's
@@ -575,24 +585,24 @@ function AppShellContent({ children }: AppShellProps) {
                         </span>
                       </div>
                       <div className="py-1">
-                        <Link href="/settings/profile" onClick={() => setProfileOpen(false)}
+                        <Link href="/settings/profile" onClick={() => setOpenMenu(null)}
                           className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                           <User size={14} strokeWidth={1.5} /> My Profile
                         </Link>
                         {/* The studio app is the trainer's alone — the platform
                             operator never reaches it on their own session — so
                             there is no operator branch here. */}
-                        <Link href="/settings/profile?tab=security" onClick={() => setProfileOpen(false)}
+                        <Link href="/settings/profile?tab=security" onClick={() => setOpenMenu(null)}
                           className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                           <Settings size={14} strokeWidth={1.5} /> Security
                         </Link>
                         {user?.organization_name && (
-                          <Link href="/subscription" onClick={() => setProfileOpen(false)}
+                          <Link href="/subscription" onClick={() => setOpenMenu(null)}
                             className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                             <CreditCard size={14} strokeWidth={1.5} /> Subscription &amp; Billing
                           </Link>
                         )}
-                        <Link href="/help" onClick={() => setProfileOpen(false)}
+                        <Link href="/help" onClick={() => setOpenMenu(null)}
                           className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                           <HelpCircle size={14} strokeWidth={1.5} /> Help & Support
                         </Link>

@@ -169,7 +169,6 @@ function SkeletonCard() {
   );
 }
 
-
 export default function InvoicesPage() {
   const [statusTab, setStatusTab] = React.useState<InvoiceStatus | 'all'>('all');
   // Seeded from ?q= so a hit from the global search lands on that invoice.
@@ -270,7 +269,7 @@ export default function InvoicesPage() {
         <PageHero
           icon={<FileText size={20} />}
           title="Invoices"
-          subtitle="Manage billing, track payments, and send invoices."
+
         >
           <div className="flex flex-wrap items-center gap-2.5">
             <div className="flex flex-1 gap-2.5">

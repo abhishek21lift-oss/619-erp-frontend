@@ -16,7 +16,6 @@ import {
   NOTIFICATION_LIMITS, type NotificationValues,
 } from '@/lib/forms/schemas/notification';
 
-
 interface Notif { id:string; title:string; body:string; type:string; audience:string; status:'sent'|'scheduled'; created_at:string; recipients:number; }
 
 const KPIS = [
@@ -111,7 +110,7 @@ function NContent() {
       <PageHero
         icon={<Bell size={20} />}
         title="Notifications"
-        subtitle="Send alerts, reminders & announcements to members."
+
         actions={
           <button type="button" onClick={()=>setShowForm(v=>!v)}
             className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"

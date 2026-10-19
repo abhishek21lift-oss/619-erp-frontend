@@ -206,7 +206,7 @@ function AutoContent() {
       <PageHero
         icon={<Bot size={20} />}
         title="Automation Rules"
-        subtitle="Automate WhatsApp, SMS, and email messages for welcome, follow-up, renewal, birthday, and promotions."
+
         actions={
           <button type="button" onClick={()=>{cancelForm(); setShowForm(!showForm);}}
             className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"

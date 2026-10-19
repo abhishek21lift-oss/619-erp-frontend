@@ -100,7 +100,7 @@ function Inner() {
       <PageHero
         className="mb-5"
         title="Verify payments"
-        subtitle="Match each UPI reference against your bank statement, then approve to activate the membership."
+
         icon={<ShieldCheck size={20} />}
         actions={
           <div className="flex gap-2">

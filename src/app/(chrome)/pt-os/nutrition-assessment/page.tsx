@@ -198,7 +198,7 @@ function NutritionHub({ clientId, toast }: NutritionHubProps) {
       <PageHero
         icon={<Salad size={18} />}
         title={`${clientName}'s Nutrition`}
-        subtitle="Nutrition Assessment"
+
         actions={
           <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: '#fff', color: '#0F172A' }}>
             New Assessment
@@ -400,7 +400,7 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
           without the "Discard changes?" check Back makes; Back on the first
           step is the way out now. */}
       <div className="mx-auto max-w-3xl pt-1">
-        <PageHero icon={<Salad size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'} subtitle={clientName}>
+        <PageHero icon={<Salad size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'}>
           {!reviewMode && <NutritionProgressTimeline current={step} onStep={setStep} />}
         </PageHero>
       </div>

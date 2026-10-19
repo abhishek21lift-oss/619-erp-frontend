@@ -94,8 +94,6 @@ const DAYS = [
 
 const SESSIONS_OPTIONS = Array.from({ length: 7 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} Session${i > 0 ? 's' : ''}` }));
 
-
-
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 /* ─────────────────────────────────────────────────────── HELPERS */
@@ -231,7 +229,6 @@ function initForm(): EnrollFormData {
     finalAmount: '', amountPaid: '', paymentMethod: '',
   };
 }
-
 
 /* ─────────────────────────────────────────────────────── PAGE EXPORT */
 /** The active goal from the Goals page, as a label. */
@@ -725,7 +722,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
       <PageHero
         icon={<Award size={20} />}
         title={clientName || 'Client'}
-        subtitle="PT Enrollment"
+
       >
         {heroFacts.length > 0 && (
           <div className="flex flex-wrap gap-1.5">

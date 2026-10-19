@@ -67,7 +67,7 @@ function RecapBody() {
     load(month);
   };
 
-  const title = <PageTitle accent="studio" icon={<CalendarRange size={20} />} title="Monthly recap" sub="Your month, from everything logged" />;
+  const title = <PageTitle accent="studio" icon={<CalendarRange size={20} />} title="Monthly recap" />;
   if (failed) return <>{title}<LoadError what="recap" /></>;
   if (!recap) return <PageSkeleton />;
 

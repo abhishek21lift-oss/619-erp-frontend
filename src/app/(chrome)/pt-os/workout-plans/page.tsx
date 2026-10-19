@@ -23,7 +23,6 @@ import { errorMessage } from '@/lib/forms/errors';
 
 interface ClientOption { id: string; name: string; }
 
-
 /** The one accent this page uses. Six rotating card gradients were six
  *  different meanings for a colour that never meant anything. */
 const ACCENT = '#0067e0';
@@ -189,7 +188,6 @@ function Inner() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-
   /** Assign a plan. The backend screening gate hard-blocks only clients
    *  whose PAR-Q explicitly flags them as medically blocked; missing
    *  paperwork assigns fine and comes back as screening_warnings, which we
@@ -219,7 +217,6 @@ function Inner() {
     }
   }, [toast, fetchData]);
 
-
   const filteredExercises = exercises.filter((ex) => {
     // body_region is the normalized bucket; body_part is the legacy text the
     // same rows still carry, so this keeps matching either way.
@@ -229,7 +226,6 @@ function Inner() {
     if (activeBodyPart !== 'All' && (ex.body_region ?? ex.body_part) !== activeBodyPart) return false;
     return true;
   });
-
 
   /**
    * The assignment covering each plan, by plan id.
@@ -326,13 +322,7 @@ function Inner() {
           compact
           icon={<Dumbbell size={18} />}
           title={briefClient?.name ?? 'Workout Plans'}
-          subtitle={briefClient
-            ? [
-              briefClient.age != null ? `${briefClient.age} yrs` : null,
-              briefClient.gender,
-              briefClient.goal ? String(briefClient.goal).replace(/_/g, ' ') : null,
-            ].filter(Boolean).join(' · ') || 'Design their programme'
-            : 'Build and manage training programmes'}
+
           actions={(
           <div className="flex shrink-0 items-center gap-2">
             {/* View toggle — compact, and only where a grid exists to toggle. */}

@@ -190,10 +190,11 @@ describe('Outstanding Dues — "Outstanding"', () => {
 
     const { default: Page } = await import('@/app/(chrome)/finance/dues/page');
     render(<Page />);
-    await waitFor(() => expect(screen.getByText(/40 members with pending dues/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('₹20.0K')).toBeTruthy());
+    expect(screen.getByText('Outstanding')).toBeTruthy();
   });
 
-  it('over the cap: total and debtor count come from the aggregate', async () => {
+  it('over the cap: total and risk bands come from the aggregate', async () => {
     insightsMock.dues.mockResolvedValue(debtors(100));         // the capped page
     insightsMock.duesSummary.mockResolvedValue({
       total_outstanding: 875000, debtor_count: 350, high_risk_count: 12, medium_risk_count: 60,
@@ -202,10 +203,9 @@ describe('Outstanding Dues — "Outstanding"', () => {
     const { default: Page } = await import('@/app/(chrome)/finance/dues/page');
     render(<Page />);
 
-    // 350 debtors, not the 100 rows on screen.
-    await waitFor(() => expect(screen.getByText(/350 members with pending dues/)).toBeTruthy());
-    // And it says so rather than letting the list imply it is everyone.
-    expect(screen.getByText(/showing the 100 largest/)).toBeTruthy();
+    // ₹8.8L is the server's total, not the ₹50.0K the 100 rows on screen add up to.
+    await waitFor(() => expect(screen.getByText('₹8.8L')).toBeTruthy());
+    expect(screen.queryByText('₹50.0K')).toBeNull();
     // Risk bands are the server's too — they were counted over 100 rows before.
     expect(screen.getByText('12')).toBeTruthy();
     expect(screen.getByText('60')).toBeTruthy();

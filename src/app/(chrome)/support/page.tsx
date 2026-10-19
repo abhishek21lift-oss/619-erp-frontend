@@ -259,7 +259,7 @@ function SupportPage() {
       <PageHero
         icon={<LifeBuoy size={20} />}
         title="Support"
-        subtitle="Raise a request and we will reply here."
+
         actions={!open && !composing ? (
           <HeroButton className="w-full sm:w-auto" onClick={() => setComposing(true)} icon={<Plus size={15} />}>
             New request

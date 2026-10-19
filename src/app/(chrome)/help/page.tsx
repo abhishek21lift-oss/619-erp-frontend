@@ -39,7 +39,7 @@ export default function HelpPage() {
         <PageHero
           icon={<HelpCircle size={20} />}
           title="Help & Support"
-          subtitle="Find answers to common questions"
+
         />
 
         {/* ── Search ── */}

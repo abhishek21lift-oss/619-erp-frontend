@@ -215,8 +215,7 @@ function Inner() {
       <PageHero
         icon={<Banknote size={20} />}
         title="Collected Payments"
-        subtitle={period === 'today' ? "Today's takings, as they come in"
-          : period === 'month' ? 'Everything collected this month' : 'Track and manage all incoming payments'}
+
       >
         <div className="grid grid-cols-3 gap-1 rounded-full p-1" role="tablist" aria-label="Period"
           style={{ background: 'rgba(255,255,255,0.10)' }}>

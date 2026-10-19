@@ -8,12 +8,11 @@ import {
   ArrowRightCircle, X, Check, Loader2, Users, TrendingUp, Target, PhoneCall,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, EmptyState, PageContainer, PullToRefresh } from '@/components/ui';
+import { Button, EmptyState, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { LeadFormFields, SOURCE_OPTIONS, emptyLeadForm } from '@/components/pt-os/leads/LeadFormFields';
 import type { LeadFormState } from '@/components/pt-os/leads/LeadFormFields';
 import LeadFollowupAction from '@/components/pt-os/leads/LeadFollowupAction';
-import { LeadHero } from '@/components/pt-os/leads/LeadHero';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
 import type { PtLead } from '@/lib/api';
@@ -273,9 +272,22 @@ export default function LeadsPage() {
             max-w-[1600px] with mt-1. */}
         <PageContainer>
 
-            <LeadHero
-              followUpAction={<LeadFollowupAction variant="hero" />}
-              onAddLead={() => router.push('/pt-os/leads/new')}
+            {/* The app-wide compact hero, like every other list page: the
+                Leads-only saturated card this used to render was the one
+                page in the studio that did not speak the shared hero's
+                language. The two actions stay, beside the title. */}
+            <PageHero
+              compact
+              icon={<UserSearch size={18} />}
+              title="Leads"
+              actions={(
+                <div className="flex shrink-0 items-center gap-2">
+                  <LeadFollowupAction />
+                  <Button iconLeft={<Plus size={15} />} onClick={() => router.push('/pt-os/leads/new')}>
+                    Add Lead
+                  </Button>
+                </div>
+              )}
             />
 
             {/* KPIs — 2x2 on a phone, 4 across from `sm`, which is the

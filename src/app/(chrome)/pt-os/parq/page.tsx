@@ -154,7 +154,7 @@ function ParqHub({ clientId, toast }: ParqHubProps) {
       <PageHero
         icon={<ShieldCheck size={20} />}
         title={`${clientName}'s PAR-Q`}
-        subtitle="PAR-Q + Health Screening"
+
         actions={
           <button type="button" onClick={() => openWizard(null)}
             className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
@@ -468,7 +468,7 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
       <PageHero
         icon={<ShieldCheck size={18} />}
         title={currentFormId ? 'Edit Screening' : 'New Screening'}
-        subtitle={clientName}
+
       >
         <StepperTimeline steps={stepperSteps} current={step} onStep={(id) => handleStepClick(id as StepId)} />
       </PageHero>

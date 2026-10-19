@@ -56,7 +56,7 @@ describe('radarDataFromScores', () => {
       overallScore: 66,
     });
     expect(data.map((d) => d.category)).toEqual([
-      'Cardio', 'Strength', 'Endurance', 'Mobility', 'Body Comp.', 'Health Risk',
+      'Cardio', 'Strength', 'Endurance', 'Flexibility', 'Body Comp.', 'Health Score',
     ]);
     expect(data.map((d) => d.score)).toEqual([70, null, 50, null, 60, 90]);
   });

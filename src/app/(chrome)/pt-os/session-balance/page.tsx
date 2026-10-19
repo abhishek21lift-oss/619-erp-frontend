@@ -66,7 +66,7 @@ function SessionBalanceInner() {
         <PageHero
           icon={<Gauge size={20} />}
           title="Session Balance"
-          subtitle="Track PT session usage, view low balance alerts, and manage package renewals."
+
         />
 
         {/* Low Balance Alert */}

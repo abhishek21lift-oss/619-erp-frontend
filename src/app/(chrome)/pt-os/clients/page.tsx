@@ -252,7 +252,7 @@ export default function PtClientsPage() {
           <PageHero
             icon={<Users size={20} />}
             title="PT Clients"
-            subtitle="Personal training client management"
+
             actions={(
               <button
                 type="button"

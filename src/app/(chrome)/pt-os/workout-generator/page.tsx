@@ -125,7 +125,7 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
       <PageHero
         icon={<Dumbbell size={20} color="#fff" />}
         title="Workout Generator"
-        subtitle={`Rules-based session draft${clientName ? ` for ${clientName}` : ''} — review, then save.`}
+
       />
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -232,7 +232,7 @@ function PickClient() {
   return (
     <ClientPicker
       title="Workout Generator"
-      subtitle="Pick the client this session is for."
+
       icon={<Dumbbell size={20} color="#fff" />}
       basePath="/pt-os/workout-generator"
     />

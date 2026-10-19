@@ -129,7 +129,7 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
         <PageHero
           icon={<Repeat size={20} />}
           title="Renew PT"
-          subtitle={client ? client.name : undefined}
+
         />
 
       <div className="mx-auto max-w-2xl">

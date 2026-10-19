@@ -89,7 +89,7 @@ export default function MacrocyclePage() {
         <PageHero
           icon={<CalendarRange size={20} color="#fff" />}
           title="Macrocycle"
-          subtitle="Split a training block into phases, then write each phase in the builder."
+
         />
 
         <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

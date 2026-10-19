@@ -39,7 +39,6 @@ import { errorMessage } from '@/lib/forms/errors';
  *    filter and programme exactly like the built-in 890.
  */
 
-
 export default function ExerciseLibraryPage() {
   return (
     <Guard>
@@ -173,7 +172,7 @@ function ExerciseLibrary() {
       <PageHero
         icon={<Dumbbell size={20} />}
         title="Exercise Library"
-        subtitle="Browse by muscle, equipment or name"
+
         actions={canAuthor ? (
           <HeroButton
             onClick={openCreate}
@@ -543,7 +542,6 @@ function pageWindow(current: number, count: number): (number | null)[] {
   }
   return out;
 }
-
 
 /**
  * A body region as a tile in its own colour — the library's front door.

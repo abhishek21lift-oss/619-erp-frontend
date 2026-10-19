@@ -258,7 +258,7 @@ function RevenueAnalytics() {
         <PageHero
           icon={<TrendingUp size={20} />}
           title="Revenue Analytics"
-          subtitle="Collected revenue, incentives and trainer contribution"
+
           actions={
             <div className="flex items-center gap-2">
             <button

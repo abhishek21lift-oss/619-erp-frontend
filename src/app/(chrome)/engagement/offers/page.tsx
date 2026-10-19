@@ -93,7 +93,7 @@ function OffersContent() {
       <PageHero
         icon={<Tag size={20} />}
         title="Offers & Promotions"
-        subtitle="Create discount codes, referral offers & promotional deals for members."
+
         actions={
           <button type="button" onClick={()=>{ if (showForm) { setShowForm(false); setEditing(null); } else { openNewOfferForm(); } }}
             className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"

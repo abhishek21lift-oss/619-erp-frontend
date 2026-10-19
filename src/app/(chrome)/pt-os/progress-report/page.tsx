@@ -20,7 +20,7 @@ export default function ProgressReportLandingPage() {
     <Guard>
       <ClientPicker
         title="Progress Report"
-        subtitle="Pick a client to see their training progress"
+
         icon={<TrendingUp size={20} color="#fff" />}
         basePath="/pt-os/progress-report"
         hrefFor={(id) => `/pt-os/clients/${id}/training/analytics`}

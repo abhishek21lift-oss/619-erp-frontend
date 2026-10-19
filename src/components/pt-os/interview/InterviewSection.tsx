@@ -1,41 +1,40 @@
 'use client';
 
-// One question of the Client Interview, dressed as an Apple-style card: a
-// gradient squircle in the question's own tone, the question as it is asked
-// out loud, and a writing surface that grows with the answer.
+// One topic of the Client Interview, dressed as an Apple-style card: a
+// gradient squircle in the topic's own tone, the question as it is asked out
+// loud, and a select for every answer it takes.
 //
-// The tone is decoration. Whether the question is answered is the only state
-// on the card, and it is shown in emerald with a word as well as a mark.
+// The tone is decoration. Whether the topic is answered is the only state on
+// the card, and it is shown in emerald with a word as well as a mark.
 
 import { useId } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import { Check } from 'lucide-react';
-import { FormField, TextArea } from '@/components/ui/form';
+import { SelectField, useStandaloneField } from '@/components/ui/form';
 import { semantic, rgba } from '@/lib/palette';
 import { gradient, tones } from '@/components/profile/profileTheme';
-import type { InterviewQuestion } from './questions';
+import { topicComplete, type Answers, type InterviewControl, type InterviewField, type InterviewQuestion } from './questions';
 
 const inkClass = 'text-[var(--tone-ink)] dark:text-[var(--tone-ink-dark)]';
 
 export function InterviewSection({
-  question, index, value, onChange,
+  question, index, answers, onChange,
 }: {
   question: InterviewQuestion;
   index: number;
-  value: string;
-  onChange: (next: string) => void;
+  answers: Answers;
+  onChange: (field: InterviewField, next: string) => void;
 }) {
   const reduce = useReducedMotion();
-  const hintId = useId();
+  const titleId = useId();
   const tone = tones[question.tone];
   const Icon = question.icon;
-  const answered = value != null && (typeof value === 'string' ? value.trim().length > 0 : true);
-  const nearLimit = typeof value === 'string' ? value.length >= (question.max || 2000) * 0.9 : false;
+  const answered = topicComplete(question, answers);
 
   return (
     <m.section
-      id={`q-${question.key}`}
-      aria-labelledby={`${hintId}-title`}
+      id={`q-${question.id}`}
+      aria-labelledby={titleId}
       initial={reduce ? false : { opacity: 0, y: 14 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
@@ -53,7 +52,7 @@ export function InterviewSection({
       }}
     >
       {/* A wash of the tone from the top corner — the card's colour without
-          putting colour behind the text the trainer is writing. */}
+          putting colour behind the answers. */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-28 opacity-80"
         style={{ background: `radial-gradient(120% 100% at 0% 0%, ${tone.wash}, transparent 70%)` }} />
 
@@ -76,35 +75,43 @@ export function InterviewSection({
               </span>
             )}
           </div>
-          <h2 id={`${hintId}-title`} className="mt-1 text-[17px] font-[780] leading-snug tracking-[-0.015em] sm:text-[18px]"
+          <h2 id={titleId} className="mt-1 text-[17px] font-[780] leading-snug tracking-[-0.015em] sm:text-[18px]"
             style={{ color: 'var(--text-primary)' }}>
             {question.prompt}
           </h2>
-          <p id={hintId} className="mt-0.5 text-[12.5px] leading-[1.5]" style={{ color: 'var(--text-muted)' }}>
-            {question.hint}
-          </p>
         </div>
       </div>
 
-      <div className="relative mt-3.5">
-        <FormField label={question.label} labelHidden>
-          <TextArea
-              rows={3}
-              maxLength={question.max}
-              value={String(value ?? '')}
-              aria-describedby={hintId}
-              placeholder="Type their answer…"
-              onChange={(e) => onChange(String(e.target.value))}
-              className="min-h-[92px] [field-sizing:content]"
-            />
-        </FormField>
-        <div className="mt-1.5 flex justify-end">
-          <span className="text-[11px] tabular-nums"
-            style={{ color: nearLimit ? semantic.warningLo : 'var(--text-muted)' }}>
-            {typeof value === 'string' ? `${value.length.toLocaleString()} / ${question.max.toLocaleString()}` : 'Answered'}
-          </span>
-        </div>
+      <div className="relative mt-3.5 grid gap-3.5"
+        style={question.controls.length > 1 ? { gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' } : undefined}>
+        {question.controls.map((control) => (
+          <Control key={control.key} control={control} value={answers[control.key] ?? ''} onChange={onChange} />
+        ))}
       </div>
     </m.section>
+  );
+}
+
+/**
+ * One answer, as a platform select. Its own component because the field hook
+ * is one-per-control: the smoking card holds two, and a hook cannot be called
+ * in a loop.
+ */
+function Control({
+  control, value, onChange,
+}: {
+  control: InterviewControl;
+  value: string;
+  onChange: (field: InterviewField, next: string) => void;
+}) {
+  const field = useStandaloneField<string>(control.key, value, (next) => onChange(control.key, next));
+  return (
+    <SelectField
+      field={field}
+      label={control.label}
+      description={control.hint}
+      options={control.options}
+      placeholderOption="Not provided"
+    />
   );
 }

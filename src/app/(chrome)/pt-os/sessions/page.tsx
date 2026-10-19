@@ -125,7 +125,7 @@ export default function PTSessionsPage() {
         <PageHero
           icon={<Calendar size={20} />}
           title="Session History"
-          subtitle="Track all PT sessions across trainers"
+
           actions={
             <m.button
               type="button"

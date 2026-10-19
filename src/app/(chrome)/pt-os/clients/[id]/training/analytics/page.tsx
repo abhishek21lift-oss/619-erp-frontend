@@ -163,7 +163,7 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
         <PageHero
           icon={<TrendingUp size={20} />}
           title="Progress Analytics"
-          subtitle="Built from logged sessions — not from the plan."
+
         />
 
       <div className="mx-auto max-w-screen-md">
