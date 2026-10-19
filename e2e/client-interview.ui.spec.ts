@@ -110,7 +110,9 @@ test.describe('Client interview and journey', () => {
     expect(seeded.status, JSON.stringify(seeded.body)).toBe(201);
 
     await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
-    const smoking = page.getByLabel('Smoking');
+    // `exact` because the substances section is announced as "Any smoking or
+    // drinking?", which a substring match on "Smoking" also hits.
+    const smoking = page.getByLabel('Smoking', { exact: true });
     await expect(smoking).toBeVisible({ timeout: 25_000 });
     await smoking.selectOption('daily');
     await page.getByRole('button', { name: 'Save draft' }).click();
@@ -124,7 +126,7 @@ test.describe('Client interview and journey', () => {
     expect(rows[0].training_history).toBe('Played football at college; nothing for two years.');
 
     await page.reload();
-    await expect(page.getByLabel('Smoking')).toHaveValue('daily', { timeout: 25_000 });
+    await expect(page.getByLabel('Smoking', { exact: true })).toHaveValue('daily', { timeout: 25_000 });
     await page.getByRole('button', { name: 'Complete interview' }).click();
     await expect(page.getByRole('heading', { name: 'Interview complete' })).toBeVisible({ timeout: 20_000 });
 

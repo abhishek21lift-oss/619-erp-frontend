@@ -54,7 +54,16 @@ export function AssessmentInfoCard({
         />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 grid gap-4">
+        <FloatInput
+          label="Testing conditions (optional)" multiline autoGrow maxLength={500}
+          value={form.testingConditions}
+          onChange={(v) => set('testingConditions', v)}
+        />
+        <p className="-mt-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+          Time of day, fasted or fed, equipment and hydration. Shown beside the comparison so a changed
+          protocol is visible instead of being read as a changed result.
+        </p>
         <FloatInput
           label="Assessment Notes" multiline autoGrow maxLength={2000}
           value={form.assessmentNotes}

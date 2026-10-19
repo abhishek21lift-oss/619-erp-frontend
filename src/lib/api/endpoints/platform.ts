@@ -16,6 +16,8 @@ import type {
   MeProfile, MeCoach, MeMembership, MePayment, MeAttendance, MeMeasurement, MeSession,
   MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage, MePhoto, MePhotoType,
   MeLastPerformance, MeWorkoutLogInput, MeWorkoutSummary, MeGoals, MeGoal, MeGoalInput, MeRecap, MeRenewal,
+  ProgressRetestOverview, ProgressComparison, ProgressHabitLog, ProgressHabitDashboard,
+  ProgressHabitPreferences, ProgressDashboard,
   InvitationPreview, InvoiceQuery, InvoiceTotals, LoginEvent, LoginEventQuery,
   OrgBillingProfile, OrgInternalNotes, OrgUser, Organization, OrganizationDetail,
   PlatformUser, PlatformUserQuery, PlatformUserSummary,
@@ -844,6 +846,23 @@ export const me = {
   /** Save a finished workout. 201 when created, 200 when the request id was already logged. */
   logWorkout: (body: MeWorkoutLogInput) =>
     http<{ data: MeWorkoutSummary }>('/api/me/workouts', { method: 'POST', body: JSON.stringify(body) }),
+  /** Module 5: countdown, seven-domain comparison, daily habits, goal and workouts in one read. */
+  progress: (params: { date?: string; days?: number } = {}) =>
+    http<{ data: ProgressDashboard }>(`/api/me/progress${qsOf(params)}`),
+  retest: () => http<{ data: ProgressRetestOverview }>('/api/me/progress/retest'),
+  comparison: () => http<{ data: ProgressComparison }>('/api/me/progress/comparison'),
+  habitLogs: (from: string, to: string) =>
+    http<{ data: ProgressHabitLog[] }>(`/api/me/habits${qsOf({ from, to })}`),
+  todayHabit: (date?: string) =>
+    http<{ data: ProgressHabitLog | null }>(`/api/me/habits/today${qsOf({ date })}`),
+  saveHabit: (body: Record<string, unknown>) =>
+    http<{ data: ProgressHabitLog }>('/api/me/habits', { method: 'POST', body: JSON.stringify(body) }),
+  habitPreferences: () =>
+    http<{ data: ProgressHabitPreferences }>('/api/me/habit-preferences'),
+  saveHabitPreferences: (body: Partial<ProgressHabitPreferences>) =>
+    http<{ data: ProgressHabitPreferences }>('/api/me/habit-preferences', {
+      method: 'PUT', body: JSON.stringify(body),
+    }),
   /** The member's goals, with progress computed from the records, and the studio's weight target. */
   goals: () => http<{ data: MeGoals }>('/api/me/goals'),
   createGoal: (body: MeGoalInput) =>

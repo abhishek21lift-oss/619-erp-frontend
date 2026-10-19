@@ -11,6 +11,9 @@ import type {
   ParqDocumentType, ParqForm, ParqFormDetail, ParqGateStatus, WorkoutPreviousExercise,
   WorkoutProgressPoint, WorkoutSession, WorkoutSessionDetail, WorkoutSessionExercise,
   WorkoutSet, WorkoutVolumePoint, TodayRoster, TrainingAnalytics, MuscleLandmark,
+  ProgressRetestSettings, ProgressRetestOverview, ProgressRetestSchedule, ProgressComparison,
+  ProgressHabitLog, ProgressHabitDashboard, ProgressHabitPreferences, ProgressDashboard,
+  ProgressInsightReview,
 } from '../types';
 
 // ── Progress Tracking ─────────────────────────────────────────
@@ -294,5 +297,60 @@ export const progress = {
           method: 'DELETE',
         }),
     },
+  },
+
+  // ── Module 5: re-testing, comparison and daily habits ──────
+  retest: {
+    get: (clientId: string) =>
+      http<{ data: ProgressRetestOverview }>(`/api/progress/clients/${encodeURIComponent(clientId)}/retest`),
+    start: (clientId: string, data: { scheduled_date?: string | null; notes?: string | null }) =>
+      http<{ data: ProgressRetestSchedule }>(`/api/progress/clients/${encodeURIComponent(clientId)}/retest`, {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    reschedule: (clientId: string, id: string, data: { scheduled_date: string; reason?: string | null; notes?: string | null }) =>
+      http<{ data: ProgressRetestSchedule }>(`/api/progress/clients/${encodeURIComponent(clientId)}/retest/${encodeURIComponent(id)}`, {
+        method: 'PATCH', body: JSON.stringify(data),
+      }),
+    cancel: (clientId: string, id: string, reason?: string) =>
+      http<{ data: ProgressRetestSchedule }>(`/api/progress/clients/${encodeURIComponent(clientId)}/retest/${encodeURIComponent(id)}/cancel`, {
+        method: 'POST', body: JSON.stringify({ reason }),
+      }),
+    complete: (clientId: string, id: string, assessmentId: string) =>
+      http<{ data: ProgressRetestSchedule }>(`/api/progress/clients/${encodeURIComponent(clientId)}/retest/${encodeURIComponent(id)}/complete`, {
+        method: 'POST', body: JSON.stringify({ assessment_id: assessmentId }),
+      }),
+    settings: () => http<{ data: ProgressRetestSettings }>('/api/progress/module5/settings'),
+    saveSettings: (data: { cadence_months: number; reminder_days: number[]; is_enabled?: boolean }) =>
+      http<{ data: ProgressRetestSettings }>('/api/progress/module5/settings', {
+        method: 'PUT', body: JSON.stringify(data),
+      }),
+  },
+  comparison: (clientId: string, params: { baseline_id?: string; latest_id?: string } = {}) =>
+    http<{ data: ProgressComparison }>(`/api/progress/clients/${encodeURIComponent(clientId)}/comparison${buildQs(params)}`),
+  habits: {
+    list: (clientId: string, from: string, to: string) =>
+      http<{ data: ProgressHabitLog[] }>(`/api/progress/clients/${encodeURIComponent(clientId)}/habits${buildQs({ from, to })}`),
+    dashboard: (clientId: string, params: { date?: string; days?: number } = {}) =>
+      http<{ data: ProgressDashboard }>(`/api/progress/clients/${encodeURIComponent(clientId)}/habits/dashboard${buildQs(params)}`),
+    preferences: (clientId: string) =>
+      http<{ data: ProgressHabitPreferences }>(`/api/progress/clients/${encodeURIComponent(clientId)}/habit-preferences`),
+    savePreferences: (clientId: string, data: Partial<ProgressHabitPreferences>) =>
+      http<{ data: ProgressHabitPreferences }>(`/api/progress/clients/${encodeURIComponent(clientId)}/habit-preferences`, {
+        method: 'PUT', body: JSON.stringify(data),
+      }),
+    log: (clientId: string, data: Record<string, unknown>) =>
+      http<{ data: ProgressHabitLog }>(`/api/progress/clients/${encodeURIComponent(clientId)}/habits`, {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    reviews: (clientId: string) =>
+      http<{ data: ProgressInsightReview[] }>(`/api/progress/clients/${encodeURIComponent(clientId)}/insights/reviews`),
+    review: (clientId: string, data: {
+      insight_key: string; insight_type: 'observation' | 'recommendation'; title: string;
+      observation?: string | null; recommendation?: string | null;
+      decision: 'acknowledged' | 'approved' | 'dismissed'; notes?: string | null;
+    }) =>
+      http<{ data: ProgressInsightReview }>(`/api/progress/clients/${encodeURIComponent(clientId)}/insights/review`, {
+        method: 'POST', body: JSON.stringify(data),
+      }),
   },
 };

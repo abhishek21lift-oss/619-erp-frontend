@@ -78,7 +78,8 @@ describe('the shared PT-OS client picker', () => {
     // 14 since Member Messages: its "New message" picks a client the same way.
     // 15 since the Client Interview (Phase 2): it opens on a client choice too.
     // 16 since the Workout Generator: it drafts for one client.
-    expect(callers().length).toBe(16);
+    // 17 since the Progress Hub: it reviews one client's re-tests and habits.
+    expect(callers().length).toBe(17);
   });
 
   it('every basePath it is given is a route that exists', () => {

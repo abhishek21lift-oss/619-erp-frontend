@@ -4823,3 +4823,214 @@ export interface HostingerOperationParams {
   query?: Record<string, unknown>;
   body?: Record<string, unknown>;
 }
+
+// ── Module 5: re-testing, comparison, daily habits ────────────
+export type ProgressRetestState =
+  | 'missing_baseline' | 'not_scheduled' | 'upcoming' | 'due'
+  | 'overdue' | 'rescheduled' | 'completed';
+
+export interface ProgressRetestSettings {
+  cadence_months: 4 | 5 | 6;
+  reminder_days: number[];
+  is_enabled: boolean;
+  updated_at: string | null;
+}
+
+export interface ProgressRetestSchedule {
+  id: string;
+  status: Exclude<ProgressRetestState, 'missing_baseline' | 'not_scheduled'>;
+  scheduled_date: string;
+  cadence_months: number;
+  baseline_assessment_id: string | null;
+  completed_assessment_id: string | null;
+  source: 'auto' | 'manual';
+  rescheduled_from: string | null;
+  reschedule_reason: string | null;
+  notes: string | null;
+  completed_at: string | null;
+  cancelled_at: string | null;
+  state?: ProgressRetestState;
+  state_label?: string;
+  days_until?: number | null;
+  next_reminder?: { stage_days: number; in_days: number; on_date: string } | null;
+}
+
+export interface ProgressRetestOverview {
+  client_id: string;
+  today: string;
+  timezone: string;
+  settings: ProgressRetestSettings;
+  assessment_count: number;
+  baseline: Record<string, unknown> | null;
+  latest: Record<string, unknown> | null;
+  schedule: ProgressRetestSchedule | null;
+  state: { state: ProgressRetestState; days_until: number | null; label: string };
+  history: ProgressRetestSchedule[];
+  prompt?: string;
+}
+
+export interface ProgressComparisonMetric {
+  key: string;
+  label: string;
+  unit: string;
+  baseline_value: number | null;
+  latest_value: number | null;
+  previous_value?: number | null;
+  absolute_change: number | null;
+  percent_change: number | null;
+  outcome: 'improved' | 'declined' | 'unchanged' | 'changed' | 'missing' | 'new_measurement' | 'not_remeasured' | 'incomparable';
+  improved: boolean | null;
+  comparable: boolean;
+  incomparable_reason?: string | null;
+  decimals?: number;
+}
+
+export interface ProgressComparisonDomain {
+  key: string;
+  label: string;
+  score: { key: string; label: string; baseline_value: number | null; latest_value: number | null; absolute_change: number | null; outcome: string } | null;
+  comparable: boolean;
+  incomparable_reason?: string | null;
+  metrics: ProgressComparisonMetric[];
+}
+
+export interface ProgressComparison {
+  baseline: Record<string, unknown> | null;
+  latest: Record<string, unknown> | null;
+  previous: Record<string, unknown> | null;
+  domains: ProgressComparisonDomain[];
+  summary: Record<string, number> | null;
+  conditions: { baseline: string | null; latest: string | null; changed: boolean } | null;
+  trainer_observations: string[];
+  previous_comparison?: ProgressComparison | null;
+  generated_at: string;
+  message?: string;
+}
+
+export interface ProgressHabitLog {
+  id: string;
+  log_date: string;
+  sleep_hours: number | null;
+  sleep_quality: number | null;
+  water_ml: number | null;
+  electrolytes: boolean | null;
+  steps: number | null;
+  steps_source: 'manual' | 'wearable' | 'imported' | null;
+  stress_level: number | null;
+  energy_level: number | null;
+  fatigue_level: number | null;
+  soreness_level: number | null;
+  recovery_level: number | null;
+  notes: string | null;
+  source: 'manual' | 'wearable' | 'imported' | 'mixed';
+  updated_at: string;
+}
+
+export interface ProgressHabitMetric {
+  average: number | null;
+  total: number | null;
+  samples: number;
+}
+
+export interface ProgressHabitTrend {
+  current_average: number | null;
+  previous_average: number | null;
+  absolute_change: number | null;
+  percent_change: number | null;
+  samples: number;
+  previous_samples: number;
+}
+
+export interface ProgressHabitDashboard {
+  today: {
+    log: ProgressHabitLog | null;
+    checklist: { key: string; label: string; done: boolean; detail: string | null; target: string | null; optional: boolean }[];
+    completion: number;
+  };
+  averages: Record<string, ProgressHabitMetric>;
+  trends: Record<string, Record<string, ProgressHabitTrend>>;
+  streaks: Record<string, number | null>;
+  last_7_days: {
+    logged_days: number;
+    sleep_average: number | null;
+    sleep_samples: number;
+    sleep_target_days: number;
+    steps_average: number | null;
+    step_samples: number;
+    step_target_days: number | null;
+  };
+  data_quality: {
+    logged_days: number;
+    expected_days: number;
+    missing_days: number;
+    missing_dates?: string[];
+    sources: Record<string, number>;
+    warnings: { code: string; message: string }[];
+  };
+  reference: Record<string, string>;
+}
+
+export interface ProgressGoalSummary {
+  goal_type: string;
+  target_date: string | null;
+  target: { metric: string; value: number; unit: string } | null;
+  current: { metric: string; value: number; unit: string; date: string } | null;
+  start: { metric: string; value: number; unit: string; date: string } | null;
+  progress_percent: number | null;
+  summary: string;
+}
+
+export interface ProgressInsight {
+  insight_key: string;
+  type: 'observation' | 'recommendation';
+  title: string;
+  detail: string;
+  severity: 'info' | 'attention' | 'high';
+  evidence: Record<string, unknown>;
+  recommendation: string | null;
+  requires_trainer_review: true;
+  auto_apply: false;
+}
+
+export interface ProgressInsightReview {
+  id: string;
+  insight_key: string;
+  insight_type: 'observation' | 'recommendation';
+  title: string;
+  observation: string | null;
+  recommendation: string | null;
+  decision: 'acknowledged' | 'approved' | 'dismissed';
+  notes: string | null;
+  reviewed_by_name?: string | null;
+  created_at: string;
+}
+
+export interface ProgressDashboard {
+  client_id: string;
+  today: string;
+  timezone: string;
+  period: { end_date: string; days: number; start_date: string };
+  schedule: ProgressRetestOverview['state'] | ProgressRetestSchedule;
+  assessment: {
+    count: number;
+    baseline: Record<string, unknown> | null;
+    latest: Record<string, unknown> | null;
+    comparison: ProgressComparison | null;
+  };
+  habits: ProgressHabitDashboard;
+  goal: ProgressGoalSummary | null;
+  workouts: { completed: number; planned: number | null; sessions_per_week: number | null; adherence_percent: number | null; period_days: number };
+  insights: ProgressInsight[];
+  insight_reviews: ProgressInsightReview[];
+  data_sources?: Record<string, string>;
+}
+
+export interface ProgressHabitPreferences {
+  sleep_target_min: number;
+  sleep_target_max: number;
+  water_target_ml: number | null;
+  step_target: number | null;
+  reminder_enabled: boolean;
+  reminder_time: string | null;
+  wearable_provider: string | null;
+}
