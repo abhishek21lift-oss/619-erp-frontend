@@ -357,6 +357,13 @@ export type Client = {
   final_amount?: number;
   combo_plan?: string;
   interested_in?: string;
+  // Written by the intake screens (migration 050) and read by the AI
+  // generators' prefill — the vocabulary differs per column, so the prefill
+  // translates rather than trusting any of them as a form value.
+  goal?: string | null;
+  injuries?: string | null;
+  workout_experience_level?: string | null;
+  frequency?: string | null;
 };
 
 export type DuesItem = {

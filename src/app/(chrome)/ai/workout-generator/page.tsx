@@ -14,11 +14,19 @@ import {
 } from '@/components/ui/form';
 import { aiWorkoutInputSchema, stated } from '@/lib/forms/schemas/aiGenerator';
 import { AiClientPicker, type AiClientOption } from '@/components/ai/AiClientPicker';
+import { applyFacts, hasAnyFact, useAiClientPrefill } from '@/lib/ai-client-prefill';
 
 const ACCENT = '#0067E0';
 const ACCENT_SOFT = '#0067E0';
 const ACCENT_DIM = 'rgba(0,103,224,0.10)';
 const ACCENT_GRADIENT = `linear-gradient(135deg, ${ACCENT_SOFT}, ${ACCENT})`;
+
+/** The form before anyone — trainer or record — has stated anything. */
+const INITIAL_FORM = {
+  age: '', gender: 'male', weight_kg: '', height_cm: '',
+  goal: 'general_fitness', experience_level: 'beginner',
+  injuries: '', equipment: 'gym', training_days: '4',
+};
 
 const GOALS = ['weight_loss', 'muscle_gain', 'strength', 'endurance', 'flexibility', 'general_fitness'];
 const EXPERIENCE = ['beginner', 'intermediate', 'advanced'];
@@ -140,11 +148,7 @@ export default function WorkoutGeneratorPage() {
   const linkedClientId = useSearchParams().get('client_id');
   const [pickedClient, setPickedClient] = useState<AiClientOption | null>(null);
   const clientId = linkedClientId ?? (pickedClient ? String(pickedClient.id) : null);
-  const [form, setForm] = useState({
-    age: '', gender: 'male', weight_kg: '', height_cm: '',
-    goal: 'general_fitness', experience_level: 'beginner',
-    injuries: '', equipment: 'gym', training_days: '4',
-  });
+  const [form, setForm] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
   const [loadStep, setLoadStep] = useState(0);
   const [plan, setPlan] = useState<AiWorkoutPlan | null>(null);
@@ -160,7 +164,33 @@ export default function WorkoutGeneratorPage() {
    */
   const generatingRef = useRef(false);
 
-  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k: string, v: string) => {
+    editedRef.current.add(k);
+    setForm((f) => ({ ...f, [k]: v }));
+  };
+
+  /**
+   * Fields the trainer has edited by hand. Auto-fill only ever supplies a
+   * field nobody has touched — the record informs the form, it does not
+   * overrule the person using it. Switching clients clears the set, because
+   * edits to the OLD client's form must not shadow the new client's record.
+   */
+  const editedRef = useRef(new Set<string>());
+  const prefill = useAiClientPrefill(clientId);
+
+  const shownClientRef = useRef<string | null>(clientId);
+  useEffect(() => {
+    if (shownClientRef.current === clientId) return;
+    shownClientRef.current = clientId;
+    editedRef.current.clear();
+    setForm(INITIAL_FORM);
+  }, [clientId]);
+
+  useEffect(() => {
+    if (!prefill.facts) return;
+    setForm((f) => applyFacts(f, prefill.facts!.workout, editedRef.current));
+  }, [prefill.facts]);
+
 
   const ageField = useStandaloneField('age', form.age, (v: string) => set('age', v), { error: fieldErrors.age });
   const weightField = useStandaloneField('weight_kg', form.weight_kg, (v: string) => set('weight_kg', v), { error: fieldErrors.weight_kg });
@@ -246,20 +276,7 @@ export default function WorkoutGeneratorPage() {
     <Guard>
       <PageContainer>
 
-        <PageHero
-          icon={<Dumbbell size={20} />}
-          title="AI Workout Generator"
-          subtitle="A personalised training programme built around your biology, goals, and equipment."
-        >
-          <div className="flex flex-wrap gap-2">
-            {['Progressive Overload', 'Warm-Up & Cool-Down', 'Injury-Aware', 'Tempo & Rest Times'].map((p) => (
-              <span key={p} className="rounded-full px-3 py-1.5 text-[11.5px] font-[650] text-white"
-                style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>
-                {p}
-              </span>
-            ))}
-          </div>
-        </PageHero>
+        <PageHero compact icon={<Dumbbell size={20} />} title="AI Workout Generator" />
 
       <div className="mx-auto w-full max-w-4xl">
 
@@ -282,6 +299,23 @@ export default function WorkoutGeneratorPage() {
               of the way. */}
           {!linkedClientId && (
             <AiClientPicker selected={pickedClient} onSelect={setPickedClient} />
+          )}
+
+          {/* What the prefill found, in words. The form is filled from the
+              client's own record; anything the record does not hold is left
+              blank, never guessed at. */}
+          {clientId && (
+            <div role="status"
+              className="mb-5 rounded-[12px] px-3.5 py-2 text-[12.5px] font-[600]"
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+              {prefill.loading
+                ? 'Loading this client’s saved details…'
+                : prefill.failed
+                  ? 'Could not load the saved details — fill in what you know.'
+                  : prefill.facts && hasAnyFact(prefill.facts.workout)
+                    ? `Prefilled from ${prefill.facts.clientName}’s record — edit anything before generating.`
+                    : 'Nothing saved for this client yet — fill in what you know.'}
+            </div>
           )}
 
           {/* No asterisks. These three are OPTIONAL and the server says so: it
