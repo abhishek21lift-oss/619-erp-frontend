@@ -126,23 +126,17 @@ describe('no page draws a container box around its own title', () => {
     expect(s).toContain('<PageHero');
   });
 
-  // pt-os/leads is deliberately absent from the list above. It renders
-  // components/pt-os/leads/LeadHero instead of PageHero, because the design it
-  // has to match cannot be expressed through PageHero's API: the heading is
-  // fixed at 21px on a phone where the target is ~30px, and the actions slot
-  // sits BESIDE the title from `sm` up where the target stacks them full-width
-  // inside the card. PageHero is shared by every page, so changing it to suit
-  // one of them would change all of them.
-  //
-  // It is exempt from THAT assertion only. It still has to satisfy the slab
-  // header, gutter and page-main checks above, and it still uses the shared
-  // PageContainer — which is the part of the shell that actually matters for
-  // alignment and the bottom-nav offset.
-  it('pt-os/leads uses a Leads-specific hero, and still the shared container', () => {
+  // pt-os/leads used to be deliberately absent from the list above: it
+  // rendered components/pt-os/leads/LeadHero — a Leads-only saturated card,
+  // because the design it had to match could not be expressed through
+  // PageHero's API. It is now on the shared compact hero like every other
+  // list page, so the exception is gone.
+  it('pt-os/leads uses the shared compact hero and container', () => {
     const s = src('app', 'pt-os', 'leads', 'page.tsx');
-    expect(s).toContain('<LeadHero');
+    expect(s).toContain('<PageHero');
+    expect(s).toContain('compact');
     expect(s).toContain('<PageContainer>');
-    expect(s).not.toContain('<PageHero');
+    expect(s).not.toContain('<LeadHero');
   });
 
   it.each(pages)('%s/%s/%s is off the double-padding legacy scaffold', (...p) => {
@@ -457,17 +451,23 @@ describe('the AI suite (Workout/Diet Generator, Progress Analyzer, Business Insi
     }
   });
 
-  it('the feature-pill rows restyle for the navy hero instead of their own tint', () => {
-    // 'rgba(255,255,255,0.75)' pills on a pale card become translucent white
-    // on navy — the same chip balance-sheet and leads use in PageHero.
-    for (const p of [
-      ['app', 'ai', 'workout-generator', 'page.tsx'],
-      ['app', 'ai', 'diet-generator', 'page.tsx'],
-      ['app', 'ai', 'progress-analysis', 'page.tsx'],
-    ]) {
-      const s = src(...p);
-      expect(s).not.toContain('rgba(255,255,255,0.75)');
-      expect(s).toContain("background: 'rgba(255,255,255,0.14)'");
+  it('the three AI pages use the compact hero, with no feature-pill row under it', () => {
+    // These heroes used to carry a navy pill row ('Progressive Overload',
+    // 'Weight Trends'). The 2026-10-19 redesign made all three title-only and
+    // compact: a trainer opening a generator is there to fill in a form, and
+    // the pills were a paragraph of adjectives above it. The title is the
+    // page's own, exactly.
+    const titles: Record<string, string> = {
+      'workout-generator': 'AI Workout Generator',
+      'diet-generator': 'AI Diet Generator',
+      'progress-analysis': 'AI Progress Analyzer',
+    };
+    for (const [folder, title] of Object.entries(titles)) {
+      const s = src('app', 'ai', folder, 'page.tsx');
+      expect(s).toContain('<PageHero');
+      expect(s).toContain('compact');
+      expect(s).toContain(`title="${title}"`);
+      expect(s).not.toContain("background: 'rgba(255,255,255,0.14)'");
     }
   });
 

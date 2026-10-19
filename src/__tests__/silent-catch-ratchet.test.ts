@@ -82,7 +82,6 @@ function sites(): string[] {
 const KNOWN = [
   'app/(bare)/start-free/page.tsx:67',
   'app/(chrome)/ai-coach/knowledge/page.tsx:75',
-  'app/(chrome)/ai/progress-analysis/page.tsx:98',
   'app/(chrome)/engagement/notifications/page.tsx:46',
   // The three /stats catches are the reasoned ones: when the SQL aggregate is
   // unavailable the page falls back to summing the rows it has, which is
@@ -121,10 +120,6 @@ const KNOWN = [
   'components/LandingPage.tsx:60',
   'components/LandingPage.tsx:67',
   'components/TrialBanner.tsx:19',
-  // Same reasoned silence as the progress-analysis picker this was extracted
-  // from (app/(chrome)/ai/progress-analysis/page.tsx:76): an optional client
-  // list whose load failure leaves an empty dropdown, never a wrong number.
-  'components/ai/AiClientPicker.tsx:35',
   'components/fitness/AiCoachPanel.tsx:128',
   'components/fitness/AiCoachPanel.tsx:134',
   // The hosting console reads the operation allow-list beside the reads that

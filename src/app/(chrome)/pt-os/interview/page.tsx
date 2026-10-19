@@ -23,7 +23,8 @@ import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { InterviewSection } from '@/components/pt-os/interview/InterviewSection';
 import { InterviewHero, SectionNav } from '@/components/pt-os/interview/InterviewChrome';
 import {
-  INTERVIEW_QUESTIONS, EMPTY_ANSWERS as EMPTY, answeredCount, type Answers,
+  EMPTY_ANSWERS as EMPTY, INTERVIEW_FIELDS, INTERVIEW_QUESTIONS, answeredCount, topicAnswered,
+  type Answers, type InterviewField,
 } from '@/components/pt-os/interview/questions';
 import { semantic, rgba } from '@/lib/palette';
 import { gradient, tones } from '@/components/profile/profileTheme';
@@ -33,15 +34,19 @@ import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { errorMessage } from '@/lib/forms/errors';
 import { STEP_LABEL, stepHref, type ClientInterview } from '@/lib/journey';
 
+/**
+ * The saved answers, as the strings the selects hold. Numeric columns come
+ * back from Postgres with a scale — NUMERIC(4,1) reads '7.0' for the 7 that
+ * was stored — and a select matches its option's value exactly, so the
+ * trailing zeros are trimmed. Without that, a client who sits seven hours a
+ * day would show "Under 2 hours".
+ */
 function answersFrom(row: ClientInterview | null): Answers {
-  if (!row) return { ...EMPTY };
-  const base = Object.fromEntries(INTERVIEW_QUESTIONS.map(({ key }) => {
-    const raw = row[key as keyof ClientInterview];
-    return [key, raw != null ? (typeof raw === 'number' ? raw : String(raw)) : ''] as [string, string | number | null];
-  })) as Answers;
-  const structured = ['lifestyle_occupation','lifestyle_sitting_hours','lifestyle_screen_time','lifestyle_sleep_hours','lifestyle_meal_regularity','lifestyle_smoking','lifestyle_alcohol','lifestyle_training_days'] as const;
-  for (const k of structured) {
-    if (base[k] === '') base[k] = null;
+  const base = { ...EMPTY };
+  if (!row) return base;
+  for (const field of INTERVIEW_FIELDS) {
+    const raw = row[field as keyof ClientInterview];
+    base[field] = raw == null ? '' : String(raw).replace(/\.0+$/, '');
   }
   return base;
 }
@@ -75,6 +80,14 @@ function InterviewForm({ clientId }: { clientId: string }) {
 
   const formRef = useRef<HTMLFormElement>(null);
   const bar = useColumnRect(formRef, !loading && !completed);
+  /**
+   * The interview as the record holds it, and the baseline the save diffs
+   * against. A field equal to its baseline is left out of the request body
+   * entirely: the API reads an empty string as "clear this column", so a
+   * value this form has no control for (an interview written before these
+   * selects existed) must not be sent at all, rather than sent blank.
+   */
+  const savedRef = useRef<Answers>({ ...EMPTY });
 
   const draftKey = `client-interview-draft.v1:${clientId}`;
   const initial = useMemo(() => answersFrom(current), [current]);
@@ -95,8 +108,13 @@ function InterviewForm({ clientId }: { clientId: string }) {
         // start — a new interview is a new record, the old one is kept.
         const draft = (listRes?.data ?? []).find((r) => r.status === 'draft') ?? null;
         setCurrent(draft);
+        // What the record holds, as the save's baseline: only fields that
+        // differ from it are written, so a value this form cannot show is
+        // never cleared by saving a field beside it.
+        const loaded = answersFrom(draft);
+        savedRef.current = loaded;
         const restored = restore({ notBefore: draft ? Date.parse(draft.updated_at) : undefined });
-        setAnswers(restored ? { ...answersFrom(draft), ...restored } : answersFrom(draft));
+        setAnswers(restored ? { ...loaded, ...restored } : loaded);
         if (restored) toast.info('Restored your unsaved draft.');
       } catch (err: unknown) {
         if (!cancelled) toast.error(errorMessage(err, 'Could not load this client.'));
@@ -108,29 +126,32 @@ function InterviewForm({ clientId }: { clientId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId]);
 
-  const hasAnyAnswer = INTERVIEW_QUESTIONS.some(({ key }) => {
-    const v = answers[key];
-    return v != null && (typeof v === 'string' ? v.trim().length > 0 : true);
-  });
+  const hasAnyAnswer = answeredCount(answers) > 0;
 
   const save = async (status: 'draft' | 'completed') => {
     if (status === 'completed' && !hasAnyAnswer) {
-      toast.error('Write down at least one answer before completing the interview.');
+      toast.error('Answer at least one question before completing the interview.');
       return;
     }
     setSaving(status);
     try {
-      const structuredKeys = ['lifestyle_occupation','lifestyle_sitting_hours','lifestyle_screen_time','lifestyle_sleep_hours','lifestyle_meal_regularity','lifestyle_smoking','lifestyle_alcohol','lifestyle_training_days'] as const;
-      const body: Record<string, unknown> = { ...answers, status };
-      for (const k of structuredKeys) {
-        const v = answers[k as keyof Answers];
-        body[k] = (v === '' || v == null) ? null : v;
+      // Diff, not overwrite: the API treats an empty string as "clear this
+      // column", so only what the trainer actually changed goes in the body.
+      // The seven free-text columns are absent for the same reason — this
+      // form never asks them, so sending them would erase what an earlier
+      // interview recorded.
+      const body: Record<string, unknown> = { status };
+      for (const field of INTERVIEW_FIELDS) {
+        const v = answers[field];
+        if (v === savedRef.current[field]) continue;
+        body[field] = v;
       }
       const res = current
         ? await api.pt.interviews.update(current.id, body)
         : await api.pt.interviews.create(clientId, body);
       clear();
       setCurrent(res.data);
+      savedRef.current = answersFrom(res.data);
       if (status === 'completed') setCompleted(true);
       else toast.success('Interview saved as a draft.');
     } catch (err: unknown) {
@@ -155,8 +176,8 @@ function InterviewForm({ clientId }: { clientId: string }) {
         onSubmit={(e) => { e.preventDefault(); save('completed'); }}>
         <SectionNav answers={answers} />
         {INTERVIEW_QUESTIONS.map((q, i) => (
-          <InterviewSection key={q.key} question={q} index={i} value={answers[q.key] == null ? '' : String(answers[q.key])}
-            onChange={(next) => setAnswers((a) => ({ ...a, [q.key]: next }))} />
+          <InterviewSection key={q.id} question={q} index={i} answers={answers}
+            onChange={(field: InterviewField, next: string) => setAnswers((a) => ({ ...a, [field]: next }))} />
         ))}
 
       </form>
@@ -173,7 +194,7 @@ function InterviewForm({ clientId }: { clientId: string }) {
         }}>
         <p className="hidden min-w-0 flex-1 pl-2 text-[12.5px] font-[650] sm:block" style={{ color: 'var(--text-muted)' }}
           aria-live="polite">
-          <span className="tabular-nums" style={{ color: 'var(--text-primary)' }}>{answered}</span> of {INTERVIEW_QUESTIONS.length} answered
+          <span className="tabular-nums" style={{ color: 'var(--text-primary)' }}>{answered}</span> of {INTERVIEW_FIELDS.length} answered
         </p>
         <div className="flex flex-1 gap-2 sm:flex-none">
           <Button type="button" variant="outline" className="flex-1 sm:flex-none" iconLeft={<Save size={14} />}
@@ -219,10 +240,7 @@ function useColumnRect(ref: React.RefObject<HTMLElement | null>, mounted: boolea
 function InterviewComplete({ clientName, clientId, answers }: { clientName: string; clientId: string; answers: Answers }) {
   const router = useRouter();
   const reduce = useReducedMotion();
-  const covered = INTERVIEW_QUESTIONS.filter((q) => {
-    const v = answers[q.key];
-    return v != null && (typeof v === 'string' ? v.trim().length > 0 : true);
-  });
+  const covered = INTERVIEW_QUESTIONS.filter((q) => topicAnswered(q, answers));
   return (
     <PageContainer>
       <m.div
@@ -247,7 +265,7 @@ function InterviewComplete({ clientName, clientId, answers }: { clientName: stri
           {covered.map((q) => {
             const Icon = q.icon;
             return (
-              <li key={q.key} className="flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5 text-[11.5px] font-[700]"
+              <li key={q.id} className="flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5 text-[11.5px] font-[700]"
                 style={{ background: 'var(--bg-card, var(--bg-elevated))', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
                 <span aria-hidden className="flex h-5 w-5 items-center justify-center rounded-full text-white"
                   style={{ background: gradient(tones[q.tone]) }}>
@@ -280,7 +298,7 @@ function InterviewSkeleton() {
   return (
     <PageContainer>
       <div role="status" aria-label="Loading the interview" className="space-y-4">
-        {block('h-[188px]', 'rounded-[28px]')}
+        {block('h-[132px]', 'rounded-[28px]')}
         <div className="mx-auto max-w-2xl space-y-3">
           {block('h-9', 'rounded-full')}
           {block('h-[196px]')}
