@@ -110,6 +110,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/pt-os/mobility-assessment', label: 'Mobility Assessment', icon: 'Move' },
       { href: '/pt-os/posture-assessment', label: 'Posture Assessment',   icon: 'Accessibility' },
       { href: '/pt-os/strength-tracking', label: 'Strength Tracking',   icon: 'Zap' },
+      { href: '/pt-os/progress',           label: 'Progress Hub',            icon: 'LineChart' },
       { href: '/pt-os/progress-tracking-setup', label: 'Progress Tracking Overview', icon: 'Flag' },
       { href: '/pt-os/progress-photos',   label: 'Progress Photos',     icon: 'Camera',      feature: 'progress_photos' },
       { href: '/pt-os/progress-report',   label: 'Progress Report',     icon: 'TrendingUp' },

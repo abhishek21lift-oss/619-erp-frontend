@@ -224,8 +224,26 @@ export async function apiPost<T = unknown>(
   token: string,
   body: unknown,
 ): Promise<{ status: number; body: T }> {
+  return writeApi<T>('POST', path, token, body);
+}
+
+/** PUT through the API — for restoring a setting a journey changed. */
+export async function apiPut<T = unknown>(
+  path: string,
+  token: string,
+  body: unknown,
+): Promise<{ status: number; body: T }> {
+  return writeApi<T>('PUT', path, token, body);
+}
+
+async function writeApi<T>(
+  method: 'POST' | 'PUT',
+  path: string,
+  token: string,
+  body: unknown,
+): Promise<{ status: number; body: T }> {
   const res = await fetch(`${API_URL}${path}`, {
-    method: 'POST',
+    method,
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/json', 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });

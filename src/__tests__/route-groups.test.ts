@@ -75,6 +75,7 @@ const BARE = [
   'member/messages',
   'member/photos',
   'member/goals',
+  'member/habits',
   'member/recap',
   'member/renew',
   'platform-login',              // the Command Center's door — no session yet
