@@ -122,6 +122,19 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
     await chipRow(scope, label).getByRole('button', { name: yes ? 'Yes' : 'No', exact: true }).click();
   };
 
+  /** Choose an option from one of a step's two pickers.
+   *
+   *  Both pickers are labelled the same ("Exercise", "Test") and their panels
+   *  share every option name. Picking from the first closes it, but its
+   *  AnimatePresence panel stays mounted for ~150ms holding its old options —
+   *  so clicking the second picker straight away makes the option resolve to
+   *  two buttons and Playwright's strict mode throws. Wait for it to be gone. */
+  const pick = async (page: Page, label: string, index: number, option: string): Promise<void> => {
+    await expect(page.getByLabel(`Search ${label}`)).toHaveCount(0);
+    await page.getByRole('button', { name: label, exact: true }).nth(index).click();
+    await page.getByRole('button', { name: option, exact: true }).click();
+  };
+
   /** A Sit and Reach attempt's own row — the innermost grid holding both its reach and its Valid chips. */
   const attemptRow = (page: Page, n: number): Locator =>
     page.locator('div.grid').filter({ has: page.getByLabel(`Attempt ${n} reach`) }).last();
@@ -139,26 +152,17 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
     await next.click(); // 3 → 4
 
     // 4: a cardiorespiratory test is the step's only requirement.
-    await page.getByRole('button', { name: 'Test', exact: true }).click();
-    await page.getByRole('button', { name: 'YMCA 3-Minute Step Test', exact: true }).click();
+    await pick(page, 'Test', 0, 'YMCA 3-Minute Step Test');
     await next.click(); // 4 → 5
 
     // 5: two distinct strength exercises.
-    await page.getByRole('button', { name: 'Exercise', exact: true }).first().click();
-    await page.getByRole('button', { name: 'Bench Press', exact: true }).click();
-    await page.getByRole('button', { name: 'Exercise', exact: true }).nth(1).click();
-    await page.getByRole('button', { name: 'Leg Press', exact: true }).click();
+    await pick(page, 'Exercise', 0, 'Bench Press');
+    await pick(page, 'Exercise', 1, 'Leg Press');
     await next.click(); // 5 → 6
 
-    // 6: two distinct endurance tests. Both pickers are labelled "Test", and
-    // the first one's exit animation keeps its options mounted for ~150ms —
-    // long enough for "Curl Up Test" to match twice if the second picker
-    // opens straight away. Wait for the first picker to be gone.
-    await page.getByRole('button', { name: 'Test', exact: true }).first().click();
-    await page.getByRole('button', { name: 'Push Up Test', exact: true }).click();
-    await expect(page.getByLabel('Search Test')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Test', exact: true }).nth(1).click();
-    await page.getByRole('button', { name: 'Curl Up Test', exact: true }).click();
+    // 6: two distinct endurance tests.
+    await pick(page, 'Test', 0, 'Push Up Test');
+    await pick(page, 'Test', 1, 'Curl Up Test');
     await next.click(); // 6 → 7
   }
 
@@ -173,7 +177,9 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
     // ── Quadriceps: an empty test cannot be marked complete ────────────────
     await card(page, 'Quadriceps').getByRole('button', { name: 'Start', exact: true }).click();
     await page.getByRole('button', { name: 'Mark Test Complete', exact: true }).click();
-    await expect(page.getByRole('alert')).toContainText('choose Yes or No');
+    // Next's route announcer is also role="alert" (and empty), so match the
+    // validation alert by its message rather than by the role alone.
+    await expect(page.getByRole('alert').filter({ hasText: 'choose Yes or No' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Mark Test Complete', exact: true })).toBeVisible();
 
     // Contact on both sides; pelvis and pain clear. Contact Yes means no gap to measure.
