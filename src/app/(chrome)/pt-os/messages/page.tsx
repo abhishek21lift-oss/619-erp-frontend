@@ -162,7 +162,7 @@ function MessagesContent() {
               {failed ? (
                 <div className="px-4 py-6 text-center">
                   <p className="text-[13px] font-[650]" style={{ color: INK }}>Could not load conversations</p>
-                  <p className="mt-1 text-[12px]" style={{ color: MUTED }}>They will retry shortly.</p>
+                  <p className="mt-1 text-[12px]" style={{ color: MUTED }}>Retrying automatically.</p>
                 </div>
               ) : !inbox ? (
                 <div className="space-y-2 px-3 py-2.5">
@@ -178,7 +178,7 @@ function MessagesContent() {
                     {query ? 'No matching conversations' : 'No messages yet'}
                   </p>
                   <p className="mt-1 text-[12px]" style={{ color: MUTED }}>
-                    {query ? 'Try another name.' : 'When a member writes to you from their app, it shows up here.'}
+                    {query ? 'Try another name.' : 'Messages from your clients arrive here.'}
                   </p>
                 </div>
               ) : (
@@ -240,7 +240,6 @@ function MessagesContent() {
                       <MessagesSquare size={22} />
                     </span>
                     <p className="text-[15px] font-[780]" style={{ color: INK }}>Pick a conversation</p>
-                    <p className="mt-1 text-[12.5px]" style={{ color: MUTED }}>Or start a new one with any client.</p>
                   </div>
                 </Centered>
               )}

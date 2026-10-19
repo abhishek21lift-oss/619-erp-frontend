@@ -64,17 +64,16 @@ function Inner() {
 
       {/* ── Hero ──
           maxWidth 1280 with its own 20px of side padding, applied INSIDE
-          .shell-main's gutter, and a bottom rule instead of a header. */}
+          .shell-main's gutter, and a bottom rule instead of a header.
+
+          The hero used to carry a "N% growth rate" pill; the forecast table's
+          own header states the same growth rate against the months it is
+          computed from, which is where a reader looks for it. */}
       <PageHero
         icon={<TrendingUp size={20} />}
         title="Projected Revenue"
 
-      >
-        <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[12px] font-[700] text-white"
-          style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>
-          <BarChart3 size={14} /> {growthRate}% growth rate
-        </span>
-      </PageHero>
+      />
 
       {/* ── Finance Tabs ── */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'var(--bg-card)', padding: '6px', borderRadius: 14, border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', overflowX: 'auto', flexWrap: 'nowrap' }}>

@@ -263,27 +263,19 @@ export default function InvoicesPage() {
 
         {/* ── Hero ──
             maxWidth 1280 with its own 20/32px of padding INSIDE
-            .shell-main's gutter. The right-hand column of Overdue/Pending
-            figures and the Create button wrapped under the title on a phone
-            and lost their alignment; they are hero children now. */}
+            .shell-main's gutter. The Create button is a hero child so it
+            stays aligned with the title on a phone.
+
+            Overdue and Pending used to be repeated here as translucent tiles.
+            The four KPI cards below show the same two figures with the same
+            labels, so on a phone the hero spent a third of the first screen
+            restating what the next screen says. */}
         <PageHero
           icon={<FileText size={20} />}
           title="Invoices"
 
         >
           <div className="flex flex-wrap items-center gap-2.5">
-            <div className="flex flex-1 gap-2.5">
-              {[
-                { label: 'Overdue', value: fmtCurrency(stats.overdue) },
-                { label: 'Pending', value: fmtCurrency(stats.pending) },
-              ].map((s2) => (
-                <div key={s2.label} className="min-w-0 flex-1 rounded-[12px] px-3 py-2.5"
-                  style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
-                  <p className="truncate text-[17px] font-[800] tabular-nums leading-none text-white">{s2.value}</p>
-                  <p className="mt-1.5 text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.66)' }}>{s2.label}</p>
-                </div>
-              ))}
-            </div>
             <button
               type="button"
               onClick={() => setShowCreateModal(true)}
@@ -478,15 +470,21 @@ export default function InvoicesPage() {
                     fontWeight: 780,
                     letterSpacing: '-0.03em',
                     color: 'rgba(30,41,59,0.9)',
-                  }}>No invoices found</p>
-                  <p style={{
-                    marginTop: '8px',
-                    maxWidth: '320px',
-                    fontSize: '14px',
-                    color: 'rgba(148,163,184,0.8)',
-                  }}>
-                    {search ? 'Try adjusting your search terms.' : 'Create your first invoice to start tracking payments.'}
-                  </p>
+                  }}>{search ? 'No invoices found' : 'No invoices yet'}</p>
+                  {/* The first-run line ("Create your first invoice to start
+                      tracking payments") only said what the button under it
+                      says; the search miss keeps its hint because that one is
+                      not inferable from the screen. */}
+                  {search && (
+                    <p style={{
+                      marginTop: '8px',
+                      maxWidth: '320px',
+                      fontSize: '14px',
+                      color: 'rgba(148,163,184,0.8)',
+                    }}>
+                      Try adjusting your search terms.
+                    </p>
+                  )}
                   <div style={{ marginTop: '24px' }}>
                     <Button variant="primary" iconLeft={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>Create Invoice</Button>
                   </div>
@@ -577,7 +575,6 @@ function CreateInvoiceModal({
       open
       onClose={onClose}
       title="Create Invoice"
-      subtitle="New billing entry"
       icon={<Plus size={16} />}
       footer={
         <>

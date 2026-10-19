@@ -198,7 +198,6 @@ function PhotoStudio({ clientId }: PhotoStudioProps) {
                 ) : (
                   <div className="flex flex-col items-center gap-2 text-center px-4">
                     <span className="text-[28px]">📸</span>
-                    <p className="text-[12px] font-[600] text-slate-400">Tap to capture</p>
                   </div>
                 )}
               </div>

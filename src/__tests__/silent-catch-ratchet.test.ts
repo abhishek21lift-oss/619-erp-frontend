@@ -106,8 +106,11 @@ const KNOWN = [
   'app/(chrome)/settings/integrations/page.tsx:442',
   // Two remain on the Security page (the session count on each panel); the
   // other two went with the account-management UI.
-  'app/(chrome)/settings/profile/page.tsx:1864',
-  'app/(chrome)/settings/profile/page.tsx:2156',
+  // 1864 -> 1859 and 2156 -> 2151: a UI-copy pass removed five lines above
+  // each site in this file. File set and per-file count unchanged — line
+  // numbers only.
+  'app/(chrome)/settings/profile/page.tsx:1859',
+  'app/(chrome)/settings/profile/page.tsx:2151',
   'app/(chrome)/settings/profile/page.tsx:950',
   'app/(chrome)/settings/profile/page.tsx:951',
   'app/(platform)/platform/_shared/CommandBar.tsx:103',

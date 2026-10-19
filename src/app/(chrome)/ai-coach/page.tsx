@@ -400,12 +400,6 @@ export default function AiCoachPage() {
 
             <div className="min-w-0 flex-1">
               <p className="truncate text-[14px] font-[760]" style={{ color: 'var(--text-primary)' }}>AI Coach</p>
-              {/* Hidden on phones: at that width it only ever rendered as
-                  "Answers from your studio's live data & doc…", which tells
-                  the user nothing and costs a line of a very tight header. */}
-              <p className="hidden truncate text-[10.5px] sm:block" style={{ color: 'var(--text-muted)' }}>
-                Answers from your studio&apos;s live data &amp; documents
-              </p>
             </div>
 
             {/* Client attach */}

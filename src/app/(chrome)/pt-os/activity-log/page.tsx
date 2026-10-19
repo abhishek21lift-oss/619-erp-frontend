@@ -286,7 +286,6 @@ function Inner() {
             <div className="flex flex-col items-center gap-2 py-14 text-center">
               <ScrollText size={22} style={{ color: 'var(--text-disabled)' }} />
               <p className="text-[13px] font-[650]" style={{ color: 'var(--text-secondary)' }}>No events match these filters</p>
-              <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>Clear a filter to widen the search.</p>
             </div>
           )}
 

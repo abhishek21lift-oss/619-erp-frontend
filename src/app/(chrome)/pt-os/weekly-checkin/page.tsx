@@ -107,7 +107,7 @@ export default function WeeklyCheckinPage() {
                 Unable to Load Data
               </h2>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 20px' }}>
-                This feature is not available yet or there was a problem loading the page. Please try again later.
+                Please try again.
               </p>
               <button
                 onClick={() => { clients.refetch(); checkins.refetch(); }}

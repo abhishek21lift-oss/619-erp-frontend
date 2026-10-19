@@ -92,7 +92,7 @@ export default function ClientBirthdaysPage() {
                 style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>
                 <PartyPopper size={15} className="shrink-0 text-white" />
                 <span className="text-[12.5px] font-[700] text-white">
-                  {todayCount} {todayCount === 1 ? 'client has' : 'clients have'} a birthday today — say hi!
+                  {todayCount} {todayCount === 1 ? 'client has' : 'clients have'} a birthday today
                 </span>
               </div>
             )}
@@ -195,7 +195,7 @@ export default function ClientBirthdaysPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', marginTop: 20 }}>
               <Sparkles size={12} style={{ color: 'var(--text-disabled)' }} />
               <span style={{ fontSize: 11.5, color: 'var(--text-disabled)' }}>
-                Showing {filtered.length} of {clients.length} clients with a date of birth on file
+                Showing {filtered.length} of {clients.length}
               </span>
             </div>
           )}

@@ -62,7 +62,7 @@ function ProgressHubSwitch() {
     return (
       <ClientPicker
         title="Progress Hub"
-        subtitle="Pick a client to review re-testing, habits and seven-domain change"
+        subtitle="Pick a client"
         icon={<LineChart size={20} color="#fff" />}
         basePath="/pt-os/progress"
       />
@@ -124,7 +124,7 @@ function ProgressHub({ clientId }: { clientId: string }) {
   if (failed && !data) {
     return (
       <PageContainer>
-        <PageHero title="Progress Hub" subtitle="Seven-section review" icon={<LineChart size={20} />}
+        <PageHero title="Progress Hub" icon={<LineChart size={20} />}
           actions={<Button variant="secondary" onClick={() => router.push('/pt-os/progress')}>Change client</Button>} />
         <EmptyState icon={<AlertCircle size={20} />} title="Could not load progress" description={failed}
           action={<Button variant="outline" onClick={() => void load()}>Try again</Button>} />
@@ -149,19 +149,15 @@ function ProgressHub({ clientId }: { clientId: string }) {
         )}
       >
         <div className="flex flex-wrap gap-2">
+          {/* One badge, and only when it names the next action. The unlogged-day
+              count and the assessments-on-file count that used to sit here were
+              printed again in the panels below (Data quality, Assessment
+              history) and cost ~28px each above the first panel on a phone. */}
           {data.overview.state.state === 'missing_baseline' && (
             <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-[700] text-white/80">
               No baseline — start with the seven-step assessment
             </span>
           )}
-          {data.dashboard.habits.data_quality.missing_days > 0 && (
-            <span className="rounded-full bg-amber-300/15 px-3 py-1 text-[11px] font-[700] text-amber-100">
-              {data.dashboard.habits.data_quality.missing_days} unlogged days
-            </span>
-          )}
-          <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-[700] text-white/70">
-            {data.dashboard.assessment.count} assessment{data.dashboard.assessment.count === 1 ? '' : 's'} on file
-          </span>
         </div>
       </PageHero>
 
@@ -361,9 +357,12 @@ function OverviewSection({ data, days, setDays }: {
       <div className="grid gap-3 lg:grid-cols-2">
         <Panel title="Baseline to latest" subtitle={comparison ? `${date(comparison.baseline?.assessment_date)} → ${date(comparison.latest?.assessment_date)}` : 'A second test unlocks comparison'}>
           {!comparison ? (
-            <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-              {overview.assessment_count < 2 ? 'Only one assessment is on file. The seven-domain comparison appears after the next test.' : 'Comparison unavailable.'}
-            </p>
+            // The panel's own subtitle and the comparison section below both
+            // carry this story; a third copy here was the third place to read
+            // the same sentence.
+            overview.assessment_count < 2 ? null : (
+              <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>Comparison unavailable.</p>
+            )
           ) : (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <Stat label="Improved" value={String(comparison.summary?.improved ?? 0)} tone="success" />
@@ -397,7 +396,7 @@ function OverviewSection({ data, days, setDays }: {
         </Panel>
       </div>
 
-      <Panel title="Data quality" subtitle="What is missing, not inferred"
+      <Panel title="Data quality"
         action={<div className="flex gap-1">{[7, 30].map((d) => (
           <button key={d} onClick={() => setDays(d)} className="rounded-full px-2.5 py-1 text-[10.5px] font-[750]"
             style={days === d ? { background: 'var(--brand)', color: '#fff' } : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
@@ -474,7 +473,7 @@ function ComparisonSection({ comparison }: { comparison: ProgressComparison | nu
   const [mode, setMode] = useState<'baseline' | 'previous'>('baseline');
   if (!comparison) {
     return <EmptyState icon={<TrendingUp size={20} />} title="A second assessment unlocks comparison"
-      description="There is one test on file. Complete the next re-test and every domain is compared here — with protocol changes and missing values shown, never guessed." />;
+      description="Complete the next re-test and every domain is compared here — protocol changes and missing values shown, never guessed." />;
   }
   const view = mode === 'previous' && comparison.previous_comparison ? comparison.previous_comparison : comparison;
   const summary = view.summary;
@@ -534,7 +533,11 @@ function ComparisonSection({ comparison }: { comparison: ProgressComparison | nu
 
 function DomainCard({ domain }: { domain: ProgressComparisonDomain }) {
   return (
-    <Panel title={domain.label} subtitle={domain.comparable ? 'Like-for-like across the recorded protocol' : domain.incomparable_reason || 'Protocol changed'}>
+    // No subtitle when the domain is comparable: the title and the metric rows
+    // are the answer, and "Like-for-like across the recorded protocol" was
+    // printed on every one of the seven panels. An incomparable domain still
+    // states why.
+    <Panel title={domain.label} subtitle={domain.comparable ? undefined : domain.incomparable_reason || 'Protocol changed'}>
       <div className="space-y-1">
         {domain.metrics.map((m) => <MetricRow key={m.key} metric={m} />)}
       </div>

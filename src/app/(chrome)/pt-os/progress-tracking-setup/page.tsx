@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
   Flag, Loader2, AlertCircle, Check, X, ChevronRight, Camera, Ruler, Zap,
-  Move, Accessibility, AlertTriangle,
+  Move, Accessibility,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, DonutChart } from '@/components/ui';
@@ -103,7 +103,6 @@ function BaselineDashboard({ clientId }: BaselineDashboardProps) {
   const hasStrength = strengthLogs.length > 0;
   const hasMobility = mobilityAssessments.length > 0;
   const hasPosture = postureAssessments.length > 0;
-  const baselineCreated = hasMeasurements && hasPhotos && hasStrength && hasMobility && hasPosture;
 
   const items: CompletionItem[] = [
     { key: 'measurements', label: 'Measurements Saved', done: hasMeasurements, icon: <Ruler size={16} />, href: `/pt-os/assessment?client_id=${clientId}`, accent: '#10b981' },
@@ -119,13 +118,6 @@ function BaselineDashboard({ clientId }: BaselineDashboardProps) {
     typeof latestPosture?.posture_risk_score === 'number' ? latestPosture.posture_risk_score : null,
   ].filter((s): s is number => s != null);
   const baselineScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
-
-  const alerts: string[] = [];
-  if (!hasPhotos) alerts.push('No progress photos uploaded yet.');
-  if (!hasMeasurements) alerts.push('No body measurements recorded yet — start with Fitness Testing.');
-  if (!hasStrength) alerts.push('No strength baseline logged yet.');
-  if (!hasMobility) alerts.push('No mobility assessment on file yet.');
-  if (!hasPosture) alerts.push('No posture assessment on file yet.');
 
   if (loading) {
     return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#F59E0B' }} /></div>;
@@ -154,9 +146,6 @@ function BaselineDashboard({ clientId }: BaselineDashboardProps) {
         <h1 className="text-[26px] sm:text-[32px] font-[860] tracking-[-0.03em] leading-tight text-white">
           {clientName}&apos;s Baseline
         </h1>
-        <p className="mt-2 text-[13px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
-          {baselineCreated ? 'Baseline complete — every component is on file.' : 'Create Your Baseline Transformation Record'}
-        </p>
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-8 items-center">
           <DonutChart
@@ -185,20 +174,6 @@ function BaselineDashboard({ clientId }: BaselineDashboardProps) {
           </div>
         </div>
       </m.div>
-
-      {alerts.length > 0 && (
-        <div className="rounded-[20px] p-5" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.25)' }}>
-          <div className="flex items-center gap-2 mb-2.5">
-            <AlertTriangle size={14} style={{ color: '#d97706' }} />
-            <p className="text-[12.5px] font-[760]" style={{ color: '#92400e' }}>Smart Alerts</p>
-          </div>
-          <div className="space-y-1.5">
-            {alerts.map((a) => (
-              <p key={a} className="text-[12.5px]" style={{ color: '#92400e' }}>· {a}</p>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {items.map((it) => (

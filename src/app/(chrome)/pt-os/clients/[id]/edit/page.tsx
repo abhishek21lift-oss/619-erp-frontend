@@ -4,7 +4,7 @@ import { use, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  Save, User, Trash2, AlertTriangle, Camera, Loader2, CheckCircle,
+  Save, User, Trash2, AlertTriangle, Camera, Loader2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button } from '@/components/ui';
@@ -269,9 +269,6 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                 className="hidden" onChange={pickPhoto} />
 
               <div className="min-w-0">
-                <p className="text-[11px] font-[750] uppercase tracking-[0.14em]" style={{ color: 'rgba(184,215,255,0.75)' }}>
-                  Editing
-                </p>
                 <h1 className="truncate text-[22px] font-[880] leading-tight tracking-[-0.03em] text-white">
                   {form.name || 'Client'}
                 </h1>
@@ -338,14 +335,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
           {/* ── Save footer ── */}
           <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="flex items-center justify-between rounded-[16px] px-5 py-4"
+            className="flex items-center justify-end rounded-[16px] px-5 py-4"
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(15,23,42,0.04)' }}>
-            <div className="flex items-center gap-2">
-              <CheckCircle size={15} style={{ color: '#10b981' }} />
-              <span className="text-[12.5px] font-[550]" style={{ color: 'var(--text-disabled)' }}>
-                Review all fields before saving
-              </span>
-            </div>
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => router.push(`/pt-os/clients/${id}`)}>
                 Cancel

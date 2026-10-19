@@ -311,11 +311,6 @@ export default function AiCommandCenter({
                 <p className="truncate text-[13.5px] font-[800] tracking-[-0.01em]" style={{ color: '#0f172a' }}>
                   {plan ? plan.title : result ? 'Done' : showAnswer ? asked : 'AI Assistant'}
                 </p>
-                {!showAnswer && !showAction && (
-                  <p className="text-[10.5px] font-[600]" style={{ color: '#64748b' }}>
-                    Ask anything, or pick a shortcut
-                  </p>
-                )}
               </div>
               <button type="button" onClick={onClose} aria-label="Close AI assistant"
                 className="flex h-8 w-8 items-center justify-center rounded-full"

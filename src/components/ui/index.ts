@@ -27,6 +27,9 @@ export type { SkeletonProps } from './Skeleton';
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 
+export { Disclosure } from './Disclosure';
+export type { DisclosureProps } from './Disclosure';
+
 export { KpiCard } from './KpiCard';
 export type { KpiCardProps } from './KpiCard';
 

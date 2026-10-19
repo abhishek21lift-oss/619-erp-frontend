@@ -277,9 +277,11 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
     await page.getByRole('button', { name: 'Save Assessment', exact: true }).click();
     const savedRes = await saved;
     expect(savedRes.status(), `POST /api/progress/assessments → ${await savedRes.text()}`).toBe(201);
-    // exact: the success toast reads "Assessment saved." and getByText is
-    // case-insensitive, so a bare match resolves to both.
-    await expect(page.getByText('Assessment Saved', { exact: true })).toBeVisible({ timeout: 20_000 });
+    // The marker is the panel's own control, not a line of its copy: the copy
+    // pass deleted the panel's "Assessment Saved" heading as a restatement of
+    // the "Assessment saved." toast, and this button exists nowhere else in
+    // the wizard.
+    await expect(page.getByRole('button', { name: 'Download PDF Report', exact: true })).toBeVisible({ timeout: 20_000 });
 
     await expect.poll(async () => (await batteries()).length, { timeout: 15_000 }).toBe(1);
     const [row] = await batteries();

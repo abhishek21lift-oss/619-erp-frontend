@@ -508,7 +508,6 @@ function SchedulePageContent() {
                           <Calendar size={20} style={{ color: '#F59E0B' }} />
                         </div>
                         <p className="text-[13px] font-[600]" style={{ color: 'var(--text-disabled)' }}>No sessions scheduled</p>
-                        <p className="text-[11px] mt-1" style={{ color: 'var(--text-disabled)' }}>Book a session to get started</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -869,7 +868,6 @@ function CreateSessionModal({
       open={open}
       onClose={handleClose}
       title={step === 1 ? 'Book PT Session' : 'Review & Confirm'}
-      subtitle={step === 1 ? 'Enter session details' : 'Verify booking details'}
       icon={<Calendar size={16} />}
       size="lg"
       footer={

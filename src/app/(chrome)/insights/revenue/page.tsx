@@ -416,11 +416,16 @@ function RevenueAnalytics() {
           />
         </div>
 
-        {/* ── Monthly bar chart (2 series → legend required) ──────────── */}
+        {/* ── Monthly bar chart (2 series → legend required) ────────────
+            The subtitle names only what the KPI above does not: the year's
+            total and payment count are already on that tile, and repeating
+            them here made the panel header the second place a reader checks
+            the same number. */}
         <Panel
           title={`Monthly Revenue — ${year}`}
-          subtitle={`${fmtMoney(yearRevenue)} collected across ${yearPayments.toLocaleString('en-IN')} payments`
-            + (bestMonth ? ` · best ${bestMonth.month} (${fmtMoney(bestMonth.revenue)}) · avg ${fmtMoney(avgMonthly)}/month` : '')}
+          subtitle={bestMonth
+            ? `Best ${bestMonth.month} (${fmtMoney(bestMonth.revenue)}) · avg ${fmtMoney(avgMonthly)}/month`
+            : undefined}
           icon={<BarChart3 size={15} />}
           action={<Legend items={[
             { label: 'Revenue', color: REVENUE_COLOR },

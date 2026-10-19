@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Guard from '@/components/Guard';
-import { Activity, Users, Clock, TrendingUp, Calendar, BarChart3, ArrowUpRight } from 'lucide-react';
+import { Activity, Users, Clock, TrendingUp, Calendar, BarChart3 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { isCheckIn } from '@/lib/checkin';
 import { scrollIndexIntoCentre } from '@/lib/chart-scroll';
@@ -184,10 +184,6 @@ function Inner() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 3, height: 18, borderRadius: 2, background: 'linear-gradient(180deg, #0067e0, #0059ce)' }} />
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Check-ins by Hour</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 8, background: 'rgba(0,103,224,0.08)', border: '1px solid rgba(0,103,224,0.15)' }}>
-              <ArrowUpRight size={12} color="#0059ce" />
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#0059ce' }}>{totalCheckins} total</span>
             </div>
           </div>
           {loading ? (

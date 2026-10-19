@@ -216,7 +216,7 @@ function Inner() {
                           <Sparkles size={28} color="#0067e0" />
                         </div>
                         <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--text-secondary)' }}>Ready to start tracking?</div>
-                        <div style={{ fontSize: 13, color: 'var(--text-disabled)', maxWidth: 360, lineHeight: 1.5 }}>Add members and begin logging their transformation journey. Every rep, every kg counts!</div>
+                        <div style={{ fontSize: 13, color: 'var(--text-disabled)', maxWidth: 360, lineHeight: 1.5 }}>Add members to start tracking.</div>
                       </m.div>
                     </td></tr>
                   ) : (

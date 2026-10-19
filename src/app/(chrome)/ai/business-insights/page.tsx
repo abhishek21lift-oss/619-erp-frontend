@@ -135,7 +135,7 @@ export default function BusinessInsightsPage() {
         {!insights && !loading && !error && (
           <div className="flex items-start gap-2 rounded-[20px] border border-blue-100 bg-blue-50 p-5 text-sm text-blue-800">
             <Info className="mt-0.5 h-4 w-4 shrink-0" />
-            Pick a period above and generate — the studio's real collections, renewals and dues are analysed, and every verified number is shown beside the AI's reading of it.
+            Pick a period above and generate. Every verified number is shown beside the AI&apos;s reading of it.
           </div>
         )}
 

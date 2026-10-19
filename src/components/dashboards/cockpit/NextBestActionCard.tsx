@@ -102,9 +102,6 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName }: {
             <h3 className="text-[15px] font-[800] tracking-[-0.015em] sm:text-[16px]" style={{ color: 'var(--text-primary)' }}>
               Next Best Action
             </h3>
-            <p className="text-[11px] font-[600]" style={{ color: 'var(--text-muted)' }}>
-              What moves the needle right now
-            </p>
           </div>
           {/* Urgency in words as well as colour. */}
           <span className="shrink-0 rounded-full px-2.5 py-1 text-[10.5px] font-[800]"

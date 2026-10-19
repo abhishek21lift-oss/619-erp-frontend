@@ -158,7 +158,6 @@ function PackagesTab() {
           style={{ textAlign: 'center', padding: '60px 24px', borderRadius: 20, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
           <Package size={48} color={a} style={{ margin: '0 auto 12px', display: 'block' }} />
           <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>No Packages Yet</h3>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '6px 0 20px' }}>Create your first PT package to get started.</p>
           <m.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={openCreate} style={{ ...btnPrim, display: 'inline-flex' }}>
             <Plus size={15} /> Create Package
           </m.button>
