@@ -1,9 +1,21 @@
 'use client';
 
 import { ClipboardList } from 'lucide-react';
+import GoalStepCard from './GoalStepCard';
+import { blue, gray, tint } from '@/lib/palette';
+import type { BarrierPlan, GoalMilestone } from '@/lib/goal-plan';
+
+export interface SummaryAvailability {
+  /** "3 days × 60 min · 3 h/week". */
+  commitment: string;
+  preferredDays: string[];
+  timeOfDayLabel: string;
+}
 
 interface GoalSummaryCardProps {
   primaryGoalLabel: string;
+  statement: string;
+  successMetric: string;
   currentWeight: number | null;
   targetWeight: number | null;
   currentBodyFat: number | null;
@@ -11,12 +23,17 @@ interface GoalSummaryCardProps {
   targetDate: string;
   priorityLabel: string;
   motivationLevel: number;
+  confidenceLevel: number;
   commitmentLevel: number;
+  barriers: BarrierPlan[];
+  availability: SummaryAvailability;
+  milestones: GoalMilestone[];
 }
 
 export function GoalSummaryCard({
-  primaryGoalLabel, currentWeight, targetWeight, currentBodyFat, targetBodyFat,
-  targetDate, priorityLabel, motivationLevel, commitmentLevel,
+  primaryGoalLabel, statement, successMetric, currentWeight, targetWeight, currentBodyFat, targetBodyFat,
+  targetDate, priorityLabel, motivationLevel, confidenceLevel, commitmentLevel,
+  barriers, availability, milestones,
 }: GoalSummaryCardProps) {
   const weightDiff = currentWeight != null && targetWeight != null ? Math.round((targetWeight - currentWeight) * 10) / 10 : null;
 
@@ -30,33 +47,69 @@ export function GoalSummaryCard({
     { label: 'Target Date', value: targetDate || '—' },
     { label: 'Priority', value: priorityLabel || '—' },
     { label: 'Motivation', value: `${motivationLevel} / 10` },
+    { label: 'Confidence', value: `${confidenceLevel} / 10` },
     { label: 'Commitment', value: `${commitmentLevel} / 10` },
+    { label: 'Availability', value: availability.commitment },
   ];
 
   return (
-    <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-      <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
-      <div className="p-7 sm:p-10">
-        <div className="flex items-start gap-4 mb-6">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <ClipboardList size={20} color="#1CA3F9" />
+    <GoalStepCard icon={ClipboardList} title="Goal Summary" hint="everything captured, at a glance">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+        {rows.map((r) => (
+          <div key={r.label} className="flex items-center justify-between rounded-[12px] px-4 py-2.5" style={{ background: gray[50] }}>
+            <span className="text-[12px] font-[600]" style={{ color: gray[500] }}>{r.label}</span>
+            <span className="text-[13px] font-[760]" style={{ color: gray[800] }}>{r.value}</span>
           </div>
-          <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Goal Summary</h2>
-            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Everything captured, at a glance.</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-          {rows.map((r) => (
-            <div key={r.label} className="flex items-center justify-between rounded-[12px] px-4 py-2.5" style={{ background: 'var(--bg-subtle)' }}>
-              <span className="text-[12px] font-[600] text-[color:var(--text-muted)]">{r.label}</span>
-              <span className="text-[13px] font-[760] text-[color:var(--text-primary)]">{r.value}</span>
-            </div>
-          ))}
-        </div>
+        ))}
       </div>
-    </div>
+
+      {(statement || successMetric) && (
+        <div className="mt-6 rounded-[16px] p-5" style={{ background: tint(blue[500], 0.06), border: `1px solid ${tint(blue[500], 0.18)}` }}>
+          <p className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: blue[700] }}>SMART Statement</p>
+          <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: gray[800] }}>{statement || '—'}</p>
+          {successMetric && (
+            <p className="mt-2 text-[12px]" style={{ color: gray[600] }}>
+              Success measured by: <span className="font-[700]">{successMetric}</span>
+            </p>
+          )}
+        </div>
+      )}
+
+      {barriers.length > 0 && (
+        <div className="mt-6">
+          <p className="mb-2 text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: gray[500] }}>Barriers & Mitigation Plans</p>
+          <ul className="space-y-2">
+            {barriers.map((b) => (
+              <li key={b.challenge} className="rounded-[12px] px-4 py-2.5" style={{ background: gray[50] }}>
+                <p className="text-[12.5px] font-[760]" style={{ color: gray[800] }}>{b.challenge}</p>
+                <p className="text-[12px]" style={{ color: gray[600] }}>{b.plan}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {availability.preferredDays.length > 0 && (
+        <p className="mt-4 text-[12px]" style={{ color: gray[600] }}>
+          Preferred days: <span className="font-[700]">{availability.preferredDays.join(', ')}</span>
+          {availability.timeOfDayLabel ? <> · {availability.timeOfDayLabel}</> : null}
+        </p>
+      )}
+
+      {milestones.length > 0 && (
+        <div className="mt-6">
+          <p className="mb-2 text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: gray[500] }}>Milestones</p>
+          <ul className="space-y-1.5">
+            {milestones.map((mst) => (
+              <li key={`${mst.type}-${mst.date}-${mst.label}`} className="flex flex-wrap items-baseline justify-between gap-2 text-[12px]">
+                <span style={{ color: gray[700] }}>{mst.label}</span>
+                <span className="font-[600]" style={{ color: gray[500] }}>{mst.date}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </GoalStepCard>
   );
 }
 

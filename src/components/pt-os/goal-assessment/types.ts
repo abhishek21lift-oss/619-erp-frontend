@@ -7,6 +7,7 @@ import {
   TrendingDown, Weight, Wind, Zap,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import type { BarrierPlan, GoalMilestone, TimeOfDay } from '@/lib/goal-plan';
 
 export type GoalType =
   | 'fat_loss' | 'muscle_gain' | 'body_recomposition' | 'strength_gain' | 'powerlifting'
@@ -15,6 +16,11 @@ export type GoalType =
 
 export type PriorityGoal = 'fat_loss' | 'muscle_gain' | 'strength' | 'health' | 'performance' | 'lifestyle' | 'endurance' | 'posture' | 'nutrition' | 'recovery';
 
+/**
+ * The six readiness questions feed `calcLifestyleReadinessScore` and its
+ * backend twin — that key list is fixed, so the four daily-routine keys below
+ * add context to the plan without silently changing a stored score.
+ */
 export interface LifestyleAnswers {
   can_train_4_6_days: boolean | null;
   meal_prep_possible: boolean | null;
@@ -22,12 +28,20 @@ export interface LifestyleAnswers {
   drink_enough_water: boolean | null;
   family_support: boolean | null;
   medical_restrictions: boolean | null;
+  // Daily routine — plan shaping only, not scored.
+  consistent_schedule: boolean | null;
+  regular_training_time: boolean | null;
+  stress_managed: boolean | null;
+  willing_to_track: boolean | null;
 }
 
 export interface GoalFormData {
   goalType: GoalType | '';
   goalName: string;
   goalDescription: string;
+
+  // SMART statement + the metric the client will judge success by.
+  successMetric: string;
 
   targetWeight: string;
   targetBodyFat: string;
@@ -36,11 +50,14 @@ export interface GoalFormData {
   priorityGoal: PriorityGoal | '';
 
   motivationLevel: string;
+  confidenceLevel: string;
   commitmentLevel: string;
   motivationReason: string;
 
   biggestChallenges: string[];
   challengeOther: string;
+  /** One mitigation plan per selected challenge. */
+  barrierPlans: BarrierPlan[];
 
   lifestyle: LifestyleAnswers;
 
@@ -51,13 +68,22 @@ export interface GoalFormData {
 
   // SMART scheduling / routine architecture
   trainingDays: string;
+  /** Weekday names, e.g. ['Monday','Thursday'] — may be shorter than trainingDays. */
+  preferredDays: string[];
+  sessionMinutes: string;
+  timeOfDay: TimeOfDay;
   experienceLevel: string;
   equipment: string;
   status: 'active' | 'paused' | 'completed' | 'archived';
+
+  milestones: GoalMilestone[];
+  shortTermWeeks: string;
+  mediumTermWeeks: string;
 }
 
 export interface FormErrors {
   primaryGoal?: string;
+  smartGoal?: string;
   targetWeight?: string;
   targetBodyFat?: string;
   deadline?: string;
@@ -65,6 +91,8 @@ export interface FormErrors {
   motivation?: string;
   challenges?: string;
   lifestyle?: string;
+  schedule?: string;
+  milestones?: string;
 }
 
 /**
@@ -109,32 +137,40 @@ export const PRIORITY_META: { value: PriorityGoal; label: string; icon: LucideIc
 
 export const STEPS = [
   { id: 1, key: 'primaryGoal', label: 'Primary Goal' },
-  { id: 2, key: 'targetWeight', label: 'Target Weight' },
-  { id: 3, key: 'targetBodyFat', label: 'Target Body Fat' },
-  { id: 4, key: 'deadline', label: 'Deadline' },
-  { id: 5, key: 'priority', label: 'Priority' },
-  { id: 6, key: 'motivation', label: 'Motivation' },
-  { id: 7, key: 'challenges', label: 'Challenges' },
-  { id: 8, key: 'lifestyle', label: 'Lifestyle' },
-  { id: 9, key: 'schedule', label: 'Schedule' },
+  { id: 2, key: 'smartGoal', label: 'SMART Goal' },
+  { id: 3, key: 'targetWeight', label: 'Target Weight' },
+  { id: 4, key: 'targetBodyFat', label: 'Target Body Fat' },
+  { id: 5, key: 'deadline', label: 'Deadline' },
+  { id: 6, key: 'priority', label: 'Priority' },
+  { id: 7, key: 'motivation', label: 'Motivation & Confidence' },
+  { id: 8, key: 'challenges', label: 'Challenges & Barriers' },
+  { id: 9, key: 'lifestyle', label: 'Lifestyle' },
+  { id: 10, key: 'schedule', label: 'Availability' },
+  { id: 11, key: 'milestones', label: 'Milestones' },
 ] as const;
 
+export const LAST_STEP = STEPS[STEPS.length - 1].id;
 export type StepId = typeof STEPS[number]['id'];
 
 export function initGoalForm(): GoalFormData {
   return {
     goalType: '', goalName: '', goalDescription: '',
+    successMetric: '',
     targetWeight: '', targetBodyFat: '', targetDate: '',
     priorityGoal: '',
-    motivationLevel: '7', commitmentLevel: '7', motivationReason: '',
-    biggestChallenges: [], challengeOther: '',
+    motivationLevel: '7', confidenceLevel: '7', commitmentLevel: '7', motivationReason: '',
+    biggestChallenges: [], challengeOther: '', barrierPlans: [],
     lifestyle: {
       can_train_4_6_days: null, meal_prep_possible: null, sleep_7_8_hours: null,
       drink_enough_water: null, family_support: null, medical_restrictions: null,
+      consistent_schedule: null, regular_training_time: null, stress_managed: null,
+      willing_to_track: null,
     },
     startingWeightManual: '', startingBodyFatManual: '',
     notes: '',
-    trainingDays: '3', experienceLevel: 'beginner', equipment: 'full_gym', status: 'active',
+    trainingDays: '3', preferredDays: [], sessionMinutes: '60', timeOfDay: 'flexible',
+    experienceLevel: 'beginner', equipment: 'full_gym', status: 'active',
+    milestones: [], shortTermWeeks: '8', mediumTermWeeks: '12',
   };
 }
 

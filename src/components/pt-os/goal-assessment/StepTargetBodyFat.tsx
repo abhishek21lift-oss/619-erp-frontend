@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { Percent, ArrowDown, ArrowUp } from 'lucide-react';
 import { Slider } from '@/components/ui';
 import FloatInput from '@/components/ui/FloatInput';
+import GoalStepCard from './GoalStepCard';
 import type { GoalFormData } from './types';
 import { n } from './types';
 
@@ -13,88 +14,76 @@ interface StepTargetBodyFatProps {
   currentBodyFat: number | null;
   /** True when the current body fat comes from a fitness test. */
   measured: boolean;
+  step: number;
 }
 
-export function StepTargetBodyFat({ form, set, currentBodyFat, measured }: StepTargetBodyFatProps) {
+export function StepTargetBodyFat({ form, set, currentBodyFat, measured, step }: StepTargetBodyFatProps) {
   const target = n(form.targetBodyFat);
   const gap = useMemo(() => (currentBodyFat != null && target != null ? Math.round((target - currentBodyFat) * 10) / 10 : null), [currentBodyFat, target]);
 
   return (
-    <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-      <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
-      <div className="p-7 sm:p-10">
-        <div className="flex items-start gap-4 mb-7">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <Percent size={20} color="#1CA3F9" />
+    <GoalStepCard icon={Percent} title="Target Body Fat %" step={step} hint="optional — leave blank if not applicable">
+      {/* The slider used to sit at 20% on a goal with no body-fat target,
+          showing a number that was never saved. It appears once a target
+          is set, and the target can be cleared again. */}
+      {target != null ? (
+        <>
+          <Slider
+            label="Target Body Fat" value={target} min={5} max={45} step={0.5}
+            onChange={(v) => set('targetBodyFat', String(v))}
+            formatValue={(v) => `${v}%`}
+            scaleLabels={['5%', '45%']}
+          />
+          <div className="mt-4 flex flex-wrap items-end gap-3">
+            <div className="max-w-[220px] flex-1">
+              <FloatInput label="Or enter exactly (%)" numeric="decimal" value={form.targetBodyFat} onChange={(v) => set('targetBodyFat', v)} />
+            </div>
+            <button type="button" onClick={() => set('targetBodyFat', '')}
+              className="h-11 rounded-full px-4 text-[12.5px] font-[700]"
+              style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+              No body-fat target
+            </button>
           </div>
-          <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Target Body Fat %</h2>
-            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 3 of 8 — optional, leave blank if not applicable.</p>
+        </>
+      ) : (
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="max-w-[220px] flex-1">
+            <FloatInput label="Target body fat (%)" numeric="decimal" value={form.targetBodyFat} onChange={(v) => set('targetBodyFat', v)} />
+          </div>
+          <p className="pb-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>No target set — that is fine for goals that are not about body fat.</p>
+        </div>
+      )}
+
+      {!measured && (
+        <div className="mt-4 max-w-[220px]">
+          <FloatInput label="Starting body fat (%)" numeric="decimal" value={form.startingBodyFatManual} onChange={(v) => set('startingBodyFatManual', v)} />
+        </div>
+      )}
+
+      {gap != null && (
+        <div className="mt-6 rounded-[16px] p-5" style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)' }}>
+          <div className="flex flex-wrap items-center justify-center gap-4 text-center">
+            <div>
+              <p className="text-[10px] text-white/40 font-[600] uppercase tracking-wider">Current BF%</p>
+              <p className="text-[20px] font-[800] text-white">{currentBodyFat}%</p>
+            </div>
+            {gap < 0 ? <ArrowDown size={18} color="#0067E0" /> : gap > 0 ? <ArrowUp size={18} color="#0067E0" /> : null}
+            <div>
+              <p className="text-[10px] text-white/40 font-[600] uppercase tracking-wider">Target BF%</p>
+              <p className="text-[20px] font-[800] text-white">{target}%</p>
+            </div>
+            <div className="rounded-full px-3 py-1.5" style={{ background: 'rgba(0,103,224,0.15)' }}>
+              <p className="text-[13px] font-[800]" style={{ color: '#0067E0' }}>
+                {gap === 0 ? 'Maintain' : `Required Reduction: ${Math.abs(gap)}%`}
+              </p>
+            </div>
           </div>
         </div>
-
-        {/* The slider used to sit at 20% on a goal with no body-fat target,
-            showing a number that was never saved. It appears once a target
-            is set, and the target can be cleared again. */}
-        {target != null ? (
-          <>
-            <Slider
-              label="Target Body Fat" value={target} min={5} max={45} step={0.5}
-              onChange={(v) => set('targetBodyFat', String(v))}
-              formatValue={(v) => `${v}%`}
-              scaleLabels={['5%', '45%']}
-            />
-            <div className="mt-4 flex flex-wrap items-end gap-3">
-              <div className="max-w-[220px] flex-1">
-                <FloatInput label="Or enter exactly (%)" numeric="decimal" value={form.targetBodyFat} onChange={(v) => set('targetBodyFat', v)} />
-              </div>
-              <button type="button" onClick={() => set('targetBodyFat', '')}
-                className="h-11 rounded-full px-4 text-[12.5px] font-[700]"
-                style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-                No body-fat target
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="max-w-[220px] flex-1">
-              <FloatInput label="Target body fat (%)" numeric="decimal" value={form.targetBodyFat} onChange={(v) => set('targetBodyFat', v)} />
-            </div>
-            <p className="pb-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>No target set — that is fine for goals that are not about body fat.</p>
-          </div>
-        )}
-
-        {!measured && (
-          <div className="mt-4 max-w-[220px]">
-            <FloatInput label="Starting body fat (%)" numeric="decimal" value={form.startingBodyFatManual} onChange={(v) => set('startingBodyFatManual', v)} />
-          </div>
-        )}
-
-        {gap != null && (
-          <div className="mt-6 rounded-[16px] p-5" style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)' }}>
-            <div className="flex flex-wrap items-center justify-center gap-4 text-center">
-              <div>
-                <p className="text-[10px] text-white/40 font-[600] uppercase tracking-wider">Current BF%</p>
-                <p className="text-[20px] font-[800] text-white">{currentBodyFat}%</p>
-              </div>
-              {gap < 0 ? <ArrowDown size={18} color="#0067E0" /> : gap > 0 ? <ArrowUp size={18} color="#0067E0" /> : null}
-              <div>
-                <p className="text-[10px] text-white/40 font-[600] uppercase tracking-wider">Target BF%</p>
-                <p className="text-[20px] font-[800] text-white">{target}%</p>
-              </div>
-              <div className="rounded-full px-3 py-1.5" style={{ background: 'rgba(0,103,224,0.15)' }}>
-                <p className="text-[13px] font-[800]" style={{ color: '#0067E0' }}>
-                  {gap === 0 ? 'Maintain' : `Required Reduction: ${Math.abs(gap)}%`}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        {currentBodyFat == null && (
-          <p className="mt-4 text-[11px] text-[color:var(--text-muted)]">No body-fat reading on file yet — this comparison will appear once one is recorded.</p>
-        )}
-      </div>
-    </div>
+      )}
+      {currentBodyFat == null && (
+        <p className="mt-4 text-[11px] text-[color:var(--text-muted)]">No body-fat reading on file yet — this comparison will appear once one is recorded.</p>
+      )}
+    </GoalStepCard>
   );
 }
 

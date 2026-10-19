@@ -1,23 +1,31 @@
 'use client';
 import { useMemo } from 'react';
+import { CalendarRange } from 'lucide-react';
 import { generateMilestones } from '@/lib/goal-scheduling';
+import GoalStepCard from './GoalStepCard';
+import type { GoalMilestone } from '@/lib/goal-plan';
 
-export default function MilestoneTracker({ startDate, targetDate }: { startDate?: string | null; targetDate?: string | null }) {
-  const milestones = useMemo(() => generateMilestones(startDate, targetDate, 8, 12), [startDate, targetDate]);
+/**
+ * Milestones as the client's own plan. When the wizard has confirmed ones,
+ * they are shown instead of a freshly generated guess — two different dates
+ * for the same checkpoint is how a trainer stops trusting the review screen.
+ */
+export default function MilestoneTracker({ startDate, targetDate, milestones }: { startDate?: string | null; targetDate?: string | null; milestones?: GoalMilestone[] }) {
+  const rows = useMemo(() => {
+    if (milestones?.length) return milestones.map((m) => ({ label: m.label, date: m.date }));
+    return generateMilestones(startDate, targetDate, 8, 12).map((m) => ({ label: m.label, date: m.date }));
+  }, [milestones, startDate, targetDate]);
+
   return (
-    <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-      <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
-      <div className="p-6">
-        <p className="text-[13px] font-[760] text-[color:var(--text-primary)] mb-3">Milestones</p>
-        <ul className="space-y-2">
-          {milestones.map((m) => (
-            <li key={m.date + m.label} className="flex items-center justify-between text-[12px]">
-              <span className="text-[color:var(--text-secondary)]">{m.label}</span>
-              <span className="font-[600] text-[color:var(--text-muted)]">{m.date}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
+    <GoalStepCard icon={CalendarRange} title="Milestones">
+      <ul className="space-y-2">
+        {rows.map((m) => (
+          <li key={m.date + m.label} className="flex items-center justify-between text-[12px]">
+            <span className="text-[color:var(--text-secondary)]">{m.label}</span>
+            <span className="font-[600] text-[color:var(--text-muted)]">{m.date}</span>
+          </li>
+        ))}
+      </ul>
+    </GoalStepCard>
   );
 }
