@@ -673,7 +673,7 @@ function RecentPanel({ recent, clients }: { recent: Attendance[]; clients: Clien
   return (
     <section className="mt-4 rounded-[26px] p-4 sm:p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <SectionTitle icon={<Sparkles size={16} />} tone="aqua" title="Just checked in" subtitle="Today, newest first" />
+        <SectionTitle icon={<Sparkles size={16} />} tone="aqua" title="Just checked in" subtitle="Newest first" />
         <Link href="/checkin/qr-scanner" className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-[780] text-white"
           style={{ background: gradient(tones.aqua) }}>
           <QrCode size={14} aria-hidden /> Scanner
@@ -967,14 +967,17 @@ function MonthlySummary({ records }: { records: Attendance[] }) {
 /* ────────────────────────────────────────────────────────────────
    ATTENTION — what needs a trainer, from the day's own figures
 ──────────────────────────────────────────────────────────────── */
-type AttentionItem = { key: string; title: string; desc: string; status: Status };
+type AttentionItem = { key: string; title: string; desc?: string; status: Status };
 
 function buildAttention(s: DaySummary, isToday: boolean): AttentionItem[] {
   const out: AttentionItem[] = [];
   const day = isToday ? 'today' : 'that day';
+  // Only the unmarked case carries a description: what to do about it is not
+  // inferable from the count. "Worth a message" and "Marked late on the
+  // register" restated the title or the CTA beside them.
   if (s.unmarked > 0) out.push({ key: 'unmarked', status: 'unmarked', title: `${s.unmarked} not marked ${day}`, desc: 'No check-in and no mark yet. Mark them, or scan them in as they arrive.' });
-  if (s.absent > 0) out.push({ key: 'absent', status: 'absent', title: `${s.absent} marked absent`, desc: 'Worth a message — an absence noticed early is easier to turn around.' });
-  if (s.late > 0) out.push({ key: 'late', status: 'late', title: `${s.late} arrived late`, desc: 'Marked late on the register.' });
+  if (s.absent > 0) out.push({ key: 'absent', status: 'absent', title: `${s.absent} marked absent` });
+  if (s.late > 0) out.push({ key: 'late', status: 'late', title: `${s.late} arrived late` });
   return out;
 }
 
@@ -987,7 +990,7 @@ function AlertsPanel({ alerts, onView }: { alerts: AttentionItem[]; onView: (f: 
             <CheckCircle2 size={26} aria-hidden />
           </span>
           <p className="mt-3 text-[15px] font-[800]" style={{ color: 'var(--text-primary)' }}>All clear</p>
-          <p className="mt-1 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>Everyone is marked and nobody is absent or late.</p>
+          <p className="mt-1 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>Everyone is marked.</p>
         </div>
       </Card>
     );
@@ -1005,7 +1008,7 @@ function AlertsPanel({ alerts, onView }: { alerts: AttentionItem[]; onView: (f: 
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] font-[800]" style={{ color: 'var(--text-primary)' }}>{a.title}</p>
-                <p className="mt-1 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{a.desc}</p>
+                {a.desc && <p className="mt-1 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{a.desc}</p>}
               </div>
             </div>
             <button type="button" onClick={() => onView(a.status)}

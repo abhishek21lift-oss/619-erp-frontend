@@ -285,7 +285,7 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
                 fields={COACH_NOTE_FIELDS}
                 notes={form.coachNotes}
                 onChange={(key, value) => set('coachNotes', { ...form.coachNotes, [key]: value })}
-                subtitle="Step 2 of 2 — optional, free-form notes per focus area."
+                subtitle="Optional — free-form notes per focus area."
               />}
           </m.div>
         ) : (

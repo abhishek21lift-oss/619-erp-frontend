@@ -290,7 +290,6 @@ export default function WorkoutGeneratorPage() {
             </div>
             <div>
               <div className="text-[15px] font-[750]" style={{ color: 'var(--text-primary)' }}>Your Profile</div>
-              <div className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>The plan is calibrated to everything below</div>
             </div>
           </div>
 

@@ -692,7 +692,8 @@ describe('what the phone screenshots showed', () => {
   it('Revenue Analytics carries what the old Reports dashboard led with', () => {
     const revenue = src('app', 'insights', 'revenue', 'page.tsx');
     expect(revenue).toContain('exportCsv');
-    expect(revenue).toMatch(/best \$\{bestMonth\.month\}/);
+    // Case-insensitive: the case was never the point, the interpolation is.
+    expect(revenue).toMatch(/best \$\{bestMonth\.month\}/i);
   });
 });
 

@@ -59,14 +59,6 @@ function fmtDayLabel(ymd: string): string {
   return new Date(y, mo - 1, d).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' });
 }
 
-/** "today" / "tomorrow" stand alone, but a named date needs a preposition —
- *  "no sessions today" vs "no sessions on Monday, 3 Aug". */
-function fmtDayPhrase(ymd: string): string {
-  const label = fmtDayLabel(ymd);
-  const relative = label === 'Today' || label === 'Tomorrow' || label === 'Yesterday';
-  return relative ? label.toLowerCase() : `on ${label}`;
-}
-
 /* ── Status config — values match the pt_sessions CHECK constraint
    ('scheduled','completed','cancelled','no_show'), which is the only set
    the database will accept. Note the underscore in no_show. */
@@ -584,7 +576,6 @@ export default function MySchedulePage() {
                     <EmptyState
                       icon={<CalendarDays size={22} />}
                       title="Nothing scheduled"
-                      description={`You have no sessions ${fmtDayPhrase(selectedDay)}.`}
                     />
                   </div>
                 )}

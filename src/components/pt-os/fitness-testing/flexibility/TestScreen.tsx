@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ArrowLeft, Check, RotateCcw, ShieldAlert } from 'lucide-react';
-import { Button, FloatInput } from '@/components/ui';
+import { Button, Disclosure, FloatInput } from '@/components/ui';
 import { flexibilityTestIssues, formTest, FLEXIBILITY_FORM_KEY } from '@/lib/flexibility-protocol';
 import type { FlexibilityDerived, FlexibilityFormState, FlexibilityTestKey } from '@/lib/flexibility-protocol';
 import type { Gender } from '@/lib/fitness-calculations';
@@ -114,7 +114,39 @@ export function TestScreen({ test, form, patchFlex, derived, age, gender, onBack
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,330px)_1fr]">
-        <aside className="space-y-4 rounded-[18px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+        {/* The protocol. On a laptop it is a side column and costs nothing —
+            the fields sit beside it. On a phone it rendered first, so the
+            whole battery (Purpose → Safety) stood between the trainer and the
+            first input. Phones now carry what a test cannot be run correctly
+            without: what it measures, the measurement rules and Safety;
+            positioning and procedure stay one tap away. Both views read the
+            same `content`, so the two cannot disagree. */}
+        <div className="space-y-4 lg:hidden">
+          <div className="rounded-[18px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+            <p className="text-[12.5px] leading-[1.5]" style={{ color: 'var(--text-secondary)' }}>{content.purpose}</p>
+
+            <div className="mt-3 space-y-3 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+              <Bullets title="Measurement" items={content.measurement} />
+              <Bullets title="Safety" items={content.safety} />
+
+              <Disclosure summary="Instructions">
+                <div className="space-y-3">
+                  <Bullets title="Equipment" items={content.equipment} />
+                  <Bullets title="Positioning" items={content.positioning} />
+                  <Bullets title="Procedure" items={content.procedure} ordered />
+                  {content.reference && (
+                    <div>
+                      <p className="text-[10.5px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Reference</p>
+                      <p className="mt-1 text-[12px] leading-[1.5]" style={{ color: 'var(--text-secondary)' }}>{content.reference}</p>
+                    </div>
+                  )}
+                </div>
+              </Disclosure>
+            </div>
+          </div>
+        </div>
+
+        <aside className="hidden space-y-4 rounded-[18px] p-4 lg:block" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
           <div>
             <p className="text-[10.5px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Purpose</p>
             <p className="mt-1.5 text-[12.5px] leading-[1.5]" style={{ color: 'var(--text-secondary)' }}>{content.purpose}</p>

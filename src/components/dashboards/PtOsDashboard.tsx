@@ -1485,7 +1485,7 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
           style={{ background: rgba(palette.emerald[500], 0.09) }}>
           <ShieldCheck size={16} style={{ color: palette.emerald[600] }} />
           <p className="text-[12px] font-[700]" style={{ color: C.ink }}>
-            Nothing else to review — the card above has it.
+            Nothing else to review.
           </p>
         </div>
       ) : done ? (
@@ -1593,8 +1593,8 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
                       earned the original sentence. */}
                   <p className="mb-2.5 text-[11.5px] leading-snug" style={{ color: C.muted }}>
                     {selected.contacts.length === 0
-                      ? 'This list is not loaded here, so there is nobody to message from this card. Open it to see who they are.'
-                      : 'No mobile number on file for these clients, so there is nobody to message from here.'}
+                      ? 'Not loaded here — open the list to see who they are.'
+                      : 'No mobile number on file for these clients.'}
                   </p>
                   <button type="button" onClick={() => router.push(selected.href)}
                     className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[12.5px] font-[750] transition active:scale-[0.98]"
@@ -1865,13 +1865,13 @@ function TodaySchedule() {
             <p className="mt-2.5 text-[14px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>
               {done > 0 ? 'All done for today' : 'Nothing on today'}
             </p>
-            <p className="mt-0.5 max-w-[34ch] text-[11.5px] leading-[1.5]" style={{ color: C.muted }}>
-              {done > 0
-                ? `${done} session${done === 1 ? '' : 's'} completed.`
-                /* Names all three sources: a studio whose training days live on
-                   the enrolment form must not be told nobody trains today. */
-                : 'No booked slots, no programme day, and nobody enrolled for today.'}
-            </p>
+            {done === 0 && (
+              <p className="mt-0.5 max-w-[34ch] text-[11.5px] leading-[1.5]" style={{ color: C.muted }}>
+                {/* Names all three sources: a studio whose training days live on
+                    the enrolment form must not be told nobody trains today. */}
+                No bookings, programme day or enrolment today.
+              </p>
+            )}
             {done === 0 && (
               <button onClick={() => router.push('/pt-os/schedule-session')}
                 className="mt-3 inline-flex h-[38px] items-center gap-1.5 rounded-full px-4 text-[12px] font-[750] text-white transition-transform active:scale-95"

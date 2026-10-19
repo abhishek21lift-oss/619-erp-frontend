@@ -396,7 +396,7 @@ function NewClientForm() {
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
             <h2 className="text-[32px] font-[900] tracking-[-0.04em] text-slate-900 leading-none mb-3">Client Onboarded!</h2>
             <p className="text-[15px] text-slate-500 leading-relaxed mb-6">
-              <span className="font-[700] text-slate-800">{form.name}</span> has been successfully registered.
+              <span className="font-[700] text-slate-800">{form.name}</span> has been registered.
             </p>
           </m.div>
 

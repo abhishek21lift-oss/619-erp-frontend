@@ -31,8 +31,8 @@ const glass = {
   boxShadow: 'var(--shadow-card)',
 } as const;
 
-function StatCard({ label, value, sub, icon: Icon, color }: {
-  label: string; value: string | number; sub?: string;
+function StatCard({ label, value, icon: Icon, color }: {
+  label: string; value: string | number;
   icon: React.ElementType; color: string;
 }) {
   return (
@@ -46,7 +46,6 @@ function StatCard({ label, value, sub, icon: Icon, color }: {
             {label}
           </div>
           <div style={{ fontSize: 'clamp(24px, 5vw, 36px)', fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
-          {sub && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>{sub}</div>}
         </div>
         <div style={{ width: 40, height: 40, borderRadius: 12, background: `${color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color }}>
           <Icon size={20} />
@@ -122,13 +121,12 @@ export default function DashboardPage() {
         <>
           {/* KPI row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 20 }}>
-            <StatCard label="Currently Inside" value={data?.currently_inside.total ?? 0} sub="Active gym visitors right now" icon={Users} color="#10b981" />
-            <StatCard label="Today's Check-ins" value={data?.today.total ?? 0} sub="Total across all types" icon={CheckCircle2} color="#0067e0" />
-            <StatCard label="Members Inside" value={(data?.currently_inside.breakdown as Record<string, number> | undefined)?.client ?? 0} sub="Active member sessions" icon={User} color="#0067e0" />
+            <StatCard label="Currently Inside" value={data?.currently_inside.total ?? 0} icon={Users} color="#10b981" />
+            <StatCard label="Today's Check-ins" value={data?.today.total ?? 0} icon={CheckCircle2} color="#0067e0" />
+            <StatCard label="Members Inside" value={(data?.currently_inside.breakdown as Record<string, number> | undefined)?.client ?? 0} icon={User} color="#0067e0" />
             <StatCard
               label="Peak Hour"
               value={peakHour !== null ? HOUR_LABELS[peakHour] : '—'}
-              sub="Busiest time today"
               icon={TrendingUp}
               color="#f59e0b"
             />

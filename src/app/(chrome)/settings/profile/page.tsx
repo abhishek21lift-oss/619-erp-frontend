@@ -417,7 +417,7 @@ function SpecialisationEditor({ value, onChange }: { value: string[]; onChange: 
  * word of it is read.
  */
 function SectionHeader({ icon, title, subtitle, tone = 'indigo' }: {
-  icon: React.ReactNode; title: string; subtitle: string; tone?: ToneName;
+  icon: React.ReactNode; title: string; subtitle?: string; tone?: ToneName;
 }) {
   const t = tones[tone];
   return (
@@ -430,7 +430,7 @@ function SectionHeader({ icon, title, subtitle, tone = 'indigo' }: {
       </div>
       <div className="min-w-0">
         <p className="text-[15px] font-[800] tracking-[-0.015em]" style={{ color: 'var(--text-primary)' }}>{title}</p>
-        <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{subtitle}</p>
+        {subtitle && <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{subtitle}</p>}
       </div>
     </div>
   );
@@ -1502,7 +1502,6 @@ function ProfilePageInner() {
                     <SectionHeader tone="sunset"
                       icon={<BadgeCheck size={15} />}
                       title="Profile completion"
-                      subtitle="Scored on what you've saved, not what you've typed"
                     />
                     <CompletionPanel completion={me.completion} onGoToTab={setTab} />
                   </GlassCard>
@@ -1511,7 +1510,7 @@ function ProfilePageInner() {
                 {/* Personal Information */}
                 <FadeUp>
                   <GlassCard className="p-6" tone="indigo">
-                    <SectionHeader tone="indigo" icon={<User size={15} />} title="Personal Information" subtitle="Your name, contact and bio" />
+                    <SectionHeader tone="indigo" icon={<User size={15} />} title="Personal Information" />
                     <div className="flex flex-col gap-3">
                       <FloatInput tone="brand" upperLifted label="Full Name" value={name} onChange={setName} required />
                       <FloatInput tone="brand" upperLifted label="Email Address" type="email" value={email} onChange={setEmail} required />
@@ -1525,7 +1524,7 @@ function ProfilePageInner() {
                 {/* Activity Timeline */}
                 <FadeUp delay={0.05}>
                   <GlassCard className="p-6" tone="violet">
-                    <SectionHeader tone="violet" icon={<History size={15} />} title="Activity Timeline" subtitle="Recent account events" />
+                    <SectionHeader tone="violet" icon={<History size={15} />} title="Activity Timeline" />
                     {activityLoading ? (
                       <div className="flex items-center justify-center py-10">
                         <Loader2 size={18} className="animate-spin" style={{ color: 'var(--text-disabled)' }} />
@@ -1569,7 +1568,7 @@ function ProfilePageInner() {
                 {/* Current Session */}
                 <FadeUp delay={0.08}>
                   <GlassCard className="p-6 lg:col-span-2" tone="sky">
-                    <SectionHeader tone="sky" icon={<Wifi size={15} />} title="Current Session" subtitle="This device, right now" />
+                    <SectionHeader tone="sky" icon={<Wifi size={15} />} title="Current Session" />
                     {!device || !session ? (
                       <p className="text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>Session info unavailable.</p>
                     ) : (
@@ -1595,9 +1594,8 @@ function ProfilePageInner() {
                         </div>
                         <div className="rounded-2xl p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                           <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-                            This app tracks the device you&apos;re on now, not a roster of past logins. If you suspect
-                            unauthorized access, sign out everywhere from the Security tab — it immediately invalidates
-                            every active login, including this one.
+                            Only the device you&apos;re on now is tracked. To end every login, use Sign out
+                            everywhere in the Security tab.
                           </p>
                         </div>
                       </div>
@@ -1646,7 +1644,6 @@ function ProfilePageInner() {
                   <SectionHeader tone="sunset"
                     icon={<Briefcase size={15} />}
                     title="Professional profile"
-                    subtitle="What you do, as opposed to what the software lets you click"
                   />
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <FloatInput tone="brand" upperLifted label="Job title" value={jobTitle} onChange={setJobTitle} />
@@ -1693,7 +1690,6 @@ function ProfilePageInner() {
                   <SectionHeader tone="indigo"
                     icon={<Briefcase size={15} />}
                     title="Professional information"
-                    subtitle="Your designation, how you coach, and where you've coached"
                   />
                   <ProfessionalSection
                     issues={fieldIssues}
@@ -1710,7 +1706,7 @@ function ProfilePageInner() {
                   <SectionHeader tone="mint"
                     icon={<Calendar size={15} />}
                     title="Availability"
-                    subtitle="When you take sessions. Split shifts are supported."
+                    subtitle="Split shifts are supported."
                   />
                   <WorkingHoursEditor
                     issues={fieldIssues}
@@ -1741,7 +1737,7 @@ function ProfilePageInner() {
                   <SectionHeader tone="gold"
                     icon={<Trophy size={15} />}
                     title="Achievements"
-                    subtitle="Competitions, records, awards and media — newest first"
+                    subtitle="Newest first"
                   />
                   <AchievementsSection value={achievements} onChange={setAchievements} issues={fieldIssues} />
                 </GlassCard>
@@ -1774,8 +1770,7 @@ function ProfilePageInner() {
                       <BadgeCheck size={26} className="mx-auto mb-2.5" style={{ color: 'var(--text-disabled)' }} />
                       <p className="text-[13px] font-[680]" style={{ color: 'var(--text-primary)' }}>No certifications yet</p>
                       <p className="mx-auto mt-1 max-w-[380px] text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                        Add your CPT, CPR/AED and any specialist qualifications. Record the
-                        expiry and this page will tell you before one lapses.
+                        Add your qualifications and expiry dates — you&apos;ll be warned before one lapses.
                       </p>
                     </div>
                   ) : (
@@ -1842,7 +1837,7 @@ function ProfilePageInner() {
                         <div className="flex items-center gap-2.5 rounded-xl px-4 py-3"
                           style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.18)' }}>
                           <ShieldCheck size={14} style={{ color: '#059669' }} />
-                          <span className="text-[12px] font-[640]" style={{ color: '#059669' }}>Two-factor authentication is active and protecting your account</span>
+                          <span className="text-[12px] font-[640]" style={{ color: '#059669' }}>Active</span>
                         </div>
                         <button onClick={() => setDisableMfaOpen(true)}
                           className="self-start rounded-xl px-4 py-2 text-[12px] font-[700] transition-all"
@@ -1888,7 +1883,7 @@ function ProfilePageInner() {
                         <div className="flex items-center gap-2.5 rounded-xl px-4 py-3"
                           style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.18)' }}>
                           <AlertTriangle size={14} style={{ color: '#d97706' }} />
-                          <span className="text-[12px] font-[640]" style={{ color: '#d97706' }}>Two-factor authentication is not enabled</span>
+                          <span className="text-[12px] font-[640]" style={{ color: '#d97706' }}>Not enabled</span>
                         </div>
                         <button onClick={startMfaSetup} disabled={mfaBusy}
                           className="flex items-center justify-center gap-2 self-start rounded-xl px-4 py-2.5 text-[12.5px] font-[720] text-white transition-all"
@@ -1941,7 +1936,7 @@ function ProfilePageInner() {
                 {/* Change Password */}
                 <FadeUp delay={0.08}>
                   <GlassCard className="p-6 lg:col-span-2" tone="rose">
-                    <SectionHeader tone="rose" icon={<Lock size={15} />} title="Change Password" subtitle="Use a strong, unique password" />
+                    <SectionHeader tone="rose" icon={<Lock size={15} />} title="Change Password" />
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="flex flex-col gap-3">
                         <FloatInput tone="brand" upperLifted label="Current Password" type={showCur ? 'text' : 'password'} value={currentPw} onChange={setCurrentPw}
@@ -2031,7 +2026,7 @@ function ProfilePageInner() {
                 {/* Theme */}
                 <FadeUp>
                   <GlassCard className="p-6" tone="gold">
-                    <SectionHeader tone="gold" icon={<Sun size={15} />} title="Appearance" subtitle="Theme preference" />
+                    <SectionHeader tone="gold" icon={<Sun size={15} />} title="Appearance" />
                     <div className="grid grid-cols-3 gap-2">
                       {([
                         { id: 'light', label: 'Light', icon: <Sun size={18} />, tone: 'gold' },
@@ -2089,7 +2084,7 @@ function ProfilePageInner() {
                 {/* Notifications */}
                 <FadeUp delay={0.08}>
                   <GlassCard className="p-6 lg:col-span-2" tone="berry">
-                    <SectionHeader tone="berry" icon={<Bell size={15} />} title="Notification Preferences" subtitle="Choose how you want to be notified" />
+                    <SectionHeader tone="berry" icon={<Bell size={15} />} title="Notification Preferences" />
                     {notifications ? (
                       <>
                         <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
@@ -2144,7 +2139,7 @@ function ProfilePageInner() {
               <DialogTitle>Save your recovery codes</DialogTitle>
             </DialogHeader>
             <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-              Store these somewhere safe. Each code can be used once to get back into your account if you lose access to your authenticator app.
+              Each code works once. Store them somewhere safe.
             </p>
             <div className="grid grid-cols-2 gap-2 rounded-[12px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
               {(recoveryCodes ?? []).map(code => (

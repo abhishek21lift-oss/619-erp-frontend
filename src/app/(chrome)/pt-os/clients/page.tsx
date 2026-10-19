@@ -408,11 +408,11 @@ function EmptyState({ search, statusFilter, onNew }: { search: string; statusFil
       <p className="text-[17px] font-[760] tracking-[-0.01em] text-gray-900">
         {isFiltered ? 'No PT clients found' : 'Add your first client'}
       </p>
-      <p className="max-w-[320px] text-center text-[13px] text-slate-500">
-        {isFiltered
-          ? 'Try adjusting your search or filters'
-          : 'Your client roster is private to your studio — enrol your first PT client to get started.'}
-      </p>
+      {isFiltered && (
+        <p className="max-w-[320px] text-center text-[13px] text-slate-500">
+          Try adjusting your search or filters
+        </p>
+      )}
       {!isFiltered && (
         <button onClick={onNew}
           className="mt-2 inline-flex items-center gap-2 rounded-[12px] px-5 py-2.5 text-[13px] font-[700] text-white transition-all hover:-translate-y-0.5"

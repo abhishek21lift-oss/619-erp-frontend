@@ -270,7 +270,6 @@ export default function DietGeneratorPage() {
             </div>
             <div>
               <div className="text-[15px] font-[750]" style={{ color: 'var(--text-primary)' }}>Your Profile & Preferences</div>
-              <div className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>Calories and macros are calculated from these</div>
             </div>
           </div>
 

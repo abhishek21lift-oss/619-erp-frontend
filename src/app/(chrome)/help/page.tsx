@@ -120,8 +120,7 @@ export default function HelpPage() {
           <div style={{ width: 48, height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,103,224,0.08)', border: '1px solid rgba(0,103,224,0.12)', marginBottom: 16 }}>
             <HelpCircle size={22} color="#0067e0" />
           </div>
-          <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Still need help?</p>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 20px' }}>Reach out to our support team</p>
+          <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 20px' }}>Still need help?</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* A ticket first: it keeps the whole thread, with replies, in the
                 app (/support). This page used to offer only email, phone and

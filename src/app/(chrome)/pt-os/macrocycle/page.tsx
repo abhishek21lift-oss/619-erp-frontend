@@ -113,10 +113,10 @@ export default function MacrocyclePage() {
 
         <section className="mb-5">
           <h2 className="mb-1 text-[15px] font-[700]">
-            {totalWeeks}-week block · {cycle.phases.length} phase{cycle.phases.length === 1 ? '' : 's'}
+            {totalWeeks}-week block
           </h2>
           <p className="mb-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-            {daysPerWeek} day{daysPerWeek === 1 ? '' : 's'}/week: {days.join(' · ')}
+            {days.join(' · ')}
           </p>
           <div className="space-y-3">
             {cycle.phases.map((phase) => (
@@ -128,7 +128,7 @@ export default function MacrocyclePage() {
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h3 className="text-[14px] font-[600]">{phase.name}</h3>
                   <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                    {weeksLabel(phase.weeks)} · {phase.weeks.length} week{phase.weeks.length === 1 ? '' : 's'}
+                    {weeksLabel(phase.weeks)}
                   </span>
                 </div>
                 <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>{phase.focus}</p>

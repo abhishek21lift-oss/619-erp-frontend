@@ -485,7 +485,7 @@ function SubmitSuccess({ clientId, clientName, result }: { clientId: string; cli
       </div>
       <h1 className="mt-5 text-[24px] font-[860] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>Consent Completed</h1>
       <p className="mt-2 text-[13.5px]" style={{ color: 'var(--text-muted)' }}>
-        {clientName}&apos;s Personal Training Informed Consent has been signed and recorded.
+        Signed and recorded for {clientName}.
       </p>
 
       <div className="mt-7 flex flex-wrap items-center justify-center gap-3">

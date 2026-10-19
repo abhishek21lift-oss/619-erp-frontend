@@ -357,7 +357,7 @@ function Inner() {
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 10, background: 'var(--bg-subtle)', marginBottom: 20 }}>
             <Info size={13} style={{ color: 'var(--text-disabled)', flexShrink: 0 }} />
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Browsing the shared meal &amp; template library. Open this page from a client&apos;s profile to track their water intake or assign a plan.</span>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Assign a plan or track water from a client&apos;s profile.</span>
           </div>
         )}
 
@@ -466,7 +466,7 @@ function Inner() {
               ) : filteredMeals.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
                   <Salad size={32} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
-                  <p style={{ margin: 0, fontSize: 14 }}>No meals in the library yet. Add your first meal to start building it out.</p>
+                  <p style={{ margin: 0, fontSize: 14 }}>No meals in the library yet.</p>
                 </div>
               ) : (
                 <m.div variants={containerVariants} initial="hidden" animate="visible"
@@ -580,7 +580,6 @@ function Inner() {
                   <Pill size={16} color="#0067e0" />
                 </div>
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Supplement Stack</h3>
-                <span style={{ padding: '2px 8px', borderRadius: 8, fontSize: 10, fontWeight: 700, background: 'rgba(0,103,224,0.1)', color: '#0067e0', letterSpacing: '0.05em' }}>RECOMMENDED</span>
               </div>
 
               {loading ? (

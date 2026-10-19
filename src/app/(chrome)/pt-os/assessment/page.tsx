@@ -640,8 +640,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
                 <CheckCircle2 size={19} />
               </span>
               <div>
-                <p className="text-[14px] font-[760] text-[color:var(--text-primary)]">Assessment Saved</p>
-                <p className="text-[12.5px] text-[color:var(--text-muted)]">
+                <p className="text-[14px] font-[760] text-[color:var(--text-primary)]">
                   Assessment {String(lastSaved.assessment_number ?? '')} recorded for {clientName}.
                 </p>
               </div>

@@ -140,13 +140,9 @@ function Today() {
       <PageHero
         icon={<CalendarDays size={20} />}
         title="Today"
-        subtitle={roster?.day_of_week
-          ? `${roster.day_of_week}${clients.length > 0 ? ` · ${done} of ${clients.length} done` : ''}`
-          : undefined}
+        subtitle={roster?.day_of_week}
       >
-        {/* How far through the day, without spending a row on it. The count in
-            the subtitle is the same number in words; this is the version you
-            can read without reading. */}
+        {/* How far through the day, without spending a row on it. */}
         {clients.length > 0 && (
           <div
             className="h-1.5 w-full overflow-hidden rounded-full"
@@ -190,7 +186,7 @@ function Today() {
         <EmptyState
           icon={<Users size={22} />}
           title="Nobody is in today"
-          description="Nothing booked, no programme prescribing today, and nobody whose enrolment names this weekday."
+          description="Nothing is booked for today."
           action={(
             <button
               type="button"
@@ -362,7 +358,7 @@ function ClientRow({
               would have read "null · 0 exercises" for exactly the newly
               enrolled client this list was extended to include. */}
           {!c.plan_name
-            ? 'No programme yet · exercises can be added in the session'
+            ? 'No programme yet'
             : c.is_rest_day
               ? `${c.plan_name} · nothing scheduled`
               : `${c.plan_name} · ${c.planned_exercises} exercise${c.planned_exercises === 1 ? '' : 's'}`}

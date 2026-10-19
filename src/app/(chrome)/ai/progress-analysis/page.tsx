@@ -201,7 +201,6 @@ function ProgressAnalysisInner() {
             </div>
             <div className="text-center">
               <div className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>Analysing progress data…</div>
-              <div className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>AI is reviewing workouts, nutrition, and attendance patterns</div>
             </div>
           </m.div>
         )}

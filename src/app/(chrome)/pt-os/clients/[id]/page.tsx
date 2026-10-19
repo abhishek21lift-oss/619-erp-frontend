@@ -971,7 +971,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   <LinkPanel
                     icon={<Wallet size={16} />}
                     title="Payments"
-                    body="What has been taken, what is outstanding, and the sessions it bought."
                     color={TAB_COLOR.danger}
                     links={[
                       { label: 'Payment history', href: `/pt-os/clients/${client.id}/payments`, hint: 'Every transaction', icon: <Wallet size={15} />, color: TAB_COLOR.primary },
@@ -1045,7 +1044,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 <LinkPanel
                   icon={<Sparkles size={16} />}
                   title="AI Coach"
-                  body="The observations above the tabs are derived from this client's own readings. The assistant can go further — ask it about their programme, recovery or nutrition."
+                  body="Ask about their programme, recovery or nutrition."
                   color={TAB_COLOR.warning}
                   action={(
                     <Button
@@ -1069,7 +1068,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 <LinkPanel
                   icon={<FileBarChart size={16} />}
                   title="Reports"
-                  body="What this client's month looks like. The studio-wide report is a different question and lives on its own screen."
+                  body="What this client's month looks like."
                   color={TAB_COLOR.success}
                   links={[
                     { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume, intensity, trend', icon: <TrendingUp size={15} />, color: TAB_COLOR.success },
@@ -1085,7 +1084,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   <LinkPanel
                     icon={<ShieldCheck size={16} />}
                     title="Screening &amp; assessments"
-                    body="The forms the training brief is assembled from."
                     color={TAB_COLOR.dangerDeep}
                     links={[
                       { label: 'PAR-Q', href: `/pt-os/parq?client_id=${client.id}`, hint: 'Medical clearance', icon: <ShieldCheck size={15} />, color: TAB_COLOR.success },

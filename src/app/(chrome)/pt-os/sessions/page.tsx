@@ -191,7 +191,6 @@ export default function PTSessionsPage() {
               <Calendar className="h-7 w-7" strokeWidth={1.5} />
             </div>
             <p className="text-sm font-medium text-[#64748B]">No sessions found</p>
-            <p className="mt-1 text-[12px] text-[#94a3b8]">Schedule a PT session to see it here</p>
           </div>
         ) : (
           <div className="space-y-2">

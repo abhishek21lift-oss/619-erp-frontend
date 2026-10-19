@@ -312,7 +312,6 @@ function PasskeysContent() {
           </p>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
             Give this device a name so you can identify it later.
-            Your browser will prompt you to use your fingerprint, Face ID, or Windows Hello.
           </p>
           <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
             <input
@@ -405,8 +404,7 @@ function PasskeysContent() {
               No passkeys registered
             </p>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.6 }}>
-              Add a passkey to sign in instantly with your fingerprint, Face ID, or Windows Hello —
-              no password needed.
+              Sign in with your fingerprint, Face ID or Windows Hello.
             </p>
             {supported && available && (
               <button

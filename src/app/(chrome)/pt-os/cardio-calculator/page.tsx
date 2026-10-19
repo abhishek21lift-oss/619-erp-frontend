@@ -153,7 +153,6 @@ export default function CardioCalculatorPage() {
             </p>
             <ul className="mt-2 space-y-1 text-[12px] opacity-80">
               <li>Frequency: sessions per week are set on the plan, not here.</li>
-              <li>Type: {modality || 'pick a modality above'}.</li>
               <li>Intensity: target HR above, or RPE / talk-test where HR is unreliable (medication, heat, beta-blockers).</li>
             </ul>
           </section>
