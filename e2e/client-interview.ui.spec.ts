@@ -98,6 +98,10 @@ test.describe('Client interview and journey', () => {
     expect(journey.steps.find((s) => s.key === 'interview')?.state).toBe('done');
 
     await page.getByRole('button', { name: /Continue to Fitness Assessment/ }).click();
+    // The click's promise is a client-side push; the URL commits once the
+    // destination's payload arrives. CI runs the production bundle rather than
+    // a compiling dev server precisely so this is not a race — see the
+    // webServer note in playwright.config.ts before touching this timeout.
     await expect(page).toHaveURL(new RegExp(`/pt-os/assessment\\?client_id=${clientId}`));
   });
 

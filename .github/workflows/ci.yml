@@ -207,6 +207,11 @@ jobs:
       FRONTEND_URL: http://127.0.0.1:3100
       E2E_API_URL: http://127.0.0.1:5100
       E2E_APP_URL: http://127.0.0.1:3100
+      # Serve the production build in this job, not `next dev`. A dev server
+      # compiles a route on its first request, and a client-side transition does
+      # not commit its URL until that compile finishes — see the webServer note
+      # in playwright.config.ts.
+      E2E_WEB_SERVER: 'prod'
       PORT: '5100'
 
     steps:
@@ -320,6 +325,18 @@ jobs:
         working-directory: frontend
         run: npm ci --legacy-peer-deps
 
+      # The journeys below run the standalone server (E2E_WEB_SERVER=prod), so
+      # the bundle they exercise has to exist first. It is also the bundle the
+      # deploy ships.
+      - name: Build the frontend
+        working-directory: frontend
+        env:
+          # Inlined into the client bundle at build time: the browser has to
+          # call the API this job started, not a build-machine placeholder.
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:5100
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: npm run build
+
       - name: Run the isolation suite
         working-directory: frontend
         # --project=api: these assert against the API directly, because a leak
@@ -358,7 +375,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: frontend/playwright-report/
+          # The HTML report exists only because the CI reporter list asks for it
+          # (playwright.config.ts); `test-results/` is where traces, screenshots
+          # and error-context.md for the failed tests land. Neither was uploaded
+          # before, so a red journey arrived with nothing to debug it with.
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
           retention-days: 7
 
       # ── Prove the suite above actually exercised app_tenant ──────────────
