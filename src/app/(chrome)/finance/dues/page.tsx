@@ -128,10 +128,6 @@ function Inner() {
     : filtered.filter((d) => Number(d.balance_amount || 0) >= RISK_HIGH).length;
   const medRisk  = summary ? summary.medium_risk_count
     : filtered.filter((d) => { const a = Number(d.balance_amount || 0); return a >= RISK_MEDIUM && a < RISK_HIGH; }).length;
-  const debtorCount = summary ? summary.debtor_count : filtered.length;
-  // The table shows at most what the API returned; say so when that is less
-  // than the real number of debtors instead of letting the list imply it is all.
-  const truncated = summary != null && !search && dues.length < summary.debtor_count;
 
   return (
     <PullToRefresh onRefresh={fetchDues}>
