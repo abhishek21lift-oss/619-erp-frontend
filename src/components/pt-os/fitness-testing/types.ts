@@ -14,6 +14,9 @@ export interface AssessmentFormData {
   assessmentDate: string;
   assessmentType: AssessmentType;
   assessmentNotes: string;
+  /** Time of day, fasted state, equipment, hydration — the context that makes
+   *  two tests comparable or not. */
+  testingConditions: string;
   trainerId: string;
   trainerName: string;
 
@@ -96,6 +99,7 @@ export function initAssessmentForm(): AssessmentFormData {
     assessmentDate: todayISO(),
     assessmentType: 'initial',
     assessmentNotes: '',
+    testingConditions: '',
     trainerId: '', trainerName: '',
     bpSystolic: '', bpDiastolic: '', restingHeartRate: '', restingSpo2: '', bpNotMeasured: false,
     weight: '', heightCm: '', waistCm: '', waistIliacCm: '', hipsCm: '', neckCm: '', chestCm: '',
@@ -167,6 +171,7 @@ export function formFromAssessmentRow(row: Record<string, unknown>): AssessmentF
     assessmentDate: str(row.assessment_date).slice(0, 10) || f.assessmentDate,
     assessmentType: (str(row.assessment_type) || 'initial') as AssessmentType,
     assessmentNotes: str(row.trainer_notes),
+    testingConditions: str(row.testing_conditions),
     trainerId: str(row.trainer_id), trainerName: str(row.trainer_name),
     bpSystolic: str(row.bp_systolic), bpDiastolic: str(row.bp_diastolic),
     restingHeartRate: str(row.resting_heart_rate), restingSpo2: str(row.resting_spo2),

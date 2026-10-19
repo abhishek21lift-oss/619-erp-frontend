@@ -20,7 +20,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { m } from 'framer-motion';
 import {
-  Bell, CalendarRange, Camera, ChevronRight, FileSignature, Flame, IdCard, LineChart, LogOut, Medal,
+  Bell, CalendarRange, Camera, ChevronRight, ClipboardCheck, FileSignature, Flame, IdCard, LineChart, LogOut, Medal,
   MessageCircle, RefreshCw, Target, Trophy, UserRound, Dumbbell,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -60,7 +60,8 @@ const GROUPS: Group[] = [
     rows: [
       { href: '/member/goals', label: 'Goals', sub: 'Targets with a projected finish date', icon: Target },
       { href: '/member/records', label: 'Records', sub: 'Streaks, milestones and personal bests', icon: Medal },
-      { href: '/member/progress', label: 'Progress', sub: 'Weight trend and body measurements', icon: LineChart },
+      { href: '/member/progress', label: 'Progress', sub: 'Weight, measurements and assessment countdown', icon: LineChart },
+      { href: '/member/habits', label: 'Daily journal', sub: 'Sleep, steps, water and recovery', icon: ClipboardCheck },
       { href: '/member/photos', label: 'Progress photos', sub: 'Your photo timeline and before/after', icon: Camera },
       { href: '/member/recap', label: 'Monthly recap', sub: 'Your month in numbers — and a card to share', icon: CalendarRange },
     ],

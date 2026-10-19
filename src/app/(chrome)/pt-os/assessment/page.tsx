@@ -346,6 +346,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
         assessment_date: form.assessmentDate,
         assessment_type: form.assessmentType,
         assessment_notes: form.assessmentNotes.trim() || null,
+        testing_conditions: form.testingConditions.trim() || null,
         age: age ?? undefined, gender: gender ?? undefined,
         bp_not_measured: form.bpNotMeasured && !form.bpSystolic && !form.bpDiastolic,
 
