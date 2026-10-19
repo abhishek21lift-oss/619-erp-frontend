@@ -1,10 +1,10 @@
 'use client';
 
-import { Suspense, useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   TrendingUp, Loader2, Sparkles, AlertTriangle, AlertCircle, CheckCircle2,
-  User, TrendingDown, Minus, Target, Brain, ChevronRight, RefreshCw, X,
+  User, TrendingDown, Minus, Target, Brain, RefreshCw,
 } from 'lucide-react';
 import { m, type Variants } from 'framer-motion';
 import { api } from '@/lib/api';
@@ -13,12 +13,13 @@ import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
 import { PremiumLineChart } from '@/components/visualizations';
 import { errorMessage } from '@/lib/forms/errors';
+import { AiClientPicker } from '@/components/ai/AiClientPicker';
 
 const ACCENT = '#FBBF24';
 const ACCENT_DIM = 'rgba(251,191,36,0.12)';
 const ACCENT_GLOW = 'rgba(251,191,36,0.25)';
 
-interface Client { id: number; name: string; email?: string; }
+interface Client { id: string | number; name: string; email?: string; }
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -74,10 +75,7 @@ function ProgressAnalysisInner() {
   const sp = useSearchParams();
   const linkedClientId = sp.get('client_id');
 
-  const [clients, setClients] = useState<Client[]>([]);
-  const [clientSearch, setClientSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<AiProgressAnalysis | null>(null);
   const [counts, setCounts] = useState<AiProgressDataCounts | null>(null);
@@ -85,20 +83,6 @@ function ProgressAnalysisInner() {
   const [meta, setMeta] = useState<{ model?: string; tier?: string; used_fallback?: boolean } | null>(null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [error, setError] = useState('');
-
-  // Debounced search with a sequence guard. The old effect fired per
-  // keystroke with no abort — typing "ann" could render "a"'s results last.
-  const searchSeq = useRef(0);
-  useEffect(() => {
-    const id = setTimeout(() => {
-      const seq = ++searchSeq.current;
-      const load = clientSearch ? api.clients.search(clientSearch) : api.clients.list({ limit: 20 });
-      load.then((data) => {
-        if (searchSeq.current === seq) setClients(data as unknown as Client[]);
-      }).catch(() => {});
-    }, clientSearch ? 300 : 0);
-    return () => clearTimeout(id);
-  }, [clientSearch]);
 
   // Resolve the linked client by id.
   //
@@ -142,10 +126,6 @@ function ProgressAnalysisInner() {
     } finally { setLoading(false); }
   };
 
-  const filteredClients = clients.filter((c) =>
-    c.name.toLowerCase().includes(clientSearch.toLowerCase())
-  );
-
   const thinData = counts !== null &&
     counts.assessments === 0 && counts.checkins === 0 &&
     counts.strength_logs === 0 && counts.goals === 0;
@@ -159,23 +139,14 @@ function ProgressAnalysisInner() {
         <PageHero
           icon={<TrendingUp size={20} />}
           title="AI Progress Analyzer"
-          subtitle="Deep dive into a client's fitness journey with AI-powered insights and strategy"
-        >
-          <div className="flex flex-wrap gap-2">
-            {['Weight Trends', 'Strength Analysis', 'Attendance Tracking', 'Risk Detection', 'Monthly Strategy'].map((p) => (
-              <span key={p} className="rounded-full px-3 py-1.5 text-[12px] font-[550] text-white"
-                style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>
-                {p}
-              </span>
-            ))}
-          </div>
-        </PageHero>
+          compact
+        />
 
       <div className="mx-auto w-full max-w-4xl">
 
         {/* Client selector */}
         <m.div variants={fadeUp} initial="hidden" animate="show" custom={1}
-          className="mb-8 rounded-[24px] border border-gray-200 bg-white p-5 sm:p-7"
+          className="mb-8 rounded-[24px] border border-[var(--border)] bg-[var(--bg-card)] p-5 sm:p-7"
           style={{ boxShadow: 'var(--shadow-xs)' }}>
           <div className="mb-6 flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: ACCENT_DIM }}>
@@ -184,71 +155,10 @@ function ProgressAnalysisInner() {
             <span className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>Select Client</span>
           </div>
 
-          <div className="relative">
-            <div className="relative">
-              <User size={16} color="#94a3b8" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input aria-label="Search clients by name"
-                role="combobox"
-                aria-expanded={showDropdown}
-                aria-controls="pa-client-list"
-                aria-autocomplete="list"
-                type="text"
-                className="h-[52px] w-full rounded-[15px] py-2.5 pl-12 pr-10 text-[15px] font-[500] outline-none"
-                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-                placeholder="Search clients by name…"
-                value={selectedClient ? selectedClient.name : clientSearch}
-                onFocus={() => setShowDropdown(true)}
-                onChange={(e) => { setClientSearch(e.target.value); setSelectedClient(null); setShowDropdown(true); }}
-                onKeyDown={(e) => { if (e.key === 'Escape') setShowDropdown(false); }}
-              />
-              {selectedClient && (
-                <button
-                  type="button"
-                  aria-label="Clear selected client"
-                  onClick={() => { setSelectedClient(null); setClientSearch(''); setShowDropdown(true); }}
-                  className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-
-            {showDropdown && filteredClients.length > 0 && (
-              <div id="pa-client-list" role="listbox" aria-label="Matching clients" style={{
-                position: 'absolute', zIndex: 20, width: '100%', marginTop: 4,
-                background: 'var(--bg-card)', border: '1px solid var(--border)',
-                borderRadius: 14, boxShadow: 'var(--shadow-card)',
-                maxHeight: 220, overflowY: 'auto', overscrollBehavior: 'contain',
-              }}>
-                {filteredClients.map((c, i) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    role="option"
-                    aria-selected={selectedClient?.id === c.id}
-                    style={{
-                      width: '100%', textAlign: 'left', padding: '12px 16px',
-                      background: 'transparent', border: 'none', cursor: 'pointer',
-                      borderBottom: i < filteredClients.length - 1 ? '1px solid #f1f5f9' : 'none',
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    }}
-                    // onClick, not onMouseDown: keyboard Enter/Space on a
-                    // focused button fires click, never mousedown — the old
-                    // handler made every option inert for keyboard users.
-                    onClick={() => { setSelectedClient(c); setClientSearch(c.name); setShowDropdown(false); }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#F8FAFC'; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
-                  >
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</div>
-                      {c.email && <div style={{ fontSize: 12, color: 'var(--text-disabled)', marginTop: 2 }}>{c.email}</div>}
-                    </div>
-                    <ChevronRight size={14} color="#94a3b8" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <AiClientPicker
+            selected={selectedClient}
+            onSelect={(c) => setSelectedClient(c ? { id: c.id, name: c.name, email: c.email } : null)}
+          />
 
           {error && (
             <div role="alert" className="mt-4 flex items-start gap-2 rounded-[10px] px-3.5 py-2.5 text-[13px] font-medium"
@@ -323,7 +233,7 @@ function ProgressAnalysisInner() {
 
             {/* Provenance: what the reading rests on */}
             {counts && (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[16px] border border-gray-200 bg-white px-4 py-3 text-[12px]"
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[16px] border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 text-[12px]"
                 style={{ boxShadow: 'var(--shadow-xs)', color: 'var(--text-secondary)' }}>
                 <span className="font-bold" style={{ color: 'var(--text-primary)' }}>Based on</span>
                 <span>{counts.assessments} assessments</span>
@@ -379,7 +289,7 @@ function ProgressAnalysisInner() {
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
               {analysis.weight_trend && (
                 <m.div variants={fadeUp} initial="hidden" animate="show" custom={2}
-                  className="rounded-[16px] border border-gray-200 bg-white p-5"
+                  className="rounded-[16px] border border-[var(--border)] bg-[var(--bg-card)] p-5"
                   style={{ boxShadow: 'var(--shadow-xs)' }}>
                   <div className="mb-3 flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--text-disabled)' }}>Weight</span>
@@ -397,7 +307,7 @@ function ProgressAnalysisInner() {
               )}
               {analysis.strength_trend && (
                 <m.div variants={fadeUp} initial="hidden" animate="show" custom={3}
-                  className="rounded-[16px] border border-gray-200 bg-white p-5"
+                  className="rounded-[16px] border border-[var(--border)] bg-[var(--bg-card)] p-5"
                   style={{ boxShadow: 'var(--shadow-xs)' }}>
                   <div className="mb-3 flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--text-disabled)' }}>Strength</span>
@@ -409,7 +319,7 @@ function ProgressAnalysisInner() {
               )}
               {analysis.attendance_trend && (
                 <m.div variants={fadeUp} initial="hidden" animate="show" custom={4}
-                  className="rounded-[16px] border border-gray-200 bg-white p-5"
+                  className="rounded-[16px] border border-[var(--border)] bg-[var(--bg-card)] p-5"
                   style={{ boxShadow: 'var(--shadow-xs)' }}>
                   <div className="mb-3 flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--text-disabled)' }}>Attendance</span>
@@ -478,7 +388,7 @@ function ProgressAnalysisInner() {
             {/* Recommendations */}
             {analysis.recommendations?.length ? (
               <m.div variants={fadeUp} initial="hidden" animate="show" custom={7}
-                className="overflow-hidden rounded-[20px] border border-gray-200 bg-white"
+                className="overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--bg-card)]"
                 style={{ boxShadow: 'var(--shadow-xs)' }}>
                 <div className="flex items-center gap-2 px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
                   <Target size={18} color={ACCENT} />
@@ -506,7 +416,7 @@ function ProgressAnalysisInner() {
             {/* Next month strategy */}
             {analysis.next_month_strategy && (
               <m.div variants={fadeUp} initial="hidden" animate="show" custom={8}
-                className="flex gap-3.5 rounded-[16px] border border-gray-200 bg-white px-6 py-5"
+                className="flex gap-3.5 rounded-[16px] border border-[var(--border)] bg-[var(--bg-card)] px-6 py-5"
                 style={{ boxShadow: 'var(--shadow-xs)' }}>
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]" style={{ background: ACCENT_DIM }}>
                   <Brain size={18} color={ACCENT} />
