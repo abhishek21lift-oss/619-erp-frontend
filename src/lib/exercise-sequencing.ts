@@ -4,6 +4,28 @@
 export type Mechanic = 'compound' | 'isolation' | string;
 export type MovementPattern = string;
 
+// ── Module 4 metadata ──────────────────────────────────────────────────────
+//
+// Every field below is OPTIONAL. Rows written before this metadata existed
+// carry none of it, and the engine must sequence them exactly as it always
+// did rather than invent a classification — a guessed "unsupported" is a
+// safety claim nobody reviewed.
+
+export type JointAction = 'compound' | 'isolation';
+/** `unknown` is a real value: the trainer has not classified the movement. */
+export type StructuralStatus = 'supported' | 'unsupported' | 'unknown';
+export type ExerciseTool =
+  | 'barbell'
+  | 'dumbbell'
+  | 'cable'
+  | 'bodyweight'
+  | 'plate-loaded-machine'
+  | 'selectorized-machine'
+  | 'smith-machine'
+  | 'band'
+  | 'other';
+export type ForceLine = 'vertical' | 'horizontal' | 'diagonal' | 'rotational' | 'mixed' | 'unknown';
+
 export interface SeqExercise {
   id: string;
   name: string;
@@ -14,6 +36,14 @@ export interface SeqExercise {
   equipment?: string;
   locked?: boolean;
   order?: number;
+
+  // Module 4 structured metadata. Absent/`unknown` means "not reviewed yet".
+  jointAction?: JointAction;
+  structuralStatus?: StructuralStatus;
+  tools?: ExerciseTool[];
+  forceLine?: ForceLine;
+  /** Explicit trainer review; never inferred from an exercise name. */
+  powerPriority?: boolean;
 }
 
 export interface SequencedExercise extends SeqExercise {
@@ -25,36 +55,60 @@ export interface SequencedExercise extends SeqExercise {
 const POWER_PATTERNS = new Set(['Olympic', 'Power', 'Plyometric']);
 const HIGH_DEMAND = new Set(['Squat', 'Hinge', 'Vertical Push']);
 
-function isPower(ex: SeqExercise): boolean {
+/**
+ * Power work. `powerPriority` is the reviewed answer; the category/name check
+ * below is the pre-Module 4 heuristic kept for rows that have no metadata yet.
+ * It is not extended to new guesses.
+ */
+export function isPowerExercise(ex: SeqExercise): boolean {
+  if (ex.powerPriority === true) return true;
   const cat = (ex.category || '').toLowerCase();
   if (cat.includes('olympic') || cat.includes('powerlifting') || cat.includes('plyometric')) return true;
   const name = ex.name.toLowerCase();
   return /clean|snatch|jerk|power clean|hang clean/.test(name);
 }
 
-function isCompound(ex: SeqExercise): boolean {
-  return (ex.mechanic || '').toLowerCase() === 'compound';
+/** Joint action, from the reviewed field when present and `mechanic` otherwise. */
+export function isCompoundExercise(ex: SeqExercise): boolean {
+  return ((ex.jointAction ?? ex.mechanic) || '').toLowerCase() === 'compound';
 }
 
-function isCardio(ex: SeqExercise): boolean {
+export function isIsolationExercise(ex: SeqExercise): boolean {
+  return ((ex.jointAction ?? ex.mechanic) || '').toLowerCase() === 'isolation';
+}
+
+export function isCardioExercise(ex: SeqExercise): boolean {
   const cat = (ex.category || '').toLowerCase();
   return cat.includes('cardio') || (ex.movementPattern || '').toLowerCase() === 'locomotion';
 }
 
-function phaseFor(ex: SeqExercise, idx: number): string {
-  if (isPower(ex)) return 'Power / High-Skill';
-  if (isCompound(ex)) return 'Primary Compound';
-  if (isCardio(ex)) return 'Conditioning';
-  return 'Accessory / Isolation';
+/**
+ * Session order, lower = earlier:
+ *   10  power / high-skill
+ *   15  unsupported structural compound (needs bracing, placed while fresh)
+ *   20  high-demand compound without reviewed structural status (legacy)
+ *   30  other compound
+ *   50  accessory / isolation
+ *   60  conditioning
+ * An exercise with no `structuralStatus` never reaches tier 15: the engine
+ * cannot know whether it is supported.
+ */
+export function exercisePriority(ex: SeqExercise): number {
+  if (isPowerExercise(ex)) return 10;
+  if (isCompoundExercise(ex)) {
+    if (ex.structuralStatus === 'unsupported') return 15;
+    if (HIGH_DEMAND.has(ex.movementPattern || '')) return 20;
+    return 30;
+  }
+  if (isCardioExercise(ex)) return 60;
+  return 50;
 }
 
-function priority(ex: SeqExercise): number {
-  // lower = earlier
-  if (isPower(ex)) return 10;
-  if (isCompound(ex) && HIGH_DEMAND.has(ex.movementPattern || '')) return 20;
-  if (isCompound(ex)) return 30;
-  if (isCardio(ex)) return 60;
-  return 50;
+function phaseFor(ex: SeqExercise): string {
+  if (isPowerExercise(ex)) return 'Power / High-Skill';
+  if (isCompoundExercise(ex)) return 'Primary Compound';
+  if (isCardioExercise(ex)) return 'Conditioning';
+  return 'Accessory / Isolation';
 }
 
 export function sequenceWorkout(exercises: SeqExercise[]): SequencedExercise[] {
@@ -67,25 +121,26 @@ export function sequenceWorkout(exercises: SeqExercise[]): SequencedExercise[] {
     const lb = b.e.locked ? 0 : 1;
     if (la !== lb) return la - lb;
     if (a.e.locked && b.e.locked) return a.i - b.i;
-    const pa = priority(a.e);
-    const pb = priority(b.e);
+    const pa = exercisePriority(a.e);
+    const pb = exercisePriority(b.e);
     if (pa !== pb) return pa - pb;
     return a.i - b.i;
   });
 
   return sorted.map((item, idx) => {
     const ex = item.e;
-    const p = priority(ex);
     let reason = '';
-    if (isPower(ex)) reason = 'Power/high-skill movement placed early while fresh.';
-    else if (isCompound(ex)) reason = 'Compound movement before isolation work.';
-    else if (isCardio(ex)) reason = 'Conditioning placed after resistance work.';
+    if (isPowerExercise(ex)) reason = 'Power/high-skill movement placed early while fresh.';
+    else if (isCompoundExercise(ex) && ex.structuralStatus === 'unsupported') {
+      reason = 'Unsupported structural compound placed after power work, while bracing is fresh.';
+    } else if (isCompoundExercise(ex)) reason = 'Compound movement before isolation work.';
+    else if (isCardioExercise(ex)) reason = 'Conditioning placed after resistance work.';
     else reason = 'Accessory/isolation work placed later.';
     if (ex.locked) reason = 'Locked by trainer; order preserved.';
     return {
       ...ex,
       sequenceOrder: idx + 1,
-      phase: phaseFor(ex, idx),
+      phase: phaseFor(ex),
       reason,
     };
   });

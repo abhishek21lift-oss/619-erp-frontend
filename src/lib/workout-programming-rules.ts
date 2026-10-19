@@ -1,144 +1,22 @@
 /**
- * Module 4 — deterministic workout-programming rules.
+ * Module 4 — review rules on top of the sequencing engine.
  *
- * This module is intentionally pure: it does not fetch client data, infer
- * injuries, or persist a workout. The caller must provide reviewed exercise
- * metadata and run the server-side safety/authorization checks before saving.
+ * This module does not sequence anything itself. Ordering lives in
+ * exercise-sequencing.ts (which has a backend twin) and the RM bands live in
+ * strength-prescription.ts, so there is no second answer that can disagree
+ * with the plan the trainer is looking at. What is here only reports what a
+ * trainer should review, and validates form input.
  *
- * Screenshot-derived defaults are preserved, but treated as coaching
- * guidelines rather than universal prescriptions.
+ * Pure: no fetching, no injury inference, no persistence.
  */
 
-export type JointAction = 'isolation' | 'compound';
-export type StructuralStatus = 'supported' | 'unsupported';
-export type ExerciseTool =
-  | 'barbell'
-  | 'dumbbell'
-  | 'cable'
-  | 'bodyweight'
-  | 'plate-loaded-machine'
-  | 'selectorized-machine'
-  | 'smith-machine'
-  | 'band'
-  | 'other';
-export type ForceLine = 'vertical' | 'horizontal' | 'diagonal' | 'rotational' | 'mixed' | 'unknown';
-export type TrainingExperience = 'beginner' | 'intermediate' | 'advanced';
-export type ProgrammingGoal = 'strength' | 'hypertrophy' | 'endurance' | 'fat_loss' | 'general_fitness' | 'powerlifting';
-
-export interface ExerciseProgrammingMetadata {
-  id: string;
-  name: string;
-  jointAction: JointAction;
-  structuralStatus: StructuralStatus;
-  tools: ExerciseTool[];
-  forceLine: ForceLine;
-  /** Explicit trainer-defined priority, e.g. competition lift or power movement. */
-  powerPriority?: boolean;
-  /** Stable source order is preserved within the same sequencing tier. */
-  sourceOrder?: number;
-  /** Optional, explicitly reviewed contraindication/restriction tags. */
-  restrictionTags?: string[];
-}
-
-export interface ExerciseFilter {
-  jointAction?: JointAction | 'all';
-  structuralStatus?: StructuralStatus | 'all';
-  tool?: ExerciseTool | 'all';
-  forceLine?: ForceLine | 'all';
-}
-
-export interface SequencedExercise extends ExerciseProgrammingMetadata {
-  sequenceTier: 1 | 2 | 3;
-  sequenceReason: string;
-}
-
-/**
- * The screenshot's sequence rules:
- * 1. Power work and unsupported structural compound exercises (e.g. squat,
- *    deadlift) start the session while the client is fresh.
- * 2. Supported compounds follow.
- * 3. Isolation work follows compounds.
- *
- * Power priority is an explicit, reviewed flag; it is never inferred from a
- * free-text exercise name. This avoids brittle guesses and accidental loading
- * of an unsafe movement. The function is stable for equal-tier exercises.
- */
-export function sequenceWorkout<T extends ExerciseProgrammingMetadata>(exercises: readonly T[]): Array<T & SequencedExercise> {
-  return exercises
-    .map((exercise, index) => {
-      const tier: 1 | 2 | 3 = exercise.powerPriority
-        ? 1
-        : exercise.jointAction === 'compound' && exercise.structuralStatus === 'unsupported'
-          ? 1
-          : exercise.jointAction === 'compound'
-            ? 2
-            : 3;
-      const sequenceReason = exercise.powerPriority
-        ? 'Power-priority movement: perform early while fresh.'
-        : tier === 1
-          ? 'Unsupported structural compound: prioritize early while technique and bracing are fresh.'
-          : tier === 2
-            ? 'Supported compound: follows priority lifts.'
-            : 'Isolation movement: follows compound work.';
-      return {
-        exercise,
-        index,
-        tier,
-        result: { ...exercise, sequenceTier: tier, sequenceReason },
-      };
-    })
-    .sort((a, b) =>
-      a.tier - b.tier ||
-      (a.exercise.sourceOrder ?? a.index) - (b.exercise.sourceOrder ?? b.index) ||
-      a.index - b.index,
-    )
-    .map(({ result }) => result);
-}
-
-/** Filters only against reviewed structured tags; unknown metadata is not guessed. */
-export function filterExerciseLibrary<T extends ExerciseProgrammingMetadata>(
-  exercises: readonly T[],
-  filter: ExerciseFilter,
-): T[] {
-  return exercises.filter((exercise) =>
-    (!filter.jointAction || filter.jointAction === 'all' || exercise.jointAction === filter.jointAction) &&
-    (!filter.structuralStatus || filter.structuralStatus === 'all' || exercise.structuralStatus === filter.structuralStatus) &&
-    (!filter.tool || filter.tool === 'all' || exercise.tools.includes(filter.tool)) &&
-    (!filter.forceLine || filter.forceLine === 'all' || exercise.forceLine === filter.forceLine),
-  );
-}
-
-/**
- * Screenshot-preserving RM bands. These are programming defaults, not a claim
- * that every set should be taken to a true repetition maximum or failure.
- */
-export const RM_GUIDELINES: Record<TrainingExperience, { min: number; max: number; rationale: string }> = {
-  beginner: { min: 15, max: 20, rationale: 'Technique and motor-pattern practice; use a manageable load and stop before form degrades.' },
-  intermediate: { min: 10, max: 15, rationale: 'Moderate-load volume; adjust reps and effort to the goal and exercise.' },
-  advanced: { min: 6, max: 8, rationale: 'Higher-intensity work; reserve demanding loading for exercises and lifters that can perform it safely.' },
-};
-
-export interface RepPrescription {
-  minReps: number;
-  maxReps: number;
-  /** Suggested reps in reserve, not a requirement to reach failure. */
-  targetRir: number;
-  note: string;
-}
-
-/**
- * Uses the screenshot band as a default. Goal-specific prescriptions and
- * individual assessment should override it where appropriate.
- */
-export function defaultRepPrescription(experience: TrainingExperience): RepPrescription {
-  const band = RM_GUIDELINES[experience];
-  return {
-    minReps: band.min,
-    maxReps: band.max,
-    targetRir: experience === 'beginner' ? 3 : experience === 'intermediate' ? 2 : 1,
-    note: band.rationale,
-  };
-}
+import {
+  exercisePriority,
+  isCompoundExercise,
+  isIsolationExercise,
+  isPowerExercise,
+  type SeqExercise,
+} from './exercise-sequencing';
 
 export interface WorkoutRuleIssue {
   code: 'MISSING_METADATA' | 'POWER_ORDER' | 'UNSUPPORTED_COMPOUND_ORDER' | 'ISOLATION_BEFORE_COMPOUND';
@@ -148,48 +26,71 @@ export interface WorkoutRuleIssue {
 
 /**
  * Review a proposed order without silently rewriting a trainer's saved plan.
- * Unknown or incomplete metadata produces a warning, not an invented value.
+ *
+ * The rules are one-directional: an exercise is only flagged when something
+ * that should have come after it is already above it. That keeps the engine's
+ * own output clean — auditing `sequenceWorkout(x)` must never report a
+ * problem the sequencer itself created.
  */
-export function auditWorkoutOrder(exercises: readonly ExerciseProgrammingMetadata[]): WorkoutRuleIssue[] {
+export function auditWorkoutOrder(exercises: readonly SeqExercise[]): WorkoutRuleIssue[] {
   const issues: WorkoutRuleIssue[] = [];
-  const firstCompound = exercises.findIndex((e) => e.jointAction === 'compound');
+  const firstCompound = exercises.findIndex(isCompoundExercise);
+  let seenNonPower = false;
+
   exercises.forEach((exercise, index) => {
-    if (!exercise.jointAction || !exercise.structuralStatus || !exercise.tools?.length || !exercise.forceLine) {
+    // Reachable for legacy rows: every metadata field is optional, so this is
+    // the branch that keeps them labelled "needs review" instead of guessed.
+    if ((!exercise.jointAction && !exercise.mechanic) || !exercise.structuralStatus) {
       issues.push({
         code: 'MISSING_METADATA',
         severity: 'warning',
         message: `${exercise.name}: programming metadata is incomplete; sequencing cannot be fully verified.`,
       });
     }
-    if (exercise.powerPriority && index > 0) {
+
+    if (isPowerExercise(exercise) && seenNonPower) {
       issues.push({
         code: 'POWER_ORDER',
         severity: 'warning',
         message: `${exercise.name}: power-priority work is not first; review whether it should move earlier.`,
       });
     }
-    if (exercise.jointAction === 'compound' && exercise.structuralStatus === 'unsupported' && index > 0) {
+
+    if (
+      !isPowerExercise(exercise) &&
+      isCompoundExercise(exercise) &&
+      exercise.structuralStatus === 'unsupported' &&
+      exercises.slice(0, index).some((e) => exercisePriority(e) > exercisePriority(exercise))
+    ) {
       issues.push({
         code: 'UNSUPPORTED_COMPOUND_ORDER',
         severity: 'warning',
-        message: `${exercise.name}: unsupported structural compound work appears after another exercise.`,
+        message: `${exercise.name}: unsupported structural compound work appears after work that should follow it.`,
       });
     }
-    if (exercise.jointAction === 'isolation' && firstCompound !== -1 && index < firstCompound) {
+
+    if (isIsolationExercise(exercise) && firstCompound !== -1 && index < firstCompound) {
       issues.push({
         code: 'ISOLATION_BEFORE_COMPOUND',
         severity: 'warning',
         message: `${exercise.name}: isolation work precedes compound work; review the session goal and sequencing.`,
       });
     }
+
+    if (!isPowerExercise(exercise)) seenNonPower = true;
   });
+
   return issues;
 }
 
-/** Minimal eligibility check for trainer-facing forms; not a medical clearance. */
+/**
+ * Minimal eligibility check for trainer-facing forms; not a medical clearance.
+ * Takes `string` on purpose — the values arrive from a form, so validating
+ * them is the point rather than something the type system already guarantees.
+ */
 export function validateProgrammingInputs(input: {
-  experience: TrainingExperience;
-  goal: ProgrammingGoal;
+  experience: string;
+  goal: string;
   sessionsPerWeek: number;
   sessionMinutes: number;
 }): string[] {

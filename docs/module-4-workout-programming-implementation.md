@@ -12,7 +12,13 @@ Existing entry points discovered during the audit:
 - Cardio calculations: `src/lib/cardio-calculations.ts`
 - Backend cardio twin: `src/modules/pt-os/cardio.js` in `619-erp-backend`
 
-A first pure rule-engine foundation lives in `src/lib/workout-programming-rules.ts`; tests are in `src/__tests__/workout-programming-rules.test.ts`. The engine must be wired into the current screens and authoritative backend before this feature can be called complete.
+The sequencing rules are **extensions of the engine that already ships**, not a new one:
+
+- `src/lib/exercise-sequencing.ts` — ordering. It gains optional Module 4 fields (`jointAction`, `structuralStatus`, `tools`, `forceLine`, `powerPriority`) and the unsupported-structural tier; the legacy priority it already had is unchanged, so the workout generator and builder keep their current output until a row actually carries the new metadata. It has a backend twin.
+- `src/lib/strength-prescription.ts` — the RM bands. It already holds `15–20 / 10–15 / 6–8` as `RM_RANGES`, plus sets, rest, RPE/RIR and the no-verified-1RM guard. Module 4 must extend this, not restate the numbers.
+- `src/lib/workout-programming-rules.ts` — review only: `auditWorkoutOrder` (warnings over a proposed order) and `validateProgrammingInputs`. It sequences nothing and prescribes nothing, so it cannot disagree with the engine.
+
+Tests: `src/__tests__/exercise-sequencing.test.ts` (ordering, legacy behaviour and the new tier) and `src/__tests__/workout-programming-rules.test.ts` (review + validation). Wiring the metadata through the screens and the authoritative backend is still required before this feature can be called complete.
 
 ## Screenshot requirements to preserve
 
@@ -40,7 +46,7 @@ Exceptions require trainer review: pain or restriction flags, rehab/return-to-tr
 
 ### RM allocation
 
-Screenshot-derived defaults:
+Screenshot-derived defaults, already implemented in `src/lib/strength-prescription.ts` (`RM_RANGES`), kept there rather than copied:
 
 - Beginner: 15–20 reps (form and motor-pattern learning).
 - Intermediate: 10–15 reps (moderate load and volume).
@@ -83,4 +89,4 @@ The duration and intensity of each phase should be editable. Karvonen calculatio
 
 ## Important distinction
 
-The current cardio calculator already implements Karvonen, modality classification, and five-phase defaults. The current Exercise Library already filters on several structured fields, and the Macrocycle planner already generates phase plans. These should be extended and tested rather than duplicated. The new pure rule-engine file is a foundation only; schema migration, backend enforcement, UI integration, and end-to-end verification remain release blockers.
+The current cardio calculator already implements Karvonen, modality classification, and five-phase defaults. The current Exercise Library already filters on several structured fields, and the Macrocycle planner already generates phase plans. These must be extended and tested rather than duplicated — which is why Module 4 adds fields to `exercise-sequencing.ts` and review rules beside it instead of a second sequencer, and points at `strength-prescription.ts` for the RM bands. Schema migration, backend enforcement, UI integration, and end-to-end verification remain release blockers.
