@@ -57,6 +57,7 @@ exports[`api surface > exposes every namespace it did before the split 1`] = `
   "upiPayments",
   "webauthn",
   "whatsapp",
+  "workoutGenerator",
   "workouts",
 ]
 `;
@@ -591,6 +592,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "whatsapp.reconnect → /api/integrations/whatsapp/reconnect",
   "whatsapp.status → /api/integrations/whatsapp/status",
   "whatsapp.unlink → /api/integrations/whatsapp",
+  "workoutGenerator.preview → /api/pt-os/clients/",
   "workouts.assign → /api/workouts/assign",
   "workouts.assignments.detail → /api/workouts/assignments/",
   "workouts.assignments.list → /api/workouts/assignments",

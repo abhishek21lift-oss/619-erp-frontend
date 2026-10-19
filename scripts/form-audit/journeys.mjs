@@ -74,6 +74,10 @@ export const JOURNEYS = {
   'e2e/renewal-offer.ui.spec.ts': [
     'src/components/pt-os/RenewalOfferSheet.tsx',
   ],
+  'e2e/workout-programming.ui.spec.ts': [
+    'src/app/(chrome)/pt-os/workout-generator/page.tsx',
+    'src/app/(chrome)/pt-os/macrocycle/page.tsx',
+  ],
 };
 
 /** Every form file some journey claims to cover. */

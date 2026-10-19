@@ -52,8 +52,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, Reorder, useDragControls } from 'framer-motion';
-import { Plus, Loader2, Check, CloudOff, Dumbbell, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { Plus, Loader2, Check, CloudOff, Dumbbell, ChevronLeft, ChevronRight, Eye, ArrowDownUp } from 'lucide-react';
 import { api } from '@/lib/api';
+import { sequenceWorkout } from '@/lib/exercise-sequencing';
 import type {
   ProgressionPreview, ProgressionType, WorkoutPlan, WorkoutPlanExercise, WorkoutExerciseInput,
 } from '@/lib/api';
@@ -312,6 +313,22 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
     }
   }, [planId, day, week, markEdited, toast]);
 
+  /**
+   * Re-order today with the sequencing engine: power and compounds first,
+   * isolation later. It is the same write as dragging, so the result saves
+   * through the reorder endpoint and the trainer can still drag it after.
+   */
+  const autoSequence = useCallback(() => {
+    const byId = new Map(forDay.map((r) => [r.id, r]));
+    const ordered = sequenceWorkout(forDay.map((r) => ({
+      id: r.id,
+      name: r.name,
+      mechanic: r.mechanic ?? undefined,
+      movementPattern: r.movement_pattern ?? undefined,
+    }))).map((s) => byId.get(s.id)).filter((r): r is WorkoutPlanExercise => Boolean(r));
+    void reorder(ordered);
+  }, [forDay, reorder]);
+
   if (loading) {
     return (
       <div className="flex justify-center py-24">
@@ -457,6 +474,22 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
           );
         })}
       </div>
+
+      {/* One tap, same write as a drag. Hidden with fewer than two rows
+          because there is nothing to re-order. */}
+      {forDay.length > 1 && (
+        <div className="mb-2 flex justify-end">
+          <button
+            type="button"
+            onClick={autoSequence}
+            title="Put power and compound movements first"
+            className="flex h-[44px] items-center gap-1.5 text-[12.5px] font-[700]"
+            style={{ color: 'var(--brand)' }}
+          >
+            <ArrowDownUp size={14} /> Auto-sequence
+          </button>
+        </div>
+      )}
 
       {/* ── The day's exercises ──
           One branch, not two. Every week is editable now, so the read-only

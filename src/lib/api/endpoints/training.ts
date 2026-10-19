@@ -343,3 +343,35 @@ export const calendar = {
   disconnect: () =>
     http<{ message: string }>('/api/calendar/disconnect', { method: 'DELETE' }),
 };
+
+// ── Workout Generator ────────────────────────────────────────────
+//
+// The backend recomputes the session from the live library and the client's
+// recorded constraints, so the response — not a client-side draft — is what
+// the builder should render. Generation never writes; the trainer saves
+// through the plan endpoints.
+export const workoutGenerator = {
+  preview: (clientId: string, data: {
+    goal?: string;
+    experience?: string;
+    avoidPatterns?: string[];
+    avoidMuscles?: string[];
+    equipment?: string[];
+    maxDifficulty?: string;
+    includeCardio?: boolean;
+    cardioMinutes?: number;
+    modality?: string;
+    hasVerified1RM?: boolean;
+  }) =>
+    http<{
+      data: {
+        client: { id: string; name: string };
+        draft: import('../../workout-generator').GeneratedWorkout;
+        poolSize: number;
+        validation: { ok: boolean; problems: string[] };
+      };
+    }>(`/api/pt-os/clients/${clientId}/workout-generator/preview`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }).then((r) => r.data),
+};
