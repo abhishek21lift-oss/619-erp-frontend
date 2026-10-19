@@ -92,7 +92,6 @@ function MessagesContent() {
     return (
       <PageContainer>
         <PageHero compact icon={<MessagesSquare size={18} />} title="Messages"
-
           actions={(
             <Button variant="outline" iconLeft={<X size={14} />} onClick={() => setPicking(false)}>
               Cancel
@@ -109,7 +108,6 @@ function MessagesContent() {
   return (
     <PageContainer>
       <PageHero compact icon={<MessagesSquare size={18} />} title="Messages"
-
         actions={(
           <Button iconLeft={<PenSquare size={14} />} onClick={() => setPicking(true)}>
             New message
