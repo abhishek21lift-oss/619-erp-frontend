@@ -940,9 +940,6 @@ function EmptyState({ onPrompt, generators, onGenerator, onKnowledgeBase }: {
           <h1 className="text-[17px] font-[820] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
             What can I help with?
           </h1>
-          <p className="mt-0.5 text-[11.5px] leading-snug" style={{ color: 'var(--text-muted)' }}>
-            Answers come from your studio&apos;s live records, not generic advice.
-          </p>
         </div>
       </div>
 

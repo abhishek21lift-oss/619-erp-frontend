@@ -38,7 +38,7 @@ function ProgressTrackingSetupContent() {
   const sp = useSearchParams();
   const clientId = sp.get('client_id') || '';
 
-  if (!clientId) return <ClientPicker title="Progress Tracking Overview" subtitle="Pick a client to see their baseline completion" icon={<Flag size={20} color="#fff" />} basePath="/pt-os/progress-tracking-setup" />;
+  if (!clientId) return <ClientPicker title="Progress Tracking Overview" icon={<Flag size={20} color="#fff" />} basePath="/pt-os/progress-tracking-setup" />;
   return <BaselineDashboard key={clientId} clientId={clientId} router={router} />;
 }
 

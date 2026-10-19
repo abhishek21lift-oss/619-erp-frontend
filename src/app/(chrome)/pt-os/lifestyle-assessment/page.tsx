@@ -197,7 +197,7 @@ function LifestyleHub({ clientId, toast }: LifestyleHubProps) {
       <PageHero
         icon={<HeartPulse size={18} />}
         title={`${clientName}'s Lifestyle`}
-        subtitle="Lifestyle Assessment"
+
         actions={
           <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: '#fff', color: '#0F172A' }}>
             New Assessment
@@ -403,7 +403,7 @@ function LifestyleWizard({ clientId, clientName, editing, nutritionHabits, toast
           without the "Discard changes?" check Back makes; Back on the first
           step is the way out now. */}
       <div className="mx-auto max-w-3xl pt-1">
-        <PageHero icon={<HeartPulse size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'} subtitle={clientName}>
+        <PageHero icon={<HeartPulse size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'}>
           {!reviewMode && <LifestyleProgressTimeline current={step} onStep={handleStepClick} />}
         </PageHero>
       </div>

@@ -85,7 +85,7 @@ export default function BusinessInsightsPage() {
         <PageHero
           icon={<BarChart3 size={20} />}
           title="AI Business Insights"
-          subtitle="AI-powered analysis of your studio's performance and growth opportunities"
+
         />
 
       <div className="mx-auto w-full max-w-4xl space-y-5">

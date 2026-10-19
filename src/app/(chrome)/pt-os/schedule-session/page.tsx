@@ -238,7 +238,6 @@ function SchedulePageContent() {
     fetchSessions();
   }, [fetchSessions]);
 
-
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const daysInMonth = getDaysInMonth(year, month);
@@ -360,7 +359,7 @@ function SchedulePageContent() {
           <PageHero
             icon={<Calendar size={20} />}
             title="Schedule Session"
-            subtitle="Your studio's PT sessions by calendar, timeline, week or day"
+
             actions={
               <HeroButton className="w-full sm:w-auto" onClick={() => setShowCreateModal(true)} icon={<Plus size={15} />}>
                 Book Session

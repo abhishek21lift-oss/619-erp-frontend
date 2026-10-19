@@ -160,7 +160,7 @@ function Inner() {
         // header onto three lines on a phone. Where the range genuinely
         // changes the meaning of what is on screen — an empty board — it
         // is spelled out there instead.
-        subtitle="Who is actually turning up"
+
       />
 
         {/* ── Range ────────────────────────────────────────────────────

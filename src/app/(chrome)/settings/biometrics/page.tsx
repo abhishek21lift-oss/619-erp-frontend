@@ -137,7 +137,7 @@ function BiometricInner() {
       <PageHero
         icon={<Fingerprint size={20} />}
         title="Biometric Security"
-        subtitle="Manage passkeys, view authentication activity and audit logs"
+
         actions={
           <HeroButton
             variant="glass"

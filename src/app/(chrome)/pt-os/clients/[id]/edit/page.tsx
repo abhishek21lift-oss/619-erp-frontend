@@ -275,9 +275,6 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                 <h1 className="truncate text-[22px] font-[880] leading-tight tracking-[-0.03em] text-white">
                   {form.name || 'Client'}
                 </h1>
-                <p className="mt-0.5 text-[12px]" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                  Tap the photo to {photoUrl ? 'change' : 'add'} it · everything else saves with the button below
-                </p>
               </div>
             </div>
           </m.div>

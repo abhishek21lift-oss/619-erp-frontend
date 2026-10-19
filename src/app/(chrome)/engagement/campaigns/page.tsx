@@ -160,7 +160,7 @@ function CampaignContent() {
       <PageHero
         icon={<Send size={20} />}
         title="Campaigns"
-        subtitle="Plan, launch & track multi-channel marketing campaigns."
+
         actions={
           <button type="button" onClick={() => setShowForm(v => !v)}
             className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"

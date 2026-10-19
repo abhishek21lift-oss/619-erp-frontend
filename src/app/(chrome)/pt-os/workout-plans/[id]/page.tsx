@@ -106,7 +106,7 @@ function Inner() {
         className="mb-5"
         icon={<Dumbbell size={20} />}
         title={plan.name}
-        subtitle={[clientName ? `For ${clientName}` : null, plan.description].filter(Boolean).join(' · ') || undefined}
+
         actions={
           <div className="flex gap-2">
             <HeroButton variant="glass" className="flex-1 sm:flex-none" onClick={() => setEditing(true)} icon={<SlidersHorizontal size={14} />}>

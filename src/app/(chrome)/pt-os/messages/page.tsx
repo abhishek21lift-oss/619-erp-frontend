@@ -92,13 +92,12 @@ function MessagesContent() {
     return (
       <PageContainer>
         <PageHero compact icon={<MessagesSquare size={18} />} title="Messages"
-          subtitle="Pick who to write to"
           actions={(
             <Button variant="outline" iconLeft={<X size={14} />} onClick={() => setPicking(false)}>
               Cancel
             </Button>
           )} />
-        <ClientPicker title="New message" subtitle="Who do you want to message?"
+        <ClientPicker title="New message"
           icon={<PenSquare size={20} color="#fff" />} basePath="/pt-os/messages" />
       </PageContainer>
     );
@@ -109,9 +108,6 @@ function MessagesContent() {
   return (
     <PageContainer>
       <PageHero compact icon={<MessagesSquare size={18} />} title="Messages"
-        subtitle={inbox
-          ? (totalUnread ? `${totalUnread} unread message${totalUnread === 1 ? '' : 's'}` : 'All caught up')
-          : 'Member conversations'}
         actions={(
           <Button iconLeft={<PenSquare size={14} />} onClick={() => setPicking(true)}>
             New message

@@ -505,7 +505,6 @@ export default function IntegrationsPage() {
     return { staticFiltered, showCalendar, showOpenRouter, showWhatsApp };
   }, [category, search]);
 
-
   return (
     <Guard role="trainer">
       <div style={{ maxWidth: 1200, margin: '0 auto', paddingTop: 4 }}>
@@ -514,7 +513,7 @@ export default function IntegrationsPage() {
           className="mb-5"
           icon={<Zap size={20} />}
           title="Integrations"
-          subtitle="Connect your studio with powerful tools"
+
         />
 
         {/* ── Search & Filters ── */}

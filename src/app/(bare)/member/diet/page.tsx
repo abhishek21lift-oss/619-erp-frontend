@@ -73,7 +73,7 @@ function DietBody() {
   return (
     <>
       <PageTitle accent="diet" icon={<Apple size={20} />} title="My diet"
-        sub={plans.length === 1 ? plans[0].name : `${plans.length} active plans`} />
+ />
       {plans.map((p) => <DietBlock key={p.assignment_id} plan={p} />)}
     </>
   );

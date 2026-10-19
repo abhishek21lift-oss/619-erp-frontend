@@ -216,7 +216,7 @@ function StrengthHub({ clientId }: StrengthHubProps) {
       <PageHero
         icon={<Zap size={20} />}
         title={`${clientName}'s Strength Progress`}
-        subtitle="Strength Tracking"
+
       >
         {!bodyWeightKg && (
           <p className="text-[12.5px] font-[600]" style={{ color: '#FDE68A' }}>

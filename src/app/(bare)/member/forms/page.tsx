@@ -42,7 +42,7 @@ function FormsBody() {
     api.me.forms().then((r) => setData(r.data)).catch(() => setFailed(true));
   }, []);
 
-  const title = <PageTitle accent="studio" icon={<FileSignature size={20} />} title="My forms" sub="Health screening and consent" />;
+  const title = <PageTitle accent="studio" icon={<FileSignature size={20} />} title="My forms" />;
   if (failed) return <>{title}<LoadError what="forms" /></>;
   if (!data) return <PageSkeleton />;
 

@@ -654,7 +654,7 @@ function SubscriptionScreen() {
     <PageHero
       icon={<CreditCard size={20} />}
       title="Subscription & billing"
-      subtitle={heroSubtitle}
+
       actions={
         <HeroButton
           variant="glass"
@@ -1016,7 +1016,7 @@ function SubscriptionScreen() {
     return (
       <AppShell>
         <PageContainer>
-          <PageHero icon={<CreditCard size={20} />} title="Subscription & billing" subtitle="Loading your plan…" />
+          <PageHero icon={<CreditCard size={20} />} title="Subscription & billing" />
           <div className="flex min-h-[30vh] items-center justify-center">
             <Loader2 size={28} className="animate-spin" style={{ color: 'var(--brand)' }} />
           </div>

@@ -148,7 +148,7 @@ export default function RecordPaymentPage() {
           className="mb-4"
           icon={<Wallet size={20} />}
           title="Record Payment"
-          subtitle="Log a cash, UPI, card or bank payment against a client"
+
         />
         <AnimatePresence mode="wait">
           {done ? (

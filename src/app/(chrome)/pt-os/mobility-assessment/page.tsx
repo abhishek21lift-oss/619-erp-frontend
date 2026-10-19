@@ -131,7 +131,7 @@ function MobilityHub({ clientId, toast }: MobilityHubProps) {
       <PageHero
         icon={<Move size={18} />}
         title={`${clientName}'s Mobility`}
-        subtitle="Mobility Assessment"
+
         actions={
           <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: '#fff', color: '#0F172A' }}>
             New Assessment
@@ -276,7 +276,7 @@ function MobilityWizard({ clientId, clientName, editing, toast, onDone }: Mobili
           without the "Discard changes?" check Back makes; Back on the first
           step is the way out now. */}
       <div className="mx-auto max-w-3xl pt-1">
-        <PageHero icon={<Move size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'} subtitle={clientName}>
+        <PageHero icon={<Move size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'}>
           {!reviewMode && <MobilityProgressTimeline current={step} onStep={setStep} />}
         </PageHero>
       </div>

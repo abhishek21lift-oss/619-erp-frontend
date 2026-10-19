@@ -86,7 +86,7 @@ function WAContent() {
       <PageHero
         icon={<MessageCircle size={20} />}
         title="WhatsApp / SMS"
-        subtitle="Send personalised WhatsApp messages to members using templates or custom messages."
+
       />
 
       {/* ── ERROR BANNER ── */}

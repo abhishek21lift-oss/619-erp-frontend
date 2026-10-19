@@ -131,7 +131,7 @@ function Inner() {
           className="mb-5"
           icon={<Sparkles size={20} />}
           title="Transformations"
-          subtitle="Track member progress and body transformation journeys"
+
         />
 
         {error && (

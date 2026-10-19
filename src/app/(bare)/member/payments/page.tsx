@@ -122,7 +122,7 @@ function Inner() {
     <MemberShell>
       {isMember ? (
         <PageTitle accent="records" icon={<Receipt size={20} />} title="My payments"
-          sub="Every payment and its status"
+
           aside={
             <button type="button" onClick={() => void load()} aria-label="Refresh payments"
               className="grid h-10 w-10 place-items-center rounded-full transition-transform active:scale-95"
@@ -133,9 +133,7 @@ function Inner() {
       ) : (
         <PageHeader
           title={isMember ? 'My payments' : 'Member payments'}
-          subtitle={isMember
-            ? 'Every payment you have made, and where each one stands.'
-            : 'UPI payments members have submitted, across the studio.'}
+
           icon={<Receipt size={19} />}
           actions={
             <button type="button" onClick={() => void load()}

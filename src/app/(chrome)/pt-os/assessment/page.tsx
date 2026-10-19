@@ -598,9 +598,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       <PageHero
         icon={<ClipboardCheck size={18} />}
         title="Fitness Testing"
-        subtitle={editingId
-          ? `${clientName || 'Client'} · Editing the ${form.assessmentDate} assessment`
-          : `${clientName || 'Client'} · Assessment ${nextAssessmentNumber}`}
+
         surface={{
           background: [
             `radial-gradient(circle 260px at 6% 115%, ${fitnessMesh.glowA}, transparent 70%)`,

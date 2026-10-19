@@ -321,7 +321,7 @@ function Inner() {
       <PageHero
         icon={<Salad size={20} />}
         title="Diet Plans"
-        subtitle="Nutrition planning and meal tracking for your clients"
+
       >
         {/* The date and Add Meal were a flex row that wrapped under the title
             on a phone; on the hero they are a fixed two-up. */}

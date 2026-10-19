@@ -127,7 +127,7 @@ function PostureHub({ clientId, toast }: PostureHubProps) {
       <PageHero
         icon={<Accessibility size={18} />}
         title={`${clientName}'s Posture`}
-        subtitle="Posture Assessment"
+
         actions={
           <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: '#fff', color: '#0F172A' }}>
             New Assessment
@@ -266,7 +266,7 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
           without the "Discard changes?" check Back makes; Back on the first
           step is the way out now. */}
       <div className="mx-auto max-w-3xl pt-1">
-        <PageHero icon={<Accessibility size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'} subtitle={clientName}>
+        <PageHero icon={<Accessibility size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'}>
           {!reviewMode && <PostureProgressTimeline current={step} onStep={setStep} />}
         </PageHero>
       </div>
