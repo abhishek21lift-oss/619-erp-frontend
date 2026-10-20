@@ -142,10 +142,14 @@ describe('clientEnrollSchema', () => {
     ).toBe(true);
   });
 
-  it('accepts a zero final amount (complimentary / trial)', () => {
-    expect(
-      clientEnrollSchema.safeParse(enroll({ finalAmount: '0', amountPaid: '0' })).success,
-    ).toBe(true);
+  it('refuses a zero final amount (an enrolment for nothing)', () => {
+    const result = clientEnrollSchema.safeParse(enroll({ finalAmount: '0', amountPaid: '0' }));
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.map((issue) => issue.message)).toContain(
+        'Final Selling Price must be greater than zero.',
+      );
+    }
   });
 
   it('rejects negative amounts', () => {

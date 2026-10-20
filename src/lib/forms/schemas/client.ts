@@ -355,6 +355,17 @@ export const clientEnrollSchema = z
       }
     }
 
+    // An enrolment at zero is not an enrolment. The page's own validator says
+    // the same; keeping the rule here means the agreement cannot open on a
+    // payload the page validated but the schema silently accepted.
+    if (v.finalAmount !== null && v.finalAmount <= 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['finalAmount'],
+        message: 'Final Selling Price must be greater than zero.',
+      });
+    }
+
     // Amount Paid cannot exceed Final Selling Price — the rule that protects
     // the ledger. (Amount Paid cannot be lowered below what is already
     // recorded is enforced server-side against the stored value.)
