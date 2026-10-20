@@ -60,6 +60,29 @@ describe('clientEnrollSchema', () => {
     ).toBe(true);
   });
 
+  it('accepts the payload the enrolment page sends (optional keys absent)', () => {
+    // The page's EnrollFormData carries only the fields it edits. Client
+    // fields (mobile, gender, dob, …) are not keys at all, so the schema
+    // must treat "absent" as "not supplied" rather than as invalid input.
+    expect(
+      clientEnrollSchema.safeParse({
+        startDate: '2026-10-21',
+        duration: '3',
+        trainerId: '',
+        trainerName: '',
+        trainingMode: 'Offline',
+        workoutExperienceLevel: '',
+        previousTrainerExperience: false,
+        workoutTime: '07:00',
+        trainingDays: ['Mon', 'Wed', 'Fri'],
+        sessionsPerWeek: '3',
+        finalAmount: '18,000',
+        amountPaid: '6,000',
+        paymentMethod: '',
+      }).success,
+    ).toBe(true);
+  });
+
   it('requires start date, duration, sessions per week, final amount and amount paid', () => {
     expect(clientEnrollSchema.safeParse(enroll({ startDate: '' })).success).toBe(false);
     expect(clientEnrollSchema.safeParse(enroll({ duration: '' })).success).toBe(false);
