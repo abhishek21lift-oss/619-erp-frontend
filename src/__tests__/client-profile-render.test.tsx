@@ -4,7 +4,7 @@
 // notes and the running programme. Child cards that fetch their own data are
 // stubbed — they have tests of their own.
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act, fireEvent, within } from '@testing-library/react';
 import { Suspense } from 'react';
 
 const client = {
@@ -54,6 +54,14 @@ describe('client profile', () => {
     expect(screen.getByText('PT membership')).toBeTruthy();
     expect(screen.getByText('— Overdue')).toBeTruthy();
     expect(screen.getByText('Left knee — no deep lunges.')).toBeTruthy();
-    await waitFor(() => expect(screen.getByText('Hypertrophy A')).toBeTruthy());
+    // The hero no longer carries these three stat tiles.
+    const hero = screen.getByRole('heading', { name: 'Hari Narayan Singh' }).closest('section');
+    expect(hero).toBeTruthy();
+    expect(within(hero!).queryByText('Days left')).toBeNull();
+    expect(within(hero!).queryByText('Trainer')).toBeNull();
+    expect(within(hero!).queryByText('Programme')).toBeNull();
+    // The programme itself still renders in its own tab.
+    fireEvent.click(screen.getByRole('tab', { name: 'Training' }));
+    await waitFor(() => expect(screen.getByText(/Hypertrophy A/)).toBeTruthy());
   });
 });

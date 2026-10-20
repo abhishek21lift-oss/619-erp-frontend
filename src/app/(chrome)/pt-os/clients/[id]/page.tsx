@@ -14,7 +14,7 @@ import {
   ShieldCheck, FileSignature, ClipboardList,
   QrCode, Printer, ScrollText, ChevronDown, Mail, FileBarChart, Sparkles,
   Gauge, PersonStanding, Accessibility, Ruler, MessagesSquare, Send,
-  Cake, UserPlus, Megaphone, Hourglass, CalendarRange, UserCheck, Flag,
+  Cake, UserPlus, Megaphone, Hourglass, CalendarRange, Flag,
   Route,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -451,19 +451,6 @@ function NotesCard({ notes, onSave }: { notes?: string; onSave: (next: string) =
   );
 }
 
-/** One glass figure on the hero. */
-function HeroStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="min-w-0 rounded-[18px] px-3 py-2.5 sm:px-3.5 sm:py-3"
-      style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
-      <p className="flex items-center gap-1 text-[10px] font-[700] uppercase tracking-[0.08em] text-white/75">
-        {icon}{label}
-      </p>
-      <p className="mt-1 truncate text-[16px] font-[780] leading-tight tracking-[-0.01em] text-white sm:text-[18px]">{value}</p>
-    </div>
-  );
-}
-
 /** A round action with its label underneath — the iOS Contacts action row. */
 function ActionButton({ label, ariaLabel, icon, tint, onClick, href, external }: {
   label: string;
@@ -749,13 +736,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.28)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
                     <Pencil size={13} /> <span className="hidden sm:inline">Edit</span>
                   </button>
-                </div>
-
-                <div className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
-                  <HeroStat icon={<Hourglass size={11} />} label="Days left"
-                    value={client.days_left != null ? String(Math.max(0, client.days_left)) : '—'} />
-                  <HeroStat icon={<UserCheck size={11} />} label="Trainer" value={client.trainer_name || '—'} />
-                  <HeroStat icon={<ScrollText size={11} />} label="Programme" value={activePlanName || 'None yet'} />
                 </div>
                 </div>
               </m.section>
