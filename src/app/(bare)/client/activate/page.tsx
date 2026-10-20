@@ -25,8 +25,9 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { ClientActivationPreview } from '@/lib/api';
-import { invitationPasswordRules, checkInvitationPassword } from '@/lib/password-policy';
+import { invitationPasswordRules } from '@/lib/password-policy';
 import { errorMessage } from '@/lib/forms/errors';
+import { clientActivateSchema } from '@/lib/forms/schemas/client';
 
 /** Brand for this flow: black / white / maroon, matching the activation email.
  *  Both constants are the same red on purpose: the darker shade the email
@@ -176,6 +177,7 @@ function ActivateForm() {
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [done, setDone] = useState<string | null>(null);
 
   useEffect(() => {
@@ -195,9 +197,20 @@ function ActivateForm() {
 
   const submit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    const problem = checkInvitationPassword(password, confirm);
-    if (problem) { setError(problem); return; }
-    setBusy(true); setError('');
+    const parsed = clientActivateSchema.safeParse({ password, confirm });
+    if (!parsed.success) {
+      const next: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const k = issue.path[0];
+        if (typeof k === 'string' && !next[k]) next[k] = String(issue.message);
+      }
+      setFieldErrors(next);
+      setError(Object.values(next).join(' '));
+      return;
+    }
+    setFieldErrors({});
+    setError('');
+    setBusy(true);
     try {
       const r = await api.clientActivation.accept(token, password);
       setDone(r.data.email);
@@ -212,6 +225,16 @@ function ActivateForm() {
       setError(msg);
     } finally { setBusy(false); }
   }, [token, password, confirm]);
+
+  /** Clear one field's error as soon as the user edits it, so a red message
+   *  always refers to the current value. */
+  const clearFieldError = (key: string) => {
+    if (fieldErrors[key]) {
+      const next = { ...fieldErrors };
+      delete next[key];
+      setFieldErrors(next);
+    }
+  };
 
   if (loading) {
     return (
@@ -275,12 +298,15 @@ function ActivateForm() {
               id="pw"
               type={show ? 'text' : 'password'}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => { setPassword(e.target.value); clearFieldError('password'); }}
               autoComplete="new-password"
               autoFocus
               className="h-12 w-full rounded-[11px] pl-3.5 pr-11 text-[15px] outline-none"
               style={inputStyle}
             />
+            {fieldErrors.password && (
+              <p className="mt-1 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{fieldErrors.password}</p>
+            )}
             <button
               type="button"
               onClick={() => setShow((v) => !v)}
@@ -301,11 +327,14 @@ function ActivateForm() {
             id="pw2"
             type={show ? 'text' : 'password'}
             value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
+            onChange={(e) => { setConfirm(e.target.value); clearFieldError('confirm'); }}
             autoComplete="new-password"
             className="h-12 w-full rounded-[11px] px-3.5 text-[15px] outline-none"
             style={inputStyle}
           />
+          {fieldErrors.confirm && (
+            <p className="mt-1 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{fieldErrors.confirm}</p>
+          )}
         </div>
 
         {/* A live checklist rather than a strength bar. "Strength: fair" does

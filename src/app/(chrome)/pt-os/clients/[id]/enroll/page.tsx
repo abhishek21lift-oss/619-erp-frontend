@@ -24,6 +24,7 @@ import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { errorMessage } from '@/lib/forms/errors';
+import { clientEnrollSchema } from '@/lib/forms/schemas/client';
 import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
 
 /* ─────────────────────────────────────────────────────── TYPES */
@@ -63,6 +64,7 @@ interface FormErrors {
   startDate?: string; duration?: string; trainingMode?: string;
   workoutTime?: string; trainingDays?: string; sessionsPerWeek?: string;
   finalAmount?: string; amountPaid?: string; paymentMethod?: string;
+  [key: string]: string | undefined;
 }
 
 /* ─────────────────────────────────────────────────────── CONSTANTS */
@@ -537,17 +539,26 @@ function EnrollForm({ clientId }: { clientId: string }) {
   };
 
   const handleSubmit = () => {
-    const allErrors = validateAll(form);
-    setErrors(allErrors);
-    if (hasErrors(allErrors)) {
+    // Canonical schema validation: one rule set governs the enrolment form,
+    // including cross-field rules (amount paid cannot exceed final amount).
+    const parsed = clientEnrollSchema.safeParse(form);
+    const nextErrors: FormErrors = {};
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        const k = issue.path[0];
+        if (typeof k === 'string' && !nextErrors[k]) nextErrors[k] = String(issue.message);
+      }
+    }
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
       // Order matches on-screen top-to-bottom position so the first hit is
       // the first invalid field the user would actually see when scrolled up.
       const order: (keyof FormErrors)[] = [
         'startDate', 'duration', 'finalAmount', 'amountPaid',
         'trainingMode', 'workoutTime', 'trainingDays', 'sessionsPerWeek',
       ];
-      const firstKey = order.find((k) => allErrors[k]);
-      toast.error((firstKey && allErrors[firstKey]) || 'Please fix the highlighted fields.');
+      const firstKey = order.find((k) => nextErrors[k]);
+      toast.error((firstKey && nextErrors[firstKey]) || 'Please fix the highlighted fields.');
       if (firstKey) fieldRefs.current[firstKey]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }

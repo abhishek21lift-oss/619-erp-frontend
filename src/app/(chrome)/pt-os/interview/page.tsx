@@ -27,7 +27,7 @@ import {
   type Answers, type InterviewField,
 } from '@/components/pt-os/interview/questions';
 import { semantic, rgba } from '@/lib/palette';
-import { gradient, tones } from '@/components/profile/profileTheme';
+import { gradient, ringStops, tones } from '@/components/profile/profileTheme';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
@@ -172,7 +172,7 @@ function InterviewForm({ clientId }: { clientId: string }) {
   return (
     <PageContainer>
       <InterviewHero clientName={clientName} answers={answers} answered={answered} resumed={current !== null} />
-      <form ref={formRef} id="interview-form" className="mx-auto mt-4 max-w-3xl space-y-3 pb-32 sm:space-y-4"
+      <form ref={formRef} id="interview-form" className="mx-auto mt-2 max-w-3xl space-y-3 pb-32 sm:mt-3 sm:space-y-4"
         onSubmit={(e) => { e.preventDefault(); save('completed'); }}>
         <SectionNav answers={answers} />
         {INTERVIEW_QUESTIONS.map((q, i) => (
@@ -188,10 +188,15 @@ function InterviewForm({ clientId }: { clientId: string }) {
         style={{
           left: bar.left, width: bar.width,
           background: 'color-mix(in srgb, var(--bg-elevated, var(--bg-base)) 82%, transparent)',
-          border: '1px solid var(--border)',
+          border: '1px solid var(--border-2)',
           backdropFilter: 'blur(20px) saturate(1.4)', WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
-          boxShadow: '0 18px 40px -18px rgba(15,23,42,0.35)',
+          boxShadow: '0 22px 46px -22px rgba(15,23,42,0.45), inset 0 1px 0 rgba(255,255,255,0.12)',
         }}>
+        <span aria-hidden className="pointer-events-none absolute inset-x-7 top-0 h-[2px] rounded-b-full"
+          style={{ background: `linear-gradient(90deg, transparent, ${semantic.primary}, transparent)`, opacity: 0.45 }} />
+        <span className="pl-1 text-[12px] font-[750] tabular-nums sm:hidden" style={{ color: 'var(--text-muted)' }}>
+          <span style={{ color: 'var(--text-primary)' }}>{answered}</span>/{INTERVIEW_FIELDS.length}
+        </span>
         <p className="hidden min-w-0 flex-1 pl-2 text-[12.5px] font-[650] sm:block" style={{ color: 'var(--text-muted)' }}
           aria-live="polite">
           <span className="tabular-nums" style={{ color: 'var(--text-primary)' }}>{answered}</span> of {INTERVIEW_FIELDS.length} answered
@@ -247,28 +252,66 @@ function InterviewComplete({ clientName, clientId, answers }: { clientName: stri
         initial={reduce ? false : { opacity: 0, scale: 0.96, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center text-center">
+        className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center py-10 text-center">
         <div className="relative">
-          <div aria-hidden className="absolute -inset-6 rounded-full blur-2xl"
-            style={{ background: `radial-gradient(circle, ${rgba(semantic.success, 0.35)}, transparent 70%)` }} />
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-[26px] text-white"
-            style={{ background: `linear-gradient(135deg, ${semantic.success}, ${semantic.successLo})`, boxShadow: `0 16px 34px -12px ${rgba(semantic.success, 0.6)}` }}>
-            <CheckCircle2 size={38} strokeWidth={2.2} />
-          </div>
+          <div aria-hidden className="absolute -inset-10 rounded-full blur-3xl"
+            style={{ background: `radial-gradient(circle, ${rgba(tones.berry.from, 0.30)}, transparent 68%)` }} />
+          {/* An Apple Fitness-style award: a spectrum ring around the completed
+              tick, not another success banner. */}
+          <m.div
+            initial={reduce ? false : { scale: 0.72, opacity: 0, rotate: -6 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+            transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 190, damping: 16, delay: 0.08 }}
+            className="relative grid h-[120px] w-[120px] place-items-center rounded-full"
+            style={{
+              background: `conic-gradient(from 210deg, ${ringStops[0]}, ${ringStops[1]} 26%, ${ringStops[2]} 46%, ${tones.mint.from} 64%, ${tones.indigo.from} 82%, ${ringStops[0]})`,
+              boxShadow: `0 26px 50px -24px ${rgba(tones.violet.to, 0.6)}`,
+            }}>
+            <div className="grid h-[100px] w-[100px] place-items-center rounded-full" style={{ background: 'var(--bg-base)' }}>
+              <div className="grid h-[76px] w-[76px] place-items-center rounded-[24px] text-white"
+                style={{
+                  background: `linear-gradient(135deg, ${semantic.success}, ${semantic.successLo})`,
+                  boxShadow: `0 16px 30px -12px ${rgba(semantic.success, 0.6)}, inset 0 1px 0 rgba(255,255,255,0.35)`,
+                }}>
+                <CheckCircle2 size={36} strokeWidth={2.2} />
+              </div>
+            </div>
+          </m.div>
+          {/* A few sparks in the page's own tones — static, so the award stays
+              the only thing that moves. */}
+          {!reduce && (
+            <>
+              <span aria-hidden className="absolute -right-2 top-1 h-2.5 w-2.5 rounded-full"
+                style={{ background: tones.gold.from, boxShadow: `0 0 12px ${tones.gold.glow}` }} />
+              <span aria-hidden className="absolute -left-3 bottom-3 h-2 w-2 rounded-full"
+                style={{ background: tones.sky.from, boxShadow: `0 0 12px ${tones.sky.glow}` }} />
+              <span aria-hidden className="absolute -top-3 left-4 h-1.5 w-1.5 rounded-full"
+                style={{ background: tones.berry.from, boxShadow: `0 0 10px ${tones.berry.glow}` }} />
+            </>
+          )}
         </div>
-        <h1 className="mt-6 text-[26px] font-[860] tracking-[-0.025em]" style={{ color: 'var(--text-primary)' }}>Interview complete</h1>
-        <p className="mt-2 text-[13.5px]" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-7 text-[10px] font-[820] uppercase tracking-[0.16em]" style={{ color: semantic.successLo }}>
+          Intake step 4 complete
+        </p>
+        <h1 className="mt-1.5 text-[27px] font-[860] tracking-[-0.03em]"
+          style={{ color: 'var(--text-primary)', textWrap: 'balance' }}>Interview complete</h1>
+        <p className="mt-2 max-w-[36ch] text-[13.5px] leading-relaxed" style={{ color: 'var(--text-muted)', textWrap: 'pretty' }}>
           {clientName}&apos;s interview has been recorded — {covered.length} of {INTERVIEW_QUESTIONS.length} topics covered.
         </p>
         {/* What was captured, in each topic's own tone. */}
-        <ul className="mt-5 flex flex-wrap justify-center gap-1.5" aria-label="Topics covered">
+        <ul className="mt-6 flex flex-wrap justify-center gap-1.5" aria-label="Topics covered">
           {covered.map((q) => {
+            const tone = tones[q.tone];
             const Icon = q.icon;
             return (
               <li key={q.id} className="flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5 text-[11.5px] font-[700]"
-                style={{ background: 'var(--bg-card, var(--bg-elevated))', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                style={{
+                  background: tone.wash,
+                  border: `1px solid ${rgba(tone.from, 0.22)}`,
+                  color: 'var(--text-primary)',
+                }}>
                 <span aria-hidden className="flex h-5 w-5 items-center justify-center rounded-full text-white"
-                  style={{ background: gradient(tones[q.tone]) }}>
+                  style={{ background: gradient(tone), boxShadow: `0 4px 10px -5px ${tone.glow}` }}>
                   <Icon size={11} strokeWidth={2.4} />
                 </span>
                 {q.label}
@@ -276,12 +319,17 @@ function InterviewComplete({ clientName, clientId, answers }: { clientName: stri
             );
           })}
         </ul>
-        <Button className="mt-8" iconLeft={<ArrowRight size={14} />}
+        <Button className="mt-8 h-11 px-5" iconLeft={<ArrowRight size={14} />}
           onClick={() => router.push(stepHref('assessment', clientId))}
-          style={{ background: `linear-gradient(135deg, ${semantic.primaryHi}, ${semantic.primaryLo})`, color: '#fff' }}>
+          style={{
+            background: `linear-gradient(135deg, ${semantic.primaryHi}, ${semantic.primaryLo})`,
+            color: '#fff',
+            boxShadow: `0 16px 30px -14px ${rgba(semantic.primary, 0.65)}`,
+          }}>
           Continue to {STEP_LABEL.assessment}
         </Button>
-        <button type="button" className="mt-3 text-[13px] font-[650]" style={{ color: 'var(--text-muted)' }}
+        <button type="button" className="mt-3 rounded-full px-3 py-1.5 text-[12.5px] font-[650] transition-colors hover:bg-[var(--bg-subtle)]"
+          style={{ color: 'var(--text-muted)' }}
           onClick={() => router.push(`/pt-os/clients/${clientId}`)}>
           Back to profile
         </button>
@@ -298,11 +346,11 @@ function InterviewSkeleton() {
   return (
     <PageContainer>
       <div role="status" aria-label="Loading the interview" className="space-y-4">
-        {block('h-[132px]', 'rounded-[28px]')}
-        <div className="mx-auto max-w-2xl space-y-3">
-          {block('h-9', 'rounded-full')}
-          {block('h-[196px]')}
-          {block('h-[196px]')}
+        {block('h-[118px]', 'rounded-[26px]')}
+        <div className="mx-auto max-w-3xl space-y-3">
+          {block('h-8', 'rounded-full')}
+          {block('h-[188px]')}
+          {block('h-[188px]')}
         </div>
       </div>
     </PageContainer>

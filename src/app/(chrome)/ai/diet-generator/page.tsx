@@ -6,6 +6,7 @@ import { Apple, Loader2, ChevronDown, ChevronUp, Sparkles, RotateCcw, Droplets, 
 import { m, type Variants } from 'framer-motion';
 import { api } from '@/lib/api';
 import type { AiDietPlan, AiDietMeal } from '@/lib/api';
+import type { AiKnowledgeGrounding } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
 import { errorMessage } from '@/lib/forms/errors';
@@ -14,6 +15,7 @@ import {
 } from '@/components/ui/form';
 import { aiDietInputSchema, stated } from '@/lib/forms/schemas/aiGenerator';
 import { AiClientPicker, type AiClientOption } from '@/components/ai/AiClientPicker';
+import { GroundingLine } from '@/components/pt-os/GenerationEvidence';
 import { applyFacts, hasAnyFact, useAiClientPrefill } from '@/lib/ai-client-prefill';
 
 const ACCENT = '#10B981';
@@ -129,7 +131,10 @@ export default function DietGeneratorPage() {
   const [loading, setLoading] = useState(false);
   const [loadStep, setLoadStep] = useState(0);
   const [plan, setPlan] = useState<AiDietPlan | null>(null);
-  const [meta, setMeta] = useState<{ model?: string; tier?: string; used_fallback?: boolean } | null>(null);
+  const [meta, setMeta] = useState<{
+    model?: string; tier?: string; used_fallback?: boolean;
+    grounding?: AiKnowledgeGrounding;
+  } | null>(null);
   const [error, setError] = useState('');
   /** Per-field messages from the schema. Populated only by a generate ATTEMPT. */
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -239,7 +244,7 @@ export default function DietGeneratorPage() {
         budget: form.budget, meal_frequency: stated(v.meal_frequency),
       });
       setPlan(res.data);
-      setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback });
+      setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback, grounding: res.grounding });
     } catch (e: unknown) {
       setError(errorMessage(e, 'Failed to generate diet plan.'));
     } finally {
@@ -403,6 +408,7 @@ export default function DietGeneratorPage() {
                 {meta.used_fallback && <span className="text-[11px]" style={{ color: '#B45309', opacity: 0.7 }}>(fallback)</span>}
               </m.div>
             )}
+            {meta?.grounding && <GroundingLine grounding={meta.grounding} />}
 
             {/* Overview */}
             <m.div variants={fadeUp} initial="hidden" animate="show" custom={1}

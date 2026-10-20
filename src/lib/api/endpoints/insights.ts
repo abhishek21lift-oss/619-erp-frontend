@@ -9,7 +9,7 @@ import { buildQs } from '../qs';
 import type {
   ActivityFeed, AiActionPlan, AiActionResult, AiActionSummary,
   AiBusinessInsights, AiBusinessRawData, AiConversation, AiDietParams, AiDietPlan,
-  AiFitnessTestAnalysis, AiHealthResponse, AiKnowledgeDocument, AiMessage, AiModelStat,
+  AiFitnessTestAnalysis, AiHealthResponse, AiKnowledgeDocument, AiKnowledgeGrounding, AiMessage, AiModelStat,
   AiProgressAnalysis, AiProgressDataCounts, AiProviderSettings, AiUsageStats, AiWorkoutParams, AiWorkoutPlan,
   AiWorkoutGenerationResult, AiWorkoutContext, AiWeightPoint,
   DuesItem, DuesSummary, ProfileDevice, ProfileSession, SearchResponse,
@@ -198,19 +198,19 @@ export const ai = {
     }),
 
   generateDiet: (params: AiDietParams) =>
-    httpSSE<{ data: AiDietPlan; model: string; tier: string; used_fallback: boolean }>('/api/ai/diet/generate', {
+    httpSSE<{ data: AiDietPlan; model: string; tier: string; used_fallback: boolean; grounding?: AiKnowledgeGrounding }>('/api/ai/diet/generate', {
       method: 'POST',
       body: JSON.stringify(params),
     }),
 
   analyzeProgress: (client_id: string) =>
-    httpSSE<{ data: AiProgressAnalysis; data_counts?: AiProgressDataCounts; weight_history?: AiWeightPoint[]; model: string; tier: string; used_fallback: boolean }>('/api/ai/progress/analyze', {
+    httpSSE<{ data: AiProgressAnalysis; data_counts?: AiProgressDataCounts; weight_history?: AiWeightPoint[]; model: string; tier: string; used_fallback: boolean; grounding?: AiKnowledgeGrounding }>('/api/ai/progress/analyze', {
       method: 'POST',
       body: JSON.stringify({ client_id }),
     }),
 
   analyzeFitnessTest: (assessment_id: string) =>
-    httpSSE<{ data: AiFitnessTestAnalysis; model: string; tier: string; used_fallback: boolean }>('/api/ai/fitness-testing/analyze', {
+    httpSSE<{ data: AiFitnessTestAnalysis; model: string; tier: string; used_fallback: boolean; grounding?: AiKnowledgeGrounding }>('/api/ai/fitness-testing/analyze', {
       method: 'POST',
       body: JSON.stringify({ assessment_id }),
     }),

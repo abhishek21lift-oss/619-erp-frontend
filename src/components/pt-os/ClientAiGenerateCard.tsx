@@ -57,7 +57,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type {
-  AiDietPlan, AiWorkoutContext, AiWorkoutGenerationResult, AiWorkoutPlan,
+  AiDietPlan, AiKnowledgeGrounding, AiWorkoutContext, AiWorkoutGenerationResult, AiWorkoutPlan,
 } from '@/lib/api';
 import GenerationEvidence from './GenerationEvidence';
 import GenerationContextPanel from './GenerationContextPanel';
@@ -142,6 +142,8 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
      * evidence block under a diet would be claiming checks nobody ran.
      */
     evidence?: AiWorkoutGenerationResult;
+    /** Diet carries only the knowledge-grounding report. */
+    grounding?: AiKnowledgeGrounding;
   } | null>(null);
   const [saving, setSaving] = useState(false);
   // A saved diet stays on screen (there is no builder to jump to), so the
@@ -233,7 +235,7 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
         // the field list rather than being handed invented ones. That message
         // is now shown instead of being papered over with 175cm and 75kg.
         const res = await api.ai.generateDiet({ client_id: client.id });
-        setResult({ kind, plan: res.data });
+        setResult({ kind, plan: res.data, grounding: res.grounding });
       }
     } catch (err) {
       const msg = readableError(errorMessage(err, 'Generation failed. Please try again.'));
@@ -532,6 +534,9 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
               )}
 
               {result.evidence && <GenerationEvidence result={result.evidence} />}
+              {result.kind === 'diet' && result.grounding && (
+                <GenerationEvidence result={{ grounding: result.grounding }} />
+              )}
 
               {canSave ? (
                 <div className="mt-2.5 flex items-center justify-between gap-2 border-t pt-2.5"

@@ -5,13 +5,8 @@
 // answer and looks fine. One that treats a keep-alive comment as content
 // prints ": ping" into the trainer's answer. One that ignores the done event
 // returns an object with no provenance and the source chips quietly vanish.
-import { describe, expect, it, vi, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, expect, it, vi, afterEach } from 'vitest';
 import { streamClientAi, ClientAiError } from '@/lib/client-ai';
-
-// jsdom runs on localhost, where apiBase() insists on an explicit backend URL
-// rather than guessing one. Give it the same value .env.local would.
-beforeAll(() => { vi.stubEnv('NEXT_PUBLIC_API_URL', 'http://localhost:5000'); });
-afterAll(() => { vi.unstubAllEnvs(); });
 
 /** A Response whose body yields exactly these pieces, split where we say. */
 function sse(pieces: string[], init: { status?: number } = {}) {
@@ -108,19 +103,49 @@ describe('failures', () => {
     await expect(ask()).rejects.toMatchObject({
       code: 'NOT_FOUND',
       status: 404,
+      // The code names the problem: an unknown ROUTE is a deployment gap, not
+      // a missing client. Lying that the client is missing sends the trainer
+      // hunting for a data problem that is not there (WIRE-01).
+      message: 'The AI assistant is not set up in this app yet. Please contact support.',
+    });
+  });
+
+  it('a named CLIENT_NOT_FOUND is still the client, and stays distinct from the route miss', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => sse([
+      evt({ type: 'error', code: 'CLIENT_NOT_FOUND', status: 404, message: 'Not found, or not visible to you.' }),
+    ])));
+
+    await expect(ask()).rejects.toMatchObject({
+      code: 'CLIENT_NOT_FOUND',
+      status: 404,
       message: 'This client could not be found in your studio.',
     });
   });
 
-  it('an error event mid-stream carries whether text was already on screen', async () => {
+  it('an error event carries whether text was already on screen', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => sse([
       evt({ type: 'chunk', content: 'Rahul has been ' }),
-      evt({ type: 'error', code: 'AI_TIMEOUT', message: 'The assistant is temporarily unavailable.', partial: true }),
+      evt({ type: 'error', code: 'ERROR', message: 'The model stopped.', partial: true }),
     ])));
 
     const err = await ask().catch((e) => e);
     expect(err).toBeInstanceOf(ClientAiError);
     expect(err.partial).toBe(true);
+  });
+
+  it('the status on an error event drives the same message map as a refusal', async () => {
+    // Service-side limiters fire AFTER the stream opened; without reading
+    // evt.status every stream-open refusal fell through to "Something went
+    // wrong.", no matter the code.
+    vi.stubGlobal('fetch', vi.fn(async () => sse([
+      evt({ type: 'error', code: 'RATE_LIMITED', status: 429, message: 'Too many questions at once. Give it a moment.' }),
+    ])));
+
+    await expect(ask()).rejects.toMatchObject({
+      code: 'RATE_LIMITED',
+      status: 429,
+      message: 'Too many questions at once. Give it a moment.',
+    });
   });
 
   it('a stream that ends without done is incomplete, not a success', async () => {
@@ -148,7 +173,11 @@ describe('what it sends', () => {
     await streamClientAi({ clientId: 'c-1', message: 'hi', history }, {});
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toContain('/ai/client-agent/chat/stream');
+    expect(url).toBe('/ai/client-agent/chat/stream');
+    // Same-origin by construction: aiBase() is '' and the /ai rewrite (prod
+    // and, since WIRE-01, dev) carries it. An abs-URL to the ERP would drop
+    // the strict cookie AND 404 — /ai lives on the assistant service.
+    expect(String(url)).not.toMatch(/^(http|\/\/)/);
     // The token is httpOnly, so there is no header to set — omitting this sends
     // the request with no credential at all and the service answers 401.
     expect(init.credentials).toBe('include');

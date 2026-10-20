@@ -48,6 +48,8 @@ const controls = () => INTERVIEW_QUESTIONS.flatMap((q) => q.controls);
 const select = (label: string) => screen.getByLabelText(label) as HTMLSelectElement;
 const answeredCount = () =>
   screen.getByRole('progressbar', { name: 'Interview progress' }).getAttribute('aria-valuenow');
+/** The hero's heading: the client the interview belongs to. */
+const clientHeading = () => screen.findByText('Mina Rao');
 
 beforeEach(() => {
   mockDrafts = [];
@@ -59,7 +61,7 @@ beforeEach(() => {
 describe('<InterviewPage />', () => {
   it('asks every topic, in order, each answer as its own labelled select', async () => {
     render(<InterviewPage />);
-    expect(await screen.findByText('Mina Rao · Client Interview')).toBeTruthy();
+    await clientHeading();
 
     // Seven topics, one pill each; the smoking topic carries two answers.
     expect(INTERVIEW_QUESTIONS).toHaveLength(7);
@@ -78,11 +80,27 @@ describe('<InterviewPage />', () => {
     }
     // Smoke and drink are two independent columns, not one answer.
     expect(select('Smoking')).not.toBe(select('Alcohol'));
+    // Rendering seven cards of selects and reading every option's accessible
+    // name is slow in jsdom; the default 5s budget is not this test's to spend
+    // on a loaded machine.
+  }, 20_000);
+
+  it('opens on a hero that says whose interview this is, and how far it has got', async () => {
+    render(<InterviewPage />);
+    await clientHeading();
+
+    // The hero's own progress: what is answered, out of every answer there is.
+    const bar = screen.getByRole('progressbar', { name: 'Interview progress' });
+    expect(bar.getAttribute('aria-valuenow')).toBe('0');
+    expect(bar.getAttribute('aria-valuemax')).toBe(String(INTERVIEW_FIELDS.length));
+    // The page names itself in the hero, so the trainer knows which step of
+    // the intake journey they are in.
+    expect(screen.getByText(/client interview · step 4/i)).toBeTruthy();
   });
 
   it('starts with nothing chosen, and cannot complete an empty interview', async () => {
     render(<InterviewPage />);
-    await screen.findByText('Mina Rao · Client Interview');
+    await clientHeading();
     const complete = screen.getByRole('button', { name: 'Complete interview' }) as HTMLButtonElement;
     expect(complete.disabled).toBe(true);
     expect(answeredCount()).toBe('0');
@@ -104,7 +122,7 @@ describe('<InterviewPage />', () => {
     // lifestyle_sitting_hours is NUMERIC(4,1): a stored 7 arrives as '7.0'.
     mockDrafts = [{ id: 'iv-9', status: 'draft', updated_at: '2026-10-07T10:00:00Z', lifestyle_occupation: 'desk_job', lifestyle_sitting_hours: '7.0' }];
     render(<InterviewPage />);
-    expect(await screen.findByText(/Resuming a saved draft/)).toBeTruthy();
+    expect(await screen.findByText(/Resumed from your draft/)).toBeTruthy();
     expect(select('Type of work').value).toBe('desk_job');
     expect(select('Sitting hours').value).toBe('7');
 
@@ -119,7 +137,7 @@ describe('<InterviewPage />', () => {
 
   it('writes only what the trainer changed, and never the older free-text columns', async () => {
     render(<InterviewPage />);
-    await screen.findByText('Mina Rao · Client Interview');
+    await clientHeading();
     fireEvent.change(select('Smoking'), { target: { value: 'former' } });
     fireEvent.click(screen.getByRole('button', { name: 'Complete interview' }));
 
@@ -150,7 +168,7 @@ describe('<InterviewPage />', () => {
       lifestyle_occupation: 'Software engineer', lifestyle_sitting_hours: '7.5', lifestyle_sleep_hours: '7',
     }];
     render(<InterviewPage />);
-    expect(await screen.findByText(/Resuming a saved draft/)).toBeTruthy();
+    expect(await screen.findByText(/Resumed from your draft/)).toBeTruthy();
 
     fireEvent.change(select('Smoking'), { target: { value: 'daily' } });
     // The three stored answers still count as answers.

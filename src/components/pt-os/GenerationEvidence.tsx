@@ -41,23 +41,37 @@
 
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, OctagonAlert, ShieldCheck, TriangleAlert } from 'lucide-react';
-import type { AiWorkoutGenerationResult } from '@/lib/api';
+import type { AiGenerationAudit, AiGenerationScreen, AiKnowledgeGrounding } from '@/lib/api';
 
 /** Severities the audit reports, worst first. */
 const BLOCKING_AUDIT = ['critical', 'major'];
 
-export default function GenerationEvidence({ result }: { result: AiWorkoutGenerationResult }) {
+/** The generation result's shape; also satisfied by AiWorkoutGenerationResult. */
+export type GenerationEvidenceResult = {
+  grounding?: AiKnowledgeGrounding;
+  screen?: AiGenerationScreen;
+  audit?: AiGenerationAudit;
+  quality?: { score: number; max: number; components: Record<string, number>; basis: string };
+  critique?: Array<{ severity: string; point: string; because: string }>;
+  critique_verdict?: string | null;
+};
+
+export default function GenerationEvidence({ result }: { result: GenerationEvidenceResult }) {
   const [open, setOpen] = useState(false);
-  const { screen, audit, quality, critique, critique_verdict: verdict } = result;
+  const { screen, audit, quality, critique, critique_verdict: verdict, grounding } = result;
 
   // Nothing came back to show. Says so rather than rendering an empty frame
   // that reads as "checked, all clear".
   if (!screen && !audit && !quality && !critique?.length) {
-    return (
-      <p className="mt-2 text-[10.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-        This generation came back without a screen or a rule check. Review it as unchecked.
-      </p>
-    );
+    // Diet generations carry only the knowledge-grounding report, so a
+    // grounding-only result IS a complete report, not an empty frame.
+    return grounding
+      ? <div className="mt-2.5 border-t pt-2.5" style={{ borderColor: 'var(--border)' }}><GroundingLine grounding={grounding} /></div>
+      : (
+        <p className="mt-2 text-[10.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          This generation came back without a screen or a rule check. Review it as unchecked.
+        </p>
+      );
   }
 
   const blocking = audit?.violations.filter((v) => BLOCKING_AUDIT.includes(v.severity)) ?? [];
@@ -105,6 +119,12 @@ export default function GenerationEvidence({ result }: { result: AiWorkoutGenera
           {quality.basis}
         </p>
       )}
+
+      {/* ── How the MPTS corpus was used ─────────────────────────────────
+          A method claim is only as good as its source. An answer that used
+          no document, or that fabricated citation numbers, says so here
+          without redacting the plan itself. */}
+      {grounding && <GroundingLine grounding={grounding} />}
 
       {/* ── Screened, or not ──────────────────────────────────────────────
           The single most misreadable fact on this card, so it is stated in
@@ -237,6 +257,59 @@ export default function GenerationEvidence({ result }: { result: AiWorkoutGenera
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * The knowledge-grounding line: which approved corpus answered, and whether
+ * the plan's citations held up.
+ *
+ * Shared by the client card and both generator pages, so workout and diet say
+ * the same thing the same way. Wording states only what the server reported —
+ * corpus version and citation counts are server-frozen copy, not inferences.
+ */
+export function GroundingLine({ grounding }: { grounding: AiKnowledgeGrounding }) {
+  const notes: string[] = [];
+  if (grounding.corpus_version) notes.push(`corpus ${grounding.corpus_version}`);
+
+  let tone: 'ok' | 'warn' = 'ok';
+  let title: string;
+  switch (grounding.status) {
+    case 'ok': {
+      title = grounding.sources.length
+        ? `Grounded in ${grounding.sources.length} approved MPTS document${grounding.sources.length === 1 ? '' : 's'}`
+        : 'No approved MPTS document matched this request';
+      if (grounding.validation_status === 'no_citations') {
+        notes.push('the model did not name the passages it used');
+      } else if (grounding.validation_status === 'invalid_citations') {
+        notes.push(`${grounding.citations_rejected.length} fabricated citation${grounding.citations_rejected.length === 1 ? '' : 's'} removed`);
+      }
+      if (grounding.validation_status !== 'ok') tone = 'warn';
+      break;
+    }
+    case 'unavailable':
+      tone = 'warn';
+      title = 'Grounding could not be verified — the knowledge base was unreachable';
+      break;
+    case 'stale':
+      tone = 'warn';
+      title = 'Grounding interrupted — the corpus needs reindexing';
+      break;
+    case 'empty':
+      tone = 'warn';
+      title = 'No approved MPTS document was available';
+      break;
+    default:
+      tone = 'warn';
+      title = 'Generated without the MPTS knowledge base';
+  }
+
+  return (
+    <Finding
+      tone={tone}
+      title={title}
+      detail={notes.join(' · ') || undefined}
+    />
   );
 }
 

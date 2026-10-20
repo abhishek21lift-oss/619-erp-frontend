@@ -245,3 +245,41 @@ describe('generation evidence', () => {
       .toBeInTheDocument();
   });
 });
+
+describe('knowledge grounding report', () => {
+  const GROUNDING = {
+    status: 'ok', corpus_version: 'mpts-v20261020093000-n3',
+    validation_status: 'ok', citations_claimed: 1, citations_accepted: [1],
+    citations_rejected: [], sources: ['MPTS Programming SOP'],
+  } as const satisfies Partial<AiWorkoutGenerationResult['grounding']>;
+
+  it('names the corpus a grounded generation was drawn from', () => {
+    render(<GenerationEvidence result={result({ grounding: { ...GROUNDING } })} />);
+
+    expect(screen.getByText(/Grounded in 1 approved MPTS document/)).toBeInTheDocument();
+    expect(screen.getByText(/corpus mpts-v20261020093000-n3/)).toBeInTheDocument();
+  });
+
+  it('flags a plan that cited no passage rather than reading as verified', () => {
+    render(<GenerationEvidence result={result({
+      grounding: { ...GROUNDING, validation_status: 'no_citations', citations_accepted: [], citations_claimed: 0 },
+    })} />);
+
+    expect(screen.getByText(/did not name the passages/)).toBeInTheDocument();
+  });
+
+  it('reports when fabricated citations were stripped from the plan', () => {
+    render(<GenerationEvidence result={result({
+      grounding: { ...GROUNDING, validation_status: 'invalid_citations', citations_claimed: 3, citations_accepted: [1], citations_rejected: [7, 9] },
+    })} />);
+
+    expect(screen.getByText(/2 fabricated citations removed/)).toBeInTheDocument();
+  });
+
+  it('renders a grounding-only report (diet) — not the unchecked excuse', () => {
+    render(<GenerationEvidence result={{ grounding: { ...GROUNDING } }} />);
+
+    expect(screen.getByText(/Grounded in 1 approved MPTS document/)).toBeInTheDocument();
+    expect(screen.queryByText(/came back without a screen/)).not.toBeInTheDocument();
+  });
+});

@@ -16,6 +16,7 @@ import { CLIENT_SOURCES, RELATIONSHIPS } from '@/lib/client-intake';
 import { useToast } from '@/lib/toast';
 import { readImageAsDataUrl, AVATAR_RULES } from '@/lib/forms/files';
 import { errorMessage } from '@/lib/forms/errors';
+import { clientUpdateSchema } from '@/lib/forms/schemas/client';
 
 function SectionCard({ title, icon, children, accent = '#F59E0B' }: {
   title: string; icon: React.ReactNode; children: React.ReactNode; accent?: string;
@@ -91,13 +92,54 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
   // Who the client is. Nothing about their schedule or their money — the PT
   // dates and the amounts are not loaded, not held here and not sent back.
-  const [form, setForm] = useState({
-    name: '', mobile: '', email: '', gender: '', dob: '', address: '', emergency_contact: '', emergency_phone: '',
-    emergency_contact_relationship: '', client_source: '',
-  });
+  //
+  // The form holds raw strings (what the controls produce). The schema parses
+  // at submit; nulls the schema uses for "absent" never reach this state.
+  interface ClientEditForm {
+    name: string;
+    mobile: string;
+    email: string;
+    gender: string;
+    dob: string;
+    address: string;
+    emergency_contact: string;
+    emergency_phone: string;
+    emergency_contact_relationship: string;
+    client_source: string;
+  }
+  const blankClientEditForm: ClientEditForm = {
+    name: '',
+    mobile: '',
+    email: '',
+    gender: '',
+    dob: '',
+    address: '',
+    emergency_contact: '',
+    emergency_phone: '',
+    emergency_contact_relationship: '',
+    client_source: '',
+  };
+  const [form, setForm] = useState<ClientEditForm>(blankClientEditForm);
 
-  const set = (key: keyof typeof form) => (v: string) =>
-    setForm(p => ({ ...p, [key]: v }));
+  // Snapshot of the record as loaded, so we can tell which fields the trainer
+  // actually changed. Untouched legacy values — even malformed ones — are not
+  // re-validated, so editing an unrelated field never fails on data the trainer
+  // did not touch. This is the change detection the form could not do before
+  // the schema existed; see handleSave.
+  const original = useRef<ClientEditForm | null>(null);
+
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const set = (key: keyof ClientEditForm) => (v: string) => {
+    setForm((p) => ({ ...p, [key]: v }));
+    // Clearing a field's error as soon as the trainer edits it keeps the form
+    // honest: a red message refers to the current value, not a stale one.
+    if (fieldErrors[key]) {
+      const next = { ...fieldErrors };
+      delete next[key];
+      setFieldErrors(next);
+    }
+  };
 
   // Load client data
   useEffect(() => {
@@ -109,7 +151,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
           // The stored photo, so the hero shows the client rather than
           // their initials the moment the page opens.
           setPhotoUrl((c as { photo_url?: string }).photo_url ?? null);
-          setForm({
+          const loaded: ClientEditForm = {
             name: c.name ?? '',
             mobile: c.mobile ?? '',
             email: c.email ?? '',
@@ -120,7 +162,9 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
             emergency_phone: c.emergency_phone ?? '',
             emergency_contact_relationship: c.emergency_contact_relationship ?? '',
             client_source: c.client_source ?? '',
-          });
+          };
+          setForm(loaded);
+          original.current = loaded;
         }
       } catch (err: any) {
         toast.error(err?.message || 'Failed to load client');
@@ -152,11 +196,57 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
     }
   };
 
+  // Which fields the trainer actually changed, vs the record as loaded.
+  // Only changed fields are validated; an untouched malformed legacy value is
+  // preserved rather than blocking an unrelated edit.
+  const changedFields = (): Set<string> => {
+    const o = original.current;
+    if (!o) return new Set<string>();
+    const changed = new Set<string>();
+    const keys: (keyof ClientEditForm)[] = [
+      'name',
+      'mobile',
+      'email',
+      'gender',
+      'dob',
+      'address',
+      'emergency_contact',
+      'emergency_phone',
+      'emergency_contact_relationship',
+      'client_source',
+    ];
+    for (const key of keys) {
+      const cur = String(form[key] ?? '').trim();
+      const prev = String(o[key] ?? '').trim();
+      if (cur !== prev) changed.add(key);
+    }
+    return changed;
+  };
+
   const handleSave = async () => {
-    if (!form.name.trim()) { toast.error('Name is required'); return; }
+    const parsed = clientUpdateSchema.safeParse(form);
+    const nextErrors: Record<string, string> = {};
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0];
+        if (typeof key === 'string' && !nextErrors[key]) nextErrors[key] = String(issue.message);
+      }
+    }
+    // Suppress errors on fields the trainer did not touch: legacy values the
+    // server already holds must not block an unrelated edit.
+    const changed = changedFields();
+    for (const key of Object.keys(nextErrors)) {
+      if (!changed.has(key)) delete nextErrors[key];
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      toast.error(Object.values(nextErrors).join(' '));
+      return;
+    }
+    setFieldErrors({});
     setSaving(true);
     try {
-      const str  = (v: string) => v.trim() || null;
+      const str = (v: string) => v.trim() || null;
       // Personal fields only.
       //
       // The five that used to follow — pt_start_date, pt_end_date,
@@ -279,9 +369,9 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
           {/* ── Personal Info ── */}
           <SectionCard title="Personal Information" icon={<User size={16} />}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FloatInput label="Full Name" required value={form.name} onChange={set('name')} />
-              <FloatInput label="Phone Number" type="tel" value={form.mobile} onChange={set('mobile')} />
-              <FloatInput label="Email Address" type="email" value={form.email} onChange={set('email')} />
+              <FloatInput label="Full Name" required value={form.name} onChange={set('name')} error={fieldErrors.name} />
+              <FloatInput label="Phone Number" type="tel" value={form.mobile} onChange={set('mobile')} error={fieldErrors.mobile} />
+              <FloatInput label="Email Address" type="email" value={form.email} onChange={set('email')} error={fieldErrors.email} />
               <div>
                 <label htmlFor="client-gender" className="block text-[11px] font-[600] mb-2" style={{ color: 'var(--text-disabled)' }}>Gender</label>
                 <select id="client-gender"
@@ -298,16 +388,16 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                   <option value="Other">Other</option>
                 </select>
               </div>
-              <FloatInput label="Date of Birth" type="date" value={form.dob} onChange={set('dob')} />
+              <FloatInput label="Date of Birth" type="date" value={form.dob} onChange={set('dob')} error={fieldErrors.dob} />
               <div className="sm:col-span-2">
-                <FloatInput label="Address" value={form.address} onChange={set('address')} />
+                <FloatInput label="Address" value={form.address} onChange={set('address')} error={fieldErrors.address} />
               </div>
               {/* Labels, options and field order match the intake form. The
                   same column called two different things on the screen that
                   captures it and the screen that corrects it is how a studio
                   ends up unsure which field it filled in. */}
-              <FloatInput label="Emergency Contact Name" value={form.emergency_contact} onChange={set('emergency_contact')} />
-              <FloatInput label="Emergency Contact Number" type="tel" value={form.emergency_phone} onChange={set('emergency_phone')} />
+              <FloatInput label="Emergency Contact Name" value={form.emergency_contact} onChange={set('emergency_contact')} error={fieldErrors.emergency_contact} />
+              <FloatInput label="Emergency Contact Number" type="tel" value={form.emergency_phone} onChange={set('emergency_phone')} error={fieldErrors.emergency_phone} />
               <SearchableSelect
                 label="Relationship"
                 placeholder="Relationship to the emergency contact"
