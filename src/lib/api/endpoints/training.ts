@@ -361,6 +361,14 @@ export const workoutGenerator = {
     includeCardio?: boolean;
     cardioMinutes?: number;
     modality?: string;
+    // Additive FITT/heart-rate inputs. Omitted values keep the application defaults.
+    cardioIntensity?: string;
+    cardioMethod?: string;
+    cardioFrequencyPerWeek?: number;
+    cardioProgramType?: string;
+    age?: number;
+    restingHeartRate?: number;
+    measuredMaxHeartRate?: number;
     hasVerified1RM?: boolean;
   }) =>
     http<{

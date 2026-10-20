@@ -19,6 +19,11 @@ import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { Dumbbell, Loader2, RefreshCw, Save, AlertTriangle, Info } from 'lucide-react';
+import {
+  CARDIO_PROGRAM_TYPES,
+  K11_INTENSITY_BANDS,
+  getK11IntensityBand,
+} from '@/lib/cardio-calculations';
 import type { GeneratedWorkout } from '@/lib/workout-generator';
 
 const GOALS = [
@@ -44,6 +49,14 @@ function repsLowerBound(reps: string): number {
   return Number.isFinite(n) && n > 0 ? n : 8;
 }
 
+/** Blank means "not supplied". Anything else must be a whole number in range. */
+function optionalInt(value: string, min: number, max: number): number | undefined {
+  const text = value.trim();
+  if (!text) return undefined;
+  const n = Number(text);
+  return Number.isInteger(n) && n >= min && n <= max ? n : NaN;
+}
+
 function GeneratorScreen({ clientId }: { clientId: string }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -53,6 +66,13 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
   const [avoidMuscles, setAvoidMuscles] = useState('');
   const [equipment, setEquipment] = useState('');
   const [cardio, setCardio] = useState('');
+  const [cardioIntensity, setCardioIntensity] = useState('');
+  const [cardioMethod, setCardioMethod] = useState('');
+  const [cardioFrequency, setCardioFrequency] = useState('');
+  const [cardioProgram, setCardioProgram] = useState('');
+  const [age, setAge] = useState('');
+  const [restingHr, setRestingHr] = useState('');
+  const [measuredMhr, setMeasuredMhr] = useState('');
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<GeneratedWorkout | null>(null);
@@ -62,9 +82,20 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
   const generate = useCallback(async () => {
     setBusy(true);
     try {
-      // Blank means "use the goal default", not zero. A non-numeric entry is
-      // refused rather than coerced to NaN and posted.
-      const cardioMinutes = /^\d+$/.test(cardio.trim()) ? Number(cardio) : undefined;
+      // Blank means "use the application default", not zero. A non-numeric
+      // entry is refused rather than coerced to NaN and posted.
+      const cardioMinutes = optionalInt(cardio, 0, 180);
+      const cardioFrequencyValue = optionalInt(cardioFrequency, 1, 14);
+      const ageValue = optionalInt(age, 1, 120);
+      const restingHrValue = optionalInt(restingHr, 1, 300);
+      const measuredMhrValue = optionalInt(measuredMhr, 1, 300);
+      if (
+        [cardioMinutes, cardioFrequencyValue, ageValue, restingHrValue, measuredMhrValue]
+          .some((value) => Number.isNaN(value))
+      ) {
+        toast.error('Enter whole numbers for cardio minutes, frequency, age and heart rates.');
+        return;
+      }
       const res = await api.workoutGenerator.preview(clientId, {
         goal: goal || undefined,
         experience: experience || undefined,
@@ -72,6 +103,13 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
         avoidMuscles: avoidMuscles ? avoidMuscles.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
         equipment: equipment ? equipment.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
         cardioMinutes,
+        cardioIntensity: cardioIntensity || undefined,
+        cardioMethod: cardioMethod || undefined,
+        cardioFrequencyPerWeek: cardioFrequencyValue,
+        cardioProgramType: cardioProgram || undefined,
+        age: ageValue,
+        restingHeartRate: restingHrValue,
+        measuredMaxHeartRate: measuredMhrValue,
       });
       setDraft(res.draft);
       setClientName(res.client.name);
@@ -81,7 +119,11 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
     } finally {
       setBusy(false);
     }
-  }, [clientId, goal, experience, avoidPatterns, avoidMuscles, equipment, cardio, toast]);
+  }, [
+    clientId, goal, experience, avoidPatterns, avoidMuscles, equipment, cardio,
+    cardioIntensity, cardioMethod, cardioFrequency, cardioProgram, age, restingHr, measuredMhr,
+    toast,
+  ]);
 
   useEffect(() => { void generate(); }, [clientId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -120,6 +162,22 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
     }
   }, [draft, clientName, router, toast]);
 
+  const fitt = draft?.conditioning?.fitt;
+  const target = draft?.conditioning?.targetHeartRate;
+  const intensityBand = fitt ? getK11IntensityBand(fitt.intensity) : null;
+  const program = fitt ? CARDIO_PROGRAM_TYPES.find((type) => type.key === fitt.programType) : null;
+  const defaultKeys = fitt
+    ? fitt.defaults ?? (fitt.basis === 'application-default'
+      ? ['intensity', 'frequency', 'programme'] as const
+      : [])
+    : [];
+  const defaultLabels = defaultKeys.map((key) => ({
+    intensity: 'Intensity',
+    frequency: 'Frequency',
+    programme: 'Programme',
+  })[key]);
+  const defaultVerb = defaultLabels.length === 1 ? 'uses' : 'use';
+
   return (
     <PageContainer>
       <PageHero
@@ -139,10 +197,6 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
             {EXPERIENCE.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
           </SelectInput>
         </FormField>
-        <FormField label="Cardio minutes">
-          <TextInput inputMode="numeric" min={0} max={180} value={cardio}
-            onChange={(e) => setCardio(e.target.value)} placeholder="Goal default" />
-        </FormField>
         <FormField label="Avoid movement patterns">
           <TextInput value={avoidPatterns} onChange={(e) => setAvoidPatterns(e.target.value)}
             placeholder="Squat, Hinge (comma separated)" />
@@ -156,6 +210,60 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
             placeholder="Barbell, Dumbbell (blank = all)" />
         </FormField>
       </div>
+
+      <section className="mb-5 rounded-[14px] border p-4" style={{ borderColor: 'var(--border)' }}>
+        <h2 className="mb-1 text-[15px] font-[700]">Cardio prescription (optional)</h2>
+        <p className="mb-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+          Blank fields keep the application defaults. A target heart rate appears only when
+          age or measured max HR is supplied together with resting HR; the generator never invents one.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <FormField label="Cardio minutes">
+            <TextInput inputMode="numeric" min={0} max={180} value={cardio}
+              onChange={(e) => setCardio(e.target.value)} placeholder="Goal default" />
+          </FormField>
+          <FormField label="K11 intensity">
+            <SelectInput value={cardioIntensity} onChange={(e) => setCardioIntensity(e.target.value)}>
+              <option value="">Application default (moderate)</option>
+              {K11_INTENSITY_BANDS.map((band) => (
+                <option key={band.key} value={band.key}>{band.label}</option>
+              ))}
+            </SelectInput>
+          </FormField>
+          <FormField label="Target calculation">
+            <SelectInput value={cardioMethod} onChange={(e) => setCardioMethod(e.target.value)}>
+              <option value="">Application default (Karvonen)</option>
+              <option value="mhr">MHR: THR = MHR × %</option>
+              <option value="karvonen">Karvonen: THR = ((MHR − RHR) × %) + RHR</option>
+            </SelectInput>
+          </FormField>
+          <FormField label="Frequency per week">
+            <TextInput inputMode="numeric" min={1} max={14} value={cardioFrequency}
+              onChange={(e) => setCardioFrequency(e.target.value)} placeholder="Application default (3)" />
+          </FormField>
+          <FormField label="Programme type">
+            <SelectInput value={cardioProgram} onChange={(e) => setCardioProgram(e.target.value)}>
+              <option value="">Application default (Continuous / LISS)</option>
+              {CARDIO_PROGRAM_TYPES.map((type) => (
+                <option key={type.key} value={type.key}>{type.label}</option>
+              ))}
+            </SelectInput>
+          </FormField>
+          <FormField label="Age (MHR estimate)">
+            <TextInput inputMode="numeric" min={1} max={120} value={age}
+              onChange={(e) => setAge(e.target.value)} placeholder="Not supplied" />
+          </FormField>
+          <FormField label="Resting HR">
+            <TextInput inputMode="numeric" min={1} value={restingHr}
+              onChange={(e) => setRestingHr(e.target.value)} placeholder="Not supplied" />
+          </FormField>
+          <FormField label="Measured max HR">
+            <TextInput inputMode="numeric" min={1} value={measuredMhr}
+              onChange={(e) => setMeasuredMhr(e.target.value)} placeholder="Not supplied" />
+          </FormField>
+        </div>
+      </section>
+
       <Button onClick={generate} disabled={busy} className="mb-6">
         {busy ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />} Generate
       </Button>
@@ -199,7 +307,48 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
           {draft.conditioning && (
             <section>
               <h2 className="mb-2 text-[15px] font-[700]">Conditioning</h2>
-              <p className="text-[13px]">{draft.conditioning.modality} · {draft.conditioning.minutes} min · {draft.conditioning.intensity} — {draft.conditioning.notes}</p>
+              <p className="text-[13px]">
+                {draft.conditioning.modality} · {draft.conditioning.minutes} min ·{' '}
+                {intensityBand?.label ?? draft.conditioning.intensity} — {draft.conditioning.notes}
+              </p>
+              {fitt && (
+                <dl className="mt-2 grid gap-2 text-[12px] sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="rounded-[10px] px-3 py-2" style={{ background: 'var(--bg-subtle)' }}>
+                    <dt className="font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Frequency</dt>
+                    <dd className="mt-0.5 font-[750]">{fitt.frequencyPerWeek}×/week</dd>
+                  </div>
+                  <div className="rounded-[10px] px-3 py-2" style={{ background: 'var(--bg-subtle)' }}>
+                    <dt className="font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Main work</dt>
+                    <dd className="mt-0.5 font-[750]">{fitt.timeMinutes} min</dd>
+                  </div>
+                  <div className="rounded-[10px] px-3 py-2" style={{ background: 'var(--bg-subtle)' }}>
+                    <dt className="font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Intensity</dt>
+                    <dd className="mt-0.5 font-[750]">{intensityBand?.label ?? fitt.intensity}</dd>
+                  </div>
+                  <div className="rounded-[10px] px-3 py-2" style={{ background: 'var(--bg-subtle)' }}>
+                    <dt className="font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Programme</dt>
+                    <dd className="mt-0.5 font-[750]">{program?.label ?? fitt.programType}</dd>
+                  </div>
+                </dl>
+              )}
+              <p className="mt-2 text-[12px]">
+                <strong>Target heart rate:</strong>{' '}
+                {target
+                  ? `${target.minBpm}–${target.maxBpm} BPM (${target.basisLabel} · ${target.method === 'mhr' ? 'MHR method' : 'Karvonen method'})`
+                  : 'Not set. Supply age or measured max HR together with resting HR; no BPM is invented.'}
+              </p>
+              {defaultLabels.length > 0 && (
+                <p className="mt-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                  {defaultLabels.join(', ')} {defaultVerb} application defaults, not K11 limits.
+                </p>
+              )}
+              {(draft.conditioning.warnings?.length ?? 0) > 0 && (
+                <ul className="mt-2 space-y-1 text-[12px]" style={{ color: 'var(--danger-text, #b91c1c)' }}>
+                  {draft.conditioning.warnings?.map((warning) => (
+                    <li key={warning} className="flex items-start gap-1.5"><AlertTriangle size={13} className="mt-0.5 shrink-0" /> {warning}</li>
+                  ))}
+                </ul>
+              )}
             </section>
           )}
 
