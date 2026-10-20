@@ -235,11 +235,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: abhishek21lift-oss/619-erp-backend
-          # This PR and backend #245 are one change: the frontend posts FITT
-          # keys the backend on `main` does not validate or return yet. Pin the
-          # exact backend commit only for this frontend branch, so the E2E job
-          # proves the actual pair; on `main` it falls through to `main` again.
-          ref: ${{ (github.event_name == 'pull_request' && github.head_ref == 'feat/cardio-fitt-prescriptions' && '1d283354647772d55fae9eaad09ca39e32f6abf1') || env.BACKEND_REF || 'main' }}
+          ref: ${{ env.BACKEND_REF || 'main' }}
           path: backend
           # GITHUB_TOKEN is scoped to THIS repository only — it cannot check
           # out another private repo and fails with a 404. A PAT (or GitHub App
