@@ -15,7 +15,7 @@ import {
   Sparkles, Send, Square, Copy, Check, RotateCcw, Plus, Search, X, Trash2,
   Pin, PinOff, Pencil, MessageSquare, PanelLeft, Download, User, BookOpen,
   Dumbbell, Apple, TrendingUp, BarChart3, Database, Loader2, AlertTriangle,
-  ChevronRight,
+  ChevronRight, TriangleAlert,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import ChatMarkdown from '@/components/fitness/ChatMarkdown';
@@ -36,6 +36,8 @@ interface ChatMessage {
   sources?: string[];
   /** Live-data tools consulted (client lookup, revenue, attendance…). */
   tools?: string[];
+  /** Set when the answer was produced while the document store was unreachable. */
+  grounding?: 'unavailable';
 }
 
 /* ── Suggested prompts ─────────────────────────────────────────────────────
@@ -176,14 +178,15 @@ export default function AiCoachPage() {
     let started = false;
     let pendingSources: string[] | undefined;
     let pendingTools: string[] | undefined;
+    let pendingGrounding: 'unavailable' | undefined;
 
     const controller = new AbortController();
     abortRef.current = controller;
 
     const pushReply = (content: string, error = false) =>
-      setMessages((prev) => [...prev, { id: replyId, role: 'assistant', content, error, sources: pendingSources, tools: pendingTools }]);
+      setMessages((prev) => [...prev, { id: replyId, role: 'assistant', content, error, sources: pendingSources, tools: pendingTools, grounding: pendingGrounding }]);
     const updateReply = (content: string) =>
-      setMessages((prev) => prev.map((msg) => (msg.id === replyId ? { ...msg, content, sources: pendingSources, tools: pendingTools } : msg)));
+      setMessages((prev) => prev.map((msg) => (msg.id === replyId ? { ...msg, content, sources: pendingSources, tools: pendingTools, grounding: pendingGrounding } : msg)));
 
     try {
       // The SSE parsing lives in lib/ai-stream so this page and the floating
@@ -200,6 +203,7 @@ export default function AiCoachPage() {
           onConversationId: setConversationId,
           onSources: (srcs) => { pendingSources = srcs; },
           onTools: (t) => { pendingTools = t; },
+          onGrounding: (g) => { pendingGrounding = g; },
           onText: (text) => {
             acc = text;
             if (!started) { started = true; pushReply(acc); } else updateReply(acc);
@@ -1061,6 +1065,17 @@ function MessageBubble({ msg, copied, onCopy, canRegenerate, onRegenerate }: {
           }}
         >
           <ChatMarkdown content={msg.content} tone="themed" size={13} />
+
+          {/* The reader is told when the answer was NOT grounded, same truth
+              the backend sent mid-stream — an outage answer renders like a
+              grounded one otherwise. */}
+          {msg.grounding === 'unavailable' && (
+            <p className="mt-2 flex items-center gap-1.5 rounded-[10px] px-2.5 py-1.5 text-[10.5px] font-[650] leading-relaxed"
+              style={{ background: 'rgba(245,158,11,0.08)', color: '#B45309', border: '1px solid rgba(245,158,11,0.25)' }}>
+              <TriangleAlert size={11} className="shrink-0" aria-hidden />
+              Your studio&rsquo;s document store could not be searched — this answer was not grounded in your documents.
+            </p>
+          )}
 
           {(msg.sources?.length || msg.tools?.length) ? (
             <div className="mt-2 flex flex-wrap items-center gap-1.5 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
