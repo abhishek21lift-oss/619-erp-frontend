@@ -39,12 +39,41 @@ export interface GeneratedExercise extends SequencedExercise {
   prescription: ReturnType<typeof prescribeStrengthLoad>;
 }
 
+export interface GeneratedConditioningFitt {
+  frequencyPerWeek: number;
+  timeMinutes: number;
+  intensity: string;
+  modalityCategory: string | null;
+  programType: string;
+  basis: 'requested' | 'application-default';
+  /** FITT fields that fell back to an application default. */
+  defaults?: Array<'intensity' | 'frequency' | 'programme'>;
+}
+
+export interface GeneratedTargetHeartRate {
+  method: string;
+  minBpm: number;
+  maxBpm: number;
+  /** '% MHR' or '% HRR' — never mixed. */
+  basisLabel: string;
+}
+
+export interface GeneratedConditioning {
+  modality: string;
+  minutes: number;
+  intensity: string;
+  notes: string;
+  fitt?: GeneratedConditioningFitt;
+  targetHeartRate?: GeneratedTargetHeartRate | null;
+  warnings?: string[];
+}
+
 export interface GeneratedWorkout {
   goal: string;
   experience: ExperienceLevel;
   warmup: Array<{ name: string; minutes: number; intensity: string; notes: string }>;
   mainWork: GeneratedExercise[];
-  conditioning: { modality: string; minutes: number; intensity: string; notes: string } | null;
+  conditioning: GeneratedConditioning | null;
   cooldown: Array<{ name: string; minutes: number; intensity: string; notes: string }>;
   excluded: Array<{ id: string; name: string; reason: string }>;
   warnings: string[];

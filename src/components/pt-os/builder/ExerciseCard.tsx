@@ -34,6 +34,10 @@ import {
   TRACKING_MODE_LABEL, allowedModes, effectiveMode, trackingKind,
   type TrackingKind, type TrackingMode,
 } from '@/lib/training-tracking';
+import {
+  CARDIO_PLAN_DRAFT_EVENT, CARDIO_PROGRAM_TYPES, clearCardioPlanDraft,
+  getK11IntensityBand, getProgressionPhase, readCardioPlanDraft, type CardioPlanDraft,
+} from '@/lib/cardio-calculations';
 
 /** Muscle-group hues. Fixed per group so a group keeps its colour everywhere. */
 const GROUP_TONE: Record<string, string> = {
@@ -60,13 +64,17 @@ type FieldSpec = {
  * the JSON object instead of a top-level key.
  */
 type ConfigSpec = {
-  configKey: 'duration_seconds' | 'distance';
+  configKey: 'duration_seconds' | 'distance' | 'target_heart_rate';
   label: string;
   suffix: string;
   /** Shown in minutes, stored in seconds. */
   minutes?: boolean;
   /** Stored alongside a distance so a number is never unitless. */
   distanceUnit?: 'm' | 'km';
+  /** Reject zero for values where zero is not a real prescription. */
+  min?: number;
+  /** Heart rate is a whole number of beats per minute. */
+  integer?: boolean;
 };
 
 type AnySpec = FieldSpec | ConfigSpec;
@@ -109,10 +117,17 @@ const ADVANCED_ALL: FieldSpec[] = [
 /**
  * Intensity detail per kind. Tempo and drop sets describe a rep, so they mean
  * nothing on a hold, a carry or a run; RPE is already a primary field for
- * cardio.
+ * cardio. Target HR is config-held because the canonical workout_exercises
+ * table has no heart-rate column (the column of that name was retired with the
+ * training-domain tables in migration 195).
  */
-function advancedFor(kind: TrackingKind): FieldSpec[] {
-  if (kind === 'cardio') return ADVANCED_ALL.filter((f) => f.key === 'warmup_sets' || f.key === 'superset_group');
+function advancedFor(kind: TrackingKind): AnySpec[] {
+  if (kind === 'cardio') {
+    return [
+      { configKey: 'target_heart_rate', label: 'Target HR', suffix: 'bpm', min: 1, integer: true },
+      ...ADVANCED_ALL.filter((f) => f.key === 'warmup_sets' || f.key === 'superset_group'),
+    ];
+  }
   if (kind === 'hold' || kind === 'carry') return ADVANCED_ALL.filter((f) => f.key !== 'tempo');
   return ADVANCED_ALL;
 }
@@ -155,7 +170,14 @@ export default function ExerciseCard({
   const mode = effectiveMode(exercise);
   const kind = trackingKind(mode, exercise.exercise_type);
   const primary = PRIMARY[kind];
-  const advanced = advancedFor(kind);
+  // A K11 prescription already carries an authoritative min/max band. A
+  // second editable single target would fall out of step with it, so the
+  // stored single value is only editable when no calculated band exists.
+  const hasCardioBand = kind === 'cardio'
+    && (exercise.config as Record<string, unknown> | null | undefined)?.cardio_source === 'k11';
+  const advanced = advancedFor(kind).filter((f) => !(
+    hasCardioBand && isConfigSpec(f) && f.configKey === 'target_heart_rate'
+  ));
   const repBased = kind === 'load_reps' || kind === 'reps';
 
   return (
@@ -276,6 +298,11 @@ export default function ExerciseCard({
           would be a number the trainer never wrote. */}
       {preview && <RampLine preview={preview} exercise={exercise} kind={kind} />}
 
+      {/* ── Cardio prescription, when one was saved from the calculator ── */}
+      {kind === 'cardio' && (
+        <CardioPrescriptionLine exercise={exercise} onCommit={commit} readOnly={readOnly} />
+      )}
+
       {/* ── Intensity detail, folded away ──
           Sets/reps/weight/rest are set on nearly every exercise; tempo and RPE
           are not. Showing all seven at once is the spreadsheet feeling the
@@ -291,7 +318,7 @@ export default function ExerciseCard({
           size={14}
           style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .18s' }}
         />
-        {open ? 'Fewer options' : repBased ? 'Tempo, RPE, warm-up, drop sets' : kind === 'cardio' ? 'Warm-up, superset' : 'RPE, warm-up, superset'}
+        {open ? 'Fewer options' : repBased ? 'Tempo, RPE, warm-up, drop sets' : kind === 'cardio' ? (hasCardioBand ? 'Warm-up, superset' : 'Target HR, warm-up, superset') : 'RPE, warm-up, superset'}
       </button>
 
       {open && (
@@ -306,9 +333,13 @@ export default function ExerciseCard({
               enough for "3-1-2-0" to fit without scrolling inside itself. */}
           <div className="grid grid-cols-2 gap-2 pt-1">
             {advanced.map((f) => (
-              readOnly
-                ? <StaticField key={String(f.key)} spec={f} exercise={exercise} />
-                : <InlineField key={String(f.key)} spec={f} exercise={exercise} onCommit={commit} />
+              isConfigSpec(f)
+                ? (readOnly
+                  ? <StaticConfigField key={f.configKey} spec={f} exercise={exercise} />
+                  : <ConfigField key={f.configKey} spec={f} exercise={exercise} onCommit={commit} />)
+                : (readOnly
+                  ? <StaticField key={String(f.key)} spec={f} exercise={exercise} />
+                  : <InlineField key={String(f.key)} spec={f} exercise={exercise} onCommit={commit} />)
             ))}
           </div>
           {repBased && <DropSetField exercise={exercise} onCommit={commit} readOnly={readOnly} />}
@@ -574,7 +605,10 @@ function ConfigField({
       if (spec.distanceUnit) delete cfg.distance_unit;
     } else {
       const n = Number(trimmed.replace(',', '.'));
-      if (!Number.isFinite(n) || n < 0) { setDraft(lastCommitted.current); return; }
+      if (!Number.isFinite(n) || n < (spec.min ?? 0) || (spec.integer && !Number.isInteger(n))) {
+        setDraft(lastCommitted.current);
+        return;
+      }
       cfg[spec.configKey] = spec.minutes ? Math.round(n * 60) : n;
       if (spec.distanceUnit) cfg.distance_unit = spec.distanceUnit;
     }
@@ -609,6 +643,128 @@ function ConfigField({
         )}
       </div>
     </label>
+  );
+}
+
+/** A config number, or null. `Number(null)` is 0, so guard before coercing. */
+function configNumber(config: Record<string, unknown>, key: string): number | null {
+  const raw = config[key];
+  if (raw === null || raw === undefined || raw === '') return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+function configString(config: Record<string, unknown>, key: string): string | null {
+  const raw = config[key];
+  return typeof raw === 'string' && raw.trim() !== '' ? raw : null;
+}
+
+/**
+ * The persisted cardio prescription, plus an explicit Apply action for a draft
+ * saved from the Cardio & FITT calculator.
+ *
+ * The draft lives in localStorage under one key. This line listens for the
+ * calculator's change event so every cardio row in an open builder updates,
+ * and clears the draft after the first row applies it. Nothing is written to a
+ * plan until Apply is pressed.
+ */
+function CardioPrescriptionLine({
+  exercise, onCommit, readOnly,
+}: {
+  exercise: WorkoutPlanExercise;
+  onCommit: (p: WorkoutExerciseInput) => void;
+  readOnly?: boolean;
+}) {
+  const [draft, setDraft] = useState<CardioPlanDraft | null>(null);
+
+  useEffect(() => {
+    const refresh = () => setDraft(readCardioPlanDraft());
+    refresh();
+    if (typeof window === 'undefined') return undefined;
+    window.addEventListener(CARDIO_PLAN_DRAFT_EVENT, refresh);
+    return () => window.removeEventListener(CARDIO_PLAN_DRAFT_EVENT, refresh);
+  }, []);
+
+  const config = (exercise.config ?? {}) as Record<string, unknown>;
+  const min = configNumber(config, 'target_heart_rate_min');
+  const max = configNumber(config, 'target_heart_rate_max');
+  const single = configNumber(config, 'target_heart_rate');
+  const basis = configString(config, 'target_heart_rate_basis');
+  const intensity = getK11IntensityBand(configString(config, 'cardio_intensity'));
+  const program = CARDIO_PROGRAM_TYPES.find(
+    (type) => type.key === configString(config, 'cardio_program_type'),
+  );
+  const frequency = configNumber(config, 'cardio_frequency_per_week');
+  const mainWork = configNumber(config, 'cardio_main_work_minutes');
+  const progressionPhase = getProgressionPhase(configString(config, 'cardio_progression_phase'));
+  const progressionPercent = configNumber(config, 'cardio_progression_intensity_percent');
+
+  const persistedRange = min != null && max != null ? `${min}–${max} BPM` : null;
+  const persistedTarget = persistedRange ?? (single != null ? `${single} BPM` : null);
+  const hasPersisted = persistedTarget != null;
+  const canApply = draft != null && !readOnly;
+
+  if (!hasPersisted && !canApply) return null;
+
+  const apply = () => {
+    if (!draft) return;
+    const next = { ...((exercise.config ?? {}) as Record<string, unknown>), ...draft.config };
+    onCommit({ config: next });
+    clearCardioPlanDraft();
+    setDraft(null);
+  };
+
+  const dismiss = () => {
+    clearCardioPlanDraft();
+    setDraft(null);
+  };
+
+  return (
+    <div
+      className="mt-2 rounded-[10px] border px-2.5 py-2 text-[11.5px]"
+      style={{ borderColor: 'var(--border)', background: 'var(--bg-subtle)' }}
+    >
+      {hasPersisted && (
+        <p style={{ color: 'var(--text-muted)' }}>
+          <span className="font-[750]" style={{ color: 'var(--text-primary)' }}>Prescribed:</span>{' '}
+          {intensity ? `${intensity.label} · ` : ''}
+          {persistedTarget}
+          {basis ? ` (${basis})` : ''}
+          {frequency != null ? ` · ${frequency}×/week` : ''}
+          {mainWork != null ? ` · ${mainWork} min main work` : ''}
+          {program ? ` · ${program.label}` : ''}
+          {progressionPhase
+            ? ` · ${progressionPhase.label}${progressionPercent != null ? ` (${progressionPercent}% HRR)` : ''}`
+            : ''}
+        </p>
+      )}
+
+      {canApply && draft && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+          <span style={{ color: 'var(--text-muted)' }}>
+            Saved: {draft.summary.intensityLabel} · {draft.summary.minBpm}–{draft.summary.maxBpm} BPM ·{' '}
+            {draft.summary.frequencyPerWeek}×/week · {draft.summary.mainWorkMinutes} min main work
+          </span>
+          <button
+            type="button"
+            onClick={apply}
+            className="h-[36px] rounded-[9px] px-3 text-[11.5px] font-[750] text-white"
+            style={{ background: 'var(--brand)' }}
+          >
+            Apply
+          </button>
+          <button
+            type="button"
+            onClick={dismiss}
+            aria-label="Dismiss saved cardio prescription"
+            className="h-[36px] rounded-[9px] border px-2.5 text-[11.5px] font-[700]"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
