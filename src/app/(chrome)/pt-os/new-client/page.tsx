@@ -18,6 +18,7 @@ import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useToast } from '@/lib/toast';
 import { readImageAsDataUrl, AVATAR_RULES } from '@/lib/forms/files';
 import { errorMessage } from '@/lib/forms/errors';
+import { clientCreateSchema } from '@/lib/forms/schemas/client';
 
 /* ─────────────────────────────────────────────────────── TYPES */
 interface FormData {
@@ -38,11 +39,8 @@ interface FormData {
 }
 
 // No `address` key any more — nothing can fail on a field with no rule.
-interface FormErrors {
-  name?: string; gender?: string; dob?: string; mobile?: string;
-  whatsapp?: string; email?: string; emergencyPhone?: string;
-  emergencyRelationship?: string;
-}
+// Field errors keyed by schema field name; a missing key means no error.
+type FormErrors = Record<string, string>;
 
 const GENDERS: FormData['gender'][] = ['Male', 'Female', 'Other'];
 
@@ -74,9 +72,6 @@ function hasEmergencyContact(form: FormData): boolean {
 }
 
 /* ─────────────────────────────────────────────────────── VALIDATION */
-const MOBILE_RE = /^[6-9]\d{9}$/; // mirrors the backend's ptClientCreateSchema exactly
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 function computeAge(dob: string): number | null {
   if (!dob) return null;
   const d = new Date(dob);
@@ -88,91 +83,20 @@ function computeAge(dob: string): number | null {
   return age;
 }
 
-function validateName(v: string): string | undefined {
-  const t = v.trim();
-  if (!t) return 'Full name is required.';
-  if (t.length < 3) return 'Name must be at least 3 characters.';
-  return undefined;
-}
-function validateGender(v: string): string | undefined {
-  return v ? undefined : 'Please select a gender.';
-}
-function validateDob(v: string): string | undefined {
-  if (!v) return undefined; // optional
-  const d = new Date(v);
-  if (isNaN(d.getTime())) return 'Invalid date.';
-  if (d > new Date()) return 'Date of birth cannot be in the future.';
-  const age = computeAge(v);
-  if (age === null || age < 10 || age > 100) return 'Age must be between 10 and 100 years.';
-  return undefined;
-}
-function validateMobile(v: string): string | undefined {
-  const digits = v.replace(/\D/g, '');
-  if (!digits) return 'Mobile number is required.';
-  if (!MOBILE_RE.test(digits)) return 'Enter a valid 10-digit Indian mobile number.';
-  return undefined;
-}
-function validateWhatsapp(v: string, sameAsMobile: boolean): string | undefined {
-  if (sameAsMobile) return undefined;
-  const digits = v.replace(/\D/g, '');
-  if (!digits) return undefined; // optional when entered independently
-  if (!MOBILE_RE.test(digits)) return 'Enter a valid 10-digit Indian mobile number.';
-  return undefined;
-}
-function validateEmail(v: string): string | undefined {
-  if (!v.trim()) return undefined; // optional
-  return EMAIL_RE.test(v.trim()) ? undefined : 'Enter a valid email address.';
-}
-function validateEmergencyPhone(v: string): string | undefined {
-  const digits = v.replace(/\D/g, '');
-  if (!digits) return undefined; // optional
-  if (!MOBILE_RE.test(digits)) return 'Enter a valid 10-digit Indian mobile number.';
-  return undefined;
-}
-// Required only once there is a contact to be related TO. Occupation, which
-// this replaces, was unconditionally required — but the emergency contact's
-// name and number are both optional, so an unconditional star here would make
-// the operator declare somebody's relationship to nobody. The star on the
-// field appears and disappears with this same condition.
-function validateRelationship(form: FormData): string | undefined {
-  if (!hasEmergencyContact(form)) return undefined;
-  return form.emergencyRelationship.trim() ? undefined : 'Tell us how this person is related to the client.';
-}
-
-function validateAll(form: FormData): FormErrors {
-  return {
-    name: validateName(form.name),
-    gender: validateGender(form.gender),
-    dob: validateDob(form.dob),
-    mobile: validateMobile(form.mobile),
-    whatsapp: validateWhatsapp(form.whatsapp, form.whatsappSameAsMobile),
-    email: validateEmail(form.email),
-    emergencyPhone: validateEmergencyPhone(form.emergencyPhone),
-    emergencyRelationship: validateRelationship(form),
-    // Address is no longer required. It was never used to reach anybody — the
-    // studio calls or messages — and it was the field that most often stalled
-    // an otherwise complete signup at the counter.
-  };
-}
-
-function hasErrors(errors: FormErrors): boolean {
-  return Object.values(errors).some(Boolean);
-}
-
 // Counts what the form asks for, not what it insists on: 3 required (name,
 // gender, mobile) plus 5 that fill the profile out. Address and Occupation
 // were counted as required here; with Occupation gone and Address optional,
 // both move into the optional half rather than out of the count, so a
 // complete-looking form still reads 100%.
-function computeProgress(form: FormData): number {
+function computeProgress(form: FormData, fieldErrors: Record<string, string>): number {
   let filled = 0;
   const total = 8;
-  if (!validateName(form.name)) filled++;
-  if (!validateGender(form.gender)) filled++;
-  if (!validateMobile(form.mobile)) filled++;
-  if (form.dob.trim() && !validateDob(form.dob)) filled++;
-  if (form.email.trim() && !validateEmail(form.email)) filled++;
-  if (form.emergencyPhone.trim() && !validateEmergencyPhone(form.emergencyPhone)) filled++;
+  if (form.name.trim() && !fieldErrors.name) filled++;
+  if (form.gender && !fieldErrors.gender) filled++;
+  if (form.mobile.trim() && !fieldErrors.mobile) filled++;
+  if (form.dob.trim() && !fieldErrors.dob) filled++;
+  if (form.email.trim() && !fieldErrors.email) filled++;
+  if (form.emergencyPhone.trim() && !fieldErrors.emergencyPhone) filled++;
   if (form.emergencyRelationship.trim()) filled++;
   if (form.clientSource.trim()) filled++;
   return Math.round((filled / total) * 100);
@@ -293,11 +217,24 @@ function NewClientForm() {
     setForm((prev) => ({ ...prev, [key]: val }));
   }, []);
 
-  const touchField = useCallback((key: keyof FormErrors) => {
-    setErrors((prev) => ({ ...prev, [key]: validateAll(form)[key] }));
+  // Canonical field errors, computed once per render from the Zod schema.
+  const fieldErrors = useMemo(() => {
+    const result = clientCreateSchema.safeParse(form);
+    const out: Record<string, string> = {};
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        const k = issue.path[0];
+        if (typeof k === 'string' && !out[k]) out[k] = String(issue.message);
+      }
+    }
+    return out;
   }, [form]);
 
-  const progress = useMemo(() => computeProgress(form), [form]);
+  const touchField = useCallback((key: string) => {
+    setErrors((prev) => ({ ...prev, [key]: fieldErrors[key] ?? undefined }));
+  }, [fieldErrors]);
+
+  const progress = useMemo(() => computeProgress(form, fieldErrors), [form, fieldErrors]);
   const age = computeAge(form.dob);
 
   const handleWhatsappToggle = (checked: boolean) => {
@@ -321,9 +258,14 @@ function NewClientForm() {
   };
 
   const handleSubmit = async () => {
-    const allErrors = validateAll(form);
-    setErrors(allErrors);
-    if (hasErrors(allErrors)) {
+    const result = clientCreateSchema.safeParse(form);
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const k = issue.path[0];
+        if (typeof k === 'string' && !fieldErrors[k]) fieldErrors[k] = String(issue.message);
+      }
+      setErrors(fieldErrors);
       toast.error('Please fix the highlighted fields.');
       return;
     }
@@ -511,7 +453,7 @@ function NewClientForm() {
                     <button
                       key={g} type="button"
                       aria-pressed={form.gender === g}
-                      onClick={() => { set('gender', g); setErrors((e) => ({ ...e, gender: undefined })); }}
+                      onClick={() => { set('gender', g); setErrors((e) => { const n = { ...e }; delete n.gender; return n; }); }}
                       className="rounded-[11px] px-4 py-2.5 text-[13px] font-[660] transition-all duration-200"
                       style={{
                         background: form.gender === g ? '#0f172a' : '#f8fafc',
@@ -604,7 +546,7 @@ function NewClientForm() {
                 placeholder="Relationship to the emergency contact"
                 required={hasEmergencyContact(form)}
                 value={form.emergencyRelationship}
-                onChange={(v) => { set('emergencyRelationship', v); setErrors((e) => ({ ...e, emergencyRelationship: undefined })); }}
+                onChange={(v) => { set('emergencyRelationship', v); setErrors((e) => { const n = { ...e }; delete n.emergencyRelationship; return n; }); }}
                 options={RELATIONSHIPS}
                 error={errors.emergencyRelationship}
               />
