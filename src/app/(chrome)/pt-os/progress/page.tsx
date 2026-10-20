@@ -14,12 +14,12 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  Activity, AlertCircle, AlertTriangle, CalendarClock, CheckCircle2, ClipboardList,
-  Flag, HeartPulse, LineChart, ListChecks, Loader2, Ruler, Sparkles, Target, TrendingUp,
+  Activity, AlertCircle, AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, ClipboardList,
+  Flag, HeartPulse, LineChart, Loader2, Ruler, Search, Sparkles, TrendingUp, Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
-import ClientPicker from '@/components/pt-os/shared/ClientPicker';
+import { ClientAvatar } from '@/components/pt-os/shared/ClientPicker';
 import {
   Button, Card, EmptyState, PageContainer, PageHero, PremiumAreaChart, Skeleton,
 } from '@/components/ui';
@@ -29,7 +29,7 @@ import { api } from '@/lib/api';
 import type {
   ProgressComparison, ProgressComparisonDomain, ProgressComparisonMetric, ProgressDashboard,
   ProgressHabitLog, ProgressHabitPreferences, ProgressInsight, ProgressInsightReview,
-  ProgressRetestOverview, ProgressRetestSettings,
+  ProgressRetestOverview, ProgressRetestRoster, ProgressRetestRosterRow, ProgressRetestSettings,
 } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
 
@@ -58,17 +58,190 @@ export default function TrainerProgressPage() {
 function ProgressHubSwitch() {
   const sp = useSearchParams();
   const clientId = sp.get('client_id') || '';
-  if (!clientId) {
-    return (
-      <ClientPicker
+  return clientId ? <ProgressHub key={clientId} clientId={clientId} /> : <ProgressRoster />;
+}
+
+const ROSTER_FILTERS: { key: string; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'overdue', label: 'Overdue' },
+  { key: 'due', label: 'Due' },
+  { key: 'upcoming', label: 'Upcoming' },
+  { key: 'rescheduled', label: 'Rescheduled' },
+  { key: 'not_scheduled', label: 'Not scheduled' },
+  { key: 'missing_baseline', label: 'No baseline' },
+];
+
+function timing(row: ProgressRetestRosterRow) {
+  const { state, days_until } = row.state;
+  if (state === 'overdue') return `${Math.abs(days_until ?? 0)} day${days_until === -1 ? '' : 's'} overdue`;
+  if (state === 'due') return 'Due today';
+  if (days_until != null) return `In ${days_until} day${days_until === 1 ? '' : 's'}`;
+  return row.state.label;
+}
+
+/** Cross-client view: who is due, who is overdue, and who has no baseline. */
+function ProgressRoster() {
+  const router = useRouter();
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('all');
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState<ProgressRetestRoster | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setFailed('');
+    // Typing should not fire one request per keystroke, and the last response
+    // must not overwrite a newer filter.
+    const timer = setTimeout(() => {
+      api.progress.retest.overview({ search: search.trim(), status, page, limit: 20 })
+        .then((res) => { if (alive) setData(res.data); })
+        .catch((err) => { if (alive) setFailed(errorMessage(err, 'Could not load the progress roster.')); })
+        .finally(() => { if (alive) setLoading(false); });
+    }, 220);
+    return () => { alive = false; clearTimeout(timer); };
+  }, [search, status, page, reloadKey]);
+
+  const counts = data?.counts;
+  const open = (id: string) => router.push(`/pt-os/progress?client_id=${encodeURIComponent(id)}`);
+  const filtered = Boolean(search.trim()) || status !== 'all';
+
+  return (
+    <PageContainer>
+      <PageHero
         title="Progress Hub"
-        subtitle="Pick a client"
-        icon={<LineChart size={20} color="#fff" />}
-        basePath="/pt-os/progress"
+        subtitle={data
+          ? `${data.total} client${data.total === 1 ? '' : 's'} · studio date ${data.today} · ${data.timezone}`
+          : 'Re-tests, daily habits and seven-domain change across every client.'}
+        icon={<LineChart size={20} />}
+        actions={(
+          <Button variant="outline" size="sm" onClick={() => setReloadKey((k) => k + 1)} disabled={loading}>
+            {loading ? <Loader2 size={14} className="animate-spin" /> : 'Refresh'}
+          </Button>
+        )}
       />
-    );
-  }
-  return <ProgressHub key={clientId} clientId={clientId} />;
+
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        <Stat label="Overdue" value={String(counts?.overdue ?? '—')} hint="Needs a decision"
+          tone={counts?.overdue ? 'warn' : 'neutral'} />
+        <Stat label="Due today" value={String(counts?.due ?? '—')} hint="Book the re-test"
+          tone={counts?.due ? 'warn' : 'neutral'} />
+        <Stat label="Upcoming" value={String((counts?.upcoming ?? 0) + (counts?.rescheduled ?? 0))}
+          hint="Scheduled ahead" tone="brand" />
+        <Stat label="No open cycle"
+          value={String((counts?.not_scheduled ?? 0) + (counts?.missing_baseline ?? 0))}
+          hint="Not scheduled / no baseline" tone="neutral" />
+      </div>
+
+      <div className="space-y-2.5">
+        <div className="relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+          <input
+            aria-label="Search clients by name, email or mobile"
+            type="search"
+            placeholder="Search by name, email or mobile…"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#0271EB]"
+            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          />
+        </div>
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by re-test state">
+          {ROSTER_FILTERS.map((f) => {
+            const active = status === f.key;
+            const count = counts
+              ? (f.key === 'all' ? counts.total : counts[f.key as keyof ProgressRetestRoster['counts']])
+              : null;
+            return (
+              <button key={f.key} type="button" aria-pressed={active}
+                onClick={() => { setStatus(f.key); setPage(1); }}
+                className="rounded-full px-3 py-1.5 text-[11px] font-[750] transition-colors"
+                style={active
+                  ? { background: 'var(--brand)', color: '#fff' }
+                  : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+                {f.label}{count != null && <span className="ml-1 opacity-70 tabular-nums">{count}</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {failed && data && (
+        <p className="rounded-[12px] px-4 py-2.5 text-[12px]"
+          style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--danger-text)' }}>
+          {failed} — showing the last loaded roster.
+        </p>
+      )}
+
+      {loading && !data && (
+        <div className="space-y-2.5" aria-busy="true" aria-label="Loading clients">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[74px] w-full rounded-[16px]" />)}
+        </div>
+      )}
+
+      {!loading && !data && failed && (
+        <EmptyState icon={<AlertCircle size={20} />} title="Could not load the roster" description={failed}
+          action={<Button variant="outline" onClick={() => setReloadKey((k) => k + 1)}>Try again</Button>} />
+      )}
+
+      {data && (
+        <>
+          {data.clients.length === 0 ? (
+            <EmptyState icon={<Users size={20} />}
+              title={filtered ? 'No clients match' : 'No clients yet'}
+              description={filtered
+                ? 'Try a different search or re-test state.'
+                : 'Add a client to start tracking assessments and re-tests.'} />
+          ) : (
+            <div className={loading ? 'space-y-2.5 opacity-60 transition-opacity' : 'space-y-2.5 transition-opacity'}>
+              {data.clients.map((c) => (
+                <button key={c.client_id} type="button" onClick={() => open(c.client_id)}
+                  className="group flex w-full items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#7FB4FF] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
+                  style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                  <ClientAvatar name={c.name} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="truncate text-[13.5px] font-[720]" style={{ color: 'var(--text-primary)' }}>{c.name}</span>
+                      <StatePill state={c.state.state} />
+                    </div>
+                    <p className="mt-1 truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                      {c.assessment_count === 0
+                        ? 'No assessment on file'
+                        : `${c.assessment_count} assessment${c.assessment_count === 1 ? '' : 's'} · latest ${date(c.latest_date)}${c.latest_score == null ? '' : ` · ${Math.round(c.latest_score)}/100`}`}
+                      {c.scheduled_date ? ` · next ${date(c.scheduled_date)} (${timing(c)})` : ` · ${timing(c)}`}
+                    </p>
+                  </div>
+                  <span className="hidden shrink-0 text-right text-[11px] font-[680] sm:block"
+                    style={{ color: c.state.state === 'overdue' || c.state.state === 'due' ? '#b45309' : 'var(--text-muted)' }}>
+                    {c.trainer_name || 'Unassigned'}
+                  </span>
+                  <ArrowRight size={14} className="flex-shrink-0 opacity-40 transition-opacity group-hover:opacity-100"
+                    style={{ color: 'var(--text-disabled)' }} />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {data.pages > 1 && (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-[11.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                Page {data.page} of {data.pages} · {data.total} client{data.total === 1 ? '' : 's'}
+              </span>
+              <div className="flex gap-1.5">
+                <Button variant="secondary" size="sm" disabled={data.page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}>Previous</Button>
+                <Button variant="secondary" size="sm" disabled={data.page >= data.pages}
+                  onClick={() => setPage((p) => p + 1)}>Next</Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </PageContainer>
+  );
 }
 
 interface HubData {

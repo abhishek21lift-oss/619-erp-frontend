@@ -337,6 +337,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "progress.retest.cancel → /api/progress/clients/",
   "progress.retest.complete → /api/progress/clients/",
   "progress.retest.get → /api/progress/clients/",
+  "progress.retest.overview → /api/progress/module5/overview",
   "progress.retest.reschedule → /api/progress/clients/",
   "progress.retest.saveSettings → /api/progress/module5/settings",
   "progress.retest.settings → /api/progress/module5/settings",

@@ -11,7 +11,8 @@ import type {
   ParqDocumentType, ParqForm, ParqFormDetail, ParqGateStatus, WorkoutPreviousExercise,
   WorkoutProgressPoint, WorkoutSession, WorkoutSessionDetail, WorkoutSessionExercise,
   WorkoutSet, WorkoutVolumePoint, TodayRoster, TrainingAnalytics, MuscleLandmark,
-  ProgressRetestSettings, ProgressRetestOverview, ProgressRetestSchedule, ProgressComparison,
+  ProgressRetestSettings, ProgressRetestOverview, ProgressRetestRoster, ProgressRetestSchedule,
+  ProgressComparison,
   ProgressHabitLog, ProgressHabitDashboard, ProgressHabitPreferences, ProgressDashboard,
   ProgressInsightReview,
 } from '../types';
@@ -301,6 +302,8 @@ export const progress = {
 
   // ── Module 5: re-testing, comparison and daily habits ──────
   retest: {
+    overview: (params: { search?: string; status?: string; page?: number; limit?: number } = {}) =>
+      http<{ data: ProgressRetestRoster }>(`/api/progress/module5/overview${buildQs(params)}`),
     get: (clientId: string) =>
       http<{ data: ProgressRetestOverview }>(`/api/progress/clients/${encodeURIComponent(clientId)}/retest`),
     start: (clientId: string, data: { scheduled_date?: string | null; notes?: string | null }) =>

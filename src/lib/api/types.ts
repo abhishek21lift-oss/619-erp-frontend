@@ -3886,6 +3886,28 @@ export type AiWorkoutContext = {
   training_history: { has_history: boolean; window_weeks: number } | null;
 };
 
+/**
+ * How one generation related to the versioned, approved MPTS knowledge corpus.
+ *
+ * Sent in the terminal SSE event of every grounded generator (workout, diet,
+ * progress, fitness testing) and frozen into the server-side generation
+ * ledger. A grounded generation that arrives WITHOUT this block is a client
+ * running against an outdated server, and unknown-grounding must not render
+ * as verified — that is why `grounding` is optional in the result types.
+ */
+export type AiKnowledgeGrounding = {
+  status: 'ok' | 'empty' | 'unavailable' | 'stale' | 'skipped';
+  /** The exact approved corpus this generation can be traced to (`mpts-v…`). */
+  corpus_version: string | null;
+  /** What the deterministic citation validator concluded about the FINAL plan. */
+  validation_status: 'ok' | 'no_citations' | 'invalid_citations';
+  citations_claimed: number;
+  citations_accepted: number[];
+  citations_rejected: number[];
+  /** Titles of the corpus documents the evidence was drawn from. */
+  sources: string[];
+};
+
 export type AiWorkoutGenerationResult = {
   data: AiWorkoutPlan;
   model: string;
@@ -3908,6 +3930,8 @@ export type AiWorkoutGenerationResult = {
   critique?: Array<{ severity: string; point: string; because: string }>;
   critique_verdict?: string | null;
   screen?: AiGenerationScreen;
+  /** How the approved MPTS corpus was used (see AiKnowledgeGrounding). */
+  grounding?: AiKnowledgeGrounding;
 };
 
 /**
@@ -4867,6 +4891,36 @@ export interface ProgressRetestOverview {
   state: { state: ProgressRetestState; days_until: number | null; label: string };
   history: ProgressRetestSchedule[];
   prompt?: string;
+}
+
+export interface ProgressRetestRosterRow {
+  client_id: string;
+  name: string;
+  email: string | null;
+  mobile: string | null;
+  client_status: string | null;
+  trainer_name: string | null;
+  assessment_count: number;
+  baseline_date: string | null;
+  latest_date: string | null;
+  latest_score: number | null;
+  schedule_id: string | null;
+  scheduled_date: string | null;
+  cadence_months: number | null;
+  schedule_status: ProgressRetestSchedule['status'] | null;
+  rescheduled_from: string | null;
+  state: { state: ProgressRetestState; days_until: number | null; label: string };
+}
+
+export interface ProgressRetestRoster {
+  today: string;
+  timezone: string;
+  counts: Record<'total' | 'missing_baseline' | 'not_scheduled' | 'upcoming' | 'due' | 'overdue' | 'rescheduled', number>;
+  clients: ProgressRetestRosterRow[];
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
 }
 
 export interface ProgressComparisonMetric {
