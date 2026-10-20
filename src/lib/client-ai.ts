@@ -19,7 +19,20 @@
  * cookie is sameSite:'strict' and a cross-site request would arrive without it.
  */
 
-import { apiBase } from '@/lib/http';
+// No apiBase import on purpose: /ai never targets the ERP. See aiBase() below.
+/**
+ * The assistant is reached through the same-origin `/ai` rewrite
+ * (next.config.js) — never a cross-origin URL, which is the whole
+ * authorisation model: the httpOnly `token` cookie is sameSite:'strict' and
+ * does not survive any cross-site request. Production has the rewrite; dev
+ * has it too once AI_SERVICE_URL is set (same file). The URL that must never
+ * be used is the ERP's base (apiBase()): `/ai/*` lives on the assistant
+ * service, and asking the ERP for it 404s in every environment — the
+ * production behaviour the round-2 audit filed as WIRE-01.
+ */
+function aiBase(): string {
+  return '';
+}
 
 /**
  * The service's check of the answer's figures against the records they were
@@ -78,15 +91,33 @@ export class ClientAiError extends Error {
   }
 }
 
+/**
+ * Codes the service can name, in the copy the panel shows verbatim. The point
+ * of the map (WIRE-01) is that the code, not the transport status alone,
+ * carries the meaning: a 404 from an unknown route is a deployment/company
+ * problem and must not read as "your client is missing" — the two had one
+ * message, and the trainer chased a data bug that was not there.
+ */
+const CODE_MESSAGES: Readonly<Record<string, string>> = {
+  NO_TOKEN: 'Your session has expired. Please sign in again.',
+  CLIENT_NOT_FOUND: 'This client could not be found in your studio.',
+  NOT_FOUND: 'The AI assistant is not set up in this app yet. Please contact support.',
+  RATE_LIMITED: 'Too many questions at once. Give it a moment.',
+  QUOTA_EXCEEDED: 'This studio has used its AI allowance for this month. Please contact your administrator.',
+  QUOTA_UNVERIFIED: 'The assistant cannot verify your studio’s AI allowance right now. Please try again shortly.',
+  MODEL_FAILED: 'The assistant is temporarily unavailable. Please try again shortly.',
+  ALL_MODELS_FAILED: 'The assistant is temporarily unavailable. Please try again shortly.',
+};
+
 /** Messages worth showing a trainer verbatim, keyed by what the service said. */
 function friendly(code: string, status: number, fallback: string): string {
+  const known = CODE_MESSAGES[code];
+  if (known) return known;
   if (status === 401) return 'Your session has expired. Please sign in again.';
   if (status === 404) return 'This client could not be found in your studio.';
   if (status === 403) return 'You do not have access to this client.';
   if (status === 429) return 'Too many questions at once. Give it a moment.';
-  if (code === 'ALL_MODELS_FAILED' || status === 503) {
-    return 'The assistant is temporarily unavailable. Please try again shortly.';
-  }
+  if (status === 503) return 'The assistant is temporarily unavailable. Please try again shortly.';
   return fallback || 'Something went wrong.';
 }
 
@@ -130,7 +161,7 @@ export async function streamClientAi(
 ): Promise<ClientAiAnswer> {
   let res: Response;
   try {
-    res = await fetch(`${apiBase()}/ai/client-agent/chat/stream`, {
+    res = await fetch(`${aiBase()}/ai/client-agent/chat/stream`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -193,13 +224,18 @@ export async function streamClientAi(
         case 'done':
           answer = evt as unknown as ClientAiAnswer;
           break;
-        case 'error':
+        case 'error': {
+          const code = (evt.code as string) ?? 'ERROR';
+          const status = (evt.status as number) ?? 0;
           throw new ClientAiError(
-            friendly((evt.code as string) ?? 'ERROR', 0, (evt.message as string) ?? ''),
-            (evt.code as string) ?? 'ERROR',
-            0,
+            // Error events carry the transport-equivalent status so the same
+            // map as a refusal-before-stream applies (WIRE-01).
+            friendly(code, status, (evt.message as string) ?? ''),
+            code,
+            status,
             Boolean(evt.partial),
           );
+        }
         default:
           break;
       }
