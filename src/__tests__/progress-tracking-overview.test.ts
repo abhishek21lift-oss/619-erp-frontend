@@ -23,16 +23,18 @@ import {srcPath} from '@/__tests__/helpers/app-routes';
 const src = (...p: string[]) => readFileSync(srcPath(...p), 'utf8');
 
 describe('Progress Tracking Overview is named consistently everywhere', () => {
-  const screening = NAV_GROUPS.find((g) => g.id === 'progress-tracking')!;
   const page = src('app', 'pt-os', 'progress-tracking-setup', 'page.tsx');
   const clientDetail = src('app', 'pt-os', 'clients', '[id]', 'page.tsx');
 
-  it('the sidebar no longer calls it a session', () => {
-    const item = screening.items.find((i) => i.href === '/pt-os/progress-tracking-setup');
-    expect(item?.label).toBe('Progress Tracking Overview');
+  it('has no global sidebar entry — it is a per-client screen', () => {
+    // It used to sit in the fifteen-item Screening group, one client picker
+    // away from the client whose baselines it summarises. It now opens from
+    // that client's Reports tab instead.
+    const all = NAV_GROUPS.flatMap((g) => g.items.map((i) => i.href));
+    expect(all).not.toContain('/pt-os/progress-tracking-setup');
   });
 
-  it('the client picker matches the sidebar', () => {
+  it('the client picker matches the page title', () => {
     expect(page).toContain('title="Progress Tracking Overview"');
   });
 
@@ -45,16 +47,8 @@ describe('Progress Tracking Overview is named consistently everywhere', () => {
     expect(page).not.toMatch(/>Progress Tracking Setup</);
   });
 
-  it('is no longer linked from a client\'s profile, which now goes straight to Measurements', () => {
-    // The Measurements tab used to open a panel of three links — Measurements,
-    // Record a fitness test, and this one. The tab goes straight to
-    // Measurements now, so the panel and its links are gone.
-    //
-    // The naming assertions above still carry this screen: they are about the
-    // page, the nav entry and the heading, none of which moved. What this one
-    // guards is only that the profile does not resurrect a link the tab
-    // replaced.
-    expect(clientDetail).not.toContain("label: 'Progress tracking overview'");
-    expect(clientDetail).not.toContain('Choose what to measure');
+  it('is linked from the client\'s Reports tab, where the client is already chosen', () => {
+    expect(clientDetail).toContain("label: 'Progress tracking overview'");
+    expect(clientDetail).toContain('/pt-os/progress-tracking-setup?client_id=');
   });
 });

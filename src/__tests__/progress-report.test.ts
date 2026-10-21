@@ -17,7 +17,7 @@ import {srcPath} from '@/__tests__/helpers/app-routes';
 const src = (...p: string[]) => readFileSync(srcPath(...p), 'utf8');
 
 describe('"Progress Report" opens a client\'s progress, not PT revenue', () => {
-  const screening = NAV_GROUPS.find((g) => g.id === 'progress-tracking')!;
+  const screening = NAV_GROUPS.find((g) => g.id === 'progress')!;
   const insights = NAV_GROUPS.find((g) => g.id === 'insights')!;
 
   it('Screening\'s Progress Report points at the client-picker landing page', () => {
