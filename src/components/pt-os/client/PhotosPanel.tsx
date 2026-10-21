@@ -3,7 +3,10 @@
 import { useEffect, useState } from 'react';
 import { Camera, ChevronRight, AlertTriangle } from 'lucide-react';
 import { api } from '@/lib/api';
+import { cardSurface } from '@/components/ui/Card';
 import { errorMessage } from '@/lib/forms/errors';
+import { fmtDateMedium } from '@/lib/format';
+import { red, rgba } from '@/lib/palette';
 import { activatable } from '@/lib/a11y';
 import { EmptyPanel, TAB_COLOR } from './ClientTabs';
 
@@ -44,13 +47,6 @@ function byNewest(a: ProgressPhoto, b: ProgressPhoto) {
   return String(b.taken_at ?? '').localeCompare(String(a.taken_at ?? ''));
 }
 
-function formatTaken(value: string) {
-  if (!value) return '';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
 export default function PhotosPanel({ clientId }: { clientId: string }) {
   const [photos, setPhotos] = useState<ProgressPhoto[] | null>(null);
   const [error, setError] = useState('');
@@ -74,10 +70,10 @@ export default function PhotosPanel({ clientId }: { clientId: string }) {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-[22px] bg-white px-6 py-12 text-center"
-        style={{ border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+      <div className="flex flex-col items-center gap-3 rounded-[22px] px-6 py-12 text-center"
+        style={{ ...cardSurface }}>
         <div className="flex h-12 w-12 items-center justify-center rounded-[16px]"
-          style={{ background: 'rgba(220,38,38,0.10)', color: '#dc2626' }}>
+          style={{ background: rgba(red[600], 0.10), color: red[600] }}>
           <AlertTriangle size={20} />
         </div>
         {/* Says the request failed, rather than reporting an empty gallery. */}
@@ -121,8 +117,8 @@ export default function PhotosPanel({ clientId }: { clientId: string }) {
   }
 
   return (
-    <div className="rounded-[22px] bg-white p-4"
-      style={{ border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+    <div className="rounded-[22px] p-4"
+      style={{ ...cardSurface }}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="text-[13px] font-[780]" style={{ color: 'var(--text-primary)' }}>
           {photos.length} photo{photos.length === 1 ? '' : 's'}
@@ -138,12 +134,12 @@ export default function PhotosPanel({ clientId }: { clientId: string }) {
           <div key={p.id}
             className="group relative aspect-square overflow-hidden rounded-[14px] cursor-pointer"
             style={{ border: '1px solid var(--border)' }}
-            {...activatable(() => setPreview(p.photo_url), { label: `View ${p.photo_type} photo from ${formatTaken(p.taken_at)}` })}>
+            {...activatable(() => setPreview(p.photo_url), { label: `View ${p.photo_type} photo from ${fmtDateMedium(p.taken_at)}` })}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p.photo_url} alt={`${p.photo_type} view, ${formatTaken(p.taken_at)}`} className="h-full w-full object-cover" />
+            <img src={p.photo_url} alt={`${p.photo_type} view, ${fmtDateMedium(p.taken_at)}`} className="h-full w-full object-cover" />
             <span className="absolute inset-x-0 bottom-0 truncate px-1.5 py-1 text-[9.5px] font-[700] text-white"
               style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.65), transparent)' }}>
-              {formatTaken(p.taken_at)}
+              {fmtDateMedium(p.taken_at)}
             </span>
           </div>
         ))}

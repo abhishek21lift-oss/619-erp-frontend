@@ -1,6 +1,6 @@
 'use client';
 
-// The client workspace: twelve tabs instead of thirteen tiles.
+// The client workspace: eleven tabs instead of thirteen tiles.
 //
 // ── What this replaces ─────────────────────────────────────────────────────
 //
@@ -34,9 +34,10 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   LayoutGrid, Dumbbell, Salad, Ruler, ScrollText, ClipboardCheck, Camera,
-  FileSignature, Wallet, StickyNote, Sparkles, FileBarChart, ChevronRight,
+  FileSignature, Wallet, Sparkles, FileBarChart, ChevronRight,
 } from 'lucide-react';
-import { palette } from '@/lib/palette';
+import { palette, rgba } from '@/lib/palette';
+import { cardSurface } from '@/components/ui/Card';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -56,7 +57,7 @@ export const TAB_COLOR = {
 
 export const TAB_KEYS = [
   'overview', 'training', 'nutrition', 'measurements', 'log', 'checkins',
-  'photos', 'documents', 'payments', 'notes', 'ai', 'reports',
+  'photos', 'documents', 'payments', 'ai', 'reports',
 ] as const;
 export type TabKey = typeof TAB_KEYS[number];
 
@@ -119,7 +120,6 @@ const TABS: TabDef[] = [
   { key: 'ai', label: 'AI Coach', icon: <Sparkles size={16} />, color: TAB_COLOR.warning },
   { key: 'payments', label: 'Payments', icon: <Wallet size={16} />, color: TAB_COLOR.danger },
   { key: 'documents', label: 'Documents', icon: <FileSignature size={16} />, color: TAB_COLOR.dangerDeep },
-  { key: 'notes', label: 'Notes', icon: <StickyNote size={16} />, color: TAB_COLOR.primary },
   { key: 'reports', label: 'Reports', icon: <FileBarChart size={16} />, color: TAB_COLOR.success },
 ];
 
@@ -143,7 +143,7 @@ export interface ClientTabsProps {
  * reaching for. Dropping the rectangle and letting the icon carry its own
  * colour alone is what made it actually read as simple.
  *
- * Horizontally scrollable rather than wrapped: twelve tabs wrap to three rows
+ * Horizontally scrollable rather than wrapped: eleven tabs wrap to three rows
  * on a phone, and a three-row tab bar is a menu pretending to be a tab bar.
  * Scrolling keeps it one line.
  *
@@ -159,7 +159,7 @@ export interface ClientTabsProps {
  *
  * ── Why the edges fade ─────────────────────────────────────────────────────
  *
- * Twelve tabs do not fit a phone, so the strip was cutting the last visible
+ * Eleven tabs do not fit a phone, so the strip was cutting the last visible
  * label in half against a hard container edge — "Mea…" — which reads as a
  * rendering fault rather than an invitation to scroll. The strip now fades out
  * at whichever end has more content, which is the one honest way to say "there
@@ -172,7 +172,7 @@ export interface ClientTabsProps {
  *
  * The fades are driven by measured scroll position, not shown unconditionally
  * — a permanent fade over a strip that is not scrollable is a lie about the
- * content, and on a desktop where all twelve fit it would dim two real tabs.
+ * content, and on a desktop where all eleven fit it would dim two real tabs.
  */
 export function ClientTabs({ active, onChange, counts, clientId }: ClientTabsProps) {
   const reduce = useReducedMotion();
@@ -345,8 +345,8 @@ export function EmptyPanel({
   color?: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-[22px] bg-white px-6 py-12 text-center"
-      style={{ border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+    <div className="flex flex-col items-center gap-3 rounded-[22px] px-6 py-12 text-center"
+      style={{ ...cardSurface }}>
       <div className="flex h-12 w-12 items-center justify-center rounded-[16px]"
         style={color
           ? { background: `linear-gradient(135deg, ${color}, ${color}cc)`, color: '#fff', boxShadow: `0 4px 12px ${color}40` }
@@ -361,7 +361,7 @@ export function EmptyPanel({
             <a key={a.href} href={a.href}
               className="flex h-[44px] items-center gap-1.5 rounded-[12px] px-4 text-[12px] font-[750] transition-all hover:-translate-y-0.5"
               style={i === 0
-                ? { background: 'var(--brand)', color: '#fff', boxShadow: '0 4px 14px rgba(0,103,224,0.35)' }
+                ? { background: 'var(--brand)', color: '#fff', boxShadow: `0 4px 14px ${rgba(palette.blue[500], 0.35)}` }
                 : { background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
               {a.label} <ChevronRight size={13} />
             </a>
@@ -409,8 +409,8 @@ export function LinkPanel({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[22px] bg-white p-4 sm:p-5"
-      style={{ border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+    <div className="rounded-[22px] p-4 sm:p-5"
+      style={{ ...cardSurface }}>
       <div className="mb-3.5 flex items-center gap-2.5 pb-3.5" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
           style={color

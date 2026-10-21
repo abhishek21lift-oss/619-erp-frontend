@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { STEP_LABEL, stepHref, type ClientJourney, type JourneyStep, type JourneyStepKey } from '@/lib/journey';
+import { amber, blue, emerald, gray, red, rgba } from '@/lib/palette';
 
 const STEP_ICON: Record<JourneyStepKey, React.ReactNode> = {
   registration: <UserPlus size={14} />,
@@ -29,16 +30,16 @@ const STEP_ICON: Record<JourneyStepKey, React.ReactNode> = {
 };
 
 const STEP_COLOR: Record<JourneyStepKey, string> = {
-  registration: '#0067E0', consent: '#7FB4FF', parq: '#0050AD', interview: '#64748B',
-  assessment: '#3B8DF5', goals: '#94A3B8', enrolment: '#002D61', workout_plan: '#0059CE',
+  registration: blue[500], consent: blue[300], parq: blue[700], interview: gray[500],
+  assessment: blue[400], goals: gray[400], enrolment: blue[900], workout_plan: blue[600],
 };
 
 const STATE_CHIP: Record<JourneyStep['state'], { label: string; fg: string; bg: string; icon: React.ReactNode }> = {
-  done: { label: 'Done', fg: '#047857', bg: 'rgba(48,209,88,0.14)', icon: <CheckCircle2 size={12} /> },
-  in_progress: { label: 'In progress', fg: '#B45309', bg: 'rgba(255,159,10,0.16)', icon: <Clock3 size={12} /> },
+  done: { label: 'Done', fg: emerald[700], bg: rgba(emerald[500], 0.14), icon: <CheckCircle2 size={12} /> },
+  in_progress: { label: 'In progress', fg: amber[700], bg: rgba(amber[500], 0.16), icon: <Clock3 size={12} /> },
   todo: { label: 'To do', fg: 'var(--text-muted)', bg: 'var(--bg-subtle)', icon: <CircleDashed size={12} /> },
-  blocked: { label: 'Blocked', fg: '#B91C1C', bg: 'rgba(255,69,58,0.14)', icon: <Lock size={12} /> },
-  renew: { label: 'Renew', fg: '#B45309', bg: 'rgba(255,159,10,0.16)', icon: <RefreshCw size={12} /> },
+  blocked: { label: 'Blocked', fg: red[700], bg: rgba(red[500], 0.14), icon: <Lock size={12} /> },
+  renew: { label: 'Renew', fg: amber[700], bg: rgba(amber[500], 0.16), icon: <RefreshCw size={12} /> },
 };
 
 export default function ClientJourneyCard({ clientId }: { clientId: string }) {
@@ -78,7 +79,7 @@ export default function ClientJourneyCard({ clientId }: { clientId: string }) {
           role="progressbar" aria-valuemin={0} aria-valuemax={journey.steps.length} aria-valuenow={done}
           aria-label="Client journey progress">
           <div className="h-full rounded-full transition-all"
-            style={{ width: `${(done / journey.steps.length) * 100}%`, background: 'linear-gradient(90deg,#0067E0,#10B981)' }} />
+            style={{ width: `${(done / journey.steps.length) * 100}%`, background: `linear-gradient(90deg, ${blue[500]}, ${emerald[500]})` }} />
         </div>
         <span className="shrink-0 text-[12px] font-[700] tabular-nums" style={{ color: 'var(--text-muted)' }}>
           {done}/{journey.steps.length}
@@ -93,7 +94,7 @@ export default function ClientJourneyCard({ clientId }: { clientId: string }) {
             <li key={step.key} aria-current={isNext ? 'step' : undefined}>
               <button type="button" onClick={() => router.push(stepHref(step.key, clientId, step.state))}
                 className="flex min-h-[48px] w-full items-center gap-2.5 rounded-[14px] px-3 py-2 text-left transition active:scale-[0.99]"
-                style={{ background: isNext ? 'rgba(10,132,255,0.08)' : 'var(--bg-subtle)', outline: isNext ? '1.5px solid rgba(10,132,255,0.35)' : 'none' }}>
+                style={{ background: isNext ? rgba(blue[500], 0.08) : 'var(--bg-subtle)', outline: isNext ? `1.5px solid ${rgba(blue[500], 0.35)}` : 'none' }}>
                 <span aria-hidden className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[8px] text-white"
                   style={{ background: STEP_COLOR[step.key] }}>
                   {STEP_ICON[step.key]}
@@ -120,12 +121,12 @@ export default function ClientJourneyCard({ clientId }: { clientId: string }) {
         nextAllowed ? (
           <button type="button" onClick={() => router.push(stepHref(next.key, clientId, next.state))}
             className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-[700] text-white transition active:scale-[0.99]"
-            style={{ background: 'linear-gradient(135deg,#0067E0,#0059CE)' }}>
+            style={{ background: `linear-gradient(135deg, ${blue[500]}, ${blue[600]})` }}>
             {next.state === 'renew' ? 'Renew PT' : `Next: ${STEP_LABEL[next.key]}`}
             <ArrowRight size={16} />
           </button>
         ) : (
-          <p role="status" className="rounded-[14px] px-3 py-2.5 text-[12.5px] leading-snug" style={{ background: 'rgba(255,69,58,0.10)', color: 'var(--text-primary)' }}>
+          <p role="status" className="rounded-[14px] px-3 py-2.5 text-[12.5px] leading-snug" style={{ background: rgba(red[500], 0.10), color: 'var(--text-primary)' }}>
             {next.detail || `${STEP_LABEL[next.key]} is blocked.`}
           </p>
         )

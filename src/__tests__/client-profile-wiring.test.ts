@@ -141,14 +141,12 @@ describe('dead state that cost two requests per page view', () => {
   });
 });
 
-describe('the Notes tab goes somewhere', () => {
-  it('switches tab instead of linking to the page you are already on', () => {
-    // It linked to /pt-os/clients/{id} — this page's own URL — so tapping it
-    // navigated nowhere and left the Notes panel exactly where it was.
-    // Then it was a panel whose only button switched back to Overview. It
-    // now holds the notes editor itself.
-    expect(PROFILE).toMatch(/<TabPanel id="notes" active=\{tab\}>[\s\S]{0,200}?<NotesCard /);
-    expect(PROFILE).not.toMatch(/\/pt-os\/clients\/\$\{client\.id\}`[^/]/);
+describe('the notes are edited where they are read', () => {
+  it('renders one editor on Overview, not a second copy behind a tab', () => {
+    // The tab used to hold a second mount of the same editor. Notes are read
+    // on every visit, so the Overview card is the one that stays.
+    expect(PROFILE).toMatch(/<NotesCard notes=\{client\.notes\} onSave=\{handleSaveNotes\} \/>/);
+    expect(PROFILE).not.toMatch(/<TabPanel id="notes"/);
   });
 });
 

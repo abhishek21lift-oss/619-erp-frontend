@@ -223,8 +223,8 @@ describe('<ClientTabs /> — the strip', () => {
   });
 
   it('shows a count badge only where there is something to count', () => {
-    render(<ClientTabs active="overview" onChange={() => {}} counts={{ photos: 4, notes: 0 }} clientId="c1" />);
+    render(<ClientTabs active="overview" onChange={() => {}} counts={{ photos: 4, documents: 0 }} clientId="c1" />);
     expect(screen.getByRole('tab', { name: /Photos/ })).toHaveTextContent('4');
-    expect(screen.getByRole('tab', { name: /Notes/ })).not.toHaveTextContent('0');
+    expect(screen.getByRole('tab', { name: /Documents/ })).not.toHaveTextContent('0');
   });
 });

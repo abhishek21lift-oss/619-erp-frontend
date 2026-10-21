@@ -16,6 +16,8 @@ export {
   CardDescription,
   CardBody,
   CardFooter,
+  cardSurface,
+  cardSurfaceGlow,
 } from './Card';
 
 export { Badge, statusTone } from './Badge';

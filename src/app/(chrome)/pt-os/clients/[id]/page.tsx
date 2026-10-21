@@ -14,7 +14,7 @@ import {
   ShieldCheck, FileSignature, ClipboardList,
   QrCode, Printer, ScrollText, ChevronDown, Mail, FileBarChart, Sparkles,
   Gauge, PersonStanding, Accessibility, Ruler, MessagesSquare, Send,
-  Cake, UserPlus, Megaphone, Hourglass, CalendarRange, Flag,
+  Cake, UserPlus, Megaphone, CalendarRange, Flag,
   Route,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -22,7 +22,8 @@ import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth-context';
-import { PremiumAreaChart, Button } from '@/components/ui';
+import { PremiumAreaChart, Button, cardSurfaceGlow } from '@/components/ui';
+import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import ClientAiPanel from '@/components/pt-os/ClientAiPanel';
 import ClientSnapshot from '@/components/pt-os/ClientSnapshot';
 import ClientLoginCard from '@/components/pt-os/ClientLoginCard';
@@ -37,6 +38,7 @@ import type { ClientRecovery, MeGoal, MeGoals } from '@/lib/api';
 import { printWindowCloseButtonHtml } from '@/lib/printWindowChrome';
 import { escapeHtml, escapeImageDataUrl } from '@/lib/escapeHtml';
 import { errorMessage } from '@/lib/forms/errors';
+import { fmtDateMedium, fmtDayMonth, fmtMoney } from '@/lib/format';
 import { whatsAppHref } from '@/lib/phone';
 import { amber, blue, emerald, gray, red, rgba } from '@/lib/palette';
 import { tones, gradient, navyHero, type Tone } from '@/components/profile/profileTheme';
@@ -84,16 +86,6 @@ interface PtClientDetail {
   days_left: number | null;
   due_status?: string;
 }
-
-const fmtINR = (n: number | string | null | undefined) =>
-  '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
-
-const fmtDate = (d?: string) => {
-  if (!d) return '—';
-  const dt = new Date(d);
-  if (isNaN(dt.getTime())) return d;
-  return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-};
 
 // ── Colour ─────────────────────────────────────────────────────────────
 // Decoration (section tiles, action buttons, tinted card depth) comes from
@@ -168,7 +160,7 @@ function MemberGoalRow({ goal: g }: { goal: MeGoal }) {
         </span>
       </div>
       <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-        {[now, g.target_date ? `by ${fmtDate(g.target_date)}` : null, g.projection?.eta ? `on pace for ${fmtDate(g.projection.eta)}` : null]
+        {[now, g.target_date ? `by ${fmtDateMedium(g.target_date)}` : null, g.projection?.eta ? `on pace for ${fmtDateMedium(g.projection.eta)}` : null]
           .filter(Boolean).join(' · ') || 'No reading yet'}
       </p>
       {pct != null && !g.reached && (
@@ -190,14 +182,10 @@ function SectionCard({ title, icon, tint, action, children, className = '' }: {
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       className={`overflow-hidden rounded-[24px] ${className}`}
       style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
         // Adaptive glass rather than one light-only shadow: the tokens carry
         // the dark mode, and the tint keeps each section's own colour in its
         // depth instead of every card casting the same slate.
-        boxShadow: `var(--glass-shadow), inset 0 1px 0 var(--glass-ring), 0 18px 40px -26px ${tint.glow}`,
-        backdropFilter: 'saturate(180%) blur(20px)',
-        WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+        ...cardSurfaceGlow(tint.glow),
       }}
     >
       <header className="flex items-center justify-between gap-3 px-5 pb-3 pt-4">
@@ -391,10 +379,10 @@ function QrCheckinCard({ clientId, clientName }: { clientId: string; clientName:
 }
 
 /**
- * Coach notes — one editor, shown on Overview and in the Notes tab.
+ * Coach notes — the one editor, on Overview where they are read.
  *
- * The Notes tab used to be a panel whose only content was a button sending
- * you back to Overview, where the notes actually lived.
+ * The Notes tab used to hold a second mount of this same editor, so a save in
+ * one left the other showing stale text until the next load.
  */
 function NotesCard({ notes, onSave }: { notes?: string; onSave: (next: string) => Promise<boolean> }) {
   const [editing, setEditing] = useState(false);
@@ -589,13 +577,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const whatsappHref = (phone?: string, name?: string) =>
     whatsAppHref(phone, `Hi ${name ?? 'there'}, this is your trainer from ${user?.organization_name || 'MY PT STUDIO'}.`);
 
-  // Set only when the browser fails to load photo_url, so one bad path does
-  // not leave a broken-image icon where the client's face should be.
-  const [photoBroken, setPhotoBroken] = useState(false);
-
-  const initials = (name: string) =>
-    name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
-
   // The backend owns the current-term definition (GET /clients/:id). A
   // pt_client_subscriptions row is a snapshot no payment path updates, so it
   // is never read for the current term; the fallbacks are the client's own
@@ -692,22 +673,16 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
                 <div className="relative z-10">
                 <div className="flex items-start gap-4 sm:gap-6">
-                  {/* The client's face when there is one; onError falls back
-                      to initials rather than a broken image. */}
-                  <div className="relative flex h-[84px] w-[84px] shrink-0 items-center justify-center overflow-hidden rounded-full text-[28px] font-[800] sm:h-[112px] sm:w-[112px] sm:text-[36px]"
+                  <ClientAvatar
+                    name={client.name}
+                    photoUrl={client.photo_url}
+                    className="relative flex h-[84px] w-[84px] shrink-0 items-center justify-center rounded-full text-[28px] font-[800] sm:h-[112px] sm:w-[112px] sm:text-[36px]"
                     style={{
                       background: 'linear-gradient(145deg, rgba(255,255,255,0.35), rgba(255,255,255,0.08))',
                       border: '3px solid rgba(255,255,255,0.55)',
                       boxShadow: '0 12px 28px -10px rgba(0,0,0,0.45)',
-                    }}>
-                    {client.photo_url && !photoBroken ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={client.photo_url} alt={client.name} onError={() => setPhotoBroken(true)}
-                        className="h-full w-full object-cover" />
-                    ) : (
-                      initials(client.name)
-                    )}
-                  </div>
+                    }}
+                  />
 
                   <div className="min-w-0 flex-1 pt-1">
                     <h1 className="truncate text-[24px] font-[800] leading-[1.1] tracking-[-0.03em] sm:text-[34px]">
@@ -786,8 +761,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                         style={{ background: `linear-gradient(90deg, ${tones.sky.from}, ${tones.indigo.to} 55%, ${tones.berry.from})` }} />
                     </div>
                     <div className="mt-2 flex justify-between text-[11.5px] font-[560]" style={{ color: 'var(--text-muted)' }}>
-                      <span>{fmtDate(client.pt_start_date)}</span>
-                      <span>{fmtDate(client.pt_end_date)}</span>
+                      <span>{fmtDateMedium(client.pt_start_date)}</span>
+                      <span>{fmtDateMedium(client.pt_end_date)}</span>
                     </div>
                   </>
                 ) : (
@@ -798,10 +773,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
                 <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
                   {[
-                    { label: 'Term fee', value: fmtINR(currentTermFee), tint: tones.sky, icon: <IndianRupee size={12} /> },
-                    { label: 'Paid', value: fmtINR(currentTermPaid), tint: OK, icon: <CheckCircle size={12} /> },
+                    { label: 'Term fee', value: fmtMoney(currentTermFee), tint: tones.sky, icon: <IndianRupee size={12} /> },
+                    { label: 'Paid', value: fmtMoney(currentTermPaid), tint: OK, icon: <CheckCircle size={12} /> },
                     {
-                      label: 'Balance', value: fmtINR(currentTermBalance), tint: balanceTint,
+                      label: 'Balance', value: fmtMoney(currentTermBalance), tint: balanceTint,
                       icon: currentTermBalance > 0 ? <AlertTriangle size={12} /> : <CheckCircle size={12} />,
                       // Balance's state is otherwise carried only by colour.
                       state: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'Overdue' : 'Due') : 'Cleared',
@@ -845,7 +820,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     <SectionCard title="Weight trend" icon={<TrendingUp size={15} />} tint={tones.lime}>
                       <PremiumAreaChart
                         data={recentWeights.map((a: any) => ({
-                          date: fmtDate(a.created_at || a.assessment_date).slice(0, 5),
+                          date: fmtDayMonth(a.created_at || a.assessment_date),
                           weight: Number(a.weight),
                         })) as Record<string, unknown>[]}
                         xKey="date"
@@ -898,13 +873,13 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
                   <SectionCard title="Personal info" icon={<User size={15} />} tint={tones.sky}>
                     <InfoRow icon={<User size={13} />} tint={tones.indigo} label="Gender" value={client.gender || '—'} />
-                    <InfoRow icon={<Cake size={13} />} tint={tones.berry} label="Birthday" value={fmtDate(client.dob)} />
+                    <InfoRow icon={<Cake size={13} />} tint={tones.berry} label="Birthday" value={fmtDateMedium(client.dob)} />
                     <InfoRow icon={<Phone size={13} />} tint={tones.lime} label="Phone" value={client.mobile || '—'} />
                     {client.whatsapp && client.whatsapp !== client.mobile && (
                       <InfoRow icon={<MessageCircle size={13} />} tint={tones.mint} label="WhatsApp" value={client.whatsapp} />
                     )}
                     <InfoRow icon={<Mail size={13} />} tint={tones.sky} label="Email" value={client.email || '—'} />
-                    <InfoRow icon={<Calendar size={13} />} tint={tones.sunset} label="Joined" value={fmtDate(client.joining_date)} />
+                    <InfoRow icon={<Calendar size={13} />} tint={tones.sunset} label="Joined" value={fmtDateMedium(client.joining_date)} />
                     {/* Asked at intake; the one field here a studio owner reads on purpose. */}
                     <InfoRow icon={<Megaphone size={13} />} tint={tones.violet} label="Source" value={client.client_source || '—'} last />
                   </SectionCard>
@@ -917,13 +892,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   </SectionCard>
 
                   <SectionCard title="PT assignment" icon={<Dumbbell size={15} />} tint={tones.indigo}>
-                    <InfoRow icon={<Calendar size={13} />} tint={tones.lime} label="Start" value={fmtDate(client.pt_start_date)} />
-                    <InfoRow icon={<Calendar size={13} />} tint={tones.rose} label="End" value={fmtDate(client.pt_end_date)} />
                     <InfoRow icon={<Clock size={13} />} tint={tones.mint} label="Duration" value={client.duration_months ? `${client.duration_months} months` : '—'} />
-                    <InfoRow icon={<IndianRupee size={13} />} tint={tones.sky} label="Monthly fee" value={fmtINR(client.monthly_pt_amount)} />
-                    <InfoRow icon={<Hourglass size={13} />} tint={daysTint} label="Days left"
-                      value={client.days_left != null ? `${client.days_left} days` : '—'}
-                      danger={client.days_left != null && client.days_left <= 7} last />
+                    <InfoRow icon={<IndianRupee size={13} />} tint={tones.sky} label="Monthly fee" value={fmtMoney(client.monthly_pt_amount)} last />
                   </SectionCard>
 
                   <NotesCard notes={client.notes} onSave={handleSaveNotes} />
@@ -931,7 +901,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   <div className="grid grid-cols-1 gap-4">
                     <button onClick={() => router.push(`/pt-os/session-balance?client_id=${client.id}`)}
                       className="group flex w-full items-center justify-between gap-3 rounded-[24px] p-4 text-left transition active:scale-[0.99]"
-                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: `var(--glass-shadow), inset 0 1px 0 var(--glass-ring), 0 18px 40px -26px ${tones.mint.glow}` }}>
+                      style={{ ...cardSurfaceGlow(tones.mint.glow) }}>
                       <div className="flex items-center gap-3">
                         <Squircle tint={tones.mint} size={40}><Zap size={17} /></Squircle>
                         <div>
@@ -962,23 +932,17 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                   onClick={() => router.push(`/pt-os/clients/${client.id}/subscriptions`)}
                   className="group flex w-full flex-wrap items-center justify-between gap-4 rounded-[24px] p-5 text-left transition active:scale-[0.99]"
-                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: `var(--glass-shadow), inset 0 1px 0 var(--glass-ring), 0 18px 40px -26px ${tones.indigo.glow}` }}>
+                  style={{ ...cardSurfaceGlow(tones.indigo.glow) }}>
                   <div className="flex items-center gap-3">
                     <Squircle tint={tones.indigo} size={42}><Repeat size={18} /></Squircle>
                     <div>
                       <h3 className="text-[15px] font-[720]" style={{ color: 'var(--text-primary)' }}>PT subscription history</h3>
                       <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                        {lifetimeTermCount} term{lifetimeTermCount !== 1 ? 's' : ''} · {fmtINR(lifetimePaid)} lifetime paid
+                        {lifetimeTermCount} term{lifetimeTermCount !== 1 ? 's' : ''} · {fmtMoney(lifetimePaid)} lifetime paid
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-[700] ${inkClass}`}
-                      style={{ background: balanceTint.wash, ...inkVars(balanceTint) }}>
-                      {currentTermBalance > 0 ? `${fmtINR(currentTermBalance)} due` : 'Cleared'}
-                    </span>
-                    <ChevronRight size={18} className="transition-transform group-hover:translate-x-0.5" style={{ color: 'var(--text-muted)' }} />
-                  </div>
+                  <ChevronRight size={18} className="transition-transform group-hover:translate-x-0.5" style={{ color: 'var(--text-muted)' }} />
                 </m.button>
               </TabPanel>
 
@@ -1008,11 +972,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
               <TabPanel id="photos" active={tab}>
                 <PhotosPanel clientId={client.id} />
-              </TabPanel>
-
-              <TabPanel id="notes" active={tab}>
-                {/* The notes themselves, not a button back to Overview. */}
-                <NotesCard notes={client.notes} onSave={handleSaveNotes} />
               </TabPanel>
 
               <TabPanel id="ai" active={tab}>
@@ -1052,8 +1011,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   body="What this client's month looks like."
                   color={TAB_COLOR.success}
                   links={[
-                    { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume, intensity, trend', icon: <TrendingUp size={15} />, color: TAB_COLOR.success },
-                    { label: 'Payment history', href: `/pt-os/clients/${client.id}/payments`, hint: 'Every transaction', icon: <Wallet size={15} />, color: TAB_COLOR.primary },
                     { label: 'Measurements', href: `/pt-os/measurements?client_id=${client.id}`, hint: 'Readings over time', icon: <Ruler size={15} />, color: TAB_COLOR.danger },
                     { label: 'Progress tracking overview', href: `/pt-os/progress-tracking-setup?client_id=${client.id}`, hint: 'Which baselines are complete', icon: <Flag size={15} />, color: TAB_COLOR.primary },
                     { label: 'Studio reports', href: '/insights/revenue', hint: 'Revenue and commissions across the studio', icon: <FileBarChart size={15} />, color: TAB_COLOR.warning },
@@ -1068,8 +1025,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     title="Screening &amp; assessments"
                     color={TAB_COLOR.dangerDeep}
                     links={[
-                      { label: 'PAR-Q', href: `/pt-os/parq?client_id=${client.id}`, hint: 'Medical clearance', icon: <ShieldCheck size={15} />, color: TAB_COLOR.success },
-                      { label: 'Informed consent', href: `/pt-os/informed-consent?client_id=${client.id}`, hint: 'Signed agreement', icon: <FileSignature size={15} />, color: TAB_COLOR.primary },
                       { label: 'Client interview', href: `/pt-os/interview?client_id=${client.id}`, hint: 'History, pain, lifestyle, goals', icon: <MessagesSquare size={15} />, color: TAB_COLOR.primary },
                       { label: 'Lifestyle assessment', href: `/pt-os/lifestyle-assessment?client_id=${client.id}`, hint: 'Sleep, stress, recovery', icon: <HeartPulse size={15} />, color: TAB_COLOR.danger },
                       { label: 'Nutrition assessment', href: `/pt-os/nutrition-assessment?client_id=${client.id}`, hint: 'Habits, intake, barriers', icon: <Salad size={15} />, color: TAB_COLOR.success },

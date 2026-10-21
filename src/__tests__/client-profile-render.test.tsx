@@ -53,6 +53,14 @@ describe('client profile', () => {
     expect(screen.getByText('5 days left')).toBeTruthy();
     expect(screen.getByText('PT membership')).toBeTruthy();
     expect(screen.getByText('— Overdue')).toBeTruthy();
+    // Term dates live on the membership card only; the assignment card keeps
+    // the facts that are not already on it.
+    const assignment = screen.getByText('PT assignment').closest('section');
+    expect(assignment).toBeTruthy();
+    expect(within(assignment!).queryByText('Start')).toBeNull();
+    expect(within(assignment!).queryByText('End')).toBeNull();
+    expect(within(assignment!).getByText('Duration')).toBeTruthy();
+    expect(within(assignment!).getByText('Monthly fee')).toBeTruthy();
     expect(screen.getByText('Left knee — no deep lunges.')).toBeTruthy();
     // The hero no longer carries these three stat tiles.
     const hero = screen.getByRole('heading', { name: 'Hari Narayan Singh' }).closest('section');

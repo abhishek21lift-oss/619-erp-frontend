@@ -19,20 +19,22 @@
 import { m, useReducedMotion } from 'framer-motion';
 import { ClipboardCheck, TrendingDown, TrendingUp, Minus, ChevronRight } from 'lucide-react';
 import type { ClientRecovery } from '@/lib/api';
+import { cardSurface } from '@/components/ui/Card';
+import { amber, blue, emerald, gray, red, rgba } from '@/lib/palette';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 const BAND: Record<string, { label: string; colour: string }> = {
-  good: { label: 'Good', colour: '#059669' },
-  fair: { label: 'Fair', colour: '#0059ce' },
-  low: { label: 'Low', colour: '#d97706' },
-  poor: { label: 'Poor', colour: '#dc2626' },
+  good: { label: 'Good', colour: emerald[600] },
+  fair: { label: 'Fair', colour: blue[600] },
+  low: { label: 'Low', colour: amber[600] },
+  poor: { label: 'Poor', colour: red[600] },
 };
 
 const TREND: Record<string, { label: string; icon: React.ReactNode; colour: string }> = {
-  improving: { label: 'Improving', icon: <TrendingUp size={13} />, colour: '#059669' },
-  steady: { label: 'Steady', icon: <Minus size={13} />, colour: '#64748b' },
-  declining: { label: 'Declining', icon: <TrendingDown size={13} />, colour: '#d97706' },
+  improving: { label: 'Improving', icon: <TrendingUp size={13} />, colour: emerald[600] },
+  steady: { label: 'Steady', icon: <Minus size={13} />, colour: gray[500] },
+  declining: { label: 'Declining', icon: <TrendingDown size={13} />, colour: amber[600] },
 };
 
 const COMPONENTS: Array<{ key: keyof NonNullable<ClientRecovery['components']>; label: string }> = [
@@ -192,11 +194,11 @@ function bandOf(score: number): keyof typeof BAND {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-[22px] bg-white p-4 sm:p-5"
-      style={{ border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+    <div className="rounded-[22px] p-4 sm:p-5"
+      style={{ ...cardSurface }}>
       <div className="mb-3.5 flex items-center gap-2.5 pb-3.5" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
-          style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 3px 12px #0891b245' }}>
+          style={{ background: `linear-gradient(135deg, ${blue[500]}, ${blue[600]})`, boxShadow: `0 3px 12px ${rgba(blue[500], 0.27)}` }}>
           <ClipboardCheck size={16} className="text-white" />
         </div>
         <h3 className="text-[13.5px] font-[740]" style={{ color: 'var(--text-primary)' }}>Recovery &amp; readiness</h3>
@@ -213,7 +215,7 @@ function Empty({ title, body, href }: { title: string; body: string; href: strin
       <p className="max-w-[52ch] text-[11.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{body}</p>
       <a href={href}
         className="mt-1 flex h-[44px] items-center gap-1.5 rounded-[12px] px-4 text-[12px] font-[750] text-white"
-        style={{ background: 'var(--brand)', boxShadow: '0 4px 14px rgba(0,103,224,0.35)' }}>
+        style={{ background: 'var(--brand)', boxShadow: `0 4px 14px ${rgba(blue[500], 0.35)}` }}>
         Record a check-in <ChevronRight size={13} />
       </a>
     </div>
