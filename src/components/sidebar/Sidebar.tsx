@@ -17,6 +17,7 @@ import StudioMark from '@/components/StudioMark';
 import UserPhoto from '@/components/UserPhoto';
 import { NAV_GROUPS, isVisibleForRole, isGroupVisibleForRole, isVisibleForFeature, isGroupVisibleForFeature } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { roleLabel } from '@/lib/roles';
 import {
   LayoutDashboard, Target, Users, UserPlus, UserCheck, RefreshCw, CalendarClock, UserX, Cake,
@@ -706,34 +707,19 @@ export default function Sidebar({
     if (next) onCollapse?.(); else onExpand?.();
   }, [collapsed, onExpand, onCollapse]);
 
-  // The mobile drawer is a modal: focus it when it opens and keep Tab inside
-  // until it closes. Without this the page behind stayed tabbable under an
-  // aria-modal dialog, which is a lie to anyone navigating by keyboard.
-  const drawerRef = useRef<HTMLElement>(null);
+  // The repo's dialog hook: focus the close button on open, trap Tab inside,
+  // and restore focus on close. Escape stays in AppShell, which also owns the
+  // page scroll lock.
   const closeRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    if (!isMobile || !mobileOpen) return;
-    closeRef.current?.focus();
-    const drawer = drawerRef.current;
-    if (!drawer) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return;
-      const focusable = Array.from(
-        drawer.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'),
-      );
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [isMobile, mobileOpen]);
+  const setDrawerRef = useDialogA11y({
+    open: isMobile && mobileOpen,
+    escapeCloses: false,
+    initialFocus: closeRef,
+  });
 
   return (
     <aside
-      ref={drawerRef}
+      ref={setDrawerRef}
       data-sidebar={variant}
       data-theme="dark"
       data-no-pull-refresh

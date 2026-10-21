@@ -39,6 +39,7 @@ import {
 import { api, SearchItem, SearchResponse } from '@/lib/api';
 import { cn } from '@/components/ui/cn';
 import { useSearchFieldFocus } from '@/lib/search-field-focus';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { avatarGradient, initialsAvatar } from '@/lib/avatar';
 import {
   ViewedRecord, clearRecentQueries, clearRecentlyViewed, getRecentQueries,
@@ -341,7 +342,6 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const sheetInputRef = React.useRef<HTMLInputElement>(null);
   const searchButtonRef = React.useRef<HTMLButtonElement>(null);
-  const sheetRef = React.useRef<HTMLDivElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const listRef = React.useRef<HTMLDivElement>(null);
   const abortRef = React.useRef<AbortController | null>(null);
@@ -523,6 +523,11 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
     searchButtonRef.current?.focus();
   }, [close]);
 
+  // The repo's dialog hook: traps Tab inside the sheet, closes on Escape, and
+  // restores focus. `closeSheet` also targets the search trigger explicitly,
+  // because iOS does not focus a button on tap.
+  const setSheetRef = useDialogA11y({ open: sheetOpen, onClose: closeSheet });
+
   const go = React.useCallback((href: string) => {
     close();
     setQuery('');
@@ -585,7 +590,6 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
     } else if (e.key === 'Escape') {
       e.preventDefault();
       if (query) setQuery('');
-      else if (sheetOpen) closeSheet();
       else { close(); inputRef.current?.blur(); }
     }
   };
@@ -607,38 +611,6 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, []);
-
-  // Escape closes the sheet even when focus has left the input.
-  React.useEffect(() => {
-    if (!sheetOpen) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeSheet(); };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [sheetOpen, closeSheet]);
-
-  // The sheet is a modal over the page. Keep Tab inside it: without this the
-  // background shell (sidebar, top bar, bottom nav) stayed in the tab order
-  // underneath an aria-modal dialog.
-  React.useEffect(() => {
-    if (!sheetOpen) return;
-    const panel = sheetRef.current;
-    if (!panel) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return;
-      const focusable = Array.from(
-        panel.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ),
-      );
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [sheetOpen]);
 
   React.useEffect(() => {
     const onPointerDown = (e: MouseEvent) => {
@@ -1068,7 +1040,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
                 onClick={closeSheet}
               />
               <m.div
-                ref={sheetRef}
+                ref={setSheetRef}
                 id="global-search-sheet"
                 role="dialog"
                 aria-modal="true"

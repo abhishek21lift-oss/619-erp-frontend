@@ -38,9 +38,8 @@ describe('the mobile drawer is hidden when closed and modal when open', () => {
   });
 
   it('traps Tab inside the open drawer', () => {
-    expect(sidebar).toMatch(/e\.key !== 'Tab'/);
-    expect(sidebar).toMatch(/document\.activeElement === last/);
-    expect(sidebar).toMatch(/document\.activeElement === first/);
+    expect(sidebar).toContain('useDialogA11y');
+    expect(sidebar).toMatch(/ref=\{setDrawerRef\}/);
   });
 
   it('closes on Escape and returns focus to the toggle', () => {
@@ -139,8 +138,8 @@ describe('the phone search sheet is modal', () => {
   });
 
   it('traps Tab and returns focus to its trigger when dismissed', () => {
-    expect(search).toMatch(/e\.key !== 'Tab'/);
-    expect(search).toMatch(/document\.activeElement === last/);
+    expect(search).toContain('useDialogA11y');
+    expect(search).toMatch(/ref=\{setSheetRef\}/);
     expect(search).toMatch(/searchButtonRef\.current\?\.focus\(\)/);
   });
 });
