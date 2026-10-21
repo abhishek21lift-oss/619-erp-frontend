@@ -11,6 +11,7 @@ import { PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api, PtClientBase } from '@/lib/api';
 import { termEnded } from '@/lib/term-dates';
+import { serverFilter } from '@/lib/client-filter';
 
 type PtClient = PtClientBase & {
   gender: string;
@@ -127,7 +128,7 @@ function ClientTableRow({ client, index }: { client: PtClient; index: number }) 
     <m.tr
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.025, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
       onClick={() => router.push(`/pt-os/clients/${client.id}`)}
       className="group cursor-pointer transition-all duration-200 hover:bg-gray-50"
       style={{ borderBottom: '1px solid var(--border)' }}
@@ -197,49 +198,78 @@ function ClientTableRow({ client, index }: { client: PtClient; index: number }) 
   );
 }
 
+const PAGE_SIZE = 50;
+
 export default function PtClientsPage() {
   const router = useRouter();
   // Seeded from ?q= so a handoff from the global search arrives filtered.
   const [search, setSearch] = useSeededSearch();
   const [statusFilter, setStatusFilter] = useState('all');
-  const clients = useAsync<{ data: PtClient[]; total: number }>(
-    () => api.pt.clients().then(r => r as { data: PtClient[]; total: number }),
-    [],
+  const [page, setPage] = useState(0);
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  // One request per pause in typing, not one per keystroke. The list is
+  // filtered by the database now, so each search is a round trip.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => { setPage(0); }, [statusFilter]);
+
+  const clients = useAsync<{
+    data: PtClient[];
+    total: number;
+    summary?: { total: number; revenue: number; paid: number; balance: number; active_count: number };
+  }>(
+    () => api.pt.clients({
+      // buildQs stringifies undefined, so an absent filter must be absent here.
+      ...(debouncedSearch ? { search: debouncedSearch } : {}),
+      ...serverFilter(statusFilter),
+      limit: PAGE_SIZE,
+      offset: page * PAGE_SIZE,
+    }).then(r => r as {
+      data: PtClient[];
+      total: number;
+      summary?: { total: number; revenue: number; paid: number; balance: number; active_count: number };
+    }),
+    [debouncedSearch, statusFilter, page],
   );
 
-  const filtered = useMemo(() => (clients.data?.data ?? []).filter(c => {
-    if (search) {
-      const q = search.toLowerCase();
-      // Mobile and email are matched too: the global search finds people by
-      // phone number, and handing that query over to a filter that ignores
-      // phone numbers would show "no results" for a client that plainly exists.
-      if (!(c.name?.toLowerCase().includes(q) || c.trainer_name?.toLowerCase().includes(q)
-        || (c.unique_id || '').toLowerCase().includes(q) || (c.client_id || '').toLowerCase().includes(q)
-        || (c.mobile || '').toLowerCase().includes(q) || (c.email || '').toLowerCase().includes(q)))
-        return false;
-    }
-    // The Expired badge is derived from days_left, so the pill must match the
-    // derivation — filtering on raw status alone hides lapsed-term rows under
-    // Active and misses them under Expired when the sweep hasn't run yet.
-    if (statusFilter === 'expired') {
-      if (!(c.status === 'expired' || termEnded(c.days_left))) return false;
-    } else if (statusFilter !== 'all' && c.status !== statusFilter) return false;
-    return true;
-  }), [clients.data, search, statusFilter]);
+  const rows = useMemo(() => clients.data?.data ?? [], [clients.data]);
+  const total = clients.data?.total ?? rows.length;
 
-  const summary = useMemo(() => clients.data?.data?.reduce(
+  // The API reports the whole-studio KPIs; a backend that predates `summary`
+  // still supplies the page, so fall back to reducing what was returned.
+  const summary = useMemo(() => clients.data?.summary ?? rows.reduce(
     (acc, c) => ({
       total: acc.total + 1,
       revenue: acc.revenue + Number(c.final_amount || 0),
       paid: acc.paid + Number(c.paid_amount || 0),
       balance: acc.balance + termBalance(c),
+      active_count: acc.active_count,
     }),
-    { total: 0, revenue: 0, paid: 0, balance: 0 },
-  ), [clients.data]);
+    { total: 0, revenue: 0, paid: 0, balance: 0, active_count: 0 },
+  ), [clients.data, rows]);
 
-  // Last-day clients (days_left === 0) are still valid — termEnded says so —
-  // so they count as active here, matching their badge.
-  const activeCount = useMemo(() => (clients.data?.data ?? []).filter(c => c.status === 'active' && (c.days_left ?? 0) >= 0).length, [clients.data]);
+  const activeCount = clients.data?.summary
+    ? summary.active_count
+    : rows.filter(c => c.status === 'active' && (c.days_left ?? 0) >= 0).length;
+
+  // A filter or deletion can leave the page past the end; step back once.
+  useEffect(() => {
+    if (page > 0 && total > 0 && page * PAGE_SIZE >= total) {
+      setPage(Math.max(0, Math.ceil(total / PAGE_SIZE) - 1));
+    }
+  }, [page, total]);
+
+  const firstRow = total === 0 ? 0 : page * PAGE_SIZE + 1;
+  const lastRow = Math.min(total, page * PAGE_SIZE + rows.length);
+  const hasPrev = page > 0;
+  const hasNext = page * PAGE_SIZE + rows.length < total;
 
   return (
     <Guard>
@@ -322,9 +352,8 @@ export default function PtClientsPage() {
                     same rows, and PullToRefresh above already refetches on
                     the gesture people actually use here. */}
                 <span className="ml-auto shrink-0 text-[11px] font-[600] text-slate-500">
-                  <span className="text-gray-700">{filtered.length}</span>
-                  <span className="mx-1 text-slate-300">/</span>
-                  {clients.data?.data?.length ?? 0}
+                  <span className="text-gray-700">{total}</span>
+                  {total === 1 ? ' client' : ' clients'}
                 </span>
               </div>
             </div>
@@ -352,13 +381,33 @@ export default function PtClientsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((c, i) => <ClientTableRow key={c.id} client={c} index={i} />)}
+                    {rows.map((c, i) => <ClientTableRow key={c.id} client={c} index={i} />)}
                   </tbody>
                 </table>
               </div>
-              {filtered.length === 0 && !clients.loading && (
+              {rows.length === 0 && !clients.loading && (
                 <div className="p-6">
                   <EmptyState search={search} statusFilter={statusFilter} onNew={() => router.push('/pt-os/new-client')} />
+                </div>
+              )}
+              {total > PAGE_SIZE && (
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-3.5"
+                  style={{ borderColor: 'var(--border)' }}>
+                  <span className="text-[11.5px] font-[600] text-slate-500">
+                    Showing {firstRow}–{lastRow} of {total}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={!hasPrev}
+                      className="h-[36px] rounded-[10px] px-3.5 text-[12px] font-[700] disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--fg)' }}>
+                      Previous
+                    </button>
+                    <button type="button" onClick={() => setPage(p => p + 1)} disabled={!hasNext}
+                      className="h-[36px] rounded-[10px] px-3.5 text-[12px] font-[700] disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--fg)' }}>
+                      Next
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
