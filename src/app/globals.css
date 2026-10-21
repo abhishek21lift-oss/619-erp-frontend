@@ -507,6 +507,17 @@ body {
 }
 .menu-toggle:hover { background: var(--logo-blue-soft-h); }
 .menu-toggle:active { transform: scale(0.94); }
+
+/* The top-bar controls are 32–36px so they fit the 32px compact bar. Apple asks
+   for 44px targets; this extends the hit area without changing what is drawn.
+   The pseudo-element belongs to the button, so a tap on it still clicks it. */
+.topbar-hit { position: relative; }
+.topbar-hit::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+}
 .shell-main {
   flex: 1;
   padding: 24px;

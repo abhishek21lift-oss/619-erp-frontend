@@ -340,6 +340,8 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
 
   const inputRef = React.useRef<HTMLInputElement>(null);
   const sheetInputRef = React.useRef<HTMLInputElement>(null);
+  const searchButtonRef = React.useRef<HTMLButtonElement>(null);
+  const sheetRef = React.useRef<HTMLDivElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const listRef = React.useRef<HTMLDivElement>(null);
   const abortRef = React.useRef<AbortController | null>(null);
@@ -514,6 +516,13 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
     setFocusIdx(-1);
   }, []);
 
+  // Dismissing the sheet (Cancel, Escape, the backdrop) is not navigation:
+  // focus goes back to the button that opened it rather than to <body>.
+  const closeSheet = React.useCallback(() => {
+    close();
+    searchButtonRef.current?.focus();
+  }, [close]);
+
   const go = React.useCallback((href: string) => {
     close();
     setQuery('');
@@ -576,6 +585,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
     } else if (e.key === 'Escape') {
       e.preventDefault();
       if (query) setQuery('');
+      else if (sheetOpen) closeSheet();
       else { close(); inputRef.current?.blur(); }
     }
   };
@@ -601,10 +611,34 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
   // Escape closes the sheet even when focus has left the input.
   React.useEffect(() => {
     if (!sheetOpen) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeSheet(); };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [sheetOpen, close]);
+  }, [sheetOpen, closeSheet]);
+
+  // The sheet is a modal over the page. Keep Tab inside it: without this the
+  // background shell (sidebar, top bar, bottom nav) stayed in the tab order
+  // underneath an aria-modal dialog.
+  React.useEffect(() => {
+    if (!sheetOpen) return;
+    const panel = sheetRef.current;
+    if (!panel) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const focusable = Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [sheetOpen]);
 
   React.useEffect(() => {
     const onPointerDown = (e: MouseEvent) => {
@@ -926,11 +960,14 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
     <>
       {/* ── Phone: a button, because an inline input here is ~140px wide ── */}
       <button
+        ref={searchButtonRef}
         type="button"
         aria-label="Search clients"
+        aria-expanded={sheetOpen}
+        aria-controls="global-search-sheet"
         onClick={() => setSheetOpen(true)}
         className={cn(
-          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors duration-200 sm:hidden',
+          'topbar-hit flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors duration-200 sm:hidden',
           darkMode ? 'text-slate-300 hover:bg-white/10 hover:text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700',
         )}
       >
@@ -1028,9 +1065,14 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
               <div
                 className="absolute inset-0"
                 style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(6px)' }}
-                onClick={close}
+                onClick={closeSheet}
               />
               <m.div
+                ref={sheetRef}
+                id="global-search-sheet"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Search"
                 className="absolute inset-x-0 top-0 flex max-h-dvh flex-col rounded-b-[22px]"
                 initial={reduce ? false : { y: -16 }}
                 animate={{ y: 0 }}
@@ -1079,7 +1121,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
                   </div>
                   <button
                     type="button"
-                    onClick={close}
+                    onClick={closeSheet}
                     className="shrink-0 rounded-xl px-2.5 text-[13px] font-[600]"
                     style={{ color: 'var(--text-secondary)', minHeight: 44 }}
                   >

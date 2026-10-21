@@ -66,7 +66,7 @@ export default function PublicNav({ action }: { action: 'sign-in' | 'start-free'
 
           <Link
             href={href}
-            className="rounded-lg px-4 py-2 text-[13.5px] font-[650] transition-shadow"
+            className="rounded-lg px-4 py-2 text-[13.5px] font-[650] transition-colors hover:bg-slate-900/5"
             style={{ color: C.body }}
           >
             {label}
