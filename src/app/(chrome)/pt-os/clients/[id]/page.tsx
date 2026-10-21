@@ -997,6 +997,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     { label: 'Workout programmes', href: `/pt-os/workout-plans?client_id=${client.id}`, hint: 'Design or assign a plan', icon: <ScrollText size={15} />, color: TAB_COLOR.primary },
                     { label: 'Assigned programme', href: `/pt-os/clients/${client.id}/training/assigned`, hint: 'What they are on now', icon: <ClipboardList size={15} />, color: TAB_COLOR.success },
                     { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume, intensity, trend', icon: <TrendingUp size={15} />, color: TAB_COLOR.warning },
+                    { label: 'Strength tracking', href: `/pt-os/strength-tracking?client_id=${client.id}`, hint: 'Lifts and personal records', icon: <Zap size={15} />, color: TAB_COLOR.danger },
                   ]}
                 />
               </TabPanel>
@@ -1054,6 +1055,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume, intensity, trend', icon: <TrendingUp size={15} />, color: TAB_COLOR.success },
                     { label: 'Payment history', href: `/pt-os/clients/${client.id}/payments`, hint: 'Every transaction', icon: <Wallet size={15} />, color: TAB_COLOR.primary },
                     { label: 'Measurements', href: `/pt-os/measurements?client_id=${client.id}`, hint: 'Readings over time', icon: <Ruler size={15} />, color: TAB_COLOR.danger },
+                    { label: 'Progress tracking overview', href: `/pt-os/progress-tracking-setup?client_id=${client.id}`, hint: 'Which baselines are complete', icon: <Flag size={15} />, color: TAB_COLOR.primary },
                     { label: 'Studio reports', href: '/insights/revenue', hint: 'Revenue and commissions across the studio', icon: <FileBarChart size={15} />, color: TAB_COLOR.warning },
                   ]}
                 />
@@ -1070,6 +1072,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       { label: 'Informed consent', href: `/pt-os/informed-consent?client_id=${client.id}`, hint: 'Signed agreement', icon: <FileSignature size={15} />, color: TAB_COLOR.primary },
                       { label: 'Client interview', href: `/pt-os/interview?client_id=${client.id}`, hint: 'History, pain, lifestyle, goals', icon: <MessagesSquare size={15} />, color: TAB_COLOR.primary },
                       { label: 'Lifestyle assessment', href: `/pt-os/lifestyle-assessment?client_id=${client.id}`, hint: 'Sleep, stress, recovery', icon: <HeartPulse size={15} />, color: TAB_COLOR.danger },
+                      { label: 'Nutrition assessment', href: `/pt-os/nutrition-assessment?client_id=${client.id}`, hint: 'Habits, intake, barriers', icon: <Salad size={15} />, color: TAB_COLOR.success },
                       { label: 'Posture assessment', href: `/pt-os/posture-assessment?client_id=${client.id}`, hint: 'Alignment findings', icon: <Accessibility size={15} />, color: TAB_COLOR.primary },
                       { label: 'Mobility assessment', href: `/pt-os/mobility-assessment?client_id=${client.id}`, hint: 'Restriction and pain', icon: <PersonStanding size={15} />, color: TAB_COLOR.danger },
                       { label: 'Fitness testing', href: `/pt-os/assessment?client_id=${client.id}`, hint: 'Strength, cardio, flexibility', icon: <Gauge size={15} />, color: TAB_COLOR.warning },

@@ -15,7 +15,8 @@ import { m, AnimatePresence } from 'framer-motion';
 import { cn } from '@/components/ui/cn';
 import StudioMark from '@/components/StudioMark';
 import UserPhoto from '@/components/UserPhoto';
-import { NAV_GROUPS, isVisibleForRole, isGroupVisibleForRole, isVisibleForFeature, isGroupVisibleForFeature } from '@/lib/nav-config';
+import { NAV_GROUPS, PINNED_ITEMS, findItemByPath, isVisibleForRole, isGroupVisibleForRole, isVisibleForFeature, isGroupVisibleForFeature } from '@/lib/nav-config';
+import type { NavItem } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { roleLabel } from '@/lib/roles';
@@ -151,16 +152,118 @@ export const SIDEBAR_FOREGROUNDS = {
   activeLabel:  BRAND,
 } as const;
 
-// Section headings — appear above these group IDs
+// Section headings — appear above these group IDs. "Workspace" is rendered
+// above the pinned direct links rather than a group, since today / schedule /
+// check-in are the first screenful and the Clients and Sessions groups follow.
 const SECTION_LABELS: Record<string, string> = {
-  'attendance':        'Workspace',
-  'personal-training': 'Personal Training',
-  'finance':           'Business',
-  'ai-coach':          'Intelligence',
+  'programs':  'Personal Training',
+  'finance':   'Business',
+  'ai-coach':  'Intelligence',
 };
 
 // Snappy spring-like easing
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+// One leaf of the navigation. Shared by the pinned direct links and the items
+// inside an expanded group so the two cannot drift apart visually.
+function NavLeaf({ item, active, badgeCount, onLinkClick, layoutId }: {
+  item: NavItem;
+  active: boolean;
+  badgeCount: number;
+  onLinkClick?: () => void;
+  layoutId: string;
+}) {
+  const ItemIcon = ICON_MAP[item.icon];
+  const isDisabled = !!item.comingSoon;
+
+  const inner = (
+    <>
+      {active && !isDisabled && (
+        <m.div
+          layoutId={layoutId}
+          className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 rounded-r-full"
+          style={{
+            background: `linear-gradient(180deg, ${BRAND}, ${BRAND}55)`,
+            boxShadow: `0 0 8px ${BRAND}45`,
+          }}
+        />
+      )}
+      <div
+        className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-150 rounded-lg pointer-events-none"
+        style={{ background: !active && !isDisabled ? THEME.hoverBg : undefined }}
+      />
+      <div
+        className="flex h-5 w-5 items-center justify-center rounded-md shrink-0 transition-all duration-200 relative z-10"
+        style={{ background: active && !isDisabled ? THEME.iconBg : 'transparent' }}
+      >
+        {ItemIcon && (
+          <ItemIcon
+            size={11}
+            strokeWidth={active && !isDisabled ? 2.5 : 1.5}
+            style={{ color: active && !isDisabled ? '#fff' : THEME.inactiveIcon }}
+          />
+        )}
+      </div>
+      <span
+        className="truncate relative z-10 text-[11.5px] flex-1"
+        style={{ color: active && !isDisabled ? BRAND : THEME.inactiveText }}
+      >
+        {item.label}
+      </span>
+      {isDisabled && (
+        <span
+          className="relative z-10 ml-1 shrink-0 rounded-full px-1.5 py-px text-[8px] font-bold uppercase tracking-wider"
+          style={{ background: 'rgba(148,163,184,0.12)', color: '#94A3B8', border: '1px solid rgba(148,163,184,0.2)' }}
+        >
+          SOON
+        </span>
+      )}
+      {!isDisabled && item.isNew && badgeCount === 0 && (
+        <span
+          className="relative z-10 ml-1 shrink-0 block h-1.5 w-1.5 rounded-full"
+          style={{ background: '#10B981', boxShadow: '0 0 5px rgba(16,185,129,0.5)' }}
+        />
+      )}
+      {!isDisabled && badgeCount > 0 && (
+        <span
+          className="relative z-10 ml-1 shrink-0 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
+          style={{ background: BRAND }}
+        >
+          {badgeCount > 99 ? '99+' : badgeCount}
+        </span>
+      )}
+    </>
+  );
+
+  if (isDisabled) {
+    return (
+      <div
+        key={item.href}
+        className="relative flex items-center gap-2 rounded-lg px-3 py-[7px] overflow-hidden cursor-default select-none"
+        style={{ opacity: 0.4 }}
+      >
+        {inner}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      key={item.href}
+      href={item.href}
+      onClick={onLinkClick}
+      aria-current={active && !isDisabled ? 'page' : undefined}
+      className={cn(
+        'relative flex items-center gap-2 rounded-lg px-3 py-3 transition-colors duration-150 overflow-hidden',
+        'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[rgba(127,180,255,0.55)]',
+        active && 'font-semibold',
+      )}
+      style={{ background: active ? THEME.subActiveBg : 'transparent' }}
+    >
+      {inner}
+    </Link>
+  );
+}
 
 // ── Nav ───────────────────────────────────────────────────────────────────────
 function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean; onLinkClick?: () => void; onExpand?: () => void }) {
@@ -266,9 +369,19 @@ function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean;
   // clicking the open one closes it. This used to be a Record, so every group
   // a trainer had ever clicked stood open together.
   const toggleGroup = (id: string) => setOpenGroupId(p => (p === id ? null : id));
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
+
+  // Longest-match active state, not per-item prefix matching. Plain prefix
+  // matching lit up both "All Clients" and "Clients Birthday" on
+  // /pt-os/clients/birthdays; findItemByPath already resolves one winner.
+  const activeHref = useMemo(() => findItemByPath(pathname ?? '')?.href ?? null, [pathname]);
+  const isActive = (href: string) => href === activeHref;
   const anyChildActive = (items: { href?: string; children?: { href?: string }[] }[]) =>
     items.some(i => isActive(i.href || '') || i.children?.some(c => isActive(c.href || '')));
+
+  const visiblePinned = useMemo(
+    () => PINNED_ITEMS.filter(i => isVisibleForRole(i, user?.role) && isVisibleForFeature(i, features)),
+    [user?.role, features],
+  );
 
   // Follow the route: whatever page you land on opens its own group. A single
   // id has no "open by default" fallback the way the Record had, so without
@@ -281,6 +394,52 @@ function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean;
 
   return (
     <nav role="navigation" aria-label="Main navigation" className="px-2.5 py-1">
+      {/* Pinned daily destinations. Direct links, not an accordion. */}
+      {visiblePinned.length > 0 && (
+        <div>
+          {!collapsed ? (
+            <>
+              <p className="px-3 pt-2 pb-1 text-[9.5px] font-bold uppercase tracking-[0.14em]" style={{ color: THEME.sectionLabel }}>
+                Workspace
+              </p>
+              <div className="space-y-px pb-1">
+                {visiblePinned.map(item => (
+                  <NavLeaf
+                    key={item.href}
+                    item={item}
+                    active={isActive(item.href)}
+                    badgeCount={item.badge ? (badgeCounts[item.badge] ?? 0) : 0}
+                    onLinkClick={onLinkClick}
+                    layoutId="sidebar-active-workspace"
+                  />
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center gap-1.5 py-1">
+              {visiblePinned.map(item => {
+                const Icon = ICON_MAP[item.icon] || LayoutDashboard;
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onLinkClick}
+                    aria-label={item.label}
+                    title={item.label}
+                    aria-current={active ? 'page' : undefined}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200"
+                    style={{ background: active ? THEME.iconBg : THEME.iconBgIdle }}
+                  >
+                    <Icon size={17} strokeWidth={active ? 2.5 : 1.5} style={{ color: active ? '#fff' : THEME.inactiveIcon }} />
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {navItems.map((group, groupIndex) => {
         const GroupIcon = ICON_MAP[group.icon] || LayoutDashboard;
         const open = openGroupId === group.id;
@@ -406,100 +565,16 @@ function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean;
                         className="ml-[22px] mt-1 space-y-px border-l pl-2.5 pb-1"
                         style={{ borderColor: THEME.subBorder }}
                       >
-                        {group.items.map((item) => {
-                          const ItemIcon = ICON_MAP[item.icon];
-                          const active = isActive(item.href);
-                          const isDisabled = !!item.comingSoon;
-                          const badgeCount = item.badge ? (badgeCounts[item.badge] ?? 0) : 0;
-
-                          const inner = (
-                            <>
-                              {active && !isDisabled && (
-                                <m.div
-                                  layoutId={`sidebar-active-${group.id}`}
-                                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 rounded-r-full"
-                                  style={{
-                                    background: `linear-gradient(180deg, ${BRAND}, ${BRAND}55)`,
-                                    boxShadow: `0 0 8px ${BRAND}45`,
-                                  }}
-                                />
-                              )}
-                              <div
-                                className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-150 rounded-lg pointer-events-none"
-                                style={{ background: !active && !isDisabled ? THEME.hoverBg : undefined }}
-                              />
-                              <div
-                                className="flex h-5 w-5 items-center justify-center rounded-md shrink-0 transition-all duration-200 relative z-10"
-                                style={{ background: active && !isDisabled ? THEME.iconBg : 'transparent' }}
-                              >
-                                {ItemIcon && (
-                                  <ItemIcon
-                                    size={11}
-                                    strokeWidth={active && !isDisabled ? 2.5 : 1.5}
-                                    style={{ color: active && !isDisabled ? '#fff' : THEME.inactiveIcon }}
-                                  />
-                                )}
-                              </div>
-                              <span
-                                className="truncate relative z-10 text-[11.5px] flex-1"
-                                style={{ color: active && !isDisabled ? BRAND : THEME.inactiveText }}
-                              >
-                                {item.label}
-                              </span>
-                              {isDisabled && (
-                                <span
-                                  className="relative z-10 ml-1 shrink-0 rounded-full px-1.5 py-px text-[8px] font-bold uppercase tracking-wider"
-                                  style={{ background: 'rgba(148,163,184,0.12)', color: '#94A3B8', border: '1px solid rgba(148,163,184,0.2)' }}
-                                >
-                                  SOON
-                                </span>
-                              )}
-                              {!isDisabled && item.isNew && badgeCount === 0 && (
-                                <span
-                                  className="relative z-10 ml-1 shrink-0 block h-1.5 w-1.5 rounded-full"
-                                  style={{ background: '#10B981', boxShadow: '0 0 5px rgba(16,185,129,0.5)' }}
-                                />
-                              )}
-                              {!isDisabled && badgeCount > 0 && (
-                                <span
-                                  className="relative z-10 ml-1 shrink-0 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
-                                  style={{ background: BRAND }}
-                                >
-                                  {badgeCount > 99 ? '99+' : badgeCount}
-                                </span>
-                              )}
-                            </>
-                          );
-
-                          if (isDisabled) {
-                            return (
-                              <div
-                                key={item.href}
-                                className="relative flex items-center gap-2 rounded-lg px-3 py-[7px] overflow-hidden cursor-default select-none"
-                                style={{ opacity: 0.4 }}
-                              >
-                                {inner}
-                              </div>
-                            );
-                          }
-
-                          return (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              onClick={onLinkClick}
-                              aria-current={active && !isDisabled ? 'page' : undefined}
-                              className={cn(
-                                'relative flex items-center gap-2 rounded-lg px-3 py-3 transition-colors duration-150 overflow-hidden',
-                                'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[rgba(127,180,255,0.55)]',
-                                active && 'font-semibold',
-                              )}
-                              style={{ background: active ? THEME.subActiveBg : 'transparent' }}
-                            >
-                              {inner}
-                            </Link>
-                          );
-                        })}
+                        {group.items.map((item) => (
+                          <NavLeaf
+                            key={item.href}
+                            item={item}
+                            active={isActive(item.href)}
+                            badgeCount={item.badge ? (badgeCounts[item.badge] ?? 0) : 0}
+                            onLinkClick={onLinkClick}
+                            layoutId={`sidebar-active-${group.id}`}
+                          />
+                        ))}
                       </div>
                     </m.div>
                   )}
