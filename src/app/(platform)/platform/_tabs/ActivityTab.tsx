@@ -80,7 +80,7 @@ export function ActivityTab() {
               <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: ACTIVITY_TONE[a.action] || '#94a3b8' }} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[12.5px] font-[650]" style={{ color: 'var(--text-primary)' }}>
-                  <span className="font-[750]">{a.action.replace(/[._]/g, ' ')}</span>
+                  <span className="font-[750]">{activityLabel(a)}</span>
                   {a.entity_type ? <span style={{ color: 'var(--text-muted)' }}> · {a.entity_type}</span> : null}
                 </p>
                 <p className="truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>
