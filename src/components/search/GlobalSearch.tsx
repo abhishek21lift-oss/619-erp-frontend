@@ -39,6 +39,7 @@ import {
 import { api, SearchItem, SearchResponse } from '@/lib/api';
 import { cn } from '@/components/ui/cn';
 import { useSearchFieldFocus } from '@/lib/search-field-focus';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { avatarGradient, initialsAvatar } from '@/lib/avatar';
 import {
   ViewedRecord, clearRecentQueries, clearRecentlyViewed, getRecentQueries,
@@ -340,6 +341,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
 
   const inputRef = React.useRef<HTMLInputElement>(null);
   const sheetInputRef = React.useRef<HTMLInputElement>(null);
+  const searchButtonRef = React.useRef<HTMLButtonElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const listRef = React.useRef<HTMLDivElement>(null);
   const abortRef = React.useRef<AbortController | null>(null);
@@ -514,6 +516,18 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
     setFocusIdx(-1);
   }, []);
 
+  // Dismissing the sheet (Cancel, Escape, the backdrop) is not navigation:
+  // focus goes back to the button that opened it rather than to <body>.
+  const closeSheet = React.useCallback(() => {
+    close();
+    searchButtonRef.current?.focus();
+  }, [close]);
+
+  // The repo's dialog hook: traps Tab inside the sheet, closes on Escape, and
+  // restores focus. `closeSheet` also targets the search trigger explicitly,
+  // because iOS does not focus a button on tap.
+  const setSheetRef = useDialogA11y({ open: sheetOpen, onClose: closeSheet });
+
   const go = React.useCallback((href: string) => {
     close();
     setQuery('');
@@ -597,14 +611,6 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, []);
-
-  // Escape closes the sheet even when focus has left the input.
-  React.useEffect(() => {
-    if (!sheetOpen) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [sheetOpen, close]);
 
   React.useEffect(() => {
     const onPointerDown = (e: MouseEvent) => {
@@ -926,11 +932,14 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
     <>
       {/* ── Phone: a button, because an inline input here is ~140px wide ── */}
       <button
+        ref={searchButtonRef}
         type="button"
         aria-label="Search clients"
+        aria-expanded={sheetOpen}
+        aria-controls="global-search-sheet"
         onClick={() => setSheetOpen(true)}
         className={cn(
-          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors duration-200 sm:hidden',
+          'topbar-hit flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors duration-200 sm:hidden',
           darkMode ? 'text-slate-300 hover:bg-white/10 hover:text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700',
         )}
       >
@@ -1028,9 +1037,14 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
               <div
                 className="absolute inset-0"
                 style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(6px)' }}
-                onClick={close}
+                onClick={closeSheet}
               />
               <m.div
+                ref={setSheetRef}
+                id="global-search-sheet"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Search"
                 className="absolute inset-x-0 top-0 flex max-h-dvh flex-col rounded-b-[22px]"
                 initial={reduce ? false : { y: -16 }}
                 animate={{ y: 0 }}
@@ -1079,7 +1093,7 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
                   </div>
                   <button
                     type="button"
-                    onClick={close}
+                    onClick={closeSheet}
                     className="shrink-0 rounded-xl px-2.5 text-[13px] font-[600]"
                     style={{ color: 'var(--text-secondary)', minHeight: 44 }}
                   >

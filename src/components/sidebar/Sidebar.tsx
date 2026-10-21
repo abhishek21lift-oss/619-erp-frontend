@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ChevronDown, X, LogOut, User, Settings,
   PanelLeft, PanelLeftClose,
@@ -17,12 +17,13 @@ import StudioMark from '@/components/StudioMark';
 import UserPhoto from '@/components/UserPhoto';
 import { NAV_GROUPS, isVisibleForRole, isGroupVisibleForRole, isVisibleForFeature, isGroupVisibleForFeature } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { roleLabel } from '@/lib/roles';
 import {
   LayoutDashboard, Target, Users, UserPlus, UserCheck, RefreshCw, CalendarClock, UserX, Cake,
   ClipboardList, ScanFace, User as UserIcon, Dumbbell, UserCog, Sparkles, CalendarOff, Calendar, Apple,
   LayoutGrid, Layers, PlusCircle, Ticket, Gift, CreditCard, TrendingUp, Inbox,
-  List, Filter, PieChart, IndianRupee, Wallet, FileText, AlertCircle, ArrowUpRight, BarChart3, Award,
+  List, Filter, PieChart, IndianRupee, Wallet, FileText, AlertCircle, ArrowUpRight, BarChart3, Award, Trophy,
   LineChart, FileBarChart, Activity, RefreshCcw, Clock, Megaphone, Bell, MessageCircle, Send, Tag, Star,
   UsersRound, Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
   CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap, BookOpen, HeartPulse, Salad,
@@ -35,7 +36,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard, Target, Users, UserPlus, UserCheck, RefreshCw, CalendarClock, UserX, Cake,
   ClipboardList, ScanFace, User: UserIcon, Dumbbell, UserCog, Sparkles, CalendarOff, Calendar, Apple,
   LayoutGrid, Layers, PlusCircle, Ticket, Gift, CreditCard, TrendingUp, Inbox,
-  List, Filter, PieChart, IndianRupee, Wallet, FileText, AlertCircle, ArrowUpRight, BarChart3, Award,
+  List, Filter, PieChart, IndianRupee, Wallet, FileText, AlertCircle, ArrowUpRight, BarChart3, Award, Trophy,
   LineChart, FileBarChart, Activity, RefreshCcw, Clock, Megaphone, Bell, MessageCircle, Send, Tag, Star,
   UsersRound, Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
   CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap, BookOpen, HeartPulse, Salad,
@@ -162,7 +163,7 @@ const SECTION_LABELS: Record<string, string> = {
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 // ── Nav ───────────────────────────────────────────────────────────────────────
-function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkClick?: () => void }) {
+function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean; onLinkClick?: () => void; onExpand?: () => void }) {
   const { user } = useAuth();
   const { features } = useFeatures();
   const pathname = usePathname();
@@ -311,12 +312,15 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
             <div className="relative mb-px">
               {/* Group button */}
               <button
-                onClick={() => { if (!collapsed) toggleGroup(group.id); }}
+                onClick={() => {
+                  if (collapsed) { onExpand?.(); setOpenGroupId(group.id); return; }
+                  toggleGroup(group.id);
+                }}
                 aria-expanded={!collapsed ? open : undefined}
                 aria-label={group.label}
                 title={collapsed ? group.label : undefined}
                 className={cn(
-                  'relative w-full rounded-xl transition-all duration-200 overflow-hidden',
+                  'relative w-full rounded-xl transition-colors duration-200 overflow-hidden',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(127,180,255,0.55)] focus-visible:ring-offset-1 focus-visible:ring-offset-transparent',
                   collapsed ? 'flex justify-center px-0 py-2' : '',
                 )}
@@ -484,8 +488,9 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                               key={item.href}
                               href={item.href}
                               onClick={onLinkClick}
+                              aria-current={active && !isDisabled ? 'page' : undefined}
                               className={cn(
-                                'relative flex items-center gap-2 rounded-lg px-3 py-[7px] transition-all duration-150 overflow-hidden',
+                                'relative flex items-center gap-2 rounded-lg px-3 py-3 transition-colors duration-150 overflow-hidden',
                                 'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[rgba(127,180,255,0.55)]',
                                 active && 'font-semibold',
                               )}
@@ -702,11 +707,27 @@ export default function Sidebar({
     if (next) onCollapse?.(); else onExpand?.();
   }, [collapsed, onExpand, onCollapse]);
 
+  // The repo's dialog hook: focus the close button on open, trap Tab inside,
+  // and restore focus on close. Escape stays in AppShell, which also owns the
+  // page scroll lock.
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const setDrawerRef = useDialogA11y({
+    open: isMobile && mobileOpen,
+    escapeCloses: false,
+    initialFocus: closeRef,
+  });
+
   return (
     <aside
+      ref={setDrawerRef}
       data-sidebar={variant}
       data-theme="dark"
       data-no-pull-refresh
+      role={isMobile ? 'dialog' : undefined}
+      aria-modal={isMobile && mobileOpen ? true : undefined}
+      aria-label={isMobile ? 'Navigation menu' : undefined}
+      id={isMobile ? 'mobile-navigation' : undefined}
+      inert={isMobile && !mobileOpen}
       className={cn(
         !isMobile && [
           'fixed inset-y-0 left-0 z-40 hidden flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
@@ -802,7 +823,7 @@ export default function Sidebar({
               onClick={toggleCollapsed}
               title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              className="flex h-6 w-6 items-center justify-center rounded-md transition-all duration-150"
+              className="flex h-8 w-8 items-center justify-center rounded-md transition-colors duration-150"
               style={{ color: 'rgba(255,255,255,0.40)' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(127,180,255,0.12)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
@@ -817,13 +838,14 @@ export default function Sidebar({
           {/* Mobile close */}
           {isMobile && (
             <button
+              ref={closeRef}
               type="button"
               aria-label="Close sidebar"
               onClick={onMobileClose}
-              className="flex h-6 w-6 items-center justify-center rounded-lg transition-colors"
-              style={{ color: 'rgba(255,255,255,0.40)' }}
+              className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors"
+              style={{ color: 'rgba(255,255,255,0.62)' }}
             >
-              <X size={13} />
+              <X size={16} />
             </button>
           )}
         </div>
@@ -831,10 +853,10 @@ export default function Sidebar({
 
       {/* Nav */}
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden py-1"
+        className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain py-1"
         style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(127,180,255,0.15) transparent' }}
       >
-        <SidebarNav collapsed={collapsed} onLinkClick={isMobile ? onMobileClose : undefined} />
+        <SidebarNav collapsed={collapsed} onLinkClick={isMobile ? onMobileClose : undefined} onExpand={onExpand} />
       </div>
 
       {/* User profile */}

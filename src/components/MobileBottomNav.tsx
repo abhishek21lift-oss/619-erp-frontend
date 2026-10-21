@@ -49,6 +49,16 @@ interface MobileBottomNavProps {
 const EASE   = [0.22, 1, 0.36, 1] as const;
 const SPRING = { type: 'spring', stiffness: 520, damping: 38, mass: 0.7 } as const;
 
+// Exported for the contrast test. The inactive label was 0.36 white — 3.33:1
+// on this bar, under AA. 0.62 is ~6.7:1 over the bar flattened on white.
+export const BOTTOM_NAV_COLORS = {
+  background:    'rgba(15,23,42,0.94)',
+  activeLabel:   '#b8d7ff',
+  activeIcon:    '#7fb4ff',
+  inactiveLabel: 'rgba(255,255,255,0.62)',
+  inactiveIcon:  'rgba(255,255,255,0.40)',
+} as const;
+
 export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNavProps) {
   const pathname = usePathname();
   const { features }     = useFeatures();
@@ -65,8 +75,9 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
       // making it cleverer than that, and why both were wrong.
       className="mobile-bottom-nav fixed left-0 right-0 z-40 lg:hidden"
       data-no-pull-refresh
+      inert={sidebarOpen}
       style={{
-        background: 'rgba(15,23,42,0.94)',
+        background: BOTTOM_NAV_COLORS.background,
         backdropFilter: 'blur(24px) saturate(180%)',
         WebkitBackdropFilter: 'blur(24px) saturate(180%)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
@@ -100,13 +111,13 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
             <Link
               key={href}
               href={href}
-              className="relative flex flex-1 flex-col items-center justify-center overflow-hidden focus-visible:outline-none"
+              className="group relative flex flex-1 flex-col items-center justify-center overflow-hidden focus-visible:outline-none"
               aria-current={isActive ? 'page' : undefined}
               style={{ gap: 1, minHeight: 44 }}
             >
               {/* Focus ring for keyboard nav */}
               <span
-                className="absolute inset-1 rounded-xl opacity-0 transition-opacity focus-visible:opacity-100 ring-2 ring-purple-400 ring-offset-0"
+                className="absolute inset-1 rounded-xl opacity-0 transition-opacity group-focus-visible:opacity-100 ring-2 ring-purple-400 ring-offset-0"
                 aria-hidden="true"
               />
 
@@ -120,7 +131,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                     bottom: 3,
                     background: 'rgba(127,180,255,0.13)',
                   }}
-                  transition={SPRING}
+                  transition={reducedMotion ? { duration: 0 } : SPRING}
                 />
               )}
 
@@ -134,7 +145,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                   size={17}
                   strokeWidth={isActive ? 2.3 : 1.7}
                   style={{
-                    color: isActive ? '#7fb4ff' : 'rgba(255,255,255,0.40)',
+                    color: isActive ? BOTTOM_NAV_COLORS.activeIcon : BOTTOM_NAV_COLORS.inactiveIcon,
                     transition: 'color 200ms ease',
                   }}
                   aria-hidden="true"
@@ -149,7 +160,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                 className="relative z-10 select-none whitespace-nowrap text-[9.5px] font-bold uppercase leading-none"
                 style={{
                   letterSpacing: '0.065em',
-                  color: isActive ? '#b8d7ff' : 'rgba(255,255,255,0.36)',
+                  color: isActive ? BOTTOM_NAV_COLORS.activeLabel : BOTTOM_NAV_COLORS.inactiveLabel,
                   transition: 'color 200ms ease',
                 }}
               >
