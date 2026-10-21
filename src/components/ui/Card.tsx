@@ -4,6 +4,24 @@ import * as React from 'react';
 import { useMotionTemplate, useMotionValue, m } from 'framer-motion';
 import { cn } from './cn';
 
+/**
+ * The surface every profile card shares — one definition of the adaptive
+ * glass, so a card added later cannot reintroduce a light-only `bg-white`.
+ * `glow` is the section's own tint; it colours the depth, not the state.
+ */
+export const cardSurface: React.CSSProperties = {
+  background: 'var(--bg-card)',
+  border: '1px solid var(--border)',
+  boxShadow: 'var(--glass-shadow), inset 0 1px 0 var(--glass-ring)',
+  backdropFilter: 'saturate(180%) blur(20px)',
+  WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+};
+
+export const cardSurfaceGlow = (glow: string): React.CSSProperties => ({
+  ...cardSurface,
+  boxShadow: `var(--glass-shadow), inset 0 1px 0 var(--glass-ring), 0 18px 40px -26px ${glow}`,
+});
+
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Enable mouse-tracking spotlight effect on hover */
   spotlight?: boolean;

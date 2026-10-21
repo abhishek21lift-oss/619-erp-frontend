@@ -58,10 +58,15 @@ describe('the client profile hero wears the house navy', () => {
   });
 
   it('takes card depth from the adaptive glass tokens, tinted per section', () => {
-    expect((code.match(/var\(--glass-shadow\)/g) ?? []).length).toBeGreaterThanOrEqual(3);
-    expect(code).toMatch(/0 18px 40px -26px \$\{tint\.glow\}/);
-    expect(code).toContain('0 18px 40px -26px ${tones.mint.glow}');
-    expect(code).toContain('0 18px 40px -26px ${tones.indigo.glow}');
+    // One definition of the surface, in the shared card module, so a card
+    // added later cannot bring back the light-only shadow.
+    const card = readFileSync(srcPath('components', 'ui', 'Card.tsx'), 'utf8');
+    expect(card).toContain('var(--glass-shadow)');
+    expect(card).toMatch(/0 18px 40px -26px \$\{glow\}/);
+    expect((code.match(/cardSurfaceGlow\(/g) ?? []).length).toBeGreaterThanOrEqual(3);
+    expect(code).toContain('cardSurfaceGlow(tint.glow)');
+    expect(code).toContain('cardSurfaceGlow(tones.mint.glow)');
+    expect(code).toContain('cardSurfaceGlow(tones.indigo.glow)');
     // One light-only shadow on every card is exactly what was removed.
     expect(code).not.toContain('0 12px 32px -18px rgba(15,23,42,0.18)');
   });

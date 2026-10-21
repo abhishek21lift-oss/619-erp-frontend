@@ -19,6 +19,7 @@ import {
   Sparkles, X, Send, Loader2, AlertTriangle, User, Database,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { amber, blue, red, rgba } from '@/lib/palette';
 import {
   streamClientAi, ClientAiError, SUGGESTED_QUESTIONS,
   type ClientAiTurn, type ClientAiGrounding,
@@ -208,7 +209,7 @@ export default function ClientAiPanel({
         <div className="flex items-center gap-3 px-4 py-3.5" style={{ borderBottom: '1px solid var(--border)' }}>
           <div
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
-            style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)' }}
+            style={{ background: `linear-gradient(135deg, ${blue[500]}, ${blue[600]})` }}
           >
             <Sparkles size={16} className="text-white" />
           </div>
@@ -237,9 +238,9 @@ export default function ClientAiPanel({
             <div className="flex flex-col items-center gap-4 pt-6 text-center">
               <div
                 className="flex h-12 w-12 items-center justify-center rounded-full"
-                style={{ background: 'rgba(0,103,224,0.12)' }}
+                style={{ background: rgba(blue[500], 0.12) }}
               >
-                <Sparkles size={20} style={{ color: '#0067e0' }} />
+                <Sparkles size={20} style={{ color: blue[500] }} />
               </div>
               <div>
                 <p className="text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>
@@ -271,7 +272,7 @@ export default function ClientAiPanel({
                 {msg.role === 'user' ? (
                   <div
                     className="max-w-[85%] rounded-[14px] rounded-br-[4px] px-3.5 py-2.5 text-[12.5px] font-[560]"
-                    style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff' }}
+                    style={{ background: `linear-gradient(135deg, ${blue[500]}, ${blue[600]})`, color: '#fff' }}
                   >
                     {msg.content}
                   </div>
@@ -279,14 +280,14 @@ export default function ClientAiPanel({
                   <div
                     className="rounded-[14px] rounded-bl-[4px] px-3.5 py-3"
                     style={{
-                      background: msg.failed ? 'rgba(239,68,68,0.08)' : 'var(--bg-subtle)',
-                      border: `1px solid ${msg.failed ? 'rgba(239,68,68,0.25)' : 'var(--border)'}`,
+                      background: msg.failed ? rgba(red[500], 0.08) : 'var(--bg-subtle)',
+                      border: `1px solid ${msg.failed ? rgba(red[500], 0.25) : 'var(--border)'}`,
                     }}
                   >
                     {msg.failed && (
                       <div className="mb-1.5 flex items-center gap-1.5">
-                        <AlertTriangle size={12} style={{ color: '#ef4444' }} />
-                        <span className="text-[11px] font-[700]" style={{ color: '#ef4444' }}>
+                        <AlertTriangle size={12} style={{ color: red[500] }} />
+                        <span className="text-[11px] font-[700]" style={{ color: red[500] }}>
                           Couldn&rsquo;t answer
                         </span>
                       </div>
@@ -300,7 +301,7 @@ export default function ClientAiPanel({
                         <span
                           aria-hidden
                           className="ml-0.5 inline-block animate-pulse align-baseline"
-                          style={{ width: 2, height: '0.95em', background: '#0067e0' }}
+                          style={{ width: 2, height: '0.95em', background: blue[500] }}
                         />
                       )}
                     </p>
@@ -311,7 +312,7 @@ export default function ClientAiPanel({
                     )}
 
                     {msg.truncated && (
-                      <p className="mt-1.5 flex items-center gap-1.5 text-[10.5px] font-[700]" style={{ color: '#f59e0b' }}>
+                      <p className="mt-1.5 flex items-center gap-1.5 text-[10.5px] font-[700]" style={{ color: amber[500] }}>
                         <AlertTriangle size={11} />
                         Stopped before it finished — treat this as incomplete.
                       </p>
@@ -325,9 +326,9 @@ export default function ClientAiPanel({
                     {!!msg.grounding?.figures.length && (
                       <div
                         className="mt-2.5 rounded-[10px] px-2.5 py-2"
-                        style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.30)' }}
+                        style={{ background: rgba(amber[500], 0.10), border: `1px solid ${rgba(amber[500], 0.30)}` }}
                       >
-                        <p className="flex items-center gap-1.5 text-[10.5px] font-[750]" style={{ color: '#b45309' }}>
+                        <p className="flex items-center gap-1.5 text-[10.5px] font-[750]" style={{ color: amber[700] }}>
                           <AlertTriangle size={11} />
                           Not found in {clientName}&rsquo;s records:{' '}
                           {msg.grounding.figures.map((f) => f.text).join(', ')}
@@ -344,9 +345,9 @@ export default function ClientAiPanel({
                     {!!msg.proposal && (
                       <div
                         className="mt-2.5 rounded-[10px] px-2.5 py-2"
-                        style={{ background: 'rgba(0,103,224,0.07)', border: '1px solid rgba(0,103,224,0.25)' }}
+                        style={{ background: rgba(blue[500], 0.07), border: `1px solid ${rgba(blue[500], 0.25)}` }}
                       >
-                        <p className="text-[10.5px] font-[750]" style={{ color: '#0067e0' }}>
+                        <p className="text-[10.5px] font-[750]" style={{ color: blue[500] }}>
                           Suggested action — nothing was done{msg.proposal.needsConfirm ? ' (needs your confirmation, which this panel cannot take yet)' : ''}:
                         </p>
                         <p className="mt-1 text-[10.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
@@ -364,7 +365,7 @@ export default function ClientAiPanel({
                           <span
                             key={t}
                             className="rounded-full px-2 py-0.5 text-[9.5px] font-[700] uppercase tracking-wide"
-                            style={{ background: 'rgba(0,103,224,0.10)', color: '#0067e0' }}
+                            style={{ background: rgba(blue[500], 0.10), color: blue[500] }}
                           >
                             {toolLabel(t)}
                           </span>
@@ -372,7 +373,7 @@ export default function ClientAiPanel({
                       </div>
                     )}
                     {!!msg.unavailable?.length && (
-                      <p className="mt-1.5 text-[10.5px] font-[600]" style={{ color: '#f59e0b' }}>
+                      <p className="mt-1.5 text-[10.5px] font-[600]" style={{ color: amber[500] }}>
                         Couldn&rsquo;t read: {msg.unavailable.map((u) => toolLabel(u.tool)).join(', ')}
                       </p>
                     )}
@@ -383,7 +384,7 @@ export default function ClientAiPanel({
 
             {waiting && (
               <div className="flex items-center gap-2 px-1 py-2">
-                <Loader2 size={13} className="animate-spin" style={{ color: '#0067e0' }} />
+                <Loader2 size={13} className="animate-spin" style={{ color: blue[500] }} />
                 <span className="text-[11.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
                   Reading {clientName}&rsquo;s records&hellip;
                 </span>
@@ -422,7 +423,7 @@ export default function ClientAiPanel({
             disabled={busy || !draft.trim()}
             aria-label="Send"
             iconLeft={busy ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-            style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff', minHeight: 44 }}
+            style={{ background: `linear-gradient(135deg, ${blue[500]}, ${blue[600]})`, color: '#fff', minHeight: 44 }}
           >
             Send
           </Button>

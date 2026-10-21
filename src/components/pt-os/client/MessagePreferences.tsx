@@ -13,6 +13,8 @@ import { Mail, MessageCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { errorMessage } from '@/lib/forms/errors';
+import { fmtDateMedium } from '@/lib/format';
+import { blue, emerald } from '@/lib/palette';
 
 type Channel = 'whatsapp_opt_out' | 'email_opt_out';
 
@@ -26,8 +28,8 @@ export interface MessagePreferencesProps {
 }
 
 const ROWS: { key: Channel; label: string; icon: React.ReactNode; color: string }[] = [
-  { key: 'whatsapp_opt_out', label: 'WhatsApp reminders & offers', icon: <MessageCircle size={14} />, color: '#10b981' },
-  { key: 'email_opt_out', label: 'Email reminders & offers', icon: <Mail size={14} />, color: '#0067E0' },
+  { key: 'whatsapp_opt_out', label: 'WhatsApp reminders & offers', icon: <MessageCircle size={14} />, color: emerald[500] },
+  { key: 'email_opt_out', label: 'Email reminders & offers', icon: <Mail size={14} />, color: blue[500] },
 ];
 
 export default function MessagePreferences({ clientId, whatsappOptOut, emailOptOut, updatedAt, onSaved }: MessagePreferencesProps) {
@@ -71,7 +73,7 @@ export default function MessagePreferences({ clientId, whatsappOptOut, emailOptO
             <button type="button" role="switch" aria-checked={receives} aria-label={label}
               disabled={saving !== null} onClick={() => toggle(key)}
               className="relative h-[28px] w-[48px] shrink-0 rounded-full transition disabled:opacity-60"
-              style={{ background: receives ? '#10B981' : 'var(--border)' }}>
+              style={{ background: receives ? emerald[500] : 'var(--border)' }}>
               <span className="absolute top-[3px] h-[22px] w-[22px] rounded-full bg-white shadow transition-all"
                 style={{ left: receives ? 23 : 3 }} />
             </button>
@@ -80,7 +82,7 @@ export default function MessagePreferences({ clientId, whatsappOptOut, emailOptO
       })}
       <p className="px-1 pt-1 text-[11.5px] leading-snug" style={{ color: 'var(--text-muted)' }}>
         Turn a channel off when the client asks you to stop. Payment receipts are always sent.
-        {updatedAt ? ` Last changed ${new Date(updatedAt).toLocaleDateString()}.` : ''}
+        {updatedAt ? ` Last changed ${fmtDateMedium(updatedAt)}.` : ''}
       </p>
     </div>
   );

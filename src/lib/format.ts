@@ -50,6 +50,28 @@ function toDDMMYYYY(d: Date): string {
 }
 
 /**
+ * "21 Oct 2026" — the medium date the client profile and its panels use.
+ *
+ * `fmtDate` above is the app's numeric date; this is the same day written
+ * with a month word, for the profile's card labels. Both live here so a
+ * second copy cannot drift from the first.
+ */
+export function fmtDateMedium(value?: string | Date | null): string {
+  if (!value) return '—';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+/** "21 Oct" — a chart axis label, where the year is already in context. */
+export function fmtDayMonth(value?: string | Date | null): string {
+  if (!value) return '—';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+}
+
+/**
  * Convert a DD-MM-YYYY string into the YYYY-MM-DD shape the backend
  * expects. Pass-through if it's already YYYY-MM-DD or empty.
  */
