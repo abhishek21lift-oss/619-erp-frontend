@@ -18,17 +18,30 @@
 // The client is still chosen here because assignment happens on create: a
 // programme nobody is on is a template, and the trainer who just typed a name
 // almost always has a client in mind.
+//
+// Weeks is a string until submit. The old dialog clamped it on blur, so a
+// cleared box became a deliberate-looking one-week programme. A blank or
+// unparseable box is now an error, not a value.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useStore } from '@tanstack/react-form';
 import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
-import { Dumbbell, Loader2, Search, X } from 'lucide-react';
+import { Dumbbell, Loader2, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { WorkoutPlan } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { assignWorkoutPlan } from '@/lib/workoutAssign';
-import { errorMessage } from '@/lib/forms/errors';
+import {
+  ChoiceChips, FormErrorBanner, NumberField, RadioField, SearchField, SubmitStatus,
+  TextField, type FieldLike,
+} from '@/components/ui/form';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import { PROGRAMME_NAME_MAX } from '@/lib/forms/schemas/programmeDetails';
+import {
+  programmeCreateDefaults, programmeCreateSchema, toProgrammeCreatePayload,
+} from '@/lib/forms/schemas/programmeCreate';
 
 export interface ClientOption { id: string; name: string; }
 
@@ -52,32 +65,8 @@ export const PROGRAMME_DIFFICULTIES = [
   { value: 'advanced', label: 'Advanced' },
 ] as const;
 
-export const WEEKS_MIN = 1;
+/** The create form's ceiling. The server accepts longer plans; new ones do not. */
 export const WEEKS_MAX = 52;
-
-/**
- * Read a number out of what is currently typed, held to its bounds.
- *
- * Called on blur and again on submit — never on change, which is what was
- * broken. The fields used to be numeric state clamped on every keystroke:
- *
- *   onChange={(e) => setWeeks(Math.max(1, Number(e.target.value) || 1))}
- *
- * Numeric state cannot hold "", so clearing the box to type a new value was
- * impossible. Select-all and type 8: the browser fires change with "" first,
- * Number("") is 0, `|| 1` turns that into 1, the box snaps to "1" — and the 8
- * lands after it, giving 18. The only reachable values were the ones you could
- * build by appending to a 1.
- *
- * The upper bound was not enforced at all either: max={52} is a hint the
- * browser does not apply to typing, and Math.max only has a floor. 999 weeks
- * submitted happily.
- */
-export function clamp(raw: string, min: number, max: number): number {
-  const n = Math.floor(Number(raw));
-  if (!Number.isFinite(n)) return min;
-  return Math.min(max, Math.max(min, n));
-}
 
 /**
  * The programme goal a screening answer implies.
@@ -136,6 +125,23 @@ export function difficultyFromClient(raw: unknown): string | undefined {
   return PROGRAMME_DIFFICULTIES.find((d) => d.value === key)?.value;
 }
 
+/** Mark a choice as the trainer's own, then change it. */
+type ChoiceTouched = { goal: boolean; difficulty: boolean };
+
+function withChoiceTouched<T>(
+  field: FieldLike<T>,
+  touched: { current: ChoiceTouched },
+  key: keyof ChoiceTouched,
+): FieldLike<T> {
+  return {
+    ...field,
+    handleChange: (value) => {
+      touched.current[key] = true;
+      field.handleChange(value);
+    },
+  };
+}
+
 export interface NewProgrammeDialogProps {
   open: boolean;
   onClose: () => void;
@@ -152,42 +158,67 @@ export default function NewProgrammeDialog({
   const { toast } = useToast();
 
   const [clients, setClients] = useState<ClientOption[]>([]);
+  const [search, setSearch] = useState('');
   // Escape, focus trap and focus restore. This dialog had none of the three:
   // it could only be dismissed with a mouse, and Tab left it immediately.
   const dialogRef = useDialogA11y({ open: true, onClose });
-  const [search, setSearch] = useState('');
-  const [clientId, setClientId] = useState<string | null>(presetClientId ?? null);
-  const [name, setName] = useState('');
-  const [goal, setGoal] = useState<string>(PROGRAMME_GOALS[0].value);
-  const [difficulty, setDifficulty] = useState<string>('intermediate');
-  // Held as a string, not a number, and clamped on blur rather than on every
-  // keystroke. See clamp() above for what the numeric version did.
-  const [weeks, setWeeks] = useState('4');
-  const [saving, setSaving] = useState(false);
+
   /**
-   * Which fields the trainer has typed in themselves.
+   * Which choice the trainer picked themselves.
    *
-   * Picking a client fills the rest of the form from that client's record —
-   * but a trainer who has already named the programme and then changes their
-   * mind about the client must not watch their own typing disappear. Only
-   * untouched fields are filled.
+   * Picking a client fills the form from that client's record — but a trainer
+   * who has already chosen a goal or difficulty must not watch their choice
+   * disappear when they change their mind about the client. The name is never
+   * filled, so it needs no entry here.
    */
-  const [touched, setTouched] = useState<Record<'name' | 'goal' | 'difficulty', boolean>>({
-    name: false, goal: false, difficulty: false,
+  const touched = useRef<ChoiceTouched>({ goal: false, difficulty: false });
+
+  const schema = useMemo(() => programmeCreateSchema(WEEKS_MAX), []);
+  const defaultValues = useMemo(
+    () => programmeCreateDefaults(presetClientId),
+    [presetClientId],
+  );
+
+  const f = useAppForm({
+    schema,
+    defaultValues,
+    onSubmit: async (values) => {
+      const { plan } = await api.workouts.plans.create(toProgrammeCreatePayload(values));
+      const clientId = values.client_id as string;
+
+      // Assign before navigating. A failure here must not swallow the plan —
+      // it exists either way, so report and continue rather than roll back.
+      // Shared with the Workout Plans page's own "Assign" button so a
+      // PARQ_BLOCKED client gets the same persistent, actionable toast here
+      // that it gets there, rather than one generic line that can vanish
+      // before it's read on the way to the builder.
+      const clientName = clients.find((c) => c.id === clientId)?.name ?? 'the client';
+      await assignWorkoutPlan(
+        plan,
+        { id: clientId, name: clientName },
+        toast,
+        (path) => router.push(path),
+      );
+
+      onCreated?.(plan);
+      router.push(`/pt-os/workout-plans/${plan.id}/builder`);
+    },
   });
-  const touch = (k: 'name' | 'goal' | 'difficulty') =>
-    setTouched((t) => (t[k] ? t : { ...t, [k]: true }));
+  const { form, submit, resetTo, errors, isSubmitting } = f;
+  const clientId = useStore(form.store, (s) => String(s.values.client_id ?? ''));
 
   useEffect(() => {
     if (!open) return;
-    setClientId(presetClientId ?? null);
+    touched.current = { goal: false, difficulty: false };
+    setSearch('');
+    resetTo(programmeCreateDefaults(presetClientId));
     api.pt.clients()
       .then((r: { data?: unknown[] }) => {
         setClients(((r?.data ?? []) as Array<{ id: string; name: string }>)
           .map((c) => ({ id: c.id, name: c.name })));
       })
       .catch(() => setClients([]));
-  }, [open, presetClientId]);
+  }, [open, presetClientId, resetTo]);
 
   /**
    * Fill the form from what is already known about the chosen client.
@@ -228,16 +259,15 @@ export default function NewProgrammeDialog({
         const matchedGoal = goalFromClient(screening.goal_type) ?? goalFromClient(row.goal);
         const matchedDifficulty = difficultyFromClient(row.workout_experience_level);
 
-        setTouched((t) => {
-          if (!t.goal && matchedGoal) setGoal(matchedGoal);
-          if (!t.difficulty && matchedDifficulty) setDifficulty(matchedDifficulty);
-          return t;
-        });
+        if (!touched.current.goal && matchedGoal) form.setFieldValue('goal', matchedGoal);
+        if (!touched.current.difficulty && matchedDifficulty) {
+          form.setFieldValue('difficulty', matchedDifficulty);
+        }
       })
       .catch(() => { /* the form keeps its defaults; nothing is claimed */ });
 
     return () => { cancelled = true; };
-  }, [open, clientId]);
+  }, [open, clientId, form]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -245,49 +275,6 @@ export default function NewProgrammeDialog({
   }, [clients, search]);
 
   if (!open) return null;
-
-  const submit = async () => {
-    if (!clientId) { toast.error('Pick a client first'); return; }
-    if (!name.trim()) { toast.error('Give the programme a name'); return; }
-
-    setSaving(true);
-    try {
-      const { plan } = await api.workouts.plans.create({
-        name: name.trim(),
-        goal,
-        difficulty,
-        duration_weeks: clamp(weeks, WEEKS_MIN, WEEKS_MAX),
-        // A client's programme, not a template. The server used to read an
-        // absent flag as TRUE, so every programme made here was stored as one.
-        is_template: false,
-        // No sessions_per_week: the server counts it from the days the
-        // builder programmes (migration 219).
-        // Deliberately no exercises: the builder adds them, one granular
-        // request each, so they keep stable ids from the moment they exist.
-      });
-
-      // Assign before navigating. A failure here must not swallow the plan —
-      // it exists either way, so report and continue rather than roll back.
-      // Shared with the Workout Plans page's own "Assign" button so a
-      // PARQ_BLOCKED client gets the same persistent, actionable toast here
-      // that it gets there, rather than one generic line that can vanish
-      // before it's read on the way to the builder.
-      const clientName = clients.find((c) => c.id === clientId)?.name ?? 'the client';
-      await assignWorkoutPlan(
-        plan,
-        { id: clientId, name: clientName },
-        toast,
-        (path) => router.push(path),
-      );
-
-      onCreated?.(plan);
-      router.push(`/pt-os/workout-plans/${plan.id}/builder`);
-    } catch (err: unknown) {
-      toast.error(errorMessage(err, 'Could not create the programme'));
-    } finally {
-      setSaving(false);
-    }
-  };
 
   return (
     <m.div
@@ -375,6 +362,7 @@ export default function NewProgrammeDialog({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close"
             className="-mr-1.5 -mt-1 flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-[12px] transition-colors"
@@ -384,167 +372,125 @@ export default function NewProgrammeDialog({
           </button>
         </div>
 
-        {/* Body — the only part that scrolls. */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
-          {!presetClientId && (
-            <Field label="Client">
-              <div className="relative mb-2">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  autoFocus
-                  placeholder="Search clients…"
-                  className="h-[44px] w-full rounded-[12px] pl-9 pr-3 text-[13.5px] outline-none"
-                  style={inputStyle}
-                />
-              </div>
-              <div
-                className="max-h-44 overflow-y-auto overscroll-contain rounded-[12px]"
-                style={{ border: '1px solid var(--border)', background: 'var(--bg-subtle)' }}
-              >
-                {filtered.length === 0 ? (
-                  <p className="p-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>No clients found.</p>
-                ) : filtered.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => setClientId(c.id)}
-                    aria-pressed={c.id === clientId}
-                    className="flex h-[44px] w-full items-center px-3 text-left text-[13.5px] font-[650]"
-                    style={{
-                      background: c.id === clientId ? 'var(--bg-elevated)' : 'transparent',
-                      color: c.id === clientId ? 'var(--brand)' : 'var(--text-primary)',
-                    }}
-                  >
-                    {c.name}
-                  </button>
-                ))}
-              </div>
-            </Field>
-          )}
-          <Field label="Programme name">
-            <input
-              value={name}
-              onChange={(e) => { setName(e.target.value); touch('name'); }}
-              placeholder="e.g. Upper / Lower Split"
-              className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none transition-shadow focus:ring-2"
-              style={inputStyle}
-            />
-          </Field>
-
-          <ChoiceField
-            label="Goal"
-            options={PROGRAMME_GOALS}
-            value={goal}
-            onChange={(v) => { setGoal(v); touch('goal'); }}
-          />
-
-          <ChoiceField
-            label="Difficulty"
-            options={PROGRAMME_DIFFICULTIES}
-            value={difficulty}
-            onChange={(v) => { setDifficulty(v); touch('difficulty'); }}
-          />
-
-          <Field label="Weeks">
-            <input
-              min={WEEKS_MIN} max={WEEKS_MAX} value={weeks} inputMode="numeric"
-              onChange={(e) => setWeeks(e.target.value)}
-              onBlur={() => setWeeks(String(clamp(weeks, WEEKS_MIN, WEEKS_MAX)))}
-              className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
-              style={inputStyle}
-            />
-          </Field>
-          <p className="-mt-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-            Sessions per week come from the days you programme in the builder.
-          </p>
-
-        </div>
-
-        {/* Footer — pinned. The panel used to be one scrolling column, so on a
-            short screen with the client list open the primary action scrolled
-            out of view and the sheet looked like it had no way forward. */}
-        <div
-          className="px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4"
-          style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-elevated)' }}
+        <form
+          noValidate
+          onSubmit={(e) => { e.preventDefault(); void submit(); }}
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <button
-            onClick={submit}
-            disabled={saving}
-            className="flex h-[48px] w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-[700] text-white transition-transform active:scale-[0.98] disabled:opacity-60"
-            style={{ background: 'var(--brand)', boxShadow: '0 8px 24px rgba(2,113,235,0.24)' }}
+          {/* Body — the only part that scrolls. */}
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+            {!presetClientId && (
+              <form.Field name="client_id">
+                {(field) => (
+                  <RadioField
+                    field={field}
+                    legend="Client"
+                    options={filtered.map((c) => ({ value: c.id, label: c.name }))}
+                    required
+                    serverError={errors.fieldErrors.client_id}
+                    className="mb-3"
+                    optionsClassName="max-h-44 overflow-y-auto overscroll-contain pr-1"
+                    before={(
+                      <SearchField
+                        label="Search clients"
+                        placeholder="Search clients…"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        // Enter filters; it must not submit a form with no client.
+                        onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
+                        fieldClassName="mb-2"
+                      />
+                    )}
+                  />
+                )}
+              </form.Field>
+            )}
+
+            <form.Field name="name">
+              {(field) => (
+                <TextField
+                  field={field}
+                  label="Programme name"
+                  required
+                  maxLength={PROGRAMME_NAME_MAX}
+                  showCount
+                  placeholder="e.g. Upper / Lower Split"
+                  serverError={errors.fieldErrors.name}
+                  className="mb-3"
+                />
+              )}
+            </form.Field>
+
+            <form.Field name="goal">
+              {(field) => (
+                <ChoiceChips
+                  field={withChoiceTouched(field, touched, 'goal')}
+                  legend="Goal"
+                  options={PROGRAMME_GOALS}
+                  required
+                  serverError={errors.fieldErrors.goal}
+                  className="mb-3"
+                />
+              )}
+            </form.Field>
+
+            <form.Field name="difficulty">
+              {(field) => (
+                <ChoiceChips
+                  field={withChoiceTouched(field, touched, 'difficulty')}
+                  legend="Difficulty"
+                  options={PROGRAMME_DIFFICULTIES}
+                  required
+                  serverError={errors.fieldErrors.difficulty}
+                  className="mb-3"
+                />
+              )}
+            </form.Field>
+
+            <form.Field name="duration_weeks">
+              {(field) => (
+                <NumberField
+                  field={field}
+                  label="Weeks"
+                  required
+                  mode="integer"
+                  min={1}
+                  max={WEEKS_MAX}
+                  serverError={errors.fieldErrors.duration_weeks}
+                  className="mb-1"
+                />
+              )}
+            </form.Field>
+            <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+              Sessions per week come from the days you programme in the builder.
+            </p>
+          </div>
+
+          {/* Footer — pinned. The panel used to be one scrolling column, so on a
+              short screen with the client list open the primary action scrolled
+              out of view and the sheet looked like it had no way forward. */}
+          <div
+            className="px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4"
+            style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-elevated)' }}
           >
-            {saving && <Loader2 size={16} className="animate-spin" />}
-            {saving ? 'Creating…' : 'Create and add exercises'}
-          </button>
-          <p className="mt-2 text-center text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-            You will add exercises next, in the builder.
-          </p>
-        </div>
+            <FormErrorBanner errors={errors} onRetry={() => void submit()} className="mb-3" />
+            <SubmitStatus isSubmitting={isSubmitting} submittingLabel="Creating programme…" />
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              aria-busy={isSubmitting}
+              className="flex h-[48px] w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-[700] text-white transition-transform active:scale-[0.98] disabled:opacity-60"
+              style={{ background: 'var(--brand)', boxShadow: '0 8px 24px rgba(2,113,235,0.24)' }}
+            >
+              {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+              {isSubmitting ? 'Creating…' : 'Create and add exercises'}
+            </button>
+            <p className="mt-2 text-center text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+              You will add exercises next, in the builder.
+            </p>
+          </div>
+        </form>
       </m.div>
     </m.div>
-  );
-}
-
-const inputStyle: React.CSSProperties = {
-  background: 'var(--bg-subtle)',
-  border: '1px solid var(--border)',
-  color: 'var(--text-primary)',
-};
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="mb-3 block">
-      <span className="mb-1.5 block text-[11px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-        {label}
-      </span>
-      {children}
-    </label>
-  );
-}
-
-/**
- * A row of pill buttons choosing one value.
- *
- * A <div role="group"> with its own caption rather than Field's <label>: a
- * label wrapping a group of buttons gave the FIRST button the whole caption
- * as its accessible name ("Goal Weight Loss Endurance …").
- */
-export function ChoiceField({
-  label, options, value, onChange,
-}: {
-  label: string;
-  options: ReadonlyArray<{ value: string; label: string }>;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const id = `choice-${label.toLowerCase().replace(/\W+/g, '-')}`;
-  return (
-    <div role="group" aria-labelledby={id} className="mb-3">
-      <span id={id} className="mb-1.5 block text-[11px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-        {label}
-      </span>
-      <div className="flex flex-wrap gap-1.5">
-        {options.map((o) => {
-          const active = o.value === value;
-          return (
-            <button
-              key={o.value}
-              type="button"
-              onClick={() => onChange(o.value)}
-              aria-pressed={active}
-              className="h-[44px] rounded-[12px] px-3 text-[12.5px] font-[700] transition-transform active:scale-95"
-              style={{
-                background: active ? 'var(--brand)' : 'var(--bg-subtle)',
-                color: active ? '#fff' : 'var(--text-muted)',
-                border: `1px solid ${active ? 'transparent' : 'var(--border)'}`,
-              }}
-            >
-              {o.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
   );
 }

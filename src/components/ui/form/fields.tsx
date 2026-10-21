@@ -605,6 +605,10 @@ export interface RadioFieldProps<T extends string = string> {
   disabled?: boolean;
   serverError?: string;
   className?: string;
+  /** Content between the legend and the options, e.g. a filter box. */
+  before?: React.ReactNode;
+  /** Applied to the option list, for a scroll container. */
+  optionsClassName?: string;
   /** Lay the options out in a row. Only sensible for two or three short ones. */
   inline?: boolean;
 }
@@ -637,6 +641,8 @@ export function RadioField<T extends string = string>({
   disabled,
   serverError,
   className,
+  before,
+  optionsClassName,
   inline,
 }: RadioFieldProps<T>) {
   const error = visibleError(field, serverError);
@@ -672,7 +678,9 @@ export function RadioField<T extends string = string>({
         )}
       </legend>
 
-      <div className={cn('flex gap-2', inline ? 'flex-row flex-wrap' : 'flex-col')}>
+      {before}
+
+      <div className={cn('flex gap-2', inline ? 'flex-row flex-wrap' : 'flex-col', optionsClassName)}>
         {options.map((o) => {
           const id = `${field.name}-${o.value}`;
           const selected = field.state.value === o.value;

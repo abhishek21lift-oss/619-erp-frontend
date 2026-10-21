@@ -86,14 +86,14 @@ describe('NewProgrammeDialog — the replacement for the deleted wizard', () => 
   it('refuses to create without a name', async () => {
     render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
     fireEvent.click(screen.getByRole('button', { name: /create and add exercises/i }));
-    await waitFor(() => expect(toastError).toHaveBeenCalled());
+    expect(await screen.findByText('Programme name is required.')).toBeInTheDocument();
     expect(create).not.toHaveBeenCalled();
   });
 
   it('refuses to create without a client', async () => {
     render(<NewProgrammeDialog open onClose={() => {}} />);
     await fillAndSubmit();
-    await waitFor(() => expect(toastError).toHaveBeenCalled());
+    expect(await screen.findByText('Client is required.')).toBeInTheDocument();
     expect(create).not.toHaveBeenCalled();
   });
 
@@ -126,11 +126,11 @@ describe('NewProgrammeDialog — the replacement for the deleted wizard', () => 
     expect(push).toHaveBeenCalledWith('/pt-os/workout-plans/plan-99/builder');
   });
 
-  it('does not navigate when creation itself fails', async () => {
+  it('keeps the dialog open and shows the server error when creation fails', async () => {
     create.mockRejectedValue(new Error('nope'));
     render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
     await fillAndSubmit();
-    await waitFor(() => expect(toastError).toHaveBeenCalled());
+    expect(await screen.findByText('nope')).toBeInTheDocument();
     expect(push).not.toHaveBeenCalled();
   });
 

@@ -90,7 +90,7 @@ const KNOWN = [
   // render a failure as zero, and that is gone from all three.
   'app/(chrome)/finance/collected-payments/page.tsx:113',
   'app/(chrome)/finance/dues/page.tsx:100',
-  'components/payments/UpiPayScreen.tsx:202',
+  'components/payments/UpiPayScreen.tsx:210',
   // Line moved 587 -> 592 -> 597 -> 584: the Check-in QR print popup above
   // gained five lines of escaping plus two imports, the premium hero pass added
   // a colour note and a card-shadow comment above it, and the unused hero stat
@@ -135,8 +135,8 @@ const KNOWN = [
   'components/platform/hosting-centre.tsx:681',
   'components/platform/hosting-vps.tsx:75',
   'components/pt-os/analytics/LandmarkEditor.tsx:82',
-  'components/pt-os/builder/NewProgrammeDialog.tsx:216',
-  'components/pt-os/builder/NewProgrammeDialog.tsx:219',
+  'components/pt-os/builder/NewProgrammeDialog.tsx:247',
+  'components/pt-os/builder/NewProgrammeDialog.tsx:250',
   'components/pt-os/workout-log/ExercisePicker.tsx:274',
   'components/pt-os/workout-log/ExercisePicker.tsx:288',
   'lib/auth-context.tsx:214',

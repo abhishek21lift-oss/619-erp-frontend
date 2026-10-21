@@ -57,7 +57,7 @@ test.describe('Programme — edit details', () => {
     const d = dialog(page);
 
     await d.getByLabel('Programme name').fill(renamed);
-    await d.getByRole('button', { name: 'Weight Loss' }).click();
+    await d.getByRole('radio', { name: 'Weight Loss' }).click();
     await d.getByLabel('Weeks').fill('10');
     await d.getByRole('button', { name: 'Save changes' }).click();
 
