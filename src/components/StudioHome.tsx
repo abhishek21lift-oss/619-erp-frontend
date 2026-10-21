@@ -13,12 +13,19 @@
 // user's tree is identical to what it was.
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/lib/auth-context';
 import Guard from '@/components/Guard';
-import PtOsDashboard from '@/components/dashboards/PtOsDashboard';
 import InstallAppCard from '@/components/member/InstallAppCard';
 import LandingPage from '@/components/LandingPage';
 import BrandLogo from '@/components/BrandLogo';
+
+// The signed-in dashboard (and the chart library behind it) must not ride in
+// the bundle a visitor downloads to read the landing page. next/dynamic gives
+// it its own chunk, fetched only when this branch renders; anonymous visitors
+// never reach it. Server rendering is left on — the dashboard is a client
+// component behind Guard either way, and its first paint should not change.
+const PtOsDashboard = dynamic(() => import('@/components/dashboards/PtOsDashboard'));
 
 // Must stay comfortably ABOVE the auth bootstrap's own abort timeout
 // (auth-context.tsx aborts /api/auth/me at 10s). Both used to be 10s, so they
