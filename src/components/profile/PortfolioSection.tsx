@@ -38,11 +38,18 @@ import { Button } from '@/components/ui/Button';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  FormErrorBanner, SubmitStatus, TextAreaField, TextField,
+} from '@/components/ui/form';
 import { api, PORTFOLIO_LIMITS } from '@/lib/api';
 import type { PortfolioItem, PortfolioKind } from '@/lib/api';
 import { ApiError } from '@/lib/http';
 import { errorMessage } from '@/lib/forms/errors';
 import { checkFile, acceptAttribute, GALLERY_RULES } from '@/lib/forms/files';
+import {
+  portfolioUploadDefaults, portfolioUploadSchema, toPortfolioUploadPayload,
+} from '@/lib/forms/schemas/portfolioUpload';
+import { useAppForm } from '@/lib/forms/useAppForm';
 
 const KINDS: { value: PortfolioKind; label: string; hint: string; icon: React.ReactNode }[] = [
   { value: 'image', label: 'Photo', hint: 'A single image', icon: <ImageIcon size={14} /> },
@@ -431,10 +438,6 @@ function FilePick({ label, file, onPick, max }: {
   );
 }
 
-function fieldStyle() {
-  return { background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' };
-}
-
 function UploadDialog({ open, onOpenChange, onCreated, remaining }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -444,55 +447,65 @@ function UploadDialog({ open, onOpenChange, onCreated, remaining }: {
   const [kind, setKind] = useState<PortfolioKind>('image');
   const [file, setFile] = useState<File | null>(null);
   const [after, setAfter] = useState<File | null>(null);
-  const [externalUrl, setExternalUrl] = useState('');
-  const [title, setTitle] = useState('');
-  const [caption, setCaption] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const reset = useCallback(() => {
+  const resetFiles = useCallback(() => {
     setKind('image'); setFile(null); setAfter(null);
-    setExternalUrl(''); setTitle(''); setCaption(''); setError(null);
   }, []);
 
   // A poster is shown small and behind a play button, so it gets the smaller
   // ceiling — the same one the server enforces.
   const limit = kind === 'video_link' ? PORTFOLIO_LIMITS.posterBytes : PORTFOLIO_LIMITS.imageBytes;
 
-  const problem = !file ? 'Choose an image'
+  const fileProblem = !file ? 'Choose an image'
     : file.size > limit ? `That image is larger than ${MB(limit)}`
       : kind === 'before_after' && !after ? 'A before/after needs both images'
         : kind === 'before_after' && after && after.size > PORTFOLIO_LIMITS.imageBytes
           ? `The second image is larger than ${MB(PORTFOLIO_LIMITS.imageBytes)}`
-          : kind === 'video_link' && !externalUrl.trim() ? 'Paste the YouTube or Vimeo link'
-            : null;
+          : null;
 
-  const submit = async () => {
-    if (problem || !file) return;
-    setBusy(true); setError(null);
-    try {
+  const defaults = useMemo(() => portfolioUploadDefaults(), []);
+  const schema = useMemo(() => portfolioUploadSchema(kind), [kind]);
+
+  const f = useAppForm({
+    schema,
+    defaultValues: defaults,
+    onSubmit: async (values) => {
+      // The file picker already disables the button, but Enter can still submit
+      // a form. Never let that path create an item with no image.
+      if (fileProblem || !file) return;
+
       const item = await api.profile.portfolio.create({
         kind,
         file,
         after: kind === 'before_after' ? after || undefined : undefined,
-        externalUrl: kind === 'video_link' ? externalUrl.trim() : undefined,
-        title: title.trim() || undefined,
-        caption: caption.trim() || undefined,
+        ...toPortfolioUploadPayload(values, kind),
       });
       onCreated(item);
-      reset();
+      resetFiles();
       onOpenChange(false);
-    } catch (err) {
-      // The server's message names the actual limit or the actual reason, and
-      // is more use than anything this component could invent.
-      setError(reason(err, 'That upload did not go through. Try again.'));
-    } finally {
-      setBusy(false);
+    },
+  });
+  const {
+    form, submit, resetTo, errors, isSubmitting, clearErrors,
+  } = f;
+
+  useEffect(() => {
+    if (!open) return;
+    resetFiles();
+    resetTo(defaults);
+  }, [open, resetFiles, resetTo, defaults]);
+
+  const handleOpenChange = (v: boolean) => {
+    if (isSubmitting) return;
+    if (!v) {
+      resetFiles();
+      resetTo(defaults);
     }
+    onOpenChange(v);
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!busy) { if (!v) reset(); onOpenChange(v); } }}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Add to your portfolio</DialogTitle>
@@ -501,108 +514,119 @@ function UploadDialog({ open, onOpenChange, onCreated, remaining }: {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4">
-          <div>
-            <span className="mb-1.5 block text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-              What are you adding
-            </span>
-            <div className="grid grid-cols-3 gap-1.5">
-              {KINDS.map((k) => (
-                <button
-                  key={k.value}
-                  type="button"
-                  onClick={() => { setKind(k.value); setError(null); }}
-                  className="flex flex-col items-center gap-1 rounded-xl px-2 py-2.5 text-[10.5px] font-[700] transition-colors"
-                  style={{
-                    background: kind === k.value ? 'rgba(0,103,224,0.12)' : 'var(--bg-subtle)',
-                    border: `1px solid ${kind === k.value ? 'rgba(0,103,224,0.45)' : 'var(--border)'}`,
-                    color: kind === k.value ? '#0067e0' : 'var(--text-secondary)',
-                  }}
-                >
-                  {k.icon}
-                  <span className="text-center leading-tight">{k.label}</span>
-                </button>
-              ))}
+        <form
+          noValidate
+          onSubmit={(e) => { e.preventDefault(); void submit(); }}
+          className="flex flex-col gap-4"
+        >
+          <div className="flex flex-col gap-4">
+            <div>
+              <span className="mb-1.5 block text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                What are you adding
+              </span>
+              <div className="grid grid-cols-3 gap-1.5">
+                {KINDS.map((k) => (
+                  <button
+                    key={k.value}
+                    type="button"
+                    aria-pressed={kind === k.value}
+                    onClick={() => { setKind(k.value); clearErrors(); }}
+                    className="flex flex-col items-center gap-1 rounded-xl px-2 py-2.5 text-[10.5px] font-[700] transition-colors"
+                    style={{
+                      background: kind === k.value ? 'rgba(0,103,224,0.12)' : 'var(--bg-subtle)',
+                      border: `1px solid ${kind === k.value ? 'rgba(0,103,224,0.45)' : 'var(--border)'}`,
+                      color: kind === k.value ? '#0067e0' : 'var(--text-secondary)',
+                    }}
+                  >
+                    {k.icon}
+                    <span className="text-center leading-tight">{k.label}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                {KINDS.find((k) => k.value === kind)?.hint}
+              </p>
             </div>
-            <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-              {KINDS.find((k) => k.value === kind)?.hint}
-            </p>
-          </div>
 
-          <div className={kind === 'before_after' ? 'grid grid-cols-2 gap-3' : ''}>
-            <FilePick
-              label={kind === 'before_after' ? 'Before' : kind === 'video_link' ? 'Thumbnail' : 'Image'}
-              file={file}
-              onPick={(f) => { setFile(f); setError(null); }}
-              max={limit}
-            />
-            {kind === 'before_after' && (
-              <FilePick label="After" file={after} onPick={setAfter} max={PORTFOLIO_LIMITS.imageBytes} />
+            <div className={kind === 'before_after' ? 'grid grid-cols-2 gap-3' : ''}>
+              <FilePick
+                label={kind === 'before_after' ? 'Before' : kind === 'video_link' ? 'Thumbnail' : 'Image'}
+                file={file}
+                onPick={(f) => { setFile(f); clearErrors(); }}
+                max={limit}
+              />
+              {kind === 'before_after' && (
+                <FilePick
+                  label="After"
+                  file={after}
+                  onPick={(f) => { setAfter(f); clearErrors(); }}
+                  max={PORTFOLIO_LIMITS.imageBytes}
+                />
+              )}
+            </div>
+
+            {kind === 'video_link' && (
+              <form.Field name="external_url">
+                {(field) => (
+                  <TextField
+                    field={field}
+                    label="Video link"
+                    type="url"
+                    required
+                    autoComplete="url"
+                    placeholder="https://www.youtube.com/watch?v=…"
+                    description="YouTube or Vimeo. Other hosts are refused."
+                    serverError={errors.fieldErrors.external_url}
+                  />
+                )}
+              </form.Field>
+            )}
+
+            <div className="grid grid-cols-1 gap-3">
+              <form.Field name="title">
+                {(field) => (
+                  <TextField
+                    field={field}
+                    label="Title (optional)"
+                    maxLength={120}
+                    showCount
+                    placeholder="12-week transformation"
+                    serverError={errors.fieldErrors.title}
+                  />
+                )}
+              </form.Field>
+              <form.Field name="caption">
+                {(field) => (
+                  <TextAreaField
+                    field={field}
+                    label="Caption (optional)"
+                    maxLength={400}
+                    showCount
+                    rows={2}
+                    placeholder="What this shows, and over what period"
+                    serverError={errors.fieldErrors.caption}
+                  />
+                )}
+              </form.Field>
+            </div>
+
+            {fileProblem && !errors.formError && (
+              <p className="flex items-start gap-1.5 text-[11.5px] font-[620]"
+                style={{ color: 'var(--text-muted)' }}>
+                <AlertTriangle size={12} className="mt-[1px] shrink-0" />
+                {fileProblem}
+              </p>
             )}
           </div>
 
-          {kind === 'video_link' && (
-            <div>
-              <span className="mb-1 block text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                Video link
-              </span>
-              <input
-                value={externalUrl}
-                onChange={(e) => { setExternalUrl(e.target.value); setError(null); }}
-                placeholder="https://www.youtube.com/watch?v=…"
-                inputMode="url"
-                className="w-full rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[var(--brand)]"
-                style={fieldStyle()}
-              />
-              <p className="mt-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                YouTube or Vimeo. Other hosts are refused.
-              </p>
-            </div>
-          )}
+          <FormErrorBanner errors={errors} onRetry={() => void submit()} />
+          <SubmitStatus isSubmitting={isSubmitting} submittingLabel="Adding to portfolio…" />
 
-          <div className="grid grid-cols-1 gap-3">
-            <div>
-              <span className="mb-1 block text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                Title <span className="font-[500] normal-case">(optional)</span>
-              </span>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                maxLength={120}
-                placeholder="12-week transformation"
-                className="w-full rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[var(--brand)]"
-                style={fieldStyle()}
-              />
-            </div>
-            <div>
-              <span className="mb-1 block text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                Caption <span className="font-[500] normal-case">(optional)</span>
-              </span>
-              <textarea
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                maxLength={400}
-                rows={2}
-                placeholder="What this shows, and over what period"
-                className="w-full resize-none rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[var(--brand)]"
-                style={fieldStyle()}
-              />
-            </div>
-          </div>
-
-          {(error || problem) && (
-            <p className="flex items-start gap-1.5 text-[11.5px] font-[620]"
-              style={{ color: error ? '#dc2626' : 'var(--text-muted)' }}>
-              {error && <AlertTriangle size={12} className="mt-[1px] shrink-0" />}
-              {error || problem}
-            </p>
-          )}
-        </div>
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => { reset(); onOpenChange(false); }} disabled={busy}>Cancel</Button>
-          <Button onClick={submit} loading={busy} disabled={!!problem}>Add to portfolio</Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
+            <Button type="submit" loading={isSubmitting} disabled={!!fileProblem}>Add to portfolio</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -102,7 +102,7 @@ describe('it still does what the page depends on', () => {
   it('keeps the contract the page and its tests use', async () => {
     const mod = await import('@/components/pt-os/builder/NewProgrammeDialog');
     expect(typeof mod.default).toBe('function');
-    expect(typeof mod.clamp).toBe('function');
+    expect(mod.WEEKS_MAX).toBe(52);
     expect(mod.PROGRAMME_GOALS.length).toBeGreaterThan(0);
   });
 

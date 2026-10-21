@@ -16,7 +16,7 @@
  * being asserted.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import {
@@ -38,6 +38,7 @@ import {
   REJECT_REASONS, REJECT_REASON_LABELS, UpiStatusBadge, fmtMoney, fmtMoneyExact, orderTermLabel,
 } from '@/components/payments/upi-shared';
 import { errorMessage } from '@/lib/forms/errors';
+import { paymentReviewSchema } from '@/lib/forms/schemas/paymentReview';
 
 const PAGE_SIZE = 25;
 
@@ -399,11 +400,21 @@ function ActionDialog({
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ reason?: string; note?: string }>({});
+  // State alone cannot stop two taps in the same frame: React applies the
+  // disabled attribute after the event finishes. The ref closes that gap.
+  const inFlight = useRef(false);
 
   // Reset per opening, so a note typed for one payment can never be submitted
   // against the next one.
   useEffect(() => {
-    if (action) { setReason('PAYMENT_NOT_RECEIVED'); setNote(''); setError(null); }
+    if (action) {
+      setReason('PAYMENT_NOT_RECEIVED');
+      setNote('');
+      setError(null);
+      setFieldErrors({});
+      inFlight.current = false;
+    }
   }, [action]);
 
   // Escape, focus trap and focus restore, from one shared hook.
@@ -420,10 +431,33 @@ function ActionDialog({
   const { row, kind } = action;
 
   const run = async () => {
-    setBusy(true);
+    if (busy) return;
+    if (inFlight.current) return;
+
     setError(null);
+    setFieldErrors({});
+
+    const parsed = paymentReviewSchema.safeParse({ kind, reason, note });
+    if (!parsed.success) {
+      const next: { reason?: string; note?: string } = {};
+      let formError: string | null = null;
+      for (const issue of parsed.error.issues) {
+        const field = issue.path[0];
+        if (field === 'reason' || field === 'note') {
+          next[field] ??= issue.message;
+        } else if (!formError) {
+          formError = issue.message;
+        }
+      }
+      setFieldErrors(next);
+      setError(formError);
+      return;
+    }
+
+    inFlight.current = true;
+    setBusy(true);
     try {
-      if (kind === 'approve') {
+      if (parsed.data.kind === 'approve') {
         const res = await api.upiPayments.approve(row.id);
         const until = res.data.activation.activated_to;
         toast.success(until
@@ -439,11 +473,11 @@ function ActionDialog({
             description: 'Their balance was already partly paid when this was approved. Refund it or agree how to use it.',
           });
         }
-      } else if (kind === 'reject') {
-        await api.upiPayments.reject(row.id, reason, note.trim() || undefined);
+      } else if (parsed.data.kind === 'reject') {
+        await api.upiPayments.reject(row.id, parsed.data.reason, parsed.data.note ?? undefined);
         toast.success('Rejected. The member can submit a corrected reference.');
       } else {
-        await api.upiPayments.requestCorrection(row.id, reason, note.trim() || undefined);
+        await api.upiPayments.requestCorrection(row.id, parsed.data.reason, parsed.data.note ?? undefined);
         toast.success('Correction requested.');
       }
       await onDone();
@@ -455,6 +489,7 @@ function ActionDialog({
         : 'Something went wrong. Please try again.';
       setError(message);
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   };
@@ -516,7 +551,9 @@ function ActionDialog({
                 <p className="mt-3 text-[13px]" style={{ color: 'var(--text-muted)' }}>
                   The member is told why and can submit a new reference.
                 </p>
-                <fieldset className="mt-3">
+                <fieldset className="mt-3"
+                  aria-describedby={fieldErrors.reason ? 'reject-reason-error' : undefined}
+                  aria-invalid={fieldErrors.reason ? true : undefined}>
                   <legend className="text-[12px] font-[650]" style={{ color: 'var(--text-primary)' }}>
                     Reason
                   </legend>
@@ -529,20 +566,35 @@ function ActionDialog({
                           color: reason === r ? 'var(--brand)' : 'var(--text-primary)',
                         }}>
                         <input type="radio" name="reject-reason" value={r}
-                          checked={reason === r} onChange={() => setReason(r)}
+                          checked={reason === r}
+                          onChange={() => {
+                            setReason(r);
+                            setFieldErrors((e) => (e.reason ? { ...e, reason: undefined } : e));
+                          }}
                           className="h-3.5 w-3.5" />
                         {REJECT_REASON_LABELS[r]}
                       </label>
                     ))}
                   </div>
                 </fieldset>
+                {fieldErrors.reason && (
+                  <p id="reject-reason-error" className="mt-1.5 text-[11.5px] leading-[1.35]"
+                    style={{ color: 'var(--danger-text)' }}>
+                    {fieldErrors.reason}
+                  </p>
+                )}
                 <label htmlFor="reject-note" className="mt-3 block text-[12px] font-[650]"
                   style={{ color: 'var(--text-primary)' }}>
                   Note to the member <span style={{ color: 'var(--text-muted)' }}>(optional)</span>
                 </label>
                 <textarea
                   id="reject-note" rows={2} value={note} maxLength={500}
-                  onChange={(e) => setNote(e.target.value)}
+                  aria-invalid={fieldErrors.note ? true : undefined}
+                  aria-describedby={fieldErrors.note ? 'reject-note-error' : undefined}
+                  onChange={(e) => {
+                    setNote(e.target.value);
+                    setFieldErrors((fe) => (fe.note ? { ...fe, note: undefined } : fe));
+                  }}
                   placeholder="e.g. We received ₹9,000, not ₹10,620."
                   className="mt-1.5 w-full resize-none rounded-xl px-3 py-2.5 text-[14px] outline-none"
                   style={{
@@ -550,6 +602,12 @@ function ActionDialog({
                     border: '1px solid var(--border-2)',
                   }}
                 />
+                {fieldErrors.note && (
+                  <p id="reject-note-error" className="mt-1.5 text-[11.5px] leading-[1.35]"
+                    style={{ color: 'var(--danger-text)' }}>
+                    {fieldErrors.note}
+                  </p>
+                )}
               </>
             )}
 

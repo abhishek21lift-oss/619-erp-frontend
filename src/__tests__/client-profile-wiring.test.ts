@@ -88,10 +88,12 @@ describe('a failed save is not silent', () => {
   it('session-balance reports why a package could not be created', () => {
     // It was try/finally with no catch at all: a failed save reset the button
     // and said nothing, so the form looked like it had ignored the click.
+    // The create form is now on useAppForm, whose mapper fills `errors` and
+    // whose banner renders it as the form's one live region.
     const page = read('app', '(chrome)', 'pt-os', 'session-balance', 'page.tsx');
-    expect(page).toMatch(/catch\s*\(/);
-    expect(page).toMatch(/errorMessage\(/);
-    expect(page).toMatch(/role="alert"/);
+    expect(page).toMatch(/useAppForm\(/);
+    expect(page).toMatch(/FormErrorBanner/);
+    expect(page).toMatch(/errors=\{f\.errors\}/);
   });
 });
 

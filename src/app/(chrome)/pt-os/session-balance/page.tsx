@@ -8,7 +8,14 @@ import { useAsync } from '@/lib/use-async';
 import { api, Client } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
 import { useToast } from '@/lib/toast';
-import { Button, PageContainer, PageHero, FormField, TextInput, SelectInput } from '@/components/ui';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import {
+  sessionBalanceSchema, blankSessionBalance, toSessionBalancePayload,
+} from '@/lib/forms/schemas/sessionBalance';
+import { Button, PageContainer, PageHero } from '@/components/ui';
+import {
+  TextField, NumberField, SelectField, DateFieldControl, FormErrorBanner,
+} from '@/components/ui/form';
 
 /**
  * Session balances, optionally pre-scoped to one client.
@@ -27,15 +34,10 @@ import { Button, PageContainer, PageHero, FormField, TextInput, SelectInput } fr
  */
 function SessionBalanceInner() {
   const sp = useSearchParams();
-  // Seeded from the URL, then owned by the dropdown. Not derived on every
+  // Seeded once from the URL, then owned by the form. Not derived on every
   // render: the operator must be able to change the selection on a page they
   // arrived at with one already made.
-  const [clientId, setClientId] = useState(() => sp.get('client_id') || '');
-  const [totalSessions, setTotalSessions] = useState('');
-  const [packageName, setPackageName] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [seededClientId] = useState(() => sp.get('client_id') || '');
   const [usingId, setUsingId] = useState<string | null>(null);
   // Which list the panel shows. 'low' reads the same fetch as the alert above.
   const [scope, setScope] = useState<'all' | 'low'>('all');
@@ -51,25 +53,21 @@ function SessionBalanceInner() {
     void Promise.allSettled([allBalances.refetch(), balances.refetch()]);
   }
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!clientId || !totalSessions) return;
-    setSaving(true);
-    setError('');
-    try {
-      await api.automation.sessionBalance.create({
-        client_id: clientId, total_sessions: parseInt(totalSessions),
-        package_name: packageName || undefined, end_date: endDate || undefined,
-      });
-      setTotalSessions(''); setPackageName(''); setEndDate('');
+  const f = useAppForm({
+    schema: sessionBalanceSchema,
+    defaultValues: blankSessionBalance(seededClientId),
+    onSubmit: async (values) => {
+      await api.automation.sessionBalance.create(toSessionBalancePayload(values));
+    },
+    onSuccess: (values) => {
+      // The client stays selected, as before — the trainer is usually adding a
+      // second package to the same person. Everything else clears.
+      f.resetTo(blankSessionBalance(values.client_id ?? ''));
       reloadBalances();
-    } catch (err: unknown) {
-      // There was no catch at all — just try/finally. A failed save reset the
-      // button and said nothing, so the form looked like it had simply
-      // ignored the click, and the trainer pressed it again.
-      setError(errorMessage(err, 'Could not create the session package.'));
-    } finally { setSaving(false); }
-  }
+    },
+  });
+
+  const { form, isSubmitting } = f;
 
   // Burning a session is irreversible — there is no "add one back" — so it
   // asks first, unlike the rest of the row.
@@ -114,36 +112,46 @@ function SessionBalanceInner() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
             <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'var(--text-primary)' }}>Add Session Package</h2>
-            <form onSubmit={handleCreate} className="space-y-3">
-              <FormField label="Client" required>
-                <SelectInput value={clientId} onChange={e => setClientId(e.target.value)}>
-                  <option value="">Select client...</option>
-                  {clients.data?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </SelectInput>
-              </FormField>
-              <FormField label="Total sessions" required>
-                <TextInput min={1} inputMode="numeric"
-                  value={totalSessions} onChange={e => setTotalSessions(e.target.value)} />
-              </FormField>
+            <form noValidate onSubmit={(e) => { e.preventDefault(); void f.submit(); }} className="space-y-3">
+              <form.Field name="client_id">
+                {(field) => (
+                  <SelectField
+                    field={field}
+                    label="Client"
+                    required
+                    placeholderOption="Select client..."
+                    options={(clients.data ?? []).map(c => ({ value: c.id, label: c.name }))}
+                    serverError={f.errors.fieldErrors.client_id}
+                  />
+                )}
+              </form.Field>
+              <form.Field name="total_sessions">
+                {(field) => (
+                  <NumberField field={field} label="Total sessions" required mode="integer"
+                    serverError={f.errors.fieldErrors.total_sessions} />
+                )}
+              </form.Field>
               {/* The example survives as a placeholder because that is what it
                   always was — a format, not the field's name. */}
-              <FormField label="Package name">
-                <TextInput placeholder="e.g. 12 PT Sessions"
-                  value={packageName} onChange={e => setPackageName(e.target.value)} />
-              </FormField>
-              <FormField label="Valid until" description="Optional. Leave blank for no expiry.">
-                <TextInput type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-              </FormField>
-              {error && (
-                <p role="alert" className="rounded-[10px] px-3 py-2 text-[12px] font-[600]"
-                  style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>
-                  {error}
-                </p>
-              )}
-              <Button type="submit" disabled={!clientId || !totalSessions || saving}
+              <form.Field name="package_name">
+                {(field) => (
+                  <TextField field={field} label="Package name"
+                    placeholder="e.g. 12 PT Sessions"
+                    serverError={f.errors.fieldErrors.package_name} />
+                )}
+              </form.Field>
+              <form.Field name="end_date">
+                {(field) => (
+                  <DateFieldControl field={field} label="Valid until"
+                    description="Optional. Leave blank for no expiry."
+                    serverError={f.errors.fieldErrors.end_date} />
+                )}
+              </form.Field>
+              <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} />
+              <Button type="submit" disabled={isSubmitting}
                 className="!w-full !rounded-[14px] !py-3 !font-[700]"
-                style={{ background: !clientId || !totalSessions || saving ? '#e2e8f0' : 'linear-gradient(135deg, #1E293B, #475569)', color: '#fff' }}>
-                {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Create Balance
+                style={{ background: isSubmitting ? '#e2e8f0' : 'linear-gradient(135deg, #1E293B, #475569)', color: '#fff' }}>
+                {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Create Balance
               </Button>
             </form>
           </div>

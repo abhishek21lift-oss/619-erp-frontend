@@ -1,22 +1,23 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useStore } from '@tanstack/react-form';
 import { m } from 'framer-motion';
 import { ClipboardCheck, Plus, Loader2, Check } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { useAsync } from '@/lib/use-async';
 import { api, Client } from '@/lib/api';
-import { Button, FormField, PageHero, TextInput, TextArea, SelectInput } from '@/components/ui';
+import { Button, PageHero } from '@/components/ui';
+import {
+  ChoiceChips, DateFieldControl, FormErrorBanner, NumberField, SelectField, TextAreaField,
+} from '@/components/ui/form';
 import { PremiumAreaChart } from '@/components/visualizations';
 import WeeklyCheckinInsightCard from '@/components/pt-os/WeeklyCheckinInsightCard';
 import { mondayYmd } from '@/lib/attendance-view';
-
-const MOODS = [
-  { value: 'great', label: 'Great', color: '#10b981' },
-  { value: 'good', label: 'Good', color: '#0067e0' },
-  { value: 'okay', label: 'Okay', color: '#f59e0b' },
-  { value: 'tired', label: 'Tired', color: '#f59e0b' },
-  { value: 'stressed', label: 'Stressed', color: '#ef4444' },
-];
+import { useAppForm } from '@/lib/forms/useAppForm';
+import {
+  WEEKLY_CHECKIN_MOOD_OPTIONS, blankWeeklyCheckin, toWeeklyCheckinPayload,
+  weeklyCheckinSchema,
+} from '@/lib/forms/schemas/weeklyCheckin';
 
 interface CheckinRow {
   id: string;
@@ -28,27 +29,39 @@ interface CheckinRow {
 }
 
 export default function WeeklyCheckinPage() {
-  const [clientId, setClientId] = useState('');
   // Monday, in the trainer's own calendar. It was the Sunday before, computed
   // in UTC — a different week from the member app's, and in India before
   // 05:30 a different day as well. The server snaps any date to its Monday.
-  const [weekStart, setWeekStart] = useState(() => mondayYmd());
-  const [weight, setWeight] = useState('');
-  const [mood, setMood] = useState('good');
-  const [sleepHours, setSleepHours] = useState('');
-  const [waterGlasses, setWaterGlasses] = useState('');
-  const [workoutCount, setWorkoutCount] = useState('');
-  const [adherencePct, setAdherencePct] = useState('');
-  const [trainerNotes, setTrainerNotes] = useState('');
-  // The three readings readiness needs. All optional — a check-in taken at the
-  // door should record what the client said and leave the rest blank.
-  const [stress, setStress] = useState('');
-  const [energy, setEnergy] = useState('');
-  const [soreness, setSoreness] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
+  // Captured once so a page left open overnight does not move the week.
+  const [initialValues] = useState(() => blankWeeklyCheckin(mondayYmd()));
+  const [saved, setSaved] = useState(false);
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const clients = useAsync<any[]>(() => api.pt.clients().then(r => r.data), []);
+  const f = useAppForm({
+    schema: weeklyCheckinSchema,
+    defaultValues: initialValues,
+    // A successful check-in leaves every value on screen: the trainer logs the
+    // next week from the same client, and the old form never cleared itself.
+    keepValuesOnSuccess: true,
+    onSubmit: async (values) => {
+      await api.progress.weeklyCheckins.create(toWeeklyCheckinPayload(values));
+      setSaved(true);
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+      savedTimer.current = setTimeout(() => setSaved(false), 2000);
+      // The list is the only confirmation that the upsert landed, so refresh
+      // it even though the form stays populated.
+      checkins.refetch();
+    },
+  });
+  const { form, errors, isSubmitting } = f;
+  const values = useStore(form.store, (s) => s.values);
+  const clientId = values.client_id;
+
+  useEffect(() => () => {
+    if (savedTimer.current) clearTimeout(savedTimer.current);
+  }, []);
+
+  const clients = useAsync<Client[]>(() => api.pt.clients().then(r => r.data as Client[]), []);
   const checkins = useAsync(() => api.progress.weeklyCheckins.list(clientId ? { client_id: clientId } : {}).then(r => r.data), [clientId]);
   // One typed view of the check-in rows, reused everywhere below instead of
   // an `any[]` cast at each call site.
@@ -66,26 +79,15 @@ export default function WeeklyCheckinPage() {
 
   const pageError = clients.error || checkins.error;
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!clientId) return;
-    setSaving(true);
-    try {
-      await api.progress.weeklyCheckins.create({
-        client_id: clientId, week_start_date: weekStart,
-        weight: weight ? parseFloat(weight) : undefined,
-        mood, sleep_hours: sleepHours ? parseFloat(sleepHours) : undefined,
-        water_glasses: waterGlasses ? parseInt(waterGlasses) : undefined,
-        workout_count: workoutCount ? parseInt(workoutCount) : undefined,
-        adherence_pct: adherencePct ? parseInt(adherencePct) : undefined,
-        trainer_notes: trainerNotes || undefined,
-        stress_level: stress ? parseInt(stress) : undefined,
-        energy_level: energy ? parseInt(energy) : undefined,
-        soreness_level: soreness ? parseInt(soreness) : undefined,
-      });
-      setSuccess(true); setTimeout(() => setSuccess(false), 2000);
-      checkins.refetch();
-    } finally { setSaving(false); }
+  // Clear a previous "Saved!" before validation runs, so a refused retry can
+  // never sit under a success label while the error banner says otherwise.
+  function submit() {
+    if (savedTimer.current) {
+      clearTimeout(savedTimer.current);
+      savedTimer.current = null;
+    }
+    setSaved(false);
+    void f.submit();
   }
 
   if (pageError && !clients.loading && !checkins.loading) {
@@ -141,55 +143,109 @@ export default function WeeklyCheckinPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'var(--text-primary)' }}>Log Check-In</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Migrated to the form system. Every caption here used to be a
-                  placeholder, so a half-filled check-in was six anonymous
-                  number boxes — and this form is filled from a phone, beside a
-                  client, where "was the third one water or workouts?" is a real
-                  question. The captions are persistent now; the placeholders
-                  that survive carry a unit or a range, which is what a
-                  placeholder is for. */}
-              <FormField label="Client" required>
-                <SelectInput value={clientId} onChange={e => setClientId(e.target.value)}>
-                  <option value="">Select client...</option>
-                  {clients.data?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </SelectInput>
-              </FormField>
+            <form
+              noValidate
+              onSubmit={(e) => { e.preventDefault(); submit(); }}
+              className="space-y-4"
+            >
+              <FormErrorBanner errors={errors} onRetry={submit} />
 
-              <FormField label="Week starting">
-                <TextInput type="date" value={weekStart} onChange={e => setWeekStart(e.target.value)} />
-              </FormField>
+              <form.Field name="client_id">
+                {(field) => (
+                  <SelectField
+                    field={field}
+                    label="Client"
+                    required
+                    placeholderOption="Select client..."
+                    options={(clients.data ?? []).map(c => ({ value: c.id, label: c.name }))}
+                    serverError={errors.fieldErrors.client_id}
+                  />
+                )}
+              </form.Field>
+
+              <form.Field name="week_start_date">
+                {(field) => (
+                  <DateFieldControl
+                    field={field}
+                    label="Week starting"
+                    required
+                    serverError={errors.fieldErrors.week_start_date}
+                  />
+                )}
+              </form.Field>
 
               <div className="grid grid-cols-2 gap-3">
-                {/* `inputMode` alone, and deliberately.
-                    It is what opens the keypad — decimal vs numeric decides
-                    whether it has a point, so weight and sleep take halves
-                    while glasses and workouts do not. `type="number"` was
-                    here too and contributed only its hazard: a scroll wheel
-                    over a focused field silently changing a client's logged
-                    weight. `TextInput` now refuses to render it at all. */}
-                <FormField label="Weight" description="kg">
-                  <TextInput step="0.1" inputMode="decimal" placeholder="e.g. 72.5"
-                    value={weight} onChange={e => setWeight(e.target.value)} />
-                </FormField>
-                <FormField label="Sleep" description="hours per night">
-                  <TextInput step="0.5" inputMode="decimal" placeholder="e.g. 7.5"
-                    value={sleepHours} onChange={e => setSleepHours(e.target.value)} />
-                </FormField>
-                <FormField label="Water" description="glasses per day">
-                  <TextInput inputMode="numeric"
-                    value={waterGlasses} onChange={e => setWaterGlasses(e.target.value)} />
-                </FormField>
-                <FormField label="Workouts" description="this week">
-                  <TextInput inputMode="numeric"
-                    value={workoutCount} onChange={e => setWorkoutCount(e.target.value)} />
-                </FormField>
+                <form.Field name="weight">
+                  {(field) => (
+                    <NumberField
+                      field={field}
+                      label="Weight"
+                      description="kg (20–400)"
+                      mode="decimal"
+                      placeholder="e.g. 72.5"
+                      min={20}
+                      max={400}
+                      serverError={errors.fieldErrors.weight}
+                    />
+                  )}
+                </form.Field>
+                <form.Field name="sleep_hours">
+                  {(field) => (
+                    <NumberField
+                      field={field}
+                      label="Sleep"
+                      description="hours per night (0–24)"
+                      mode="decimal"
+                      placeholder="e.g. 7.5"
+                      min={0}
+                      max={24}
+                      serverError={errors.fieldErrors.sleep_hours}
+                    />
+                  )}
+                </form.Field>
+                <form.Field name="water_glasses">
+                  {(field) => (
+                    <NumberField
+                      field={field}
+                      label="Water"
+                      description="glasses per day (0–40)"
+                      mode="integer"
+                      min={0}
+                      max={40}
+                      serverError={errors.fieldErrors.water_glasses}
+                    />
+                  )}
+                </form.Field>
+                <form.Field name="workout_count">
+                  {(field) => (
+                    <NumberField
+                      field={field}
+                      label="Workouts"
+                      description="this week (0–21)"
+                      mode="integer"
+                      min={0}
+                      max={21}
+                      serverError={errors.fieldErrors.workout_count}
+                    />
+                  )}
+                </form.Field>
               </div>
 
-              <FormField label="Adherence" description="Percentage, 0 to 100.">
-                <TextInput min={0} max={100} inputMode="numeric"
-                  value={adherencePct} onChange={e => setAdherencePct(e.target.value)} />
-              </FormField>
+              <form.Field name="adherence_pct">
+                {(field) => (
+                  <NumberField
+                    field={field}
+                    label="Adherence"
+                    description="Percentage, 0 to 100."
+                    mode="decimal"
+                    min={0}
+                    max={100}
+                    suffix="%"
+                    serverError={errors.fieldErrors.adherence_pct}
+                  />
+                )}
+              </form.Field>
+
               {/* ── Readiness inputs ──
                   Sleep is already above. These three are the rest of what a
                   recovery score needs: without them it is a sleep score
@@ -200,47 +256,79 @@ export default function WeeklyCheckinPage() {
                   Readiness — 1 to 10, optional
                 </p>
                 <div className="grid grid-cols-3 gap-3">
-                  {([
-                    { label: 'Stress', hint: '10 = worst', value: stress, set: setStress },
-                    { label: 'Energy', hint: '10 = best', value: energy, set: setEnergy },
-                    { label: 'Soreness', hint: '10 = worst', value: soreness, set: setSoreness },
-                  ]).map((f) => (
-                    // The hint moves from a loose <p> under the box into the
-                    // field's description slot, so it is announced with the
-                    // control instead of being read as stray text after it.
-                    <FormField key={f.label} label={f.label} description={f.hint}>
-                      <TextInput
-                        min={1} max={10} inputMode="numeric"
-                        value={f.value} onChange={(e) => f.set(e.target.value)}
+                  <form.Field name="stress_level">
+                    {(field) => (
+                      <NumberField
+                        field={field}
+                        label="Stress"
+                        description="10 = worst"
+                        mode="integer"
+                        min={1}
+                        max={10}
+                        serverError={errors.fieldErrors.stress_level}
                       />
-                    </FormField>
-                  ))}
+                    )}
+                  </form.Field>
+                  <form.Field name="energy_level">
+                    {(field) => (
+                      <NumberField
+                        field={field}
+                        label="Energy"
+                        description="10 = best"
+                        mode="integer"
+                        min={1}
+                        max={10}
+                        serverError={errors.fieldErrors.energy_level}
+                      />
+                    )}
+                  </form.Field>
+                  <form.Field name="soreness_level">
+                    {(field) => (
+                      <NumberField
+                        field={field}
+                        label="Soreness"
+                        description="10 = worst"
+                        mode="integer"
+                        min={1}
+                        max={10}
+                        serverError={errors.fieldErrors.soreness_level}
+                      />
+                    )}
+                  </form.Field>
                 </div>
               </div>
 
-              <div>
-                <p className="text-[11px] font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>Mood</p>
-                <div className="flex gap-2">
-                  {MOODS.map(m => (
-                    <button key={m.value} type="button" onClick={() => setMood(m.value)}
-                      className="flex-1 rounded-[10px] py-2 text-[11px] font-semibold transition-all"
-                      style={{
-                        background: mood === m.value ? `${m.color}15` : '#F8FAFC',
-                        border: `1.5px solid ${mood === m.value ? m.color : 'transparent'}`,
-                        color: mood === m.value ? m.color : '#64748b',
-                      }}>{m.label}</button>
-                  ))}
-                </div>
-              </div>
-              <FormField label="Trainer notes">
-                <TextArea rows={2} placeholder="How the week went, anything to watch"
-                  value={trainerNotes} onChange={e => setTrainerNotes(e.target.value)} />
-              </FormField>
-              <Button type="submit" disabled={!clientId || saving}
+              <form.Field name="mood">
+                {(field) => (
+                  <ChoiceChips
+                    field={field}
+                    legend="Mood"
+                    required
+                    options={WEEKLY_CHECKIN_MOOD_OPTIONS}
+                    serverError={errors.fieldErrors.mood}
+                  />
+                )}
+              </form.Field>
+
+              <form.Field name="trainer_notes">
+                {(field) => (
+                  <TextAreaField
+                    field={field}
+                    label="Trainer notes"
+                    rows={2}
+                    maxLength={2000}
+                    showCount
+                    placeholder="How the week went, anything to watch"
+                    serverError={errors.fieldErrors.trainer_notes}
+                  />
+                )}
+              </form.Field>
+
+              <Button type="submit" disabled={!clientId || isSubmitting}
                 className="!w-full !rounded-[14px] !py-3 !font-[700]"
-                style={{ background: !clientId || saving ? 'rgba(0,0,0,0.1)' : 'linear-gradient(135deg, #0059ce, #0067e0)', color: '#fff' }}>
-                {saving ? <Loader2 size={16} className="animate-spin" /> : success ? <Check size={16} /> : <Plus size={16} />}
-                {saving ? 'Saving...' : success ? 'Saved!' : 'Log Check-In'}
+                style={{ background: !clientId || isSubmitting ? 'rgba(0,0,0,0.1)' : 'linear-gradient(135deg, #0059ce, #0067e0)', color: '#fff' }}>
+                {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : saved ? <Check size={16} /> : <Plus size={16} />}
+                {isSubmitting ? 'Saving...' : saved ? 'Saved!' : 'Log Check-In'}
               </Button>
             </form>
           </m.div>

@@ -7,6 +7,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { WorkoutPlan } from '@/lib/api';
+import { ApiError } from '@/lib/http';
 
 const update = vi.fn(async () => ({}));
 const detail = vi.fn(async () => ({ ...PLAN, name: 'Meet Prep' }));
@@ -40,8 +41,8 @@ describe('Edit details', () => {
     render(<EditProgrammeDialog plan={PLAN} onClose={onClose} onSaved={onSaved} />);
 
     fireEvent.change(screen.getByDisplayValue('Meet prep'), { target: { value: 'Meet Prep' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Strength' }));
-    fireEvent.click(screen.getByText('Save changes'));
+    fireEvent.click(screen.getByRole('radio', { name: 'Strength' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(update).toHaveBeenCalled());
     expect(update.mock.calls[0]).toEqual(['p1', { name: 'Meet Prep', goal: 'strength' }]);
@@ -52,7 +53,7 @@ describe('Edit details', () => {
   it('sends a new length when the weeks change', async () => {
     render(<EditProgrammeDialog plan={PLAN} onClose={() => {}} onSaved={() => {}} />);
     fireEvent.change(weeksField(), { target: { value: '16' } });
-    fireEvent.click(screen.getByText('Save changes'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(update).toHaveBeenCalled());
     expect(update.mock.calls[0]).toEqual(['p1', { duration_weeks: 16 }]);
@@ -61,7 +62,7 @@ describe('Edit details', () => {
   it('closes without a request when nothing changed', async () => {
     const onClose = vi.fn();
     render(<EditProgrammeDialog plan={PLAN} onClose={onClose} onSaved={() => {}} />);
-    fireEvent.click(screen.getByText('Save changes'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(update).not.toHaveBeenCalled();
@@ -75,7 +76,7 @@ describe('Edit details', () => {
     fireEvent.blur(weeksField());
     expect(weeksField().value).toBe('60');
     fireEvent.change(screen.getByDisplayValue('Meet prep'), { target: { value: 'Long block' } });
-    fireEvent.click(screen.getByText('Save changes'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(update).toHaveBeenCalled());
     expect(update.mock.calls[0]).toEqual(['p1', { name: 'Long block' }]);
@@ -87,10 +88,10 @@ describe('Edit details', () => {
     const bare = { ...PLAN, goal: null, difficulty: null } as unknown as WorkoutPlan;
     render(<EditProgrammeDialog plan={bare} onClose={() => {}} onSaved={() => {}} />);
     for (const name of ['General Fitness', 'Intermediate', 'Muscle Gain']) {
-      expect(screen.getByRole('button', { name })).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.getByRole('radio', { name })).toHaveAttribute('aria-checked', 'false');
     }
     fireEvent.change(screen.getByDisplayValue('Meet prep'), { target: { value: 'Renamed' } });
-    fireEvent.click(screen.getByText('Save changes'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(update).toHaveBeenCalled());
     expect(update.mock.calls[0]).toEqual(['p1', { name: 'Renamed' }]);
@@ -99,11 +100,54 @@ describe('Edit details', () => {
   it('sends a goal the trainer picks for a programme that had none', async () => {
     const bare = { ...PLAN, goal: null } as unknown as WorkoutPlan;
     render(<EditProgrammeDialog plan={bare} onClose={() => {}} onSaved={() => {}} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Endurance' }));
-    fireEvent.click(screen.getByText('Save changes'));
+    fireEvent.click(screen.getByRole('radio', { name: 'Endurance' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(update).toHaveBeenCalled());
     expect(update.mock.calls[0]).toEqual(['p1', { goal: 'endurance' }]);
+  });
+
+  it('blocks a blank name without closing or writing', async () => {
+    const onClose = vi.fn();
+    render(<EditProgrammeDialog plan={PLAN} onClose={onClose} onSaved={() => {}} />);
+    fireEvent.change(screen.getByRole('textbox', { name: /programme name/i }), {
+      target: { value: '   ' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    expect(await screen.findByText('Programme name is required.')).toBeInTheDocument();
+    expect(update).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('blocks a cleared weeks box instead of silently recording one week', async () => {
+    render(<EditProgrammeDialog plan={PLAN} onClose={() => {}} onSaved={() => {}} />);
+    fireEvent.change(weeksField(), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    expect(await screen.findByText('Weeks is required.')).toBeInTheDocument();
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('blocks an unparseable weeks box', async () => {
+    render(<EditProgrammeDialog plan={PLAN} onClose={() => {}} onSaved={() => {}} />);
+    fireEvent.change(weeksField(), { target: { value: 'abc' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    expect(await screen.findByText('Weeks must be a number.')).toBeInTheDocument();
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('keeps the dialog open and reports a server failure', async () => {
+    const onClose = vi.fn();
+    update.mockRejectedValueOnce(new ApiError('database unavailable', 500));
+    render(<EditProgrammeDialog plan={PLAN} onClose={onClose} onSaved={() => {}} />);
+    fireEvent.change(screen.getByDisplayValue('Meet prep'), { target: { value: 'Renamed' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    expect(await screen.findByText('The server had a problem saving this. Try again in a moment.'))
+      .toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it('has no sessions-per-week field — the builder\'s days decide it', () => {

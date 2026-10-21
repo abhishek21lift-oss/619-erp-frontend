@@ -16,11 +16,11 @@
 // by appending digits to a 1.
 //
 // The fix is to hold what is typed as a string and only turn it into a number
-// on blur and on submit. These tests drive the real component through the real
-// sequence of change events rather than asserting on the handler, because the
-// bug lived in the round trip between state and the rendered value.
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+// on submit. These tests drive the real component through the real sequence of
+// change events rather than asserting on the handler, because the bug lived in
+// the round trip between state and the rendered value.
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
@@ -49,18 +49,18 @@ vi.mock('@/lib/api', () => ({
 
 vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast: { error: vi.fn(), success: vi.fn() } }) }));
 
-import NewProgrammeDialog, { clamp } from '@/components/pt-os/builder/NewProgrammeDialog';
+import NewProgrammeDialog from '@/components/pt-os/builder/NewProgrammeDialog';
 
-  /*
-   * Queried by inputMode rather than by role.
-   *
-   * These used to be `getAllByRole('spinbutton')`, which is the implicit role
-   * of `<input type="number">` — so the query was coupled to the very thing
-   * that made the field unsafe. A scroll wheel over a focused number input
-   * silently changes its value, and the design system no longer renders one.
-   *
-   * Every assertion below is unchanged; only the way the fields are found is.
-   */
+/*
+ * Queried by inputMode rather than by role.
+ *
+ * These used to be `getAllByRole('spinbutton')`, which is the implicit role
+ * of `<input type="number">` — so the query was coupled to the very thing
+ * that made the field unsafe. A scroll wheel over a focused number input
+ * silently changes its value, and the design system no longer renders one.
+ *
+ * Every assertion below is unchanged; only the way the fields are found is.
+ */
 function numericFields() {
   return Array.from(
     document.querySelectorAll('input[inputmode="numeric"]'),
@@ -73,11 +73,17 @@ function open() {
   return { weeks };
 }
 
+function nameField() {
+  return screen.getByPlaceholderText(/Upper \/ Lower Split/i);
+}
+
 beforeEach(() => {
   push.mockClear();
   createPlan.mockClear();
   assign.mockClear();
 });
+
+afterEach(cleanup);
 
 describe('typing a new value', () => {
   it('lets the field be cleared without snapping to 1', () => {
@@ -119,41 +125,48 @@ describe('typing a new value', () => {
   });
 });
 
-describe('clamping on blur', () => {
-  it('an empty field falls back to the minimum, not to nothing', () => {
+describe('bounds without silently rewriting what was typed', () => {
+  it('leaves an empty field empty on blur', () => {
     const { weeks } = open();
     fireEvent.change(weeks, { target: { value: '' } });
     fireEvent.blur(weeks);
-    expect(weeks.value).toBe('1');
+    expect(weeks.value).toBe('');
   });
 
-  it('holds the upper bound, which was never enforced before', () => {
-    // max={52} is a hint the browser does not apply to typed input, and the
-    // old Math.max only had a floor — 999 weeks submitted happily.
+  it('leaves an out-of-range value visible on blur so submit can explain it', () => {
     const { weeks } = open();
     fireEvent.change(weeks, { target: { value: '999' } });
     fireEvent.blur(weeks);
-    expect(weeks.value).toBe('52');
+    expect(weeks.value).toBe('999');
   });
 
-  it('holds the lower bound', () => {
+  it.each([
+    ['', 'Weeks is required.'],
+    ['0', 'Weeks must be at least 1.'],
+    ['53', 'Weeks cannot be more than 52.'],
+    ['2.5', 'Weeks must be a whole number.'],
+    ['abc', 'Weeks must be a number.'],
+  ])('blocks %j weeks and does not create anything', async (raw, message) => {
     const { weeks } = open();
-    fireEvent.change(weeks, { target: { value: '0' } });
-    fireEvent.blur(weeks);
-    expect(weeks.value).toBe('1');
+    fireEvent.change(nameField(), { target: { value: 'Test' } });
+    fireEvent.change(weeks, { target: { value: raw } });
+    fireEvent.click(screen.getByRole('button', { name: /create and add exercises/i }));
+
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(createPlan).not.toHaveBeenCalled();
   });
 });
 
 describe('what reaches the API', () => {
   it('submits the typed number, not the starting one', async () => {
     const { weeks } = open();
-    fireEvent.change(screen.getByPlaceholderText(/Upper \/ Lower Split/i), {
+    fireEvent.change(nameField(), {
       target: { value: 'Push Pull Legs' },
     });
     fireEvent.change(weeks, { target: { value: '' } });
     fireEvent.change(weeks, { target: { value: '8' } });
 
-    fireEvent.click(screen.getByText(/Create and add exercises/i));
+    fireEvent.click(screen.getByRole('button', { name: /create and add exercises/i }));
 
     await waitFor(() => expect(createPlan).toHaveBeenCalled());
     const body = createPlan.mock.calls[0][0] as Record<string, unknown>;
@@ -165,46 +178,32 @@ describe('what reaches the API', () => {
     // The server read an absent flag as TRUE, so every programme made here
     // was stored as a template.
     open();
-    fireEvent.change(screen.getByPlaceholderText(/Upper \/ Lower Split/i), { target: { value: 'PPL' } });
-    fireEvent.click(screen.getByText(/Create and add exercises/i));
+    fireEvent.change(nameField(), { target: { value: 'PPL' } });
+    fireEvent.click(screen.getByRole('button', { name: /create and add exercises/i }));
     await waitFor(() => expect(createPlan).toHaveBeenCalled());
     expect(createPlan.mock.calls[0][0]).toMatchObject({ is_template: false });
   });
 
   it('sends the difficulty the trainer chose, not a fixed intermediate', async () => {
     open();
-    fireEvent.change(screen.getByPlaceholderText(/Upper \/ Lower Split/i), { target: { value: 'First block' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Beginner' }));
-    fireEvent.click(screen.getByText(/Create and add exercises/i));
+    fireEvent.change(nameField(), { target: { value: 'First block' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Beginner' }));
+    fireEvent.click(screen.getByRole('button', { name: /create and add exercises/i }));
     await waitFor(() => expect(createPlan).toHaveBeenCalled());
     expect(createPlan.mock.calls[0][0]).toMatchObject({ difficulty: 'beginner' });
   });
 
-  it('submits a number even if the field is left mid-edit and empty', async () => {
-    // Submitting without blurring is reachable: tap the button directly from
-    // the field. The API must not receive NaN.
-    const { weeks } = open();
-    fireEvent.change(screen.getByPlaceholderText(/Upper \/ Lower Split/i), {
-      target: { value: 'Test' },
-    });
-    fireEvent.change(weeks, { target: { value: '' } });
-    fireEvent.click(screen.getByText(/Create and add exercises/i));
+  it('starts blank again when the dialog is reopened', async () => {
+    const { rerender } = render(
+      <NewProgrammeDialog open onClose={() => {}} presetClientId="c1" />,
+    );
+    fireEvent.change(nameField(), { target: { value: 'Draft' } });
+    fireEvent.change(numericFields()[0], { target: { value: '20' } });
 
-    await waitFor(() => expect(createPlan).toHaveBeenCalled());
-    const body = createPlan.mock.calls[0][0] as { duration_weeks: number };
-    expect(Number.isFinite(body.duration_weeks)).toBe(true);
-    expect(body.duration_weeks).toBe(1);
-  });
-});
+    rerender(<NewProgrammeDialog open={false} onClose={() => {}} presetClientId="c1" />);
+    rerender(<NewProgrammeDialog open onClose={() => {}} presetClientId="c1" />);
 
-describe('clamp()', () => {
-  it('floors, bounds, and survives junk', () => {
-    expect(clamp('8', 1, 52)).toBe(8);
-    expect(clamp('', 1, 52)).toBe(1);
-    expect(clamp('0', 1, 52)).toBe(1);
-    expect(clamp('999', 1, 52)).toBe(52);
-    expect(clamp('-4', 1, 52)).toBe(1);
-    expect(clamp('3.7', 1, 52)).toBe(3);
-    expect(clamp('abc', 1, 52)).toBe(1);
+    await waitFor(() => expect(numericFields()[0]?.value).toBe('4'));
+    expect(nameField().value).toBe('');
   });
 });

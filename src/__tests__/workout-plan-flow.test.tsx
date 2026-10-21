@@ -61,7 +61,7 @@ const numbers = () =>
   Array.from(document.querySelectorAll('input[inputmode="numeric"]')) as HTMLInputElement[];
 // The client list is fetched on open, so the row is not there on first paint.
 const pickClient = async () =>
-  fireEvent.click(await screen.findByRole('button', { name: 'Rahul Sharma' }));
+  fireEvent.click(await screen.findByRole('radio', { name: 'Rahul Sharma' }));
 
 describe('the client is the first thing the form asks for', () => {
   it('puts the client field above the programme name', () => {
@@ -84,7 +84,7 @@ describe('picking a client fills the form', () => {
     await pickClient();
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Advanced' })).toHaveAttribute('aria-pressed', 'true'));
+      expect(screen.getByRole('radio', { name: 'Advanced' })).toHaveAttribute('aria-checked', 'true'));
     expect(nameField().value).toBe('');
   });
 
@@ -96,7 +96,7 @@ describe('picking a client fills the form', () => {
     await pickClient();
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Weight Loss' })).toHaveAttribute('aria-pressed', 'true'));
+      expect(screen.getByRole('radio', { name: 'Weight Loss' })).toHaveAttribute('aria-checked', 'true'));
   });
 
   it('turns a powerlifting screening into a Strength programme', async () => {
@@ -105,7 +105,7 @@ describe('picking a client fills the form', () => {
     await pickClient();
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Strength' })).toHaveAttribute('aria-pressed', 'true'));
+      expect(screen.getByRole('radio', { name: 'Strength' })).toHaveAttribute('aria-checked', 'true'));
   });
 
   it('takes the difficulty from the workout experience recorded at enrolment', async () => {
@@ -114,7 +114,7 @@ describe('picking a client fills the form', () => {
     await pickClient();
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Beginner' })).toHaveAttribute('aria-pressed', 'true'));
+      expect(screen.getByRole('radio', { name: 'Beginner' })).toHaveAttribute('aria-checked', 'true'));
     // Weeks is not "filled" — nothing on the record says how long a block runs.
     expect(numbers()[0].value).toBe('4');
   });
@@ -126,8 +126,8 @@ describe('picking a client fills the form', () => {
     await pickClient();
 
     await waitFor(() => expect(clientRow).toHaveBeenCalled());
-    expect(screen.getByRole('button', { name: 'Muscle Gain' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Intermediate' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('radio', { name: 'Muscle Gain' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('radio', { name: 'Intermediate' })).toHaveAttribute('aria-checked', 'true');
   });
 
   it('leaves a field alone once the trainer has chosen it', async () => {
@@ -136,13 +136,13 @@ describe('picking a client fills the form', () => {
     clientRow.mockResolvedValue({ data: { id: 'c1', name: 'Rahul Sharma', workout_experience_level: 'advanced' } });
     goalsList.mockResolvedValue({ data: [{ goal_type: 'fat_loss' }] });
     openDialog();
-    fireEvent.click(screen.getByRole('button', { name: 'Beginner' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Beginner' }));
 
     await pickClient();
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Weight Loss' })).toHaveAttribute('aria-pressed', 'true'));
+      expect(screen.getByRole('radio', { name: 'Weight Loss' })).toHaveAttribute('aria-checked', 'true'));
 
-    expect(screen.getByRole('button', { name: 'Beginner' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('radio', { name: 'Beginner' })).toHaveAttribute('aria-checked', 'true');
   });
 
   it('survives both reads failing', async () => {

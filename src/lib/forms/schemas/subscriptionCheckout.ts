@@ -28,6 +28,8 @@ import { z } from 'zod';
 import { textField } from '../primitives';
 import { utrField } from '../domain';
 
+export { normalizeUtrInput } from '../domain';
+
 export const submitUtrSchema = z.object({
   utr: utrField({ label: 'UPI reference number', required: true }),
   note: textField({ label: 'Note', maxLength: 500 }),
@@ -38,18 +40,6 @@ export type SubmitUtrState = { utr: string; note: string };
 
 export function blankSubmitUtr(): SubmitUtrState {
   return { utr: '', note: '' };
-}
-
-/**
- * Keep only what a UTR can contain, as it is typed.
- *
- * Pure and exported so the rule is testable. The cap is the schema's maximum,
- * so the box stops rather than accepting a 20-digit paste and then reporting it
- * — a length the user can see running out is better feedback than a refusal
- * afterwards.
- */
-export function normalizeUtrInput(raw: string): string {
-  return raw.replace(/\D/g, '').slice(0, 16);
 }
 
 /** Server messages this endpoint produces, mapped to the field they belong to. */
