@@ -66,7 +66,7 @@ function numeric(normalizer: Normalizer, opts: NumericFieldOptions) {
   const { label, required = false, min, max, unit } = opts;
   const suffix = unit ? ` ${unit}` : '';
 
-  return z.unknown().transform((raw, ctx): number | null => {
+  return z.unknown().optional().transform((raw, ctx): number | null => {
     const n = normalizer(raw);
 
     if (typeof n === 'number' && Number.isNaN(n)) {
@@ -111,7 +111,7 @@ export const decimalField = (opts: NumericFieldOptions) => numeric(toNumberOrNul
 
 /** A whole number. Fractions are rejected, never rounded. */
 export const integerField = (opts: NumericFieldOptions) =>
-  z.unknown().transform((raw, ctx): number | null => {
+  z.unknown().optional().transform((raw, ctx): number | null => {
     // Separated from `numeric` so "2.5 sessions" reports the *fraction* as the
     // problem rather than the generic "must be a number", which would send the
     // user looking for a typo that is not there.
@@ -163,7 +163,7 @@ export interface TextFieldOptions extends FieldOptions {
 export const textField = (opts: TextFieldOptions) => {
   const { label, required = false, minLength, maxLength, pattern } = opts;
 
-  return z.unknown().transform((raw, ctx): string | null => {
+  return z.unknown().optional().transform((raw, ctx): string | null => {
     const s = toTextOrNull(raw);
 
     if (s === null) {
@@ -212,7 +212,7 @@ export const textField = (opts: TextFieldOptions) => {
 export const emailField = (opts: FieldOptions) => {
   const { label, required = false } = opts;
 
-  return z.unknown().transform((raw, ctx): string | null => {
+  return z.unknown().optional().transform((raw, ctx): string | null => {
     const s = toEmailOrNull(raw);
 
     if (s === null) {
@@ -243,7 +243,7 @@ export const emailField = (opts: FieldOptions) => {
 export const phoneField = (opts: FieldOptions) => {
   const { label, required = false } = opts;
 
-  return z.unknown().transform((raw, ctx): string | null => {
+  return z.unknown().optional().transform((raw, ctx): string | null => {
     const s = toPhoneOrNull(raw);
 
     if (s === null) {
@@ -270,7 +270,7 @@ export const phoneField = (opts: FieldOptions) => {
 export const codeField = (opts: TextFieldOptions) => {
   const { label, required = false, minLength = 3, maxLength = 32 } = opts;
 
-  return z.unknown().transform((raw, ctx): string | null => {
+  return z.unknown().optional().transform((raw, ctx): string | null => {
     const s = toCodeOrNull(raw);
 
     if (s === null) {
@@ -323,7 +323,7 @@ export interface DateFieldOptions extends FieldOptions {
 export const dateField = (opts: DateFieldOptions) => {
   const { label, required = false, min, max } = opts;
 
-  return z.unknown().transform((raw, ctx): string | null => {
+  return z.unknown().optional().transform((raw, ctx): string | null => {
     const s = toDateOrNull(raw);
 
     if (s === null) {
@@ -388,7 +388,7 @@ export const enumField = <const T extends readonly [string, ...string[]]>(
   const { label, required = false } = opts;
   const allowed = new Set<string>(options);
 
-  return z.unknown().transform((raw, ctx): T[number] | null => {
+  return z.unknown().optional().transform((raw, ctx): T[number] | null => {
     const s = toTextOrNull(raw);
 
     if (s === null) {
@@ -410,7 +410,7 @@ export const enumField = <const T extends readonly [string, ...string[]]>(
 
 /** A checkbox or switch. Anything absent reads as `false`, never as invalid. */
 export const booleanField = () =>
-  z.unknown().transform((raw): boolean => {
+  z.unknown().optional().transform((raw): boolean => {
     if (typeof raw === 'boolean') return raw;
     if (raw === 'true' || raw === 'on' || raw === 1 || raw === '1') return true;
     return false;
@@ -436,7 +436,7 @@ export interface MonthFieldOptions extends FieldOptions {
 export const monthField = (opts: MonthFieldOptions) => {
   const { label, required = false, min, max } = opts;
 
-  return z.unknown().transform((raw, ctx): string | null => {
+  return z.unknown().optional().transform((raw, ctx): string | null => {
     const s = toTextOrNull(raw);
 
     if (s === null) {
@@ -510,7 +510,7 @@ export const monthField = (opts: MonthFieldOptions) => {
 export const timeField = (opts: FieldOptions) => {
   const { label, required = false } = opts;
 
-  return z.unknown().transform((raw, ctx): string | null => {
+  return z.unknown().optional().transform((raw, ctx): string | null => {
     const s = toTextOrNull(raw);
 
     if (s === null) {

@@ -12,16 +12,23 @@
 // builder programmes (migration 219), so it is edited there, by adding or
 // removing a day.
 
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { m } from 'framer-motion';
 import { Loader2, Pencil, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { WorkoutPlan } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
-import { errorMessage } from '@/lib/forms/errors';
 import {
-  ChoiceField, PROGRAMME_DIFFICULTIES, PROGRAMME_GOALS, WEEKS_MAX, WEEKS_MIN, clamp,
+  ChoiceChips, FormErrorBanner, NumberField, SubmitStatus, TextField,
+} from '@/components/ui/form';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import {
+  PROGRAMME_NAME_MAX, programmeDetailsDefaults, programmeDetailsSchema,
+  toProgrammeDetailsPatch,
+} from '@/lib/forms/schemas/programmeDetails';
+import {
+  PROGRAMME_DIFFICULTIES, PROGRAMME_GOALS, WEEKS_MAX,
 } from './NewProgrammeDialog';
 
 export interface EditProgrammeDialogProps {
@@ -34,47 +41,29 @@ export default function EditProgrammeDialog({ plan, onClose, onSaved }: EditProg
   const { toast } = useToast();
   const dialogRef = useDialogA11y({ open: true, onClose });
 
-  const [name, setName] = useState(plan.name);
-  // '' when the programme has none — an AI-saved programme can carry neither.
-  // Pre-selecting a default here would show a choice nobody made, and then
-  // save it on a mere rename.
-  const [goal, setGoal] = useState<string>(plan.goal ?? '');
-  const [difficulty, setDifficulty] = useState<string>(plan.difficulty ?? '');
-  const [weeks, setWeeks] = useState(String(plan.duration_weeks || 4));
-  const [saving, setSaving] = useState(false);
-
   // A programme longer than the form's own ceiling (the server allows up to
   // 104 weeks) must not be silently shortened by an edit to its name.
   const weeksMax = Math.max(WEEKS_MAX, plan.duration_weeks || 0);
+  const schema = useMemo(() => programmeDetailsSchema(weeksMax), [weeksMax]);
 
-  const save = async () => {
-    if (!name.trim()) { toast.error('Give the programme a name'); return; }
+  const f = useAppForm({
+    schema,
+    defaultValues: programmeDetailsDefaults(plan),
+    onSubmit: async (values) => {
+      // Only what changed. Sending an untouched field is harmless for most of
+      // these, but a length that did not change must not look like one that
+      // did — the server moves running assignments' end dates when it does.
+      const patch = toProgrammeDetailsPatch(plan, values);
+      if (Object.keys(patch).length === 0) return;
 
-    // Only what changed. Sending an untouched field is harmless for most of
-    // these, but a length that did not change must not look like one that
-    // did — the server moves running assignments' end dates when it does.
-    const nextWeeks = clamp(weeks, WEEKS_MIN, weeksMax);
-    const patch: { name?: string; goal?: string; difficulty?: string; duration_weeks?: number } = {};
-    if (name.trim() !== plan.name) patch.name = name.trim();
-    if (goal && goal !== (plan.goal ?? '')) patch.goal = goal;
-    if (difficulty && difficulty !== (plan.difficulty ?? '')) patch.difficulty = difficulty;
-    if (nextWeeks !== plan.duration_weeks) patch.duration_weeks = nextWeeks;
-
-    if (Object.keys(patch).length === 0) { onClose(); return; }
-
-    setSaving(true);
-    try {
       await api.workouts.plans.update(plan.id, patch);
       const fresh = await api.workouts.plans.detail(plan.id);
       toast.success('Programme updated');
       onSaved(fresh);
-      onClose();
-    } catch (err: unknown) {
-      toast.error(errorMessage(err, 'Could not update the programme'));
-    } finally {
-      setSaving(false);
-    }
-  };
+    },
+    onSuccess: () => onClose(),
+  });
+  const { form, submit, errors, isSubmitting } = f;
 
   return (
     <m.div
@@ -135,6 +124,7 @@ export default function EditProgrammeDialog({ plan, onClose, onSaved }: EditProg
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close"
             className="-mr-1.5 -mt-1 flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-[12px]"
@@ -144,62 +134,88 @@ export default function EditProgrammeDialog({ plan, onClose, onSaved }: EditProg
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
-          <label className="mb-3 block">
-            <span className="mb-1.5 block text-[11px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-              Programme name
-            </span>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={120}
-              className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
-              style={inputStyle}
-            />
-          </label>
-
-          <ChoiceField label="Goal" options={PROGRAMME_GOALS} value={goal} onChange={setGoal} />
-          <ChoiceField label="Difficulty" options={PROGRAMME_DIFFICULTIES} value={difficulty} onChange={setDifficulty} />
-
-          <label className="mb-1 block">
-            <span className="mb-1.5 block text-[11px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-              Weeks
-            </span>
-            <input
-              value={weeks}
-              inputMode="numeric"
-              onChange={(e) => setWeeks(e.target.value)}
-              onBlur={() => setWeeks(String(clamp(weeks, WEEKS_MIN, weeksMax)))}
-              className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
-              style={inputStyle}
-            />
-          </label>
-          <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-            Clients on this programme have their end date moved to match.
-          </p>
-        </div>
-
-        <div
-          className="px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4"
-          style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-elevated)' }}
+        <form
+          noValidate
+          onSubmit={(e) => { e.preventDefault(); void submit(); }}
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <button
-            onClick={save}
-            disabled={saving}
-            className="flex h-[48px] w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-[700] text-white transition-transform active:scale-[0.98] disabled:opacity-60"
-            style={{ background: 'var(--brand)', boxShadow: '0 8px 24px rgba(2,113,235,0.24)' }}
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+            <form.Field name="name">
+              {(field) => (
+                <TextField
+                  field={field}
+                  label="Programme name"
+                  required
+                  maxLength={PROGRAMME_NAME_MAX}
+                  showCount
+                  serverError={errors.fieldErrors.name}
+                  className="mb-3"
+                />
+              )}
+            </form.Field>
+
+            <form.Field name="goal">
+              {(field) => (
+                <ChoiceChips
+                  field={field}
+                  legend="Goal"
+                  options={PROGRAMME_GOALS}
+                  serverError={errors.fieldErrors.goal}
+                  className="mb-3"
+                />
+              )}
+            </form.Field>
+
+            <form.Field name="difficulty">
+              {(field) => (
+                <ChoiceChips
+                  field={field}
+                  legend="Difficulty"
+                  options={PROGRAMME_DIFFICULTIES}
+                  serverError={errors.fieldErrors.difficulty}
+                  className="mb-3"
+                />
+              )}
+            </form.Field>
+
+            <form.Field name="duration_weeks">
+              {(field) => (
+                <NumberField
+                  field={field}
+                  label="Weeks"
+                  required
+                  mode="integer"
+                  min={1}
+                  max={weeksMax}
+                  serverError={errors.fieldErrors.duration_weeks}
+                  className="mb-1"
+                />
+              )}
+            </form.Field>
+            <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+              Clients on this programme have their end date moved to match.
+            </p>
+          </div>
+
+          <div
+            className="px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4"
+            style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-elevated)' }}
           >
-            {saving && <Loader2 size={16} className="animate-spin" />}
-            {saving ? 'Saving…' : 'Save changes'}
-          </button>
-        </div>
+            <FormErrorBanner errors={errors} onRetry={() => void submit()} className="mb-3" />
+            <SubmitStatus isSubmitting={isSubmitting} submittingLabel="Saving programme…" />
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              aria-busy={isSubmitting}
+              className="flex h-[48px] w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-[700] text-white transition-transform active:scale-[0.98] disabled:opacity-60"
+              style={{ background: 'var(--brand)', boxShadow: '0 8px 24px rgba(2,113,235,0.24)' }}
+            >
+              {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+              {isSubmitting ? 'Saving…' : 'Save changes'}
+            </button>
+          </div>
+        </form>
       </m.div>
     </m.div>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  background: 'var(--bg-subtle)',
-  border: '1px solid var(--border)',
-  color: 'var(--text-primary)',
-};

@@ -314,9 +314,14 @@ describe('the five representative migrations', () => {
     // The migration moves markup only. If a value binding or a submit handler
     // went missing the form would still render, and still look right.
     const checks: [string, RegExp[]][] = [
+      // Now on the second layer: the bindings are the field render props and
+      // the rules are the schema's. The business logic survived the move —
+      // all eleven readings, the client, the week and the notes are still
+      // the same ones the endpoint receives.
       ['app/(chrome)/pt-os/weekly-checkin/page.tsx', [
-        /onSubmit=\{handleSubmit\}/, /value=\{weight\}/, /setWeight\(e\.target\.value\)/,
-        /value=\{adherencePct\}/, /value=\{trainerNotes\}/, /step="0\.5"/,
+        /<form\.Field name="client_id">/, /<form\.Field name="weight">/,
+        /<form\.Field name="adherence_pct">/, /<form\.Field name="trainer_notes">/,
+        /weeklyCheckinSchema/, /toWeeklyCheckinPayload/,
       ]],
       // Now on the second layer: the value comes from the field render prop
       // rather than from `form.session_count`, and the option list and the
@@ -329,7 +334,9 @@ describe('the five representative migrations', () => {
         /PACKAGE_GOAL_OPTIONS/, /toPtPackagePayload/,
       ]],
       ['app/(chrome)/pt-os/session-balance/page.tsx', [
-        /onSubmit=\{handleCreate\}/, /value=\{totalSessions\}/, /value=\{endDate\}/,
+        /<form\.Field name="client_id">/, /<form\.Field name="total_sessions">/,
+        /<form\.Field name="end_date">/, /sessionBalanceSchema/,
+        /toSessionBalancePayload/,
       ]],
       ['app/(chrome)/attendance/page.tsx', [/value=\{query\}/, /setQuery\(e\.target\.value\)/]],
     ];
@@ -340,11 +347,11 @@ describe('the five representative migrations', () => {
   });
 
   it('gives the numeric fields the right mobile keyboard', () => {
-    // type="number" gets a numeric keypad; inputMode decides whether it has a
-    // decimal point. Weight and sleep take halves, glasses and workouts do not.
+    // `NumberField` owns the inputMode now. Weight, sleep and adherence take
+    // halves; glasses, workouts and the three readiness scores do not.
     const src = readFileSync(join(SRC, 'app/(chrome)/pt-os/weekly-checkin/page.tsx'), 'utf8');
-    expect((src.match(/inputMode="decimal"/g) ?? []).length).toBe(2);
-    expect((src.match(/inputMode="numeric"/g) ?? []).length).toBeGreaterThanOrEqual(3);
+    expect((src.match(/mode="decimal"/g) ?? []).length).toBe(3);
+    expect((src.match(/mode="integer"/g) ?? []).length).toBe(5);
   });
 });
 

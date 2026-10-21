@@ -185,6 +185,10 @@ function AppShellContent({ children }: AppShellProps) {
   const settingsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+  // Where focus goes back to when a menu closes by Escape.
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const [notifStatus, setNotifStatus] = useState('');
 
   const unreadCount = notifications.filter(n => !n.read_at).length;
 
@@ -246,6 +250,7 @@ function AppShellContent({ children }: AppShellProps) {
     try {
       await api.notifications.markAllRead();
       setNotifications(prev => prev.map(n => ({ ...n, read_at: new Date().toISOString() })));
+      setNotifStatus('All notifications marked as read');
     } catch { /* ignore */ }
   };
 
@@ -260,24 +265,64 @@ function AppShellContent({ children }: AppShellProps) {
   };
 
   useEffect(() => {
-    // Outside click closes whichever menu is open; Escape always does.
+    // Outside click, or focus leaving the three triggers/panels, closes the
+    // open menu. focusin rather than a per-wrapper onBlur: the wrapper is not
+    // an interactive element, and a document listener covers Tab and clicks
+    // alike.
+    const isInside = (target: Node) =>
+      [settingsRef, notifRef, profileRef].some((r) => r.current?.contains(target));
     const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      const inside = [settingsRef, notifRef, profileRef].some((r) => r.current?.contains(target));
-      if (!inside) setOpenMenu(null);
+      if (!isInside(e.target as Node)) setOpenMenu(null);
     };
-    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenMenu(null); };
+    const handleFocusIn = (e: FocusEvent) => {
+      if (!isInside(e.target as Node)) setOpenMenu(null);
+    };
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('focusin', handleFocusIn);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('focusin', handleFocusIn);
     };
   }, []);
+
+  // Escape closes the open top-bar menu and puts focus back on its trigger.
+  // The old handler cleared openMenu from anywhere on the page, so a keyboard
+  // user who had tabbed into a panel landed on <body> when it vanished.
+  useEffect(() => {
+    if (!openMenu) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpenMenu(null);
+        menuTriggerRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [openMenu]);
+
+  // The mobile drawer is modal: lock the page behind it and let Escape close
+  // it, returning focus to the toggle that opened it.
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMobileMenuOpen(false);
+        mobileMenuButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [mobileMenuOpen]);
 
   return (
     <LazyMotion features={domAnimation} strict>
       <ImpersonationBanner />
+      <p role="status" aria-live="polite" className="sr-only">{notifStatus}</p>
       <div className="flex min-h-dvh bg-[var(--bg-canvas)]">
         {/* Sidebar — desktop */}
         <Sidebar collapsed={sidebarCollapsed} onExpand={() => setSidebarCollapsed(false)} onCollapse={() => setSidebarCollapsed(true)} />
@@ -346,8 +391,10 @@ function AppShellContent({ children }: AppShellProps) {
                   other topbar icons — it's the only way into navigation on a
                   phone, so it earns being the one coloured control up here.
                   The tokens flip with the theme, so no darkMode branch. */}
-              <button type="button" aria-label="Open navigation menu" onClick={() => setMobileMenuOpen(true)}
-                className="menu-toggle flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 lg:hidden">
+              <button ref={mobileMenuButtonRef} type="button" aria-label="Open navigation menu"
+                aria-expanded={mobileMenuOpen} aria-controls="mobile-navigation"
+                onClick={() => setMobileMenuOpen(true)}
+                className="menu-toggle topbar-hit flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 lg:hidden">
                 <Menu size={17} strokeWidth={2} />
               </button>
 
@@ -369,7 +416,7 @@ function AppShellContent({ children }: AppShellProps) {
                 onClick={toggleDark}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
+                className={cn('topbar-hit flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-colors duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
                 style={{ background: 'transparent', color: darkMode ? '#94A3B8' : '#64748B' }}
               >
                 <AnimatePresence mode="wait" initial={false}>
@@ -385,14 +432,19 @@ function AppShellContent({ children }: AppShellProps) {
               </m.button>
 
               {/* ── Settings dropdown ── */}
-              <div ref={settingsRef} className="relative">
+              <div
+                ref={settingsRef}
+                className="relative"
+              >
                 <m.button
                   type="button"
                   aria-label="Settings"
-                  onClick={() => setOpenMenu(m => (m === 'settings' ? null : 'settings'))}
+                  aria-expanded={settingsOpen}
+                  aria-controls="topbar-settings-menu"
+                  onClick={(e) => { menuTriggerRef.current = e.currentTarget; setOpenMenu(m => (m === 'settings' ? null : 'settings')); }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className={cn('relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden transition-all duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
+                  className={cn('topbar-hit relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-colors duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
                   style={{
                     background: settingsOpen ? (darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)') : 'transparent',
                   }}
@@ -408,6 +460,7 @@ function AppShellContent({ children }: AppShellProps) {
                 <AnimatePresence>
                   {settingsOpen && (
                     <m.div
+                      id="topbar-settings-menu"
                       initial={{ opacity: 0, y: -4, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.96 }}
@@ -433,14 +486,19 @@ function AppShellContent({ children }: AppShellProps) {
               </div>
 
               {/* ── Notification bell ── */}
-              <div ref={notifRef} className="relative">
+              <div
+                ref={notifRef}
+                className="relative"
+              >
                 <m.button
                   type="button"
                   aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
-                  onClick={() => setOpenMenu(m => (m === 'notifications' ? null : 'notifications'))}
+                  aria-expanded={notifOpen}
+                  aria-controls="topbar-notifications-menu"
+                  onClick={(e) => { menuTriggerRef.current = e.currentTarget; setOpenMenu(m => (m === 'notifications' ? null : 'notifications')); }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className={cn('relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
+                  className={cn('topbar-hit relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-colors duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
                   style={{
                     background: notifOpen ? (darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)') : 'transparent',
                   }}
@@ -460,6 +518,7 @@ function AppShellContent({ children }: AppShellProps) {
                 <AnimatePresence>
                   {notifOpen && (
                     <m.div
+                      id="topbar-notifications-menu"
                       initial={{ opacity: 0, y: -4, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.96 }}
@@ -550,9 +609,16 @@ function AppShellContent({ children }: AppShellProps) {
               </div>
 
               {/* ── Profile dropdown ── */}
-              <div ref={profileRef} className="relative">
-                <button onClick={() => setOpenMenu(m => (m === 'profile' ? null : 'profile'))}
-                  className="flex items-center gap-2.5 pl-3 transition-all duration-200 hover:opacity-80"
+              <div
+                ref={profileRef}
+                className="relative"
+              >
+                <button
+                  type="button"
+                  aria-expanded={profileOpen}
+                  aria-controls="topbar-profile-menu"
+                  onClick={(e) => { menuTriggerRef.current = e.currentTarget; setOpenMenu(m => (m === 'profile' ? null : 'profile')); }}
+                  className="topbar-hit flex items-center gap-2.5 pl-3 transition-opacity duration-200 hover:opacity-80"
                   style={{ borderLeft: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}>
                   {/* The trainer's photo when they have one, else the studio's
                       logo, else its letters — never letters when a picture
@@ -569,6 +635,7 @@ function AppShellContent({ children }: AppShellProps) {
                 <AnimatePresence>
                   {profileOpen && (
                     <m.div
+                      id="topbar-profile-menu"
                       initial={{ opacity: 0, y: -4, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.96 }}

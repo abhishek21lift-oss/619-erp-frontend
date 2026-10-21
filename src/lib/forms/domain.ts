@@ -97,9 +97,9 @@ export const trainingFrequencyField = (opts: Partial<FieldOptions> = {}) =>
     ...opts,
   } as NumericFieldOptions);
 
-/** Programme duration in weeks. 1–104. */
-export const programmeWeeksField = (opts: Partial<FieldOptions> = {}) =>
-  integerField({ label: 'Duration', min: 1, max: 104, unit: 'weeks', ...opts } as NumericFieldOptions);
+/** Programme duration in weeks. 1–104, or the ceiling a screen supplies. */
+export const programmeWeeksField = (opts: Partial<NumericFieldOptions> = {}) =>
+  integerField({ label: 'Duration', min: 1, max: 104, unit: 'weeks', ...opts });
 
 /** Repetitions in a set. 1–100. */
 export const repsField = (opts: Partial<FieldOptions> = {}) =>
@@ -203,6 +203,18 @@ export const utrField = (opts: Partial<TextFieldOptions> = {}) =>
     },
     ...opts,
   } as TextFieldOptions);
+
+/**
+ * Keep only what a UTR can contain, as it is typed.
+ *
+ * Pure and exported so the rule is testable. The cap is the schema's maximum,
+ * so the box stops rather than accepting a 20-digit paste and then reporting it
+ * — a length the user can see running out is better feedback than a refusal
+ * afterwards.
+ */
+export function normalizeUtrInput(raw: string): string {
+  return raw.replace(/\D/g, '').slice(0, 16);
+}
 
 /** A trainer commission percentage. 0–100. */
 export const commissionPctField = (opts: Partial<FieldOptions> = {}) =>

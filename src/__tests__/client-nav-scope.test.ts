@@ -32,7 +32,7 @@ describe('a client sees only their own surfaces', () => {
 
   it('is offered none of the back office', () => {
     const seen = visibleTo('member');
-    for (const id of ['finance', 'trainer-management', 'insights', 'platform', 'subscription']) {
+    for (const id of ['finance', 'programs', 'insights', 'platform']) {
       expect([id, seen.includes(id)]).toEqual([id, false]);
     }
   });

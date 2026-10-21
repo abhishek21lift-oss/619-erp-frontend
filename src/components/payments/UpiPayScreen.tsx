@@ -42,10 +42,18 @@ import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
 import { Button, cn } from '@/components/ui';
 import {
+  FormErrorBanner, FormField, TextArea, TextInput, visibleError,
+} from '@/components/ui/form';
+import {
   AmountBreakdown, STATUS_META, UpiStatusBadge, fmtCountdown, fmtMoneyExact, orderTermLabel,
 } from '@/components/payments/upi-shared';
 import { errorMessage } from '@/lib/forms/errors';
+import { useAppForm } from '@/lib/forms/useAppForm';
+import { normalizeUtrInput } from '@/lib/forms/domain';
 import { checkFile, acceptAttribute, formatBytes, PAYMENT_PROOF_RULES } from '@/lib/forms/files';
+import {
+  blankUpiProof, toUpiProofPayload, upiProofSchema, UPI_PROOF_FIELD_HINTS,
+} from '@/lib/forms/schemas/upiProof';
 
 const POLL_MS = 8000;
 
@@ -407,7 +415,7 @@ function Divider({ label }: { label: string }) {
 
 // ── UTR form ────────────────────────────────────────────────────────────────
 
-function UtrForm({
+export function UtrForm({
   orderId, isBalance, previousRejection, onSubmitted, toast, className,
 }: {
   orderId: string;
@@ -417,47 +425,17 @@ function UtrForm({
   toast: ReturnType<typeof useToast>['toast'];
   className?: string;
 }) {
-  const [utr, setUtr] = useState('');
-  const [notes, setNotes] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  // Mirrors the server's rule exactly. Validating here is a courtesy — the
-  // schema, the DTO and a CHECK constraint all enforce it independently.
-  const utrValid = /^[0-9]{12,16}$/.test(utr);
-  const showUtrError = utr.length > 0 && !utrValid;
+  const f = useAppForm({
+    schema: upiProofSchema,
+    defaultValues: blankUpiProof(),
+    fieldHints: UPI_PROOF_FIELD_HINTS,
+    onSubmit: async (values) => {
+      setFileError(null);
 
-  /**
-   * Validate the payment proof a member attaches.
-   *
-   * The test it replaces was `/^image\/(png|jpe?g)$|^application\/pdf$/.test(f.type)`,
-   * and `File.type` is derived by the browser from the file's EXTENSION, not
-   * from its bytes. Renaming anything to `proof.png` passed it. This reads the
-   * leading bytes and compares them against the format's signature, which is
-   * the one check a file cannot talk its way out of — and it is still only a
-   * client-side gate: the server repeats it, which is where it counts.
-   */
-  const pickFile = async (f: File | null) => {
-    setError(null);
-    if (!f) { setFile(null); return; }
-
-    const check = await checkFile(f, PAYMENT_PROOF_RULES);
-    if (!check.ok) {
-      setFile(null);
-      setError(check.message);
-      if (fileInput.current) fileInput.current.value = '';
-      return;
-    }
-    setFile(f);
-  };
-
-  const submit = async () => {
-    if (!utrValid || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
       // Upload first so the reference and its proof land together. A failed
       // upload must not block the payment being recorded, though — the proof
       // is optional, and a member who has genuinely paid should not be stuck
@@ -472,22 +450,41 @@ function UtrForm({
         }
       }
 
-      await api.upiPayments.submitUtr(orderId, {
-        utr,
-        screenshot_url: screenshot?.url ?? null,
-        screenshot_mime: screenshot?.mime ?? null,
-        notes: notes.trim() || null,
-      });
-
+      await api.upiPayments.submitUtr(orderId, toUpiProofPayload(values, screenshot));
       toast.success('Reference submitted. The studio will verify it shortly.');
-      setUtr(''); setNotes(''); setFile(null);
-      await onSubmitted();
-    } catch (err) {
-      const message = errorMessage(err, 'Could not submit. Please try again.');
-      setError(message);
-    } finally {
-      setBusy(false);
+    },
+    onSuccess: () => {
+      f.resetTo(blankUpiProof());
+      setFile(null);
+      setFileError(null);
+      if (fileInput.current) fileInput.current.value = '';
+      void onSubmitted();
+    },
+  });
+  const { form, isSubmitting } = f;
+
+  /**
+   * Validate the payment proof a member attaches.
+   *
+   * The test it replaces was `/^image\/(png|jpe?g)$|^application\/pdf$/.test(f.type)`,
+   * and `File.type` is derived by the browser from the file's EXTENSION, not
+   * from its bytes. Renaming anything to `proof.png` passed it. This reads the
+   * leading bytes and compares them against the format's signature, which is
+   * the one check a file cannot talk its way out of — and it is still only a
+   * client-side gate: the server repeats it, which is where it counts.
+   */
+  const pickFile = async (candidate: File | null) => {
+    setFileError(null);
+    if (!candidate) { setFile(null); return; }
+
+    const check = await checkFile(candidate, PAYMENT_PROOF_RULES);
+    if (!check.ok) {
+      setFile(null);
+      setFileError(check.message);
+      if (fileInput.current) fileInput.current.value = '';
+      return;
     }
+    setFile(candidate);
   };
 
   return (
@@ -515,121 +512,147 @@ function UtrForm({
         Open your UPI app, find this transaction, and copy the UPI reference / UTR number.
       </p>
 
-      <label htmlFor="utr" className="mt-4 block text-[12px] font-[650]"
-        style={{ color: 'var(--text-primary)' }}>
-        UPI reference number (UTR)
-      </label>
-      <input
-        id="utr"
-        // `inputMode` rather than type="number": a UTR is a digit STRING, and a
-        // number input strips leading zeros and adds a spinner nobody wants.
-        inputMode="numeric"
-        autoComplete="off"
-        value={utr}
-        onChange={(e) => setUtr(e.target.value.replace(/\D/g, '').slice(0, 16))}
-        placeholder="12 to 16 digits"
-        aria-invalid={showUtrError}
-        aria-describedby={showUtrError ? 'utr-error' : undefined}
-        className="mt-1.5 w-full rounded-xl px-3.5 font-mono text-[16px] tracking-[0.02em] outline-none transition-shadow"
-        style={{
-          height: 52,
-          background: 'var(--bg-base)',
-          color: 'var(--text-primary)',
-          border: `1px solid ${showUtrError ? 'var(--danger)' : 'var(--border-2)'}`,
-        }}
-      />
-      <div className="mt-1.5 flex items-center justify-between">
-        <span id="utr-error" className="text-[11.5px]"
-          style={{ color: showUtrError ? 'var(--danger-text)' : 'var(--text-muted)' }}>
-          {showUtrError ? 'Must be 12 to 16 digits.' : 'Numbers only.'}
-        </span>
-        <span className="text-[11.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
-          {utr.length}/16
-        </span>
-      </div>
+      <form noValidate onSubmit={(e) => { e.preventDefault(); void f.submit(); }}>
+        <form.Field name="utr">
+          {(field) => {
+            const error = visibleError(field, f.errors.fieldErrors.utr);
+            const value = field.state.value ?? '';
+            return (
+              <FormField
+                label="UPI reference number (UTR)"
+                required
+                error={error}
+                description={error ? undefined : 'Numbers only.'}
+                className="mt-4"
+                labelAside={
+                  <span className="text-[11.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                    {value.length}/16
+                  </span>
+                }
+              >
+                <TextInput
+                  name={field.name}
+                  // `inputMode` rather than type="number": a UTR is a digit
+                  // STRING, and a number input strips leading zeros and adds a
+                  // spinner nobody wants.
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={value}
+                  onChange={(e) => {
+                    field.handleChange(normalizeUtrInput(e.target.value));
+                    f.clearFieldError('utr');
+                  }}
+                  onBlur={field.handleBlur}
+                  placeholder="12 to 16 digits"
+                  className="rounded-xl font-mono tracking-[0.02em]"
+                  style={{ height: 52, background: 'var(--bg-base)', fontSize: 16 }}
+                />
+              </FormField>
+            );
+          }}
+        </form.Field>
 
-      {/* ── Optional proof ── */}
-      <label htmlFor="pay-proof" className="mt-4 block text-[12px] font-[650]" style={{ color: 'var(--text-primary)' }}>
-        Payment screenshot <span style={{ color: 'var(--text-muted)' }}>(optional)</span>
-      </label>
-      <input id="pay-proof"
-        ref={fileInput}
-        type="file"
-        accept={acceptAttribute(PAYMENT_PROOF_RULES)}
-        className="sr-only"
-        onChange={(e) => void pickFile(e.target.files?.[0] ?? null)}
-      />
-      <AnimatePresence mode="wait">
-        {file ? (
-          <m.div
-            key="picked"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="mt-1.5 flex items-center gap-2.5 rounded-xl p-3"
-            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
-          >
-            <FileText size={16} style={{ color: 'var(--brand)' }} />
-            <span className="min-w-0 flex-1 truncate text-[13px]" style={{ color: 'var(--text-primary)' }}>
-              {file.name}
-            </span>
-            <button type="button" aria-label="Remove screenshot"
-              onClick={() => { setFile(null); if (fileInput.current) fileInput.current.value = ''; }}
-              style={{ color: 'var(--text-muted)' }}>
-              <X size={16} />
-            </button>
-          </m.div>
-        ) : (
-          <m.button
-            key="empty"
-            type="button"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => fileInput.current?.click()}
-            className="mt-1.5 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[13px] font-[600]"
-            style={{
-              border: '1px dashed var(--border-3)',
-              color: 'var(--text-muted)',
-              background: 'transparent',
-            }}
-          >
-            <Upload size={15} /> Add a screenshot — JPG, PNG or PDF, up to {formatBytes(PAYMENT_PROOF_RULES.maxBytes)}
-          </m.button>
+        {/* ── Optional proof ── */}
+        <label htmlFor="pay-proof" className="mt-4 block text-[12px] font-[650]" style={{ color: 'var(--text-primary)' }}>
+          Payment screenshot <span style={{ color: 'var(--text-muted)' }}>(optional)</span>
+        </label>
+        <input id="pay-proof"
+          ref={fileInput}
+          type="file"
+          accept={acceptAttribute(PAYMENT_PROOF_RULES)}
+          className="sr-only"
+          aria-invalid={!!fileError}
+          aria-describedby={fileError ? 'pay-proof-error' : undefined}
+          onChange={(e) => void pickFile(e.target.files?.[0] ?? null)}
+        />
+        <AnimatePresence mode="wait">
+          {file ? (
+            <m.div
+              key="picked"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="mt-1.5 flex items-center gap-2.5 rounded-xl p-3"
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+            >
+              <FileText size={16} style={{ color: 'var(--brand)' }} />
+              <span className="min-w-0 flex-1 truncate text-[13px]" style={{ color: 'var(--text-primary)' }}>
+                {file.name}
+              </span>
+              <button type="button" aria-label="Remove screenshot"
+                onClick={() => { setFile(null); if (fileInput.current) fileInput.current.value = ''; }}
+                style={{ color: 'var(--text-muted)' }}>
+                <X size={16} />
+              </button>
+            </m.div>
+          ) : (
+            <m.button
+              key="empty"
+              type="button"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => fileInput.current?.click()}
+              className="mt-1.5 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[13px] font-[600]"
+              style={{
+                border: '1px dashed var(--border-3)',
+                color: 'var(--text-muted)',
+                background: 'transparent',
+              }}
+            >
+              <Upload size={15} /> Add a screenshot — JPG, PNG or PDF, up to {formatBytes(PAYMENT_PROOF_RULES.maxBytes)}
+            </m.button>
+          )}
+        </AnimatePresence>
+        {fileError && (
+          <p id="pay-proof-error" role="alert"
+            className="mt-2 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
+            <AlertTriangle size={14} className="mt-px shrink-0" /> {fileError}
+          </p>
         )}
-      </AnimatePresence>
 
-      <label htmlFor="pay-notes" className="mt-4 block text-[12px] font-[650]"
-        style={{ color: 'var(--text-primary)' }}>
-        Note for the studio <span style={{ color: 'var(--text-muted)' }}>(optional)</span>
-      </label>
-      <textarea
-        id="pay-notes"
-        rows={2}
-        value={notes}
-        maxLength={500}
-        onChange={(e) => setNotes(e.target.value)}
-        placeholder="Anything the studio should know"
-        className="mt-1.5 w-full resize-none rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
-        style={{
-          background: 'var(--bg-base)',
-          color: 'var(--text-primary)',
-          border: '1px solid var(--border-2)',
-        }}
-      />
+        <form.Field name="notes">
+          {(field) => {
+            const error = visibleError(field, f.errors.fieldErrors.notes);
+            const value = field.state.value ?? '';
+            return (
+              <FormField
+                label="Note for the studio (optional)"
+                error={error}
+                className="mt-4"
+                labelAside={
+                  <span className="text-[10.5px] tabular-nums"
+                    style={{ color: value.length > 500 ? 'var(--danger-text)' : 'var(--text-muted)' }}>
+                    {value.length}/500
+                  </span>
+                }
+              >
+                <TextArea
+                  name={field.name}
+                  rows={2}
+                  value={value}
+                  onChange={(e) => {
+                    field.handleChange(e.target.value);
+                    f.clearFieldError('notes');
+                  }}
+                  onBlur={field.handleBlur}
+                  placeholder="Anything the studio should know"
+                  className="resize-none rounded-xl"
+                  style={{ background: 'var(--bg-base)', fontSize: 14 }}
+                />
+              </FormField>
+            );
+          }}
+        </form.Field>
 
-      {error && (
-        <p className="mt-3 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
-          <AlertTriangle size={14} className="mt-px shrink-0" /> {error}
-        </p>
-      )}
+        <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} className="mt-3" />
 
-      <button
-        type="button"
-        onClick={submit}
-        disabled={!utrValid || busy}
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl text-[15px] font-[700] text-white transition-all disabled:cursor-not-allowed disabled:opacity-45"
-        style={{ height: 52, background: 'var(--brand)' }}
-      >
-        {busy ? <><Loader2 size={17} className="animate-spin" /> Submitting…</>
-              : <>Submit for verification <ArrowRight size={16} /></>}
-      </button>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl text-[15px] font-[700] text-white transition-all disabled:cursor-not-allowed disabled:opacity-45"
+          style={{ height: 52, background: 'var(--brand)' }}
+        >
+          {isSubmitting ? <><Loader2 size={17} className="animate-spin" /> Submitting…</>
+                        : <>Submit for verification <ArrowRight size={16} /></>}
+        </button>
+      </form>
 
       <p className="mt-3 flex items-start gap-2 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
         <ShieldCheck size={13} className="mt-px shrink-0" />

@@ -92,7 +92,7 @@ test.describe('Client creation', () => {
     await page.getByLabel(/^Full Name/).fill(uniqueName());
     await page.getByRole('button', { name: 'Create Client' }).click();
 
-    await expect(page.getByText(/select a gender/i)).toBeVisible();
+    await expect(page.getByText(/gender is required/i)).toBeVisible();
     await expect(page.getByRole('heading', { name: /Client Onboarded/i })).toHaveCount(0);
     await page.waitForTimeout(1000);
     expect(posted, 'nothing was sent').toBe(0);

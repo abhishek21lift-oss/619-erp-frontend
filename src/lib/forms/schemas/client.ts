@@ -7,7 +7,7 @@
  * keys it always did.
  */
 import { z } from 'zod';
-import { textField, phoneField, emailField, dateField, enumField, timeField, booleanField, moneyField } from '../primitives';
+import { textField, phoneField, emailField, dateField, enumField, timeField, integerField, moneyField } from '../primitives';
 import { CLIENT_SOURCES } from '../../client-intake';
 import { MIN_LENGTH } from '../../password-policy';
 
@@ -249,49 +249,35 @@ export function blankClientUpdate(): ClientUpdateValues {
 /**
  * Client PT enrolment — PATCH /api/pt-os/clients/:id.
  *
- * Enrolment writes the client's first PT term (status, dates, duration,
- * schedule) together with the enrolment payment (final amount, amount paid,
- * payment method). It is a money-and-membership boundary: the backend locks
- * the client row and recomputes `balance_amount` server-side, so the schema's
- * job is to refuse impossible input before the request ever leaves the
- * browser — never to replace server validation.
+ * Mirrors exactly what the enrolment form already validates by hand before it
+ * opens the agreement: the eight editable fields the PATCH actually carries —
+ * start date, duration, training mode, workout time, training days, sessions
+ * per week, final amount and amount paid. Trainer, experience level, previous
+ * trainer experience and payment method are deliberately NOT in this shape:
+ * they are either informational or re-checked by the backend, and a legacy
+ * value the trainer never touched must not block the enrolment.
  *
- * LENIENT on legacy values: every field except `startDate`, `duration`,
- * `sessionsPerWeek`, `finalAmount` and `amountPaid` is optional. A legacy
- * client whose record holds a malformed optional value can still be enrolled
- * after an unrelated edit because only changed fields are validated by the
- * page's change detection — the schema itself validates whatever it is given.
+ * Cross-field rules live here because they cannot be expressed field-by-field:
+ *   - Final Selling Price must be greater than zero.
+ *   - Amount Paid cannot exceed Final Selling Price — the rule that protects
+ *     the ledger. The backend additionally refuses to lower Amount Paid below
+ *     what the ledger already records; that needs the stored value, so it
+ *     stays server-side.
  *
  * Backend contract (src/modules/pt-os/pt-os.routes.js PATCH /clients/:id):
- *   - duration_months: whole number 1-60
- *   - final_amount: >= 0 (zero is legitimate: complimentary / trial)
- *   - paid_amount: >= 0, cannot be lowered below what is already recorded
- *   - paid_amount <= final_amount
- *   - payment_method: closed set CASH | UPI | CARD | BANK_TRANSFER | SPLIT
- *   - client_source: closed set (empty string cleared to NULL)
- *   - mobile / whatsapp / emergency_phone: 10-digit Indian mobile or blank
- *   - email: valid address or blank
- *   - dob / pt_start_date / pt_end_date: real calendar date (YYYY-MM-DD)
- *   - status: 'active' only with a running term (enforced server-side)
- *   - training_mode: closed set Offline | Online | Hybrid
+ * duration_months is a whole number 1-60 and the server recomputes
+ * balance_amount itself — this schema never replaces server validation.
  */
-export const ENROLL_DURATIONS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] as const;
 export const ENROLL_SESSIONS_PER_WEEK = ['1', '2', '3', '4', '5', '6', '7'] as const;
-export const ENROLL_TRAINING_MODES = ['Offline', 'Online', 'Hybrid'] as const;
-export const ENROLL_EXPERIENCE_LEVELS = ['beginner', 'intermediate', 'advanced', 'athlete'] as const;
-export const ENROLL_PAYMENT_METHODS = ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER', 'SPLIT'] as const;
 
-/** The backend expects `HH:MM`; `timeField` normalises '6:05' → '06:05'. */
 export const clientEnrollSchema = z
   .object({
-    startDate: dateField({ label: 'PT Start Date', required: true }),
-    duration: enumField(ENROLL_DURATIONS, { label: 'PT Duration', required: true }),
-    trainerId: textField({ label: 'Trainer' }),
-    trainerName: textField({ label: 'Trainer Name' }),
-    trainingMode: enumField(ENROLL_TRAINING_MODES, { label: 'Training Mode' }),
-    workoutExperienceLevel: enumField(ENROLL_EXPERIENCE_LEVELS, { label: 'Workout Experience' }),
-    previousTrainerExperience: booleanField(),
-    workoutTime: timeField({ label: 'Preferred Workout Time' }),
+    startDate: dateField({ label: 'Start date', required: true }),
+    // 1-60 (the backend's range), not the 1-12 the select offers: a legacy
+    // term longer than a year must still be re-saveable.
+    duration: integerField({ label: 'PT Duration', required: true, min: 1, max: 60 }),
+    trainingMode: textField({ label: 'Training mode', required: true }),
+    workoutTime: timeField({ label: 'Workout time', required: true }),
     trainingDays: z.unknown().transform((raw, ctx) => {
       const arr = Array.isArray(raw) ? raw.filter((v) => typeof v === 'string' && v.trim() !== '') : [];
       if (arr.length === 0) {
@@ -300,82 +286,27 @@ export const clientEnrollSchema = z
       }
       return arr;
     }),
-    sessionsPerWeek: enumField(ENROLL_SESSIONS_PER_WEEK, { label: 'Sessions Per Week', required: true }),
-    finalAmount: moneyField({ label: 'Final / Selling Price', required: true, min: 0 }),
-    amountPaid: moneyField({ label: 'Amount Paid', required: true, min: 0 }),
-    paymentMethod: enumField(ENROLL_PAYMENT_METHODS, { label: 'Payment Method' }),
-    mobile: phoneField({ label: 'Mobile number' }),
-    email: emailField({ label: 'Email address' }),
-    gender: enumField(GENDERS, { label: 'Gender' }),
-    dob: dateField({ label: 'Date of birth' }),
-    address: textField({ label: 'Address' }),
-    emergency_contact: textField({ label: 'Emergency contact name' }),
-    emergency_phone: phoneField({ label: 'Emergency contact number' }),
-    emergency_contact_relationship: textField({ label: 'Relationship' }),
-    client_source: enumField(CLIENT_SOURCES, { label: 'Client source' }),
+    sessionsPerWeek: enumField(ENROLL_SESSIONS_PER_WEEK, { label: 'Sessions per week', required: true }),
+    finalAmount: moneyField({ label: 'Final Selling Price', required: true }),
+    amountPaid: moneyField({ label: 'Amount Paid', required: true }),
   })
   .superRefine((v, ctx) => {
-    // End date not before start date. endDate = startDate + duration months.
-    if (v.startDate && v.duration) {
-      const start = new Date(v.startDate);
-      const end = new Date(start);
-      end.setMonth(end.getMonth() + Number(v.duration));
-      if (end < start) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['duration'],
-          message: 'The PT end date cannot be before the start date.',
-        });
-      }
+    if (typeof v.finalAmount === 'number' && v.finalAmount <= 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['finalAmount'],
+        message: 'Final Selling Price must be greater than zero.',
+      });
     }
-
-    // Date of birth: reject a future dob and an age outside 10-100, matching
-    // the create form's rules.
-    if (v.dob) {
-      const d = new Date(v.dob);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (d > today) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['dob'],
-          message: 'Date of birth cannot be in the future.',
-        });
-      } else {
-        let age = today.getFullYear() - d.getFullYear();
-        const m = today.getMonth() - d.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age -= 1;
-        if (age < 10 || age > 100) {
-          ctx.addIssue({
-            code: 'custom',
-            path: ['dob'],
-            message: 'Age must be between 10 and 100 years.',
-          });
-        }
-      }
-    }
-
-    // Amount Paid cannot exceed Final Selling Price — the rule that protects
-    // the ledger. (Amount Paid cannot be lowered below what is already
-    // recorded is enforced server-side against the stored value.)
-    if (v.amountPaid !== null && v.finalAmount !== null && v.amountPaid > v.finalAmount) {
+    if (
+      typeof v.amountPaid === 'number' &&
+      typeof v.finalAmount === 'number' &&
+      v.amountPaid > v.finalAmount
+    ) {
       ctx.addIssue({
         code: 'custom',
         path: ['amountPaid'],
         message: 'Amount Paid cannot exceed Final Selling Price.',
-      });
-    }
-
-    // Relationship is required only once there is an emergency contact to
-    // relate to.
-    const hasEmergencyContact = Boolean(
-      v.emergency_contact?.trim() || v.emergency_phone?.trim(),
-    );
-    if (hasEmergencyContact && !v.emergency_contact_relationship?.trim()) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['emergency_contact_relationship'],
-        message: 'Tell us how this person is related to the client.',
       });
     }
   });
@@ -386,25 +317,11 @@ export function blankClientEnroll(): ClientEnrollValues {
   return {
     startDate: '',
     duration: null,
-    trainerId: '',
-    trainerName: '',
-    trainingMode: null,
-    workoutExperienceLevel: null,
-    previousTrainerExperience: false,
+    trainingMode: '',
     workoutTime: null,
     trainingDays: [],
     sessionsPerWeek: null,
     finalAmount: null,
     amountPaid: null,
-    paymentMethod: null,
-    mobile: '',
-    email: '',
-    gender: null,
-    dob: null,
-    address: '',
-    emergency_contact: '',
-    emergency_phone: '',
-    emergency_contact_relationship: '',
-    client_source: null,
   };
 }

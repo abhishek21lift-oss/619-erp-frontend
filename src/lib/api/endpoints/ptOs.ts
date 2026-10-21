@@ -17,7 +17,7 @@ import type { ClientInterview, ClientJourney } from '../../journey';
 export const pt = {
   dashboard: () =>
     http<{ data: unknown }>('/api/pt-os/dashboard'),
-  clients: (params?: { search?: string; status?: string; dues?: string; limit?: number; offset?: number }) =>
+  clients: (params?: { search?: string; status?: string; dues?: string; term?: 'ended'; limit?: number; offset?: number }) =>
     http<{ data: unknown[]; total: number }>(`/api/pt-os/clients${buildQs(params)}`),
   /** Each active client's first and latest recorded weight. */
   transformations: () =>

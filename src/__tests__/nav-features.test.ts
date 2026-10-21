@@ -58,7 +58,7 @@ describe('group filtering', () => {
     // 'platform' used to be in this list. The control plane is not a nav
     // group any more — see src/app/(platform)/layout.tsx — so there is nothing
     // here to assert about it.
-    for (const id of ['personal-training', 'session-management']) {
+    for (const id of ['clients', 'sessions']) {
       expect(group(id).feature).toBeUndefined();
       expect(isGroupVisibleForFeature(group(id), { finance: false })).toBe(true);
     }

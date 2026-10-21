@@ -168,23 +168,8 @@ function money(raw: string): number | null {
 function validateStartDate(v: string): string | undefined {
   return v ? undefined : 'Start date is required.';
 }
-function validateDuration(v: string): string | undefined {
-  return v ? undefined : 'Please select a duration.';
-}
-function validateTrainingMode(v: string): string | undefined {
-  return v ? undefined : 'Please select a training mode.';
-}
 function validateWorkoutTime(form: EnrollFormData): string | undefined {
   return form.workoutTime ? undefined : 'Please select a workout time.';
-}
-function validateTrainingDays(v: string[]): string | undefined {
-  return v.length >= 1 ? undefined : 'Select at least 1 training day.';
-}
-function validateSessionsPerWeek(v: string): string | undefined {
-  if (!v) return 'Please select sessions per week.';
-  const n = Number(v);
-  if (n < 1 || n > 7) return 'Sessions must be between 1 and 7.';
-  return undefined;
 }
 function validateFinalAmount(v: string): string | undefined {
   if (!v.trim()) return 'Final Selling Price is required.';
@@ -206,22 +191,6 @@ function validateAmountPaid(form: EnrollFormData): string | undefined {
 // own the studio. They used to be admin/manager-only, which — once the trainer
 // became the owner — left the one person running the studio unable to record
 // what a client paid at enrolment.
-function validateAll(form: EnrollFormData): FormErrors {
-  return {
-    startDate: validateStartDate(form.startDate),
-    duration: validateDuration(form.duration),
-    trainingMode: validateTrainingMode(form.trainingMode),
-    workoutTime: validateWorkoutTime(form),
-    trainingDays: validateTrainingDays(form.trainingDays),
-    sessionsPerWeek: validateSessionsPerWeek(form.sessionsPerWeek),
-    finalAmount: validateFinalAmount(form.finalAmount),
-    amountPaid: validateAmountPaid(form),
-  };
-}
-function hasErrors(errors: FormErrors): boolean {
-  return Object.values(errors).some(Boolean);
-}
-
 function initForm(): EnrollFormData {
   return {
     startDate: todayStr(), duration: '',
@@ -479,11 +448,11 @@ function EnrollForm({ clientId }: { clientId: string }) {
     // meant the one person running the studio could not record what a client
     // paid at enrolment. The trainer owns the studio; the fields are theirs.
     ...{
-      // The SAME reading the validator did. `Number(form.finalAmount)` here
-      // and `money()` there would be two parsers on one value, and the one
-      // that reaches the server would be the looser of the two. `?? 0` is
-      // unreachable — validateAll blocks the submit on a null — and is kept
-      // because "unreachable" and "cannot happen" are different.
+      // The SAME reading the schema and the balance preview use. Two parsers
+      // on one value would make the one that reaches the server the looser of
+      // the two. `?? 0` is unreachable — the schema refuses a null before the
+      // agreement opens — and is kept because "unreachable" and "cannot
+      // happen" are different.
       final_amount: money(form.finalAmount) ?? 0,
       paid_amount: money(form.amountPaid) ?? 0,
       // Empty means "not recorded". Sending '' would fail the server's enum

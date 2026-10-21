@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, ScanFace, Dumbbell, Bot } from 'lucide-react';
+import { CalendarClock, CalendarDays, Users, ScanFace, Bot } from 'lucide-react';
 import { m } from 'framer-motion';
 import { isVisibleForFeature } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
@@ -17,17 +17,20 @@ import { useNavScroll } from '@/contexts/nav-scroll-context';
 // Two of these five are feature-gated capabilities, so they carry the same
 // keys the sidebar uses. A studio with AI Suite or Attendance switched off
 // gets a shorter bar rather than a tab that 403s — which is worse here than
-// in the sidebar, since this is the only navigation on a phone. Home, Clients
+// in the sidebar, since this is the only navigation on a phone. Today, Clients
 // and Sessions are core and can never be switched off.
 // Sessions opens My Schedule — what is booked, today first — rather than
 // Session History, which is where the tab used to land. It stays lit on the
 // other session screens (history, booking) so the bar still says where you are.
-const BASE_ITEMS: { href: string; icon: typeof Home; label: string; feature?: string; alsoActive?: string[] }[] = [
-  { href: '/',                   icon: Home,     label: 'Home'     },
-  { href: '/pt-os/clients',      icon: Users,    label: 'Clients'  },
-  { href: '/ai-coach',           icon: Bot,      label: 'AI Coach', feature: 'ai_suite'   },
-  { href: '/pt-os/my-schedule',  icon: Dumbbell, label: 'Sessions', alsoActive: ['/pt-os/sessions', '/pt-os/schedule-session', '/pt-os/session-balance'] },
-  { href: '/checkin/qr-scanner', icon: ScanFace, label: 'Check-in', feature: 'attendance' },
+// Home is Today, not the dashboard: on a phone the first tap of a shift is
+// "who am I seeing", and the dashboard is one tap from there. Sessions uses a
+// calendar rather than a dumbbell — it opens a schedule, not a workout.
+const BASE_ITEMS: { href: string; icon: typeof CalendarDays; label: string; feature?: string; alsoActive?: string[] }[] = [
+  { href: '/pt-os/today',        icon: CalendarDays,  label: 'Today'    },
+  { href: '/pt-os/clients',      icon: Users,         label: 'Clients'  },
+  { href: '/ai-coach',           icon: Bot,           label: 'AI Coach', feature: 'ai_suite'   },
+  { href: '/pt-os/my-schedule',  icon: CalendarClock, label: 'Sessions', alsoActive: ['/pt-os/sessions', '/pt-os/schedule-session', '/pt-os/session-balance'] },
+  { href: '/checkin/qr-scanner', icon: ScanFace,      label: 'Check-in', feature: 'attendance' },
 ];
 
 // This bar used to swap in four control-plane tabs — Overview, Studios,
@@ -49,6 +52,16 @@ interface MobileBottomNavProps {
 const EASE   = [0.22, 1, 0.36, 1] as const;
 const SPRING = { type: 'spring', stiffness: 520, damping: 38, mass: 0.7 } as const;
 
+// Exported for the contrast test. The inactive label was 0.36 white — 3.33:1
+// on this bar, under AA. 0.62 is ~6.7:1 over the bar flattened on white.
+export const BOTTOM_NAV_COLORS = {
+  background:    'rgba(15,23,42,0.94)',
+  activeLabel:   '#b8d7ff',
+  activeIcon:    '#7fb4ff',
+  inactiveLabel: 'rgba(255,255,255,0.62)',
+  inactiveIcon:  'rgba(255,255,255,0.40)',
+} as const;
+
 export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNavProps) {
   const pathname = usePathname();
   const { features }     = useFeatures();
@@ -65,8 +78,9 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
       // making it cleverer than that, and why both were wrong.
       className="mobile-bottom-nav fixed left-0 right-0 z-40 lg:hidden"
       data-no-pull-refresh
+      inert={sidebarOpen}
       style={{
-        background: 'rgba(15,23,42,0.94)',
+        background: BOTTOM_NAV_COLORS.background,
         backdropFilter: 'blur(24px) saturate(180%)',
         WebkitBackdropFilter: 'blur(24px) saturate(180%)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
@@ -92,21 +106,20 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
       <div className="flex items-stretch" style={{ height: 'var(--bottom-nav-h, 52px)' }}>
         {items.map((item) => {
           const { href, icon: Icon, label } = item;
-          const isActive = href === '/'
-            ? pathname === '/'
-            : [href, ...(item.alsoActive ?? [])].some((h) => pathname === h || pathname.startsWith(h + '/'));
+          const isActive = [href, ...(item.alsoActive ?? [])]
+            .some((h) => pathname === h || pathname.startsWith(h + '/'));
 
           return (
             <Link
               key={href}
               href={href}
-              className="relative flex flex-1 flex-col items-center justify-center overflow-hidden focus-visible:outline-none"
+              className="group relative flex flex-1 flex-col items-center justify-center overflow-hidden focus-visible:outline-none"
               aria-current={isActive ? 'page' : undefined}
               style={{ gap: 1, minHeight: 44 }}
             >
               {/* Focus ring for keyboard nav */}
               <span
-                className="absolute inset-1 rounded-xl opacity-0 transition-opacity focus-visible:opacity-100 ring-2 ring-purple-400 ring-offset-0"
+                className="absolute inset-1 rounded-xl opacity-0 transition-opacity group-focus-visible:opacity-100 ring-2 ring-purple-400 ring-offset-0"
                 aria-hidden="true"
               />
 
@@ -120,7 +133,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                     bottom: 3,
                     background: 'rgba(127,180,255,0.13)',
                   }}
-                  transition={SPRING}
+                  transition={reducedMotion ? { duration: 0 } : SPRING}
                 />
               )}
 
@@ -134,7 +147,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                   size={17}
                   strokeWidth={isActive ? 2.3 : 1.7}
                   style={{
-                    color: isActive ? '#7fb4ff' : 'rgba(255,255,255,0.40)',
+                    color: isActive ? BOTTOM_NAV_COLORS.activeIcon : BOTTOM_NAV_COLORS.inactiveIcon,
                     transition: 'color 200ms ease',
                   }}
                   aria-hidden="true"
@@ -149,7 +162,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                 className="relative z-10 select-none whitespace-nowrap text-[9.5px] font-bold uppercase leading-none"
                 style={{
                   letterSpacing: '0.065em',
-                  color: isActive ? '#b8d7ff' : 'rgba(255,255,255,0.36)',
+                  color: isActive ? BOTTOM_NAV_COLORS.activeLabel : BOTTOM_NAV_COLORS.inactiveLabel,
                   transition: 'color 200ms ease',
                 }}
               >

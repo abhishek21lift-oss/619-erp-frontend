@@ -31,7 +31,9 @@ describe('the shell keeps one menu open at a time', () => {
   it('closes on an outside click and on Escape', () => {
     expect(shell).toMatch(/addEventListener\('mousedown'/);
     expect(shell).toMatch(/addEventListener\('keydown'/);
-    expect(shell).toMatch(/e\.key === 'Escape'\) setOpenMenu\(null\)/);
+    // Escape still closes it; closing now also returns focus to the trigger.
+    expect(shell).toMatch(/if \(e\.key === 'Escape'\) \{[\s\S]{0,120}setOpenMenu\(null\);/);
+    expect(shell).toMatch(/setOpenMenu\(null\);[\s\S]{0,80}menuTriggerRef\.current\?\.focus\(\)/);
     // Both listeners come off on unmount.
     expect(shell).toContain("removeEventListener('mousedown'");
     expect(shell).toContain("removeEventListener('keydown'");

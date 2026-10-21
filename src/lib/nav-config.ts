@@ -42,79 +42,71 @@ export type NavGroup = {
   items: NavItem[];
 };
 
+// The three things a trainer needs at the start of a shift. They used to sit
+// in three different accordions (Today under Programs, Schedule under Sessions,
+// Check In under Attendance), so the sidebar now renders them as direct links
+// above the groups. See PINNED_ITEMS handling in Sidebar.tsx.
+export const PINNED_ITEMS: NavItem[] = [
+  { href: '/pt-os/today',           label: 'Today',        icon: 'CalendarDays' },
+  { href: '/pt-os/my-schedule',     label: 'My Schedule',  icon: 'CalendarCheck' },
+  { href: '/checkin/qr-scanner',    label: 'Check In',     icon: 'ScanFace', feature: 'attendance' },
+];
+
 // This list is the STUDIO application's navigation, and only that.
+//
+// Groups are ordered by the trainer's day, and SECTION_LABELS in Sidebar.tsx
+// groups them into four headings. Per-client forms (PAR-Q, consent, the
+// assessment suite) are deliberately absent: they live in the client record's
+// Documents tab, where the client is already chosen.
 export const NAV_GROUPS: NavGroup[] = [
   {
-    id: 'attendance',
-    label: 'Attendance',
-    icon: 'ScanFace',
-    feature: 'attendance',
-    items: [
-      { href: '/checkin/qr-scanner', label: 'Check In',            icon: 'ScanFace' },
-      { href: '/attendance',         label: 'Attendance Records',  icon: 'ClipboardList',  roles: ['trainer'] },
-    ],
-  },
-  {
-    id: 'personal-training',
+    id: 'clients',
     label: 'Clients',
     icon: 'Users',
     items: [
-      { href: '/pt-os/leads',            label: 'Lead',                icon: 'UserSearch' },
-      { href: '/pt-os/new-client',       label: 'New Client',         icon: 'UserPlus' },
-      { href: '/pt-os/clients',          label: 'All Clients',        icon: 'Users' },
-      { href: '/pt-os/messages',         label: 'Member Messages',    icon: 'MessagesSquare', badge: 'messagesUnread', matchPrefix: '/pt-os/messages' },
-      { href: '/pt-os/clients/birthdays', label: 'Clients Birthday',  icon: 'Cake' },
+      { href: '/pt-os/clients',           label: 'All Clients',         icon: 'Users' },
+      { href: '/pt-os/leads',             label: 'Leads',               icon: 'UserSearch' },
+      { href: '/pt-os/messages',          label: 'Member Messages',     icon: 'MessagesSquare', badge: 'messagesUnread', matchPrefix: '/pt-os/messages' },
+      { href: '/pt-os/clients/birthdays', label: 'Clients Birthday',    icon: 'Cake' },
     ],
   },
   {
-    id: 'trainer-management',
+    id: 'sessions',
+    label: 'Sessions',
+    icon: 'Calendar',
+    items: [
+      { href: '/pt-os/schedule-session',  label: 'Book Session',        icon: 'CalendarPlus' },
+      { href: '/pt-os/session-balance',   label: 'Session Balance',     icon: 'Gauge' },
+      { href: '/pt-os/sessions',          label: 'Session History',     icon: 'History' },
+      { href: '/attendance',              label: 'Attendance Records',  icon: 'ClipboardList', feature: 'attendance', roles: ['trainer'] },
+    ],
+  },
+  {
+    id: 'programs',
     label: 'Programs',
     icon: 'Dumbbell',
     feature: 'programs',
     items: [
-      { href: '/pt-os/today',               label: 'Today',                icon: 'CalendarDays' },
       { href: '/pt-os/workout-plans',       label: 'Workouts',             icon: 'Dumbbell',    matchPrefix: '/pt-os/workout-plans' },
-      { href: '/pt-os/workout-generator',   label: 'Workout Generator',    icon: 'Sparkles' },
-      { href: '/pt-os/macrocycle',          label: 'Macrocycle',           icon: 'Layers' },
-      { href: '/pt-os/cardio-calculator',   label: 'Cardio & FITT',        icon: 'HeartPulse' },
       { href: '/pt-os/workout-log',         label: 'Workout Log',          icon: 'ClipboardList', matchPrefix: '/pt-os/workout-log' },
-      { href: '/pt-os/exercise-library',    label: 'Exercise Library',     icon: 'BookOpen',    feature: 'exercise_library' },
       { href: '/pt-os/diet-plans',          label: 'Diet Plans',           icon: 'Apple' },
-      { href: '/training/transformations',  label: 'Transformations',      icon: 'Sparkles',    roles: ['trainer'], feature: 'progress_photos' },
+      { href: '/pt-os/macrocycle',          label: 'Macrocycle',           icon: 'Layers' },
+      { href: '/pt-os/exercise-library',    label: 'Exercise Library',     icon: 'BookOpen',    feature: 'exercise_library' },
+      { href: '/pt-os/cardio-calculator',   label: 'Cardio & FITT',        icon: 'HeartPulse' },
+      // One photo destination for the studio. The per-client gallery is the
+      // Photos tab inside the client record.
+      { href: '/training/transformations',  label: 'Photos & Transformations', icon: 'Sparkles', roles: ['trainer'], feature: 'progress_photos' },
     ],
   },
   {
-    id: 'session-management',
-    label: 'Sessions',
-    icon: 'Calendar',
-    items: [
-      { href: '/pt-os/my-schedule',       label: 'My Schedule',          icon: 'CalendarCheck' },
-      { href: '/pt-os/schedule-session',  label: 'Book Session',         icon: 'CalendarPlus' },
-      { href: '/pt-os/session-balance',   label: 'Session Balance',      icon: 'Gauge' },
-      { href: '/pt-os/sessions',          label: 'Session History',      icon: 'History' },
-    ],
-  },
-  {
-    id: 'progress-tracking',
-    label: 'Screening',
-    icon: 'ShieldCheck',
+    id: 'progress',
+    label: 'Progress',
+    icon: 'LineChart',
     feature: 'screening',
     items: [
-      { href: '/pt-os/informed-consent',  label: 'Consent',              icon: 'FileSignature' },
-      { href: '/pt-os/parq',              label: 'PAR-Q',                icon: 'ShieldCheck' },
-      { href: '/pt-os/interview',         label: 'Client Interview',     icon: 'MessagesSquare' },
-      { href: '/pt-os/goals',             label: 'Goal Setting',         icon: 'Target' },
-      { href: '/pt-os/assessment',        label: 'Fitness Testing',      icon: 'ClipboardCheck' },
-      { href: '/pt-os/lifestyle-assessment', label: 'Lifestyle',         icon: 'HeartPulse' },
-      { href: '/pt-os/nutrition-assessment', label: 'Nutrition Assessment', icon: 'Salad' },
-      { href: '/pt-os/mobility-assessment', label: 'Mobility Assessment', icon: 'Move' },
-      { href: '/pt-os/posture-assessment', label: 'Posture Assessment',   icon: 'Accessibility' },
-      { href: '/pt-os/strength-tracking', label: 'Strength Tracking',   icon: 'Zap' },
-      { href: '/pt-os/progress',           label: 'Progress Hub',            icon: 'LineChart' },
-      { href: '/pt-os/progress-tracking-setup', label: 'Progress Tracking Overview', icon: 'Flag' },
-      { href: '/pt-os/progress-photos',   label: 'Progress Photos',     icon: 'Camera',      feature: 'progress_photos' },
-      { href: '/pt-os/progress-report',   label: 'Progress Report',     icon: 'TrendingUp' },
-      { href: '/pt-os/weekly-checkin',    label: 'Weekly Check-in',     icon: 'ClipboardCheck' },
+      { href: '/pt-os/progress',           label: 'Progress Hub',        icon: 'LineChart' },
+      { href: '/pt-os/progress-report',    label: 'Progress Report',     icon: 'TrendingUp' },
+      { href: '/pt-os/weekly-checkin',     label: 'Weekly Check-in',     icon: 'ClipboardCheck' },
     ],
   },
   {
@@ -132,9 +124,43 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/finance/collected-payments', label: 'Collected Payments',  icon: 'Banknote',     roles: ['trainer'] },
       { href: '/finance/invoices',          label: 'Invoices',             icon: 'FileText',     roles: ['trainer'] },
       { href: '/finance/dues',              label: 'Outstanding Dues',     icon: 'AlertCircle',  badge: 'duesCount', roles: ['trainer'] },
+      // Packages was its own one-link accordion. The item keeps the packages
+      // key so switching that capability off still hides the catalogue.
+      { href: '/subscription/packages',     label: 'Session Packages',     icon: 'Package',      roles: ['trainer'], feature: 'packages' },
       { href: '/pt-os/balance-sheet',       label: 'Balance Sheet',        icon: 'Wallet' },
       { href: '/finance/forecast',          label: 'Revenue Forecast',     icon: 'TrendingUp',   roles: ['trainer'] },
       // UPI Payment Settings lives in My Profile → UPI Payments now.
+    ],
+  },
+  {
+    id: 'insights',
+    label: 'Reports',
+    icon: 'FileBarChart',
+    roles: ['trainer'],
+    feature: 'insights',
+    items: [
+      // One revenue page: All Reports and PT Revenue Report were thinner
+      // copies of it. Session Utilisation's weekday chart is on the
+      // Attendance Report, which reads the same endpoint.
+      { href: '/insights/revenue',         label: 'Revenue Report',      icon: 'TrendingUp',    roles: ['trainer'] },
+      { href: '/insights/renewal',         label: 'Renewal Report',      icon: 'RefreshCcw',    roles: ['trainer'] },
+      { href: '/insights/traffic',         label: 'Attendance Report',   icon: 'Activity',      roles: ['trainer'] },
+      { href: '/operations/leaderboard',   label: 'Member Leaderboard',  icon: 'Trophy',        roles: ['trainer'] },
+      { href: '/pt-os/activity-log',       label: 'Activity Log',        icon: 'ScrollText',    roles: ['trainer'] },
+    ],
+  },
+  {
+    id: 'communication',
+    label: 'Communication',
+    icon: 'MessageCircle',
+    feature: 'communication',
+    items: [
+      { href: '/engagement/whatsapp',      label: 'WhatsApp / SMS',       icon: 'MessageCircle', roles: ['trainer'] },
+      { href: '/engagement/notifications', label: 'Notifications',        icon: 'Bell',          roles: ['trainer'] },
+      { href: '/engagement/campaigns',     label: 'Campaigns',            icon: 'Send',          roles: ['trainer'] },
+      { href: '/engagement/offers',        label: 'Promotional Offers',   icon: 'Tag',           roles: ['trainer'] },
+      { href: '/engagement/feedback',      label: 'Feedback',             icon: 'Star',          roles: ['trainer'] },
+      { href: '/engagement/automation',    label: 'Automation Rules',     icon: 'Bot',           roles: ['trainer'] },
     ],
   },
   // Members get their own group. It is the only one they see, so it carries
@@ -154,57 +180,19 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    id: 'communication',
-    label: 'Communication',
-    icon: 'MessageCircle',
-    feature: 'communication',
-    items: [
-      { href: '/engagement/whatsapp',      label: 'WhatsApp / SMS',       icon: 'MessageCircle', roles: ['trainer'] },
-      { href: '/engagement/notifications', label: 'Notifications',        icon: 'Bell',          roles: ['trainer'] },
-      { href: '/engagement/campaigns',     label: 'Campaigns',            icon: 'Send',          roles: ['trainer'] },
-      { href: '/engagement/offers',        label: 'Promotional Offers',   icon: 'Tag',           roles: ['trainer'] },
-      { href: '/engagement/feedback',      label: 'Feedback',             icon: 'Star',          roles: ['trainer'] },
-      { href: '/engagement/automation',    label: 'Automation Rules',     icon: 'Bot',           roles: ['trainer'] },
-    ],
-  },
-  {
-    id: 'subscription',
-    label: 'Packages',
-    icon: 'Package',
-    feature: 'packages',
-    items: [
-      { href: '/subscription/packages', label: 'Session Packages', icon: 'Package', roles: ['trainer'] },
-    ],
-  },
-  {
     id: 'ai-coach',
     label: 'AI Suite',
     icon: 'Bot',
     feature: 'ai_suite',
     items: [
       { href: '/ai-coach',              label: 'AI Coach',            icon: 'Bot' },
-      { href: '/ai/workout-generator', label: 'Workout Generator',   icon: 'Dumbbell' },
-      { href: '/ai/diet-generator',    label: 'Diet Generator',      icon: 'Apple' },
-      { href: '/ai/progress-analysis', label: 'Progress Analyzer',   icon: 'TrendingUp' },
-      { href: '/ai/business-insights', label: 'Business Insights',   icon: 'BarChart3',  roles: ['trainer'] },
-      { href: '/ai-coach/knowledge',   label: 'Knowledge Base',      icon: 'BookOpen',   roles: ['trainer'], feature: 'ai_knowledge_base' },
-    ],
-  },
-  {
-    id: 'insights',
-    label: 'Insights',
-    icon: 'FileBarChart',
-    roles: ['trainer'],
-    feature: 'insights',
-    items: [
-      // One revenue page: All Reports and PT Revenue Report were thinner
-      // copies of it. Session Utilisation's weekday chart is on the
-      // Attendance Report, which reads the same endpoint.
-      { href: '/insights/revenue',         label: 'Revenue Report',      icon: 'TrendingUp',    roles: ['trainer'] },
-      { href: '/insights/renewal',         label: 'Renewal Report',      icon: 'RefreshCcw',    roles: ['trainer'] },
-      { href: '/insights/traffic',         label: 'Attendance Report',   icon: 'Activity',      roles: ['trainer'] },
-      { href: '/operations/leaderboard',   label: 'Member Leaderboard',  icon: 'Trophy',        roles: ['trainer'] },
-      { href: '/pt-os/activity-log',       label: 'Activity Log',        icon: 'ScrollText',    roles: ['trainer'] },
+      // The AI generator is the primary programme tool. The rule-based
+      // /pt-os/workout-generator route still exists but is not in the nav.
+      { href: '/ai/workout-generator', label: 'AI Workout Generator', icon: 'Dumbbell' },
+      { href: '/ai/diet-generator',    label: 'AI Diet Generator',    icon: 'Apple' },
+      { href: '/ai/progress-analysis', label: 'AI Progress Analysis', icon: 'TrendingUp' },
+      { href: '/ai/business-insights', label: 'Business Insights',    icon: 'BarChart3',  roles: ['trainer'] },
+      { href: '/ai-coach/knowledge',   label: 'Knowledge Base',       icon: 'BookOpen',   roles: ['trainer'], feature: 'ai_knowledge_base' },
     ],
   },
 ];
@@ -218,7 +206,7 @@ export const SETTINGS_GROUP: NavGroup = {
     { href: '/support',                   label: 'Support',              icon: 'LifeBuoy' },
     { href: '/subscription',              label: 'Subscription & Billing', icon: 'CreditCard',  roles: ['trainer'] },
     { href: '/settings/passkeys',         label: 'Passkeys & Security',  icon: 'Shield',         roles: ['trainer'], feature: 'passkeys' },
-    { href: '/settings/biometrics',       label: 'Member Passkeys',      icon: 'Shield',         roles: ['trainer'], feature: 'passkeys' },
+    { href: '/settings/biometrics',       label: 'Member Passkey Setup', icon: 'Shield',         roles: ['trainer'], feature: 'passkeys' },
     { href: '/settings/integrations',     label: 'Integrations',         icon: 'Zap',            roles: ['trainer'], feature: 'integrations' },
   ],
 };
@@ -227,10 +215,12 @@ export const QUICK_ACTIONS = [
   { id: 'qa-record-pay',   label: 'Record payment',  icon: 'Wallet',       href: '/finance/record-payment',    roles: ['trainer'] as Role[], feature: 'finance' },
   { id: 'qa-book-session', label: 'Book PT session', icon: 'CalendarPlus', href: '/pt-os/schedule-session' },
   { id: 'qa-checkin',      label: 'Check In',         icon: 'ScanFace',     href: '/checkin/qr-scanner', feature: 'attendance' },
+  { id: 'qa-new-client',   label: 'New client',       icon: 'UserPlus',     href: '/pt-os/new-client',            roles: ['trainer'] as Role[] },
 ];
 
 export function allNavItems(): Array<NavItem & { groupId: string; groupLabel: string }> {
   const out: Array<NavItem & { groupId: string; groupLabel: string }> = [];
+  for (const it of PINNED_ITEMS) out.push({ ...it, groupId: 'workspace', groupLabel: 'Workspace' });
   for (const g of NAV_GROUPS) {
     const inherit = (it: NavItem): NavItem => ({ ...it, feature: it.feature ?? g.feature });
     for (const it of g.items) {
