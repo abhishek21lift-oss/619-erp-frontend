@@ -105,6 +105,8 @@ const CODE_MESSAGES: Readonly<Record<string, string>> = {
   RATE_LIMITED: 'Too many questions at once. Give it a moment.',
   QUOTA_EXCEEDED: 'This studio has used its AI allowance for this month. Please contact your administrator.',
   QUOTA_UNVERIFIED: 'The assistant cannot verify your studio’s AI allowance right now. Please try again shortly.',
+  AI_NOT_ENABLED: 'The AI assistant is not included in your studio’s plan. Please contact your administrator.',
+  ENTITLEMENT_UNVERIFIED: 'The assistant cannot verify your studio’s plan right now. Please try again shortly.',
   MODEL_FAILED: 'The assistant is temporarily unavailable. Please try again shortly.',
   ALL_MODELS_FAILED: 'The assistant is temporarily unavailable. Please try again shortly.',
 };
