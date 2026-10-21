@@ -47,10 +47,14 @@ function sourceFiles(dir = SRC, out: string[] = []): string[] {
 const files = sourceFiles();
 
 /**
- * A fetch() whose URL names an API path. `lib/http.ts` is the transport itself
- * and is allowed to call fetch — it is what everything else routes through.
+ * A fetch() whose URL names an API or AI-service path. `lib/http.ts` is the
+ * transport itself and is allowed to call fetch — it is what everything else
+ * routes through. `/ai/` is a second, separate origin (mps-ai), so it is in
+ * scope too: its transport (lib/client-ai.ts) fetch()es directly exactly like
+ * the /api escapes do, and Phase 3 proved one can lose the impersonation
+ * identity silently if it is left out of this scan.
  */
-const API_FETCH = /fetch\(\s*[`'"][^`'"]*\/api\//;
+const API_FETCH = /fetch\(\s*[`'"][^`'"]*\/(api|ai)\//;
 
 /**
  * Every direct API fetch, paired with the CALL's own init object.
@@ -117,11 +121,15 @@ describe('api transport', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('the two known direct-fetch call sites still carry them', () => {
+  it('the known direct-fetch call sites still carry them', () => {
     // Asserted positively as well: "no offenders" is also satisfied by the
-    // fetch disappearing, and these two features are supposed to exist.
+    // fetch disappearing, and these three features are supposed to exist.
     const byFile = new Map(directApiFetches().map((h) => [h.file, h.block]));
-    for (const rel of ['lib/ai-stream.ts', 'app/(chrome)/pt-os/clients/[id]/enroll/page.tsx']) {
+    for (const rel of [
+      'lib/ai-stream.ts',
+      'app/(chrome)/pt-os/clients/[id]/enroll/page.tsx',
+      'lib/client-ai.ts',
+    ]) {
       const block = byFile.get(rel);
       expect(block, `${rel} no longer fetches the API`).toBeDefined();
       expect(block).toMatch(/tenantAuthHeaders\(\)/);
