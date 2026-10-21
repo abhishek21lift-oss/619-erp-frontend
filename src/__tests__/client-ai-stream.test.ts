@@ -184,3 +184,68 @@ describe('what it sends', () => {
     expect(JSON.parse(String(init.body)).history).toHaveLength(8);
   });
 });
+
+describe('identity propagation (Phase 3, S-2)', () => {
+  const IMP = {
+    token: 'imp-jwt-value',
+    readonly: true,
+    accountId: 'acc-1',
+    accountName: 'Platform Operator',
+    orgId: 'org-1',
+    orgName: 'Iron Pit Studio',
+  };
+
+  afterEach(() => {
+    sessionStorage.clear();
+  });
+
+  it('a normal trainer sends NO Authorization header — the cookie is the identity', async () => {
+    const fetchMock = vi.fn(async () => sse([evt(DONE)]));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await streamClientAi({ clientId: 'c-1', message: 'hi' }, {});
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    // The exact /ai/ transport path — a second call site that the /api scan in
+    // api-transport.test.ts never sees, so it is asserted here rather than
+    // trusted to the ratchet.
+    expect(String(url)).toBe('/ai/client-agent/chat/stream');
+    const headers = init.headers as Record<string, string>;
+    expect(headers.Authorization).toBeUndefined();
+    expect(Object.keys(headers)).not.toContain('x-org-id');
+    // Same-origin by construction, so even a stray header could not be relayed
+    // to a foreign origin from this transport.
+    expect(String(url)).not.toMatch(/^(http|\/\/)/);
+  });
+
+  it('while impersonating, the Bearer token IS the identity (same as /api calls)', async () => {
+    sessionStorage.setItem('619_impersonation', JSON.stringify(IMP));
+    const fetchMock = vi.fn(async () => sse([evt(DONE)]));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await streamClientAi({ clientId: 'c-1', message: 'hi' }, {});
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    expect(headers.Authorization).toBe(`Bearer ${IMP.token}`);
+    // The strict cookie rides along as before; both credentials reach the
+    // service exactly as they do for http() on /api.
+    expect(init.credentials).toBe('include');
+  });
+
+  it('a cleared impersonation takes the header with it — nothing leaks past a logout-ish state', async () => {
+    sessionStorage.setItem('619_impersonation', JSON.stringify(IMP));
+    const fetchMock = vi.fn(async () => sse([evt(DONE)]));
+    vi.stubGlobal('fetch', fetchMock);
+
+    // Enter impersonation, then exit it the way the app does.
+    await streamClientAi({ clientId: 'c-1', message: 'hi' }, {});
+    const withImp = (fetchMock.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+    expect(withImp.Authorization).toBe(`Bearer ${IMP.token}`);
+
+    sessionStorage.removeItem('619_impersonation');
+    await streamClientAi({ clientId: 'c-1', message: 'hi' }, {});
+    const withoutImp = (fetchMock.mock.calls[1][1] as RequestInit).headers as Record<string, string>;
+    expect(withoutImp.Authorization).toBeUndefined();
+  });
+});

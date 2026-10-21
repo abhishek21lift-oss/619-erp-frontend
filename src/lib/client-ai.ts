@@ -20,6 +20,7 @@
  */
 
 // No apiBase import on purpose: /ai never targets the ERP. See aiBase() below.
+import { tenantAuthHeaders } from './http';
 /**
  * The assistant is reached through the same-origin `/ai` rewrite
  * (next.config.js) — never a cross-origin URL, which is the whole
@@ -164,7 +165,12 @@ export async function streamClientAi(
     res = await fetch(`${aiBase()}/ai/client-agent/chat/stream`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      // tenantAuthHeaders() for the same reason ai-stream.ts does it: this is
+      // a direct fetch() the /api transport never sees, so while impersonating
+      // the Bearer token IS the identity — without it the call ran as the
+      // operator, not the studio. Otherwise it is a no-op and the httpOnly
+      // cookie remains the credential.
+      headers: { 'Content-Type': 'application/json', ...tenantAuthHeaders() },
       signal,
       body: JSON.stringify({
         clientId: input.clientId,
