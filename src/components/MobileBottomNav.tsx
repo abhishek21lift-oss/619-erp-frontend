@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarClock, CalendarDays, Users, ScanFace, Bot } from 'lucide-react';
+import { CalendarClock, Users, ScanFace, Bot, Home } from 'lucide-react';
 import { m } from 'framer-motion';
 import { isVisibleForFeature } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
@@ -17,16 +17,16 @@ import { useNavScroll } from '@/contexts/nav-scroll-context';
 // Two of these five are feature-gated capabilities, so they carry the same
 // keys the sidebar uses. A studio with AI Suite or Attendance switched off
 // gets a shorter bar rather than a tab that 403s — which is worse here than
-// in the sidebar, since this is the only navigation on a phone. Today, Clients
+// in the sidebar, since this is the only navigation on a phone. Home, Clients
 // and Sessions are core and can never be switched off.
 // Sessions opens My Schedule — what is booked, today first — rather than
 // Session History, which is where the tab used to land. It stays lit on the
 // other session screens (history, booking) so the bar still says where you are.
-// Home is Today, not the dashboard: on a phone the first tap of a shift is
-// "who am I seeing", and the dashboard is one tap from there. Sessions uses a
-// calendar rather than a dumbbell — it opens a schedule, not a workout.
-const BASE_ITEMS: { href: string; icon: typeof CalendarDays; label: string; feature?: string; alsoActive?: string[] }[] = [
-  { href: '/pt-os/today',        icon: CalendarDays,  label: 'Today'    },
+// Home opens the studio dashboard at `/` — the first screen after sign-in —
+// and uses the same Home icon as the member portal's first tab. Sessions uses
+// a calendar rather than a dumbbell — it opens a schedule, not a workout.
+const BASE_ITEMS: { href: string; icon: typeof Home; label: string; feature?: string; alsoActive?: string[] }[] = [
+  { href: '/',                   icon: Home,          label: 'Home'     },
   { href: '/pt-os/clients',      icon: Users,         label: 'Clients'  },
   { href: '/ai-coach',           icon: Bot,           label: 'AI Coach', feature: 'ai_suite'   },
   { href: '/pt-os/my-schedule',  icon: CalendarClock, label: 'Sessions', alsoActive: ['/pt-os/sessions', '/pt-os/schedule-session', '/pt-os/session-balance'] },
