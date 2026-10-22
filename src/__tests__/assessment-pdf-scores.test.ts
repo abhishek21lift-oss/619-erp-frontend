@@ -67,3 +67,41 @@ describe('assessment report — score presentation', () => {
     expect(html).toContain('Overall Fitness Score');
   });
 });
+
+// Resting vitals on the report (MPTS vitals norms). Every classification is a
+// stored value; the safety line is the exercise decision, and the note is the
+// reminder that one reading is not a diagnosis.
+describe('assessment report — resting vitals', () => {
+  const vitals = {
+    bp_systolic: 135, bp_diastolic: 85, bp_category: 'Hypertension Stage 1',
+    resting_heart_rate: 72, rhr_category: 'Normal',
+    resting_spo2: 92, spo2_category: 'Mildly Low',
+    vitals_safety: 'caution',
+  };
+
+  it('prints each reading with its category and the safety state', () => {
+    const html = generateAssessmentReportHTML({ ...base, ...vitals }, 'Test Client');
+    expect(html).toContain('<label>Blood Pressure Classification</label><p>Hypertension Stage 1</p>');
+    expect(html).toContain('<label>Heart Rate Classification</label><p>Normal</p>');
+    expect(html).toContain('<label>SpO₂ Classification</label><p>Mildly Low</p>');
+    expect(html).toContain('<label>Resting Heart Rate</label><p>72 bpm</p>');
+    expect(html).toContain('<label>Exercise Safety</label><p>Caution — recheck before exertion testing</p>');
+  });
+
+  it('prints stop as medical clearance required', () => {
+    const html = generateAssessmentReportHTML({ ...base, ...vitals, vitals_safety: 'stop' }, 'Test Client');
+    expect(html).toContain('Stop — medical clearance required before exertion testing');
+  });
+
+  it('an unknown or absent safety state prints as a dash, never as safe', () => {
+    const html = generateAssessmentReportHTML({ ...base, ...vitals, vitals_safety: null }, 'Test Client');
+    expect(html).toContain('<label>Exercise Safety</label><p>—</p>');
+    expect(html).not.toContain('No exercise-safety stop recorded');
+  });
+
+  it('always carries the repeat-and-not-a-diagnosis note', () => {
+    const html = generateAssessmentReportHTML(base, 'Test Client');
+    expect(html).toContain('A single resting reading is not a diagnosis.');
+    expect(html).toContain('5–10 minutes');
+  });
+});

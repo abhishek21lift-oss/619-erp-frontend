@@ -16,7 +16,7 @@
  */
 
 import { emerald, amber, red, tint } from '@/lib/palette';
-import type { FitnessCategory, BpCategory } from '@/lib/fitness-calculations';
+import type { FitnessCategory, BpCategory, RhrCategory, Spo2Category } from '@/lib/fitness-calculations';
 
 // The same hues as the member spectrum and the front desk's, so the
 // decorative colour across the app stays one family.
@@ -129,11 +129,29 @@ export function categoryPill(category: FitnessCategory): { bg: string; color: st
 }
 
 /** A blood-pressure classification pill. Clinical bands: normal, watch,
- *  and the two that stop exertion testing. */
+ *  and the bands that stop exertion testing. */
 export function bpPill(category: BpCategory): { bg: string; color: string } {
   const color =
     category === 'Normal' ? emerald[600]
       : category === 'Elevated' || category === 'Hypertension Stage 1' ? amber[600]
+        : red[600];
+  return { bg: tint(color, 0.13), color };
+}
+
+/** A resting-heart-rate pill. "Low" is a description, not a diagnosis —
+ *  athlete context is applied to the safety decision, not to the label. */
+export function rhrPill(category: RhrCategory): { bg: string; color: string } {
+  const color =
+    category === 'Normal' ? emerald[600]
+      : category === 'Low' || category === 'High Normal' ? amber[600]
+        : red[600];
+  return { bg: tint(color, 0.13), color };
+}
+
+export function spo2Pill(category: Spo2Category): { bg: string; color: string } {
+  const color =
+    category === 'Normal' ? emerald[600]
+      : category === 'Mildly Low' ? amber[600]
         : red[600];
   return { bg: tint(color, 0.13), color };
 }

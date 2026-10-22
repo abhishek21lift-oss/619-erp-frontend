@@ -3,24 +3,36 @@
 import { useMemo } from 'react';
 import { HeartPulse, AlertTriangle, Check } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
-import { classifyBp } from '@/lib/fitness-calculations';
+import { assessVitalsSafety, classifyBp, classifyRhr, classifySpo2 } from '@/lib/fitness-calculations';
 import type { AssessmentFormData } from './types';
 import { n } from './types';
 import { StepHeader } from './StepHeader';
-import { bpPill, stepTones } from './fitnessTheme';
+import { bpPill, rhrPill, spo2Pill, stepTones } from './fitnessTheme';
 
 interface StepBloodPressureProps {
   form: AssessmentFormData;
   set: <K extends keyof AssessmentFormData>(key: K, val: AssessmentFormData[K]) => void;
   error?: string;
+  /** Recorded training level is "athlete". Context for a low resting rate. */
+  athlete?: boolean;
 }
 
-export function StepBloodPressure({ form, set, error }: StepBloodPressureProps) {
-  const { category, isUnsafe } = useMemo(
-    () => classifyBp(n(form.bpSystolic), n(form.bpDiastolic)),
-    [form.bpSystolic, form.bpDiastolic],
-  );
-  const badge = category ? bpPill(category) : null;
+export function StepBloodPressure({ form, set, error, athlete = false }: StepBloodPressureProps) {
+  const { category, rhrCategory, spo2Category, safety } = useMemo(() => {
+    const systolic = n(form.bpSystolic);
+    const diastolic = n(form.bpDiastolic);
+    const restingHeartRate = n(form.restingHeartRate);
+    const restingSpo2 = n(form.restingSpo2);
+    return {
+      category: classifyBp(systolic, diastolic),
+      rhrCategory: classifyRhr(restingHeartRate),
+      spo2Category: classifySpo2(restingSpo2),
+      safety: assessVitalsSafety({ systolic, diastolic, restingHeartRate, restingSpo2, athlete }),
+    };
+  }, [form.bpSystolic, form.bpDiastolic, form.restingHeartRate, form.restingSpo2, athlete]);
+  const bpBadge = category ? bpPill(category) : null;
+  const rhrBadge = rhrCategory ? rhrPill(rhrCategory) : null;
+  const spo2Badge = spo2Category ? spo2Pill(spo2Category) : null;
 
   return (
     <div>
@@ -59,22 +71,73 @@ export function StepBloodPressure({ form, set, error }: StepBloodPressureProps) 
 
       {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
-      {category && badge && (
-        <div className="mt-6 flex items-center gap-2.5">
+      {(category || rhrCategory || spo2Category) && (
+        <div className="mt-6">
           <span className="text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Classification</span>
-          <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: badge.bg, color: badge.color }}>
-            {category}
-          </span>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {category && bpBadge && (
+              <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: bpBadge.bg, color: bpBadge.color }}>
+                BP · {category}
+              </span>
+            )}
+            {rhrCategory && rhrBadge && (
+              <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: rhrBadge.bg, color: rhrBadge.color }}>
+                HR · {rhrCategory}
+              </span>
+            )}
+            {spo2Category && spo2Badge && (
+              <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: spo2Badge.bg, color: spo2Badge.color }}>
+                SpO₂ · {spo2Category}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
-      {isUnsafe && (
+      {safety.level === 'stop' && (
         <div className="mt-4 flex items-start gap-3 rounded-[16px] p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
           <AlertTriangle size={18} style={{ color: 'var(--danger-text)', flexShrink: 0, marginTop: 1 }} />
-          <p className="text-[13px] font-[640]" style={{ color: 'var(--danger-text)' }}>
-            Exercise not recommended. Medical clearance required. Cardio, strength and endurance tests will be skipped — only measurements and flexibility are recorded today.
-          </p>
+          <div>
+            <p className="text-[13px] font-[640]" style={{ color: 'var(--danger-text)' }}>
+              Exercise not recommended. Medical clearance required. Cardio, strength and endurance tests will be skipped — only measurements and flexibility are recorded today.
+            </p>
+            <ul className="mt-2 list-disc space-y-1 pl-4 text-[12px]" style={{ color: 'var(--danger-text)' }}>
+              {safety.reasons.map((r) => <li key={r}>{r}</li>)}
+            </ul>
+          </div>
         </div>
+      )}
+
+      {safety.level === 'caution' && (
+        <div className="mt-4 flex items-start gap-3 rounded-[16px] p-4" style={{ background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.25)' }}>
+          <AlertTriangle size={18} style={{ color: '#b45309', flexShrink: 0, marginTop: 1 }} />
+          <div>
+            <p className="text-[13px] font-[640]" style={{ color: '#92400e' }}>
+              Exercise may proceed with caution — reassess before the exertion tests.
+            </p>
+            <ul className="mt-2 list-disc space-y-1 pl-4 text-[12px]" style={{ color: '#92400e' }}>
+              {safety.reasons.map((r) => <li key={r}>{r}</li>)}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {safety.repeatBp && (
+        <p className="mt-3 text-[12px] font-[600]" style={{ color: 'var(--text-secondary)' }}>
+          Rest 5–10 minutes and recheck blood pressure before exertion testing; record the second reading.
+        </p>
+      )}
+
+      {safety.athleteLowRhr && (
+        <p className="mt-3 text-[12px] font-[600]" style={{ color: 'var(--text-secondary)' }}>
+          Low resting heart rate is common in trained athletes and is not flagged here. Confirm the client feels well.
+        </p>
+      )}
+
+      {safety.reasons.length > 0 && (
+        <p className="mt-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+          These classifications describe a single resting reading. They are not a diagnosis; repeat abnormal readings and refer when indicated.
+        </p>
       )}
     </div>
   );

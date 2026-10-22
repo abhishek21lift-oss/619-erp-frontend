@@ -5,7 +5,7 @@
 // Persisting it per assessment requires the approval-gated migration described
 // in F10 (new nullable `scoring_formula_version` column on pt_assessments);
 // until then this is documentation only and legacy rows are treated as unknown.
-export const FITNESS_SCORING_VERSION = '1';
+export const FITNESS_SCORING_VERSION = '2';
 // (same formulas, duplicated deliberately since there's no shared package
 // between the two apps). These are used client-side for live preview only —
 // the backend recomputes and stores the authoritative values.
@@ -13,7 +13,10 @@ export const FITNESS_SCORING_VERSION = '1';
 import type { FitnessScores } from '@/components/pt-os/fitness-testing/FitnessDashboard';
 
 export type FitnessCategory = 'Excellent' | 'Good' | 'Average' | 'Below Average' | 'Poor';
-export type BpCategory = 'Normal' | 'Elevated' | 'Hypertension Stage 1' | 'Hypertension Stage 2' | 'Hypotension';
+export type BpCategory = 'Normal' | 'Elevated' | 'Hypertension Stage 1' | 'Hypertension Stage 2' | 'Hypertensive Crisis' | 'Hypotension';
+export type RhrCategory = 'Low' | 'Normal' | 'High Normal' | 'High';
+export type Spo2Category = 'Normal' | 'Mildly Low' | 'Critical';
+export type VitalsSafetyLevel = 'safe' | 'caution' | 'stop';
 export type Gender = 'Male' | 'Female' | 'Other';
 
 /** A pg numeric arrives as a string; an absent metric as null. Both collapse
@@ -41,25 +44,118 @@ function round(n: number, decimals = 1): number {
   return Math.round(n * f) / f;
 }
 
-// ── Step 1: Blood Pressure ── AHA guideline thresholds.
-export function classifyBp(systolic: number | null, diastolic: number | null): { category: BpCategory | null; isUnsafe: boolean } {
-  if (systolic == null && diastolic == null) return { category: null, isUnsafe: false };
-  // One number is still a reading: 180 over a blank diastolic is stage-2
-  // hypertension, and used to classify as nothing — which switched off the
-  // stop on exactly the reading it exists for. Mirrors the API.
-  if (systolic == null || diastolic == null) {
-    if ((systolic != null && systolic >= 140) || (diastolic != null && diastolic >= 90)) return { category: 'Hypertension Stage 2', isUnsafe: true };
-    if ((systolic != null && systolic < 90) || (diastolic != null && diastolic < 60)) return { category: 'Hypotension', isUnsafe: true };
-    return { category: null, isUnsafe: false };
+// ── Step 1: Vitals ── AHA blood-pressure bands plus resting heart rate and
+// SpO₂. Classification is clinical description only; the exercise-safety
+// decision lives in assessVitalsSafety below. A single reading is never a
+// diagnosis.
+export function classifyBp(systolic: number | null, diastolic: number | null): BpCategory | null {
+  if (systolic == null && diastolic == null) return null;
+  // Highest-risk band wins when the two numbers disagree: 185/70 is crisis,
+  // 160/58 is stage 2, 135/55 is hypotension. The label is what the trainer
+  // acts on and refers with.
+  if ((systolic != null && systolic >= 180) || (diastolic != null && diastolic >= 120)) return 'Hypertensive Crisis';
+  if ((systolic != null && systolic >= 140) || (diastolic != null && diastolic >= 90)) return 'Hypertension Stage 2';
+  if ((systolic != null && systolic < 90) || (diastolic != null && diastolic < 60)) return 'Hypotension';
+  if ((systolic != null && systolic >= 130) || (diastolic != null && diastolic >= 80)) return 'Hypertension Stage 1';
+  // One number is still a reading, but it cannot establish "normal": only the
+  // high bands are safe to name from a single systolic value.
+  if (systolic != null && systolic >= 120 && (diastolic == null || diastolic < 80)) return 'Elevated';
+  if (systolic == null || diastolic == null) return null;
+  return 'Normal';
+}
+
+// Preferred adult resting range is 60–80 bpm (average ~72); 60–100 is the
+// broader adult reference. A low reading is described, not diagnosed —
+// trained athletes commonly sit at 40–50 and are handled by context below.
+export function classifyRhr(rhr: number | null): RhrCategory | null {
+  if (rhr == null || !Number.isFinite(rhr)) return null;
+  if (rhr < 60) return 'Low';
+  if (rhr <= 80) return 'Normal';
+  if (rhr <= 100) return 'High Normal';
+  return 'High';
+}
+
+export function classifySpo2(spo2: number | null): Spo2Category | null {
+  if (spo2 == null || !Number.isFinite(spo2)) return null;
+  if (spo2 < 90) return 'Critical';
+  if (spo2 < 95) return 'Mildly Low';
+  return 'Normal';
+}
+
+export interface VitalsSafety {
+  level: VitalsSafetyLevel;
+  reasons: string[];
+  requiresMedicalClearance: boolean;
+  repeatBp: boolean;
+  athleteLowRhr: boolean;
+}
+
+export interface VitalsSafetyInput {
+  systolic: number | null;
+  diastolic: number | null;
+  restingHeartRate: number | null;
+  restingSpo2: number | null;
+  /** Recorded training level is "athlete". Context only — it never hides a
+   *  genuinely dangerous reading. */
+  athlete?: boolean;
+}
+
+/** The exercise-safety decision, separate from the clinical labels above.
+ *  `stop` means no cardio, strength or endurance test today. `caution` means
+ *  the test may proceed after rest/recheck. */
+export function assessVitalsSafety(v: VitalsSafetyInput): VitalsSafety {
+  const reasons: string[] = [];
+  let level: VitalsSafetyLevel = 'safe';
+  // Read through a function so TypeScript keeps the declared union type: the
+  // assignments happen inside the closures below, which flow analysis cannot see.
+  const currentLevel = (): VitalsSafetyLevel => level;
+  const stop = (reason: string) => { level = 'stop'; reasons.push(reason); };
+  const caution = (reason: string) => {
+    if (level !== 'stop') level = 'caution';
+    reasons.push(reason);
+  };
+
+  const bp = classifyBp(v.systolic, v.diastolic);
+  const bpKnown = v.systolic != null || v.diastolic != null;
+  if (bp === 'Hypertensive Crisis') {
+    stop('Blood pressure is in the hypertensive crisis range (≥180/120 mmHg). Stop testing and arrange urgent medical assessment.');
+  } else if (bp === 'Hypertension Stage 2') {
+    stop('Blood pressure is at hypertension stage 2 (≥140/90 mmHg). Exertion testing requires medical clearance.');
+  } else if (bp === 'Hypotension') {
+    stop('Blood pressure is low (<90/60 mmHg). Exertion testing requires medical clearance.');
+  } else if (bp === 'Hypertension Stage 1') {
+    caution('Blood pressure is at hypertension stage 1 (130–139/80–89 mmHg). Rest 5–10 minutes and recheck before exertion testing.');
+  } else if (bp === 'Elevated') {
+    caution('Blood pressure is elevated (120–129/<80 mmHg). Rest 5–10 minutes and recheck.');
   }
-  // The more dangerous band wins when the two readings disagree: 160/58 is
-  // stage-2 hypertension with a low diastolic, not hypotension. Both are
-  // unsafe to test; the label is what the trainer acts on and refers with.
-  if (systolic >= 140 || diastolic >= 90) return { category: 'Hypertension Stage 2', isUnsafe: true };
-  if (systolic < 90 || diastolic < 60) return { category: 'Hypotension', isUnsafe: true };
-  if (systolic >= 130 || diastolic >= 80) return { category: 'Hypertension Stage 1', isUnsafe: false };
-  if (systolic >= 120 && diastolic < 80) return { category: 'Elevated', isUnsafe: false };
-  return { category: 'Normal', isUnsafe: false };
+
+  const rhr = classifyRhr(v.restingHeartRate);
+  if (rhr === 'High') {
+    stop('Resting heart rate is above 100 bpm. Do not start exertion testing; reassess and refer if it persists.');
+  } else if (rhr === 'Low') {
+    if (v.restingHeartRate != null && v.restingHeartRate < 40) {
+      stop('Resting heart rate is below 40 bpm. Do not start exertion testing without medical review.');
+    } else if (!v.athlete) {
+      caution('Resting heart rate is below 60 bpm. Confirm the client is well; for a trained athlete this can be normal.');
+    }
+  } else if (rhr === 'High Normal') {
+    caution('Resting heart rate is 81–100 bpm. Recheck after 5 minutes of rest.');
+  }
+
+  const spo2 = classifySpo2(v.restingSpo2);
+  if (spo2 === 'Critical') {
+    stop('Resting SpO₂ is below 90%. Do not start exertion testing; seek medical assessment.');
+  } else if (spo2 === 'Mildly Low') {
+    caution('Resting SpO₂ is 90–94%. Recheck after rest and monitor for breathlessness.');
+  }
+
+  return {
+    level: currentLevel(),
+    reasons,
+    requiresMedicalClearance: currentLevel() === 'stop',
+    repeatBp: bpKnown && bp !== 'Normal',
+    athleteLowRhr: Boolean(v.athlete) && rhr === 'Low' && (v.restingHeartRate ?? 0) >= 40,
+  };
 }
 
 // ── Step 2: Anthropometric ──
@@ -307,7 +403,7 @@ export function scoreBodyComposition(bodyFatPct: number | null, gender: Gender |
 // specific risk proxy (not a clinical diagnosis): healthy band 100, overweight
 // and underweight both 60, obese 30 — there is no separate underweight penalty.
 // Discontinuity: BMI 24.9 → 100, BMI 25.0 → 60.
-const BP_RISK_SCORE: Record<string, number> = { Normal: 100, Elevated: 80, 'Hypertension Stage 1': 55, 'Hypertension Stage 2': 20, Hypotension: 40 };
+const BP_RISK_SCORE: Record<string, number> = { Normal: 100, Elevated: 80, 'Hypertension Stage 1': 55, 'Hypertension Stage 2': 20, 'Hypertensive Crisis': 5, Hypotension: 40 };
 function scoreBmiRisk(bmi: number | null): number | null {
   if (bmi == null) return null;
   if (bmi >= 18.5 && bmi < 25) return 100;

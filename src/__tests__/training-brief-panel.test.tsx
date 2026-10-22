@@ -30,7 +30,13 @@ const FULL = {
   client: { id: 'c1', name: 'Ajeet Yadav', gender: 'male', age: 28, goal: 'muscle_gain', notes: null },
   sections: {
     readiness: { present: true, as_of: '2026-07-01', risk_level: 'low', current_health: [], past_history: [] },
-    body: { present: true, as_of: '2026-07-01', weight_kg: 72, height_cm: 175 },
+    body: {
+      present: true, as_of: '2026-07-01', weight_kg: 72, height_cm: 175,
+      bp: '135/85', bp_category: 'Hypertension Stage 1',
+      resting_hr: 72, rhr_category: 'Normal',
+      resting_spo2: 92, spo2_category: 'Mildly Low',
+      vitals_safety: 'caution',
+    },
     capacity: { present: true, as_of: '2026-07-01', strength: { score: 6, category: 'fair' } },
     limitations: {
       present: true,
@@ -62,6 +68,11 @@ describe('TrainingBriefPanel — the render is total', () => {
     await waitFor(() => expect(screen.getByText(/86% complete/)).toBeTruthy());
     expect(screen.getByText('Neck')).toBeTruthy();
     expect(screen.getByText('rounded shoulders')).toBeTruthy();
+    // Vitals categories and the exercise-safety decision reach the brief too.
+    expect(screen.getByText('135/85 · Hypertension Stage 1')).toBeTruthy();
+    expect(screen.getByText('72 bpm · Normal')).toBeTruthy();
+    expect(screen.getByText('92% · Mildly Low')).toBeTruthy();
+    expect(screen.getByText('Caution — recheck before exertion')).toBeTruthy();
   });
 
   // The exact shape that took the segment down: mobility present, `findings`
@@ -175,6 +186,8 @@ describe('briefAsText', () => {
     expect(text).toContain('NOT ASSESSED');
     expect(text).toContain('Current programme');
     expect(text).toContain('Neck: pain + restricted');
+    expect(text).toContain('Vitals: BP 135/85 (Hypertension Stage 1)');
+    expect(text).toContain('Vitals safety: caution');
   });
 
   it('does not throw on a degraded brief', () => {

@@ -4150,7 +4150,9 @@ export interface BriefBody extends BriefSectionBase {
   height_cm?: number | null; weight_kg?: number | null; bmi?: number | null;
   body_fat_pct?: number | null; lean_mass_kg?: number | null;
   waist_cm?: number | null; waist_hip_ratio?: number | null;
-  resting_hr?: number | null; bp?: string | null; bp_category?: string | null;
+  resting_hr?: number | null; rhr_category?: string | null;
+  resting_spo2?: number | null; spo2_category?: string | null;
+  bp?: string | null; bp_category?: string | null; vitals_safety?: string | null;
 }
 
 export interface BriefScore { score: number | null; category: string | null; vo2_max?: number | null }

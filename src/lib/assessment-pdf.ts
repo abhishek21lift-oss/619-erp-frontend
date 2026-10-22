@@ -62,6 +62,12 @@ const FLEX_STATUS_TEXT: Record<FlexibilityDerived['overall_status'], string> = {
   incomplete: 'Assessment incomplete',
 };
 
+const VITALS_SAFETY_TEXT: Record<string, string> = {
+  safe: 'No exercise-safety stop recorded',
+  caution: 'Caution — recheck before exertion testing',
+  stop: 'Stop — medical clearance required before exertion testing',
+};
+
 /**
  * Step 7 is either the current K11 four-test battery (v3 payload) or the old
  * two-test blob. A v3 row deliberately has no single mobility score, so the
@@ -138,12 +144,16 @@ export function generateAssessmentReportHTML(assessment: Row, clientName: string
   const number = assessment.assessment_number != null ? e(String(assessment.assessment_number)) : '—';
   const coach = e(String(assessment.trainer_name ?? '')) || '—';
 
-  const vitals = section('Blood Pressure', [
+  const vitals = section('Blood Pressure &amp; Resting Vitals', [
     field('Systolic', v(assessment.bp_systolic, ' mmHg')),
     field('Diastolic', v(assessment.bp_diastolic, ' mmHg')),
+    field('Blood Pressure Classification', v(assessment.bp_category)),
     field('Resting Heart Rate', v(assessment.resting_heart_rate, ' bpm')),
+    field('Heart Rate Classification', v(assessment.rhr_category)),
     field('Resting SpO₂', v(assessment.resting_spo2, '%')),
-    field('Classification', v(assessment.bp_category)),
+    field('SpO₂ Classification', v(assessment.spo2_category)),
+    field('Exercise Safety', VITALS_SAFETY_TEXT[String(assessment.vitals_safety ?? '')] ?? '—'),
+    field('Note', 'A single resting reading is not a diagnosis. Repeat an abnormal blood pressure after 5–10 minutes of rest.'),
   ].join(''));
 
   const anthro = section('Anthropometric', [

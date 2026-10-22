@@ -17,6 +17,18 @@ export interface FitnessScores {
   overallScore: number | null;
 }
 
+/** The resting vitals behind the Health Score. Optional: the dashboard still
+ *  renders for callers that only have the six performance scores. */
+export interface FitnessVitals {
+  bpSystolic: number | null;
+  bpDiastolic: number | null;
+  bpCategory: string | null;
+  restingHeartRate: number | null;
+  rhrCategory: string | null;
+  restingSpo2: number | null;
+  spo2Category: string | null;
+}
+
 // Order is load-bearing: the radar plots these six in this order.
 const CATEGORY_META: { key: keyof FitnessScores; label: string; tone: Tone; Icon: LucideIcon }[] = [
   { key: 'cardioScore', label: 'Cardio', tone: domain.cardio, Icon: HeartPulse },
@@ -40,6 +52,17 @@ export function radarDataFromScores(scores: FitnessScores): RadarDatum[] {
 
 interface FitnessDashboardProps {
   scores: FitnessScores;
+  vitals?: FitnessVitals;
+}
+
+function VitalTile({ label, value, category }: { label: string; value: string; category: string | null }) {
+  return (
+    <div className="rounded-[14px] px-4 py-3" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+      <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
+      <p className="mt-1 text-[15px] font-[760] tabular-nums" style={{ color: 'var(--text-primary)' }}>{value}</p>
+      {category && <p className="mt-0.5 text-[11px] font-[600]" style={{ color: 'var(--text-secondary)' }}>{category}</p>}
+    </div>
+  );
 }
 
 /** The overall score as an activity ring — the ring's length is the score,
@@ -79,10 +102,14 @@ function ScoreRing({ score, size = 208 }: { score: number | null; size?: number 
   );
 }
 
-export function FitnessDashboard({ scores }: FitnessDashboardProps) {
+export function FitnessDashboard({ scores, vitals }: FitnessDashboardProps) {
   const coverage = scoreCoverage(scores);
   const radarData = radarDataFromScores(scores);
   const overall = scores.overallScore;
+  const bp = vitals?.bpSystolic != null || vitals?.bpDiastolic != null
+    ? `${vitals?.bpSystolic ?? '—'}/${vitals?.bpDiastolic ?? '—'} mmHg` : '—';
+  const rhr = vitals?.restingHeartRate != null ? `${vitals.restingHeartRate} bpm` : '—';
+  const spo2 = vitals?.restingSpo2 != null ? `${vitals.restingSpo2}%` : '—';
 
   return (
     <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 18px 44px -18px rgba(15,23,42,0.30)' }}>
@@ -109,6 +136,14 @@ export function FitnessDashboard({ scores }: FitnessDashboardProps) {
             </p>
           </div>
         </div>
+
+        {vitals && (
+          <div className="mb-7 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <VitalTile label="Blood Pressure" value={bp} category={vitals.bpCategory} />
+            <VitalTile label="Resting Heart Rate" value={rhr} category={vitals.rhrCategory} />
+            <VitalTile label="Resting SpO₂" value={spo2} category={vitals.spo2Category} />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           <div className="flex flex-col items-center">

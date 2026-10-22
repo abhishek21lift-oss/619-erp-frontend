@@ -103,7 +103,7 @@ for (let v = 0; v <= 220; v += 0.5) FINE.push(v);
 // table or a score bucket, so every such case scored null on BOTH sides and
 // the check passed vacuously. See F5.
 const FITNESS_CATEGORIES = [null, 'Poor', 'Below Average', 'Average', 'Good', 'Excellent'];
-const BP_CATEGORIES = [null, 'Normal', 'Elevated', 'Hypertension Stage 1', 'Hypertension Stage 2', 'Hypotension'];
+const BP_CATEGORIES = [null, 'Normal', 'Elevated', 'Hypertension Stage 1', 'Hypertension Stage 2', 'Hypertensive Crisis', 'Hypotension'];
 
 function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
   const cases: Array<{ fn: string; args: unknown[] }> = [];
@@ -156,6 +156,40 @@ function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
     for (const f of ['brzycki', 'epley']) { add('calc1RM', [60, reps, f]); add('calc1RM', [100.5, reps, f]); }
   }
   for (const c of FITNESS_CATEGORIES) add('scoreCategory', [c]);
+
+  // ── Resting vitals ─────────────────────────────────────────────────────
+  //
+  // The three classifiers are threshold tables, so every half-unit is walked.
+  // assessVitalsSafety then walks each reading against a safe baseline, and
+  // finally crosses the abnormal values so the precedence between `stop` and
+  // `caution` — and the reasons array both UIs render — cannot drift.
+  for (const v of FINE) {
+    add('classifyRhr', [v]);
+    add('classifySpo2', [v]);
+    add('assessVitalsSafety', [{ systolic: v, diastolic: 75, restingHeartRate: 72, restingSpo2: 98, athlete: false }]);
+    add('assessVitalsSafety', [{ systolic: 118, diastolic: v, restingHeartRate: 72, restingSpo2: 98, athlete: false }]);
+    add('assessVitalsSafety', [{ systolic: 118, diastolic: 75, restingHeartRate: v, restingSpo2: 98, athlete: false }]);
+    add('assessVitalsSafety', [{ systolic: 118, diastolic: 75, restingHeartRate: 72, restingSpo2: v, athlete: false }]);
+    add('assessVitalsSafety', [{ systolic: 118, diastolic: 75, restingHeartRate: v, restingSpo2: 98, athlete: true }]);
+  }
+  for (const v of [null, -1, 39.5, 59.5, 60.5, 79.5, 80.5, 99.5, 100.5, 221, Number.NaN]) {
+    add('classifyBp', [v, 75]);
+    add('classifyBp', [118, v]);
+    add('classifyRhr', [v]);
+    add('classifySpo2', [v]);
+    add('assessVitalsSafety', [{ systolic: v, diastolic: v, restingHeartRate: v, restingSpo2: v, athlete: false }]);
+  }
+  for (const systolic of [85, 118, 125, 135, 160, 185]) {
+    for (const diastolic of [55, 75, 85, 100, 120]) {
+      for (const restingHeartRate of [39, 50, 72, 85, 105]) {
+        for (const restingSpo2 of [88, 92, 98]) {
+          for (const athlete of [false, true]) {
+            add('assessVitalsSafety', [{ systolic, diastolic, restingHeartRate, restingSpo2, athlete }]);
+          }
+        }
+      }
+    }
+  }
   for (const f of NUMS) for (const g of GENDERS) add('scoreBodyComposition', [f, g]);
   for (const bp of BP_CATEGORIES) for (const bmi of NUMS) add('scoreHealthRisk', [bp, bmi]);
   for (const a of [null, 0, 40, 60, 100]) for (const b of [null, 0, 40, 60, 100]) add('scoreEnduranceBattery', [a, b]);
@@ -720,10 +754,15 @@ function main() {
         { fn: 'classifyEndurance', args: ['Push Up Test', 30, 'Male'] },
         { fn: 'classifyEndurance', args: ['Plank', 60, null] },
         { fn: 'scoreHealthRisk', args: ['Normal', 22] },
+        { fn: 'scoreHealthRisk', args: ['Hypertensive Crisis', 22] },
         { fn: 'scoreCategory', args: ['Good'] },
         { fn: 'classifyFlexibilityScore', args: [8] },
         { fn: 'classifyVo2Max', args: [45, 30, 'Male'] },
         { fn: 'classifyBp', args: [120, 70] },
+        { fn: 'classifyBp', args: [185, 70] },
+        { fn: 'classifyRhr', args: [72] },
+        { fn: 'classifySpo2', args: [98] },
+        { fn: 'assessVitalsSafety', args: [{ systolic: 185, diastolic: 70, restingHeartRate: 72, restingSpo2: 98, athlete: false }] },
       ],
     },
     {

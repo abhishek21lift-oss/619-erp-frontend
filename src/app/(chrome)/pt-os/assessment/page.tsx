@@ -15,7 +15,7 @@ import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { downloadAssessmentPdf } from '@/lib/assessment-pdf';
 import {
-  computeAge, calcBmi, classifyBp, calcVo2MaxRockport, calcVo2MaxCooper,
+  computeAge, calcBmi, classifyBp, classifyRhr, classifySpo2, assessVitalsSafety, calcVo2MaxRockport, calcVo2MaxCooper,
   calcVo2MaxBruce, calcHarvardPei, classifyHarvardPei, classifyVo2Max, classifyStepTestRecovery,
   calc1RM, classifyStrength, classifyEndurance,
   scoreCategory, scoreBodyComposition, scoreHealthRisk, scoreTestBattery, computeOverallScore,
@@ -37,7 +37,7 @@ import StepEndurance from '@/components/pt-os/fitness-testing/StepEndurance';
 import StepFlexibility from '@/components/pt-os/fitness-testing/StepFlexibility';
 import { FLEXIBILITY_PROTOCOLS, FLEXIBILITY_TEST_ORDER } from '@/components/pt-os/fitness-testing/flexibility/protocol-content';
 import { buildFlexibilityPayload, formTest, legacyMobilityScore } from '@/lib/flexibility-protocol';
-import FitnessDashboard, { type FitnessScores } from '@/components/pt-os/fitness-testing/FitnessDashboard';
+import FitnessDashboard, { type FitnessScores, type FitnessVitals } from '@/components/pt-os/fitness-testing/FitnessDashboard';
 import { ScreeningStatusCard, ScreeningWarningsNotice } from '@/components/pt-os/fitness-testing/ScreeningStatusCard';
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
 import AiRecommendationsPanel from '@/components/pt-os/fitness-testing/AiRecommendationsPanel';
@@ -84,10 +84,10 @@ function estimateOneRM(form: AssessmentFormData, testNum: 1 | 2 = 1): number | n
   return mode === 'direct' ? n(direct1RM) : calc1RM(n(weightKg), n(reps), formula);
 }
 
-function validateStep(id: StepId, form: AssessmentFormData, isBeginner: boolean, bpUnsafe = false): string | undefined {
-  // Exertion tests are intentionally skipped when resting BP is unsafe; they
-  // are not required (and must not block submission) in that case.
-  if (bpUnsafe && (id === 4 || id === 5 || id === 6)) return undefined;
+function validateStep(id: StepId, form: AssessmentFormData, isBeginner: boolean, vitalsStop = false): string | undefined {
+  // Exertion tests are intentionally skipped when the resting vitals are
+  // unsafe; they are not required (and must not block submission) then.
+  if (vitalsStop && (id === 4 || id === 5 || id === 6)) return undefined;
   if (id === 1) {
     if (form.assessmentDate > todayISO()) return 'The assessment date cannot be in the future.';
     if (!form.bpSystolic && !form.bpDiastolic && !form.bpNotMeasured) {
@@ -293,8 +293,8 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
 
   const liveScores = useMemo<FitnessScores>(() => {
     const bmi = calcBmi(n(form.weight), n(form.heightCm));
-    const bp = classifyBp(n(form.bpSystolic), n(form.bpDiastolic));
-    const healthRiskScore = scoreHealthRisk(bp.category, bmi);
+    const bpCategory = classifyBp(n(form.bpSystolic), n(form.bpDiastolic));
+    const healthRiskScore = scoreHealthRisk(bpCategory, bmi);
     const bodyCompositionScore = scoreBodyComposition(n(form.bodyFatPct), gender);
 
     let vo2: number | null = null;
@@ -344,21 +344,36 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
 
   const isBeginner = experienceLevel === 'beginner';
 
-  // An unsafe resting BP (stage-2 hypertension or hypotension) stops the
-  // exertion tests — cardio (4), strength (5), endurance (6). The reading,
-  // measurements, body composition and flexibility are still recorded; the
-  // API refuses exertion results alongside an unsafe reading (BP_UNSAFE).
-  // Before this the warning showed on step 1 and the wizard walked straight
-  // on into a step test and a 1RM.
-  const bpUnsafe = useMemo(
-    () => classifyBp(n(form.bpSystolic), n(form.bpDiastolic)).isUnsafe,
-    [form.bpSystolic, form.bpDiastolic],
+  // The live vitals summary — the same labels the API recomputes and stores.
+  const liveVitals = useMemo<FitnessVitals>(() => {
+    const bpSystolic = n(form.bpSystolic);
+    const bpDiastolic = n(form.bpDiastolic);
+    const restingHeartRate = n(form.restingHeartRate);
+    const restingSpo2 = n(form.restingSpo2);
+    return {
+      bpSystolic, bpDiastolic, bpCategory: classifyBp(bpSystolic, bpDiastolic),
+      restingHeartRate, rhrCategory: classifyRhr(restingHeartRate),
+      restingSpo2, spo2Category: classifySpo2(restingSpo2),
+    };
+  }, [form.bpSystolic, form.bpDiastolic, form.restingHeartRate, form.restingSpo2]);
+
+  // An unsafe resting vitals reading stops the exertion tests — cardio (4),
+  // strength (5), endurance (6). The reading, measurements, body composition
+  // and flexibility are still recorded; the API refuses exertion results
+  // alongside a stop (VITALS_UNSAFE/BP_UNSAFE/...).
+  const vitalsStop = useMemo(
+    () => assessVitalsSafety({
+      systolic: liveVitals.bpSystolic, diastolic: liveVitals.bpDiastolic,
+      restingHeartRate: liveVitals.restingHeartRate, restingSpo2: liveVitals.restingSpo2,
+      athlete: experienceLevel === 'athlete',
+    }).level === 'stop',
+    [liveVitals, experienceLevel],
   );
   const isExertionStep = (s: StepId) => s === 4 || s === 5 || s === 6;
 
   const goToStep = (s: StepId) => {
-    if (bpUnsafe && isExertionStep(s)) {
-      toast.error('Resting blood pressure is unsafe — cardio, strength and endurance tests are skipped.');
+    if (vitalsStop && isExertionStep(s)) {
+      toast.error('Resting vitals are unsafe — cardio, strength and endurance tests are skipped.');
       return;
     }
     setStep(s);
@@ -366,12 +381,12 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
 
   const handleNext = () => {
     const stepDef = STEPS.find((s) => s.id === step)!;
-    const err = validateStep(step, form, isBeginner, bpUnsafe);
+    const err = validateStep(step, form, isBeginner, vitalsStop);
     setErrors((e) => ({ ...e, [stepDef.key]: err }));
     if (err) { toast.error(err); return; }
     if (step === 7) { setReviewMode(true); return; }
-    if (bpUnsafe && step === 3) {
-      toast.warning('Resting blood pressure is unsafe — skipping cardio, strength and endurance tests.');
+    if (vitalsStop && step === 3) {
+      toast.warning('Resting vitals are unsafe — skipping cardio, strength and endurance tests.');
       setStep(7);
       return;
     }
@@ -380,7 +395,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
 
   const handleBack = () => {
     if (reviewMode) { setReviewMode(false); return; }
-    if (bpUnsafe && step === 7) { setStep(3); return; }
+    if (vitalsStop && step === 7) { setStep(3); return; }
     if (step > 1) { setStep((s) => (s - 1) as StepId); return; }
     if (isDirty && !window.confirm('Discard unsaved changes?')) return;
     router.push(`/pt-os/clients/${clientId}`);
@@ -399,7 +414,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     const stepErrors: FormErrors = {};
     let firstFailing: StepId | null = null;
     for (const s of STEPS) {
-      const err = validateStep(s.id, form, isBeginner, bpUnsafe);
+      const err = validateStep(s.id, form, isBeginner, vitalsStop);
       if (err) {
         stepErrors[s.key as keyof FormErrors] = err;
         if (firstFailing == null) firstFailing = s.id;
@@ -475,8 +490,8 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
           : form.flexibility.legacy,
       };
 
-      if (bpUnsafe) {
-        // Anything typed into the exertion steps before the BP reading was
+      if (vitalsStop) {
+        // Anything typed into the exertion steps before the vitals reading was
         // corrected to an unsafe one is not sent — the API would refuse it.
         for (const k of ['cardio_test_type', 'cardio_test_data', 'strength_exercise', 'strength_exercise_2',
           'strength_test_data', 'endurance_test_type', 'endurance_test_type_2', 'endurance_test_data']) delete payload[k];
@@ -498,7 +513,11 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
 
       clear();
       if (created) setHistory((h) => [created, ...h.filter((x) => String(x.id) !== String(created.id))]);
-      toast.success(created?.bp_unsafe ? 'Assessment saved. Blood pressure flagged unsafe — medical clearance recommended.' : editingId ? 'Assessment updated.' : 'Assessment saved.');
+      toast.success(
+        created?.bp_unsafe || (created?.vitals_safety as { level?: string } | undefined)?.level === 'stop'
+          ? 'Assessment saved. Resting vitals flagged unsafe — medical clearance recommended.'
+          : editingId ? 'Assessment updated.' : 'Assessment saved.',
+      );
       setEditingId(null);
 
       if (created) setLastSaved(created);
@@ -603,6 +622,22 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     return { date: String(row.assessment_date ?? '').slice(0, 10), data: row.flexibility_test_data };
   })();
 
+  // Saved rows carry the categories the API derived. Old rows have no
+  // category columns, so fall back to classifying their raw values.
+  const savedVitals: FitnessVitals | undefined = (() => {
+    if (!lastSaved) return undefined;
+    const bpSystolic = scoreNum(lastSaved.bp_systolic);
+    const bpDiastolic = scoreNum(lastSaved.bp_diastolic);
+    const restingHeartRate = scoreNum(lastSaved.resting_heart_rate);
+    const restingSpo2 = scoreNum(lastSaved.resting_spo2);
+    const cat = (v: unknown) => (typeof v === 'string' && v ? v : null);
+    return {
+      bpSystolic, bpDiastolic, bpCategory: cat(lastSaved.bp_category) ?? classifyBp(bpSystolic, bpDiastolic),
+      restingHeartRate, rhrCategory: cat(lastSaved.rhr_category) ?? classifyRhr(restingHeartRate),
+      restingSpo2, spo2Category: cat(lastSaved.spo2_category) ?? classifySpo2(restingSpo2),
+    };
+  })();
+
   return (
     <PageContainer>
       <PageHero
@@ -647,7 +682,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
             </div>
 
             <ScreeningWarningsNotice warnings={saveWarnings} clientId={clientId} />
-            <FitnessDashboard scores={scoresFromAssessmentRow(lastSaved)} />
+            <FitnessDashboard scores={scoresFromAssessmentRow(lastSaved)} vitals={savedVitals} />
             <AiRecommendationsPanel assessmentId={String(lastSaved.id)} />
 
             <div className="flex flex-wrap gap-3">
@@ -667,7 +702,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
         ) : !reviewMode ? (
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
             {step === 1 && <AssessmentInfoCard form={form} set={set} clientName={clientName} nextAssessmentNumber={nextAssessmentNumber} />}
-            {step === 1 && <StepBloodPressure form={form} set={set} error={errors.bp} />}
+            {step === 1 && <StepBloodPressure form={form} set={set} error={errors.bp} athlete={experienceLevel === 'athlete'} />}
             {step === 2 && <StepAnthropometric form={form} set={set} error={errors.anthropometric} />}
             {step === 3 && <StepBodyComposition form={form} set={set} age={age} gender={gender} error={errors.bodyComposition} />}
             {step === 4 && <StepCardio form={form} set={set} age={age} gender={gender} error={errors.cardio} />}
@@ -688,7 +723,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
           </m.div>
         ) : (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
-            <FitnessDashboard scores={liveScores} />
+            <FitnessDashboard scores={liveScores} vitals={liveVitals} />
           </m.div>
         )}
 

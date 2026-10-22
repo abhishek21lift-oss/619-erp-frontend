@@ -372,8 +372,12 @@ export default function TrainingBriefPanel({ clientId, onLoaded }: TrainingBrief
           <Row label="Height" value={s.body.height_cm != null ? `${s.body.height_cm} cm` : null} />
           <Row label="BMI" value={s.body.bmi != null ? String(s.body.bmi) : null} />
           <Row label="Body fat" value={s.body.body_fat_pct != null ? `${s.body.body_fat_pct}%` : null} />
-          <Row label="Resting HR" value={s.body.resting_hr != null ? `${s.body.resting_hr} bpm` : null} />
+          <Row label="Resting HR" value={s.body.resting_hr != null ? `${s.body.resting_hr} bpm${s.body.rhr_category ? ` · ${s.body.rhr_category}` : ''}` : null} />
           <Row label="Blood pressure" value={s.body.bp ? `${s.body.bp}${s.body.bp_category ? ` · ${s.body.bp_category}` : ''}` : null} />
+          <Row label="Resting SpO₂" value={s.body.resting_spo2 != null ? `${s.body.resting_spo2}%${s.body.spo2_category ? ` · ${s.body.spo2_category}` : ''}` : null} />
+          <Row label="Vitals safety" value={s.body.vitals_safety === 'stop' ? 'Stop — medical clearance required'
+            : s.body.vitals_safety === 'caution' ? 'Caution — recheck before exertion'
+              : s.body.vitals_safety === 'safe' ? 'No stop recorded' : null} />
         </div>
       </Card>
 
@@ -623,6 +627,14 @@ export function briefAsText(b: TrainingBrief): string {
     L.push(`- ${[s.body.weight_kg && `${s.body.weight_kg} kg`, s.body.height_cm && `${s.body.height_cm} cm`,
       s.body.bmi && `BMI ${s.body.bmi}`, s.body.body_fat_pct && `${s.body.body_fat_pct}% fat`]
       .filter(Boolean).join(', ') || 'no measurements'}`);
+    // Vitals travel with the brief because they change what is safe to program.
+    const vitals = [
+      s.body.bp && `BP ${s.body.bp}${s.body.bp_category ? ` (${s.body.bp_category})` : ''}`,
+      s.body.resting_hr != null && `resting HR ${s.body.resting_hr}${s.body.rhr_category ? ` (${s.body.rhr_category})` : ''}`,
+      s.body.resting_spo2 != null && `SpO₂ ${s.body.resting_spo2}%${s.body.spo2_category ? ` (${s.body.spo2_category})` : ''}`,
+    ].filter(Boolean).join(', ');
+    if (vitals) L.push(`- Vitals: ${vitals}`);
+    if (s.body.vitals_safety) L.push(`- Vitals safety: ${s.body.vitals_safety}`);
   }
   if (s.lifestyle.present) {
     L.push('', 'RECOVERY CAPACITY');
