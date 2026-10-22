@@ -155,7 +155,16 @@ export default function ClientAiPanel({
         streaming: false,
       });
     } catch (err) {
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted) {
+        // Cancelled by the trainer (or the panel closed). Stop the bubble, and
+        // drop it if no text arrived — an empty "streaming" bubble would
+        // otherwise sit there forever. busy is reset in finally.
+        setMessages((prev) => prev.flatMap((msg) => {
+          if (msg.id !== answerId) return [msg];
+          return msg.content.trim() ? [{ ...msg, streaming: false }] : [];
+        }));
+        return;
+      }
       const partial = err instanceof ClientAiError && err.partial;
       if (partial) {
         // Keep what arrived, flag it. Deleting text the trainer has already
@@ -170,7 +179,7 @@ export default function ClientAiPanel({
         }]);
       }
     } finally {
-      if (!controller.signal.aborted) setBusy(false);
+      setBusy(false);
     }
   }, [busy, clientId, messages]);
 

@@ -88,14 +88,6 @@ ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
 # this same variable, so the header and the bundle agree by construction rather
 # than by two people remembering to update both.
 
-# Where the AI service (repo: mps-ai) lives on the compose network. Read by
-# next.config.js's rewrites(), which Next.js evaluates at BUILD time and bakes
-# into routes-manifest.json — so this has to be an ARG, not a runtime env var.
-# Optional: unset means /ai/* is simply not routed, and the build still
-# succeeds, which is what lets a deploy without the AI service keep working.
-ARG AI_SERVICE_URL
-ENV AI_SERVICE_URL=$AI_SERVICE_URL
-
 # `.next/cache` cached across builds for the third network dependency above:
 # next/font/google downloads Inter and JetBrains Mono from Google at BUILD
 # time, and Next has no retry setting for it. A warm cache means a rebuild does

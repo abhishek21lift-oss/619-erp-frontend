@@ -1,39 +1,20 @@
 /**
- * The one place that knows how the Client AI service is called.
+ * The one place the Client Assistant is called.
  *
- * Deliberately NOT part of `src/lib/api` — that barrel targets the ERP backend,
- * and this reaches a different service (repo: mps-ai) with a different base
- * path, error envelope and failure modes. Filing it under `api.*` would imply a
- * shared contract that does not exist, and the first person to add a retry or a
- * refresh interceptor there would silently change behaviour here.
- *
- * There is one function, and it streams. The service also exposes a plain JSON
- * /chat for server-to-server callers, but a second client for it here would be
- * a second set of error handling that nothing exercises — and the first thing
- * to drift when the envelope changes.
+ * The assistant now runs inside the ERP backend: this is a normal ERP route
+ * (`POST /api/ai/client-agent/chat/stream`), behind the studio's ai_suite gate,
+ * trainer auth, the AI rate limiter and the monthly quota. There is no second
+ * service, no `/ai` rewrite and no `AI_SERVICE_URL`.
  *
  * Auth is the httpOnly `token` cookie, sent by `credentials: 'include'` the
- * same way every other call in this app does it. The browser cannot read that
- * cookie, so there is no header to set — which is exactly why /ai is a
- * same-origin rewrite (next.config.js) rather than a call to another host: the
- * cookie is sameSite:'strict' and a cross-site request would arrive without it.
+ * same way every other call in this app does it. `apiBase()` keeps the standard
+ * vhost same-origin and points at the API host where one is configured.
+ * `tenantAuthHeaders()` is still added for the impersonation case: a direct
+ * fetch() bypasses the /api transport, so while impersonating the Bearer token
+ * IS the identity.
  */
 
-// No apiBase import on purpose: /ai never targets the ERP. See aiBase() below.
-import { tenantAuthHeaders } from './http';
-/**
- * The assistant is reached through the same-origin `/ai` rewrite
- * (next.config.js) — never a cross-origin URL, which is the whole
- * authorisation model: the httpOnly `token` cookie is sameSite:'strict' and
- * does not survive any cross-site request. Production has the rewrite; dev
- * has it too once AI_SERVICE_URL is set (same file). The URL that must never
- * be used is the ERP's base (apiBase()): `/ai/*` lives on the assistant
- * service, and asking the ERP for it 404s in every environment — the
- * production behaviour the round-2 audit filed as WIRE-01.
- */
-function aiBase(): string {
-  return '';
-}
+import { apiBase, tenantAuthHeaders } from './http';
 
 /**
  * The service's check of the answer's figures against the records they were
@@ -101,15 +82,21 @@ export class ClientAiError extends Error {
  */
 const CODE_MESSAGES: Readonly<Record<string, string>> = {
   NO_TOKEN: 'Your session has expired. Please sign in again.',
+  NO_TENANT: 'Your account has no studio context. Please contact your administrator.',
   CLIENT_NOT_FOUND: 'This client could not be found in your studio.',
   NOT_FOUND: 'The AI assistant is not set up in this app yet. Please contact support.',
   RATE_LIMITED: 'Too many questions at once. Give it a moment.',
+  AI_QUOTA_EXCEEDED: 'This studio has used its AI allowance for this month. Please contact your administrator.',
+  AI_QUOTA_UNVERIFIABLE: 'The assistant cannot verify your studio’s AI allowance right now. Please try again shortly.',
   QUOTA_EXCEEDED: 'This studio has used its AI allowance for this month. Please contact your administrator.',
   QUOTA_UNVERIFIED: 'The assistant cannot verify your studio’s AI allowance right now. Please try again shortly.',
   AI_NOT_ENABLED: 'The AI assistant is not included in your studio’s plan. Please contact your administrator.',
+  FEATURE_DISABLED: 'The AI assistant is not included in your studio’s plan. Please contact your administrator.',
   ENTITLEMENT_UNVERIFIED: 'The assistant cannot verify your studio’s plan right now. Please try again shortly.',
   MODEL_FAILED: 'The assistant is temporarily unavailable. Please try again shortly.',
   ALL_MODELS_FAILED: 'The assistant is temporarily unavailable. Please try again shortly.',
+  UNAVAILABLE: 'The assistant is temporarily unavailable. Please try again shortly.',
+  INTERNAL: 'Something went wrong. Please try again.',
 };
 
 /** Messages worth showing a trainer verbatim, keyed by what the service said. */
@@ -164,7 +151,7 @@ export async function streamClientAi(
 ): Promise<ClientAiAnswer> {
   let res: Response;
   try {
-    res = await fetch(`${aiBase()}/ai/client-agent/chat/stream`, {
+    res = await fetch(`${apiBase()}/api/ai/client-agent/chat/stream`, {
       method: 'POST',
       credentials: 'include',
       // tenantAuthHeaders() for the same reason ai-stream.ts does it: this is

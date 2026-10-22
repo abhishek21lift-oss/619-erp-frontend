@@ -168,26 +168,11 @@ const nextConfig = {
   },
 
   async rewrites() {
-    // The AI service (repo: mps-ai) runs as its own container. It is routed
-    // through the same same-origin rewrite as /api so the browser never makes
-    // a cross-origin call. That keeps CORS out of the picture, and — the part
-    // that actually matters — means the httpOnly `token` cookie is sent: it is
-    // sameSite:'strict' and would not survive a cross-site request. Without
-    // this the Ask AI panel would be unauthenticated in production while
-    // working fine against localhost.
-    //
-    // Optional on purpose. A deploy that has not stood the AI service up yet
-    // omits AI_SERVICE_URL and /ai/* simply 404s, rather than the whole
-    // frontend refusing to build.
-    const aiUrl = (process.env.AI_SERVICE_URL || '').trim().replace(/\/+$/, '');
-
-    if (!IS_PROD) {
-      // Dev parity (WIRE-01): production routes /ai/* through this same
-      // rewrite; development returned [] so every AI call hit the ERP's
-      // origin — which has no /ai/* — and 404'd the panel while prod worked.
-      // With AI_SERVICE_URL set, dev streams exactly like a deploy.
-      return aiUrl ? [{ source: '/ai/:path*', destination: `${aiUrl}/ai/:path*` }] : [];
-    }
+    // The Client Assistant is an ERP route now, reached on the same origin as
+    // every other /api call. There is no separate AI container and no /ai/*
+    // rewrite: the browser's httpOnly, sameSite:'strict' cookie is the
+    // credential, exactly as it is for the rest of the app.
+    if (!IS_PROD) return [];
 
     const backendUrl = (
       process.env.NEXT_PUBLIC_API_URL || ''
@@ -204,7 +189,6 @@ const nextConfig = {
     return [
       { source: '/api/:path*', destination: `${backendUrl}/api/:path*` },
       { source: '/uploads/:path*', destination: `${backendUrl}/uploads/:path*` },
-      ...(aiUrl ? [{ source: '/ai/:path*', destination: `${aiUrl}/ai/:path*` }] : []),
     ];
   },
 };

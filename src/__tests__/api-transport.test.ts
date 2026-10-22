@@ -49,10 +49,9 @@ const files = sourceFiles();
 /**
  * A fetch() whose URL names an API or AI-service path. `lib/http.ts` is the
  * transport itself and is allowed to call fetch — it is what everything else
- * routes through. `/ai/` is a second, separate origin (mps-ai), so it is in
- * scope too: its transport (lib/client-ai.ts) fetch()es directly exactly like
- * the /api escapes do, and Phase 3 proved one can lose the impersonation
- * identity silently if it is left out of this scan.
+ * routes through. `lib/client-ai.ts` fetch()es directly exactly like the /api
+ * escapes do, and Phase 3 proved one can lose the impersonation identity
+ * silently if it is left out of this scan.
  */
 const API_FETCH = /fetch\(\s*[`'"][^`'"]*\/(api|ai)\//;
 

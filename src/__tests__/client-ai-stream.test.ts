@@ -5,8 +5,13 @@
 // answer and looks fine. One that treats a keep-alive comment as content
 // prints ": ping" into the trainer's answer. One that ignores the done event
 // returns an object with no provenance and the source chips quietly vanish.
-import { describe, expect, it, vi, afterEach } from 'vitest';
+import { describe, expect, it, vi, afterEach, beforeAll } from 'vitest';
 import { streamClientAi, ClientAiError } from '@/lib/client-ai';
+
+// jsdom runs on localhost, where apiBase() returns the configured backend
+// (the production VPS returns '' and uses the same-origin /api rewrite).
+const API = 'http://api.test';
+beforeAll(() => { process.env.NEXT_PUBLIC_API_URL = API; });
 
 /** A Response whose body yields exactly these pieces, split where we say. */
 function sse(pieces: string[], init: { status?: number } = {}) {
@@ -173,11 +178,8 @@ describe('what it sends', () => {
     await streamClientAi({ clientId: 'c-1', message: 'hi', history }, {});
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe('/ai/client-agent/chat/stream');
-    // Same-origin by construction: aiBase() is '' and the /ai rewrite (prod
-    // and, since WIRE-01, dev) carries it. An abs-URL to the ERP would drop
-    // the strict cookie AND 404 — /ai lives on the assistant service.
-    expect(String(url)).not.toMatch(/^(http|\/\/)/);
+    expect(url).toBe(`${API}/api/ai/client-agent/chat/stream`);
+    // This is the ERP route, not the retired AI service.
     // The token is httpOnly, so there is no header to set — omitting this sends
     // the request with no credential at all and the service answers 401.
     expect(init.credentials).toBe('include');
@@ -206,16 +208,12 @@ describe('identity propagation (Phase 3, S-2)', () => {
     await streamClientAi({ clientId: 'c-1', message: 'hi' }, {});
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    // The exact /ai/ transport path — a second call site that the /api scan in
-    // api-transport.test.ts never sees, so it is asserted here rather than
-    // trusted to the ratchet.
-    expect(String(url)).toBe('/ai/client-agent/chat/stream');
+    // The exact transport path — asserted here rather than trusted to the
+    // /api scan in api-transport.test.ts.
+    expect(String(url)).toBe(`${API}/api/ai/client-agent/chat/stream`);
     const headers = init.headers as Record<string, string>;
     expect(headers.Authorization).toBeUndefined();
     expect(Object.keys(headers)).not.toContain('x-org-id');
-    // Same-origin by construction, so even a stray header could not be relayed
-    // to a foreign origin from this transport.
-    expect(String(url)).not.toMatch(/^(http|\/\/)/);
   });
 
   it('while impersonating, the Bearer token IS the identity (same as /api calls)', async () => {
