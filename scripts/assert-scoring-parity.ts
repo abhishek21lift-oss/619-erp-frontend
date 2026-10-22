@@ -104,6 +104,12 @@ for (let v = 0; v <= 220; v += 0.5) FINE.push(v);
 // the check passed vacuously. See F5.
 const FITNESS_CATEGORIES = [null, 'Poor', 'Below Average', 'Average', 'Good', 'Excellent'];
 const BP_CATEGORIES = [null, 'Normal', 'Elevated', 'Hypertension Stage 1', 'Hypertension Stage 2', 'Hypertensive Crisis', 'Hypotension'];
+// Fine sweeps across the anthropometric band edges (18.5 / 23 / 25 BMI,
+// 80 / 90 cm waist, 0.86 / 0.95 WHR). The integer FINE grid alone cannot see a
+// sub-unit threshold move.
+const BMI_FINE = Array.from({ length: 301 }, (_, i) => 10 + i / 10);
+const RATIO_FINE = Array.from({ length: 101 }, (_, i) => 0.5 + i / 100);
+const ANTHRO_GENDERS = [null, 'Male', 'Female', 'Other', 'male', 'female'];
 
 function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
   const cases: Array<{ fn: string; args: unknown[] }> = [];
@@ -111,6 +117,14 @@ function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
 
   for (const w of NUMS) for (const h of NUMS) add('calcBmi', [w, h]);
   for (const a of NUMS) for (const b of NUMS) add('calcWhr', [a, b]);
+  for (const b of BMI_FINE) add('classifyBmi', [b]);
+  for (const b of [...NUMS, null, Number.NaN, -1, 0]) add('classifyBmi', [b]);
+  for (const v of [...FINE, ...RATIO_FINE]) {
+    for (const g of ANTHRO_GENDERS) {
+      add('classifyWaistRisk', [v, g]);
+      add('classifyWhrRisk', [v, g]);
+    }
+  }
   for (const w of NUMS) for (const f of NUMS) { add('calcLeanBodyMass', [w, f]); add('calcFatMass', [w, f]); }
   for (const w of NUMS) for (const h of [150, 175, 200]) for (const a of [null, 20, 45, 70]) for (const g of GENDERS) add('calcBmr', [w, h, a, g]);
   for (const s of NUMS) for (const d of NUMS) add('classifyBp', [s, d]);
@@ -760,6 +774,9 @@ function main() {
         { fn: 'classifyVo2Max', args: [45, 30, 'Male'] },
         { fn: 'classifyBp', args: [120, 70] },
         { fn: 'classifyBp', args: [185, 70] },
+        { fn: 'classifyBmi', args: [23] },
+        { fn: 'classifyWaistRisk', args: [90, 'Male'] },
+        { fn: 'classifyWhrRisk', args: [0.86, 'Female'] },
         { fn: 'classifyRhr', args: [72] },
         { fn: 'classifySpo2', args: [98] },
         { fn: 'assessVitalsSafety', args: [{ systolic: 185, diastolic: 70, restingHeartRate: 72, restingSpo2: 98, athlete: false }] },

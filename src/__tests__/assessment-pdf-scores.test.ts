@@ -68,6 +68,44 @@ describe('assessment report — score presentation', () => {
   });
 });
 
+// Anthropometric norms (MPTS): adult Asian BMI bands, plus sex-specific
+// low-risk waist and WHR labels. Every classification printed here is the
+// stored value — the report never derives one from a legacy row whose
+// classification was not recorded.
+describe('assessment report — anthropometric norms', () => {
+  const anthro = {
+    bmi: 24.2, bmi_category: 'Overweight',
+    waist_cm: 92, waist_iliac_cm: 74,
+    waist_risk: 'Above low-risk threshold',
+    hips_cm: 94, waist_hip_ratio: 0.98, whr_risk: 'Above low-risk threshold',
+  };
+
+  it('prints each stored classification beside its measurement', () => {
+    const html = generateAssessmentReportHTML({ ...base, ...anthro }, 'Test Client');
+    expect(html).toContain('<label>BMI Classification</label><p>Overweight</p>');
+    expect(html).toContain('<label>Waist Narrowest</label><p>92 cm</p>');
+    expect(html).toContain('<label>Waist Circumference Risk</label><p>Above low-risk threshold</p>');
+    expect(html).toContain('<label>Waist-Hip Ratio Risk</label><p>Above low-risk threshold</p>');
+    // The separate iliac landmark is displayed, never substituted.
+    expect(html).toContain('<label>Waist Iliac</label><p>74 cm</p>');
+  });
+
+  it('does not invent a classification for a row saved before the columns existed', () => {
+    const html = generateAssessmentReportHTML({
+      ...base, bmi: 24.2, waist_cm: 92, hips_cm: 94, waist_hip_ratio: 0.98,
+    }, 'Test Client');
+    expect(html).toContain('<label>BMI Classification</label><p>—</p>');
+    expect(html).toContain('<label>Waist Circumference Risk</label><p>—</p>');
+    expect(html).toContain('<label>Waist-Hip Ratio Risk</label><p>—</p>');
+  });
+
+  it('states the norm basis and that only the low-risk cut-off is defined', () => {
+    const html = generateAssessmentReportHTML({ ...base, ...anthro }, 'Test Client');
+    expect(html).toContain('adult Asian bands');
+    expect(html).toContain('only the low-risk cut-off is defined');
+  });
+});
+
 // Resting vitals on the report (MPTS vitals norms). Every classification is a
 // stored value; the safety line is the exercise decision, and the note is the
 // reminder that one reading is not a diagnosis.

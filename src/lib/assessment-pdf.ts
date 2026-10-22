@@ -160,15 +160,19 @@ export function generateAssessmentReportHTML(assessment: Row, clientName: string
     field('Weight', v(assessment.weight, ' kg')),
     field('Height', v(assessment.height_cm, ' cm')),
     field('BMI', v(assessment.bmi)),
+    field('BMI Classification', v(assessment.bmi_category)),
     field('Waist Narrowest', v(assessment.waist_cm, ' cm')),
     field('Waist Iliac', v(assessment.waist_iliac_cm, ' cm')),
+    field('Waist Circumference Risk', v(assessment.waist_risk)),
     field('Hips', v(assessment.hips_cm, ' cm')),
     field('Waist-Hip Ratio', v(assessment.waist_hip_ratio)),
+    field('Waist-Hip Ratio Risk', v(assessment.whr_risk)),
     field('Neck', v(assessment.neck_cm, ' cm')),
     field('Chest', v(assessment.chest_cm, ' cm')),
     field('Right / Left Arm', `${v(assessment.arm_right_cm)} / ${v(assessment.arm_left_cm)} cm`),
     field('Right / Left Thigh', `${v(assessment.thigh_right_cm)} / ${v(assessment.thigh_left_cm)} cm`),
     field('Right / Left Calf', `${v(assessment.calf_right_cm)} / ${v(assessment.calf_left_cm)} cm`),
+    field('Norm', 'BMI uses adult Asian bands. Waist risk uses Waist Narrowest, not Waist Iliac. Waist and WHR risk bands are sex-specific; only the low-risk cut-off is defined.'),
   ].join(''));
 
   const bodyComp = section('Body Composition', [

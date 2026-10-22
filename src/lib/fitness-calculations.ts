@@ -170,6 +170,42 @@ export function calcWhr(waistCm: number | null, hipsCm: number | null): number |
   return round(waistCm / hipsCm, 2);
 }
 
+// MPTS adult Asian BMI bands.
+export type BmiCategory = 'Underweight' | 'Normal' | 'Overweight' | 'Obese';
+
+// The published waist and WHR norms define only the low-risk side. A reading
+// at or above the cut-off is described as such — never promoted to an invented
+// "moderate" or "high" risk band.
+export type AnthropometricRisk = 'Low risk' | 'Above low-risk threshold';
+
+export function classifyBmi(bmi: number | null): BmiCategory | null {
+  if (bmi == null || !Number.isFinite(bmi) || bmi <= 0) return null;
+  if (bmi < 18.5) return 'Underweight';
+  if (bmi < 23) return 'Normal';
+  if (bmi < 25) return 'Overweight';
+  return 'Obese';
+}
+
+// Waist circumference is the narrowest-waist measurement (`waist_cm`), the
+// same field the WHR formula uses. The iliac-crest measurement is a separate
+// landmark and is never substituted when `waist_cm` is missing.
+const WAIST_LOW_RISK_CM: Record<'Male' | 'Female', number> = { Male: 90, Female: 80 };
+const WHR_LOW_RISK: Record<'Male' | 'Female', number> = { Male: 0.95, Female: 0.86 };
+
+export function classifyWaistRisk(waistCm: number | null, gender: Gender | null): AnthropometricRisk | null {
+  if (waistCm == null || !Number.isFinite(waistCm) || waistCm <= 0) return null;
+  const g = sexOf(gender);
+  if (!g) return null;
+  return waistCm < WAIST_LOW_RISK_CM[g] ? 'Low risk' : 'Above low-risk threshold';
+}
+
+export function classifyWhrRisk(whr: number | null, gender: Gender | null): AnthropometricRisk | null {
+  if (whr == null || !Number.isFinite(whr) || whr <= 0) return null;
+  const g = sexOf(gender);
+  if (!g) return null;
+  return whr < WHR_LOW_RISK[g] ? 'Low risk' : 'Above low-risk threshold';
+}
+
 // ── Step 3: Body Composition ── Mifflin-St Jeor (1990).
 export function calcBmr(weightKg: number | null, heightCm: number | null, age: number | null, gender: Gender | null): number | null {
   if (!weightKg || !heightCm || !age || !gender) return null;
@@ -399,10 +435,17 @@ export function scoreBodyComposition(bodyFatPct: number | null, gender: Gender |
 // Health Score (stored column `health_risk_score`): average of a BP-category
 // subscore and a BMI-category subscore. Higher is better — 100 is normal BP
 // within the healthy BMI band — same direction as the other five categories.
-// BP_RISK_SCORE bands follow AHA BP categories. The BMI bands are a project-
-// specific risk proxy (not a clinical diagnosis): healthy band 100, overweight
-// and underweight both 60, obese 30 — there is no separate underweight penalty.
-// Discontinuity: BMI 24.9 → 100, BMI 25.0 → 60.
+// BP_RISK_SCORE bands follow AHA BP categories.
+//
+// The BMI bands below are deliberately NOT the MPTS/Asian anthropometric
+// categories in classifyBmi(): they are the pre-existing project risk proxy,
+// left unchanged so stored Health Scores stay comparable. A BMI of 23–24.9 is
+// therefore "Overweight" in the anthropometric block while this score still
+// treats 18.5–<25 as healthy. This divergence is documented and pinned by a
+// regression test; do not silently reconcile it here.
+//
+// Healthy band 100, overweight/underweight 60, obese 30 — no separate
+// underweight penalty. Discontinuity: BMI 24.9 → 100, BMI 25.0 → 60.
 const BP_RISK_SCORE: Record<string, number> = { Normal: 100, Elevated: 80, 'Hypertension Stage 1': 55, 'Hypertension Stage 2': 20, 'Hypertensive Crisis': 5, Hypotension: 40 };
 function scoreBmiRisk(bmi: number | null): number | null {
   if (bmi == null) return null;

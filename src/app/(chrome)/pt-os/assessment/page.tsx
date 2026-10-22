@@ -15,7 +15,8 @@ import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { downloadAssessmentPdf } from '@/lib/assessment-pdf';
 import {
-  computeAge, calcBmi, classifyBp, classifyRhr, classifySpo2, assessVitalsSafety, calcVo2MaxRockport, calcVo2MaxCooper,
+  computeAge, calcBmi, calcWhr, classifyBmi, classifyWaistRisk, classifyWhrRisk,
+  classifyBp, classifyRhr, classifySpo2, assessVitalsSafety, calcVo2MaxRockport, calcVo2MaxCooper,
   calcVo2MaxBruce, calcHarvardPei, classifyHarvardPei, classifyVo2Max, classifyStepTestRecovery,
   calc1RM, classifyStrength, classifyEndurance,
   scoreCategory, scoreBodyComposition, scoreHealthRisk, scoreTestBattery, computeOverallScore,
@@ -37,7 +38,7 @@ import StepEndurance from '@/components/pt-os/fitness-testing/StepEndurance';
 import StepFlexibility from '@/components/pt-os/fitness-testing/StepFlexibility';
 import { FLEXIBILITY_PROTOCOLS, FLEXIBILITY_TEST_ORDER } from '@/components/pt-os/fitness-testing/flexibility/protocol-content';
 import { buildFlexibilityPayload, formTest, legacyMobilityScore } from '@/lib/flexibility-protocol';
-import FitnessDashboard, { type FitnessScores, type FitnessVitals } from '@/components/pt-os/fitness-testing/FitnessDashboard';
+import FitnessDashboard, { type FitnessScores, type FitnessVitals, type FitnessAnthropometric } from '@/components/pt-os/fitness-testing/FitnessDashboard';
 import { ScreeningStatusCard, ScreeningWarningsNotice } from '@/components/pt-os/fitness-testing/ScreeningStatusCard';
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
 import AiRecommendationsPanel from '@/components/pt-os/fitness-testing/AiRecommendationsPanel';
@@ -357,6 +358,19 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     };
   }, [form.bpSystolic, form.bpDiastolic, form.restingHeartRate, form.restingSpo2]);
 
+  // The live anthropometric summary — the same labels the API recomputes and
+  // stores. Waist uses waistCm only; waistIliacCm is never substituted.
+  const liveAnthropometric = useMemo<FitnessAnthropometric>(() => {
+    const bmi = calcBmi(n(form.weight), n(form.heightCm));
+    const waistCm = n(form.waistCm);
+    const waistHipRatio = calcWhr(waistCm, n(form.hipsCm));
+    return {
+      bmi, bmiCategory: classifyBmi(bmi),
+      waistCm, waistRisk: classifyWaistRisk(waistCm, gender),
+      waistHipRatio, whrRisk: classifyWhrRisk(waistHipRatio, gender),
+    };
+  }, [form.weight, form.heightCm, form.waistCm, form.hipsCm, gender]);
+
   // An unsafe resting vitals reading stops the exertion tests — cardio (4),
   // strength (5), endurance (6). The reading, measurements, body composition
   // and flexibility are still recorded; the API refuses exertion results
@@ -624,17 +638,29 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
 
   // Saved rows carry the categories the API derived. Old rows have no
   // category columns, so fall back to classifying their raw values.
+  const cat = (v: unknown) => (typeof v === 'string' && v ? v : null);
   const savedVitals: FitnessVitals | undefined = (() => {
     if (!lastSaved) return undefined;
     const bpSystolic = scoreNum(lastSaved.bp_systolic);
     const bpDiastolic = scoreNum(lastSaved.bp_diastolic);
     const restingHeartRate = scoreNum(lastSaved.resting_heart_rate);
     const restingSpo2 = scoreNum(lastSaved.resting_spo2);
-    const cat = (v: unknown) => (typeof v === 'string' && v ? v : null);
     return {
       bpSystolic, bpDiastolic, bpCategory: cat(lastSaved.bp_category) ?? classifyBp(bpSystolic, bpDiastolic),
       restingHeartRate, rhrCategory: cat(lastSaved.rhr_category) ?? classifyRhr(restingHeartRate),
       restingSpo2, spo2Category: cat(lastSaved.spo2_category) ?? classifySpo2(restingSpo2),
+    };
+  })();
+
+  const savedAnthropometric: FitnessAnthropometric | undefined = (() => {
+    if (!lastSaved) return undefined;
+    const bmi = scoreNum(lastSaved.bmi);
+    const waistCm = scoreNum(lastSaved.waist_cm);
+    const waistHipRatio = scoreNum(lastSaved.waist_hip_ratio);
+    return {
+      bmi, bmiCategory: cat(lastSaved.bmi_category) ?? classifyBmi(bmi),
+      waistCm, waistRisk: cat(lastSaved.waist_risk) ?? classifyWaistRisk(waistCm, gender),
+      waistHipRatio, whrRisk: cat(lastSaved.whr_risk) ?? classifyWhrRisk(waistHipRatio, gender),
     };
   })();
 
@@ -682,7 +708,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
             </div>
 
             <ScreeningWarningsNotice warnings={saveWarnings} clientId={clientId} />
-            <FitnessDashboard scores={scoresFromAssessmentRow(lastSaved)} vitals={savedVitals} />
+            <FitnessDashboard scores={scoresFromAssessmentRow(lastSaved)} vitals={savedVitals} anthropometric={savedAnthropometric} />
             <AiRecommendationsPanel assessmentId={String(lastSaved.id)} />
 
             <div className="flex flex-wrap gap-3">
@@ -703,7 +729,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
             {step === 1 && <AssessmentInfoCard form={form} set={set} clientName={clientName} nextAssessmentNumber={nextAssessmentNumber} />}
             {step === 1 && <StepBloodPressure form={form} set={set} error={errors.bp} athlete={experienceLevel === 'athlete'} />}
-            {step === 2 && <StepAnthropometric form={form} set={set} error={errors.anthropometric} />}
+            {step === 2 && <StepAnthropometric form={form} set={set} error={errors.anthropometric} gender={gender} />}
             {step === 3 && <StepBodyComposition form={form} set={set} age={age} gender={gender} error={errors.bodyComposition} />}
             {step === 4 && <StepCardio form={form} set={set} age={age} gender={gender} error={errors.cardio} />}
             {step === 5 && <StepStrength form={form} set={set} gender={gender} error={errors.strength} isBeginner={isBeginner} />}
@@ -723,7 +749,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
           </m.div>
         ) : (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
-            <FitnessDashboard scores={liveScores} vitals={liveVitals} />
+            <FitnessDashboard scores={liveScores} vitals={liveVitals} anthropometric={liveAnthropometric} />
           </m.div>
         )}
 

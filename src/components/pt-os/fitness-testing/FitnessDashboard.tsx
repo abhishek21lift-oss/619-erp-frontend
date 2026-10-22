@@ -29,6 +29,18 @@ export interface FitnessVitals {
   spo2Category: string | null;
 }
 
+/** The anthropometric measurements and their norm labels, when the caller has
+ *  them. Old saved rows have no stored label, so the caller may supply a
+ *  classification derived from the raw measurements. */
+export interface FitnessAnthropometric {
+  bmi: number | null;
+  bmiCategory: string | null;
+  waistCm: number | null;
+  waistRisk: string | null;
+  waistHipRatio: number | null;
+  whrRisk: string | null;
+}
+
 // Order is load-bearing: the radar plots these six in this order.
 const CATEGORY_META: { key: keyof FitnessScores; label: string; tone: Tone; Icon: LucideIcon }[] = [
   { key: 'cardioScore', label: 'Cardio', tone: domain.cardio, Icon: HeartPulse },
@@ -53,6 +65,7 @@ export function radarDataFromScores(scores: FitnessScores): RadarDatum[] {
 interface FitnessDashboardProps {
   scores: FitnessScores;
   vitals?: FitnessVitals;
+  anthropometric?: FitnessAnthropometric;
 }
 
 function VitalTile({ label, value, category }: { label: string; value: string; category: string | null }) {
@@ -102,7 +115,7 @@ function ScoreRing({ score, size = 208 }: { score: number | null; size?: number 
   );
 }
 
-export function FitnessDashboard({ scores, vitals }: FitnessDashboardProps) {
+export function FitnessDashboard({ scores, vitals, anthropometric }: FitnessDashboardProps) {
   const coverage = scoreCoverage(scores);
   const radarData = radarDataFromScores(scores);
   const overall = scores.overallScore;
@@ -110,6 +123,11 @@ export function FitnessDashboard({ scores, vitals }: FitnessDashboardProps) {
     ? `${vitals?.bpSystolic ?? '—'}/${vitals?.bpDiastolic ?? '—'} mmHg` : '—';
   const rhr = vitals?.restingHeartRate != null ? `${vitals.restingHeartRate} bpm` : '—';
   const spo2 = vitals?.restingSpo2 != null ? `${vitals.restingSpo2}%` : '—';
+  const bmi = anthropometric?.bmi != null ? String(anthropometric.bmi) : '—';
+  const waist = anthropometric?.waistCm != null ? `${anthropometric.waistCm} cm` : '—';
+  const whr = anthropometric?.waistHipRatio != null ? String(anthropometric.waistHipRatio) : '—';
+  const showAnthropometric = anthropometric != null
+    && (anthropometric.bmi != null || anthropometric.waistCm != null || anthropometric.waistHipRatio != null);
 
   return (
     <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 18px 44px -18px rgba(15,23,42,0.30)' }}>
@@ -142,6 +160,14 @@ export function FitnessDashboard({ scores, vitals }: FitnessDashboardProps) {
             <VitalTile label="Blood Pressure" value={bp} category={vitals.bpCategory} />
             <VitalTile label="Resting Heart Rate" value={rhr} category={vitals.rhrCategory} />
             <VitalTile label="Resting SpO₂" value={spo2} category={vitals.spo2Category} />
+          </div>
+        )}
+
+        {showAnthropometric && anthropometric && (
+          <div className="mb-7 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <VitalTile label="BMI" value={bmi} category={anthropometric.bmiCategory} />
+            <VitalTile label="Waist Circumference" value={waist} category={anthropometric.waistRisk} />
+            <VitalTile label="Waist-Hip Ratio" value={whr} category={anthropometric.whrRisk} />
           </div>
         )}
 

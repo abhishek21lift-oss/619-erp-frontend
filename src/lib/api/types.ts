@@ -4148,8 +4148,10 @@ export interface BriefReadiness extends BriefSectionBase {
 
 export interface BriefBody extends BriefSectionBase {
   height_cm?: number | null; weight_kg?: number | null; bmi?: number | null;
+  bmi_category?: string | null;
   body_fat_pct?: number | null; lean_mass_kg?: number | null;
-  waist_cm?: number | null; waist_hip_ratio?: number | null;
+  waist_cm?: number | null; waist_risk?: string | null;
+  waist_hip_ratio?: number | null; whr_risk?: string | null;
   resting_hr?: number | null; rhr_category?: string | null;
   resting_spo2?: number | null; spo2_category?: string | null;
   bp?: string | null; bp_category?: string | null; vitals_safety?: string | null;

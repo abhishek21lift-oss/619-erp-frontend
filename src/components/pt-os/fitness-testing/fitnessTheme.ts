@@ -16,7 +16,9 @@
  */
 
 import { emerald, amber, red, tint } from '@/lib/palette';
-import type { FitnessCategory, BpCategory, RhrCategory, Spo2Category } from '@/lib/fitness-calculations';
+import type {
+  FitnessCategory, BpCategory, RhrCategory, Spo2Category, BmiCategory, AnthropometricRisk,
+} from '@/lib/fitness-calculations';
 
 // The same hues as the member spectrum and the front desk's, so the
 // decorative colour across the app stays one family.
@@ -153,5 +155,22 @@ export function spo2Pill(category: Spo2Category): { bg: string; color: string } 
     category === 'Normal' ? emerald[600]
       : category === 'Mildly Low' ? amber[600]
         : red[600];
+  return { bg: tint(color, 0.13), color };
+}
+
+/** An adult Asian BMI band. Normal is the only green band. */
+export function bmiPill(category: BmiCategory): { bg: string; color: string } {
+  const color =
+    category === 'Normal' ? emerald[600]
+      : category === 'Obese' ? red[600]
+        : amber[600];
+  return { bg: tint(color, 0.13), color };
+}
+
+/** The low-risk cut-off is the only published side of the waist/WHR norms, so
+ *  the other value is amber (review) — never red, which would invent a
+ *  moderate/high-risk band the guideline does not define. */
+export function riskPill(risk: AnthropometricRisk): { bg: string; color: string } {
+  const color = risk === 'Low risk' ? emerald[600] : amber[600];
   return { bg: tint(color, 0.13), color };
 }

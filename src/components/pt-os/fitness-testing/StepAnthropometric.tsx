@@ -3,21 +3,66 @@
 import { useMemo } from 'react';
 import { Ruler } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
-import { calcBmi, calcWhr } from '@/lib/fitness-calculations';
+import {
+  calcBmi, calcWhr, classifyBmi, classifyWaistRisk, classifyWhrRisk,
+} from '@/lib/fitness-calculations';
+import type { AnthropometricRisk, BmiCategory, Gender } from '@/lib/fitness-calculations';
 import type { AssessmentFormData } from './types';
 import { n } from './types';
 import { StepHeader } from './StepHeader';
-import { stepTones } from './fitnessTheme';
+import { bmiPill, riskPill, stepTones } from './fitnessTheme';
 
 interface StepAnthropometricProps {
   form: AssessmentFormData;
   set: <K extends keyof AssessmentFormData>(key: K, val: AssessmentFormData[K]) => void;
   error?: string;
+  /** Client profile sex. Waist and WHR norms are sex-specific. */
+  gender?: Gender | null;
 }
 
-export function StepAnthropometric({ form, set, error }: StepAnthropometricProps) {
-  const bmi = useMemo(() => calcBmi(n(form.weight), n(form.heightCm)), [form.weight, form.heightCm]);
-  const whr = useMemo(() => calcWhr(n(form.waistCm), n(form.hipsCm)), [form.waistCm, form.hipsCm]);
+function ClassificationTile({
+  label, value, unit, category, risk,
+}: {
+  label: string;
+  value: number | null;
+  unit?: string;
+  category?: BmiCategory | null;
+  risk?: AnthropometricRisk | null;
+}) {
+  const badge = category ? bmiPill(category) : risk ? riskPill(risk) : null;
+  const text = category ?? risk ?? null;
+  return (
+    <div>
+      <p className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
+      <p className="mt-1 text-[24px] font-[820] leading-none tabular-nums tracking-[-0.02em]" style={{ color: value == null ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+        {value ?? '—'}{value != null && unit ? ` ${unit}` : ''}
+      </p>
+      {text && badge && (
+        <span className="mt-2 inline-block rounded-full px-2.5 py-1 text-[11px] font-[700]" style={{ background: badge.bg, color: badge.color }}>
+          {text}
+        </span>
+      )}
+    </div>
+  );
+}
+
+export function StepAnthropometric({ form, set, error, gender = null }: StepAnthropometricProps) {
+  const { bmi, whr, bmiCategory, waistRisk, whrRisk, waistCm } = useMemo(() => {
+    const bmi = calcBmi(n(form.weight), n(form.heightCm));
+    const waistCm = n(form.waistCm);
+    const whr = calcWhr(waistCm, n(form.hipsCm));
+    return {
+      bmi,
+      whr,
+      waistCm,
+      bmiCategory: classifyBmi(bmi),
+      // Uses waistCm only — the iliac-crest reading is a different landmark.
+      waistRisk: classifyWaistRisk(waistCm, gender),
+      whrRisk: classifyWhrRisk(whr, gender),
+    };
+  }, [form.weight, form.heightCm, form.waistCm, form.hipsCm, gender]);
+
+  const sexUnsupported = gender === null || gender === 'Other';
 
   return (
     <div>
@@ -56,16 +101,22 @@ export function StepAnthropometric({ form, set, error }: StepAnthropometricProps
 
       {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
-      {(bmi != null || whr != null) && (
-        <div className="mt-6 grid grid-cols-2 gap-4 rounded-[18px] p-5" style={{ background: stepTones[2].wash, border: '1px solid var(--border)' }}>
-          <div>
-            <p className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>BMI</p>
-            <p className="mt-1 text-[24px] font-[820] leading-none tabular-nums tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>{bmi ?? '—'}</p>
+      {sexUnsupported && (
+        <p className="mt-4 rounded-[14px] px-4 py-3 text-[12px] leading-snug" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', color: 'var(--text-secondary)' }}>
+          Waist-circumference and waist-to-hip risk bands are sex-specific. No classification is shown for this client until their profile records male or female. The measurements are still saved.
+        </p>
+      )}
+
+      {(bmi != null || whr != null || waistCm != null) && (
+        <div className="mt-6 rounded-[18px] p-5" style={{ background: stepTones[2].wash, border: '1px solid var(--border)' }}>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+            <ClassificationTile label="BMI" value={bmi} category={bmiCategory} />
+            <ClassificationTile label="Waist Circumference" value={waistCm} unit="cm" risk={waistRisk} />
+            <ClassificationTile label="Waist-Hip Ratio" value={whr} risk={whrRisk} />
           </div>
-          <div>
-            <p className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Waist-Hip Ratio</p>
-            <p className="mt-1 text-[24px] font-[820] leading-none tabular-nums tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>{whr ?? '—'}</p>
-          </div>
+          <p className="mt-4 text-[11px] leading-snug" style={{ color: 'var(--text-muted)' }}>
+            BMI uses the adult Asian bands. Waist and WHR use the Waist Narrowest measurement, not Waist Iliac. The published norms define only the low-risk cut-off; a reading at or above it is shown as above that threshold, not given an invented risk band.
+          </p>
         </div>
       )}
     </div>

@@ -32,6 +32,9 @@ const FULL = {
     readiness: { present: true, as_of: '2026-07-01', risk_level: 'low', current_health: [], past_history: [] },
     body: {
       present: true, as_of: '2026-07-01', weight_kg: 72, height_cm: 175,
+      bmi: 23.5, bmi_category: 'Overweight',
+      waist_cm: 92, waist_risk: 'Above low-risk threshold',
+      waist_hip_ratio: 0.98, whr_risk: 'Above low-risk threshold',
       bp: '135/85', bp_category: 'Hypertension Stage 1',
       resting_hr: 72, rhr_category: 'Normal',
       resting_spo2: 92, spo2_category: 'Mildly Low',
@@ -68,6 +71,10 @@ describe('TrainingBriefPanel — the render is total', () => {
     await waitFor(() => expect(screen.getByText(/86% complete/)).toBeTruthy());
     expect(screen.getByText('Neck')).toBeTruthy();
     expect(screen.getByText('rounded shoulders')).toBeTruthy();
+    // Anthropometric norms travel with their measurements.
+    expect(screen.getByText('23.5 · Overweight')).toBeTruthy();
+    expect(screen.getByText('92 cm · Above low-risk threshold')).toBeTruthy();
+    expect(screen.getByText('0.98 · Above low-risk threshold')).toBeTruthy();
     // Vitals categories and the exercise-safety decision reach the brief too.
     expect(screen.getByText('135/85 · Hypertension Stage 1')).toBeTruthy();
     expect(screen.getByText('72 bpm · Normal')).toBeTruthy();
@@ -186,6 +193,9 @@ describe('briefAsText', () => {
     expect(text).toContain('NOT ASSESSED');
     expect(text).toContain('Current programme');
     expect(text).toContain('Neck: pain + restricted');
+    expect(text).toContain('BMI 23.5 (Overweight)');
+    expect(text).toContain('waist 92 cm (Above low-risk threshold)');
+    expect(text).toContain('WHR 0.98 (Above low-risk threshold)');
     expect(text).toContain('Vitals: BP 135/85 (Hypertension Stage 1)');
     expect(text).toContain('Vitals safety: caution');
   });
@@ -226,6 +236,9 @@ describe('TrainingBriefPanel — the real payload', () => {
     expect(screen.getByText('Neck')).toBeTruthy();
     expect(screen.getByText('Anterior Pelvic Tilt')).toBeTruthy();
     expect(screen.getByText(/Approved for Exercise|Low/)).toBeTruthy();
+    // This row predates the classification columns: its BMI prints bare
+    // rather than acquiring a category nobody stored.
+    expect(screen.getByText('26.1')).toBeTruthy();
   });
 
   it('never hands a non-string to a text slot', () => {
@@ -241,6 +254,8 @@ describe('TrainingBriefPanel — the real payload', () => {
   });
 
   it('copies to text without throwing on the real payload', () => {
-    expect(() => briefAsText(normaliseBrief(LIVE)!)).not.toThrow();
+    const text = briefAsText(normaliseBrief(LIVE)!);
+    expect(text).toContain('BMI 26.1');
+    expect(text).not.toContain('BMI 26.1 (');
   });
 });
