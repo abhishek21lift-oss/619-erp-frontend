@@ -310,7 +310,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       const pei = calcHarvardPei(n(form.cardioDurationSec), n(form.cardioPulse1), n(form.cardioPulse2), n(form.cardioPulse3));
       cardioCategory = classifyHarvardPei(pei);
     } else if (form.cardioTestType === 'YMCA 3-Minute Step Test') {
-      cardioCategory = classifyStepTestRecovery(n(form.cardioRecoveryHr));
+      cardioCategory = classifyStepTestRecovery(n(form.cardioRecoveryHr), age, gender);
     }
     if (vo2 != null && !cardioCategory) cardioCategory = classifyVo2Max(vo2, age, gender);
     const cardioScore = scoreCategory(cardioCategory);

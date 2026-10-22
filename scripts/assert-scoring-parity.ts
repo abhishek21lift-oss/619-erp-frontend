@@ -102,7 +102,7 @@ for (let v = 0; v <= 220; v += 0.5) FINE.push(v);
 // spaces. The previous lowercase/underscore spellings never matched a norm
 // table or a score bucket, so every such case scored null on BOTH sides and
 // the check passed vacuously. See F5.
-const FITNESS_CATEGORIES = [null, 'Poor', 'Below Average', 'Average', 'Good', 'Excellent'];
+const FITNESS_CATEGORIES = [null, 'Poor', 'Below Average', 'Average', 'Above Average', 'Good', 'Excellent', 'Very Poor'];
 const BP_CATEGORIES = [null, 'Normal', 'Elevated', 'Hypertension Stage 1', 'Hypertension Stage 2', 'Hypertensive Crisis', 'Hypotension'];
 // Fine sweeps across the anthropometric band edges (18.5 / 23 / 25 BMI,
 // 80 / 90 cm waist, 0.86 / 0.95 WHR). The integer FINE grid alone cannot see a
@@ -134,7 +134,14 @@ function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
   for (const w of NUMS) for (const a of [null, 30, 50]) for (const g of GENDERS) for (const t of [null, 12, 15]) for (const hr of [null, 120, 160]) add('calcVo2MaxRockport', [w, a, g, t, hr]);
   for (const d of [null, 100, 180]) for (const p1 of NUMS) for (const p2 of [null, 40, 60]) for (const p3 of [null, 35, 55]) add('calcHarvardPei', [d, p1, p2, p3]);
   for (const p of NUMS) add('classifyHarvardPei', [p]);
-  for (const hr of NUMS) add('classifyStepTestRecovery', [hr]);
+  // K11 recovery-HR norms are age- and sex-specific. Walk every band edge
+  // across both supported sexes and the unsupported inputs, so a moved edge or
+  // a dropped null cannot hide.
+  for (const hr of NUMS) {
+    for (const age of [null, 17, 18, 25, 26, 35, 36, 45, 46, 55, 56]) {
+      for (const gender of ANTHRO_GENDERS) add('classifyStepTestRecovery', [hr, age, gender]);
+    }
+  }
   for (const w of NUMS) for (const r of [null, 0, 1, 5, 10, 12, 20, 37]) for (const f of ['brzycki', 'epley']) add('calc1RM', [w, r, f]);
   for (const o of NUMS) for (const bw of NUMS) for (const ex of [null, 'Bench Press', 'Squat', 'Deadlift', 'Shoulder Press', 'Leg Press', 'Lunges']) for (const g of GENDERS) add('classifyStrength', [o, bw, ex, g]);
   for (const tt of [null, 'Push Up Test', 'Curl Up Test', 'Plank', 'Wall Sit', 'Bodyweight Squat', 'Custom']) for (const v of NUMS) for (const g of GENDERS) add('classifyEndurance', [tt, v, g]);
@@ -149,7 +156,9 @@ function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
   for (const v of FINE) {
     add('classifyFlexibilityScore', [v]);
     add('classifyHarvardPei', [v]);
-    add('classifyStepTestRecovery', [v]);
+    for (const age of [18, 25, 26, 35, 36, 45, 46, 55]) {
+      for (const gender of ['Male', 'Female']) add('classifyStepTestRecovery', [v, age, gender]);
+    }
     add('calcVo2MaxCooper', [v * 20]);
     add('calcVo2MaxBruce', [v / 10]);
     add('calcBmi', [v, 175]);
@@ -770,6 +779,10 @@ function main() {
         { fn: 'scoreHealthRisk', args: ['Normal', 22] },
         { fn: 'scoreHealthRisk', args: ['Hypertensive Crisis', 22] },
         { fn: 'scoreCategory', args: ['Good'] },
+        { fn: 'scoreCategory', args: ['Above Average'] },
+        { fn: 'scoreCategory', args: ['Very Poor'] },
+        { fn: 'classifyStepTestRecovery', args: [90, 30, 'Male'] },
+        { fn: 'classifyStepTestRecovery', args: [130, 30, 'Male'] },
         { fn: 'classifyFlexibilityScore', args: [8] },
         { fn: 'classifyVo2Max', args: [45, 30, 'Male'] },
         { fn: 'classifyBp', args: [120, 70] },

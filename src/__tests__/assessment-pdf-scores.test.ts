@@ -58,6 +58,23 @@ describe('assessment report — score presentation', () => {
     expect(html).not.toContain('<label>Body Composition</label><p>—</p>');
   });
 
+  it('a continuous body-composition score equal to a category bucket still prints bare', () => {
+    // 70 and 10 are K11 category buckets; a Body Composition score is
+    // continuous, so the same number must not borrow a classification.
+    for (const score of [70, 10]) {
+      const html = generateAssessmentReportHTML({ ...base, body_composition_score: score }, 'Test Client');
+      expect(html).not.toContain(`${score} (`);
+    }
+  });
+
+  it('prints a stored K11 classification verbatim', () => {
+    const html = generateAssessmentReportHTML(
+      { ...base, cardio_test_type: 'YMCA 3-Minute Step Test', cardio_category: 'Very Poor', cardio_score_computed: 10 },
+      'Test Client',
+    );
+    expect(html).toContain('<label>Classification</label><p>Very Poor</p>');
+  });
+
   it('a partial assessment still renders the dashboard with missing values as dashes', () => {
     const html = generateAssessmentReportHTML(
       { ...base, strength_score_computed: null, endurance_score_computed: null },

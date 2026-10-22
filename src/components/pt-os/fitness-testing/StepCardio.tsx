@@ -46,7 +46,7 @@ export function StepCardio({ form, set, age, gender, error }: StepCardioProps) {
         return { vo2: null, category: classifyHarvardPei(pei), pei };
       }
       case 'YMCA 3-Minute Step Test':
-        return { vo2: null, category: classifyStepTestRecovery(n(form.cardioRecoveryHr)) };
+        return { vo2: null, category: classifyStepTestRecovery(n(form.cardioRecoveryHr), age, gender) };
       default:
         return { vo2: null, category: null };
     }

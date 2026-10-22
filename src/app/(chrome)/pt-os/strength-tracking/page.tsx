@@ -72,9 +72,11 @@ const CATEGORY_COLOR: Record<string, string> = { 'Upper Body': '#f59e0b', 'Lower
 const LEVEL_STYLE: Record<FitnessCategory, { bg: string; color: string }> = {
   Excellent: { bg: 'rgba(16,185,129,0.14)', color: '#059669' },
   Good: { bg: 'rgba(245,158,11,0.14)', color: '#d97706' },
+  'Above Average': { bg: 'rgba(245,158,11,0.14)', color: '#d97706' },
   Average: { bg: 'rgba(245,158,11,0.14)', color: '#f59e0b' },
   'Below Average': { bg: 'rgba(239,68,68,0.12)', color: '#dc2626' },
   Poor: { bg: 'rgba(220,38,38,0.16)', color: '#b91c1c' },
+  'Very Poor': { bg: 'rgba(220,38,38,0.16)', color: '#b91c1c' },
 };
 
 export default function StrengthTrackingPage() {
