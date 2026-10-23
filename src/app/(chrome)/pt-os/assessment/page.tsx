@@ -316,9 +316,9 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     const cardioScore = scoreCategory(cardioCategory);
 
     const oneRM = estimateOneRM(form, 1);
-    const strengthCategory = classifyStrength(oneRM, n(form.weight), form.strengthExercise || null, gender);
+    const strengthCategory = classifyStrength(oneRM, n(form.weight), form.strengthExercise || null, gender, age);
     const oneRM2 = estimateOneRM(form, 2);
-    const strengthCategory2 = classifyStrength(oneRM2, n(form.weight), form.strengthExercise2 || null, gender);
+    const strengthCategory2 = classifyStrength(oneRM2, n(form.weight), form.strengthExercise2 || null, gender, age);
     const strengthScore = scoreTestBattery(scoreCategory(strengthCategory), scoreCategory(strengthCategory2));
 
     // Interpret the result by the test's own protocol, not by a stored flag that
@@ -732,7 +732,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
             {step === 2 && <StepAnthropometric form={form} set={set} error={errors.anthropometric} gender={gender} />}
             {step === 3 && <StepBodyComposition form={form} set={set} age={age} gender={gender} error={errors.bodyComposition} />}
             {step === 4 && <StepCardio form={form} set={set} age={age} gender={gender} error={errors.cardio} />}
-            {step === 5 && <StepStrength form={form} set={set} gender={gender} error={errors.strength} isBeginner={isBeginner} />}
+            {step === 5 && <StepStrength form={form} set={set} gender={gender} age={age} error={errors.strength} isBeginner={isBeginner} />}
             {step === 6 && <StepEndurance form={form} set={set} gender={gender} error={errors.endurance} />}
             {step === 7 && (
               <StepFlexibility

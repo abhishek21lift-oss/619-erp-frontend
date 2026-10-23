@@ -14,7 +14,7 @@ import { PremiumSparkline } from '@/components/visualizations';
 import { api } from '@/lib/api';
 import { palette } from '@/lib/palette';
 import { useToast } from '@/lib/toast';
-import { calc1RM, classifyStrength } from '@/lib/fitness-calculations';
+import { calc1RM, classifyStrengthDetail, computeAge } from '@/lib/fitness-calculations';
 import type { Gender, FitnessCategory } from '@/lib/fitness-calculations';
 import { errorMessage } from '@/lib/forms/errors';
 import { useStore } from '@tanstack/react-form';
@@ -53,13 +53,11 @@ function normaliseLog(raw: Record<string, unknown>): StrengthLog {
 // history from the trend without any sign of it. 200 is the API's ceiling.
 const LOG_LIMIT = 200;
 
-// Exercises with published relative-strength norms in fitness-calculations.ts
-// (Bench Press/Squat/Deadlift/Shoulder Press/Leg Press) get a Strength Level
-// badge. Bodyweight/isometric moves (Pull Up, Push Up, Lunges, Plank, Side
-// Plank, Curl Up) still log weight/reps and get a 1RM estimate where that's
-// meaningful, but no fabricated ratio-based level — there's no norms table
-// for them, and guessing one would be dishonest precision.
-const EXERCISES_WITH_NORMS = new Set(['Bench Press', 'Squat', 'Deadlift', 'Shoulder Press', 'Leg Press']);
+// Exercises with supplied K11 relative-strength norms in
+// fitness-calculations.ts: Bench Press (upper body) and Leg Press (lower body)
+// only. K11 names Squat as an alternative but supplies no Squat percentiles,
+// and Deadlift / Shoulder Press have none — no borrowed table, no badge.
+const EXERCISES_WITH_NORMS = new Set(['Bench Press', 'Leg Press']);
 
 const CATEGORIES: { label: string; exercises: string[] }[] = [
   { label: 'Upper Body', exercises: ['Bench Press', 'Shoulder Press', 'Pull Up', 'Push Up'] },
@@ -72,9 +70,12 @@ const CATEGORY_COLOR: Record<string, string> = { 'Upper Body': '#f59e0b', 'Lower
 const LEVEL_STYLE: Record<FitnessCategory, { bg: string; color: string }> = {
   Excellent: { bg: 'rgba(16,185,129,0.14)', color: '#059669' },
   Good: { bg: 'rgba(245,158,11,0.14)', color: '#d97706' },
+  'Well Above Average': { bg: 'rgba(16,185,129,0.16)', color: '#059669' },
   'Above Average': { bg: 'rgba(245,158,11,0.14)', color: '#d97706' },
   Average: { bg: 'rgba(245,158,11,0.14)', color: '#f59e0b' },
   'Below Average': { bg: 'rgba(239,68,68,0.12)', color: '#dc2626' },
+  'Well Below Average': { bg: 'rgba(220,38,38,0.16)', color: '#b91c1c' },
+  'Below Supported Range': { bg: 'rgba(220,38,38,0.16)', color: '#b91c1c' },
   Poor: { bg: 'rgba(220,38,38,0.16)', color: '#b91c1c' },
   'Very Poor': { bg: 'rgba(220,38,38,0.16)', color: '#b91c1c' },
 };
@@ -105,6 +106,7 @@ function StrengthHub({ clientId }: StrengthHubProps) {
   const { toast } = useToast();
   const [clientName, setClientName] = useState('');
   const [gender, setGender] = useState<Gender | null>(null);
+  const [age, setAge] = useState<number | null>(null);
   const [bodyWeightKg, setBodyWeightKg] = useState<number | null>(null);
   const [logs, setLogs] = useState<StrengthLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,6 +125,7 @@ function StrengthHub({ clientId }: StrengthHubProps) {
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
       setClientName(String(c.name ?? ''));
       setGender((c.gender as Gender) || null);
+      setAge(computeAge(c.dob ? String(c.dob) : null));
       // Bodyweight comes from the latest Fitness Test that recorded one — the
       // number the page's own hint tells the trainer to enter there. The
       // client profile's weight column is never written by anything (no
@@ -239,7 +242,7 @@ function StrengthHub({ clientId }: StrengthHubProps) {
               <ExerciseCard
                 key={ex} exercise={ex} accent={CATEGORY_COLOR[cat.label] ?? palette.gray[500]}
                 latest={latestByExercise[ex]} trend={trendByExercise[ex]}
-                gender={gender} bodyWeightKg={bodyWeightKg}
+                gender={gender} bodyWeightKg={bodyWeightKg} age={age}
                 onLog={(w, s, r, o) => handleLog(ex, w, s, r, o)}
               />
             ))}
@@ -279,13 +282,13 @@ interface ExerciseCardProps {
   exercise: string; accent: string;
   latest: StrengthLog | undefined;
   trend: { label: string; value: number }[] | undefined;
-  gender: Gender | null; bodyWeightKg: number | null;
+  gender: Gender | null; bodyWeightKg: number | null; age: number | null;
   onLog: (weightKg: number, setsDone: number, repsDone: number, opts: LogOptions) => Promise<void>;
 }
 
 interface LogOptions { direct: boolean; date: string }
 
-function ExerciseCard({ exercise, accent, latest, trend, gender, bodyWeightKg, onLog }: ExerciseCardProps) {
+function ExerciseCard({ exercise, accent, latest, trend, gender, bodyWeightKg, age, onLog }: ExerciseCardProps) {
   const [expanded, setExpanded] = useState(false);
   // A lift entered after the session can carry the day it was done, and a
   // tested single can be recorded as the 1RM it is.
@@ -321,9 +324,14 @@ function ExerciseCard({ exercise, accent, latest, trend, gender, bodyWeightKg, o
     return calc1RM(typeof w === 'number' ? w : null, typeof r === 'number' ? r : null, 'epley');
   }, [values.weight_kg, values.reps]);
 
-  const level = EXERCISES_WITH_NORMS.has(exercise) && latest?.one_rm_estimate != null
-    ? classifyStrength(latest.one_rm_estimate, bodyWeightKg, exercise, gender)
+  // K11 needs age at the test. This page's badge describes the latest logged
+  // lift, so the client's current age is the closest available input; a log
+  // that predates a birthday can only differ at a band edge, and the badge is
+  // a live convenience — the assessment row keeps the authoritative result.
+  const classification = EXERCISES_WITH_NORMS.has(exercise) && latest?.one_rm_estimate != null
+    ? classifyStrengthDetail(latest.one_rm_estimate, bodyWeightKg, exercise, gender, age)
     : null;
+  const level = classification?.category ?? null;
 
   return (
     <div className="rounded-[16px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
@@ -336,7 +344,7 @@ function ExerciseCard({ exercise, accent, latest, trend, gender, bodyWeightKg, o
               {latest.one_rm_estimate != null && <span className="text-[11px] text-[color:var(--text-muted)]">1RM ~{latest.one_rm_estimate} kg</span>}
               {level && (
                 <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]" style={{ background: LEVEL_STYLE[level].bg, color: LEVEL_STYLE[level].color }}>
-                  {level}
+                  {level}{classification?.percentile != null ? ` · ${classification.percentile}th pct` : ''}
                 </span>
               )}
             </div>

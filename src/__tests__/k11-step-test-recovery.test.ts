@@ -126,6 +126,6 @@ describe('K11 category scoring', () => {
   });
 
   it('bumps the formula-bundle version for the changed classifier', () => {
-    expect(FITNESS_SCORING_VERSION).toBe('3');
+    expect(FITNESS_SCORING_VERSION).toBe('4');
   });
 });

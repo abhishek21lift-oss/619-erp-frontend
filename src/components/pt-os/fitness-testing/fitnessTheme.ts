@@ -120,11 +120,12 @@ export function bandInk(score: number): string {
  *  is the band's. */
 export function categoryPill(category: FitnessCategory): { bg: string; color: string } {
   const color =
-    category === 'Excellent' || category === 'Good' ? emerald[600]
+    category === 'Excellent' || category === 'Good' || category === 'Well Above Average' ? emerald[600]
       : category === 'Above Average' || category === 'Average' ? amber[600]
         : red[600];
   const alpha =
-    category === 'Excellent' || category === 'Poor' || category === 'Very Poor' ? 0.16
+    category === 'Excellent' || category === 'Well Above Average' || category === 'Poor' || category === 'Very Poor'
+      || category === 'Below Supported Range' ? 0.16
       : 0.11;
   return { bg: tint(color, alpha), color };
 }
