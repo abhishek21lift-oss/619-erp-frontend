@@ -252,10 +252,9 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
     await page.getByLabel('Attempt 3 reach').fill('15');
     await attemptRow(page, 3).getByRole('button', { name: 'No', exact: true }).click();
     await expect(page.getByText('-3.0 in')).toBeVisible();
-    // The live screen answers with its own norm engine's wording ("Norm data
-    // unavailable"); the stored record, the summary and the PDF carry the
-    // protocol phrase, asserted below and in the row read back from the API.
-    await expect(page.getByText('Norm data unavailable')).toBeVisible();
+    // No age/sex means no K11 table, so the live screen, the stored record,
+    // the summary and the PDF all carry the protocol's unavailable phrase.
+    await expect(page.getByText('Norm classification unavailable')).toBeVisible();
     await page.getByRole('button', { name: 'Mark Test Complete', exact: true }).click();
 
     // ── The summary: overall status and the arithmetic, as stored ──────────

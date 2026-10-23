@@ -25,8 +25,6 @@ function renderScreen() {
       form={form}
       patchFlex={vi.fn()}
       derived={deriveFlexibility(null)}
-      age={30}
-      gender="male"
       onBack={vi.fn()}
     />,
   );

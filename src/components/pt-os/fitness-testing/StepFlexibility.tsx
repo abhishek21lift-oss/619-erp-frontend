@@ -46,8 +46,8 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
   const patchFlex = (p: Partial<FlexibilityFormState>) => set('flexibility', { ...flex, ...p });
 
   const derived = useMemo<FlexibilityDerived>(
-    () => deriveFlexibility(buildFlexibilityPayload(flex)),
-    [flex],
+    () => deriveFlexibility(buildFlexibilityPayload(flex), { age, gender }),
+    [flex, age, gender],
   );
 
   const recordedCount = FLEXIBILITY_TEST_ORDER.filter((k) => formTest(flex, k).completed).length;
@@ -156,8 +156,6 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
           form={flex}
           patchFlex={patchFlex}
           derived={derived}
-          age={age}
-          gender={gender}
           onBack={() => setView('overview')}
           onSaveDraft={onSaveDraft}
         />

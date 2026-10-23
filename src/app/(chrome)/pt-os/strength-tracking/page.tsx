@@ -68,8 +68,11 @@ const CATEGORIES: { label: string; exercises: string[] }[] = [
 const CATEGORY_COLOR: Record<string, string> = { 'Upper Body': '#f59e0b', 'Lower Body': '#0067e0', Core: '#059669' };
 
 const LEVEL_STYLE: Record<FitnessCategory, { bg: string; color: string }> = {
+  Superior: { bg: 'rgba(16,185,129,0.18)', color: '#047857' },
   Excellent: { bg: 'rgba(16,185,129,0.14)', color: '#059669' },
+  'Very Good': { bg: 'rgba(16,185,129,0.12)', color: '#059669' },
   Good: { bg: 'rgba(245,158,11,0.14)', color: '#d97706' },
+  Fair: { bg: 'rgba(245,158,11,0.12)', color: '#d97706' },
   'Well Above Average': { bg: 'rgba(16,185,129,0.16)', color: '#059669' },
   'Above Average': { bg: 'rgba(245,158,11,0.14)', color: '#d97706' },
   Average: { bg: 'rgba(245,158,11,0.14)', color: '#f59e0b' },

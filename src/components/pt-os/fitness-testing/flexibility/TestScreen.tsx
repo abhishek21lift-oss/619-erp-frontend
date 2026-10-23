@@ -5,7 +5,6 @@ import { ArrowLeft, Check, RotateCcw, ShieldAlert } from 'lucide-react';
 import { Button, Disclosure, FloatInput } from '@/components/ui';
 import { flexibilityTestIssues, formTest, FLEXIBILITY_FORM_KEY } from '@/lib/flexibility-protocol';
 import type { FlexibilityDerived, FlexibilityFormState, FlexibilityTestKey } from '@/lib/flexibility-protocol';
-import type { Gender } from '@/lib/fitness-calculations';
 import { FLEXIBILITY_PROTOCOLS } from './protocol-content';
 import QuadricepsFields from './QuadricepsFields';
 import HamstringsFields from './HamstringsFields';
@@ -17,8 +16,6 @@ interface TestScreenProps {
   form: FlexibilityFormState;
   patchFlex: (p: Partial<FlexibilityFormState>) => void;
   derived: FlexibilityDerived;
-  age: number | null;
-  gender: Gender | null;
   onBack: () => void;
   onSaveDraft?: () => void;
 }
@@ -41,7 +38,7 @@ function Bullets({ title, items, ordered }: { title: string; items: string[]; or
  * existing localStorage draft; completion is an explicit trainer decision
  * because only the trainer can see that the procedure was followed.
  */
-export function TestScreen({ test, form, patchFlex, derived, age, gender, onBack, onSaveDraft }: TestScreenProps) {
+export function TestScreen({ test, form, patchFlex, derived, onBack, onSaveDraft }: TestScreenProps) {
   const content = FLEXIBILITY_PROTOCOLS[test];
   const state = formTest(form, test);
   const [issues, setIssues] = useState<string[]>([]);
@@ -89,8 +86,6 @@ export function TestScreen({ test, form, patchFlex, derived, age, gender, onBack
       state={form.sitAndReach}
       derived={derived.tests.sit_and_reach.unable_to_complete ? null : derived.tests.sit_and_reach}
       patch={(p) => patchFlex({ sitAndReach: { ...form.sitAndReach, ...p } })}
-      age={age}
-      gender={gender}
     />
   );
 

@@ -102,7 +102,7 @@ for (let v = 0; v <= 220; v += 0.5) FINE.push(v);
 // spaces. The previous lowercase/underscore spellings never matched a norm
 // table or a score bucket, so every such case scored null on BOTH sides and
 // the check passed vacuously. See F5.
-const FITNESS_CATEGORIES = [null, 'Poor', 'Below Average', 'Average', 'Above Average', 'Good', 'Excellent', 'Very Poor', 'Well Above Average', 'Well Below Average', 'Below Supported Range'];
+const FITNESS_CATEGORIES = [null, 'Poor', 'Below Average', 'Average', 'Above Average', 'Good', 'Excellent', 'Very Poor', 'Well Above Average', 'Well Below Average', 'Below Supported Range', 'Superior', 'Very Good', 'Fair'];
 const BP_CATEGORIES = [null, 'Normal', 'Elevated', 'Hypertension Stage 1', 'Hypertension Stage 2', 'Hypertensive Crisis', 'Hypotension'];
 // Fine sweeps across the anthropometric band edges (18.5 / 23 / 25 BMI,
 // 80 / 90 cm waist, 0.86 / 0.95 WHR). The integer FINE grid alone cannot see a
@@ -128,7 +128,7 @@ function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
   for (const w of NUMS) for (const f of NUMS) { add('calcLeanBodyMass', [w, f]); add('calcFatMass', [w, f]); }
   for (const w of NUMS) for (const h of [150, 175, 200]) for (const a of [null, 20, 45, 70]) for (const g of GENDERS) add('calcBmr', [w, h, a, g]);
   for (const s of NUMS) for (const d of NUMS) add('classifyBp', [s, d]);
-  for (const v of NUMS) for (const a of [null, 20, 35, 50, 65]) for (const g of GENDERS) add('classifyVo2Max', [v, a, g]);
+  for (const v of NUMS) for (const a of [null, 14, 15, 19, 20, 24, 25, 29, 30, 34, 35, 39, 40, 44, 45, 49, 50, 54, 55, 59, 60, 64, 65, 70, 90]) for (const g of GENDERS) add('classifyVo2Max', [v, a, g]);
   for (const d of NUMS) add('calcVo2MaxCooper', [d]);
   for (const t of NUMS) add('calcVo2MaxBruce', [t]);
   for (const w of NUMS) for (const a of [null, 30, 50]) for (const g of GENDERS) for (const t of [null, 12, 15]) for (const hr of [null, 120, 160]) add('calcVo2MaxRockport', [w, a, g, t, hr]);
@@ -174,7 +174,10 @@ function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
     add('classifyStrengthDetail', [100, bad, 'Bench Press', 'Male', 30]);
     add('classifyStrengthDetail', [bad, 80, 'Bench Press', 'Male', 30]);
   }
-  for (const tt of [null, 'Push Up Test', 'Curl Up Test', 'Plank', 'Wall Sit', 'Bodyweight Squat', 'Custom']) for (const v of NUMS) for (const g of GENDERS) add('classifyEndurance', [tt, v, g]);
+  for (const tt of [null, 'Push Up Test', 'Curl Up Test', 'Plank', 'Wall Sit', 'Bodyweight Squat', 'Custom']) {
+    for (const v of NUMS) for (const g of GENDERS) for (const a of [null, 19, 20, 29, 30, 39, 40, 49, 50, 59, 60, 69, 70]) add('classifyEndurance', [tt, v, g, a]);
+  }
+  for (const v of NUMS) for (const a of [null, 17, 18, 25, 26, 35, 36, 45, 46, 55, 56, 65, 66]) for (const g of GENDERS) add('classifySitAndReach', [v, a, g]);
   for (const l of NUMS) for (const r of NUMS) add('checkAsymmetry', [l, r]);
   for (const s of NUMS) add('classifyFlexibilityScore', [s]);
 
@@ -196,7 +199,9 @@ function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
     for (const g of GENDERS) {
       add('scoreBodyComposition', [v / 2, g]);
       add('classifyVo2Max', [v / 2, 35, g]);
-      add('classifyEndurance', ['Plank', v, g]);
+      add('classifyEndurance', ['Push Up Test', v, g, 30]);
+      add('classifyEndurance', ['Curl Up Test', v, g, 50]);
+      add('classifySitAndReach', [v, g === 'female' ? 50 : 30, g]);
       add('classifyStrength', [v * 2, 80, 'Bench Press', g, 35]);
       add('classifyStrengthDetail', [v * 2, 80, 'Bench Press', g, 35]);
     }
@@ -620,7 +625,8 @@ function buildParqCases(): Array<{ fn: string; args: unknown[] }> {
  */
 function buildFlexibilityCases(): Array<{ fn: string; args: unknown[] }> {
   const cases: Array<{ fn: string; args: unknown[] }> = [];
-  const add = (input: unknown) => cases.push({ fn: 'deriveFlexibility', args: [input] });
+  const add = (input: unknown, context?: { age: number | null; gender: string | null }) =>
+    cases.push({ fn: 'deriveFlexibility', args: context ? [input, context] : [input] });
 
   const qSide = (p: Record<string, unknown> = {}) => ({ contact: true, distance_cm: null, pain: false, pelvic_compensation: false, tightness: 'Normal', notes: '', ...p });
   const hSide = (p: Record<string, unknown> = {}) => ({ hip_flexion_deg: 75, knee_extended: true, pelvic_compensation: false, pain: false, tightness: 'Normal', notes: '', ...p });
@@ -682,6 +688,18 @@ function buildFlexibilityCases(): Array<{ fn: string; args: unknown[] }> {
   add(battery({ sit_and_reach: { attempts: [{ inches: 12, valid: true }, { inches: 25, valid: false }, { inches: 18.5, valid: true }], knee_bending: true, bouncing: true } }));
   add(battery({ sit_and_reach: { attempts: [], completed: true } }));
   add(battery({ sit_and_reach: { attempts: 'nope' } }));
+
+  // With age and sex, the sit-and-reach is classified against K11; without
+  // them, a stored norm is preserved and a live preview stays unavailable.
+  for (const age of [null, 17, 18, 25, 26, 35, 36, 45, 46, 55, 56, 65, 66]) {
+    for (const gender of ['Male', 'Female', null, 'Other']) {
+      add(battery(), { age, gender });
+      add(battery({ sit_and_reach: { attempts: [{ inches: 12, valid: true }] } }), { age, gender });
+    }
+  }
+  const storedNorm = { table_version: 'k11-2026.01-sit-and-reach', category: 'Good', message: 'Stored K11 norm' };
+  add(battery({ sit_and_reach: { norm: storedNorm } }));
+  add(battery({ sit_and_reach: { norm: storedNorm } }), { age: 70, gender: 'Male' });
 
   const KEYS = ['quadriceps', 'hamstrings', 'hip_flexors', 'sit_and_reach'];
   for (const key of KEYS) {
@@ -810,13 +828,17 @@ function main() {
         { fn: 'classifyStrength', args: [85, 100, 'Leg Press', 'Female', 65] },
         { fn: 'classifyStrength', args: [10, 100, 'Bench Press', 'Female', 25] },
         { fn: 'classifyStrengthDetail', args: [10, 100, 'Bench Press', 'Female', 25] },
-        { fn: 'classifyEndurance', args: ['Push Up Test', 30, 'Male'] },
-        { fn: 'classifyEndurance', args: ['Plank', 60, null] },
+        { fn: 'classifyEndurance', args: ['Push Up Test', 30, 'Male', 30] },
+        { fn: 'classifyEndurance', args: ['Curl Up Test', 60, 'Female', 30] },
+        { fn: 'classifySitAndReach', args: [22, 30, 'Male'] },
         { fn: 'scoreHealthRisk', args: ['Normal', 22] },
         { fn: 'scoreHealthRisk', args: ['Hypertensive Crisis', 22] },
         { fn: 'scoreCategory', args: ['Good'] },
         { fn: 'scoreCategory', args: ['Above Average'] },
         { fn: 'scoreCategory', args: ['Very Poor'] },
+        { fn: 'scoreCategory', args: ['Superior'] },
+        { fn: 'scoreCategory', args: ['Very Good'] },
+        { fn: 'scoreCategory', args: ['Fair'] },
         { fn: 'classifyStepTestRecovery', args: [90, 30, 'Male'] },
         { fn: 'classifyStepTestRecovery', args: [130, 30, 'Male'] },
         { fn: 'classifyFlexibilityScore', args: [8] },

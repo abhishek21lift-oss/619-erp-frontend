@@ -325,9 +325,9 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     // can drift out of sync with the selected test type (F7).
     const isRepBased = (t: string) => t === 'Push Up Test' || t === 'Curl Up Test';
     const enduranceValue = isRepBased(form.enduranceTestType) ? n(form.enduranceReps) : n(form.enduranceDurationSec);
-    const enduranceCategory = classifyEndurance(form.enduranceTestType || null, enduranceValue, gender);
+    const enduranceCategory = classifyEndurance(form.enduranceTestType || null, enduranceValue, gender, age);
     const enduranceValue2 = isRepBased(form.enduranceTestType2) ? n(form.enduranceReps2) : n(form.enduranceDurationSec2);
-    const enduranceCategory2 = classifyEndurance(form.enduranceTestType2 || null, enduranceValue2, gender);
+    const enduranceCategory2 = classifyEndurance(form.enduranceTestType2 || null, enduranceValue2, gender, age);
     const enduranceScore = scoreTestBattery(scoreCategory(enduranceCategory), scoreCategory(enduranceCategory2));
 
     // A v3 battery has no single mobility score — four incompatible units, so
@@ -733,7 +733,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
             {step === 3 && <StepBodyComposition form={form} set={set} age={age} gender={gender} error={errors.bodyComposition} />}
             {step === 4 && <StepCardio form={form} set={set} age={age} gender={gender} error={errors.cardio} />}
             {step === 5 && <StepStrength form={form} set={set} gender={gender} age={age} error={errors.strength} isBeginner={isBeginner} />}
-            {step === 6 && <StepEndurance form={form} set={set} gender={gender} error={errors.endurance} />}
+            {step === 6 && <StepEndurance form={form} set={set} gender={gender} age={age} error={errors.endurance} />}
             {step === 7 && (
               <StepFlexibility
                 form={form}

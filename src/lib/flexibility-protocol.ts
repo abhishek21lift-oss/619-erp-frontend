@@ -2,8 +2,8 @@
 //
 // The four-test battery that replaced step 7's two-slot dropdown workflow. The
 // reference criteria are the SUPPLIED K11 protocol's, not universal clinical
-// norms; the UI copy says so, and `norm` stays unavailable rather than
-// inventing cutoffs.
+// norms. The sit-and-reach norm uses K11's age/sex table when that context is
+// known; otherwise `norm` stays unavailable rather than inventing cutoffs.
 //
 // This file is deliberately duplicated on the server
 // (`src/modules/progress/flexibility-protocol.js`, same function names). The
@@ -14,7 +14,11 @@
 //
 // Pure: no React, no fetch, no clock.
 
-import { checkAsymmetry, classifyFlexibilityScore, scoreCategory, scoreTestBattery } from './fitness-calculations';
+import {
+  checkAsymmetry, classifyFlexibilityScore, classifySitAndReach,
+  K11_SIT_AND_REACH_TABLE_VERSION, scoreCategory, scoreTestBattery,
+} from './fitness-calculations';
+import type { Gender } from './fitness-calculations';
 import { toMeasurementOrNull } from './forms/normalize';
 
 export const PROTOCOL_VERSION = 'k11-2026.01';
@@ -190,7 +194,7 @@ export interface AbleSitAndReach extends AbleTest {
   score_inches: number | null;
   knee_bending: boolean;
   bouncing: boolean;
-  /** Always unavailable while the norm table is empty (never invented). */
+  /** K11 norm when age/sex context is present; stored norm (or unavailable) otherwise. */
   norm: { table_version: string | null; category: string | null; message: string };
   notes: string;
 }
@@ -351,7 +355,14 @@ function deriveHipFlexors(raw: unknown): DerivedHipFlexors {
   };
 }
 
-function deriveSitAndReach(raw: unknown): DerivedSitAndReach {
+export interface FlexibilityContext {
+  age: number | null;
+  gender: Gender | null;
+}
+
+const NORM_UNAVAILABLE = { table_version: null, category: null, message: 'Norm classification unavailable' };
+
+function deriveSitAndReach(raw: unknown, context: FlexibilityContext): DerivedSitAndReach {
   const state = testState(raw);
   if (state.unable_to_complete) return unableResult(state);
   const t = obj(raw);
@@ -369,6 +380,28 @@ function deriveSitAndReach(raw: unknown): DerivedSitAndReach {
       bestAttemptIndex = i;
     }
   });
+
+  // With age and sex, classify the raw reach against K11. Without them (the
+  // PDF/history path), preserve a norm already stored in the payload instead
+  // of erasing it; a live preview has no stored norm and stays unavailable.
+  const contextProvided = context.age != null && context.gender != null;
+  const category = classifySitAndReach(bestRaw, context.age, context.gender);
+  const stored = obj(t.norm);
+  const storedCategory = typeof stored.category === 'string' ? stored.category : null;
+  const norm = category
+    ? {
+      table_version: K11_SIT_AND_REACH_TABLE_VERSION,
+      category,
+      message: 'K11 age/sex sit-and-reach norm',
+    }
+    : (!contextProvided && storedCategory
+      ? {
+        table_version: typeof stored.table_version === 'string' ? stored.table_version : null,
+        category: storedCategory,
+        message: typeof stored.message === 'string' ? stored.message : NORM_UNAVAILABLE.message,
+      }
+      : NORM_UNAVAILABLE);
+
   return {
     attempts,
     best_attempt_index: bestAttemptIndex,
@@ -380,9 +413,7 @@ function deriveSitAndReach(raw: unknown): DerivedSitAndReach {
     knee_bending: t.knee_bending === true,
     bouncing: t.bouncing === true,
     notes: str(t.notes),
-    // Empty norm table today. Never invent a cutoff: the raw score is still
-    // computed and shown.
-    norm: { table_version: null, category: null, message: 'Norm classification unavailable' },
+    norm: { table_version: norm.table_version, category: norm.category, message: norm.message },
     completed: state.completed,
     unable_to_complete: false,
     unable_reason: null,
@@ -392,14 +423,19 @@ function deriveSitAndReach(raw: unknown): DerivedSitAndReach {
 /**
  * The one function compared FE↔BE (see `scripts/assert-scoring-parity.ts`).
  * Deterministic: no clock, no ids, no defaults read from the environment.
+ * `context` is the client's age and sex at the time of testing; omit it when
+ * replaying a stored payload and the stored norm should be kept.
  */
-export function deriveFlexibility(recorded: FlexibilityRecorded | null | undefined): FlexibilityDerived {
+export function deriveFlexibility(
+  recorded: FlexibilityRecorded | null | undefined,
+  context: FlexibilityContext = { age: null, gender: null },
+): FlexibilityDerived {
   const r = obj(recorded);
   const tests = obj(r.tests);
   const quadriceps = deriveQuadriceps(tests.quadriceps);
   const hamstrings = deriveHamstrings(tests.hamstrings);
   const hipFlexors = deriveHipFlexors(tests.hip_flexors);
-  const sitAndReach = deriveSitAndReach(tests.sit_and_reach);
+  const sitAndReach = deriveSitAndReach(tests.sit_and_reach, context);
 
   const all = [quadriceps, hamstrings, hipFlexors, sitAndReach];
   const allCompleted = all.every((t) => t.completed);

@@ -76,7 +76,7 @@ export function FlexibilitySummary({ form, derived, previous }: SummaryProps) {
       ? 'Not performed'
       : sr.score_inches == null
         ? 'No valid attempt recorded'
-        : `${sr.best_raw_inches} in − ${SIT_AND_REACH_ZERO_POINT_INCHES} = ${sr.score_inches.toFixed(1)} in · ${sr.norm.message}`,
+        : `${sr.best_raw_inches} in − ${SIT_AND_REACH_ZERO_POINT_INCHES} = ${sr.score_inches.toFixed(1)} in · ${sr.norm.category ? `${sr.norm.category} — ` : ''}${sr.norm.message}`,
   };
 
   return (

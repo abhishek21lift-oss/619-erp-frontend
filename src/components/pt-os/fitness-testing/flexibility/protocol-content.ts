@@ -143,7 +143,7 @@ export const SIT_AND_REACH_PROTOCOL: TestProtocol = {
     'No bouncing or ballistic reaching — it loads the spine and inflates the score.',
     'Stop on low-back pain or hamstring cramp.',
   ],
-  reference: 'Sit-and-reach norms are age- and sex-specific and need a validated reference table. None is loaded, so the score is displayed raw with no category.',
+  reference: 'K11 sit-and-reach norms are age- and sex-specific; the category is shown when the client’s age and sex are recorded.',
 };
 
 export const FLEXIBILITY_PROTOCOLS: Record<FlexibilityTestKey, TestProtocol> = {
