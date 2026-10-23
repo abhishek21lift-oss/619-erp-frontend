@@ -219,29 +219,35 @@ jobs:
         uses: actions/checkout@v4
         with: { path: frontend }
 
-      # `main`, deliberately, and worth stating because "test the matching
-      # commit" sounds like it should pin a SHA.
+      # Pushes to main test backend main: that is the pair production will
+      # serve. A PR may carry a matching backend branch, though, and testing
+      # that PR against main would compare two different contracts. Use the
+      # same-name backend branch when it exists; otherwise fall back to main.
       #
-      # The three repos deploy continuously from their own default branches.
-      # The backend this frontend will actually meet in production is the tip
-      # of backend `main` at deploy time — so that is the pairing worth
-      # testing. Pinning an older SHA would prove a combination that never
-      # runs anywhere.
-      #
-      # What was missing is not the pin but the RECORD: a green tick did not
-      # say which backend it was green against. The step below prints both
-      # SHAs, so a run can be traced to the exact pair it proved.
+      # The token is shared with the checkout below: the backend repo is
+      # private, and GITHUB_TOKEN cannot read it.
+      - name: Resolve backend ref
+        id: backend_ref
+        env:
+          E2E_REPO_TOKEN: ${{ secrets.E2E_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+          CANDIDATE_REF: ${{ github.head_ref }}
+        run: |
+          ref=main
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ -n "$CANDIDATE_REF" ] && [ -n "$E2E_REPO_TOKEN" ] \
+            && git ls-remote --exit-code --heads \
+              "https://x-access-token:${E2E_REPO_TOKEN}@github.com/abhishek21lift-oss/619-erp-backend.git" \
+              "refs/heads/${CANDIDATE_REF}" >/dev/null 2>&1; then
+            ref="$CANDIDATE_REF"
+          fi
+          echo "ref=${ref}" >> "$GITHUB_OUTPUT"
+          echo "backend ref: ${ref}"
+
       - name: Checkout backend
         uses: actions/checkout@v4
         with:
           repository: abhishek21lift-oss/619-erp-backend
-          ref: ${{ env.BACKEND_REF || 'main' }}
+          ref: ${{ steps.backend_ref.outputs.ref }}
           path: backend
-          # GITHUB_TOKEN is scoped to THIS repository only — it cannot check
-          # out another private repo and fails with a 404. A PAT (or GitHub App
-          # token) with read access to the backend repo is required. Until
-          # E2E_REPO_TOKEN exists this job cannot run, which is why the job is
-          # continue-on-error and the build job does not depend on it.
           token: ${{ secrets.E2E_REPO_TOKEN || secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v4
@@ -272,7 +278,7 @@ jobs:
         run: |
           echo "frontend $(git -C frontend rev-parse HEAD)"
           echo "backend  $(git -C backend  rev-parse HEAD)"
-          echo "backend ref: ${BACKEND_REF:-main}"
+          echo "backend ref: ${{ steps.backend_ref.outputs.ref }}"
 
       # ── Does every frontend call resolve to a backend route? ─────────────
       #
