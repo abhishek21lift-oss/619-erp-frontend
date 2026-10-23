@@ -80,9 +80,9 @@ describe('scoring accuracy', () => {
     expect(classifyHarvardPei(90)).toBe('Excellent');
   });
   it('invents no category for tests or sexes without norms', () => {
-    expect(classifyEndurance('Wall Sit', 90, 'Male')).toBeNull();
-    expect(classifyEndurance('Plank', 90, null)).toBe('Good');
-    expect(classifyEndurance('Push Up Test', 25, null)).toBeNull();
+    expect(classifyEndurance('Wall Sit', 90, 'Male', 30)).toBeNull();
+    expect(classifyEndurance('Plank', 90, null, 30)).toBeNull();
+    expect(classifyEndurance('Push Up Test', 25, null, 30)).toBeNull();
     expect(classifyStrength(100, 80, 'Lunges', 'Male')).toBeNull();
   });
   it('scores goal readiness out of the questions answered', () => {

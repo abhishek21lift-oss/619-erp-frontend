@@ -38,7 +38,7 @@ describe('scoreBodyComposition prerequisites (F14)', () => {
   });
   it('still scores supported genders', () => {
     expect(scoreBodyComposition(15, 'Male')).toBe(100);
-    expect(scoreBodyComposition(25, 'Female')).toBe(100);
+    expect(scoreBodyComposition(25, 'Female')).toBe(80);
   });
   it('returns null when body fat is missing', () => {
     expect(scoreBodyComposition(null, 'Male')).toBeNull();

@@ -1,10 +1,8 @@
 'use client';
 
 import { Plus, Trash2 } from 'lucide-react';
-import { classifyFlexibilityROM } from '@/lib/flexibility-norms';
 import { SIT_AND_REACH_ZERO_POINT_INCHES } from '@/lib/flexibility-protocol';
 import type { AbleSitAndReach, FlexibilityFormState } from '@/lib/flexibility-protocol';
-import type { Gender } from '@/lib/fitness-calculations';
 import { Button } from '@/components/ui';
 import { Insight, InsightUnavailable, Measurement, NotesField, YesNoChips } from './fields';
 
@@ -15,18 +13,16 @@ interface Props {
   /** null when the test is marked unable — nothing is derived then. */
   derived: AbleSitAndReach | null;
   patch: (p: Partial<FlexibilityFormState['sitAndReach']>) => void;
-  age: number | null;
-  gender: Gender | null;
 }
 
 /** YMCA Sit and Reach, scored against the box's 15-inch zero point. */
-export function SitAndReachFields({ state: s, derived, patch, age, gender }: Props) {
+export function SitAndReachFields({ state: s, derived, patch }: Props) {
   const setAttempt = (index: number, p: Partial<{ inches: string; valid: boolean }>) =>
     patch({ attempts: s.attempts.map((a, i) => (i === index ? { ...a, ...p } : a)) });
 
   const measured = !!derived && derived.attempts.length > 0;
   const score = derived?.score_inches ?? null;
-  const norm = classifyFlexibilityROM('Sit and Reach', score, age, gender);
+  const norm = derived?.norm ?? null;
   const flagged = !!derived && (derived.best_attempt_index == null || s.kneeBending || s.bouncing);
 
   return (
@@ -97,7 +93,9 @@ export function SitAndReachFields({ state: s, derived, patch, age, gender }: Pro
               <p style={{ color: 'var(--text-muted)' }}>
                 The 15-inch mark is the box zero point, so a short reach is a negative score — that is a real result, not an error.
               </p>
-              <p style={{ color: 'var(--text-muted)' }}>Norm: {norm.message} — no validated age/sex table is loaded.</p>
+              <p style={{ color: 'var(--text-muted)' }}>
+                Norm: {norm?.category ? `${norm.category} — ${norm.message}` : norm?.message ?? 'Norm classification unavailable'}
+              </p>
               {derived.best_attempt_index == null && <p style={{ color: 'var(--warning-text)' }}>No valid attempt yet: at least one attempt must be marked valid.</p>}
             </div>
           ) : (

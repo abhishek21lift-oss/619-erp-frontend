@@ -20,6 +20,7 @@ interface StepEnduranceProps {
   form: AssessmentFormData;
   set: <K extends keyof AssessmentFormData>(key: K, val: AssessmentFormData[K]) => void;
   gender: Gender | null;
+  age: number | null;
   error?: string;
 }
 
@@ -28,15 +29,15 @@ interface TestResult {
   category: FitnessCategory | null;
 }
 
-function useTestResult(testType: EnduranceTestType | '', valueType: 'reps' | 'time', reps: string, durationSec: string, gender: Gender | null): TestResult {
+function useTestResult(testType: EnduranceTestType | '', valueType: 'reps' | 'time', reps: string, durationSec: string, gender: Gender | null, age: number | null): TestResult {
   const value = valueType === 'reps' ? n(reps) : n(durationSec);
-  const category = classifyEndurance(testType || null, value, gender);
+  const category = classifyEndurance(testType || null, value, gender, age);
   return { value, category };
 }
 
-export function StepEndurance({ form, set, gender, error }: StepEnduranceProps) {
-  const t1 = useTestResult(form.enduranceTestType, form.enduranceValueType, form.enduranceReps, form.enduranceDurationSec, gender);
-  const t2 = useTestResult(form.enduranceTestType2, form.enduranceValueType2, form.enduranceReps2, form.enduranceDurationSec2, gender);
+export function StepEndurance({ form, set, gender, age, error }: StepEnduranceProps) {
+  const t1 = useTestResult(form.enduranceTestType, form.enduranceValueType, form.enduranceReps, form.enduranceDurationSec, gender, age);
+  const t2 = useTestResult(form.enduranceTestType2, form.enduranceValueType2, form.enduranceReps2, form.enduranceDurationSec2, gender, age);
   const combinedScore = useMemo(
     () => scoreTestBattery(scoreCategory(t1.category), scoreCategory(t2.category)),
     [t1.category, t2.category],

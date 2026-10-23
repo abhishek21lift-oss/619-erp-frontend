@@ -150,7 +150,7 @@ function flexibilitySection(assessment: Row): string {
     field('Reference Range', h.unable_to_complete ? '—' : `${v(h.reference.min_deg, '°')}–${v(h.reference.max_deg, '°')} · ${h.reference.note}`),
     field('Hip Flexors (Thomas Test)', hip),
     field('YMCA Sit and Reach', sit),
-    field('Norm', s.unable_to_complete ? '—' : s.norm.message),
+    field('Norm', s.unable_to_complete ? '—' : `${s.norm.category ? `${s.norm.category} — ` : ''}${s.norm.message}`),
     field('Asymmetry Detected', d.has_asymmetry ? 'Yes' : 'No'),
     field('Overall Status', FLEX_STATUS_TEXT[d.overall_status]),
     ...(d.override_used ? [field('Override Reason', e(overrideReason))] : []),
