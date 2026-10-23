@@ -6,6 +6,7 @@
 
 export type GoalDifficulty = 'Easy' | 'Moderate' | 'Hard' | 'Very Hard';
 export type GoalDirection = 'loss' | 'gain' | 'maintain';
+export type GoalMetric = 'weight' | 'body_fat' | 'lift' | 'sessions' | 'custom';
 
 export interface LifestyleReadinessAnswers {
   can_train_4_6_days?: boolean | null;
@@ -69,6 +70,18 @@ export function calcSafeWeeklyRate(startingWeight: number | null, direction: Goa
   return null;
 }
 
+// K11 measurable targets. Body fat: 0.25 percentage points/week. Lift: 0.5%
+// of the current lift/week. Sessions and custom metrics have no rate.
+export function calcSafeWeeklyRateForMetric(
+  metric: GoalMetric | null, current: number | null, direction: GoalDirection | null,
+): number | null {
+  if (direction == null || direction === 'maintain') return null;
+  if (metric === 'body_fat') return 0.25;
+  if (metric === 'lift') return current != null && current > 0 ? round(current * 0.005) : null;
+  if (metric === 'sessions' || metric === 'custom') return null;
+  return calcSafeWeeklyRate(current, direction);
+}
+
 const DIFFICULTY_LEVELS: GoalDifficulty[] = ['Easy', 'Moderate', 'Hard', 'Very Hard'];
 export function classifyGoalDifficulty(
   requiredRate: number | null, safeRate: number | null,
@@ -114,14 +127,21 @@ export interface RiskFactorInputs {
   daysRemaining: number | null;
   motivationLevel: number | null;
   commitmentLevel: number | null;
+  metric?: GoalMetric | null;
 }
 
-export function buildRiskFactors({ requiredRate, safeRate, lifestyleReadinessScore, medicalRestrictions, daysRemaining, motivationLevel, commitmentLevel }: RiskFactorInputs): string[] {
+export function buildRiskFactors({ requiredRate, safeRate, lifestyleReadinessScore, medicalRestrictions, daysRemaining, motivationLevel, commitmentLevel, metric }: RiskFactorInputs): string[] {
   const risks: string[] = [];
   const ratio = requiredRate != null && safeRate ? Math.abs(requiredRate) / safeRate : null;
 
   if (ratio != null && ratio > 1.5) {
-    risks.push('Required weekly rate of change exceeds safe guidelines for this timeline.');
+    if (metric === 'lift') {
+      risks.push('Required weekly strength gain exceeds the 0.5% of current lift / week benchmark.');
+    } else if (metric === 'body_fat') {
+      risks.push('Required body-fat change exceeds the 0.25 percentage points / week benchmark.');
+    } else {
+      risks.push('Required weekly rate of change exceeds safe guidelines for this timeline.');
+    }
   }
   if (lifestyleReadinessScore != null && lifestyleReadinessScore < 40) {
     risks.push('Low lifestyle readiness — schedule, sleep, or support may limit consistency.');

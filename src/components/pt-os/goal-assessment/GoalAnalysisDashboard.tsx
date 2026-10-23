@@ -1,7 +1,7 @@
 'use client';
 
 import { Gauge, AlertTriangle, Calendar } from 'lucide-react';
-import type { GoalDifficulty } from '@/lib/goal-calculations';
+import type { GoalDifficulty, GoalMetric } from '@/lib/goal-calculations';
 
 const DIFFICULTY_STYLE: Record<GoalDifficulty, { bg: string; color: string }> = {
   Easy: { bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
@@ -17,6 +17,9 @@ interface GoalAnalysisDashboardProps {
   requiredWeeklyRate: number | null;
   safeWeeklyRate: number | null;
   riskFactors: string[];
+  metric: GoalMetric | null;
+  /** Unit for the required/safe rate line; a lift may be in lb or kg. */
+  rateUnit?: string;
 }
 
 function todayPlusDays(days: number): string {
@@ -26,12 +29,13 @@ function todayPlusDays(days: number): string {
 }
 
 export function GoalAnalysisDashboard({
-  difficulty, estimatedDurationWeeks, recommendedPtDurationMonths, requiredWeeklyRate, safeWeeklyRate, riskFactors,
+  difficulty, estimatedDurationWeeks, recommendedPtDurationMonths, requiredWeeklyRate, safeWeeklyRate, riskFactors, metric, rateUnit = 'kg/wk',
 }: GoalAnalysisDashboardProps) {
   const ratio = requiredWeeklyRate != null && safeWeeklyRate ? Math.abs(requiredWeeklyRate) / safeWeeklyRate : null;
   const unrealistic = ratio != null && ratio > 1.5;
   const suggestedDate = unrealistic && estimatedDurationWeeks ? todayPlusDays(estimatedDurationWeeks * 7) : null;
   const style = difficulty ? DIFFICULTY_STYLE[difficulty] : null;
+  const rateBased = metric != null && metric !== 'sessions' && metric !== 'custom';
 
   return (
     <div className="rounded-[24px] overflow-hidden" style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)', boxShadow: '0 12px 40px rgba(15,23,42,0.25)' }}>
@@ -78,10 +82,14 @@ export function GoalAnalysisDashboard({
             <p className="mt-1.5 text-[18px] font-[800] text-white">{recommendedPtDurationMonths != null ? `${recommendedPtDurationMonths} mo` : '—'}</p>
           </div>
           <div className="rounded-[14px] p-4" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <p className="text-[10.5px] font-[700] uppercase tracking-wider text-white/40">Required vs Safe Rate</p>
+            <p className="text-[10.5px] font-[700] uppercase tracking-wider text-white/40">{rateBased ? 'Required vs Safe Rate' : 'Rate'}</p>
             <p className="mt-1.5 text-[15px] font-[800] text-white">
-              {requiredWeeklyRate != null ? `${Math.abs(requiredWeeklyRate)} kg/wk` : '—'}
-              <span className="text-white/40 font-[500]"> / {safeWeeklyRate != null ? `${safeWeeklyRate} kg/wk` : '—'}</span>
+              {!rateBased
+                ? <span className="text-white/40">Not rate-based</span>
+                : <>
+                  {requiredWeeklyRate != null ? `${Math.abs(requiredWeeklyRate)} ${rateUnit}` : '—'}
+                  <span className="text-white/40 font-[500]"> / {safeWeeklyRate != null ? `${safeWeeklyRate} ${rateUnit}` : '—'}</span>
+                </>}
             </p>
           </div>
         </div>

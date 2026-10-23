@@ -35,7 +35,7 @@ export default function StepSchedule({ form, set, step }: StepScheduleProps) {
   };
 
   return (
-    <GoalStepCard icon={Calendar} title="Availability & Schedule" step={step} hint="when the client can actually train">
+    <GoalStepCard icon={Calendar} title="Training Availability" step={step} hint="when the client can actually train">
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Training days / week">

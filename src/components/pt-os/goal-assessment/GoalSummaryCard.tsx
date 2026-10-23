@@ -3,7 +3,8 @@
 import { ClipboardList } from 'lucide-react';
 import GoalStepCard from './GoalStepCard';
 import { blue, gray, tint } from '@/lib/palette';
-import type { BarrierPlan, GoalMilestone } from '@/lib/goal-plan';
+import { formatGoalMeasure } from '@/lib/goal-plan';
+import type { BarrierPlan, GoalMeasure, GoalMilestone } from '@/lib/goal-plan';
 
 export interface SummaryAvailability {
   /** "3 days × 60 min · 3 h/week". */
@@ -16,40 +17,58 @@ interface GoalSummaryCardProps {
   primaryGoalLabel: string;
   statement: string;
   successMetric: string;
+  measure: GoalMeasure | null;
   currentWeight: number | null;
   targetWeight: number | null;
   currentBodyFat: number | null;
   targetBodyFat: number | null;
   targetDate: string;
   priorityLabel: string;
+  clientAgreed: boolean;
+  clientExpectation: string;
   motivationLevel: number;
   confidenceLevel: number;
   commitmentLevel: number;
   barriers: BarrierPlan[];
   availability: SummaryAvailability;
   milestones: GoalMilestone[];
+  reviewDate: string;
 }
 
 export function GoalSummaryCard({
-  primaryGoalLabel, statement, successMetric, currentWeight, targetWeight, currentBodyFat, targetBodyFat,
-  targetDate, priorityLabel, motivationLevel, confidenceLevel, commitmentLevel,
-  barriers, availability, milestones,
+  primaryGoalLabel, statement, successMetric, measure,
+  currentWeight, targetWeight, currentBodyFat, targetBodyFat,
+  targetDate, priorityLabel, clientAgreed, clientExpectation,
+  motivationLevel, confidenceLevel, commitmentLevel,
+  barriers, availability, milestones, reviewDate,
 }: GoalSummaryCardProps) {
   const weightDiff = currentWeight != null && targetWeight != null ? Math.round((targetWeight - currentWeight) * 10) / 10 : null;
+  const measureLabel = formatGoalMeasure(measure);
 
   const rows: { label: string; value: string }[] = [
     { label: 'Primary Goal', value: primaryGoalLabel || '—' },
-    { label: 'Current Weight', value: currentWeight != null ? `${currentWeight} kg` : '—' },
-    { label: 'Target Weight', value: targetWeight != null ? `${targetWeight} kg` : '—' },
-    { label: 'Current Body Fat', value: currentBodyFat != null ? `${currentBodyFat}%` : '—' },
-    { label: 'Target Body Fat', value: targetBodyFat != null ? `${targetBodyFat}%` : '—' },
-    { label: 'Weight Difference', value: weightDiff != null ? `${weightDiff > 0 ? '+' : ''}${weightDiff} kg` : '—' },
+    ...(measureLabel ? [{ label: 'Measurable Target', value: measureLabel }] : []),
+    ...(targetWeight != null
+      ? [
+        { label: 'Current Weight', value: currentWeight != null ? `${currentWeight} kg` : '—' },
+        { label: 'Target Weight', value: `${targetWeight} kg` },
+      ]
+      : []),
+    ...(targetBodyFat != null
+      ? [
+        { label: 'Current Body Fat', value: currentBodyFat != null ? `${currentBodyFat}%` : '—' },
+        { label: 'Target Body Fat', value: `${targetBodyFat}%` },
+      ]
+      : []),
+    ...(weightDiff != null ? [{ label: 'Weight Difference', value: `${weightDiff > 0 ? '+' : ''}${weightDiff} kg` }] : []),
     { label: 'Target Date', value: targetDate || '—' },
     { label: 'Priority', value: priorityLabel || '—' },
+    { label: 'Client Agreement', value: clientAgreed ? 'Agreed' : 'Not confirmed' },
     { label: 'Motivation', value: `${motivationLevel} / 10` },
     { label: 'Confidence', value: `${confidenceLevel} / 10` },
     { label: 'Commitment', value: `${commitmentLevel} / 10` },
     { label: 'Availability', value: availability.commitment },
+    ...(reviewDate ? [{ label: 'Next Review', value: reviewDate }] : []),
   ];
 
   return (
@@ -72,6 +91,13 @@ export function GoalSummaryCard({
               Success measured by: <span className="font-[700]">{successMetric}</span>
             </p>
           )}
+        </div>
+      )}
+
+      {clientExpectation && (
+        <div className="mt-4 rounded-[14px] px-4 py-3" style={{ background: gray[50] }}>
+          <p className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: gray[500] }}>Client Expectation</p>
+          <p className="mt-1 text-[12.5px]" style={{ color: gray[700] }}>{clientExpectation}</p>
         </div>
       )}
 
@@ -98,7 +124,7 @@ export function GoalSummaryCard({
 
       {milestones.length > 0 && (
         <div className="mt-6">
-          <p className="mb-2 text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: gray[500] }}>Milestones</p>
+          <p className="mb-2 text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: gray[500] }}>Time Horizons</p>
           <ul className="space-y-1.5">
             {milestones.map((mst) => (
               <li key={`${mst.type}-${mst.date}-${mst.label}`} className="flex flex-wrap items-baseline justify-between gap-2 text-[12px]">

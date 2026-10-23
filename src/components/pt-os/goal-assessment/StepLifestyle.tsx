@@ -1,12 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
+import Link from 'next/link';
 import FloatInput from '@/components/ui/FloatInput';
-import { HeartHandshake } from 'lucide-react';
+import { ArrowUpRight, HeartHandshake } from 'lucide-react';
 import GoalStepCard from './GoalStepCard';
-import { amber, emerald, gray, red } from '@/lib/palette';
+import { amber, emerald, gray, red, tint, blue } from '@/lib/palette';
 import { calcLifestyleReadinessScore } from '@/lib/goal-calculations';
-import type { GoalFormData, LifestyleAnswers } from './types';
+import type { ClientContext, GoalFormData, LifestyleAnswers } from './types';
 
 const READINESS: { key: keyof LifestyleAnswers; label: string; hint: string }[] = [
   { key: 'can_train_4_6_days', label: 'Can train 4–6 days/week', hint: 'Enough free days to hit the target frequency' },
@@ -36,10 +37,36 @@ interface StepLifestyleProps {
   form: GoalFormData;
   set: <K extends keyof GoalFormData>(key: K, val: GoalFormData[K]) => void;
   step: number;
+  context: ClientContext;
+  clientId: string;
   error?: string;
 }
 
-export function StepLifestyle({ form, set, step, error }: StepLifestyleProps) {
+const SCREEN_TIME: Record<string, string> = {
+  '<2': 'under 2 h/day', '2_4': '2–4 h/day', '4_6': '4–6 h/day', '6_8': '6–8 h/day', '8_plus': '8+ h/day',
+};
+const MEAL_REGULARITY: Record<string, string> = {
+  regular: 'Regular', irregular: 'Irregular', inconsistent: 'Frequently skipped',
+};
+const SMOKING: Record<string, string> = { never: 'Never', occasionally: 'Occasionally', daily: 'Daily', former: 'Former' };
+const ALCOHOL: Record<string, string> = { never: 'Never', occasionally: 'Occasionally', weekly: 'Weekly', frequently: 'Frequently' };
+
+function contextRows(c: ClientContext): { label: string; value: string }[] {
+  return [
+    { label: 'Occupation', value: c.occupation || '—' },
+    { label: 'Sitting / day', value: c.sittingHours != null ? `${c.sittingHours} h` : '—' },
+    { label: 'Sedentary risk', value: c.sedentaryRisk || '—' },
+    { label: 'Screen time', value: c.screenTime ? (SCREEN_TIME[c.screenTime] || c.screenTime) : '—' },
+    { label: 'Sleep / night', value: c.sleepHours != null ? `${c.sleepHours} h` : '—' },
+    { label: 'Stress level', value: c.stressLevel != null ? `${c.stressLevel} / 10` : '—' },
+    { label: 'Meal timing', value: c.mealRegularity ? (MEAL_REGULARITY[c.mealRegularity] || c.mealRegularity) : '—' },
+    { label: 'Diet preferences', value: c.dietPreferences.length ? c.dietPreferences.join(', ') : '—' },
+    { label: 'Allergies / restrictions', value: c.foodAllergies.length ? c.foodAllergies.join(', ') : '—' },
+    { label: 'Smoking / alcohol', value: [c.smoking ? SMOKING[c.smoking] || c.smoking : null, c.alcohol ? ALCOHOL[c.alcohol] || c.alcohol : null].filter(Boolean).join(' · ') || '—' },
+  ];
+}
+
+export function StepLifestyle({ form, set, step, context, clientId, error }: StepLifestyleProps) {
   const score = useMemo(() => calcLifestyleReadinessScore(form.lifestyle), [form.lifestyle]);
 
   const setAnswer = (key: keyof LifestyleAnswers, value: boolean) => {
@@ -99,6 +126,33 @@ export function StepLifestyle({ form, set, step, error }: StepLifestyleProps) {
       ) : undefined}
     >
       <div className="space-y-6">
+        <div className="rounded-[18px] p-5" style={{ background: tint(blue[500], 0.05), border: `1px solid ${tint(blue[500], 0.18)}` }}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-[13px] font-[760]" style={{ color: gray[800] }}>Client context</p>
+              <p className="mt-1 text-[12px]" style={{ color: gray[500] }}>
+                K11 lifestyle screening, read from the records that already own it.
+              </p>
+            </div>
+            <Link
+              href={`/pt-os/interview?client_id=${encodeURIComponent(clientId)}`}
+              className="inline-flex items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-[11.5px] font-[700]"
+              style={{ background: 'var(--bg-card)', color: blue[700], border: `1px solid ${tint(blue[500], 0.25)}` }}
+            >
+              Client Interview <ArrowUpRight size={11} />
+            </Link>
+          </div>
+
+          <dl className="mt-4 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+            {contextRows(context).map((row) => (
+              <div key={row.label} className="flex items-baseline justify-between gap-3 border-b py-1.5" style={{ borderColor: gray[100] }}>
+                <dt className="text-[11.5px] font-[600]" style={{ color: gray[500] }}>{row.label}</dt>
+                <dd className="text-right text-[12px] font-[700]" style={{ color: row.value === '—' ? gray[400] : gray[700] }}>{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+
         {group(READINESS, 'Readiness', 'These six drive the readiness score and the risk factors in the review.')}
         {group(ROUTINE, 'Daily routine', 'These shape the plan. They do not change the readiness score.')}
 

@@ -23,6 +23,31 @@ export interface BarrierPlan {
 
 export type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'flexible';
 
+/** K11 measurable target — what the goal is judged by. */
+export type GoalMeasureMetric = 'weight' | 'body_fat' | 'lift' | 'sessions' | 'custom';
+
+export interface GoalMeasure {
+  metric: GoalMeasureMetric;
+  current: number | null;
+  target: number | null;
+  unit: string;
+  exercise?: string | null;
+  label?: string | null;
+}
+
+/** One line a trainer reads on a goal card or in the review summary. */
+export function formatGoalMeasure(measure: GoalMeasure | null | undefined): string {
+  if (!measure || measure.target == null) return '';
+  const target = measure.target;
+  switch (measure.metric) {
+    case 'weight': return `${target} kg`;
+    case 'body_fat': return `${target}% body fat`;
+    case 'lift': return `${measure.exercise ? `${measure.exercise} ` : ''}${target} ${measure.unit || 'kg'}`;
+    case 'sessions': return `${target} sessions/week`;
+    case 'custom': return `${measure.label ? `${measure.label}: ` : ''}${target}${measure.unit ? ` ${measure.unit}` : ''}`;
+  }
+}
+
 export const MILESTONE_TIERS: { value: MilestoneTier; label: string; hint: string }[] = [
   { value: 'short_term', label: 'Short term', hint: 'First checkpoint — habits and consistency' },
   { value: 'medium_term', label: 'Medium term', hint: 'Mid-point review — measurable progress' },
@@ -168,6 +193,9 @@ export interface SmartCheckInput {
   targetWeight: string;
   targetBodyFat: string;
   targetDate: string;
+  targetMetric?: GoalMeasureMetric | '';
+  targetValue?: string;
+  targetExercise?: string;
 }
 
 export interface SmartCheckRow {
@@ -182,9 +210,20 @@ export interface SmartCheckRow {
  * Each row is derived from what has actually been entered — nothing is
  * marked done on a promise, and the "still missing" line says what to add.
  */
-export function smartChecklist(input: SmartCheckInput, opts: { priorityGoal: string; today?: string } = { priorityGoal: '' }): SmartCheckRow[] {
+export function smartChecklist(input: SmartCheckInput, opts: { priorityGoal: string; clientAgreed?: boolean; today?: string } = { priorityGoal: '' }): SmartCheckRow[] {
   const today = opts.today || new Date().toISOString().slice(0, 10);
-  const hasTargets = !!input.targetWeight.trim() || !!input.targetBodyFat.trim();
+  const metric = input.targetMetric || '';
+  const numericTarget = metric === 'weight'
+    ? !!input.targetWeight.trim()
+    : metric === 'body_fat'
+      ? !!input.targetBodyFat.trim()
+      : metric === 'lift'
+        ? !!input.targetValue?.trim() && !!input.targetExercise?.trim()
+        : metric === 'sessions' || metric === 'custom'
+          ? !!input.targetValue?.trim()
+          : false;
+  // No metric picked yet: an old weight/body-fat target still counts.
+  const hasTargets = numericTarget || (!metric && (!!input.targetWeight.trim() || !!input.targetBodyFat.trim()));
   const hasMeasure = hasTargets || !!input.successMetric.trim();
   const hasTime = !!input.targetDate && input.targetDate >= today;
   const specific = input.goalType === 'custom'
@@ -194,8 +233,8 @@ export function smartChecklist(input: SmartCheckInput, opts: { priorityGoal: str
   return [
     { key: 'S', label: 'Specific', done: specific, detail: 'Describe exactly what the client wants to achieve.' },
     { key: 'M', label: 'Measurable', done: hasMeasure, detail: 'Add a target number or a success metric.' },
-    { key: 'A', label: 'Achievable', done: hasTargets && hasTime, detail: 'Add targets and a deadline so the plan can be checked.' },
-    { key: 'R', label: 'Relevant', done: !!opts.priorityGoal, detail: 'Pick the top priority this goal serves.' },
+    { key: 'A', label: 'Achievable', done: hasTargets && hasTime, detail: 'Add a measurable target and a deadline so the plan can be checked.' },
+    { key: 'R', label: 'Relevant', done: !!opts.priorityGoal && opts.clientAgreed !== false, detail: 'Pick the top priority and confirm the client agrees with the goal.' },
     { key: 'T', label: 'Time-bound', done: hasTime, detail: 'Set a target date today or later.' },
   ];
 }

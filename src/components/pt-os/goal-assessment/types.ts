@@ -7,7 +7,7 @@ import {
   TrendingDown, Weight, Wind, Zap,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import type { BarrierPlan, GoalMilestone, TimeOfDay } from '@/lib/goal-plan';
+import type { BarrierPlan, GoalMeasureMetric, GoalMilestone, TimeOfDay } from '@/lib/goal-plan';
 
 export type GoalType =
   | 'fat_loss' | 'muscle_gain' | 'body_recomposition' | 'strength_gain' | 'powerlifting'
@@ -43,11 +43,25 @@ export interface GoalFormData {
   // SMART statement + the metric the client will judge success by.
   successMetric: string;
 
+  /**
+   * K11 measurable target. Weight and body fat still use their first-class
+   * columns/fields; the other three are stored in routine_blueprint.k11.
+   */
+  targetMetric: GoalMeasureMetric | '';
+  targetExercise: string;
+  targetStart: string;
+  targetValue: string;
+  targetUnit: string;
+  customMetric: string;
+
   targetWeight: string;
   targetBodyFat: string;
   targetDate: string;
 
   priorityGoal: PriorityGoal | '';
+  /** K11 Relevant: the client has seen and agreed to this goal. */
+  clientAgreed: boolean;
+  clientExpectation: string;
 
   motivationLevel: string;
   confidenceLevel: string;
@@ -79,13 +93,41 @@ export interface GoalFormData {
   milestones: GoalMilestone[];
   shortTermWeeks: string;
   mediumTermWeeks: string;
+
+  /** K11 check-in date; mirrored to pt_goals.review_date on save. */
+  reviewDate: string;
+}
+
+/**
+ * Lifestyle context already recorded by the Client Interview, Lifestyle,
+ * Nutrition and PAR-Q modules. Read-only in the goal wizard — one owner per
+ * record, so the goal cannot drift from the source.
+ */
+export interface ClientContext {
+  occupation: string | null;
+  sittingHours: number | null;
+  screenTime: string | null;
+  sleepHours: number | null;
+  stressLevel: number | null;
+  mealRegularity: string | null;
+  dietPreferences: string[];
+  foodAllergies: string[];
+  smoking: string | null;
+  alcohol: string | null;
+  sedentaryRisk: string | null;
+}
+
+export interface RetestInfo {
+  date: string | null;
+  label: string;
+  state: string;
+  cadenceMonths: number | null;
 }
 
 export interface FormErrors {
   primaryGoal?: string;
   smartGoal?: string;
-  targetWeight?: string;
-  targetBodyFat?: string;
+  measureTarget?: string;
   deadline?: string;
   priority?: string;
   motivation?: string;
@@ -93,6 +135,7 @@ export interface FormErrors {
   lifestyle?: string;
   schedule?: string;
   milestones?: string;
+  assessmentReview?: string;
 }
 
 /**
@@ -138,15 +181,15 @@ export const PRIORITY_META: { value: PriorityGoal; label: string; icon: LucideIc
 export const STEPS = [
   { id: 1, key: 'primaryGoal', label: 'Primary Goal' },
   { id: 2, key: 'smartGoal', label: 'SMART Goal' },
-  { id: 3, key: 'targetWeight', label: 'Target Weight' },
-  { id: 4, key: 'targetBodyFat', label: 'Target Body Fat' },
-  { id: 5, key: 'deadline', label: 'Deadline' },
-  { id: 6, key: 'priority', label: 'Priority' },
-  { id: 7, key: 'motivation', label: 'Motivation & Confidence' },
-  { id: 8, key: 'challenges', label: 'Challenges & Barriers' },
-  { id: 9, key: 'lifestyle', label: 'Lifestyle' },
-  { id: 10, key: 'schedule', label: 'Availability' },
-  { id: 11, key: 'milestones', label: 'Milestones' },
+  { id: 3, key: 'measureTarget', label: 'Measure & Target' },
+  { id: 4, key: 'deadline', label: 'Deadline' },
+  { id: 5, key: 'priority', label: 'Priority & Agreement' },
+  { id: 6, key: 'motivation', label: 'Motivation & Confidence' },
+  { id: 7, key: 'challenges', label: 'Challenges & Barriers' },
+  { id: 8, key: 'lifestyle', label: 'Lifestyle & Routine' },
+  { id: 9, key: 'schedule', label: 'Training Availability' },
+  { id: 10, key: 'milestones', label: 'Time Horizons' },
+  { id: 11, key: 'assessmentReview', label: 'Assessment & Review' },
 ] as const;
 
 export const LAST_STEP = STEPS[STEPS.length - 1].id;
@@ -156,8 +199,10 @@ export function initGoalForm(): GoalFormData {
   return {
     goalType: '', goalName: '', goalDescription: '',
     successMetric: '',
+    targetMetric: '', targetExercise: '', targetStart: '', targetValue: '', targetUnit: 'kg', customMetric: '',
     targetWeight: '', targetBodyFat: '', targetDate: '',
     priorityGoal: '',
+    clientAgreed: false, clientExpectation: '',
     motivationLevel: '7', confidenceLevel: '7', commitmentLevel: '7', motivationReason: '',
     biggestChallenges: [], challengeOther: '', barrierPlans: [],
     lifestyle: {
@@ -171,6 +216,7 @@ export function initGoalForm(): GoalFormData {
     trainingDays: '3', preferredDays: [], sessionMinutes: '60', timeOfDay: 'flexible',
     experienceLevel: 'beginner', equipment: 'full_gym', status: 'active',
     milestones: [], shortTermWeeks: '8', mediumTermWeeks: '12',
+    reviewDate: '',
   };
 }
 
