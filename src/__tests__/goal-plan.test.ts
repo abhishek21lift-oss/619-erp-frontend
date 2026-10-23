@@ -4,7 +4,7 @@
 // its happy path.
 import { describe, expect, it } from 'vitest';
 import {
-  barrierPayload, barrierPlansFor, defaultMilestones, formatWeeklyCommitment,
+  barrierPayload, barrierPlansFor, defaultMilestones, formatGoalMeasure, formatWeeklyCommitment,
   smartChecklist, trainingDaysFrom, validateMilestones, weeksFrom, weeklyCommitmentMinutes,
 } from '@/lib/goal-plan';
 import type { GoalMilestone } from '@/lib/goal-plan';
@@ -139,5 +139,53 @@ describe('bounded parse helpers', () => {
     expect(weeksFrom('0', 8)).toBe(1);
     expect(weeksFrom('99', 8)).toBe(52);
     expect(weeksFrom('', 8)).toBe(8);
+  });
+});
+
+describe('K11 measurable targets', () => {
+  const base = {
+    goalType: 'strength_gain', goalName: '', statement: 'Squat 120 kg',
+    successMetric: '', targetWeight: '', targetBodyFat: '', targetDate: '2027-01-19',
+  };
+
+  it('formats each measure for the summary and goal card', () => {
+    expect(formatGoalMeasure({ metric: 'weight', current: 80, target: 75, unit: 'kg' })).toBe('75 kg');
+    expect(formatGoalMeasure({ metric: 'lift', current: 100, target: 120, unit: 'kg', exercise: 'Back Squat' })).toBe('Back Squat 120 kg');
+    expect(formatGoalMeasure({ metric: 'sessions', current: 2, target: 4, unit: 'sessions/week' })).toBe('4 sessions/week');
+    expect(formatGoalMeasure({ metric: 'custom', current: 90, target: 80, unit: 'cm', label: 'Waist' })).toBe('Waist: 80 cm');
+    expect(formatGoalMeasure(null)).toBe('');
+  });
+
+  it('needs the exercise as well as the number for a lift target', () => {
+    const noExercise = smartChecklist(
+      { ...base, targetMetric: 'lift', targetValue: '120' },
+      { priorityGoal: 'strength', clientAgreed: true, today: TODAY },
+    );
+    expect(noExercise.find((r) => r.key === 'M')?.done).toBe(false);
+    expect(noExercise.find((r) => r.key === 'A')?.done).toBe(false);
+
+    const complete = smartChecklist(
+      { ...base, targetMetric: 'lift', targetValue: '120', targetExercise: 'Back Squat' },
+      { priorityGoal: 'strength', clientAgreed: true, today: TODAY },
+    );
+    expect(complete.find((r) => r.key === 'M')?.done).toBe(true);
+    expect(complete.find((r) => r.key === 'A')?.done).toBe(true);
+  });
+
+  it('leaves Relevant unticked when the client has not agreed', () => {
+    const rows = smartChecklist(
+      { ...base, targetMetric: 'lift', targetValue: '120', targetExercise: 'Back Squat' },
+      { priorityGoal: 'strength', clientAgreed: false, today: TODAY },
+    );
+    expect(rows.find((r) => r.key === 'R')?.done).toBe(false);
+  });
+
+  it('does not read a leftover weight as the chosen lift target', () => {
+    const rows = smartChecklist(
+      { ...base, targetMetric: 'lift', targetWeight: '75', targetValue: '', targetExercise: '' },
+      { priorityGoal: 'strength', clientAgreed: true, today: TODAY },
+    );
+    expect(rows.find((r) => r.key === 'M')?.done).toBe(false);
+    expect(rows.find((r) => r.key === 'A')?.done).toBe(false);
   });
 });

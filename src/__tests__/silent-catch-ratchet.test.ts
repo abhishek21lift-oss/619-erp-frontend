@@ -104,6 +104,14 @@ const KNOWN = [
   'app/(chrome)/pt-os/diet-plans/page.tsx:199',
   'app/(chrome)/pt-os/exercise-library/[id]/edit/page.tsx:28',
   'app/(chrome)/pt-os/exercise-library/new/page.tsx:28',
+  // The goal wizard reads the Client Interview and the Module 5 re-test
+  // schedule as optional context. Neither is a number the trainer acts on:
+  // the step shows "Not recorded"/"No re-test scheduled" and the goal can
+  // still be set without them. Both reads are allowed to fail on their own
+  // so a missing module cannot block the goal. Only the re-test fallback is
+  // the bare `null` shape this ratchet pins; the interview fallback is an
+  // object literal and does not match.
+  'app/(chrome)/pt-os/goals/page.tsx:367',
   'app/(chrome)/pt-os/workout-plans/[id]/page.tsx:51',
   'app/(chrome)/settings/integrations/page.tsx:442',
   // Two remain on the Security page (the session count on each panel); the

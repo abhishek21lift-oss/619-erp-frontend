@@ -3,6 +3,8 @@
 import { ChevronRight, Target } from 'lucide-react';
 import { PremiumProgressChart } from '@/components/visualizations';
 import { calcCompletionPct, calcAchievementStatus, daysRemaining } from '@/lib/goal-calculations';
+import { formatGoalMeasure } from '@/lib/goal-plan';
+import type { GoalMeasure } from '@/lib/goal-plan';
 import { GOAL_TYPE_META } from './types';
 
 const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
@@ -37,6 +39,9 @@ export function GoalCard({ goal, latestWeight, onClick }: GoalCardProps) {
     ? Math.ceil((new Date(targetDate).getTime() - new Date(String(goal.created_at)).getTime()) / 86400000)
     : null;
   const status = STATUS_STYLE[calcAchievementStatus(completion, days, totalDays)];
+  const k11 = (goal.routine_blueprint as { k11?: { measure?: GoalMeasure } } | null)?.k11;
+  const measureLabel = formatGoalMeasure(k11?.measure ?? null);
+  const reviewDate = goal.review_date ? String(goal.review_date).slice(0, 10) : null;
 
   return (
     <button
@@ -86,12 +91,22 @@ export function GoalCard({ goal, latestWeight, onClick }: GoalCardProps) {
               · {String(goal.training_split).replace(/_/g, ' ')}
             </span>
           )}
+          {!!measureLabel && (
+            <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: 'rgba(0,103,224,0.08)', color: '#0059CE' }}>
+              {measureLabel}
+            </span>
+          )}
           <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: status.bg, color: status.color }}>
             {status.label}
           </span>
           {days != null && (
             <span className="text-[11.5px] font-[600] text-[color:var(--text-muted)]">
               {days < 0 ? `${Math.abs(days)}d overdue` : `${days}d remaining`}
+            </span>
+          )}
+          {reviewDate && (
+            <span className="text-[11.5px] font-[600] text-[color:var(--text-muted)]">
+              · review {reviewDate}
             </span>
           )}
           {goal.goal_difficulty != null && (

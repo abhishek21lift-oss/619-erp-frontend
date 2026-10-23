@@ -27,7 +27,8 @@ export function StepSmartGoal({ form, set, step, error }: StepSmartGoalProps) {
     goalType: form.goalType, goalName: form.goalName, statement: form.goalDescription,
     successMetric: form.successMetric, targetWeight: form.targetWeight,
     targetBodyFat: form.targetBodyFat, targetDate: form.targetDate,
-  }, { priorityGoal: form.priorityGoal }), [form]);
+    targetMetric: form.targetMetric, targetValue: form.targetValue, targetExercise: form.targetExercise,
+  }, { priorityGoal: form.priorityGoal, clientAgreed: form.clientAgreed }), [form]);
 
   const done = checklist.filter((c) => c.done).length;
 
@@ -83,7 +84,7 @@ export function StepSmartGoal({ form, set, step, error }: StepSmartGoalProps) {
           {/* Targets, priority and deadline live in later steps; saying so
               beats an amber tick that looks like a problem on step 2. */}
           <p className="mt-3 text-[11.5px]" style={{ color: gray[400] }}>
-            Measurable, Achievable and Time-bound complete as you fill in targets, priority and deadline in the next steps.
+            Measurable, Achievable and Time-bound complete as you fill in the target, priority and deadline in the next steps.
           </p>
         </div>
 
