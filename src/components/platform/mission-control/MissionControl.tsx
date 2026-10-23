@@ -28,7 +28,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { m } from 'framer-motion';
-import { Loader2, RefreshCw, Activity, ShieldCheck, Radio, Terminal } from 'lucide-react';
+import { Loader2, RefreshCw, Activity, ShieldCheck, Radio, Terminal, Bot } from 'lucide-react';
 import { useCommandCenterSnapshot } from '@/components/platform/useCommandCenterSnapshot';
 import { Center, ErrorState } from '@/app/(platform)/platform/_shared/ui';
 import AlertCenter from '@/components/platform/alert-center';
@@ -39,12 +39,14 @@ import { GlobalStatus } from './GlobalStatus';
 import { HealthMatrix } from './HealthMatrix';
 import { Topology } from './Topology';
 import { ObservabilityBar } from './ObservabilityBar';
+import { AiOperations } from './AiOperations';
 import { surface, toneFor } from './tokens';
 
-type Deck = 'operations' | 'guardian' | 'recovery' | 'logs';
+type Deck = 'operations' | 'ai' | 'guardian' | 'recovery' | 'logs';
 
 const DECKS: Array<{ id: Deck; label: string; Icon: typeof Activity }> = [
   { id: 'operations', label: 'Operations', Icon: Activity },
+  { id: 'ai', label: 'AI', Icon: Bot },
   { id: 'guardian', label: 'Guardian', Icon: ShieldCheck },
   { id: 'recovery', label: 'Recovery', Icon: Terminal },
   { id: 'logs', label: 'Live logs', Icon: Radio },
@@ -142,6 +144,8 @@ export const MissionControl: React.FC = () => {
       <m.div key={deck} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.22 }}>
         {deck === 'operations' && <AlertCenter />}
+        {/* Reads the snapshot already held here: no poll of its own. */}
+        {deck === 'ai' && <AiOperations snap={snap} onRefresh={handleRefresh} />}
         {deck === 'guardian' && <Guardian />}
         {deck === 'recovery' && <CommandPanel />}
         {deck === 'logs' && <LiveLogs />}

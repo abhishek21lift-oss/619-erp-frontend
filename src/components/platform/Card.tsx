@@ -39,6 +39,14 @@ function Ratio({ label, value }: { label: string; value: unknown }) {
   </div>;
 }
 
+/** The AI card's configuration-versus-reality verdict, in an operator's words. */
+export const RECONCILIATION_LABEL: Record<string, string> = {
+  consistent: 'Consistent',
+  mismatch: 'Config mismatch',
+  runtime_failure: 'Runtime failure',
+  not_verified: 'Not verified',
+};
+
 function CardBody({ card }: { card: CommandCenterCard }) {
   const d = card.data;
   switch (card.name) {
@@ -81,8 +89,16 @@ function CardBody({ card }: { card: CommandCenterCard }) {
         {fmtText(pick(d, 'note')) !== '—' && <p className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>{fmtText(pick(d, 'note'))}</p>}</div>;
     }
     case 'ai': {
-      const today = pick(d, 'today'); const hour = pick(d, 'last_hour'); const routing = pick(d, 'routing');
-      return <div className="space-y-2.5"><Grid><Metric label="Active model" value={fmtText(pick(d, 'active_model'))} /><Metric label="Last request" value={pick(d, 'last_request_at') ? new Date(String(pick(d, 'last_request_at'))).toLocaleTimeString() : '—'} /><Metric label="Today requests" value={fmtNum(pick(today, 'requests'))} /><Metric label="Today latency" value={fmtMs(pick(today, 'avg_latency_ms'))} /><Metric label="Today fallbacks" value={fmtNum(pick(today, 'fallbacks'))} /><Metric label="Today cost" value={typeof pick(today, 'cost_inr') === 'number' ? `₹${Number(pick(today, 'cost_inr')).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : '—'} /><Metric label="1h requests" value={fmtNum(pick(hour, 'requests'))} /><Metric label="1h fallback rate" value={fmtPct(pick(hour, 'fallback_rate'))} /></Grid><p className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>Primary: {fmtText(pick(routing, 'primary'))} · Secondary: {fmtText(pick(routing, 'secondary'))} · Fallback: {fmtText(pick(routing, 'fallback'))}</p></div>;
+      const today = pick(d, 'today'); const hour = pick(d, 'last_hour'); const routing = pick(d, 'routing'); const rec = pick(d, 'reconciliation');
+      const cost = pick(today, 'cost_inr');
+      // "Active" is the model that SERVED the last returned request; the
+      // configured primary sits beside it, never in its place.
+      return <div className="space-y-2.5"><Grid><Metric label="Active model" value={fmtText(pick(d, 'active_model'))} hint="served the last request" /><Metric label="Configured primary" value={fmtText(pick(routing, 'primary'))} hint={`from ${fmtText(pick(routing, 'sources.primary'))}`} /><Metric label="Last request" value={pick(d, 'last_request_at') ? new Date(String(pick(d, 'last_request_at'))).toLocaleTimeString() : '—'} /><Metric label="Reconciliation" value={RECONCILIATION_LABEL[String(pick(rec, 'state'))] ?? '—'} /><Metric label="Today requests" value={fmtNum(pick(today, 'requests'))} /><Metric label="Today latency" value={fmtMs(pick(today, 'avg_latency_ms'))} hint={pick(today, 'p95_latency_ms') != null ? `p95 ${fmtMs(pick(today, 'p95_latency_ms'))}` : undefined} /><Metric label="Today fallbacks" value={fmtNum(pick(today, 'fallbacks'))} /><Metric label={pick(today, 'cost_is_floor') ? 'Today cost (floor)' : 'Today cost'} value={typeof cost === 'number' ? `₹${cost.toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : '—'} /><Metric label="1h requests" value={fmtNum(pick(hour, 'requests'))} /><Metric label="1h fallback rate" value={fmtPct(pick(hour, 'fallback_rate'))} /></Grid><p className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>Secondary: {fmtText(pick(routing, 'secondary'))} · Fallback: {fmtText(pick(routing, 'fallback'))} · Gateway: {fmtText(pick(d, 'gateway.kind'))}</p></div>;
+    }
+    case 'freellmapi': {
+      const svc = pick(d, 'service'); const pr = pick(d, 'providers'); const md = pick(d, 'models'); const keys = pick(d, 'keys');
+      const of = (a: unknown, b: unknown) => (typeof a === 'number' && typeof b === 'number' ? `${a} / ${b}` : '—');
+      return <div className="space-y-2.5"><Grid><Metric label="Service" value={pick(svc, 'live') === true ? 'Live' : pick(svc, 'reachable') === false ? 'Unreachable' : pick(svc, 'live') === false ? 'Not live' : '—'} hint={pick(svc, 'version') ? `v${String(pick(svc, 'version'))}` : undefined} /><Metric label="Probe latency" value={fmtMs(pick(svc, 'latency_ms'))} /><Metric label="Providers healthy" value={of(pick(pr, 'healthy'), pick(pr, 'total'))} /><Metric label="Models available" value={of(pick(md, 'available'), pick(md, 'total'))} /><Metric label="Enabled keys" value={fmtNum(pick(keys, 'total'))} /><Metric label="Healthy keys" value={keys ? 'Not exposed' : '—'} hint={keys ? 'by the gateway' : undefined} /></Grid><p className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>Endpoint {fmtText(pick(d, 'gateway.endpoint'))} · details in the AI deck</p></div>;
     }
     case 'security': {
       const auth = pick(d, 'auth'); const posture = pick(d, 'posture'); const checks = Array.isArray(pick(posture, 'checks')) ? pick(posture, 'checks') as Array<Record<string, unknown>> : [];
