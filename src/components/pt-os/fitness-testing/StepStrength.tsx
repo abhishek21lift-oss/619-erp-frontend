@@ -10,6 +10,7 @@ import type { AssessmentFormData, StrengthExercise } from './types';
 import { n } from './types';
 import { StepHeader } from './StepHeader';
 import { categoryPill, gradient, stepTones } from './fitnessTheme';
+import { strengthCategoryGap } from './strengthGuidance';
 
 const EXERCISES: StrengthExercise[] = ['Bench Press', 'Leg Press', 'Squat', 'Deadlift', 'Shoulder Press', 'Custom Exercise'];
 
@@ -64,13 +65,12 @@ export function StepStrength({ form, set, gender, age, error, isBeginner }: Step
   const options2 = EXERCISES.filter((e) => e !== form.strengthExercise);
   // Why a lift that has a 1RM and a body weight still has no category: the K11
   // tables need an age 20+, a supported sex, and Bench Press or Leg Press.
-  const categoryGap = bodyWeight && (t1.oneRM != null || t2.oneRM != null) && !t1.category && !t2.category
-    ? age == null || age < 20
-      ? `K11 strength norms require age 20 or over${age == null ? ' — no date of birth is recorded for this client' : ''}.`
-      : !gender || gender === 'Other'
-        ? 'K11 strength norms are sex-specific and need a recorded sex of Male or Female.'
-        : 'No K11 percentile reference is supplied for this lift. Bench Press and Leg Press are the only supported tests.'
-    : null;
+  // One reason per test, deduplicated, so a classified test never hides why
+  // the other one is unclassified.
+  const categoryGaps = [...new Set([
+    strengthCategoryGap(form.strengthExercise || null, t1.oneRM, t1.category, bodyWeight, gender, age),
+    strengthCategoryGap(form.strengthExercise2 || null, t2.oneRM, t2.category, bodyWeight, gender, age),
+  ].filter((gap): gap is string => gap != null))];
 
   return (
     <div>
@@ -136,9 +136,9 @@ export function StepStrength({ form, set, gender, age, error, isBeginner }: Step
           {!t1.category && !t2.category && !bodyWeight && (
             <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Enter weight in the Anthropometric step to classify strength level.</p>
           )}
-          {categoryGap && (
-            <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{categoryGap}</p>
-          )}
+          {categoryGaps.map((gap) => (
+            <p key={gap} className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{gap}</p>
+          ))}
         </div>
       )}
     </div>
