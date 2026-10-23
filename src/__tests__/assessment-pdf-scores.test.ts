@@ -123,6 +123,52 @@ describe('assessment report — anthropometric norms', () => {
   });
 });
 
+// K11 strength: the stored category plus the percentile computed at save
+// time. Legacy rows have no percentile and print the category alone.
+describe('assessment report — K11 strength percentiles', () => {
+  const withStrength = (category: string | null, percentile: number | null, extra: Record<string, unknown> = {}) => ({
+    ...base,
+    strength_exercise: 'Bench Press',
+    strength_category: category,
+    strength_test_data: JSON.stringify({ test1: { k11_percentile: percentile }, test2: {} }),
+    ...extra,
+  });
+
+  it('prints the stored percentile beside its category', () => {
+    const html = generateAssessmentReportHTML(withStrength('Well Above Average', 80), 'Test Client');
+    expect(html).toContain('<label>Test 1 Classification</label><p>Well Above Average (80th percentile)</p>');
+  });
+
+  it('keeps both tests and their own percentiles separate', () => {
+    const html = generateAssessmentReportHTML({
+      ...withStrength('Above Average', 70),
+      strength_exercise_2: 'Leg Press',
+      strength_category_2: 'Below Average',
+      strength_test_data: JSON.stringify({ test1: { k11_percentile: 70 }, test2: { k11_percentile: 30 } }),
+    }, 'Test Client');
+    expect(html).toContain('<p>Above Average (70th percentile)</p>');
+    expect(html).toContain('<p>Below Average (30th percentile)</p>');
+  });
+
+  it('a legacy row prints the category alone, never an inferred percentile', () => {
+    const html = generateAssessmentReportHTML({ ...base, strength_category: 'Average' }, 'Test Client');
+    expect(html).toContain('<label>Test 1 Classification</label><p>Average</p>');
+    expect(html).not.toContain('th percentile');
+  });
+
+  it('a ratio below every supplied row prints the explicit label with no percentile', () => {
+    const html = generateAssessmentReportHTML(withStrength('Below Supported Range', null), 'Test Client');
+    expect(html).toContain('<p>Below Supported Range</p>');
+    expect(html).not.toContain('Below Supported Range (');
+  });
+
+  it('states the K11 basis and the two supplied lifts', () => {
+    const html = generateAssessmentReportHTML(withStrength('Average', 50), 'Test Client');
+    expect(html).toContain('K11 relative strength (1RM ÷ body weight)');
+    expect(html).toContain('Bench Press and Leg Press only');
+  });
+});
+
 // Resting vitals on the report (MPTS vitals norms). Every classification is a
 // stored value; the safety line is the exercise decision, and the note is the
 // reminder that one reading is not a diagnosis.

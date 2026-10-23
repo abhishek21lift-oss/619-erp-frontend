@@ -47,6 +47,30 @@ function field(label: string, value: string): string {
   return `<div class="field"><label>${label}</label><p>${value}</p></div>`;
 }
 
+/** `strength_test_data` as an object, whichever form the API returned. */
+function strengthTestData(assessment: Row): Row {
+  const raw = assessment.strength_test_data;
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) return raw as Row;
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Row : {};
+    } catch { return {}; }
+  }
+  return {};
+}
+
+/** The stored K11 category, with the percentile detail when that row has it.
+ *  A legacy row has no percentile, so it prints the category alone — never an
+ *  inferred one. */
+function strengthClassification(category: unknown, test: unknown): string {
+  const label = v(category);
+  if (label === '—') return label;
+  const t = test && typeof test === 'object' && !Array.isArray(test) ? test as Row : {};
+  const percentile = Number(t.k11_percentile);
+  return t.k11_percentile != null && Number.isInteger(percentile) ? `${label} (${percentile}th percentile)` : label;
+}
+
 function section(title: string, bodyHtml: string): string {
   return `<div class="section"><h2>${title}</h2><div class="grid">${bodyHtml}</div></div>`;
 }
@@ -195,12 +219,14 @@ export function generateAssessmentReportHTML(assessment: Row, clientName: string
     field('Classification', v(assessment.cardio_category)),
   ].join(''));
 
+  const sd = strengthTestData(assessment);
   const strength = section('Muscular Strength', [
     field('Test 1', v(assessment.strength_exercise)),
-    field('Test 1 Classification', v(assessment.strength_category)),
+    field('Test 1 Classification', strengthClassification(assessment.strength_category, sd.test1)),
     field('Test 2', v(assessment.strength_exercise_2)),
-    field('Test 2 Classification', v(assessment.strength_category_2)),
+    field('Test 2 Classification', strengthClassification(assessment.strength_category_2, sd.test2)),
     field('Combined Strength Score', scoreLabel(assessment.strength_score_computed)),
+    field('Norm', 'K11 relative strength (1RM ÷ body weight), by sex and age at testing. Supplied tables cover Bench Press and Leg Press only.'),
   ].join(''));
 
   const endurance = section('Muscular Endurance', [

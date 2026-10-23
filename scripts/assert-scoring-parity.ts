@@ -102,7 +102,7 @@ for (let v = 0; v <= 220; v += 0.5) FINE.push(v);
 // spaces. The previous lowercase/underscore spellings never matched a norm
 // table or a score bucket, so every such case scored null on BOTH sides and
 // the check passed vacuously. See F5.
-const FITNESS_CATEGORIES = [null, 'Poor', 'Below Average', 'Average', 'Above Average', 'Good', 'Excellent', 'Very Poor'];
+const FITNESS_CATEGORIES = [null, 'Poor', 'Below Average', 'Average', 'Above Average', 'Good', 'Excellent', 'Very Poor', 'Well Above Average', 'Well Below Average', 'Below Supported Range'];
 const BP_CATEGORIES = [null, 'Normal', 'Elevated', 'Hypertension Stage 1', 'Hypertension Stage 2', 'Hypertensive Crisis', 'Hypotension'];
 // Fine sweeps across the anthropometric band edges (18.5 / 23 / 25 BMI,
 // 80 / 90 cm waist, 0.86 / 0.95 WHR). The integer FINE grid alone cannot see a
@@ -143,7 +143,37 @@ function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
     }
   }
   for (const w of NUMS) for (const r of [null, 0, 1, 5, 10, 12, 20, 37]) for (const f of ['brzycki', 'epley']) add('calc1RM', [w, r, f]);
-  for (const o of NUMS) for (const bw of NUMS) for (const ex of [null, 'Bench Press', 'Squat', 'Deadlift', 'Shoulder Press', 'Leg Press', 'Lunges']) for (const g of GENDERS) add('classifyStrength', [o, bw, ex, g]);
+  // K11 strength is sex- and age-banded, and only Bench Press / Leg Press have
+  // supplied tables. The older single-scale grid could not see an age band or
+  // a percentile row move.
+  const STRENGTH_EXERCISES = [null, 'Bench Press', 'Leg Press', 'Squat', 'Deadlift', 'Shoulder Press', 'Lunges', 'Custom Exercise'];
+  const STRENGTH_AGES = [null, 0, 19, 19.9, 20, 29, 29.9, 30, 39, 39.9, 40, 49, 50, 59, 60, 75, 100];
+  for (const o of NUMS) for (const bw of NUMS) for (const ex of STRENGTH_EXERCISES) for (const g of GENDERS) {
+    for (const age of STRENGTH_AGES) {
+      add('classifyStrength', [o, bw, ex, g, age]);
+      add('classifyStrengthDetail', [o, bw, ex, g, age]);
+    }
+  }
+  for (const age of [...STRENGTH_AGES, Number.NaN, Number.POSITIVE_INFINITY, -1]) add('strengthAgeBand', [age]);
+  // Every supplied threshold is a two-decimal ratio; a 0.01 sweep over the
+  // plausible range hits each one exactly and one step either side.
+  for (const g of ['Male', 'Female']) {
+    for (const ex of ['Bench Press', 'Leg Press']) {
+      for (const age of [20, 29, 30, 39, 40, 49, 50, 59, 60, 75]) {
+        for (let r = 0.2; r <= 2.5 + 1e-9; r += 0.01) {
+          const oneRm = Number(r.toFixed(2)) * 100;
+          add('classifyStrength', [oneRm, 100, ex, g, age]);
+          add('classifyStrengthDetail', [oneRm, 100, ex, g, age]);
+        }
+      }
+    }
+  }
+  for (const bad of [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, -1, 0]) {
+    add('classifyStrength', [100, bad, 'Bench Press', 'Male', 30]);
+    add('classifyStrength', [bad, 80, 'Bench Press', 'Male', 30]);
+    add('classifyStrengthDetail', [100, bad, 'Bench Press', 'Male', 30]);
+    add('classifyStrengthDetail', [bad, 80, 'Bench Press', 'Male', 30]);
+  }
   for (const tt of [null, 'Push Up Test', 'Curl Up Test', 'Plank', 'Wall Sit', 'Bodyweight Squat', 'Custom']) for (const v of NUMS) for (const g of GENDERS) add('classifyEndurance', [tt, v, g]);
   for (const l of NUMS) for (const r of NUMS) add('checkAsymmetry', [l, r]);
   for (const s of NUMS) add('classifyFlexibilityScore', [s]);
@@ -167,7 +197,8 @@ function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
       add('scoreBodyComposition', [v / 2, g]);
       add('classifyVo2Max', [v / 2, 35, g]);
       add('classifyEndurance', ['Plank', v, g]);
-      add('classifyStrength', [v * 2, 80, 'Bench Press', g]);
+      add('classifyStrength', [v * 2, 80, 'Bench Press', g, 35]);
+      add('classifyStrengthDetail', [v * 2, 80, 'Bench Press', g, 35]);
     }
     add('scoreHealthRisk', ['Normal', v / 4]);
     // Asymmetry is a RATIO, so one side is pinned and the other walked: this
@@ -773,7 +804,12 @@ function main() {
       minCalls: 10000,
       minNonNullCalls: 1000,
       mustScore: [
-        { fn: 'classifyStrength', args: [100, 80, 'Bench Press', 'Male'] },
+        { fn: 'classifyStrength', args: [100, 80, 'Bench Press', 'Male', 30] },
+        { fn: 'classifyStrengthDetail', args: [100, 80, 'Bench Press', 'Male', 30] },
+        { fn: 'classifyStrength', args: [148, 100, 'Bench Press', 'Male', 20] },
+        { fn: 'classifyStrength', args: [85, 100, 'Leg Press', 'Female', 65] },
+        { fn: 'classifyStrength', args: [10, 100, 'Bench Press', 'Female', 25] },
+        { fn: 'classifyStrengthDetail', args: [10, 100, 'Bench Press', 'Female', 25] },
         { fn: 'classifyEndurance', args: ['Push Up Test', 30, 'Male'] },
         { fn: 'classifyEndurance', args: ['Plank', 60, null] },
         { fn: 'scoreHealthRisk', args: ['Normal', 22] },

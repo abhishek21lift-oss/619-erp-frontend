@@ -4,8 +4,8 @@ import { useMemo } from 'react';
 import { Dumbbell, Info } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
-import { calc1RM, classifyStrength, scoreCategory, scoreTestBattery } from '@/lib/fitness-calculations';
-import type { Gender, FitnessCategory } from '@/lib/fitness-calculations';
+import { calc1RM, classifyStrengthDetail, scoreCategory, scoreTestBattery } from '@/lib/fitness-calculations';
+import type { Gender, FitnessCategory, StrengthPercentile } from '@/lib/fitness-calculations';
 import type { AssessmentFormData, StrengthExercise } from './types';
 import { n } from './types';
 import { StepHeader } from './StepHeader';
@@ -19,6 +19,8 @@ interface StepStrengthProps {
   form: AssessmentFormData;
   set: <K extends keyof AssessmentFormData>(key: K, val: AssessmentFormData[K]) => void;
   gender: Gender | null;
+  /** Age at the time of testing — the K11 norms are age-banded. */
+  age: number | null;
   error?: string;
   /** True when the client's workout experience is 'beginner' — a 1RM test
    *  isn't expected at that stage, so this step becomes optional. */
@@ -28,23 +30,26 @@ interface StepStrengthProps {
 interface TestResult {
   oneRM: number | null;
   category: FitnessCategory | null;
+  percentile: StrengthPercentile | null;
 }
 
 function useTestResult(
   exercise: StrengthExercise | '', mode: 'direct' | 'estimated',
   weightKg: string, reps: string, formula: 'brzycki' | 'epley', direct1RM: string,
-  bodyWeight: number | null, gender: Gender | null,
+  bodyWeight: number | null, gender: Gender | null, age: number | null,
 ): TestResult {
   const estimated = calc1RM(n(weightKg), n(reps), formula);
   const oneRM = mode === 'direct' ? n(direct1RM) : estimated;
-  const category = classifyStrength(oneRM, bodyWeight, exercise || null, gender);
-  return { oneRM, category };
+  const detail = classifyStrengthDetail(oneRM, bodyWeight, exercise || null, gender, age);
+  return { oneRM, category: detail?.category ?? null, percentile: detail?.percentile ?? null };
 }
 
-export function StepStrength({ form, set, gender, error, isBeginner }: StepStrengthProps) {
+const percentileLabel = (percentile: StrengthPercentile): string => `${percentile}th percentile`;
+
+export function StepStrength({ form, set, gender, age, error, isBeginner }: StepStrengthProps) {
   const bodyWeight = n(form.weight);
-  const t1 = useTestResult(form.strengthExercise, form.strengthMode, form.strengthWeightKg, form.strengthReps, form.strengthFormula, form.strengthDirect1RM, bodyWeight, gender);
-  const t2 = useTestResult(form.strengthExercise2, form.strengthMode2, form.strengthWeightKg2, form.strengthReps2, form.strengthFormula2, form.strengthDirect1RM2, bodyWeight, gender);
+  const t1 = useTestResult(form.strengthExercise, form.strengthMode, form.strengthWeightKg, form.strengthReps, form.strengthFormula, form.strengthDirect1RM, bodyWeight, gender, age);
+  const t2 = useTestResult(form.strengthExercise2, form.strengthMode2, form.strengthWeightKg2, form.strengthReps2, form.strengthFormula2, form.strengthDirect1RM2, bodyWeight, gender, age);
   const combinedScore = useMemo(
     () => scoreTestBattery(scoreCategory(t1.category), scoreCategory(t2.category)),
     [t1.category, t2.category],
@@ -57,6 +62,15 @@ export function StepStrength({ form, set, gender, error, isBeginner }: StepStren
   // twice, same guard Muscular Endurance already uses.
   const options1 = EXERCISES.filter((e) => e !== form.strengthExercise2);
   const options2 = EXERCISES.filter((e) => e !== form.strengthExercise);
+  // Why a lift that has a 1RM and a body weight still has no category: the K11
+  // tables need an age 20+, a supported sex, and Bench Press or Leg Press.
+  const categoryGap = bodyWeight && (t1.oneRM != null || t2.oneRM != null) && !t1.category && !t2.category
+    ? age == null || age < 20
+      ? `K11 strength norms require age 20 or over${age == null ? ' — no date of birth is recorded for this client' : ''}.`
+      : !gender || gender === 'Other'
+        ? 'K11 strength norms are sex-specific and need a recorded sex of Male or Female.'
+        : 'No K11 percentile reference is supplied for this lift. Bench Press and Leg Press are the only supported tests.'
+    : null;
 
   return (
     <div>
@@ -71,7 +85,7 @@ export function StepStrength({ form, set, gender, error, isBeginner }: StepStren
         <div className="mb-6 flex items-start gap-2.5 rounded-[14px] p-4" style={{ background: 'rgba(0,103,224,0.06)', border: '1px solid rgba(0,103,224,0.18)' }}>
           <Info size={15} style={{ color: '#0067E0', flexShrink: 0, marginTop: 1 }} />
           <p className="text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            This client&apos;s workout experience is set to <strong>Beginner</strong> — 1RM strength tests aren&apos;t required at this stage. Skip ahead with Next, or record a baseline anyway if you&apos;d like one.
+            This client&apos;s workout experience is set to <strong>Beginner</strong>. K11 guidance is that beginners should not undergo an initial maximal 1RM test — the priority is learning movement patterns and technique. Skip this step with Next and use the technique-focused alternative: log a comfortable submaximal set (8–12 reps) in <strong>Strength Tracking</strong> instead.
           </p>
         </div>
       )}
@@ -111,16 +125,19 @@ export function StepStrength({ form, set, gender, error, isBeginner }: StepStren
           </div>
           {t1.category && p1 && (
             <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: p1.bg, color: p1.color }}>
-              {form.strengthExercise}: {t1.category}
+              {form.strengthExercise}: {t1.category}{t1.percentile != null ? ` · ${percentileLabel(t1.percentile)}` : ''}
             </span>
           )}
           {t2.category && p2 && (
             <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: p2.bg, color: p2.color }}>
-              {form.strengthExercise2}: {t2.category}
+              {form.strengthExercise2}: {t2.category}{t2.percentile != null ? ` · ${percentileLabel(t2.percentile)}` : ''}
             </span>
           )}
           {!t1.category && !t2.category && !bodyWeight && (
             <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Enter weight in the Anthropometric step to classify strength level.</p>
+          )}
+          {categoryGap && (
+            <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{categoryGap}</p>
           )}
         </div>
       )}
@@ -220,7 +237,9 @@ function StrengthTestBlock({
             {mode === 'direct' ? 'Direct 1RM' : 'Estimated 1RM'}: {result.oneRM} kg
           </span>
           {result.category && pill && (
-            <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: pill.bg, color: pill.color }}>{result.category}</span>
+            <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: pill.bg, color: pill.color }}>
+              {result.category}{result.percentile != null ? ` · ${percentileLabel(result.percentile)}` : ''}
+            </span>
           )}
         </div>
       )}
