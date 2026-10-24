@@ -23,6 +23,8 @@ export interface ScreeningSummary {
   block: { code: string; message: string } | null;
   /** Paperwork that is missing or out of date, short of a hard stop. */
   warnings: string[];
+  /** The screening items still missing, by key (backend screeningSummary). */
+  missing: ('informed_consent' | 'parq')[];
   /** A completed consent and a fully answered PAR-Q, and nothing blocking. */
   complete: boolean;
 }
@@ -30,6 +32,9 @@ export interface ScreeningSummary {
 /** The server error codes that refuse training, and what to do about each. */
 export const TRAINING_BLOCK_ACTIONS: Record<string, { title: string; action?: 'enroll' | 'renew' | 'consent' | 'parq' }> = {
   CLIENT_NOT_ENROLLED: { title: 'Not enrolled in PT', action: 'enroll' },
+  // Provisional enrolment: the term exists, but both consent and PAR-Q may be
+  // outstanding, so no single action link is correct here.
+  CLIENT_PENDING_ACTIVATION: { title: 'Activation pending' },
   TERM_EXPIRED: { title: 'PT term has ended', action: 'renew' },
   CLIENT_FROZEN: { title: 'Membership frozen' },
   CLIENT_NOT_ACTIVE: { title: 'Client not active' },

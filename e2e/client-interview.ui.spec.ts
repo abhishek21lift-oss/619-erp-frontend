@@ -4,8 +4,8 @@ import { gotoApp, apiToken, apiGet, apiPost, apiDelete } from './helpers/session
 /**
  * Journey — the Client Interview, and the intake journey around it (Phase 2).
  *
- *   Registration → Informed Consent → PAR-Q → Client Interview →
- *   Fitness Assessment → Goals → PT Enrolment → Workout Plan
+ *   Welcome & Gym Tour → PT Enrolment → Informed Consent → PAR-Q →
+ *   Client Interview → Goals → Fitness Assessment → Program Design
  *
  * Real browser, real API, real Postgres. The client is arranged through the
  * API (registration is client-create.ui.spec's journey); everything under test
@@ -54,21 +54,23 @@ test.describe('Client interview and journey', () => {
   const interviews = async () =>
     (await apiGet<{ data: Interview[] }>(`/api/pt-os/clients/${clientId}/interviews`, token)).data;
 
-  test('a new client\'s profile shows the journey, with consent next and enrolment blocked', async ({ page }) => {
+  test('a new client\'s profile shows the K11 journey, with the welcome tour next', async ({ page }) => {
     await gotoApp(page, `/pt-os/clients/${clientId}`);
     await expect(page.getByRole('progressbar', { name: 'Client journey progress' })).toBeVisible({ timeout: 25_000 });
-    await expect(page.getByRole('button', { name: /Next: Informed Consent/ })).toBeVisible();
-    // The enrolment step says what is in the way, in the server's words.
-    await expect(page.getByText('Complete the Informed Consent and PAR-Q before enrolling.')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Next: Welcome & Gym Tour/ })).toBeVisible();
+    // Enrolment is its own step now, and screening no longer stands in front
+    // of it: it is a warning on the enrolment screen, not a block.
+    await expect(page.getByRole('button', { name: /PT Enrolment.*To do/ })).toBeVisible();
   });
 
-  test('the enrolment screen refuses an unscreened client and offers the missing steps', async ({ page }) => {
+  test('the enrolment screen warns an unscreened client and offers the missing steps', async ({ page }) => {
     await gotoApp(page, `/pt-os/clients/${clientId}/enroll`);
-    await expect(page.getByRole('button', { name: /Complete Informed Consent/ })).toBeVisible({ timeout: 25_000 });
+    await expect(page.getByText(/Screening is incomplete/)).toBeVisible({ timeout: 25_000 });
+    await expect(page.getByRole('button', { name: /Complete Informed Consent/ })).toBeVisible();
     await expect(page.getByRole('button', { name: /Complete PAR-Q/ })).toBeVisible();
   });
 
-  test('the selects store canonical values, and completing continues to the assessment', async ({ page }) => {
+  test('the selects store canonical values, and completing continues to the server\'s next step', async ({ page }) => {
     await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
     const occupation = page.getByLabel('Type of work');
     await expect(occupation).toBeVisible({ timeout: 25_000 });
@@ -97,12 +99,12 @@ test.describe('Client interview and journey', () => {
     const journey = (await apiGet<{ data: Journey }>(`/api/pt-os/clients/${clientId}/journey`, token)).data;
     expect(journey.steps.find((s) => s.key === 'interview')?.state).toBe('done');
 
-    await page.getByRole('button', { name: /Continue to Fitness Assessment/ }).click();
+    await page.getByRole('button', { name: /Continue to Welcome & Gym Tour/ }).click();
     // The click's promise is a client-side push; the URL commits once the
     // destination's payload arrives. CI runs the production bundle rather than
     // a compiling dev server precisely so this is not a race — see the
     // webServer note in playwright.config.ts before touching this timeout.
-    await expect(page).toHaveURL(new RegExp(`/pt-os/assessment\\?client_id=${clientId}`));
+    await expect(page).toHaveURL(new RegExp(`/pt-os/welcome-tour\\?client_id=${clientId}`));
   });
 
   test('a draft is saved, resumed on reload, and completed without erasing older answers', async ({ page }) => {

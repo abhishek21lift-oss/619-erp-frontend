@@ -54,7 +54,11 @@ function termBalance(c: PtClient): number {
   return Number(c.current_term_balance ?? c.balance_amount ?? 0);
 }
 
-function getStatusInfo(status: string, days_left: number | null) {  // Not yet enrolled in a package — added to the roster but no active PT program.
+function getStatusInfo(status: string, days_left: number | null, has_pt_term = false) {
+  // 'pending' means two different things: a bare add (no term yet) is "Not
+  // Enrolled", while a provisional enrolment (term written, screening still
+  // outstanding) is "Activation Pending".
+  if (status === 'pending' && has_pt_term) return { label: 'Activation Pending', color: '#d97706', bg: 'rgba(217,119,6,0.12)', dot: '#d97706' };
   if (status === 'pending') return { label: 'Not Enrolled', color: '#7fb4ff', bg: 'rgba(127,180,255,0.14)', dot: '#0067e0' };
   if (status === 'frozen') return { label: 'Frozen', color: '#0067e0', bg: 'rgba(0,103,224,0.12)', dot: '#0067e0' };
   // days_left 0 is the term's last day, which is still a valid day (lib/term-dates.ts).
@@ -110,7 +114,7 @@ function DaysArc({ days_left }: { days_left: number | null }) {
 const STATUS_FILTERS = [
   { value: 'all',     label: 'All',     from: '#0067e0', to: '#0067e0' },
   { value: 'active',  label: 'Active',  from: '#10b981', to: '#059669' },
-  { value: 'pending', label: 'Not Enrolled', from: '#0067e0', to: '#0067e0' },
+  { value: 'pending', label: 'Pending', from: '#d97706', to: '#b45309' },
   { value: 'frozen',  label: 'Frozen',  from: '#0067e0', to: '#0067e0' },
   { value: 'expired', label: 'Expired', from: '#64748b', to: '#475569' },
 ];
@@ -119,7 +123,7 @@ function ClientTableRow({ client, index }: { client: PtClient; index: number }) 
   const router = useRouter();
   const palette = CLIENT_PALETTES[index % CLIENT_PALETTES.length];
   const initials = client.name.split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase();
-  const statusInfo = getStatusInfo(client.status, client.days_left);
+  const statusInfo = getStatusInfo(client.status, client.days_left, client.has_pt_term);
   // Same fallback the profile hero uses: photo_url carries both data URLs from
   // the in-app crop and stored paths, and a path this deployment cannot serve
   // must land on the initials rather than a broken-image icon in every row.

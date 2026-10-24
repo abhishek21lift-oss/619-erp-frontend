@@ -2,8 +2,8 @@ import { test, expect, type APIRequestContext, type APIResponse } from '@playwri
 
 // The PT client lifecycle, end to end, through the real API (Phase 2).
 //
-//   Registration → Informed Consent → PAR-Q → Client Interview →
-//   Fitness Assessment → Goals → PT Enrolment → Workout Plan
+//   Welcome & Gym Tour → PT Enrolment → Informed Consent → PAR-Q →
+//   Client Interview → Goals → Fitness Assessment → Program Design
 //
 // Every step here is taken the way the app takes it — the consent is
 // acknowledged and signed by both parties through its own routes, the PAR-Q
@@ -13,9 +13,9 @@ import { test, expect, type APIRequestContext, type APIResponse } from '@playwri
 // What it proves, each against a client it made itself:
 //
 //   · the whole journey in order, with the server's `next` step at each point,
-//     and every gate refusing the step that comes too early
+//     and training refused until screening is complete
 //   · a revoked consent stops training, and the journey says why
-//   · a high-risk PAR-Q blocks enrolment until clearance
+//   · a high-risk PAR-Q keeps a provisional enrolment pending and blocks training
 //   · a pending client and an expired client cannot be trained or activated
 //   · two enrolments in flight together make one term; two lead conversions
 //     in flight together make one client
@@ -94,6 +94,12 @@ test.describe('the PT client lifecycle, through the real API', () => {
     return id;
   }
 
+  /** Record the K11 welcome and gym tour. */
+  async function completeWelcomeTour(clientId: string) {
+    const res = await api.post(`/api/pt-os/clients/${clientId}/welcome-tour`, A);
+    expect(res.status(), await res.text()).toBe(200);
+  }
+
   /** Draft → acknowledgements → client signature → trainer signature. */
   async function signConsent(clientId: string): Promise<string> {
     const created = await api.post('/api/pt-os/informed-consent', { ...A, data: { client_id: clientId } });
@@ -146,24 +152,34 @@ test.describe('the PT client lifecycle, through the real API', () => {
 
   // ── The whole journey ──────────────────────────────────────────────────
 
-  test('a new client walks the journey in order; every early step is refused', async () => {
+  test('a new client walks the K11 journey in order; training waits for screening', async () => {
     const id = await newClient('JOURNEY');
     let j = await journey(id);
-    expect(j.next).toBe('consent');
-    expect(stateOf(j, 'enrolment')?.state).toBe('blocked');
+    expect(j.next).toBe('welcome_tour');
+    expect(stateOf(j, 'enrolment')?.state).toBe('todo');
 
-    // Too early: enrolment and training both refused, with the reason.
+    await completeWelcomeTour(id);
+    j = await journey(id);
+    expect(stateOf(j, 'welcome_tour')?.state).toBe('done');
+    expect(j.next).toBe('enrolment');
+
+    // Enrolment is provisional: the term is written, the client stays pending
+    // until consent and a fully answered PAR-Q exist.
     const early = await enrol(id);
-    expect(early.status()).toBe(403);
-    expect(await errorCode(early)).toBe('SCREENING_REQUIRED');
-    expect((await early.json()).error.missing).toEqual(['informed_consent', 'parq']);
-    expect(await errorCode(await bookSession(id))).toBe('CLIENT_NOT_ENROLLED');
+    expect(early.status(), await early.text()).toBe(200);
+    expect((await (await api.get(`/api/pt-os/clients/${id}`, A)).json()).data.status).toBe('pending');
+    j = await journey(id);
+    expect(stateOf(j, 'enrolment')?.state).toBe('done');
+    expect(stateOf(j, 'enrolment')?.detail).toMatch(/pending screening/i);
+    expect(j.next).toBe('consent');
+
+    // Too early: training is refused until screening is complete.
+    expect(await errorCode(await bookSession(id))).toBe('CLIENT_PENDING_ACTIVATION');
 
     await signConsent(id);
     j = await journey(id);
     expect(stateOf(j, 'consent')?.state).toBe('done');
     expect(j.next).toBe('parq');
-    expect((await (await enrol(id)).json()).error.missing).toEqual(['parq']);
 
     const parq = await submitParq(id, 'no');
     expect(parq.risk_level).not.toBe('high');
@@ -177,13 +193,24 @@ test.describe('the PT client lifecycle, through the real API', () => {
     expect(done.status()).toBe(200);
     j = await journey(id);
     expect(stateOf(j, 'interview')?.state).toBe('done');
+    expect(j.next).toBe('goals');
+
+    const goal = await api.post('/api/progress/goals', {
+      ...A, data: { client_id: id, goal_type: 'fat_loss', target_weight: 60 },
+    });
+    expect(goal.status(), await goal.text()).toBe(201);
+    j = await journey(id);
+    expect(stateOf(j, 'goals')?.state).toBe('done');
     expect(j.next).toBe('assessment');
 
-    const enrolled = await enrol(id);
-    expect(enrolled.status(), await enrolled.text()).toBe(200);
+    const assessment = await api.post('/api/progress/assessments', {
+      ...A, data: { client_id: id, assessment_date: day(-1) },
+    });
+    expect(assessment.status(), await assessment.text()).toBe(201);
     j = await journey(id);
-    expect(stateOf(j, 'enrolment')?.state).toBe('done');
-    expect(stateOf(j, 'workout_plan')?.state).toBe('todo');
+    expect(stateOf(j, 'assessment')?.state).toBe('done');
+    expect(j.next).toBe('program_design');
+    expect(stateOf(j, 'program_design')?.state).toBe('todo');
 
     // Read back, not inferred from the 200.
     const client = (await (await api.get(`/api/pt-os/clients/${id}`, A)).json()).data;
@@ -227,23 +254,29 @@ test.describe('the PT client lifecycle, through the real API', () => {
       .toBe('NOT_SIGNABLE');
   });
 
-  test('a high-risk PAR-Q blocks enrolment until clearance', async () => {
+  test('a high-risk PAR-Q keeps a provisional enrolment pending and blocks training', async () => {
     const id = await newClient('HIGH-RISK');
     await signConsent(id);
     const parq = await submitParq(id, 'yes');
     expect(parq.risk_level).toBe('high');
 
-    const refused = await enrol(id);
-    expect(refused.status()).toBe(403);
-    expect(await errorCode(refused)).toBe('PARQ_BLOCKED');
-    const step = stateOf(await journey(id), 'parq');
-    expect(step?.state).toBe('blocked');
-    expect(step?.detail).toBeTruthy();
-
-    // Nothing was written by the refused enrolment.
+    // Enrolment is provisional: the term is written, activation waits.
+    const provisional = await enrol(id);
+    expect(provisional.status(), await provisional.text()).toBe(200);
     const client = (await (await api.get(`/api/pt-os/clients/${id}`, A)).json()).data;
     expect(client.status).toBe('pending');
-    expect(client.pt_end_date ?? null).toBeNull();
+    expect(client.pt_end_date).toBeTruthy();
+
+    const refused = await bookSession(id);
+    expect(refused.status()).toBe(403);
+    expect(await errorCode(refused)).toBe('PARQ_BLOCKED');
+
+    const j = await journey(id);
+    const step = stateOf(j, 'parq');
+    expect(step?.state).toBe('blocked');
+    expect(step?.detail).toBeTruthy();
+    expect(stateOf(j, 'enrolment')?.state).toBe('done');
+    expect(stateOf(j, 'enrolment')?.detail).toMatch(/pending screening/i);
   });
 
   // ── Status: pending and expired ────────────────────────────────────────

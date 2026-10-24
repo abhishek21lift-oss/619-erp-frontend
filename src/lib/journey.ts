@@ -1,8 +1,8 @@
 // The intake journey (backend client-journey.service): the order of the
 // steps, what each is called, and where each one is done.
 //
-//   Registration → Informed Consent → PAR-Q → Client Interview →
-//   Fitness Assessment → Goals → PT Enrolment → Workout Plan
+//   Welcome & Gym Tour → PT Enrolment → Informed Consent → PAR-Q →
+//   Client Interview → Goals → Fitness Assessment → Program Design
 //
 // The STATE of each step comes from GET /api/pt-os/clients/:id/journey — read
 // live from the record each step produces — so a "next step" button can never
@@ -11,7 +11,7 @@
 import type { ScreeningSummary } from '@/lib/screening';
 
 export type JourneyStepKey =
-  | 'registration' | 'consent' | 'parq' | 'interview' | 'assessment' | 'goals' | 'enrolment' | 'workout_plan';
+  | 'welcome_tour' | 'enrolment' | 'consent' | 'parq' | 'interview' | 'goals' | 'assessment' | 'program_design';
 export type JourneyStepState = 'done' | 'in_progress' | 'todo' | 'blocked' | 'renew';
 
 export interface JourneyStep {
@@ -55,35 +55,35 @@ export interface ClientInterview {
 }
 
 export const STEP_LABEL: Record<JourneyStepKey, string> = {
-  registration: 'Registration',
+  welcome_tour: 'Welcome & Gym Tour',
+  enrolment: 'PT Enrolment',
   consent: 'Informed Consent',
   parq: 'PAR-Q screening',
   interview: 'Client Interview',
-  assessment: 'Fitness Assessment',
   goals: 'Goals',
-  enrolment: 'PT Enrolment',
-  workout_plan: 'Workout Plan',
+  assessment: 'Fitness Assessment',
+  program_design: 'Program Design',
 };
 
 /** Where a step is done, for this client. Renewal goes to Renew, not Enrol. */
 export function stepHref(key: JourneyStepKey, clientId: string, state?: JourneyStepState): string {
   const q = `client_id=${encodeURIComponent(clientId)}`;
   switch (key) {
-    case 'registration': return `/pt-os/clients/${clientId}/edit`;
+    case 'welcome_tour': return `/pt-os/welcome-tour?${q}`;
+    case 'enrolment': return state === 'renew' ? `/pt-os/clients/${clientId}/renew` : `/pt-os/clients/${clientId}/enroll`;
     case 'consent': return `/pt-os/informed-consent?${q}`;
     case 'parq': return `/pt-os/parq?${q}`;
     case 'interview': return `/pt-os/interview?${q}`;
-    case 'assessment': return `/pt-os/assessment?${q}`;
     case 'goals': return `/pt-os/goals?${q}`;
-    case 'enrolment': return state === 'renew' ? `/pt-os/clients/${clientId}/renew` : `/pt-os/clients/${clientId}/enroll`;
-    case 'workout_plan': return `/pt-os/workout-plans?${q}`;
+    case 'assessment': return `/pt-os/assessment?${q}`;
+    case 'program_design': return `/pt-os/program-design?${q}`;
     default: return `/pt-os/clients/${clientId}`;
   }
 }
 
 /** The step after `key` in the journey, for "Continue to …" buttons. */
 export function stepAfter(key: JourneyStepKey): JourneyStepKey | null {
-  const order: JourneyStepKey[] = ['registration', 'consent', 'parq', 'interview', 'assessment', 'goals', 'enrolment', 'workout_plan'];
+  const order: JourneyStepKey[] = ['welcome_tour', 'enrolment', 'consent', 'parq', 'interview', 'goals', 'assessment', 'program_design'];
   const i = order.indexOf(key);
   return i >= 0 && i < order.length - 1 ? order[i + 1] : null;
 }

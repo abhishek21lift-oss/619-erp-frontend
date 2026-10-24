@@ -238,10 +238,13 @@ function EnrollForm({ clientId }: { clientId: string }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [hasRenewed, setHasRenewed] = useState(false);
-  // What a NEW client's screening is still missing. Enrolment waits for a
-  // completed Informed Consent and a fully answered PAR-Q; the server refuses
-  // it otherwise (SCREENING_REQUIRED), and this says so before the form.
+  // What a NEW client's screening is still missing. It no longer stops the
+  // enrolment: the server writes the term and keeps the client 'pending' until
+  // the consent and PAR-Q are complete, and this warns the trainer up front.
   const [screeningMissing, setScreeningMissing] = useState<{ consent: boolean; parq: boolean; block: string | null } | null>(null);
+  // The server kept this enrolment provisional — term written, activation
+  // waiting on screening. Read from the PATCH response, not guessed here.
+  const [activationPending, setActivationPending] = useState(false);
   const [form, setForm] = useState<EnrollFormData>(initForm);
   const [errors, setErrors] = useState<FormErrors>({});
   const [saving, setSaving] = useState(false);
@@ -425,12 +428,10 @@ function EnrollForm({ clientId }: { clientId: string }) {
   // before surfacing a real error, so the (very likely) second attempt —
   // which lands on an already-warm backend — just works.
   const savePayload = () => api.pt.updateClient(clientId, {
-    // A client stays 'pending' ("Not Enrolled") from creation until
-    // something actually enrolls them — this save IS that enrollment, so it
-    // must promote status itself. PATCH /clients/:id only touches status
-    // when the caller explicitly sends it; omitting it here silently left
-    // every fully-paid, fully-scheduled enrollment stuck showing "Not
-    // Enrolled" forever.
+    // A client stays 'pending' ("Not Enrolled") from creation until something
+    // actually enrolls them — this save IS that enrollment. The server keeps
+    // them 'pending' when their screening is incomplete (provisional
+    // enrolment) and promotes them once the consent and PAR-Q are done.
     status: 'active',
     pt_start_date: form.startDate,
     pt_end_date: endDate,
@@ -471,7 +472,8 @@ function EnrollForm({ clientId }: { clientId: string }) {
 
   const attemptSave = async (isRetry: boolean) => {
     try {
-      await savePayload();
+      const res = await savePayload();
+      setActivationPending(Boolean((res as { data?: { activation_pending?: boolean } })?.data?.activation_pending));
       clear();
       setSubmitError(null);
       setSaving(false);
@@ -590,32 +592,6 @@ function EnrollForm({ clientId }: { clientId: string }) {
     );
   }
 
-  if (screeningMissing) {
-    return (
-      <div className="mx-auto max-w-md py-20 text-center">
-        <ShieldAlert size={34} style={{ color: '#EF4444', margin: '0 auto 12px' }} />
-        <p className="text-[16px] font-[760]" style={{ color: 'var(--text-primary)' }}>Complete {clientName || 'this client'}&apos;s screening first</p>
-        <p className="mt-2 text-[13px]" style={{ color: 'var(--text-muted)' }}>
-          A new client is enrolled in PT only after their Informed Consent is completed and their PAR-Q is fully answered.
-        </p>
-        {screeningMissing.block && (
-          <p role="alert" className="mt-3 rounded-[12px] px-3 py-2 text-[12.5px]" style={{ background: 'rgba(255,69,58,0.10)', color: 'var(--text-primary)' }}>
-            {screeningMissing.block}
-          </p>
-        )}
-        <div className="mt-6 flex flex-col gap-2">
-          {screeningMissing.consent && (
-            <Button onClick={() => router.push(`/pt-os/informed-consent?client_id=${clientId}`)}>Complete Informed Consent</Button>
-          )}
-          {screeningMissing.parq && (
-            <Button variant={screeningMissing.consent ? 'outline' : undefined} onClick={() => router.push(`/pt-os/parq?client_id=${clientId}`)}>Complete PAR-Q</Button>
-          )}
-          <Button variant="outline" onClick={() => router.push(`/pt-os/clients/${clientId}`)}>Back to profile</Button>
-        </div>
-      </div>
-    );
-  }
-
   if (hasRenewed) {
     return (
       <div className="mx-auto max-w-md py-24 text-center">
@@ -658,10 +634,28 @@ function EnrollForm({ clientId }: { clientId: string }) {
         >
           <Check size={30} style={{ color: '#059669' }} />
         </m.div>
-        <h2 className="mt-4 text-[19px] font-[820] tracking-[-0.02em] text-slate-900">Enrolled</h2>
+        <h2 className="mt-4 text-[19px] font-[820] tracking-[-0.02em] text-slate-900">
+          {activationPending ? 'Enrolled — activation pending screening' : 'Enrolled'}
+        </h2>
         <p className="mt-1 text-[13px] font-[560] text-slate-500">
           {clientName} is on a {form.duration}-month programme starting {fmtDateLong(form.startDate)}.
         </p>
+        {activationPending && (
+          <div role="status" className="mt-3 rounded-[12px] px-3 py-2.5 text-left"
+            style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.25)' }}>
+            <p className="text-[12.5px] font-[640]" style={{ color: '#92400e' }}>
+              The term is written, but the client stays pending until the Informed Consent is completed and the PAR-Q is fully answered.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => router.push(`/pt-os/informed-consent?client_id=${clientId}`)}>
+                Complete Informed Consent
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => router.push(`/pt-os/parq?client_id=${clientId}`)}>
+                Complete PAR-Q
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="mt-6 flex flex-col gap-2">
           <button
@@ -674,7 +668,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
             {downloading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
             {downloading ? 'Preparing…' : 'Download enrolment form (PDF)'}
           </button>
-          {/* The next journey step — a workout plan, once enrolled. */}
+          {/* The next journey step — Informed Consent, after a provisional enrolment. */}
           <JourneyNextButton clientId={clientId} current="enrolment" />
           <button
             type="button"
@@ -747,6 +741,35 @@ function EnrollForm({ clientId }: { clientId: string }) {
             </m.div>
           )}
         </AnimatePresence>
+
+        {screeningMissing && (
+          <div role="alert" className="rounded-[14px] px-4 py-3"
+            style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
+            <div className="flex items-start gap-2">
+              <ShieldAlert size={15} style={{ color: '#d97706', flexShrink: 0, marginTop: 1 }} />
+              <div className="min-w-0">
+                <p className="text-[12.5px] font-[700]" style={{ color: '#92400e' }}>
+                  Screening is incomplete. The client will be enrolled but activated only after Informed Consent and PAR-Q.
+                </p>
+                {screeningMissing.block && (
+                  <p className="mt-1 text-[12px]" style={{ color: '#92400e' }}>{screeningMissing.block}</p>
+                )}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {screeningMissing.consent && (
+                    <Button size="sm" variant="outline" onClick={() => router.push(`/pt-os/informed-consent?client_id=${clientId}`)}>
+                      Complete Informed Consent
+                    </Button>
+                  )}
+                  {screeningMissing.parq && (
+                    <Button size="sm" variant="outline" onClick={() => router.push(`/pt-os/parq?client_id=${clientId}`)}>
+                      Complete PAR-Q
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── MAIN CARD ── */}
         <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: EASE }}>
