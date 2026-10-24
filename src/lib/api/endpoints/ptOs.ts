@@ -113,6 +113,11 @@ export const pt = {
   /** Every intake-journey step's state and the next one (lib/journey.ts). */
   journey: (id: string) =>
     http<{ data: ClientJourney }>(`/api/pt-os/clients/${id}/journey`),
+  /** Step 1: the K11 welcome and gym tour. Idempotent — the first stamp wins. */
+  completeWelcomeTour: (id: string) =>
+    http<{ data: { id: string; welcome_tour_completed_at: string } }>(
+      `/api/pt-os/clients/${id}/welcome-tour`, { method: 'POST' },
+    ),
   /** The Client Interview step (migration 227). */
   interviews: {
     list: (clientId: string) =>
