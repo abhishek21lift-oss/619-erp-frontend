@@ -5,7 +5,7 @@ import {
   LogOut, Bell, Settings,
   User, HelpCircle, ChevronDown, CreditCard,
   Menu, CheckCheck, ExternalLink, ChevronRight, Sun, Moon,
-  KeyRound, Fingerprint, Zap,
+  KeyRound, Fingerprint, Zap, LifeBuoy,
 } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
@@ -66,13 +66,9 @@ const NAV_KEYWORDS: Record<string, string> = {
   '/pt-os/weekly-checkin':       'progress tracking weekly check-in measurements goals',
   '/pt-os/schedule-session':     'session booking schedule appointments',
   '/pt-os/session-balance':      'session balance remaining credits',
-  '/pt-os/measurements':         'measurements body stats metrics weight',
-  '/pt-os/strength-tracking':    'strength tracking lifts weights lifting',
-  '/pt-os/progress-photos':      'progress photos pictures transformation',
   '/engagement/automation':      'automation workflows triggers rules',
   '/finance/collected-payments': 'payments transactions collected',
   '/engagement/notifications':   'communication messaging notifications alerts',
-  '/settings':                   'settings configuration preferences',
   '/insights/revenue':           'reports revenue analytics insights income monthly',
   '/attendance':                 'attendance check-in sign-in records',
 };
@@ -82,8 +78,8 @@ const NAV_KEYWORDS: Record<string, string> = {
 // the face check-in hub, they'd otherwise show as two identical search
 // results. Its keywords were folded into NAV_KEYWORDS['/checkin/qr-scanner']
 // above instead.
-const EXTRA_SEARCH_PAGES: PageEntry[] = [
-  { label: 'Attendance Dashboard', href: '/checkin/dashboard',  keywords: 'attendance dashboard live stats today visitors inside' },
+const EXTRA_SEARCH_PAGES: Array<PageEntry & { feature?: string }> = [
+  { label: 'Attendance Dashboard', href: '/checkin/dashboard', feature: 'attendance', keywords: 'attendance dashboard live stats today visitors inside' },
 ];
 
 // The page index. This used to BE the search: the box filtered this array in
@@ -95,17 +91,18 @@ const EXTRA_SEARCH_PAGES: PageEntry[] = [
 // longer is: a studio's feature flags decide which pages exist for it, so this
 // is rebuilt per session instead. Searching a page the studio does not have
 // would only lead to a 403.
-function buildSearchPages(features: Record<string, boolean>): PageEntry[] {
+function buildSearchPages(features: Record<string, boolean>, role?: string): PageEntry[] {
   return [
     ...allNavItems()
       .filter(item => !item.hidden)
+      .filter(item => isVisibleForRole(item, role))
       .filter(item => isVisibleForFeature(item, features))
       .map(item => ({
         label: item.label,
         href: item.href,
         keywords: NAV_KEYWORDS[item.href] ?? item.label.toLowerCase(),
       })),
-    ...EXTRA_SEARCH_PAGES,
+    ...EXTRA_SEARCH_PAGES.filter(item => isVisibleForFeature(item, features)),
   ];
 }
 
@@ -135,8 +132,9 @@ function AppShellContent({ children }: AppShellProps) {
   // was wrong. BOTTOM-NAV.md has the full account.
   useViewportDesyncFix();
 
+  const { user, logout } = useAuth();
   const { features } = useFeatures();
-  const searchPages = useMemo(() => buildSearchPages(features), [features]);
+  const searchPages = useMemo(() => buildSearchPages(features, user?.role), [features, user?.role]);
 
   // One top-bar menu at a time. Three independent booleans let settings, the
   // bell and the avatar all stand open together; a single id means opening
@@ -165,7 +163,6 @@ function AppShellContent({ children }: AppShellProps) {
   const { theme, toggle: toggleDark } = useTheme();
   const darkMode = theme === 'dark';
 
-  const { user, logout } = useAuth();
   const studioName = user?.organization_name || 'PT Studio';
   const router = useRouter();
   const pathname = usePathname();
@@ -671,7 +668,11 @@ function AppShellContent({ children }: AppShellProps) {
                         )}
                         <Link href="/help" onClick={() => setOpenMenu(null)}
                           className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
-                          <HelpCircle size={14} strokeWidth={1.5} /> Help & Support
+                          <HelpCircle size={14} strokeWidth={1.5} /> Help Center
+                        </Link>
+                        <Link href="/support" onClick={() => setOpenMenu(null)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
+                          <LifeBuoy size={14} strokeWidth={1.5} /> Support
                         </Link>
                         <hr className="my-1 border-[var(--border)]" />
                         <button onClick={handleLogout}

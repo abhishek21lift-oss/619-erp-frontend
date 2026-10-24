@@ -33,6 +33,7 @@ import { useRouter } from 'next/navigation';
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Search, X, ArrowRight, UserPlus, CalendarPlus, IndianRupee,
+  Wallet, ScanFace,
   Clock, CornerDownLeft, Users, FileText, Loader2,
   Dumbbell, ClipboardList, Salad, Activity, MessageSquare, Sparkles,
 } from 'lucide-react';
@@ -41,6 +42,9 @@ import { cn } from '@/components/ui/cn';
 import { useSearchFieldFocus } from '@/lib/search-field-focus';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { avatarGradient, initialsAvatar } from '@/lib/avatar';
+import { QUICK_ACTIONS as NAV_QUICK_ACTIONS, isVisibleForFeature, isVisibleForRole } from '@/lib/nav-config';
+import { useAuth } from '@/lib/auth-context';
+import { useFeatures } from '@/lib/features-context';
 import {
   ViewedRecord, clearRecentQueries, clearRecentlyViewed, getRecentQueries,
   getRecentlyViewed, pushRecentQuery, pushRecentlyViewed, subscribeToHistory,
@@ -73,27 +77,25 @@ interface QuickAction {
   keywords: string;
 }
 
-const QUICK_ACTIONS: QuickAction[] = [
-  { label: 'New client', hint: 'Enrol someone new', href: '/pt-os/new-client', icon: UserPlus, keywords: 'new create add client member enrol enroll signup join' },
-  { label: 'Record payment', hint: 'Log money received', href: '/finance/record-payment', icon: IndianRupee, keywords: 'new create add payment collect money cash received invoice bill' },
-  { label: 'Schedule session', hint: 'Book a PT session', href: '/pt-os/schedule-session', icon: CalendarPlus, keywords: 'new create add session booking schedule appointment slot' },
-];
+const QUICK_ACTION_ICONS: Record<string, QuickAction['icon']> = {
+  Wallet, CalendarPlus, ScanFace, UserPlus,
+};
 
 /**
  * Quick actions surface on an explicit intent, not on every query — otherwise
  * they sit above real results competing for the first row. "+" is the deliberate
  * shortcut; the create/new/add verbs catch the people who type what they mean.
  */
-function matchQuickActions(query: string): QuickAction[] {
+function matchQuickActions(query: string, actions: QuickAction[]): QuickAction[] {
   const raw = query.trim().toLowerCase();
   if (!raw) return [];
-  if (raw === '+') return QUICK_ACTIONS;
+  if (raw === '+') return actions;
   const q = raw.startsWith('+') ? raw.slice(1).trim() : raw;
-  if (!q) return QUICK_ACTIONS;
+  if (!q) return actions;
   const explicit = raw.startsWith('+') || /^(new|create|add)\b/.test(q);
   if (!explicit) return [];
   const terms = q.split(/\s+/).filter(Boolean);
-  return QUICK_ACTIONS.filter((a) => {
+  return actions.filter((a) => {
     const haystack = `${a.label} ${a.keywords}`.toLowerCase();
     return terms.every((t) => haystack.includes(t));
   });
@@ -327,6 +329,8 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
   const router = useRouter();
   const reduce = useReducedMotion();
   const placeholder = usePlaceholder();
+  const { user } = useAuth();
+  const { features } = useFeatures();
 
   const [query, setQuery] = React.useState('');
   const [open, setOpen] = React.useState(false);
@@ -430,7 +434,13 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
 
   // ── Sections ───────────────────────────────────────────────────────────────
 
-  const quickActions = React.useMemo(() => matchQuickActions(query), [query]);
+  const availableActions = React.useMemo(
+    () => NAV_QUICK_ACTIONS
+      .filter((a) => isVisibleForRole(a, user?.role) && isVisibleForFeature(a, features))
+      .map((a) => ({ ...a, icon: QUICK_ACTION_ICONS[a.icon] ?? Sparkles })),
+    [user?.role, features],
+  );
+  const quickActions = React.useMemo(() => matchQuickActions(query, availableActions), [query, availableActions]);
   const pageMatches = React.useMemo(() => matchPages(pages, trimmed), [pages, trimmed]);
 
   const sections = React.useMemo<Section[]>(() => {

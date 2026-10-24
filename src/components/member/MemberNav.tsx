@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import { Apple, ClipboardCheck, Dumbbell, Home, UserRound, Wallet } from 'lucide-react';
 import { loadMemberNotifications } from './memberNotifications';
 import { palette } from '@/lib/palette';
+import { NAV_GROUPS, isVisibleForFeature } from '@/lib/nav-config';
+import { useFeatures } from '@/lib/features-context';
 
 /**
  * The member portal's bottom tab bar.
@@ -53,13 +55,14 @@ import { palette } from '@/lib/palette';
  * Sign out. The tab carries a
  * dot when there are unread notifications, so they are not hidden behind it.
  */
-const TABS = [
-  { href: '/member/dashboard', label: 'Home', icon: Home },
-  { href: '/member/workout', label: 'Workout', icon: Dumbbell },
-  { href: '/member/diet', label: 'Diet', icon: Apple },
-  { href: '/member/checkin', label: 'Check-in', icon: ClipboardCheck },
-  { href: '/member/payments', label: 'Payments', icon: Wallet },
-] as const;
+const MEMBER_ICONS: Record<string, typeof Home> = {
+  LayoutDashboard: Home,
+  Dumbbell,
+  Apple,
+  ClipboardCheck,
+  Wallet,
+  UserRound,
+};
 
 /** Pages reached from More: the More tab lights up on each of them. */
 const MORE_ROUTES = ['/member/more', '/member/messages', '/member/card', '/member/records', '/member/goals', '/member/recap', '/member/renew', '/member/progress', '/member/habits', '/member/photos', '/member/notifications', '/member/forms', '/member/account', '/member/coach'];
@@ -69,6 +72,7 @@ export const MEMBER_NAV_CLEARANCE = 'calc(84px + env(safe-area-inset-bottom, 0px
 
 export default function MemberNav() {
   const pathname = usePathname();
+  const { features } = useFeatures();
   const [unread, setUnread] = useState(0);
 
   // Re-checked on each navigation, so reading them on /member/notifications
@@ -82,6 +86,10 @@ export default function MemberNav() {
   }, [pathname]);
 
   const moreActive = MORE_ROUTES.some((r) => pathname === r || pathname?.startsWith(`${r}/`));
+
+  const accountGroup = NAV_GROUPS.find((g) => g.id === 'my-account');
+  if (!accountGroup || !isVisibleForFeature(accountGroup, features)) return null;
+  const tabs = accountGroup.items;
 
   return (
     <nav
@@ -106,37 +114,32 @@ export default function MemberNav() {
       }}
     >
       <div className="mx-auto flex w-full max-w-[560px]">
-        {TABS.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href;
+        {tabs.map(({ href, label, icon }) => {
+          const Icon = MEMBER_ICONS[icon] ?? Home;
+          const isProfile = href === '/member/more';
+          const active = isProfile
+            ? moreActive
+            : pathname === href || (href === '/member/payments' && pathname?.startsWith('/member/pay/'));
           return (
             <Link
               key={href}
               href={href}
               aria-current={active ? 'page' : undefined}
+              aria-label={isProfile && unread > 0 ? `Profile, ${unread} unread notification${unread === 1 ? '' : 's'}` : undefined}
               className="flex flex-1 flex-col items-center gap-1 py-2.5"
               style={{ color: active ? palette.blue[500] : palette.gray[500] }}
             >
-              <Icon size={18} strokeWidth={active ? 2.4 : 1.9} />
+              <span className="relative">
+                <Icon size={18} strokeWidth={active ? 2.4 : 1.9} />
+                {isProfile && unread > 0 && (
+                  <span aria-hidden className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full"
+                    style={{ background: palette.red[500], boxShadow: '0 0 0 2px var(--bg-card)' }} />
+                )}
+              </span>
               <span className="text-[10px] font-[700]">{label}</span>
             </Link>
           );
         })}
-        <Link
-          href="/member/more"
-          aria-current={moreActive ? 'page' : undefined}
-          aria-label={unread > 0 ? `Profile, ${unread} unread notification${unread === 1 ? '' : 's'}` : undefined}
-          className="flex flex-1 flex-col items-center gap-1 py-2.5"
-          style={{ color: moreActive ? palette.blue[500] : palette.gray[500] }}
-        >
-          <span className="relative">
-            <UserRound size={18} strokeWidth={moreActive ? 2.4 : 1.9} />
-            {unread > 0 && (
-              <span aria-hidden className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full"
-                style={{ background: palette.red[500], boxShadow: '0 0 0 2px var(--bg-card)' }} />
-            )}
-          </span>
-          <span className="text-[10px] font-[700]">Profile</span>
-        </Link>
       </div>
     </nav>
   );

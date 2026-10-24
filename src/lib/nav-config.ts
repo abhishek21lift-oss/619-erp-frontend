@@ -172,11 +172,12 @@ export const NAV_GROUPS: NavGroup[] = [
     roles: ['member'],
     feature: 'member_portal',
     items: [
-      { href: '/member/dashboard', label: 'Dashboard',   icon: 'LayoutDashboard', roles: ['member'] },
-      { href: '/member/workout',   label: 'My Programme', icon: 'Dumbbell',       roles: ['member'] },
-      { href: '/member/diet',      label: 'My Diet',      icon: 'Apple',          roles: ['member'] },
-      { href: '/member/checkin',   label: 'Weekly Check-in', icon: 'ClipboardCheck', roles: ['member'] },
-      { href: '/member/payments',  label: 'My Payments', icon: 'Receipt',         roles: ['member'] },
+      { href: '/member/dashboard', label: 'Home',      icon: 'LayoutDashboard', roles: ['member'] },
+      { href: '/member/workout',   label: 'Workout',   icon: 'Dumbbell',        roles: ['member'] },
+      { href: '/member/diet',      label: 'Diet',      icon: 'Apple',           roles: ['member'] },
+      { href: '/member/checkin',   label: 'Check-in',  icon: 'ClipboardCheck',  roles: ['member'] },
+      { href: '/member/payments',  label: 'Payments',  icon: 'Receipt',         roles: ['member'] },
+      { href: '/member/more',      label: 'Profile',   icon: 'UserRound',       roles: ['member'] },
     ],
   },
   {
@@ -212,10 +213,10 @@ export const SETTINGS_GROUP: NavGroup = {
 };
 
 export const QUICK_ACTIONS = [
-  { id: 'qa-record-pay',   label: 'Record payment',  icon: 'Wallet',       href: '/finance/record-payment',    roles: ['trainer'] as Role[], feature: 'finance' },
-  { id: 'qa-book-session', label: 'Book PT session', icon: 'CalendarPlus', href: '/pt-os/schedule-session' },
-  { id: 'qa-checkin',      label: 'Check In',         icon: 'ScanFace',     href: '/checkin/qr-scanner', feature: 'attendance' },
-  { id: 'qa-new-client',   label: 'New client',       icon: 'UserPlus',     href: '/pt-os/new-client',            roles: ['trainer'] as Role[] },
+  { id: 'qa-record-pay',   label: 'Record payment',  hint: 'Log money received',  icon: 'Wallet',       href: '/finance/record-payment',    roles: ['trainer'] as Role[], feature: 'finance', keywords: 'new create add payment collect money cash received invoice bill' },
+  { id: 'qa-book-session', label: 'Book PT session', hint: 'Book a PT session',   icon: 'CalendarPlus', href: '/pt-os/schedule-session',    roles: ['trainer'] as Role[], keywords: 'new create add session booking schedule appointment slot' },
+  { id: 'qa-checkin',      label: 'Check In',        hint: 'Scan the attendance QR', icon: 'ScanFace',  href: '/checkin/qr-scanner', feature: 'attendance', roles: ['trainer'] as Role[], keywords: 'checkin check in attendance qr scan walk-in' },
+  { id: 'qa-new-client',   label: 'New client',      hint: 'Enrol someone new',   icon: 'UserPlus',     href: '/pt-os/new-client',            roles: ['trainer'] as Role[], keywords: 'new create add client member enrol enroll signup join' },
 ];
 
 export function allNavItems(): Array<NavItem & { groupId: string; groupLabel: string }> {

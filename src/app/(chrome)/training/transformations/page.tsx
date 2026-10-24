@@ -244,7 +244,7 @@ function Inner() {
                         <td style={td}><WeightChange current={c.current_weight} change={c.weight_change} /></td>
                         <td style={{ ...td, color: 'var(--text-muted)' }}>{fmtDate(c.created_at ?? undefined)}</td>
                         <td style={td}>
-                          <Link href={`/clients/${c.id}`}
+                          <Link href={`/pt-os/clients/${c.id}`}
                             style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 10, background: 'rgba(0,103,224,0.08)', color: '#0067e0', fontSize: 11.5, fontWeight: 600, textDecoration: 'none', border: '1px solid rgba(0,103,224,0.2)', transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)' }}
                             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,103,224,0.15)'; e.currentTarget.style.transform = 'translateY(-1px) scale(1.03)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,103,224,0.15)'; }}
                             onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,103,224,0.08)'; e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}>
