@@ -23,6 +23,8 @@ export interface ScreeningSummary {
   block: { code: string; message: string } | null;
   /** Paperwork that is missing or out of date, short of a hard stop. */
   warnings: string[];
+  /** The screening items still missing, by key (backend screeningSummary). */
+  missing: ('informed_consent' | 'parq')[];
   /** A completed consent and a fully answered PAR-Q, and nothing blocking. */
   complete: boolean;
 }

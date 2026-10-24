@@ -142,9 +142,10 @@ describe('the screens that end a step point at the next one', () => {
     expect(src).toMatch(/Start Client Screening/);
   });
 
-  it('the enrol page stops a new client whose screening is incomplete, with links to finish it', () => {
+  it('the enrol page warns about missing screening instead of stopping', () => {
     const src = read('clients/[id]/enroll/page.tsx');
-    expect(src).toMatch(/if \(screeningMissing\) \{/);
+    expect(src).not.toMatch(/if \(screeningMissing\) \{/);
+    expect(src).toMatch(/activation pending screening/i);
     expect(src).toMatch(/Complete Informed Consent/);
     expect(src).toMatch(/Complete PAR-Q/);
   });
