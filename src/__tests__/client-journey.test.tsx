@@ -18,7 +18,7 @@ const APP = path.join(__dirname, '..', 'app', '(chrome)', 'pt-os');
 const read = (rel: string) => fs.readFileSync(path.join(APP, rel), 'utf8');
 
 function journeyOf(states: Partial<Record<JourneyStep['key'], JourneyStep['state']>>, next: JourneyStep['key'] | null, detail?: string) {
-  const keys: JourneyStep['key'][] = ['registration', 'consent', 'parq', 'interview', 'assessment', 'goals', 'enrolment', 'workout_plan'];
+  const keys: JourneyStep['key'][] = ['welcome_tour', 'enrolment', 'consent', 'parq', 'interview', 'goals', 'assessment', 'program_design'];
   return {
     data: {
       steps: keys.map((key) => ({ key, state: states[key] ?? 'todo', ...(key === 'interview' ? { optional: true } : {}), ...(detail && states[key] === 'blocked' ? { detail } : {}) })),
@@ -31,58 +31,92 @@ function journeyOf(states: Partial<Record<JourneyStep['key'], JourneyStep['state
 beforeEach(() => { mockJourney.mockReset(); mockPush.mockReset(); });
 
 describe('the journey order and where each step is done', () => {
-  it('runs registration → consent → PAR-Q → interview → assessment → goals → enrolment → plan', () => {
+  it('runs welcome/tour → enrolment → consent → PAR-Q → interview → goals → assessment → program design', () => {
+    expect(stepAfter('welcome_tour')).toBe('enrolment');
+    expect(stepAfter('enrolment')).toBe('consent');
     expect(stepAfter('parq')).toBe('interview');
-    expect(stepAfter('interview')).toBe('assessment');
-    expect(stepAfter('goals')).toBe('enrolment');
-    expect(stepAfter('workout_plan')).toBeNull();
+    expect(stepAfter('interview')).toBe('goals');
+    expect(stepAfter('goals')).toBe('assessment');
+    expect(stepAfter('program_design')).toBeNull();
   });
 
   it('every step has a page; renewal goes to Renew, not Enrol', () => {
+    expect(stepHref('welcome_tour', 'c1')).toBe('/pt-os/welcome-tour?client_id=c1');
+    expect(stepHref('program_design', 'c1')).toBe('/pt-os/program-design?client_id=c1');
     expect(stepHref('interview', 'c1')).toBe('/pt-os/interview?client_id=c1');
     expect(stepHref('enrolment', 'c1')).toBe('/pt-os/clients/c1/enroll');
     expect(stepHref('enrolment', 'c1', 'renew')).toBe('/pt-os/clients/c1/renew');
-    expect(stepHref('workout_plan', 'c1')).toBe('/pt-os/workout-plans?client_id=c1');
   });
 });
 
 describe('ClientJourneyCard', () => {
   it('shows every step with its state and offers the server\'s next step', async () => {
-    mockJourney.mockResolvedValue(journeyOf({ registration: 'done', consent: 'done', parq: 'done' }, 'interview'));
+    mockJourney.mockResolvedValue(journeyOf({ welcome_tour: 'done', enrolment: 'done', consent: 'done' }, 'parq'));
     render(<ClientJourneyCard clientId="c1" />);
-    await screen.findByText(STEP_LABEL.workout_plan);
+    await screen.findByText(STEP_LABEL.program_design);
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '3');
-    fireEvent.click(screen.getByRole('button', { name: /Next: Client Interview/ }));
-    expect(mockPush).toHaveBeenCalledWith('/pt-os/interview?client_id=c1');
+    fireEvent.click(screen.getByRole('button', { name: /Next: PAR-Q screening/ }));
+    expect(mockPush).toHaveBeenCalledWith('/pt-os/parq?client_id=c1');
   });
 
   it('never offers a blocked step: it shows why instead', async () => {
-    mockJourney.mockResolvedValue(journeyOf({ registration: 'done', consent: 'blocked' }, 'consent', 'This client has revoked their Informed Consent.'));
+    mockJourney.mockResolvedValue(journeyOf({ welcome_tour: 'done', enrolment: 'done', consent: 'blocked' }, 'consent', 'This client has revoked their Informed Consent.'));
     render(<ClientJourneyCard clientId="c1" />);
     expect(await screen.findByRole('status')).toHaveTextContent(/revoked/);
     expect(screen.queryByRole('button', { name: /^Next:/ })).toBeNull();
   });
 
   it('an expired client is offered Renew PT', async () => {
-    mockJourney.mockResolvedValue(journeyOf({ registration: 'done', consent: 'done', parq: 'done', interview: 'done', assessment: 'done', goals: 'done', enrolment: 'renew' }, 'enrolment'));
+    mockJourney.mockResolvedValue(journeyOf({ welcome_tour: 'done', enrolment: 'renew' }, 'enrolment'));
     render(<ClientJourneyCard clientId="c1" />);
     fireEvent.click(await screen.findByRole('button', { name: /Renew PT/ }));
     expect(mockPush).toHaveBeenCalledWith('/pt-os/clients/c1/renew');
+  });
+
+  it('shows a provisional enrolment as done, with the activation note', async () => {
+    mockJourney.mockResolvedValue({ data: {
+      steps: [
+        { key: 'welcome_tour', state: 'done' },
+        { key: 'enrolment', state: 'done', detail: 'PT enrolled — activation pending screening.' },
+        { key: 'consent', state: 'done' },
+        { key: 'parq', state: 'todo' },
+        { key: 'interview', state: 'todo', optional: true },
+        { key: 'goals', state: 'todo' },
+        { key: 'assessment', state: 'todo' },
+        { key: 'program_design', state: 'blocked' },
+      ],
+      next: 'parq',
+      screening: {},
+    } });
+    render(<ClientJourneyCard clientId="c1" />);
+    expect(await screen.findByText(/activation pending screening/)).toBeTruthy();
+  });
+
+  it('a completed journey links to the ongoing tools', async () => {
+    mockJourney.mockResolvedValue(journeyOf(
+      { welcome_tour: 'done', enrolment: 'done', consent: 'done', parq: 'done', interview: 'done',
+        goals: 'done', assessment: 'done', program_design: 'done' }, null));
+    render(<ClientJourneyCard clientId="c1" />);
+    expect(await screen.findByText(/Onboarding complete/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Workout Log/ }));
+    expect(mockPush).toHaveBeenCalledWith('/pt-os/clients/c1/workout-log');
+    fireEvent.click(screen.getByRole('button', { name: /Progress & Retest/ }));
+    expect(mockPush).toHaveBeenCalledWith('/pt-os/progress?client_id=c1');
   });
 });
 
 describe('JourneyNextButton', () => {
   it('skips the step the screen is, and offers the next outstanding one', async () => {
-    mockJourney.mockResolvedValue(journeyOf({ registration: 'done', consent: 'done', parq: 'in_progress' }, 'parq'));
+    mockJourney.mockResolvedValue(journeyOf({ welcome_tour: 'done', enrolment: 'done', consent: 'done', parq: 'in_progress' }, 'parq'));
     render(<JourneyNextButton clientId="c1" current="parq" />);
     fireEvent.click(await screen.findByRole('button', { name: /Continue to Client Interview/ }));
     expect(mockPush).toHaveBeenCalledWith('/pt-os/interview?client_id=c1');
   });
 
   it('a blocked next step shows its reason, not a button', async () => {
-    mockJourney.mockResolvedValue(journeyOf({ registration: 'done', consent: 'done', parq: 'done', interview: 'done', assessment: 'done', goals: 'done', enrolment: 'blocked' }, 'enrolment', 'Complete the Informed Consent and PAR-Q before enrolling.'));
+    mockJourney.mockResolvedValue(journeyOf({ welcome_tour: 'done', enrolment: 'done', consent: 'done', parq: 'done', interview: 'done', goals: 'done', assessment: 'blocked' }, 'assessment', 'This client is enrolled but not active yet.'));
     render(<JourneyNextButton clientId="c1" current="goals" />);
-    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/before enrolling/));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/not active/));
   });
 });
 

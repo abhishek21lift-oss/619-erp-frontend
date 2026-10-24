@@ -2,36 +2,37 @@
 
 // The client's intake journey, on their profile.
 //
-// Registration → Informed Consent → PAR-Q → Client Interview → Fitness
-// Assessment → Goals → PT Enrolment → Workout Plan, each with the state the
-// server read from the record that step produces (GET …/journey), and one
+// Welcome & Gym Tour → PT Enrolment → Informed Consent → PAR-Q → Client
+// Interview → Goals → Fitness Assessment → Program Design, each with the state
+// the server read from the record that step produces (GET …/journey), and one
 // button for the next thing to do. A blocked step says why, in the server's
-// words, and the button never offers a step the server would refuse.
+// words, and the button never offers a step the server would refuse. Once the
+// journey is complete, the card hands over to the ongoing tools.
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowRight, CheckCircle2, CircleDashed, Clock3, FileSignature, Gauge, ListChecks, Lock,
-  MessagesSquare, RefreshCw, ShieldCheck, Target, UserPlus, Dumbbell,
+  MessagesSquare, RefreshCw, ShieldCheck, Sparkles, Target, Dumbbell,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { STEP_LABEL, stepHref, type ClientJourney, type JourneyStep, type JourneyStepKey } from '@/lib/journey';
 import { amber, blue, emerald, gray, red, rgba } from '@/lib/palette';
 
 const STEP_ICON: Record<JourneyStepKey, React.ReactNode> = {
-  registration: <UserPlus size={14} />,
+  welcome_tour: <Sparkles size={14} />,
+  enrolment: <ListChecks size={14} />,
   consent: <FileSignature size={14} />,
   parq: <ShieldCheck size={14} />,
   interview: <MessagesSquare size={14} />,
-  assessment: <Gauge size={14} />,
   goals: <Target size={14} />,
-  enrolment: <ListChecks size={14} />,
-  workout_plan: <Dumbbell size={14} />,
+  assessment: <Gauge size={14} />,
+  program_design: <Dumbbell size={14} />,
 };
 
 const STEP_COLOR: Record<JourneyStepKey, string> = {
-  registration: blue[500], consent: blue[300], parq: blue[700], interview: gray[500],
-  assessment: blue[400], goals: gray[400], enrolment: blue[900], workout_plan: blue[600],
+  welcome_tour: emerald[500], enrolment: blue[900], consent: blue[300], parq: blue[700],
+  interview: gray[500], goals: gray[400], assessment: blue[400], program_design: blue[600],
 };
 
 const STATE_CHIP: Record<JourneyStep['state'], { label: string; fg: string; bg: string; icon: React.ReactNode }> = {
@@ -117,7 +118,25 @@ export default function ClientJourneyCard({ clientId }: { clientId: string }) {
         })}
       </ol>
 
-      {next && (
+      {journey.next === null ? (
+        <div className="space-y-2 rounded-[14px] px-3 py-2.5" style={{ background: 'var(--bg-subtle)' }}>
+          <p className="text-[12.5px] font-[650]" style={{ color: 'var(--text-primary)' }}>
+            Onboarding complete — client is active.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log`)}
+              className="min-h-[40px] rounded-[12px] text-[12.5px] font-[700] text-white transition active:scale-[0.99]"
+              style={{ background: `linear-gradient(135deg, ${blue[500]}, ${blue[600]})` }}>
+              Workout Log
+            </button>
+            <button type="button" onClick={() => router.push(`/pt-os/progress?client_id=${encodeURIComponent(clientId)}`)}
+              className="min-h-[40px] rounded-[12px] text-[12.5px] font-[700] transition active:scale-[0.99]"
+              style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
+              Progress &amp; Retest
+            </button>
+          </div>
+        </div>
+      ) : next && (
         nextAllowed ? (
           <button type="button" onClick={() => router.push(stepHref(next.key, clientId, next.state))}
             className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-[700] text-white transition active:scale-[0.99]"
