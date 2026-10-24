@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  Check, Camera, CheckCircle2, Award, FileSpreadsheet, X, ClipboardCheck,
+  Check, Camera, CheckCircle2, Award, FileSpreadsheet, X, ClipboardCheck, Sparkles,
 } from 'lucide-react';
 import { getSheetCacheSync, lookupByMobile } from '@/lib/sheet-import';
 import { useRouter } from 'next/navigation';
@@ -345,14 +345,14 @@ function NewClientForm() {
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="flex flex-col gap-3 justify-center mt-6">
             <Button
               style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
-              onClick={() => router.push(`/pt-os/informed-consent?client_id=${createdId}`)}
+              onClick={() => router.push(`/pt-os/welcome-tour?client_id=${createdId}`)}
             >
-              <ClipboardCheck size={17} className="mr-2" />
-              Start Client Screening
+              <Sparkles size={17} className="mr-2" />
+              {'Start Welcome & Tour'}
             </Button>
-            {/* No "Enroll in PT" here: a new client is enrolled only after their
-                Informed Consent and PAR-Q are complete — the server refuses it
-                before then (SCREENING_REQUIRED). Screening is the next step. */}
+            {/* Step 1 of the K11 sequence is the welcome and gym tour. Screening
+                is not lost: the journey points at it after the tour, and a
+                provisional enrolment stays pending until it is done. */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button variant="outline" onClick={() => router.push(`/pt-os/clients/${createdId}`)}>
                 View Client Profile

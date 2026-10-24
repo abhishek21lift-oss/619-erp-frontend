@@ -129,17 +129,26 @@ describe('the screens that end a step point at the next one', () => {
     expect(read('clients/[id]/enroll/page.tsx')).toMatch(/current="enrolment"/);
   });
 
-  it('the interview continues to the Fitness Assessment and keeps its draft in the scoped, purged store', () => {
+  it('the interview ends with the server-driven next step and keeps its scoped draft', () => {
     const src = read('interview/page.tsx');
-    expect(src).toMatch(/stepHref\('assessment', clientId\)/);
+    expect(src).toMatch(/current="interview"/);
+    expect(src).not.toMatch(/stepHref\('assessment', clientId\)/);
     expect(src).toMatch(/client-interview-draft\.v1:\$\{clientId\}/);
     expect('client-interview-draft.v1:c1').toMatch(/-draft\.v\d+:/);
   });
 
-  it('the new-client success screen does not offer enrolment before screening', () => {
+  it('the new-client success screen starts the welcome tour', () => {
     const src = read('new-client/page.tsx');
+    expect(src).toMatch(/\/pt-os\/welcome-tour\?client_id=\$\{createdId\}/);
+    expect(src).toMatch(/Start Welcome & Tour/);
     expect(src).not.toMatch(/createdId\}\/enroll/);
-    expect(src).toMatch(/Start Client Screening/);
+  });
+
+  it('the client list distinguishes a provisional enrolment from a bare add', () => {
+    const src = read('clients/page.tsx');
+    expect(src).toMatch(/Activation Pending/);
+    expect(src).toMatch(/has_pt_term/);
+    expect(src).toMatch(/label: 'Pending'/);
   });
 
   it('the enrol page warns about missing screening instead of stopping', () => {
