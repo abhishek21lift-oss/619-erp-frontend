@@ -19,17 +19,6 @@ export const n = (v: string): number | null => {
   return Number.isFinite(f) ? f : null;
 };
 
-export function calcAge(dob: string): number | null {
-  if (!dob) return null;
-  const d = new Date(dob);
-  if (Number.isNaN(d.getTime())) return null;
-  const today = new Date();
-  let age = today.getFullYear() - d.getFullYear();
-  const monthDiff = today.getMonth() - d.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < d.getDate())) age--;
-  return age >= 0 && age < 130 ? age : null;
-}
-
 export function calcBMI(heightCm: number | null, weightKg: number | null): number | null {
   if (!heightCm || !weightKg || heightCm <= 0 || weightKg <= 0) return null;
   const heightM = heightCm / 100;

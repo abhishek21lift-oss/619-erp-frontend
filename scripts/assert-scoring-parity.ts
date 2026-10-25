@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 /**
- * Do the two copies of the fitness scoring library still agree?
+ * Do the two copies of the fitness scoring library still agree — and does the
+ * consent wording on screen match the wording printed on the signed PDF?
  *
  * ── The duplicate this guards ──────────────────────────────────────────────
  *
@@ -30,6 +31,13 @@
  * unnoticed. Set SCORING_PARITY_OPTIONAL=1 to downgrade a missing backend to a
  * warning — for a contributor who has not cloned it — and never in CI.
  *
+ * ── The second duplicate: consent copy ─────────────────────────────────────
+ *
+ * A client ticks a sentence on screen and the PDF prints that sentence as the
+ * signed record. The screen lives in the frontend, the printed label in
+ * backend/src/lib/consentText.js, and they had already drifted. This script
+ * compares every label the wizard actually shows.
+ *
  * ── What it does NOT check ─────────────────────────────────────────────────
  *
  * That either implementation is CORRECT. Both could be wrong together and this
@@ -49,6 +57,7 @@ import * as FE_NUTRITION from '../src/lib/nutrition-calculations';
 import * as FE_POSTURE from '../src/lib/posture-calculations';
 import * as FE_PARQ from '../src/lib/parq-calculations';
 import * as FE_FLEXIBILITY from '../src/lib/flexibility-protocol';
+import { PARQ_CONSENT_FIELDS, INFORMED_CONSENT_ACK_FIELDS } from '../src/lib/consent-copy';
 
 const BACKEND_MODULE = 'src/modules/progress/fitness-scoring.js';
 const LIFESTYLE_BACKEND_MODULE = 'src/modules/progress/lifestyle-scoring.js';
@@ -58,6 +67,7 @@ const NUTRITION_BACKEND_MODULE = 'src/modules/progress/nutrition-scoring.js';
 const POSTURE_BACKEND_MODULE = 'src/modules/progress/posture-scoring.js';
 const PARQ_BACKEND_MODULE = 'src/modules/pt-os/parq-scoring.js';
 const FLEXIBILITY_BACKEND_MODULE = 'src/modules/progress/flexibility-protocol.js';
+const CONSENT_BACKEND_MODULE = 'src/lib/consentText.js';
 
 /** Where the backend checkout might be, in the order worth trying. */
 function findBackend(moduleRelPath: string = BACKEND_MODULE): string | null {
@@ -809,7 +819,49 @@ function runSuite(suite: Suite, backendPath: string): string[] {
   return mismatches;
 }
 
+/**
+ * The consent wording is the same contract as the score: the client ticks the
+ * sentence on screen and the PDF prints it as the signed record. Compare the
+ * labels the wizard shows with the labels the generators print.
+ */
+function consentCopyMismatches(): string[] {
+  const backendPath = findBackend(CONSENT_BACKEND_MODULE);
+  if (!backendPath) {
+    return [`consent text: backend not found (looked for ${CONSENT_BACKEND_MODULE} under ` +
+      '$BACKEND_PATH, ../backend, ../619-erp-backend)'];
+  }
+  const BE = createRequire(import.meta.url)(backendPath) as {
+    PARQ_CONSENT_LABELS: Record<string, string>;
+    INFORMED_CONSENT_ACK_LABELS: Record<string, string>;
+  };
+  const mismatches: string[] = [];
+  for (const field of PARQ_CONSENT_FIELDS) {
+    const printed = BE.PARQ_CONSENT_LABELS[field.key];
+    if (printed !== field.label) {
+      mismatches.push(`PAR-Q ${field.key}: on screen ${JSON.stringify(field.label)}, printed ${JSON.stringify(printed)}`);
+    }
+  }
+  for (const field of INFORMED_CONSENT_ACK_FIELDS) {
+    const printed = BE.INFORMED_CONSENT_ACK_LABELS[field.key];
+    if (printed !== field.label) {
+      mismatches.push(`Informed consent ${field.key}: on screen ${JSON.stringify(field.label)}, printed ${JSON.stringify(printed)}`);
+    }
+  }
+  return mismatches;
+}
+
 function main() {
+  const copyMismatches = consentCopyMismatches();
+  if (copyMismatches.length) {
+    if (process.env.SCORING_PARITY_OPTIONAL === '1' && copyMismatches.length === 1 && copyMismatches[0].includes('backend not found')) {
+      console.warn(`⚠ ${copyMismatches[0]} — skipped because SCORING_PARITY_OPTIONAL=1`);
+    } else {
+      console.error('\n✗ consent wording differs between the wizard and the signed PDF:\n');
+      for (const m of copyMismatches) console.error(m);
+      process.exit(1);
+    }
+  }
+
   // Both libraries live in the same backend checkout, so one lookup failure is
   // the same failure for both — but each is resolved by its own path so a
   // module that moves is named precisely rather than reported as "no backend".

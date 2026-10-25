@@ -8,6 +8,7 @@ import type {
   ParqAnswerValue, ParqStatus, ClearanceApprovalStatus,
 } from '@/lib/api';
 import { n, PARQ_QUESTIONS } from '@/lib/parq-calculations';
+import { PARQ_CONSENT_FIELDS } from '@/lib/consent-copy';
 import { todayISO } from '@/lib/forms/domain';
 
 export { PARQ_QUESTIONS, n };
@@ -231,9 +232,9 @@ export function prevStepId(current: StepId, riskLevel: 'low' | 'medium' | 'high'
 // participation, emergency care and data use are agreed on the Informed
 // Consent — they used to be ticked and signed here too. The other keys stay
 // on ConsentCheckboxesForm because older records carry them.
-export const CONSENT_CHECKBOX_FIELDS: { key: keyof ConsentCheckboxesForm; label: string }[] = [
-  { key: 'info_true', label: 'The answers in this screening are true and complete to the best of my knowledge, and I will tell my trainer if my health changes.' },
-];
+// The wording lives in lib/consent-copy.ts so the cross-repo parity script can
+// import it without loading this file's zod-dependent graph.
+export const CONSENT_CHECKBOX_FIELDS: { key: keyof ConsentCheckboxesForm; label: string }[] = [...PARQ_CONSENT_FIELDS];
 
 export const TRAINER_NOTES_FIELDS: { key: keyof TrainerNotesForm; label: string }[] = [
   { key: 'observations', label: 'Observations' },

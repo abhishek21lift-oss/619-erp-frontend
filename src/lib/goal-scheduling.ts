@@ -83,24 +83,6 @@ export function recommendTrainingSplit(trainingDays: number | string, opts: { go
   return { trainingDays: days, split, label, notes, calendar };
 }
 
-export interface Milestone { label: string; date: string; type: string; }
-export function generateMilestones(startDate?: string | null, targetDate?: string | null, shortWeeks = 8, mediumWeeks = 12): Milestone[] {
-  const start = startDate ? new Date(startDate) : new Date();
-  const target = targetDate ? new Date(targetDate) : null;
-  const milestones: Milestone[] = [{ label: 'Start', date: start.toISOString().slice(0, 10), type: 'start' }];
-  const addWeeks = (w: number) => {
-    const d = new Date(start); d.setDate(d.getDate() + w * 7); return d.toISOString().slice(0, 10);
-  };
-  if (shortWeeks > 0) milestones.push({ label: `Short-term checkpoint (Week ${shortWeeks})`, date: addWeeks(shortWeeks), type: 'short_term' });
-  if (mediumWeeks > 0 && mediumWeeks !== shortWeeks) milestones.push({ label: `Medium-term review (Week ${mediumWeeks})`, date: addWeeks(mediumWeeks), type: 'medium_term' });
-  if (target) {
-    const totalWeeks = Math.ceil((target.getTime() - start.getTime()) / (7 * 86400000));
-    if (totalWeeks > mediumWeeks) milestones.push({ label: 'Long-term goal deadline', date: target.toISOString().slice(0, 10), type: 'long_term' });
-  }
-  const seen = new Set<string>();
-  return milestones.filter(m => { if (seen.has(m.date)) return false; seen.add(m.date); return true; });
-}
-
 export interface RoutineBlueprint {
   split: string; experience: string; equipment: string; weeklyStructure: string;
   sessionTemplate: { warmup: string; mainLifts: { sets: number; reps: string; rpeOrRir: string; rest: string; tempo: string; }; accessories: { sets: number; reps: string; rpeOrRir: string; rest: string; }; core: { sets: number; reps: string; rest: string; }; cooldown: string; };

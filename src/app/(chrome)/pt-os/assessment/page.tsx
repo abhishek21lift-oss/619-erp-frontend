@@ -27,7 +27,7 @@ import { STEPS, initAssessmentForm, formFromAssessmentRow, n } from '@/component
 import { todayISO } from '@/lib/forms/domain';
 import { rangeIssue, type Range } from '@/lib/forms/ranges';
 import type { AssessmentFormData, FormErrors, StepId } from '@/components/pt-os/fitness-testing/types';
-import ProgressTimeline from '@/components/pt-os/fitness-testing/ProgressTimeline';
+import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
 import AssessmentInfoCard from '@/components/pt-os/fitness-testing/AssessmentInfoCard';
 import StepBloodPressure from '@/components/pt-os/fitness-testing/StepBloodPressure';
 import StepAnthropometric from '@/components/pt-os/fitness-testing/StepAnthropometric';
@@ -688,7 +688,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
             boxShadow: '0 18px 40px -20px rgba(15,23,42,0.45)',
           }}
         >
-          <ProgressTimeline current={step} onStep={goToStep} />
+          <StepperTimeline steps={STEPS} current={step} onStep={goToStep} />
         </div>
       )}
 

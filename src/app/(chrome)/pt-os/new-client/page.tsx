@@ -14,11 +14,12 @@ import FloatInput from '@/components/ui/FloatInput';
 import PhotoCropModal from '@/components/pt-os/PhotoCropModal';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import { CLIENT_SOURCES, RELATIONSHIPS } from '@/lib/client-intake';
+import { ageFrom } from '@/lib/enrollment';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useToast } from '@/lib/toast';
 import { readImageAsDataUrl, AVATAR_RULES } from '@/lib/forms/files';
 import { errorMessage } from '@/lib/forms/errors';
-import { clientCreateSchema } from '@/lib/forms/schemas/client';
+import { clientCreateSchema, GENDERS } from '@/lib/forms/schemas/client';
 
 /* ─────────────────────────────────────────────────────── TYPES */
 interface FormData {
@@ -41,8 +42,6 @@ interface FormData {
 // No `address` key any more — nothing can fail on a field with no rule.
 // Field errors keyed by schema field name; a missing key means no error.
 type FormErrors = Record<string, string>;
-
-const GENDERS: FormData['gender'][] = ['Male', 'Female', 'Other'];
 
 // Occupation used to sit in this slot. It was required, and nothing on the
 // intake path read it back — while the emergency contact beside it was a name
@@ -72,17 +71,6 @@ function hasEmergencyContact(form: FormData): boolean {
 }
 
 /* ─────────────────────────────────────────────────────── VALIDATION */
-function computeAge(dob: string): number | null {
-  if (!dob) return null;
-  const d = new Date(dob);
-  if (isNaN(d.getTime())) return null;
-  const today = new Date();
-  let age = today.getFullYear() - d.getFullYear();
-  const m = today.getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
-  return age;
-}
-
 // Counts what the form asks for, not what it insists on: 3 required (name,
 // gender, mobile) plus 5 that fill the profile out. Address and Occupation
 // were counted as required here; with Occupation gone and Address optional,
@@ -235,7 +223,7 @@ function NewClientForm() {
   }, [fieldErrors]);
 
   const progress = useMemo(() => computeProgress(form, fieldErrors), [form, fieldErrors]);
-  const age = computeAge(form.dob);
+  const age = ageFrom(form.dob || null);
 
   const handleWhatsappToggle = (checked: boolean) => {
     setForm((prev) => ({ ...prev, whatsappSameAsMobile: checked, whatsapp: checked ? prev.mobile : prev.whatsapp }));

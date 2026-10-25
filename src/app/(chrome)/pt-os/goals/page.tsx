@@ -40,7 +40,7 @@ import GoalAnalysisDashboard from '@/components/pt-os/goal-assessment/GoalAnalys
 import GoalSummaryCard from '@/components/pt-os/goal-assessment/GoalSummaryCard';
 import GoalTimeline from '@/components/pt-os/goal-assessment/GoalTimeline';
 import GoalCard from '@/components/pt-os/goal-assessment/GoalCard';
-import GoalProgressTimeline from '@/components/pt-os/goal-assessment/GoalProgressTimeline';
+import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
 import BaselineScreeningCard from '@/components/pt-os/goal-assessment/BaselineScreeningCard';
 import type { BaselineMetric, BaselineSource } from '@/components/pt-os/goal-assessment/BaselineScreeningCard';
 import { errorMessage } from '@/lib/forms/errors';
@@ -866,7 +866,7 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
         {/* No Cancel action here — the sticky footer's Back button already
             exits the wizard at step 1 with the same discard-confirm guard,
             so a second escape hatch in the hero was redundant chrome. */}
-        {!reviewMode && <GoalProgressTimeline current={step} onStep={setStep} />}
+        {!reviewMode && <StepperTimeline steps={STEPS} current={step} onStep={setStep} />}
       </PageHero>
 
       <div className="mx-auto max-w-3xl space-y-5">

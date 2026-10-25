@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, HeartPulse, Plus, History,
+  ArrowLeft, ArrowRight, Check, Loader2, HeartPulse,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, PageHero } from '@/components/ui';
@@ -19,7 +19,8 @@ import {
 } from '@/lib/lifestyle-calculations';
 import { STEPS, initLifestyleForm, n, COACH_NOTE_FIELDS, FOOD_PREFERENCE_OPTIONS } from '@/components/pt-os/lifestyle-assessment/types';
 import type { LifestyleFormData, FormErrors, StepId, CoachNotes } from '@/components/pt-os/lifestyle-assessment/types';
-import LifestyleProgressTimeline from '@/components/pt-os/lifestyle-assessment/LifestyleProgressTimeline';
+import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
+import AssessmentHistoryHub from '@/components/pt-os/shared/AssessmentHistoryHub';
 import StepSleep from '@/components/pt-os/lifestyle-assessment/StepSleep';
 import StepStress from '@/components/pt-os/lifestyle-assessment/StepStress';
 import StepOccupationActivity from '@/components/pt-os/lifestyle-assessment/StepOccupationActivity';
@@ -32,7 +33,7 @@ import HabitRiskBadges from '@/components/pt-os/lifestyle-assessment/HabitRiskBa
 import WeeklyHabitGoals from '@/components/pt-os/lifestyle-assessment/WeeklyHabitGoals';
 import CoachNotesPanel from '@/components/pt-os/shared/CoachNotesPanel';
 import LifestyleComparison from '@/components/pt-os/lifestyle-assessment/LifestyleComparison';
-import LifestyleCard from '@/components/pt-os/lifestyle-assessment/LifestyleCard';
+import AssessmentScoreCard from '@/components/pt-os/shared/AssessmentScoreCard';
 import { errorMessage } from '@/lib/forms/errors';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -170,63 +171,30 @@ function LifestyleHub({ clientId, toast }: LifestyleHubProps) {
   const openWizard = (id: string | null) => { setEditingId(id); setView('wizard'); };
   const closeWizard = (refresh: boolean) => { setView('list'); setEditingId(null); if (refresh) loadData(); };
 
-  if (loading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>;
-  }
-  if (loadError) {
-    return (
-      <div className="mx-auto max-w-md py-24 text-center">
-        <AlertCircle size={32} style={{ color: '#ef4444', margin: '0 auto 12px' }} />
-        <p className="text-[14px] font-[600] text-[color:var(--text-secondary)]">{loadError}</p>
-        <Button variant="outline" className="mt-4" onClick={loadData}>Retry</Button>
-      </div>
-    );
-  }
-
   if (view === 'wizard') {
     const editing = editingId ? assessments.find((a) => String(a.id) === editingId) : null;
     return <LifestyleWizard clientId={clientId} clientName={clientName} editing={editing || null} nutritionHabits={nutritionHabits} toast={toast} onDone={closeWizard} />;
   }
 
-  const sorted = [...assessments].sort((a, b) => String(b.assessment_date ?? '').localeCompare(String(a.assessment_date ?? '')));
-  const initial = sorted[sorted.length - 1];
-  const latest = sorted[0];
-
   return (
-    <div className="mx-auto w-full max-w-3xl py-6 space-y-5">
-      <PageHero
-        icon={<HeartPulse size={18} />}
-        title={`${clientName}'s Lifestyle`}
-
-        actions={
-          <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: '#fff', color: '#0F172A' }}>
-            New Assessment
-          </Button>
-        }
-      />
-
-      {sorted.length >= 2 && <LifestyleComparison initial={initial} latest={latest} />}
-
-      <div className="space-y-3">
-        {sorted.length === 0 && (
-          <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <p className="text-[14px] font-[600] text-[color:var(--text-muted)]">No lifestyle assessments yet.</p>
-            <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}>
-              Start First Assessment
-            </Button>
-          </div>
-        )}
-        {sorted.length > 0 && (
-          <div className="flex items-center gap-2 px-1">
-            <History size={14} style={{ color: 'var(--text-muted)' }} />
-            <p className="text-[12.5px] font-[700] text-[color:var(--text-muted)]">Assessment History</p>
-          </div>
-        )}
-        {sorted.map((a) => (
-          <LifestyleCard key={String(a.id)} assessment={a} onClick={() => openWizard(String(a.id))} />
-        ))}
-      </div>
-    </div>
+    <AssessmentHistoryHub
+      title={`${clientName}'s Lifestyle`}
+      icon={<HeartPulse size={18} />}
+      emptyLabel="No lifestyle assessments yet."
+      loading={loading}
+      loadError={loadError}
+      onRetry={loadData}
+      onNew={() => openWizard(null)}
+      assessments={assessments}
+      renderComparison={(initial, latest) => <LifestyleComparison initial={initial} latest={latest} />}
+      renderCard={(a) => (
+        <AssessmentScoreCard
+          key={String(a.id)} assessment={a}
+          scoreKey="lifestyle_score" readinessKey="lifestyle_readiness"
+          onClick={() => openWizard(String(a.id))}
+        />
+      )}
+    />
   );
 }
 
@@ -325,7 +293,7 @@ function LifestyleWizard({ clientId, clientName, editing, nutritionHabits, toast
   };
 
   // Deep-audit finding (shared with the PAR-Q/Informed Consent wizards):
-  // LifestyleProgressTimeline's own click handler lets a click jump one step
+  // The stepper's own click handler lets a click jump one step
   // ahead of `current`, and this used to be wired straight to `setStep`,
   // bypassing handleNext()'s validateStep() call — a user could click past
   // Occupation & Activity without selecting an occupation type. The one
@@ -404,7 +372,7 @@ function LifestyleWizard({ clientId, clientName, editing, nutritionHabits, toast
           step is the way out now. */}
       <div className="mx-auto max-w-3xl pt-1">
         <PageHero icon={<HeartPulse size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'}>
-          {!reviewMode && <LifestyleProgressTimeline current={step} onStep={handleStepClick} />}
+          {!reviewMode && <StepperTimeline steps={STEPS} current={step} onStep={handleStepClick} />}
         </PageHero>
       </div>
 

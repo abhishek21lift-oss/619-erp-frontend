@@ -4,22 +4,21 @@ import { useEffect, useRef } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import { Check } from 'lucide-react';
 
-export interface StepperTimelineStep {
-  id: number;
+export interface StepperTimelineStep<Id extends number = number> {
+  id: Id;
   label: string;
 }
 
-interface StepperTimelineProps {
-  steps: StepperTimelineStep[];
-  current: number;
-  onStep: (id: number) => void;
+interface StepperTimelineProps<Id extends number> {
+  steps: readonly StepperTimelineStep<Id>[];
+  current: Id;
+  onStep: (id: Id) => void;
 }
 
-/** Generalized from LifestyleProgressTimeline — numbered circles with
- *  animated fill bars, click-to-jump when a step is reachable
- *  (`step.id <= current + 1`). Accepts an arbitrary `steps` list so every
- *  wizard module can share one stepper instead of reimplementing it. */
-export function StepperTimeline({ steps, current, onStep }: StepperTimelineProps) {
+/** Numbered circles with animated fill bars, click-to-jump when a step is
+ *  reachable (`step.id <= current + 1`). Every assessment wizard passes its
+ *  own `steps` list rather than keeping a near-identical wrapper. */
+export function StepperTimeline<Id extends number>({ steps, current, onStep }: StepperTimelineProps<Id>) {
   // Reachability is computed by array *position*, not raw numeric id — a
   // caller (e.g. PAR-Q) may pass a `steps` list with gaps in `id` when a
   // step is conditionally hidden, so "id <= current + 1" would wrongly

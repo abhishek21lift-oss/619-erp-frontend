@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, Salad, Plus, History,
+  ArrowLeft, ArrowRight, Check, Loader2, Salad,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, PageHero } from '@/components/ui';
@@ -19,7 +19,8 @@ import {
 } from '@/lib/nutrition-calculations';
 import { STEPS, initNutritionForm, n, COACH_NOTE_FIELDS } from '@/components/pt-os/nutrition-assessment/types';
 import type { NutritionFormData, FormErrors, StepId, CoachNotes } from '@/components/pt-os/nutrition-assessment/types';
-import NutritionProgressTimeline from '@/components/pt-os/nutrition-assessment/NutritionProgressTimeline';
+import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
+import AssessmentHistoryHub from '@/components/pt-os/shared/AssessmentHistoryHub';
 import StepDietPreference from '@/components/pt-os/nutrition-assessment/StepDietPreference';
 import StepFoodRestrictions, { FOOD_ALLERGY_OPTIONS, FOODS_TO_AVOID_OPTIONS } from '@/components/pt-os/nutrition-assessment/StepFoodRestrictions';
 import StepFavouriteFoods, { FAVOURITE_FOOD_OPTIONS } from '@/components/pt-os/nutrition-assessment/StepFavouriteFoods';
@@ -32,7 +33,7 @@ import NutritionDashboard from '@/components/pt-os/nutrition-assessment/Nutritio
 import NutritionRiskBadges from '@/components/pt-os/nutrition-assessment/NutritionRiskBadges';
 import CoachNotesPanel from '@/components/pt-os/shared/CoachNotesPanel';
 import NutritionComparison from '@/components/pt-os/nutrition-assessment/NutritionComparison';
-import NutritionCard from '@/components/pt-os/nutrition-assessment/NutritionCard';
+import AssessmentScoreCard from '@/components/pt-os/shared/AssessmentScoreCard';
 import { errorMessage } from '@/lib/forms/errors';
 import AssessmentDateField, { assessmentDateIssue } from '@/components/pt-os/shared/AssessmentDateField';
 import { rangeIssue } from '@/lib/forms/ranges';
@@ -171,63 +172,30 @@ function NutritionHub({ clientId, toast }: NutritionHubProps) {
   const openWizard = (id: string | null) => { setEditingId(id); setView('wizard'); };
   const closeWizard = (refresh: boolean) => { setView('list'); setEditingId(null); if (refresh) loadData(); };
 
-  if (loading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>;
-  }
-  if (loadError) {
-    return (
-      <div className="mx-auto max-w-md py-24 text-center">
-        <AlertCircle size={32} style={{ color: '#ef4444', margin: '0 auto 12px' }} />
-        <p className="text-[14px] font-[600] text-[color:var(--text-secondary)]">{loadError}</p>
-        <Button variant="outline" className="mt-4" onClick={loadData}>Retry</Button>
-      </div>
-    );
-  }
-
   if (view === 'wizard') {
     const editing = editingId ? assessments.find((a) => String(a.id) === editingId) : null;
     return <NutritionWizard clientId={clientId} clientName={clientName} editing={editing || null} toast={toast} onDone={closeWizard} />;
   }
 
-  const sorted = [...assessments].sort((a, b) => String(b.assessment_date ?? '').localeCompare(String(a.assessment_date ?? '')));
-  const initial = sorted[sorted.length - 1];
-  const latest = sorted[0];
-
   return (
-    <div className="mx-auto w-full max-w-3xl py-6 space-y-5">
-      <PageHero
-        icon={<Salad size={18} />}
-        title={`${clientName}'s Nutrition`}
-
-        actions={
-          <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: '#fff', color: '#0F172A' }}>
-            New Assessment
-          </Button>
-        }
-      />
-
-      {sorted.length >= 2 && <NutritionComparison initial={initial} latest={latest} />}
-
-      <div className="space-y-3">
-        {sorted.length === 0 && (
-          <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <p className="text-[14px] font-[600] text-[color:var(--text-muted)]">No nutrition assessments yet.</p>
-            <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}>
-              Start First Assessment
-            </Button>
-          </div>
-        )}
-        {sorted.length > 0 && (
-          <div className="flex items-center gap-2 px-1">
-            <History size={14} style={{ color: 'var(--text-muted)' }} />
-            <p className="text-[12.5px] font-[700] text-[color:var(--text-muted)]">Assessment History</p>
-          </div>
-        )}
-        {sorted.map((a) => (
-          <NutritionCard key={String(a.id)} assessment={a} onClick={() => openWizard(String(a.id))} />
-        ))}
-      </div>
-    </div>
+    <AssessmentHistoryHub
+      title={`${clientName}'s Nutrition`}
+      icon={<Salad size={18} />}
+      emptyLabel="No nutrition assessments yet."
+      loading={loading}
+      loadError={loadError}
+      onRetry={loadData}
+      onNew={() => openWizard(null)}
+      assessments={assessments}
+      renderComparison={(initial, latest) => <NutritionComparison initial={initial} latest={latest} />}
+      renderCard={(a) => (
+        <AssessmentScoreCard
+          key={String(a.id)} assessment={a}
+          scoreKey="nutrition_score" readinessKey="nutrition_readiness"
+          onClick={() => openWizard(String(a.id))}
+        />
+      )}
+    />
   );
 }
 
@@ -401,7 +369,7 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
           step is the way out now. */}
       <div className="mx-auto max-w-3xl pt-1">
         <PageHero icon={<Salad size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'}>
-          {!reviewMode && <NutritionProgressTimeline current={step} onStep={setStep} />}
+          {!reviewMode && <StepperTimeline steps={STEPS} current={step} onStep={setStep} />}
         </PageHero>
       </div>
 

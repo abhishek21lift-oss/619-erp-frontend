@@ -11,14 +11,21 @@ const READINESS_STYLE: Record<string, { bg: string; color: string }> = {
   'High Risk': { bg: 'rgba(220,38,38,0.18)', color: '#dc2626' },
 };
 
-interface LifestyleCardProps {
+interface AssessmentScoreCardProps {
   assessment: Record<string, unknown>;
+  /** The row's score column, e.g. `lifestyle_score`. */
+  scoreKey: string;
+  /** The row's readiness-band column, e.g. `lifestyle_readiness`. */
+  readinessKey: string;
   onClick: () => void;
 }
 
-export function LifestyleCard({ assessment, onClick }: LifestyleCardProps) {
-  const score = typeof assessment.lifestyle_score === 'number' ? assessment.lifestyle_score : null;
-  const readiness = assessment.lifestyle_readiness ? String(assessment.lifestyle_readiness) : null;
+/** One assessment in a client's history: score ring, date, readiness band. */
+export function AssessmentScoreCard({ assessment, scoreKey, readinessKey, onClick }: AssessmentScoreCardProps) {
+  const rawScore = assessment[scoreKey];
+  const score = typeof rawScore === 'number' ? rawScore : null;
+  const rawReadiness = assessment[readinessKey];
+  const readiness = rawReadiness ? String(rawReadiness) : null;
   const style = readiness ? READINESS_STYLE[readiness] : null;
   const date = assessment.assessment_date ? String(assessment.assessment_date).slice(0, 10) : '—';
   const riskCount = Array.isArray(assessment.risk_factors) ? assessment.risk_factors.length : 0;
@@ -61,4 +68,4 @@ export function LifestyleCard({ assessment, onClick }: LifestyleCardProps) {
   );
 }
 
-export default LifestyleCard;
+export default AssessmentScoreCard;

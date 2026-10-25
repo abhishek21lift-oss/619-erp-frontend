@@ -1,0 +1,78 @@
+'use client';
+
+import { ArrowDown, ArrowUp, Minus, GitCompare } from 'lucide-react';
+
+export interface ComparisonRow {
+  key: string;
+  label: string;
+  a: number | null;
+  b: number | null;
+  higherIsBetter: boolean;
+}
+
+interface AssessmentComparisonProps {
+  title?: string;
+  initial: Record<string, unknown>;
+  latest: Record<string, unknown>;
+  rows: ComparisonRow[];
+}
+
+/** A number from an assessment row, or null when absent/unparseable. */
+export function comparisonNumber(v: unknown): number | null {
+  const f = typeof v === 'number' ? v : parseFloat(String(v ?? ''));
+  return Number.isFinite(f) ? f : null;
+}
+
+/** Initial vs latest assessment, one row per metric with a direction-aware delta. */
+export function AssessmentComparison({ title = 'Progress Comparison', initial, latest, rows }: AssessmentComparisonProps) {
+  return (
+    <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
+      <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
+      <div className="p-7 sm:p-10">
+        <div className="flex items-start gap-4 mb-7">
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
+            <GitCompare size={20} color="#1CA3F9" />
+          </div>
+          <div>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">{title}</h2>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">
+              Initial ({String(initial.assessment_date ?? '—')}) vs. Latest ({String(latest.assessment_date ?? '—')})
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          {rows.map((m) => {
+            if (m.a == null && m.b == null) return null;
+            const delta = m.a != null && m.b != null ? Math.round((m.b - m.a) * 100) / 100 : null;
+            const improved = delta != null && delta !== 0 ? (delta > 0) === m.higherIsBetter : null;
+            return (
+              <div key={m.key} className="flex items-center justify-between gap-3 rounded-[14px] px-4 py-3" style={{ background: 'var(--bg-subtle)' }}>
+                <span className="text-[13px] font-[640] text-[color:var(--text-secondary)]">{m.label}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[12.5px] font-[600] text-[color:var(--text-muted)]">
+                    {m.a ?? '—'} <span className="mx-1">→</span> {m.b ?? '—'}
+                  </span>
+                  {delta != null && (
+                    <span
+                      className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-[700]"
+                      style={{
+                        background: improved == null ? 'rgba(148,163,184,0.14)' : improved ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+                        color: improved == null ? 'var(--text-muted)' : improved ? '#059669' : '#dc2626',
+                      }}
+                    >
+                      {delta === 0 ? <Minus size={11} /> : delta > 0 ? <ArrowUp size={11} /> : <ArrowDown size={11} />}
+                      {delta > 0 ? '+' : ''}{delta}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default AssessmentComparison;

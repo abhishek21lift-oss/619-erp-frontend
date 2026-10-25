@@ -20,11 +20,13 @@ import { GOAL_TYPE_META } from '@/components/pt-os/goal-assessment/types';
 import { api } from '@/lib/api';
 import { ApiError, apiBase, tenantAuthHeaders } from '@/lib/http';
 import { toMoneyOrNull } from '@/lib/forms/normalize';
+import { todayISO } from '@/lib/forms/domain';
 import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { errorMessage } from '@/lib/forms/errors';
-import { clientEnrollSchema } from '@/lib/forms/schemas/client';
+import { clientEnrollSchema, ENROLL_SESSIONS_PER_WEEK } from '@/lib/forms/schemas/client';
+import { ptEndDate, renewalBalance } from '@/lib/forms/schemas/renewPt';
 import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
 
 /* ─────────────────────────────────────────────────────── TYPES */
@@ -94,21 +96,13 @@ const DAYS = [
   { key: 'Sun', letter: 'S', full: 'Sunday' },
 ];
 
-const SESSIONS_OPTIONS = Array.from({ length: 7 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} Session${i > 0 ? 's' : ''}` }));
+const SESSIONS_OPTIONS = ENROLL_SESSIONS_PER_WEEK.map((v) => ({
+  value: v, label: `${v} Session${v === '1' ? '' : 's'}`,
+}));
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 /* ─────────────────────────────────────────────────────── HELPERS */
-function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-function addMonths(dateStr: string, months: number): string {
-  if (!dateStr || !months) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return '';
-  d.setMonth(d.getMonth() + Number(months));
-  return d.toISOString().slice(0, 10);
-}
 function fmtDateLong(d: string): string {
   if (!d) return '—';
   const dt = new Date(d);
@@ -135,17 +129,6 @@ function to24Hour(v: string): string {
   if (m[3].toUpperCase() === 'PM') h += 12;
   return `${String(h).padStart(2, '0')}:${m[2]}`;
 }
-/** Balance Due = Final Selling Price − Amount Paid, never negative. Mirrors
- *  the backend's GREATEST(final_amount - paid_amount, 0) exactly — this is
- *  a live UX preview only, the backend independently recomputes and owns
- *  the source of truth on every save. */
-function calcBalanceDue(finalAmount: string, amountPaid: string): number {
-  const final = money(finalAmount);
-  const paid = money(amountPaid);
-  if (final === null) return 0;
-  return Math.max(final - (paid ?? 0), 0);
-}
-
 /**
  * One money field's value, read the way the rest of the app reads money.
  *
@@ -156,7 +139,7 @@ function calcBalanceDue(finalAmount: string, amountPaid: string): number {
  *
  * `toMoneyOrNull` strips the separator and the rupee sign, rounds at the paise
  * through a scaled integer, and still distinguishes absent (null) from
- * unparseable (NaN) — which the validators below need, because "Amount Paid is
+ * unparseable (NaN) — which the schema needs, because "Amount Paid is
  * required" and "Enter a valid amount" are different messages.
  */
 function money(raw: string): number | null {
@@ -165,35 +148,27 @@ function money(raw: string): number | null {
 }
 
 /* ─────────────────────────────────────────────────────── VALIDATION */
-function validateStartDate(v: string): string | undefined {
-  return v ? undefined : 'Start date is required.';
+/** The canonical schema's errors, keyed by field. Used both on blur and on
+ *  submit so early feedback cannot word a rule differently from the save. */
+function fieldErrors(form: EnrollFormData): FormErrors {
+  const parsed = clientEnrollSchema.safeParse(form);
+  const out: FormErrors = {};
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues) {
+      const k = issue.path[0];
+      if (typeof k === 'string' && !out[k]) out[k] = issue.message;
+    }
+  }
+  return out;
 }
-function validateWorkoutTime(form: EnrollFormData): string | undefined {
-  return form.workoutTime ? undefined : 'Please select a workout time.';
-}
-function validateFinalAmount(v: string): string | undefined {
-  if (!v.trim()) return 'Final Selling Price is required.';
-  const n = money(v);
-  if (n === null) return 'Enter a valid amount.';
-  if (n <= 0) return 'Final Selling Price must be greater than zero.';
-  return undefined;
-}
-function validateAmountPaid(form: EnrollFormData): string | undefined {
-  if (!form.amountPaid.trim()) return 'Amount Paid is required.';
-  const paid = money(form.amountPaid);
-  if (paid === null) return 'Enter a valid amount.';
-  if (paid < 0) return 'Amount Paid cannot be negative.';
-  const final = money(form.finalAmount);
-  if (final !== null && paid > final) return 'Amount Paid cannot exceed Final Selling Price.';
-  return undefined;
-}
+
 // Payment fields are the trainer's, like every other field on this form: they
 // own the studio. They used to be admin/manager-only, which — once the trainer
 // became the owner — left the one person running the studio unable to record
 // what a client paid at enrolment.
 function initForm(): EnrollFormData {
   return {
-    startDate: todayStr(), duration: '',
+    startDate: todayISO(), duration: '',
     trainerId: '', trainerName: '', trainingMode: '', workoutExperienceLevel: '',
     previousTrainerExperience: false, workoutTime: '',
     trainingDays: [], sessionsPerWeek: '',
@@ -319,7 +294,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
         // An existing term's start date is kept; a client with no term starts
         // today. Client creation used to stamp pt_start_date on everyone, so a
         // stale "start" from the day they were added would otherwise pre-fill.
-        startDate: (hasPtTerm(c as PtTermFields) && String(c.pt_start_date ?? '').slice(0, 10)) || todayStr(),
+        startDate: (hasPtTerm(c as PtTermFields) && String(c.pt_start_date ?? '').slice(0, 10)) || todayISO(),
         duration: c.duration_months ? String(c.duration_months) : '',
         trainerId: String(c.trainer_id ?? ''),
         trainerName: String(c.trainer_name ?? ''),
@@ -367,8 +342,13 @@ function EnrollForm({ clientId }: { clientId: string }) {
     setForm((prev) => ({ ...prev, [key]: val }));
   }, []);
 
+  const validateOnBlur = (key: keyof FormErrors) => {
+    const next = fieldErrors(form)[key];
+    setErrors((e) => ({ ...e, [key]: next }));
+  };
+
   const endDate = useMemo(
-    () => addMonths(form.startDate, Number(form.duration)),
+    () => ptEndDate(form.startDate, Number(form.duration)) ?? '',
     [form.startDate, form.duration],
   );
   /** The header chips. Built as a list so a client missing a date of birth or
@@ -388,14 +368,14 @@ function EnrollForm({ clientId }: { clientId: string }) {
   }, [clientMeta]);
 
   const balanceDue = useMemo(
-    () => calcBalanceDue(form.finalAmount, form.amountPaid),
+    () => renewalBalance(money(form.finalAmount) ?? 0, money(form.amountPaid) ?? 0),
     [form.finalAmount, form.amountPaid],
   );
-  const isPaidInFull = Boolean(form.finalAmount) && Number(form.finalAmount) > 0 && balanceDue === 0;
+  const isPaidInFull = (money(form.finalAmount) ?? 0) > 0 && balanceDue === 0;
   const totalWeeks = form.duration ? Number(form.duration) * 4 : 0;
   const estimatedSessions = totalWeeks && form.sessionsPerWeek ? totalWeeks * Number(form.sessionsPerWeek) : 0;
-  const daysRemaining = endDate ? daysBetween(todayStr(), endDate) : null;
-  const startsToday = form.startDate === todayStr();
+  const daysRemaining = endDate ? daysBetween(todayISO(), endDate) : null;
+  const startsToday = form.startDate === todayISO();
   const endingSoon = daysRemaining !== null && daysRemaining >= 0 && daysRemaining <= 7;
 
   const toggleDay = (key: string) => {
@@ -512,14 +492,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
   const handleSubmit = () => {
     // Canonical schema validation: one rule set governs the enrolment form,
     // including cross-field rules (amount paid cannot exceed final amount).
-    const parsed = clientEnrollSchema.safeParse(form);
-    const nextErrors: FormErrors = {};
-    if (!parsed.success) {
-      for (const issue of parsed.error.issues) {
-        const k = issue.path[0];
-        if (typeof k === 'string' && !nextErrors[k]) nextErrors[k] = String(issue.message);
-      }
-    }
+    const nextErrors = fieldErrors(form);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       // Order matches on-screen top-to-bottom position so the first hit is
@@ -783,14 +756,14 @@ function EnrollForm({ clientId }: { clientId: string }) {
                     <span className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
                       PT Start Date <span style={{ color: '#F59E0B' }}>*</span>
                     </span>
-                    <button type="button" onClick={() => set('startDate', todayStr())} className="text-[11px] font-[700]" style={{ color: '#F59E0B' }}>
+                    <button type="button" onClick={() => set('startDate', todayISO())} className="text-[11px] font-[700]" style={{ color: '#F59E0B' }}>
                       Today
                     </button>
                   </div>
                   <FloatInput
                     label="" ariaLabel="PT Start Date" type="date" value={form.startDate}
                     onChange={(v) => set('startDate', v)}
-                    onBlur={() => setErrors((e) => ({ ...e, startDate: validateStartDate(form.startDate) }))}
+                    onBlur={() => validateOnBlur('startDate')}
                     error={errors.startDate}
                   />
                 </div>
@@ -822,7 +795,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                       prefix={<span className="text-[13px] font-[700]">₹</span>}
                       value={form.finalAmount}
                       onChange={(v) => set('finalAmount', v)}
-                      onBlur={() => setErrors((e) => ({ ...e, finalAmount: validateFinalAmount(form.finalAmount) }))}
+                      onBlur={() => validateOnBlur('finalAmount')}
                       error={errors.finalAmount}
                     />
                   </div>
@@ -836,7 +809,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                       prefix={<span className="text-[13px] font-[700]">₹</span>}
                       value={form.amountPaid}
                       onChange={(v) => set('amountPaid', v)}
-                      onBlur={() => setErrors((e) => ({ ...e, amountPaid: validateAmountPaid(form) }))}
+                      onBlur={() => validateOnBlur('amountPaid')}
                       error={errors.amountPaid}
                     />
                   </div>
@@ -961,7 +934,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                   label="Preferred Workout Time" required
                   type="time" value={form.workoutTime}
                   onChange={(v) => { set('workoutTime', v); setErrors((e) => ({ ...e, workoutTime: undefined })); }}
-                  onBlur={() => setErrors((e) => ({ ...e, workoutTime: validateWorkoutTime(form) }))}
+                  onBlur={() => validateOnBlur('workoutTime')}
                   error={errors.workoutTime}
                 />
               </div>
