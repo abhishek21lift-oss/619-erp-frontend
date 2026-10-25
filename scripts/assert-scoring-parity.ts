@@ -57,8 +57,7 @@ import * as FE_NUTRITION from '../src/lib/nutrition-calculations';
 import * as FE_POSTURE from '../src/lib/posture-calculations';
 import * as FE_PARQ from '../src/lib/parq-calculations';
 import * as FE_FLEXIBILITY from '../src/lib/flexibility-protocol';
-import { CONSENT_CHECKBOX_FIELDS } from '../src/components/pt-os/parq/types';
-import { FINAL_ACK_FIELDS } from '../src/components/pt-os/informed-consent/types';
+import { PARQ_CONSENT_FIELDS, INFORMED_CONSENT_ACK_FIELDS } from '../src/lib/consent-copy';
 
 const BACKEND_MODULE = 'src/modules/progress/fitness-scoring.js';
 const LIFESTYLE_BACKEND_MODULE = 'src/modules/progress/lifestyle-scoring.js';
@@ -836,13 +835,13 @@ function consentCopyMismatches(): string[] {
     INFORMED_CONSENT_ACK_LABELS: Record<string, string>;
   };
   const mismatches: string[] = [];
-  for (const field of CONSENT_CHECKBOX_FIELDS) {
+  for (const field of PARQ_CONSENT_FIELDS) {
     const printed = BE.PARQ_CONSENT_LABELS[field.key];
     if (printed !== field.label) {
       mismatches.push(`PAR-Q ${field.key}: on screen ${JSON.stringify(field.label)}, printed ${JSON.stringify(printed)}`);
     }
   }
-  for (const field of FINAL_ACK_FIELDS) {
+  for (const field of INFORMED_CONSENT_ACK_FIELDS) {
     const printed = BE.INFORMED_CONSENT_ACK_LABELS[field.key];
     if (printed !== field.label) {
       mismatches.push(`Informed consent ${field.key}: on screen ${JSON.stringify(field.label)}, printed ${JSON.stringify(printed)}`);

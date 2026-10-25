@@ -3,6 +3,7 @@
 // wizard. Mirrors the pattern in src/components/pt-os/parq/types.ts.
 
 import type { InformedConsent, InformedConsentAcknowledgements } from '@/lib/api';
+import { INFORMED_CONSENT_ACK_FIELDS } from '@/lib/consent-copy';
 import { todayISO } from '@/lib/forms/domain';
 
 export interface InformedConsentFormData {
@@ -214,16 +215,9 @@ export function prevStepId(current: StepId): StepId | null {
 
 // Section 6 (confidentiality) + Section 7 (voluntary participation) +
 // Section 8 (final declaration) — shown together on the Agreement step.
-// The signed PDF prints these labels from the backend's consentText.js; the
-// cross-repo parity script fails if the two drift.
-export const FINAL_ACK_FIELDS: { key: keyof InformedConsentAcknowledgements; label: string }[] = [
-  { key: 'understands_confidentiality', label: 'I understand my personal and medical information will remain confidential and will only be used for designing, monitoring and improving my personal training program. Parts of my programme may be drafted with the help of AI tools; to do this, relevant details (such as my goals, measurements and health or injury notes, but not my phone number) are sent to an AI service provider that is not permitted to store or train on them, and my trainer reviews everything before it is used.' },
-  { key: 'voluntary_participation', label: 'I understand my participation is voluntary and I can withdraw at any time.' },
-  {
-    key: 'final_declaration',
-    label: 'I confirm that: I have read this entire informed consent document; I understand the risks; I understand the benefits; I have asked all my questions; my questions have been answered; I voluntarily agree to participate.',
-  },
-];
+// The wording lives in lib/consent-copy.ts so the cross-repo parity script can
+// import it without loading this file's zod-dependent graph.
+export const FINAL_ACK_FIELDS: { key: keyof InformedConsentAcknowledgements; label: string }[] = [...INFORMED_CONSENT_ACK_FIELDS];
 
 export function buildCreatePayload(form: InformedConsentFormData, clientId: string): Record<string, unknown> {
   return {
