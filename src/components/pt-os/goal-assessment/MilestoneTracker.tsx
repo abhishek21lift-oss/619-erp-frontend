@@ -1,7 +1,7 @@
 'use client';
 import { useMemo } from 'react';
 import { CalendarRange } from 'lucide-react';
-import { generateMilestones } from '@/lib/goal-scheduling';
+import { defaultMilestones } from '@/lib/goal-plan';
 import GoalStepCard from './GoalStepCard';
 import type { GoalMilestone } from '@/lib/goal-plan';
 
@@ -13,7 +13,8 @@ import type { GoalMilestone } from '@/lib/goal-plan';
 export default function MilestoneTracker({ startDate, targetDate, milestones }: { startDate?: string | null; targetDate?: string | null; milestones?: GoalMilestone[] }) {
   const rows = useMemo(() => {
     if (milestones?.length) return milestones.map((m) => ({ label: m.label, date: m.date }));
-    return generateMilestones(startDate, targetDate, 8, 12).map((m) => ({ label: m.label, date: m.date }));
+    const start = startDate || new Date().toISOString().slice(0, 10);
+    return defaultMilestones(start, targetDate, 8, 12).map((m) => ({ label: m.label, date: m.date }));
   }, [milestones, startDate, targetDate]);
 
   return (

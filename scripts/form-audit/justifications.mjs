@@ -168,13 +168,13 @@ export const JUSTIFIED = {
 
   'src/app/(chrome)/pt-os/clients/[id]/enroll/page.tsx': {
     allow: 1,
-    allowStateCoercions: 6,
+    allowStateCoercions: 5,
     reason:
-      'Six `Number(form.x)` reads, every one of them on a value that cannot be ' +
+      'Five `Number(form.x)` reads, every one of them on a value that cannot be ' +
       'blank or unparseable by the time it is read. `duration` is a <select> ' +
-      'typed `\'1\'..\'12\'`, `sessionsPerWeek` a <select> the validator also ' +
-      'bounds to 1–7, and `validateAll` runs on every submit and blocks it — ' +
-      'the save path is handleSubmit → validateAll → agreement sheet → ' +
+      'typed `\'1\'..\'12\'`, `sessionsPerWeek` a <select> the schema also ' +
+      'bounds to 1–7, and `fieldErrors` runs on every submit and blocks it — ' +
+      'the save path is handleSubmit → fieldErrors → agreement sheet → ' +
       'confirmAndSave, and nothing else calls attemptSave. The two MONEY reads ' +
       'are not in that six: they were `Number(form.finalAmount)`, they are ' +
       'toMoneyOrNull now, and that is a fix rather than an exemption — ' +

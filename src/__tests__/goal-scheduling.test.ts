@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { recommendTrainingSplit, generateMilestones, buildRoutineBlueprint } from '@/lib/goal-scheduling';
+import { recommendTrainingSplit, buildRoutineBlueprint } from '@/lib/goal-scheduling';
 
 describe('goal scheduling', () => {
   it('3 days -> full body', () => {
@@ -26,11 +26,6 @@ describe('goal scheduling', () => {
       const s = recommendTrainingSplit(d, {});
       expect(s.calendar.filter((x) => x.type === 'training')).toHaveLength(d);
     }
-  });
-  it('milestones include start and deadline', () => {
-    const ms = generateMilestones('2026-01-01', '2026-04-01', 8, 12);
-    expect(ms[0].type).toBe('start');
-    expect(ms.some((m) => m.type === 'long_term')).toBe(true);
   });
   it('routine blueprint has main lifts', () => {
     const b = buildRoutineBlueprint({ goal: 'strength_gain', experience: 'intermediate', equipment: 'full_gym', trainingDays: 4, split: 'upper_lower' });

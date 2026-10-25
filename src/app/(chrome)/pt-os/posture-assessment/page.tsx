@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, Accessibility, Plus, History,
+  ArrowLeft, ArrowRight, Check, Loader2, Accessibility,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, PageHero } from '@/components/ui';
@@ -16,7 +16,8 @@ import { calcPostureRiskScore, classifyRisk, calcPostureReferrals } from '@/lib/
 import ReferralBanner from '@/components/pt-os/shared/ReferralBanner';
 import { STEPS, initPostureForm, COACH_NOTE_FIELDS } from '@/components/pt-os/posture-assessment/types';
 import type { PostureFormData, StepId, CoachNotes } from '@/components/pt-os/posture-assessment/types';
-import PostureProgressTimeline from '@/components/pt-os/posture-assessment/PostureProgressTimeline';
+import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
+import AssessmentHistoryHub from '@/components/pt-os/shared/AssessmentHistoryHub';
 import StepPostureObservations from '@/components/pt-os/posture-assessment/StepPostureObservations';
 import CoachNotesPanel from '@/components/pt-os/shared/CoachNotesPanel';
 import PostureRiskBadges from '@/components/pt-os/posture-assessment/PostureRiskBadges';
@@ -100,63 +101,24 @@ function PostureHub({ clientId, toast }: PostureHubProps) {
   const openWizard = (id: string | null) => { setEditingId(id); setView('wizard'); };
   const closeWizard = (refresh: boolean) => { setView('list'); setEditingId(null); if (refresh) loadData(); };
 
-  if (loading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>;
-  }
-  if (loadError) {
-    return (
-      <div className="mx-auto max-w-md py-24 text-center">
-        <AlertCircle size={32} style={{ color: '#ef4444', margin: '0 auto 12px' }} />
-        <p className="text-[14px] font-[600] text-[color:var(--text-secondary)]">{loadError}</p>
-        <Button variant="outline" className="mt-4" onClick={loadData}>Retry</Button>
-      </div>
-    );
-  }
-
   if (view === 'wizard') {
     const editing = editingId ? assessments.find((a) => String(a.id) === editingId) : null;
     return <PostureWizard clientId={clientId} clientName={clientName} editing={editing || null} toast={toast} onDone={closeWizard} />;
   }
 
-  const sorted = [...assessments].sort((a, b) => String(b.assessment_date ?? '').localeCompare(String(a.assessment_date ?? '')));
-  const initial = sorted[sorted.length - 1];
-  const latest = sorted[0];
-
   return (
-    <div className="mx-auto w-full max-w-3xl py-6 space-y-5">
-      <PageHero
-        icon={<Accessibility size={18} />}
-        title={`${clientName}'s Posture`}
-
-        actions={
-          <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: '#fff', color: '#0F172A' }}>
-            New Assessment
-          </Button>
-        }
-      />
-
-      {sorted.length >= 2 && <PostureComparison initial={initial} latest={latest} />}
-
-      <div className="space-y-3">
-        {sorted.length === 0 && (
-          <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <p className="text-[14px] font-[600] text-[color:var(--text-muted)]">No posture assessments yet.</p>
-            <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}>
-              Start First Assessment
-            </Button>
-          </div>
-        )}
-        {sorted.length > 0 && (
-          <div className="flex items-center gap-2 px-1">
-            <History size={14} style={{ color: 'var(--text-muted)' }} />
-            <p className="text-[12.5px] font-[700] text-[color:var(--text-muted)]">Assessment History</p>
-          </div>
-        )}
-        {sorted.map((a) => (
-          <PostureCard key={String(a.id)} assessment={a} onClick={() => openWizard(String(a.id))} />
-        ))}
-      </div>
-    </div>
+    <AssessmentHistoryHub
+      title={`${clientName}'s Posture`}
+      icon={<Accessibility size={18} />}
+      emptyLabel="No posture assessments yet."
+      loading={loading}
+      loadError={loadError}
+      onRetry={loadData}
+      onNew={() => openWizard(null)}
+      assessments={assessments}
+      renderComparison={(initial, latest) => <PostureComparison initial={initial} latest={latest} />}
+      renderCard={(a) => <PostureCard key={String(a.id)} assessment={a} onClick={() => openWizard(String(a.id))} />}
+    />
   );
 }
 
@@ -267,7 +229,7 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
           step is the way out now. */}
       <div className="mx-auto max-w-3xl pt-1">
         <PageHero icon={<Accessibility size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'}>
-          {!reviewMode && <PostureProgressTimeline current={step} onStep={setStep} />}
+          {!reviewMode && <StepperTimeline steps={STEPS} current={step} onStep={setStep} />}
         </PageHero>
       </div>
 

@@ -231,6 +231,8 @@ export function prevStepId(current: StepId, riskLevel: 'low' | 'medium' | 'high'
 // participation, emergency care and data use are agreed on the Informed
 // Consent — they used to be ticked and signed here too. The other keys stay
 // on ConsentCheckboxesForm because older records carry them.
+// The signed PDF prints these labels from the backend's consentText.js; the
+// cross-repo parity script fails if the two drift.
 export const CONSENT_CHECKBOX_FIELDS: { key: keyof ConsentCheckboxesForm; label: string }[] = [
   { key: 'info_true', label: 'The answers in this screening are true and complete to the best of my knowledge, and I will tell my trainer if my health changes.' },
 ];

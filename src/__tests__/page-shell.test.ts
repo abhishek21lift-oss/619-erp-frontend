@@ -13,8 +13,7 @@
 // either side that nothing else notices.
 
 import { describe, expect, it } from 'vitest';
-import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { srcPath } from '@/__tests__/helpers/app-routes';
 
 const code = (s: string) => s
@@ -507,17 +506,6 @@ describe('the client-scoped PT pages (enroll, renew, goals, sessions, strength t
     expect(enroll).not.toContain('<ClientAvatar');
   });
 
-  it('the goal wizard progress timeline is readable on navy, not near-black-on-navy', () => {
-    // GoalProgressTimeline was built for a light page background: the active
-    // step's circle was #0f172a (near-black) and its label was the same
-    // #0f172a on top of it — invisible once the component moved inside
-    // PageHero's navy gradient. Fixed at the source since this component
-    // has exactly one caller.
-    const timeline = src('components', 'pt-os', 'goal-assessment', 'GoalProgressTimeline.tsx');
-    expect(timeline).not.toContain("active ? '#0f172a'");
-    expect(timeline).not.toContain("background: '#e2e8f0'");
-  });
-
   it('the goals list and goal wizard headers both use PageHero', () => {
     // Two return paths in one file — the client's goal list and the
     // multi-step wizard for creating/editing one — each had its own ad-hoc
@@ -721,20 +709,24 @@ describe('informed consent, PAR-Q and fitness testing wizards', () => {
   });
 
   it('the shared and fitness-testing steppers are readable on navy, not near-black-on-navy', () => {
-    // Same bug as GoalProgressTimeline: built for a light background, so the
-    // active step read #0f172a on #fff and the rest read near-black on a
-    // light track — both invisible once these steppers moved inside
-    // PageHero. StepperTimeline is shared by the consent and PAR-Q wizards;
-    // fitness-testing/ProgressTimeline has one caller, the assessment wizard.
+    // Built for a light background, so the active step read #0f172a on #fff
+    // and the rest read near-black on a light track — both invisible once the
+    // stepper moved inside PageHero.
     const stepper = src('components', 'pt-os', 'shared', 'StepperTimeline.tsx');
     expect(stepper).not.toContain("color: '#0f172a'");
     expect(stepper).not.toContain("background: '#e2e8f0'");
     expect(stepper).toContain('rgba(255,255,255,0.14)');
     // Every wizard's stepper is now the shared one — six near-identical
     // copies used to drift apart, some still light-on-light.
-    for (const dir of ['fitness-testing', 'goal-assessment', 'lifestyle-assessment', 'nutrition-assessment', 'mobility-assessment', 'posture-assessment']) {
-      const file = readdirSync(join(process.cwd(), 'src', 'components', 'pt-os', dir)).find((f) => f.endsWith('ProgressTimeline.tsx'))!;
-      expect(src('components', 'pt-os', dir, file)).toContain("import StepperTimeline from '@/components/pt-os/shared/StepperTimeline'");
+    for (const page of [
+      ['pt-os', 'assessment'],
+      ['pt-os', 'goals'],
+      ['pt-os', 'lifestyle-assessment'],
+      ['pt-os', 'nutrition-assessment'],
+      ['pt-os', 'mobility-assessment'],
+      ['pt-os', 'posture-assessment'],
+    ]) {
+      expect(src('app', ...page, 'page.tsx')).toContain("import StepperTimeline from '@/components/pt-os/shared/StepperTimeline'");
     }
   });
 });
