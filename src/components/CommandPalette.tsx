@@ -98,7 +98,7 @@ export default function CommandPalette() {
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
     if (abortRef.current) { abortRef.current.abort(); abortRef.current = null; }
-    if (!open || !q.trim()) { setMemberResults([]); return; }
+    if (!open || !q.trim() || user?.role !== 'trainer') { setMemberResults([]); return; }
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -119,7 +119,7 @@ export default function CommandPalette() {
       if (searchTimer.current) clearTimeout(searchTimer.current);
       controller.abort();
     };
-  }, [q, open]);
+  }, [q, open, user?.role]);
 
   // ── Build static results ──
   const staticResults = useMemo<Result[]>(() => {
@@ -158,7 +158,7 @@ export default function CommandPalette() {
         label: name,
         sub: c.mobile ? `+${c.country_code || '91'} ${c.mobile}` : (c.email || ''),
         icon: '◉',
-        href: `/clients/${c.id}`,
+        href: `/pt-os/clients/${c.id}`,
         group: 'Members',
       };
     });
