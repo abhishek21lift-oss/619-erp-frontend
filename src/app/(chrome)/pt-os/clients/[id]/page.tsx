@@ -109,11 +109,13 @@ const NEUTRAL: Tone = {
 const inkClass = 'text-[var(--tone-ink)] dark:text-[var(--tone-ink-dark)]';
 const inkVars = (t: Tone) => ({ '--tone-ink': t.ink, '--tone-ink-dark': t.inkDark }) as React.CSSProperties;
 
-function getStatusConfig(status: string, days_left: number | null, pt_end_date?: string) {
+function getStatusConfig(status: string, days_left: number | null, pt_end_date?: string, has_pt_term = false) {
   // The last day of the term is a valid day (lib/term-dates.ts).
   const endPassed = termEnded(days_left, pt_end_date);
   if (endPassed) return { label: 'Inactive', dot: gray[400] };
   if (status === 'frozen') return { label: 'Frozen', dot: blue[300] };
+  // A provisional enrolment has a term but is not active until screening.
+  if (status === 'pending' && has_pt_term) return { label: 'Activation Pending', dot: amber[400] };
   if (status === 'active' && days_left != null && days_left <= 7) return { label: 'Expiring', dot: amber[400] };
   if (status === 'active') return { label: 'Active', dot: emerald[400] };
   if (status === 'expired' || status === 'inactive') return { label: 'Inactive', dot: gray[400] };
@@ -609,7 +611,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   // different numbers.
   const waNumber = client?.whatsapp || client?.mobile;
   const waHref = waNumber ? whatsappHref(waNumber, client?.name) : null;
-  const statusCfg = client ? getStatusConfig(client.status, client.days_left, client.pt_end_date) : null;
+  const statusCfg = client ? getStatusConfig(client.status, client.days_left, client.pt_end_date, client.has_pt_term) : null;
   const balanceTint = currentTermBalance > 0 ? (client?.due_status === 'OVERDUE' ? BAD : WARN) : OK;
   const daysTint = client?.days_left != null && client.days_left <= 7 ? WARN : tones.sky;
 

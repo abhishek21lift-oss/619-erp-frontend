@@ -495,6 +495,8 @@ export type PtClientBase = {
   pt_end_date: string;
   days_left: number;
   status: string;
+  /** Whether the client has ever had a PT term (server-computed). */
+  has_pt_term?: boolean;
 };
 
 // ─────────────────────── PAR-Q / Health Screening ──────────────────────

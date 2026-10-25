@@ -16,12 +16,13 @@
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m, useReducedMotion } from 'framer-motion';
-import { ArrowRight, CheckCircle2, Loader2, MessagesSquare, Save } from 'lucide-react';
+import { CheckCircle2, Loader2, MessagesSquare, Save } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, PageContainer } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { InterviewSection } from '@/components/pt-os/interview/InterviewSection';
 import { InterviewHero, SectionNav } from '@/components/pt-os/interview/InterviewChrome';
+import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
 import {
   EMPTY_ANSWERS as EMPTY, INTERVIEW_FIELDS, INTERVIEW_QUESTIONS, answeredCount, topicAnswered,
   type Answers, type InterviewField,
@@ -32,7 +33,7 @@ import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { errorMessage } from '@/lib/forms/errors';
-import { STEP_LABEL, stepHref, type ClientInterview } from '@/lib/journey';
+import { type ClientInterview } from '@/lib/journey';
 
 /**
  * The saved answers, as the strings the selects hold. Numeric columns come
@@ -319,15 +320,7 @@ function InterviewComplete({ clientName, clientId, answers }: { clientName: stri
             );
           })}
         </ul>
-        <Button className="mt-8 h-11 px-5" iconLeft={<ArrowRight size={14} />}
-          onClick={() => router.push(stepHref('assessment', clientId))}
-          style={{
-            background: `linear-gradient(135deg, ${semantic.primaryHi}, ${semantic.primaryLo})`,
-            color: '#fff',
-            boxShadow: `0 16px 30px -14px ${rgba(semantic.primary, 0.65)}`,
-          }}>
-          Continue to {STEP_LABEL.assessment}
-        </Button>
+        <JourneyNextButton clientId={clientId} current="interview" className="mt-8" />
         <button type="button" className="mt-3 rounded-full px-3 py-1.5 text-[12.5px] font-[650] transition-colors hover:bg-[var(--bg-subtle)]"
           style={{ color: 'var(--text-muted)' }}
           onClick={() => router.push(`/pt-os/clients/${clientId}`)}>

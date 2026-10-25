@@ -29,6 +29,22 @@ vi.mock('@/lib/api', () => ({
   api: {
     pt: {
       client: async () => ({ data: { name: 'Mina Rao' } }),
+      journey: async () => ({
+        data: {
+          steps: [
+            { key: 'welcome_tour', state: 'done' },
+            { key: 'enrolment', state: 'done' },
+            { key: 'consent', state: 'done' },
+            { key: 'parq', state: 'done' },
+            { key: 'interview', state: 'done', optional: true },
+            { key: 'goals', state: 'done' },
+            { key: 'assessment', state: 'todo' },
+            { key: 'program_design', state: 'todo' },
+          ],
+          next: 'assessment',
+          screening: {},
+        },
+      }),
       interviews: {
         list: async () => ({ data: mockDrafts }),
         create: (...a: unknown[]) => mockCreate(...a),
@@ -156,7 +172,7 @@ describe('<InterviewPage />', () => {
     const covered = screen.getByRole('list', { name: 'Topics covered' });
     expect(within(covered).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Smoking & alcohol']);
 
-    fireEvent.click(screen.getByRole('button', { name: /continue to fitness assessment/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /continue to fitness assessment/i }));
     expect(mockPush).toHaveBeenCalledWith('/pt-os/assessment?client_id=c1');
   });
 
