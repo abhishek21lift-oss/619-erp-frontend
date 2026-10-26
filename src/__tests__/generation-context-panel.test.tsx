@@ -288,3 +288,44 @@ describe('records that disagree', () => {
     expect(screen.queryByText(/Records disagree/)).toBeNull();
   });
 });
+
+// ── A field name is not an instruction ─────────────────────────────────────
+//
+// "set experience level in enrolment" still left the trainer to find the
+// enrolment screen. The panel knows which client this is, so the fix can be
+// the link itself — and stays plain words when the panel is rendered without
+// a client, which is how the existing tests and any future read-only use it.
+describe('where to record a missing fact', () => {
+  it('links each blocking field to the screen that writes it', () => {
+    render(<GenerationContextPanel context={context()} clientId="c1" />);
+    expect(screen.getByRole('link', { name: 'set a goal on the client' }))
+      .toHaveAttribute('href', '/pt-os/goals?client_id=c1');
+    expect(screen.getByRole('link', { name: 'set experience level in enrolment' }))
+      .toHaveAttribute('href', '/pt-os/clients/c1/enroll');
+    expect(screen.getByRole('link', { name: 'set sessions per week in enrolment' }))
+      .toHaveAttribute('href', '/pt-os/clients/c1/enroll');
+  });
+
+  it('links an absent measurement to the assessment, and age to the profile', () => {
+    const base = context();
+    const withWeight = context({
+      data_quality: {
+        ...base.data_quality,
+        missing: [...base.data_quality.missing, { field: 'weight_kg', blocking: false }],
+      },
+    });
+    render(<GenerationContextPanel context={withWeight} clientId="c1" />);
+    expect(screen.getByRole('link', { name: 'record height on the profile' }))
+      .toHaveAttribute('href', '/pt-os/assessment?client_id=c1');
+    expect(screen.getByRole('link', { name: 'record a weight or an assessment' }))
+      .toHaveAttribute('href', '/pt-os/assessment?client_id=c1');
+    expect(screen.getByRole('link', { name: 'record date of birth' }))
+      .toHaveAttribute('href', '/pt-os/clients/c1/edit');
+  });
+
+  it('stays plain words when it does not know whose client this is', () => {
+    render(<GenerationContextPanel context={context()} />);
+    expect(screen.queryByRole('link', { name: 'set a goal on the client' })).toBeNull();
+    expect(screen.getByText(/set a goal on the client/)).toBeInTheDocument();
+  });
+});

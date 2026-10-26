@@ -50,6 +50,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
@@ -59,6 +60,7 @@ import { api } from '@/lib/api';
 import type {
   AiDietPlan, AiKnowledgeGrounding, AiWorkoutContext, AiWorkoutGenerationResult, AiWorkoutPlan,
 } from '@/lib/api';
+import { STEP_LABEL, stepHref, type ClientJourney } from '@/lib/journey';
 import GenerationEvidence from './GenerationEvidence';
 import GenerationContextPanel from './GenerationContextPanel';
 import TrainerStatedFields, { type StatedValues } from './TrainerStatedFields';
@@ -112,6 +114,11 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
   const [busy, setBusy] = useState<'workout' | 'diet' | null>(null);
   const [context, setContext] = useState<AiWorkoutContext | null>(null);
   const [contextFailed, setContextFailed] = useState(false);
+  // Where this client is in intake. Only the workout generator is gated by it:
+  // a diet can be written for somebody whose PT has lapsed, but a programme
+  // cannot be assigned to them. The server refuses that at assign time; this
+  // reads the same journey so the trainer is told before a token is spent.
+  const [journey, setJourney] = useState<ClientJourney | null>(null);
   // What the trainer knows that the record does not. Sent as their statement,
   // never written to the client, and never able to overwrite a recorded value.
   const [stated, setStated] = useState<StatedValues>({});
@@ -186,6 +193,22 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
   }, [client.id]);
 
   useEffect(() => { void loadContext(); }, [loadContext]);
+
+  /**
+   * The intake gate, best-effort like the context above.
+   *
+   * A failed read is not a blocked client: the server still decides, and the
+   * assign call still refuses. So this fails open and says nothing, rather
+   * than taking the generator away because a second endpoint was slow.
+   */
+  useEffect(() => {
+    let live = true;
+    setJourney(null);
+    api.pt.journey(client.id)
+      .then((res) => { if (live) setJourney(res.data); })
+      .catch(() => { if (live) setJourney(null); });
+    return () => { live = false; };
+  }, [client.id]);
 
   // A result belongs to the client it was generated for. Without this,
   // switching clients leaves the previous plan on screen with a Save button
@@ -338,6 +361,18 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
   const program = context?.current_program;
   const onLiveProgramme = Boolean(program?.active && !program.expired);
 
+  // The journey's own verdict on whether a programme can be assigned yet.
+  // `blocked` is what the server's gate answers for a lapsed, frozen or
+  // not-yet-enrolled client; `next` is the step that opens it.
+  const programDesign = journey?.steps.find((s) => s.key === 'program_design');
+  const journeyBlocked = programDesign?.state === 'blocked';
+  const nextStep = journey?.steps.find((s) => s.key === journey?.next);
+  const nextKey = nextStep && nextStep.key !== 'program_design' ? nextStep.key : null;
+  const journeyHref = nextKey
+    ? stepHref(nextKey, client.id, nextStep?.state)
+    : `/pt-os/clients/${client.id}`;
+  const journeyLinkLabel = nextKey ? `Continue to ${STEP_LABEL[nextKey]}` : 'Open the client journey';
+
   const blockedFields = (context?.data_quality.blocking ?? [])
     .filter((f) => !(f in stated && String(stated[f as keyof StatedValues] ?? '').trim()));
 
@@ -388,7 +423,7 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
             so Tailwind's rem sizes render at 87.5% of their names — h-10 is
             35px here, a third under the touch target this app holds
             everything else to. Anything that has to be exactly 44 says 44. */}
-        {context && <GenerationContextPanel context={context} />}
+        {context && <GenerationContextPanel context={context} clientId={client.id} />}
         {contextFailed && (
           <div
             role="status"
@@ -404,7 +439,7 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
             </span>
           </div>
         )}
-        <TrainerStatedFields context={context} values={stated} onChange={setStated} />
+        <TrainerStatedFields context={context} values={stated} onChange={setStated} clientId={client.id} />
 
         {onLiveProgramme && program?.active && (
           <div
@@ -438,6 +473,23 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
           </div>
         )}
 
+        {journeyBlocked && (
+          <div
+            role="status"
+            className="mt-3 flex items-start gap-1.5 rounded-[12px] px-3 py-2.5 text-[11.5px] leading-relaxed"
+            style={{ background: rgba(palette.amber[500], 0.1), color: palette.amber[600], border: '1px solid var(--border)' }}
+          >
+            <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+            <span>
+              <strong className="font-[750]">Program design is not open yet.</strong>{' '}
+              {programDesign?.detail ?? 'This client cannot be assigned a programme yet.'}{' '}
+              <Link href={journeyHref} className="font-[750] underline underline-offset-2">
+                {journeyLinkLabel}
+              </Link>
+            </span>
+          </div>
+        )}
+
         <div className="mt-3 flex flex-col gap-2">
           <button
             type="button"
@@ -446,8 +498,10 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
             // the server's own answer rather than re-derived here. The panel
             // above names the fields; a button that looks live and then 422s
             // teaches a trainer to distrust the screen.
-            disabled={busy !== null || blockedFields.length > 0}
-            title={blockedFields.length > 0 ? `Record ${blockedFields.join(', ')} first` : undefined}
+            disabled={busy !== null || blockedFields.length > 0 || journeyBlocked}
+            title={journeyBlocked
+              ? 'The client cannot be assigned a programme yet'
+              : blockedFields.length > 0 ? `Record ${blockedFields.join(', ')} first` : undefined}
             className="flex h-[44px] w-full items-center justify-center gap-1.5 rounded-[13px] px-3 text-[12.5px] font-[720] text-white transition-transform active:scale-[0.985] disabled:opacity-45"
             style={{
               background: `linear-gradient(135deg, ${BLUE}, ${palette.blue[600]})`,

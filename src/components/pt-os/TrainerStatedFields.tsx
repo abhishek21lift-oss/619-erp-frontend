@@ -37,6 +37,7 @@
  * said cannot be done.
  */
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { ChevronDown, PencilLine } from 'lucide-react';
 import type { AiClientFactField, AiWorkoutContext } from '@/lib/api';
@@ -62,11 +63,13 @@ const FIELDS: Array<{
 ];
 
 export default function TrainerStatedFields({
-  context, values, onChange,
+  context, values, onChange, clientId,
 }: {
   context: AiWorkoutContext | null;
   values: StatedValues;
   onChange: (next: StatedValues) => void;
+  /** Whose record to point at. Absent on read-only uses; no links then. */
+  clientId?: string;
 }) {
   const blocking = context?.data_quality.blocking ?? [];
 
@@ -142,6 +145,24 @@ export default function TrainerStatedFields({
             client&rsquo;s record, and anything already on file is used instead &mdash; except
             equipment, where what you type here narrows the list.
           </p>
+          {clientId && (
+            <p className="mb-2 text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+              To make these part of the client&rsquo;s record, set the goal in{' '}
+              <Link
+                href={`/pt-os/goals?client_id=${encodeURIComponent(clientId)}`}
+                className="font-[700] underline underline-offset-2"
+              >
+                Goals
+              </Link>
+              {' '}and experience and sessions in{' '}
+              <Link
+                href={`/pt-os/clients/${encodeURIComponent(clientId)}/enroll`}
+                className="font-[700] underline underline-offset-2"
+              >
+                PT Enrolment
+              </Link>.
+            </p>
+          )}
 
           <div className="space-y-1.5">
             {FIELDS.map((f) => {

@@ -90,6 +90,11 @@ describe('Program Design hub', () => {
     expect(screen.getByText(/Upper \/ lower/)).toBeTruthy();
     expect(screen.getByText(/50–60%/)).toBeTruthy();
     expect(await screen.findByRole('button', { name: /Continue to/ })).toBeTruthy();
+    // The rules generator was the only door here. The AI generator lives on
+    // the profile's AI tab, and this is the link that makes it reachable from
+    // the step it belongs to.
+    expect(screen.getByRole('link', { name: /Generate with AI/ }))
+      .toHaveAttribute('href', '/pt-os/clients/c1?tab=ai');
   });
 
   it('renders with a bare profile, showing — and a link to complete the assessment', async () => {

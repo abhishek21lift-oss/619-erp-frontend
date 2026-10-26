@@ -4,8 +4,9 @@
  *
  * The rules engine on the server picks, sequences and prescribes; this page is
  * the review surface. Nothing is saved until the trainer presses save, and
- * what is saved goes through the existing plan endpoints — so a generated
- * session is edited and assigned exactly like a hand-built one.
+ * what is saved goes through the existing plan endpoints and lands on the
+ * assign surface — so a generated session is assigned exactly like a
+ * hand-built one, instead of being left in a builder nobody is on.
  *
  * The draft is a suggestion, not a verdict: excluded exercises are shown with
  * the reason they were left out, so "why isn't the deadlift here" is answered
@@ -131,7 +132,7 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
     if (!draft || !draft.mainWork.length) return;
     setSaving(true);
     try {
-      const res = await api.workouts.plans.create({
+      await api.workouts.plans.create({
         name: `${clientName || 'Client'} — ${draft.goal.replace('_', ' ')} (generated)`,
         description: [
           'Generated session. Review before assigning.',
@@ -153,14 +154,14 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
           }.`,
         })),
       });
-      toast.success('Plan saved — opening the builder');
-      router.push(`/pt-os/workout-plans/${res.plan.id}/builder`);
+      toast.success(`Plan saved — assign it to ${clientName || 'the client'}.`);
+      router.push(`/pt-os/workout-plans?client_id=${clientId}`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not save the plan');
     } finally {
       setSaving(false);
     }
-  }, [draft, clientName, router, toast]);
+  }, [draft, clientName, clientId, router, toast]);
 
   const fitt = draft?.conditioning?.fitt;
   const target = draft?.conditioning?.targetHeartRate;
@@ -369,7 +370,7 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
           )}
 
           <Button onClick={saveAsPlan} disabled={saving || !draft.mainWork.length}>
-            {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Save as plan &amp; open builder
+            {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Save plan &amp; assign
           </Button>
         </div>
       )}
