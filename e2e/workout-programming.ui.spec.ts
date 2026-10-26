@@ -81,9 +81,13 @@ test.describe('Workout generator — review a draft, then save it', () => {
     await page.getByRole('button', { name: new RegExp(`${ALPHA.clientName}$`) }).click();
     await expect(page).toHaveURL(new RegExp(`client_id=${ALPHA.clientId}`));
 
-    // The preview is requested on arrival; wait for the review surface, not
-    // just the controls, so a failed generation is reported as such.
-    const save = page.getByRole('button', { name: /Save as plan/ });
+    // The fixture client has no goal or experience on file, and the server now
+    // refuses to invent them. Supply both for this session, then wait for the
+    // review surface so a failed generation is reported as such.
+    await page.getByLabel('Goal').selectOption('general_fitness');
+    await page.getByLabel('Experience').selectOption('beginner');
+    await page.getByRole('button', { name: 'Generate', exact: true }).click();
+    const save = page.getByRole('button', { name: /Save plan & assign/ });
     await expect(save).toBeEnabled({ timeout: 30_000 });
     await expect(page.getByRole('heading', { name: /Main work/ })).toBeVisible();
 
@@ -93,7 +97,9 @@ test.describe('Workout generator — review a draft, then save it', () => {
 
     const before = idsOf(await plans(token));
     await save.click();
-    await expect(page).toHaveURL(/\/pt-os\/workout-plans\/[^/]+\/builder/, { timeout: 30_000 });
+    // Saving lands on the assign surface for this client, not the builder for
+    // a plan nobody is on yet.
+    await expect(page).toHaveURL(new RegExp(`/pt-os/workout-plans\\?client_id=${ALPHA.clientId}`), { timeout: 30_000 });
 
     const added = (await plans(token)).filter((p) => !before.has(p.id));
     for (const p of added) created.push(p.id);
