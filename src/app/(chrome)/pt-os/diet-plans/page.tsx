@@ -10,18 +10,21 @@ import {
   Target, Loader2, Users, Info, TrendingUp,
 } from 'lucide-react';
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip as ChartTooltip, LineChart, Line, ReferenceLine, LabelList, Cell,
+  ResponsiveContainer, XAxis, YAxis, CartesianGrid,
+  Tooltip as ChartTooltip, LineChart, Line, ReferenceLine,
 } from 'recharts';
 import Guard from '@/components/Guard';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DonutChart, PageContainer, PageHero } from '@/components/ui';
+import { clampNumericText } from '@/components/ui/FloatInput';
 import { api } from '@/lib/api';
-import type { Meal as ApiMeal, DietTemplate as ApiDietTemplate, DietAssignment, NutritionLog } from '@/lib/api';
+import type {
+  Meal as ApiMeal, DietTemplate as ApiDietTemplate, DietTemplateMeal,
+  DietAssignment, NutritionLog,
+} from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useTheme } from '@/components/ThemeProvider';
 import { ProgressRing } from '@/components/fitness/ProgressRing';
 import { MealCard } from '@/components/fitness/MealCard';
-import { GroceryList } from '@/components/fitness/GroceryList';
 import { SpotlightCard } from '@/components/fitness/SpotlightCard';
 import { AiCoachPanel } from '@/components/fitness/AiCoachPanel';
 import { identity } from '@/lib/palette';
@@ -34,14 +37,15 @@ type MealType = 'Breakfast' | 'Lunch' | 'Snacks' | 'Dinner' | 'Pre Workout' | 'P
 
 interface Meal {
   id: string; type: MealType; name: string; calories: number;
-  protein: number; carbs: number; fats: number; time: string; emoji: string;
+  protein: number | null; carbs: number | null; fats: number | null;
+  time: string; emoji: string;
   serving_size?: string | null; description?: string | null;
 }
 
 interface DietTemplate {
   id: string; name: string; description: string; goal: string;
-  calories: number; protein: number; carbs: number; fats: number;
-  meals: number; color: string;
+  calories: number; protein: number | null; carbs: number | null; fats: number | null;
+  meals: number; mealList: DietTemplateMeal[]; color: string;
 }
 
 interface Supplement {
@@ -58,24 +62,6 @@ const MEAL_TYPES: { id: MealType; icon: React.ReactNode; label: string; time: st
   { id: 'Pre Workout', icon: <Activity size={13} />, label: 'Pre Workout', time: 'Before training', color: '#f59e0b' },
   { id: 'Post Workout', icon: <Activity size={13} />, label: 'Post Workout', time: 'After training', color: '#10b981' },
 ];
-
-// Chart-mark colors for the "Calories by Meal Type" bar chart — a SEPARATE
-// set from MEAL_TYPES.color above, which only ever tints a pill background at
-// ~10% opacity and is unaffected by this. A full-saturation mark sitting
-// directly on the chart surface is a stricter test than a tint: validated
-// with dataviz/scripts/validate_palette.js, the light-mode hex passes as-is,
-// but amber/orange/emerald read too light against the dark surface (fail the
-// lightness-band check) — these are darker steps of the SAME hues so both
-// modes pass. Order matches MEAL_TYPES, which is the fixed categorical order
-// used everywhere else on this page.
-const MEAL_CHART_COLORS_LIGHT: Record<MealType, string> = {
-  'Breakfast': '#f59e0b', 'Lunch': '#0067e0', 'Snacks': '#0067e0',
-  'Dinner': '#0067e0', 'Pre Workout': '#f59e0b', 'Post Workout': '#10b981',
-};
-const MEAL_CHART_COLORS_DARK: Record<MealType, string> = {
-  'Breakfast': '#d97706', 'Lunch': '#0067e0', 'Snacks': '#0067e0',
-  'Dinner': '#0067e0', 'Pre Workout': '#b91c1c', 'Post Workout': '#059669',
-};
 
 // Macro donut (protein/carbs/fats) — same reasoning, same amber step swapped
 // for dark mode. Matches the macro colors already used on ProgressRing/meter
@@ -119,7 +105,8 @@ function mapApiTemplate(row: ApiDietTemplate, idx: number): DietTemplate {
     id: row.id, name: row.name, description: row.description ?? '',
     goal: GOAL_LABELS[row.goal] ?? row.goal,
     calories: row.daily_calories, protein: row.daily_protein_g, carbs: row.daily_carbs_g, fats: row.daily_fats_g,
-    meals: row.meal_count, color: TEMPLATE_COLORS[idx % TEMPLATE_COLORS.length],
+    meals: row.meal_count, mealList: row.meals ?? [],
+    color: TEMPLATE_COLORS[idx % TEMPLATE_COLORS.length],
   };
 }
 
@@ -157,7 +144,6 @@ function Inner() {
   const searchParams = useSearchParams();
   const clientId = searchParams.get('client_id');
   const { theme } = useTheme();
-  const mealChartColors = theme === 'dark' ? MEAL_CHART_COLORS_DARK : MEAL_CHART_COLORS_LIGHT;
   const macroColors = theme === 'dark' ? MACRO_COLORS_DARK : MACRO_COLORS_LIGHT;
 
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -165,6 +151,10 @@ function Inner() {
   const [savingWater, setSavingWater] = useState(false);
   const [clientName, setClientName] = useState('');
   const [activeAssignment, setActiveAssignment] = useState<DietAssignment | null>(null);
+  const [today, setToday] = useState<NutritionLog | null>(null);
+  const [intake, setIntake] = useState({ calories: '', protein: '', carbs: '', fats: '' });
+  const [savingIntake, setSavingIntake] = useState(false);
+  const [endingPlan, setEndingPlan] = useState(false);
   const [history, setHistory] = useState<NutritionLog[]>([]);
   const [meals, setMeals] = useState<Meal[]>([]);
   const [templates, setTemplates] = useState<DietTemplate[]>([]);
@@ -174,7 +164,7 @@ function Inner() {
   // Seeded from ?q= so a hit from the global search lands on that template.
   const [search, setSearch] = useSeededSearch();
   const [goalFilter, setGoalFilter] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'meals' | 'templates' | 'grocery' | 'supplements' | 'analytics'>('meals');
+  const [activeTab, setActiveTab] = useState<'meals' | 'templates' | 'supplements' | 'analytics'>('meals');
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [addMealOpen, setAddMealOpen] = useState(false);
   const [mealDetail, setMealDetail] = useState<Meal | null>(null);
@@ -184,7 +174,7 @@ function Inner() {
     setLoading(true);
     try {
       const [mealsRaw, templatesRaw, supplementsRaw] = await Promise.all([
-        api.diet.meals.list({ date }),
+        api.diet.meals.list(),
         api.diet.templates.list(),
         api.diet.supplements.list(),
       ]);
@@ -201,13 +191,23 @@ function Inner() {
         const c = clientRes?.data as Record<string, unknown> | undefined;
         setClientName(c ? String(c.name ?? '') : '');
         setActiveAssignment(Array.isArray(assignRes) && assignRes.length > 0 ? assignRes[0] : null);
-        setWater(trackerRes?.today?.water_glasses ?? 0);
+        const t = trackerRes?.today ?? null;
+        setToday(t);
+        setWater(t?.water_glasses ?? 0);
+        setIntake({
+          calories: t?.calories_consumed != null ? String(t.calories_consumed) : '',
+          protein: t?.protein_g != null ? String(t.protein_g) : '',
+          carbs: t?.carbs_g != null ? String(t.carbs_g) : '',
+          fats: t?.fats_g != null ? String(t.fats_g) : '',
+        });
         // Backend returns the last 7 days newest-first; the trend charts read
         // left-to-right as oldest-first.
         setHistory(Array.isArray(trackerRes?.history) ? [...trackerRes.history].reverse() : []);
       } else {
         setClientName('');
         setActiveAssignment(null);
+        setToday(null);
+        setIntake({ calories: '', protein: '', carbs: '', fats: '' });
         setWater(0);
         setHistory([]);
       }
@@ -225,18 +225,26 @@ function Inner() {
   // which is the stray leading zero on the rings. With one meal it merely looks
   // wrong; with two it is `"025.0" + "30.0"` = "025.030.0", and every number
   // downstream of it — the ring fill, the donut, the remaining-kcal — is NaN.
-  // calories is an `integer` column and comes back as a number, which is why it
-  // was the only one of the four that added up.
   const num = (v: unknown) => Number(v) || 0;
-  const consumed = meals.reduce((s, m) => s + num(m.calories), 0);
-  const totalProtein = meals.reduce((s, m) => s + num(m.protein), 0);
-  const totalCarbs = meals.reduce((s, m) => s + num(m.carbs), 0);
-  const totalFats = meals.reduce((s, m) => s + num(m.fats), 0);
 
-  const GOAL_CAL = activeAssignment?.daily_calories ?? 2400;
-  const GOAL_PROT = activeAssignment?.daily_protein_g ?? 160;
-  const GOAL_CARBS = activeAssignment?.daily_carbs_g ?? 260;
-  const GOAL_FATS = activeAssignment?.daily_fats_g ?? 65;
+  // The rings read what the client actually logged, not the meal library.
+  // Summing the library made "consumed" mean "calories on offer", so every
+  // ring sat at 100% for a client who had eaten nothing.
+  const consumed = num(today?.calories_consumed);
+  const totalProtein = num(today?.protein_g);
+  const totalCarbs = num(today?.carbs_g);
+  const totalFats = num(today?.fats_g);
+
+  // Goals exist only when a plan is assigned. Invented 2400/160/260/65
+  // defaults drew progress against a target nobody had set.
+  const GOAL_CAL = activeAssignment?.daily_calories ?? null;
+  const GOAL_PROT = activeAssignment?.daily_protein_g ?? null;
+  const GOAL_CARBS = activeAssignment?.daily_carbs_g ?? null;
+  const GOAL_FATS = activeAssignment?.daily_fats_g ?? null;
+
+  const activeTemplate = activeAssignment
+    ? templates.find((t) => t.id === activeAssignment.diet_template_id) ?? null
+    : null;
 
   const waterPct = Math.min((water / 8) * 100, 100);
 
@@ -252,16 +260,6 @@ function Inner() {
     { name: 'Carbs', value: carbsKcal, color: macroColors.carbs },
     { name: 'Fats', value: fatsKcal, color: macroColors.fats },
   ], [proteinKcal, carbsKcal, fatsKcal, macroColors]);
-
-  // Calories per meal type — "compare magnitude across categories" → bar chart,
-  // categorical color following the fixed MEAL_TYPES order.
-  const mealCalorieBarData = useMemo(() => (
-    MEAL_TYPES.map((mt) => ({
-      name: mt.label,
-      calories: meals.filter((m) => m.type === mt.id).reduce((s, m) => s + m.calories, 0),
-      color: mealChartColors[mt.id],
-    }))
-  ), [meals, mealChartColors]);
 
   // 7-day trend series (client-scoped only — history is empty otherwise).
   const calorieTrendData = useMemo(() => (
@@ -301,6 +299,53 @@ function Inner() {
       toast.error(errorMessage(err, 'Could not save water intake.'));
     } finally {
       setSavingWater(false);
+    }
+  };
+
+  const saveIntake = async () => {
+    if (!clientId) return;
+    const fields = [
+      ['calories', 'calories_consumed', 'Calories'],
+      ['protein', 'protein_g', 'Protein'],
+      ['carbs', 'carbs_g', 'Carbs'],
+      ['fats', 'fats_g', 'Fats'],
+    ] as const;
+
+    const payload: Record<string, number | null> = {};
+    for (const [key, column, label] of fields) {
+      const raw = intake[key].trim();
+      if (raw === '') { payload[column] = null; continue; }
+      const n = Number(raw);
+      if (!Number.isFinite(n) || n < 0) {
+        toast.error(`${label} must be a number of 0 or more.`);
+        return;
+      }
+      payload[column] = n;
+    }
+
+    setSavingIntake(true);
+    try {
+      const res = await api.diet.tracker.update({ client_id: clientId, log_date: date, ...payload });
+      setToday(res.log);
+      toast.success('Intake saved.');
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Could not save intake.'));
+    } finally {
+      setSavingIntake(false);
+    }
+  };
+
+  const endActivePlan = async () => {
+    if (!activeAssignment) return;
+    setEndingPlan(true);
+    try {
+      await api.diet.assignments.update(activeAssignment.id, 'completed');
+      toast.success('Plan ended.');
+      fetchData();
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Could not end this plan.'));
+    } finally {
+      setEndingPlan(false);
     }
   };
 
@@ -361,27 +406,62 @@ function Inner() {
           </div>
         )}
 
+        {/* Active plan — what the client is actually following, with its meals */}
+        {activeAssignment && (
+          <div style={{ marginBottom: 20, padding: '14px 16px', borderRadius: 14, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <Target size={15} color="#10b981" />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{activeAssignment.template_name}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
+                  {activeAssignment.daily_calories} kcal
+                  {activeAssignment.daily_protein_g != null && ` · ${activeAssignment.daily_protein_g}g P`}
+                  {activeAssignment.daily_carbs_g != null && ` · ${activeAssignment.daily_carbs_g}g C`}
+                  {activeAssignment.daily_fats_g != null && ` · ${activeAssignment.daily_fats_g}g F`}
+                </div>
+              </div>
+              <button
+                onClick={endActivePlan}
+                disabled={endingPlan}
+                style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-muted)', fontSize: 11.5, fontWeight: 700, fontFamily: 'inherit', cursor: endingPlan ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                {endingPlan ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />} End plan
+              </button>
+            </div>
+            {activeTemplate && activeTemplate.mealList.length > 0 && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                {activeTemplate.mealList.map((meal) => (
+                  <span key={meal.id} style={{ padding: '3px 9px', borderRadius: 7, fontSize: 11, background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                    {meal.name} · {meal.calories} kcal
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Macro progress rings */}
         <m.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
           {[
-            { label: 'Calories', value: consumed, goal: GOAL_CAL, unit: 'kcal', color: '#ef4444' },
-            { label: 'Protein', value: totalProtein, goal: GOAL_PROT, unit: 'g', color: '#0067e0' },
-            { label: 'Carbs', value: totalCarbs, goal: GOAL_CARBS, unit: 'g', color: '#f59e0b' },
-            { label: 'Fats', value: totalFats, goal: GOAL_FATS, unit: 'g', color: '#0067e0' },
+            { label: 'Calories', value: consumed, raw: today?.calories_consumed, goal: GOAL_CAL, unit: 'kcal', color: '#ef4444' },
+            { label: 'Protein', value: totalProtein, raw: today?.protein_g, goal: GOAL_PROT, unit: 'g', color: '#0067e0' },
+            { label: 'Carbs', value: totalCarbs, raw: today?.carbs_g, goal: GOAL_CARBS, unit: 'g', color: '#f59e0b' },
+            { label: 'Fats', value: totalFats, raw: today?.fats_g, goal: GOAL_FATS, unit: 'g', color: '#0067e0' },
           ].map((macro) => (
             <m.div key={macro.label} variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
               <ProgressRing
                 size={90}
                 strokeWidth={7}
-                progress={Math.min((macro.value / macro.goal) * 100, 100)}
+                progress={macro.goal != null && macro.raw != null ? Math.min((macro.value / macro.goal) * 100, 100) : 0}
                 color={macro.color}
-                value={String(Math.round(macro.value * 10) / 10)}
+                value={macro.raw != null ? String(Math.round(macro.value * 10) / 10) : '—'}
                 label={macro.unit}
               />
               <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textAlign: 'center' }}>
                 {macro.label}<br />
-                <span style={{ color: 'var(--text-disabled)', fontWeight: 500 }}>/{macro.goal}{macro.unit}</span>
+                <span style={{ color: 'var(--text-disabled)', fontWeight: 500 }}>
+                  /{macro.goal ?? '—'}{macro.goal ? macro.unit : ''}
+                </span>
               </span>
             </m.div>
           ))}
@@ -411,6 +491,42 @@ function Inner() {
             </div>
           </div>
         </m.div>
+
+        {/* Intake log — the only place the client's real consumption is written */}
+        <div style={{ marginTop: 16, padding: '14px 16px', borderRadius: 14, background: 'var(--bg-card)', border: '1px solid var(--border)', opacity: clientId ? 1 : 0.6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+            <Apple size={14} color="#10b981" />
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>Log intake</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>What {clientName || 'the client'} actually ate on this date. Leave a field blank to clear it.</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8, alignItems: 'end' }}>
+            {[
+              { key: 'calories', label: 'Calories', unit: 'kcal', mode: 'integer' as const },
+              { key: 'protein', label: 'Protein', unit: 'g', mode: 'decimal' as const },
+              { key: 'carbs', label: 'Carbs', unit: 'g', mode: 'decimal' as const },
+              { key: 'fats', label: 'Fats', unit: 'g', mode: 'decimal' as const },
+            ].map((field) => (
+              <label key={field.key} style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)' }}>
+                {field.label} ({field.unit})
+                <input
+                  type="text" inputMode={field.mode === 'integer' ? 'numeric' : 'decimal'} placeholder="—"
+                  value={intake[field.key as keyof typeof intake]}
+                  onChange={(e) => setIntake((prev) => ({
+                    ...prev, [field.key]: clampNumericText(e.target.value, field.mode),
+                  }))}
+                  disabled={!clientId}
+                  style={{ height: 38, borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-primary)', padding: '0 10px', fontSize: 13, fontFamily: 'inherit', minWidth: 0 }}
+                />
+              </label>
+            ))}
+            <button
+              onClick={saveIntake}
+              disabled={!clientId || savingIntake}
+              style={{ height: 38, padding: '0 16px', borderRadius: 9, border: 'none', background: clientId ? '#10b981' : 'var(--bg-subtle)', color: clientId ? '#fff' : 'var(--text-disabled)', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', cursor: clientId && !savingIntake ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              {savingIntake ? <Loader2 size={13} className="animate-spin" /> : null} Save
+            </button>
+          </div>
+        </div>
       </div>
 
       <div style={{ padding: '20px 32px 60px', maxWidth: 1400, margin: '0 auto' }}>
@@ -419,7 +535,6 @@ function Inner() {
           {[
             { key: 'meals', label: "Meal Library", count: meals.length, color: '#10b981' },
             { key: 'templates', label: 'Templates', count: templates.length, color: '#0067e0' },
-            { key: 'grocery', label: 'Grocery List', color: '#f59e0b' },
             { key: 'supplements', label: 'Supplements', count: supplements.length, color: '#0067e0' },
             { key: 'analytics', label: 'Analytics', color: '#0067e0' },
           ].map((tab) => (
@@ -563,15 +678,6 @@ function Inner() {
             </m.div>
           )}
 
-          {/* Grocery Tab */}
-          {activeTab === 'grocery' && (
-            <m.div key="grocery" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <div style={{ maxWidth: 640, margin: '0 auto' }}>
-                <GroceryList onGenerate={() => setAiPanelOpen(true)} />
-              </div>
-            </m.div>
-          )}
-
           {/* Supplements Tab */}
           {activeTab === 'supplements' && (
             <m.div key="supplements" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
@@ -620,37 +726,11 @@ function Inner() {
           {activeTab === 'analytics' && (
             <m.div key="analytics" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
-                {/* Calories by meal — magnitude comparison across categories → bar, categorical color, direct labels */}
-                <SpotlightCard style={{ padding: 20 }}>
-                  <h4 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Calories by Meal</h4>
-                  {mealCalorieBarData.every((d) => d.calories === 0) ? (
-                    <EmptyChartState label="No meals logged for this date yet." />
-                  ) : (
-                    <ResponsiveContainer width="100%" height={240}>
-                      <BarChart data={mealCalorieBarData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-                        <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="3 3" />
-                        <XAxis dataKey="name" tick={{ fontSize: 10.5, fill: 'var(--text-muted)' }} axisLine={{ stroke: 'var(--border)' }} tickLine={false} interval={0} angle={-20} textAnchor="end" height={46} />
-                        <YAxis tick={{ fontSize: 10.5, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} width={40} />
-                        <ChartTooltip
-                          cursor={{ fill: 'var(--bg-subtle)' }}
-                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 12 }}
-                          labelStyle={{ color: 'var(--text-secondary)', fontWeight: 700, marginBottom: 2 }}
-                          formatter={(value: number) => [`${value} kcal`, 'Calories']}
-                        />
-                        <Bar dataKey="calories" radius={[4, 4, 0, 0]} maxBarSize={40}>
-                          {mealCalorieBarData.map((d) => <Cell key={d.name} fill={d.color} />)}
-                          <LabelList dataKey="calories" position="top" style={{ fontSize: 10.5, fontWeight: 700, fill: 'var(--text-secondary)' }} formatter={(v: number) => (v > 0 ? v : '')} />
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
-                </SpotlightCard>
-
                 {/* Macro composition — part-to-whole share of calories → donut, categorical color */}
                 <SpotlightCard style={{ padding: 20 }}>
                   <h4 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Macro Composition</h4>
                   {macroKcalTotal === 0 ? (
-                    <EmptyChartState label="Log a meal to see the macro breakdown." />
+                    <EmptyChartState label="Log intake to see the macro breakdown." />
                   ) : (
                     <DonutChart
                       data={macroDonutData}
@@ -663,15 +743,25 @@ function Inner() {
                   <div style={{ marginTop: 16, padding: '12px 14px', borderRadius: 10, background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                       <span style={{ color: 'var(--text-muted)' }}>Total consumed</span>
-                      <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{consumed} / {GOAL_CAL} kcal</span>
+                      <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {GOAL_CAL != null ? `${consumed} / ${GOAL_CAL} kcal` : `${consumed} kcal`}
+                      </span>
                     </div>
-                    <div style={{ marginTop: 8, height: 5, borderRadius: 3, background: 'var(--bg-card)', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                      <m.div initial={{ width: 0 }} animate={{ width: `${Math.min((consumed / GOAL_CAL) * 100, 100)}%` }} transition={{ duration: 1.2, ease: 'easeOut' }}
-                        style={{ height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
-                    </div>
-                    <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text-disabled)', textAlign: 'right' }}>
-                      {Math.max(0, GOAL_CAL - consumed)} kcal remaining
-                    </div>
+                    {GOAL_CAL != null ? (
+                      <>
+                        <div style={{ marginTop: 8, height: 5, borderRadius: 3, background: 'var(--bg-card)', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                          <m.div initial={{ width: 0 }} animate={{ width: `${Math.min((consumed / GOAL_CAL) * 100, 100)}%` }} transition={{ duration: 1.2, ease: 'easeOut' }}
+                            style={{ height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
+                        </div>
+                        <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text-disabled)', textAlign: 'right' }}>
+                          {Math.max(0, GOAL_CAL - consumed)} kcal remaining
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text-disabled)', textAlign: 'right' }}>
+                        No active plan target.
+                      </div>
+                    )}
                   </div>
                 </SpotlightCard>
 
@@ -723,7 +813,9 @@ function Inner() {
                         <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="3 3" />
                         <XAxis dataKey="date" tick={{ fontSize: 10.5, fill: 'var(--text-muted)' }} axisLine={{ stroke: 'var(--border)' }} tickLine={false} />
                         <YAxis tick={{ fontSize: 10.5, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} width={44} />
-                        <ReferenceLine y={GOAL_CAL} stroke="var(--text-disabled)" strokeDasharray="4 4" label={{ value: 'Goal', position: 'insideTopRight', fontSize: 10, fill: 'var(--text-disabled)' }} />
+                        {GOAL_CAL != null && (
+                          <ReferenceLine y={GOAL_CAL} stroke="var(--text-disabled)" strokeDasharray="4 4" label={{ value: 'Goal', position: 'insideTopRight', fontSize: 10, fill: 'var(--text-disabled)' }} />
+                        )}
                         <ChartTooltip
                           contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 12 }}
                           labelStyle={{ color: 'var(--text-secondary)', fontWeight: 700, marginBottom: 2 }}
@@ -758,7 +850,7 @@ function Inner() {
             <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', zIndex: 8999 }}
               onClick={() => setAiPanelOpen(false)} />
-            <AiCoachPanel type="diet" onClose={() => setAiPanelOpen(false)} />
+            <AiCoachPanel type="diet" clientId={clientId ?? undefined} onClose={() => setAiPanelOpen(false)} />
           </>
         )}
       </AnimatePresence>

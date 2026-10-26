@@ -1056,9 +1056,9 @@ export interface Meal {
   description?: string | null;
   meal_type: 'breakfast' | 'lunch' | 'snacks' | 'dinner' | 'pre_workout' | 'post_workout';
   calories: number;
-  protein_g: number;
-  carbs_g: number;
-  fats_g: number;
+  protein_g: number | null;
+  carbs_g: number | null;
+  fats_g: number | null;
   serving_size?: string | null;
   image_url?: string | null;
   is_active: boolean;
@@ -1070,9 +1070,9 @@ export interface DietTemplateMeal {
   name: string;
   meal_type: string;
   calories: number;
-  protein_g: number;
-  carbs_g: number;
-  fats_g: number;
+  protein_g: number | null;
+  carbs_g: number | null;
+  fats_g: number | null;
   day_of_week: number | null;
   sort_order: number;
 }
@@ -1083,9 +1083,9 @@ export interface DietTemplate {
   description?: string | null;
   goal: string;
   daily_calories: number;
-  daily_protein_g: number;
-  daily_carbs_g: number;
-  daily_fats_g: number;
+  daily_protein_g: number | null;
+  daily_carbs_g: number | null;
+  daily_fats_g: number | null;
   is_active: boolean;
   meal_count: number;
   meals: DietTemplateMeal[];
@@ -1174,19 +1174,19 @@ export interface DietAssignment {
   template_name: string;
   template_goal: string;
   daily_calories: number;
-  daily_protein_g: number;
-  daily_carbs_g: number;
-  daily_fats_g: number;
+  daily_protein_g: number | null;
+  daily_carbs_g: number | null;
+  daily_fats_g: number | null;
 }
 
 export interface NutritionLog {
   client_id: string;
   log_date: string;
-  calories_consumed: number;
-  protein_g: number;
-  carbs_g: number;
-  fats_g: number;
-  water_glasses: number;
+  calories_consumed: number | null;
+  protein_g: number | null;
+  carbs_g: number | null;
+  fats_g: number | null;
+  water_glasses: number | null;
   notes?: string | null;
 }
 
@@ -4091,6 +4091,11 @@ export type AiKnowledgeGrounding = {
   citations_rejected: number[];
   /** Titles of the corpus documents the evidence was drawn from. */
   sources: string[];
+  /**
+   * Diet only: whether the save route's own normaliser accepted the streamed
+   * plan. False means "Save & assign" will refuse it as-is.
+   */
+  structure_ok?: boolean;
 };
 
 export type AiWorkoutGenerationResult = {

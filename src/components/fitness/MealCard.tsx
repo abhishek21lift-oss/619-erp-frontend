@@ -18,9 +18,9 @@ interface MealCardProps {
   mealType?: string;
   time?: string;
   calories?: number;
-  proteinG?: number;
-  carbsG?: number;
-  fatG?: number;
+  proteinG?: number | null;
+  carbsG?: number | null;
+  fatG?: number | null;
   emoji?: string;
   foods?: MealFood[];
   onClick?: () => void;

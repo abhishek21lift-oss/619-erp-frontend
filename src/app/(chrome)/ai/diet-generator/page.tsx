@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Apple, Loader2, ChevronDown, ChevronUp, Sparkles, RotateCcw, Droplets, ShoppingCart, Pill, Utensils } from 'lucide-react';
 import { m, type Variants } from 'framer-motion';
@@ -138,6 +139,9 @@ export default function DietGeneratorPage() {
   const [error, setError] = useState('');
   /** Per-field messages from the schema. Populated only by a generate ATTEMPT. */
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
   /**
    * A same-frame re-entry guard. `loading` is state, so two taps in one frame
    * both read false and both fire a billed model call.
@@ -163,6 +167,14 @@ export default function DietGeneratorPage() {
     shownClientRef.current = clientId;
     editedRef.current.clear();
     setForm(INITIAL_FORM);
+    // The previous client's plan must not survive the switch: it was written
+    // for someone else, and the save button would assign it to this one.
+    setPlan(null);
+    setMeta(null);
+    setError('');
+    setFieldErrors({});
+    setSaved(false);
+    setSaveError('');
   }, [clientId]);
 
   useEffect(() => {
@@ -232,6 +244,7 @@ export default function DietGeneratorPage() {
 
     generatingRef.current = true;
     setError(''); setLoading(true); setPlan(null); setMeta(null);
+    setSaved(false); setSaveError('');
     try {
       const v = parsed.data;
       const res = await api.ai.generateDiet({
@@ -252,6 +265,30 @@ export default function DietGeneratorPage() {
       setLoading(false);
     }
   };
+
+  /**
+   * The generated plan was a dead end: it could be read and then had to be
+   * retyped meal by meal. This is the same reviewed plan, written as a real
+   * template + assignment by the server's one transaction.
+   */
+  const savePlan = async () => {
+    if (!clientId || !plan || saving) return;
+    setSaving(true);
+    setSaveError('');
+    setSaved(false);
+    try {
+      await api.diet.saveFromAi({ client_id: clientId, plan });
+      setSaved(true);
+    } catch (e: unknown) {
+      setSaveError(errorMessage(e, 'Could not save this plan.'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // The grounding gate already ran normalisePlan, so structure_ok:false means
+  // the save route would refuse this exact plan. Say so before the click.
+  const planSaveable = meta?.grounding?.structure_ok !== false;
 
   return (
     <Guard>
@@ -365,7 +402,7 @@ export default function DietGeneratorPage() {
               {loading ? 'Generating Plan…' : 'Generate Meal Plan'}
             </button>
             {plan && (
-              <button onClick={() => { setPlan(null); setMeta(null); }}
+              <button onClick={() => { setPlan(null); setMeta(null); setSaved(false); setSaveError(''); }}
                 className="flex w-full items-center justify-center gap-2 rounded-[14px] px-5 py-3 text-[13.5px] font-[650] sm:w-auto"
                 style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                 <RotateCcw size={14} /> Start Over
@@ -409,6 +446,52 @@ export default function DietGeneratorPage() {
               </m.div>
             )}
             {meta?.grounding && <GroundingLine grounding={meta.grounding} />}
+
+            {/* Save & assign — the step the page never had */}
+            <m.div variants={fadeUp} initial="hidden" animate="show" custom={1}
+              className="flex flex-col gap-3 rounded-[18px] px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+              <div className="min-w-0">
+                <div className="text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>Save this plan</div>
+                <div className="mt-0.5 text-[12px]" style={{ color: saved ? '#059669' : 'var(--text-muted)' }}>
+                  {!clientId
+                    ? 'Select a client above before saving.'
+                    : !planSaveable
+                      ? 'This plan failed the save checks — regenerate it before saving.'
+                      : saved
+                        ? 'Saved and assigned to this client.'
+                        : 'Creates a template and assigns it to this client, ending their previous plan.'}
+                </div>
+              </div>
+              <div className="flex flex-shrink-0 items-center gap-2">
+                {saved && clientId && (
+                  <Link href={`/pt-os/diet-plans?client_id=${clientId}`}
+                    className="text-[12.5px] font-[700]"
+                    style={{ color: ACCENT }}>
+                    Open diet plans
+                  </Link>
+                )}
+                <button
+                  onClick={savePlan}
+                  disabled={!clientId || !planSaveable || saving || saved}
+                  className="flex items-center justify-center gap-2 rounded-[12px] px-5 py-2.5 text-[13px] font-[750]"
+                  style={{
+                    background: !clientId || !planSaveable || saved ? 'var(--bg-subtle)' : ACCENT_GRADIENT,
+                    color: !clientId || !planSaveable || saved ? 'var(--text-disabled)' : '#fff',
+                    cursor: !clientId || !planSaveable || saving || saved ? 'not-allowed' : 'pointer',
+                    border: 'none',
+                  }}>
+                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                  {saved ? 'Saved and assigned' : saving ? 'Saving…' : 'Save & assign to client'}
+                </button>
+              </div>
+            </m.div>
+            {saveError && (
+              <div className="rounded-[12px] px-4 py-2.5 text-[13px] font-[600]"
+                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626' }}>
+                {saveError}
+              </div>
+            )}
 
             {/* Overview */}
             <m.div variants={fadeUp} initial="hidden" animate="show" custom={1}

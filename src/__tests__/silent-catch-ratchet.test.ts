@@ -99,9 +99,9 @@ const KNOWN = [
   // still the same statement.
   'app/(chrome)/pt-os/clients/[id]/page.tsx:574',
   'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:83',
-  'app/(chrome)/pt-os/diet-plans/page.tsx:197',
-  'app/(chrome)/pt-os/diet-plans/page.tsx:198',
-  'app/(chrome)/pt-os/diet-plans/page.tsx:199',
+  'app/(chrome)/pt-os/diet-plans/page.tsx:187',
+  'app/(chrome)/pt-os/diet-plans/page.tsx:188',
+  'app/(chrome)/pt-os/diet-plans/page.tsx:189',
   'app/(chrome)/pt-os/exercise-library/[id]/edit/page.tsx:28',
   'app/(chrome)/pt-os/exercise-library/new/page.tsx:28',
   // The goal wizard reads the Client Interview and the Module 5 re-test
@@ -133,8 +133,8 @@ const KNOWN = [
   'components/LandingPage.tsx:60',
   'components/LandingPage.tsx:67',
   'components/TrialBanner.tsx:19',
-  'components/fitness/AiCoachPanel.tsx:128',
-  'components/fitness/AiCoachPanel.tsx:134',
+  'components/fitness/AiCoachPanel.tsx:130',
+  'components/fitness/AiCoachPanel.tsx:136',
   // The hosting console reads the operation allow-list beside the reads that
   // carry the page: `hostingerCatalogue()` is a local lookup on the server, and
   // if it fails the screen keeps its compiled-in safety labels and the spec line
