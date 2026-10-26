@@ -153,6 +153,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "communication.send → /api/communication/send",
   "diet.assign → /api/diet/assign",
   "diet.assignments.list → /api/diet/assignments",
+  "diet.assignments.update → /api/diet/assignments/",
   "diet.fitnessProfile.get → /api/diet/fitness-profile/",
   "diet.fitnessProfile.update → /api/diet/fitness-profile/",
   "diet.meals.create → /api/diet/meals",

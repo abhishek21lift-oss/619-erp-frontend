@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, X, Brain, Zap, Dumbbell, Salad, Send, User, ChevronDown, RotateCcw, BookOpen, Database,
@@ -10,7 +11,7 @@ import { streamAiChat } from '@/lib/ai-stream';
 import type { Client } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { errorMessage } from '@/lib/forms/errors';
-import { aiWorkoutInputSchema, aiDietInputSchema } from '@/lib/forms/schemas/aiGenerator';
+import { aiWorkoutInputSchema } from '@/lib/forms/schemas/aiGenerator';
 import { clampNumericText } from '@/components/ui/FloatInput';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -56,10 +57,9 @@ function computeAge(dob?: string): number | undefined {
   return age > 0 && age < 120 ? age : undefined;
 }
 
-// ─── Workout Goals / Diet Goals ──────────────────────────────────────────────
+// ─── Workout Goals ───────────────────────────────────────────────────────────
 
 const WORKOUT_GOALS = ['Muscle Gain', 'Fat Loss', 'Strength', 'Endurance'];
-const DIET_GOALS = ['Muscle Gain', 'Fat Loss', 'Maintenance', 'Performance'];
 const EXPERIENCE_LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
@@ -70,7 +70,11 @@ const VIOLET = '#7fb4ff';
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPanelProps) {
-  const [mode, setMode] = useState<Mode>(initialMode ?? 'generate');
+  // Only the workout specialist still generates a plan in this panel. Diet
+  // plans have their own page with a real save/assign step, so this panel is
+  // chat-only for diet and general.
+  const chatOnly = type !== 'workout';
+  const [mode, setMode] = useState<Mode>(chatOnly ? 'chat' : (initialMode ?? 'generate'));
 
   // Client selection state
   const [clientList, setClientList] = useState<Client[]>([]);
@@ -79,12 +83,10 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [clientLocked, setClientLocked] = useState(false);
 
-  // Generate plan state
+  // Generate plan state (workout specialist only)
   const [goal, setGoal] = useState('');
   const [experience, setExperience] = useState('');
   const [trainingDays, setTrainingDays] = useState<string>('4');
-  const [dietaryPrefs, setDietaryPrefs] = useState('');
-  const [allergies, setAllergies] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationResult, setGenerationResult] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -194,59 +196,33 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
     };
 
     try {
-      if (type === 'workout') {
-        const parsed = aiWorkoutInputSchema.safeParse({
-          ...facts, training_days: trainingDays, injuries: '',
-        });
-        if (!parsed.success) return refuse(parsed.error.issues);
-        const v = parsed.data;
-        const res = await api.ai.generateWorkout({
-          age, gender, weight_kg, height_cm,
-          goal: goal.toLowerCase().replace(/ /g, '_'),
-          experience_level: experience.toLowerCase() || 'beginner',
-          // The parsed value, not `parseInt(...) || 4`. A blank box is now a
-          // refusal above rather than a silent four.
-          training_days: v.training_days ?? undefined,
-          client_id: selectedClient.id,
-        });
-        const plan = res.data;
-        const summary = [
-          `📋 ${plan.name}`,
-          `🎯 Goal: ${plan.goal} | Level: ${plan.level} | ${plan.weeks} weeks, ${plan.days_per_week}×/week`,
-          '',
-          ...Object.entries(plan.weekly_schedule ?? {}).slice(0, 4).map(([day, d]) =>
-            `${day.toUpperCase()}: ${d.name} — ${d.exercises?.map(e => e.name).join(', ')}`
-          ),
-          '',
-          plan.progression_notes ? `📈 ${plan.progression_notes}` : '',
-          plan.nutrition_notes ? `🥗 ${plan.nutrition_notes}` : '',
-        ].filter(Boolean).join('\n');
-        setGenerationResult(summary);
-      } else {
-        const parsed = aiDietInputSchema.safeParse({
-          ...facts, meal_frequency: '3',
-          dietary_preferences: dietaryPrefs, allergies,
-        });
-        if (!parsed.success) return refuse(parsed.error.issues);
-        const res = await api.ai.generateDiet({
-          age, gender, weight_kg, height_cm,
-          activity_level: 'moderate',
-          goal: goal.toLowerCase().replace(/ /g, '_'),
-          dietary_preferences: dietaryPrefs || undefined,
-          allergies: allergies || undefined,
-          client_id: selectedClient.id,
-        });
-        const plan = res.data;
-        const summary = [
-          `📋 ${plan.name}`,
-          `🔥 ${plan.total_calories} kcal | 💪 ${plan.macros?.protein_g}g P | 🍚 ${plan.macros?.carbs_g}g C | 🧈 ${plan.macros?.fat_g}g F`,
-          '',
-          ...plan.meals?.slice(0, 5).map(mm => `${mm.name} (${mm.time}) — ${mm.calories} kcal`) ?? [],
-          '',
-          plan.notes ?? '',
-        ].filter(Boolean).join('\n');
-        setGenerationResult(summary);
-      }
+      const parsed = aiWorkoutInputSchema.safeParse({
+        ...facts, training_days: trainingDays, injuries: '',
+      });
+      if (!parsed.success) return refuse(parsed.error.issues);
+      const v = parsed.data;
+      const res = await api.ai.generateWorkout({
+        age, gender, weight_kg, height_cm,
+        goal: goal.toLowerCase().replace(/ /g, '_'),
+        experience_level: experience.toLowerCase() || 'beginner',
+        // The parsed value, not `parseInt(...) || 4`. A blank box is now a
+        // refusal above rather than a silent four.
+        training_days: v.training_days ?? undefined,
+        client_id: selectedClient.id,
+      });
+      const plan = res.data;
+      const summary = [
+        `📋 ${plan.name}`,
+        `🎯 Goal: ${plan.goal} | Level: ${plan.level} | ${plan.weeks} weeks, ${plan.days_per_week}×/week`,
+        '',
+        ...Object.entries(plan.weekly_schedule ?? {}).slice(0, 4).map(([day, d]) =>
+          `${day.toUpperCase()}: ${d.name} — ${d.exercises?.map(e => e.name).join(', ')}`
+        ),
+        '',
+        plan.progression_notes ? `📈 ${plan.progression_notes}` : '',
+        plan.nutrition_notes ? `🥗 ${plan.nutrition_notes}` : '',
+      ].filter(Boolean).join('\n');
+      setGenerationResult(summary);
     } catch (err) {
       setGenerationError(errorMessage(err, 'Failed to generate plan. Please try again.'));
     } finally {
@@ -421,10 +397,10 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
             )}
           </div>
 
-          {/* Segmented mode toggle — hidden for the general coach, whose
-              Generate form (goal / experience / dietary prefs) is shaped for
-              a workout or diet plan specifically and has nothing to render. */}
-          {type !== 'general' && (
+          {/* Segmented mode toggle — only the workout specialist still has a
+              Generate form. Diet and general open straight into Chat; diet
+              plans are generated and saved on their own page. */}
+          {type === 'workout' && (
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 11, padding: 3, gap: 2 }}>
             {(['generate', 'chat'] as const).map(m_ => (
               <button
@@ -450,7 +426,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
         {/* Body */}
         <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
           <AnimatePresence mode="wait">
-            {mode === 'generate' && type !== 'general' ? (
+            {mode === 'generate' && type === 'workout' ? (
               <m.div
                 key="generate"
                 initial={{ opacity: 0, x: -14 }}
@@ -481,42 +457,23 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                 {/* Goal select */}
                 <Field label="Goal">
                   <SelectInput value={goal} onChange={setGoal} placeholder="Select goal...">
-                    {(type === 'workout' ? WORKOUT_GOALS : DIET_GOALS).map(g => <option key={g} value={g}>{g}</option>)}
+                    {WORKOUT_GOALS.map(g => <option key={g} value={g}>{g}</option>)}
                   </SelectInput>
                 </Field>
 
-                {type === 'workout' ? (
-                  <>
-                    <Field label="Experience Level">
-                      <SelectInput value={experience} onChange={setExperience} placeholder="Select level...">
-                        {EXPERIENCE_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-                      </SelectInput>
-                    </Field>
+                <Field label="Experience Level">
+                  <SelectInput value={experience} onChange={setExperience} placeholder="Select level...">
+                    {EXPERIENCE_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+                  </SelectInput>
+                </Field>
 
-                    <Field label="Training Days per Week">
-                      <input
-                        type="text" inputMode="numeric" min={1} max={7} value={trainingDays}
-                        onChange={e => setTrainingDays(clampNumericText(e.target.value, 'integer'))}
-                        style={inputStyle} placeholder="e.g. 4"
-                      />
-                    </Field>
-                  </>
-                ) : (
-                  <>
-                    <Field label="Dietary Preferences">
-                      <input
-                        type="text" value={dietaryPrefs} onChange={e => setDietaryPrefs(e.target.value)}
-                        style={inputStyle} placeholder="e.g. Vegetarian, High protein..."
-                      />
-                    </Field>
-                    <Field label="Allergies / Intolerances">
-                      <input
-                        type="text" value={allergies} onChange={e => setAllergies(e.target.value)}
-                        style={inputStyle} placeholder="e.g. Nuts, Gluten..."
-                      />
-                    </Field>
-                  </>
-                )}
+                <Field label="Training Days per Week">
+                  <input
+                    type="text" inputMode="numeric" min={1} max={7} value={trainingDays}
+                    onChange={e => setTrainingDays(clampNumericText(e.target.value, 'integer'))}
+                    style={inputStyle} placeholder="e.g. 4"
+                  />
+                </Field>
 
                 {!selectedClient && (
                   <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.35)', margin: '-4px 0 0' }}>
@@ -581,7 +538,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 8 }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: VIOLET }}>
-                          <Sparkles size={13} /> Plan Generated &amp; Saved
+                          <Sparkles size={13} /> Plan Generated
                         </span>
                         <button
                           onClick={() => { setGenerationResult(null); setGoal(''); }}
@@ -640,6 +597,26 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                     <p style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.32)', margin: '5px 2px 0' }}>
                       Optional — pick a client so the coach can factor in their profile.
                     </p>
+                  </div>
+                )}
+
+                {/* Diet plans are generated, reviewed and saved on their own
+                    page. This panel never saved one, and the old Generate form
+                    here was a second, weaker door to the same model call. */}
+                {type === 'diet' && (
+                  <div style={{ padding: '10px 16px 0' }}>
+                    <Link
+                      href={selectedClient ? `/ai/diet-generator?client_id=${selectedClient.id}` : '/ai/diet-generator'}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '8px 11px', borderRadius: 9, textDecoration: 'none',
+                        fontSize: 11.5, fontWeight: 650, color: VIOLET,
+                        background: 'rgba(127,180,255,0.10)',
+                        border: '1px solid rgba(127,180,255,0.22)',
+                      }}
+                    >
+                      <Sparkles size={12} /> Generate &amp; save a full diet plan
+                    </Link>
                   </div>
                 )}
 

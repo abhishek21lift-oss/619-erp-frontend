@@ -269,31 +269,51 @@ describe('the five module pages', () => {
   });
 });
 
-describe('the diet page adds its macros instead of concatenating them', () => {
+describe('the diet page reads real intake, not the meal library', () => {
   // protein/carbs/fats are Postgres `numeric`, and node-postgres returns
   // numeric as a STRING to avoid losing precision. So `0 + "25.0"` was the
-  // string "025.0" — the stray leading zero on the rings.
+  // string "025.0" — the stray leading zero on the rings. With two entries it
+  // is "025.0" + "30.0" = "025.030.0", and every number downstream is NaN.
   //
-  // With one meal it only looks wrong. With two it is "025.0" + "30.0" =
-  // "025.030.0", and the ring fill, the macro donut and the remaining-kcal
-  // figure downstream of it are all NaN. calories is an `integer` column and
-  // comes back as a number, which is why it was the only one of the four that
-  // ever added up.
+  // The source was the meal LIBRARY, so "consumed" meant "calories on offer"
+  // and every ring sat at 100% for a client who had eaten nothing. It is now
+  // the day's tracker row.
   const diet = src('app', 'pt-os', 'diet-plans', 'page.tsx');
 
-  it('coerces every macro before summing it', () => {
+  it('coerces every numeric before using it', () => {
     expect(diet).toContain('const num = (v: unknown) => Number(v) || 0;');
-    for (const k of ['calories', 'protein', 'carbs', 'fats']) {
-      expect(diet).toContain(`s + num(m.${k})`);
-    }
+    expect(diet).toContain('const consumed = num(today?.calories_consumed);');
+    expect(diet).toContain('const totalProtein = num(today?.protein_g);');
+    expect(diet).toContain('const totalCarbs = num(today?.carbs_g);');
+    expect(diet).toContain('const totalFats = num(today?.fats_g);');
   });
 
-  it('no longer adds a raw field straight onto the accumulator', () => {
-    expect(diet).not.toMatch(/s \+ \(m\.(protein|carbs|fats|calories) \|\| 0\)/);
+  it('does not sum the meal library into the rings', () => {
+    expect(diet).not.toMatch(/meals\.reduce\(\(s, m\) => s \+ num\(m\.(calories|protein|carbs|fats)\)/);
+  });
+
+  it('invents no goal when no plan is assigned', () => {
+    expect(diet).not.toContain('?? 2400');
+    expect(diet).not.toContain('?? 160');
+    expect(diet).not.toContain('?? 260');
+    expect(diet).not.toContain('?? 65');
+    expect(diet).toContain('activeAssignment?.daily_calories ?? null');
   });
 
   it('rounds for display, because summing floats gives 25.400000000000002', () => {
     expect(diet).toContain('Math.round(macro.value * 10) / 10');
+  });
+
+  it('has no always-empty grocery tab', () => {
+    expect(diet).not.toContain('GroceryList');
+    expect(diet).not.toContain("key: 'grocery'");
+  });
+
+  it('can end the active plan and stops sending a date to the meal library', () => {
+    expect(diet).toContain('api.diet.assignments.update(activeAssignment.id, \'completed\')');
+    expect(diet).toContain('End plan');
+    expect(diet).toContain('api.diet.meals.list()');
+    expect(diet).not.toContain('api.diet.meals.list({ date })');
   });
 });
 

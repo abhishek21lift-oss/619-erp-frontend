@@ -278,6 +278,11 @@ export const diet = {
   assignments: {
     list: (params: { client_id: string; status?: string }) =>
       http<DietAssignment[]>(`/api/diet/assignments${buildQs(params)}`),
+    update: (id: string, status: 'completed' | 'cancelled' | 'paused') =>
+      http<{ message: string; assignment: DietAssignment }>(`/api/diet/assignments/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      }),
   },
   /**
    * Save a reviewed AI diet as the studio's own template, its meals and an
@@ -290,8 +295,8 @@ export const diet = {
     ),
   tracker: {
     get: (params: { client_id: string; date?: string }) =>
-      http<{ today: NutritionLog; history: NutritionLog[] }>(`/api/diet/tracker${buildQs(params)}`),
-    update: (data: { client_id: string; log_date?: string; calories_consumed?: number; protein_g?: number; carbs_g?: number; fats_g?: number; water_glasses?: number; notes?: string }) =>
+      http<{ today: NutritionLog | null; history: NutritionLog[] }>(`/api/diet/tracker${buildQs(params)}`),
+    update: (data: { client_id: string; log_date?: string; calories_consumed?: number | null; protein_g?: number | null; carbs_g?: number | null; fats_g?: number | null; water_glasses?: number | null; notes?: string | null }) =>
       http<{ message: string; log: NutritionLog }>('/api/diet/tracker', {
         method: 'PUT',
         body: JSON.stringify(data),
