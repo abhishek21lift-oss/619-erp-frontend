@@ -1,13 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Camera, ChevronRight, AlertTriangle } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Camera, ChevronRight, AlertTriangle, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import { cardSurface } from '@/components/ui/Card';
 import { errorMessage } from '@/lib/forms/errors';
 import { fmtDateMedium } from '@/lib/format';
-import { red, rgba } from '@/lib/palette';
+import { stateTone } from '@/lib/state-tone';
 import { activatable } from '@/lib/a11y';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { EmptyPanel, TAB_COLOR } from './ClientTabs';
 
 /**
@@ -50,7 +52,8 @@ function byNewest(a: ProgressPhoto, b: ProgressPhoto) {
 export default function PhotosPanel({ clientId }: { clientId: string }) {
   const [photos, setPhotos] = useState<ProgressPhoto[] | null>(null);
   const [error, setError] = useState('');
-  const [preview, setPreview] = useState<string | null>(null);
+  const [preview, setPreview] = useState<ProgressPhoto | null>(null);
+  const dialogRef = useDialogA11y({ open: !!preview, onClose: () => setPreview(null) });
 
   useEffect(() => {
     let cancelled = false;
@@ -70,10 +73,10 @@ export default function PhotosPanel({ clientId }: { clientId: string }) {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-[22px] px-6 py-12 text-center"
+      <div className="flex flex-col items-center gap-3 rounded-[24px] px-6 py-12 text-center"
         style={{ ...cardSurface }}>
         <div className="flex h-12 w-12 items-center justify-center rounded-[16px]"
-          style={{ background: rgba(red[600], 0.10), color: red[600] }}>
+          style={{ background: stateTone.danger.bg, color: stateTone.danger.fg }}>
           <AlertTriangle size={20} />
         </div>
         {/* Says the request failed, rather than reporting an empty gallery. */}
@@ -117,7 +120,7 @@ export default function PhotosPanel({ clientId }: { clientId: string }) {
   }
 
   return (
-    <div className="rounded-[22px] p-4"
+    <div className="rounded-[24px] p-4"
       style={{ ...cardSurface }}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="text-[13px] font-[780]" style={{ color: 'var(--text-primary)' }}>
@@ -134,10 +137,12 @@ export default function PhotosPanel({ clientId }: { clientId: string }) {
           <div key={p.id}
             className="group relative aspect-square overflow-hidden rounded-[14px] cursor-pointer"
             style={{ border: '1px solid var(--border)' }}
-            {...activatable(() => setPreview(p.photo_url), { label: `View ${p.photo_type} photo from ${fmtDateMedium(p.taken_at)}` })}>
+            {...activatable(() => setPreview(p), { label: `View ${p.photo_type} photo from ${fmtDateMedium(p.taken_at)}` })}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p.photo_url} alt={`${p.photo_type} view, ${fmtDateMedium(p.taken_at)}`} className="h-full w-full object-cover" />
-            <span className="absolute inset-x-0 bottom-0 truncate px-1.5 py-1 text-[9.5px] font-[700] text-white"
+            <img src={p.photo_url} alt={`${p.photo_type} view, ${fmtDateMedium(p.taken_at)}`}
+              width={320} height={320} loading="lazy" decoding="async"
+              className="h-full w-full object-cover" />
+            <span className="absolute inset-x-0 bottom-0 truncate px-1.5 py-1 text-[11px] font-[700] text-white"
               style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.65), transparent)' }}>
               {fmtDateMedium(p.taken_at)}
             </span>
@@ -145,19 +150,42 @@ export default function PhotosPanel({ clientId }: { clientId: string }) {
         ))}
       </div>
 
-      {preview && (
+      {/* Portalled to <body>: the panel is inside a Framer Motion element,
+          and a transformed ancestor turns position:fixed into "fixed to the
+          panel" — which put the backdrop halfway down the page. */}
+      {preview && createPortal(
         <div
           // A full-screen overlay: a downward drag inside it is somebody
           // looking at the photo, not asking to refresh the page underneath.
           // pull-refresh-optout.test.ts scans for exactly this and caught it
           // missing here.
           data-no-pull-refresh
-          className="fixed inset-0 z-50 flex items-center justify-center p-6"
-          style={{ background: 'rgba(0,0,0,0.8)' }}
-          {...activatable(() => setPreview(null), { label: 'Close photo preview' })}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={preview} alt="Enlarged view" className="max-h-full max-w-full rounded-[16px]" />
-        </div>
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+          style={{ background: 'rgba(0,0,0,0.85)' }}
+          onClick={() => setPreview(null)}>
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${preview.photo_type} photo from ${fmtDateMedium(preview.taken_at)}`}
+            className="relative flex max-h-full max-w-full flex-col items-center outline-none"
+            onClick={(e) => e.stopPropagation()}>
+            <button type="button" onClick={() => setPreview(null)}
+              aria-label="Close photo preview"
+              className="absolute -top-14 right-0 flex h-[44px] w-[44px] items-center justify-center rounded-full text-white"
+              style={{ background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.28)' }}>
+              <X size={20} />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={preview.photo_url}
+              alt={`${preview.photo_type} view from ${fmtDateMedium(preview.taken_at)}, enlarged`}
+              className="max-h-[80vh] max-w-full rounded-[16px] object-contain" />
+            <p className="mt-2 text-[11px] font-[620] text-white/75">
+              {preview.photo_type} · {fmtDateMedium(preview.taken_at)}
+            </p>
+          </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

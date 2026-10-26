@@ -50,20 +50,15 @@ afterEach(() => {
 });
 
 function strip() {
-  return screen.getByRole('tablist');
+  return screen.getByRole('navigation', { name: 'Client sections' });
 }
 
 describe('<ClientTabs /> — the strip', () => {
-  it('renders every tab', () => {
+  it('renders every tab as a link', () => {
     render(<ClientTabs active="overview" onChange={() => {}} clientId="c1" />);
-    // Every tile is on screen, but they are not all the same kind of control:
-    // three of them LEAVE the page and are links, the rest switch a panel and
-    // are tabs. Counting only role="tab" would say nine and read as three
-    // tabs having gone missing.
-    const tabs = screen.getAllByRole('tab');
-    const links = screen.getAllByRole('link');
-    expect(tabs.length + links.length).toBe(TABS.length);
-    // The one that was being cut in half — a link now, not a tab.
+    // The strip is navigation, not a tablist: every tile has an href, so
+    // middle-click, Ctrl-click and copy-link all work.
+    expect(screen.getAllByRole('link')).toHaveLength(TABS.length);
     expect(screen.getByRole('link', { name: /Measurements/ })).toBeInTheDocument();
   });
 
@@ -97,16 +92,12 @@ describe('<ClientTabs /> — the strip', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('leaves the panel tabs as buttons', () => {
-    // The counter-test. Rendering every tile as an <a> keeps role="tab" on
-    // the nine that do not navigate — so a role check alone passes while the
-    // strip fills with anchors that have no href: not focusable, not
-    // clickable by keyboard, and a link to nowhere in the accessibility
-    // tree. The ELEMENT is the property that matters here.
+  it('points every panel tab at this profile with its tab in the query', () => {
     render(<ClientTabs active="overview" onChange={() => {}} clientId="c1" />);
-    for (const name of [/Overview/, /Training/, /Check-ins/, /Payments/]) {
-      const tile = screen.getByRole('tab', { name });
-      expect(tile.tagName).toBe('BUTTON');
+    for (const key of ['overview', 'training', 'checkins', 'payments']) {
+      const tile = screen.getByRole('link', { name: new RegExp(TABS.find((t) => t.key === key)!.label) });
+      expect(tile.tagName).toBe('A');
+      expect(tile).toHaveAttribute('href', `/pt-os/clients/c1?tab=${key}`);
     }
   });
 
@@ -114,15 +105,15 @@ describe('<ClientTabs /> — the strip', () => {
     // The other half of the same defect: an <a> without href is not a link.
     render(<ClientTabs active="overview" onChange={() => {}} clientId="c1" />);
     const anchors = Array.from(document.querySelectorAll('a'));
-    expect(anchors).toHaveLength(3);
+    expect(anchors).toHaveLength(TABS.length);
     for (const a of anchors) expect(a.getAttribute('href')).toBeTruthy();
   });
 
-  it('marks exactly one tab selected', () => {
+  it('marks exactly one tab as the current page', () => {
     render(<ClientTabs active="training" onChange={() => {}} clientId="c1" />);
-    const selected = screen.getAllByRole('tab').filter((t) => t.getAttribute('aria-selected') === 'true');
-    expect(selected).toHaveLength(1);
-    expect(selected[0]).toHaveTextContent('Training');
+    const current = screen.getAllByRole('link').filter((t) => t.getAttribute('aria-current') === 'page');
+    expect(current).toHaveLength(1);
+    expect(current[0]).toHaveTextContent('Training');
   });
 
   // data-fade rather than style.maskImage: jsdom's CSS parser drops a
@@ -189,11 +180,11 @@ describe('<ClientTabs /> — the strip', () => {
     // around it was the extra layer that got simplified away. Selection is a
     // ring drawn on the icon tile's own box-shadow instead.
     render(<ClientTabs active="training" onChange={() => {}} clientId="c1" />);
-    const tabs = screen.getAllByRole('tab');
+    const tabs = screen.getAllByRole('link');
     const iconStyle = (t: HTMLElement) => (t.querySelector('span[style*="linear-gradient"]') as HTMLElement).style;
 
-    const selected = tabs.find((t) => t.getAttribute('aria-selected') === 'true')!;
-    const resting = tabs.find((t) => t.getAttribute('aria-selected') === 'false')!;
+    const selected = tabs.find((t) => t.getAttribute('aria-current') === 'page')!;
+    const resting = tabs.find((t) => t.getAttribute('aria-current') === null)!;
     expect(iconStyle(selected).boxShadow).not.toBe(iconStyle(resting).boxShadow);
     // No tab, selected or not, wraps its icon in a background rectangle of
     // its own — the button itself carries no background at all.
@@ -202,7 +193,7 @@ describe('<ClientTabs /> — the strip', () => {
 
   it('renders each tab as an icon tile over a label, like Quick Actions', () => {
     render(<ClientTabs active="overview" onChange={() => {}} clientId="c1" />);
-    const overview = screen.getByRole('tab', { name: /Overview/ });
+    const overview = screen.getByRole('link', { name: /Overview/ });
     // The icon tile is a distinct child with its own coloured gradient fill,
     // not an icon sitting inline beside the label text.
     const tile = overview.querySelector('span[style*="linear-gradient"]');
@@ -215,7 +206,7 @@ describe('<ClientTabs /> — the strip', () => {
     // the strip are never the same colour, which is what would actually blur
     // together while scrolling.
     render(<ClientTabs active="overview" onChange={() => {}} clientId="c1" />);
-    const tabs = screen.getAllByRole('tab');
+    const tabs = screen.getAllByRole('link');
     const bg = (el: HTMLElement) => (el.querySelector('span[style*="linear-gradient"]') as HTMLElement).style.background;
     for (let i = 1; i < tabs.length; i++) {
       expect(bg(tabs[i])).not.toBe(bg(tabs[i - 1]));
@@ -224,7 +215,7 @@ describe('<ClientTabs /> — the strip', () => {
 
   it('shows a count badge only where there is something to count', () => {
     render(<ClientTabs active="overview" onChange={() => {}} counts={{ photos: 4, documents: 0 }} clientId="c1" />);
-    expect(screen.getByRole('tab', { name: /Photos/ })).toHaveTextContent('4');
-    expect(screen.getByRole('tab', { name: /Documents/ })).not.toHaveTextContent('0');
+    expect(screen.getByRole('link', { name: /Photos/ })).toHaveTextContent('4');
+    expect(screen.getByRole('link', { name: /Documents/ })).not.toHaveTextContent('0');
   });
 });

@@ -28,6 +28,11 @@ export interface LineChartCoreProps {
   surface?: Surface;
   showPoints?: boolean;
   ariaLabel?: string;
+  /**
+   * Bottom of the y domain. Omit for the old 0-based scale; `'auto'` pads the
+   * data range so a body metric (78 → 72 kg) is not flattened against zero.
+   */
+  yMin?: number | 'auto';
 }
 
 /**
@@ -50,10 +55,24 @@ export function LineChartCore({
   surface = 'auto',
   showPoints = true,
   ariaLabel,
+  yMin,
 }: LineChartCoreProps) {
   const motionProps = useChartMotion();
   const compact = useIsCompactChart();
   const nivoData = React.useMemo(() => toNivoSeries(data, xKey, series), [data, xKey, series]);
+
+  const yDomain = React.useMemo(() => {
+    if (yMin === undefined) return { min: 0, max: 'auto' as const };
+    if (typeof yMin === 'number') return { min: yMin, max: 'auto' as const };
+    const values = data.flatMap((row) => series
+      .map((s) => Number(row[s.key]))
+      .filter((v) => Number.isFinite(v)));
+    if (!values.length) return { min: 0, max: 'auto' as const };
+    const lo = Math.min(...values);
+    const hi = Math.max(...values);
+    const pad = (hi - lo || Math.abs(hi) * 0.1 || 1) * 0.15;
+    return { min: lo - pad, max: hi + pad };
+  }, [data, series, yMin]);
 
   const gradient = React.useMemo(
     () => buildGradientFill(
@@ -67,14 +86,14 @@ export function LineChartCore({
     <ResponsiveLine
       data={nivoData}
       xScale={{ type: 'point' }}
-      yScale={{ type: 'linear', min: 0, max: 'auto', stacked: false, nice: true }}
+      yScale={{ type: 'linear', ...yDomain, stacked: false, nice: yMin === undefined }}
       curve={curve}
       margin={scaleMargin(chartMargin.line, compact)}
       colors={(d) => colorByKey[String(d.id)] ?? seriesPalette[0]}
       lineWidth={border.lineWidth}
       enableArea={enableArea}
       areaOpacity={enableArea ? 1 : 0}
-      areaBaselineValue={0}
+      areaBaselineValue={yDomain.min}
       defs={enableArea ? gradient.defs : []}
       fill={enableArea ? gradient.fill : []}
       enablePoints={showPoints}

@@ -1,11 +1,11 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { use, useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { CopyId } from '@/components/ui/CopyId';
-import { m } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import {
-  User, Calendar, Target,
+  User, Calendar,
   Dumbbell, Wallet, FileText, RefreshCw,
   CheckCircle, AlertTriangle, Clock, IndianRupee,
   Zap, Repeat, ChevronRight,
@@ -25,7 +25,7 @@ import { useAuth } from '@/lib/auth-context';
 import { PremiumAreaChart, Button, cardSurfaceGlow } from '@/components/ui';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import ClientAiPanel from '@/components/pt-os/ClientAiPanel';
-import ClientSnapshot from '@/components/pt-os/ClientSnapshot';
+import ClientSnapshot, { normaliseSnapshot, type SnapshotState } from '@/components/pt-os/ClientSnapshot';
 import ClientLoginCard from '@/components/pt-os/ClientLoginCard';
 import ClientAiGenerateCard from '@/components/pt-os/ClientAiGenerateCard';
 import RenewalOfferSheet from '@/components/pt-os/RenewalOfferSheet';
@@ -34,7 +34,7 @@ import {
 } from '@/components/pt-os/client/ClientTabs';
 import RecoveryPanel from '@/components/pt-os/client/RecoveryPanel';
 import PhotosPanel from '@/components/pt-os/client/PhotosPanel';
-import type { ClientRecovery, MeGoal, MeGoals } from '@/lib/api';
+import type { MeGoal, MeGoals } from '@/lib/api';
 import { printWindowCloseButtonHtml } from '@/lib/printWindowChrome';
 import { escapeHtml, escapeImageDataUrl } from '@/lib/escapeHtml';
 import { errorMessage } from '@/lib/forms/errors';
@@ -179,9 +179,7 @@ function SectionCard({ title, icon, tint, action, children, className = '' }: {
   children: React.ReactNode; className?: string;
 }) {
   return (
-    <m.section
-      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+    <section
       className={`overflow-hidden rounded-[24px] ${className}`}
       style={{
         // Adaptive glass rather than one light-only shadow: the tokens carry
@@ -193,12 +191,12 @@ function SectionCard({ title, icon, tint, action, children, className = '' }: {
       <header className="flex items-center justify-between gap-3 px-5 pb-3 pt-4">
         <div className="flex min-w-0 items-center gap-3">
           <Squircle tint={tint}>{icon}</Squircle>
-          <h3 className="truncate text-[15px] font-[720] tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+          <h2 className="truncate text-[15px] font-[720] tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>{title}</h2>
         </div>
         {action}
       </header>
       <div className="px-5 pb-5">{children}</div>
-    </m.section>
+    </section>
   );
 }
 
@@ -233,16 +231,16 @@ const DOC_STATUS_STYLE: Record<string, { label: string; tone: Tone }> = {
   expired: { label: 'Expired', tone: BAD },
 };
 
-function DocumentRow({ icon, tint, label, status, detail, onClick }: {
+function DocumentRow({ icon, tint, label, status, detail, href }: {
   icon: React.ReactNode; tint: Tone; label: string; status: string; detail?: { text: string; tone: Tone } | null;
-  onClick: () => void;
+  href: string;
 }) {
   // Falls back to `unknown`, not to `none`: a status this table has not
   // heard of is one we cannot interpret, which is not the same as a form
   // that was never started.
   const style = DOC_STATUS_STYLE[status] || DOC_STATUS_STYLE.unknown;
   return (
-    <button onClick={onClick}
+    <Link href={href}
       className="flex min-h-[52px] w-full items-center justify-between gap-3 rounded-[14px] px-3 py-2.5 text-left transition active:scale-[0.99]"
       style={{ background: 'var(--bg-subtle)' }}>
       <div className="flex min-w-0 items-center gap-2.5">
@@ -260,7 +258,7 @@ function DocumentRow({ icon, tint, label, status, detail, onClick }: {
         </span>
         <ChevronRight size={15} style={{ color: 'var(--text-muted)' }} />
       </div>
-    </button>
+    </Link>
   );
 }
 
@@ -270,7 +268,6 @@ function DocumentRow({ icon, tint, label, status, detail, onClick }: {
  * each list. Without it (an older server) every row says "Not checked".
  */
 function DocumentsCard({ clientId, screening }: { clientId: string; screening?: ScreeningSummary | null }) {
-  const router = useRouter();
   const parq = screening?.parq;
   const riskDetail = parq?.risk_level === 'high'
     ? { text: parq.has_valid_clearance ? 'High risk · cleared' : 'High risk', tone: parq.has_valid_clearance ? WARN : BAD }
@@ -290,10 +287,10 @@ function DocumentsCard({ clientId, screening }: { clientId: string; screening?: 
         )}
         <DocumentRow icon={<FileSignature size={14} />} tint={tones.sky} label="Informed consent"
           status={screening?.consent.status ?? 'unknown'}
-          onClick={() => router.push(`/pt-os/informed-consent?client_id=${clientId}`)} />
+          href={`/pt-os/informed-consent?client_id=${clientId}`} />
         <DocumentRow icon={<ShieldCheck size={14} />} tint={tones.lime} label="PAR-Q screening"
           status={parq?.status ?? 'unknown'} detail={riskDetail}
-          onClick={() => router.push(`/pt-os/parq?client_id=${clientId}`)} />
+          href={`/pt-os/parq?client_id=${clientId}`} />
         {!screening?.block && (screening?.warnings?.length ?? 0) > 0 && (
           <ul className="space-y-1 px-1 pt-1">
             {screening!.warnings.map((w) => (
@@ -313,19 +310,25 @@ function DocumentsCard({ clientId, screening }: { clientId: string; screening?: 
 function QrCheckinCard({ clientId, clientName }: { clientId: string; clientName: string }) {
   const [open, setOpen] = useState(false);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    let cancelled = false;
+  // Generated on first expand, not on every profile view: this is a
+  // print-once artefact most trainers never open, and the QR endpoint does
+  // real work per call.
+  const generate = () => {
     setLoading(true);
     setError('');
     api.qr.generateFor('client', clientId)
-      .then((res) => { if (!cancelled) setDataUrl(res.dataUrl); })
-      .catch((e) => { if (!cancelled) setError(errorMessage(e, 'Failed to generate QR code')); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [clientId]);
+      .then((res) => setDataUrl(res.dataUrl))
+      .catch((e) => setError(errorMessage(e, 'Failed to generate QR code')))
+      .finally(() => setLoading(false));
+  };
+
+  const toggle = () => {
+    if (!open && !dataUrl) generate();
+    setOpen((o) => !o);
+  };
 
   const handlePrint = () => {
     if (!dataUrl) return;
@@ -353,7 +356,7 @@ function QrCheckinCard({ clientId, clientName }: { clientId: string; clientName:
     <SectionCard title="Check-in QR" icon={<QrCode size={15} />} tint={tones.indigo}>
       {/* Collapsed by default: a print-once artefact, looked at when a client
           joins and rarely again. */}
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
+      <button type="button" onClick={toggle} aria-expanded={open}
         className={`flex h-[44px] w-full items-center justify-between gap-2 rounded-[12px] px-3.5 text-[13px] font-[650] transition active:scale-[0.99] ${inkClass}`}
         style={{ background: 'var(--bg-subtle)', ...inkVars(tones.indigo) }}>
         {open ? 'Hide code' : 'Show code'}
@@ -404,7 +407,7 @@ function NotesCard({ notes, onSave }: { notes?: string; onSave: (next: string) =
       title="Coach notes" icon={<FileText size={15} />} tint={tones.sunset}
       action={!editing ? (
         <button type="button" onClick={() => setEditing(true)}
-          className={`flex h-[36px] items-center gap-1.5 rounded-full px-3 text-[12.5px] font-[650] ${inkClass}`}
+          className={`flex h-[44px] items-center gap-1.5 rounded-full px-3 text-[12.5px] font-[650] ${inkClass}`}
           style={{ background: tones.sunset.wash, ...inkVars(tones.sunset) }}>
           <Pencil size={12} /> {notes ? 'Edit' : 'Add'}
         </button>
@@ -493,14 +496,14 @@ function ProfileSkeleton() {
 // belong beside "Call". It lives inside Edit.
 export default function PtClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
+  const reduce = useReducedMotion();
   const [client, setClient] = useState<PtClientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  /** Readiness, lifted off the snapshot so the Check-ins tab can render it. */
-  const [recovery, setRecovery] = useState<ClientRecovery | undefined>(undefined);
+  /** The whole summary, so Check-ins can tell loading/failure from "none". */
+  const [snapshotState, setSnapshotState] = useState<SnapshotState>({ status: 'loading' });
   /** Which section of the workspace is open. Overview is where you land. */
   const [tab, setTab] = useState<TabKey>('overview');
   // Notifications deep-link a section (a weekly check-in lands on Check-ins).
@@ -508,6 +511,15 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   useEffect(() => {
     const want = new URLSearchParams(window.location.search).get('tab');
     if (want && (TAB_KEYS as readonly string[]).includes(want)) setTab(want as TabKey);
+  }, []);
+
+  // The URL follows the selected section, so refresh/share/Back land where
+  // the trainer was. Replace rather than push: tab switches are not pages.
+  const selectTab = useCallback((next: TabKey) => {
+    setTab(next);
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', next);
+    window.history.replaceState(null, '', url);
   }, []);
   /** Ask AI — the read-only assistant scoped to this client. */
   const [aiOpen, setAiOpen] = useState(false);
@@ -566,6 +578,24 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
   useEffect(() => { loadData(); }, [id]);
 
+  const loadSnapshot = useCallback(async () => {
+    setSnapshotState({ status: 'loading' });
+    try {
+      const { data } = await api.pt.snapshot(id);
+      if (!data || typeof data !== 'object') throw new Error('The summary came back empty.');
+      setSnapshotState({ status: 'ready', snapshot: normaliseSnapshot(data) });
+    } catch (err) {
+      setSnapshotState({
+        status: 'error',
+        message: errorMessage(err, 'The summary could not be loaded.'),
+      });
+    }
+  }, [id]);
+
+  // Fetched here, not inside the snapshot, so Check-ins can still tell
+  // "loading" and "failed" from "no check-ins" when it is opened directly.
+  useEffect(() => { void loadSnapshot(); }, [loadSnapshot]);
+
   const [activePlanName, setActivePlanName] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -589,7 +619,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
   // Lifetime paid across every PT term — pt_clients.paid_amount is that total.
   const lifetimePaid = Number(client?.paid_amount ?? 0);
-  const lifetimeTermCount = subscriptionHistory.length > 0 ? subscriptionHistory.length : 1;
+  // A never-enrolled client has no terms. The old fallback credited everybody
+  // with one, so a new lead showed "1 term · ₹0 lifetime paid" as if a term
+  // had been sold and paid.
+  const lifetimeTermCount = subscriptionHistory.length > 0
+    ? subscriptionHistory.length
+    : hasPtTerm(client) ? 1 : 0;
 
   // PT term progress: elapsed over total, clamped so a finished term is 100%.
   const totalDurationDays = client?.pt_start_date && client?.pt_end_date
@@ -602,6 +637,15 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   // Enroll vs Renew, from the server's term flag — never from pt_start_date,
   // which client creation used to default for everyone (lib/pt-term.ts).
   const hasTerm = hasPtTerm(client);
+
+  // Readiness belongs to the summary; only hand it over once that answered.
+  const recovery = snapshotState.status === 'ready' ? snapshotState.snapshot.recovery : undefined;
+  const weightPoints = recentWeights.map((a: any) => ({
+    date: fmtDayMonth(a.created_at || a.assessment_date),
+    weight: Number(a.weight),
+  }));
+  const firstWeight = weightPoints[0];
+  const lastWeight = weightPoints[weightPoints.length - 1];
 
   // Null when the number cannot be normalised — no button then, rather than
   // a WhatsApp link to nobody.
@@ -646,7 +690,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   the content and inside the hero's overflow-hidden, which is
                   what keeps a blur from escaping the rounded corner. */}
               <m.section
-                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                initial={reduce ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 className="relative mb-5 overflow-hidden rounded-[32px] p-5 text-white sm:p-7"
                 style={{
@@ -678,6 +722,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   <ClientAvatar
                     name={client.name}
                     photoUrl={client.photo_url}
+                    alt=""
                     className="relative flex h-[84px] w-[84px] shrink-0 items-center justify-center rounded-full text-[28px] font-[800] sm:h-[112px] sm:w-[112px] sm:text-[36px]"
                     style={{
                       background: 'linear-gradient(145deg, rgba(255,255,255,0.35), rgba(255,255,255,0.08))',
@@ -687,7 +732,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   />
 
                   <div className="min-w-0 flex-1 pt-1">
-                    <h1 className="truncate text-[24px] font-[800] leading-[1.1] tracking-[-0.03em] sm:text-[34px]">
+                    <h1 className="line-clamp-2 break-words text-[22px] font-[800] leading-[1.1] tracking-[-0.03em] sm:line-clamp-none sm:truncate sm:text-[34px]">
                       {client.name}
                     </h1>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -707,12 +752,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     )}
                   </div>
 
-                  <button onClick={() => router.push(`/pt-os/clients/${id}/edit`)}
+                  <Link href={`/pt-os/clients/${id}/edit`}
                     aria-label="Edit profile"
                     className="flex h-[44px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-[700] text-white transition active:scale-95"
                     style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.28)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
                     <Pencil size={13} /> <span className="hidden sm:inline">Edit</span>
-                  </button>
+                  </Link>
                 </div>
                 </div>
               </m.section>
@@ -730,13 +775,13 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   <ActionButton label="WhatsApp" icon={<MessageCircle size={20} />} tint={tones.mint} href={waHref} external />
                 )}
                 <ActionButton label="Message" icon={<MessagesSquare size={20} />} tint={tones.sky}
-                  onClick={() => router.push(`/pt-os/messages?client=${encodeURIComponent(String(id))}`)} />
+                  href={`/pt-os/messages?client=${encodeURIComponent(String(id))}`} />
                 {hasTerm ? (
                   <ActionButton label="Renew" icon={<Repeat size={20} />} tint={tones.indigo}
-                    onClick={() => router.push(`/pt-os/clients/${id}/renew`)} />
+                    href={`/pt-os/clients/${id}/renew`} />
                 ) : (
                   <ActionButton label="Enroll" icon={<UserPlus size={20} />} tint={tones.indigo}
-                    onClick={() => router.push(`/pt-os/clients/${id}/enroll`)} />
+                    href={`/pt-os/clients/${id}/enroll`} />
                 )}
                 {/* The member renews themselves: priced here, paid by UPI in their app. */}
                 <ActionButton label="Offer" ariaLabel="Renewal offer" icon={<Send size={20} />} tint={tones.berry} onClick={() => setOfferOpen(true)} />
@@ -757,7 +802,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   <>
                     <div className="h-2.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}
                       role="progressbar" aria-label="PT term elapsed" aria-valuenow={ptTermPct} aria-valuemin={0} aria-valuemax={100}>
-                      <m.div initial={{ width: 0 }} animate={{ width: `${ptTermPct}%` }}
+                      <m.div initial={reduce ? false : { width: 0 }} animate={{ width: `${ptTermPct}%` }}
                         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                         className="h-full rounded-full"
                         style={{ background: `linear-gradient(90deg, ${tones.sky.from}, ${tones.indigo.to} 55%, ${tones.berry.from})` }} />
@@ -773,7 +818,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   </p>
                 )}
 
-                <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
                   {[
                     { label: 'Term fee', value: fmtMoney(currentTermFee), tint: tones.sky, icon: <IndianRupee size={12} /> },
                     { label: 'Paid', value: fmtMoney(currentTermPaid), tint: OK, icon: <CheckCircle size={12} /> },
@@ -782,15 +827,17 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       icon: currentTermBalance > 0 ? <AlertTriangle size={12} /> : <CheckCircle size={12} />,
                       // Balance's state is otherwise carried only by colour.
                       state: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'Overdue' : 'Due') : 'Cleared',
+                      // Full-width on phones so six-figure INR never truncates.
+                      wide: true,
                     },
                   ].map((k) => (
-                    <div key={k.label} className="min-w-0 rounded-[18px] p-3"
+                    <div key={k.label} className={`min-w-0 rounded-[18px] p-3 ${k.wide ? 'col-span-2 sm:col-span-1' : ''}`}
                       style={{ background: `linear-gradient(160deg, ${k.tint.wash}, transparent)`, border: `1px solid ${k.tint.wash}` }}>
-                      <p className={`flex items-center gap-1 text-[10.5px] font-[700] uppercase tracking-[0.06em] ${inkClass}`} style={inkVars(k.tint)}>
+                      <p className={`flex items-center gap-1 text-[11px] font-[700] uppercase tracking-[0.06em] ${inkClass}`} style={inkVars(k.tint)}>
                         {k.icon}{k.label}
                         {k.state && <span className="sr-only"> — {k.state}</span>}
                       </p>
-                      <p className="mt-1 truncate text-[18px] font-[800] leading-tight tracking-[-0.02em] tabular-nums sm:text-[22px]"
+                      <p className="mt-1 break-words text-[18px] font-[800] leading-tight tracking-[-0.02em] tabular-nums sm:text-[22px]"
                         style={{ color: 'var(--text-primary)' }}>
                         {k.value}
                       </p>
@@ -800,63 +847,41 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
               </SectionCard>
 
               {/* ── CLIENT LOGIN ──
-                  Under the money, because eligibility depends on it. Renders
-                  nothing if the status read fails. */}
+                  Under the money, because eligibility depends on it. */}
               <div className="mb-5">
                 <ClientLoginCard clientId={client.id} />
               </div>
 
-              {/* What needs attention, the goal, the coach, the records. */}
-              <ClientSnapshot clientId={client.id} onLoaded={(s) => setRecovery(s.recovery)} />
-
               {/* ── WORKSPACE ── */}
-              <ClientTabs active={tab} onChange={setTab} clientId={client.id} />
+              <ClientTabs active={tab} onChange={selectTab} clientId={client.id} />
 
               <TabPanel id="overview" active={tab}>
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {/* The summary is part of Overview, not a separate block above
+                    the workspace: it was the last thing pushing the tabs below
+                    a phone's first screen. */}
+                <div className="mb-4">
+                  <ClientSnapshot clientId={client.id} state={snapshotState} onRetry={loadSnapshot} />
+                </div>
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 items-start">
                   {/* Where the client is in intake, and the one next thing to do. */}
                   <SectionCard title="Client journey" icon={<Route size={15} />} tint={tones.indigo}>
                     <ClientJourneyCard clientId={client.id} />
                   </SectionCard>
-                  {recentWeights.length >= 2 && (
+                  {weightPoints.length >= 2 && firstWeight && lastWeight && (
                     <SectionCard title="Weight trend" icon={<TrendingUp size={15} />} tint={tones.lime}>
                       <PremiumAreaChart
-                        data={recentWeights.map((a: any) => ({
-                          date: fmtDayMonth(a.created_at || a.assessment_date),
-                          weight: Number(a.weight),
-                        })) as Record<string, unknown>[]}
+                        data={weightPoints as Record<string, unknown>[]}
                         xKey="date"
                         areas={[{ key: 'weight', label: 'Weight (kg)', color: emerald[500] }]}
                         height={110}
                         formatValue={(v) => `${v} kg`}
+                        yMin="auto"
                       />
-                    </SectionCard>
-                  )}
-
-                  {activeGoals.length > 0 && (
-                    <SectionCard title="Active goals" icon={<Target size={15} />} tint={tones.berry}
-                      action={(
-                        <button onClick={() => router.push(`/pt-os/goals?client_id=${client.id}`)}
-                          className={`h-[36px] rounded-full px-3 text-[12.5px] font-[650] ${inkClass}`}
-                          style={{ background: tones.berry.wash, ...inkVars(tones.berry) }}>
-                          View all
-                        </button>
-                      )}>
-                      <div className="space-y-2">
-                        {activeGoals.slice(0, 3).map((g: any) => (
-                          <div key={g.id} className="rounded-[14px] px-3.5 py-3" style={{ background: 'var(--bg-subtle)' }}>
-                            <p className="text-[13.5px] font-[680] capitalize" style={{ color: 'var(--text-primary)' }}>
-                              {String(g.goal_type || g.type || 'Goal').replace(/_/g, ' ')}
-                            </p>
-                            {(g.target_weight || g.target_body_fat) && (
-                              <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                                {[g.target_weight ? `Target ${g.target_weight} kg` : null, g.target_body_fat ? `Body fat ${g.target_body_fat}%` : null]
-                                  .filter(Boolean).join(' · ')}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                      {/* The chart's own accessible name says "six points";
+                          these are the readings a screen reader cannot hover. */}
+                      <p className="sr-only">
+                        Weight trend: {firstWeight.weight} kg on {firstWeight.date} to {lastWeight.weight} kg on {lastWeight.date}.
+                      </p>
                     </SectionCard>
                   )}
 
@@ -901,18 +926,18 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   <NotesCard notes={client.notes} onSave={handleSaveNotes} />
 
                   <div className="grid grid-cols-1 gap-4">
-                    <button onClick={() => router.push(`/pt-os/session-balance?client_id=${client.id}`)}
+                    <Link href={`/pt-os/session-balance?client_id=${client.id}`}
                       className="group flex w-full items-center justify-between gap-3 rounded-[24px] p-4 text-left transition active:scale-[0.99]"
                       style={{ ...cardSurfaceGlow(tones.mint.glow) }}>
                       <div className="flex items-center gap-3">
-                        <Squircle tint={tones.mint} size={40}><Zap size={17} /></Squircle>
+                        <Squircle tint={tones.mint} size={42}><Zap size={17} /></Squircle>
                         <div>
                           <p className="text-[14px] font-[700]" style={{ color: 'var(--text-primary)' }}>Session balance</p>
                           <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>Packages and sessions left</p>
                         </div>
                       </div>
                       <ChevronRight size={18} className="transition-transform group-hover:translate-x-0.5" style={{ color: 'var(--text-muted)' }} />
-                    </button>
+                    </Link>
                     <QrCheckinCard clientId={client.id} clientName={client.name} />
                   </div>
                 </div>
@@ -930,22 +955,21 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     ]}
                   />
                 </div>
-                <m.button
-                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                  onClick={() => router.push(`/pt-os/clients/${client.id}/subscriptions`)}
+                <Link
+                  href={`/pt-os/clients/${client.id}/subscriptions`}
                   className="group flex w-full flex-wrap items-center justify-between gap-4 rounded-[24px] p-5 text-left transition active:scale-[0.99]"
                   style={{ ...cardSurfaceGlow(tones.indigo.glow) }}>
                   <div className="flex items-center gap-3">
                     <Squircle tint={tones.indigo} size={42}><Repeat size={18} /></Squircle>
                     <div>
-                      <h3 className="text-[15px] font-[720]" style={{ color: 'var(--text-primary)' }}>PT subscription history</h3>
+                      <h2 className="text-[15px] font-[720]" style={{ color: 'var(--text-primary)' }}>PT subscription history</h2>
                       <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
                         {lifetimeTermCount} term{lifetimeTermCount !== 1 ? 's' : ''} · {fmtMoney(lifetimePaid)} lifetime paid
                       </p>
                     </div>
                   </div>
                   <ChevronRight size={18} className="transition-transform group-hover:translate-x-0.5" style={{ color: 'var(--text-muted)' }} />
-                </m.button>
+                </Link>
               </TabPanel>
 
               {/* Tabs whose work lives on its own screen send you there rather
@@ -969,7 +993,13 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
               </TabPanel>
 
               <TabPanel id="checkins" active={tab}>
-                <RecoveryPanel recovery={recovery} clientId={client.id} />
+                <RecoveryPanel
+                  recovery={recovery}
+                  clientId={client.id}
+                  status={snapshotState.status}
+                  error={snapshotState.status === 'error' ? snapshotState.message : undefined}
+                  onRetry={loadSnapshot}
+                />
               </TabPanel>
 
               <TabPanel id="photos" active={tab}>

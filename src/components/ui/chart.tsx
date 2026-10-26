@@ -312,6 +312,26 @@ export interface PremiumAreaChartProps {
   height?: number;
   className?: string;
   formatValue?: (v: number) => string;
+  /** Bottom of the y axis. `'auto'` pads the range instead of anchoring at 0. */
+  yMin?: number | 'auto';
+}
+
+/** Y domain for the area chart. Exported so the padding can be tested. */
+export function areaYDomain(
+  data: Record<string, unknown>[],
+  areas: PremiumAreaEntry[],
+  yMin?: number | 'auto',
+): [number | 'auto', number | 'auto'] {
+  if (yMin === undefined) return [0, 'auto'];
+  if (typeof yMin === 'number') return [yMin, 'auto'];
+  const values = data.flatMap((row) => areas
+    .map((a) => Number(row[a.key]))
+    .filter((v) => Number.isFinite(v)));
+  if (!values.length) return [0, 'auto'];
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  const pad = (hi - lo || Math.abs(hi) * 0.1 || 1) * 0.15;
+  return [lo - pad, hi + pad];
 }
 
 export function PremiumAreaChart({
@@ -321,8 +341,11 @@ export function PremiumAreaChart({
   height = 200,
   className,
   formatValue,
+  yMin,
 }: PremiumAreaChartProps) {
   const uid = React.useId().replace(/:/g, 'x');
+
+  const yDomain = React.useMemo(() => areaYDomain(data, areas, yMin), [data, areas, yMin]);
 
   return (
     <div className={cn('w-full', className)} style={{ height }}>
@@ -348,6 +371,7 @@ export function PremiumAreaChart({
             dy={6}
           />
           <YAxis
+            domain={yDomain}
             tickLine={false}
             axisLine={false}
             tick={TICK_STYLE}

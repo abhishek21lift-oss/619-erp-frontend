@@ -15,7 +15,11 @@ beforeEach(() => { mockUpdate.mockReset(); mockSuccess.mockReset(); mockError.mo
 describe('MessagePreferences', () => {
   it('a switch reads "receives messages": on unless the client opted out', () => {
     render(<MessagePreferences clientId="c1" whatsappOptOut emailOptOut={false} />);
-    expect(screen.getByRole('switch', { name: /WhatsApp/ })).toHaveAttribute('aria-checked', 'false');
+    const whatsapp = screen.getByRole('switch', { name: /WhatsApp/ });
+    expect(whatsapp).toHaveAttribute('aria-checked', 'false');
+    // The switch IS the row, so its label and description are inside the
+    // target rather than next to a 28px track.
+    expect(whatsapp).toHaveTextContent(/WhatsApp reminders/);
     expect(screen.getByRole('switch', { name: /Email/ })).toHaveAttribute('aria-checked', 'true');
   });
 

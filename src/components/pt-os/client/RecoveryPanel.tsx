@@ -17,24 +17,25 @@
 // an instruction.
 
 import { m, useReducedMotion } from 'framer-motion';
-import { ClipboardCheck, TrendingDown, TrendingUp, Minus, ChevronRight } from 'lucide-react';
+import { ClipboardCheck, TrendingDown, TrendingUp, Minus, ChevronRight, RefreshCw } from 'lucide-react';
 import type { ClientRecovery } from '@/lib/api';
 import { cardSurface } from '@/components/ui/Card';
-import { amber, blue, emerald, gray, red, rgba } from '@/lib/palette';
+import { blue, rgba } from '@/lib/palette';
+import { stateTone, type StateToneStyle } from '@/lib/state-tone';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-const BAND: Record<string, { label: string; colour: string }> = {
-  good: { label: 'Good', colour: emerald[600] },
-  fair: { label: 'Fair', colour: blue[600] },
-  low: { label: 'Low', colour: amber[600] },
-  poor: { label: 'Poor', colour: red[600] },
+const BAND: Record<string, { label: string } & StateToneStyle> = {
+  good: { label: 'Good', ...stateTone.success },
+  fair: { label: 'Fair', ...stateTone.info },
+  low: { label: 'Low', ...stateTone.warning },
+  poor: { label: 'Poor', ...stateTone.danger },
 };
 
-const TREND: Record<string, { label: string; icon: React.ReactNode; colour: string }> = {
-  improving: { label: 'Improving', icon: <TrendingUp size={13} />, colour: emerald[600] },
-  steady: { label: 'Steady', icon: <Minus size={13} />, colour: gray[500] },
-  declining: { label: 'Declining', icon: <TrendingDown size={13} />, colour: amber[600] },
+const TREND: Record<string, { label: string; icon: React.ReactNode } & StateToneStyle> = {
+  improving: { label: 'Improving', icon: <TrendingUp size={13} />, ...stateTone.success },
+  steady: { label: 'Steady', icon: <Minus size={13} />, ...stateTone.neutral },
+  declining: { label: 'Declining', icon: <TrendingDown size={13} />, ...stateTone.warning },
 };
 
 const COMPONENTS: Array<{ key: keyof NonNullable<ClientRecovery['components']>; label: string }> = [
@@ -47,11 +48,51 @@ const COMPONENTS: Array<{ key: keyof NonNullable<ClientRecovery['components']>; 
 export interface RecoveryPanelProps {
   recovery?: ClientRecovery;
   clientId: string;
+  /** Whether the summary that carries readiness is still loading or failed. */
+  status?: 'loading' | 'error' | 'ready';
+  error?: string;
+  onRetry?: () => void;
 }
 
-export default function RecoveryPanel({ recovery, clientId }: RecoveryPanelProps) {
+export default function RecoveryPanel({
+  recovery, clientId, status = 'ready', error, onRetry,
+}: RecoveryPanelProps) {
   const reduce = useReducedMotion();
   const checkinHref = `/pt-os/weekly-checkin?client_id=${clientId}`;
+
+  // The tab can be deep-linked before the summary answers. Without these two
+  // states it claimed "no check-ins recorded yet" while loading, and also when
+  // the request had failed — the one case where that sentence is a lie.
+  if (status === 'loading') {
+    return (
+      <Shell>
+        <div aria-busy="true" aria-label="Loading readiness" className="space-y-2">
+          <div className="h-12 w-40 animate-pulse rounded-[12px]" style={{ background: 'var(--bg-subtle)' }} />
+          <div className="h-16 animate-pulse rounded-[14px]" style={{ background: 'var(--bg-subtle)' }} />
+        </div>
+      </Shell>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <Shell>
+        <div role="alert" className="flex flex-wrap items-center gap-3 rounded-[14px] px-3.5 py-3"
+          style={{ background: stateTone.danger.bg, border: `1px solid ${stateTone.danger.border}` }}>
+          <p className="min-w-0 flex-1 text-[12.5px] font-[650] leading-snug" style={{ color: stateTone.danger.fg }}>
+            Could not load readiness. {error}
+          </p>
+          {onRetry && (
+            <button type="button" onClick={onRetry}
+              className="flex h-[44px] items-center gap-1.5 rounded-[12px] px-3.5 text-[12px] font-[750]"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+              <RefreshCw size={13} /> Retry
+            </button>
+          )}
+        </div>
+      </Shell>
+    );
+  }
 
   if (!recovery?.present) {
     return (
@@ -86,17 +127,17 @@ export default function RecoveryPanel({ recovery, clientId }: RecoveryPanelProps
           <div className="flex flex-wrap items-end gap-x-5 gap-y-3">
             <div>
               <p className="text-[44px] font-[880] leading-none tabular-nums tracking-[-0.03em]"
-                style={{ color: band?.colour ?? 'var(--text-primary)' }}>
+                style={{ color: band?.fg ?? 'var(--text-primary)' }}>
                 {score}
                 <span className="text-[16px] font-[700]" style={{ color: 'var(--text-muted)' }}>/100</span>
               </p>
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
                 {band && (
-                  <span className="rounded-full px-2 py-0.5 text-[10px] font-[800] uppercase tracking-wider"
-                    style={{ background: `${band.colour}18`, color: band.colour }}>{band.label}</span>
+                  <span className="rounded-full px-2 py-0.5 text-[11px] font-[800] uppercase tracking-wider"
+                    style={{ background: band.bg, color: band.fg }}>{band.label}</span>
                 )}
                 {trend && (
-                  <span className="flex items-center gap-1 text-[11px] font-[720]" style={{ color: trend.colour }}>
+                  <span className="flex items-center gap-1 text-[11px] font-[720]" style={{ color: trend.fg }}>
                     {trend.icon}{trend.label}
                   </span>
                 )}
@@ -109,7 +150,7 @@ export default function RecoveryPanel({ recovery, clientId }: RecoveryPanelProps
                 {answered} of {total} questions answered
                 {recovery.as_of ? ` · week of ${recovery.as_of}` : ''}
               </p>
-              <p className="mt-0.5 text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
+              <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
                 Self-reported by the client. Not a physiological measurement.
               </p>
             </div>
@@ -122,7 +163,7 @@ export default function RecoveryPanel({ recovery, clientId }: RecoveryPanelProps
               return (
                 <div key={key} className="rounded-[14px] px-3 py-2.5"
                   style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                  <p className="text-[9.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                  <p className="text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
                     {label}
                   </p>
                   {v == null ? (
@@ -136,7 +177,7 @@ export default function RecoveryPanel({ recovery, clientId }: RecoveryPanelProps
                           animate={{ width: `${v}%` }}
                           transition={{ duration: 0.5, ease: EASE }}
                           className="h-full rounded-full"
-                          style={{ background: band?.colour ?? 'var(--brand)' }}
+                          style={{ background: band?.fg ?? 'var(--brand)' }}
                         />
                       </div>
                     </>
@@ -148,7 +189,7 @@ export default function RecoveryPanel({ recovery, clientId }: RecoveryPanelProps
 
           {recovery.weeks.length >= 2 && (
             <div className="mt-4">
-              <p className="mb-2 text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+              <p className="mb-2 text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
                 Last {recovery.weeks.length} scored weeks
               </p>
               {/* A sparkline of bars rather than a chart library: four to twelve
@@ -161,12 +202,12 @@ export default function RecoveryPanel({ recovery, clientId }: RecoveryPanelProps
                       animate={{ height: `${Math.max(6, (w.score / 100) * 48)}px` }}
                       transition={{ duration: 0.4, ease: EASE }}
                       className="w-full rounded-[4px]"
-                      style={{ background: BAND[bandOf(w.score)].colour, opacity: 0.85 }}
+                      style={{ background: BAND[bandOf(w.score)].fg, opacity: 0.85 }}
                     />
                   </div>
                 ))}
               </div>
-              <div className="mt-1.5 flex justify-between text-[9.5px] font-[620]" style={{ color: 'var(--text-muted)' }}>
+              <div className="mt-1.5 flex justify-between text-[11px] font-[620]" style={{ color: 'var(--text-muted)' }}>
                 <span>{recovery.weeks[0]?.week}</span>
                 <span>{recovery.weeks[recovery.weeks.length - 1]?.week}</span>
               </div>
@@ -194,14 +235,14 @@ function bandOf(score: number): keyof typeof BAND {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-[22px] p-4 sm:p-5"
+    <div className="rounded-[24px] p-4 sm:p-5"
       style={{ ...cardSurface }}>
       <div className="mb-3.5 flex items-center gap-2.5 pb-3.5" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
           style={{ background: `linear-gradient(135deg, ${blue[500]}, ${blue[600]})`, boxShadow: `0 3px 12px ${rgba(blue[500], 0.27)}` }}>
           <ClipboardCheck size={16} className="text-white" />
         </div>
-        <h3 className="text-[13.5px] font-[740]" style={{ color: 'var(--text-primary)' }}>Recovery &amp; readiness</h3>
+        <h2 className="text-[13.5px] font-[740]" style={{ color: 'var(--text-primary)' }}>Recovery &amp; readiness</h2>
       </div>
       {children}
     </div>

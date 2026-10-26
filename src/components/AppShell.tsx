@@ -329,7 +329,7 @@ function AppShellContent({ children }: AppShellProps) {
 
         {/* Right column — blur overlay when mobile drawer is open */}
         <div
-          className={cn('relative flex flex-1 flex-col min-w-0 overflow-x-hidden', sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64 xl:pl-72')}
+          className={cn('relative flex flex-1 flex-col min-w-0 overflow-x-clip', sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64 xl:pl-72')}
           style={{
             isolation: 'isolate',
             transition: 'padding-left 300ms cubic-bezier(0.16,1,0.3,1)',
@@ -719,7 +719,7 @@ function AppShellContent({ children }: AppShellProps) {
               the equivalent Tailwind utilities (mx-auto w-full max-w-[1440px] px-4
               sm:px-6 lg:px-8) were dead here: same-specificity CSS declared later in
               globals.css always won, so they never actually took effect. */}
-          <main id="main-content" className="flex-1 min-w-0 overflow-x-hidden shell-main"
+          <main id="main-content" className="flex-1 min-w-0 overflow-x-clip shell-main"
           >
             {pathname === '/' && <TrialBanner />}
             {/* Keyed on pathname so each route fades in on arrival. There is

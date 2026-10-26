@@ -10,14 +10,15 @@
 // journey is complete, the card hands over to the ongoing tools.
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   ArrowRight, CheckCircle2, CircleDashed, Clock3, FileSignature, Gauge, ListChecks, Lock,
   MessagesSquare, RefreshCw, ShieldCheck, Sparkles, Target, Dumbbell,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { STEP_LABEL, stepHref, type ClientJourney, type JourneyStep, type JourneyStepKey } from '@/lib/journey';
-import { amber, blue, emerald, gray, red, rgba } from '@/lib/palette';
+import { blue, emerald, gray, rgba } from '@/lib/palette';
+import { stateTone, type StateToneStyle } from '@/lib/state-tone';
 
 const STEP_ICON: Record<JourneyStepKey, React.ReactNode> = {
   welcome_tour: <Sparkles size={14} />,
@@ -35,16 +36,15 @@ const STEP_COLOR: Record<JourneyStepKey, string> = {
   interview: gray[500], goals: gray[400], assessment: blue[400], program_design: blue[600],
 };
 
-const STATE_CHIP: Record<JourneyStep['state'], { label: string; fg: string; bg: string; icon: React.ReactNode }> = {
-  done: { label: 'Done', fg: emerald[700], bg: rgba(emerald[500], 0.14), icon: <CheckCircle2 size={12} /> },
-  in_progress: { label: 'In progress', fg: amber[700], bg: rgba(amber[500], 0.16), icon: <Clock3 size={12} /> },
-  todo: { label: 'To do', fg: 'var(--text-muted)', bg: 'var(--bg-subtle)', icon: <CircleDashed size={12} /> },
-  blocked: { label: 'Blocked', fg: red[700], bg: rgba(red[500], 0.14), icon: <Lock size={12} /> },
-  renew: { label: 'Renew', fg: amber[700], bg: rgba(amber[500], 0.16), icon: <RefreshCw size={12} /> },
+const STATE_CHIP: Record<JourneyStep['state'], { label: string; icon: React.ReactNode } & StateToneStyle> = {
+  done: { label: 'Done', ...stateTone.success, icon: <CheckCircle2 size={12} /> },
+  in_progress: { label: 'In progress', ...stateTone.warning, icon: <Clock3 size={12} /> },
+  todo: { label: 'To do', ...stateTone.neutral, icon: <CircleDashed size={12} /> },
+  blocked: { label: 'Blocked', ...stateTone.danger, icon: <Lock size={12} /> },
+  renew: { label: 'Renew', ...stateTone.warning, icon: <RefreshCw size={12} /> },
 };
 
 export default function ClientJourneyCard({ clientId }: { clientId: string }) {
-  const router = useRouter();
   const [journey, setJourney] = useState<ClientJourney | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -92,8 +92,9 @@ export default function ClientJourneyCard({ clientId }: { clientId: string }) {
           const chip = STATE_CHIP[step.state];
           const isNext = step.key === journey.next;
           return (
-            <li key={step.key} aria-current={isNext ? 'step' : undefined}>
-              <button type="button" onClick={() => router.push(stepHref(step.key, clientId, step.state))}
+            <li key={step.key}>
+              <Link href={stepHref(step.key, clientId, step.state)}
+                aria-current={isNext ? 'step' : undefined}
                 className="flex min-h-[48px] w-full items-center gap-2.5 rounded-[14px] px-3 py-2 text-left transition active:scale-[0.99]"
                 style={{ background: isNext ? rgba(blue[500], 0.08) : 'var(--bg-subtle)', outline: isNext ? `1.5px solid ${rgba(blue[500], 0.35)}` : 'none' }}>
                 <span aria-hidden className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[8px] text-white"
@@ -112,7 +113,7 @@ export default function ClientJourneyCard({ clientId }: { clientId: string }) {
                   style={{ color: chip.fg, background: chip.bg }}>
                   {chip.icon}{chip.label}
                 </span>
-              </button>
+              </Link>
             </li>
           );
         })}
@@ -124,28 +125,28 @@ export default function ClientJourneyCard({ clientId }: { clientId: string }) {
             Onboarding complete — client is active.
           </p>
           <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log`)}
-              className="min-h-[40px] rounded-[12px] text-[12.5px] font-[700] text-white transition active:scale-[0.99]"
+            <Link href={`/pt-os/clients/${clientId}/workout-log`}
+              className="flex min-h-[44px] items-center justify-center rounded-[12px] text-[12.5px] font-[700] text-white transition active:scale-[0.99]"
               style={{ background: `linear-gradient(135deg, ${blue[500]}, ${blue[600]})` }}>
               Workout Log
-            </button>
-            <button type="button" onClick={() => router.push(`/pt-os/progress?client_id=${encodeURIComponent(clientId)}`)}
-              className="min-h-[40px] rounded-[12px] text-[12.5px] font-[700] transition active:scale-[0.99]"
+            </Link>
+            <Link href={`/pt-os/progress?client_id=${encodeURIComponent(clientId)}`}
+              className="flex min-h-[44px] items-center justify-center rounded-[12px] text-[12.5px] font-[700] transition active:scale-[0.99]"
               style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
               Progress &amp; Retest
-            </button>
+            </Link>
           </div>
         </div>
       ) : next && (
         nextAllowed ? (
-          <button type="button" onClick={() => router.push(stepHref(next.key, clientId, next.state))}
+          <Link href={stepHref(next.key, clientId, next.state)}
             className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-[700] text-white transition active:scale-[0.99]"
             style={{ background: `linear-gradient(135deg, ${blue[500]}, ${blue[600]})` }}>
             {next.state === 'renew' ? 'Renew PT' : `Next: ${STEP_LABEL[next.key]}`}
             <ArrowRight size={16} />
-          </button>
+          </Link>
         ) : (
-          <p role="status" className="rounded-[14px] px-3 py-2.5 text-[12.5px] leading-snug" style={{ background: rgba(red[500], 0.10), color: 'var(--text-primary)' }}>
+          <p role="status" className="rounded-[14px] px-3 py-2.5 text-[12.5px] leading-snug" style={{ background: stateTone.danger.bg, color: 'var(--text-primary)' }}>
             {next.detail || `${STEP_LABEL[next.key]} is blocked.`}
           </p>
         )

@@ -63,21 +63,23 @@ export default function MessagePreferences({ clientId, whatsappOptOut, emailOptO
         // The switch reads "receives messages": on means NOT opted out.
         const receives = !flags[key];
         return (
-          <div key={key} className="flex min-h-[52px] items-center justify-between gap-3 rounded-[14px] px-3 py-2.5"
+          // The whole row is the switch: a 28px track is a thumb-sized target
+          // and a thumb is not a mouse pointer.
+          <button key={key} type="button" role="switch" aria-checked={receives} aria-label={label}
+            disabled={saving !== null} onClick={() => toggle(key)}
+            className="flex min-h-[52px] w-full items-center justify-between gap-3 rounded-[14px] px-3 py-2.5 text-left transition active:scale-[0.995] disabled:opacity-60"
             style={{ background: 'var(--bg-subtle)' }}>
-            <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex min-w-0 items-center gap-2.5">
               <span aria-hidden className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[8px] text-white"
                 style={{ background: color }}>{icon}</span>
               <span className="truncate text-[13px] font-[650]" style={{ color: 'var(--text-primary)' }}>{label}</span>
-            </div>
-            <button type="button" role="switch" aria-checked={receives} aria-label={label}
-              disabled={saving !== null} onClick={() => toggle(key)}
-              className="relative h-[28px] w-[48px] shrink-0 rounded-full transition disabled:opacity-60"
-              style={{ background: receives ? emerald[500] : 'var(--border)' }}>
+            </span>
+            <span aria-hidden className="relative h-[28px] w-[48px] shrink-0 rounded-full transition-colors"
+              style={{ background: receives ? 'var(--success-text)' : 'var(--border)' }}>
               <span className="absolute top-[3px] h-[22px] w-[22px] rounded-full bg-white shadow transition-all"
                 style={{ left: receives ? 23 : 3 }} />
-            </button>
-          </div>
+            </span>
+          </button>
         );
       })}
       <p className="px-1 pt-1 text-[11.5px] leading-snug" style={{ color: 'var(--text-muted)' }}>

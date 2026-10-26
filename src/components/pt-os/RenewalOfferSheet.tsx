@@ -16,7 +16,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { m } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import { AlertTriangle, CheckCircle2, Clock, Loader2, MessageCircle, Send, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { UpiOrder } from '@/lib/api';
@@ -29,7 +29,8 @@ import {
   OFFER_MONTHS, OFFER_VALID_DAYS, blankRenewalOffer, renewalOfferSchema, toRenewalOfferPayload,
 } from '@/lib/forms/schemas/renewalOffer';
 import { whatsAppHref } from '@/lib/phone';
-import { palette, rgba } from '@/lib/palette';
+import { palette } from '@/lib/palette';
+import { stateTone } from '@/lib/state-tone';
 import { useToast } from '@/lib/toast';
 
 type OfferClient = {
@@ -46,6 +47,7 @@ const inr = (n: number | string) => `₹${Number(n).toLocaleString('en-IN', { ma
 const day = (v: string) => new Date(v).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
 export default function RenewalOfferSheet({ client, onClose }: { client: OfferClient; onClose: () => void }) {
+  const reduce = useReducedMotion();
   const ref = useDialogA11y({ open: true, onClose });
   const [current, setCurrent] = useState<UpiOrder | null | undefined>(undefined);
   const [upi, setUpi] = useState<{ ready: boolean; gst: number } | null>(null);
@@ -66,7 +68,7 @@ export default function RenewalOfferSheet({ client, onClose }: { client: OfferCl
     <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" data-no-pull-refresh>
       <div className="absolute inset-0" style={{ background: 'rgba(15,23,42,0.5)' }} onClick={onClose} aria-hidden />
       <m.div ref={ref} role="dialog" aria-modal="true" aria-labelledby="renewal-offer-title"
-        initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        initial={reduce ? false : { y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
         className="relative max-h-[92vh] w-full max-w-[520px] overflow-y-auto rounded-t-[24px] p-5 pb-[max(20px,env(safe-area-inset-bottom))] sm:m-4 sm:rounded-[24px]"
         style={{ background: 'var(--bg-canvas)' }}>
         <div className="mb-4 flex items-start justify-between gap-3">
@@ -76,9 +78,9 @@ export default function RenewalOfferSheet({ client, onClose }: { client: OfferCl
               {client.name} sees it in the app and pays by UPI. You verify the payment and their plan extends.
             </p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="grid h-9 w-9 shrink-0 place-items-center rounded-full"
+          <button type="button" onClick={onClose} aria-label="Close" className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-full"
             style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)' }}>
-            <X size={16} aria-hidden />
+            <X size={18} aria-hidden />
           </button>
         </div>
 
@@ -87,14 +89,14 @@ export default function RenewalOfferSheet({ client, onClose }: { client: OfferCl
         ) : upi === null || current === undefined ? (
           <div className="grid h-40 place-items-center" aria-busy="true"><Loader2 size={20} className="animate-spin" style={{ color: 'var(--text-muted)' }} /></div>
         ) : !upi.ready ? (
-          <div className="rounded-[14px] p-4" style={{ background: rgba(palette.amber[500], 0.1) }} role="alert">
+          <div className="rounded-[14px] p-4" style={{ background: stateTone.warning.bg, border: `1px solid ${stateTone.warning.border}` }} role="alert">
             <p className="flex items-center gap-2 text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>
-              <AlertTriangle size={15} aria-hidden style={{ color: palette.amber[600] }} /> UPI payments are not set up
+              <AlertTriangle size={15} aria-hidden style={{ color: stateTone.warning.fg }} /> UPI payments are not set up
             </p>
             <p className="mt-1 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
               A renewal offer is paid by UPI to your studio&apos;s account. Add your UPI ID first.
             </p>
-            <Link href="/settings/profile?tab=upi" className="mt-3 inline-flex h-10 items-center rounded-[12px] px-4 text-[13px] font-[750] text-white" style={{ background: BLUE }}>
+            <Link href="/settings/profile?tab=upi" className="mt-3 inline-flex h-[44px] items-center rounded-[12px] px-4 text-[13px] font-[750] text-white" style={{ background: BLUE }}>
               Set up UPI
             </Link>
           </div>
@@ -114,10 +116,11 @@ export default function RenewalOfferSheet({ client, onClose }: { client: OfferCl
 
 function CurrentOffer({ order }: { order: UpiOrder }) {
   const paid = order.status === 'VERIFICATION_PENDING';
+  const tone = paid ? stateTone.success : stateTone.info;
   return (
-    <div className="mb-4 rounded-[14px] p-3.5" style={{ background: paid ? rgba(GOOD, 0.1) : rgba(BLUE, 0.07), border: `1px solid ${rgba(paid ? GOOD : BLUE, 0.25)}` }}>
+    <div className="mb-4 rounded-[14px] p-3.5" style={{ background: tone.bg, border: `1px solid ${tone.border}` }}>
       <p className="flex items-center gap-2 text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>
-        {paid ? <CheckCircle2 size={14} aria-hidden style={{ color: GOOD }} /> : <Clock size={14} aria-hidden style={{ color: BLUE }} />}
+        {paid ? <CheckCircle2 size={14} aria-hidden style={{ color: tone.fg }} /> : <Clock size={14} aria-hidden style={{ color: tone.fg }} />}
         {paid ? 'Paid — waiting for you to verify' : 'Offer sent, not paid yet'}
       </p>
       <p className="mt-1 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
@@ -125,7 +128,7 @@ function CurrentOffer({ order }: { order: UpiOrder }) {
         {paid ? '' : ` · open until ${day(order.expires_at)}`}
       </p>
       {paid ? (
-        <Link href="/finance/verify-payments" className="mt-2 inline-block text-[12.5px] font-[750]" style={{ color: BLUE }}>Verify the payment →</Link>
+        <Link href="/finance/verify-payments" className="mt-2 inline-flex min-h-[44px] items-center text-[12.5px] font-[750]" style={{ color: stateTone.info.fg }}>Verify the payment →</Link>
       ) : (
         <p className="mt-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>Sending a new offer replaces this one.</p>
       )}
@@ -204,7 +207,7 @@ function OfferForm({ client, gst, replacing, onSent }: {
       )}
 
       <button type="submit" disabled={isSubmitting}
-        className="flex h-12 w-full items-center justify-center gap-2 rounded-[13px] text-[14px] font-[780] text-white disabled:opacity-60"
+        className="flex h-[44px] w-full items-center justify-center gap-2 rounded-[13px] text-[14px] font-[780] text-white disabled:opacity-60"
         style={{ background: BLUE }}>
         {isSubmitting ? <Loader2 size={16} className="animate-spin" aria-hidden /> : <Send size={16} aria-hidden />}
         {replacing ? 'Send new offer' : 'Send offer'}
@@ -219,8 +222,8 @@ function Sent({ client, order, memberCanSee, onClose }: { client: OfferClient; o
   const wa = whatsAppHref(client.mobile, message);
   return (
     <div role="status">
-      <div className="flex items-start gap-3 rounded-[14px] p-4" style={{ background: rgba(GOOD, 0.1) }}>
-        <CheckCircle2 size={20} aria-hidden style={{ color: GOOD }} className="mt-0.5 shrink-0" />
+      <div className="flex items-start gap-3 rounded-[14px] p-4" style={{ background: stateTone.success.bg, border: `1px solid ${stateTone.success.border}` }}>
+        <CheckCircle2 size={20} aria-hidden style={{ color: stateTone.success.fg }} className="mt-0.5 shrink-0" />
         <div>
           <p className="text-[14px] font-[780]" style={{ color: 'var(--text-primary)' }}>Offer sent — {inr(order.total_amount)}</p>
           <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
@@ -232,12 +235,12 @@ function Sent({ client, order, memberCanSee, onClose }: { client: OfferClient; o
       </div>
       {wa && (
         <a href={wa} target="_blank" rel="noopener noreferrer"
-          className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-[13px] text-[14px] font-[780] text-white"
+          className="mt-3 flex h-[44px] w-full items-center justify-center gap-2 rounded-[13px] text-[14px] font-[780] text-white"
           style={{ background: GOOD }}>
           <MessageCircle size={16} aria-hidden /> Send on WhatsApp
         </a>
       )}
-      <button type="button" onClick={onClose} className="mt-2 h-11 w-full rounded-[13px] text-[13.5px] font-[700]" style={{ color: 'var(--text-muted)' }}>
+      <button type="button" onClick={onClose} className="mt-2 h-[44px] w-full rounded-[13px] text-[13.5px] font-[700]" style={{ color: 'var(--text-muted)' }}>
         Done
       </button>
     </div>
