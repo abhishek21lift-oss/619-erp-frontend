@@ -12,7 +12,7 @@
 // the shell's top bar and reaches this page through a window event.
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Building2, UserPlus, Loader2, ShieldAlert, LayoutDashboard, Activity, CreditCard, TrendingUp, ScrollText, HeartPulse, ToggleRight, Megaphone, Bot, LifeBuoy, HardDrive, Mail, Users2, Fingerprint, Server } from 'lucide-react';
+import { Building2, UserPlus, Loader2, ShieldAlert, LayoutDashboard, Activity, CreditCard, TrendingUp, ScrollText, HeartPulse, ToggleRight, Megaphone, Bot, LifeBuoy, HardDrive, Mail, Users2, Fingerprint, Server, BookOpen } from 'lucide-react';
 import { getImpersonation } from '@/lib/http';
 import { CommandBar, OPEN_COMMAND_BAR } from './_shared/CommandBar';
 import { AiControlCentre, AnalyticsPanel, AuditCentre, FeatureManager, HostingAssistant, HostingCentre, HostingVps, InvitationsPanel, NotificationCentre, SecurityCentre, StorageCentre, SupportCentre, CommandCenterPanel, TenancyCentre } from './_shared/panels';
@@ -24,6 +24,7 @@ import CommandCenterOverview from '@/components/platform/CommandCenterOverview';
 import { StudiosTab } from './_tabs/StudiosTab';
 import { UsersTab } from './_tabs/UsersTab';
 import RegistrationsTab from './_tabs/RegistrationsTab';
+import KnowledgeTab from './_tabs/KnowledgeTab';
 import { CcHero } from '@/components/platform/cc-viz';
 import { SegmentedTabs } from '@/components/platform/console';
 import { ccModuleTone } from '@/components/platform/ccTheme';
@@ -32,6 +33,7 @@ import type { CcToneName } from '@/components/platform/ccTheme';
 const TAB_ICON: Record<Tab, React.ReactNode> = {
   overview: <LayoutDashboard size={14} />, studios: <Building2 size={14} />, registrations: <UserPlus size={14} />, invitations: <Mail size={14} />,
   users: <Users2 size={14} />, finance: <CreditCard size={14} />, analytics: <TrendingUp size={14} />, ai: <Bot size={14} />,
+  knowledge: <BookOpen size={14} />,
   health: <HeartPulse size={14} />, storage: <HardDrive size={14} />, support: <LifeBuoy size={14} />, security: <ShieldAlert size={14} />,
   tenancy: <Fingerprint size={14} />, audit: <ScrollText size={14} />, activity: <Activity size={14} />, features: <ToggleRight size={14} />,
   announcements: <Megaphone size={14} />, hosting: <Server size={14} />,
@@ -52,6 +54,7 @@ const TAB_BLURB: Record<Tab, string> = {
   finance: 'Billing, payment verification, invoices and coupons.',
   analytics: 'What studios actually do with the product, month by month.',
   ai: 'AI Suite usage, cost, allowances and model routing.',
+  knowledge: 'The approved methodology corpus every studio’s AI generation is grounded in.',
   health: 'Live collector readings, alerts, the Guardian and the recovery ladder.',
   storage: 'Bytes stored per studio, from the upload ledger.',
   support: 'Tickets from studios, worst first.',
@@ -127,6 +130,7 @@ function PlatformContent() {
         {tab === 'support' && <SupportCentre />}
         {tab === 'invitations' && <InvitationsPanel />}
         {tab === 'ai' && <AiControlCentre />}
+        {tab === 'knowledge' && <KnowledgeTab />}
         {tab === 'features' && <FeatureManager />}
         {tab === 'announcements' && <NotificationCentre />}
         {tab === 'security' && <SecurityCentre />}

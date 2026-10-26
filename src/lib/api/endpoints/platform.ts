@@ -78,6 +78,34 @@ export interface StudioRegistration {
   updated_at: string;
 }
 
+/**
+ * A document in the shared MPTS corpus — the platform-wide knowledge every
+ * studio's AI generation is grounded in, alongside the studio's own documents.
+ *
+ * `status` is ingestion (extraction + chunking + embedding); `approval_status`
+ * is the review gate. A document is retrievable only when BOTH are ready and
+ * approved, which is why the console shows them as two separate states.
+ */
+export interface PlatformKnowledgeDocument {
+  id: string;
+  title: string;
+  source_version: string | null;
+  category: 'sop' | 'guide' | 'policy';
+  filename: string;
+  mime_type: string;
+  file_size_bytes: number;
+  content_hash: string | null;
+  status: 'processing' | 'ready' | 'failed';
+  error_message: string | null;
+  chunk_count: number;
+  approval_status: 'pending' | 'approved' | 'revoked';
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
+  /** Derived by the server: approval_status === 'approved'. */
+  is_active: boolean;
+}
+
 export const superAdmin = {
   registrations: (status: 'pending' | 'approved' | 'rejected' | 'all' = 'pending') =>
     http<{ data: StudioRegistration[]; counts: Record<string, number> }>(
@@ -759,6 +787,49 @@ export const superAdmin = {
     http<HostingerAssistantAnswer>('/api/platform/hostinger/assistant', {
       method: 'POST', body: JSON.stringify({ question }),
     }),
+
+  // ── Shared MPTS corpus (platform-wide AI knowledge) ──────────────────
+  //
+  // These documents are not one studio's: an approved document is a generation
+  // source for every studio. Upload starts `pending`; only an explicit approve
+  // makes it retrievable, and approving a newer version of the same title
+  // revokes the older one server-side.
+  knowledge: {
+    list: () =>
+      http<{ data: PlatformKnowledgeDocument[]; corpus_version: string }>(
+        '/api/platform/ai/knowledge',
+      ),
+    upload: (
+      file: File,
+      title: string,
+      category: PlatformKnowledgeDocument['category'],
+      sourceVersion?: string,
+    ) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('title', title);
+      formData.append('category', category);
+      if (sourceVersion) formData.append('source_version', sourceVersion);
+      return http<{ data: PlatformKnowledgeDocument }>('/api/platform/ai/knowledge', {
+        method: 'POST',
+        body: formData,
+      });
+    },
+    approve: (id: string) =>
+      http<{ data: PlatformKnowledgeDocument; corpus_version: string }>(
+        `/api/platform/ai/knowledge/${id}/approve`,
+        { method: 'POST' },
+      ),
+    revoke: (id: string) =>
+      http<{ data: PlatformKnowledgeDocument; corpus_version: string }>(
+        `/api/platform/ai/knowledge/${id}/revoke`,
+        { method: 'POST' },
+      ),
+    reindex: (id: string) =>
+      http<{ message: string }>(`/api/platform/ai/knowledge/${id}/reindex`, { method: 'POST' }),
+    delete: (id: string) =>
+      http<{ message: string }>(`/api/platform/ai/knowledge/${id}`, { method: 'DELETE' }),
+  },
 };
 
 // ── Settings ──────────────────────────────────────────────

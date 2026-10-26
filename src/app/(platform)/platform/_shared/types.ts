@@ -3,7 +3,7 @@
 // Extracted verbatim from the 3,197-line platform/page.tsx (audit H-03).
 import type { Organization, SubStudio } from '@/lib/api';
 
-export type Tab = 'overview' | 'registrations' | 'studios' | 'users' | 'invitations' | 'support' | 'analytics' | 'ai' | 'finance' | 'features' | 'announcements' | 'activity' | 'audit' | 'security' | 'storage' | 'health' | 'tenancy' | 'hosting';
+export type Tab = 'overview' | 'registrations' | 'studios' | 'users' | 'invitations' | 'support' | 'analytics' | 'ai' | 'knowledge' | 'finance' | 'features' | 'announcements' | 'activity' | 'audit' | 'security' | 'storage' | 'health' | 'tenancy' | 'hosting';
 // Must list every Tab: normalizeTab() falls back to 'overview' for anything not
 // here, so omitting one silently breaks its ?tab= deep link from the sidebar.
 //
@@ -16,7 +16,7 @@ export type Tab = 'overview' | 'registrations' | 'studios' | 'users' | 'invitati
 // platform-modules.test.ts now checks this list against the Tab union rather
 // than trusting the comment, because a comment saying "must list every Tab" is
 // exactly as strong as the next person's attention.
-export const TAB_IDS: Tab[] = ['overview', 'studios', 'registrations', 'users', 'invitations', 'support', 'analytics', 'ai', 'finance', 'features', 'announcements', 'activity', 'audit', 'security', 'storage', 'health', 'tenancy', 'hosting'];
+export const TAB_IDS: Tab[] = ['overview', 'studios', 'registrations', 'users', 'invitations', 'support', 'analytics', 'ai', 'knowledge', 'finance', 'features', 'announcements', 'activity', 'audit', 'security', 'storage', 'health', 'tenancy', 'hosting'];
 
 // ── Modules ─────────────────────────────────────────────────────────────────
 //
@@ -54,7 +54,7 @@ export const MODULES: PlatformModule[] = [
   { id: 'studios',    label: 'Studios',   tabs: ['studios', 'registrations', 'invitations'] },
   { id: 'users',      label: 'Users',     tabs: ['users'] },
   { id: 'revenue',    label: 'Revenue',   tabs: ['finance', 'analytics'] },
-  { id: 'ai',         label: 'AI',        tabs: ['ai'] },
+  { id: 'ai',         label: 'AI',        tabs: ['ai', 'knowledge'] },
   { id: 'operations', label: 'Operations', tabs: ['health', 'storage', 'support', 'hosting'] },
   { id: 'security',   label: 'Security',  tabs: ['security', 'tenancy', 'audit', 'activity'] },
   { id: 'control',    label: 'Control',   tabs: ['features', 'announcements'] },
@@ -70,6 +70,7 @@ export const TAB_LABELS: Record<Tab, string> = {
   finance: 'Finance',
   analytics: 'Analytics',
   ai: 'AI Control',
+  knowledge: 'MPTS Knowledge',
   health: 'System Health',
   storage: 'Storage',
   support: 'Support',

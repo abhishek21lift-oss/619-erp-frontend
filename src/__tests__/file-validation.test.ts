@@ -163,6 +163,13 @@ describe('formats', () => {
 });
 
 describe('size', () => {
+  it('matches the 15 MB cap both knowledge-base upload endpoints enforce', () => {
+    // multer caps the studio route and the platform corpus route at 15 MB. A
+    // higher client cap lets a file pass the picker and then fail the POST —
+    // after the upload has already been read into the browser.
+    expect(KNOWLEDGE_RULES.maxBytes).toBe(15 * MB);
+  });
+
   it('rejects an empty file before reading anything', async () => {
     // A 0-byte file would pass a signature check vacuously.
     const r = await checkFile(new File([], 'photo.png'), AVATAR_RULES);
