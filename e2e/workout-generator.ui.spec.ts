@@ -11,6 +11,13 @@ test.describe('Workout generator — cardio prescription', () => {
   test('shows FITT and uses measured MHR when supplied', async ({ page }) => {
     await gotoApp(page, `/pt-os/workout-generator?client_id=${ALPHA.clientId}`);
     await expect(page.getByRole('heading', { name: 'Workout Generator' })).toBeVisible({ timeout: 25_000 });
+
+    // The fixture client has no goal or experience on file, and the generator
+    // now refuses to invent them. Supply both for this session, then ask for
+    // the draft the cardio assertions need.
+    await page.getByLabel('Goal').selectOption('general_fitness');
+    await page.getByLabel('Experience').selectOption('beginner');
+    await page.getByRole('button', { name: 'Generate', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Conditioning' })).toBeVisible({ timeout: 40_000 });
 
     // No heart-rate inputs on first load: structure only, no invented BPM.

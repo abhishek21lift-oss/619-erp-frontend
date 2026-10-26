@@ -35,6 +35,7 @@
  * should do stay on the surface; the evidence behind them is one tap away.
  */
 
+import Link from 'next/link';
 import {
   AlertTriangle, ChevronDown, Clock, GitCompareArrows,
   ShieldAlert, ShieldCheck, ShieldQuestion,
@@ -69,6 +70,33 @@ const FIX: Partial<Record<AiClientFactField, string>> = {
   gender: 'record gender',
   equipment: 'no column records this — state it when generating',
 };
+
+/** The screen that writes a fact. Null when no screen owns it, or when this
+ *  panel was rendered without knowing whose client it is describing. */
+function fixHref(field: AiClientFactField, clientId?: string): string | null {
+  if (!clientId) return null;
+  const id = encodeURIComponent(clientId);
+  const q = `client_id=${id}`;
+  switch (field) {
+    case 'goal': return `/pt-os/goals?${q}`;
+    case 'experience_level':
+    case 'training_days': return `/pt-os/clients/${id}/enroll`;
+    case 'height_cm':
+    case 'weight_kg': return `/pt-os/assessment?${q}`;
+    case 'age':
+    case 'gender': return `/pt-os/clients/${id}/edit`;
+    default: return null;
+  }
+}
+
+function Fix({ field, clientId }: { field: AiClientFactField; clientId?: string }) {
+  const label = FIX[field];
+  if (!label) return null;
+  const href = fixHref(field, clientId);
+  return href
+    ? <Link href={href} className="underline underline-offset-2">{label}</Link>
+    : <>{label}</>;
+}
 
 /** The record a column belongs to, in the words a trainer uses for it. */
 const RECORD: Record<string, string> = {
@@ -124,7 +152,7 @@ function formatFact(field: AiClientFactField, value: unknown): string {
   }
 }
 
-export default function GenerationContextPanel({ context }: { context: AiWorkoutContext }) {
+export default function GenerationContextPanel({ context, clientId }: { context: AiWorkoutContext; clientId?: string }) {
   const { facts, data_quality: dq, safety, current_program: program, training_history: history } = context;
 
   // Tolerated as absent, not assumed empty by accident. Backend and frontend
@@ -204,8 +232,13 @@ export default function GenerationContextPanel({ context }: { context: AiWorkout
             {blocking.map((m) => LABEL[m.field]).join(', ')} {blocking.length === 1 ? 'is' : 'are'} not
             recorded, and a programme cannot be written without{' '}
             {blocking.length === 1 ? 'it' : 'them'}
-            {blocking.map((m) => FIX[m.field]).filter(Boolean).length > 0 && (
-              <> &mdash; {blocking.map((m) => FIX[m.field]).filter(Boolean).join('; ')}</>
+            {blocking.some((m) => FIX[m.field]) && (
+              <> &mdash; {blocking.filter((m) => FIX[m.field]).map((m, i) => (
+                <span key={m.field}>
+                  {i > 0 ? '; ' : ''}
+                  <Fix field={m.field} clientId={clientId} />
+                </span>
+              ))}</>
             )}
             .
           </span>
@@ -287,7 +320,9 @@ export default function GenerationContextPanel({ context }: { context: AiWorkout
                 <dd className="text-right font-[650]" style={{ color: 'var(--text-muted)' }}>not recorded</dd>
               </div>
               {FIX[m.field] && (
-                <dd className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>{FIX[m.field]}</dd>
+                <dd className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                  <Fix field={m.field} clientId={clientId} />
+                </dd>
               )}
             </div>
           ))}

@@ -35,6 +35,7 @@ const mockGenerateDiet = vi.fn();
 const mockLoginStatus = vi.fn();
 const mockSaveFromGeneration = vi.fn();
 const mockSaveDiet = vi.fn();
+const mockJourney = vi.fn();
 
 vi.mock('@/lib/api', () => ({
   api: {
@@ -45,6 +46,9 @@ vi.mock('@/lib/api', () => ({
     },
     clientLogin: {
       status: (...args: unknown[]) => mockLoginStatus(...args),
+    },
+    pt: {
+      journey: (...args: unknown[]) => mockJourney(...args),
     },
     workouts: {
       plans: {
@@ -116,6 +120,21 @@ const LOGIN_STATUS: ClientLoginStatus = {
 const renderCard = (props?: Partial<React.ComponentProps<typeof ClientAiGenerateCard>>) =>
   render(<ClientAiGenerateCard client={CLIENT} {...props} />);
 
+const JOURNEY_CAN_TRAIN = {
+  steps: [{ key: 'program_design', state: 'todo' }],
+  next: 'program_design',
+  screening: {},
+};
+
+const JOURNEY_BLOCKED = {
+  steps: [
+    { key: 'enrolment', state: 'renew' },
+    { key: 'program_design', state: 'blocked', detail: "Renew the client's PT before assigning a plan." },
+  ],
+  next: 'enrolment',
+  screening: {},
+};
+
 function deferred<T>() {
   let resolve!: (v: T) => void;
   let reject!: (e: unknown) => void;
@@ -128,8 +147,10 @@ beforeEach(() => {
   mockGenerateDiet.mockReset();
   mockSaveDiet.mockReset();
   mockLoginStatus.mockReset();
+  mockJourney.mockReset();
   mockToastError.mockReset();
   mockLoginStatus.mockResolvedValue({ data: LOGIN_STATUS });
+  mockJourney.mockResolvedValue({ data: JOURNEY_CAN_TRAIN });
 });
 
 afterEach(() => vi.clearAllMocks());
@@ -806,6 +827,14 @@ describe('trainer-stated context', () => {
     expect(screen.getByText(/not saved to the client/)).toBeInTheDocument();
   });
 
+  it('points to the screens where a stated value becomes part of the record', async () => {
+    await withContext();
+    expect(screen.getByRole('link', { name: 'Goals' }))
+      .toHaveAttribute('href', '/pt-os/goals?client_id=cl-1');
+    expect(screen.getByRole('link', { name: 'PT Enrolment' }))
+      .toHaveAttribute('href', '/pt-os/clients/cl-1/enroll');
+  });
+
   it('is already open when the record cannot support a generation', async () => {
     await withContext();
     // Same render, no await: the fields are reachable the moment the trainer
@@ -945,6 +974,62 @@ describe('when the context cannot be read', () => {
 
     const workout = screen.getByText('Generate AI Workout').closest('button') as HTMLButtonElement;
     expect(workout.disabled).toBe(false);
+    fireEvent.click(workout);
+    await waitFor(() => expect(mockGenerateWorkout).toHaveBeenCalled());
+  });
+});
+
+// ── The intake journey is the same gate the server enforces ────────────────
+//
+// A client whose PT has lapsed can be generated for here, but the plan can
+// never be assigned: /api/workouts/assign refuses. The trainer found that out
+// after spending a generation, and the card had said nothing beforehand. The
+// journey already knows which step is blocking, so the card reads it and says
+// where to go — and fails open if that read fails, because the server is still
+// the thing that decides.
+describe('a client the intake journey says cannot train yet', () => {
+  it('shuts the workout generator and names the step that opens it', async () => {
+    mockJourney.mockResolvedValue({ data: JOURNEY_BLOCKED });
+    renderCard();
+
+    await waitFor(() => expect(mockJourney).toHaveBeenCalledWith('cl-1'));
+    const workout = screen.getByText('Generate AI Workout').closest('button') as HTMLButtonElement;
+    await waitFor(() => expect(workout.disabled).toBe(true));
+
+    expect(screen.getByText("Renew the client's PT before assigning a plan.")).toBeInTheDocument();
+    // The journey says enrolment is the next step, and renewal is its state —
+    // so the link goes to Renew, not the first-time enrol form.
+    expect(screen.getByRole('link', { name: /Continue to PT Enrolment/ }))
+      .toHaveAttribute('href', '/pt-os/clients/cl-1/renew');
+  });
+
+  it('leaves the diet generator alone: nothing screens a diet', async () => {
+    mockJourney.mockResolvedValue({ data: JOURNEY_BLOCKED });
+    renderCard();
+
+    await waitFor(() => expect(mockJourney).toHaveBeenCalled());
+    const diet = screen.getByText('Generate AI Diet').closest('button') as HTMLButtonElement;
+    expect(diet.disabled).toBe(false);
+  });
+
+  it('leaves the workout generator open when the client can train', async () => {
+    renderCard();
+
+    await waitFor(() => expect(mockJourney).toHaveBeenCalled());
+    const workout = screen.getByText('Generate AI Workout').closest('button') as HTMLButtonElement;
+    expect(workout.disabled).toBe(false);
+    expect(screen.queryByText(/before assigning a plan/)).toBeNull();
+  });
+
+  it('fails open when the journey cannot be read', async () => {
+    mockJourney.mockRejectedValue(new Error('journey unavailable'));
+    mockGenerateWorkout.mockResolvedValue({ data: WORKOUT_PLAN });
+    renderCard();
+
+    await waitFor(() => expect(mockJourney).toHaveBeenCalled());
+    const workout = screen.getByText('Generate AI Workout').closest('button') as HTMLButtonElement;
+    expect(workout.disabled).toBe(false);
+
     fireEvent.click(workout);
     await waitFor(() => expect(mockGenerateWorkout).toHaveBeenCalled());
   });

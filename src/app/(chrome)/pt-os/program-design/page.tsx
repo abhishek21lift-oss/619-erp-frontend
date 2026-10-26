@@ -243,6 +243,9 @@ function ProgramDesign({ clientId }: { clientId: string }) {
             Beginners: 15–20 RM, stop short of muscular failure.
           </p>
           <div className="mt-3 flex flex-wrap gap-3 text-[12.5px] font-[700]">
+            <Link className="inline-flex items-center gap-1.5" style={{ color: semantic.primary }} href={`/pt-os/clients/${clientId}?tab=ai`}>
+              <Sparkles size={13} /> Generate with AI
+            </Link>
             <Link className="inline-flex items-center gap-1.5" style={{ color: semantic.primary }} href={`/pt-os/workout-generator?client_id=${clientId}`}>
               <Sparkles size={13} /> Workout Generator
             </Link>
