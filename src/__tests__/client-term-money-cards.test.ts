@@ -99,14 +99,19 @@ describe('the Term Fee / Paid / Balance cards are not a copy of the hero', () =>
     // come out the same height as each other on every one of them, which is
     // the property the square was actually bought for.
     expect(code).not.toContain('aspect-square');
-    expect(code).toContain('className="min-w-0 rounded-[18px] p-3"');
+    expect(code).toContain('min-w-0 rounded-[18px] p-3');
+    // Two columns on a phone, so six-figure INR has room; the balance takes
+    // the full width rather than being squeezed into a third.
+    expect(code).toContain('grid grid-cols-2 gap-2 sm:grid-cols-3');
+    expect(code).toContain("wide: true");
+    expect(code).toContain("col-span-2 sm:col-span-1");
   });
 
   it('carries no sub-label under the figure', () => {
     // 'Current term' under Term Fee and 'Cleared' under a balance of zero
     // restated what the figure already said, and they are what made the card
     // tall enough to need the empty space above them.
-    const block = code.slice(code.indexOf('grid grid-cols-3'), code.indexOf('CLIENT LOGIN'));
+    const block = code.slice(code.indexOf('grid grid-cols-2 gap-2 sm:grid-cols-3'), code.indexOf('CLIENT LOGIN'));
     expect(block).not.toContain('sub:');
     expect(block).not.toContain('{k.sub}');
     expect(block).not.toContain("'Current term'");
@@ -118,7 +123,7 @@ describe('the Term Fee / Paid / Balance cards are not a copy of the hero', () =>
     // the sub-labels are gone — and red-versus-amber is exactly the
     // distinction a colour-blind reader cannot make. Dropping the text from
     // the design must not drop the fact, so it is announced rather than drawn.
-    const block = code.slice(code.indexOf('grid grid-cols-3'), code.indexOf('CLIENT LOGIN'));
+    const block = code.slice(code.indexOf('grid grid-cols-2 gap-2 sm:grid-cols-3'), code.indexOf('CLIENT LOGIN'));
     expect(block).toMatch(/state: currentTermBalance > 0 \? \(client\.due_status === 'OVERDUE' \? 'Overdue' : 'Due'\) : 'Cleared'/);
     expect(block).toContain('className="sr-only"');
   });

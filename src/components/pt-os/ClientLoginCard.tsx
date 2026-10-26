@@ -20,21 +20,27 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { m, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   KeyRound, Loader2, MailCheck, ShieldCheck, ShieldOff, Send, Clock,
-  AlertTriangle, Lock, CheckCircle2, Info,
+  AlertTriangle, Lock, CheckCircle2, Info, RefreshCw,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { ClientLoginStatus } from '@/lib/api';
-import { palette, rgba } from '@/lib/palette';
 import { errorMessage } from '@/lib/forms/errors';
+import { stateTone, type StateToneName } from '@/lib/state-tone';
 
 const C = {
-  primary: palette.blue[500],
-  success: palette.emerald[500],
-  warning: palette.amber[500],
-  danger: palette.red[500],
+  primary: 'var(--brand)',
+  success: stateTone.success.fg,
+  warning: stateTone.warning.fg,
+  danger: stateTone.danger.fg,
+};
+
+const HEAD_TONE = {
+  active: stateTone.success,
+  pending: stateTone.warning,
+  setup: stateTone.info,
 };
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -71,7 +77,7 @@ function Button({ onClick, busy, children, tone = C.primary, subtle = false, dis
       type="button"
       onClick={onClick}
       disabled={busy || disabled}
-      className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[11px] px-3 text-[12.5px] font-[720] transition-opacity disabled:opacity-45"
+      className="flex h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[11px] px-3 text-[12.5px] font-[720] transition-opacity disabled:opacity-45"
       style={subtle
         ? { background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: tone }
         : { background: tone, color: '#fff' }}
@@ -82,20 +88,24 @@ function Button({ onClick, busy, children, tone = C.primary, subtle = false, dis
 }
 
 export default function ClientLoginCard({ clientId }: { clientId: string }) {
+  const reduce = useReducedMotion();
   const [status, setStatus] = useState<ClientLoginStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [busy, setBusy] = useState<'activate' | 'resend' | 'deactivate' | null>(null);
-  const [note, setNote] = useState<{ tone: string; text: string } | null>(null);
+  const [note, setNote] = useState<{ tone: StateToneName; text: string } | null>(null);
 
   const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError('');
     try {
       const r = await api.clientLogin.status(clientId);
       setStatus(r.data);
-    } catch {
-      // A status read that fails must not blank the profile page around it.
-      // The card simply does not render, which is the same outcome as the
-      // feature being unavailable.
+    } catch (err) {
+      // A failed read is not the same as "no login". Say the check failed and
+      // offer the retry; rendering nothing made the two indistinguishable.
       setStatus(null);
+      setLoadError(errorMessage(err, 'Could not check this client\u2019s login.'));
     } finally {
       setLoading(false);
     }
@@ -112,17 +122,17 @@ export default function ClientLoginCard({ clientId }: { clientId: string }) {
       const r = await fn();
       setStatus(r.data);
       if (kind === 'deactivate') {
-        setNote({ tone: C.warning, text: 'Login disabled. Every open session was signed out.' });
+        setNote({ tone: 'warning', text: 'Login disabled. Every open session was signed out.' });
       } else if (r.email_sent === false) {
         // The account and the link exist either way. Saying so matters: without
         // it a failed send reads as "activation failed" and the trainer presses
         // Activate again instead of Resend.
-        setNote({ tone: C.warning, text: 'The login was created but the email could not be sent. Try Resend.' });
+        setNote({ tone: 'warning', text: 'The login was created but the email could not be sent. Try Resend.' });
       } else {
-        setNote({ tone: C.success, text: 'Activation email sent. The link works once and expires.' });
+        setNote({ tone: 'success', text: 'Activation email sent. The link works once and expires.' });
       }
     } catch (err: unknown) {
-      setNote({ tone: C.danger, text: errorMessage(err, 'That did not work.') });
+      setNote({ tone: 'danger', text: errorMessage(err, 'That did not work.') });
       // Re-read rather than trust local state: a 409 usually means the server
       // knows something this card does not.
       void load();
@@ -140,7 +150,22 @@ export default function ClientLoginCard({ clientId }: { clientId: string }) {
       </div>
     );
   }
-  if (!status) return null;
+
+  if (!status) {
+    return (
+      <div role="alert" className="flex flex-wrap items-center gap-3 rounded-[16px] px-4 py-3.5"
+        style={{ background: stateTone.danger.bg, border: `1px solid ${stateTone.danger.border}` }}>
+        <p className="min-w-0 flex-1 text-[12px] font-[650] leading-snug" style={{ color: stateTone.danger.fg }}>
+          {loadError || 'Could not check this client\u2019s login.'}
+        </p>
+        <button type="button" onClick={() => void load()}
+          className="flex h-[44px] items-center gap-1.5 rounded-[11px] px-3.5 text-[12px] font-[750]"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+          <RefreshCw size={13} /> Retry
+        </button>
+      </div>
+    );
+  }
 
   const locked = !!status.locked_until && new Date(status.locked_until).getTime() > Date.now();
   const active = status.login_activated && status.login_enabled;
@@ -162,36 +187,36 @@ export default function ClientLoginCard({ clientId }: { clientId: string }) {
     );
   }
 
-  const tone = active ? C.success : invitePending ? C.warning : C.primary;
+  const head = active ? HEAD_TONE.active : invitePending ? HEAD_TONE.pending : HEAD_TONE.setup;
 
   return (
     <m.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={reduce ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: EASE }}
       className="overflow-hidden rounded-[16px]"
       style={{
         background: 'var(--bg-card)',
-        border: `1px solid ${rgba(tone, 0.22)}`,
+        border: `1px solid ${head.border}`,
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',
       }}
     >
       <div className="flex items-center gap-2.5 px-4 py-3"
-        style={{ background: `linear-gradient(135deg, ${rgba(tone, 0.10)}, transparent)` }}>
+        style={{ background: head.bg }}>
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px]"
-          style={{ background: rgba(tone, 0.14), color: tone }}>
+          style={{ background: 'var(--bg-canvas)', color: head.fg }}>
           {active ? <ShieldCheck size={16} /> : invitePending ? <Send size={15} /> : <KeyRound size={15} />}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-[790]" style={{ color: 'var(--text-primary)' }}>Client login</p>
-          <p className="text-[11px] font-[600]" style={{ color: tone }}>
+          <h2 className="text-[13px] font-[790]" style={{ color: 'var(--text-primary)' }}>Client login</h2>
+          <p className="text-[11px] font-[600]" style={{ color: head.fg }}>
             {active ? 'Active' : invitePending ? 'Invitation sent — waiting for them to set a password' : 'Not set up'}
           </p>
         </div>
         {locked && (
-          <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[9.5px] font-[750] uppercase tracking-[0.07em]"
-            style={{ background: rgba(C.danger, 0.12), color: C.danger }}>
-            <Lock size={9} /> Locked
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-[750] uppercase tracking-[0.07em]"
+            style={{ background: stateTone.danger.bg, color: stateTone.danger.fg }}>
+            <Lock size={10} /> Locked
           </span>
         )}
       </div>
@@ -233,7 +258,7 @@ export default function ClientLoginCard({ clientId }: { clientId: string }) {
 
         {status.invitation?.last_error && !status.login_activated && (
           <p className="mb-3 flex items-start gap-1.5 rounded-[10px] px-2.5 py-2 text-[11.5px] leading-relaxed"
-            style={{ background: rgba(C.danger, 0.08), color: C.danger }}>
+            style={{ background: stateTone.danger.bg, color: stateTone.danger.fg }}>
             <AlertTriangle size={12} className="mt-0.5 shrink-0" />
             Last send failed: {status.invitation.last_error}
           </p>
@@ -242,12 +267,12 @@ export default function ClientLoginCard({ clientId }: { clientId: string }) {
         <AnimatePresence>
           {note && (
             <m.p
-              initial={{ opacity: 0, height: 0 }}
+              initial={reduce ? false : { opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
+              exit={reduce ? undefined : { opacity: 0, height: 0 }}
               role="status"
               className="mb-3 flex items-start gap-1.5 overflow-hidden rounded-[10px] px-2.5 py-2 text-[11.5px] leading-relaxed"
-              style={{ background: rgba(note.tone, 0.09), color: note.tone }}
+              style={{ background: stateTone[note.tone].bg, color: stateTone[note.tone].fg }}
             >
               <CheckCircle2 size={12} className="mt-0.5 shrink-0" />
               {note.text}

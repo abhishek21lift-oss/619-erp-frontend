@@ -31,7 +31,10 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }), usePat
 vi.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: { organization_name: 'Studio' } }) }));
 vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() } }) }));
 vi.mock('@/components/Guard', () => ({ default: ({ children }: any) => <>{children}</> }));
-vi.mock('@/components/pt-os/ClientSnapshot', () => ({ default: () => null }));
+vi.mock('@/components/pt-os/ClientSnapshot', () => ({
+  default: () => null,
+  normaliseSnapshot: (data: unknown) => data,
+}));
 vi.mock('@/components/pt-os/ClientLoginCard', () => ({ default: () => null }));
 vi.mock('@/components/pt-os/ClientAiGenerateCard', () => ({ default: () => <div>AI generate card</div> }));
 
@@ -45,8 +48,8 @@ describe('client profile', () => {
     const params = Promise.resolve({ id: 'c1' });
     await act(async () => { render(<Suspense fallback="loading"><Page params={params} /></Suspense>); await params; });
     await waitFor(() => expect(screen.getAllByText('Hari Narayan Singh').length).toBeGreaterThan(0), { timeout: 3000 });
-    expect(screen.getByRole('button', { name: 'Renew' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Enroll' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Renew' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Enroll' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Call' })).toBeTruthy();
     // The e2e renewal-offer journey opens the sheet by this accessible name.
     expect(screen.getByRole('button', { name: 'Renewal offer' })).toBeTruthy();
@@ -69,7 +72,7 @@ describe('client profile', () => {
     expect(within(hero!).queryByText('Trainer')).toBeNull();
     expect(within(hero!).queryByText('Programme')).toBeNull();
     // The programme itself still renders in its own tab.
-    fireEvent.click(screen.getByRole('tab', { name: 'Training' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Training' }));
     await waitFor(() => expect(screen.getByText(/Hypertrophy A/)).toBeTruthy());
   });
 });

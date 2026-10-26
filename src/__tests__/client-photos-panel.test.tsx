@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import PhotosPanel from '@/components/pt-os/client/PhotosPanel';
 
 const list = vi.fn();
@@ -40,6 +40,10 @@ describe('when the client has photos', () => {
     // The exact words the old hardcoded panel always showed.
     expect(screen.queryByText('No progress photos yet')).toBeNull();
     expect(screen.getAllByRole('img')).toHaveLength(2);
+    for (const img of screen.getAllByRole('img')) {
+      expect(img).toHaveAttribute('loading', 'lazy');
+      expect(img).toHaveAttribute('width', '320');
+    }
   });
 
   it('asks the API for THIS client', async () => {
@@ -57,6 +61,28 @@ describe('when the client has photos', () => {
     await waitFor(() => expect(screen.getAllByRole('img').length).toBe(2));
     const srcs = screen.getAllByRole('img').map((i) => i.getAttribute('src'));
     expect(srcs[0]).toContain('new');
+  });
+});
+
+describe('the enlarged photo', () => {
+  it('opens as a dialog with a visible close button and Escape', async () => {
+    list.mockResolvedValue({ data: [photo('a', '2026-09-01')] });
+    render(<PhotosPanel clientId="c1" />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /View front photo/ }));
+    const dialog = screen.getByRole('dialog', { name: /front photo from/ });
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    // Portalled out of the animated panel: inside it, position:fixed resolves
+    // against the panel and the backdrop covers half the page.
+    expect(dialog.parentElement?.parentElement).toBe(document.body);
+    expect(within(dialog).getByAltText(/front view from .*enlarged/)).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close photo preview' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /View front photo/ }));
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 });
 

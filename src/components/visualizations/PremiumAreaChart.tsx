@@ -34,6 +34,11 @@ export interface PremiumAreaChartProps {
   minPoints?: number;
   ariaLabel?: string;
   className?: string;
+  /**
+   * Bottom of the y axis. Omit for 0-based; `'auto'` pads the data range for
+   * metrics where zero is not meaningful (weight, body fat).
+   */
+  yMin?: number | 'auto';
 }
 
 /**
@@ -63,6 +68,7 @@ export function PremiumAreaChart({
   minPoints = 2,
   ariaLabel,
   className,
+  yMin,
 }: PremiumAreaChartProps) {
   const colorByKey = React.useMemo(() => {
     const map: Record<string, string> = {};
@@ -112,6 +118,7 @@ export function PremiumAreaChart({
         surface={surface}
         showPoints={showPoints}
         ariaLabel={shellProps.ariaLabel}
+        yMin={yMin}
       />
     </ChartShell>
   );

@@ -55,22 +55,22 @@ describe('ClientJourneyCard', () => {
     render(<ClientJourneyCard clientId="c1" />);
     await screen.findByText(STEP_LABEL.program_design);
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '3');
-    fireEvent.click(screen.getByRole('button', { name: /Next: PAR-Q screening/ }));
-    expect(mockPush).toHaveBeenCalledWith('/pt-os/parq?client_id=c1');
+    expect(screen.getByRole('link', { name: /Next: PAR-Q screening/ }))
+      .toHaveAttribute('href', '/pt-os/parq?client_id=c1');
   });
 
   it('never offers a blocked step: it shows why instead', async () => {
     mockJourney.mockResolvedValue(journeyOf({ welcome_tour: 'done', enrolment: 'done', consent: 'blocked' }, 'consent', 'This client has revoked their Informed Consent.'));
     render(<ClientJourneyCard clientId="c1" />);
     expect(await screen.findByRole('status')).toHaveTextContent(/revoked/);
-    expect(screen.queryByRole('button', { name: /^Next:/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: /^Next:/ })).toBeNull();
   });
 
   it('an expired client is offered Renew PT', async () => {
     mockJourney.mockResolvedValue(journeyOf({ welcome_tour: 'done', enrolment: 'renew' }, 'enrolment'));
     render(<ClientJourneyCard clientId="c1" />);
-    fireEvent.click(await screen.findByRole('button', { name: /Renew PT/ }));
-    expect(mockPush).toHaveBeenCalledWith('/pt-os/clients/c1/renew');
+    expect(await screen.findByRole('link', { name: /Renew PT/ }))
+      .toHaveAttribute('href', '/pt-os/clients/c1/renew');
   });
 
   it('shows a provisional enrolment as done, with the activation note', async () => {
@@ -98,10 +98,10 @@ describe('ClientJourneyCard', () => {
         goals: 'done', assessment: 'done', program_design: 'done' }, null));
     render(<ClientJourneyCard clientId="c1" />);
     expect(await screen.findByText(/Onboarding complete/)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Workout Log/ }));
-    expect(mockPush).toHaveBeenCalledWith('/pt-os/clients/c1/workout-log');
-    fireEvent.click(screen.getByRole('button', { name: /Progress & Retest/ }));
-    expect(mockPush).toHaveBeenCalledWith('/pt-os/progress?client_id=c1');
+    expect(screen.getByRole('link', { name: /Workout Log/ }))
+      .toHaveAttribute('href', '/pt-os/clients/c1/workout-log');
+    expect(screen.getByRole('link', { name: /Progress & Retest/ }))
+      .toHaveAttribute('href', '/pt-os/progress?client_id=c1');
   });
 });
 

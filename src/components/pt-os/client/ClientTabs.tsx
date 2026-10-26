@@ -31,6 +31,7 @@
 // way out of it.
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   LayoutGrid, Dumbbell, Salad, Ruler, ScrollText, ClipboardCheck, Camera,
@@ -235,10 +236,9 @@ export function ClientTabs({ active, onChange, counts, clientId }: ClientTabsPro
   const fade = edges.left && edges.right ? 'both' : edges.left ? 'left' : edges.right ? 'right' : 'none';
 
   return (
-    <div className="relative mb-4">
-      <div
+    <div className="sticky below-topbar z-20 -mx-1 mb-4 bg-[var(--bg-canvas)] px-1 pb-1 pt-2 md:static md:bg-transparent">
+      <nav
         ref={scrollerRef}
-        role="tablist"
         aria-label="Client sections"
         data-fade={fade}
         onScroll={measure}
@@ -252,20 +252,24 @@ export function ClientTabs({ active, onChange, counts, clientId }: ClientTabsPro
         {TABS.map((t, i) => {
           const on = t.key === active;
           const n = counts?.[t.key];
-          const to = t.href?.(clientId);
-          // A tab that leaves the page is a link and never the selected one;
-          // a tab that switches a panel is a button that can be. Same tile,
-          // same label, two different promises — and role="tab" on something
-          // that navigates would promise the wrong one to a screen reader.
-          const Tag = to ? 'a' : 'button';
-          const nav = to
-            ? { href: to }
-            : { role: 'tab' as const, 'aria-selected': on, onClick: () => onChange(t.key) };
+          // A tab that leaves the page is a link to its own screen. A tab that
+          // switches a panel is also a real link, to this page with ?tab=, so
+          // middle-click / copy-link / Back all work; a plain click is handled
+          // in place instead of reloading the profile.
+          const to = t.href?.(clientId) ?? `/pt-os/clients/${clientId}?tab=${t.key}`;
+          const switchesPanel = !t.href;
           return (
-            <Tag
+            <Link
               key={t.key}
+              href={to}
               data-tab={t.key}
-              {...nav}
+              aria-current={on ? 'page' : undefined}
+              onClick={(e) => {
+                if (!switchesPanel) return;
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                e.preventDefault();
+                onChange(t.key);
+              }}
               className="flex shrink-0 flex-col items-center gap-1.5 rounded-[14px] px-1 py-1 text-center transition-transform active:scale-95"
               style={{ minWidth: 64 }}
             >
@@ -289,20 +293,20 @@ export function ClientTabs({ active, onChange, counts, clientId }: ClientTabsPro
               >
                 {t.icon}
                 {n != null && n > 0 && (
-                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-[800]"
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[11px] font-[800]"
                     style={{ background: 'var(--brand)', color: '#fff', border: '2px solid var(--bg-canvas)' }}>
                     {n}
                   </span>
                 )}
               </m.span>
-              <span className="text-[9.5px] font-[680] leading-tight whitespace-nowrap"
-                style={{ color: on ? t.color : 'var(--text-muted)' }}>
+              <span className="text-[11px] font-[680] leading-tight whitespace-nowrap"
+                style={{ color: on ? 'var(--text-primary)' : 'var(--text-muted)' }}>
                 {t.label}
               </span>
-            </Tag>
+            </Link>
           );
         })}
-      </div>
+      </nav>
     </div>
   );
 }
@@ -310,12 +314,14 @@ export function ClientTabs({ active, onChange, counts, clientId }: ClientTabsPro
 /** Wrapper that fades one panel out and the next in, without layout jump. */
 export function TabPanel({ id, active, children }: { id: TabKey; active: TabKey; children: React.ReactNode }) {
   const reduce = useReducedMotion();
+  const label = TABS.find((t) => t.key === id)?.label ?? 'Client section';
   return (
     <AnimatePresence mode="wait" initial={false}>
       {id === active && (
         <m.div
           key={id}
-          role="tabpanel"
+          role="region"
+          aria-label={label}
           initial={reduce ? false : { opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={reduce ? undefined : { opacity: 0 }}
@@ -345,7 +351,7 @@ export function EmptyPanel({
   color?: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-[22px] px-6 py-12 text-center"
+    <div className="flex flex-col items-center gap-3 rounded-[24px] px-6 py-12 text-center"
       style={{ ...cardSurface }}>
       <div className="flex h-12 w-12 items-center justify-center rounded-[16px]"
         style={color
@@ -358,13 +364,13 @@ export function EmptyPanel({
       {actions && actions.length > 0 && (
         <div className="mt-1 flex flex-wrap justify-center gap-2">
           {actions.map((a, i) => (
-            <a key={a.href} href={a.href}
+            <Link key={a.href} href={a.href}
               className="flex h-[44px] items-center gap-1.5 rounded-[12px] px-4 text-[12px] font-[750] transition-all hover:-translate-y-0.5"
               style={i === 0
                 ? { background: 'var(--brand)', color: '#fff', boxShadow: `0 4px 14px ${rgba(palette.blue[500], 0.35)}` }
                 : { background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
               {a.label} <ChevronRight size={13} />
-            </a>
+            </Link>
           ))}
         </div>
       )}
@@ -409,20 +415,20 @@ export function LinkPanel({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[22px] p-4 sm:p-5"
+    <div className="rounded-[24px] p-4 sm:p-5"
       style={{ ...cardSurface }}>
       <div className="mb-3.5 flex items-center gap-2.5 pb-3.5" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
           style={color
             ? { background: `linear-gradient(135deg, ${color}, ${color}cc)`, color: '#fff', boxShadow: `0 3px 10px ${color}40` }
             : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>{icon}</div>
-        <h3 className="text-[13.5px] font-[740]" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+        <h2 className="text-[13.5px] font-[740]" style={{ color: 'var(--text-primary)' }}>{title}</h2>
       </div>
       {body && <p className="mb-3 max-w-[62ch] text-[12px]" style={{ color: 'var(--text-muted)' }}>{body}</p>}
       {action && <div className="mb-3">{action}</div>}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {links.map((l) => (
-          <a key={l.href} href={l.href}
+          <Link key={l.href} href={l.href}
             className="flex min-h-[56px] items-center gap-3 rounded-[14px] px-3 py-2.5 transition-all hover:-translate-y-0.5"
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
             {l.icon && l.color && (
@@ -433,10 +439,10 @@ export function LinkPanel({
             )}
             <span className="min-w-0 flex-1">
               <span className="block text-[12.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{l.label}</span>
-              {l.hint && <span className="mt-0.5 block text-[10.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>{l.hint}</span>}
+              {l.hint && <span className="mt-0.5 block text-[11.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>{l.hint}</span>}
             </span>
             <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
-          </a>
+          </Link>
         ))}
       </div>
     </div>

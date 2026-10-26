@@ -14,12 +14,13 @@
 // caller's own session on every single turn.
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { m } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import {
   Sparkles, X, Send, Loader2, AlertTriangle, User, Database,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
-import { amber, blue, red, rgba } from '@/lib/palette';
+import { blue, rgba } from '@/lib/palette';
+import { stateTone } from '@/lib/state-tone';
 import {
   streamClientAi, ClientAiError, SUGGESTED_QUESTIONS,
   type ClientAiTurn, type ClientAiGrounding,
@@ -65,6 +66,7 @@ export default function ClientAiPanel({
   clientName: string;
   onClose: () => void;
 }) {
+  const reduce = useReducedMotion();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -208,10 +210,10 @@ export default function ClientAiPanel({
       />
 
       <m.div
-        initial={{ opacity: 0, y: 24 }}
+        initial={reduce ? false : { opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.22 }}
-        className="relative flex h-[86vh] w-full max-w-[620px] flex-col overflow-hidden rounded-t-[22px] sm:h-[76vh] sm:rounded-[22px]"
+        className="relative flex h-[86vh] w-full max-w-[620px] flex-col overflow-hidden rounded-t-[24px] sm:h-[76vh] sm:rounded-[24px]"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg, 0 24px 64px rgba(0,0,0,0.28))' }}
       >
         {/* Header */}
@@ -234,15 +236,17 @@ export default function ClientAiPanel({
             type="button"
             onClick={onClose}
             aria-label="Close Client AI"
-            className="flex h-9 w-9 items-center justify-center rounded-[10px] transition-colors hover:bg-[var(--bg-hover)]"
+            className="flex h-[44px] w-[44px] items-center justify-center rounded-[10px] transition-colors hover:bg-[var(--bg-hover)]"
             style={{ border: '1px solid var(--border)' }}
           >
-            <X size={15} style={{ color: 'var(--text-muted)' }} />
+            <X size={18} style={{ color: 'var(--text-muted)' }} />
           </button>
         </div>
 
-        {/* Transcript */}
-        <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-4">
+        {/* Transcript: role=log announces each answer as it arrives, so a
+            screen-reader user knows the stream started and when it stops. */}
+        <div ref={listRef} role="log" aria-live="polite" aria-relevant="additions text"
+          aria-busy={busy} aria-label="Conversation" className="flex-1 overflow-y-auto px-4 py-4">
           {messages.length === 0 && (
             <div className="flex flex-col items-center gap-4 pt-6 text-center">
               <div
@@ -289,14 +293,14 @@ export default function ClientAiPanel({
                   <div
                     className="rounded-[14px] rounded-bl-[4px] px-3.5 py-3"
                     style={{
-                      background: msg.failed ? rgba(red[500], 0.08) : 'var(--bg-subtle)',
-                      border: `1px solid ${msg.failed ? rgba(red[500], 0.25) : 'var(--border)'}`,
+                      background: msg.failed ? stateTone.danger.bg : 'var(--bg-subtle)',
+                      border: `1px solid ${msg.failed ? stateTone.danger.border : 'var(--border)'}`,
                     }}
                   >
                     {msg.failed && (
                       <div className="mb-1.5 flex items-center gap-1.5">
-                        <AlertTriangle size={12} style={{ color: red[500] }} />
-                        <span className="text-[11px] font-[700]" style={{ color: red[500] }}>
+                        <AlertTriangle size={12} style={{ color: stateTone.danger.fg }} />
+                        <span className="text-[11px] font-[700]" style={{ color: stateTone.danger.fg }}>
                           Couldn&rsquo;t answer
                         </span>
                       </div>
@@ -321,7 +325,7 @@ export default function ClientAiPanel({
                     )}
 
                     {msg.truncated && (
-                      <p className="mt-1.5 flex items-center gap-1.5 text-[10.5px] font-[700]" style={{ color: amber[500] }}>
+                      <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-[700]" style={{ color: stateTone.warning.fg }}>
                         <AlertTriangle size={11} />
                         Stopped before it finished — treat this as incomplete.
                       </p>
@@ -335,14 +339,14 @@ export default function ClientAiPanel({
                     {!!msg.grounding?.figures.length && (
                       <div
                         className="mt-2.5 rounded-[10px] px-2.5 py-2"
-                        style={{ background: rgba(amber[500], 0.10), border: `1px solid ${rgba(amber[500], 0.30)}` }}
+                        style={{ background: stateTone.warning.bg, border: `1px solid ${stateTone.warning.border}` }}
                       >
-                        <p className="flex items-center gap-1.5 text-[10.5px] font-[750]" style={{ color: amber[700] }}>
+                        <p className="flex items-center gap-1.5 text-[11px] font-[750]" style={{ color: stateTone.warning.fg }}>
                           <AlertTriangle size={11} />
                           Not found in {clientName}&rsquo;s records:{' '}
                           {msg.grounding.figures.map((f) => f.text).join(', ')}
                         </p>
-                        <p className="mt-1 text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                        <p className="mt-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
                           Check {msg.grounding.figures.length === 1 ? 'this figure' : 'these figures'} against the record before acting on {msg.grounding.figures.length === 1 ? 'it' : 'them'}.
                         </p>
                       </div>
@@ -354,12 +358,12 @@ export default function ClientAiPanel({
                     {!!msg.proposal && (
                       <div
                         className="mt-2.5 rounded-[10px] px-2.5 py-2"
-                        style={{ background: rgba(blue[500], 0.07), border: `1px solid ${rgba(blue[500], 0.25)}` }}
+                        style={{ background: stateTone.info.bg, border: `1px solid ${stateTone.info.border}` }}
                       >
-                        <p className="text-[10.5px] font-[750]" style={{ color: blue[500] }}>
+                        <p className="text-[11px] font-[750]" style={{ color: stateTone.info.fg }}>
                           Suggested action — nothing was done{msg.proposal.needsConfirm ? ' (needs your confirmation, which this panel cannot take yet)' : ''}:
                         </p>
-                        <p className="mt-1 text-[10.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                        <p className="mt-1 text-[11px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                           {msg.proposal.text}
                         </p>
                       </div>
@@ -373,8 +377,8 @@ export default function ClientAiPanel({
                         {msg.tools.map((t) => (
                           <span
                             key={t}
-                            className="rounded-full px-2 py-0.5 text-[9.5px] font-[700] uppercase tracking-wide"
-                            style={{ background: rgba(blue[500], 0.10), color: blue[500] }}
+                            className="rounded-full px-2 py-0.5 text-[11px] font-[700] uppercase tracking-wide"
+                            style={{ background: stateTone.info.bg, color: stateTone.info.fg }}
                           >
                             {toolLabel(t)}
                           </span>
@@ -382,7 +386,7 @@ export default function ClientAiPanel({
                       </div>
                     )}
                     {!!msg.unavailable?.length && (
-                      <p className="mt-1.5 text-[10.5px] font-[600]" style={{ color: amber[500] }}>
+                      <p className="mt-1.5 text-[11px] font-[600]" style={{ color: stateTone.warning.fg }}>
                         Couldn&rsquo;t read: {msg.unavailable.map((u) => toolLabel(u.tool)).join(', ')}
                       </p>
                     )}
@@ -392,8 +396,8 @@ export default function ClientAiPanel({
             ))}
 
             {waiting && (
-              <div className="flex items-center gap-2 px-1 py-2">
-                <Loader2 size={13} className="animate-spin" style={{ color: blue[500] }} />
+              <div className="flex items-center gap-2 px-1 py-2" role="status">
+                <Loader2 size={13} className="animate-spin" style={{ color: stateTone.info.fg }} />
                 <span className="text-[11.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
                   Reading {clientName}&rsquo;s records&hellip;
                 </span>
@@ -439,10 +443,10 @@ export default function ClientAiPanel({
         </form>
 
         <p
-          className="flex items-center justify-center gap-1.5 px-4 pb-3 text-[10px]"
+          className="flex items-center justify-center gap-1.5 px-4 pb-3 text-[11px]"
           style={{ color: 'var(--text-muted)' }}
         >
-          <User size={9} />
+          <User size={10} />
           Read-only. Always check important details against the record.
         </p>
       </m.div>

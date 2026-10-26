@@ -37,6 +37,7 @@ export function initialsOf(name: string | null | undefined): string {
 export default function ClientAvatar({
   name,
   photoUrl,
+  alt,
   className,
   style,
   children,
@@ -44,6 +45,8 @@ export default function ClientAvatar({
   name: string | null | undefined;
   /** photo_url off the client row. Absent, empty or unloadable → initials. */
   photoUrl?: string | null;
+  /** Override the image's alt text. Pass "" when the name sits next to it. */
+  alt?: string;
   className?: string;
   style?: React.CSSProperties;
   /** Fallback content when there is no photo. Defaults to the initials —
@@ -60,7 +63,7 @@ export default function ClientAvatar({
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={photoUrl as string}
-          alt={name ?? ''}
+          alt={alt ?? name ?? ''}
           onError={() => setBroken(true)}
           style={{ height: '100%', width: '100%', objectFit: 'cover' }}
         />

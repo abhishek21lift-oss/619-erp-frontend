@@ -49,6 +49,11 @@ describe('every Enroll-or-Renew screen reads the one rule', () => {
     expect(src).toMatch(/const hasTerm = hasPtTerm\(client\)/);
   });
 
+  it('a never-enrolled client is credited with no terms, not one', () => {
+    const src = read('page.tsx');
+    expect(src).toMatch(/subscriptionHistory\.length > 0\s*\? subscriptionHistory\.length\s*: hasPtTerm\(client\) \? 1 : 0/);
+  });
+
   it('the subscription history only offers Renew to a client with a term', () => {
     const src = read('subscriptions/page.tsx');
     expect(src).toMatch(/hasPtTerm\(client\) \?/);

@@ -25,88 +25,90 @@
 // in a progress bar and "nobody has recorded this" look identical, and the
 // second one is an instruction to go and measure something.
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import {
-  AlertTriangle, ChevronRight, Target, Trophy, Sparkles, Info,
+  AlertTriangle, ChevronRight, Target, Trophy, Sparkles, Info, RefreshCw,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { cardSurface } from '@/components/ui/Card';
 import { fmtDateMedium } from '@/lib/format';
-import { amber, blue, emerald, red, rgba } from '@/lib/palette';
+import { amber, blue, emerald, rgba } from '@/lib/palette';
+import { stateTone, type StateToneStyle } from '@/lib/state-tone';
 import type {
   ClientSnapshot as Snapshot, ClientAlert, ClientGoalProgress, ClientPr, CoachInsight,
 } from '@/lib/api';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-const TONE: Record<string, { fg: string; bg: string; border: string }> = {
-  critical: { fg: red[700], bg: rgba(red[600], 0.08), border: rgba(red[600], 0.28) },
-  warning: { fg: amber[700], bg: rgba(amber[600], 0.09), border: rgba(amber[600], 0.26) },
-  info: { fg: blue[500], bg: rgba(blue[500], 0.07), border: rgba(blue[500], 0.22) },
+const TONE: Record<string, StateToneStyle> = {
+  critical: stateTone.danger,
+  warning: stateTone.warning,
+  info: stateTone.info,
 };
+
+export type SnapshotState =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'ready'; snapshot: Snapshot };
 
 export interface ClientSnapshotProps {
   clientId: string;
-  /** Lets the profile hide "Baseline setup" once the client is onboarded. */
-  onLoaded?: (snapshot: Snapshot) => void;
+  state: SnapshotState;
+  onRetry: () => void;
 }
 
-export default function ClientSnapshot({ clientId, onLoaded }: ClientSnapshotProps) {
-  const [snap, setSnap] = useState<Snapshot | null>(null);
-  const [loading, setLoading] = useState(true);
+/** Shape is read, not trusted: a partial payload degrades to empty cards. */
+export function normaliseSnapshot(data: Snapshot): Snapshot {
+  return {
+    alerts: Array.isArray(data.alerts) ? data.alerts : [],
+    goal: data.goal && typeof data.goal === 'object' ? data.goal : { present: false },
+    prs: Array.isArray(data.prs) ? data.prs : [],
+    coach: Array.isArray(data.coach) ? data.coach : [],
+    recovery: data.recovery && typeof data.recovery === 'object' ? data.recovery : { present: false, weeks: [] },
+    baseline_done: data.baseline_done === true,
+  };
+}
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    api.pt.snapshot(clientId)
-      .then(({ data }) => {
-        if (cancelled || !data || typeof data !== 'object') return;
-        // Shape is read, not trusted: a partial payload must degrade to an
-        // empty card, never take the profile to its error boundary.
-        const safe: Snapshot = {
-          alerts: Array.isArray(data.alerts) ? data.alerts : [],
-          goal: data.goal && typeof data.goal === 'object' ? data.goal : { present: false },
-          prs: Array.isArray(data.prs) ? data.prs : [],
-          coach: Array.isArray(data.coach) ? data.coach : [],
-          recovery: data.recovery && typeof data.recovery === 'object' ? data.recovery : { present: false, weeks: [] },
-          baseline_done: data.baseline_done === true,
-        };
-        setSnap(safe);
-        onLoaded?.(safe);
-      })
-      .catch(() => { /* the profile still works without it; no toast for a side panel */ })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientId]);
-
-  // A skeleton, not a spinner.
-  //
-  // This section loads after the page around it, so a spinner sitting in the
-  // middle of a rendered profile reads as "the page is reloading" — and on a
-  // phone it appeared directly under the app's own pull-to-refresh indicator,
-  // so the screen showed two refresh spinners at once for the same page.
-  // Placeholders in the shape of the cards say "this part is still coming"
-  // without claiming anything about the rest of the page.
-  if (loading) {
+export default function ClientSnapshot({ clientId, state, onRetry }: ClientSnapshotProps) {
+  // A skeleton, not a spinner: this section loads after the page around it,
+  // so placeholders in the shape of the cards say "still coming" without
+  // looking like the whole page is reloading.
+  if (state.status === 'loading') {
     return (
-      <div className="mb-5 space-y-3" aria-busy="true" aria-label="Loading client summary">
+      <div className="space-y-3" aria-busy="true" aria-label="Loading client summary">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {[0, 1, 2].map((i) => <Skeleton key={i} className="h-[52px] rounded-[14px]" />)}
         </div>
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <Skeleton className="h-[168px] rounded-[22px]" />
-          <Skeleton className="h-[168px] rounded-[22px]" />
+          <Skeleton className="h-[168px] rounded-[24px]" />
+          <Skeleton className="h-[168px] rounded-[24px]" />
         </div>
-        <Skeleton className="h-[118px] rounded-[22px]" />
+        <Skeleton className="h-[118px] rounded-[24px]" />
       </div>
     );
   }
-  if (!snap) return null;
 
+  if (state.status === 'error') {
+    return (
+      <div role="alert" className="flex flex-wrap items-center gap-3 rounded-[16px] px-4 py-3"
+        style={{ background: stateTone.danger.bg, border: `1px solid ${stateTone.danger.border}`, color: stateTone.danger.fg }}>
+        <AlertTriangle size={16} className="shrink-0" />
+        <p className="min-w-0 flex-1 text-[12.5px] font-[650] leading-snug">
+          Could not load what needs attention. {state.message}
+        </p>
+        <button type="button" onClick={onRetry}
+          className="flex h-[44px] items-center gap-1.5 rounded-[12px] px-3.5 text-[12px] font-[750]"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+          <RefreshCw size={13} /> Retry
+        </button>
+      </div>
+    );
+  }
+
+  const snap = state.snapshot;
   return (
-    <div className="mb-5 space-y-3">
+    <div className="space-y-3">
       <AttentionStrip alerts={snap.alerts} />
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <GoalCard goal={snap.goal} clientId={clientId} />
@@ -129,9 +131,9 @@ function AttentionStrip({ alerts }: { alerts: ClientAlert[] }) {
   if (!alerts.length) {
     return (
       <div className="flex items-center gap-2.5 rounded-[16px] px-4 py-3"
-        style={{ background: rgba(emerald[500], 0.07), border: `1px solid ${rgba(emerald[500], 0.22)}` }}>
-        <Info size={15} style={{ color: emerald[600] }} />
-        <p className="text-[12px] font-[680]" style={{ color: emerald[700] }}>
+        style={{ background: stateTone.success.bg, border: `1px solid ${stateTone.success.border}` }}>
+        <Info size={15} style={{ color: stateTone.success.fg }} />
+        <p className="text-[12px] font-[680]" style={{ color: stateTone.success.fg }}>
           Nothing needs attention — term, payments, measurements and last session all look current.
         </p>
       </div>
@@ -152,7 +154,7 @@ function AttentionStrip({ alerts }: { alerts: ClientAlert[] }) {
               <span className="min-w-0">
                 <span className="block text-[12px] font-[750] leading-tight">{a.label}</span>
                 {a.detail && (
-                  <span className="mt-0.5 block text-[10.5px] font-[600] opacity-80">{a.detail}</span>
+                  <span className="mt-0.5 block text-[11px] font-[600]">{a.detail}</span>
                 )}
               </span>
               {a.href && <ChevronRight size={13} className="ml-auto shrink-0 opacity-60" />}
@@ -203,7 +205,7 @@ function GoalCard({ goal, clientId }: { goal: ClientGoalProgress; clientId: stri
   return (
     <Card title="Goal" icon={<Target size={16} />} from={emerald[500]} to={emerald[600]}
       right={pct !== null
-        ? <span className="shrink-0 text-[20px] font-[860] tabular-nums leading-none" style={{ color: emerald[600] }}>{pct}%</span>
+        ? <span className="shrink-0 text-[20px] font-[860] tabular-nums leading-none" style={{ color: 'var(--success-text)' }}>{pct}%</span>
         : null}>
       <p className="text-[14px] font-[800] tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>
         {label}
@@ -216,7 +218,7 @@ function GoalCard({ goal, clientId }: { goal: ClientGoalProgress; clientId: stri
 
       {pct !== null ? (
         <>
-              <Bar pct={pct} colour={emerald[600]} />
+              <Bar pct={pct} colour="var(--success)" />
           <div className="mt-2.5 grid grid-cols-3 gap-2">
             <Stat label="Started" value={goal.start_kg != null ? `${goal.start_kg} kg` : '—'} />
             <Stat label="Current" value={goal.current_kg != null ? `${goal.current_kg} kg` : '—'}
@@ -238,7 +240,7 @@ function GoalCard({ goal, clientId }: { goal: ClientGoalProgress; clientId: stri
       )}
 
       {goal.target_date && (
-        <p className="mt-2.5 text-[10.5px] font-[620]" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-2.5 text-[11px] font-[620]" style={{ color: 'var(--text-muted)' }}>
           Target date {fmtDateMedium(goal.target_date)}
         </p>
       )}
@@ -287,8 +289,8 @@ function CoachCard({ insights, clientId }: { insights: CoachInsight[]; clientId:
     <Card title="AI Coach" icon={<Sparkles size={16} />} from={blue[500]} to={blue[500]}
       right={source === 'ai'
         ? (
-          <span className="shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-[800] uppercase tracking-wider"
-            style={{ background: rgba(blue[500], 0.14), color: blue[500] }}>AI</span>
+          <span className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-[800] uppercase tracking-wider"
+            style={{ background: stateTone.info.bg, color: stateTone.info.fg }}>AI</span>
         )
         : null}>
       {lines.length === 0 ? (
@@ -298,15 +300,15 @@ function CoachCard({ insights, clientId }: { insights: CoachInsight[]; clientId:
           {lines.map((c) => (
             <div key={c.id} className="rounded-[12px] px-3 py-2.5"
               style={{
-                background: c.tone === 'good' ? rgba(emerald[500], 0.07) : rgba(amber[600], 0.08),
-                border: `1px solid ${c.tone === 'good' ? rgba(emerald[500], 0.2) : rgba(amber[600], 0.22)}`,
+                background: c.tone === 'good' ? stateTone.success.bg : stateTone.warning.bg,
+                border: `1px solid ${c.tone === 'good' ? stateTone.success.border : stateTone.warning.border}`,
               }}>
               <p className="text-[12px] font-[680] leading-snug" style={{ color: 'var(--text-primary)' }}>
                 {c.text}
               </p>
               {/* Traceable on purpose: a prompt a trainer cannot check is one
                   they cannot overrule, and these are suggestions, not orders. */}
-              <p className="mt-1 text-[10px] font-[620]" style={{ color: 'var(--text-muted)' }}>{c.because}</p>
+              <p className="mt-1 text-[11px] font-[620]" style={{ color: 'var(--text-muted)' }}>{c.because}</p>
             </div>
           ))}
         </div>
@@ -318,13 +320,13 @@ function CoachCard({ insights, clientId }: { insights: CoachInsight[]; clientId:
           onClick={ask}
           disabled={busy}
           className="flex h-[44px] items-center gap-1.5 rounded-[12px] px-3.5 text-[11.5px] font-[750] disabled:opacity-60"
-          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: blue[500] }}
+          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--info-lo)' }}
         >
           <Sparkles size={13} className={busy ? 'animate-pulse' : undefined} />
           {busy ? 'Reading their file…' : source === 'ai' ? 'Ask again' : 'Ask the AI coach'}
         </button>
         {failed && (
-          <span className="text-[10.5px] font-[620]" style={{ color: 'var(--text-muted)' }}>
+          <span className="text-[11px] font-[620]" style={{ color: 'var(--text-muted)' }}>
             Could not reach the coach — the notes above still stand.
           </span>
         )}
@@ -347,7 +349,7 @@ function PrCard({ prs, clientId }: { prs: ClientPr[]; clientId: string }) {
           {prs.map((p) => (
             <div key={p.exercise} className="rounded-[14px] px-3 py-2.5"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-              <p className="text-[9.5px] font-[700] uppercase leading-tight tracking-wide"
+              <p className="text-[11px] font-[700] uppercase leading-tight tracking-wide"
                 style={{
                   color: 'var(--text-muted)',
                   display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
@@ -357,7 +359,7 @@ function PrCard({ prs, clientId }: { prs: ClientPr[]; clientId: string }) {
                 style={{ color: 'var(--text-primary)' }}>
                 {p.weight_kg}<span className="text-[11px] font-[700]"> kg</span>
               </p>
-              <p className="mt-1 text-[9.5px] font-[620]" style={{ color: 'var(--text-muted)' }}>
+              <p className="mt-1 text-[11px] font-[620]" style={{ color: 'var(--text-muted)' }}>
                 {[p.reps != null ? `× ${p.reps}` : null, p.achieved_on ? fmtDateMedium(p.achieved_on) : null].filter(Boolean).join(' · ')}
               </p>
             </div>
@@ -397,9 +399,9 @@ function Bar({ pct, colour }: { pct: number; colour: string }) {
 function Stat({ label, value, accent }: { label: string; value: string; accent?: string | null }) {
   return (
     <div>
-      <p className="text-[9.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
+      <p className="text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
       <p className="mt-0.5 text-[13px] font-[800] tabular-nums" style={{ color: 'var(--text-primary)' }}>{value}</p>
-      {accent && <p className="text-[10px] font-[700]" style={{ color: emerald[600] }}>{accent}</p>}
+      {accent && <p className="text-[11px] font-[700]" style={{ color: 'var(--success-text)' }}>{accent}</p>}
     </div>
   );
 }
@@ -411,9 +413,8 @@ function Card({
   right?: React.ReactNode; children: React.ReactNode;
 }) {
   return (
-    <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: EASE }}
-      className="rounded-[22px] p-4 sm:p-5"
+    <div
+      className="rounded-[24px] p-4 sm:p-5"
       style={{ ...cardSurface }}>
       {/* The page's own card header: a gradient chip with a coloured shadow and
           a rule under the title. The first cut used flat pastel squares and a
@@ -423,11 +424,11 @@ function Card({
           style={{ background: `linear-gradient(135deg, ${from}, ${to})`, boxShadow: `0 3px 12px ${from}45` }}>
           <span className="text-white">{icon}</span>
         </div>
-        <h3 className="min-w-0 flex-1 truncate text-[13.5px] font-[740]" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+        <h2 className="min-w-0 flex-1 truncate text-[13.5px] font-[740]" style={{ color: 'var(--text-primary)' }}>{title}</h2>
         {right}
       </div>
       {children}
-    </m.div>
+    </div>
   );
 }
 
@@ -438,7 +439,7 @@ function SectionHeading({
     <div className="mb-2.5 flex items-center gap-2.5">
       <div className="flex h-8 w-8 items-center justify-center rounded-[10px]"
         style={{ background: tint, border: `1px solid ${border}` }}>{icon}</div>
-      <h3 className="text-[13.5px] font-[740]" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+      <h2 className="text-[13.5px] font-[740]" style={{ color: 'var(--text-primary)' }}>{title}</h2>
     </div>
   );
 }
