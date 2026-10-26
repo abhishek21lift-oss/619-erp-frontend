@@ -57,10 +57,10 @@ test.describe('Client interview and journey', () => {
   test('a new client\'s profile shows the K11 journey, with the welcome tour next', async ({ page }) => {
     await gotoApp(page, `/pt-os/clients/${clientId}`);
     await expect(page.getByRole('progressbar', { name: 'Client journey progress' })).toBeVisible({ timeout: 25_000 });
-    await expect(page.getByRole('button', { name: /Next: Welcome & Gym Tour/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Next: Welcome & Gym Tour/ })).toBeVisible();
     // Enrolment is its own step now, and screening no longer stands in front
     // of it: it is a warning on the enrolment screen, not a block.
-    await expect(page.getByRole('button', { name: /PT Enrolment.*To do/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /PT Enrolment.*To do/ })).toBeVisible();
   });
 
   test('the enrolment screen warns an unscreened client and offers the missing steps', async ({ page }) => {
