@@ -129,6 +129,15 @@ describe('existing deep links still resolve', () => {
   });
 });
 
+describe('the MPTS Knowledge tab', () => {
+  it('lives in the AI module and is reachable by deep link', () => {
+    expect(TAB_IDS).toContain('knowledge');
+    expect(moduleForTab('knowledge')).toBe('ai');
+    expect(normalizeTab('knowledge')).toBe('knowledge');
+    expect(TAB_LABELS.knowledge).toBe('MPTS Knowledge');
+  });
+});
+
 describe('the Users module', () => {
   it('exists — it is the one module the console did not have', () => {
     expect(MODULES.map((m) => m.id)).toContain('users');

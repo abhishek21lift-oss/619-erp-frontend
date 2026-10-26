@@ -377,7 +377,8 @@ export const DOCUMENT_RULES: FileRules = {
 /** AI knowledge-base ingestion. */
 export const KNOWLEDGE_RULES: FileRules = {
   formats: KNOWLEDGE_FORMATS,
-  maxBytes: 20 * MB,
+  // Both upload endpoints (studio and platform corpus) cap multer at 15 MB.
+  maxBytes: 15 * MB,
 };
 
 /**
