@@ -111,7 +111,7 @@ const KNOWN = [
   // so a missing module cannot block the goal. Only the re-test fallback is
   // the bare `null` shape this ratchet pins; the interview fallback is an
   // object literal and does not match.
-  'app/(chrome)/pt-os/goals/page.tsx:367',
+  'app/(chrome)/pt-os/goals/page.tsx:279',
   'app/(chrome)/pt-os/workout-plans/[id]/page.tsx:51',
   'app/(chrome)/settings/integrations/page.tsx:442',
   // Two remain on the Security page (the session count on each panel); the

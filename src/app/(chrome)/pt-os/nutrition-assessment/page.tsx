@@ -288,6 +288,13 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
     setStep((s) => (s + 1) as StepId);
   };
 
+  // The timeline offers exactly one forward jump, so route it through
+  // handleNext() — a click must not skip that step's validation.
+  const handleStepClick = (id: StepId) => {
+    if (id === step + 1) { handleNext(); return; }
+    setStep(id);
+  };
+
   const handleBack = () => {
     if (reviewMode) { setReviewMode(false); return; }
     if (step > 1) { setStep((s) => (s - 1) as StepId); return; }
@@ -301,6 +308,21 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
   };
 
   const handleSubmit = async () => {
+    // Back-navigation can leave an earlier step unanswered; check every step
+    // before posting rather than trusting the one the user happens to be on.
+    const allErrors: FormErrors = {};
+    for (const s of STEPS) {
+      const err = validateStep(s.id, form);
+      if (err) allErrors[s.key] = err;
+    }
+    const firstInvalid = STEPS.find((s) => allErrors[s.key]);
+    if (firstInvalid) {
+      setErrors(allErrors);
+      setReviewMode(false);
+      setStep(firstInvalid.id);
+      toast.error(allErrors[firstInvalid.key]!);
+      return;
+    }
     setSaving(true);
     try {
       const foodAllergies = [...form.foodAllergies, ...splitList(form.foodAllergyOther)];
@@ -369,7 +391,7 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
           step is the way out now. */}
       <div className="mx-auto max-w-3xl pt-1">
         <PageHero icon={<Salad size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'}>
-          {!reviewMode && <StepperTimeline steps={STEPS} current={step} onStep={setStep} />}
+          {!reviewMode && <StepperTimeline steps={STEPS} current={step} onStep={handleStepClick} />}
         </PageHero>
       </div>
 

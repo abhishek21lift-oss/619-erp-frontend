@@ -28,6 +28,19 @@ const STATE = {
 } as const;
 
 /**
+ * A PAR-Q is on file once it has been submitted or reviewed. `draft` is still
+ * in progress. `completed` is not a ParqStatus — checking for it made every
+ * submitted PAR-Q render as "In progress".
+ */
+export function parqBaselineState(
+  status: string | null,
+  hasDate: boolean,
+): BaselineSource['state'] {
+  if (!hasDate) return 'missing';
+  return status === 'submitted' || status === 'reviewed' ? 'complete' : 'pending';
+}
+
+/**
  * What the plan is built on. Read-only by design: the goal wizard never
  * creates or edits an assessment, it points at the module that does. Each
  * row carries the same client_id the wizard was opened with, so opening one

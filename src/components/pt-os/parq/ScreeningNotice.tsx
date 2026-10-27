@@ -13,7 +13,7 @@ import { AlertTriangle, CheckCircle2, ClipboardCheck, RotateCcw } from 'lucide-r
 import { Button } from '@/components/ui';
 import type { ParqForm } from '@/lib/api';
 
-export const PARQ_QUESTION_COUNT = 10;
+const PARQ_QUESTION_COUNT = 10;
 const STALE_MONTHS = 12;
 
 export type ScreeningIssue =

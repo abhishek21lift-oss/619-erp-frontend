@@ -128,7 +128,9 @@ function ProgramDesign({ clientId }: { clientId: string }) {
   const weightKg = num(assessment?.weight) ?? num(c.weight);
   const heightCm = num(assessment?.height_cm) ?? num(c.height);
   const restingHr = num(assessment?.resting_heart_rate);
-  const trainingDays = num(interview?.lifestyle_training_days) ?? num(c.sessions_per_week);
+  // Enrolment writes sessions_per_week; the Interview's training-days answer
+  // is a legacy fallback for records that predate it.
+  const trainingDays = num(c.sessions_per_week) ?? num(interview?.lifestyle_training_days);
   const goalKey = goal ? String(goal.goal_type ?? '') : (c.goal ? String(c.goal) : null);
 
   const bmr = basalMetabolicRate({

@@ -33,7 +33,7 @@ export function StepFunctionalTests({ form, set }: StepFunctionalTestsProps) {
         {form.mobilityTests.map((t, i) => (
           <div key={t.test} className="rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>
             <Slider
-              label={t.test} value={t.score ?? 3} min={1} max={5}
+              label={t.test} value={t.score ?? 3} min={1} max={5} unset={t.score == null}
               onChange={(v) => updateTest(i, { score: v })}
               scaleLabels={['1 · Poor', '5 · Excellent']}
             />

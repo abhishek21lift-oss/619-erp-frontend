@@ -43,11 +43,24 @@ export type StepId = typeof STEPS[number]['id'];
 export function initMobilityForm(): MobilityFormData {
   return {
     assessmentDate: todayISO(),
-    bodyRegions: BODY_REGIONS.map((region) => ({ region, score: 3, pain: false, restriction: false })),
-    mobilityTests: MOBILITY_TESTS.map((test) => ({ test, score: 3, notes: '', pain: false, restriction: false })),
+    // Unscored, not a default 3: an untouched form used to average out to
+    // 60/100 "Average" without anyone assessing the client.
+    bodyRegions: BODY_REGIONS.map((region) => ({ region, score: null, pain: false, restriction: false })),
+    mobilityTests: MOBILITY_TESTS.map((test) => ({ test, score: null, notes: '', pain: false, restriction: false })),
     gripStrengthKg: '', verticalJumpCm: '', sitReachCm: '', balanceTestSeconds: '', reactionTimeMs: '',
     performanceNotes: '',
   };
+}
+
+/** How many regions still have no score. The wizard refuses to advance while
+ *  any remain: an unscored region is not a 3. */
+export function unscoredBodyRegions(form: Pick<MobilityFormData, 'bodyRegions'>): number {
+  return form.bodyRegions.filter((r) => r.score == null).length;
+}
+
+/** How many movement screens still have no score. */
+export function unscoredMobilityTests(form: Pick<MobilityFormData, 'mobilityTests'>): number {
+  return form.mobilityTests.filter((t) => t.score == null).length;
 }
 
 // One parser for every measurement in the app. See toMeasurementOrNull for

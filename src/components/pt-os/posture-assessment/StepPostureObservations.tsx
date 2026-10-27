@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { PersonStanding } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import MultiSelectChips from '@/components/pt-os/MultiSelectChips';
-import { POSTURE_ISSUES_BY_VIEW } from './types';
+import { POSTURE_ISSUES_BY_VIEW, postureFindingCount } from './types';
 import type { PostureFormData } from './types';
 
 const VIEWS: { key: 'frontIssues' | 'sideIssues' | 'backIssues'; label: string }[] = [
@@ -20,6 +20,14 @@ interface StepPostureObservationsProps {
 
 export function StepPostureObservations({ form, set }: StepPostureObservationsProps) {
   const [activeView, setActiveView] = useState<'frontIssues' | 'sideIssues' | 'backIssues'>('frontIssues');
+  const hasFindings = postureFindingCount(form) > 0;
+
+  // A finding and "no issues noted" cannot both be true, so recording one
+  // withdraws the confirmation rather than leaving a contradictory form.
+  const setView = (key: typeof activeView, value: string[]) => {
+    set(key, value);
+    if (value.length) set('noIssuesNoted', false);
+  };
 
   return (
     <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
@@ -65,10 +73,25 @@ export function StepPostureObservations({ form, set }: StepPostureObservationsPr
 
         {/* An issue saved on an older record from a view that no longer lists
             it still shows, so it can be seen and removed. */}
-        <MultiSelectChips value={form[activeView]} onChange={(v) => set(activeView, v)}
+        <MultiSelectChips value={form[activeView]} onChange={(v) => setView(activeView, v)}
           options={[...POSTURE_ISSUES_BY_VIEW[activeView], ...form[activeView].filter((i) => !POSTURE_ISSUES_BY_VIEW[activeView].includes(i))]} />
 
-        <FloatInput label="Other Notes" multiline autoGrow maxLength={1000} value={form.otherIssueNotes} onChange={(v) => set('otherIssueNotes', v)} />
+        <FloatInput label="Other Notes" multiline autoGrow maxLength={1000} value={form.otherIssueNotes}
+          onChange={(v) => { set('otherIssueNotes', v); if (v.trim()) set('noIssuesNoted', false); }} />
+
+        <label className="flex items-start gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={form.noIssuesNoted}
+            disabled={hasFindings}
+            onChange={(e) => set('noIssuesNoted', e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[var(--brand)] disabled:cursor-not-allowed"
+          />
+          <span className="text-[12.5px] font-[550] leading-[1.35]"
+            style={{ color: hasFindings ? 'var(--text-disabled)' : 'var(--text-primary)' }}>
+            No posture issues noted
+          </span>
+        </label>
       </div>
     </div>
   );

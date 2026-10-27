@@ -182,12 +182,12 @@ export function buildFormPayload(form: ParqFormData, clientId: string): Record<s
     past_history: {
       // Asked on the Past History step.
       respiratory_disease: ph.respiratory_disease, copd: ph.copd, tuberculosis: ph.tuberculosis,
+      back_pain: ph.back_pain, neck_pain: ph.neck_pain, knee_pain: ph.knee_pain,
+      shoulder_pain: ph.shoulder_pain, hip_pain: ph.hip_pain,
       previous_fractures: ph.previous_fractures, surgeries: ph.surgeries, hospitalization: ph.hospitalization,
       previous_physiotherapy: ph.previous_physiotherapy,
       // No longer asked here — kept only when an older screening answered them.
       heart_disease: kept(ph.heart_disease), asthma: kept(ph.asthma), joint_problems: kept(ph.joint_problems),
-      back_pain: kept(ph.back_pain), neck_pain: kept(ph.neck_pain), knee_pain: kept(ph.knee_pain),
-      shoulder_pain: kept(ph.shoulder_pain), hip_pain: kept(ph.hip_pain),
       exercise_history: kept(ph.exercise_history), occupation: kept(ph.occupation), work_posture: kept(ph.work_posture),
       daily_sitting_hours: n(ph.daily_sitting_hours) ?? undefined,
       previous_injuries: kept(ph.previous_injuries), previous_trainer: kept(ph.previous_trainer),

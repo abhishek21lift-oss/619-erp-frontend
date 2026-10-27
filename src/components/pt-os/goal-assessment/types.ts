@@ -195,6 +195,33 @@ export const STEPS = [
 export const LAST_STEP = STEPS[STEPS.length - 1].id;
 export type StepId = typeof STEPS[number]['id'];
 
+/** The client columns Enrollment writes and a new goal should start from. */
+export interface GoalClientDefaults {
+  workout_experience_level?: string | null;
+  sessions_per_week?: number | string | null;
+}
+
+/**
+ * A new goal starts from what Enrollment already recorded. The defaults in
+ * initGoalForm() remain the fallback for a client with no enrolment record,
+ * but they must not overwrite a real answer.
+ */
+export function initGoalFormForClient(client?: GoalClientDefaults | null): GoalFormData {
+  const form = initGoalForm();
+  const rawExperience = typeof client?.workout_experience_level === 'string'
+    ? client.workout_experience_level.trim().toLowerCase()
+    : '';
+  const experience = ['beginner', 'intermediate', 'advanced'].includes(rawExperience)
+    ? rawExperience
+    : form.experienceLevel;
+  const rawSessions = client?.sessions_per_week;
+  const sessions = rawSessions == null || rawSessions === '' ? null : Number(rawSessions);
+  const trainingDays = Number.isInteger(sessions) && sessions! >= 1 && sessions! <= 7
+    ? String(sessions)
+    : form.trainingDays;
+  return { ...form, experienceLevel: experience, trainingDays };
+}
+
 export function initGoalForm(): GoalFormData {
   return {
     goalType: '', goalName: '', goalDescription: '',

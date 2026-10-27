@@ -5,7 +5,7 @@ import type { InformedConsentStatus } from '@/lib/api';
 
 export interface StatusStyle { label: string; bg: string; color: string; }
 
-export const STATUS_STYLE: Record<InformedConsentStatus, StatusStyle> = {
+const STATUS_STYLE: Record<InformedConsentStatus, StatusStyle> = {
   draft:                       { label: 'Draft',                bg: 'rgba(148,163,184,0.15)', color: '#64748b' },
   pending_client_signature:    { label: 'Pending Client Sign',   bg: 'rgba(245,158,11,0.15)',  color: '#d97706' },
   pending_trainer_signature:   { label: 'Pending Trainer Sign',  bg: 'rgba(245,158,11,0.15)',  color: '#d97706' },
