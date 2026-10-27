@@ -100,3 +100,15 @@ describe('design-system guardrails', () => {
     }
   }
 });
+
+describe('globals.css ships no slop utilities', () => {
+  const css = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8');
+
+  it('has no gradient text', () => {
+    expect(css).not.toMatch(/-webkit-text-fill-color:\s*transparent/);
+  });
+
+  it('has no left-accent card utilities', () => {
+    expect(css).not.toMatch(/\.card\.accent-/);
+  });
+});

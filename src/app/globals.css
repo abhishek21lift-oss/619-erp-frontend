@@ -1830,12 +1830,7 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
 .card-hover:hover {
   box-shadow: var(--shadow-card-hover), 0 0 0 1px var(--border-2);
 }
-/* Card with left accent stripe — use .card.accent-brand etc. */
-.card.accent-brand { border-left: 3px solid var(--brand); }
-.card.accent-gold   { border-left: 3px solid var(--gold); }
-.card.accent-success{ border-left: 3px solid var(--success); }
-.card.accent-danger { border-left: 3px solid var(--danger); }
-.card.accent-accent { border-left: 3px solid var(--accent); }
+
 
 /* ── Premium glass panel ── */
 .glass-panel {
@@ -1906,22 +1901,7 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
 .badge-warning { box-shadow: 0 0 0 1px var(--warning-border) inset; }
 .badge-brand   { box-shadow: 0 0 0 1px var(--brand-soft) inset; }
 
-/* ── Premium page title bar ── */
-.page-title {
-  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.dark .page-title,
-[data-theme="dark"] .page-title {
-  background: linear-gradient(135deg, #F8FAFC 0%, #94A3B8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ── Premium metric number ── */
+/* ── Metric number ── */
 .metric-value {
   font-size: 2rem;
   font-weight: 800;
@@ -1929,18 +1909,6 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
   line-height: 1;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
-}
-.metric-value.gold {
-  background: linear-gradient(135deg, var(--gold-hi), var(--gold));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.metric-value.brand {
-  background: linear-gradient(135deg, var(--brand-hi), var(--brand));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 /* ── Premium modal ── */
