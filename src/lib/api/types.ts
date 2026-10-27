@@ -364,6 +364,10 @@ export type Client = {
   injuries?: string | null;
   workout_experience_level?: string | null;
   frequency?: string | null;
+  /** Recorded weekly frequency, preferred over `frequency` by the AI generators. */
+  sessions_per_week?: number | null;
+  /** "Mon, Wed, Fri" — the fallback when no session count was recorded. */
+  preferred_training_days?: string | null;
 };
 
 export type DuesItem = {

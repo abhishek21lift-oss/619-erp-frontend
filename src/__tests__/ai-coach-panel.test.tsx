@@ -29,6 +29,7 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import { AiCoachPanel } from '@/components/fitness/AiCoachPanel';
+import { api } from '@/lib/api';
 
 type Handlers = {
   onConversationId?: (id: string) => void;
@@ -200,5 +201,70 @@ describe('<AiCoachPanel />', () => {
     await waitFor(() => expect(streamAiChat).toHaveBeenCalledTimes(2));
     expect(screen.getByText('second answer')).toBeTruthy();
     expect(screen.getByText('first answer')).toBeTruthy();
+  });
+});
+
+describe('<AiCoachPanel type="workout" /> day count', () => {
+  const member = (over: Record<string, unknown> = {}) => ({
+    id: 'c1', name: 'Amit Shukla', dob: '1990-01-01', gender: 'male',
+    weight: 70, height: 175, ...over,
+  });
+
+  async function pick(name = 'Amit Shukla') {
+    const search = screen.getByLabelText('Search clients');
+    fireEvent.focus(search);
+    await waitFor(() => expect(screen.getByText(name)).toBeTruthy());
+    fireEvent.mouseDown(screen.getByText(name));
+  }
+
+  const daysBox = () => screen.getByLabelText('Training days per week') as HTMLInputElement;
+
+  beforeEach(() => {
+    vi.mocked(api.clients.list).mockResolvedValue([]);
+    vi.mocked(api.ai.generateWorkout).mockReset();
+  });
+
+  it('starts from the member\'s recorded sessions, not a guessed four', async () => {
+    vi.mocked(api.clients.list).mockResolvedValue([member({ sessions_per_week: 6 }) as never]);
+    render(<AiCoachPanel type="workout" />);
+
+    await pick();
+
+    expect(daysBox().value).toBe('6');
+  });
+
+  it('falls back to the number of preferred training days', async () => {
+    vi.mocked(api.clients.list).mockResolvedValue([
+      member({ sessions_per_week: null, preferred_training_days: 'Mon, Wed, Fri' }) as never,
+    ]);
+    render(<AiCoachPanel type="workout" />);
+
+    await pick();
+
+    expect(daysBox().value).toBe('3');
+  });
+
+  it('stays blank when the record holds no frequency, and sends that blank', async () => {
+    vi.mocked(api.clients.list).mockResolvedValue([member() as never]);
+    vi.mocked(api.ai.generateWorkout).mockResolvedValue({
+      data: {
+        name: 'Plan', goal: 'muscle_gain', level: 'beginner', weeks: 4,
+        days_per_week: 4, weekly_schedule: {},
+      },
+    } as never);
+    render(<AiCoachPanel type="workout" />);
+
+    await pick();
+    expect(daysBox().value).toBe('');
+
+    fireEvent.change(screen.getByLabelText('Select goal...'), { target: { value: 'Muscle Gain' } });
+    // Two controls carry that name: the mode toggle and the submit button.
+    const generate = screen.getAllByRole('button', { name: /Generate Plan/i });
+    fireEvent.click(generate[generate.length - 1]);
+
+    await waitFor(() => expect(api.ai.generateWorkout).toHaveBeenCalled());
+    const body = vi.mocked(api.ai.generateWorkout).mock.calls[0][0] as Record<string, unknown>;
+    // Blank is omitted, not turned into a number the trainer never chose.
+    expect(body.training_days).toBeUndefined();
   });
 });

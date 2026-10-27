@@ -634,7 +634,7 @@ function WorkoutPreview({ plan }: { plan: AiWorkoutPlan }) {
         Goal {plan.goal} &middot; {plan.level} &middot; {plan.weeks} weeks &middot; {plan.days_per_week}&times;/week
       </p>
       <ul className="space-y-0.5 pt-1">
-        {days.slice(0, 4).map(([day, d]) => (
+        {days.map(([day, d]) => (
           <li key={day} className="text-[11px] leading-relaxed" style={{ color: 'var(--text-primary)' }}>
             <span className="font-[720]" style={{ color: BLUE }}>{day}</span>: {d.name}
             {d.exercises?.length ? ` — ${d.exercises.slice(0, 3).map((e) => e.name).join(', ')}` : ''}
