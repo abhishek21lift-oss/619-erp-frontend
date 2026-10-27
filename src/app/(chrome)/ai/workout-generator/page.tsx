@@ -7,7 +7,7 @@ import { Dumbbell, Loader2, ChevronDown, ChevronUp, Sparkles, RotateCcw, Flame, 
 import { m, type Variants } from 'framer-motion';
 import { api } from '@/lib/api';
 import type {
-  AiKnowledgeGrounding, AiWorkoutPlan, AiWorkoutDay, AiWorkoutExercise, SavedFromGeneration,
+  AiGenerationAudit, AiKnowledgeGrounding, AiWorkoutPlan, AiWorkoutDay, AiWorkoutExercise, SavedFromGeneration,
 } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
@@ -187,6 +187,7 @@ export default function WorkoutGeneratorPage() {
   const [meta, setMeta] = useState<{
     model?: string; tier?: string; used_fallback?: boolean;
     grounding?: AiKnowledgeGrounding;
+    audit?: AiGenerationAudit;
   } | null>(null);
   const [generationId, setGenerationId] = useState<string | null>(null);
   const [saved, setSaved] = useState<SavedFromGeneration | null>(null);
@@ -358,7 +359,10 @@ export default function WorkoutGeneratorPage() {
       });
       setPlan(res.data);
       setGenerationId(res.generation_id ?? null);
-      setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback, grounding: res.grounding });
+      setMeta({
+        model: res.model, tier: res.tier, used_fallback: res.used_fallback,
+        grounding: res.grounding, audit: res.audit,
+      });
     } catch (e: unknown) {
       // The one refusal this page can answer. Anything else is an error the
       // trainer can only read.
@@ -377,6 +381,9 @@ export default function WorkoutGeneratorPage() {
    */
   const savePlan = async () => {
     if (!generationId || savingRef.current) return;
+    // A critical finding is the audit's fact about this exact proposal; the
+    // server refuses it too, but the button should not invite the attempt.
+    if ((meta?.audit?.violations ?? []).some((v) => v.severity === 'critical')) return;
     savingRef.current = true;
     setSavingPlan(true); setSaveError('');
     try {
@@ -390,6 +397,9 @@ export default function WorkoutGeneratorPage() {
   };
 
   const scheduleEntries = plan ? Object.entries(plan.weekly_schedule ?? {}) : [];
+
+  const criticalCount = (meta?.audit?.violations ?? [])
+    .filter((v) => v.severity === 'critical').length;
 
   return (
     <Guard>
@@ -602,12 +612,12 @@ export default function WorkoutGeneratorPage() {
                       {saved.assigned === false
                         ? 'Saved, but not assigned — it will not appear on Today.'
                         : (saved.other_active_assignments ?? 0) > 0
-                          ? `Saved and assigned — this client is now on ${(saved.other_active_assignments ?? 0) + 1} active programmes, so starting a session will no longer pick one automatically.`
+                          ? `Saved and assigned — this client is now on ${(saved.other_active_assignments ?? 0) + 1} active programmes. A started session uses the one that prescribes today's workout; choose the programme explicitly if that is not the right one.`
                           : `Saved ${saved.saved} exercises to ${saved.name} — now live for this client.`}
                     </div>
                     {saved.unresolved.length > 0 && (
                       <p className="mb-0 mt-2" style={{ color: 'var(--text-muted)' }}>
-                        {saved.unresolved.length} not in the library — add them in the builder:{' '}
+                        {saved.unresolved.length} not in the library — create them in the Exercise Library, then add them in the builder:{' '}
                         {saved.unresolved.map((u) => u.name).join(', ')}
                       </p>
                     )}
@@ -625,11 +635,13 @@ export default function WorkoutGeneratorPage() {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>Happy with this plan?</div>
-                      <p className="mb-0 mt-1 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                        Save &amp; assign writes it to this client and makes it their live programme.
+                      <p className="mb-0 mt-1 text-[12.5px] leading-relaxed" style={{ color: criticalCount ? '#DC2626' : 'var(--text-muted)' }}>
+                        {criticalCount
+                          ? `Cannot save — ${criticalCount} critical safety finding${criticalCount === 1 ? '' : 's'}. Regenerate the programme.`
+                          : 'Save & assign writes it to this client and makes it their live programme.'}
                       </p>
                     </div>
-                    <button onClick={savePlan} disabled={savingPlan}
+                    <button onClick={savePlan} disabled={savingPlan || criticalCount > 0}
                       className="flex items-center justify-center gap-2 rounded-[12px] px-5 py-2.5 text-[13px] font-[750] text-white"
                       style={{ background: ACCENT_GRADIENT, opacity: savingPlan ? 0.6 : 1 }}>
                       {savingPlan ? <Loader2 size={14} className="animate-spin" /> : null}
