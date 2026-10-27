@@ -91,7 +91,6 @@ export function ExerciseCard({
         style={{
           background: 'var(--bg-card)',
           border: `1px solid var(--border)`,
-          borderLeft: `3px solid ${accentColor}`,
         }}
       >
         {/* Compact image: 44px */}
@@ -168,7 +167,6 @@ export function ExerciseCard({
       style={{
         background: 'var(--bg-card)',
         border: `1px solid var(--border)`,
-        borderLeft: `3px solid ${accentColor}`,
       }}
     >
       {/* Image area */}

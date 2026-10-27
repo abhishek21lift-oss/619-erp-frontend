@@ -38,7 +38,7 @@ function StatCard({ label, value, icon: Icon, color }: {
   return (
     <m.div
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      style={{ ...glass, borderRadius: 16, padding: 20, borderLeft: `3px solid ${color}` }}
+      style={{ ...glass, borderRadius: 16, padding: 20 }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>

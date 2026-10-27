@@ -68,11 +68,6 @@ const glass = {
   boxShadow: 'var(--shadow-card)',
 } as const;
 
-const catColor: Record<string, string> = {
-  payments: '#f59e0b', communication: '#10b981', ai: '#0067e0',
-  scheduling: '#0067e0', devices: '#0067e0', analytics: '#0067e0',
-};
-
 const sc: Record<Status, string> = { connected: '#10b981', error: '#ef4444', pending: '#f59e0b', unavailable: 'var(--text-disabled)' };
 const sl: Record<Status, string> = { connected: 'Connected', error: 'Error', pending: 'Pending', unavailable: 'Unavailable' };
 
@@ -124,7 +119,7 @@ function OpenRouterCard() {
   return (
     <m.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
       whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
-      style={{ ...glass, borderRadius: 20, padding: 20, borderLeft: `3px solid ${catColor.ai}` }}
+      style={{ ...glass, borderRadius: 20, padding: 20 }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
         <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#0067e0' }}>
@@ -273,7 +268,7 @@ function GoogleCalendarCard({ flashSuccess, errorText }: { flashSuccess: boolean
   return (
     <m.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
       whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
-      style={{ ...glass, borderRadius: 20, padding: 20, borderLeft: `3px solid ${catColor.scheduling}`, position: 'relative', overflow: 'hidden' }}
+      style={{ ...glass, borderRadius: 20, padding: 20, position: 'relative', overflow: 'hidden' }}
     >
       {/* Success flash */}
       <AnimatePresence>
@@ -380,12 +375,11 @@ function StaticCard({ integration, isConnected, connectedAt }: {
 }) {
   const status: Status = isConnected ? 'connected' : integration.status;
   const Icon = iconMap[integration.icon];
-  const catAccent = catColor[integration.category] || '#f59e0b';
 
   return (
     <m.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.92 }} transition={{ duration: 0.25 }}
       whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
-      style={{ ...glass, borderRadius: 20, padding: 20, borderLeft: `3px solid ${catAccent}` }}
+      style={{ ...glass, borderRadius: 20, padding: 20 }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
         <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: integration.bg, color: integration.color }}>

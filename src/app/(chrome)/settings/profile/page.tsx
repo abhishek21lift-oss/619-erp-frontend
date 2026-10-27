@@ -288,9 +288,6 @@ function CertificateRow({ cert, index, issues, saved, onChange, onRemove }: {
         style={{
           background: 'var(--bg-subtle)',
           border: '1px solid var(--border)',
-          // A hairline in the status colour down the leading edge, so a wall of
-          // certificates shows its problems before any of it is read.
-          borderLeft: `3px solid ${meta ? meta.color : 'var(--border)'}`,
         }}
       >
         <div className="mb-3 flex items-start justify-between gap-3">

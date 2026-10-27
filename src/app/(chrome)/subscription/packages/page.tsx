@@ -167,7 +167,7 @@ function PackagesTab() {
           {filtered.map((pkg, i) => (
             <m.div key={pkg.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
               whileHover={{ y: -4, boxShadow: `0 16px 48px ${a}22` }}
-              style={{ borderRadius: 18, background: 'var(--bg-card)', borderLeft: `3px solid ${a}`, borderTop: '1px solid var(--border)', borderRight: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: 20, position: 'relative' }}>
+              style={{ borderRadius: 18, background: 'var(--bg-card)', border: '1px solid var(--border)', padding: 20, position: 'relative' }}>
               <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 4 }}>
                 <button onClick={() => openEdit(pkg)} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'var(--bg-subtle)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: a }}>
                   <Pencil size={13} />

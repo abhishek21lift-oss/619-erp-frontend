@@ -238,7 +238,7 @@ export default function WhatsAppCard() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.25 }}
         whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
-        style={{ ...glass, borderRadius: 20, padding: 20, borderLeft: `3px solid ${ACCENT}` }}
+        style={{ ...glass, borderRadius: 20, padding: 20 }}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
           <div style={{

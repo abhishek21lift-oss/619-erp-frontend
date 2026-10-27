@@ -61,11 +61,10 @@ export default function HelpPage() {
             <m.div key={i} variants={itemVariants}
               style={{
                 borderRadius: 16, overflow: 'hidden',
-                background: 'var(--bg-card)',
+                background: openIdx === i ? 'var(--bg-subtle)' : 'var(--bg-card)',
                 border: '1px solid var(--border)',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                borderLeft: `3px solid ${openIdx === i ? '#0067e0' : 'rgba(0,0,0,0.07)'}`,
-                transition: 'border-color 0.25s',
+                transition: 'background-color 0.25s',
               }}
             >
               <button
