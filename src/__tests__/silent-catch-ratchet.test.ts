@@ -113,16 +113,19 @@ const KNOWN = [
   // object literal and does not match.
   'app/(chrome)/pt-os/goals/page.tsx:279',
   'app/(chrome)/pt-os/workout-plans/[id]/page.tsx:51',
-  'app/(chrome)/settings/integrations/page.tsx:442',
+  // 442 -> 436: the side-tab stripe removal deleted the six-line category
+  // colour table above this site. File set and per-file count unchanged.
+  'app/(chrome)/settings/integrations/page.tsx:436',
   // Two remain on the Security page (the session count on each panel); the
   // other two went with the account-management UI.
-  // 1864 -> 1859 and 2156 -> 2151: a UI-copy pass removed five lines above
-  // each site in this file. File set and per-file count unchanged — line
-  // numbers only.
-  'app/(chrome)/settings/profile/page.tsx:1859',
-  'app/(chrome)/settings/profile/page.tsx:2151',
-  'app/(chrome)/settings/profile/page.tsx:950',
-  'app/(chrome)/settings/profile/page.tsx:951',
+  // 1864 -> 1859 -> 1856 and 2156 -> 2151 -> 2148: a UI-copy pass removed
+  // five lines above each site, then the side-tab stripe removal deleted a
+  // three-line comment-plus-property above them. File set and per-file count
+  // unchanged — line numbers only.
+  'app/(chrome)/settings/profile/page.tsx:1856',
+  'app/(chrome)/settings/profile/page.tsx:2148',
+  'app/(chrome)/settings/profile/page.tsx:947',
+  'app/(chrome)/settings/profile/page.tsx:948',
   'app/(platform)/platform/_shared/CommandBar.tsx:103',
   'app/(platform)/platform/_shared/CommandBar.tsx:104',
   'app/(platform)/platform/_tabs/ActivityTab.tsx:47',
