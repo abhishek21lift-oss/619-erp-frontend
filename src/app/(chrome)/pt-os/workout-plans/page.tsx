@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Suspense, useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
@@ -152,16 +153,25 @@ function Inner() {
   // said it did not.
   useEffect(() => {
     const term = searchQuery.trim();
+    // The body-region chip is a SERVER filter, like the search: filtering the
+    // fifty rows already on screen hid most of the library. The request is
+    // cancelled on the next keystroke or chip so a slow answer for an old
+    // filter cannot land after a fast one for the current filter.
+    let cancelled = false;
     const t = setTimeout(() => {
-      api.exercises.list(term ? { q: term } : undefined)
+      api.exercises.list({
+        ...(term ? { q: term } : {}),
+        ...(activeBodyPart !== 'All' ? { body_region: activeBodyPart } : {}),
+      })
         .then((r) => {
+          if (cancelled) return;
           setExercises(r.exercises || []);
           setExerciseTotal(r.total ?? (r.exercises || []).length);
         })
         .catch(() => { /* keep what is on screen rather than blanking it */ });
     }, 250);
-    return () => clearTimeout(t);
-  }, [searchQuery]);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [searchQuery, activeBodyPart]);
 
   const fetchData = useCallback(async () => {
     setDataLoading(true);
@@ -218,11 +228,9 @@ function Inner() {
   }, [toast, fetchData]);
 
   const filteredExercises = exercises.filter((ex) => {
-    // body_region is the normalized bucket; body_part is the legacy text the
-    // same rows still carry, so this keeps matching either way.
-    // No name filter here any more — the server did it. Keeping both would
-    // re-filter the server's results against a stale query mid-debounce and
-    // blank the list for a moment on every keystroke.
+    // The region is filtered server-side now. This only hides the previous
+    // filter's rows during the 250ms before the new page arrives, so the
+    // heading never sits above exercises from another body region.
     if (activeBodyPart !== 'All' && (ex.body_region ?? ex.body_part) !== activeBodyPart) return false;
     return true;
   });
@@ -638,6 +646,16 @@ function Inner() {
                     </div>
                   )}
                 </m.div>
+              )}
+              {!dataLoading && (
+                <div className="mt-4 flex justify-end">
+                  <Link href="/pt-os/exercise-library"
+                    className="text-[12.5px] font-[700] hover:underline" style={{ color: ACCENT }}>
+                    {exerciseTotal > 0
+                      ? `View all ${exerciseTotal.toLocaleString()} in Exercise Library`
+                      : 'Browse the Exercise Library'} →
+                  </Link>
+                </div>
               )}
             </m.div>
           )}

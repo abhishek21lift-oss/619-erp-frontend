@@ -38,9 +38,9 @@ vi.mock('@/lib/toast', () => ({
 }));
 
 /** One page of 50, out of a library of 890 — production's actual shape. */
-const page = (names: string[], total = 890) => ({
+const page = (names: string[], total = 890, region = 'Chest') => ({
   exercises: names.map((name, i) => ({
-    id: `ex-${i}`, name, body_region: 'Chest', body_part: 'Chest',
+    id: `ex-${i}`, name, body_region: region, body_part: region,
   })),
   total,
   limit: 50,
@@ -53,6 +53,8 @@ const FIRST_PAGE = Array.from({ length: 50 }, (_, i) => `Exercise ${i + 1}`);
 const exercisesList = vi.fn(async (params?: Record<string, string | number>) => {
   // The server searches the whole library, not the page the client holds.
   if (params?.q === 'romanian') return page(['Romanian Deadlift'], 1);
+  // And filters the whole library by region, likewise.
+  if (params?.body_region === 'Back') return page(['Barbell Row'], 125, 'Back');
   return page(FIRST_PAGE);
 });
 
@@ -111,6 +113,28 @@ describe('the exercise count', () => {
     }));
     render(<WorkoutPlansPage />);
     expect(await screen.findByText('3')).toBeTruthy();
+  });
+});
+
+describe('the body-region filter', () => {
+  it('asks the server for the region instead of filtering the first page', async () => {
+    // The chip used to filter the fifty rows already on screen, so Back showed
+    // the handful of back exercises that happened to start with A–C. The
+    // library holds 125.
+    await openLibrary();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+    await waitFor(() =>
+      expect(exercisesList).toHaveBeenCalledWith(expect.objectContaining({ body_region: 'Back' })));
+    expect(await screen.findByText('Barbell Row')).toBeTruthy();
+  });
+
+  it('shows the region total in the link to the full library', async () => {
+    await openLibrary();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+    const link = await screen.findByRole('link', { name: /View all 125 in Exercise Library/i });
+    expect(link.getAttribute('href')).toBe('/pt-os/exercise-library');
   });
 });
 
