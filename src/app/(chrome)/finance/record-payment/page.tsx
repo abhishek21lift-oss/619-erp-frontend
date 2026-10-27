@@ -25,7 +25,7 @@ const METHOD_ICONS: Record<Method, React.ReactNode> = {
 // as the same colour everywhere it appears in the app.
 const METHOD_COLORS: Record<Method, string> = {
   Cash: 'from-emerald-500 to-green-500',
-  UPI: 'from-violet-500 to-purple-500',
+  UPI: 'from-[var(--brand-hi)] to-[var(--brand)]',
   Card: 'from-blue-500 to-cyan-500',
   Bank: 'from-amber-500 to-orange-500',
 };
@@ -166,7 +166,7 @@ export default function RecordPaymentPage() {
                 <Check size={28} strokeWidth={2.5} className="text-white" />
               </m.div>
               <div>
-                <div className="text-[32px] font-extrabold tracking-[-0.03em] bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent tabular-nums leading-none">
+                <div className="text-[32px] font-extrabold tracking-[-0.03em] text-[var(--success)] tabular-nums leading-none">
                   ₹{done.amount.toLocaleString('en-IN')}
                 </div>
                 <div className="mt-2 text-[13px] text-[var(--text-muted)]">Recorded for {done.name}</div>
@@ -176,7 +176,7 @@ export default function RecordPaymentPage() {
             <m.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-4">
 
               {/* ── Amount hero ── */}
-              <div className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-indigo-500/10 via-violet-500/10 to-purple-500/10 p-6 sm:p-8 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] text-center">
+              <div className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--bg-subtle)] p-6 sm:p-8 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] text-center">
                 {/* Corner glows as ONE unfiltered gradient layer, replacing two
                     `blur-3xl` circles. `filter: blur()` promotes a child to its own
                     compositing layer, and WebKit then applies this card's rounded
@@ -191,8 +191,8 @@ export default function RecordPaymentPage() {
                   className="pointer-events-none absolute inset-0"
                   style={{
                     backgroundImage: [
-                      'radial-gradient(circle 240px at calc(100% - 32px) 32px, rgba(148,161,249,0.2), transparent 70%)',
-                      'radial-gradient(circle 240px at 32px calc(100% - 32px), rgba(180,157,251,0.2), transparent 70%)',
+                      'radial-gradient(circle 240px at calc(100% - 32px) 32px, rgba(0,103,224,0.12), transparent 70%)',
+                      'radial-gradient(circle 240px at 32px calc(100% - 32px), rgba(0,103,224,0.12), transparent 70%)',
                     ].join(', '),
                   }}
                   aria-hidden
@@ -206,7 +206,7 @@ export default function RecordPaymentPage() {
                     ? undefined
                     : { color: 'var(--text-disabled)' }}
                 >
-                  <span className={amount ? 'bg-gradient-to-br from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent' : ''}>
+                  <span className={amount ? 'text-[var(--brand)]' : ''}>
                     {displayAmount}
                   </span>
                 </div>
@@ -341,7 +341,7 @@ export default function RecordPaymentPage() {
               <m.button onClick={handleSubmit} whileTap={{ scale: 0.98 }} disabled={saving}
                 className={`w-full rounded-2xl text-[16px] font-bold tracking-[-0.01em] transition-all duration-200 ${
                   amount && selected
-                    ? 'bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-[0_4px_16px_rgba(99,102,241,0.35)] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(99,102,241,0.45)]'
+                    ? 'bg-[var(--brand)] text-white shadow-[0_4px_16px_var(--brand-glow)] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_var(--brand-glow)]'
                     : 'bg-[var(--bg-subtle)] text-[var(--text-disabled)]'
                 } ${saving ? 'cursor-wait' : 'cursor-pointer'}`}
                 style={{ height: 54 }}>

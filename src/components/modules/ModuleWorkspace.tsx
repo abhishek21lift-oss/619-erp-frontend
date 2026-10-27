@@ -56,7 +56,7 @@ const accentClasses = {
   blue: 'from-blue-600 to-cyan-500',
   green: 'from-emerald-600 to-teal-500',
   yellow: 'from-amber-500 to-orange-500',
-  purple: 'from-violet-600 to-fuchsia-500',
+  purple: 'from-[var(--brand-hi)] to-[var(--brand)]',
   red: 'from-rose-600 to-red-500',
 };
 
