@@ -312,8 +312,8 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
       const out = await api.workouts.plans.saveFromGeneration({ generation_id: result.generationId });
       const missed = out.unresolved.length;
       const message = missed
-        ? `Saved ${out.saved} exercises. ${missed} not in the library — add them in the builder: `
-          + out.unresolved.map((u) => u.name).join(', ')
+        ? `Saved ${out.saved} exercises. ${missed} not in the library — create them in the Exercise Library, `
+          + `then add them in the builder: ${out.unresolved.map((u) => u.name).join(', ')}`
         : `Saved ${out.saved} exercises to ${out.name}`;
 
       // Whether it is LIVE is a separate fact from whether it saved, and until
@@ -326,9 +326,9 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
       const detail = out.assigned === false
         ? `Saved, but not assigned — it will not appear on ${client.name}'s Today.`
         : clash > 0
-          ? `${client.name} is now on ${clash + 1} active programmes, so starting a session `
-            + 'will no longer pick one automatically — choose the programme each time, '
-            + 'or finish the older ones.'
+          ? `${client.name} is now on ${clash + 1} active programmes. A started session uses `
+            + "the one that prescribes today's workout; choose the programme explicitly if "
+            + 'that is not the right one, or finish the older programmes.'
           : out.assigned
             ? `Now live for ${client.name}.`
             : undefined;
@@ -376,7 +376,14 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
   const blockedFields = (context?.data_quality.blocking ?? [])
     .filter((f) => !(f in stated && String(stated[f as keyof StatedValues] ?? '').trim()));
 
-  const canSave = result?.kind === 'diet' || (result?.kind === 'workout' && Boolean(result.generationId));
+  // The server refuses to save a proposal whose audit found a critical
+  // violation. Saying so here is the difference between a trainer wondering
+  // why the button failed and knowing the plan must be regenerated.
+  const critical = result?.kind === 'workout'
+    ? (result.evidence?.audit?.violations ?? []).filter((v) => v.severity === 'critical')
+    : [];
+  const canSave = result?.kind === 'diet'
+    || (result?.kind === 'workout' && Boolean(result.generationId) && critical.length === 0);
 
   return (
     <m.div
@@ -612,9 +619,12 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
               ) : (
                 <p className="mt-2 border-t pt-1.5 text-[10.5px]" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
                   {/* A workout whose ledger row was not written has nothing
-                      to save against, so it says so rather than offering a
-                      button that fails. */}
-                  Preview only &mdash; nothing has been saved to {client.name}&rsquo;s record.
+                      to save against, and a critical audit finding must not
+                      be saved at all, so it says which rather than offering
+                      a button that fails. */}
+                  {critical.length
+                    ? `Cannot save — ${critical.length} critical safety finding${critical.length === 1 ? '' : 's'}. Regenerate the programme.`
+                    : <>Preview only &mdash; nothing has been saved to {client.name}&rsquo;s record.</>}
                 </p>
               )}
             </m.div>

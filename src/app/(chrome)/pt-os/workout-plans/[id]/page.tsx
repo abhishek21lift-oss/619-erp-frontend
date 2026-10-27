@@ -144,6 +144,14 @@ function Inner() {
       </PageHero>
 
       <div className="space-y-4">
+          {plan.description && (
+            <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+              <p className="mb-2 text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>Programme notes</p>
+              <p className="whitespace-pre-wrap text-[12.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                {plan.description}
+              </p>
+            </div>
+          )}
           {WEEKDAYS.map((day, i) => {
             const exercises = grouped.get(i + 1);
             if (!exercises?.length) return null;

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, X, Brain, Zap, Dumbbell, Salad, Send, User, ChevronDown, RotateCcw, BookOpen, Database,
@@ -74,6 +75,28 @@ function recordedTrainingDays(c: Client | null): string {
   return preferred >= 1 && preferred <= 7 ? String(preferred) : '';
 }
 
+/**
+ * The profile's goal/experience as this form's labels, or blank.
+ *
+ * The server prefers the record to anything this form sends. Showing the
+ * record in the field — rather than a trainer's pick the server will ignore —
+ * is what makes the panel honest about which programme it will generate.
+ */
+function recordedGoal(c: Client | null): string {
+  const raw = typeof c?.goal === 'string' ? c.goal.trim() : '';
+  if (!raw) return '';
+  const key = raw.toLowerCase().replace(/[\s-]+/g, '_');
+  return WORKOUT_GOALS.find((g) => g.toLowerCase().replace(/ /g, '_') === key)
+    ?? raw.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
+function recordedExperience(c: Client | null): string {
+  const raw = typeof c?.workout_experience_level === 'string' ? c.workout_experience_level.trim() : '';
+  if (!raw) return '';
+  return EXPERIENCE_LEVELS.find((l) => l.toLowerCase() === raw.toLowerCase())
+    ?? raw.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
 // ─── Workout Goals ───────────────────────────────────────────────────────────
 
 const WORKOUT_GOALS = ['Muscle Gain', 'Fat Loss', 'Strength', 'Endurance'];
@@ -91,6 +114,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
   // plans have their own page with a real save/assign step, so this panel is
   // chat-only for diet and general.
   const chatOnly = type !== 'workout';
+  const router = useRouter();
   const [mode, setMode] = useState<Mode>(chatOnly ? 'chat' : (initialMode ?? 'generate'));
 
   // Client selection state
@@ -107,6 +131,17 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationResult, setGenerationResult] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  // The ledger id the preview came from. Without it the panel generated a
+  // plan it could never save; the trainer copied the text somewhere else.
+  const [generationId, setGenerationId] = useState<string | null>(null);
+  // Whose plan the preview is. The trainer can change the picker between the
+  // request and its answer; a preview saved against whoever is selected then
+  // would file one member's programme under another's name.
+  const [generationClientId, setGenerationClientId] = useState<string | null>(null);
+  // Critical findings are the server's refusal reason; hiding the button here
+  // stops the trainer walking into it.
+  const [generationCritical, setGenerationCritical] = useState(0);
+  const [savingPlan, setSavingPlan] = useState(false);
 
   // Chat state
   const [messages, setMessages] = useState<Message[]>([
@@ -145,6 +180,8 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
     api.clients.get(clientId)
       .then(c => {
         setSelectedClient(c);
+        setGoal(recordedGoal(c));
+        setExperience(recordedExperience(c));
         setTrainingDays(recordedTrainingDays(c));
         setClientLocked(true);
       })
@@ -165,9 +202,14 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
 
   async function handleGenerate() {
     if (!goal || !selectedClient) return;
+    // Captured, not read after the await: the picker is live during the call.
+    const clientIdForGeneration = selectedClient.id;
     setIsGenerating(true);
     setGenerationResult(null);
     setGenerationError(null);
+    setGenerationId(null);
+    setGenerationClientId(null);
+    setGenerationCritical(0);
 
     // Unknown stays unknown. These used to fall back to invented defaults
     // (30/male/75/175), which reached the server marked as trainer-stated
@@ -225,13 +267,19 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
       const res = await api.ai.generateWorkout({
         age, gender, weight_kg, height_cm,
         goal: goal.toLowerCase().replace(/ /g, '_'),
-        experience_level: experience.toLowerCase() || 'beginner',
+        // Blank stays blank. Sending "beginner" for a lead the studio has not
+        // assessed marked an invented value as the trainer's own statement.
+        experience_level: experience.toLowerCase() || undefined,
         // The parsed value, not `parseInt(...) || 4`. A blank box is now a
         // refusal above rather than a silent four.
         training_days: v.training_days ?? undefined,
-        client_id: selectedClient.id,
+        client_id: clientIdForGeneration,
       });
       const plan = res.data;
+      setGenerationId(res.generation_id ?? null);
+      setGenerationClientId(clientIdForGeneration);
+      setGenerationCritical((res.audit?.violations ?? [])
+        .filter((v) => v.severity === 'critical').length);
       // Names the library does not hold are dropped on save, so a preview that
       // showed them as usable would promise sessions nobody can save.
       const unverified = [...new Set((res.audit?.unverified ?? []).map((u) => u.name))];
@@ -254,6 +302,29 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
       setGenerationError(errorMessage(err, 'Failed to generate plan. Please try again.'));
     } finally {
       setIsGenerating(false);
+    }
+  }
+
+  /**
+   * Turn this preview into a real programme.
+   *
+   * The save reads the proposal back from the ledger by id, so this panel
+   * cannot smuggle in edits — and the trainer lands in the builder where the
+   * rest of the work already happens.
+   */
+  async function saveGeneratedPlan() {
+    if (!generationId || !selectedClient || generationClientId !== selectedClient.id || savingPlan) return;
+    setSavingPlan(true);
+    setGenerationError(null);
+    try {
+      const out = await api.workouts.plans.saveFromGeneration({ generation_id: generationId });
+      setGenerationId(null);
+      onClose?.();
+      router.push(`/pt-os/workout-plans/${out.plan_id}/builder`);
+    } catch (err) {
+      setGenerationError(errorMessage(err, 'Could not save this programme'));
+    } finally {
+      setSavingPlan(false);
     }
   }
 
@@ -331,6 +402,11 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
   }
 
   const canGenerate = Boolean(goal && selectedClient) && !isGenerating;
+  // Values the record already holds. The server prefers them over the body,
+  // so the form shows them read-only rather than inviting a pick it discards.
+  const goalFromRecord = Boolean(recordedGoal(selectedClient));
+  const experienceFromRecord = Boolean(recordedExperience(selectedClient));
+  const daysFromRecord = Boolean(recordedTrainingDays(selectedClient));
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -479,9 +555,12 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                     onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
                     onSelect={(c) => {
                       setSelectedClient(c);
-                      // The member's own record decides the starting value.
-                      // The trainer can still type over it; blank stays blank
-                      // so the server uses the record or refuses.
+                      // The member's own record decides these values. The
+                      // server prefers the record anyway; showing a trainer's
+                      // pick it will ignore was the lie this fixes. Blank
+                      // stays blank so the server uses the record or refuses.
+                      setGoal(recordedGoal(c));
+                      setExperience(recordedExperience(c));
                       setTrainingDays(recordedTrainingDays(c));
                       setClientQuery(c.name);
                       setShowClientDropdown(false);
@@ -491,24 +570,31 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
 
                 {/* Goal select */}
                 <Field label="Goal">
-                  <SelectInput value={goal} onChange={setGoal} placeholder="Select goal...">
+                  <SelectInput value={goal} onChange={setGoal} disabled={goalFromRecord} placeholder="Select goal...">
+                    {goal && !WORKOUT_GOALS.includes(goal) && <option value={goal}>{goal}</option>}
                     {WORKOUT_GOALS.map(g => <option key={g} value={g}>{g}</option>)}
                   </SelectInput>
+                  {goalFromRecord && <RecordNote />}
                 </Field>
 
                 <Field label="Experience Level">
-                  <SelectInput value={experience} onChange={setExperience} placeholder="Select level...">
+                  <SelectInput value={experience} onChange={setExperience} disabled={experienceFromRecord} placeholder="Select level...">
+                    {experience && !EXPERIENCE_LEVELS.includes(experience) && <option value={experience}>{experience}</option>}
                     {EXPERIENCE_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
                   </SelectInput>
+                  {experienceFromRecord && <RecordNote />}
                 </Field>
 
                 <Field label="Training Days per Week">
                   <input
                     type="text" inputMode="numeric" min={1} max={7} value={trainingDays}
                     aria-label="Training days per week"
+                    readOnly={daysFromRecord}
                     onChange={e => setTrainingDays(clampNumericText(e.target.value, 'integer'))}
-                    style={inputStyle} placeholder="1–7"
+                    style={{ ...inputStyle, ...(daysFromRecord ? { cursor: 'default', opacity: 0.85 } : {}) }}
+                    placeholder="1–7"
                   />
+                  {daysFromRecord && <RecordNote />}
                 </Field>
 
                 {!selectedClient && (
@@ -562,7 +648,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                 </AnimatePresence>
 
                 <AnimatePresence>
-                  {generationResult && (
+                  {generationResult && generationClientId === selectedClient?.id && (
                     <m.div
                       initial={{ opacity: 0, y: 10, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.97 }}
                       transition={{ duration: 0.25, ease: 'easeOut' }}
@@ -577,7 +663,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                           <Sparkles size={13} /> Plan Generated
                         </span>
                         <button
-                          onClick={() => { setGenerationResult(null); setGoal(''); }}
+                          onClick={() => { setGenerationResult(null); setGenerationId(null); setGenerationClientId(null); setGenerationCritical(0); }}
                           style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 11.5, cursor: 'pointer' }}
                         >
                           <RotateCcw size={11} /> New
@@ -586,6 +672,24 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                       <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.78)', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: 240, overflowY: 'auto' }}>
                         {generationResult}
                       </p>
+                      {generationCritical > 0 ? (
+                        <p style={{ margin: '10px 0 0', fontSize: 11.5, color: '#f87171', lineHeight: 1.5 }}>
+                          {`Cannot save — ${generationCritical} critical safety finding${generationCritical === 1 ? '' : 's'}. Regenerate the programme.`}
+                        </p>
+                      ) : generationId && (
+                        <button
+                          onClick={saveGeneratedPlan}
+                          disabled={savingPlan}
+                          style={{
+                            marginTop: 10, width: '100%', padding: '10px 0', borderRadius: 9, border: 'none',
+                            background: savingPlan ? 'rgba(0,103,224,0.35)' : ACCENT,
+                            color: '#fff', fontSize: 12.5, fontWeight: 700,
+                            cursor: savingPlan ? 'wait' : 'pointer',
+                          }}
+                        >
+                          {savingPlan ? 'Saving…' : 'Save & open builder'}
+                        </button>
+                      )}
                     </m.div>
                   )}
                 </AnimatePresence>
@@ -872,15 +976,24 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function RecordNote() {
+  return (
+    <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.38)', marginTop: -2 }}>
+      From the client record — edit the profile to change it.
+    </span>
+  );
+}
+
 function SelectInput({
-  value, onChange, placeholder, children,
-}: { value: string; onChange: (v: string) => void; placeholder: string; children: React.ReactNode }) {
+  value, onChange, placeholder, children, disabled = false,
+}: { value: string; onChange: (v: string) => void; placeholder: string; children: React.ReactNode; disabled?: boolean }) {
   return (
     <div style={{ position: 'relative' }}>
       <select aria-label={placeholder}
         value={value}
+        disabled={disabled}
         onChange={e => onChange(e.target.value)}
-        style={{ ...inputStyle, paddingRight: 34, cursor: 'pointer', color: value ? '#fff' : 'rgba(255,255,255,0.45)' }}
+        style={{ ...inputStyle, paddingRight: 34, cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.85 : 1, color: value ? '#fff' : 'rgba(255,255,255,0.45)' }}
       >
         <option value="">{placeholder}</option>
         {children}

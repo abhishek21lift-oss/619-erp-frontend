@@ -595,6 +595,29 @@ describe('the evidence the trainer approves against', () => {
     expect(screen.getByText('1 exercise not in the library')).toBeInTheDocument();
   });
 
+  it('does not offer Save when the audit found a critical violation', async () => {
+    mockGenerateWorkout.mockResolvedValue({
+      data: WORKOUT_PLAN, generation_id: 'gen-1', screen: SCREEN,
+      audit: {
+        violations: [{
+          severity: 'critical', rule: 'blocked_exercise_prescribed',
+          detail: 'Overhead Press is excluded for this client',
+        }],
+        unverified: [],
+        counts: { exercises: 9, verified: 9, critical: 1, major: 0, minor: 0 },
+        revised: false,
+      },
+    });
+
+    renderCard();
+    fireEvent.click(screen.getByText('Generate AI Workout'));
+    await screen.findByText('8-Week Hypertrophy Foundation');
+
+    // The server refuses it; the card must not invite the attempt.
+    expect(screen.queryByText('Save as programme')).not.toBeInTheDocument();
+    expect(screen.getByText(/Cannot save — 1 critical safety finding/)).toBeInTheDocument();
+  });
+
   it('puts the evidence before the Save button, not after it', async () => {
     mockGenerateWorkout.mockResolvedValue({
       data: WORKOUT_PLAN, generation_id: 'gen-1', screen: SCREEN,
@@ -668,9 +691,9 @@ describe('whether the saved programme is actually live', () => {
   });
 
   it('warns, rather than congratulates, when the client is now on several programmes', async () => {
-    // The one case the trainer has to act on: the session log links a new
-    // session to a plan automatically only when there is exactly one active
-    // assignment, so from here attribution is theirs to make by hand.
+    // The session log still picks one automatically: the live assignment that
+    // prescribes today's workout, newest first. The trainer is told there is
+    // a choice, not that the choice has become manual.
     mockSaveFromGeneration.mockResolvedValue(saved({ other_active_assignments: 3 }));
     await generateThenSave();
 
@@ -678,7 +701,7 @@ describe('whether the saved programme is actually live', () => {
     expect(mockToastSuccess).not.toHaveBeenCalled();
     const [, opts] = mockToastWarning.mock.calls[0];
     expect(opts.description).toContain('4 active programmes');
-    expect(opts.description).toContain('will no longer pick one automatically');
+    expect(opts.description).toContain("prescribes today's workout");
   });
 
   it('says so plainly when the plan was saved but not assigned', async () => {
