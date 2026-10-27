@@ -188,13 +188,14 @@ describe('reading a client record', () => {
     // Strength is a programme goal since migration 219.
     expect(goalFromClient('strength_gain')).toBe('strength');
     expect(goalFromClient('powerlifting')).toBe('strength');
+    // Body recomposition is a programme goal since migration 239.
+    expect(goalFromClient('body_recomposition')).toBe('body_recomposition');
   });
 
   it('refuses the screening goals that have no honest equivalent', () => {
-    // Six programme goals against fourteen screening ones. Mapping
-    // body recomposition onto Muscle Gain would put a goal on the programme
-    // that nobody chose.
-    for (const t of ['body_recomposition', 'mobility',
+    // Seven programme goals against fourteen screening ones. Mapping the rest
+    // onto one of them would put a goal on the programme that nobody chose.
+    for (const t of ['mobility',
       'medical_fitness', 'senior_fitness', 'athletic_performance', 'custom']) {
       expect(goalFromClient(t)).toBeUndefined();
     }
