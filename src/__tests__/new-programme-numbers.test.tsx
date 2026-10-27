@@ -52,7 +52,7 @@ vi.mock('@/lib/api', () => ({
 
 vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast: { error: vi.fn(), success: vi.fn() } }) }));
 
-import { NewProgrammeForm } from '@/app/(chrome)/pt-os/workout-plans/new/page';
+import { NewProgrammeForm } from '@/components/pt-os/builder/NewProgrammeForm';
 
 /*
  * Queried by inputMode rather than by role.

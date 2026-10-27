@@ -41,7 +41,7 @@ vi.mock('@/lib/api', () => ({
 }));
 vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn(), info: vi.fn() } }) }));
 
-import { NewProgrammeForm } from '@/app/(chrome)/pt-os/workout-plans/new/page';
+import { NewProgrammeForm } from '@/components/pt-os/builder/NewProgrammeForm';
 import { goalFromClient, difficultyFromClient } from '@/lib/programme-options';
 
 beforeEach(() => {

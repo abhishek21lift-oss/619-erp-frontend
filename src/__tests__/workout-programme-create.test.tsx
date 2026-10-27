@@ -42,7 +42,7 @@ vi.mock('@/lib/toast', () => ({
   useToast: () => ({ toast: { error: toastError, success: vi.fn(), warning: vi.fn() } }),
 }));
 
-import { NewProgrammeForm } from '@/app/(chrome)/pt-os/workout-plans/new/page';
+import { NewProgrammeForm } from '@/components/pt-os/builder/NewProgrammeForm';
 import { ApiError } from '@/lib/http';
 import {appPath, routeExists} from '@/__tests__/helpers/app-routes';
 
