@@ -292,14 +292,14 @@ export function ExerciseEditor({
               type="button"
               onClick={() => setPreview((p) => !p)}
               aria-pressed={preview}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/20 px-3.5 text-[12.5px] font-[700] backdrop-blur-sm transition-colors hover:bg-white/30"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/20 px-3.5 text-[12.5px] font-[700] backdrop-blur-xs transition-colors hover:bg-white/30"
             >
               {preview ? <><Pencil size={13} /> Edit</> : <><Eye size={13} /> Preview</>}
             </button>
           </div>
 
           <div className="relative mt-5 flex items-center gap-3.5">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[17px] bg-white/20 backdrop-blur-sm">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[17px] bg-white/20 backdrop-blur-xs">
               <ToneIcon size={26} strokeWidth={2.1} />
             </span>
             <div className="min-w-0">
@@ -822,7 +822,7 @@ function GlassButton({ label, onClick, children }: { label: string; onClick: () 
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all hover:bg-white/30 active:scale-90"
+      className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 backdrop-blur-xs transition-all hover:bg-white/30 active:scale-90"
     >
       {children}
     </button>

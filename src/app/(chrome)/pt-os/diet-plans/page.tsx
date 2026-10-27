@@ -791,7 +791,7 @@ function Inner() {
                           <ChartTooltip
                             contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 12 }}
                             labelStyle={{ color: 'var(--text-secondary)', fontWeight: 700, marginBottom: 2 }}
-                            formatter={(value: number) => [`${value} glasses`, 'Water']}
+                            formatter={(value) => [`${value} glasses`, 'Water']}
                           />
                           <Line type="monotone" dataKey="glasses" stroke="#0067e0" strokeWidth={2} dot={{ r: 3, fill: '#0067e0' }} activeDot={{ r: 5 }} />
                         </LineChart>
@@ -819,7 +819,7 @@ function Inner() {
                         <ChartTooltip
                           contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 12 }}
                           labelStyle={{ color: 'var(--text-secondary)', fontWeight: 700, marginBottom: 2 }}
-                          formatter={(value: number) => [`${value} kcal`, 'Calories']}
+                          formatter={(value) => [`${value} kcal`, 'Calories']}
                         />
                         <Line type="monotone" dataKey="calories" stroke="#10b981" strokeWidth={2} dot={{ r: 3, fill: '#10b981' }} activeDot={{ r: 5 }} />
                       </LineChart>

@@ -76,7 +76,7 @@ export default function PtOsLandingPage() {
           </h2>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {features.map(([title, body]) => (
-              <article key={title} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <article key={title} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
                 <h3 className="text-lg font-semibold">{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>
               </article>

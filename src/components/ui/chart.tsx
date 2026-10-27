@@ -4,7 +4,7 @@ import * as React from 'react';
 import {
   ResponsiveContainer,
   Tooltip,
-  TooltipProps,
+  TooltipContentProps,
   BarChart,
   Bar,
   AreaChart,
@@ -73,7 +73,7 @@ export function ChartContainer({ config, children, className, ...props }: ChartC
 }
 
 // ── ChartTooltipContent ────────────────────────────────────────────────────
-interface ChartTooltipContentProps extends TooltipProps<number, string> {
+interface ChartTooltipContentProps extends TooltipContentProps<number, string> {
   hideLabel?: boolean;
   hideIndicator?: boolean;
   indicator?: 'line' | 'dot' | 'dashed';
@@ -179,8 +179,8 @@ const TICK_STYLE = {
 
 function PremiumTooltipBox({ active, payload, label, formatValue }: {
   active?: boolean;
-  payload?: Array<{ name?: string; value?: number; color?: string }>;
-  label?: string;
+  payload?: ReadonlyArray<{ name?: string; value?: number; color?: string }>;
+  label?: string | number;
   formatValue?: (v: number) => string;
 }) {
   if (!active || !payload?.length) return null;
@@ -272,10 +272,10 @@ export function PremiumBarChart({
           />
           <Tooltip
             cursor={{ fill: 'var(--bg-subtle)' }}
-            content={(props: TooltipProps<number, string>) => (
+            content={(props: TooltipContentProps) => (
               <PremiumTooltipBox
                 active={props.active}
-                payload={props.payload as Array<{ name?: string; value?: number; color?: string }>}
+                payload={props.payload as ReadonlyArray<{ name?: string; value?: number; color?: string }>}
                 label={props.label}
                 formatValue={formatValue}
               />
@@ -382,10 +382,10 @@ export function PremiumAreaChart({
           />
           <Tooltip
             cursor={{ stroke: 'var(--border)', strokeWidth: 1 }}
-            content={(props: TooltipProps<number, string>) => (
+            content={(props: TooltipContentProps) => (
               <PremiumTooltipBox
                 active={props.active}
-                payload={props.payload as Array<{ name?: string; value?: number; color?: string }>}
+                payload={props.payload as ReadonlyArray<{ name?: string; value?: number; color?: string }>}
                 label={props.label}
                 formatValue={formatValue}
               />

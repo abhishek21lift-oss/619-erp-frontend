@@ -365,7 +365,7 @@ function DetailHero({ exercise: ex }: { exercise: LibraryExercise }) {
       </span>
 
       <div className="relative flex items-center gap-3">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[15px] bg-white/20 backdrop-blur-sm">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[15px] bg-white/20 backdrop-blur-xs">
           <Icon size={22} strokeWidth={2.2} />
         </span>
         <div className="min-w-0">
@@ -385,7 +385,7 @@ function DetailHero({ exercise: ex }: { exercise: LibraryExercise }) {
           {ex.difficulty}
         </span>
         {facts.map((f) => (
-          <span key={f} className="rounded-full bg-white/20 px-2.5 py-1 text-[11.5px] font-[650] backdrop-blur-sm">{f}</span>
+          <span key={f} className="rounded-full bg-white/20 px-2.5 py-1 text-[11.5px] font-[650] backdrop-blur-xs">{f}</span>
         ))}
         {ex.is_custom && <span className="rounded-full bg-white/20 px-2.5 py-1 text-[11.5px] font-[650]">Custom</span>}
         {ex.version ? <span className="rounded-full bg-white/20 px-2.5 py-1 text-[11.5px] font-[650]">v{ex.version}</span> : null}

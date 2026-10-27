@@ -573,7 +573,7 @@ function RegionTile({
       <span aria-hidden className="pointer-events-none absolute -bottom-5 -right-4 opacity-20 transition-transform duration-500 group-hover:scale-110">
         <Icon size={64} strokeWidth={1.6} />
       </span>
-      <span className="relative flex h-8 w-8 items-center justify-center rounded-[10px] bg-white/20 backdrop-blur-sm">
+      <span className="relative flex h-8 w-8 items-center justify-center rounded-[10px] bg-white/20 backdrop-blur-xs">
         <Icon size={16} strokeWidth={2.3} />
       </span>
       <span className="relative mt-3 text-[14px] font-[750] leading-tight tracking-[-0.01em]">{region}</span>

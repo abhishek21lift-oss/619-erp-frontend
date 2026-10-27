@@ -544,7 +544,7 @@ function TrackingChip({
       value={mode}
       onChange={(e) => change(e.target.value as TrackingMode)}
       // 44px like every other control here — this one is tapped at the rack.
-      className="h-[44px] cursor-pointer rounded-[12px] border-0 px-2.5 text-[11px] font-[700] outline-none focus-visible:ring-2"
+      className="h-[44px] cursor-pointer rounded-[12px] border-0 px-2.5 text-[11px] font-[700] outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
       style={chipStyle}
     >
       {options.map((m) => <option key={m} value={m}>{TRACKING_MODE_LABEL[m]}</option>)}

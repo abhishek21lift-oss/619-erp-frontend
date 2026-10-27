@@ -111,7 +111,7 @@ function DefaultFallback({ error, reset }: { error: Error; reset: () => void }) 
       <div className="mt-2 flex gap-2">
         <button
           onClick={reset}
-          className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-rose-700"
+          className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-xs transition hover:bg-rose-700"
         >
           <RotateCcw className="h-4 w-4" />
           Try again

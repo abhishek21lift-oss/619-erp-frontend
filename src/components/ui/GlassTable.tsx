@@ -43,7 +43,7 @@ export function GlassThead({
     <thead
       className={cn(
         'border-b border-[var(--border)]',
-        'bg-[var(--bg-subtle)] backdrop-blur-sm',
+        'bg-[var(--bg-subtle)] backdrop-blur-xs',
         'text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--text-muted)]',
         className,
       )}

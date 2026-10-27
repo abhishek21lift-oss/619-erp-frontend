@@ -7,7 +7,7 @@
 // The cascade is the whole story:
 //
 //   .outline-none (Tailwind, 223 uses)   class selector, specificity (0,1,0),
-//                                        emitted by @tailwind utilities near
+//                                        emitted by @import "tailwindcss" near
 //                                        the top of globals.css. The
 //                                        :focus-visible rule is (0,1,0) too
 //                                        and comes LATER in the file, so it
@@ -62,12 +62,12 @@ describe('the ring exists', () => {
     expect(rule![1]).toMatch(/outline:\s*2px solid/);
   });
 
-  it('comes after @tailwind utilities, so outline-none does not beat it', () => {
-    // Both are specificity (0,1,0). At equal specificity the later rule wins,
-    // and that is the only thing keeping 223 Tailwind outline-none classes
-    // from suppressing the ring.
-    expect(css.indexOf('@tailwind utilities')).toBeGreaterThan(-1);
-    expect(css.indexOf(':focus-visible')).toBeGreaterThan(css.indexOf('@tailwind utilities'));
+  it('comes after the Tailwind import, so outline-none does not beat it', () => {
+    // Tailwind 4 emits its utilities from @import "tailwindcss"; the app's
+    // unlayered :focus-visible rule comes later, so it wins on source order.
+    const tailwind = css.indexOf('@import "tailwindcss"');
+    expect(tailwind).toBeGreaterThan(-1);
+    expect(css.indexOf(':focus-visible')).toBeGreaterThan(tailwind);
   });
 
   it('does not rely on !important', () => {
