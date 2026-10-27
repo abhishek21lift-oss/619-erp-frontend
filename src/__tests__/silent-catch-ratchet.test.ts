@@ -149,8 +149,8 @@ const KNOWN = [
   // the same Promise.all rejects into the screen's error state and retry.
   'components/platform/hosting-centre.tsx:681',
   'components/platform/hosting-vps.tsx:75',
-  'app/(chrome)/pt-os/workout-plans/new/page.tsx:166',
-  'app/(chrome)/pt-os/workout-plans/new/page.tsx:169',
+  'components/pt-os/builder/NewProgrammeForm.tsx:135',
+  'components/pt-os/builder/NewProgrammeForm.tsx:138',
   'components/pt-os/analytics/LandmarkEditor.tsx:82',
   'components/pt-os/workout-log/ExercisePicker.tsx:283',
   'components/pt-os/workout-log/ExercisePicker.tsx:297',

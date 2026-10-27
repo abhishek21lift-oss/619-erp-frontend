@@ -189,7 +189,7 @@ test.describe('Invoice creation', () => {
     const ghost = uniqueMember();
     await openCreate(page);
     await fillInvoice(page, ghost, '7,777');
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Create Invoice' })).toBeHidden();
 
     await openCreate(page);
@@ -210,7 +210,7 @@ test.describe('Invoice creation', () => {
     await submit(page).click();
     await expect(dialog(page).getByRole('alert').first()).toBeVisible({ timeout: 10_000 });
 
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
     await page.unroute('**/api/invoices');
 
     await openCreate(page);

@@ -65,7 +65,7 @@ test.describe('PT package creation', () => {
   test.beforeEach(async ({ page }) => {
     token = await apiToken();
     await gotoApp(page, '/subscription/packages');
-    await expect(page.getByRole('button', { name: 'Create Package' }).first())
+    await expect(page.getByRole('link', { name: 'Create Package' }).first())
       .toBeVisible({ timeout: 20_000 });
   });
 
