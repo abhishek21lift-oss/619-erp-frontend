@@ -79,6 +79,7 @@
   --brand-soft:   rgba(0,103,224,0.10);
   --brand-glow:   rgba(0,103,224,0.22);
   --brand-glow-2: rgba(0,103,224,0.08);
+  --brand-glow-soft: rgba(0,103,224,0.12);
   --rgb-brand:    0 103 224;
   --rgb-brand-hi: 96 165 250;
 
@@ -282,6 +283,7 @@
   --brand-soft:   rgba(0,103,224,0.15);
   --brand-glow:   rgba(0,103,224,0.30);
   --brand-glow-2: rgba(0,103,224,0.10);
+  --brand-glow-soft: rgba(0,103,224,0.12);
   --rgb-brand:    0 103 224;
   --rgb-brand-hi: 147 197 253;
 

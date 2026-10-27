@@ -40,7 +40,7 @@ const glass = {
   boxShadow: 'var(--shadow-card)',
 } as const;
 
-/** The communication accent, matching catColor.communication on the page. */
+/** The communication accent (emerald) for this card's status and action colour. */
 const ACCENT = '#10b981';
 
 /**

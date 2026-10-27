@@ -191,8 +191,8 @@ export default function RecordPaymentPage() {
                   className="pointer-events-none absolute inset-0"
                   style={{
                     backgroundImage: [
-                      'radial-gradient(circle 240px at calc(100% - 32px) 32px, rgba(0,103,224,0.12), transparent 70%)',
-                      'radial-gradient(circle 240px at 32px calc(100% - 32px), rgba(0,103,224,0.12), transparent 70%)',
+                      'radial-gradient(circle 240px at calc(100% - 32px) 32px, var(--brand-glow-soft), transparent 70%)',
+                      'radial-gradient(circle 240px at 32px calc(100% - 32px), var(--brand-glow-soft), transparent 70%)',
                     ].join(', '),
                   }}
                   aria-hidden
@@ -295,7 +295,7 @@ export default function RecordPaymentPage() {
                               <div className="truncate text-[14px] font-semibold text-[var(--text-primary)]">{c.name}</div>
                               {c.mobile && <div className="text-[12px] text-[var(--text-muted)]">{c.mobile}</div>}
                             </div>
-                            {selected?.id === c.id && <Check size={14} className="text-indigo-500" />}
+                            {selected?.id === c.id && <Check size={14} className="text-[var(--brand)]" />}
                           </button>
                         ))}
                       </div>
