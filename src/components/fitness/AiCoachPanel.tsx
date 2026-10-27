@@ -57,6 +57,23 @@ function computeAge(dob?: string): number | undefined {
   return age > 0 && age < 120 ? age : undefined;
 }
 
+/**
+ * The member's recorded weekly frequency, as the day box should start.
+ *
+ * Blank when the record holds neither: blank is not zero days, it is "the
+ * server reads the same columns and decides". This box used to start at '4',
+ * which the server accepted as a trainer-stated value whenever the record was
+ * thin — every unnamed client was programmed for four days.
+ */
+function recordedTrainingDays(c: Client | null): string {
+  const sessions = Number(c?.sessions_per_week);
+  if (Number.isInteger(sessions) && sessions >= 1 && sessions <= 7) return String(sessions);
+  const preferred = typeof c?.preferred_training_days === 'string'
+    ? c.preferred_training_days.split(',').filter((d) => d.trim()).length
+    : 0;
+  return preferred >= 1 && preferred <= 7 ? String(preferred) : '';
+}
+
 // ─── Workout Goals ───────────────────────────────────────────────────────────
 
 const WORKOUT_GOALS = ['Muscle Gain', 'Fat Loss', 'Strength', 'Endurance'];
@@ -86,7 +103,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
   // Generate plan state (workout specialist only)
   const [goal, setGoal] = useState('');
   const [experience, setExperience] = useState('');
-  const [trainingDays, setTrainingDays] = useState<string>('4');
+  const [trainingDays, setTrainingDays] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationResult, setGenerationResult] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -126,7 +143,11 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
   useEffect(() => {
     if (!clientId) return;
     api.clients.get(clientId)
-      .then(c => { setSelectedClient(c); setClientLocked(true); })
+      .then(c => {
+        setSelectedClient(c);
+        setTrainingDays(recordedTrainingDays(c));
+        setClientLocked(true);
+      })
       .catch(() => {});
   }, [clientId]);
 
@@ -211,14 +232,20 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
         client_id: selectedClient.id,
       });
       const plan = res.data;
+      // Names the library does not hold are dropped on save, so a preview that
+      // showed them as usable would promise sessions nobody can save.
+      const unverified = [...new Set((res.audit?.unverified ?? []).map((u) => u.name))];
       const summary = [
         `📋 ${plan.name}`,
         `🎯 Goal: ${plan.goal} | Level: ${plan.level} | ${plan.weeks} weeks, ${plan.days_per_week}×/week`,
         '',
-        ...Object.entries(plan.weekly_schedule ?? {}).slice(0, 4).map(([day, d]) =>
+        ...Object.entries(plan.weekly_schedule ?? {}).map(([day, d]) =>
           `${day.toUpperCase()}: ${d.name} — ${d.exercises?.map(e => e.name).join(', ')}`
         ),
         '',
+        unverified.length
+          ? `⚠️ ${unverified.length} exercise${unverified.length === 1 ? '' : 's'} not found in your Exercise Library — replace ${unverified.length === 1 ? 'it' : 'them'} with a library exercise before saving: ${unverified.slice(0, 5).join(', ')}${unverified.length > 5 ? '…' : ''}`
+          : '',
         plan.progression_notes ? `📈 ${plan.progression_notes}` : '',
         plan.nutrition_notes ? `🥗 ${plan.nutrition_notes}` : '',
       ].filter(Boolean).join('\n');
@@ -450,7 +477,15 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                     onFocus={() => { setShowClientDropdown(true); if (selectedClient) { setSelectedClient(null); setClientQuery(''); } }}
                     onQueryChange={(v) => { setClientQuery(v); setSelectedClient(null); setShowClientDropdown(true); }}
                     onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
-                    onSelect={(c) => { setSelectedClient(c); setClientQuery(c.name); setShowClientDropdown(false); }}
+                    onSelect={(c) => {
+                      setSelectedClient(c);
+                      // The member's own record decides the starting value.
+                      // The trainer can still type over it; blank stays blank
+                      // so the server uses the record or refuses.
+                      setTrainingDays(recordedTrainingDays(c));
+                      setClientQuery(c.name);
+                      setShowClientDropdown(false);
+                    }}
                   />
                 </Field>
 
@@ -470,8 +505,9 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                 <Field label="Training Days per Week">
                   <input
                     type="text" inputMode="numeric" min={1} max={7} value={trainingDays}
+                    aria-label="Training days per week"
                     onChange={e => setTrainingDays(clampNumericText(e.target.value, 'integer'))}
-                    style={inputStyle} placeholder="e.g. 4"
+                    style={inputStyle} placeholder="1–7"
                   />
                 </Field>
 
@@ -592,7 +628,15 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                       onFocus={() => setShowClientDropdown(true)}
                       onQueryChange={(v) => { setClientQuery(v); setShowClientDropdown(true); }}
                       onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
-                      onSelect={(c) => { setSelectedClient(c); setClientQuery(c.name); setShowClientDropdown(false); }}
+                      onSelect={(c) => {
+                        setSelectedClient(c);
+                        // The member's own record decides the starting value.
+                        // The trainer can still type over it; blank stays blank
+                        // so the server uses the record or refuses.
+                        setTrainingDays(recordedTrainingDays(c));
+                        setClientQuery(c.name);
+                        setShowClientDropdown(false);
+                      }}
                     />
                     <p style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.32)', margin: '5px 2px 0' }}>
                       Optional — pick a client so the coach can factor in their profile.
