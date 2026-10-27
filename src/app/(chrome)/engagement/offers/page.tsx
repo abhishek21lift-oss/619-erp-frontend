@@ -22,7 +22,7 @@ const KPIS = [
 ];
 
 const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.05 } } };
-const itemVariants = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.34, 1.56, 0.64, 1] as [number, number, number, number] } } };
+const itemVariants = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] } } };
 
 const statusColor:{[k:string]:string} = { active:'#10b981', expired:'#dc2626', draft:'#64748b' };
 const statusBg:{[k:string]:string} = { active:'rgba(16,185,129,0.1)', expired:'rgba(220,38,38,0.08)', draft:'#f1f5f9' };

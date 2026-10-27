@@ -111,4 +111,8 @@ describe('globals.css ships no slop utilities', () => {
   it('has no left-accent card utilities', () => {
     expect(css).not.toMatch(/\.card\.accent-/);
   });
+
+  it('has no spring easing token', () => {
+    expect(css).not.toMatch(/--ease-spring/);
+  });
 });
