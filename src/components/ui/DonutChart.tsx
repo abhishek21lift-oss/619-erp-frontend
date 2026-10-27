@@ -148,10 +148,10 @@ export function DonutChart({
               boxShadow: '0 4px 12px rgba(15, 23, 42, 0.08)',
               fontSize: 12,
             }}
-            formatter={(value: number, name: string) => [
-              `${fmt(value)} (${((value / total) * 100).toFixed(1)}%)`,
-              name,
-            ]}
+            formatter={(value, name) => {
+              const n = Number(value ?? 0);
+              return [`${fmt(n)} (${((n / total) * 100).toFixed(1)}%)`, name ?? ''];
+            }}
           />
           {!hideLegend && (
             <Legend

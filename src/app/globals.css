@@ -5,12 +5,20 @@
    Inspired by: Linear, Vercel Dashboard, Stripe, Superhuman.
    ══════════════════════════════════════════════════════════════════ */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
 
-/* ─── Reset ─────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* Tailwind v4 defaults bare `border` to currentColor; v3 used gray-200.
+   Keep the v3 colour so existing borders render unchanged. */
+@layer base {
+  *, ::after, ::before, ::backdrop, ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+  /* v4 derives placeholder colour from the text colour; keep the design token. */
+  input::placeholder, textarea::placeholder {
+    color: var(--text-disabled);
+  }
+}
 
 /* ════════════════════════════════════════════════════════════════════
    LIGHT MODE TOKENS  —  Vibrant Edition

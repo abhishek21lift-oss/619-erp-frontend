@@ -326,7 +326,7 @@ function Inner() {
               {paged.map((p) => (
                 <m.div key={p.id}
                   initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                  className="rounded-[16px] bg-white border border-zinc-100 p-4 shadow-sm active:scale-[0.985] transition-all"
+                  className="rounded-[16px] bg-white border border-zinc-100 p-4 shadow-xs active:scale-[0.985] transition-all"
                   style={{ boxShadow: 'var(--shadow-xs)' }}>
                   <div className="flex items-center justify-between mb-2.5">
                     <div className="flex items-center gap-2.5 min-w-0">

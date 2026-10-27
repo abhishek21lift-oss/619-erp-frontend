@@ -33,7 +33,7 @@ const VARIANTS: Record<Variant, string> = {
     'focus-visible:ring-[var(--brand)]',
   outline:
     'relative border border-[var(--border-2)] bg-transparent text-[var(--text-primary)] ' +
-    'backdrop-blur-sm ' +
+    'backdrop-blur-xs ' +
     'hover:border-[var(--brand)] hover:bg-[var(--brand)]/5 hover:-translate-y-0.5 ' +
     'active:translate-y-0 ' +
     'focus-visible:ring-[var(--brand)] focus-visible:border-[var(--brand)]',

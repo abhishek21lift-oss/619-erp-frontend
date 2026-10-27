@@ -15,7 +15,15 @@ export function initSentry(): void {
     environment: process.env.NODE_ENV,
     // Off by default; set NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE (e.g. 0.1) to enable.
     tracesSampleRate: Number(process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE || 0),
-    sendDefaultPii: false,
+    // v11 replaced sendDefaultPii with dataCollection, whose defaults collect
+    // request data. Keep the old restrictive behaviour.
+    dataCollection: {
+      userInfo: false,
+      cookies: false,
+      httpHeaders: false,
+      httpBodies: [],
+      urlQueryParams: false,
+    },
   });
   initialised = true;
 }

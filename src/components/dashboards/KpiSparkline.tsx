@@ -104,8 +104,8 @@ export default function KpiSparkline({
             }}
             labelStyle={{ color: 'var(--text-muted)', fontSize: 10, fontWeight: 700 }}
             itemStyle={{ color: 'var(--text-primary)' }}
-            formatter={(v: number) => [format(v), metric]}
-            labelFormatter={(l: string) => l}
+            formatter={(v) => [format(Number(v)), metric]}
+            labelFormatter={(l) => l}
           />
           <Bar dataKey="value" radius={[4, 4, 0, 0]} isAnimationActive={false} minPointSize={3}>
             {data.map((d, i) => (

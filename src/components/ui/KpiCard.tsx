@@ -183,7 +183,7 @@ export function KpiCard({
 
         {/* Big value + delta */}
         <div className="mt-3 flex items-end justify-between gap-3">
-          <p className="truncate text-3xl font-bold tabular-nums tracking-tight text-white drop-shadow-sm sm:text-[2rem]">
+          <p className="truncate text-3xl font-bold tabular-nums tracking-tight text-white drop-shadow-xs sm:text-[2rem]">
             {loading ? (
               <span className="inline-block h-8 w-28 animate-pulse rounded bg-white/30" />
             ) : (

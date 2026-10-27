@@ -417,7 +417,7 @@ function NotesCard({ notes, onSave }: { notes?: string; onSave: (next: string) =
         <div className="space-y-3">
           <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={5} autoFocus
             aria-label="Coach notes"
-            className="w-full resize-none rounded-[14px] px-3.5 py-3 text-[14px] leading-relaxed outline-none focus-visible:ring-2"
+            className="w-full resize-none rounded-[14px] px-3.5 py-3 text-[14px] leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
             style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)' }}
             placeholder="Injuries, preferences, what worked last session…" />
           <div className="flex gap-2">

@@ -21,7 +21,7 @@ const DialogOverlay = React.forwardRef<
     // open dialog is wrong at any scroll position.
     data-no-pull-refresh
     className={cn(
-      'fixed inset-0 z-50 bg-black/40 backdrop-blur-sm',
+      'fixed inset-0 z-50 bg-black/40 backdrop-blur-xs',
       'data-[state=open]:animate-in data-[state=closed]:animate-out',
       'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       className,
