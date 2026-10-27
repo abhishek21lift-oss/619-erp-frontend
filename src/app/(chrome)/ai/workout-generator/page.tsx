@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Dumbbell, Loader2, ChevronDown, ChevronUp, Sparkles, RotateCcw, Flame, Clock, Target } from 'lucide-react';
 import { m, type Variants } from 'framer-motion';
 import { api } from '@/lib/api';
-import type { AiKnowledgeGrounding, AiWorkoutPlan, AiWorkoutDay, AiWorkoutExercise } from '@/lib/api';
+import type {
+  AiKnowledgeGrounding, AiWorkoutPlan, AiWorkoutDay, AiWorkoutExercise, SavedFromGeneration,
+} from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
 import { errorMessage } from '@/lib/forms/errors';
@@ -22,22 +25,31 @@ const ACCENT_SOFT = '#0067E0';
 const ACCENT_DIM = 'rgba(0,103,224,0.10)';
 const ACCENT_GRADIENT = `linear-gradient(135deg, ${ACCENT_SOFT}, ${ACCENT})`;
 
-/** The form before anyone — trainer or record — has stated anything. */
+/**
+ * The form before anyone — trainer or record — has stated anything.
+ *
+ * It used to start at male / general_fitness / beginner / gym / four days and
+ * send all five as trainer-stated facts. Nobody typed them; for a client whose
+ * record was thin they became the programme's inputs anyway. Blank now means
+ * blank: the server's record is the authority, and an omitted field tells it
+ * so.
+ */
 const INITIAL_FORM = {
-  age: '', gender: 'male', weight_kg: '', height_cm: '',
-  goal: 'general_fitness', experience_level: 'beginner',
-  injuries: '', equipment: 'gym', training_days: '4',
+  age: '', gender: '', weight_kg: '', height_cm: '',
+  goal: '', experience_level: '', injuries: '', training_days: '',
 };
 
-const GOALS = ['weight_loss', 'muscle_gain', 'strength', 'endurance', 'flexibility', 'general_fitness'];
+const GOALS = [
+  'weight_loss', 'muscle_gain', 'strength', 'endurance', 'flexibility',
+  'general_fitness', 'body_recomposition',
+];
 const EXPERIENCE = ['beginner', 'intermediate', 'advanced'];
-const EQUIPMENT = ['gym', 'home', 'minimal', 'bodyweight_only'];
 
 const labelMap: Record<string, string> = {
   weight_loss: 'Weight Loss', muscle_gain: 'Muscle Gain', strength: 'Strength',
   endurance: 'Endurance', flexibility: 'Flexibility', general_fitness: 'General Fitness',
+  body_recomposition: 'Body Recomposition',
   beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced',
-  gym: 'Full Gym', home: 'Home (with equipment)', minimal: 'Minimal Equipment', bodyweight_only: 'Bodyweight Only',
   male: 'Male', female: 'Female', other: 'Other',
 };
 
@@ -132,6 +144,25 @@ function NoteCard({ title, text, index }: { title: string; text: string; index: 
   );
 }
 
+/**
+ * The one 409 the page can answer: the client is already on a live programme
+ * and the server refuses to choose between progressing it and starting a new
+ * one. Everything else stays an ordinary error.
+ */
+function activeProgramFrom(err: unknown): { message: string } | null {
+  const e = err as {
+    status?: number;
+    code?: string;
+    message?: string;
+    payload?: { program?: { plan_name?: string } };
+  };
+  if (e?.status !== 409 || e.code !== 'ACTIVE_PROGRAM') return null;
+  return {
+    message: e.message
+      || `${e.payload?.program?.plan_name ?? 'A programme'} is active. Choose whether to progress it or start a new one.`,
+  };
+}
+
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 export default function WorkoutGeneratorPage() {
   // ── This page needs a client, and used to pretend otherwise ──────────────
@@ -157,6 +188,11 @@ export default function WorkoutGeneratorPage() {
     model?: string; tier?: string; used_fallback?: boolean;
     grounding?: AiKnowledgeGrounding;
   } | null>(null);
+  const [generationId, setGenerationId] = useState<string | null>(null);
+  const [saved, setSaved] = useState<SavedFromGeneration | null>(null);
+  const [savingPlan, setSavingPlan] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [activeProgram, setActiveProgram] = useState<{ message: string } | null>(null);
   const [error, setError] = useState('');
   /** Per-field messages from the schema. Populated only by a generate ATTEMPT. */
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -167,6 +203,8 @@ export default function WorkoutGeneratorPage() {
    * the request — and a generation is a billed model call, not a no-op.
    */
   const generatingRef = useRef(false);
+  /** The same guard for saving: two taps must not accept one proposal twice. */
+  const savingRef = useRef(false);
 
   const set = (k: string, v: string) => {
     editedRef.current.add(k);
@@ -182,12 +220,56 @@ export default function WorkoutGeneratorPage() {
   const editedRef = useRef(new Set<string>());
   const prefill = useAiClientPrefill(clientId);
 
+  /**
+   * The studio's equipment, recorded once and read by every generation.
+   *
+   * The prompt gets equipment from `system_settings.studio_equipment`; no
+   * screen wrote that key, so every plan selected its exercises for an
+   * imagined commercial gym. This page is where a trainer already is when the
+   * omission shows, so it is where the field lives.
+   */
+  const [studioEquipment, setStudioEquipment] = useState('');
+  const [savingEquipment, setSavingEquipment] = useState(false);
+  const [equipmentSaved, setEquipmentSaved] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    api.settings.getAll()
+      .then((r) => { if (alive) setStudioEquipment(String(r.settings?.studio_equipment ?? '')); })
+      .catch(() => {
+        // Saving the blank field would replace a record this read could not see.
+        if (alive) setError('Could not load the studio equipment — saving will replace what is already recorded.');
+      });
+    return () => { alive = false; };
+  }, []);
+  const saveEquipment = async () => {
+    setSavingEquipment(true);
+    setEquipmentSaved(false);
+    try {
+      await api.settings.update({ studio_equipment: studioEquipment.trim() });
+      setEquipmentSaved(true);
+    } catch (e: unknown) {
+      setError(errorMessage(e, 'Could not save the studio equipment.'));
+    } finally {
+      setSavingEquipment(false);
+    }
+  };
+
   const shownClientRef = useRef<string | null>(clientId);
   useEffect(() => {
     if (shownClientRef.current === clientId) return;
     shownClientRef.current = clientId;
     editedRef.current.clear();
     setForm(INITIAL_FORM);
+    // A proposal belongs to the client it was generated for. Leaving it on
+    // screen would let a save write to the old client while the page names
+    // the new one.
+    setPlan(null);
+    setMeta(null);
+    setGenerationId(null);
+    setSaved(null);
+    setSaveError('');
+    setActiveProgram(null);
+    setError('');
   }, [clientId]);
 
   useEffect(() => {
@@ -200,7 +282,10 @@ export default function WorkoutGeneratorPage() {
   const weightField = useStandaloneField('weight_kg', form.weight_kg, (v: string) => set('weight_kg', v), { error: fieldErrors.weight_kg });
   const heightField = useStandaloneField('height_cm', form.height_cm, (v: string) => set('height_cm', v), { error: fieldErrors.height_cm });
   const goalField = useStandaloneField('goal', form.goal, (v: string) => set('goal', v), { error: fieldErrors.goal });
-  const equipmentField = useStandaloneField('equipment', form.equipment, (v: string) => set('equipment', v), { error: fieldErrors.equipment });
+  const studioEquipmentField = useStandaloneField(
+    'studio_equipment', studioEquipment,
+    (v: string) => { setStudioEquipment(v); setEquipmentSaved(false); },
+  );
   const injuriesField = useStandaloneField('injuries', form.injuries, (v: string) => set('injuries', v), { error: fieldErrors.injuries });
   const genderField = useStandaloneField('gender', form.gender, (v: string) => set('gender', v), { error: fieldErrors.gender });
   const experienceField = useStandaloneField('experience_level', form.experience_level, (v: string) => set('experience_level', v), { error: fieldErrors.experience_level });
@@ -212,7 +297,12 @@ export default function WorkoutGeneratorPage() {
     return () => clearInterval(t);
   }, [loading]);
 
-  const handleGenerate = async () => {
+  /**
+   * `mode` is only ever sent in answer to the server's 409: the client is on a
+   * live programme and "progress it" or "start a new one" is the trainer's
+   * call, not a default this page may invent.
+   */
+  const handleGenerate = async (mode?: 'new' | 'adapt') => {
     if (generatingRef.current) return;
     if (!clientId) {
       setError('Select a client above — a programme is written for a specific client.');
@@ -252,25 +342,50 @@ export default function WorkoutGeneratorPage() {
 
     generatingRef.current = true;
     setError(''); setLoading(true); setPlan(null); setMeta(null);
+    setGenerationId(null); setSaved(null); setSaveError(''); setActiveProgram(null);
     try {
       const v = parsed.data;
       const res = await api.ai.generateWorkout({
         client_id: clientId,
+        ...(mode ? { mode } : {}),
         // A blank box is omitted, not sent as zero — omission is what tells
         // the server to keep whatever its own record holds.
         age: stated(v.age), gender: form.gender || undefined,
         weight_kg: stated(v.weight_kg), height_cm: stated(v.height_cm),
         goal: form.goal || undefined, experience_level: form.experience_level || undefined,
-        injuries: v.injuries ?? undefined, equipment: form.equipment || undefined,
+        injuries: v.injuries ?? undefined,
         training_days: stated(v.training_days),
       });
       setPlan(res.data);
+      setGenerationId(res.generation_id ?? null);
       setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback, grounding: res.grounding });
     } catch (e: unknown) {
-      setError(errorMessage(e, 'Failed to generate workout plan.'));
+      // The one refusal this page can answer. Anything else is an error the
+      // trainer can only read.
+      const active = activeProgramFrom(e);
+      if (active) setActiveProgram(active);
+      else setError(errorMessage(e, 'Failed to generate workout plan.'));
     } finally {
       generatingRef.current = false;
       setLoading(false);
+    }
+  };
+
+  /**
+   * Save & assign — the generation id is the whole request. The server writes
+   * the plan from the frozen proposal and assigns it, screening gate included.
+   */
+  const savePlan = async () => {
+    if (!generationId || savingRef.current) return;
+    savingRef.current = true;
+    setSavingPlan(true); setSaveError('');
+    try {
+      setSaved(await api.workouts.plans.saveFromGeneration({ generation_id: generationId }));
+    } catch (e: unknown) {
+      setSaveError(errorMessage(e, 'Could not save the programme'));
+    } finally {
+      savingRef.current = false;
+      setSavingPlan(false);
     }
   };
 
@@ -346,11 +461,8 @@ export default function WorkoutGeneratorPage() {
             />
             <SelectField
               field={goalField} label="Fitness Goal" density="compact"
+              placeholderOption="Select a goal"
               options={GOALS.map((g) => ({ value: g, label: labelMap[g] ?? g }))}
-            />
-            <SelectField
-              field={equipmentField} label="Available Equipment" density="compact"
-              options={EQUIPMENT.map((eq) => ({ value: eq, label: labelMap[eq] ?? eq }))}
             />
             <ChoiceChips
               field={trainingDaysField} legend="Training Days / Week" density="compact"
@@ -368,6 +480,41 @@ export default function WorkoutGeneratorPage() {
             />
           </div>
 
+          {/* The equipment key the prompt reads, written where the trainer can
+              see why it matters. An empty box is the honest state — the AI was
+              told nothing and guessed a commercial gym. */}
+          <div className="mt-5 rounded-[14px] p-4"
+            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+            <div className="mb-1 flex items-center gap-2">
+              <Dumbbell size={14} color={ACCENT} />
+              <span className="text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>Studio equipment</span>
+            </div>
+            <p className="mb-3 mt-0 text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+              What your studio can train with. Every AI programme reads this, so
+              the exercises match the kit in the room.
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+              <TextField
+                field={studioEquipmentField} label="Studio equipment" density="compact"
+                className="flex-1" labelHidden
+                placeholder="e.g. barbell, rack, bench, dumbbells, cables"
+              />
+              <button onClick={saveEquipment} disabled={savingEquipment}
+                className="rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700]"
+                style={{
+                  background: 'var(--bg-card)', border: '1px solid var(--border)',
+                  color: 'var(--text-primary)', opacity: savingEquipment ? 0.6 : 1,
+                }}>
+                {savingEquipment ? 'Saving…' : 'Save equipment'}
+              </button>
+            </div>
+            {equipmentSaved && (
+              <span role="status" className="mt-2 inline-block text-[12px] font-[650]" style={{ color: ACCENT }}>
+                Saved — future programmes will use this.
+              </span>
+            )}
+          </div>
+
           {error && (
             <div className="mt-4 rounded-[12px] px-4 py-2.5 text-[13px] font-[600]"
               style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626' }}>
@@ -375,8 +522,28 @@ export default function WorkoutGeneratorPage() {
             </div>
           )}
 
+          {activeProgram && (
+            <div role="alert"
+              className="mt-4 rounded-[12px] px-4 py-3 text-[13px] font-[600]"
+              style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', color: '#92400e' }}>
+              <div>{activeProgram.message}</div>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                {([
+                  ['adapt', 'Progress this programme'],
+                  ['new', 'Start a new one'],
+                ] as const).map(([mode, label]) => (
+                  <button key={mode} onClick={() => handleGenerate(mode)} disabled={loading}
+                    className="rounded-[10px] px-3.5 py-2 text-[12.5px] font-[700]"
+                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <button onClick={handleGenerate} disabled={loading}
+            <button onClick={() => handleGenerate()} disabled={loading}
               className="flex w-full items-center justify-center gap-2 rounded-[14px] px-7 py-3 text-[14px] font-[750] text-white transition-all sm:w-auto"
               style={{
                 background: ACCENT_GRADIENT,
@@ -388,7 +555,10 @@ export default function WorkoutGeneratorPage() {
               {loading ? 'Generating Plan…' : 'Generate Workout Plan'}
             </button>
             {plan && (
-              <button onClick={() => { setPlan(null); setMeta(null); }}
+              <button onClick={() => {
+                setPlan(null); setMeta(null); setGenerationId(null);
+                setSaved(null); setSaveError(''); setActiveProgram(null);
+              }}
                 className="flex w-full items-center justify-center gap-2 rounded-[14px] px-5 py-3 text-[13.5px] font-[650] sm:w-auto"
                 style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                 <RotateCcw size={14} /> Start Over
@@ -422,6 +592,59 @@ export default function WorkoutGeneratorPage() {
         {/* ── Results ── */}
         {plan && (
           <div className="flex flex-col gap-5">
+            {generationId && (
+              <m.div variants={fadeUp} initial="hidden" animate="show" custom={0}
+                className="rounded-[22px] p-5 sm:p-6"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                {saved ? (
+                  <div role="status" className="text-[13px] leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+                    <div className="text-[14px] font-[750]">
+                      {saved.assigned === false
+                        ? 'Saved, but not assigned — it will not appear on Today.'
+                        : (saved.other_active_assignments ?? 0) > 0
+                          ? `Saved and assigned — this client is now on ${(saved.other_active_assignments ?? 0) + 1} active programmes, so starting a session will no longer pick one automatically.`
+                          : `Saved ${saved.saved} exercises to ${saved.name} — now live for this client.`}
+                    </div>
+                    {saved.unresolved.length > 0 && (
+                      <p className="mb-0 mt-2" style={{ color: 'var(--text-muted)' }}>
+                        {saved.unresolved.length} not in the library — add them in the builder:{' '}
+                        {saved.unresolved.map((u) => u.name).join(', ')}
+                      </p>
+                    )}
+                    {!!saved.screening_warnings?.length && (
+                      <p className="mb-0 mt-2" style={{ color: '#92400e' }}>
+                        {saved.screening_warnings.join(' ')}
+                      </p>
+                    )}
+                    <Link href={`/pt-os/workout-plans/${saved.plan_id}/builder`}
+                      className="mt-3 inline-block text-[12.5px] font-[700]" style={{ color: ACCENT }}>
+                      Open in builder →
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>Happy with this plan?</div>
+                      <p className="mb-0 mt-1 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                        Save &amp; assign writes it to this client and makes it their live programme.
+                      </p>
+                    </div>
+                    <button onClick={savePlan} disabled={savingPlan}
+                      className="flex items-center justify-center gap-2 rounded-[12px] px-5 py-2.5 text-[13px] font-[750] text-white"
+                      style={{ background: ACCENT_GRADIENT, opacity: savingPlan ? 0.6 : 1 }}>
+                      {savingPlan ? <Loader2 size={14} className="animate-spin" /> : null}
+                      {savingPlan ? 'Saving…' : 'Save & assign'}
+                    </button>
+                  </div>
+                )}
+                {saveError && (
+                  <div role="alert" className="mt-3 rounded-[12px] px-4 py-2.5 text-[13px] font-[600]"
+                    style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626' }}>
+                    {saveError}
+                  </div>
+                )}
+              </m.div>
+            )}
             {meta && (
               <m.div variants={fadeUp} initial="hidden" animate="show" custom={0}
                 className="flex w-fit items-center gap-2 rounded-full px-3.5 py-2"

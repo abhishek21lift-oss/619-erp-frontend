@@ -51,6 +51,7 @@ export const PROGRAMME_GOALS = [
   { value: 'weight_loss', label: 'Weight Loss' },
   { value: 'endurance', label: 'Endurance' },
   { value: 'general_fitness', label: 'General Fitness' },
+  { value: 'body_recomposition', label: 'Body Recomposition' },
   { value: 'recovery', label: 'Recovery' },
 ] as const;
 

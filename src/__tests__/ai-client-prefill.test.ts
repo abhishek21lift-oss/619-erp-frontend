@@ -13,6 +13,8 @@ const ptClient = vi.fn();
 const interviewsList = vi.fn();
 const lifestyleList = vi.fn();
 const nutritionList = vi.fn();
+const goalsList = vi.fn();
+const assessmentsList = vi.fn();
 
 vi.mock('@/lib/api', () => ({
   api: {
@@ -20,6 +22,8 @@ vi.mock('@/lib/api', () => ({
     progress: {
       lifestyleAssessments: { list: (...a: unknown[]) => lifestyleList(...a) },
       nutritionAssessments: { list: (...a: unknown[]) => nutritionList(...a) },
+      goals: { list: (...a: unknown[]) => goalsList(...a) },
+      assessments: { list: (...a: unknown[]) => assessmentsList(...a) },
     },
   },
 }));
@@ -34,6 +38,8 @@ beforeEach(() => {
   interviewsList.mockReset().mockResolvedValue({ data: [] });
   lifestyleList.mockReset().mockResolvedValue({ data: [] });
   nutritionList.mockReset().mockResolvedValue({ data: [] });
+  goalsList.mockReset().mockResolvedValue({ data: [] });
+  assessmentsList.mockReset().mockResolvedValue({ data: [] });
 });
 
 describe('vocabulary', () => {
@@ -43,6 +49,8 @@ describe('vocabulary', () => {
     expect(mapExperience('olympian')).toBe('');
 
     expect(mapWorkoutGoal('fat_loss')).toBe('weight_loss');
+    expect(mapWorkoutGoal('body_recomposition')).toBe('body_recomposition');
+    expect(mapWorkoutGoal('recomposition')).toBe('body_recomposition');
     expect(mapWorkoutGoal('recovery')).toBe('');           // not a chip on the workout form
     expect(mapDietGoal('fat_loss')).toBe('weight_loss');
     expect(mapDietGoal('general_fitness')).toBe('');        // not a chip on the diet form
@@ -114,6 +122,30 @@ describe('loadAiClientFacts', () => {
       allergies: 'peanut',
     });
     expect(hasAnyFact(facts.workout)).toBe(true);
+  });
+
+  it('prefers the active goal, the enrolled sessions and the latest assessed weight', async () => {
+    // The server programs to pt_goals.goal_type, pt_clients.sessions_per_week
+    // and the newest pt_assessments.weight. The form used to show the
+    // enrolment-era goal, the free-text frequency and the profile weight, so a
+    // trainer could read one set of facts and the prompt use another.
+    ptClient.mockResolvedValue({ data: {
+      name: 'Mina Rao', weight: 90, goal: 'general_fitness',
+      frequency: '2x/week', sessions_per_week: 5,
+    } });
+    goalsList.mockResolvedValue({ data: [
+      { goal_type: 'fat_loss', is_active: false, status: 'achieved', created_at: '2026-08-01' },
+      { goal_type: 'body_recomposition', is_active: true, status: 'active', created_at: '2026-10-19' },
+    ] });
+    assessmentsList.mockResolvedValue({ data: [
+      { created_at: '2026-08-01', weight: 85 },
+      { created_at: '2026-10-01', weight: 70 },
+    ] });
+
+    const facts = await loadAiClientFacts('c1');
+    expect(facts.workout.goal).toBe('body_recomposition');
+    expect(facts.workout.training_days).toBe('5');
+    expect(facts.workout.weight_kg).toBe('70');
   });
 
   it('degrades to a thinner prefill when an optional record fails, and fails only without the client', async () => {
