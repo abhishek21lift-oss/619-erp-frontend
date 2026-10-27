@@ -13,8 +13,9 @@
 // which is why the prose here names no hex codes.
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, sep } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { palette, semantic, band, identity, series, founderGold, tint, rgba } from '@/lib/palette';
+import { isDecorativeTheme } from './helpers/token-files';
 
 const FAMILIES = ['blue', 'emerald', 'amber', 'red', 'gray'] as const;
 
@@ -161,23 +162,9 @@ describe('the app uses only the palette', () => {
         if (!/\.(tsx?|css)$/.test(entry)) continue;
         // The palette module is where the canonical values are declared.
         if (p.endsWith(join('lib', 'palette.ts'))) continue;
-        // The marketing page is its own system — confined below.
-        if (p.includes(join('components', 'landing'))) continue;
-        // The visualization system is its own system too — confined below.
-        if (p.includes(join('components', 'visualizations'))) continue;
-        // The member app's decorative spectrum — its one token file, confined below.
-        if (p.endsWith(join('components', 'member', 'memberTheme.ts'))) continue;
-        // The exercise library's region colours — its one token file, confined below.
-        if (p.endsWith(join('exercise-library', 'libraryTheme.ts'))) continue;
-        // The Today card's decorative colour — its one token file, confined below.
-        if (p.endsWith(join('dashboards', 'todayTheme.ts'))) continue;
-        // My Profile's decorative colour — its one token file, confined below.
-        if (p.endsWith(join('components', 'profile', 'profileTheme.ts'))) continue;
-        // The front-desk screens' decorative colour — confined below.
-        if (p.endsWith(join('components', 'attendance', 'attendanceTheme.ts'))) continue;
-        if (p.endsWith(join('components', 'platform', 'ccTheme.ts'))) continue;
-        // Fitness Testing's decorative colour — its one token file, confined below.
-        if (p.endsWith(join('components', 'pt-os', 'fitness-testing', 'fitnessTheme.ts'))) continue;
+        // The decorative surfaces live in one token file each, confined below.
+        const relToSrc = relative(join(process.cwd(), 'src'), p).replaceAll(sep, '/');
+        if (isDecorativeTheme(relToSrc)) continue;
         const text = readFileSync(p, 'utf8');
         for (const m of text.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
           if (!known.has(m.toUpperCase())) offenders.push(`${p}: ${m}`);
