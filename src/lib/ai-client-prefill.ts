@@ -69,6 +69,10 @@ const WORKOUT_GOAL: Record<string, string> = {
   weight_loss: 'weight_loss', fat_loss: 'weight_loss', muscle_gain: 'muscle_gain',
   strength: 'strength', endurance: 'endurance', general_fitness: 'general_fitness',
   flexibility: 'flexibility',
+  // The studio's own goal. It was missing here AND from the model's schema, so
+  // a body-recomposition client was shown, and programmed as, general fitness.
+  body_recomposition: 'body_recomposition',
+  recomposition: 'body_recomposition', recomp: 'body_recomposition',
 };
 
 const DIET_GOAL: Record<string, string> = {
@@ -191,6 +195,13 @@ interface NutritionRow extends Row {
   nutrition_budget?: unknown;
 }
 
+interface GoalRow extends Row {
+  goal_type?: unknown;
+  is_active?: unknown;
+  status?: unknown;
+  created_at?: unknown;
+}
+
 function settled(r: PromiseSettledResult<unknown>): Row[] {
   if (r.status !== 'fulfilled') return [];
   const data = (r.value as { data?: unknown })?.data;
@@ -209,17 +220,25 @@ function interviewRow(rows: Row[]): InterviewRow | null {
 }
 
 /**
- * One read per client, from four records: the client row every AI generation
- * is about, plus the interview / lifestyle / nutrition history the diet and
- * workout forms can each draw on. Only the client row is required — a failed
- * optional record means a thinner prefill, not a failed one.
+ * One read per client, from the client row every AI generation is about, plus
+ * the interview / lifestyle / nutrition / goal / assessment history both forms
+ * draw on. Only the client row is required — a failed optional record means a
+ * thinner prefill, not a failed one.
  */
 export async function loadAiClientFacts(clientId: string): Promise<AiClientFacts> {
-  const [clientRes, interviewRes, lifestyleRes, nutritionRes] = await Promise.allSettled([
+  const [
+    clientRes, interviewRes, lifestyleRes, nutritionRes, goalsRes, assessmentsRes,
+  ] = await Promise.allSettled([
     api.pt.client(clientId),
     api.pt.interviews.list(clientId),
     api.progress.lifestyleAssessments.list({ client_id: clientId }),
     api.progress.nutritionAssessments.list({ client_id: clientId }),
+    // The two records the server prefers over the client row. Reading only
+    // pt_clients.goal/frequency/weight meant the form could show the goal from
+    // sign-up and the old typed weight while the prompt used the active goal
+    // and the latest assessment.
+    api.progress.goals.list({ client_id: clientId }),
+    api.progress.assessments.list({ client_id: clientId }),
   ]);
   if (clientRes.status === 'rejected') throw clientRes.reason;
 
@@ -227,12 +246,19 @@ export async function loadAiClientFacts(clientId: string): Promise<AiClientFacts
   const interview = interviewRow(settled(interviewRes));
   const lifestyle = newest(settled(lifestyleRes), 'assessment_date') as LifestyleRow | null;
   const nutrition = newest(settled(nutritionRes), 'assessment_date') as NutritionRow | null;
+  const goals = settled(goalsRes) as GoalRow[];
+  const assessment = newest(settled(assessmentsRes), 'created_at');
+
+  const activeGoal = goals.find((g) => g.is_active === true)
+    ?? goals.find((g) => g.status === 'active')
+    ?? null;
 
   const age = ageFromDob(c.dob);
   const gender = mapGender(c.gender);
-  const weight_kg = within(c.weight, STATED_RANGE.weight_kg);
+  const weight_kg = within(assessment?.weight, STATED_RANGE.weight_kg)
+    || within(c.weight, STATED_RANGE.weight_kg);
   const height_cm = within(c.height, STATED_RANGE.height_cm);
-  const goal = firstText(c.goal);
+  const goal = firstText(activeGoal?.goal_type, c.goal);
 
   return {
     clientName: firstText(c.name) || 'this client',
@@ -241,7 +267,8 @@ export async function loadAiClientFacts(clientId: string): Promise<AiClientFacts
       goal: mapWorkoutGoal(goal),
       experience_level: mapExperience(firstText(c.workout_experience_level, lifestyle?.workout_experience_level)),
       injuries: withinRange(firstText(c.injuries, interview?.pain_and_injuries), 500),
-      training_days: mapTrainingDays(c.frequency, interview?.lifestyle_training_days),
+      training_days: mapTrainingDays(c.sessions_per_week, null)
+        || mapTrainingDays(c.frequency, interview?.lifestyle_training_days),
     },
     diet: {
       age, gender, weight_kg, height_cm,
