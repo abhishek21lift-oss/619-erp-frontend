@@ -14,7 +14,9 @@ import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { calcMobilityScore, classifyMobility, calcMobilityReferrals } from '@/lib/mobility-calculations';
 import ReferralBanner from '@/components/pt-os/shared/ReferralBanner';
-import { STEPS, initMobilityForm, n } from '@/components/pt-os/mobility-assessment/types';
+import {
+  STEPS, initMobilityForm, n, unscoredBodyRegions, unscoredMobilityTests,
+} from '@/components/pt-os/mobility-assessment/types';
 import type { MobilityFormData, StepId } from '@/components/pt-os/mobility-assessment/types';
 import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
 import AssessmentHistoryHub from '@/components/pt-os/shared/AssessmentHistoryHub';
@@ -29,6 +31,26 @@ import AssessmentDateField, { assessmentDateIssue } from '@/components/pt-os/sha
 import { rangeIssue } from '@/lib/forms/ranges';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+/** What each step needs before it can be left, and before the form can be
+ *  saved. Scores are deliberately not defaulted, so the wizard has to ask. */
+function validateStep(id: StepId, form: MobilityFormData): string | undefined {
+  if (id === 1) {
+    const dateErr = assessmentDateIssue(form.assessmentDate);
+    if (dateErr) return dateErr;
+    const missing = unscoredBodyRegions(form);
+    if (missing) return `Score every body region before continuing — ${missing} still unscored.`;
+  }
+  if (id === 2) {
+    const missing = unscoredMobilityTests(form);
+    if (missing) return `Score every movement screen before continuing — ${missing} still unscored.`;
+  }
+  if (id === 3) {
+    return rangeIssue(['Grip strength', form.gripStrengthKg, 1, 150, 'kg'], ['Vertical jump', form.verticalJumpCm, 1, 150, 'cm'],
+      ['Balance test', form.balanceTestSeconds, 0, 600, 's'], ['Reaction time', form.reactionTimeMs, 50, 3000, 'ms']);
+  }
+  return undefined;
+}
 
 function formFromRow(row: Record<string, unknown>): MobilityFormData {
   const fresh = initMobilityForm();
@@ -176,13 +198,18 @@ function MobilityWizard({ clientId, clientName, editing, toast, onDone }: Mobili
   }, [form.bodyRegions, form.mobilityTests]);
 
   const handleNext = () => {
-    const err = step === 1 ? assessmentDateIssue(form.assessmentDate)
-      : step === 3 ? rangeIssue(['Grip strength', form.gripStrengthKg, 1, 150, 'kg'], ['Vertical jump', form.verticalJumpCm, 1, 150, 'cm'],
-        ['Balance test', form.balanceTestSeconds, 0, 600, 's'], ['Reaction time', form.reactionTimeMs, 50, 3000, 'ms'])
-      : undefined;
+    const err = validateStep(step, form);
     if (err) { toast.error(err); return; }
     if (step === 3) { setReviewMode(true); return; }
     setStep((s) => (s + 1) as StepId);
+  };
+
+  // The timeline offers exactly one forward jump (step + 1), so route that
+  // through handleNext() — a click must not skip the score check. Backward
+  // clicks are re-viewing an answered step and stay unguarded.
+  const handleStepClick = (id: StepId) => {
+    if (id === step + 1) { handleNext(); return; }
+    setStep(id);
   };
 
   const handleBack = () => {
@@ -198,6 +225,20 @@ function MobilityWizard({ clientId, clientName, editing, toast, onDone }: Mobili
   };
 
   const handleSubmit = async () => {
+    // Back-navigation can leave an earlier step unanswered, and a loaded
+    // record may predate the unscored state. Check every step before posting.
+    const allErrors: Partial<Record<StepId, string>> = {};
+    for (const s of STEPS) {
+      const err = validateStep(s.id, form);
+      if (err) allErrors[s.id] = err;
+    }
+    const firstInvalid = STEPS.find((s) => allErrors[s.id]);
+    if (firstInvalid) {
+      setReviewMode(false);
+      setStep(firstInvalid.id);
+      toast.error(allErrors[firstInvalid.id]!);
+      return;
+    }
     setSaving(true);
     try {
       // Blank goes as null so an edit can clear a value — `undefined` dropped
@@ -239,7 +280,7 @@ function MobilityWizard({ clientId, clientName, editing, toast, onDone }: Mobili
           step is the way out now. */}
       <div className="mx-auto max-w-3xl pt-1">
         <PageHero icon={<Move size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'}>
-          {!reviewMode && <StepperTimeline steps={STEPS} current={step} onStep={setStep} />}
+          {!reviewMode && <StepperTimeline steps={STEPS} current={step} onStep={handleStepClick} />}
         </PageHero>
       </div>
 

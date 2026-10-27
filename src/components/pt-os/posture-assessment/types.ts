@@ -37,6 +37,9 @@ export interface PostureFormData {
   sideIssues: string[];
   backIssues: string[];
   otherIssueNotes: string;
+  /** Explicit "assessed, nothing found" — zero selected issues alone is not
+   *  distinguishable from an untouched screen. Not persisted. */
+  noIssuesNoted: boolean;
 
   // Step 2 — Coach Notes
   coachNotes: CoachNotes;
@@ -52,12 +55,26 @@ export type StepId = typeof STEPS[number]['id'];
 export function initPostureForm(): PostureFormData {
   return {
     assessmentDate: todayISO(),
-    frontIssues: [], sideIssues: [], backIssues: [], otherIssueNotes: '',
+    frontIssues: [], sideIssues: [], backIssues: [], otherIssueNotes: '', noIssuesNoted: false,
     coachNotes: {
       initial_observations: '', corrective_strategy: '', training_focus: '',
       nutrition_focus: '', recovery_focus: '', special_instructions: '',
     },
   };
+}
+
+/** Whether the trainer recorded anything at all, from any of the three views
+ *  or the free-text notes. */
+export function postureFindingCount(form: Pick<PostureFormData, 'frontIssues' | 'sideIssues' | 'backIssues' | 'otherIssueNotes'>): number {
+  return form.frontIssues.length + form.sideIssues.length + form.backIssues.length
+    + (form.otherIssueNotes.trim() ? 1 : 0);
+}
+
+export function validatePostureFindings(form: PostureFormData): string | undefined {
+  if (!postureFindingCount(form) && !form.noIssuesNoted) {
+    return 'Record at least one posture finding, or confirm that no issues were noted.';
+  }
+  return undefined;
 }
 
 /** The Coach Notes areas for this assessment, beside the type they key into.

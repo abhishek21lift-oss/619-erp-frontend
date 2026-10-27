@@ -18,10 +18,12 @@ import {
 } from '@/lib/goal-calculations';
 import type { GoalMetric } from '@/lib/goal-calculations';
 import {
-  STEPS, LAST_STEP, GOAL_TYPE_META, PRIORITY_META, initGoalForm, n,
+  STEPS, LAST_STEP, GOAL_TYPE_META, PRIORITY_META, initGoalFormForClient, n,
 } from '@/components/pt-os/goal-assessment/types';
+import { formFromGoalRow } from '@/components/pt-os/goal-assessment/form-from-row';
+import type { CoachingBlock, K11Block } from '@/components/pt-os/goal-assessment/form-from-row';
 import type {
-  GoalFormData, FormErrors, StepId, LifestyleAnswers, ClientContext, RetestInfo,
+  GoalFormData, FormErrors, StepId, LifestyleAnswers, ClientContext, RetestInfo, GoalClientDefaults,
 } from '@/components/pt-os/goal-assessment/types';
 import StepPrimaryGoal from '@/components/pt-os/goal-assessment/StepPrimaryGoal';
 import StepSmartGoal from '@/components/pt-os/goal-assessment/StepSmartGoal';
@@ -29,7 +31,7 @@ import StepMeasureTarget from '@/components/pt-os/goal-assessment/StepMeasureTar
 import StepDeadline from '@/components/pt-os/goal-assessment/StepDeadline';
 import StepPriority from '@/components/pt-os/goal-assessment/StepPriority';
 import StepMotivationCommitment from '@/components/pt-os/goal-assessment/StepMotivationCommitment';
-import StepChallenges, { CHALLENGE_OPTIONS, selectedChallenges } from '@/components/pt-os/goal-assessment/StepChallenges';
+import StepChallenges, { selectedChallenges } from '@/components/pt-os/goal-assessment/StepChallenges';
 import StepLifestyle from '@/components/pt-os/goal-assessment/StepLifestyle';
 import StepSchedule from '@/components/pt-os/goal-assessment/StepSchedule';
 import StepMilestones from '@/components/pt-os/goal-assessment/StepMilestones';
@@ -41,7 +43,7 @@ import GoalSummaryCard from '@/components/pt-os/goal-assessment/GoalSummaryCard'
 import GoalTimeline from '@/components/pt-os/goal-assessment/GoalTimeline';
 import GoalCard from '@/components/pt-os/goal-assessment/GoalCard';
 import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
-import BaselineScreeningCard from '@/components/pt-os/goal-assessment/BaselineScreeningCard';
+import BaselineScreeningCard, { parqBaselineState } from '@/components/pt-os/goal-assessment/BaselineScreeningCard';
 import type { BaselineMetric, BaselineSource } from '@/components/pt-os/goal-assessment/BaselineScreeningCard';
 import { errorMessage } from '@/lib/forms/errors';
 import { todayISO } from '@/lib/forms/domain';
@@ -50,14 +52,13 @@ import {
   barrierPlansFor, barrierPayload, formatWeeklyCommitment, TIME_OF_DAY_OPTIONS,
   validateMilestones, weeklyCommitmentMinutes,
 } from '@/lib/goal-plan';
-import type { BarrierPlan, GoalMeasure, GoalMilestone } from '@/lib/goal-plan';
+import type { GoalMeasure } from '@/lib/goal-plan';
 import type { ParqForm } from '@/lib/api/types';
 import type { ClientInterview } from '@/lib/journey';
 import { rangeIssue } from '@/lib/forms/ranges';
 import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-const CHALLENGE_VALUES = new Set(CHALLENGE_OPTIONS.map((c) => c.value));
 
 function labelFor<T extends { value: string; label: string }>(list: T[], value: string): string {
   return list.find((o) => o.value === value)?.label || '';
@@ -147,96 +148,6 @@ function validateStep(id: StepId, form: GoalFormData, today: string, currentWeig
 function buildLifestylePayload(l: LifestyleAnswers): Record<string, boolean> | undefined {
   const entries = Object.entries(l).filter(([, v]) => v !== null) as [string, boolean][];
   return entries.length ? Object.fromEntries(entries) : undefined;
-}
-
-/**
- * The coaching block rides on routine_blueprint, which is written and read by
- * this module alone. `preferred_training_days`, `short_term_weeks`,
- * `medium_term_weeks` and `milestones` are real columns, so only what has no
- * column lives here — see docs/goal-setting-coaching-fields.md in the backend
- * for the migration that would give these their own columns.
- */
-interface CoachingBlock {
-  success_metric?: string;
-  confidence_level?: number;
-  session_minutes?: number;
-  time_of_day?: string;
-  barrier_plans?: BarrierPlan[];
-}
-
-/** K11 measurable target stored in routine_blueprint.k11 (no migration). */
-interface K11MeasureBlock {
-  metric?: 'weight' | 'body_fat' | 'lift' | 'sessions' | 'custom';
-  exercise?: string | null;
-  label?: string | null;
-  current?: number | null;
-  target?: number | null;
-  unit?: string | null;
-}
-
-interface K11Block {
-  measure?: K11MeasureBlock | null;
-  client_agreement?: boolean;
-  client_expectation?: string | null;
-}
-
-interface RoutineBlueprint {
-  coaching?: CoachingBlock;
-  k11?: K11Block;
-}
-
-function formFromGoalRow(row: Record<string, unknown>): GoalFormData {
-  const fresh = initGoalForm();
-  const challenges = Array.isArray(row.biggest_challenges) ? (row.biggest_challenges as string[]) : [];
-  const lifestyleRaw = (row.lifestyle_readiness as Record<string, boolean> | null) || {};
-  const blueprint = (row.routine_blueprint as RoutineBlueprint | null) || {};
-  const coaching = blueprint.coaching || {};
-  const k11 = blueprint.k11 || {};
-  const measure = k11.measure || {};
-  const milestones = Array.isArray(row.milestones) ? (row.milestones as GoalMilestone[]) : [];
-  const preferred = Array.isArray(row.preferred_training_days) ? (row.preferred_training_days as string[]) : [];
-  const metric = measure.metric || (row.target_weight != null ? 'weight' : row.target_body_fat != null ? 'body_fat' : '');
-  return {
-    ...fresh,
-    goalType: (row.goal_type as GoalFormData['goalType']) || '',
-    goalName: row.goal_type === 'custom' ? String(row.goal_other ?? '') : '',
-    goalDescription: String(row.goal_description ?? ''),
-    successMetric: String(coaching.success_metric ?? ''),
-    targetMetric: metric,
-    targetExercise: String(measure.exercise ?? ''),
-    targetStart: measure.current != null ? String(measure.current) : '',
-    targetValue: measure.target != null ? String(measure.target) : '',
-    targetUnit: metric === 'sessions' ? 'sessions/week' : String(measure.unit ?? 'kg'),
-    customMetric: String(measure.label ?? ''),
-    targetWeight: row.target_weight != null ? String(row.target_weight) : '',
-    targetBodyFat: row.target_body_fat != null ? String(row.target_body_fat) : '',
-    targetDate: row.target_date ? String(row.target_date).slice(0, 10) : '',
-    priorityGoal: (row.priority_goal as GoalFormData['priorityGoal']) || '',
-    clientAgreed: k11.client_agreement === true,
-    clientExpectation: String(k11.client_expectation ?? ''),
-    motivationLevel: row.motivation_level != null ? String(row.motivation_level) : '7',
-    confidenceLevel: coaching.confidence_level != null ? String(coaching.confidence_level) : '7',
-    commitmentLevel: row.commitment_level != null ? String(row.commitment_level) : '7',
-    motivationReason: String(row.motivation_reason ?? ''),
-    biggestChallenges: challenges.filter((c) => CHALLENGE_VALUES.has(c)),
-    challengeOther: challenges.find((c) => !CHALLENGE_VALUES.has(c)) || '',
-    barrierPlans: barrierPlansFor(challenges, Array.isArray(coaching.barrier_plans) ? coaching.barrier_plans : []),
-    lifestyle: { ...fresh.lifestyle, ...lifestyleRaw },
-    startingWeightManual: row.starting_weight != null ? String(row.starting_weight) : '',
-    startingBodyFatManual: row.starting_body_fat_pct != null ? String(row.starting_body_fat_pct) : '',
-    notes: String(row.notes ?? ''),
-    trainingDays: row.training_days_per_week != null ? String(row.training_days_per_week) : '3',
-    preferredDays: preferred,
-    sessionMinutes: coaching.session_minutes != null ? String(coaching.session_minutes) : '60',
-    timeOfDay: (coaching.time_of_day as GoalFormData['timeOfDay']) || 'flexible',
-    experienceLevel: 'beginner',
-    equipment: 'full_gym',
-    status: (row.status as GoalFormData['status']) || (row.is_active ? 'active' : 'archived'),
-    milestones,
-    shortTermWeeks: row.short_term_weeks != null ? String(row.short_term_weeks) : '8',
-    mediumTermWeeks: row.medium_term_weeks != null ? String(row.medium_term_weeks) : '12',
-    reviewDate: row.review_date ? String(row.review_date).slice(0, 10) : '',
-  };
 }
 
 /** The form's measurable target in the shape the summary/card/analysis use. */
@@ -343,6 +254,7 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
   const [habits, setHabits] = useState<Partial<LifestyleAnswers>>({});
   const [baseline, setBaseline] = useState<BaselineInfo>(EMPTY_BASELINE);
   const [context, setContext] = useState<ClientContext>(EMPTY_CONTEXT);
+  const [clientDefaults, setClientDefaults] = useState<GoalClientDefaults>({});
   const [retest, setRetest] = useState<RetestInfo>(EMPTY_RETEST);
   const [goals, setGoals] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
@@ -372,7 +284,9 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
       const parqHistory = parqRow.past_history ?? {};
       const interviews = Array.isArray(interviewRes?.data) ? interviewRes.data : [];
       const interview = (interviews.find((i) => i.status === 'completed') ?? interviews[0]) as ClientInterview | undefined;
-      const sleep = numberOrNull(lifestyleRow.sleep_duration_hours) ?? numberOrNull(interview?.lifestyle_sleep_hours);
+      // Sleep, smoking and alcohol belong to the Lifestyle assessment; the
+      // Interview is qualitative history and must not be a second source.
+      const sleep = numberOrNull(lifestyleRow.sleep_duration_hours);
       const water = numberOrNull(nutritionRow.water_intake_liters);
       setHabits({
         ...(sleep != null && sleep > 0 ? { sleep_7_8_hours: sleep >= 7 } : {}),
@@ -381,6 +295,10 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
       const c = clientRes?.data;
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
       setClientName(String(c.name ?? ''));
+      setClientDefaults({
+        workout_experience_level: stringOrNull(c.workout_experience_level),
+        sessions_per_week: numberOrNull(c.sessions_per_week),
+      });
 
       const latest = Array.isArray(assessRes?.data) ? assessRes.data[0] : null;
       const weight = numberOrNull(latest?.weight);
@@ -434,8 +352,8 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
         mealRegularity: stringOrNull(interview?.lifestyle_meal_regularity) ?? stringOrNull(nutritionRow.meal_timing_consistency),
         dietPreferences: stringList(nutritionRow.diet_preferences),
         foodAllergies: stringList(nutritionRow.food_allergies),
-        smoking: stringOrNull(interview?.lifestyle_smoking),
-        alcohol: stringOrNull(interview?.lifestyle_alcohol),
+        smoking: stringOrNull(lifestyleRow.smoking_status),
+        alcohol: stringOrNull(lifestyleRow.alcohol_status),
         sedentaryRisk: stringOrNull(lifestyleRow.sedentary_risk),
       });
 
@@ -502,6 +420,7 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
         clientId={clientId} clientName={clientName}
         latestWeight={latestWeight} latestBodyFat={latestBodyFat}
         editingGoal={editingGoal || null}
+        clientDefaults={clientDefaults}
         habits={habits}
         baseline={baseline}
         context={context}
@@ -568,6 +487,7 @@ interface GoalWizardProps {
   latestWeight: number | null;
   latestBodyFat: number | null;
   editingGoal: Record<string, unknown> | null;
+  clientDefaults: GoalClientDefaults;
   habits: Partial<LifestyleAnswers>;
   baseline: BaselineInfo;
   context: ClientContext;
@@ -576,7 +496,7 @@ interface GoalWizardProps {
   onDone: (refresh: boolean) => void;
 }
 
-function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editingGoal, habits, baseline, context, retest, toast, onDone }: GoalWizardProps) {
+function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editingGoal, clientDefaults, habits, baseline, context, retest, toast, onDone }: GoalWizardProps) {
   const goalId = editingGoal ? String(editingGoal.id) : null;
   const today = todayISO();
   const initial = useMemo(() => {
@@ -585,9 +505,9 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
       const fromRow = formFromGoalRow(editingGoal);
       return { ...fromRow, reviewDate: futureOrBlank(fromRow.reviewDate) || futureOrBlank(retest.date) };
     }
-    const fresh = initGoalForm();
+    const fresh = initGoalFormForClient(clientDefaults);
     return { ...fresh, lifestyle: { ...fresh.lifestyle, ...habits }, reviewDate: futureOrBlank(retest.date) };
-  }, [editingGoal, habits, retest.date, today]);
+  }, [clientDefaults, editingGoal, habits, retest.date, today]);
 
   const [form, setForm] = useState<GoalFormData>(initial);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -808,7 +728,7 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
         key: 'parq',
         label: 'PAR-Q health screening',
         detail: parq.date ? [parq.status, parq.riskLevel, parq.date].filter(Boolean).join(' · ') : 'Not completed',
-        state: parq.date ? (parq.status === 'completed' ? 'complete' : 'pending') : 'missing',
+        state: parqBaselineState(parq.status, Boolean(parq.date)),
         href: `/pt-os/parq${q}`,
       },
       {

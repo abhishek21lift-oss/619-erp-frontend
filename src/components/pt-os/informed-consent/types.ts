@@ -49,7 +49,7 @@ function emailOrNull(v: string): string | null {
 }
 
 /** The signing date: within the last 7 days and not in the future. */
-export function consentDateIssue(ymd: string): string | undefined {
+function consentDateIssue(ymd: string): string | undefined {
   const today = todayISO();
   if (ymd > today) return 'The signing date cannot be in the future.';
   const [y, m, d] = today.split('-').map(Number);
@@ -158,7 +158,7 @@ export const EXERCISE_PROGRAMME_CONSENT_PARAGRAPHS: string[] = [
   'In signing the consent form I affirm that I read this form in its entirety and that I understand the nature of the practical exercise sessions. I also confirm that my questions regarding the exercise programme have been answered to my satisfaction.',
 ];
 
-export const EXERCISE_PROGRAMME_CONSENT_TEXT = EXERCISE_PROGRAMME_CONSENT_PARAGRAPHS.join('\n\n');
+const EXERCISE_PROGRAMME_CONSENT_TEXT = EXERCISE_PROGRAMME_CONSENT_PARAGRAPHS.join('\n\n');
 
 export const EXERCISE_PROGRAMME_CHECKBOX_LABEL =
   'I have read and understood the above consent and agree to participate in the exercise programme.';

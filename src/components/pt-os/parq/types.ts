@@ -106,11 +106,6 @@ export type FamilyRelation = 'father' | 'mother' | 'brother' | 'sister' | 'grand
 export type FamilyCondition = 'heart_disease' | 'sudden_death' | 'hypertension' | 'diabetes' | 'stroke';
 export type FamilyHistoryForm = Record<FamilyRelation, Record<FamilyCondition, boolean>>;
 
-export const FAMILY_RELATIONS: { key: FamilyRelation; label: string }[] = [
-  { key: 'father', label: 'Father' }, { key: 'mother', label: 'Mother' },
-  { key: 'brother', label: 'Brother' }, { key: 'sister', label: 'Sister' },
-  { key: 'grandparent', label: 'Grandparent' },
-];
 export const FAMILY_CONDITIONS: { key: FamilyCondition; label: string }[] = [
   { key: 'heart_disease', label: 'Heart disease' },
   { key: 'sudden_death', label: 'Sudden death' },
@@ -245,7 +240,7 @@ export const TRAINER_NOTES_FIELDS: { key: keyof TrainerNotesForm; label: string 
   { key: 'summary', label: 'Summary' },
 ];
 
-export function initCurrentHealth(): CurrentHealthForm {
+function initCurrentHealth(): CurrentHealthForm {
   return {
     known_disease: false, known_disease_details: '',
     activity_level: '', dietary_habits: '', water_intake: '',
@@ -264,7 +259,7 @@ export function initCurrentHealth(): CurrentHealthForm {
   };
 }
 
-export function initPastHistory(): PastHistoryForm {
+function initPastHistory(): PastHistoryForm {
   return {
     heart_disease: false, respiratory_disease: false, asthma: false, copd: false, tuberculosis: false,
     joint_problems: false, back_pain: false, neck_pain: false, knee_pain: false, shoulder_pain: false, hip_pain: false,

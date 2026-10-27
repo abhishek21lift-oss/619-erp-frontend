@@ -180,7 +180,7 @@ export function StepMeasureTarget({
 }
 
 /** A target that runs the wrong way for the goal, as a sentence. */
-export function directionWarning(goalType: string, gap: number | null, metric?: GoalMeasureMetric | ''): string | null {
+function directionWarning(goalType: string, gap: number | null, metric?: GoalMeasureMetric | ''): string | null {
   if (gap == null || gap === 0) return null;
   const measured = metric === 'body_fat' ? 'body fat' : 'weight';
   if (goalType === 'fat_loss' && gap > 0) return `This is a fat-loss goal, but the target ${measured} is above the current ${measured}. Check both numbers.`;

@@ -97,6 +97,29 @@ describe('Program Design hub', () => {
       .toHaveAttribute('href', '/pt-os/clients/c1?tab=ai');
   });
 
+  it('takes training days from enrolment, not the Interview fallback', async () => {
+    // sessions_per_week is what the enrolment form writes. The Interview's
+    // training-days answer is only a fallback for older records; preferring it
+    // programmed a 4-day client for the 6 days they once mentioned.
+    mockClient.mockResolvedValue({
+      data: {
+        id: 'c1', name: 'Mina Rao', gender: 'female', dob: '1996-01-01',
+        weight: 60, height: 165, goal: 'fat_loss', sessions_per_week: 4,
+      },
+    });
+    mockAssessments.mockResolvedValue({ data: [] });
+    mockInterviews.mockResolvedValue({
+      data: [{ id: 'i1', status: 'completed', lifestyle_training_days: 6, created_at: '2026-10-01T10:00:00Z' }],
+    });
+    mockGoals.mockResolvedValue({ data: [] });
+    mockAssignments.mockResolvedValue([]);
+
+    render(<ProgramDesignPage />);
+
+    expect(await screen.findByText(/4 days\/week/)).toBeTruthy();
+    expect(screen.queryByText(/6 days\/week/)).toBeNull();
+  });
+
   it('renders with a bare profile, showing — and a link to complete the assessment', async () => {
     mockClient.mockResolvedValue({
       data: { id: 'c1', name: 'Mina', gender: null, dob: null, weight: null, height: null },

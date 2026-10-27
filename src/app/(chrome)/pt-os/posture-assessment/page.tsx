@@ -14,7 +14,7 @@ import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { calcPostureRiskScore, classifyRisk, calcPostureReferrals } from '@/lib/posture-calculations';
 import ReferralBanner from '@/components/pt-os/shared/ReferralBanner';
-import { STEPS, initPostureForm, COACH_NOTE_FIELDS } from '@/components/pt-os/posture-assessment/types';
+import { STEPS, initPostureForm, COACH_NOTE_FIELDS, validatePostureFindings } from '@/components/pt-os/posture-assessment/types';
 import type { PostureFormData, StepId, CoachNotes } from '@/components/pt-os/posture-assessment/types';
 import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
 import AssessmentHistoryHub from '@/components/pt-os/shared/AssessmentHistoryHub';
@@ -27,6 +27,13 @@ import { errorMessage } from '@/lib/forms/errors';
 import AssessmentDateField, { assessmentDateIssue } from '@/components/pt-os/shared/AssessmentDateField';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+/** What each step needs before it can be left, and before the form can be
+ *  saved. Zero selected issues is only a finding once it is confirmed. */
+function validateStep(id: StepId, form: PostureFormData): string | undefined {
+  if (id === 1) return assessmentDateIssue(form.assessmentDate) ?? validatePostureFindings(form);
+  return undefined;
+}
 
 function formFromRow(row: Record<string, unknown>): PostureFormData {
   const fresh = initPostureForm();
@@ -172,10 +179,17 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
   }, [form.frontIssues, form.sideIssues, form.backIssues]);
 
   const handleNext = () => {
-    const dateErr = step === 1 ? assessmentDateIssue(form.assessmentDate) : undefined;
-    if (dateErr) { toast.error(dateErr); return; }
+    const err = validateStep(step, form);
+    if (err) { toast.error(err); return; }
     if (step === 2) { setReviewMode(true); return; }
     setStep((s) => (s + 1) as StepId);
+  };
+
+  // The timeline offers exactly one forward jump, so route it through
+  // handleNext() — a click must not skip the observation check.
+  const handleStepClick = (id: StepId) => {
+    if (id === step + 1) { handleNext(); return; }
+    setStep(id);
   };
 
   const handleBack = () => {
@@ -191,6 +205,20 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
   };
 
   const handleSubmit = async () => {
+    // Back-navigation can leave step 1 unanswered, and a loaded record may
+    // predate the confirmation. Check every step before posting.
+    const allErrors: Partial<Record<StepId, string>> = {};
+    for (const s of STEPS) {
+      const err = validateStep(s.id, form);
+      if (err) allErrors[s.id] = err;
+    }
+    const firstInvalid = STEPS.find((s) => allErrors[s.id]);
+    if (firstInvalid) {
+      setReviewMode(false);
+      setStep(firstInvalid.id);
+      toast.error(allErrors[firstInvalid.id]!);
+      return;
+    }
     setSaving(true);
     try {
       // Emptied lists and notes go as [] / null: `undefined` dropped the key,
@@ -229,7 +257,7 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
           step is the way out now. */}
       <div className="mx-auto max-w-3xl pt-1">
         <PageHero icon={<Accessibility size={18} />} title={assessmentId ? 'Edit Assessment' : 'New Assessment'}>
-          {!reviewMode && <StepperTimeline steps={STEPS} current={step} onStep={setStep} />}
+          {!reviewMode && <StepperTimeline steps={STEPS} current={step} onStep={handleStepClick} />}
         </PageHero>
       </div>
 

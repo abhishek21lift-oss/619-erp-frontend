@@ -1,6 +1,7 @@
 // Shared form shape for the Nutrition Assessment module — imported by the
 // main page and every step component so they don't depend on each other.
 
+import { todayISO } from '@/lib/forms/domain';
 import type {
   FoodsToAvoidReason, MealRegularity, MealTimingConsistency, EatingOutFrequency,
   WeekendEatingHabits, CravingFrequency, MealPreparer, NutritionBudget,
@@ -96,7 +97,9 @@ export type StepId = typeof STEPS[number]['id'];
 
 export function initNutritionForm(): NutritionFormData {
   return {
-    assessmentDate: new Date().toISOString().slice(0, 10),
+    // Local calendar date. `toISOString()` is UTC, so an evening in India
+    // saved yesterday and an evening in New York saved tomorrow.
+    assessmentDate: todayISO(),
     dietPreferences: [],
     foodAllergies: [], foodAllergyOther: '',
     foodsToAvoid: [], foodsToAvoidOther: '', foodsToAvoidReason: '',

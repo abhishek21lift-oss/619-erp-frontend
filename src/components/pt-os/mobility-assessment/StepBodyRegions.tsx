@@ -32,7 +32,7 @@ export function StepBodyRegions({ form, set }: StepBodyRegionsProps) {
         {form.bodyRegions.map((r, i) => (
           <div key={r.region} className="rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>
             <Slider
-              label={r.region} value={r.score ?? 3} min={1} max={5}
+              label={r.region} value={r.score ?? 3} min={1} max={5} unset={r.score == null}
               onChange={(v) => updateRegion(i, { score: v })}
               scaleLabels={['1 · Restricted', '5 · Excellent']}
             />
