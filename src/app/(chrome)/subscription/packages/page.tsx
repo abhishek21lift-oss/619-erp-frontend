@@ -2,36 +2,27 @@
 
 import { useState, useEffect, useId } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
-import { Package, Plus, Pencil, Trash2, X, Check, Search } from 'lucide-react';
+import { Package, Plus, Pencil, Trash2, X, Search } from 'lucide-react';
+import Link from 'next/link';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { useAppForm } from '@/lib/forms/useAppForm';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
-import {
-  ptPackageSchema, blankPtPackage, ptPackageToFormValues, toPtPackagePayload,
-  PACKAGE_GOAL_OPTIONS,
-} from '@/lib/forms/schemas/ptPackage';
-import {
-  TextField, NumberField, SelectField, TextAreaField, FormErrorBanner,
-} from '@/components/ui/form';
+import { PACKAGE_GOAL_OPTIONS } from '@/lib/forms/schemas/ptPackage';
 import { PageHero } from '@/components/ui';
+import { PackageForm, type PtPackage } from '@/components/packages/PackageForm';
 
 /* ── shared theme ─────────────────────────────── */
 const a = '#F59E0B', b = '#D97706';
 const grad = `linear-gradient(135deg,${a},${b})`;
-const inp = { width: '100%', padding: '11px 14px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13 } as const;
-const lab = { display: 'block', fontSize: 11, fontWeight: 600, color: a, marginBottom: 5, letterSpacing: '0.05em' } as const;
-const btnPrim = { padding: '10px 20px', borderRadius: 12, border: 'none', background: grad, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: `0 4px 20px ${a}55` } as const;
+const btnPrim = { padding: '10px 20px', borderRadius: 12, border: 'none', background: grad, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: `0 4px 20px ${a}55`, textDecoration: 'none' } as const;
 
 const fmtINR = (n: number | string | null | undefined) =>
   '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
 /* ── types ────────────────────────────────────── */
-interface PtPackage {
-  id: string; name: string; session_count: number; duration_days: number;
-  price: number; goal_type: string | null; description: string | null; is_active: boolean;
-}
+// PtPackage comes from the shared form module so the list and the form agree
+// on the record shape.
 
 /**
  * The goal labels, from the schema's own option list.
@@ -42,16 +33,6 @@ interface PtPackage {
  */
 const goalLabel = (g: string | null) =>
   PACKAGE_GOAL_OPTIONS.find(t => t.value === g)?.label ?? g ?? '—';
-
-/* ── Spinner ──────────────────────────────────── */
-function Spin() {
-  return (
-    <svg style={{ width: 15, height: 15, animation: 'spin 0.8s linear infinite' }} viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25" />
-      <path d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" fill="currentColor" opacity="0.75" />
-    </svg>
-  );
-}
 
 /* ── Delete Confirm Modal ─────────────────────── */
 function DeleteModal({ open, onCancel, onConfirm }: { open: boolean; onCancel: () => void; onConfirm: () => void }) {
@@ -93,7 +74,6 @@ function PackagesTab() {
   const { toast } = useToast();
   const [packages, setPackages] = useState<PtPackage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<PtPackage | null>(null);
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -111,14 +91,8 @@ function PackagesTab() {
 
   const filtered = packages.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
-  const openCreate = () => {
-    setEditing(null);
-    setShowForm(true);
-  };
-
   const openEdit = (pkg: PtPackage) => {
     setEditing(pkg);
-    setShowForm(true);
   };
 
   const toggleStatus = async (pkg: PtPackage) => {
@@ -146,9 +120,9 @@ function PackagesTab() {
           <input aria-label="Search packages" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search packages..."
             style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: 12, border: '1px solid #cbd5e1', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13 }} />
         </div>
-        <m.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={openCreate} style={{ ...btnPrim }}>
+        <Link href="/subscription/packages/new" style={{ ...btnPrim }}>
           <Plus size={15} /> Create Package
-        </m.button>
+        </Link>
       </div>
 
       {loading ? (
@@ -158,9 +132,9 @@ function PackagesTab() {
           style={{ textAlign: 'center', padding: '60px 24px', borderRadius: 20, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
           <Package size={48} color={a} style={{ margin: '0 auto 12px', display: 'block' }} />
           <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>No Packages Yet</h3>
-          <m.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={openCreate} style={{ ...btnPrim, display: 'inline-flex' }}>
+          <Link href="/subscription/packages/new" style={{ ...btnPrim, display: 'inline-flex' }}>
             <Plus size={15} /> Create Package
-          </m.button>
+          </Link>
         </m.div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
@@ -197,14 +171,14 @@ function PackagesTab() {
         </div>
       )}
 
-      {/* Package Form Modal */}
+      {/* Edit stays in a dialog: create has its own page, but editing from a
+          card is a small, local change and the list stays visible behind it. */}
       <AnimatePresence>
-        {showForm && (
-          <PackageFormModal
+        {editing && (
+          <EditPackageModal
             editing={editing}
-            onClose={() => { setShowForm(false); setEditing(null); }}
+            onClose={() => setEditing(null)}
             onSaved={async () => {
-              setShowForm(false);
               setEditing(null);
               await fetchPackages();
             }}
@@ -250,132 +224,41 @@ function PageContent() {
   );
 }
 
-/* ── Package form ─────────────────────────────── */
+/* ── Edit dialog ──────────────────────────────── */
 
 /**
- * Create or edit a PT package.
+ * Create is a page now. Edit keeps the dialog because it starts and ends on the
+ * list, and the record being changed is already on screen.
  *
- * Its price is what every enrolment against it charges, and `parseFloat` parses
- * a PREFIX — so "8,000", which is how a studio owner writes a price, created an
- * ₹8 package. See `schemas/ptPackage.ts` for the rest.
- *
- * Mounted only while open and keyed on the package being edited, so the values
- * are rebuilt from the record rather than patched onto whatever the last one
- * left behind (§11) — which is what the two `setForm({...})` calls in
- * openCreate/openEdit were doing by hand, in two places that had to agree.
+ * The dialog chrome is the repo's dialog hook, the same one sixteen other modal
+ * surfaces use: focus in on open, trapped while open, returned to the trigger
+ * on close, Escape to dismiss.
  */
-function PackageFormModal({ editing, onClose, onSaved }: {
-  editing: PtPackage | null;
+function EditPackageModal({ editing, onClose, onSaved }: {
+  editing: PtPackage;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
-  const { toast } = useToast();
-  const f = useAppForm({
-    schema: ptPackageSchema,
-    defaultValues: editing ? ptPackageToFormValues(editing) : blankPtPackage(),
-    onSubmit: async (values) => {
-      const payload = toPtPackagePayload(values);
-      if (editing) await api.automation.ptPackages.update(editing.id, payload);
-      else await api.automation.ptPackages.create(payload);
-      toast.success(editing ? 'Package updated' : 'Package created');
-    },
-    onSuccess: () => { void onSaved(); },
-  });
-
-  const { form, isSubmitting } = f;
-
-  // The repo's dialog hook, the same one sixteen other modal surfaces use:
-  // focus in on open, trapped while open, returned to the trigger on close,
-  // Escape to dismiss. This overlay had none of it — Tab walked straight out
-  // into the package list behind it, where every card is still clickable.
   const setDialogRef = useDialogA11y({ open: true, onClose });
   const titleId = useId();
-  const heading = editing ? 'Edit Package' : 'Create Package';
 
   return (
     <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(6px)', padding: 16 }}
-      onClick={() => !isSubmitting && onClose()}>
+      onClick={onClose}>
       <m.div ref={setDialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}
         initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
-        style={{ width: '100%', maxWidth: 520, borderRadius: 22, background: 'var(--bg-card)', border: '1px solid rgba(0,0,0,0.07)', padding: 28, boxShadow: '0 24px 80px rgba(0,0,0,0.12)' }}
+        style={{ width: '100%', maxWidth: 520, maxHeight: 'calc(100dvh - 32px)', overflowY: 'auto', borderRadius: 22, background: 'var(--bg-card)', border: '1px solid rgba(0,0,0,0.07)', padding: 28, boxShadow: '0 24px 80px rgba(0,0,0,0.12)' }}
         onClick={e => e.stopPropagation()}>
-        <form noValidate onSubmit={(e) => { e.preventDefault(); void f.submit(); }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-            <h3 id={titleId} style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{heading}</h3>
-            <button type="button" onClick={onClose} aria-label={`Close ${heading}`}
-              style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'var(--bg-subtle)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-              <X size={15} />
-            </button>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <h3 id={titleId} style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Edit Package</h3>
+          <button type="button" onClick={onClose} aria-label="Close Edit Package"
+            style={{ width: 44, height: 44, borderRadius: 10, border: 'none', background: 'var(--bg-subtle)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+            <X size={15} />
+          </button>
+        </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} />
-
-            {/* The examples stay as placeholders — a price field called
-                "e.g. 8000" is the failure; a price field called "Price"
-                showing "e.g. 8000" is the point. */}
-            <form.Field name="name">
-              {(field) => (
-                <TextField field={field} label="Package name" required maxLength={120}
-                  placeholder="e.g. Fat Loss Starter"
-                  serverError={f.errors.fieldErrors.name} />
-              )}
-            </form.Field>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-              <form.Field name="session_count">
-                {(field) => (
-                  <NumberField field={field} label="Sessions" required mode="integer"
-                    placeholder="e.g. 12" serverError={f.errors.fieldErrors.session_count} />
-                )}
-              </form.Field>
-              <form.Field name="duration_days">
-                {(field) => (
-                  <NumberField field={field} label="Duration" required mode="integer" suffix="d"
-                    placeholder="e.g. 30" serverError={f.errors.fieldErrors.duration_days} />
-                )}
-              </form.Field>
-              <form.Field name="price">
-                {(field) => (
-                  <NumberField field={field} label="Price" required mode="money" suffix="₹"
-                    placeholder="e.g. 8000" serverError={f.errors.fieldErrors.price} />
-                )}
-              </form.Field>
-            </div>
-
-            <form.Field name="goal_type">
-              {(field) => (
-                <SelectField field={field} label="Goal type" options={PACKAGE_GOAL_OPTIONS}
-                  serverError={f.errors.fieldErrors.goal_type} />
-              )}
-            </form.Field>
-
-            <form.Field name="description">
-              {(field) => (
-                <TextAreaField field={field} label="Description"
-                  description="Shown to members on the package card."
-                  rows={3} maxLength={1000} showCount
-                  serverError={f.errors.fieldErrors.description} />
-              )}
-            </form.Field>
-          </div>
-
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 24 }}>
-            <button type="button" onClick={onClose} disabled={isSubmitting}
-              style={{ padding: '10px 18px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-            {/* No longer gated on four boxes being non-empty. The old button
-                was disabled until something was typed and then accepted
-                whatever it was — so a blank price could not be submitted but
-                "8,000" could, as ₹8. */}
-            <m.button type="submit" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-              disabled={isSubmitting}
-              style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: grad, color: '#fff', fontSize: 13, fontWeight: 700, cursor: isSubmitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, opacity: isSubmitting ? 0.6 : 1, boxShadow: `0 4px 16px ${a}44` }}>
-              {isSubmitting ? <Spin /> : <Check size={15} />}
-              {editing ? 'Update' : 'Create'}
-            </m.button>
-          </div>
-        </form>
+        <PackageForm editing={editing} onCancel={onClose} onSaved={onSaved} />
       </m.div>
     </m.div>
   );

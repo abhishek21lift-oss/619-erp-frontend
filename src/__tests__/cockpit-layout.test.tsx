@@ -40,8 +40,12 @@ import PtOsDashboard from '@/components/dashboards/PtOsDashboard';
 
 const SWEEP = { clients: 3, clients_with_signals: 0, critical: 0, not_assessable: 0, clients_detail: [] };
 
-function assertOrder(labels: (string | RegExp)[]) {
-  const nodes = labels.map((l) => screen.getByText(l));
+async function assertOrder(labels: (string | RegExp)[]) {
+  // Each section has its own fetch. Waiting only for the first one made this
+  // assertion race the rest; `findByText` waits for every label before the
+  // order check, so a slow worker cannot turn a layout pass into a failure.
+  const nodes = [];
+  for (const l of labels) nodes.push(await screen.findByText(l, undefined, { timeout: 10_000 }));
   for (let i = 0; i < nodes.length - 1; i++) {
     const rel = nodes[i].compareDocumentPosition(nodes[i + 1]);
     expect(
@@ -60,7 +64,7 @@ describe('cockpit section order', () => {
   it('orders the day: schedule, next action, board, who to call, money', async () => {
     render(<PtOsDashboard />);
     await screen.findByText('Active Clients', undefined, { timeout: 3000 });
-    assertOrder([
+    await assertOrder([
       /Today.s Sessions/i,
       'Next Best Action',
       'AI Coach',
@@ -69,7 +73,7 @@ describe('cockpit section order', () => {
       'This Month',
       'Key Metrics',
     ]);
-  });
+  }, 30_000);
 
   it('keeps the rest of the cockpit when the roster sweep fails', async () => {
     signalsMock.mockRejectedValue(new Error('sweep down'));

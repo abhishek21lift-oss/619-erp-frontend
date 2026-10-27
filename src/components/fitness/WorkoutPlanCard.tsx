@@ -12,10 +12,12 @@
 //
 // ── Why the metadata is a sentence, not chips ──────────────────────────────
 //
-// Goal, duration, sessions and exercise count used to be four pills. Four
-// bordered capsules per card, six cards on screen, is 24 boxes to look past
-// before reading a name. They are one muted line now — the same four facts,
-// separated by dots, in the order a trainer would say them out loud.
+// Goal, duration and sessions used to be pills. Four bordered capsules per
+// card, six cards on screen, is 24 boxes to look past before reading a name.
+// They are one muted line now — the same facts, separated by dots, in the
+// order a trainer would say them out loud. The exercise count is not on the
+// line: the bar below already answers "is this plan usable", and the empty
+// state names the reason when it is not.
 //
 // ── Nothing here is invented ───────────────────────────────────────────────
 //
@@ -76,11 +78,7 @@ export function WorkoutPlanCard({
   // field never arrived, which is not the same claim and stays silent.
   const isEmpty = exerciseCount === 0
 
-  const meta = [
-    goal,
-    prescription,
-    exerciseCount ? `${exerciseCount} exercise${exerciseCount === 1 ? '' : 's'}` : null,
-  ].filter(Boolean).join(' · ')
+  const meta = [goal, prescription].filter(Boolean).join(' · ')
 
   return (
     <m.div
@@ -128,8 +126,8 @@ export function WorkoutPlanCard({
                 <span className="truncate">{note}</span>
               </p>
             )}
-            {/* Also wraps: truncating this line dropped the exercise count,
-                which is the last fact on it and one a trainer scans for. */}
+            {/* Also wraps: truncating this line drops the prescription's last
+                fact, and the prescription is what a trainer scans for. */}
             {meta && (
               <p
                 className="mt-1 text-[11.5px] leading-relaxed"

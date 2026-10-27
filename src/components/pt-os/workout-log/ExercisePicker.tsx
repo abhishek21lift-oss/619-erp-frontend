@@ -66,6 +66,15 @@ export interface ExercisePickerPanelProps {
    */
   allowCustom?: boolean;
   /**
+   * Offer to author the typed name as a real library exercise.
+   *
+   * Unlike `allowCustom`, which only carries a name into the row, this asks
+   * the caller to navigate to the exercise editor and come back with a
+   * library id. Only the builder passes it: a programme row has nowhere to
+   * put a name, so the id has to exist before it can be attached.
+   */
+  onCreateExercise?: (name: string) => void;
+  /**
    * Collect a batch instead of adding one and closing.
    *
    * Opt-in, because the three other callers genuinely want one-at-a-time:
@@ -140,7 +149,7 @@ const VIEWPORT = 440;
  */
 export function ExercisePickerPanel({
   live, onClose, onSelect, recentNames = [], existingIds = [], allowCustom = false,
-  multiple = false, onSelectMany, busy = false, voiceSearch = false,
+  onCreateExercise, multiple = false, onSelectMany, busy = false, voiceSearch = false,
 }: ExercisePickerPanelProps) {
   const { toast } = useToast();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -322,6 +331,12 @@ export function ExercisePickerPanel({
   const showRecentChips = !search && !region && !equipment && !favoritesOnly && recentNames.length > 0;
   const showRecentList  = !search && !region && !equipment && !favoritesOnly && recent.length > 0;
   const rows = showRecentList ? recent : exercises;
+  // The name is only offered for authoring when the library does not already
+  // hold it verbatim — otherwise "Create Bench Press" sits under Bench Press.
+  const exactMatch = customName
+    ? rows.some((ex) => ex.name.trim().toLowerCase() === customName.toLowerCase())
+    : false;
+  const showCreate = Boolean(onCreateExercise && customName && !exactMatch);
 
   const virtual = useVirtualList(rows, ROW_HEIGHT, VIEWPORT);
 
@@ -528,6 +543,31 @@ export function ExercisePickerPanel({
           <p className="mb-1.5 flex items-center gap-1.5 text-[10.5px] font-[650] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>
             <Clock size={11} /> You programme often
           </p>
+        )}
+
+        {/* Authoring a missing movement, pinned above the list for the same
+            reason the custom row is: the trainer has just typed its name and
+            should not scroll past near-misses to find the way forward. */}
+        {showCreate && (
+          <button
+            type="button"
+            onClick={() => onCreateExercise!(customName)}
+            data-testid="create-exercise"
+            className="mb-2 flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left transition hover:opacity-90"
+            style={{ background: 'rgba(0,103,224,0.07)', border: '1px dashed rgba(0,103,224,0.38)', minHeight: 48 }}
+          >
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]" style={{ background: '#0067e0', color: '#fff' }}>
+              <PlusCircle size={15} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[13px] font-[650]" style={{ color: 'var(--text-primary)' }}>
+                Create “{customName}”
+              </span>
+              <span className="block truncate text-[11px]" style={{ color: 'var(--text-disabled)' }}>
+                Not in the library — add it to your studio’s exercises.
+              </span>
+            </span>
+          </button>
         )}
 
         {/* Custom — pinned above the list rather than at the end of it, so it

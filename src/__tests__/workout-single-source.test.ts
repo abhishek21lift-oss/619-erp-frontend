@@ -95,7 +95,7 @@ describe('the second builder is gone, not merely unlinked', () => {
     for (const rel of [
       'components/pt-os/builder/WorkoutBuilder.tsx',
       'components/pt-os/builder/AddExercisesScreen.tsx',
-      'components/pt-os/builder/NewProgrammeDialog.tsx',
+      'app/(chrome)/pt-os/workout-plans/new/page.tsx',
       'components/pt-os/builder/PlanVersions.tsx',
     ]) {
       expect(existsSync(join(SRC, rel))).toBe(true);

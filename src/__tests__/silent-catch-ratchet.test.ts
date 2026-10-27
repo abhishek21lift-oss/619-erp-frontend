@@ -89,7 +89,7 @@ const KNOWN = [
   // They are the fallback, not the failure — the OUTER catch is what used to
   // render a failure as zero, and that is gone from all three.
   'app/(chrome)/finance/collected-payments/page.tsx:113',
-  'app/(chrome)/finance/dues/page.tsx:100',
+  'app/(chrome)/finance/dues/page.tsx:95',
   'components/payments/UpiPayScreen.tsx:210',
   // Line moved 587 -> 592 -> 597 -> 584 -> 572: the Check-in QR print popup
   // above gained five lines of escaping plus two imports, the premium hero pass
@@ -103,7 +103,7 @@ const KNOWN = [
   'app/(chrome)/pt-os/diet-plans/page.tsx:188',
   'app/(chrome)/pt-os/diet-plans/page.tsx:189',
   'app/(chrome)/pt-os/exercise-library/[id]/edit/page.tsx:28',
-  'app/(chrome)/pt-os/exercise-library/new/page.tsx:28',
+  'app/(chrome)/pt-os/exercise-library/new/page.tsx:56',
   // The goal wizard reads the Client Interview and the Module 5 re-test
   // schedule as optional context. Neither is a number the trainer acts on:
   // the step shows "Not recorded"/"No re-test scheduled" and the goal can
@@ -139,8 +139,8 @@ const KNOWN = [
   // 130/136 -> 151/157 -> 184/190 -> 188/194: the day prefill, the
   // record-backed form and then the generation's client id added helpers
   // above them. Same two statements, same file and count.
-  'components/fitness/AiCoachPanel.tsx:188',
-  'components/fitness/AiCoachPanel.tsx:194',
+  'components/fitness/AiCoachPanel.tsx:197',
+  'components/fitness/AiCoachPanel.tsx:203',
   // The hosting console reads the operation allow-list beside the reads that
   // carry the page: `hostingerCatalogue()` is a local lookup on the server, and
   // if it fails the screen keeps its compiled-in safety labels and the spec line
@@ -149,11 +149,11 @@ const KNOWN = [
   // the same Promise.all rejects into the screen's error state and retry.
   'components/platform/hosting-centre.tsx:681',
   'components/platform/hosting-vps.tsx:75',
+  'app/(chrome)/pt-os/workout-plans/new/page.tsx:166',
+  'app/(chrome)/pt-os/workout-plans/new/page.tsx:169',
   'components/pt-os/analytics/LandmarkEditor.tsx:82',
-  'components/pt-os/builder/NewProgrammeDialog.tsx:248',
-  'components/pt-os/builder/NewProgrammeDialog.tsx:251',
-  'components/pt-os/workout-log/ExercisePicker.tsx:274',
-  'components/pt-os/workout-log/ExercisePicker.tsx:288',
+  'components/pt-os/workout-log/ExercisePicker.tsx:283',
+  'components/pt-os/workout-log/ExercisePicker.tsx:297',
   'lib/auth-context.tsx:214',
   'lib/auth-context.tsx:216',
 ].sort();

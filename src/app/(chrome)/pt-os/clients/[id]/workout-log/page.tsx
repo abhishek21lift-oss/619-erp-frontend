@@ -401,7 +401,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
                 { id: 'timeline', icon: History },
               ] as const).map(({ id: v, icon: Icon }) => (
                 <button key={v} onClick={() => { setView(v); setSelectedDay(null); }}
-                  className="flex h-8 w-8 items-center justify-center rounded-[10px] transition"
+                  className="flex h-11 w-11 items-center justify-center rounded-[10px] transition"
                   style={{ background: view === v ? '#0f172a' : 'var(--bg-subtle)', color: view === v ? '#fff' : '#64748b' }}>
                   <Icon size={14} />
                 </button>
@@ -561,11 +561,11 @@ function CalendarView({
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <button onClick={() => setMonth(new Date(year, monthIdx - 1, 1))} className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'var(--bg-subtle)' }}>
+        <button onClick={() => setMonth(new Date(year, monthIdx - 1, 1))} className="flex h-11 w-11 items-center justify-center rounded-[8px]" style={{ background: 'var(--bg-subtle)' }}>
           <ChevronLeft size={14} />
         </button>
         <p className="text-[13px] font-[760] text-gray-900">{month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
-        <button onClick={() => setMonth(new Date(year, monthIdx + 1, 1))} className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'var(--bg-subtle)' }}>
+        <button onClick={() => setMonth(new Date(year, monthIdx + 1, 1))} className="flex h-11 w-11 items-center justify-center rounded-[8px]" style={{ background: 'var(--bg-subtle)' }}>
           <ChevronRight size={14} />
         </button>
       </div>
@@ -582,7 +582,7 @@ function CalendarView({
             <button
               key={i}
               onClick={() => setSelectedDay(isSelected ? null : key)}
-              className="flex h-9 flex-col items-center justify-center rounded-[8px] text-[11.5px] font-[650] transition"
+              className="flex h-11 flex-col items-center justify-center rounded-[8px] text-[11.5px] font-[650] transition"
               style={{
                 background: isSelected ? '#0f172a' : has ? 'rgba(245,158,11,0.1)' : 'transparent',
                 color: isSelected ? '#fff' : has ? '#d97706' : '#475569',

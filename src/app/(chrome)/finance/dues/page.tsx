@@ -11,8 +11,8 @@ import { useAuth } from '@/lib/auth-context';
 import type { DuesItem, DuesSummary } from '@/lib/api';
 import { whatsAppHref } from '@/lib/phone';
 import {
-  Search, AlertTriangle, CheckCircle2, TrendingDown,
-  MessageCircle, Users, Banknote, ChevronRight,
+  Search, AlertTriangle, CheckCircle2,
+  MessageCircle, ChevronRight,
 } from 'lucide-react';
 
 export default function OutstandingDuesPage() {
@@ -20,11 +20,6 @@ export default function OutstandingDuesPage() {
 }
 
 const fmt = (n: number | string) => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
-function fmtCompact(n: number) {
-  if (n >= 100_000) return '₹' + (n / 100_000).toFixed(1) + 'L';
-  if (n >= 1_000)   return '₹' + (n / 1_000).toFixed(1) + 'K';
-  return fmt(n);
-}
 function fmtDate(d?: string) {
   if (!d) return '—';
   const dt = new Date(d);
@@ -145,21 +140,36 @@ function Inner() {
             style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
             All balances <ChevronRight size={13} aria-hidden />
           </Link>}
-      >
-        <div className="grid grid-cols-3 gap-2.5">
-          {[
-            { label: summary ? 'Outstanding' : 'Outstanding (shown)', value: fmtCompact(total) },
-            { label: 'High risk', value: String(highRisk) },
-            { label: 'Medium', value: String(medRisk) },
-          ].map((s) => (
-            <div key={s.label} className="rounded-[12px] px-3 py-2.5"
-              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
-              <p className="truncate text-[17px] font-[800] tabular-nums leading-none text-white">{s.value}</p>
-              <p className="mt-1.5 truncate text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.66)' }}>{s.label}</p>
-            </div>
-          ))}
+        />
+
+        {/* The three figures used to sit inside the shared hero as translucent
+            tiles, which made the hero taller and pushed the search below the
+            fold on a phone. They are portfolio totals, not hero decoration, so
+            they live in cards like every other finance screen. */}
+        <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
+          <KpiCard
+            label={summary ? 'Outstanding' : 'Outstanding (shown)'}
+            value={fmt(total)}
+            hint={summary ? undefined : 'Summary unavailable — first 100 rows only'}
+            icon={<AlertTriangle size={18} />}
+            accent="coral"
+            loading={loading && !summary && dues.length === 0}
+          />
+          <KpiCard
+            label="High risk"
+            value={String(highRisk)}
+            hint={`${fmt(RISK_HIGH)}+ balance`}
+            accent="amber"
+            loading={loading && dues.length === 0}
+          />
+          <KpiCard
+            label="Medium"
+            value={String(medRisk)}
+            hint={`${fmt(RISK_MEDIUM)}+ · under ${fmt(RISK_HIGH)}`}
+            accent="blue"
+            loading={loading && dues.length === 0}
+          />
         </div>
-      </PageHero>
 
       {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 14, padding: '12px 16px', fontSize: 14, color: '#dc2626', marginBottom: 16 }}>{error}</div>}
 
@@ -168,7 +178,7 @@ function Inner() {
         <div style={{ position: 'relative', maxWidth: 340 }}>
           <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-disabled)' }} />
           <input aria-label="Search member, ID or mobile" type="search" placeholder="Search member, ID or mobile" onChange={(e) => handleSearch(e.target.value)}
-            style={{ width: '100%', padding: '9px 12px 9px 34px', borderRadius: 12, border: '1.5px solid var(--border)', fontSize: 13, color: 'var(--text-primary)', background: 'var(--bg-card)', boxSizing: 'border-box' }} />
+            style={{ width: '100%', minHeight: 44, padding: '9px 12px 9px 34px', borderRadius: 12, border: '1.5px solid var(--border)', fontSize: 13, color: 'var(--text-primary)', background: 'var(--bg-card)', boxSizing: 'border-box' }} />
         </div>
       </div>
 
@@ -241,7 +251,8 @@ function Inner() {
                         <div style={{ display: 'flex', gap: 6 }}>
                           {d.mobile && (
                             <a href={whatsappHref(d.mobile, d.name, user?.organization_name || 'MY PT STUDIO')} target="_blank" rel="noopener noreferrer"
-                              style={{ width: 30, height: 30, borderRadius: 10, border: '1.5px solid #a7f3d0', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', textDecoration: 'none' }}
+                              aria-label={`Send WhatsApp reminder to ${d.name}`}
+                              style={{ width: 44, height: 44, borderRadius: 12, border: '1.5px solid #a7f3d0', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', textDecoration: 'none' }}
                               title="Send WhatsApp reminder">
                               <MessageCircle size={13} />
                             </a>

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, X, Brain, Zap, Dumbbell, Salad, Send, User, ChevronDown, RotateCcw, BookOpen, Database,
+  Square, AlertTriangle,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { streamAiChat } from '@/lib/ai-stream';
@@ -42,6 +43,8 @@ interface Message {
   sources?: string[];
   /** Live-data tools (member counts, attendance, revenue, etc.) consulted for this answer. */
   tools?: string[];
+  /** Set when the document store could not be searched for this answer. */
+  grounding?: 'unavailable';
 }
 
 // ─── SSE stream event shape (from POST /api/ai/chat) ──────────────────────────
@@ -155,10 +158,16 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
     },
   ]);
   const [chatInput, setChatInput] = useState('');
+  // Two states, not one: typing is the gap before the first token, streaming
+  // is the whole answer. They used to share `isTyping`, so the send button
+  // re-enabled on the first token and a second question could be sent into a
+  // stream that was still writing the first.
   const [isTyping, setIsTyping] = useState(false);
+  const [streaming, setStreaming] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const lastUserTextRef = useRef('');
 
   useEffect(() => {
     if (mode === 'chat') chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -330,28 +339,45 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
 
   // ── Chat send (real SSE streaming to /api/ai/chat) ──────────────────────────
 
-  const handleSend = useCallback(async () => {
-    const text = chatInput.trim();
-    if (!text || isTyping) return;
+  const handleSend = useCallback(async (retryText?: string) => {
+    const text = (retryText ?? chatInput).trim();
+    if (!text || streaming) return;
+    lastUserTextRef.current = text;
 
     const userMsg: Message = { id: `user-${Date.now()}`, role: 'user', content: text, timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
-    setChatInput('');
+    if (!retryText) setChatInput('');
     setIsTyping(true);
+    setStreaming(true);
 
     const coachId = `coach-${Date.now()}`;
     let acc = '';
     let started = false;
     let pendingSources: string[] | undefined;
     let pendingTools: string[] | undefined;
+    let pendingGrounding: 'unavailable' | undefined;
 
     const controller = new AbortController();
     abortRef.current = controller;
 
     const pushCoach = (content: string, error = false) =>
-      setMessages(prev => [...prev, { id: coachId, role: 'coach', content, timestamp: new Date(), error, sources: pendingSources, tools: pendingTools }]);
-    const updateCoach = (content: string) =>
-      setMessages(prev => prev.map(m2 => (m2.id === coachId ? { ...m2, content } : m2)));
+      setMessages(prev => [...prev, {
+        id: coachId, role: 'coach', content, timestamp: new Date(), error,
+        sources: pendingSources, tools: pendingTools, grounding: pendingGrounding,
+      }]);
+    // Sources and tools can arrive after the first token. Rewriting only the
+    // text dropped them, which was invisible only because the backend happens
+    // to emit them first today.
+    const updateCoach = (content: string, error?: boolean) =>
+      setMessages(prev => prev.map(m2 => (m2.id === coachId
+        ? {
+          ...m2, content,
+          error: error ?? m2.error,
+          sources: pendingSources ?? m2.sources,
+          tools: pendingTools ?? m2.tools,
+          grounding: pendingGrounding ?? m2.grounding,
+        }
+        : m2)));
 
     try {
       // The SSE parsing lives in lib/ai-stream — the same helper the AI Coach
@@ -368,6 +394,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
           onConversationId: setConversationId,
           onSources: (srcs) => { pendingSources = srcs; },
           onTools: (t) => { pendingTools = t; },
+          onGrounding: (g) => { pendingGrounding = g; },
           onText: (chunkText) => {
             acc = chunkText;
             if (!started) { started = true; setIsTyping(false); pushCoach(acc); }
@@ -390,18 +417,22 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
           ? 'The AI coach ran into a problem.'
           : raw;
       if (!started) { setIsTyping(false); pushCoach(`⚠️ ${msg}`, true); }
-      else updateCoach(`${acc}\n\n⚠️ ${msg}`);
+      else updateCoach(`${acc}\n\n⚠️ ${msg}`, true);
     } finally {
       setIsTyping(false);
+      setStreaming(false);
       abortRef.current = null;
     }
-  }, [chatInput, isTyping, conversationId, selectedClient]);
+  }, [chatInput, streaming, conversationId, selectedClient]);
 
   function handleChatKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend(); }
   }
 
   const canGenerate = Boolean(goal && selectedClient) && !isGenerating;
+  // Retry belongs on the newest bubble only; an older one has been answered
+  // over and re-sending its question would fork the conversation.
+  const lastMessageId = messages[messages.length - 1]?.id;
   // Values the record already holds. The server prefers them over the body,
   // so the form shows them read-only rather than inviting a pick it discards.
   const goalFromRecord = Boolean(recordedGoal(selectedClient));
@@ -489,7 +520,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                 whileHover={{ scale: 1.08, background: 'rgba(255,255,255,0.12)' }}
                 whileTap={{ scale: 0.95 }}
                 style={{
-                  width: 32, height: 32, borderRadius: 9, border: 'none',
+                  width: 44, height: 44, borderRadius: 11, border: 'none',
                   background: 'rgba(255,255,255,0.06)', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: 'rgba(255,255,255,0.55)', flexShrink: 0,
@@ -510,7 +541,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                 key={m_}
                 onClick={() => setMode(m_)}
                 style={{
-                  flex: 1, padding: '8px 0', borderRadius: 8, border: 'none',
+                  flex: 1, padding: '8px 0', minHeight: 44, borderRadius: 8, border: 'none',
                   fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
                   background: mode === m_ ? ACCENT : 'transparent',
                   color: mode === m_ ? '#fff' : 'rgba(255,255,255,0.52)',
@@ -769,7 +800,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                 )}
 
                 {/* Messages */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 8px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', padding: '16px 16px 8px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <AnimatePresence initial={false}>
                     {messages.map(msg => (
                       <m.div
@@ -790,9 +821,15 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                               : 'none',
                           }}
                         >
-                          <p style={{ fontSize: 13, color: msg.role === 'user' ? '#fff' : msg.error ? '#fca5a5' : 'rgba(255,255,255,0.85)', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                          <p style={{ fontSize: 13, color: msg.role === 'user' ? '#fff' : msg.error ? '#fca5a5' : 'rgba(255,255,255,0.85)', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                             {msg.content}
                           </p>
+                          {msg.grounding === 'unavailable' && (
+                            <p style={{ display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: 10.5, color: '#fbbf24', margin: '8px 0 0', lineHeight: 1.4 }}>
+                              <AlertTriangle size={11} style={{ flexShrink: 0, marginTop: 1 }} />
+                              Your studio&apos;s documents could not be searched — this answer is not grounded in them.
+                            </p>
+                          )}
                           {msg.sources && msg.sources.length > 0 && (
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                               <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'rgba(255,255,255,0.4)' }}>
@@ -818,6 +855,20 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                                 </span>
                               ))}
                             </div>
+                          )}
+                          {msg.error && msg.id === lastMessageId && !streaming && lastUserTextRef.current && (
+                            <button
+                              onClick={() => void handleSend(lastUserTextRef.current)}
+                              style={{
+                                marginTop: 8, minHeight: 44, width: '100%', borderRadius: 9,
+                                border: '1px solid rgba(255,255,255,0.18)', background: 'transparent',
+                                color: 'rgba(255,255,255,0.78)', fontSize: 12, fontWeight: 650,
+                                cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', gap: 5,
+                              }}
+                            >
+                              <RotateCcw size={12} /> Try again
+                            </button>
                           )}
                         </div>
                       </m.div>
@@ -868,22 +919,40 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                       lineHeight: 1.4, maxHeight: 100, overflowY: 'auto',
                     }}
                   />
-                  <m.button
-                    onClick={handleSend}
-                    disabled={!chatInput.trim() || isTyping}
-                    whileHover={chatInput.trim() && !isTyping ? { scale: 1.08 } : {}}
-                    whileTap={chatInput.trim() && !isTyping ? { scale: 0.95 } : {}}
-                    style={{
-                      width: 38, height: 38, borderRadius: 11, border: 'none',
-                      background: chatInput.trim() && !isTyping ? ACCENT : 'rgba(255,255,255,0.08)',
-                      color: chatInput.trim() && !isTyping ? '#fff' : 'rgba(255,255,255,0.25)',
-                      cursor: chatInput.trim() && !isTyping ? 'pointer' : 'not-allowed',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      transition: 'all 0.18s',
-                    }}
-                  >
-                    <Send size={16} />
-                  </m.button>
+                  {streaming ? (
+                    <m.button
+                      onClick={() => abortRef.current?.abort()}
+                      aria-label="Stop response"
+                      whileHover={{ scale: 1.08 }}
+                      whileTap={{ scale: 0.95 }}
+                      style={{
+                        width: 44, height: 44, borderRadius: 11, border: 'none',
+                        background: 'rgba(255,255,255,0.14)', color: '#fff',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', flexShrink: 0,
+                      }}
+                    >
+                      <Square size={13} fill="currentColor" />
+                    </m.button>
+                  ) : (
+                    <m.button
+                      onClick={() => void handleSend()}
+                      disabled={!chatInput.trim()}
+                      aria-label="Send message"
+                      whileHover={chatInput.trim() ? { scale: 1.08 } : {}}
+                      whileTap={chatInput.trim() ? { scale: 0.95 } : {}}
+                      style={{
+                        width: 44, height: 44, borderRadius: 11, border: 'none',
+                        background: chatInput.trim() ? ACCENT : 'rgba(255,255,255,0.08)',
+                        color: chatInput.trim() ? '#fff' : 'rgba(255,255,255,0.25)',
+                        cursor: chatInput.trim() ? 'pointer' : 'not-allowed',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                        transition: 'all 0.18s',
+                      }}
+                    >
+                      <Send size={16} />
+                    </m.button>
+                  )}
                 </div>
               </m.div>
             )}
@@ -951,6 +1020,7 @@ function ClientPicker({
               onMouseDown={() => onSelect(c)}
               style={{
                 display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px',
+                minHeight: 44,
                 background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.85)',
                 fontSize: 13, cursor: 'pointer',
               }}

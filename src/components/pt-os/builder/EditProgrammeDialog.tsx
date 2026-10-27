@@ -29,7 +29,7 @@ import {
 } from '@/lib/forms/schemas/programmeDetails';
 import {
   PROGRAMME_DIFFICULTIES, PROGRAMME_GOALS, WEEKS_MAX,
-} from './NewProgrammeDialog';
+} from '@/lib/programme-options';
 
 export interface EditProgrammeDialogProps {
   plan: WorkoutPlan;

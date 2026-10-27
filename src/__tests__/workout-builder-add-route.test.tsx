@@ -20,11 +20,13 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => params,
 }));
 
-vi.mock('@/lib/toast', () => ({
-  useToast: () => ({
-    toast: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() },
-  }),
+// Stable identity, like the real hook's memoised value: the builder's load
+// effect depends on `toast`, so a fresh object per render re-fetches forever.
+const toast = vi.hoisted(() => ({
+  success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn(),
 }));
+
+vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast }) }));
 
 const detail = vi.fn();
 vi.mock('@/lib/api', () => ({
@@ -93,8 +95,7 @@ describe('adding exercises', () => {
   });
 });
 
-describe('the day lives in the URL', () => {
-  it('defaults to Monday when the URL says nothing', async () => {
+describe('the day lives in the URL', () => {  it('defaults to Monday when the URL says nothing', async () => {
     await renderBuilder();
     await waitFor(() => expect(detail).toHaveBeenCalled());
     const add = await screen.findAllByRole('button', { name: /add exercise/i });
@@ -134,5 +135,23 @@ describe('the day lives in the URL', () => {
     // replace, not push: flicking through seven days must not bury the screen
     // the trainer arrived from under seven history entries.
     expect(opts).toMatchObject({ scroll: false });
+  });
+});
+
+describe('a programme that fails to load', () => {
+  it('shows a retry instead of an empty editor, and retries the fetch', async () => {
+    detail.mockRejectedValueOnce(new Error('500'));
+    await renderBuilder();
+
+    const retry = await screen.findByRole('button', { name: 'Try again' });
+    // An empty editor is a lie: it says the programme has no exercises, and
+    // its Add links point at a plan the server just said does not exist.
+    expect(screen.queryByRole('button', { name: /add exercise/i })).toBeNull();
+
+    fireEvent.click(retry);
+
+    await waitFor(() => expect(detail).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText('Hypertrophy Block')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
   });
 });

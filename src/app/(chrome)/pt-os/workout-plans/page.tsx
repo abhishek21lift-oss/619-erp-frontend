@@ -16,7 +16,6 @@ import { useToast } from '@/lib/toast';
 import { assignWorkoutPlan } from '@/lib/workoutAssign';
 import { AnimatedCounter } from '@/components/fitness/AnimatedCounter';
 import { WorkoutPlanCard } from '@/components/fitness/WorkoutPlanCard';
-import NewProgrammeDialog from '@/components/pt-os/builder/NewProgrammeDialog';
 import { ExerciseCard } from '@/components/fitness/ExerciseCard';
 import { AiCoachPanel } from '@/components/fitness/AiCoachPanel';
 import TrainingBriefPanel from '@/components/pt-os/TrainingBriefPanel';
@@ -116,6 +115,12 @@ function Inner() {
   const searchParams = useSearchParams();
   const presetClientId = searchParams.get('client_id');
 
+  const openCreate = useCallback(() => {
+    router.push(presetClientId
+      ? `/pt-os/workout-plans/new?client_id=${encodeURIComponent(presetClientId)}`
+      : '/pt-os/workout-plans/new');
+  }, [router, presetClientId]);
+
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [activeBodyPart, setActiveBodyPart] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,7 +134,6 @@ function Inner() {
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [assignPlan, setAssignPlan] = useState<WorkoutPlan | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   // Arriving with ?client_id= is the client profile's "Workout Plans" button:
   // somebody has opened ONE client meaning to design for them.
@@ -375,7 +379,7 @@ function Inner() {
 
             <button
               type="button"
-              onClick={() => setCreateOpen(true)}
+              onClick={openCreate}
               className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-[11px] px-4 text-[13px] font-[700] text-white transition-transform active:scale-[0.98] sm:flex-none"
               style={{ background: ACCENT, minHeight: 44, boxShadow: '0 2px 10px rgba(0,103,224,0.28)' }}>
               <Plus size={16} /> New Plan
@@ -535,7 +539,7 @@ function Inner() {
                   </p>
                   <button
                     type="button"
-                    onClick={() => setCreateOpen(true)}
+                    onClick={openCreate}
                     className="mt-4 inline-flex items-center gap-1.5 rounded-[11px] px-4 text-[13px] font-[700] text-white transition-transform active:scale-[0.98]"
                     style={{ background: 'linear-gradient(135deg, #0067e0, #3B8DF5)', minHeight: 44, boxShadow: '0 3px 12px -2px rgba(0,103,224,0.40)' }}
                   >
@@ -720,13 +724,6 @@ function Inner() {
           </>
         )}
       </AnimatePresence>
-
-      <NewProgrammeDialog
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        presetClientId={presetClientId}
-        onCreated={fetchData}
-      />
 
       <AssignClientModal
         plan={assignPlan}

@@ -151,3 +151,37 @@ describe('Custom exercise', () => {
     await waitFor(() => expect(screen.getByText(/Use the Custom option above/i)).toBeTruthy());
   });
 });
+
+describe('Create in the library', () => {
+  beforeEach(() => {
+    listMock.mockReset();
+    listMock.mockResolvedValue({ exercises: [] });
+  });
+
+  it('is not offered unless the caller has somewhere to author it', async () => {
+    setup();
+    await settle();
+    fireEvent.change(screen.getByLabelText('Search exercises'), { target: { value: 'Copenhagen plank' } });
+    expect(screen.queryByTestId('create-exercise')).toBeNull();
+  });
+
+  it('offers the typed name and hands it to the caller', async () => {
+    const onCreateExercise = vi.fn();
+    setup({ onCreateExercise });
+    await settle();
+    fireEvent.change(screen.getByLabelText('Search exercises'), { target: { value: '  Copenhagen   plank ' } });
+
+    const row = screen.getByTestId('create-exercise');
+    expect(row.textContent).toContain('Copenhagen plank');
+    fireEvent.click(row);
+    expect(onCreateExercise).toHaveBeenCalledWith('Copenhagen plank');
+  });
+
+  it('does not offer to create a name the library already holds', async () => {
+    listMock.mockResolvedValue({ exercises: [BENCH] });
+    setup({ onCreateExercise: vi.fn() });
+    await waitFor(() => expect(screen.getByText('Barbell Bench Press')).toBeTruthy());
+    fireEvent.change(screen.getByLabelText('Search exercises'), { target: { value: 'barbell bench press' } });
+    expect(screen.queryByTestId('create-exercise')).toBeNull();
+  });
+});

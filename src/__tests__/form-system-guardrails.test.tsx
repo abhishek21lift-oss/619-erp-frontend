@@ -284,7 +284,7 @@ describe('the five representative migrations', () => {
   const migrated: [string, string[]][] = [
     ['app/(chrome)/pt-os/weekly-checkin/page.tsx',
       ['Client', 'Week starting', 'Weight', 'Sleep', 'Water', 'Workouts', 'Adherence', 'Trainer notes']],
-    ['app/(chrome)/subscription/packages/page.tsx',
+    ['components/packages/PackageForm.tsx',
       ['Package name', 'Sessions', 'Duration', 'Price', 'Goal type', 'Description']],
     ['app/(chrome)/pt-os/session-balance/page.tsx',
       ['Client', 'Total sessions', 'Package name', 'Valid until']],
@@ -328,7 +328,7 @@ describe('the five representative migrations', () => {
       // `min` are the schema's. The property is the same one — the bindings
       // and the business rules survived the move — so the patterns describe
       // where they live now rather than where they used to.
-      ['app/(chrome)/subscription/packages/page.tsx', [
+      ['components/packages/PackageForm.tsx', [
         /<form\.Field name="session_count">/, /<form\.Field name="price">/,
         /<form\.Field name="duration_days">/, /ptPackageSchema/,
         /PACKAGE_GOAL_OPTIONS/, /toPtPackagePayload/,

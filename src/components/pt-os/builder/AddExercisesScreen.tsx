@@ -28,8 +28,8 @@
 // template row. Both render the same ExercisePickerPanel, so the search,
 // filters and keyboard behaviour cannot drift apart.
 
-import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { ArrowLeft, Dumbbell } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { EmptyState, PageContainer, PageHero } from '@/components/ui';
@@ -48,10 +48,13 @@ export interface AddExercisesScreenProps {
   day: number;
   /** Where "Back to builder" and a finished batch both return to. */
   backHref: string;
+  /** Just created in the library; attach it to this day on arrival. */
+  newExerciseId?: string | null;
 }
 
-export default function AddExercisesScreen({ planId, day, backHref }: AddExercisesScreenProps) {
+export default function AddExercisesScreen({ planId, day, backHref, newExerciseId }: AddExercisesScreenProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
 
   const goBack = useCallback(() => router.push(backHref), [router, backHref]);
@@ -63,6 +66,9 @@ export default function AddExercisesScreen({ planId, day, backHref }: AddExercis
   const [existingIds, setExistingIds] = useState<string[]>([]);
   const [recentNames, setRecentNames] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  // The attach below must wait for this read: it appends to `existingIds`,
+  // and a late detail response would otherwise overwrite the append.
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     if (!planId) return;
@@ -83,10 +89,51 @@ export default function AddExercisesScreen({ planId, day, backHref }: AddExercis
         // there — the server still rejects a duplicate, and refusing to open
         // the screen over a failed convenience read would be worse.
         if (!cancelled) setExistingIds([]);
+      } finally {
+        if (!cancelled) setLoaded(true);
       }
     })();
     return () => { cancelled = true; };
   }, [planId, day]);
+
+  /** Survives StrictMode's double effect without firing the attach twice. */
+  const attachedNew = useRef<string | null>(null);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!newExerciseId || !loaded || attachedNew.current === newExerciseId) return;
+    attachedNew.current = newExerciseId;
+    (async () => {
+      try {
+        await api.workouts.plans.exercises.add(planId, {
+          exercise_id: newExerciseId,
+          day_of_week: day,
+        });
+        if (!alive.current) return;
+        setExistingIds((ids) => (ids.includes(newExerciseId) ? ids : [...ids, newExerciseId]));
+        toast.success('Custom exercise created and added');
+      } catch {
+        if (!alive.current) return;
+        // It is in the library now, so the trainer can still find it below.
+        toast.error('The exercise was saved, but could not be added. Search for it below.');
+      } finally {
+        // Drop ?new either way: a refresh must not retry the attach.
+        if (alive.current) router.replace(`${pathname}?day=${day}`);
+      }
+    })();
+  }, [newExerciseId, loaded, planId, day, pathname, router, toast]);
+
+  /** The picker found nothing exact — author it, then come straight back. */
+  const createExercise = useCallback((name: string) => {
+    const returnTo = `${pathname}?day=${day}`;
+    router.push(
+      `/pt-os/exercise-library/new?name=${encodeURIComponent(name)}&returnTo=${encodeURIComponent(returnTo)}`,
+    );
+  }, [router, pathname, day]);
 
   const addAll = useCallback(async (picked: { id: string; name: string }[]) => {
     if (picked.length === 0 || saving) return;
@@ -169,6 +216,7 @@ export default function AddExercisesScreen({ planId, day, backHref }: AddExercis
               // rather than quietly optional.
               onSelect={() => {}}
               onSelectMany={addAll}
+              onCreateExercise={createExercise}
               recentNames={recentNames}
               existingIds={existingIds}
             />

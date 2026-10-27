@@ -183,7 +183,10 @@ export function KpiCard({
 
         {/* Big value + delta */}
         <div className="mt-3 flex items-end justify-between gap-3">
-          <p className="truncate text-3xl font-bold tabular-nums tracking-tight text-white drop-shadow-xs sm:text-[2rem]">
+          {/* Wraps rather than truncating. A clipped "₹1,23,4…" is worse than
+              a wrapped one: the card exists to state the figure. clamp() keeps
+              mobile cards legible without shrinking desktop ones. */}
+          <p className="min-w-0 text-[clamp(1.5rem,5vw,2rem)] font-bold leading-tight tabular-nums tracking-tight text-white [overflow-wrap:anywhere] drop-shadow-xs">
             {loading ? (
               <span className="inline-block h-8 w-28 animate-pulse rounded bg-white/30" />
             ) : (

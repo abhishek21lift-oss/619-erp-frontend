@@ -84,6 +84,8 @@ export interface WorkoutBuilderProps {
 export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
   const { toast } = useToast();
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
   const [rows, setRows] = useState<WorkoutPlanExercise[]>([]);
   // `day` lives in the URL, not in state.
   //
@@ -139,16 +141,23 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
       try {
         const detail = await api.workouts.plans.detail(planId, week > 1 ? { week } : undefined);
         if (cancelled) return;
+        setLoadFailed(false);
         setPlan(detail);
         setRows(detail.exercises ?? []);
       } catch {
-        if (!cancelled) toast.error('Could not load this programme');
+        if (!cancelled) {
+          // Without a plan there is nothing to edit: the add-exercise links
+          // point at a plan id the server just said does not exist. Rendering
+          // an empty editor made a failed load look like an empty programme.
+          setLoadFailed(true);
+          toast.error('Could not load this programme');
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [planId, week, toast]);
+  }, [planId, week, toast, reloadToken]);
 
   /**
    * Save the progression rule and re-read week 1.
@@ -334,6 +343,34 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
       <div className="flex justify-center py-24">
         <Loader2 size={26} className="animate-spin" style={{ color: 'var(--brand)' }} />
       </div>
+    );
+  }
+
+  if (!plan && loadFailed) {
+    return (
+      <PageContainer>
+        <PageHero
+          icon={<Dumbbell size={20} />}
+          title="Workout"
+          subtitle="This programme could not be loaded"
+        />
+        <div
+          className="mx-auto w-full max-w-screen-md rounded-[20px] p-6 text-center"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+        >
+          <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>
+            The programme could not be loaded. Nothing has been changed.
+          </p>
+          <button
+            type="button"
+            onClick={() => { setLoading(true); setReloadToken((n) => n + 1); }}
+            className="mt-4 inline-flex h-[44px] items-center justify-center rounded-[12px] px-5 text-[13px] font-[700] text-white"
+            style={{ background: 'var(--brand)' }}
+          >
+            Try again
+          </button>
+        </div>
+      </PageContainer>
     );
   }
 
