@@ -429,3 +429,19 @@ describe('the app uses only the palette', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe('the brand blue is one value', () => {
+  it('matches every --rgb-brand to palette.blue[500]', () => {
+    const css = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8');
+    const matches = [...css.matchAll(/--rgb-brand:\s*(\d+)\s+(\d+)\s+(\d+)/g)];
+    expect(matches).toHaveLength(2);
+    const hex = palette.blue[500];
+    const expected = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    for (const m of matches) expect(m.slice(1).map(Number)).toEqual(expected);
+  });
+
+  it('sources the Tailwind brand scale from the palette', async () => {
+    const config = (await import('../../tailwind.config')).default;
+    expect(config.theme?.extend?.colors?.brand).toEqual(palette.blue);
+  });
+});

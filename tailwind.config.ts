@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss';
+import { blue } from './src/lib/palette';
 
 const config: Config = {
   content: ['./src/**/*.{ts,tsx,js,jsx}'],
@@ -9,18 +10,15 @@ const config: Config = {
     'shadow-[0_8px_32px_-8px_rgba(59,130,246,0.45)]',
     'shadow-[0_8px_32px_-8px_rgba(16,185,129,0.45)]',
     'shadow-[0_8px_32px_-8px_rgba(245,158,11,0.45)]',
-    'shadow-[0_8px_32px_-8px_rgba(6,182,212,0.45)]',
-    'shadow-[0_8px_32px_-8px_rgba(139,92,246,0.45)]',
     'shadow-[0_8px_32px_-8px_rgba(239,68,68,0.45)]',
     'shadow-[0_8px_32px_-8px_rgba(42,45,53,0.5)]',
     // glow shadows (KpiCard — backward compat)
     'shadow-[0_8px_32px_-8px_rgba(244,63,94,0.45)]',
     'shadow-[0_8px_32px_-8px_rgba(14,165,233,0.45)]',
-    'shadow-[0_8px_32px_-8px_rgba(249,115,22,0.45)]',
     'shadow-[0_8px_32px_-8px_rgba(71,85,105,0.5)]',
     // decorative blobs
     'bg-blue-300/30', 'bg-emerald-300/30', 'bg-amber-300/30',
-    'bg-cyan-300/30', 'bg-violet-300/30', 'bg-red-300/30',
+    'bg-red-300/30',
     'bg-slate-500/20',
     // glass utility classes
     'bg-white/25', 'bg-white/15', 'bg-white/30', 'bg-white/40',
@@ -41,23 +39,7 @@ const config: Config = {
         mono: ['JetBrains Mono', 'SFMono-Regular', 'monospace'],
       },
       colors: {
-        brand: {
-          50: '#EFF6FF',
-          100: '#DBEAFE',
-          200: '#BFDBFE',
-          300: '#93C5FD',
-          400: '#60A5FA',
-          500: '#3B82F6',
-          600: '#2563EB',
-          700: '#1D4ED8',
-          800: '#1E40AF',
-          900: '#1E3A8A',
-          950: '#172554',
-        },
-        surface: {
-          DEFAULT: '#f8fafc',
-          dark: '#0f172a',
-        },
+        brand: blue,
       },
       backdropBlur: {
         xs: '2px',

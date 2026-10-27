@@ -79,7 +79,7 @@
   --brand-soft:   rgba(0,103,224,0.10);
   --brand-glow:   rgba(0,103,224,0.22);
   --brand-glow-2: rgba(0,103,224,0.08);
-  --rgb-brand:    59 130 246;
+  --rgb-brand:    0 103 224;
   --rgb-brand-hi: 96 165 250;
 
   /* ── Logo blue ────────────────────────────────────────────────
@@ -283,7 +283,7 @@
   --brand-soft:   rgba(0,103,224,0.15);
   --brand-glow:   rgba(0,103,224,0.30);
   --brand-glow-2: rgba(0,103,224,0.10);
-  --rgb-brand:    96 165 250;
+  --rgb-brand:    0 103 224;
   --rgb-brand-hi: 147 197 253;
 
   /* Logo blue — #0067E0 is too dim to read as a glyph on the slate-900
