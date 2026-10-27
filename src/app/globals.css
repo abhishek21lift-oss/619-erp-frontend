@@ -8,9 +8,6 @@
 @import "tailwindcss";
 @config "../../tailwind.config.ts";
 
-/* ─── Reset ─────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 /* Tailwind v4 defaults bare `border` to currentColor; v3 used gray-200.
    Keep the v3 colour so existing borders render unchanged. */
 @layer base {
