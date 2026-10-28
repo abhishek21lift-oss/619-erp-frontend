@@ -1,5 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { ArrowRight, Dumbbell } from 'lucide-react';
+import {
+  C,
+  PRIMARY_BUTTON,
+  SECONDARY_BUTTON,
+  SHADOW,
+  STAGE,
+} from '@/components/landing/tokens';
 
 export const metadata: Metadata = {
   title: 'PT OS: Personal Trainer Software for India',
@@ -51,21 +59,76 @@ const faqs = [
 export default function PtOsLandingPage() {
   return (
     <main className="min-h-screen bg-white text-slate-900">
-      <section className="mx-auto max-w-6xl px-6 py-20 sm:py-28">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700">MY PT STUDIO · PT OS</p>
-        <h1 className="mt-5 max-w-4xl text-4xl font-bold tracking-tight sm:text-6xl">
-          Personal trainer software built for how India coaches.
-        </h1>
-        <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">
-          PT OS brings clients, programmes, assessments, nutrition, progress, payments, scheduling and engagement into one professional workspace for personal trainers.
-        </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/start-free" className="rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800">
-            Start free
-          </Link>
-          <Link href="/" className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50">
-            Explore MY PT STUDIO
-          </Link>
+      <section aria-labelledby="pt-os-hero-title" className="mx-auto max-w-6xl px-6 pt-10 sm:pt-16">
+        <div
+          className="relative overflow-hidden rounded-[28px] p-7 sm:rounded-[36px] sm:p-11"
+          style={{ background: C.canvas, border: `1px solid ${C.lineSoft}`, boxShadow: SHADOW.panel }}
+        >
+          {/* The public surface's own light: a key light, a drafting grid, and the two brand accents. */}
+          <div aria-hidden className="pointer-events-none absolute inset-0">
+            <div className="absolute inset-0" style={{ background: STAGE.light }} />
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: STAGE.grid,
+                backgroundSize: STAGE.gridSize,
+                maskImage: STAGE.gridMask,
+                WebkitMaskImage: STAGE.gridMask,
+              }}
+            />
+            <div
+              className="absolute -right-24 -top-28 h-[320px] w-[320px] rounded-full"
+              style={{ background: C.goldSoft, filter: 'blur(60px)' }}
+            />
+            <div
+              className="absolute -bottom-32 -left-20 h-[360px] w-[360px] rounded-full"
+              style={{ background: C.blueWashStrong, filter: 'blur(70px)' }}
+            />
+          </div>
+
+          <div className="relative max-w-[820px]">
+            <span
+              className="flex h-14 w-14 items-center justify-center rounded-[18px] text-white"
+              style={{ background: `linear-gradient(135deg, ${C.blue450}, ${C.blueLo})`, boxShadow: SHADOW.blueGlow }}
+            >
+              <Dumbbell size={26} strokeWidth={2.2} aria-hidden />
+            </span>
+
+            <p
+              className="mt-7 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em]"
+              style={{ color: C.goldHi, background: C.goldSoft, border: `1px solid ${C.goldGlow}` }}
+            >
+              <span className="h-[7px] w-[7px] rounded-[2px]" style={{ background: C.blue }} />
+              MY PT STUDIO · PT OS
+            </p>
+
+            <h1
+              id="pt-os-hero-title"
+              className="mt-5 text-[clamp(2.2rem,4.6vw,3.8rem)] font-[850] leading-[1.04] tracking-[-0.045em]"
+              style={{ color: C.ink }}
+            >
+              Personal trainer software built for how India coaches.
+            </h1>
+            <p
+              className="mt-6 max-w-[660px] text-[16px] leading-[1.7] sm:text-[18px]"
+              style={{ color: C.muted }}
+            >
+              PT OS brings clients, programmes, assessments, nutrition, progress, payments, scheduling and engagement into one professional workspace for personal trainers.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link href="/start-free" className={`${PRIMARY_BUTTON} group h-[52px] w-full px-7 text-[15px] sm:w-auto`}>
+                Start free
+                <ArrowRight size={17} strokeWidth={2.5} className="transition-transform group-hover:translate-x-0.5" />
+              </Link>
+              <Link href="/" className={`${SECONDARY_BUTTON} h-[52px] w-full px-7 text-[15px] sm:w-auto`}>
+                Explore MY PT STUDIO
+              </Link>
+            </div>
+            <p className="mt-4 text-[13px] font-[520]" style={{ color: C.faint }}>
+              7-day free trial · No card required
+            </p>
+          </div>
         </div>
       </section>
 
