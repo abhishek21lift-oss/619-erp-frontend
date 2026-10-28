@@ -19,7 +19,10 @@ import { appPath, routeExists, srcPath } from '@/__tests__/helpers/app-routes';
 import { stripComments } from '@/__tests__/helpers/strip-comments';
 
 const push = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 const clientRow = vi.fn();
 const goalsList = vi.fn();
@@ -38,9 +41,8 @@ vi.mock('@/lib/api', () => ({
 }));
 vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn(), info: vi.fn() } }) }));
 
-import NewProgrammeDialog, {
-  goalFromClient, difficultyFromClient,
-} from '@/components/pt-os/builder/NewProgrammeDialog';
+import { NewProgrammeForm } from '@/components/pt-os/builder/NewProgrammeForm';
+import { goalFromClient, difficultyFromClient } from '@/lib/programme-options';
 
 beforeEach(() => {
   push.mockClear();
@@ -51,7 +53,7 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-const openDialog = () => render(<NewProgrammeDialog open onClose={() => {}} />);
+const openDialog = () => render(<NewProgrammeForm />);
 const nameField = () => screen.getByPlaceholderText(/Upper \/ Lower Split/i) as HTMLInputElement;
 // By inputMode, not by role: 'spinbutton' is the implicit role of
 // `<input type="number">`, and the design system no longer renders one — a

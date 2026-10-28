@@ -16,9 +16,10 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 
 const push = vi.fn();
+const replace = vi.fn();
 let params = new URLSearchParams('day=4');
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push, back: vi.fn(), replace: vi.fn() }),
+  useRouter: () => ({ push, back: vi.fn(), replace }),
   usePathname: () => '/pt-os/workout-plans/p1/builder/add-exercises',
   useSearchParams: () => params,
 }));
@@ -41,7 +42,10 @@ vi.mock('@/lib/toast', () => ({
  * the assertions are about this page's behaviour rather than about search,
  * virtualisation or filters — those are the picker's own tests.
  */
-let panelProps: { live?: boolean; multiple?: boolean; busy?: boolean; existingIds?: string[] } = {};
+let panelProps: {
+  live?: boolean; multiple?: boolean; busy?: boolean; existingIds?: string[];
+  onCreateExercise?: (name: string) => void;
+} = {};
 vi.mock('@/components/pt-os/workout-log/ExercisePicker', () => ({
   ExercisePickerPanel: (props: {
     live: boolean; multiple?: boolean; busy?: boolean; existingIds?: string[];
@@ -102,6 +106,7 @@ const renderPage = async (planId = 'p1') => {
 
 beforeEach(() => {
   push.mockReset();
+  replace.mockReset();
   errorToast.mockReset();
   successToast.mockReset();
   detail.mockReset();
@@ -228,5 +233,52 @@ describe('the panel is mounted as a page, not a dialog', () => {
     await renderPage();
     expect(panelProps.live).toBe(true);
     expect(panelProps.multiple).toBe(true);
+  });
+});
+
+describe('a custom exercise authored from the picker', () => {
+  it('hands the typed name and a return path to the editor', async () => {
+    await renderPage();
+    await act(async () => { panelProps.onCreateExercise?.('Copenhagen plank'); });
+
+    expect(push).toHaveBeenCalledWith(
+      '/pt-os/exercise-library/new?name=Copenhagen%20plank&returnTo=%2Fpt-os%2Fworkout-plans%2Fp1%2Fbuilder%2Fadd-exercises%3Fday%3D4',
+    );
+  });
+
+  it('attaches it to the day on return and clears the marker', async () => {
+    params = new URLSearchParams('day=4&new=ex-new');
+    await renderPage();
+
+    await waitFor(() => expect(addExercise).toHaveBeenCalledWith('p1', {
+      exercise_id: 'ex-new', day_of_week: 4,
+    }));
+    expect(successToast).toHaveBeenCalledWith('Custom exercise created and added');
+    expect(replace).toHaveBeenCalledWith('/pt-os/workout-plans/p1/builder/add-exercises?day=4');
+  });
+
+  it('attaches once, not once per render', async () => {
+    params = new URLSearchParams('day=4&new=ex-new');
+    await renderPage();
+    await waitFor(() => expect(addExercise).toHaveBeenCalledTimes(1));
+    await act(async () => {});
+    expect(addExercise).toHaveBeenCalledTimes(1);
+  });
+
+  it('marks it as already in the day so the batch cannot add it twice', async () => {
+    params = new URLSearchParams('day=4&new=ex-new');
+    await renderPage();
+    await waitFor(() => expect(panelProps.existingIds).toContain('ex-new'));
+  });
+
+  it('says the exercise was saved when the attach fails, and clears the marker', async () => {
+    addExercise.mockRejectedValue(new Error('500'));
+    params = new URLSearchParams('day=4&new=ex-new');
+    await renderPage();
+
+    await waitFor(() => expect(errorToast).toHaveBeenCalledWith(
+      expect.stringMatching(/saved, but could not be added/i),
+    ));
+    expect(replace).toHaveBeenCalledWith('/pt-os/workout-plans/p1/builder/add-exercises?day=4');
   });
 });

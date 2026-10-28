@@ -23,7 +23,10 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 
 const push = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 const createPlan = vi.fn(async () => ({ plan: { id: 'p1' } }));
 const assign = vi.fn(async () => ({}));
@@ -49,7 +52,7 @@ vi.mock('@/lib/api', () => ({
 
 vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast: { error: vi.fn(), success: vi.fn() } }) }));
 
-import NewProgrammeDialog from '@/components/pt-os/builder/NewProgrammeDialog';
+import { NewProgrammeForm } from '@/components/pt-os/builder/NewProgrammeForm';
 
 /*
  * Queried by inputMode rather than by role.
@@ -68,7 +71,7 @@ function numericFields() {
 }
 
 function open() {
-  render(<NewProgrammeDialog open onClose={() => {}} presetClientId="c1" />);
+  render(<NewProgrammeForm presetClientId="c1" />);
   const [weeks] = numericFields();
   return { weeks };
 }
@@ -193,17 +196,18 @@ describe('what reaches the API', () => {
     expect(createPlan.mock.calls[0][0]).toMatchObject({ difficulty: 'beginner' });
   });
 
-  it('starts blank again when the dialog is reopened', async () => {
-    const { rerender } = render(
-      <NewProgrammeDialog open onClose={() => {}} presetClientId="c1" />,
-    );
+  it('asks before throwing away typed changes on Cancel', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const { unmount } = render(<NewProgrammeForm presetClientId="c1" />);
     fireEvent.change(nameField(), { target: { value: 'Draft' } });
-    fireEvent.change(numericFields()[0], { target: { value: '20' } });
 
-    rerender(<NewProgrammeDialog open={false} onClose={() => {}} presetClientId="c1" />);
-    rerender(<NewProgrammeDialog open onClose={() => {}} presetClientId="c1" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(push).not.toHaveBeenCalled();
 
-    await waitFor(() => expect(numericFields()[0]?.value).toBe('4'));
-    expect(nameField().value).toBe('');
+    confirm.mockReturnValue(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(push).toHaveBeenCalledWith('/pt-os/workout-plans?client_id=c1');
+    confirm.mockRestore();
+    unmount();
   });
 });

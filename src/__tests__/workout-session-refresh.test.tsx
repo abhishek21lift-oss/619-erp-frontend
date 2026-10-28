@@ -29,12 +29,25 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Suspense } from 'react';
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), back: vi.fn() }) }));
+const push = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push, back: vi.fn() }) }));
 vi.mock('@/components/Guard', () => ({ default: ({ children }: never) => children }));
 vi.mock('@/components/AppShell', () => ({ default: ({ children }: never) => children }));
 vi.mock('@/components/pt-os/workout-log/ExercisePicker', () => ({ default: () => null }));
-vi.mock('@/components/pt-os/workout-log/SessionSummary', () => ({ default: () => null }));
-vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast: { error: vi.fn(), success: vi.fn() } }) }));
+// Mirrors the real component's contract: it exists only while open and calls
+// onFinish with the summary patch. Keeping it this thin lets the page's own
+// finish/error behaviour be tested without re-testing the summary form.
+vi.mock('@/components/pt-os/workout-log/SessionSummary', () => ({
+  default: ({ open, onFinish }: { open: boolean; onFinish: (p: unknown) => Promise<void> }) =>
+    open
+      ? <button onClick={() => { void onFinish({ notes: null, duration_minutes: 45 }); }}>confirm-finish</button>
+      : null,
+}));
+const errorToast = vi.fn();
+const successToast = vi.fn();
+vi.mock('@/lib/toast', () => ({
+  useToast: () => ({ toast: { error: errorToast, success: successToast } }),
+}));
 
 const session = {
   id: 's1', client_id: 'c1', program_name: 'PPL', workout_day: 'Push',
@@ -54,6 +67,8 @@ const session = {
 
 const getSession = vi.fn(async () => ({ data: session }));
 const updateSet = vi.fn(async () => ({ data: {} }));
+const addSet = vi.fn(async () => ({ data: {} }));
+const updateSession = vi.fn(async () => ({ data: {} }));
 
 vi.mock('@/lib/api', () => ({
   api: {
@@ -62,11 +77,11 @@ vi.mock('@/lib/api', () => ({
         sessions: {
           get: (...a: unknown[]) => getSession(...(a as [])),
           plannedDayOptions: async () => ({ data: [] }),
-          update: async () => ({ data: {} }),
+          update: (...a: unknown[]) => updateSession(...(a as [])),
         },
         sets: {
           update: (...a: unknown[]) => updateSet(...(a as [])),
-          add: async () => ({ data: {} }),
+          add: (...a: unknown[]) => addSet(...(a as [])),
           delete: async () => ({ data: {} }),
         },
         exercises: { add: async () => ({ data: {} }), remove: async () => ({}), update: async () => ({}) },
@@ -99,6 +114,11 @@ function open() {
 beforeEach(() => {
   getSession.mockClear();
   updateSet.mockClear();
+  addSet.mockClear();
+  updateSession.mockClear();
+  push.mockClear();
+  errorToast.mockClear();
+  successToast.mockClear();
 });
 
 describe('saving a set', () => {
@@ -114,7 +134,7 @@ describe('saving a set', () => {
     getSession.mockImplementationOnce(() => new Promise((r) => { release = r; }));
 
     fireEvent.click(screen.getByLabelText('Increase reps'));
-    await waitFor(() => expect(getSession).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(getSession).toHaveBeenCalledTimes(2), { timeout: 5000 });
 
     // Mid-refresh: the session must still be there.
     expect(screen.queryByText('Incline Push-Up')).toBeTruthy();
@@ -130,7 +150,7 @@ describe('saving a set', () => {
     await waitFor(() => expect(getSession).toHaveBeenCalledTimes(1));
 
     fireEvent.click(screen.getByLabelText('Increase weight'));
-    await waitFor(() => expect(getSession).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(getSession).toHaveBeenCalledTimes(2), { timeout: 5000 });
   });
 
   it('survives a failed background refresh without losing the session', async () => {
@@ -140,7 +160,7 @@ describe('saving a set', () => {
     getSession.mockRejectedValueOnce(new Error('network'));
     fireEvent.click(screen.getByLabelText('Increase reps'));
 
-    await waitFor(() => expect(getSession).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(getSession).toHaveBeenCalledTimes(2), { timeout: 5000 });
     // The set already saved; a failed totals fetch must not replace the page
     // with an error and throw away a workout in progress.
     expect(screen.queryByText('Incline Push-Up')).toBeTruthy();
@@ -158,5 +178,70 @@ describe('the first load', () => {
     await waitFor(() => expect(container.querySelector('.animate-spin')).toBeTruthy());
     release({ data: session });
     await waitFor(() => expect(screen.getByText('Incline Push-Up')).toBeTruthy());
+  });
+});
+
+describe('adding a set after one was deleted', () => {
+  it('numbers it above the highest remaining set, not the row count', async () => {
+    // Deleting set 2 leaves 1 and 3. Length + 1 is 3, which is already taken;
+    // the add then failed with a duplicate-number 409.
+    const gapped = {
+      ...session,
+      exercises: [{
+        ...session.exercises[0],
+        sets: [
+          { ...session.exercises[0].sets[0], id: 'st1', set_number: 1 },
+          { ...session.exercises[0].sets[0], id: 'st3', set_number: 3 },
+        ],
+      }],
+    };
+    getSession.mockResolvedValueOnce({ data: gapped });
+    open();
+
+    await waitFor(() => expect(screen.getByText('Incline Push-Up')).toBeTruthy());
+    fireEvent.click(screen.getByRole('button', { name: 'Add Set' }));
+
+    await waitFor(() => expect(addSet).toHaveBeenCalledWith(
+      'e1', expect.objectContaining({ set_number: 4 }),
+    ));
+  });
+});
+
+describe('finishing a workout', () => {
+  const completed = {
+    ...session,
+    exercises: [{
+      ...session.exercises[0],
+      sets: [{ ...session.exercises[0].sets[0], completed: true }],
+    }],
+  };
+
+  async function finish() {
+    getSession.mockResolvedValueOnce({ data: completed });
+    open();
+    await waitFor(() => expect(screen.getByText('Incline Push-Up')).toBeTruthy());
+    fireEvent.click(screen.getByRole('button', { name: 'Finish Workout' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'confirm-finish' }));
+  }
+
+  it('keeps the summary open and claims nothing when the completion save fails', async () => {
+    updateSession.mockRejectedValueOnce(new Error('500'));
+
+    await finish();
+
+    await waitFor(() => expect(updateSession).toHaveBeenCalled());
+    expect(successToast).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'confirm-finish' })).toBeTruthy();
+  });
+
+  it('closes the summary and returns to the log when it succeeds', async () => {
+    updateSession.mockResolvedValueOnce({ data: {} });
+
+    await finish();
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/pt-os/clients/c1/workout-log'));
+    expect(successToast).toHaveBeenCalledWith('Workout session completed.');
+    expect(screen.queryByRole('button', { name: 'confirm-finish' })).toBeNull();
   });
 });

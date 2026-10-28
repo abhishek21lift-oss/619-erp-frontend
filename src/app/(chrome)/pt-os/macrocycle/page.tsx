@@ -47,6 +47,7 @@ export default function MacrocyclePage() {
     handleBlur: () => {},
   };
   const [busy, setBusy] = useState(false);
+  const [createError, setCreateError] = useState<{ key: string; message: string } | null>(null);
   const [created, setCreated] = useState<{
     key: string;
     plans: Array<{ id: string; name: string }>;
@@ -68,16 +69,31 @@ export default function MacrocyclePage() {
 
   const create = async () => {
     setBusy(true);
+    setCreateError(null);
+    // Each phase is a separate POST. Recording them as they land means a
+    // failure on phase 3 shows the two programmes that DO exist instead of
+    // hiding them — and the retry prompt is honest about what is left.
+    const plans: Array<{ id: string; name: string }> = [];
     try {
-      const plans: Array<{ id: string; name: string }> = [];
       for (const payload of payloads) {
         const res = await api.workouts.plans.create(payload);
         plans.push({ id: res.plan.id, name: res.plan.name });
+        setCreated({ key, plans: [...plans] });
       }
-      setCreated({ key, plans });
       toast.success(`${plans.length} programme${plans.length === 1 ? '' : 's'} created`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not create the programmes');
+      const message = e instanceof Error ? e.message : 'Could not create the programmes';
+      setCreateError({
+        key,
+        message: plans.length
+          ? `Only ${plans.length} of ${payloads.length} programmes were created. ${message}`
+          : message,
+      });
+      toast.error(
+        plans.length
+          ? `${plans.length} of ${payloads.length} programmes created — ${message}`
+          : message,
+      );
     } finally {
       setBusy(false);
     }
@@ -153,12 +169,24 @@ export default function MacrocyclePage() {
                 </li>
               ))}
             </ul>
+            {createError?.key === key && (
+              <p role="alert" className="mt-3 text-[12px]" style={{ color: '#b91c1c' }}>
+                {createError.message}
+              </p>
+            )}
           </section>
         ) : (
-          <Button onClick={create} disabled={busy}>
-            {busy ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
-            Create {payloads.length} programme{payloads.length === 1 ? '' : 's'}
-          </Button>
+          <>
+            <Button onClick={create} disabled={busy}>
+              {busy ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
+              Create {payloads.length} programme{payloads.length === 1 ? '' : 's'}
+            </Button>
+            {createError?.key === key && (
+              <p role="alert" className="mt-3 text-[12px]" style={{ color: '#b91c1c' }}>
+                {createError.message}
+              </p>
+            )}
+          </>
         )}
       </PageContainer>
     </Guard>

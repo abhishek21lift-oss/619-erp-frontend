@@ -55,6 +55,8 @@ export interface ExerciseEditorProps {
   /** null = create mode. */
   exercise: LibraryExercise | null;
   meta: ExerciseMeta | null;
+  /** Create mode only: the name typed in the builder's search, prefilled. */
+  initialName?: string;
   onClose: () => void;
   onSaved: (ex: LibraryExercise, created: boolean) => void;
 }
@@ -66,7 +68,7 @@ function slugify(s: string) {
 }
 
 export function ExerciseEditor({
-  exercise, meta, onClose, onSaved,
+  exercise, meta, initialName, onClose, onSaved,
 }: ExerciseEditorProps) {
   const { toast } = useToast();
   const isEdit = Boolean(exercise);
@@ -113,8 +115,10 @@ export function ExerciseEditor({
       }
     } catch { /* a corrupt draft is not worth failing the dialog over */ }
 
-    return blankExercise();
-  }, [exercise, meta, secondaryFromServer]);
+    const blank = blankExercise();
+    if (initialName) blank.name = initialName.slice(0, 120);
+    return blank;
+  }, [exercise, meta, secondaryFromServer, initialName]);
 
   const f = useAppForm({
     schema: exerciseSchema,
@@ -149,10 +153,12 @@ export function ExerciseEditor({
   // exercise appearing in a "new" form reads as a bug.
   const announcedDraft = React.useRef(false);
   React.useEffect(() => {
-    if (isEdit || announcedDraft.current || !initialValues.name) return;
+    // A prefilled name is not a restored draft — only say so when the values
+    // that opened the form differ from the name the builder handed over.
+    if (isEdit || announcedDraft.current || !initialValues.name || initialValues.name === initialName) return;
     announcedDraft.current = true;
     toast.info('Restored your unsaved draft');
-  }, [isEdit, initialValues.name, toast]);
+  }, [isEdit, initialValues.name, initialName, toast]);
 
   // Autosave the draft — create mode only. Editing writes through the API, so
   // a local draft there would be a second, staler source of truth.

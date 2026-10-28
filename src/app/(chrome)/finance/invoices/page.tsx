@@ -28,7 +28,10 @@ import {
 } from 'lucide-react';
 import { errorMessage } from '@/lib/forms/errors';
 
-type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'draft' | 'cancelled';
+// The six statuses the backend actually stores (migration 006). `pending` is
+// not one of them: it is a stats bucket (draft + sent + partial), so it must
+// never be used as a filter value or a `statusCfg` key.
+type InvoiceStatus = 'paid' | 'overdue' | 'draft' | 'sent' | 'partial' | 'cancelled';
 type PaymentMethod = 'upi' | 'credit-card' | 'cash' | 'razorpay' | 'stripe' | 'bank-transfer';
 
 interface Invoice {
@@ -91,6 +94,21 @@ function Avatar({ name, photoUrl }: { name: string; photoUrl?: string | null }) 
   );
 }
 
+const STATUS_LABELS: Record<InvoiceStatus, string> = {
+  draft: 'Draft',
+  sent: 'Sent',
+  partial: 'Partial',
+  paid: 'Paid',
+  overdue: 'Overdue',
+  cancelled: 'Cancelled',
+};
+
+function toInvoiceStatus(value: unknown): InvoiceStatus {
+  return typeof value === 'string' && value in STATUS_LABELS
+    ? value as InvoiceStatus
+    : 'draft';
+}
+
 function normaliseInvoice(raw: Record<string, unknown>): Invoice {
   return {
     id: String(raw.id ?? ''),
@@ -98,11 +116,15 @@ function normaliseInvoice(raw: Record<string, unknown>): Invoice {
     memberAvatar: String(raw.member_avatar ?? raw.memberAvatar ?? ''),
     memberPhoto: raw.client_photo ? String(raw.client_photo) : null,
     amount: Number(raw.amount ?? 0),
-    date: String(raw.date ?? ''),
+    // The API returns `issue_date`; reading `raw.date` left every card's date
+    // and the detail panel blank.
+    date: String(raw.issue_date ?? raw.date ?? ''),
     dueDate: String(raw.due_date ?? raw.dueDate ?? ''),
-    status: (raw.status as InvoiceStatus) ?? 'draft',
+    status: toInvoiceStatus(raw.status),
     paymentMethod: (raw.payment_method ?? raw.paymentMethod ?? undefined) as PaymentMethod | undefined,
-    description: String(raw.description ?? raw.description ?? ''),
+    // A simplified invoice stores its description in `notes` as well as its
+    // single line item; the list does not return a `description` column.
+    description: String(raw.description ?? raw.notes ?? ''),
     timeline: Array.isArray(raw.timeline)
       ? raw.timeline.map((t: Record<string, unknown>) => ({
           action: String(t.action ?? ''),
@@ -168,6 +190,16 @@ function SkeletonCard() {
     </m.div>
   );
 }
+
+const STATUS_TABS: Array<{ id: InvoiceStatus | 'all'; label: string }> = [
+  { id: 'all', label: 'All Invoices' },
+  { id: 'draft', label: 'Draft' },
+  { id: 'sent', label: 'Sent' },
+  { id: 'partial', label: 'Partial' },
+  { id: 'paid', label: 'Paid' },
+  { id: 'overdue', label: 'Overdue' },
+  { id: 'cancelled', label: 'Cancelled' },
+];
 
 export default function InvoicesPage() {
   const [statusTab, setStatusTab] = React.useState<InvoiceStatus | 'all'>('all');
@@ -245,18 +277,6 @@ export default function InvoicesPage() {
     }
   }, [fetchInvoices, toast]);
 
-  const statusTabs = React.useMemo(() => {
-    const counts: Record<string, number> = { all: invoices.length, paid: 0, pending: 0, overdue: 0, draft: 0, cancelled: 0 };
-    invoices.forEach((i) => { if (i.status in counts) counts[i.status]++; });
-    return [
-      { id: 'all' as const, label: 'All Invoices', count: counts.all },
-      { id: 'paid' as const, label: 'Paid', count: counts.paid },
-      { id: 'pending' as const, label: 'Pending', count: counts.pending },
-      { id: 'overdue' as const, label: 'Overdue', count: counts.overdue },
-      { id: 'draft' as const, label: 'Draft', count: counts.draft },
-    ];
-  }, [invoices]);
-
   return (
     <Guard role="trainer">
       <PageContainer>
@@ -294,7 +314,7 @@ export default function InvoicesPage() {
         <div className="pb-2">
           {/* KPI Row */}
           <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <KpiCard label="Total Invoiced" value={fmtCurrency(stats.total)} icon={<FileText size={16} />} accent="blue" />
+            <KpiCard label="Invoices" value={String(stats.total)} icon={<FileText size={16} />} accent="blue" />
             <KpiCard label="Paid" value={fmtCurrency(stats.paid)} icon={<CheckCircle2 size={16} />} accent="emerald" />
             <KpiCard label="Pending" value={fmtCurrency(stats.pending)} icon={<Clock size={16} />} accent="amber" />
             <KpiCard label="Overdue" value={fmtCurrency(stats.overdue)} icon={<AlertTriangle size={16} />} accent="rose" />
@@ -313,21 +333,26 @@ export default function InvoicesPage() {
             border: '1px solid var(--border)',
             boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
           }}>
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-              {statusTabs.map((tab) => (
+            {/* Seven stored statuses do not fit on a phone at 390px. Scrolling
+                one row beats wrapping into four lines of pills. */}
+            <div className="-mx-1 flex w-full gap-1 overflow-x-auto px-1 pb-1 sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
+              {STATUS_TABS.map((tab) => (
                 <m.button
                   key={tab.id}
                   onClick={() => setStatusTab(tab.id)}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  aria-pressed={statusTab === tab.id}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
+                    justifyContent: 'center',
+                    minHeight: '44px',
                     padding: '8px 16px',
                     borderRadius: '9999px',
                     fontSize: '13px',
                     fontWeight: 660,
+                    whiteSpace: 'nowrap',
                     border: 'none',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
@@ -336,24 +361,15 @@ export default function InvoicesPage() {
                   }}
                 >
                   {tab.label}
-                  <span style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '2px 8px',
-                    borderRadius: '9999px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    background: statusTab === tab.id ? 'rgba(0,103,224,0.12)' : 'rgba(148,163,184,0.15)',
-                    color: statusTab === tab.id ? '#0067e0' : 'rgba(100,116,139,0.6)',
-                  }}>{tab.count}</span>
                 </m.button>
               ))}
             </div>
 
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
               <div style={{
                 display: 'flex',
+                flex: 1,
+                minWidth: 0,
                 alignItems: 'center',
                 gap: '8px',
                 padding: '10px 14px',
@@ -377,12 +393,20 @@ export default function InvoicesPage() {
                   }}
                 />
                 {search && (
-                  <button onClick={() => setSearch('')} style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 0 }}>
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    onClick={() => setSearch('')}
+                    className="flex h-[44px] w-[28px] shrink-0 items-center justify-center"
+                    style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 0 }}
+                  >
                     <X size={12} style={{ color: 'rgba(148,163,184,0.8)' }} />
                   </button>
                 )}
               </div>
-              <Button variant="primary" iconLeft={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>New Invoice</Button>
+              {/* The hero already carries Create Invoice full-width on a
+                  phone; repeating it here squeezed the search field. */}
+              <Button className="hidden sm:inline-flex" variant="primary" iconLeft={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>New Invoice</Button>
             </div>
           </div>
 
@@ -498,7 +522,7 @@ export default function InvoicesPage() {
                   style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
                 >
                   {invoices.map((invoice, i) => (
-                    <InvoiceCard key={invoice.id} invoice={invoice} index={i} onView={() => setSelectedInvoice(invoice)} onDownload={handleDownloadPDF} />
+                    <InvoiceCard key={invoice.id} invoice={invoice} index={i} onView={() => setSelectedInvoice(invoice)} onDownload={handleDownloadPDF} onMarkPaid={handleMarkPaid} />
                   ))}
                 </m.div>
               )}
@@ -676,20 +700,31 @@ function CreateInvoiceModal({
 
 /* ────────── Invoice Card ────────── */
 
-function InvoiceCard({ invoice, index, onView, onDownload }: { invoice: Invoice; index: number; onView: () => void; onDownload: (i: Invoice) => void }) {
+function InvoiceCard({ invoice, index, onView, onDownload, onMarkPaid }: {
+  invoice: Invoice;
+  index: number;
+  onView: () => void;
+  onDownload: (i: Invoice) => void;
+  onMarkPaid: (i: Invoice) => void;
+}) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [hoveredItem, setHoveredItem] = React.useState<string | null>(null);
   const isSm = useBreakpoint('(min-width: 640px)');
 
+  // One entry per stored status. `pending` used to be here and had no
+  // mapping: a `sent` or `partial` invoice read `cfg.bg` from undefined and
+  // crashed the card.
   const statusCfg: Record<InvoiceStatus, { color: string; bg: string; dot: string }> = {
-    paid: { color: '#059669', bg: 'rgba(5,150,105,0.08)', dot: '#10b981' },
-    pending: { color: '#d97706', bg: 'rgba(217,119,6,0.08)', dot: '#f59e0b' },
-    overdue: { color: '#dc2626', bg: 'rgba(220,38,38,0.08)', dot: '#ef4444' },
     draft: { color: 'var(--text-muted)', bg: 'rgba(100,116,139,0.08)', dot: '#94a3b8' },
+    sent: { color: '#0050AD', bg: 'rgba(0,103,224,0.08)', dot: '#0067E0' },
+    partial: { color: '#d97706', bg: 'rgba(217,119,6,0.08)', dot: '#f59e0b' },
+    paid: { color: '#059669', bg: 'rgba(5,150,105,0.08)', dot: '#10b981' },
+    overdue: { color: '#dc2626', bg: 'rgba(220,38,38,0.08)', dot: '#ef4444' },
     cancelled: { color: 'rgba(148,163,184,0.6)', bg: 'rgba(148,163,184,0.12)', dot: '#cbd5e1' },
   };
 
   const cfg = statusCfg[invoice.status];
+  const canMarkPaid = invoice.status !== 'paid' && invoice.status !== 'cancelled';
 
   return (
     <m.div
@@ -750,7 +785,7 @@ function InvoiceCard({ invoice, index, onView, onDownload }: { invoice: Invoice;
                 borderRadius: '50%',
                 background: cfg.dot,
               }} />
-              {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+              {STATUS_LABELS[invoice.status]}
             </span>
             {invoice.paymentMethod && (
               <span style={{
@@ -768,17 +803,21 @@ function InvoiceCard({ invoice, index, onView, onDownload }: { invoice: Invoice;
               </span>
             )}
           </div>
-          <p style={{
-            marginTop: '2px',
-            fontSize: '12.5px',
-            color: '#64748b',
-          }}>{invoice.description}</p>
+          {invoice.description && (
+            <p style={{
+              marginTop: '2px',
+              fontSize: '12.5px',
+              color: '#64748b',
+            }}>{invoice.description}</p>
+          )}
         </div>
       </div>
 
       <div style={{
         display: 'flex',
         alignItems: 'center',
+        alignSelf: isSm ? undefined : 'stretch',
+        justifyContent: isSm ? undefined : 'space-between',
         gap: isSm ? '24px' : '16px',
       }}>
         <div style={{ textAlign: 'right' }}>
@@ -799,10 +838,12 @@ function InvoiceCard({ invoice, index, onView, onDownload }: { invoice: Invoice;
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onView}
+            aria-label={`View invoice for ${invoice.memberName}`}
+            title="View Invoice"
             style={{
               display: 'flex',
-              height: '32px',
-              width: '32px',
+              height: '44px',
+              width: '44px',
               alignItems: 'center',
               justifyContent: 'center',
               borderRadius: '10px',
@@ -810,7 +851,6 @@ function InvoiceCard({ invoice, index, onView, onDownload }: { invoice: Invoice;
               cursor: 'pointer',
               background: 'var(--bg-subtle)',
             }}
-            title="View Invoice"
           >
             <Eye size={14} style={{ color: 'rgba(100,116,139,0.7)' }} />
           </m.button>
@@ -818,10 +858,12 @@ function InvoiceCard({ invoice, index, onView, onDownload }: { invoice: Invoice;
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => onDownload(invoice)}
+            aria-label={`Download PDF for ${invoice.memberName}`}
+            title="Download PDF"
             style={{
               display: 'flex',
-              height: '32px',
-              width: '32px',
+              height: '44px',
+              width: '44px',
               alignItems: 'center',
               justifyContent: 'center',
               borderRadius: '10px',
@@ -829,7 +871,6 @@ function InvoiceCard({ invoice, index, onView, onDownload }: { invoice: Invoice;
               cursor: 'pointer',
               background: 'var(--bg-subtle)',
             }}
-            title="Download PDF"
           >
             <Download size={14} style={{ color: 'rgba(100,116,139,0.7)' }} />
           </m.button>
@@ -838,10 +879,12 @@ function InvoiceCard({ invoice, index, onView, onDownload }: { invoice: Invoice;
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setMenuOpen((o) => !o)}
+              aria-label="More invoice actions"
+              aria-expanded={menuOpen}
               style={{
                 display: 'flex',
-                height: '32px',
-                width: '32px',
+                height: '44px',
+                width: '44px',
                 alignItems: 'center',
                 justifyContent: 'center',
                 borderRadius: '10px',
@@ -862,7 +905,7 @@ function InvoiceCard({ invoice, index, onView, onDownload }: { invoice: Invoice;
                   style={{
                     position: 'absolute',
                     right: 0,
-                    top: '40px',
+                    top: '48px',
                     zIndex: 50,
                     minWidth: '180px',
                     overflow: 'hidden',
@@ -876,20 +919,27 @@ function InvoiceCard({ invoice, index, onView, onDownload }: { invoice: Invoice;
                   {[
                     { icon: <Eye size={13} />, label: 'View Details', action: 'view', color: 'rgba(15,23,42,0.9)' },
                     { icon: <Download size={13} />, label: 'Download PDF', action: 'download', color: 'rgba(15,23,42,0.9)' },
-                    { icon: <CheckCircle2 size={13} />, label: 'Mark as Paid', action: 'mark-paid', color: '#059669' },
+                    // Paid and cancelled invoices cannot be marked paid again;
+                    // the item used to be a dead label that did nothing.
+                    ...(canMarkPaid
+                      ? [{ icon: <CheckCircle2 size={13} />, label: 'Mark as Paid', action: 'mark-paid', color: '#059669' }]
+                      : []),
                   ].map((item) => (
                     <button
                       key={item.action}
+                      type="button"
                       onClick={() => {
                         setMenuOpen(false);
                         if (item.action === 'view') onView();
                         else if (item.action === 'download') onDownload(invoice);
+                        else if (item.action === 'mark-paid') onMarkPaid(invoice);
                       }}
                       onMouseEnter={() => setHoveredItem(item.action)}
                       onMouseLeave={() => setHoveredItem(null)}
                       style={{
                         display: 'flex',
                         width: '100%',
+                        minHeight: '44px',
                         alignItems: 'center',
                         gap: '10px',
                         padding: '10px 14px',

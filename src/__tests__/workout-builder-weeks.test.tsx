@@ -168,7 +168,7 @@ describe('a later week is editable', () => {
   it('says where the week’s numbers come from', async () => {
     await renderBuilder();
     await goToWeek(6);
-    expect(screen.getByText(/Week 6 follows week 1/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Week 6 follows week 1/i)).toBeInTheDocument();
   });
 });
 

@@ -272,14 +272,24 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
     }
   };
 
-  const handleHeaderSave = async (patch: Record<string, unknown>) => {
-    if (!session) return;
+  const handleHeaderSave = async (patch: Record<string, unknown>): Promise<boolean> => {
+    if (!session) return false;
+    // An empty date is not "no date": the column is NOT NULL and Postgres
+    // rejects ''. Save the server's copy back instead of leaving a blank box
+    // the database never accepted.
+    if ('session_date' in patch && !String(patch.session_date ?? '').trim()) {
+      toast.error('A workout session needs a date.');
+      await loadSession();
+      return false;
+    }
     setSavingHeader(true);
     try {
       const res = await api.progress.workoutLog.sessions.update(session.id, patch);
       if (res?.data) setSession((prev) => (prev ? { ...prev, ...res.data } : prev));
+      return true;
     } catch (err: unknown) {
-      toast.error(errorMessage(err, 'Could not save.'));
+      toast.error(errorMessage(err, 'Could not save. Your logged sets are safe.'));
+      return false;
     } finally {
       setSavingHeader(false);
     }
@@ -299,10 +309,15 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
     if (!anyDone && !window.confirm(
       'No set is marked done in this session.\n\nFinish anyway? It will be saved, but it will not count toward the programme\'s progress.',
     )) return;
-    await handleHeaderSave({ ...patch, status: 'completed' });
-    setSummaryOpen(false);
-    toast.success('Workout session completed.');
-    router.push(`/pt-os/clients/${clientId}/workout-log`);
+    await handleHeaderSave({ ...patch, status: 'completed' }).then((saved) => {
+      // Closing the sheet on a failed PATCH told the trainer the workout was
+      // completed and navigated away from one that was still open. Keep the
+      // summary up so Finish can be tried again; the sets are already saved.
+      if (!saved) return;
+      setSummaryOpen(false);
+      toast.success('Workout session completed.');
+      router.push(`/pt-os/clients/${clientId}/workout-log`);
+    });
   };
 
   if (loading) {
@@ -609,7 +624,10 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
 
-  const nextSetNumber = exercise.sets.length + 1;
+  const nextSetNumber = Math.max(0, ...exercise.sets.map((s) => s.set_number)) + 1;
+  // Rest is already stored per set by the prescription. It was never shown,
+  // so the one number a trainer needs between sets lived only in the plan.
+  const restSeconds = exercise.sets.find((s) => s.rest_seconds != null)?.rest_seconds;
 
   // What this exercise can be logged AS: its library tracking mode (load ×
   // reps, bodyweight reps, hold, carry, cardio). Rows without a library
@@ -656,7 +674,7 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
     if (!previous || previous.sets.length === 0) { toast.info('No previous workout data for this exercise.'); return; }
     setBusy(true);
     try {
-      let n = exercise.sets.length;
+      let n = Math.max(0, ...exercise.sets.map((s) => s.set_number));
       for (const ps of previous.sets) {
         n += 1;
         await api.progress.workoutLog.sets.add(exercise.id, {
@@ -711,7 +729,10 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
           </span>
           <div className="min-w-0">
             <p className="truncate text-[14px] font-[740] text-gray-900">{exercise.exercise_name}</p>
-            <p className="text-[11px] text-slate-400">{exercise.sets.length} set{exercise.sets.length !== 1 ? 's' : ''}</p>
+            <p className="text-[11px] text-slate-400">
+              {exercise.sets.length} set{exercise.sets.length !== 1 ? 's' : ''}
+              {restSeconds ? ` · ${restSeconds}s rest` : ''}
+            </p>
           </div>
           {anyPr && (
             <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-[800]" style={{ background: 'rgba(245,158,11,0.15)', color: '#d97706' }}>
@@ -721,10 +742,10 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           <span onClick={(e) => { e.stopPropagation(); onRemove(); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onRemove(); } }} role="button" tabIndex={0} aria-label="Remove exercise"
-            className="flex h-9 w-9 items-center justify-center rounded-[10px] transition hover:bg-red-50">
+            className="flex h-11 w-11 items-center justify-center rounded-[10px] transition hover:bg-red-50">
             <Trash2 size={14} style={{ color: '#ef4444' }} />
           </span>
-          <span className="flex h-9 w-9 items-center justify-center rounded-[10px]">
+          <span className="flex h-11 w-11 items-center justify-center rounded-[10px]">
             <ChevronDown size={16} style={{ color: '#94a3b8', transform: expanded ? 'rotate(180deg)' : undefined, transition: 'transform 0.2s' }} />
           </span>
         </div>

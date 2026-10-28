@@ -190,7 +190,7 @@ describe('Outstanding Dues — "Outstanding"', () => {
 
     const { default: Page } = await import('@/app/(chrome)/finance/dues/page');
     render(<Page />);
-    await waitFor(() => expect(screen.getByText('₹20.0K')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('₹20,000')).toBeTruthy());
     expect(screen.getByText('Outstanding')).toBeTruthy();
   });
 
@@ -203,9 +203,9 @@ describe('Outstanding Dues — "Outstanding"', () => {
     const { default: Page } = await import('@/app/(chrome)/finance/dues/page');
     render(<Page />);
 
-    // ₹8.8L is the server's total, not the ₹50.0K the 100 rows on screen add up to.
-    await waitFor(() => expect(screen.getByText('₹8.8L')).toBeTruthy());
-    expect(screen.queryByText('₹50.0K')).toBeNull();
+    // ₹8,75,000 is the server's total, not the ₹50,000 the 100 rows on screen add up to.
+    await waitFor(() => expect(screen.getByText('₹8,75,000')).toBeTruthy());
+    expect(screen.queryByText('₹50,000')).toBeNull();
     // Risk bands are the server's too — they were counted over 100 rows before.
     expect(screen.getByText('12')).toBeTruthy();
     expect(screen.getByText('60')).toBeTruthy();

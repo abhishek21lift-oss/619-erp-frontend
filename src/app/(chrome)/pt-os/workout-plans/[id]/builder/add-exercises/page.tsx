@@ -24,6 +24,7 @@ export default function PlanAddExercisesPage({
     <AddExercisesScreen
       planId={planId}
       day={day}
+      newExerciseId={sp.get('new')}
       backHref={`/pt-os/workout-plans/${planId}/builder?day=${day}`}
     />
   );

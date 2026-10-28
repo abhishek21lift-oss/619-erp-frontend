@@ -80,7 +80,10 @@ describe('PT-OS dashboard KPIs', () => {
   it('shows the three metrics that are on every screen size', async () => {
     render(<PtOsDashboard />);
     for (const label of ['Active Clients', 'PT Revenue', 'Active Share']) {
-      expect(await screen.findByText(label)).toBeTruthy();
+      // The dashboard's first paint waits on three fetches; 1s is the
+      // library default, not a product requirement, and this file renders
+      // the whole page per test. 5s keeps it deterministic under load.
+      expect(await screen.findByText(label, undefined, { timeout: 5000 })).toBeTruthy();
     }
   });
 

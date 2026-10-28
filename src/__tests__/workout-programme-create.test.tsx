@@ -13,7 +13,10 @@ import {render, screen, waitFor, cleanup, fireEvent} from '@testing-library/reac
 import fs from 'node:fs';
 
 const push = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 const create = vi.fn();
 const assign = vi.fn();
@@ -39,7 +42,7 @@ vi.mock('@/lib/toast', () => ({
   useToast: () => ({ toast: { error: toastError, success: vi.fn(), warning: vi.fn() } }),
 }));
 
-import NewProgrammeDialog from '@/components/pt-os/builder/NewProgrammeDialog';
+import { NewProgrammeForm } from '@/components/pt-os/builder/NewProgrammeForm';
 import { ApiError } from '@/lib/http';
 import {appPath, routeExists} from '@/__tests__/helpers/app-routes';
 
@@ -57,9 +60,9 @@ async function fillAndSubmit(name = 'Upper / Lower') {
   fireEvent.click(screen.getByRole('button', { name: /create and add exercises/i }));
 }
 
-describe('NewProgrammeDialog — the replacement for the deleted wizard', () => {
+describe('NewProgrammeForm — the replacement for the deleted wizard', () => {
   it('creates the plan, assigns it, then opens the builder with the new id', async () => {
-    render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
+    render(<NewProgrammeForm presetClientId="cl-1" />);
     await fillAndSubmit();
 
     await waitFor(() => expect(create).toHaveBeenCalledOnce());
@@ -77,21 +80,21 @@ describe('NewProgrammeDialog — the replacement for the deleted wizard', () => 
     // The whole reason the flow split in two: exercises are added in the
     // builder, one granular request each, so they hold stable ids from birth.
     // Sending them here would go through the whole-plan PUT path instead.
-    render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
+    render(<NewProgrammeForm presetClientId="cl-1" />);
     await fillAndSubmit();
     await waitFor(() => expect(create).toHaveBeenCalled());
     expect(create.mock.calls[0][0].exercises).toBeUndefined();
   });
 
   it('refuses to create without a name', async () => {
-    render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
+    render(<NewProgrammeForm presetClientId="cl-1" />);
     fireEvent.click(screen.getByRole('button', { name: /create and add exercises/i }));
     expect(await screen.findByText('Programme name is required.')).toBeInTheDocument();
     expect(create).not.toHaveBeenCalled();
   });
 
   it('refuses to create without a client', async () => {
-    render(<NewProgrammeDialog open onClose={() => {}} />);
+    render(<NewProgrammeForm />);
     await fillAndSubmit();
     expect(await screen.findByText('Client is required.')).toBeInTheDocument();
     expect(create).not.toHaveBeenCalled();
@@ -102,7 +105,7 @@ describe('NewProgrammeDialog — the replacement for the deleted wizard', () => 
     // error — and an orphan plan they cannot see — would be worse than telling
     // them assignment failed and letting them carry on building.
     assign.mockRejectedValue(new Error('offline'));
-    render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
+    render(<NewProgrammeForm presetClientId="cl-1" />);
     await fillAndSubmit();
     await waitFor(() => expect(toastError).toHaveBeenCalled());
     expect(push).toHaveBeenCalledWith('/pt-os/workout-plans/plan-99/builder');
@@ -116,7 +119,7 @@ describe('NewProgrammeDialog — the replacement for the deleted wizard', () => 
     // read as PAR-Q, specifically — the same message the Workout Plans
     // page's own "Assign" button already gives.
     assign.mockRejectedValue(new ApiError('blocked', 403, 'PARQ_BLOCKED'));
-    render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
+    render(<NewProgrammeForm presetClientId="cl-1" />);
     await fillAndSubmit();
     await waitFor(() => expect(toastError).toHaveBeenCalled());
     expect(toastError.mock.calls[0][0]).toMatch(/PAR-Q/);
@@ -126,17 +129,16 @@ describe('NewProgrammeDialog — the replacement for the deleted wizard', () => 
     expect(push).toHaveBeenCalledWith('/pt-os/workout-plans/plan-99/builder');
   });
 
-  it('keeps the dialog open and shows the server error when creation fails', async () => {
+  it('keeps the form on screen and shows the server error when creation fails', async () => {
     create.mockRejectedValue(new Error('nope'));
-    render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
+    render(<NewProgrammeForm presetClientId="cl-1" />);
     await fillAndSubmit();
     expect(await screen.findByText('nope')).toBeInTheDocument();
     expect(push).not.toHaveBeenCalled();
   });
 
-  it('renders nothing when closed', () => {
-    const { container } = render(<NewProgrammeDialog open={false} onClose={() => {}} />);
-    expect(container).toBeEmptyDOMElement();
+  it('has its own route, and the list opens that route', () => {
+    expect(routeExists('pt-os/workout-plans/new')).toBe(true);
   });
 });
 
@@ -155,8 +157,9 @@ describe('the Programs screen no longer carries the old wizard', () => {
     }
   });
 
-  it('routes plan creation through the dialog', () => {
-    expect(src).toContain('NewProgrammeDialog');
+  it('routes plan creation through its own page', () => {
+    expect(src).toContain('/pt-os/workout-plans/new');
+    expect(src).not.toContain('NewProgrammeDialog');
   });
 });
 

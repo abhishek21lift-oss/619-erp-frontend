@@ -10,7 +10,7 @@ import { api } from '@/lib/api';
 import type { WorkoutPlan, WorkoutPlanExercise } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import EditProgrammeDialog from '@/components/pt-os/builder/EditProgrammeDialog';
-import { PROGRAMME_GOALS } from '@/components/pt-os/builder/NewProgrammeDialog';
+import { PROGRAMME_GOALS } from '@/lib/programme-options';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 

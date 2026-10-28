@@ -19,7 +19,10 @@
 import { escapeHtml } from '@/lib/escapeHtml';
 
 export type PaymentMethod = 'upi' | 'credit-card' | 'cash' | 'razorpay' | 'stripe' | 'bank-transfer';
-export type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'draft' | 'cancelled';
+// The six statuses the API stores, plus the legacy `pending` bucket that the
+// print helper still accepts in fixtures. `sent` and `partial` printed without
+// a type because this union was written before they were surfaced.
+export type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'draft' | 'sent' | 'partial' | 'cancelled';
 
 export interface Invoice {
   id: string;

@@ -35,23 +35,25 @@ function uniqueName(): string {
   return `E2E-PKG-${Date.now().toString(36).toUpperCase()}-${seq}`;
 }
 
-const dialog = (page: Page) => page.getByRole('dialog', { name: 'Create Package' });
+const createHeading = (page: Page) => page.getByRole('heading', { name: 'Create Package' });
 
 async function openCreate(page: Page) {
-  await page.getByRole('button', { name: 'Create Package' }).first().click();
-  await expect(dialog(page)).toBeVisible();
+  await page.getByRole('link', { name: 'Create Package' }).first().click();
+  await expect(createHeading(page)).toBeVisible();
+  await expect(page).toHaveURL(/\/subscription\/packages\/new$/);
 }
 
-/** Scoped to the dialog: the page behind it has KPI cards named "Sessions" too. */
+/** Scoped to the create page: the list behind it has KPI cards named "Sessions" too. */
 async function fillPackage(page: Page, name: string, price: string, sessions = '12', days = '90') {
-  const d = dialog(page);
-  await d.getByLabel(/^Package name/).fill(name);
-  await d.getByLabel(/^Sessions/).fill(sessions);
-  await d.getByLabel(/^Duration/).fill(days);
-  await d.getByLabel(/^Price/).fill(price);
+  await page.getByLabel(/^Package name/).fill(name);
+  // A textbox, not a label: the sidebar and mobile menu also expose a
+  // "Sessions" button, and getByLabel matches aria-label on those too.
+  await page.getByRole('textbox', { name: /^Sessions/ }).fill(sessions);
+  await page.getByLabel(/^Duration/).fill(days);
+  await page.getByLabel(/^Price/).fill(price);
 }
 
-const submit = (page: Page) => dialog(page).getByRole('button', { name: /^Create$/ });
+const submit = (page: Page) => page.getByRole('button', { name: /^Create$/ });
 
 test.describe('PT package creation', () => {
   let token: string;
@@ -65,7 +67,7 @@ test.describe('PT package creation', () => {
   test.beforeEach(async ({ page }) => {
     token = await apiToken();
     await gotoApp(page, '/subscription/packages');
-    await expect(page.getByRole('button', { name: 'Create Package' }).first())
+    await expect(page.getByRole('link', { name: 'Create Package' }).first())
       .toBeVisible({ timeout: 20_000 });
   });
 
@@ -95,11 +97,7 @@ test.describe('PT package creation', () => {
     });
 
     await openCreate(page);
-    const d = dialog(page);
-    await d.getByLabel(/^Package name/).fill(name);
-    await d.getByLabel(/^Sessions/).fill('10');
-    await d.getByLabel(/^Duration/).fill('30');
-    await d.getByLabel(/^Price/).fill('   ');
+    await fillPackage(page, name, '   ', '10', '30');
     await submit(page).click();
 
     await page.waitForTimeout(1200);
@@ -113,7 +111,7 @@ test.describe('PT package creation', () => {
     await openCreate(page);
     await fillPackage(page, uniqueName(), '5000', '12.5');
     await submit(page).click();
-    await expect(dialog(page)).toBeVisible();
+    await expect(createHeading(page)).toBeVisible();
   });
 
   test('a double-tap creates one package, not two', async ({ page }) => {
@@ -143,7 +141,7 @@ test.describe('PT package creation', () => {
     await fillPackage(page, name, '2000');
     await submit(page).click();
 
-    const banner = dialog(page).getByRole('alert').first();
+    const banner = page.getByRole('alert').first();
     await expect(banner).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('body')).not.toContainText('null value in column');
     await expect(page.locator('body')).not.toContainText('/srv/api/src');
@@ -156,11 +154,11 @@ test.describe('PT package creation', () => {
     // §7 Create → Cancel → Reopen.
     await openCreate(page);
     await fillPackage(page, uniqueName(), '9,999');
-    await dialog(page).getByRole('button', { name: 'Cancel' }).click();
-    await expect(dialog(page)).toBeHidden();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page).toHaveURL(/\/subscription\/packages$/);
 
     await openCreate(page);
-    await expect(dialog(page).getByLabel(/^Package name/)).toHaveValue('');
-    await expect(dialog(page).getByLabel(/^Price/)).toHaveValue('');
+    await expect(page.getByLabel(/^Package name/)).toHaveValue('');
+    await expect(page.getByLabel(/^Price/)).toHaveValue('');
   });
 });

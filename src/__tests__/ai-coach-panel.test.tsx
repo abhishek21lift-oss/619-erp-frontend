@@ -39,6 +39,7 @@ type Handlers = {
   onConversationId?: (id: string) => void;
   onSources?: (s: string[]) => void;
   onTools?: (t: string[]) => void;
+  onGrounding?: (g: 'unavailable') => void;
   onText?: (t: string) => void;
 };
 
@@ -205,6 +206,74 @@ describe('<AiCoachPanel />', () => {
     await waitFor(() => expect(streamAiChat).toHaveBeenCalledTimes(2));
     expect(screen.getByText('second answer')).toBeTruthy();
     expect(screen.getByText('first answer')).toBeTruthy();
+  });
+
+  it('warns when the studio documents could not be searched for the answer', async () => {
+    streamAiChat.mockImplementation(async (_req: unknown, handlers: Handlers = {}) => {
+      handlers.onGrounding?.('unavailable');
+      handlers.onText?.('Answer from general knowledge');
+      return { text: 'Answer from general knowledge', conversationId: null, aborted: false };
+    });
+    open();
+
+    await ask('hi');
+
+    await waitFor(() => {
+      expect(screen.getByText(/documents could not be searched/i)).toBeTruthy();
+    });
+  });
+
+  it('keeps sources that arrive after the first token', async () => {
+    // The backend emits sources before the first chunk today. Rewriting only
+    // the text on later chunks would silently drop them if that order changed.
+    streamAiChat.mockImplementation(async (_req: unknown, handlers: Handlers = {}) => {
+      handlers.onText?.('Partial');
+      handlers.onSources?.(['Handbook']);
+      handlers.onText?.('Partial answer');
+      return { text: 'Partial answer', conversationId: null, aborted: false };
+    });
+    open();
+
+    await ask('hi');
+
+    await waitFor(() => expect(screen.getByText('Partial answer')).toBeTruthy());
+    expect(screen.getByText('Handbook')).toBeTruthy();
+  });
+
+  it('offers Stop while streaming and keeps the partial answer', async () => {
+    streamAiChat.mockImplementation((req: { signal?: AbortSignal }, handlers: Handlers = {}) =>
+      new Promise((resolve) => {
+        handlers.onText?.('Partial answer');
+        req.signal?.addEventListener('abort', () => {
+          resolve({ text: 'Partial answer', conversationId: null, aborted: true });
+        });
+      }));
+    open();
+
+    await ask('hi');
+
+    const stop = await screen.findByRole('button', { name: 'Stop response' });
+    expect(screen.queryByRole('button', { name: 'Send message' })).toBeNull();
+
+    fireEvent.click(stop);
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Send message' })).toBeTruthy());
+    expect(screen.getByText('Partial answer')).toBeTruthy();
+  });
+
+  it('offers Try again for the newest failed answer and resends the question', async () => {
+    streamAiChat
+      .mockRejectedValueOnce(new Error('model unavailable'))
+      .mockImplementationOnce(streamsBack({ text: 'Recovered' }));
+    open();
+
+    await ask('hi');
+    const retry = await screen.findByRole('button', { name: 'Try again' });
+    fireEvent.click(retry);
+
+    await waitFor(() => expect(screen.getByText('Recovered')).toBeTruthy());
+    expect(streamAiChat).toHaveBeenCalledTimes(2);
+    expect((streamAiChat.mock.calls[1][0] as { message: string }).message).toBe('hi');
   });
 });
 
