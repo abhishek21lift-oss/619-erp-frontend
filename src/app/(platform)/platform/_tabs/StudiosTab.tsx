@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   Building2, Plus, Loader2, Users, Dumbbell, UserCircle, KeyRound, Power, ChevronDown, ImagePlus,
-  LogIn, Pencil, Trash2, IndianRupee, Eye, Gift, Receipt, Search, MoreVertical,
+  LogIn, Pencil, Trash2, IndianRupee, Eye, Gift, Receipt, MoreVertical,
   Download, ArrowUpDown, CheckSquare, Square, LogOut, ShieldOff, CalendarPlus, StickyNote, Save,
   ToggleLeft, ToggleRight, Lock,
 } from 'lucide-react';
@@ -31,6 +31,7 @@ import { Center, ErrorState, IconBtn, MiniStat } from '../_shared/ui';
 import { errorMessage } from '@/lib/forms/errors';
 import { checkFile, acceptAttribute, LOGO_RULES } from '@/lib/forms/files';
 import { clampNumericText } from '@/components/ui/FloatInput';
+import { FormField, SearchField, SelectInput, TextArea, TextInput } from '@/components/ui/form';
 
 export function exportStudiosCsv(rows: StudioRow[]): void {
   const headers = ['Name', 'Slug', 'Status', 'Plan', 'Revenue', 'Active Clients', 'Total Clients', 'Coaches', 'Accounts', 'Last Active', 'Created'];
@@ -181,22 +182,17 @@ export function StudiosTab() {
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
         <div className="relative min-w-[160px] flex-1">
-          <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-          <input aria-label="Search studios"
-            value={query} onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search studios…"
-            className="h-11 w-full rounded-[10px] pl-8 pr-3 text-[12.5px] outline-none"
-            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-          />
+          <SearchField label="Search studios" placeholder="Search studios…"
+            value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <div className="relative">
-          <select aria-label="Sort studios" value={sortBy} onChange={(e) => setSortBy(e.target.value as StudioSort)}
-            className="h-11 appearance-none rounded-[10px] py-1.5 pl-8 pr-8 text-[12px] font-[650] outline-none"
-            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-            {SORTS.map((s) => <option key={s.id} value={s.id}>Sort · {s.label}</option>)}
-          </select>
-          <ArrowUpDown size={12} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-          <ChevronDown size={12} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+        <div className="relative shrink-0">
+          <ArrowUpDown size={12} className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+          <FormField label="Sort studios" labelHidden>
+            <SelectInput value={sortBy} onChange={(e) => setSortBy(e.target.value as StudioSort)}
+              className="pl-8 text-[12px] font-[650]">
+              {SORTS.map((s) => <option key={s.id} value={s.id}>Sort · {s.label}</option>)}
+            </SelectInput>
+          </FormField>
         </div>
         <Button iconLeft={<Plus size={14} />} onClick={() => setCreateOpen(true)}
           style={{ background: 'linear-gradient(135deg,#0f172a,#334155)', color: '#fff' }}>New Studio</Button>
@@ -651,8 +647,6 @@ export function StudioOperatorPanel({ org, onChanged }: { org: Organization; onC
     finally { setSavingNotes(false); }
   };
 
-  const field = { background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as const;
-
   return (
     <div className="mt-3 grid grid-cols-1 gap-3 border-t pt-3 lg:grid-cols-2" style={{ borderColor: 'var(--border)' }}>
       {/* Bonus days */}
@@ -660,18 +654,20 @@ export function StudioOperatorPanel({ org, onChanged }: { org: Organization; onC
         <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-[750] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>
           <CalendarPlus size={11} /> Bonus days
         </p>
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="text" inputMode="numeric"
-            value={days} onChange={(e) => setDays(clampNumericText(e.target.value, 'integer'))}
-            placeholder="14" aria-label="Bonus days"
-            className="h-9 w-20 rounded-[9px] px-2.5 text-[12.5px] outline-none" style={field}
-          />
-          <input
-            value={reason} onChange={(e) => setReason(e.target.value)}
-            placeholder="Reason (optional)" aria-label="Reason"
-            className="h-9 min-w-[120px] flex-1 rounded-[9px] px-2.5 text-[12.5px] outline-none" style={field}
-          />
+        <div className="flex flex-wrap items-end gap-2">
+          <FormField label="Bonus days" labelHidden className="w-20">
+            <TextInput
+              type="text" inputMode="numeric"
+              value={days} onChange={(e) => setDays(clampNumericText(e.target.value, 'integer'))}
+              placeholder="14"
+            />
+          </FormField>
+          <FormField label="Reason" labelHidden className="min-w-[120px] flex-1">
+            <TextInput
+              value={reason} onChange={(e) => setReason(e.target.value)}
+              placeholder="Reason (optional)"
+            />
+          </FormField>
           <button
             onClick={grant} disabled={granting}
             className="flex h-11 items-center gap-1.5 rounded-[9px] px-3 text-[11.5px] font-[700] text-white disabled:opacity-50"
@@ -690,13 +686,14 @@ export function StudioOperatorPanel({ org, onChanged }: { org: Organization; onC
         <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-[750] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>
           <StickyNote size={11} /> Internal notes
         </p>
-        <textarea
-          value={notes}
-          onChange={(e) => { setNotes(e.target.value); setDirty(true); }}
-          placeholder={notesLoaded ? 'Operator-only context — never shown to the studio.' : 'Loading…'}
-          rows={3} aria-label="Internal notes"
-          className="w-full resize-y rounded-[9px] px-2.5 py-2 text-[12.5px] outline-none" style={field}
-        />
+        <FormField label="Internal notes" labelHidden>
+          <TextArea
+            value={notes}
+            onChange={(e) => { setNotes(e.target.value); setDirty(true); }}
+            placeholder={notesLoaded ? 'Operator-only context — never shown to the studio.' : 'Loading…'}
+            rows={3}
+          />
+        </FormField>
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
           <button
             onClick={saveNotes} disabled={savingNotes || !dirty}
@@ -885,7 +882,6 @@ export function BillingProfileEditor({ orgId }: { orgId: string }) {
     finally { setSaving(false); }
   };
 
-  const field = { background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as const;
   const set = (k: keyof OrgBillingProfile, v: string) => { setForm((f) => (f ? { ...f, [k]: v } : f)); setDirty(true); };
 
   const FIELDS: { key: keyof OrgBillingProfile; label: string; placeholder?: string; wide?: boolean }[] = [
@@ -915,16 +911,15 @@ export function BillingProfileEditor({ orgId }: { orgId: string }) {
         <>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {FIELDS.map((f) => (
-              <label key={String(f.key)} className={`flex flex-col gap-1 ${f.wide ? 'sm:col-span-2 lg:col-span-3' : ''}`}>
-                <span className="text-[10px] font-[700]" style={{ color: 'var(--text-disabled)' }}>{f.label}</span>
-                <input
+              <FormField key={String(f.key)} label={f.label} density="compact" disabled={!form}
+                className={f.wide ? 'sm:col-span-2 lg:col-span-3' : undefined}>
+                <TextInput
                   value={(form?.[f.key] as string) ?? ''}
                   onChange={(e) => set(f.key, e.target.value)}
                   placeholder={form ? f.placeholder : 'Loading…'}
                   disabled={!form}
-                  className="h-9 rounded-[9px] px-2.5 text-[12.5px] outline-none disabled:opacity-50" style={field}
                 />
-              </label>
+              </FormField>
             ))}
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">

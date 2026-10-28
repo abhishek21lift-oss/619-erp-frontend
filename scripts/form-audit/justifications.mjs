@@ -51,15 +51,15 @@
 export const JUSTIFIED = {
 
   'src/app/(chrome)/finance/verify-payments/page.tsx': {
-    allow: 6,
+    allow: 2,
     reason:
-      'Already correct, verified line by line rather than assumed. The radio ' +
-      'group uses fieldset+legend (what RadioField provides); the textarea has ' +
-      'htmlFor and maxLength; the dialog resets per opening so a note typed for ' +
-      'one payment cannot submit against the next; it has a busy guard, a focus ' +
-      'trap via useDialogA11y, and treats a 409 as information rather than ' +
-      'failure. Migrating it would change working code and fix nothing — the ' +
-      'case §1 and the non-negotiable rule both forbid.',
+      'The two native controls left are the reject/correct dialog: a radio ' +
+      'group that uses fieldset+legend (what RadioField provides) and a ' +
+      'textarea with htmlFor and maxLength. That dialog resets per opening, ' +
+      'guards submit with an in-flight ref, traps focus via useDialogA11y, and ' +
+      'treats a 409 as information rather than failure. The new-payment-request ' +
+      'dialog now runs on the platform (schema, useAppForm, FormField); the ' +
+      'queue search box is a filter, not a business control.',
   },
 
   'src/components/platform/subscription-requests.tsx': {

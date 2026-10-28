@@ -97,9 +97,12 @@ function audit(): Audit {
 const CEILING = {
   /** §6. Zero, and it stays zero. */
   riskyCoercions: 0,
-  unjustified: 138,
+  // 127 → 115 when the dead ModuleWorkspace cluster was deleted, then 115 → 93
+  // when FinanceTab, OrgModals and StudiosTab moved to FormField. Lower again
+  // when the next phase lands; never raise.
+  unjustified: 93,
   p0Unjustified: 0,
-  p1Unjustified: 51,
+  p1Unjustified: 46,
   /**
    * §9. Zero, and it stays zero.
    *
@@ -153,7 +156,7 @@ const CEILING = {
 // counts forms that exist; deleting a form legitimately lowers it, and the
 // ratchet still catches a form that quietly stops using the design system.
 const FLOOR = {
-  platformControls: 321,
+  platformControls: 450,
   /** Forms whose errors reach the canonical mapper. */
   errorPlatform: 55,
   /** Forms bound to a named canonical schema. */
