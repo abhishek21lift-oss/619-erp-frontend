@@ -46,7 +46,9 @@ async function openCreate(page: Page) {
 /** Scoped to the create page: the list behind it has KPI cards named "Sessions" too. */
 async function fillPackage(page: Page, name: string, price: string, sessions = '12', days = '90') {
   await page.getByLabel(/^Package name/).fill(name);
-  await page.getByLabel(/^Sessions/).fill(sessions);
+  // A textbox, not a label: the sidebar and mobile menu also expose a
+  // "Sessions" button, and getByLabel matches aria-label on those too.
+  await page.getByRole('textbox', { name: /^Sessions/ }).fill(sessions);
   await page.getByLabel(/^Duration/).fill(days);
   await page.getByLabel(/^Price/).fill(price);
 }
