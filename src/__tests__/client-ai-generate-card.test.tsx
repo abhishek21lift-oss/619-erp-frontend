@@ -12,6 +12,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import type { ClientLoginStatus } from '@/lib/api';
 import ClientAiGenerateCard from '@/components/pt-os/ClientAiGenerateCard';
 import ClientLoginCard from '@/components/pt-os/ClientLoginCard';
+import { ApiError } from '@/lib/http';
 
 const mockToastError = vi.fn();
 const mockToastSuccess = vi.fn();
@@ -522,6 +523,23 @@ describe('a diet the record cannot support', () => {
 });
 
 describe('errors', () => {
+  it('shows the generator\'s own reason instead of the generic 5xx sentence', async () => {
+    // The backend writes these 503 bodies by hand (publicAiMessage / the
+    // evidence refusal). The form mapper scrubs every 5xx, so the one
+    // sentence that names the cause never reached the trainer.
+    mockGenerateDiet.mockRejectedValue(new ApiError(
+      'DIET generation could not check the approved knowledge base. Try again shortly — nothing was generated.',
+      503,
+    ));
+
+    renderCard();
+    fireEvent.click(screen.getByText('Generate AI Diet'));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('could not check the approved knowledge base');
+    expect(alert.textContent).not.toContain('problem saving this');
+  });
+
   it('shows the failure inline and in a toast, and re-enables the buttons', async () => {
     const { promise, reject } = deferred<{ data: unknown }>();
     mockGenerateWorkout.mockReturnValue(promise);
