@@ -2,48 +2,45 @@
 
 import {
   Sparkles, Dumbbell, ChefHat, FileQuestion, BookOpen, BarChart3,
-  ArrowRight, ShieldCheck, UserRound,
+  ShieldCheck, UserRound,
 } from 'lucide-react';
-import Link from 'next/link';
 import { Container, Reveal, Section, SectionHeader } from './primitives';
 import { C, SHADOW } from './tokens';
 
+// No per-card links: every destination these used to name (/ai/*, /ai-coach,
+// /pt-os/exercise-library) is an authenticated app screen that redirects a
+// logged-out visitor to /login. The section explains the product; the page's
+// trial CTA is the public action.
 const LAYERS = [
   {
     icon: <Sparkles size={17} />,
     title: 'Workout generation',
     body: 'Generates complete, periodised programmes from a client profile, goals, PAR-Q and available equipment — in the trainer’s voice.',
-    link: { href: '/ai/workout-generator', label: 'Try the workout generator' },
   },
   {
     icon: <ChefHat size={17} />,
     title: 'Diet generation',
     body: 'Nutrition plans built around the client’s goals, training load and food preferences — Indian meals included, macros tracked.',
-    link: { href: '/ai/diet-generator', label: 'Try the diet generator' },
   },
   {
     icon: <BarChart3 size={17} />,
     title: 'Progress analysis',
     body: 'Reads records and measurements to show what is working — strength, adherence and body-composition trends over time.',
-    link: { href: '/ai/progress-analysis', label: 'See progress analysis' },
   },
   {
     icon: <BookOpen size={17} />,
     title: 'Training knowledge base',
     body: 'A searchable science library every generation is grounded in — methodology, cues and coaching notes, not guesswork.',
-    link: { href: '/ai-coach/knowledge', label: 'Browse the knowledge base' },
   },
   {
     icon: <FileQuestion size={17} />,
     title: 'Client-aware answers',
     body: 'Ask about a specific client — an injury, a plateau, a missed week — and the answer takes their history, programme and constraints into account.',
-    link: { href: '/ai-coach', label: 'Meet the AI Coach' },
   },
   {
     icon: <Dumbbell size={17} />,
     title: 'Exercise library',
     body: 'Movements with cues, tempo and equipment tags — the source of every generated set, and yours to extend.',
-    link: { href: '/pt-os/exercise-library', label: 'Open the library' },
   },
 ];
 
@@ -76,7 +73,7 @@ export default function AiSection() {
               {LAYERS.map((l, i) => (
                 <Reveal key={l.title} delay={0.05 + i * 0.04} className="h-full">
                   <div
-                    className="group flex h-full flex-col rounded-[16px] p-5 transition-colors duration-200"
+                    className="flex h-full flex-col rounded-[16px] p-5"
                     style={{ background: C.canvasAlt }}
                   >
                     <div className="flex items-center gap-2.5">
@@ -86,14 +83,6 @@ export default function AiSection() {
                       <h3 className="text-[14px] font-[600] tracking-[-0.01em]" style={{ color: C.ink }}>{l.title}</h3>
                     </div>
                     <p className="mt-3 flex-1 text-[12.5px] leading-[1.55]" style={{ color: C.muted }}>{l.body}</p>
-                    <Link
-                      href={l.link.href}
-                      className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-[500] transition-opacity hover:opacity-70"
-                      style={{ color: C.blueHi }}
-                    >
-                      {l.link.label}
-                      <ArrowRight size={13} className="transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden />
-                    </Link>
                   </div>
                 </Reveal>
               ))}
