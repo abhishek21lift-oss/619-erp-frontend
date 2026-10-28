@@ -244,6 +244,27 @@ describe('a record the studio has filled in', () => {
     expect(screen.getByText(/PAR-Q referred/)).toBeInTheDocument();
     expect(screen.queryByText(/not screened/)).toBeNull();
   });
+
+  // ── A blocked gate has to lead somewhere ────────────────────────────────
+  //
+  // The refusal reads "Resolve it before generating a programme" and the
+  // screen stopped there: the one place the gate is shown offered no way to
+  // record the screening that clears it. Same class of dead end as the
+  // programme chooser that rendered no chooser.
+  it('a blocked gate links to the screening that clears it', () => {
+    render(<GenerationContextPanel context={gateOf('referred', false)} clientId="c1" />);
+    const link = screen.getByRole('link', { name: /PAR-Q referred/ });
+    expect(link).toHaveAttribute('href', '/pt-os/parq?client_id=c1');
+  });
+
+  it('only the blocked gate is a link', () => {
+    const cleared = render(<GenerationContextPanel context={gateOf('cleared', true)} clientId="c1" />);
+    expect(screen.getByText(/PAR-Q cleared/).closest('a')).toBeNull();
+    cleared.unmount();
+
+    render(<GenerationContextPanel context={gateOf('unknown', false)} clientId="c1" />);
+    expect(screen.getByText(/PAR-Q not screened/).closest('a')).toBeNull();
+  });
 });
 
 // ── Two of the studio's own records disagreeing ────────────────────────────
