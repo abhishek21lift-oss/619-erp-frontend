@@ -155,7 +155,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'MessageCircle',
     feature: 'communication',
     items: [
-      { href: '/engagement/whatsapp',      label: 'WhatsApp / SMS',       icon: 'MessageCircle', roles: ['trainer'] },
+      { href: '/engagement/whatsapp',      label: 'WhatsApp',             icon: 'MessageCircle', roles: ['trainer'] },
       { href: '/engagement/notifications', label: 'Notifications',        icon: 'Bell',          roles: ['trainer'] },
       { href: '/engagement/campaigns',     label: 'Campaigns',            icon: 'Send',          roles: ['trainer'] },
       { href: '/engagement/offers',        label: 'Promotional Offers',   icon: 'Tag',           roles: ['trainer'] },
