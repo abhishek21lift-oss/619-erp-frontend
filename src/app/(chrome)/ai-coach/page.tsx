@@ -113,6 +113,7 @@ export default function AiCoachPage() {
   const [conversations, setConversations] = useState<AiConversation[]>([]);
   const [historyQuery, setHistoryQuery] = useState('');
   const [railOpen, setRailOpen] = useState(false);
+  const [railCollapsed, setRailCollapsed] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
 
@@ -124,6 +125,8 @@ export default function AiCoachPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
+  /** Guards conversation loads so a slow earlier click cannot replace a newer one. */
+  const loadSeqRef = useRef(0);
   const endRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   /** Last user message, so Regenerate can resend it without re-reading state. */
@@ -154,7 +157,9 @@ export default function AiCoachPage() {
 
   const send = useCallback(async (text: string, opts?: { regenerate?: boolean }) => {
     const body = text.trim();
-    if (!body || streaming) return;
+    // The ref is the synchronous truth: `streaming` is a render behind, so a
+    // fast double Enter used to open two streams for one message.
+    if (!body || abortRef.current) return;
 
     const regenerate = Boolean(opts?.regenerate);
     lastUserMsgRef.current = body;
@@ -224,13 +229,14 @@ export default function AiCoachPage() {
       setStreaming(false);
       abortRef.current = null;
     }
-  }, [streaming, conversationId, selectedClient, loadConversations]);
+  }, [conversationId, selectedClient, loadConversations]);
 
   const stop = () => abortRef.current?.abort();
 
   /* ── Conversation actions ──────────────────────────────────────────── */
 
   const newChat = () => {
+    loadSeqRef.current += 1;
     abortRef.current?.abort();
     setMessages([]);
     setConversationId(null);
@@ -240,10 +246,14 @@ export default function AiCoachPage() {
   };
 
   const openConversation = async (id: string) => {
+    // Two fast clicks must resolve in click order. Without the sequence, the
+    // slower first response lands last and shows the wrong thread.
+    const seq = ++loadSeqRef.current;
     abortRef.current?.abort();
     setRailOpen(false);
     try {
       const res = await api.ai.conversation(id);
+      if (seq !== loadSeqRef.current) return;
       const loaded = (res.data.messages ?? []).map((msg, i) => ({
         id: msg.id || `h-${i}`,
         role: msg.role,
@@ -259,6 +269,7 @@ export default function AiCoachPage() {
       // Sources/tools aren't persisted per message, so a reloaded thread shows
       // the text without its chips — the answer itself is unchanged.
     } catch {
+      if (seq !== loadSeqRef.current) return;
       toast.error('Could not open that conversation.');
     }
   };
@@ -361,6 +372,7 @@ export default function AiCoachPage() {
         {/* ── History rail ───────────────────────────────────────── */}
         <ConversationRail
           open={railOpen}
+          collapsed={railCollapsed}
           onClose={() => setRailOpen(false)}
           conversations={filteredConversations}
           activeId={conversationId}
@@ -390,6 +402,17 @@ export default function AiCoachPage() {
               onClick={() => setRailOpen(true)}
               aria-label="Conversation history"
               className="flex h-9 w-9 items-center justify-center rounded-[10px] lg:hidden"
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
+            >
+              <PanelLeft size={15} />
+            </button>
+
+            {/* Desktop rail collapse — the chat is the page; history can step aside. */}
+            <button
+              onClick={() => setRailCollapsed((v) => !v)}
+              aria-label={railCollapsed ? 'Show conversation history' : 'Hide conversation history'}
+              aria-expanded={!railCollapsed}
+              className="hidden h-9 w-9 items-center justify-center rounded-[10px] lg:flex"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
             >
               <PanelLeft size={15} />
@@ -628,6 +651,7 @@ export default function AiCoachPage() {
 
 interface RailProps {
   open: boolean;
+  collapsed: boolean;
   onClose: () => void;
   conversations: AiConversation[];
   activeId: string | null;
@@ -646,7 +670,7 @@ interface RailProps {
 }
 
 function ConversationRail(props: RailProps) {
-  const { open, onClose, conversations, activeId, query, onQuery, onNew } = props;
+  const { open, collapsed, onClose, conversations, activeId, query, onQuery, onNew } = props;
 
   // No background here on purpose — each wrapper supplies its own. The desktop
   // column keeps the translucent glass token because it sits on the page
@@ -709,9 +733,9 @@ function ConversationRail(props: RailProps) {
 
   return (
     <>
-      {/* Desktop: permanent column */}
+      {/* Desktop: collapsible column */}
       <aside
-        className="hidden w-[268px] shrink-0 lg:block"
+        className={collapsed ? 'hidden' : 'hidden w-[268px] shrink-0 lg:block'}
         style={{ borderRight: '1px solid var(--border)', background: 'var(--bg-card)' }}
       >
         {body}

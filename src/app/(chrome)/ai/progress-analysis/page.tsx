@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   TrendingUp, Loader2, Sparkles, AlertTriangle, AlertCircle, CheckCircle2,
@@ -83,6 +83,21 @@ function ProgressAnalysisInner() {
   const [meta, setMeta] = useState<{ model?: string; tier?: string; used_fallback?: boolean } | null>(null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [error, setError] = useState('');
+  // A request belongs to the client it was started for. Switching clients
+  // aborts it and clears the previous reading, so client A's analysis can
+  // never appear under client B's name.
+  const inFlight = useRef<AbortController | null>(null);
+
+  useEffect(() => () => inFlight.current?.abort(), []);
+
+  const clearResults = () => {
+    setAnalysis(null);
+    setCounts(null);
+    setWeights([]);
+    setMeta(null);
+    setUpdatedAt(null);
+    setError('');
+  };
 
   // Resolve the linked client by id.
   //
@@ -112,18 +127,28 @@ function ProgressAnalysisInner() {
 
   const handleAnalyze = async () => {
     if (!selectedClient) { setError('Please select a client first.'); return; }
+    if (inFlight.current) return;
+    const controller = new AbortController();
+    inFlight.current = controller;
     setError(''); setLoading(true);
     // A re-run keeps the previous analysis on screen while loading.
     try {
-      const res = await api.ai.analyzeProgress(String(selectedClient.id));
+      const res = await api.ai.analyzeProgress(String(selectedClient.id), controller.signal);
+      if (controller.signal.aborted) return;
       setAnalysis(res.data);
       setCounts(res.data_counts ?? null);
       setWeights(res.weight_history ?? []);
       setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback });
       setUpdatedAt(new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }));
     } catch (e: unknown) {
+      if (controller.signal.aborted) return;
       setError(errorMessage(e, 'Failed to analyse progress.'));
-    } finally { setLoading(false); }
+    } finally {
+      if (inFlight.current === controller) {
+        inFlight.current = null;
+        setLoading(false);
+      }
+    }
   };
 
   const thinData = counts !== null &&
@@ -133,7 +158,7 @@ function ProgressAnalysisInner() {
   const rate = analysis?.attendance_trend?.rate_pct;
 
   return (
-    <Guard>
+    <Guard role="trainer">
       <PageContainer>
 
         <PageHero
@@ -157,7 +182,13 @@ function ProgressAnalysisInner() {
 
           <AiClientPicker
             selected={selectedClient}
-            onSelect={(c) => setSelectedClient(c ? { id: c.id, name: c.name, email: c.email } : null)}
+            onSelect={(c) => {
+              inFlight.current?.abort();
+              inFlight.current = null;
+              setLoading(false);
+              clearResults();
+              setSelectedClient(c ? { id: c.id, name: c.name, email: c.email } : null);
+            }}
           />
 
           {error && (
@@ -243,6 +274,21 @@ function ProgressAnalysisInner() {
                 {thinData && (
                   <span className="font-semibold text-amber-700">— almost no records on file; treat the reading below as a starting template, not a verdict.</span>
                 )}
+              </div>
+            )}
+
+            {/* Nothing to trend: say so once, plainly, instead of letting the
+                model's template read as an evidence-based verdict. */}
+            {thinData && (
+              <div role="status" className="flex items-start gap-2 rounded-[16px] border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <p className="font-bold">Not enough history for a real trend</p>
+                  <p className="mt-1 text-amber-800">
+                    This client has no assessments, check-ins, strength logs or goals on file.
+                    The reading below is a starting template, not an analysis of measured change.
+                  </p>
+                </div>
               </div>
             )}
 
