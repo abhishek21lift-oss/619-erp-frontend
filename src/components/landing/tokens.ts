@@ -14,7 +14,7 @@
  * src/lib/palette.ts; these values never leak into it.
  *
  * Contrast: body and caption tokens are 4.5:1 or better on `canvas` and
- * `canvasAlt`. The action blue carries white at 4.9:1. Orange is a fill and
+ * `canvasAlt`. The action blue carries white at 4.7:1. Orange is a fill and
  * icon colour, never body text on white.
  */
 
@@ -34,12 +34,12 @@ export const C = {
   ink: '#1D1D1F', // 16.1:1 on white
   body: '#3A3A3C', // 11.4:1
   muted: '#6E6E73', // 5.1:1
-  faint: '#737378', // 4.6:1 — captions, not body copy
+  faint: '#6F6F74', // 5.0:1 on white, 4.6:1 on the grey band — captions, not body copy
 
   // ── Brand ───────────────────────────────────────────────────────────────
-  blue: '#0071E3', // action fill; white on it 4.9:1
-  blueHi: '#0066CC', // links and icons on white — 5.4:1
-  blueLo: '#0077ED', // hover
+  blue: '#0071E3', // action fill; white on it 4.7:1
+  blueHi: '#0066CC', // links and icons on white — 5.6:1
+  blueLo: '#0068D9', // hover fill; white on it 5.3:1
   blue450: '#0071E3',
   blueHover: '#0055B3',
   trackDot: '#D2D2D7',
@@ -161,7 +161,7 @@ export const FIELD = {
 /** The primary action: one flat blue pill, the way apple.com sells a product. */
 export const PRIMARY_BUTTON =
   'relative inline-flex items-center justify-center gap-2 rounded-full bg-[#0071E3] font-[500] text-white ' +
-  'transition-colors duration-200 hover:bg-[#0077ED] active:bg-[#0066CC] ' +
+  'transition-colors duration-200 hover:bg-[#0068D9] active:bg-[#0066CC] ' +
   'disabled:cursor-default disabled:opacity-50 disabled:hover:bg-[#0071E3] ' +
   'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(0,113,227,0.25)]';
 
