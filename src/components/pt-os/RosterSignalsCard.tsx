@@ -300,7 +300,7 @@ function Shell({
           <div className="min-w-0 flex-1 pt-0.5">
             <h2
               id="roster-signals-heading"
-              className="text-[15.5px] font-[780] tracking-[-0.015em]"
+              className="text-[15px] font-[780] tracking-[-0.015em]"
               style={{ color: 'var(--text-primary)' }}
             >
               Who to call
