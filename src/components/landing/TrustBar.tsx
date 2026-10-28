@@ -2,7 +2,7 @@
 
 import { Building2, IndianRupee, Radar } from 'lucide-react';
 import { Container, Reveal, Section, SectionHeader } from './primitives';
-import { C } from './tokens';
+import { C, SHADOW } from './tokens';
 import type { PublicStats } from './types';
 
 /**
@@ -34,8 +34,8 @@ export default function TrustBar({ stats }: { stats: PublicStats | null }) {
         <div className="mt-12 grid gap-4 md:grid-cols-3">
           <Reveal>
             <div
-              className="h-full rounded-2xl border p-6"
-              style={{ background: C.panel, borderColor: C.line }}
+              className="h-full rounded-[20px] p-6"
+              style={{ background: C.panel, boxShadow: SHADOW.card }}
             >
               <span
                 className="grid h-10 w-10 place-items-center rounded-xl"
@@ -44,10 +44,10 @@ export default function TrustBar({ stats }: { stats: PublicStats | null }) {
               >
                 <Building2 size={18} />
               </span>
-              <h3 className="mt-4 text-[15px] font-bold" style={{ color: C.ink }}>
+              <h3 className="mt-4 text-[16px] font-[600]" style={{ color: C.ink }}>
                 One platform for every kind of personal training business
               </h3>
-              <p className="mt-2 text-[13px] leading-[1.65]" style={{ color: C.muted }}>
+              <p className="mt-2 text-[13px] leading-[1.55]" style={{ color: C.muted }}>
                 Independent personal trainers, boutique PT studios, strength
                 coaches and online coaches — built around the trainer who
                 also runs the business.
@@ -57,8 +57,8 @@ export default function TrustBar({ stats }: { stats: PublicStats | null }) {
 
           <Reveal delay={0.06}>
             <div
-              className="h-full rounded-2xl border p-6"
-              style={{ background: C.panel, borderColor: C.line }}
+              className="h-full rounded-[20px] p-6"
+              style={{ background: C.panel, boxShadow: SHADOW.card }}
             >
               <span
                 className="grid h-10 w-10 place-items-center rounded-xl"
@@ -67,10 +67,10 @@ export default function TrustBar({ stats }: { stats: PublicStats | null }) {
               >
                 <IndianRupee size={18} />
               </span>
-              <h3 className="mt-4 text-[15px] font-bold" style={{ color: C.ink }}>
+              <h3 className="mt-4 text-[16px] font-[600]" style={{ color: C.ink }}>
                 Built for India, from the ground up
               </h3>
-              <p className="mt-2 text-[13px] leading-[1.65]" style={{ color: C.muted }}>
+              <p className="mt-2 text-[13px] leading-[1.55]" style={{ color: C.muted }}>
                 INR pricing in lakhs and crores, mobile-first signup, WhatsApp
                 follow-ups and a client check-in flow your staff can run on a
                 phone.
@@ -80,8 +80,8 @@ export default function TrustBar({ stats }: { stats: PublicStats | null }) {
 
           <Reveal delay={0.12}>
             <div
-              className="h-full rounded-2xl border p-6"
-              style={{ background: C.panel, borderColor: C.line }}
+              className="h-full rounded-[20px] p-6"
+              style={{ background: C.panel, boxShadow: SHADOW.card }}
             >
               <span
                 className="grid h-10 w-10 place-items-center rounded-xl"
@@ -90,10 +90,10 @@ export default function TrustBar({ stats }: { stats: PublicStats | null }) {
               >
                 <Radar size={18} />
               </span>
-              <h3 className="mt-4 text-[15px] font-bold" style={{ color: C.ink }}>
+              <h3 className="mt-4 text-[16px] font-[600]" style={{ color: C.ink }}>
                 One source of truth for the whole team
               </h3>
-              <p className="mt-2 text-[13px] leading-[1.65]" style={{ color: C.muted }}>
+              <p className="mt-2 text-[13px] leading-[1.55]" style={{ color: C.muted }}>
                 Clients, training, payments and analytics read from the same
                 data. The dashboard, the trainer and the desk can never
                 disagree.
@@ -105,24 +105,18 @@ export default function TrustBar({ stats }: { stats: PublicStats | null }) {
         {showStats && statBand.length > 0 && (
           <Reveal delay={0.1}>
             <div
-              className="mt-10 grid grid-cols-2 gap-y-6 rounded-2xl border px-6 py-8 text-center sm:grid-cols-4"
-              style={{ background: C.canvasAlt, borderColor: C.lineSoft }}
+              className="mt-10 grid grid-cols-2 gap-y-6 rounded-[20px] px-6 py-8 text-center sm:grid-cols-4"
+              style={{ background: C.canvasAlt }}
             >
               {statBand.map(([l, v]) => (
                 <div key={l}>
                   <div
-                    className="text-[26px] font-[850] tracking-[-0.03em] tabular-nums"
-                    style={{
-                      color: C.ink,
-                      background: `linear-gradient(180deg, ${C.ink} 30%, ${C.muted} 130%)`,
-                      WebkitBackgroundClip: 'text',
-                      backgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                    }}
+                    className="text-[32px] font-[600] tracking-[-0.03em] tabular-nums"
+                    style={{ color: C.ink }}
                   >
                     {v.toLocaleString('en-IN')}
                   </div>
-                  <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: C.faint }}>
+                  <div className="mt-1 text-[12px]" style={{ color: C.muted }}>
                     {l}
                   </div>
                 </div>

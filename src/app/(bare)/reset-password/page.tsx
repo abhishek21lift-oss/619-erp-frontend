@@ -19,7 +19,7 @@ import PublicNav, { PUBLIC_NAV_CLEARANCE } from '@/components/PublicNav';
 import AuthShell, { AuthCard } from '@/components/landing/AuthShell';
 import { RevealButton } from '@/components/landing/AuthField';
 import { api } from '@/lib/api';
-import { C, PRIMARY_BUTTON } from '@/components/landing/tokens';
+import { C, CARD, PRIMARY_BUTTON } from '@/components/landing/tokens';
 import { SoftTextField, SoftFormError } from '@/components/landing/SoftField';
 import { passwordStrength, MIN_LENGTH } from '@/lib/password-policy';
 import { useAppForm } from '@/lib/forms/useAppForm';
@@ -43,7 +43,7 @@ function Notice({ tone, title, body, href, cta }: {
         <Icon size={20} className="mt-px shrink-0" style={{ color: tone === 'error' ? C.red : C.emerald }} />
         <p className="text-[13.5px] leading-relaxed" style={{ color: C.body }}>{body}</p>
       </div>
-      <Link href={href} className={`${PRIMARY_BUTTON} mt-5 h-[54px] w-full text-[15px]`}>
+      <Link href={href} className={`${PRIMARY_BUTTON} mt-5 h-12 w-full text-[15px]`}>
         {cta} <ArrowRight size={17} strokeWidth={2.5} />
       </Link>
     </AuthCard>
@@ -74,7 +74,7 @@ function StrengthMeter({ password }: { password: string }) {
           />
         ))}
       </div>
-      <span className="text-[11.5px] font-[650]" style={{ color: STRENGTH_COLOR[strength] }}>
+      <span className="text-[11.5px] font-[500]" style={{ color: STRENGTH_COLOR[strength] }}>
         {STRENGTH_LABEL[strength]}
       </span>
       <span className="sr-only" aria-live="polite">
@@ -193,7 +193,7 @@ function ResetPasswordForm() {
 
         <SoftFormError message={f.errors.formError} className="mt-3" />
 
-        <button type="submit" disabled={f.isSubmitting} className={`${PRIMARY_BUTTON} mt-5 h-[54px] w-full text-[15px]`}>
+        <button type="submit" disabled={f.isSubmitting} className={`${PRIMARY_BUTTON} mt-5 h-12 w-full text-[15px]`}>
           {f.isSubmitting ? <><Loader2 size={17} className="animate-spin" /> Updating…</> : 'Set new password'}
         </button>
       </form>
@@ -223,7 +223,7 @@ export default function ResetPasswordPage() {
       }}
     >
       {/* useSearchParams needs a Suspense boundary in the App Router. */}
-      <Suspense fallback={<div className="h-[340px] rounded-[28px]" style={{ background: 'rgba(255,255,255,0.6)' }} />}>
+      <Suspense fallback={<div className="h-[340px] rounded-[20px]" style={{ background: CARD.background, boxShadow: CARD.boxShadow }} />}>
         <ResetPasswordForm />
       </Suspense>
     </AuthShell>

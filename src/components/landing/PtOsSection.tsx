@@ -3,7 +3,7 @@
 import { Link2, Users, Dumbbell, ChefHat, ClipboardList, TrendingUp, BadgeCheck, CalendarClock } from 'lucide-react';
 import Link from 'next/link';
 import { Container, Reveal, Section, SectionHeader } from './primitives';
-import { C } from './tokens';
+import { C, PRIMARY_BUTTON, SECONDARY_BUTTON } from './tokens';
 
 const CARDS = [
   {
@@ -77,15 +77,13 @@ export default function PtOsSection() {
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
                   href="/pt-os"
-                  className="inline-flex items-center gap-2 rounded-xl border px-5 py-2.5 text-[13.5px] font-bold transition-colors duration-200"
-                  style={{ background: C.blueWash, borderColor: C.lineBlue, color: C.ink }}
+                  className={`${PRIMARY_BUTTON} h-11 px-5 text-[14px]`}
                 >
                   Explore PT OS
                 </Link>
                 <Link
                   href="/ai-coach"
-                  className="inline-flex items-center gap-2 rounded-xl border px-5 py-2.5 text-[13.5px] font-bold transition-colors duration-200"
-                  style={{ borderColor: C.line, color: C.body }}
+                  className={`${SECONDARY_BUTTON} h-11 px-5 text-[14px]`}
                 >
                   How the AI Coach works
                 </Link>
@@ -97,20 +95,20 @@ export default function PtOsSection() {
             {CARDS.map((c, i) => (
               <Reveal key={c.title} delay={0.04 + i * 0.04} className="h-full">
                 <div
-                  className="group flex h-full flex-col rounded-2xl border p-5 transition-colors duration-200 hover:border-[rgba(0,103,224,0.5)]"
-                  style={{ background: C.panel, borderColor: C.lineSoft }}
+                  className="group flex h-full flex-col rounded-[16px] p-5"
+                  style={{ background: C.canvasAlt }}
                 >
                   <div className="flex items-center gap-2.5">
                     <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ background: C.blueWash, color: C.blueHi }} aria-hidden>
                       {c.icon}
                     </span>
-                    <h3 className="text-[14px] font-bold tracking-[-0.01em]" style={{ color: C.ink }}>{c.title}</h3>
+                    <h3 className="text-[14px] font-[600] tracking-[-0.01em]" style={{ color: C.ink }}>{c.title}</h3>
                   </div>
                   <p className="mt-3 flex-1 text-[12.5px] leading-[1.6]" style={{ color: C.muted }}>{c.body}</p>
                   {c.link && (
                     <a
                       href={c.link.href}
-                      className="mt-3 text-[12px] font-bold transition-opacity hover:opacity-80"
+                      className="mt-3 text-[12px] font-[500] transition-opacity hover:opacity-70"
                       style={{ color: C.blueHi }}
                     >
                       {c.link.label} →

@@ -273,6 +273,7 @@ function ToastViewport({
         'pointer-events-none fixed inset-x-3 bottom-4 z-[9999] flex flex-col items-stretch gap-2',
         'sm:inset-auto sm:right-6 sm:bottom-6 sm:max-w-sm sm:items-end',
       )}
+      role="group"
       aria-label="Notifications"
     >
       <AnimatePresence initial={false}>

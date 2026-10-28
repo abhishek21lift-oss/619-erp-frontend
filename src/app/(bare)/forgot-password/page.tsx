@@ -66,13 +66,13 @@ export default function ForgotPasswordPage() {
           : 'Enter the email you sign in with and we will send you a link to set a new password.'}
         footer={
           <p className="mt-5 text-center text-[13px]" style={{ color: C.muted }}>
-            Remembered it? <Link href="/login" className="font-[650] hover:underline" style={{ color: C.blueHi }}>Sign in</Link>
+            Remembered it? <Link href="/login" className="font-[500] hover:underline" style={{ color: C.blueHi }}>Sign in</Link>
           </p>
         }
       >
         {sent ? (
           <div className="mt-6">
-            <div className="flex items-start gap-3 rounded-[16px] border px-4 py-3.5" style={{ borderColor: 'rgba(2,92,67,0.18)', background: C.emeraldSoft }}>
+            <div className="flex items-start gap-3 rounded-[14px] px-4 py-3.5" style={{ background: C.emeraldSoft }}>
               <CheckCircle2 size={20} className="mt-px shrink-0" style={{ color: C.emerald }} />
               <p className="text-[13.5px] leading-relaxed" style={{ color: C.body }}>
                 Nothing in your inbox after a few minutes? Check spam, then try again — and make sure
@@ -110,7 +110,7 @@ export default function ForgotPasswordPage() {
                 is what keeps it from being an enumeration oracle. */}
             <SoftFormError message={f.errors.formError} className="mt-3" />
 
-            <button type="submit" disabled={f.isSubmitting} className={`${PRIMARY_BUTTON} mt-5 h-[54px] w-full text-[15px]`}>
+            <button type="submit" disabled={f.isSubmitting} className={`${PRIMARY_BUTTON} mt-5 h-12 w-full text-[15px]`}>
               {f.isSubmitting
                 ? <><Loader2 size={17} className="animate-spin" /> Sending…</>
                 : <>Send reset link <ArrowRight size={17} strokeWidth={2.5} /></>}

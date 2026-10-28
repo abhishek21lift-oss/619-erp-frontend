@@ -16,7 +16,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import Link from 'next/link';
 import {
-  Loader2, Eye, EyeOff, Check, X, ShieldCheck, AlertTriangle, ArrowRight, Building2,
+  Loader2, Check, X, ShieldCheck, AlertTriangle, ArrowRight, Building2,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { InvitationPreview } from '@/lib/api';
@@ -25,12 +25,11 @@ import { useAppForm } from '@/lib/forms/useAppForm';
 import {
   newPasswordSchema, blankNewPassword, NEW_PASSWORD_FIELD_HINTS,
 } from '@/lib/forms/schemas/auth';
-import { TextField, FormErrorBanner } from '@/components/ui/form';
 import { errorMessage } from '@/lib/forms/errors';
-
-/** Brand for this flow: black / white / maroon, matching the invitation email. */
-const MAROON = '#7F1D1D';
-const MAROON_DARK = '#7F1D1D';
+import { Wordmark } from '@/components/landing/Wordmark';
+import { SoftTextField, SoftFormError } from '@/components/landing/SoftField';
+import { RevealButton } from '@/components/landing/AuthField';
+import { C, CARD, PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/components/landing/tokens';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -38,33 +37,23 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="flex min-h-[100dvh] flex-col items-center justify-center px-4 py-10"
-      style={{ background: 'var(--bg-canvas)' }}
+      style={{ background: C.canvasAlt }}
     >
-      <div className="w-full max-w-[440px]">
-        <div className="mb-6 text-center">
-          <div
-            className="text-[15px] font-[800] uppercase"
-            style={{ color: 'var(--text-primary)', letterSpacing: '3px' }}
-          >
-            MY&nbsp;PT&nbsp;STUDIO
-          </div>
-          <div className="mx-auto mt-2 h-[3px] w-11 rounded-full" style={{ background: MAROON }} />
+      <div className="w-full max-w-[420px]">
+        <div className="mb-6 flex justify-center">
+          <Wordmark size={26} priority />
         </div>
         <m.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: EASE }}
-          className="rounded-[18px] p-6 sm:p-7"
-          style={{
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border)',
-            boxShadow: 'var(--shadow-card), inset 0 1px 0 rgba(255,255,255,0.06)',
-          }}
+          className="rounded-[20px] p-6 sm:p-7"
+          style={{ background: CARD.background, border: CARD.border, boxShadow: CARD.boxShadow }}
         >
           {children}
         </m.div>
-        <p className="mt-5 text-center text-[11.5px]" style={{ color: 'var(--text-disabled)' }}>
-          Need help? <a href="mailto:support@myptstudio.com" style={{ color: MAROON }}>support@myptstudio.com</a>
+        <p className="mt-5 text-center text-[12px]" style={{ color: C.muted }}>
+          Need help? <a href="mailto:support@myptstudio.com" style={{ color: C.blueHi }}>support@myptstudio.com</a>
         </p>
       </div>
     </div>
@@ -79,30 +68,25 @@ function DeadLink({ message }: { message: string }) {
       <div className="text-center">
         <div
           className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[14px]"
-          style={{ background: 'var(--danger-bg)', color: 'var(--danger-text)' }}
+          style={{ background: C.redSoft, color: C.red }}
         >
           <AlertTriangle size={22} />
         </div>
-        <h1 className="mb-2 text-[19px] font-[800]" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+        <h1 className="mb-2 text-[20px] font-[600] tracking-[-0.02em]" style={{ color: C.ink }}>
           This link can&rsquo;t be used
         </h1>
-        <p className="mb-5 text-[13.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <p className="mb-5 text-[13.5px] leading-[1.55]" style={{ color: C.muted }}>
           {message}
         </p>
         {/* The reader cannot fix this themselves, so both routes forward are
             offered explicitly rather than left implied. */}
         <div className="flex flex-col gap-2">
-          <Link
-            href="/login"
-            className="flex h-11 items-center justify-center rounded-[11px] text-[13.5px] font-[700]"
-            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-          >
+          <Link href="/login" className={`${SECONDARY_BUTTON} h-11 text-[14px]`}>
             Go to sign in
           </Link>
           <a
             href="mailto:support@myptstudio.com?subject=Invitation%20link%20expired"
-            className="flex h-11 items-center justify-center rounded-[11px] text-[13.5px] font-[700]"
-            style={{ background: MAROON, color: '#fff' }}
+            className={`${PRIMARY_BUTTON} h-11 text-[14px]`}
           >
             Request a new invitation
           </a>
@@ -132,24 +116,23 @@ function Activated({ email }: { email: string }) {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5, ease: EASE }}
           className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full"
-          style={{ background: 'var(--success-bg)', color: 'var(--success-text)' }}
+          style={{ background: C.emeraldSoft, color: C.emerald }}
         >
           <ShieldCheck size={26} />
         </m.div>
-        <h1 className="mb-2 text-[21px] font-[800]" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+        <h1 className="mb-2 text-[22px] font-[600] tracking-[-0.02em]" style={{ color: C.ink }}>
           Your studio is active
         </h1>
-        <p className="mb-6 text-[13.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-          Your password is set. Sign in with <strong style={{ color: 'var(--text-primary)' }}>{email}</strong> to get started.
+        <p className="mb-6 text-[13.5px] leading-[1.55]" style={{ color: C.muted }}>
+          Your password is set. Sign in with <strong style={{ color: C.ink }}>{email}</strong> to get started.
         </p>
         <button
           onClick={() => router.replace('/login')}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-[11px] text-[14px] font-[700]"
-          style={{ background: MAROON, color: '#fff' }}
+          className={`${PRIMARY_BUTTON} h-12 w-full text-[15px]`}
         >
           Sign in now <ArrowRight size={15} />
         </button>
-        <p className="mt-3 text-[11.5px]" style={{ color: 'var(--text-disabled)' }}>
+        <p className="mt-3 text-[12px]" style={{ color: C.faint }}>
           Taking you there in {count}s
         </p>
       </div>
@@ -215,8 +198,8 @@ function SetPasswordForm() {
     return (
       <Shell>
         <div className="flex flex-col items-center gap-3 py-6">
-          <Loader2 size={24} className="animate-spin" style={{ color: MAROON }} />
-          <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>Checking your invitation…</p>
+          <Loader2 size={24} className="animate-spin" style={{ color: C.blueHi }} />
+          <p className="text-[13px]" style={{ color: C.muted }}>Checking your invitation…</p>
         </div>
       </Shell>
     );
@@ -230,26 +213,26 @@ function SetPasswordForm() {
       <div className="mb-5">
         <div className="mb-3 flex items-center gap-2.5">
           <span
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
-            style={{ background: MAROON, color: '#fff' }}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
+            style={{ background: C.blueWash, color: C.blueHi }}
           >
             <Building2 size={17} />
           </span>
           <div className="min-w-0">
-            <p className="truncate text-[14px] font-[780]" style={{ color: 'var(--text-primary)' }}>
+            <p className="truncate text-[14px] font-[600]" style={{ color: C.ink }}>
               {preview.studio_name}
             </p>
             {/* Masked, because this page is public — it must not become a way
                 to read back an address from a token. Enough to recognise. */}
-            <p className="truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+            <p className="truncate text-[12px]" style={{ color: C.muted }}>
               {preview.email_masked}
             </p>
           </div>
         </div>
-        <h1 className="text-[20px] font-[800]" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+        <h1 className="text-[22px] font-[600] tracking-[-0.02em]" style={{ color: C.ink }}>
           Set your password
         </h1>
-        <p className="mt-1 text-[13px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-1 text-[13.5px] leading-[1.5]" style={{ color: C.muted }}>
           {preview.owner_name ? `Hello ${preview.owner_name}. ` : ''}
           Choose a password to activate your studio and sign in.
         </p>
@@ -258,35 +241,25 @@ function SetPasswordForm() {
       <form
         noValidate
         onSubmit={(e) => { e.preventDefault(); void f.submit(); }}
-        className="flex flex-col gap-3.5"
+        className="flex flex-col gap-4"
       >
         <form.Field name="password">
           {(field) => (
-            <TextField
+            <SoftTextField
               field={field}
               label="New password"
               required
               type={show ? 'text' : 'password'}
               autoComplete="new-password"
               serverError={f.errors.fieldErrors.password}
-              trailing={
-                <button
-                  type="button"
-                  onClick={() => setShow((v) => !v)}
-                  aria-label={show ? 'Hide password' : 'Show password'}
-                  className="flex h-10 w-10 items-center justify-center rounded-[9px]"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  {show ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              }
+              trailing={<RevealButton shown={show} onToggle={() => setShow((v) => !v)} />}
             />
           )}
         </form.Field>
 
         <form.Field name="confirm">
           {(field) => (
-            <TextField
+            <SoftTextField
               field={field}
               label="Confirm password"
               required
@@ -302,17 +275,17 @@ function SetPasswordForm() {
             does. Every item here is enforced by the server too. */}
         <form.Subscribe selector={(st) => [st.values.password, st.values.confirm] as const}>
           {([password, confirm]) => (
-            <ul className="flex flex-col gap-1.5 rounded-[11px] p-3" style={{ background: 'var(--bg-subtle)' }}>
+            <ul className="flex flex-col gap-1.5 rounded-[10px] p-3" style={{ background: C.canvasAlt }}>
               {invitationPasswordRules(password).map((r) => (
                 <li key={r.label} className="flex items-center gap-2 text-[12px]"
-                  style={{ color: r.ok ? 'var(--success-text)' : 'var(--text-muted)' }}>
+                  style={{ color: r.ok ? C.emerald : C.muted }}>
                   {r.ok ? <Check size={13} /> : <X size={13} style={{ opacity: 0.45 }} />}
                   {r.label}
                 </li>
               ))}
               {confirm.length > 0 && (
                 <li className="flex items-center gap-2 text-[12px]"
-                  style={{ color: password === confirm ? 'var(--success-text)' : 'var(--text-muted)' }}>
+                  style={{ color: password === confirm ? C.emerald : C.muted }}>
                   {password === confirm ? <Check size={13} /> : <X size={13} style={{ opacity: 0.45 }} />}
                   Both passwords match
                 </li>
@@ -321,7 +294,7 @@ function SetPasswordForm() {
           )}
         </form.Subscribe>
 
-        <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} />
+        <SoftFormError message={f.errors.formError ?? null} />
 
         {/* The button stays gated on the rules here, unlike elsewhere in this
             migration. A dead button is normally the wrong answer because it
@@ -339,8 +312,7 @@ function SetPasswordForm() {
               <button
                 type="submit"
                 disabled={!allOk || f.isSubmitting}
-                className="flex h-12 items-center justify-center gap-2 rounded-[11px] text-[14px] font-[700] transition-opacity disabled:opacity-40"
-                style={{ background: MAROON, backgroundImage: `linear-gradient(135deg, ${MAROON} 0%, ${MAROON_DARK} 100%)`, color: '#fff' }}
+                className={`${PRIMARY_BUTTON} h-12 w-full text-[15px]`}
               >
                 {f.isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
                 {f.isSubmitting ? 'Activating…' : 'Activate my studio'}
@@ -349,7 +321,7 @@ function SetPasswordForm() {
           }}
         </form.Subscribe>
 
-        <p className="text-center text-[11.5px]" style={{ color: 'var(--text-disabled)' }}>
+        <p className="text-center text-[12px]" style={{ color: C.faint }}>
           This link can be used once and expires{' '}
           {new Date(preview.expires_at).toLocaleString('en-IN', {
             day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
@@ -366,7 +338,7 @@ export default function SetPasswordPage() {
     <Suspense fallback={
       <Shell>
         <div className="flex justify-center py-6">
-          <Loader2 size={24} className="animate-spin" style={{ color: MAROON }} />
+          <Loader2 size={24} className="animate-spin" style={{ color: C.blueHi }} />
         </div>
       </Shell>
     }>

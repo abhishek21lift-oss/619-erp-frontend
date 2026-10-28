@@ -4,8 +4,8 @@
  * The signed-out frame: both sign-in doors, Start Free, and password recovery.
  *
  * Left, on desktop: what this door is for, and the MY PT STUDIO mark standing
- * on the surface. Right: the form. On a phone the mark shrinks to a header above the form,
- * because the form is the reason somebody is on the page.
+ * on the surface. Right: the form. On a phone the mark shrinks to a header
+ * above the form, because the form is the reason somebody is on the page.
  *
  * Every page keeps its own <PublicNav> and its own top padding (tests pin both
  * in each page's source), so both are passed in rather than owned here.
@@ -16,7 +16,7 @@
  */
 
 import type { CSSProperties, ReactNode } from 'react';
-import { m, useReducedMotion } from 'framer-motion';
+import { m } from 'framer-motion';
 import StudioMark from './StudioMark';
 import { C, CARD, EASE, STAGE } from './tokens';
 
@@ -28,20 +28,11 @@ export type AuthAside = {
   notes?: string[];
 };
 
-/** The page behind the frame: canvas, key light, drafting grid, horizon. */
+/** The page behind the frame: white light falling into the grey band. */
 export function StageBackdrop() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
       <div className="absolute inset-0" style={{ background: STAGE.light }} />
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: STAGE.grid,
-          backgroundSize: STAGE.gridSize,
-          maskImage: STAGE.gridMask,
-          WebkitMaskImage: STAGE.gridMask,
-        }}
-      />
     </div>
   );
 }
@@ -57,49 +48,49 @@ export default function AuthShell({
   aside: AuthAside;
   children: ReactNode;
 }) {
-  const reduce = useReducedMotion();
-
   return (
     <div
       className="relative flex min-h-[100dvh] flex-col"
-      style={{ background: C.canvas, color: C.body, fontFamily: "var(--font-inter), 'Inter', system-ui, sans-serif" }}
+      style={{ background: C.canvasAlt, color: C.body, fontFamily: "var(--font-inter), 'Inter', system-ui, sans-serif" }}
     >
       {nav}
       <StageBackdrop />
 
       <main className="relative z-10 flex flex-1 items-center justify-center" style={mainStyle}>
-        <div className="grid w-full max-w-[1180px] items-center gap-6 lg:grid-cols-[minmax(0,1fr)_440px] lg:gap-16">
-          {/* ── The object and what this door is for (desktop) ─────────────── */}
+        <div className="grid w-full max-w-[1000px] items-center gap-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-16">
+          {/* ── What this door is for (desktop) ───────────────────────────── */}
           <m.section
-            initial={reduce ? false : { opacity: 0, y: 14 }}
+            initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: EASE }}
             className="hidden lg:block"
           >
-            <p className="flex items-center gap-2.5 font-mono text-[11px] font-[600] uppercase tracking-[0.2em]" style={{ color: C.blueHi }}>
-              <span className="h-[7px] w-[7px] rounded-[2px]" style={{ background: C.blue }} />
+            <p className="text-[17px] font-[600] tracking-[-0.01em]" style={{ color: C.blueHi }}>
               {aside.eyebrow}
             </p>
             <h1
-              className="mt-4 max-w-[560px] text-[44px] font-[820] leading-[1.02] tracking-[-0.038em]"
+              className="mt-3 max-w-[520px] text-[clamp(2.2rem,3.4vw,3.1rem)] font-[600] leading-[1.07] tracking-[-0.028em]"
               style={{ color: C.ink }}
             >
               {aside.headline}
             </h1>
-            <p className="mt-4 max-w-[500px] text-[16px] leading-[1.6]" style={{ color: C.muted }}>
+            <p className="mt-4 max-w-[460px] text-[16px] leading-[1.55]" style={{ color: C.muted }}>
               {aside.sub}
             </p>
 
-            <StudioMark size={200} className="mt-6 max-w-[300px] !mx-0" />
+            <StudioMark size={180} className="mt-8 max-w-[260px] !mx-0" />
 
             {aside.notes && aside.notes.length > 0 && (
-              <ol className="-mt-4 grid max-w-[560px] grid-cols-3 gap-5 border-t pt-5" style={{ borderColor: 'rgba(31,42,61,0.12)' }}>
+              <ol
+                className={`mt-8 grid max-w-[520px] gap-5 border-t pt-5 ${aside.notes.length === 4 ? 'grid-cols-2' : 'grid-cols-3'}`}
+                style={{ borderColor: C.lineSoft }}
+              >
                 {aside.notes.map((n, i) => (
                   <li key={n}>
-                    <span className="font-mono text-[10.5px] font-[600] tracking-[0.14em]" style={{ color: C.blueHi }}>
+                    <span className="text-[12px] font-[600] tabular-nums" style={{ color: C.blueHi }}>
                       {String(i + 1).padStart(2, '0')}
                     </span>
-                    <p className="mt-1.5 text-[13px] font-[560] leading-[1.45]" style={{ color: C.body }}>{n}</p>
+                    <p className="mt-1.5 text-[13px] leading-[1.45]" style={{ color: C.body }}>{n}</p>
                   </li>
                 ))}
               </ol>
@@ -108,13 +99,13 @@ export default function AuthShell({
 
           {/* ── The form ─────────────────────────────────────────────────── */}
           <m.div
-            initial={reduce ? false : { opacity: 0, y: 18 }}
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: reduce ? 0 : 0.08, ease: EASE }}
-            className="mx-auto w-full max-w-[440px]"
+            transition={{ duration: 0.7, delay: 0.06, ease: EASE }}
+            className="mx-auto w-full max-w-[400px]"
           >
             <div className="-mb-3 lg:hidden">
-              <StudioMark size={84} priority />
+              <StudioMark size={80} priority />
             </div>
             {children}
           </m.div>
@@ -141,12 +132,12 @@ export function AuthCard({
 }) {
   return (
     <div>
-      <div className="rounded-[28px] p-6 sm:p-8" style={{ ...cardStyle }}>
-        <h2 className="text-[26px] font-[800] leading-[1.1] tracking-[-0.03em]" style={{ color: C.ink }}>
+      <div className="rounded-[20px] p-6 sm:p-8" style={cardStyle}>
+        <h2 className="text-[26px] font-[600] leading-[1.12] tracking-[-0.022em]" style={{ color: C.ink }}>
           {title}
         </h2>
         {subtitle && (
-          <p className="mt-2 text-[14px] leading-[1.55]" style={{ color: C.muted }}>{subtitle}</p>
+          <p className="mt-2 text-[14px] leading-[1.5]" style={{ color: C.muted }}>{subtitle}</p>
         )}
         {children}
       </div>

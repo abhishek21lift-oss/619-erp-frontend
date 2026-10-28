@@ -141,11 +141,11 @@ export default function StartFreePage() {
       >
         <AuthCard
           title="Start free"
-          subtitle={<>Create your studio account. No card required · <span className="font-[650]" style={{ color: C.blueHi }}>{trialDays ? `${trialDays}-day free trial` : 'Free trial'}</span></>}
+          subtitle={<>Create your studio account. No card required · <span className="font-[500]" style={{ color: C.blueHi }}>{trialDays ? `${trialDays}-day free trial` : 'Free trial'}</span></>}
           footer={
             <p className="mt-5 text-center text-[13px]" style={{ color: C.muted }}>
               Already have an account?{' '}
-              <Link href="/login" className="font-[700] hover:underline" style={{ color: C.blueHi }}>Log in</Link>
+              <Link href="/login" className="font-[500] hover:underline" style={{ color: C.blueHi }}>Log in</Link>
             </p>
           }
         >
@@ -174,8 +174,8 @@ export default function StartFreePage() {
               trailing={<RevealButton shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />} />
 
             {serverError && (
-              <p role="alert" className="flex items-start gap-2 rounded-[14px] px-3.5 py-3 text-[13.5px] font-[560] leading-[1.45]"
-                style={{ background: C.redSoft, color: C.red, border: '1px solid rgba(183,28,28,0.22)' }}>
+              <p role="alert" className="flex items-start gap-2 rounded-[14px] px-3.5 py-3 text-[13.5px] leading-[1.45]"
+                style={{ background: C.redSoft, color: C.red }}>
                 <AlertTriangle size={16} className="mt-px shrink-0" /> {serverError}
               </p>
             )}
@@ -238,18 +238,18 @@ function PendingApproval({ email, trialDays }: { email: string; trialDays: numbe
 
         {email && (
           <p className="mt-3 text-[13px]" style={{ color: C.muted }}>
-            We&apos;ll email <span className="font-[700]" style={{ color: C.ink }}>{email}</span> when you&apos;re live.
+            We&apos;ll email <span className="font-[600]" style={{ color: C.ink }}>{email}</span> when you&apos;re live.
           </p>
         )}
 
-        <div className="mt-6 border-t pt-5" style={{ borderColor: 'rgba(31,42,61,0.10)' }}>
-          <p className="font-mono text-[11px] font-[600] uppercase tracking-[0.16em]" style={{ color: C.blueHi }}>
+        <div className="mt-6 border-t pt-5" style={{ borderColor: C.lineSoft }}>
+          <p className="text-[13px] font-[600]" style={{ color: C.ink }}>
             What happens next
           </p>
           <ol className="mt-3 space-y-3">
             {steps.map((s, i) => (
               <li key={s} className="flex gap-3 text-[13.5px] leading-[1.5]" style={{ color: C.body }}>
-                <span className="font-mono text-[11px] font-[600] leading-[1.9]" style={{ color: C.blueHi }}>
+                <span className="text-[12px] font-[600] leading-[1.9] tabular-nums" style={{ color: C.blueHi }}>
                   {String(i + 1).padStart(2, '0')}
                 </span>
                 {s}

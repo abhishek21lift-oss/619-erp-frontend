@@ -39,19 +39,19 @@ export default function ValueProposition() {
           {/* Before */}
           <Reveal className="h-full">
             <div
-              className="flex h-full flex-col rounded-[22px] border p-6 sm:p-7"
-              style={{ background: 'rgba(248,113,113,0.04)', borderColor: 'rgba(248,113,113,0.18)' }}
+              className="flex h-full flex-col rounded-[20px] p-6 sm:p-7"
+              style={{ background: C.panel, border: `1px solid ${C.lineSoft}`, boxShadow: SHADOW.card }}
             >
               <div className="flex items-center gap-2.5">
                 <span className="h-2 w-2 rounded-full" style={{ background: C.red }} aria-hidden />
-                <h3 className="text-[13px] font-bold uppercase tracking-[0.14em]" style={{ color: C.red }}>
+                <h3 className="text-[15px] font-[600]" style={{ color: C.red }}>
                   Before MY PT STUDIO
                 </h3>
               </div>
               <ul className="mt-6 space-y-4">
                 {before.map((item) => (
                   <li key={item} className="flex items-start gap-3">
-                    <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border" style={{ borderColor: 'rgba(248,113,113,0.35)', color: C.red }} aria-hidden>
+                    <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full" style={{ background: C.redSoft, color: C.red }} aria-hidden>
                       <span className="text-[11px] leading-none">✕</span>
                     </span>
                     <p className="text-[14px] leading-[1.55]" style={{ color: C.body }}>{item}</p>
@@ -72,17 +72,12 @@ export default function ValueProposition() {
           {/* After */}
           <Reveal delay={0.08} className="h-full">
             <div
-              className="relative flex h-full flex-col overflow-hidden rounded-[22px] border p-6 sm:p-7"
-              style={{ background: C.panel, borderColor: C.lineBlue, boxShadow: SHADOW.blueGlow }}
+              className="relative flex h-full flex-col overflow-hidden rounded-[20px] p-6 sm:p-7"
+              style={{ background: C.panel, border: `1px solid ${C.blue}`, boxShadow: SHADOW.card }}
             >
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full"
-                style={{ background: 'radial-gradient(closest-side, rgba(0,103,224,0.25), transparent 75%)' }}
-              />
               <div className="relative flex items-center gap-2.5">
                 <span className="h-2 w-2 rounded-full" style={{ background: C.emerald }} aria-hidden />
-                <h3 className="text-[13px] font-bold uppercase tracking-[0.14em]" style={{ color: C.emerald }}>
+                <h3 className="text-[15px] font-[600]" style={{ color: C.emerald }}>
                   With MY PT STUDIO
                 </h3>
               </div>

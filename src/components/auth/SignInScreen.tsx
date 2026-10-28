@@ -319,7 +319,7 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
   // Full-page auth-check splash
   if (loading) {
     return (
-      <div className="relative flex min-h-[100dvh] items-center justify-center" style={{ background: C.canvas }}>
+      <div className="relative flex min-h-[100dvh] items-center justify-center" style={{ background: C.canvasAlt }}>
         <StageBackdrop />
         <div className="relative flex flex-col items-center gap-5">
           <m.div animate={reduce ? undefined : { scale: [1, 1.06, 1] }} transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}>
@@ -346,7 +346,7 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
       <div
         className="relative flex min-h-[100dvh] flex-col items-center justify-center"
         style={{
-          background: C.canvas,
+          background: C.canvasAlt,
           color: C.body,
           fontFamily: "var(--font-inter), 'Inter', system-ui, sans-serif",
           paddingTop: PUBLIC_NAV_CLEARANCE,
@@ -357,14 +357,14 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
         <StageBackdrop />
         <div className="relative z-10 w-full max-w-[420px]">
           <AuthCard title={copy.title}>
-            <div className="mt-6 flex items-center gap-3.5 rounded-[16px] border px-4 py-3.5" style={{ borderColor: 'rgba(31,42,61,0.10)', background: 'rgba(255,255,255,0.6)' }}>
+            <div className="mt-6 flex items-center gap-3.5 rounded-[14px] px-4 py-3.5" style={{ background: C.canvasAlt }}>
               <span
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[16px] font-[800] text-white"
-                style={{ background: `linear-gradient(180deg, ${C.blue450}, ${C.blueLo})` }}
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[16px] font-[600] text-white"
+                style={{ background: C.blue }}
               >
                 {(user.name || '?').slice(0, 1).toUpperCase()}
               </span>
-              <p className="text-[15px] font-[720] leading-snug" style={{ color: C.ink }}>
+              <p className="text-[15px] font-[500] leading-snug" style={{ color: C.ink }}>
                 This device is signed in as {user.name}
               </p>
             </div>
@@ -372,7 +372,7 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
               That is {otherLabel}, so it can&rsquo;t sign in here. Sign it out to
               continue on {copy.title}.
             </p>
-            <button type="button" onClick={() => logout()} className={`${PRIMARY_BUTTON} mt-6 h-[54px] w-full text-[15px]`}>
+            <button type="button" onClick={() => logout()} className={`${PRIMARY_BUTTON} mt-6 h-12 w-full text-[15px]`}>
               Sign out and continue <ArrowRight size={17} />
             </button>
             <Link
@@ -413,7 +413,7 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
               <div className="mt-5 text-center">
                 <Link
                   href={copy.otherHref}
-                  className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-[650] transition-colors hover:bg-[rgba(31,42,61,0.05)]"
+                  className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-[500] transition-colors hover:bg-black/5"
                   style={{ color: C.body }}
                 >
                   {copy.otherLabel}
@@ -432,18 +432,18 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
             <button
               type="button"
               onClick={() => { setEmail(rememberedEmail); pwRef.current?.focus(); }}
-              className="mt-6 flex w-full items-center gap-3 rounded-[16px] border px-3.5 py-3 text-left transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(0,103,224,0.22)]"
-              style={{ borderColor: 'rgba(31,42,61,0.10)', background: 'rgba(255,255,255,0.55)' }}
+              className="mt-6 flex w-full items-center gap-3 rounded-[14px] px-3.5 py-3 text-left transition-colors hover:bg-black/5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(0,113,227,0.2)]"
+              style={{ background: C.canvasAlt }}
             >
               <span
-                className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full text-[13px] font-[800] text-white"
-                style={{ background: `linear-gradient(180deg, ${C.blue450}, ${C.blueLo})` }}
+                className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full text-[13px] font-[600] text-white"
+                style={{ background: C.blue }}
               >
                 {rememberedEmail.slice(0, 1).toUpperCase()}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[12px] font-[600]" style={{ color: C.muted }}>Continue as</span>
-                <span className="block truncate text-[14px] font-[700]" style={{ color: C.ink }}>{rememberedEmail}</span>
+                <span className="block truncate text-[14px] font-[500]" style={{ color: C.ink }}>{rememberedEmail}</span>
               </span>
               <ArrowRight size={16} style={{ color: C.blueHi }} />
             </button>
@@ -459,7 +459,7 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
                 exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6, height: 0, marginTop: 0 }}
                 transition={{ duration: 0.25 }}
                 className="flex items-start gap-2.5 overflow-hidden rounded-[14px] px-3.5 py-3"
-                style={{ background: C.redSoft, border: '1px solid rgba(183,28,28,0.22)' }}
+                style={{ background: C.redSoft, border: `1px solid ${C.red}` }}
               >
                 <AlertTriangle size={16} className="mt-px shrink-0" style={{ color: C.red }} />
                 <span className="text-[13.5px] font-[560] leading-[1.45]" style={{ color: C.red }}>
@@ -467,7 +467,7 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
                   {wrongPortal && (
                     <>
                       {' '}
-                      <Link href={copy.otherHref} className="font-[750] underline underline-offset-2">
+                      <Link href={copy.otherHref} className="font-[500] underline underline-offset-2">
                         Go to {copy.otherCta}
                       </Link>
                     </>
@@ -557,8 +557,8 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
                   aria-hidden
                   className="grid h-[18px] w-[18px] place-items-center rounded-[5px] border transition-colors peer-focus-visible:ring-4 peer-focus-visible:ring-[rgba(0,103,224,0.22)]"
                   style={{
-                    borderColor: remember ? C.blue : 'rgba(31,42,61,0.28)',
-                    background: remember ? C.blue : 'rgba(255,255,255,0.8)',
+                    borderColor: remember ? C.blue : C.line,
+                    background: remember ? C.blue : C.canvas,
                   }}
                 >
                   {remember && <Check size={12} strokeWidth={3} className="text-white" />}
@@ -571,7 +571,7 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
             <button
               type="submit"
               disabled={busy || ok}
-              className={`${PRIMARY_BUTTON} h-[54px] w-full text-[15px]`}
+              className={`${PRIMARY_BUTTON} h-12 w-full text-[15px]`}
               style={ok ? { background: C.emerald } : undefined}
             >
               <AnimatePresence mode="wait" initial={false}>
@@ -595,15 +595,15 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
             {passkeyReady && (
               <>
                 <div className="flex items-center gap-3" aria-hidden>
-                  <span className="h-px flex-1" style={{ background: 'rgba(31,42,61,0.12)' }} />
-                  <span className="text-[11px] font-[600] uppercase tracking-[0.14em]" style={{ color: C.muted }}>or</span>
-                  <span className="h-px flex-1" style={{ background: 'rgba(31,42,61,0.12)' }} />
+                  <span className="h-px flex-1" style={{ background: C.lineSoft }} />
+                  <span className="text-[12px]" style={{ color: C.muted }}>or</span>
+                  <span className="h-px flex-1" style={{ background: C.lineSoft }} />
                 </div>
                 <button
                   type="button"
                   onClick={handlePasskey}
                   disabled={passkeyBusy || busy || ok}
-                  className={`${SECONDARY_BUTTON} h-[50px] w-full text-[14px] disabled:opacity-70`}
+                  className={`${SECONDARY_BUTTON} h-12 w-full text-[14px] disabled:opacity-70`}
                 >
                   {passkeyBusy
                     ? <><Loader2 size={17} className="animate-spin" /> Waiting for biometric…</>

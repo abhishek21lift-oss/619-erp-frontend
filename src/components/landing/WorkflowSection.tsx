@@ -7,7 +7,7 @@ import {
   Wallet, MessageSquareText,
 } from 'lucide-react';
 import { Container, Reveal, Section, SectionHeader } from './primitives';
-import { C } from './tokens';
+import { C, SHADOW } from './tokens';
 
 const STEPS = [
   {
@@ -89,7 +89,7 @@ export default function WorkflowSection() {
           <div
             aria-hidden
             className="absolute bottom-6 left-[23px] top-6 w-px sm:left-[27px]"
-            style={{ background: 'rgba(148,163,184,0.14)' }}
+            style={{ background: C.line }}
           />
           <m.div
             aria-hidden
@@ -97,7 +97,7 @@ export default function WorkflowSection() {
             style={{
               scaleY: reduce ? 1 : scaleY,
               opacity: reduce ? 1 : opacity,
-              background: `linear-gradient(180deg, ${C.blueHi}, ${C.gold})`,
+              background: `linear-gradient(180deg, ${C.blue}, ${C.violet})`,
             }}
           />
 
@@ -109,33 +109,33 @@ export default function WorkflowSection() {
                     className="relative z-10 grid h-12 w-12 shrink-0 place-items-center rounded-2xl border sm:h-14 sm:w-14"
                     style={{
                       background: C.panel,
-                      borderColor: i === 2 || i === 7 ? C.goldGlow : C.lineBlue,
+                      borderColor: C.lineSoft,
                       color: i === 2 || i === 7 ? C.goldHi : C.blueHi,
-                      boxShadow: `0 8px 24px -8px ${i === 2 || i === 7 ? 'rgba(245,158,11,0.35)' : 'rgba(0,103,224,0.35)'}`,
+                      boxShadow: SHADOW.card,
                     }}
                     aria-hidden
                   >
                     {s.icon}
                   </span>
                   <div
-                    className="flex-1 rounded-2xl border p-4 sm:p-5"
-                    style={{ background: C.panel, borderColor: C.lineSoft }}
+                    className="flex-1 rounded-[16px] p-4 sm:p-5"
+                    style={{ background: C.panel, boxShadow: SHADOW.card }}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-1.5">
-                      <h3 className="text-[14px] font-bold tracking-[-0.01em]" style={{ color: C.ink }}>
+                      <h3 className="text-[15px] font-[600] tracking-[-0.01em]" style={{ color: C.ink }}>
                         <span className="mr-2 text-[11px] font-bold" style={{ color: C.faint }}>
                           {String(i + 1).padStart(2, '0')}
                         </span>
                         {s.title}
                       </h3>
                       <span
-                        className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                        className="rounded-full px-2.5 py-0.5 text-[11px]"
                         style={{ background: C.blueWash, color: C.blueHi }}
                       >
                         {s.tag}
                       </span>
                     </div>
-                    <p className="mt-1.5 text-[12.5px] leading-[1.6]" style={{ color: C.muted }}>{s.body}</p>
+                    <p className="mt-1.5 text-[13px] leading-[1.5]" style={{ color: C.muted }}>{s.body}</p>
                   </div>
                 </li>
               </Reveal>

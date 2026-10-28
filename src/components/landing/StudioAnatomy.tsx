@@ -52,17 +52,12 @@ const PARTS: Array<{ icon: ReactNode; title: string; body: string; detail: strin
   },
 ];
 
-/** A physical key for the icon: lit top edge, darker lip, same light as the cube. */
+/** A plain tinted tile for the icon. */
 function Key({ children }: { children: ReactNode }) {
   return (
     <span
-      className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] border"
-      style={{
-        color: C.blueHi,
-        background: 'linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.7) 100%)',
-        borderColor: 'rgba(31,42,61,0.10)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,1), 0 1px 0 rgba(31,42,61,0.12), 0 6px 14px -8px rgba(15,23,42,0.35)',
-      }}
+      className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px]"
+      style={{ color: C.blueHi, background: C.blueWash }}
     >
       {children}
     </span>
@@ -84,23 +79,23 @@ export default function StudioAnatomy() {
           {PARTS.map((p, i) => (
             <Reveal key={p.title} delay={0.04 * i} className="h-full">
               <article
-                className="flex h-full flex-col rounded-[24px] p-6"
+                className="flex h-full flex-col rounded-[20px] p-6"
                 style={{ background: CARD.background, border: CARD.border, boxShadow: CARD.boxShadow }}
               >
                 <div className="flex items-start justify-between gap-4">
                   <Key>{p.icon}</Key>
-                  <span className="font-mono text-[11px] font-[600] tracking-[0.16em]" style={{ color: C.faint }}>
+                  <span className="text-[12px] tabular-nums" style={{ color: C.faint }}>
                     {String(i + 1).padStart(2, '0')} / 06
                   </span>
                 </div>
-                <h3 className="mt-5 text-[18px] font-[780] tracking-[-0.02em]" style={{ color: C.ink }}>{p.title}</h3>
+                <h3 className="mt-5 text-[19px] font-[600] tracking-[-0.02em]" style={{ color: C.ink }}>{p.title}</h3>
                 <p className="mt-2 flex-1 text-[14px] leading-[1.6]" style={{ color: C.muted }}>{p.body}</p>
-                <ul className="mt-5 flex flex-wrap gap-1.5 border-t pt-4" style={{ borderColor: 'rgba(31,42,61,0.08)' }}>
+                <ul className="mt-5 flex flex-wrap gap-1.5 border-t pt-4" style={{ borderColor: C.lineSoft }}>
                   {p.detail.map((d) => (
                     <li
                       key={d}
-                      className="rounded-full px-2.5 py-1 font-mono text-[10.5px] font-[600] uppercase tracking-[0.08em]"
-                      style={{ color: C.body, background: 'rgba(31,42,61,0.05)' }}
+                      className="rounded-full px-2.5 py-1 text-[11px]"
+                      style={{ color: C.muted, background: C.canvasAlt }}
                     >
                       {d}
                     </li>

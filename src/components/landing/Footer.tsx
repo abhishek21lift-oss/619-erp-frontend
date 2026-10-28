@@ -12,10 +12,10 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
     title: 'Product',
     links: [
       { label: 'Overview', href: '#product' },
-      { label: 'AI Training Layer', href: '#ai' },
-      { label: 'All features', href: '#features' },
-      { label: 'Pricing', href: '#pricing' },
-      { label: 'Trust & security', href: '#trust' },
+      { label: 'AI Training Layer', href: '/#ai' },
+      { label: 'All features', href: '/#features' },
+      { label: 'Pricing', href: '/#pricing' },
+      { label: 'Trust & security', href: '/#trust' },
     ],
   },
   {
@@ -41,7 +41,7 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
   {
     title: 'Resources',
     links: [
-      { label: 'FAQ', href: '#resources' },
+      { label: 'FAQ', href: '/#resources' },
       { label: 'Help centre', href: '/help' },
       { label: 'Support', href: '/support' },
       { label: 'Subscription', href: '/subscription' },
@@ -53,24 +53,24 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
 /** Footer — real routes and anchors only. No legal pages exist; none are linked. */
 export default function Footer() {
   return (
-    <footer className="border-t" style={{ borderColor: C.lineSoft, background: C.canvas }}>
+    <footer className="border-t" style={{ borderColor: C.lineSoft, background: C.canvasAlt }}>
       <Container>
-        <div className="grid gap-12 py-14 lg:grid-cols-[1.3fr_2fr]">
+        <div className="grid gap-12 py-16 lg:grid-cols-[1.3fr_2fr]">
           <div>
             <Wordmark />
-            <p className="mt-5 max-w-sm text-[13px] leading-[1.7]" style={{ color: C.muted }}>
+            <p className="mt-5 max-w-sm text-[12px] leading-[1.6]" style={{ color: C.muted }}>
               The business management platform for personal trainers — client management, AI-powered
               training and diet plans, payments, analytics and engagement in one platform.
             </p>
-            <div className="mt-6 flex flex-wrap gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold" style={{ borderColor: C.lineSoft, color: C.muted }}>
-                <ShieldCheck size={13} style={{ color: C.emerald }} aria-hidden /> Tenant isolation
+            <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2">
+              <span className="inline-flex items-center gap-1.5 text-[12px]" style={{ color: C.muted }}>
+                <ShieldCheck size={14} style={{ color: C.emerald }} aria-hidden /> Tenant isolation
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold" style={{ borderColor: C.lineSoft, color: C.muted }}>
-                <Sparkles size={13} style={{ color: C.goldHi }} aria-hidden /> AI Training Layer
+              <span className="inline-flex items-center gap-1.5 text-[12px]" style={{ color: C.muted }}>
+                <Sparkles size={14} style={{ color: C.goldHi }} aria-hidden /> AI Training Layer
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold" style={{ borderColor: C.lineSoft, color: C.muted }}>
-                <HeartHandshake size={13} style={{ color: C.blueHi }} aria-hidden /> Built for India
+              <span className="inline-flex items-center gap-1.5 text-[12px]" style={{ color: C.muted }}>
+                <HeartHandshake size={14} style={{ color: C.blueHi }} aria-hidden /> Built for India
               </span>
             </div>
           </div>
@@ -78,16 +78,16 @@ export default function Footer() {
           <nav aria-label="Footer" className="grid grid-cols-2 gap-8 sm:grid-cols-4">
             {COLUMNS.map((col) => (
               <div key={col.title}>
-                <h3 className="text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: C.faint }}>
+                <h3 className="text-[12px] font-[600]" style={{ color: C.ink }}>
                   {col.title}
                 </h3>
-                <ul className="mt-4 space-y-2.5">
+                <ul className="mt-3 space-y-2">
                   {col.links.map((l) => (
                     <li key={l.label}>
                       <Link
                         href={l.href}
-                        className="text-[13px] font-medium transition-opacity duration-150 hover:opacity-90"
-                        style={{ color: C.body }}
+                        className="text-[12px] transition-opacity duration-150 hover:opacity-60"
+                        style={{ color: C.muted }}
                       >
                         {l.label}
                       </Link>
