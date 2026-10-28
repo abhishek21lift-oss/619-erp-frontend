@@ -26,7 +26,8 @@ import { useToast } from '@/lib/toast';
 import { fmtDate, fmtINR, fmtWhen } from '../_shared/format';
 import { InvoicesPanel } from '../_shared/panels';
 import type { FinanceSubTab } from '../_shared/types';
-import { Center, ErrorState, Field, IconBtn, Modal, inputCls, inputStyle } from '../_shared/ui';
+import { Center, ErrorState, IconBtn, Modal } from '../_shared/ui';
+import { FormField, SelectInput, TextInput } from '@/components/ui/form';
 import { CouponsTab } from './CouponsTab';
 import { errorMessage } from '@/lib/forms/errors';
 import { clampNumericText } from '@/components/ui/FloatInput';
@@ -209,34 +210,34 @@ export function RecordPaymentModal({ studio, plans, onClose, onDone }: { studio:
   return (
     <Modal title={`Record payment · ${studio.name}`} onClose={onClose}>
       <div className="space-y-4">
-        <Field label="Plan">
-          <select className={inputCls} style={inputStyle} value={planCode} onChange={(e) => setPlanCode(e.target.value)}>
+        <FormField label="Plan">
+          <SelectInput value={planCode} onChange={(e) => setPlanCode(e.target.value)}>
             {plans.map((p) => (
               <option key={p.code} value={p.code}>
                 {p.name} — ₹{(p.effective_price_inr ?? p.price_inr).toLocaleString('en-IN')}{p.is_launch ? ' (launch)' : ''} / {p.duration_months}mo
                 {p.client_limit != null ? ` · ${p.client_limit} clients` : ' · unlimited'}
               </option>
             ))}
-          </select>
-        </Field>
-        <Field label="Amount received (₹)">
-          <input className={inputCls} style={inputStyle} type="text" inputMode="decimal"
+          </SelectInput>
+        </FormField>
+        <FormField label="Amount received (₹)">
+          <TextInput type="text" inputMode="decimal"
             value={amount} onChange={(e) => setAmount(clampNumericText(e.target.value, 'decimal'))} />
           {studio.is_founder && <p className="mt-1 text-[11px]" style={{ color: '#b45309' }}>Founder — lifetime-locked price ₹{studio.locked_price_inr?.toLocaleString('en-IN')}.</p>}
-        </Field>
+        </FormField>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label="Method">
-            <select className={inputCls} style={inputStyle} value={method} onChange={(e) => setMethod(e.target.value)}>
+          <FormField label="Method">
+            <SelectInput value={method} onChange={(e) => setMethod(e.target.value)}>
               {['upi', 'bank', 'cash', 'razorpay', 'comp'].map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </Field>
-          <Field label="Reference / UTR">
-            <input className={inputCls} style={inputStyle} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="optional" />
-          </Field>
+            </SelectInput>
+          </FormField>
+          <FormField label="Reference / UTR">
+            <TextInput value={reference} onChange={(e) => setReference(e.target.value)} placeholder="optional" />
+          </FormField>
         </div>
-        <Field label="Notes">
-          <input className={inputCls} style={inputStyle} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="optional" />
-        </Field>
+        <FormField label="Notes">
+          <TextInput value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="optional" />
+        </FormField>
         {!studio.is_founder && <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>If founder slots remain, this studio becomes a Founder Member with this price locked for life.</p>}
         <div className="flex justify-end gap-2 pt-1">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
@@ -303,23 +304,23 @@ export function ExecuteChangeModal({ studio, planCode, onClose, onDone }: { stud
           {quote.warning && (
             <p className="rounded-[10px] p-2.5 text-[11.5px]" style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.28)', color: '#b45309' }}>{quote.warning}</p>
           )}
-          <Field label="Amount received (₹)">
-            <input className={inputCls} style={inputStyle} type="text" inputMode="decimal"
+          <FormField label="Amount received (₹)">
+            <TextInput type="text" inputMode="decimal"
             value={amount} onChange={(e) => setAmount(clampNumericText(e.target.value, 'decimal'))} />
-          </Field>
+          </FormField>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Method">
-              <select className={inputCls} style={inputStyle} value={method} onChange={(e) => setMethod(e.target.value)}>
+            <FormField label="Method">
+              <SelectInput value={method} onChange={(e) => setMethod(e.target.value)}>
                 {['upi', 'bank', 'cash', 'razorpay', 'comp'].map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </Field>
-            <Field label="Reference / UTR">
-              <input className={inputCls} style={inputStyle} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="optional" />
-            </Field>
+              </SelectInput>
+            </FormField>
+            <FormField label="Reference / UTR">
+              <TextInput value={reference} onChange={(e) => setReference(e.target.value)} placeholder="optional" />
+            </FormField>
           </div>
-          <Field label="Notes">
-            <input className={inputCls} style={inputStyle} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="optional" />
-          </Field>
+          <FormField label="Notes">
+            <TextInput value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="optional" />
+          </FormField>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button loading={saving} disabled={saving} onClick={submit} style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', color: '#fff' }}>Confirm change</Button>
@@ -389,9 +390,9 @@ export function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStud
             {o.subscription_status !== 'cancelled' && <IconBtn title="Cancel subscription" onClick={() => { if (window.confirm('Cancel this subscription? The studio will be blocked until they subscribe again.')) act(() => api.superAdmin.cancelSubscription(studio.id), 'Subscription cancelled.'); }} tone="danger"><X size={12} /> Cancel</IconBtn>}
           </div>
           <div className="flex items-end gap-2">
-            <Field label={onTrial ? 'Extend trial to' : 'Change renewal date'}>
-              <input className={inputCls} style={inputStyle} type="date" value={newExpiry} onChange={(e) => setNewExpiry(e.target.value)} />
-            </Field>
+            <FormField label={onTrial ? 'Extend trial to' : 'Change renewal date'}>
+              <TextInput type="date" value={newExpiry} onChange={(e) => setNewExpiry(e.target.value)} />
+            </FormField>
             <Button variant="outline" disabled={!newExpiry} onClick={() => act(
               () => api.superAdmin.changeExpiry(studio.id, onTrial ? { trial_ends_at: newExpiry } : { current_period_end: newExpiry }),
               'Expiry updated.')}>Apply</Button>

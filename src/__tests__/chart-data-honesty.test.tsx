@@ -1,4 +1,4 @@
-// Two charts that were drawing things that were not there.
+// Charts draw only what they were given.
 //
 // ── The donut ─────────────────────────────────────────────────────────────
 //
@@ -15,25 +15,23 @@
 //
 // ── The module workspace ──────────────────────────────────────────────────
 //
-// Its "Performance Trend" area chart plotted eight points computed as
-// `index * 8 + (index % 2) * 11`, so it rose because the arithmetic made it
-// rise, and the panel beside it showed `(records.length + index * 3) % 19`
-// under labels like "Campaign ROI". Neither read a record. It rendered on
-// every tab of eight route groups.
+// This file used to cover ModuleWorkspace's "Performance Trend" and "Status
+// Mix", which plotted `index * 8 + (index % 2) * 11` and showed
+// `(records.length + index * 3) % 19` under labels like "Campaign ROI". The
+// component was retired: its two [tab] routes are canonical redirects, and no
+// page imports it any more. That half of the file went with it.
 //
-// The test is not "the fake chart is gone" — that is a fact about a file, and
-// it would pass just as well if the replacement were fake too. It is that
-// every number the surviving card puts on screen equals a count of the
-// records it was given.
+// The rule it enforced is kept where it still has a live subject: a chart
+// renders one slice per datum, drops categories with no value, and shows an
+// explicit empty state rather than inventing a placeholder slice.
 
 import * as React from 'react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
 
-// One stub serves both components. Recharts needs real layout to place a
-// slice, and jsdom has none — but what is under test is which colour each
-// slice is handed and how many there are, and that is a decision the
-// component makes before recharts is involved.
+// Recharts needs real layout to place a slice, and jsdom has none — but what
+// is under test is which colour each slice is handed and how many there are,
+// and that is a decision the component makes before recharts is involved.
 vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   PieChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -43,35 +41,7 @@ vi.mock('recharts', () => ({
   Legend: () => null,
 }));
 
-vi.mock('framer-motion', () => ({
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  m: new Proxy({}, {
-    get: (_t, tag: string) => ({ children, ...rest }: Record<string, unknown>) =>
-      React.createElement(tag, rest, children as React.ReactNode),
-  }),
-}));
-
-vi.mock('@/components/Guard', () => ({
-  default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-vi.mock('@/lib/toast', () => ({
-  useToast: () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() } }),
-}));
-
-const list = vi.fn();
-vi.mock('@/lib/module-service', () => ({
-  moduleService: {
-    list: (...args: unknown[]) => list(...args),
-    create: vi.fn(),
-    update: vi.fn(),
-    remove: vi.fn(),
-  },
-}));
-
 import { DonutChart } from '@/components/ui/DonutChart';
-import ModuleWorkspace from '@/components/modules/ModuleWorkspace';
-import { getModuleConfig } from '@/lib/module-config';
-import type { ModuleRecord } from '@/lib/module-config';
 
 const fills = () =>
   screen.getAllByTestId('slice').map((el) => el.getAttribute('data-fill') ?? '');
@@ -123,88 +93,38 @@ describe('DonutChart gives every slice its own colour', () => {
   });
 });
 
-/** A record with only the fields the status mix reads. */
-function record(status: string, id: string): ModuleRecord {
-  return {
-    id,
-    title: `t-${id}`,
-    owner: 'o',
-    status,
-    priority: 'Low',
-    amount: 0,
-    dueDate: '2026-01-01',
-    channel: 'App',
-    notes: '',
-    createdAt: '2026-01-01T00:00:00.000Z',
-  };
-}
+describe('DonutChart draws only what it was given', () => {
+  it('draws one slice per datum, not one per label', () => {
+    render(
+      <DonutChart
+        data={[
+          { name: 'active', value: 3 },
+          { name: 'paused', value: 1 },
+        ]}
+      />,
+    );
 
-describe('the module workspace shows only numbers it can count', () => {
-  const config = getModuleConfig('engagement', 'overview');
-
-  beforeEach(() => {
-    list.mockReset();
-  });
-
-  it('reports each status as the number of records holding it', async () => {
-    // Three Active, one Paused, no Draft. Anything on screen that is not one
-    // of those counts came from somewhere other than these records.
-    const records = [
-      record(config.statuses[2], 'a'),
-      record(config.statuses[2], 'b'),
-      record(config.statuses[2], 'c'),
-      record(config.statuses[3], 'd'),
-    ];
-    list.mockResolvedValue({ records, source: 'api' });
-
-    render(<ModuleWorkspace config={config} />);
-
-    const card = await screen.findByRole('img', { name: /status mix/i });
-    const label = card.getAttribute('aria-label') ?? '';
-
-    expect(label).toContain(`${config.statuses[2]} 3`);
-    expect(label).toContain(`${config.statuses[3]} 1`);
-    // A status nothing is in is absent, not drawn as an empty slice.
-    expect(label).not.toContain(config.statuses[0]);
     expect(fills()).toHaveLength(2);
   });
 
-  it('says so when there is nothing to draw, instead of drawing something', async () => {
-    // The old card met an empty module with a single grey "Empty" slice,
-    // which reads as one real category rather than as no data.
-    list.mockResolvedValue({ records: [], source: 'api' });
-
-    render(<ModuleWorkspace config={config} />);
-
-    await waitFor(() =>
-      expect(screen.getByText(/no .* yet — add one above/i)).toBeInTheDocument(),
+  it('drops zero-value categories instead of drawing them as real slices', () => {
+    // A status nothing is in must not become a slice the legend then names.
+    render(
+      <DonutChart
+        data={[
+          { name: 'active', value: 3 },
+          { name: 'empty', value: 0 },
+        ]}
+      />,
     );
-    expect(screen.queryAllByTestId('slice')).toHaveLength(0);
+
+    expect(fills()).toHaveLength(1);
   });
 
-  it('puts no number on screen that is not a status count', async () => {
-    // The generalisation of the bug. Every standalone integer rendered in the
-    // status card has to be one of the counts; `(records.length + i*3) % 19`
-    // produced numbers matching nothing, and would fail here whatever it was
-    // labelled.
-    const records = [
-      record(config.statuses[1], 'a'),
-      record(config.statuses[1], 'b'),
-      record(config.statuses[4], 'c'),
-    ];
-    list.mockResolvedValue({ records, source: 'api' });
+  it('says there is no data instead of drawing an empty ring', () => {
+    render(<DonutChart data={[]} />);
 
-    render(<ModuleWorkspace config={config} />);
-
-    const card = (await screen.findByRole('img', { name: /status mix/i }))
-      .closest('section') as HTMLElement;
-
-    const shown = Array.from(card.querySelectorAll('span'))
-      .map((el) => el.textContent?.trim() ?? '')
-      .filter((t) => /^\d+$/.test(t))
-      .map(Number);
-
-    expect(shown.length).toBeGreaterThan(0);
-    for (const n of shown) expect([2, 1]).toContain(n);
+    expect(screen.getByRole('img', { name: /no data/i })).toBeInTheDocument();
+    expect(screen.queryAllByTestId('slice')).toHaveLength(0);
   });
 });
