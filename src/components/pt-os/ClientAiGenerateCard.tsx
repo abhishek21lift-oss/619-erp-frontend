@@ -58,7 +58,8 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type {
-  AiDietPlan, AiKnowledgeGrounding, AiWorkoutContext, AiWorkoutGenerationResult, AiWorkoutPlan,
+  AiDietPlan, AiKnowledgeGrounding, AiProgramState, AiWorkoutContext,
+  AiWorkoutGenerationResult, AiWorkoutPlan,
 } from '@/lib/api';
 import { STEP_LABEL, stepHref, type ClientJourney } from '@/lib/journey';
 import GenerationEvidence from './GenerationEvidence';
@@ -97,6 +98,19 @@ const FIELD_WORDS: Record<string, string> = {
   training_days: 'sessions per week',
 };
 
+/** Where each diet field is recorded, in the order the card lists them. */
+const DIET_RECORD_AT = [
+  { fields: ['age', 'gender'], label: 'Edit profile', href: (id: string) => `/pt-os/clients/${id}/edit` },
+  { fields: ['weight_kg', 'height_cm'], label: 'Fitness testing', href: (id: string) => `/pt-os/assessment?client_id=${id}` },
+  { fields: ['activity_level'], label: 'Lifestyle assessment', href: (id: string) => `/pt-os/lifestyle-assessment?client_id=${id}` },
+  { fields: ['goal'], label: 'Goals', href: (id: string) => `/pt-os/goals?client_id=${id}` },
+];
+
+function listWords(words: string[]): string {
+  if (words.length < 2) return words[0] ?? '';
+  return `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`;
+}
+
 /**
  * "Missing required fields: height_cm, activity_level" is the diet endpoint's
  * refusal, and it reached the trainer verbatim — column names in a toast.
@@ -125,12 +139,30 @@ function generationError(err: unknown, fallback: string): string {
   return errorMessage(err, fallback);
 }
 
+/**
+ * The programme named by an ACTIVE_PROGRAM refusal, or null.
+ *
+ * The refusal carries the block it is about, so the chooser can be rendered
+ * even when the context call that normally supplies it is the thing that
+ * failed. `httpSSE` keeps the JSON body on the error for exactly this.
+ */
+function refusedProgramFrom(err: unknown): AiProgramState | null {
+  if (!(err instanceof ApiError) || err.code !== 'ACTIVE_PROGRAM') return null;
+  const program = (err.payload as { program?: AiProgramState } | null)?.program;
+  return program && typeof program === 'object' ? program : null;
+}
+
 export default function ClientAiGenerateCard({ client, goalType }: ClientAiGenerateCardProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [busy, setBusy] = useState<'workout' | 'diet' | null>(null);
   const [context, setContext] = useState<AiWorkoutContext | null>(null);
   const [contextFailed, setContextFailed] = useState(false);
+  // The programme an ACTIVE_PROGRAM refusal named. Needed when the context
+  // read failed, which is the one case where the normal chooser has nothing
+  // to render — and a refusal is fresher than a context read anyway, so it
+  // wins when both exist.
+  const [refusedProgram, setRefusedProgram] = useState<AiProgramState | null>(null);
   // Where this client is in intake. Only the workout generator is gated by it:
   // a diet can be written for somebody whose PT has lapsed, but a programme
   // cannot be assigned to them. The server refuses that at assign time; this
@@ -235,6 +267,7 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
     setSaving(false);
     setSavedDiet(false);
     setError(null);
+    setRefusedProgram(null);
   }, [client.id]);
 
   const generate = async (kind: 'workout' | 'diet') => {
@@ -274,10 +307,22 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
         // a thin record — they drive the calorie target — so it answers with
         // the field list rather than being handed invented ones. That message
         // is now shown instead of being papered over with 175cm and 75kg.
-        const res = await api.ai.generateDiet({ client_id: client.id });
+        const res = await api.ai.generateDiet({
+          client_id: client.id,
+          // The only trainer-stated field the diet resolver reads. Sending it
+          // is what lets the pre-flight count a typed goal as answered.
+          ...(stated.goal ? { goal: stated.goal } : {}),
+        });
         setResult({ kind, plan: res.data, grounding: res.grounding });
       }
+      setRefusedProgram(null);
     } catch (err) {
+      // The server refuses to choose between progressing a live programme and
+      // starting a second one. If the context read failed there was no
+      // chooser on screen to answer it, so the same 409 repeated forever; the
+      // refusal itself carries the programme the choice is about.
+      const refused = kind === 'workout' ? refusedProgramFrom(err) : null;
+      if (refused) setRefusedProgram(refused);
       const msg = readableError(generationError(err, 'Generation failed. Please try again.'));
       setError(msg);
       toast.error(msg);
@@ -375,8 +420,16 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
   // Blocking fields the trainer has not supplied for this generation. A value
   // typed above is a real answer to "the record does not have this", so it
   // opens the button — the server applies the same rule and would accept it.
-  const program = context?.current_program;
+  const program = refusedProgram ?? context?.current_program;
   const onLiveProgramme = Boolean(program?.active && !program.expired);
+
+  // What the diet generator would still refuse for. A typed goal is a real
+  // answer, as it is for the workout button; everything else is the record's.
+  // `context.diet` absent is an older server, not a complete record, so the
+  // button stays open and the server answers with its own field list.
+  const dietMissing = (context?.diet?.missing ?? [])
+    .filter((field) => !(field === 'goal' && (stated.goal ?? '').trim()));
+  const dietMissingWords = listWords(dietMissing.map((field) => FIELD_WORDS[field] ?? field));
 
   // The journey's own verdict on whether a programme can be assigned yet.
   // `blocked` is what the server's gate answers for a lapsed, frozen or
@@ -540,7 +593,8 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
           <button
             type="button"
             onClick={() => void generate('diet')}
-            disabled={busy !== null}
+            disabled={busy !== null || dietMissing.length > 0}
+            title={dietMissing.length > 0 ? `Record ${dietMissingWords} first` : undefined}
             // Secondary, not a second saturated slab. Two full-colour buttons
             // stacked read as two equally loud alarms; the workout is the one
             // that saves as a programme, so it carries the weight.
@@ -555,10 +609,29 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
               ? <><Loader2 size={14} className="animate-spin" /> Generating AI Diet...</>
               : <><Salad size={14} /> Generate AI Diet</>}
           </button>
-          {/* The diet also needs height and activity level, which the panel
-              above (built for the workout) does not list. Said before the
-              press, not after a refusal. */}
-          {context?.facts.height_cm?.origin === 'missing' && (
+          {/* The diet needs fields the panel above (built for the workout)
+              does not list — activity level lives in the lifestyle
+              assessment. The server answers the diet's own question now, so
+              this names exactly what is missing and where it is recorded,
+              before the press rather than after a refusal. */}
+          {dietMissing.length > 0 ? (
+            <p className="text-center text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+              The diet also needs {dietMissingWords} on file
+              {DIET_RECORD_AT
+                .filter((step) => step.fields.some((field) => dietMissing.includes(field)))
+                .map((step, i) => (
+                  <span key={step.label}>
+                    {i === 0 ? ' — ' : ' · '}
+                    <Link href={step.href(client.id)} className="font-[700] underline underline-offset-2">
+                      {step.label}
+                    </Link>
+                  </span>
+                ))}
+              .
+            </p>
+          ) : context?.facts.height_cm?.origin === 'missing' && (
+            // Older server without the diet block: keep the old warning rather
+            // than losing it until the backend deploys.
             <p className="text-center text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
               The diet also needs height and activity level on file.
             </p>

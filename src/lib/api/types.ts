@@ -4073,6 +4073,12 @@ export type AiWorkoutContext = {
    */
   current_program: AiProgramState;
   training_history: { has_history: boolean; window_weeks: number } | null;
+  /**
+   * What the diet generator would still refuse for, resolved by the server
+   * from the same function the generator calls. Absent on an older server,
+   * which is "unknown", not "nothing missing".
+   */
+  diet?: { missing: string[] };
 };
 
 /**
