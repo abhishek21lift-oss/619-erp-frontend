@@ -21,7 +21,9 @@ import { useStore } from '@tanstack/react-form';
 import { useAppForm } from '@/lib/forms/useAppForm';
 import { inlineNumber } from '@/lib/forms/inline';
 import { strengthLogSchema, blankStrengthLog } from '@/lib/forms/schemas/strengthLog';
-import { NumberField, FormErrorBanner } from '@/components/ui/form';
+import {
+  CheckboxField, DateFieldControl, FormErrorBanner, FormField, NumberField, TextInput, useStandaloneField,
+} from '@/components/ui/form';
 
 interface StrengthLog {
   id: string; client_id: string; exercise_name: string;
@@ -297,6 +299,8 @@ function ExerciseCard({ exercise, accent, latest, trend, gender, bodyWeightKg, a
   // tested single can be recorded as the 1RM it is.
   const [logDate, setLogDate] = useState(localToday());
   const [direct, setDirect] = useState(false);
+  const directField = useStandaloneField('is_direct_1rm', direct, setDirect);
+  const dateField = useStandaloneField('log_date', logDate, setLogDate);
 
   const f = useAppForm({
     schema: strengthLogSchema,
@@ -396,15 +400,8 @@ function ExerciseCard({ exercise, accent, latest, trend, gender, bodyWeightKg, a
             </div>
 
             <div className="mb-2 flex flex-wrap items-end gap-3">
-              <label className="flex items-center gap-2 text-[12px] font-[650]" style={{ color: 'var(--text-secondary)' }}>
-                <input type="checkbox" checked={direct} onChange={(e) => setDirect(e.target.checked)} />
-                Tested 1RM (one rep at this weight)
-              </label>
-              <label className="flex flex-col text-[11px]" style={{ color: 'var(--text-muted)' }}>Date
-                <input type="date" value={logDate} max={localToday()} onChange={(e) => setLogDate(e.target.value)}
-                  className="mt-1 rounded-[8px] border px-2 py-1 text-[13px]"
-                  style={{ borderColor: 'var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} />
-              </label>
+              <CheckboxField field={directField} label="Tested 1RM (one rep at this weight)" />
+              <DateFieldControl field={dateField} label="Date" density="compact" max={localToday()} className="w-[150px]" />
             </div>
 
             {!direct && previewOneRm != null && (
@@ -488,22 +485,18 @@ function HistoryRow({ log, onChanged }: { log: StrengthLog; onChanged: () => voi
     return (
       <div className="flex flex-wrap items-end gap-2 rounded-[12px] px-4 py-3" style={{ background: 'var(--bg-subtle)' }}>
         <span className="w-full text-[13px] font-[700] text-[color:var(--text-secondary)]">{log.exercise_name}</span>
-        <label className="flex flex-col text-[11px] text-[color:var(--text-muted)]">Weight (kg)
-          <input aria-label="Weight in kg" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)}
-            className="mt-1 w-24 rounded-[8px] border px-2 py-1 text-[13px]" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} />
-        </label>
-        <label className="flex flex-col text-[11px] text-[color:var(--text-muted)]">Sets
-          <input aria-label="Sets" inputMode="numeric" value={sets} onChange={(e) => setSets(e.target.value)}
-            className="mt-1 w-14 rounded-[8px] border px-2 py-1 text-[13px]" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} />
-        </label>
-        <label className="flex flex-col text-[11px] text-[color:var(--text-muted)]">Reps
-          <input aria-label="Reps" inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)}
-            className="mt-1 w-16 rounded-[8px] border px-2 py-1 text-[13px]" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} />
-        </label>
-        <label className="flex flex-col text-[11px] text-[color:var(--text-muted)]">Date
-          <input aria-label="Date" type="date" value={date} max={localToday()} onChange={(e) => setDate(e.target.value)}
-            className="mt-1 rounded-[8px] border px-2 py-1 text-[13px]" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} />
-        </label>
+        <FormField label="Weight (kg)" density="compact" className="w-24">
+          <TextInput className="px-2" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
+        </FormField>
+        <FormField label="Sets" density="compact" className="w-14">
+          <TextInput className="px-2" inputMode="numeric" value={sets} onChange={(e) => setSets(e.target.value)} />
+        </FormField>
+        <FormField label="Reps" density="compact" className="w-16">
+          <TextInput className="px-2" inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)} />
+        </FormField>
+        <FormField label="Date" density="compact" className="w-[150px]">
+          <TextInput type="date" value={date} max={localToday()} onChange={(e) => setDate(e.target.value)} />
+        </FormField>
         <div className="ml-auto flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setEditing(false)} disabled={busy}>Cancel</Button>
           <Button size="sm" onClick={save} disabled={busy} loading={busy}>Save</Button>

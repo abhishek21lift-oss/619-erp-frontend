@@ -98,11 +98,12 @@ const CEILING = {
   /** §6. Zero, and it stays zero. */
   riskyCoercions: 0,
   // 127 → 115 when the dead ModuleWorkspace cluster was deleted, then 115 → 93
-  // when FinanceTab, OrgModals and StudiosTab moved to FormField. Lower again
-  // when the next phase lands; never raise.
-  unjustified: 93,
+  // when FinanceTab, OrgModals and StudiosTab moved to FormField, then 93 → 83
+  // for strength-tracking and the builder's ExerciseCard. Lower again when the
+  // next phase lands; never raise.
+  unjustified: 83,
   p0Unjustified: 0,
-  p1Unjustified: 46,
+  p1Unjustified: 36,
   /**
    * §9. Zero, and it stays zero.
    *
@@ -156,7 +157,7 @@ const CEILING = {
 // counts forms that exist; deleting a form legitimately lowers it, and the
 // ratchet still catches a form that quietly stops using the design system.
 const FLOOR = {
-  platformControls: 450,
+  platformControls: 460,
   /** Forms whose errors reach the canonical mapper. */
   errorPlatform: 55,
   /** Forms bound to a named canonical schema. */
