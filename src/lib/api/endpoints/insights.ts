@@ -203,10 +203,11 @@ export const ai = {
       body: JSON.stringify(params),
     }),
 
-  analyzeProgress: (client_id: string) =>
+  analyzeProgress: (client_id: string, signal?: AbortSignal) =>
     httpSSE<{ data: AiProgressAnalysis; data_counts?: AiProgressDataCounts; weight_history?: AiWeightPoint[]; model: string; tier: string; used_fallback: boolean; grounding?: AiKnowledgeGrounding }>('/api/ai/progress/analyze', {
       method: 'POST',
       body: JSON.stringify({ client_id }),
+      signal,
     }),
 
   analyzeFitnessTest: (assessment_id: string) =>
@@ -215,13 +216,15 @@ export const ai = {
       body: JSON.stringify({ assessment_id }),
     }),
 
-  businessInsights: (params?: { from?: string; to?: string }) =>
+  businessInsights: (params?: { from?: string; to?: string }, signal?: AbortSignal) =>
     // Plain JSON, not SSE: the endpoint answers res.json({ data, raw_data,
     // ... }) in one shot. httpSSE waited for a `data: …done` event that never
     // comes and every click ended in "No result received from AI generation".
-    http<{ data: AiBusinessInsights; raw_data?: AiBusinessRawData; model: string; tier: string; used_fallback: boolean }>('/api/ai/business/insights', {
+    // `empty` marks the deterministic no-activity answer (no model was called).
+    http<{ data: AiBusinessInsights; raw_data?: AiBusinessRawData; model: string; tier: string; used_fallback: boolean; empty?: boolean }>('/api/ai/business/insights', {
       method: 'POST',
       body: JSON.stringify(params || {}),
+      signal,
     }),
 
   // ── Knowledge base (RAG documents: SOPs, guides, policies) ──────────
