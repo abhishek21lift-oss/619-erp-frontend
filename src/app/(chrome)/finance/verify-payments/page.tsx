@@ -38,7 +38,14 @@ import {
   REJECT_REASONS, REJECT_REASON_LABELS, UpiStatusBadge, fmtMoney, fmtMoneyExact, orderTermLabel,
 } from '@/components/payments/upi-shared';
 import { errorMessage } from '@/lib/forms/errors';
+import { useAppForm } from '@/lib/forms/useAppForm';
 import { paymentReviewSchema } from '@/lib/forms/schemas/paymentReview';
+import {
+  blankPaymentRequest, paymentRequestSchema, toPaymentRequestPayload,
+} from '@/lib/forms/schemas/paymentRequest';
+import {
+  FormErrorBanner, FormField, NumberField, SearchField, SelectInput, SubmitStatus, TextField,
+} from '@/components/ui/form';
 
 const PAGE_SIZE = 25;
 
@@ -734,13 +741,25 @@ function NewRequestDialog({
   const [member, setMember] = useState<Client | null>(null);
 
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
-  const [planId, setPlanId] = useState<string>('');
-  const [planName, setPlanName] = useState('');
-  const [months, setMonths] = useState('1');
-  const [amount, setAmount] = useState('');
+  // The plan picker seeds the fields below; it is not itself a form field.
+  const [planId, setPlanId] = useState('');
 
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const f = useAppForm({
+    schema: paymentRequestSchema,
+    defaultValues: blankPaymentRequest(),
+    onSubmit: async (values) => {
+      // The submit control is disabled until a member is picked; this keeps a
+      // bypass from posting a request with no client.
+      if (!member) return;
+      const res = await api.upiPayments.create({
+        client_id: member.id,
+        plan_id: planId || null,
+        ...toPaymentRequestPayload(values),
+      });
+      if (res.data.reused) toast.info('This member already had an open request for that plan.');
+      onCreated(res.data.order.id);
+    },
+  });
 
   // Plans are a nicety, not a requirement — a studio with none must still be
   // able to take a payment, so a failure here is swallowed.
@@ -748,7 +767,7 @@ function NewRequestDialog({
     void api.membershipPlans.list().then((rows) => setPlans(rows ?? [])).catch(() => setPlans([]));
   }, []);
 
-  const dialogRef = useDialogA11y({ open: true, onClose, escapeCloses: !busy });
+  const dialogRef = useDialogA11y({ open: true, onClose, escapeCloses: !f.isSubmitting });
 
   // Debounced member search.
   useEffect(() => {
@@ -769,37 +788,12 @@ function NewRequestDialog({
     setPlanId(id);
     const plan = plans.find((p) => p.id === id);
     if (plan) {
-      setPlanName(plan.name);
-      setAmount(String(Number(plan.final_amount)));
-      setMonths(String(PLAN_DURATION_MONTHS[plan.duration] ?? 1));
-    }
-  };
-
-  const monthsNum = Number(months);
-  const amountNum = Number(amount);
-  const valid = Boolean(member)
-    && planName.trim().length > 0
-    && Number.isFinite(monthsNum) && monthsNum >= 1 && monthsNum <= 120
-    && Number.isFinite(amountNum) && amountNum > 0;
-
-  const submit = async () => {
-    if (!valid || !member || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await api.upiPayments.create({
-        client_id: member.id,
-        plan_id: planId || null,
-        plan_name: planName.trim(),
-        duration_months: monthsNum,
-        base_amount: amountNum,
-      });
-      if (res.data.reused) toast.info('This member already had an open request for that plan.');
-      onCreated(res.data.order.id);
-    } catch (err) {
-      setError(errorMessage(err, 'Could not create the request.'));
-    } finally {
-      setBusy(false);
+      // Programmatic seeds must not trip the name field's onChange, which
+      // clears the plan as soon as a trainer types their own package.
+      const seed = { dontRunListeners: true } as const;
+      f.form.setFieldValue('plan_name', plan.name, seed);
+      f.form.setFieldValue('base_amount', String(Number(plan.final_amount)), seed);
+      f.form.setFieldValue('duration_months', String(PLAN_DURATION_MONTHS[plan.duration] ?? 1), seed);
     }
   };
 
@@ -815,7 +809,7 @@ function NewRequestDialog({
             A key handler here would add a tab stop that does nothing; Escape
             is the keyboard equivalent and the hook provides it. */}
         <div aria-hidden="true" className="absolute inset-0" style={{ background: 'var(--bg-overlay)' }}
-          onClick={() => !busy && onClose()} />
+          onClick={() => !f.isSubmitting && onClose()} />
         <m.div
           className="relative max-h-[92vh] w-full max-w-[440px] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-3xl"
           initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 16, opacity: 0 }}
@@ -831,6 +825,7 @@ function NewRequestDialog({
               Raise a UPI request for a member, then show them the QR or send the link.
             </p>
 
+            <form noValidate onSubmit={(e) => { e.preventDefault(); void f.submit(); }}>
             {/* ── Member ── */}
             {/* A caption over a composite — a chip once a member is picked,
                 a search box before that — and the search box carries its own
@@ -850,16 +845,12 @@ function NewRequestDialog({
               </div>
             ) : (
               <>
-                <input
+                <SearchField
+                  label="Search members"
+                  placeholder="Search by name or mobile"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search by name or mobile"
-                  aria-label="Search members"
-                  className="mt-1.5 w-full rounded-xl px-3.5 text-[15px] outline-none"
-                  style={{
-                    height: 46, background: 'var(--bg-base)', color: 'var(--text-primary)',
-                    border: '1px solid var(--border-2)',
-                  }}
+                  fieldClassName="mt-1.5"
                 />
                 {searching && (
                   <p className="mt-1.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>Searching…</p>
@@ -887,18 +878,10 @@ function NewRequestDialog({
 
             {/* ── Plan ── */}
             {plans.length > 0 && (
-              <>
-                <label htmlFor="plan-select" className="mt-4 block text-[12px] font-[650]"
-                  style={{ color: 'var(--text-primary)' }}>Plan</label>
-                <select
-                  id="plan-select"
+              <FormField label="Plan" className="mt-4">
+                <SelectInput
                   value={planId}
                   onChange={(e) => choosePlan(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl px-3 text-[15px] outline-none"
-                  style={{
-                    height: 46, background: 'var(--bg-base)', color: 'var(--text-primary)',
-                    border: '1px solid var(--border-2)',
-                  }}
                 >
                   <option value="">Custom package…</option>
                   {plans.map((p) => (
@@ -906,73 +889,74 @@ function NewRequestDialog({
                       {p.name} — {fmtMoney(p.final_amount)} ({p.duration})
                     </option>
                   ))}
-                </select>
-              </>
+                </SelectInput>
+              </FormField>
             )}
 
-            <label htmlFor="plan-name" className="mt-4 block text-[12px] font-[650]"
-              style={{ color: 'var(--text-primary)' }}>Package name</label>
-            <input
-              id="plan-name" value={planName} maxLength={160}
-              onChange={(e) => { setPlanName(e.target.value); setPlanId(''); }}
-              placeholder="Gold — 3 months"
-              className="mt-1.5 w-full rounded-xl px-3.5 text-[15px] outline-none"
-              style={{
-                height: 46, background: 'var(--bg-base)', color: 'var(--text-primary)',
-                border: '1px solid var(--border-2)',
-              }}
-            />
+            <f.form.Field
+              name="plan_name"
+              // Typing a package name means "custom", so the plan that seeded
+              // the term and price must stop claiming the order.
+              listeners={{ onChange: () => setPlanId('') }}
+            >
+              {(field) => (
+                <TextField
+                  field={field}
+                  label="Package name"
+                  required
+                  maxLength={160}
+                  placeholder="Gold — 3 months"
+                  serverError={f.errors.fieldErrors.plan_name}
+                  className="mt-4"
+                />
+              )}
+            </f.form.Field>
 
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="months" className="block text-[12px] font-[650]"
-                  style={{ color: 'var(--text-primary)' }}>Months</label>
-                <input
-                  id="months" inputMode="numeric" value={months}
-                  onChange={(e) => setMonths(e.target.value.replace(/\D/g, ''))}
-                  className="mt-1.5 w-full rounded-xl px-3.5 text-[15px] tabular-nums outline-none"
-                  style={{
-                    height: 46, background: 'var(--bg-base)', color: 'var(--text-primary)',
-                    border: '1px solid var(--border-2)',
-                  }}
-                />
-              </div>
-              <div>
-                <label htmlFor="amount" className="block text-[12px] font-[650]"
-                  style={{ color: 'var(--text-primary)' }}>Amount before GST</label>
-                <input
-                  id="amount" inputMode="decimal" value={amount}
-                  onChange={(e) => { setAmount(e.target.value.replace(/[^\d.]/g, '')); }}
-                  className="mt-1.5 w-full rounded-xl px-3.5 text-[15px] tabular-nums outline-none"
-                  style={{
-                    height: 46, background: 'var(--bg-base)', color: 'var(--text-primary)',
-                    border: '1px solid var(--border-2)',
-                  }}
-                />
-              </div>
+              <f.form.Field name="duration_months">
+                {(field) => (
+                  <NumberField
+                    field={field}
+                    label="Months"
+                    mode="integer"
+                    min={1}
+                    max={120}
+                    required
+                    serverError={f.errors.fieldErrors.duration_months}
+                  />
+                )}
+              </f.form.Field>
+              <f.form.Field name="base_amount">
+                {(field) => (
+                  <NumberField
+                    field={field}
+                    label="Amount before GST"
+                    mode="money"
+                    required
+                    placeholder="9000"
+                    description="GST is added automatically from your UPI settings."
+                    serverError={f.errors.fieldErrors.base_amount}
+                  />
+                )}
+              </f.form.Field>
             </div>
-            <p className="mt-1.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-              GST is added automatically from your UPI settings.
-            </p>
 
-            {error && (
-              <p className="mt-3 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
-                <AlertTriangle size={14} className="mt-px shrink-0" /> {error}
-              </p>
-            )}
+            <FormErrorBanner errors={f.errors} className="mt-3" />
 
             <div className="mt-5 flex gap-2">
-              <button type="button" onClick={onClose} disabled={busy}
+              <SubmitStatus isSubmitting={f.isSubmitting} submittingLabel="Creating the payment request" />
+              <button type="button" onClick={onClose} disabled={f.isSubmitting}
                 className="flex-1 rounded-xl py-3 text-[14px] font-[650] disabled:opacity-50"
                 style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)' }}>
                 Cancel
               </button>
-              <button type="button" onClick={submit} disabled={!valid || busy}
+              <button type="submit" disabled={!member || f.isSubmitting}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-[14px] font-[720] text-white disabled:opacity-45"
                 style={{ background: 'var(--brand)' }}>
-                {busy && <Loader2 size={15} className="animate-spin" />} Create & show QR
+                {f.isSubmitting && <Loader2 size={15} className="animate-spin" />} Create & show QR
               </button>
             </div>
+            </form>
           </div>
         </m.div>
       </m.div>

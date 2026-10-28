@@ -147,7 +147,9 @@ describe('controls with no accessible name', () => {
     // floor with a comment saying it is not. 200 leaves room for the
     // migrations still to come while still failing an audit that has stopped
     // finding controls at all, which is the only thing this assertion is for.
-    expect(audit.total).toBeGreaterThan(200);
+    // 200 → 150 after FinanceTab, OrgModals and StudiosTab moved to the design
+    // system. The floor only proves the scan ran; `nameless` has no threshold.
+    expect(audit.total).toBeGreaterThan(150);
     expect(audit.aria + audit.wrapped + audit.htmlFor + audit.wired
       + audit.placeholderOnly.length + audit.nameless.length).toBe(audit.total);
   });
@@ -229,7 +231,7 @@ describe('labelling across a component boundary', () => {
     const src = readFileSync(srcPath('components', 'pt-os', 'shared', 'SignaturePad.tsx'), 'utf8');
     expect(src).toMatch(/htmlFor=\{`\$\{baseId\}-typed`\}/);
     // Same floor, same reason — see the note in "is empty for the right reason".
-    expect(audit.total).toBeGreaterThan(200);
+    expect(audit.total).toBeGreaterThan(150);
   });
 });
 

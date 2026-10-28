@@ -12,7 +12,8 @@ import type { Organization, OrgUser } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { genPassword } from '../_shared/format';
 import { roleLabel } from '@/lib/roles';
-import { Field, Modal, PasswordField, inputCls, inputStyle } from '../_shared/ui';
+import { Modal, PasswordField } from '../_shared/ui';
+import { FormField, TextInput } from '@/components/ui/form';
 import { errorMessage } from '@/lib/forms/errors';
 
 export function CreateOrgModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
@@ -54,22 +55,22 @@ export function CreateOrgModal({ onClose, onCreated }: { onClose: () => void; on
   return (
     <Modal title="New Studio" onClose={onClose}>
       <div className="space-y-4">
-        <Field label="Studio name">
-          <input className={inputCls} style={inputStyle} value={form.name} placeholder="e.g. Riya's Fitness Studio"
+        <FormField label="Studio name">
+          <TextInput value={form.name} placeholder="e.g. Riya's Fitness Studio"
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-        </Field>
-        <Field label="Owner name">
-          <input className={inputCls} style={inputStyle} value={form.trainer_name} placeholder="Defaults to studio name"
+        </FormField>
+        <FormField label="Owner name">
+          <TextInput value={form.trainer_name} placeholder="Defaults to studio name"
             onChange={(e) => setForm((f) => ({ ...f, trainer_name: e.target.value }))} />
-        </Field>
-        <Field label="Login email">
-          <input className={inputCls} style={inputStyle} type="email" value={form.email} placeholder="owner@example.com"
+        </FormField>
+        <FormField label="Login email">
+          <TextInput type="email" value={form.email} placeholder="owner@example.com"
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
-        </Field>
-        <Field label="Mobile number">
-          <input className={inputCls} style={inputStyle} type="tel" value={form.mobile} placeholder="Optional"
+        </FormField>
+        <FormField label="Mobile number">
+          <TextInput type="tel" value={form.mobile} placeholder="Optional"
             onChange={(e) => setForm((f) => ({ ...f, mobile: e.target.value }))} />
-        </Field>
+        </FormField>
 
         {!manual ? (
           <div className="rounded-[11px] p-3" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
@@ -89,7 +90,7 @@ export function CreateOrgModal({ onClose, onCreated }: { onClose: () => void; on
             </button>
           </div>
         ) : (
-          <Field label="Temporary password">
+          <FormField label="Temporary password">
             <PasswordField value={form.password} onChange={(v) => setForm((f) => ({ ...f, password: v }))} onGenerate={() => setForm((f) => ({ ...f, password: genPassword() }))} />
             <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
               You will have to transmit this to the owner yourself. Prefer an invitation unless email is down.{' '}
@@ -97,7 +98,7 @@ export function CreateOrgModal({ onClose, onCreated }: { onClose: () => void; on
                 Send an invitation instead
               </button>
             </p>
-          </Field>
+          </FormField>
         )}
 
         <div className="flex justify-end gap-2 pt-1">
@@ -135,18 +136,19 @@ export function EditUserModal({ user, onClose, onSaved }: { user: OrgUser; onClo
   return (
     <Modal title="Edit account" onClose={onClose}>
       <div className="space-y-4">
-        <Field label="Name">
-          <input className={inputCls} style={inputStyle} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-        </Field>
-        <Field label="Email">
-          <input className={inputCls} style={inputStyle} type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
-        </Field>
+        <FormField label="Name">
+          <TextInput value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+        </FormField>
+        <FormField label="Email">
+          <TextInput type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+        </FormField>
         {/* The role is shown, never edited: the server refuses a role change,
             because turning a studio's trainer into a member (or back) would
             orphan the studio or give it a second owner. */}
-        <Field label="Role">
-          <p className="text-[13px] font-[600]" style={{ color: 'var(--text-primary)' }}>{roleLabel(user.role) || '—'}</p>
-        </Field>
+        <div>
+          <p className="text-[11.5px] font-[650]" style={{ color: 'var(--text-secondary)' }}>Role</p>
+          <p className="mt-1.5 text-[13px] font-[600]" style={{ color: 'var(--text-primary)' }}>{roleLabel(user.role) || '—'}</p>
+        </div>
         <div className="flex justify-end gap-2 pt-1">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button loading={saving} disabled={saving} onClick={submit} style={{ background: 'linear-gradient(135deg,#0f172a,#334155)', color: '#fff' }}>Save</Button>
@@ -238,9 +240,9 @@ export function ResetPasswordModal({ user, onClose }: { user: OrgUser; onClose: 
         </>
       ) : (
         <>
-          <Field label="New password">
+          <FormField label="New password">
             <PasswordField value={password} onChange={setPassword} onGenerate={() => setPassword(genPassword())} />
-          </Field>
+          </FormField>
           <div className="flex justify-end gap-2 pt-5">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button loading={saving} disabled={saving} onClick={submit} style={{ background: 'linear-gradient(135deg,#0f172a,#334155)', color: '#fff' }}>Reset</Button>

@@ -6,6 +6,7 @@
 // Component bodies, props and rendered markup are unchanged.
 import { Loader2, ShieldAlert, X, Copy, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { TextInput } from '@/components/ui/form';
 import { useToast } from '@/lib/toast';
 
 export function PanelSkeleton({ label }: { label: string }) {
@@ -98,12 +99,12 @@ export function PasswordField({ value, onChange, onGenerate }: { value: string; 
   const { toast } = useToast();
   return (
     <div className="flex gap-2">
-      <input className={inputCls} style={inputStyle} value={value} placeholder="Min 8 characters" onChange={(e) => onChange(e.target.value)} />
+      <TextInput value={value} placeholder="Min 8 characters" onChange={(e) => onChange(e.target.value)} />
       <button onClick={onGenerate} title="Generate"
-        className="flex h-[42px] w-[42px] flex-shrink-0 items-center justify-center rounded-[11px] transition hover:bg-black/5"
+        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[11px] transition hover:bg-black/5"
         style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}><RefreshCw size={15} /></button>
       <button onClick={() => { if (value) { navigator.clipboard?.writeText(value); toast.success('Copied'); } }} title="Copy"
-        className="flex h-[42px] w-[42px] flex-shrink-0 items-center justify-center rounded-[11px] transition hover:bg-black/5"
+        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[11px] transition hover:bg-black/5"
         style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}><Copy size={15} /></button>
     </div>
   );
