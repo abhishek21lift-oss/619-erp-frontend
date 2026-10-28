@@ -68,12 +68,14 @@ export default function AuthShell({
             <p className="text-[17px] font-[600] tracking-[-0.01em]" style={{ color: C.blueHi }}>
               {aside.eyebrow}
             </p>
-            <h1
+            {/* A tagline, not a heading: the card title is the page's H1, and it
+                is the one thing visible at every width. */}
+            <p
               className="mt-3 max-w-[520px] text-[clamp(2.2rem,3.4vw,3.1rem)] font-[600] leading-[1.07] tracking-[-0.028em]"
               style={{ color: C.ink }}
             >
               {aside.headline}
-            </h1>
+            </p>
             <p className="mt-4 max-w-[460px] text-[16px] leading-[1.55]" style={{ color: C.muted }}>
               {aside.sub}
             </p>
@@ -133,9 +135,9 @@ export function AuthCard({
   return (
     <div>
       <div className="rounded-[20px] p-6 sm:p-8" style={cardStyle}>
-        <h2 className="text-[26px] font-[600] leading-[1.12] tracking-[-0.022em]" style={{ color: C.ink }}>
+        <h1 className="text-[26px] font-[600] leading-[1.12] tracking-[-0.022em]" style={{ color: C.ink }}>
           {title}
-        </h2>
+        </h1>
         {subtitle && (
           <p className="mt-2 text-[14px] leading-[1.5]" style={{ color: C.muted }}>{subtitle}</p>
         )}
