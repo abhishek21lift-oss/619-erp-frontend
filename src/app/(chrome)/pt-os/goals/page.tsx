@@ -284,8 +284,9 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
       const parqHistory = parqRow.past_history ?? {};
       const interviews = Array.isArray(interviewRes?.data) ? interviewRes.data : [];
       const interview = (interviews.find((i) => i.status === 'completed') ?? interviews[0]) as ClientInterview | undefined;
-      // Sleep, smoking and alcohol belong to the Lifestyle assessment; the
-      // Interview is qualitative history and must not be a second source.
+      // Sleep, smoking, alcohol, occupation and screen time belong to the
+      // Lifestyle assessment; meal timing to Nutrition. The Interview is
+      // qualitative history and must not be a second source.
       const sleep = numberOrNull(lifestyleRow.sleep_duration_hours);
       const water = numberOrNull(nutritionRow.water_intake_liters);
       setHabits({
@@ -344,12 +345,12 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
       });
 
       setContext({
-        occupation: stringOrNull(interview?.lifestyle_occupation) ?? stringOrNull(lifestyleRow.occupation_type),
+        occupation: stringOrNull(lifestyleRow.occupation_type),
         sittingHours: numberOrNull(interview?.lifestyle_sitting_hours) ?? numberOrNull(parqHistory.daily_sitting_hours),
-        screenTime: stringOrNull(interview?.lifestyle_screen_time) ?? stringOrNull(lifestyleRow.screen_time_bracket),
+        screenTime: stringOrNull(lifestyleRow.screen_time_bracket),
         sleepHours: sleep,
         stressLevel: numberOrNull(lifestyleRow.stress_level),
-        mealRegularity: stringOrNull(interview?.lifestyle_meal_regularity) ?? stringOrNull(nutritionRow.meal_timing_consistency),
+        mealRegularity: stringOrNull(nutritionRow.meal_timing_consistency),
         dietPreferences: stringList(nutritionRow.diet_preferences),
         foodAllergies: stringList(nutritionRow.food_allergies),
         smoking: stringOrNull(lifestyleRow.smoking_status),

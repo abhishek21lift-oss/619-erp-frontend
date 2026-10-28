@@ -51,6 +51,13 @@ const MEAL_REGULARITY: Record<string, string> = {
 const SMOKING: Record<string, string> = { never: 'Never', occasionally: 'Occasionally', daily: 'Daily', former: 'Former' };
 const ALCOHOL: Record<string, string> = { never: 'Never', occasionally: 'Occasionally', weekly: 'Weekly', frequently: 'Frequently' };
 
+/** The records the panel above reads — one link per owner, not one per row. */
+const SOURCES = [
+  { label: 'Interview', path: 'interview' },
+  { label: 'Lifestyle', path: 'lifestyle-assessment' },
+  { label: 'Nutrition', path: 'nutrition-assessment' },
+];
+
 function contextRows(c: ClientContext): { label: string; value: string }[] {
   return [
     { label: 'Occupation', value: c.occupation || '—' },
@@ -134,13 +141,18 @@ export function StepLifestyle({ form, set, step, context, clientId, error }: Ste
                 K11 lifestyle screening, read from the records that already own it.
               </p>
             </div>
-            <Link
-              href={`/pt-os/interview?client_id=${encodeURIComponent(clientId)}`}
-              className="inline-flex items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-[11.5px] font-[700]"
-              style={{ background: 'var(--bg-card)', color: blue[700], border: `1px solid ${tint(blue[500], 0.25)}` }}
-            >
-              Client Interview <ArrowUpRight size={11} />
-            </Link>
+            <div className="flex flex-wrap gap-1.5">
+              {SOURCES.map((s) => (
+                <Link
+                  key={s.path}
+                  href={`/pt-os/${s.path}?client_id=${encodeURIComponent(clientId)}`}
+                  className="inline-flex items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-[11.5px] font-[700]"
+                  style={{ background: 'var(--bg-card)', color: blue[700], border: `1px solid ${tint(blue[500], 0.25)}` }}
+                >
+                  {s.label} <ArrowUpRight size={11} />
+                </Link>
+              ))}
+            </div>
           </div>
 
           <dl className="mt-4 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
