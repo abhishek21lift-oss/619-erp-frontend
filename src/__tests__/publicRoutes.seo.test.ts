@@ -8,7 +8,7 @@ vi.mock('next/font/google', () => {
 });
 import fs from 'node:fs';
 import path from 'node:path';
-import robots, { PRIVATE_SEGMENTS } from '@/app/robots';
+import robots, { PRIVATE_PREFIXES, PRIVATE_SEGMENTS } from '@/app/robots';
 import sitemap, { PUBLIC_ROUTES } from '@/app/sitemap';
 import { PUBLIC_SEO_ROUTES, SITE_URL, canonicalUrl } from '@/lib/seo-routes';
 import { SESSIONLESS_PAGES } from '@/lib/public-paths';
@@ -109,6 +109,14 @@ describe('robots.txt describes routes that exist', () => {
       (s) => !listed.has(s) && !publicTop.has(s) && s !== '/login',
     );
     expect(unclassified).toEqual([]);
+  });
+
+  it('blocks the authenticated PT OS subtree without blocking /pt-os', () => {
+    expect(PRIVATE_PREFIXES).toEqual(['/pt-os/']);
+    expect(disallow).toContain('/pt-os/');
+    // robots.txt is a prefix match: `/pt-os` does not start with `/pt-os/`.
+    expect(disallow).not.toContain('/pt-os');
+    expect(disallow.filter((d) => '/pt-os'.startsWith(d))).toEqual([]);
   });
 
   it('keeps crawlers off the API and sign-in form', () => {

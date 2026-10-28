@@ -6,12 +6,21 @@ import { Container } from './primitives';
 import { C } from './tokens';
 import { Wordmark } from './Wordmark';
 
-/** Product navigation columns — every link points at a real route or anchor. */
+/**
+ * Public navigation columns — every link points at a public route or anchor.
+ *
+ * The app routes these used to name (/ai-coach, /attendance, /finance/forecast,
+ * /reports, /settings, /help, /support, /subscription, ...) are authenticated,
+ * robots-disallowed and redirect a logged-out visitor to /login. Linking them
+ * from the marketing pages sent crawlers at blocked URLs and sent prospects at
+ * a sign-in wall. The only app links left are the two sign-in doors, which are
+ * meant to be linked and are intentionally kept out of the index.
+ */
 const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
   {
     title: 'Product',
     links: [
-      { label: 'Overview', href: '#product' },
+      { label: 'Overview', href: '/#product' },
       { label: 'AI Training Layer', href: '/#ai' },
       { label: 'All features', href: '/#features' },
       { label: 'Pricing', href: '/#pricing' },
@@ -22,35 +31,34 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
     title: 'Platform',
     links: [
       { label: 'PT OS', href: '/pt-os' },
-      { label: 'AI Coach', href: '/ai-coach' },
-      { label: 'Workout generator', href: '/ai/workout-generator' },
-      { label: 'Diet generator', href: '/ai/diet-generator' },
-      { label: 'Knowledge base', href: '/ai-coach/knowledge' },
+      { label: 'Why PT OS', href: '/pt-os#product' },
+      { label: 'PT OS for India', href: '/pt-os#india' },
+      { label: 'Switching', href: '/pt-os#switch' },
+      { label: 'Questions', href: '/pt-os#questions' },
     ],
   },
   {
-    title: 'Business',
+    title: 'Why us',
     links: [
-      { label: 'Attendance', href: '/attendance' },
-      { label: 'Finance & forecast', href: '/finance/forecast' },
-      { label: 'Engagement', href: '/engagement/whatsapp' },
-      { label: 'Reports', href: '/reports' },
-      { label: 'Settings', href: '/settings' },
+      { label: 'For personal trainers', href: '/#for-trainers' },
+      { label: 'For PT businesses', href: '/#for-pt-business' },
+      { label: 'Workflow', href: '/#workflow' },
+      { label: 'The gap we close', href: '/#the-gap' },
+      { label: 'Built for India', href: '/#built-for' },
     ],
   },
   {
     title: 'Resources',
     links: [
       { label: 'FAQ', href: '/#resources' },
-      { label: 'Help centre', href: '/help' },
-      { label: 'Support', href: '/support' },
-      { label: 'Subscription', href: '/subscription' },
+      { label: 'Start free', href: '/start-free' },
       { label: 'Member login', href: '/member-login' },
+      { label: 'Trainer login', href: '/login' },
     ],
   },
 ];
 
-/** Footer — real routes and anchors only. No legal pages exist; none are linked. */
+/** Footer — public routes and anchors only; the app is reached through sign-in. */
 export default function Footer() {
   return (
     <footer className="border-t" style={{ borderColor: C.lineSoft, background: C.canvasAlt }}>

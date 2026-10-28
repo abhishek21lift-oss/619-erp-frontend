@@ -82,7 +82,7 @@ export default function PtOsSection() {
                   Explore PT OS
                 </Link>
                 <Link
-                  href="/ai-coach"
+                  href="/#ai"
                   className={`${SECONDARY_BUTTON} h-11 px-5 text-[14px]`}
                 >
                   How the AI Coach works

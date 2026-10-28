@@ -12,11 +12,14 @@ const PRIORITY: Record<PublicSeoRoute, number> = {
 
 // Only the canonical URL of each public route — never a redirect, a private
 // route or a second spelling of the same page.
+//
+// No `lastModified`: it used to be `new Date()` on every request, so the
+// sitemap claimed all three pages changed at the moment it was fetched. A
+// lastmod that is always "now" is ignored by Google at best and mistrusted at
+// worst; the crawl data is a better signal until a real content date exists.
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date();
   return PUBLIC_SEO_ROUTES.map((route) => ({
     url: canonicalUrl(route),
-    lastModified,
     changeFrequency: 'monthly' as const,
     priority: PRIORITY[route],
   }));
