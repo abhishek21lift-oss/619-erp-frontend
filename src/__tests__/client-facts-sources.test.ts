@@ -1,11 +1,12 @@
 // One home per fact.
 //
-// Sleep, smoking and alcohol are scored by the Lifestyle assessment. The goal
-// wizard used to fall back to the Interview's lifestyle answers (and read
-// smoking/alcohol only from the Interview), so the two records could disagree
-// and the wizard showed whichever one it happened to read. Training frequency
-// has the same shape: enrolment writes pt_clients.sessions_per_week, and the
-// Interview's training-days answer is only a legacy fallback.
+// Sleep, smoking, alcohol, occupation and screen time are scored by the
+// Lifestyle assessment; meal timing by Nutrition. The goal wizard used to fall
+// back to the Interview's lifestyle answers (and read smoking/alcohol only
+// from the Interview), so the two records could disagree and the wizard showed
+// whichever one it happened to read. Training frequency has the same shape:
+// enrolment writes pt_clients.sessions_per_week, and the Interview's
+// training-days answer is only a legacy fallback.
 //
 // Pinned as source text, as the other page-level contracts are: mounting the
 // goal wizard means mocking eight API reads plus draft autosave, which is out
@@ -28,6 +29,20 @@ describe('lifestyle facts come from the Lifestyle assessment', () => {
     expect(goals).toContain('alcohol: stringOrNull(lifestyleRow.alcohol_status)');
     expect(goals).not.toContain('interview?.lifestyle_smoking');
     expect(goals).not.toContain('interview?.lifestyle_alcohol');
+  });
+
+  it('reads occupation and screen time from the assessment only', () => {
+    expect(goals).toContain('occupation: stringOrNull(lifestyleRow.occupation_type)');
+    expect(goals).toContain('screenTime: stringOrNull(lifestyleRow.screen_time_bracket)');
+    expect(goals).not.toContain('interview?.lifestyle_occupation');
+    expect(goals).not.toContain('interview?.lifestyle_screen_time');
+  });
+});
+
+describe('meal timing comes from the Nutrition assessment', () => {
+  it('reads meal regularity from the nutrition column only', () => {
+    expect(goals).toContain('mealRegularity: stringOrNull(nutritionRow.meal_timing_consistency)');
+    expect(goals).not.toContain('interview?.lifestyle_meal_regularity');
   });
 });
 
