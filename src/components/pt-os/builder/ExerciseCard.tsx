@@ -38,6 +38,7 @@ import {
   CARDIO_PLAN_DRAFT_EVENT, CARDIO_PROGRAM_TYPES, clearCardioPlanDraft,
   getK11IntensityBand, getProgressionPhase, readCardioPlanDraft, type CardioPlanDraft,
 } from '@/lib/cardio-calculations';
+import { FormField, SelectInput, TextArea, TextInput } from '@/components/ui/form';
 
 /** Muscle-group hues. Fixed per group so a group keeps its colour everywhere. */
 const GROUP_TONE: Record<string, string> = {
@@ -539,16 +540,17 @@ function TrackingChip({
   };
 
   return (
-    <select
-      aria-label={`Track ${exercise.name} by`}
-      value={mode}
-      onChange={(e) => change(e.target.value as TrackingMode)}
-      // 44px like every other control here — this one is tapped at the rack.
-      className="h-[44px] cursor-pointer rounded-[12px] border-0 px-2.5 text-[11px] font-[700] outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-      style={chipStyle}
-    >
-      {options.map((m) => <option key={m} value={m}>{TRACKING_MODE_LABEL[m]}</option>)}
-    </select>
+    <FormField label={`Track ${exercise.name} by`} labelHidden className="shrink-0">
+      <SelectInput
+        value={mode}
+        onChange={(e) => change(e.target.value as TrackingMode)}
+        // 44px like every other control here — this one is tapped at the rack.
+        className="h-[44px] w-auto cursor-pointer rounded-[12px] px-2.5 pr-7 text-[11px] font-[700]"
+        style={{ ...chipStyle, border: 0 }}
+      >
+        {options.map((m) => <option key={m} value={m}>{TRACKING_MODE_LABEL[m]}</option>)}
+      </SelectInput>
+    </FormField>
   );
 }
 
@@ -617,12 +619,9 @@ function ConfigField({
   };
 
   return (
-    <label className="flex flex-col gap-1">
-      <span className="text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-        {spec.label}
-      </span>
+    <FormField label={spec.label} density="compact">
       <div className="flex items-center overflow-hidden" style={inputStyle}>
-        <input
+        <TextInput
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commit}
@@ -633,8 +632,8 @@ function ConfigField({
           inputMode="decimal"
           placeholder="—"
           aria-label={`${spec.label} (${spec.suffix}) for ${exercise.name}`}
-          className="h-[44px] w-full min-w-0 flex-1 bg-transparent px-1.5 text-center text-[14px] font-[700] outline-none"
-          style={{ color: 'var(--text-primary)' }}
+          className="h-[44px] w-full min-w-0 flex-1 rounded-none border-0 bg-transparent px-1.5 text-center text-[14px] font-[700]"
+          style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)' }}
         />
         {draft !== '' && (
           <span className="shrink-0 pr-2 text-[10px] font-[600]" style={{ color: 'var(--text-muted)' }}>
@@ -642,7 +641,7 @@ function ConfigField({
           </span>
         )}
       </div>
-    </label>
+    </FormField>
   );
 }
 
@@ -840,10 +839,7 @@ function InlineField({
   };
 
   return (
-    <label className="flex flex-col gap-1">
-      <span className="text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-        {spec.label}
-      </span>
+    <FormField label={spec.label} density="compact">
       {/*
         The unit sits BESIDE the input, not on top of it.
 
@@ -862,7 +858,7 @@ function InlineField({
         className="flex items-center overflow-hidden"
         style={inputStyle}
       >
-        <input
+        <TextInput
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commit}
@@ -872,8 +868,8 @@ function InlineField({
           }}
           inputMode={spec.mode === 'text' ? 'text' : spec.mode === 'decimal' ? 'decimal' : 'numeric'}
           placeholder={spec.placeholder ?? '—'}
-          className="h-[44px] w-full min-w-0 flex-1 bg-transparent px-1.5 text-center text-[14px] font-[700] outline-none"
-          style={{ color: 'var(--text-primary)' }}
+          className="h-[44px] w-full min-w-0 flex-1 rounded-none border-0 bg-transparent px-1.5 text-center text-[14px] font-[700]"
+          style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)' }}
         />
         {spec.suffix && draft !== '' && (
           <span
@@ -884,7 +880,7 @@ function InlineField({
           </span>
         )}
       </div>
-    </label>
+    </FormField>
   );
 }
 
@@ -918,21 +914,22 @@ function NotesField({
   }, [draft]);
 
   return (
-    <textarea
-      ref={ref}
-      value={draft}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={() => {
-        const v = draft.trim();
-        if (v === last.current) return;
-        last.current = v;
-        onCommit({ notes: v === '' ? null : v });
-      }}
-      rows={1}
-      placeholder="Coach notes…"
-      aria-label={`Coach notes for ${exercise.name}`}
-      className="min-h-[44px] w-full resize-none overflow-hidden px-1 py-2.5 text-[13px] outline-none"
-      style={inputStyle}
-    />
+    <FormField label={`Coach notes for ${exercise.name}`} labelHidden className="w-full">
+      <TextArea
+        ref={ref}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => {
+          const v = draft.trim();
+          if (v === last.current) return;
+          last.current = v;
+          onCommit({ notes: v === '' ? null : v });
+        }}
+        rows={1}
+        placeholder="Coach notes…"
+        className="min-h-[44px] w-full resize-none overflow-hidden rounded-none px-1 py-2.5 text-[13px]"
+        style={{ ...inputStyle, border: 'none', borderBottom: '1px solid var(--border)' }}
+      />
+    </FormField>
   );
 }
