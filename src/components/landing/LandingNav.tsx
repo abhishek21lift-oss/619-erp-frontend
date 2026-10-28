@@ -2,10 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { m, useScroll, useSpring } from 'framer-motion';
-import { Menu, X, ArrowRight } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Wordmark } from './Wordmark';
-import { C, HEADER, SHADOW } from './tokens';
+import { C, HEADER } from './tokens';
 
 const NAV = [
   { label: 'Product', href: '#product' },
@@ -18,20 +17,25 @@ const NAV = [
 ] as const;
 
 /**
- * Sticky landing nav. Transparent over the hero, then a blurred glass bar once
- * the page scrolls; a hairline scroll-progress indicator runs along the bottom
- * edge. Desktop links on md+, a keyboard-accessible drawer below.
+ * The public bar — a slim, translucent apple.com-style header. It sits over
+ * the hero while the page is at the top and keeps the same 48px height once
+ * content scrolls beneath it, so nothing jumps between the marketing pages,
+ * Start Free and the sign-in doors.
+ *
+ * `items` exists so a second marketing page (/pt-os) can point at its own
+ * sections without forking the bar.
  */
-export default function LandingNav() {
+export default function LandingNav({
+  items = NAV,
+}: {
+  items?: readonly { label: string; href: string }[];
+} = {}) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
-  const { scrollYProgress } = useScroll();
-  const progress = useSpring(scrollYProgress, { stiffness: 140, damping: 28, mass: 0.4 });
-
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 16);
+    const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -55,62 +59,47 @@ export default function LandingNav() {
       className="fixed inset-x-0 top-0 z-50"
       style={{
         paddingTop: HEADER.padTop,
-        transition:
-          'background 240ms ease, border-color 240ms ease, backdrop-filter 240ms ease, box-shadow 240ms ease',
+        transition: 'background 240ms ease, border-color 240ms ease, backdrop-filter 240ms ease',
         background: scrolled ? HEADER.bg : HEADER.bgIdle,
         backdropFilter: scrolled ? HEADER.blur : HEADER.blurIdle,
         WebkitBackdropFilter: scrolled ? HEADER.blur : HEADER.blurIdle,
-        borderBottom: `1px solid ${HEADER.accentLine}`,
-        boxShadow: open ? 'none' : HEADER.accentGlow,
+        borderBottom: `1px solid ${scrolled || open ? HEADER.border : 'transparent'}`,
       }}
     >
       <div className={HEADER.container}>
         <nav aria-label="Main" className={HEADER.bar}>
-          <Link
-            href="/"
-            aria-label="MY PT STUDIO home"
-            className={HEADER.chipClass}
-            style={{
-              backdropFilter: HEADER.chipBlur,
-              WebkitBackdropFilter: HEADER.chipBlur,
-              boxShadow: HEADER.chipShadow,
-            }}
-          >
-            <Wordmark tile size={HEADER.logoSize} />
+          <Link href="/" aria-label="MY PT STUDIO home" className={HEADER.chipClass}>
+            <Wordmark size={22} priority />
           </Link>
 
           {/* Desktop links */}
-          <div className="hidden items-center gap-1 lg:flex">
-            {NAV.map((n) => (
+          <div className="hidden items-center gap-7 lg:flex">
+            {items.map((n) => (
               <a
                 key={n.label}
                 href={n.href}
-                className="rounded-lg px-3 py-2 text-[13.5px] font-[560] transition-colors hover:text-[var(--saffron-500)]"
-                style={{ color: C.muted }}
+                className="text-[12px] font-[400] transition-opacity hover:opacity-60"
+                style={{ color: C.ink }}
               >
                 {n.label}
               </a>
             ))}
           </div>
 
-          <div className="hidden items-center gap-2 lg:flex">
+          <div className="hidden items-center gap-5 lg:flex">
             <Link
               href="/login"
-              className="rounded-lg px-4 py-2 text-[13.5px] font-[650] transition-colors hover:bg-[rgba(163,177,198,0.18)] hover:text-[var(--saffron-500)]"
-              style={{ color: C.body }}
+              className="text-[12px] font-[400] transition-opacity hover:opacity-60"
+              style={{ color: C.ink }}
             >
-              Log In
+              Log in
             </Link>
             <Link
               href="/start-free"
-              className="group inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-[13.5px] font-bold text-white transition-all hover:-translate-y-px"
-              style={{
-                background: `linear-gradient(135deg, ${C.blue450} 0%, ${C.blueLo} 100%)`,
-                boxShadow: '0 6px 20px -8px rgba(0,103,224,0.6), inset 0 1px 0 rgba(255,255,255,0.18)',
-              }}
+              className="rounded-full px-4 py-1.5 text-[12px] font-[500] text-white transition-colors hover:brightness-110"
+              style={{ background: C.blue }}
             >
-              Get Started
-              <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+              Start free
             </Link>
           </div>
 
@@ -122,61 +111,48 @@ export default function LandingNav() {
             aria-expanded={open}
             aria-controls="landing-mobile-menu"
             aria-label={open ? 'Close menu' : 'Open menu'}
-            className="rounded-lg p-2 transition-colors hover:bg-[rgba(163,177,198,0.18)] lg:hidden"
+            className="rounded-lg p-1.5 transition-opacity hover:opacity-60 lg:hidden"
             style={{ color: C.ink }}
           >
-            {open ? <X size={22} /> : <Menu size={22} />}
+            {open ? <X size={20} /> : <Menu size={20} />}
           </button>
         </nav>
 
         {/* Mobile drawer */}
-        <div id="landing-mobile-menu" data-no-pull-refresh hidden={!open} className="pb-4 lg:hidden">
-          <div
-            className="rounded-2xl border p-3"
-            style={{ background: C.panel, borderColor: C.lineSoft, boxShadow: SHADOW.float }}
-          >
-            {NAV.map((n) => (
+        <div id="landing-mobile-menu" data-no-pull-refresh hidden={!open} className="pb-5 lg:hidden">
+          <div className="border-t pt-2" style={{ borderColor: C.lineSoft }}>
+            {items.map((n) => (
               <a
                 key={n.label}
                 href={n.href}
                 onClick={() => setOpen(false)}
-                className="block rounded-xl px-3.5 py-3 text-[14px] font-[580] transition-colors hover:bg-[rgba(163,177,198,0.18)] hover:text-[var(--saffron-500)]"
-                style={{ color: C.body }}
+                className="block px-1 py-3 text-[17px] font-[500] transition-opacity hover:opacity-60"
+                style={{ color: C.ink }}
               >
                 {n.label}
               </a>
             ))}
-            <div className="mt-2 flex gap-2 border-t pt-3" style={{ borderColor: C.lineSoft }}>
+            <div className="mt-3 flex gap-3">
               <Link
                 href="/login"
                 onClick={() => setOpen(false)}
-                className="flex-1 rounded-xl border py-2.5 text-center text-[14px] font-[650]"
+                className="flex-1 rounded-full border py-2.5 text-center text-[14px] font-[500]"
                 style={{ color: C.ink, borderColor: C.line }}
               >
-                Log In
+                Log in
               </Link>
               <Link
                 href="/start-free"
                 onClick={() => setOpen(false)}
-                className="flex-1 rounded-xl py-2.5 text-center text-[14px] font-bold text-white"
-                style={{ background: `linear-gradient(135deg, ${C.blue450} 0%, ${C.blueLo} 100%)` }}
+                className="flex-1 rounded-full py-2.5 text-center text-[14px] font-[500] text-white"
+                style={{ background: C.blue }}
               >
-                Get Started
+                Start free
               </Link>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Scroll progress */}
-      <m.div
-        aria-hidden
-        className="absolute inset-x-0 bottom-0 h-[2px] origin-left"
-        style={{
-          scaleX: progress,
-          background: `linear-gradient(90deg, ${C.blue} 0%, ${C.blueHi} 55%, ${C.gold} 100%)`,
-        }}
-      />
     </header>
   );
 }

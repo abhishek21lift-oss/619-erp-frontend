@@ -3,7 +3,7 @@
 import { Building2, UserRoundCheck, CalendarCheck2, Wallet, Radar, BadgePercent, MessageSquareText } from 'lucide-react';
 import Link from 'next/link';
 import { Container, Reveal, Section, SectionHeader } from './primitives';
-import { C } from './tokens';
+import { C, PRIMARY_BUTTON, SHADOW } from './tokens';
 
 const BENEFITS = [
   {
@@ -62,13 +62,13 @@ export default function GymSection() {
           {BENEFITS.map((b, i) => (
             <Reveal key={b.title} delay={0.03 + i * 0.035} className="h-full">
               <div
-                className="flex h-full flex-col rounded-2xl border p-5"
-                style={{ background: C.panel, borderColor: C.lineSoft }}
+                className="flex h-full flex-col rounded-[16px] p-5"
+                style={{ background: C.panel, boxShadow: SHADOW.card }}
               >
                 <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ background: C.goldSoft, color: C.goldHi }} aria-hidden>
                   {b.icon}
                 </span>
-                <h3 className="mt-3.5 text-[14px] font-bold tracking-[-0.01em]" style={{ color: C.ink }}>{b.title}</h3>
+                <h3 className="mt-3.5 text-[14px] font-[600] tracking-[-0.01em]" style={{ color: C.ink }}>{b.title}</h3>
                 <p className="mt-2 text-[12.5px] leading-[1.6]" style={{ color: C.muted }}>{b.body}</p>
               </div>
             </Reveal>
@@ -76,14 +76,13 @@ export default function GymSection() {
         </div>
 
         <Reveal delay={0.1}>
-          <div className="mt-10 flex flex-col items-center justify-between gap-4 rounded-2xl border px-6 py-5 sm:flex-row" style={{ background: C.panelAlt, borderColor: C.lineSoft }}>
+          <div className="mt-10 flex flex-col items-center justify-between gap-4 rounded-[20px] px-6 py-5 sm:flex-row" style={{ background: C.panel, boxShadow: SHADOW.card }}>
             <p className="text-center text-[13.5px] font-medium sm:text-left" style={{ color: C.body }}>
               Trainers, managers and owners — the whole team works from the same data. No training academy required.
             </p>
             <Link
               href="/start-free"
-              className="inline-flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-[13.5px] font-bold text-white"
-              style={{ background: `linear-gradient(135deg, ${C.blue450} 0%, ${C.blueLo} 100%)`, boxShadow: '0 10px 26px -10px rgba(0,103,224,0.55)' }}
+              className={`${PRIMARY_BUTTON} h-10 shrink-0 px-5 text-[14px]`}
             >
               Start your free trial
             </Link>

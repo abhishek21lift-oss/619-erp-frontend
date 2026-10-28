@@ -5,13 +5,12 @@ import {
   CalendarCheck2, Wallet, BookOpen, FileText, BarChart3, Building2,
 } from 'lucide-react';
 import { Container, Reveal, Section, SectionHeader } from './primitives';
-import { C } from './tokens';
+import { C, SHADOW } from './tokens';
 
 const CATEGORIES = [
   {
     label: 'Operate',
     color: C.blueHi,
-    wash: C.blueWash,
     features: [
       { icon: <LayoutDashboard size={15} />, t: 'Command dashboard', d: 'Revenue, sessions and client load at a glance.' },
       { icon: <CalendarCheck2 size={15} />, t: 'Attendance & check-in', d: 'Mobile-first check-in and session tracking.' },
@@ -22,7 +21,6 @@ const CATEGORIES = [
   {
     label: 'Train',
     color: C.goldHi,
-    wash: C.goldSoft,
     features: [
       { icon: <Dumbbell size={15} />, t: 'Programmes & templates', d: 'Design once, assign to one client or many.' },
       { icon: <BookOpen size={15} />, t: 'Exercise library', d: 'Cues, tempo and equipment for every movement.' },
@@ -32,7 +30,6 @@ const CATEGORIES = [
   {
     label: 'Intelligence',
     color: C.emerald,
-    wash: C.emeraldSoft,
     features: [
       { icon: <Sparkles size={15} />, t: 'AI Coach', d: 'Workout and diet generation grounded in client data.' },
       { icon: <BarChart3 size={15} />, t: 'AI insights', d: 'Progress trends from each client’s own records.' },
@@ -41,8 +38,7 @@ const CATEGORIES = [
   },
   {
     label: 'Engage',
-    color: C.blueHi,
-    wash: 'rgba(0,103,224,0.14)',
+    color: C.violetHi,
     features: [
       { icon: <MessageSquareText size={15} />, t: 'WhatsApp outreach', d: 'Renewal nudges, birthdays and follow-ups where clients reply.' },
       { icon: <Sparkles size={15} />, t: 'Campaigns & offers', d: 'Run referral offers and measure what works.' },
@@ -50,8 +46,7 @@ const CATEGORIES = [
   },
   {
     label: 'Grow',
-    color: C.blueHi,
-    wash: C.blueWash,
+    color: C.tealHi,
     features: [
       { icon: <LineChart size={15} />, t: 'Finance & forecast', d: 'Revenue trends, pending collections and forecasting.' },
       { icon: <Building2 size={15} />, t: 'Multi-branch', d: 'Roll up studios into one view of the business.' },
@@ -78,24 +73,21 @@ export default function FeatureGrid() {
           {CATEGORIES.map((cat, ci) => (
             <Reveal key={cat.label} delay={0.05 + ci * 0.05} className="h-full">
               <div
-                className="flex h-full flex-col rounded-2xl border p-5"
-                style={{ background: C.panel, borderColor: C.lineSoft }}
+                className="flex h-full flex-col rounded-[20px] p-5"
+                style={{ background: C.panel, boxShadow: SHADOW.card }}
               >
-                <span
-                  className="inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[10.5px] font-bold uppercase tracking-[0.12em]"
-                  style={{ background: cat.wash, color: cat.color }}
-                >
+                <span className="text-[13px] font-[600]" style={{ color: cat.color }}>
                   {cat.label}
                 </span>
-                <ul className="mt-5 space-y-4">
+                <ul className="mt-4 space-y-4">
                   {cat.features.map((f) => (
                     <li key={f.t} className="flex items-start gap-2.5">
                       <span className="mt-0.5 shrink-0" style={{ color: cat.color }} aria-hidden>
                         {f.icon}
                       </span>
                       <div>
-                        <p className="text-[12.5px] font-bold leading-snug" style={{ color: C.ink }}>{f.t}</p>
-                        <p className="mt-0.5 text-[11px] leading-[1.5]" style={{ color: C.faint }}>{f.d}</p>
+                        <p className="text-[13px] font-[600] leading-snug" style={{ color: C.ink }}>{f.t}</p>
+                        <p className="mt-1 text-[12px] leading-[1.45]" style={{ color: C.muted }}>{f.d}</p>
                       </div>
                     </li>
                   ))}

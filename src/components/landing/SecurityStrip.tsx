@@ -2,7 +2,7 @@
 
 import { ShieldCheck, LockKeyhole, Fingerprint, BrainCircuit, Database, ServerCog } from 'lucide-react';
 import { Container, Reveal, Section, SectionHeader } from './primitives';
-import { C } from './tokens';
+import { C, SHADOW } from './tokens';
 
 const ITEMS = [
   {
@@ -58,11 +58,11 @@ export default function SecurityStrip() {
           <div className="grid gap-3 sm:grid-cols-2">
             {ITEMS.map((item, i) => (
               <Reveal key={item.title} delay={0.04 + i * 0.04} className="h-full">
-                <div className="flex h-full gap-3.5 rounded-2xl border p-5" style={{ background: C.panel, borderColor: C.lineSoft }}>
+                <div className="flex h-full gap-3.5 rounded-[16px] p-5" style={{ background: C.panel, boxShadow: SHADOW.card }}>
                   <span className="mt-0.5 shrink-0" style={{ color: C.emerald }} aria-hidden>{item.icon}</span>
                   <div>
-                    <h3 className="text-[13.5px] font-bold" style={{ color: C.ink }}>{item.title}</h3>
-                    <p className="mt-1.5 text-[12px] leading-[1.6]" style={{ color: C.muted }}>{item.body}</p>
+                    <h3 className="text-[14px] font-[600]" style={{ color: C.ink }}>{item.title}</h3>
+                    <p className="mt-1.5 text-[12px] leading-[1.55]" style={{ color: C.muted }}>{item.body}</p>
                   </div>
                 </div>
               </Reveal>

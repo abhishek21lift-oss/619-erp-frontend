@@ -69,31 +69,26 @@ export default function AiSection() {
 
         <Reveal delay={0.08}>
           <div
-            className="relative mt-14 overflow-hidden rounded-[28px] border p-6 sm:p-8"
-            style={{ background: `linear-gradient(180deg, ${C.blueWash} 0%, ${C.canvasAlt} 100%)`, borderColor: C.lineSoft, boxShadow: SHADOW.panel }}
+            className="relative mt-14 overflow-hidden rounded-[24px] p-6 sm:p-8"
+            style={{ background: C.panel, boxShadow: SHADOW.panel }}
           >
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 top-0 h-px"
-              style={{ background: `linear-gradient(90deg, transparent, ${C.lineBlue}, transparent)` }}
-            />
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {LAYERS.map((l, i) => (
                 <Reveal key={l.title} delay={0.05 + i * 0.04} className="h-full">
                   <div
-                    className="group flex h-full flex-col rounded-2xl border p-5 transition-colors duration-200"
-                    style={{ background: C.panel, borderColor: C.lineSoft }}
+                    className="group flex h-full flex-col rounded-[16px] p-5 transition-colors duration-200"
+                    style={{ background: C.canvasAlt }}
                   >
                     <div className="flex items-center gap-2.5">
                       <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ background: C.blueWash, color: C.blueHi }} aria-hidden>
                         {l.icon}
                       </span>
-                      <h3 className="text-[14px] font-bold tracking-[-0.01em]" style={{ color: C.ink }}>{l.title}</h3>
+                      <h3 className="text-[14px] font-[600] tracking-[-0.01em]" style={{ color: C.ink }}>{l.title}</h3>
                     </div>
-                    <p className="mt-3 flex-1 text-[12.5px] leading-[1.6]" style={{ color: C.muted }}>{l.body}</p>
+                    <p className="mt-3 flex-1 text-[12.5px] leading-[1.55]" style={{ color: C.muted }}>{l.body}</p>
                     <Link
                       href={l.link.href}
-                      className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-bold transition-colors"
+                      className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-[500] transition-opacity hover:opacity-70"
                       style={{ color: C.blueHi }}
                     >
                       {l.link.label}
@@ -108,14 +103,14 @@ export default function AiSection() {
             <div className="mt-6 grid gap-3 lg:grid-cols-2">
               <Reveal delay={0.1} className="h-full">
                 <div
-                  className="flex h-full items-start gap-4 rounded-2xl border p-5"
-                  style={{ background: C.panelAlt, borderColor: C.lineSoft }}
+                  className="flex h-full items-start gap-4 rounded-[16px] p-5"
+                  style={{ background: C.canvasAlt }}
                 >
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ background: C.blueWash, color: C.blueHi }} aria-hidden>
                     <Sparkles size={18} />
                   </span>
                   <div>
-                    <h3 className="text-[14px] font-bold" style={{ color: C.ink }}>The AI does the heavy lifting</h3>
+                    <h3 className="text-[14px] font-[600]" style={{ color: C.ink }}>The AI does the heavy lifting</h3>
                     <p className="mt-1.5 text-[12.5px] leading-[1.6]" style={{ color: C.muted }}>
                       Draft programmes, plan diets, summarise client history, spot who is at risk of churning, suggest the next
                       renewal message — in minutes, not evenings.
@@ -125,14 +120,14 @@ export default function AiSection() {
               </Reveal>
               <Reveal delay={0.16} className="h-full">
                 <div
-                  className="flex h-full items-start gap-4 rounded-2xl border p-5"
-                  style={{ background: C.panelAlt, borderColor: C.lineSoft }}
+                  className="flex h-full items-start gap-4 rounded-[16px] p-5"
+                  style={{ background: C.canvasAlt }}
                 >
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ background: C.goldSoft, color: C.goldHi }} aria-hidden>
                     <UserRound size={18} />
                   </span>
                   <div>
-                    <h3 className="text-[14px] font-bold" style={{ color: C.ink }}>The trainer stays the expert</h3>
+                    <h3 className="text-[14px] font-[600]" style={{ color: C.ink }}>The trainer stays the expert</h3>
                     <p className="mt-1.5 text-[12.5px] leading-[1.6]" style={{ color: C.muted }}>
                       Review, edit, personalise and send. The client sees the trainer’s name — the AI never talks to clients directly.
                     </p>
@@ -147,8 +142,8 @@ export default function AiSection() {
                 <div key={p.t} className="flex items-center gap-2.5">
                   <span aria-hidden style={{ color: C.goldHi }}>{p.icon}</span>
                   <div>
-                    <p className="text-[12px] font-bold" style={{ color: C.ink }}>{p.t}</p>
-                    <p className="text-[10.5px] font-medium" style={{ color: C.faint }}>{p.d}</p>
+                    <p className="text-[12px] font-[500]" style={{ color: C.ink }}>{p.t}</p>
+                    <p className="text-[11px]" style={{ color: C.faint }}>{p.d}</p>
                   </div>
                 </div>
               ))}

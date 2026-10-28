@@ -1,16 +1,18 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { m, useReducedMotion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { C, EASE } from './tokens';
 
 /**
  * Scroll-reveal wrapper. Fade + rise, once, with a stagger delay.
  *
- * Framer's global `MotionConfig reducedMotion="user"` (root layout) already
- * collapses transforms for visitors who ask for less motion; the explicit
- * `useReducedMotion` branch additionally skips the hidden start so nothing
- * ever sits invisible for them.
+ * Reduced motion is handled by the root `MotionConfig reducedMotion="user"`,
+ * which collapses the transform for visitors who ask for less motion. It is
+ * deliberately NOT branched here: the server cannot read the media query, so a
+ * different `initial` style on the client is a hydration mismatch — and React
+ * keeps the server's `opacity: 0` without patching it, leaving the whole
+ * section invisible for exactly those visitors.
  */
 export function Reveal({
   children,
@@ -25,13 +27,12 @@ export function Reveal({
   className?: string;
   as?: 'div' | 'section';
 }) {
-  const reduce = useReducedMotion();
   const Tag = as === 'section' ? m.section : m.div;
   return (
     <Tag
       className={className}
-      initial={reduce ? undefined : { opacity: 0, y }}
-      whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-70px' }}
       transition={{ duration: 0.7, delay, ease: EASE }}
     >
@@ -42,7 +43,7 @@ export function Reveal({
 
 /** Page content column — the landing's single width rhythm. */
 export function Container({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`mx-auto w-full max-w-[1200px] px-5 sm:px-8 ${className}`}>{children}</div>;
+  return <div className={`mx-auto w-full max-w-[1024px] px-6 ${className}`}>{children}</div>;
 }
 
 /** Section shell: vertical rhythm + anchor offset for the fixed nav. */
@@ -61,7 +62,7 @@ export function Section({
   return (
     <section
       id={id}
-      className={`relative scroll-mt-24 py-20 sm:py-28 ${className}`}
+      className={`relative scroll-mt-24 py-24 sm:py-32 ${className}`}
       style={alt ? { background: C.canvasAlt } : undefined}
     >
       {children}
@@ -69,15 +70,12 @@ export function Section({
   );
 }
 
-/** Saffron eyebrow pill. */
+/** A short coloured label above a headline — sentence case, no pill. */
 export function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <span
-      className="inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em]"
-      style={{ color: C.goldHi, background: C.goldSoft, borderColor: 'rgba(245,158,11,0.28)' }}
-    >
+    <p className="text-[17px] font-[600] tracking-[-0.01em]" style={{ color: C.blueHi }}>
       {children}
-    </span>
+    </p>
   );
 }
 
@@ -100,14 +98,14 @@ export function SectionHeader({
 }) {
   const center = align === 'center';
   return (
-    <div className={center ? 'mx-auto max-w-3xl text-center' : 'max-w-3xl'}>
+    <div className={center ? 'mx-auto max-w-[820px] text-center' : 'max-w-[820px]'}>
       <Reveal>
         <Eyebrow>{eyebrow}</Eyebrow>
       </Reveal>
       <Reveal delay={0.05}>
         <h2
           id={id}
-          className="mt-5 text-[clamp(1.7rem,3.4vw,2.5rem)] font-[800] leading-[1.08] tracking-[-0.03em]"
+          className="mt-3 text-[clamp(2rem,4.2vw,3.3rem)] font-[600] leading-[1.08] tracking-[-0.022em]"
           style={{ color: C.ink }}
         >
           {title}
@@ -115,7 +113,7 @@ export function SectionHeader({
       </Reveal>
       {sub && (
         <Reveal delay={0.1}>
-          <p className="mt-5 text-[15px] leading-[1.7] sm:text-[17px]" style={{ color: C.muted }}>
+          <p className="mt-5 text-[17px] leading-[1.5] sm:text-[19px]" style={{ color: C.muted }}>
             {sub}
           </p>
         </Reveal>

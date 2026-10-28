@@ -15,7 +15,7 @@
  */
 
 import Image from 'next/image';
-import { m, useReducedMotion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { EASE, MARK } from './tokens';
 
 export default function StudioMark({
@@ -28,8 +28,6 @@ export default function StudioMark({
   priority?: boolean;
   className?: string;
 }) {
-  const reduce = useReducedMotion();
-
   return (
     <div className={`relative mx-auto w-full select-none ${className}`} style={{ maxWidth: size * 1.5 }} aria-hidden>
       <div className="relative" style={{ paddingBottom: '100%' }}>
@@ -42,7 +40,7 @@ export default function StudioMark({
 
         <m.div
           className="absolute inset-x-[16.67%] top-[8%]"
-          initial={reduce ? false : { opacity: 0, y: 14, scale: 0.97 }}
+          initial={{ opacity: 0, y: 14, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.9, ease: EASE }}
         >
