@@ -146,6 +146,7 @@ function deferred<T>() {
 beforeEach(() => {
   mockGenerateWorkout.mockReset();
   mockGenerateDiet.mockReset();
+  mockWorkoutContext.mockReset();
   mockSaveDiet.mockReset();
   mockLoginStatus.mockReset();
   mockJourney.mockReset();
@@ -519,6 +520,84 @@ describe('a diet the record cannot support', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('Record height, activity level on the client first');
     expect(alert.textContent).not.toContain('height_cm');
+  });
+});
+
+// ── The diet's own missing fields, named before the press ──────────────────
+//
+// The panel above is built for the workout and cannot list activity level:
+// that lives in the lifestyle assessment, not in the workout facts. The server
+// now answers the diet question on the same context call, so the button can be
+// shut and the fields named before a generation is spent finding out.
+describe('a diet the context says is not ready', () => {
+  const DIET_CONTEXT = {
+    client: { id: 'cl-1', name: 'Test Client' },
+    facts: {
+      age: { value: 34, source: 'pt_clients.dob', origin: 'recorded' },
+      gender: { value: 'female', source: 'pt_clients.gender', origin: 'recorded' },
+      weight_kg: { value: 64, source: 'pt_assessments.weight', origin: 'recorded' },
+      height_cm: { value: null, source: null, origin: 'missing' },
+      goal: { value: 'fat_loss', source: 'pt_clients.goal', origin: 'recorded' },
+      experience_level: { value: 'intermediate', source: 'pt_clients.workout_experience_level', origin: 'recorded' },
+      training_days: { value: 3, source: 'pt_clients.sessions_per_week', origin: 'recorded' },
+      equipment: { value: null, source: null, origin: 'missing' },
+    },
+    data_quality: {
+      recorded: [], stated: [], missing: [], conflicting: [], blocking: [], completeness_pct: 63,
+    },
+    safety: null,
+    current_program: { active: false },
+    training_history: null,
+    diet: { missing: ['height_cm', 'activity_level'] },
+  };
+
+  const renderWith = async (ctx: unknown = DIET_CONTEXT) => {
+    mockWorkoutContext.mockResolvedValue(ctx);
+    renderCard();
+    await screen.findByText('What the AI will use');
+  };
+
+  it('shuts the button, names the fields and links to the screens that record them', async () => {
+    await renderWith();
+
+    const diet = screen.getByText('Generate AI Diet').closest('button') as HTMLButtonElement;
+    expect(diet.disabled).toBe(true);
+    expect(diet.title).toBe('Record height and activity level first');
+    expect(screen.getByRole('link', { name: 'Fitness testing' }))
+      .toHaveAttribute('href', '/pt-os/assessment?client_id=cl-1');
+    expect(screen.getByRole('link', { name: 'Lifestyle assessment' }))
+      .toHaveAttribute('href', '/pt-os/lifestyle-assessment?client_id=cl-1');
+  });
+
+  it('opens it when the record holds every field the diet requires', async () => {
+    await renderWith({ ...DIET_CONTEXT, diet: { missing: [] } });
+
+    expect((screen.getByText('Generate AI Diet').closest('button') as HTMLButtonElement).disabled)
+      .toBe(false);
+  });
+
+  // A goal typed above is a real answer, exactly as it is for the workout
+  // button. Leaving the diet button shut after the trainer had answered the
+  // only missing field would make the two buttons disagree about the same box.
+  it('opens it when the trainer states the only missing field, and sends it', async () => {
+    mockGenerateDiet.mockResolvedValue({ data: DIET_PLAN });
+    await renderWith({
+      ...DIET_CONTEXT,
+      facts: { ...DIET_CONTEXT.facts, goal: { value: null, source: null, origin: 'missing' } },
+      diet: { missing: ['goal'] },
+    });
+
+    const diet = () => screen.getByText('Generate AI Diet').closest('button') as HTMLButtonElement;
+    expect(diet().disabled).toBe(true);
+
+    fireEvent.click(screen.getByText('Add what you know for this generation'));
+    const goal = await screen.findByPlaceholderText('e.g. muscle_gain');
+    fireEvent.change(goal, { target: { value: 'fat_loss' } });
+    expect(diet().disabled).toBe(false);
+
+    fireEvent.click(diet());
+    await waitFor(() => expect(mockGenerateDiet).toHaveBeenCalled());
+    expect(mockGenerateDiet.mock.calls[0][0]).toEqual({ client_id: 'cl-1', goal: 'fat_loss' });
   });
 });
 
@@ -990,6 +1069,38 @@ describe('a client already on a programme', () => {
     fireEvent.click(screen.getByText('Generate AI Workout'));
     await waitFor(() => expect(mockGenerateWorkout).toHaveBeenCalled());
     expect(Object.keys(mockGenerateWorkout.mock.calls[0][0])).toEqual(['client_id']);
+  });
+
+  // The chooser used to render only when workout/context loaded. If that call
+  // failed, the 409 told the trainer to choose while the screen offered no
+  // choice, and pressing Generate repeated the same refusal forever. The
+  // refusal carries the programme it is about, so the chooser can be built
+  // from the refusal itself — no second context read required.
+  it('offers the choice from the refusal when the context could not be read', async () => {
+    mockWorkoutContext.mockRejectedValue(new Error('upstream unavailable'));
+    mockGenerateWorkout
+      .mockRejectedValueOnce(new ApiError(
+        'Base Phase is active and this is week 4 of 12. Choose whether to progress it or start a new one.',
+        409,
+        'ACTIVE_PROGRAM',
+        { program: LIVE.current_program },
+      ))
+      .mockResolvedValueOnce({ data: WORKOUT_PLAN });
+
+    renderCard();
+    await screen.findByText(/Client context could not be verified/);
+    expect(screen.queryByText('Progress it')).toBeNull();
+
+    fireEvent.click(screen.getByText('Generate AI Workout'));
+    await screen.findByText('Progress it');
+    // Twice: the chooser states where the client is, and the error message
+    // repeats it as the reason for the refusal.
+    expect(screen.getAllByText(/week 4 of 12/).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByText('Start a new one'));
+    fireEvent.click(screen.getByText('Generate AI Workout'));
+    await waitFor(() => expect(mockGenerateWorkout).toHaveBeenCalledTimes(2));
+    expect(mockGenerateWorkout.mock.calls[1][0].mode).toBe('new');
   });
 });
 
