@@ -41,6 +41,7 @@ import {
   ShieldAlert, ShieldCheck, ShieldQuestion,
 } from 'lucide-react';
 import type { AiWorkoutContext, AiClientFactField } from '@/lib/api';
+import { stepHref } from '@/lib/journey';
 import { palette, rgba } from '@/lib/palette';
 
 const LABEL: Record<AiClientFactField, string> = {
@@ -275,7 +276,16 @@ export default function GenerationContextPanel({ context, clientId }: { context:
             <GateIcon size={13} />
             {/* The word too, not only the hue — a colour-blind trainer on a bad
                 monitor gets the same three states. */}
-            PAR-Q {gate === 'unscreened' ? 'not screened' : (safety.gate?.status ?? 'unknown')}
+            {gate === 'blocked' && clientId ? (
+              // The refusal says "resolve it before generating" and until now
+              // offered nowhere to go. The gate is not a warning to absorb; it
+              // is a screening that has to be recorded.
+              <Link href={stepHref('parq', clientId)} className="underline underline-offset-2">
+                {`PAR-Q ${safety.gate?.status ?? 'unknown'}`}
+              </Link>
+            ) : (
+              `PAR-Q ${gate === 'unscreened' ? 'not screened' : (safety.gate?.status ?? 'unknown')}`
+            )}
             {safety.constraints > 0 && (
               <span style={{ color: 'var(--text-muted)' }}>· {safety.constraints} constraint{safety.constraints === 1 ? '' : 's'}</span>
             )}
