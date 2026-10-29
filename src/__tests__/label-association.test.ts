@@ -39,7 +39,7 @@ describe('the accessible-name audit itself', () => {
     // migration fail a test it is improving. This only proves the scan ran
     // over the app rather than over an empty tree; `audit.nameless` is the
     // assertion with teeth, and it has no threshold at all.
-    expect(audit.total).toBeGreaterThan(150);
+    expect(audit.total).toBeGreaterThan(100);
   });
 
   it('counts a wrapped control as named, across a component boundary', () => {
@@ -149,8 +149,10 @@ describe('controls with no accessible name', () => {
     // migrations still to come while still failing an audit that has stopped
     // finding controls at all, which is the only thing this assertion is for.
     // 200 → 150 after FinanceTab, OrgModals and StudiosTab moved to the design
-    // system. The floor only proves the scan ran; `nameless` has no threshold.
-    expect(audit.total).toBeGreaterThan(150);
+    // system, then 150 → 100 after activity-log, AboutSection and
+    // ProgressionRule. The floor only proves the scan ran; `nameless` has no
+    // threshold.
+    expect(audit.total).toBeGreaterThan(100);
     expect(audit.aria + audit.wrapped + audit.htmlFor + audit.wired
       + audit.placeholderOnly.length + audit.nameless.length).toBe(audit.total);
   });
@@ -231,7 +233,7 @@ describe('labelling across a component boundary', () => {
     const src = readFileSync(srcPath('components', 'pt-os', 'shared', 'SignaturePad.tsx'), 'utf8');
     expect(src).toMatch(/htmlFor=\{`\$\{baseId\}-typed`\}/);
     // Same floor, same reason — see the note in "is empty for the right reason".
-    expect(audit.total).toBeGreaterThan(150);
+    expect(audit.total).toBeGreaterThan(100);
   });
 });
 

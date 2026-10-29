@@ -31,6 +31,7 @@ import { useEffect, useRef, useState } from 'react';
 import { m } from 'framer-motion';
 import { TrendingUp } from 'lucide-react';
 import type { ProgressionType, WorkoutPlan } from '@/lib/api';
+import { FormField, SelectInput, TextInput } from '@/components/ui/form';
 
 /** The unit and a sane default step for each rule, so the amount is never blank. */
 const RULES: Record<ProgressionType, { label: string; unit: string; step: number; hint: string }> = {
@@ -143,15 +144,12 @@ export default function ProgressionRule({ plan, onChange }: ProgressionRuleProps
           className="mt-3"
         >
           <div className="flex flex-wrap items-end gap-2">
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                By
-              </span>
+            <FormField label="By" density="compact">
               <div
                 className="flex w-[104px] items-center overflow-hidden rounded-[12px]"
                 style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
               >
-                <input
+                <TextInput
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   onBlur={commitAmount}
@@ -161,34 +159,31 @@ export default function ProgressionRule({ plan, onChange }: ProgressionRuleProps
                   }}
                   inputMode="decimal"
                   aria-label={`Amount to add per step, in ${rule.unit}`}
-                  className="h-[44px] w-full min-w-0 flex-1 bg-transparent px-2 text-center text-[14px] font-[700] outline-none"
-                  style={{ color: 'var(--text-primary)' }}
+                  className="h-[44px] w-full min-w-0 flex-1 bg-transparent px-2 text-center text-[14px] font-[700]"
+                  style={{ background: 'transparent', border: 'none', borderRadius: 0, color: 'var(--text-primary)' }}
                 />
                 <span className="shrink-0 pr-2 text-[10px] font-[600]" style={{ color: 'var(--text-muted)' }}>
                   {rule.unit}
                 </span>
               </div>
-            </label>
+            </FormField>
 
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                Every
-              </span>
-              <select
+            <FormField label="Every" density="compact">
+              <SelectInput
                 value={every}
                 onChange={(e) => onChange({
                   progression_type: type,
                   progression_amount: plan.progression_amount ?? null,
                   progression_every_weeks: Number(e.target.value),
                 })}
-                className="h-[44px] rounded-[12px] px-2.5 text-[13px] font-[700] outline-none"
+                className="h-[44px] rounded-[12px] px-2.5 pr-8 text-[13px] font-[700]"
                 style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
               >
                 {[1, 2, 3, 4].map((n) => (
                   <option key={n} value={n}>{n === 1 ? 'week' : `${n} weeks`}</option>
                 ))}
-              </select>
-            </label>
+              </SelectInput>
+            </FormField>
           </div>
           <p className="mt-2 text-[12px]" style={{ color: 'var(--text-muted)' }}>
             {rule.hint} Week 1 is always the numbers you type below.
