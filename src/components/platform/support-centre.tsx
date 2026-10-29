@@ -25,6 +25,9 @@ import { Panel, SectionLabel, Reveal } from './console';
 import { CcCard, CcDonut, CcStat } from './cc-viz';
 import { useToast } from '@/lib/toast';
 import { errorMessage } from '@/lib/forms/errors';
+import {
+  CheckboxField, FormField, SelectInput, TextArea, useStandaloneField,
+} from '@/components/ui/form';
 
 const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)' } as const;
 
@@ -66,6 +69,7 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
   const [internal, setInternal] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const internalField = useStandaloneField('internal', internal, setInternal);
 
   const load = useCallback(() => {
     api.superAdmin.supportTicket(id)
@@ -135,24 +139,26 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <select
-            value={ticket.status} disabled={busy}
-            onChange={(e) => patch({ status: e.target.value as TicketStatus })}
-            aria-label="Ticket status"
-            className="h-11 rounded-[9px] px-2 text-[11.5px] outline-none"
-            style={{ ...cardStyle, color: 'var(--text-primary)' }}
-          >
-            {(Object.keys(STATUS) as TicketStatus[]).map((s) => <option key={s} value={s}>{STATUS[s].label}</option>)}
-          </select>
-          <select
-            value={ticket.priority} disabled={busy}
-            onChange={(e) => patch({ priority: e.target.value as TicketPriority })}
-            aria-label="Ticket priority"
-            className="h-11 rounded-[9px] px-2 text-[11.5px] outline-none"
-            style={{ ...cardStyle, color: 'var(--text-primary)' }}
-          >
-            {(Object.keys(PRIORITY) as TicketPriority[]).map((p) => <option key={p} value={p}>{PRIORITY[p].label}</option>)}
-          </select>
+          <FormField label="Ticket status" labelHidden className="w-auto shrink-0">
+            <SelectInput
+              value={ticket.status} disabled={busy}
+              onChange={(e) => patch({ status: e.target.value as TicketStatus })}
+              className="h-11 rounded-[9px] px-2 pr-8 text-[11.5px]"
+              style={{ ...cardStyle, color: 'var(--text-primary)' }}
+            >
+              {(Object.keys(STATUS) as TicketStatus[]).map((s) => <option key={s} value={s}>{STATUS[s].label}</option>)}
+            </SelectInput>
+          </FormField>
+          <FormField label="Ticket priority" labelHidden className="w-auto shrink-0">
+            <SelectInput
+              value={ticket.priority} disabled={busy}
+              onChange={(e) => patch({ priority: e.target.value as TicketPriority })}
+              className="h-11 rounded-[9px] px-2 pr-8 text-[11.5px]"
+              style={{ ...cardStyle, color: 'var(--text-primary)' }}
+            >
+              {(Object.keys(PRIORITY) as TicketPriority[]).map((p) => <option key={p} value={p}>{PRIORITY[p].label}</option>)}
+            </SelectInput>
+          </FormField>
           <span className="text-[11px]" style={{ color: 'var(--text-disabled)' }}>
             {ticket.assigned_to_name ? `Owned by ${ticket.assigned_to_name}` : 'Unassigned'}
           </span>
@@ -198,25 +204,23 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
             {/* The composer restates who will see this on every keystroke —
                 the mode is never something you have to remember. */}
             <div className="mb-2 flex flex-wrap items-center gap-3">
-              <label className="flex cursor-pointer items-center gap-2">
-                <input type="checkbox" checked={internal} onChange={(e) => setInternal(e.target.checked)} className="h-4 w-4" />
-                <span className="text-[12px] font-[650]" style={{ color: internal ? '#b45309' : 'var(--text-secondary)' }}>
-                  Internal note
-                </span>
-              </label>
+              <CheckboxField field={internalField} label="Internal note" />
               <span className="text-[11px] font-[650]" style={{ color: internal ? '#b45309' : 'var(--text-muted)' }}>
                 {internal ? 'Only platform operators will see this.' : 'The studio will see this.'}
               </span>
             </div>
-            <textarea
-              value={body} onChange={(e) => setBody(e.target.value)} rows={3}
-              placeholder={internal ? 'A note for other operators…' : 'Reply to the studio…'}
-              aria-label={internal ? 'Internal note' : 'Reply to the studio'}
-              className="w-full resize-y rounded-[10px] px-2.5 py-2 text-[12.5px] outline-none"
-              style={internal
-                ? { background: 'rgba(245,158,11,0.06)', border: '1px dashed rgba(245,158,11,0.5)', color: 'var(--text-primary)' }
-                : { ...cardStyle, color: 'var(--text-primary)' }}
-            />
+            <FormField
+              label={internal ? 'Internal note' : 'Reply to the studio'} labelHidden
+            >
+              <TextArea
+                value={body} onChange={(e) => setBody(e.target.value)} rows={3}
+                placeholder={internal ? 'A note for other operators…' : 'Reply to the studio…'}
+                className="rounded-[10px] px-2.5 py-2 text-[12.5px]"
+                style={internal
+                  ? { background: 'rgba(245,158,11,0.06)', border: '1px dashed rgba(245,158,11,0.5)', color: 'var(--text-primary)' }
+                  : { ...cardStyle, color: 'var(--text-primary)' }}
+              />
+            </FormField>
             <button
               onClick={send} disabled={busy || !body.trim()}
               className="mt-2 flex h-11 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] text-white disabled:opacity-50"

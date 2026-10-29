@@ -27,6 +27,7 @@ import type {
 import { useToast } from '@/lib/toast';
 import { TENANT_ROLES, roleLabel } from '@/lib/roles';
 import { errorMessage } from '@/lib/forms/errors';
+import { FormField, TextArea, TextInput } from '@/components/ui/form';
 
 const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)' } as const;
 const inputStyle = { ...cardStyle, color: 'var(--text-primary)' } as const;
@@ -146,24 +147,22 @@ function Composer({ initial, plans, onClose, onSaved }: {
       </div>
 
       <div className="space-y-3">
-        <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Title</span>
-          <input
+        <FormField label="Title" density="compact">
+          <TextInput
             value={form.title} onChange={(e) => set('title', e.target.value)} maxLength={140}
             placeholder="Scheduled maintenance this Sunday"
-            className="h-10 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={inputStyle}
+            className="h-10 rounded-[10px] px-2.5 text-[12.5px]" style={inputStyle}
           />
-        </label>
+        </FormField>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Message</span>
-          <textarea
+        <FormField label="Message" density="compact">
+          <TextArea
             value={form.body} onChange={(e) => set('body', e.target.value)} rows={4} maxLength={4000}
             placeholder="We are upgrading the platform on Sunday between 2am and 4am IST. Bookings and check-ins will be unavailable for about 20 minutes."
-            className="resize-y rounded-[10px] px-2.5 py-2 text-[12.5px] outline-none" style={inputStyle}
+            className="rounded-[10px] px-2.5 py-2 text-[12.5px]" style={inputStyle}
           />
           <span className="text-[10.5px]" style={{ color: 'var(--text-disabled)' }}>{form.body.length} / 4000</span>
-        </label>
+        </FormField>
 
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">
@@ -174,14 +173,13 @@ function Composer({ initial, plans, onClose, onSaved }: {
               ))}
             </div>
           </div>
-          <label className="flex min-w-[180px] flex-1 flex-col gap-1">
-            <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Link (optional)</span>
-            <input
+          <FormField label="Link (optional)" density="compact" className="min-w-[180px] flex-1">
+            <TextInput
               value={form.link ?? ''} onChange={(e) => set('link', e.target.value)}
               placeholder="/subscription"
-              className="h-10 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={inputStyle}
+              className="h-10 rounded-[10px] px-2.5 text-[12.5px]" style={inputStyle}
             />
-          </label>
+          </FormField>
         </div>
         {/* Stated up front rather than as a validation error after typing a
             full URL: the server rejects absolute links, and the reason is
@@ -218,15 +216,14 @@ function Composer({ initial, plans, onClose, onSaved }: {
             </div>
           )}
           {form.audience === 'studios' && (
-            <label className="mt-2 flex flex-col gap-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-              <span>Paste studio IDs, one per line.</span>
-              <textarea
+            <FormField label="Paste studio IDs, one per line." density="compact" className="mt-2">
+              <TextArea
                 value={(form.audience_org_ids ?? []).join('\n')}
                 onChange={(e) => set('audience_org_ids', e.target.value.split('\n').map((x) => x.trim()).filter(Boolean))}
-                rows={3} aria-label="Studio IDs, one per line"
-                className="w-full resize-y rounded-[10px] px-2.5 py-2 font-mono text-[11.5px] outline-none" style={inputStyle}
+                rows={3}
+                className="rounded-[10px] px-2.5 py-2 font-mono text-[11.5px]" style={inputStyle}
               />
-            </label>
+            </FormField>
           )}
         </div>
 
